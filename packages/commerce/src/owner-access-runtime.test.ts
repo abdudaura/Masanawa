@@ -3,6 +3,7 @@ import {
   createOwnerAccessRuntime,
   type OwnerAccessRequestRepository,
   type OwnerAccessReservationPort,
+  type OwnerAccessTrialUsagePort,
 } from "./owner-access-runtime.js";
 import type { OwnerAccessQuote, OwnerAccessRequest } from "./owner-access.js";
 
@@ -30,6 +31,10 @@ function memoryRepository(): {
     },
   };
 }
+
+const trialUsage: OwnerAccessTrialUsagePort = {
+  async consume() {},
+};
 
 const paidQuote: OwnerAccessQuote = {
   requestId: "owner-request-paid",
@@ -66,6 +71,7 @@ describe("owner access runtime", () => {
     const runtime = createOwnerAccessRuntime({
       repository: memory.repo,
       reservations,
+      trialUsage,
       acceptWithinMinutes: 60,
       now: () => new Date("2026-10-05T10:00:00Z"),
     });
@@ -94,6 +100,7 @@ describe("owner access runtime", () => {
     const runtime = createOwnerAccessRuntime({
       repository: memory.repo,
       reservations,
+      trialUsage,
       acceptWithinMinutes: 60,
       now: () => new Date("2026-10-05T10:00:00Z"),
     });
@@ -126,6 +133,7 @@ describe("owner access runtime", () => {
     const runtime = createOwnerAccessRuntime({
       repository: memory.repo,
       reservations,
+      trialUsage,
       acceptWithinMinutes: 60,
       now: () => new Date("2026-10-05T10:00:00Z"),
     });
@@ -156,6 +164,7 @@ describe("owner access runtime", () => {
     const runtime = createOwnerAccessRuntime({
       repository: memory.repo,
       reservations,
+      trialUsage,
       acceptWithinMinutes: 60,
       now: () => clock,
     });
@@ -194,6 +203,7 @@ describe("owner access runtime", () => {
     const runtime = createOwnerAccessRuntime({
       repository: memory.repo,
       reservations,
+      trialUsage,
       acceptWithinMinutes: 60,
       now: () => clock,
     });

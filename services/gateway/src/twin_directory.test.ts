@@ -79,6 +79,36 @@ describe("public twin directory", () => {
     expect(found?.textChatMode).toBe("free");
   });
 
+
+
+  it("filters blocked Twins from search and stable-id resolution", async () => {
+    const authorizer: TwinDirectoryAuthorizer = {
+      async authorize() { return { tenantId, userId }; },
+    };
+    const source: PublicTwinDirectorySource = {
+      async search() { return [record()]; },
+      async findByPublicId() { return record(); },
+    };
+    const filtered = createTwinDirectoryService({
+      authorizer,
+      source,
+      visibility: {
+        async canDiscover(input) {
+          expect(input.userId).toBe(userId);
+          return false;
+        },
+      },
+    });
+
+    await expect(filtered.search({
+      authorizationHeader: "Bearer user",
+    })).resolves.toEqual([]);
+    await expect(filtered.resolve({
+      authorizationHeader: "Bearer user",
+      publicId: "amina-bello",
+    })).resolves.toBeNull();
+  });
+
   it("bounds search input before querying the source", async () => {
     await expect(service([]).search({
       authorizationHeader: "Bearer user",

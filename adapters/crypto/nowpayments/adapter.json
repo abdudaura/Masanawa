@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "family": "crypto",
+  "implementation": "nowpayments",
+  "package": "@masanawa/nowpayments",
+  "registration": "explicit"
+}

@@ -14,6 +14,7 @@ describe("twin economy Activity source", () => {
         return [
           {
             eventId: "event-visit",
+            referenceId: "visit-1",
             tenantId,
             characterId,
             eventType: "twin.visited",
@@ -23,6 +24,7 @@ describe("twin economy Activity source", () => {
           },
           {
             eventId: "event-gift",
+            referenceId: "gift-1",
             tenantId,
             characterId,
             eventType: "twin.gift.completed",
@@ -32,6 +34,7 @@ describe("twin economy Activity source", () => {
           },
           {
             eventId: "event-owner",
+            referenceId: "request-1",
             tenantId,
             characterId,
             eventType: "twin.owner-access.requested",
@@ -56,6 +59,7 @@ describe("twin economy Activity source", () => {
     ]);
     expect(records[1]?.amountCredits).toBe(100);
     expect(records[2]?.status).toBe("pending");
+    expect(records[2]?.referenceId).toBe("request-1");
     expect(JSON.stringify(records)).not.toContain("transcript");
   });
 
@@ -65,6 +69,7 @@ describe("twin economy Activity source", () => {
         return [
           {
             eventId: "event-bad",
+            referenceId: "visit-bad",
             tenantId,
             characterId:
               "character_00000000-0000-4000-8000-000000000099",
@@ -92,6 +97,7 @@ describe("twin economy Activity source", () => {
         return [
           {
             eventId: "event-accepted",
+            referenceId: "request-1",
             tenantId,
             characterId,
             eventType: "twin.owner-access.accepted",
@@ -101,6 +107,7 @@ describe("twin economy Activity source", () => {
           },
           {
             eventId: "event-scheduled",
+            referenceId: "request-1",
             tenantId,
             characterId,
             eventType: "twin.owner-access.scheduled",

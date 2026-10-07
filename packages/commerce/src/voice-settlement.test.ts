@@ -78,6 +78,28 @@ describe("verified twin voice settlement", () => {
     expect(decision.trialUnitsConsumed).toBe(0);
   });
 
+  it("fully refunds a paid reservation when media never starts", () => {
+    const decision = settleVerifiedTwinVoiceUsage({
+      admissionId: "voice-admission-no-media-paid",
+      outcome: "failed-before-media",
+      verifiedSeconds: 0,
+      trialCovered: false,
+      unitSeconds: 60,
+      priceCreditsPerUnit: 10,
+      ownerShareBasisPoints: 3000,
+      reservedCredits: 50,
+    });
+    expect(decision).toEqual({
+      disposition: "settle",
+      usageUnits: 0,
+      trialUnitsConsumed: 0,
+      customerChargeCredits: 0,
+      ownerEarningCredits: 0,
+      platformRevenueCredits: 0,
+      refundCredits: 50,
+    });
+  });
+
   it("reconciles instead of exceeding the reserved spend cap", () => {
     const decision = settleVerifiedTwinVoiceUsage({
       admissionId: "voice-admission-overage",

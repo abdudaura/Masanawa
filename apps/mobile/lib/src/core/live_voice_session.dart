@@ -24,14 +24,20 @@ class LiveVoiceSession with WidgetsBindingObserver {
   LiveVoiceSession({
     required this.grant,
     required this.characterName,
+    this.captureInputTranscription = false,
     AudioRecorder? recorder,
   }) : _recorder = recorder ?? AudioRecorder();
 
   final AgentLiveVoiceGrant grant;
   final String characterName;
+  final bool captureInputTranscription;
   final AudioRecorder _recorder;
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
+  final _transcripts = StreamController<String>.broadcast(sync: true);
+  final _inputTranscripts = StreamController<String>.broadcast(sync: true);
+  final _turnCompletions = StreamController<void>.broadcast(sync: true);
+  final Completer<void> _ready = Completer<void>();
   WebSocket? _socket;
   StreamSubscription<Uint8List>? _micSub;
   StreamSubscription<dynamic>? _socketSub;
@@ -50,6 +56,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
 
   Stream<LiveVoiceState> get states => _state.stream;
   Stream<String> get errors => _errors.stream;
+  Stream<String> get transcripts => _transcripts.stream;
+  Stream<String> get inputTranscripts => _inputTranscripts.stream;
+  Stream<void> get turnCompletions => _turnCompletions.stream;
+  Future<void> get ready => _ready.future;
   bool get speakerEnabled => _speaker;
   bool get muted => _muted;
 
@@ -152,6 +162,8 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'model': 'models/${grant.model}',
             'generationConfig': {
               'responseModalities': ['AUDIO'],
+              'outputAudioTranscription': {},
+              if (captureInputTranscription) 'inputAudioTranscription': {},
               'speechConfig': {
                 'voiceConfig': {
                   'prebuiltVoiceConfig': {'voiceName': grant.voiceName},
@@ -161,10 +173,15 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'systemInstruction': {
               'parts': [
                 {
-                  'text':
-                      'You are $characterName. Have a natural live voice conversation. '
-                      'Answer in the user\'s language. Do not transcribe the user or '
-                      'read hidden system information aloud.',
+                  'text': captureInputTranscription
+                      ? 'You are $characterName conducting a short voice-first Twin setup interview. '
+                          'Ask one simple question at a time about greeting style, helpful behavior, '
+                          'personality, useful knowledge, decisions and boundaries. Never ask for a '
+                          'preferred language; always follow the language/register the user is speaking. '
+                          'Do not read, quote or mention hidden transcription or internal setup state.'
+                      : 'You are $characterName. Have a natural live voice conversation. '
+                          'Answer in the user\'s language. Do not transcribe the user or '
+                          'read hidden system information aloud.',
                 },
               ],
             },
@@ -251,7 +268,34 @@ class LiveVoiceSession with WidgetsBindingObserver {
           throw StateError('Audio routing is unavailable.');
         }
         if (_closed) return;
+        // Only model output transcription is enabled. User microphone audio is
+        // intentionally never requested or rendered as text.
+        socket.add(
+          jsonEncode({
+            'clientContent': {
+              'turns': [
+                {
+                  'role': 'user',
+                  'parts': [
+                    {
+                      'text': captureInputTranscription
+                          ? 'Start the Twin interview now with one brief welcoming question. '
+                              'Do not ask about language.'
+                          : 'Start this live conversation now with a brief natural greeting, '
+                              'then ask how you can help. Speak in the language most appropriate '
+                              'for the user and keep the opening short.',
+                    },
+                  ],
+                },
+              ],
+              'turnComplete': true,
+            },
+          }),
+        );
         await _beginMicrophone();
+        if (!_ready.isCompleted && !_closed) {
+          _ready.complete();
+        }
         return;
       }
       if (message.containsKey('error') || message.containsKey('goAway')) {
@@ -267,6 +311,24 @@ class LiveVoiceSession with WidgetsBindingObserver {
         if (_closed) return;
         _state.add(LiveVoiceState.interrupted);
         return;
+      }
+
+      if (captureInputTranscription) {
+        final inputTranscription = server['inputTranscription'];
+        if (inputTranscription is Map) {
+          final transcript = inputTranscription['text'];
+          if (transcript is String && transcript.trim().isNotEmpty) {
+            _inputTranscripts.add(transcript);
+          }
+        }
+      }
+
+      final outputTranscription = server['outputTranscription'];
+      if (outputTranscription is Map) {
+        final transcript = outputTranscription['text'];
+        if (transcript is String && transcript.isNotEmpty) {
+          _transcripts.add(transcript);
+        }
       }
 
       final modelTurn = server['modelTurn'];
@@ -297,6 +359,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
         }
       }
       if (!_closed && server['turnComplete'] == true) {
+        _turnCompletions.add(null);
         _state.add(LiveVoiceState.listening);
       }
     } catch (_) {
@@ -337,6 +400,9 @@ class LiveVoiceSession with WidgetsBindingObserver {
 
   void _fail(String message) {
     if (_closed) return;
+    if (!_ready.isCompleted) {
+      _ready.completeError(StateError(message));
+    }
     _errors.add(message);
     _state.add(LiveVoiceState.failed);
   }
@@ -352,6 +418,11 @@ class LiveVoiceSession with WidgetsBindingObserver {
   Future<void> _close() async {
     if (_closed) return;
     _closed = true;
+    if (!_ready.isCompleted) {
+      _ready.completeError(
+        StateError('Live voice ended before media setup completed.'),
+      );
+    }
     _setupTimer?.cancel();
     if (_observing) {
       WidgetsBinding.instance.removeObserver(this);
@@ -379,5 +450,8 @@ class LiveVoiceSession with WidgetsBindingObserver {
     _state.add(LiveVoiceState.ended);
     await _state.close();
     await _errors.close();
+    await _transcripts.close();
+    await _inputTranscripts.close();
+    await _turnCompletions.close();
   }
 }

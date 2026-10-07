@@ -1,7 +1,5 @@
-import type {
-  WalletHistoryRecord,
-  WalletHistorySubsource,
-} from "./wallet_projection_sources.js";
+import type { WalletHistoryRecord } from "./wallet_projection.js";
+import type { WalletHistorySubsource } from "./wallet_projection_sources.js";
 
 export type TwinEconomyWalletEventType =
   | "twin.purchase.completed"
@@ -128,7 +126,7 @@ function mapEvent(event: TwinEconomyWalletEvent): WalletHistoryRecord {
 export function createTwinEconomyWalletHistorySource(input: {
   readonly events: TwinEconomyWalletEventReader;
 }): WalletHistorySubsource {
-  return Object.freeze({
+  return Object.freeze<WalletHistorySubsource>({
     async list(request) {
       const events = await input.events.listForOwner({
         tenantId: request.tenantId,

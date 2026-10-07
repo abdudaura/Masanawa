@@ -26,4 +26,32 @@ class GatewayTwinProfileTransport implements TwinProfileTransport {
     );
     return TwinProfile.fromJson(_map(response.data));
   }
+
+  @override
+  Future<TwinProfileCustomizationPreview> previewCustomization(
+    TwinProfileCustomizationPatch patch,
+  ) async {
+    final response = await api.dio.post<dynamic>(
+      '/agent/twin/profile/customize/preview',
+      data: patch.toJson(),
+    );
+    return TwinProfileCustomizationPreview.fromJson(_map(response.data));
+  }
+
+  @override
+  Future<TwinProfile> applyCustomization({
+    required TwinProfileCustomizationPreview preview,
+    required bool confirmed,
+  }) async {
+    await api.dio.post<dynamic>(
+      '/agent/twin/profile/customize',
+      data: {
+        ...preview.patch.toJson(),
+        'expectedRevision': preview.currentRevision,
+        'confirmed': confirmed,
+        'updatedAt': DateTime.now().toUtc().toIso8601String(),
+      },
+    );
+    return load();
+  }
 }

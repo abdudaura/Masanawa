@@ -15,7 +15,7 @@ import '../chat/shell_document.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
   'AGENT_BASE_URL',
-  defaultValue: 'https://nurainworker-production.up.railway.app',
+  defaultValue: 'https://masanawa-gateway-production.up.railway.app',
 );
 
 class _GatewayClient {
@@ -140,6 +140,7 @@ class _GatewayClient {
         throw const ApiException('Empty response from server');
       }
       await for (final line in bodyStream
+          .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
         final trimmed = line.trim();
@@ -165,6 +166,7 @@ class _GatewayClient {
       final bodyStream = res.data?.stream;
       if (bodyStream == null) throw const ApiException('Empty response from server');
       await for (final line in bodyStream
+          .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
         final value = line.trim();
@@ -321,18 +323,41 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
   Future<CreatorCloneResult> create({
     required String displayName,
     required String biography,
-    required List<String> languages,
+    required String gender,
+    required int age,
+    required String avatarBase64,
+    required String avatarMimeType,
     required List<String> personality,
     required List<String> expertise,
   }) async {
     final data = await _client.post('/creator/clone', {
       'displayName': displayName,
       'biography': biography,
-      'languages': languages,
+      'gender': gender,
+      'age': age,
+      'avatarBase64': avatarBase64,
+      'avatarMimeType': avatarMimeType,
       'personality': personality,
       'expertise': expertise,
     });
-    return CreatorCloneResult.fromJson(data);
+    final created = CreatorCloneResult.fromJson(data);
+    try {
+      final profile = await _client.get('/agent/twin/profile');
+      final publicId = profile['publicId'];
+      if (publicId is String && publicId.trim().isNotEmpty) {
+        return CreatorCloneResult(
+          created: created.created,
+          characterId: created.characterId,
+          characterVersionId: created.characterVersionId,
+          relationshipId: created.relationshipId,
+          displayName: created.displayName,
+          publicUrl: 'https://masanawa.com/${publicId.trim()}',
+        );
+      }
+    } catch (_) {
+      // Creation is canonical even if the public profile projection is still catching up.
+    }
+    return created;
   }
 }
 
@@ -701,10 +726,19 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   }
 
   @override
-  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(String characterId) async {
+  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(
+    String characterId, {
+    String? admissionId,
+    String purpose = 'conversation',
+  }) async {
     final data = await _client.post(
       '/agent/live/token',
-      {'characterId': characterId},
+      {
+        'characterId': characterId,
+        'purpose': purpose,
+        if (admissionId != null && admissionId.isNotEmpty)
+          'admissionId': admissionId,
+      },
     );
     final expiresAt = DateTime.tryParse(data['expiresAt'] as String? ?? '');
     final token = data['token'];

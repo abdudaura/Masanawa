@@ -39,3 +39,42 @@ export function registerPaidVoiceRoutes(
     });
   });
 }
+
+
+export interface PaidVoiceSettlementService {
+  mediaStarted(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly admissionId: string;
+  }): Promise<Readonly<Record<string, unknown>>>;
+
+  complete(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly admissionId: string;
+    readonly outcome: "completed" | "interrupted";
+  }): Promise<Readonly<Record<string, unknown>>>;
+}
+
+export function registerPaidVoiceSettlementRoutes(
+  app: FastifyInstance,
+  service: PaidVoiceSettlementService,
+): void {
+  app.post("/agent/twin/voice/:admissionId/media-started", async (request) => {
+    const params = request.params as Record<string, unknown>;
+    return service.mediaStarted({
+      authorizationHeader: request.headers.authorization,
+      admissionId: text(params.admissionId, "admissionId", 256),
+    });
+  });
+
+  app.post("/agent/twin/voice/:admissionId/complete", async (request) => {
+    const params = request.params as Record<string, unknown>;
+    const body = request.body as Record<string, unknown>;
+    const outcome =
+      body.outcome === "interrupted" ? "interrupted" : "completed";
+    return service.complete({
+      authorizationHeader: request.headers.authorization,
+      admissionId: text(params.admissionId, "admissionId", 256),
+      outcome,
+    });
+  });
+}

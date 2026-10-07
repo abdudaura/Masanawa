@@ -4,7 +4,7 @@ import type { GiftRecipientResolver } from "./gifts.js";
 export function createGiftRecipientResolver(input: {
   readonly ownership: CharacterOwnershipReader;
 }): GiftRecipientResolver {
-  return Object.freeze({
+  return Object.freeze<GiftRecipientResolver>({
     async resolveByCharacter(request) {
       const record = await input.ownership.readForCharacter({
         tenantId: request.tenantId as never,

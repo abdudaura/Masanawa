@@ -141,6 +141,15 @@ abstract class PaidVoiceTransport {
     required String characterId,
     required String quoteId,
   });
+
+  Future<void> mediaStarted({
+    required String admissionId,
+  });
+
+  Future<void> complete({
+    required String admissionId,
+    required String outcome,
+  });
 }
 
 class UnavailablePaidVoiceTransport implements PaidVoiceTransport {
@@ -158,6 +167,21 @@ class UnavailablePaidVoiceTransport implements PaidVoiceTransport {
   Future<PaidVoiceAdmission> start({
     required String characterId,
     required String quoteId,
+  }) {
+    throw StateError('Paid voice is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<void> mediaStarted({
+    required String admissionId,
+  }) {
+    throw StateError('Paid voice is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<void> complete({
+    required String admissionId,
+    required String outcome,
   }) {
     throw StateError('Paid voice is not connected to the Gateway yet');
   }

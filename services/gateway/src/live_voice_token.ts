@@ -1,14 +1,30 @@
 import type { AgentConversationAuthorizer } from "./agent_conversation_contract.js";
+import type { PlatformAgentProfileRepository } from "@masanawa/agents";
 import type { LiveVoiceTokenService } from "./agent_shell_contract.js";
 import { parseCanonicalId } from "@masanawa/contracts";
 
 export function createGeminiLiveTokenService(input: {
   readonly apiKey: string;
   readonly authorizer: AgentConversationAuthorizer;
+  readonly platformProfiles?: PlatformAgentProfileRepository;
   readonly model?: string;
   readonly voiceName?: string;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => Date;
+  readonly paidVoiceAdmission?: {
+    validate(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly userId: import("@masanawa/contracts").UserId;
+      readonly characterId: import("@masanawa/contracts").CharacterId;
+      readonly admissionId: string | null;
+    }): Promise<void>;
+    tokenIssued(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly userId: import("@masanawa/contracts").UserId;
+      readonly characterId: import("@masanawa/contracts").CharacterId;
+      readonly admissionId: string | null;
+    }): Promise<void>;
+  };
 }): LiveVoiceTokenService {
   const apiKey = input.apiKey.trim();
   if (!apiKey) throw new TypeError("Gemini API key is required");
@@ -17,13 +33,33 @@ export function createGeminiLiveTokenService(input: {
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? (() => new Date());
 
-  return Object.freeze({
+  const service: LiveVoiceTokenService = {
     async mint(request) {
       const characterId = parseCanonicalId("character", request.characterId);
-      await input.authorizer.authorize({
+      const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         characterId,
       });
+      await input.paidVoiceAdmission?.validate({
+        tenantId: admission.scope.tenantId,
+        userId: admission.scope.userId,
+        characterId,
+        admissionId: request.admissionId ?? null,
+      });
+      const profile = input.platformProfiles
+        ? await input.platformProfiles.readForCharacter({
+            tenantId: admission.scope.tenantId,
+            characterId,
+          })
+        : null;
+      const selectedVoiceName =
+        profile?.voiceProvider.toLowerCase() === "gemini" && profile.voiceName.trim()
+          ? profile.voiceName.trim()
+          : voiceName;
+      const twinSetup = request.purpose === "twin-setup";
+      if (twinSetup && profile && !profile.supportAgent) {
+        throw new TypeError("Twin setup live voice requires a support agent");
+      }
 
       const issued = now();
       const expiresAt = new Date(issued.getTime() + 30 * 60 * 1000);
@@ -45,9 +81,11 @@ export function createGeminiLiveTokenService(input: {
               config: {
                 sessionResumption: {},
                 responseModalities: ["AUDIO"],
+                outputAudioTranscription: {},
+                ...(twinSetup ? { inputAudioTranscription: {} } : {}),
                 speechConfig: {
                   voiceConfig: {
-                    prebuiltVoiceConfig: { voiceName },
+                    prebuiltVoiceConfig: { voiceName: selectedVoiceName },
                   },
                 },
               },
@@ -62,6 +100,12 @@ export function createGeminiLiveTokenService(input: {
       if (typeof payload.name !== "string" || payload.name.length < 16) {
         throw new Error("Gemini Live token provisioning returned no token");
       }
+      await input.paidVoiceAdmission?.tokenIssued({
+        tenantId: admission.scope.tenantId,
+        userId: admission.scope.userId,
+        characterId,
+        admissionId: request.admissionId ?? null,
+      });
       return Object.freeze({
         token: payload.name,
         websocketUrl:
@@ -70,9 +114,10 @@ export function createGeminiLiveTokenService(input: {
           "BidiGenerateContentConstrained?access_token=" +
           encodeURIComponent(payload.name),
         model,
-        voiceName,
+        voiceName: selectedVoiceName,
         expiresAt: expiresAt.toISOString(),
       });
     },
-  });
+  };
+  return Object.freeze(service);
 }

@@ -9,6 +9,7 @@ const canonicalAdapterFamilies = Object.freeze([
   "devices",
   "media",
   "inference",
+  "crypto",
 ] as const);
 
 interface PackageManifest {

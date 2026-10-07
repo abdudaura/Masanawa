@@ -213,3 +213,14 @@ export function createPostgresCharacterSessionRepository(pool: Pool,
     },
   });
 }
+
+/** Reuses canonical admission inside a composing transaction; holds lifecycle rows stable. */
+export async function readPostgresCharacterSessionForContext(client: PoolClient,
+  raw: CharacterSessionRequest): Promise<CharacterSession> {
+  const request = capture(raw);
+  await admit(client, request, "read");
+  const row = await load(client, request, false);
+  await identity(client, request, row.character_version_id, false, true);
+  return session(row);
+}
+

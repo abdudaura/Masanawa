@@ -5,6 +5,7 @@ class CreatorCloneResult {
     required this.characterVersionId,
     required this.relationshipId,
     required this.displayName,
+    this.publicUrl,
   });
 
   final bool created;
@@ -12,6 +13,7 @@ class CreatorCloneResult {
   final String characterVersionId;
   final String relationshipId;
   final String displayName;
+  final String? publicUrl;
 
   factory CreatorCloneResult.fromJson(Map<String, dynamic> json) {
     String requiredString(String key) {
@@ -28,6 +30,7 @@ class CreatorCloneResult {
       characterVersionId: requiredString('characterVersionId'),
       relationshipId: requiredString('relationshipId'),
       displayName: requiredString('displayName'),
+      publicUrl: (json['publicUrl'] as String?)?.trim(),
     );
   }
 }
@@ -36,7 +39,10 @@ abstract class CreatorCloneTransport {
   Future<CreatorCloneResult> create({
     required String displayName,
     required String biography,
-    required List<String> languages,
+    required String gender,
+    required int age,
+    required String avatarBase64,
+    required String avatarMimeType,
     required List<String> personality,
     required List<String> expertise,
   });
@@ -49,7 +55,10 @@ class UnavailableCreatorCloneTransport implements CreatorCloneTransport {
   Future<CreatorCloneResult> create({
     required String displayName,
     required String biography,
-    required List<String> languages,
+    required String gender,
+    required int age,
+    required String avatarBase64,
+    required String avatarMimeType,
     required List<String> personality,
     required List<String> expertise,
   }) {

@@ -4,3 +4,6 @@ export * from "./repository.js";
 export * from "./interaction.js";
 
 export * from "./personal-clone.js";
+export * from "./clone-setup.js";
+
+export * from "./twin-profile.js";

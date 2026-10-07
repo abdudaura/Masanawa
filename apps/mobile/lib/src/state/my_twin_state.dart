@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/twin_profile.dart';
+import '../agents/twin_profile_http_transport.dart';
+import '../core/providers.dart';
 import 'session_state.dart';
 
 final twinProfileTransportProvider = Provider<TwinProfileTransport>(
-  (ref) => const UnavailableTwinProfileTransport(),
+  (ref) => GatewayTwinProfileTransport(api: ref.watch(apiClientProvider)),
 );
 
 class MyTwinController extends AsyncNotifier<TwinProfile?> {

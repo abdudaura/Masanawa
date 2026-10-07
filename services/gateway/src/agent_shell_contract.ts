@@ -34,6 +34,7 @@ export interface AgentShellActionExecution {
 
 export interface AgentShellActionExecutor {
   execute(input: {
+    readonly authorizationHeader: string | undefined;
     readonly admission: AgentConversationAdmission;
     readonly session: CharacterSession;
     readonly action: AgentShellActionInput;
@@ -108,6 +109,8 @@ export interface LiveVoiceTokenService {
   mint(input: {
     readonly authorizationHeader: string | undefined;
     readonly characterId: string;
+    readonly admissionId?: string | null;
+    readonly purpose?: "conversation" | "twin-setup";
   }): Promise<{
     readonly token: string;
     readonly websocketUrl: string;

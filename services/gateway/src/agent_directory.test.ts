@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import type {
   AgentPresentation,
   AgentPresentationRepository,
+  MobileAgentActivityRepository,
+  PlatformAgentProfileRepository,
+  UserAgentPreferenceRepository,
 } from "@masanawa/agents";
 import type { TenantId, UserId } from "@masanawa/contracts";
 import {
@@ -79,6 +82,86 @@ describe("mobile agent directory", () => {
       },
     ]);
     expect(entries[0]).not.toHaveProperty("skillVersionIds");
+  });
+
+  it("starts independent directory enrichment reads concurrently", async () => {
+    const started: string[] = [];
+    let resolvePreference!: (value: null) => void;
+    let resolveProfile!: (value: null) => void;
+    let resolveActivity!: (value: readonly []) => void;
+
+    const preference = new Promise<null>((resolve) => {
+      resolvePreference = resolve;
+    });
+    const profile = new Promise<null>((resolve) => {
+      resolveProfile = resolve;
+    });
+    const activity = new Promise<readonly []>((resolve) => {
+      resolveActivity = resolve;
+    });
+
+    const presentations: AgentPresentationRepository = {
+      async readForCharacter() {
+        return presentation;
+      },
+      async listAll() {
+        return [presentation];
+      },
+      async listVisible() {
+        return [presentation];
+      },
+      async put() {
+        return presentation;
+      },
+    };
+    const authorizer: AgentDirectoryAuthorizer = {
+      async authorize() {
+        return { tenantId, userId };
+      },
+    };
+    const userPreferences = {
+      readForUser() {
+        started.push("preference");
+        return preference;
+      },
+    } as unknown as UserAgentPreferenceRepository;
+    const platformProfiles = {
+      readForCharacter() {
+        started.push("profile");
+        return profile;
+      },
+    } as unknown as PlatformAgentProfileRepository;
+    const activityRepository = {
+      list() {
+        started.push("activity");
+        return activity;
+      },
+    } as unknown as MobileAgentActivityRepository;
+
+    const service = createAgentDirectoryService({
+      presentations,
+      authorizer,
+      userPreferences,
+      platformProfiles,
+      activity: activityRepository,
+    });
+
+    const pending = service.list({ authorizationHeader: "Bearer user" });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(new Set(started)).toEqual(
+      new Set(["preference", "profile", "activity"]),
+    );
+
+    resolvePreference(null);
+    resolveProfile(null);
+    resolveActivity(Object.freeze([]));
+    const entries = await pending;
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.displayName).toBe("Amina");
+    expect(entries[0]?.presence).toBe("available");
   });
 
   it("does not read presentation data when authorization fails", async () => {

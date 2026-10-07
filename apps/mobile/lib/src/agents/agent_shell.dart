@@ -161,7 +161,11 @@ abstract class AgentShellTransport {
     required String characterId,
     required ShellAction action,
   });
-  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(String characterId);
+  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(
+    String characterId, {
+    String? admissionId,
+    String purpose = 'conversation',
+  });
   Future<void> setPresence({
     required String characterId,
     required String state,

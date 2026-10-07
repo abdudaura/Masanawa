@@ -15,16 +15,37 @@ import type {
   SkillDistributionRepository,
   SkillGuideRepository,
   SkillRepository,
+  TeachingProgressRepository,
 } from "@masanawa/skills";
 import type {
+  CloneSetupRepository,
   CharacterOwnershipReader,
   PersonalCloneProvisioningRepository,
   UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import type { CommerceRepository } from "@masanawa/commerce";
-import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
-import type { PlatformSessionRepository } from "@masanawa/security";
+import type {
+  BillingQuoteRepository,
+  CommerceRepository,
+  CryptoChatActionRepository,
+  CryptoRepository,
+  NgnWalletRepository,
+} from "@masanawa/commerce";
+import {
+  parseCanonicalId,
+  readRequiredEnv,
+  type TenantId,
+} from "@masanawa/contracts";
+import type {
+  CustomerChannelRepository,
+  PlatformSessionRepository,
+} from "@masanawa/security";
+import {
+  FlutterwaveBillsClient,
+  FlutterwaveFundingClient,
+  FlutterwaveHttpTransport,
+  type BillingFulfillmentStore,
+} from "@masanawa/providers";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -41,30 +62,48 @@ import {
   createPostgresCharacterSessionRepository,
   createPostgresCharacterOwnershipReader,
   createPostgresCharacterSkillAssignmentRepository,
+  createPostgresIdentityRepository,
   createPostgresCommerceRepository,
+  createPostgresCryptoRepository,
+  createPostgresCryptoChatActionRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
+  createPostgresTeachingProgressRepository,
   createPostgresSkillDistributionRepository,
   createPostgresSkillRepository,
   createPostgresUserAgentPreferenceRepository,
+  createPostgresCloneSetupRepository,
   createPostgresPersonalCloneProvisioningRepository,
   createPostgresUserRelationshipReader,
   createPostgresUserRelationshipProvisioner,
   createPostgresPlatformSessionRepository,
+  createPostgresCustomerChannelRepository,
   createPostgresServiceDependency,
   createPostgresMobileShellRepository,
   createPostgresMobilePushRepository,
   createPostgresMobileAgentActivityRepository,
+  createPostgresBillingQuoteRepository,
+  createPostgresNgnWalletRepository,
+  createPostgresBillingFulfillmentStore,
+  createPostgresBillingWebhookRepository,
+  createPostgresTwinProfileRepository,
+  createPostgresTwinRuntimeRepository,
+  createPostgresTwinEconomyEventStore,
+  withTransaction,
 } from "@masanawa/postgres";
 import {
   createAgentDirectoryService,
   type AgentDirectoryAuthorizer,
 } from "./agent_directory.js";
-import { createAgentConversationService } from "./agent_conversation.js";
+import {
+  createAgentConversationService,
+  type TwinConversationObserver,
+} from "./agent_conversation.js";
 import {
   createCreatorCloneService,
   type CreatorCloneAuthorizer,
 } from "./creator_clone.js";
+import { createAutomaticCloneCoreProvisioner, createCloneOnboardingService } from "./clone_onboarding.js";
 import { createCreatorEconomyService } from "./creator_economy.js";
 import { createCreatorSkillService } from "./creator_skills.js";
 import {
@@ -83,8 +122,27 @@ import {
   parseAlphaDevIds,
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
+import {
+  NowPaymentsClient,
+  NowPaymentsCustodyClient,
+  NowPaymentsPayoutClient,
+  collectNowPaymentsRuntimeEvidence,
+} from "@masanawa/nowpayments";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
+import {
+  createGeminiCredentialPoolInferenceProvider,
+  loadSupabaseGeminiCredentialPool,
+  parseGeminiCredentialPool,
+  parseNurainImportedGeminiCredentialPool,
+  verifyGeminiCredentialPool,
+  type GeminiCredentialPool,
+} from "./production_inference.js";
+import { createProductionAgentStrategy } from "./production_strategy.js";
+import {
+  createFinancialService,
+  type FinancialAuthorizer,
+} from "./financial_service.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createAgentShellService } from "./agent_shell.js";
 import type {
@@ -107,9 +165,51 @@ import {
   createHttpSmsOtpDelivery,
   createPlatformCustomerAuthorizers,
   createPlatformCustomerSessionAuthorizer,
+  createPlatformSessionFinancialAuthorizer,
   createResendOtpDelivery,
   type CustomerAuthService,
 } from "./customer_auth.js";
+import {
+  createBillingFinancialService,
+  type BillingFinancialService,
+} from "./financial_billing.js";
+import {
+  createBillingCheckoutService,
+  type BillingCheckoutService,
+} from "./billing_checkout.js";
+import {
+  createBillingWalletService,
+  type BillingWalletService,
+} from "./billing_wallet.js";
+import {
+  BILLING_AGENT_SYSTEM_INSTRUCTIONS,
+  createAgentBillingAssistant,
+  type AgentBillingAssistant,
+} from "./agent_billing_assistant.js";
+import {
+  TEACHING_AGENT_SYSTEM_INSTRUCTIONS,
+  createAgentTeachingAssistant,
+  type AgentTeachingAssistant,
+} from "./agent_teaching_assistant.js";
+import { createCustomerChannelBridge } from "./customer_channel_bridge.js";
+import {
+  CRYPTO_AGENT_SYSTEM_INSTRUCTIONS,
+  createAgentCryptoAssistant,
+  type AgentCryptoAssistant,
+} from "./agent_crypto_assistant.js";
+import type { CustomerChannelOptions } from "./customer_channel_routes.js";
+import {
+  createLinkedWhatsAppController,
+  type LinkedWhatsAppController,
+} from "./whatsapp_linked_device.js";
+import {
+  ensureDefaultPlatformAgents,
+  type PlatformAgentIdentityProvisioner,
+} from "./platform_agent_bootstrap.js";
+import {
+  createTwinProductionRuntime,
+  type TwinProductionRuntime,
+} from "./twin_production_runtime.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -120,6 +220,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
+  readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
   readonly agentPresentations?: AgentPresentationRepository;
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterSessions?: CharacterSessionRepository;
@@ -128,16 +229,30 @@ export interface ServiceDatabaseDependency {
   readonly userAgentPreferences?: UserAgentPreferenceRepository;
   readonly skills?: SkillRepository;
   readonly skillGuides?: SkillGuideRepository;
+  readonly teachingProgress?: TeachingProgressRepository;
   readonly skillDistribution?: SkillDistributionRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
+  readonly cloneSetups?: CloneSetupRepository;
   readonly relationships?: UserRelationshipReader;
   readonly relationshipProvisioner?: UserRelationshipProvisioner;
   readonly platformSessions?: PlatformSessionRepository;
+  readonly customerChannels?: CustomerChannelRepository;
   readonly commerce?: CommerceRepository;
+  readonly crypto?: CryptoRepository;
+  readonly cryptoChatActions?: CryptoChatActionRepository;
   readonly ownerships?: CharacterOwnershipReader;
   readonly mobileShell?: MobileShellRepository;
   readonly mobilePush?: MobilePushRepository;
   readonly mobileActivity?: MobileAgentActivityRepository;
+  readonly billingQuotes?: BillingQuoteRepository;
+  readonly billingStore?: (
+    identity: Readonly<{ tenantId: string; userId: string }>,
+  ) => BillingFulfillmentStore;
+  readonly billingWebhooks?: ReturnType<typeof createPostgresBillingWebhookRepository>;
+  readonly ngnWallet?: NgnWalletRepository;
+  readonly twinProfiles?: ReturnType<typeof createPostgresTwinProfileRepository>;
+  readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
+  readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   close(): Promise<void>;
 }
 
@@ -158,6 +273,7 @@ export interface StartGatewayServiceOptions {
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
   readonly commerceAuthorizer?: CommerceUserAuthorizer;
+  readonly financialAuthorizer?: FinancialAuthorizer;
   readonly agentStrategy?: AgentStrategy;
   readonly agentShellActionExecutor?: AgentShellActionExecutor;
 }
@@ -206,6 +322,45 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    platformAgentIdentity: Object.freeze({
+      async provision(input: Parameters<PlatformAgentIdentityProvisioner["provision"]>[0]) {
+        await withTransaction(database.pool, async (client) => {
+          const identity = createPostgresIdentityRepository(client);
+          await identity.createCharacter({
+            tenantId: input.tenantId,
+            characterId: input.characterId,
+            createdAt: input.createdAt,
+          });
+          await identity.assignCharacterOwnership({
+            tenantId: input.tenantId,
+            characterId: input.characterId,
+            kind: "platform",
+            ownerUserId: null,
+            createdAt: input.createdAt,
+          });
+          await identity.createCharacterVersion({
+            tenantId: input.tenantId,
+            characterVersionId: input.characterVersionId,
+            characterId: input.characterId,
+            versionNumber: 1,
+            constitution: input.constitution,
+            createdAt: input.createdAt,
+          });
+          await identity.publishCharacterVersion({
+            tenantId: input.tenantId,
+            characterVersionId: input.characterVersionId,
+            publishedAt: input.createdAt,
+          });
+          await identity.activateCharacterVersion({
+            tenantId: input.tenantId,
+            characterId: input.characterId,
+            characterVersionId: input.characterVersionId,
+            expectedCharacterRevision: 1,
+            activatedAt: input.createdAt,
+          });
+        });
+      },
+    }),
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
@@ -217,17 +372,30 @@ function createDefaultDatabaseDependency(
     userAgentPreferences: createPostgresUserAgentPreferenceRepository(database.pool),
     skills: createPostgresSkillRepository(database.pool),
     skillGuides: createPostgresSkillGuideRepository(database.pool),
+    teachingProgress: createPostgresTeachingProgressRepository(database.pool),
     skillDistribution: createPostgresSkillDistributionRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
+    cloneSetups: createPostgresCloneSetupRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
     relationshipProvisioner:
       createPostgresUserRelationshipProvisioner(database.pool),
     platformSessions: createPostgresPlatformSessionRepository(database.pool),
+    customerChannels: createPostgresCustomerChannelRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
+    crypto: createPostgresCryptoRepository(database.pool),
+    cryptoChatActions: createPostgresCryptoChatActionRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
     mobileShell: createPostgresMobileShellRepository(database.pool),
     mobilePush: createPostgresMobilePushRepository(database.pool),
     mobileActivity: createPostgresMobileAgentActivityRepository(database.pool),
+    billingQuotes: createPostgresBillingQuoteRepository(database.pool),
+    billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
+      createPostgresBillingFulfillmentStore(database.pool, identity),
+    billingWebhooks: createPostgresBillingWebhookRepository(database.pool),
+    ngnWallet: createPostgresNgnWalletRepository(database.pool),
+    twinProfiles: createPostgresTwinProfileRepository(database.pool),
+    twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
+    twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     close: database.close,
   });
 }
@@ -273,6 +441,65 @@ function productionGeminiApiKey(
   throw new TypeError("A Gemini API key is required for the production Agent runtime");
 }
 
+function readCsvEnv(value: string | undefined): readonly string[] {
+  if (!value?.trim()) return Object.freeze([]);
+  return Object.freeze([
+    ...new Set(
+      value.split(",").map((entry) => entry.trim().toUpperCase()).filter(Boolean),
+    ),
+  ]);
+}
+
+function readPrincipalSet(value: string | undefined): ReadonlySet<string> {
+  if (!value?.trim()) return new Set();
+  return new Set(
+    value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => (entry.includes("@") ? entry.toLowerCase() : entry)),
+  );
+}
+
+function boundedEnvInteger(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+  name: string,
+): number {
+  const parsed = value?.trim() ? Number(value) : fallback;
+  if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  return parsed;
+}
+
+function readWithdrawalAllowlist(value: string | undefined): ReadonlySet<string> {
+  if (!value?.trim()) return new Set();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return new Set();
+  }
+  if (!Array.isArray(parsed)) return new Set();
+  const keys = new Set<string>();
+  for (const item of parsed) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return new Set();
+    }
+    const row = item as Record<string, unknown>;
+    const userId = typeof row.userId === "string" ? row.userId.trim() : "";
+    const providerCode =
+      typeof row.providerCode === "string" ? row.providerCode.trim().toUpperCase() : "";
+    const address = typeof row.address === "string" ? row.address.trim() : "";
+    if (!userId || !providerCode || !address) return new Set();
+    keys.add(`${userId}|${providerCode}|${address}`);
+  }
+  return keys;
+}
+
 export async function startGatewayService(
   options: StartGatewayServiceOptions = {},
 ): Promise<GatewayServiceRuntime> {
@@ -289,12 +516,38 @@ export async function startGatewayService(
   let conversationAuthorizer = options.agentConversationAuthorizer;
   let creatorCloneAuthorizer = options.creatorCloneAuthorizer;
   let commerceAuthorizer = options.commerceAuthorizer;
+  let financialAuthorizer = options.financialAuthorizer;
   let strategy = options.agentStrategy;
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
+  let twinConversationObserver: TwinConversationObserver | undefined;
+  let twinProduction: TwinProductionRuntime | undefined =
+    options.appOptions?.twinProduction;
   let pushSender: MobilePushSender | undefined;
+  let ownerAccessSweepTenantId: TenantId | undefined;
+  let ownerAccessSweepTimer: ReturnType<typeof setInterval> | undefined;
+  let ownerAccessSweepRunning = false;
   let customerAuth: CustomerAuthService | undefined =
     options.appOptions?.customerAuth;
+  let billingCustomerAuthorizer:
+    | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
+    | undefined;
+  let billingFinancialAuthorizer:
+    | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
+    | undefined;
+
+  // Push delivery is a best-effort integration dependency. Build the sender
+  // before the Twin runtime so owner-access notifications can reuse the same
+  // canonical registration repository without becoming request/ledger truth.
+  if (
+    database.mobilePush &&
+    env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON?.trim()
+  ) {
+    pushSender = createFcmPushSender({
+      serviceAccountJson: env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON,
+      repository: database.mobilePush,
+    });
+  }
 
   if (alphaEnabled(env)) {
     if (
@@ -378,6 +631,7 @@ export async function startGatewayService(
 
   const platformTenantRaw = env.MASANAWA_PLATFORM_TENANT_ID?.trim();
   const otpPepper = env.MASANAWA_AUTH_OTP_PEPPER?.trim();
+  let platformTenantId: TenantId | undefined;
   if (
     platformTenantRaw &&
     otpPepper &&
@@ -388,8 +642,34 @@ export async function startGatewayService(
     database.relationshipProvisioner &&
     database.platformAgentProfiles
   ) {
-    const platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
+    platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
+    const activePlatformTenantId = platformTenantId;
+
+    if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
+      if (!database.platformAgentIdentity || !database.skillDistribution) {
+        await database.close().catch(() => undefined);
+        throw new Error(
+          "Platform Agent bootstrap requires Identity and Skill distribution repositories",
+        );
+      }
+      await ensureDefaultPlatformAgents({
+        tenantId: activePlatformTenantId,
+        identity: database.platformAgentIdentity,
+        presentations: database.agentPresentations,
+        profiles: database.platformAgentProfiles,
+        skillAssignments: database.characterSkillAssignments,
+        skillDistribution: database.skillDistribution,
+      });
+    }
+
     const customerSessions = createPlatformCustomerSessionAuthorizer({
+      repository: database.platformSessions,
+    });
+    billingCustomerAuthorizer = customerSessions;
+    billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
+      repository: database.platformSessions,
+    });
+    financialAuthorizer ??= createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
 
@@ -400,7 +680,7 @@ export async function startGatewayService(
       const smsToken = env.MASANAWA_AUTH_SMS_TOKEN?.trim();
       customerAuth = createCustomerAuthService({
         repository: database.platformSessions,
-        tenantId: platformTenantId,
+        tenantId: activePlatformTenantId,
         otpPepper,
         ...(resendApiKey && resendFrom
           ? {
@@ -428,6 +708,37 @@ export async function startGatewayService(
       relationships: database.relationships,
       relationshipProvisioner: database.relationshipProvisioner,
       platformProfiles: database.platformAgentProfiles,
+      ...(database.twinProfiles && database.twinEconomy
+        ? {
+            publicTwinAdmission: {
+              async canChat(request) {
+                const profile = await database.twinProfiles!.readForCharacter({
+                  tenantId: request.tenantId,
+                  characterId: request.characterId,
+                });
+                if (!profile?.discoverable) return false;
+                return !await database.twinEconomy!.isTwinBlocked({
+                  tenantId: request.tenantId,
+                  actorUserId: request.userId,
+                  characterId: request.characterId,
+                });
+              },
+              async canContinue(request) {
+                const profile = await database.twinProfiles!.readForCharacter({
+                  tenantId: request.tenantId,
+                  characterId: request.characterId,
+                });
+                if (!profile) return true;
+                if (profile.ownerUserId === request.userId) return true;
+                return !await database.twinEconomy!.isTwinBlocked({
+                  tenantId: request.tenantId,
+                  actorUserId: request.userId,
+                  characterId: request.characterId,
+                });
+              },
+            },
+          }
+        : {}),
       policyRevision:
         env.MASANAWA_PLATFORM_POLICY_REVISION?.trim() ||
         "production-mobile-v1",
@@ -445,6 +756,152 @@ export async function startGatewayService(
       commerceAuthorizer = customerAuthorizers.commerce;
     }
 
+    if (
+      !twinProduction &&
+      database.twinProfiles &&
+      database.twinEconomy &&
+      database.twinEvents &&
+      database.commerce &&
+      database.personalClones
+    ) {
+      const adminPrincipals = readPrincipalSet(
+        env.MASANAWA_ADMIN_PRINCIPALS ??
+          env.MASANAWA_ADMIN_USER_IDS ??
+          env.MASANAWA_ADMIN_EMAILS,
+      );
+      twinProduction = createTwinProductionRuntime({
+        sessions: customerSessions,
+        profiles: database.twinProfiles,
+        economy: database.twinEconomy,
+        events: database.twinEvents,
+        commerce: database.commerce,
+        personalClones: database.personalClones,
+        ...(pushSender ? { notifications: pushSender } : {}),
+        publicTwinBaseUrl:
+          env.MASANAWA_TWIN_PUBLIC_BASE_URL?.trim() ||
+          "https://masanawa.com/twin",
+        adminPrincipals,
+        voice: {
+          unitSeconds: boundedEnvInteger(
+            env.MASANAWA_TWIN_VOICE_UNIT_SECONDS,
+            60,
+            1,
+            3600,
+            "MASANAWA_TWIN_VOICE_UNIT_SECONDS",
+          ),
+          priceCreditsPerUnit: boundedEnvInteger(
+            env.MASANAWA_TWIN_VOICE_PRICE_CREDITS_PER_UNIT,
+            10,
+            1,
+            1_000_000_000,
+            "MASANAWA_TWIN_VOICE_PRICE_CREDITS_PER_UNIT",
+          ),
+          ownerShareBasisPoints: boundedEnvInteger(
+            env.MASANAWA_TWIN_VOICE_OWNER_SHARE_BPS,
+            8000,
+            0,
+            10_000,
+            "MASANAWA_TWIN_VOICE_OWNER_SHARE_BPS",
+          ),
+        },
+        ownerAccess: {
+          platformFeeBasisPoints: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_PLATFORM_FEE_BPS,
+            2000,
+            0,
+            10_000,
+            "MASANAWA_OWNER_ACCESS_PLATFORM_FEE_BPS",
+          ),
+          acceptWithinMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_ACCEPT_WITHIN_MINUTES,
+            1440,
+            5,
+            7 * 24 * 60,
+            "MASANAWA_OWNER_ACCESS_ACCEPT_WITHIN_MINUTES",
+          ),
+          startGraceMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_START_GRACE_MINUTES,
+            15,
+            1,
+            180,
+            "MASANAWA_OWNER_ACCESS_START_GRACE_MINUTES",
+          ),
+          completionGraceMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_COMPLETION_GRACE_MINUTES,
+            15,
+            1,
+            180,
+            "MASANAWA_OWNER_ACCESS_COMPLETION_GRACE_MINUTES",
+          ),
+          messageRetentionDays: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_MESSAGE_RETENTION_DAYS,
+            30,
+            1,
+            365,
+            "MASANAWA_OWNER_ACCESS_MESSAGE_RETENTION_DAYS",
+          ),
+          disputeWindowMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_DISPUTE_WINDOW_MINUTES,
+            24 * 60,
+            60,
+            7 * 24 * 60,
+            "MASANAWA_OWNER_ACCESS_DISPUTE_WINDOW_MINUTES",
+          ),
+        },
+      });
+    }
+    if (twinProduction?.ownerAccessMaintenance) {
+      ownerAccessSweepTenantId = activePlatformTenantId;
+    }
+
+    if (database.twinProfiles && database.twinEvents) {
+      twinConversationObserver = Object.freeze<TwinConversationObserver>({
+        async opened(request) {
+          const profile = await database.twinProfiles!.readForCharacter({
+            tenantId: request.tenantId as never,
+            characterId: request.characterId as never,
+          });
+          if (!profile) return;
+          await database.twinEvents!.append({
+            tenantId: request.tenantId as never,
+            payload: {
+              eventType: "twin.visited",
+              ownerUserId: profile.ownerUserId,
+              characterId: profile.characterId,
+              customerUserId: request.userId,
+              referenceId: request.characterSessionId,
+              visibility: "owner",
+              occurredAt: new Date().toISOString() as never,
+              amountCredits: null,
+              status: "observed",
+            },
+          });
+        },
+        async completed(request) {
+          const profile = await database.twinProfiles!.readForCharacter({
+            tenantId: request.tenantId as never,
+            characterId: request.characterId as never,
+          });
+          if (!profile) return;
+          await database.twinEvents!.append({
+            tenantId: request.tenantId as never,
+            payload: {
+              eventType: "twin.conversation.observed",
+              ownerUserId: profile.ownerUserId,
+              characterId: profile.characterId,
+              customerUserId: request.userId,
+              referenceId: request.referenceId,
+              visibility: "owner",
+              occurredAt: new Date().toISOString() as never,
+              amountCredits: null,
+              status: "observed",
+            },
+          });
+        },
+      });
+    }
+
+    let productionGeminiPool: GeminiCredentialPool | undefined;
     if (!strategy) {
       if (!database.skills || !database.skillGuides) {
         await database.close().catch(() => undefined);
@@ -452,49 +909,430 @@ export async function startGatewayService(
           "Production Agent runtime requires canonical Skill repositories",
         );
       }
-      const apiKey = productionGeminiApiKey(env);
-      strategy = createAlphaInferenceStrategy({
-        inference: createGeminiAlphaInferenceProvider({
-          apiKey,
-          model:
-            env.MASANAWA_GEMINI_MODEL?.trim() ||
-            env.MASANAWA_ALPHA_GEMINI_MODEL?.trim() ||
-            "gemini-3.8-flash",
+
+      const models =
+        env.MASANAWA_GEMINI_REPLY_MODELS?.trim() ||
+        env.GEMINI_REPLY_MODELS?.trim();
+      const fallbackModel =
+        env.MASANAWA_GEMINI_MODEL?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_MODEL?.trim() ||
+        "gemini-3.8-flash";
+      const credentialsJson =
+        env.MASANAWA_GEMINI_CREDENTIALS_JSON?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON?.trim();
+      const encryptionKey = env.CREDENTIAL_ENCRYPTION_KEY?.trim();
+      const encryptionKeyPrevious =
+        env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS?.trim();
+      const supabaseUrl = env.SUPABASE_URL?.trim();
+      const supabaseServiceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+      const directApiKey =
+        env.MASANAWA_GEMINI_API_KEY?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+      let importedBridgeFailure: string | undefined;
+
+      if (credentialsJson && encryptionKey) {
+        try {
+          productionGeminiPool = parseNurainImportedGeminiCredentialPool({
+            importedCredentialsJson: credentialsJson,
+            encryptionKey,
+            ...(encryptionKeyPrevious ? { encryptionKeyPrevious } : {}),
+            ...(models ? { models } : {}),
+            fallbackModel,
+          });
+        } catch (error) {
+          importedBridgeFailure =
+            error instanceof Error
+              ? error.message.slice(0, 160)
+              : "Imported Gemini bridge failed";
+        }
+      }
+
+      if (
+        !productionGeminiPool &&
+        supabaseUrl &&
+        supabaseServiceRoleKey &&
+        encryptionKey
+      ) {
+        try {
+          productionGeminiPool = await loadSupabaseGeminiCredentialPool({
+            supabaseUrl,
+            serviceRoleKey: supabaseServiceRoleKey,
+            encryptionKey,
+            ...(encryptionKeyPrevious ? { encryptionKeyPrevious } : {}),
+            ...(models ? { models } : {}),
+            fallbackModel,
+          });
+        } catch (error) {
+          if (!importedBridgeFailure) {
+            importedBridgeFailure =
+              error instanceof Error
+                ? error.message.slice(0, 160)
+                : "Supabase Gemini pool load failed";
+          }
+        }
+      }
+
+      if (!productionGeminiPool && directApiKey) {
+        productionGeminiPool = parseGeminiCredentialPool({
+          apiKey: directApiKey,
+          ...(models ? { models } : {}),
+          fallbackModel,
+        });
+      }
+
+      if (!productionGeminiPool) {
+        throw new Error(
+          importedBridgeFailure
+            ? `Gemini credential bridge failed: ${importedBridgeFailure}`
+            : "Production Gemini pool failed to initialize",
+        );
+      }
+
+      if (env.MASANAWA_GEMINI_VERIFY_ON_START === "true") {
+        const verification = await verifyGeminiCredentialPool({
+          pool: productionGeminiPool,
+        });
+        process.stdout.write(
+          `${JSON.stringify({
+            event: "gemini.pool_verified",
+            checked: verification.checked,
+            authenticated: verification.authenticated,
+            model: verification.model,
+          })}\n`,
+        );
+      }
+
+      const cryptoConversationConfigured = Boolean(
+        options.appOptions?.financial ||
+          (financialAuthorizer &&
+            database.crypto &&
+            env.NOWPAYMENTS_API_KEY?.trim() &&
+            env.NOWPAYMENTS_IPN_SECRET?.trim() &&
+            env.NOWPAYMENTS_PAYOUT_EMAIL?.trim() &&
+            env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim() &&
+            env.MASANAWA_NOWPAYMENTS_RELAY_TOKEN?.trim() &&
+            (env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
+              env.RAILWAY_STATIC_URL?.trim() ||
+              env.RAILWAY_PUBLIC_DOMAIN?.trim())),
+      );
+      strategy = createProductionAgentStrategy({
+        inference: createGeminiCredentialPoolInferenceProvider({
+          pool: productionGeminiPool,
         }),
         skills: database.skills,
         guides: database.skillGuides,
+        systemInstructions: Object.freeze([
+          ...TEACHING_AGENT_SYSTEM_INSTRUCTIONS,
+          ...(cryptoConversationConfigured
+            ? CRYPTO_AGENT_SYSTEM_INSTRUCTIONS
+            : []),
+          ...(env.FLUTTERWAVE_BILLS_ENABLED === "true"
+            ? BILLING_AGENT_SYSTEM_INSTRUCTIONS
+            : []),
+        ]),
       });
     }
 
-    const apiKey = productionGeminiApiKey(env);
-    nativeAudio ??= createGeminiLiveAudioRenderer({
-      apiKey,
-      model:
+    const liveApiKey =
+      productionGeminiPool?.apiKeys[0] ||
+      env.MASANAWA_GEMINI_API_KEY?.trim() ||
+      env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+    if (liveApiKey) {
+      const liveModel =
         env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
         env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
-        "gemini-3.8-live",
-      voiceName:
+        "gemini-3.8-live";
+      const liveVoice =
         env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
         env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
-        "Kore",
-    });
-    if (conversationAuthorizer) {
-      liveVoiceTokens = createGeminiLiveTokenService({
-        apiKey,
-        authorizer: conversationAuthorizer,
-        model:
-          env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
-          env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
-          "gemini-3.8-live",
-        voiceName:
-          env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
-          env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
-          "Kore",
+        "Bodi";
+      nativeAudio ??= createGeminiLiveAudioRenderer({
+        apiKey: liveApiKey,
+        model: liveModel,
+        voiceName: liveVoice,
       });
+      if (conversationAuthorizer) {
+        liveVoiceTokens = createGeminiLiveTokenService({
+          apiKey: liveApiKey,
+          authorizer: conversationAuthorizer,
+          model: liveModel,
+          voiceName: liveVoice,
+          ...(twinProduction
+            ? { paidVoiceAdmission: twinProduction.voiceAdmissionGate }
+            : {}),
+        });
+      }
     }
   }
 
-  const composedDirectory =
+  const billingEnabled = env.FLUTTERWAVE_BILLS_ENABLED === "true";
+  const flutterwaveSecretKey = env.FLUTTERWAVE_SECRET_KEY?.trim();
+  const flutterwaveRelayUrl = env.FLUTTERWAVE_RELAY_URL?.trim();
+  const flutterwaveRelayToken = env.MASANAWA_FLUTTERWAVE_RELAY_TOKEN?.trim();
+  const flutterwaveRelayProtocol = env.FLUTTERWAVE_RELAY_PROTOCOL === "dual-header"
+    ? ("dual-header" as const)
+    : ("bearer" as const);
+
+  if (billingEnabled && Boolean(flutterwaveRelayUrl) !== Boolean(flutterwaveRelayToken)) {
+    await database.close().catch(() => undefined);
+    throw new TypeError("Flutterwave relay URL and relay token must be configured together");
+  }
+
+  const flutterwaveTransport = billingEnabled && flutterwaveSecretKey
+    ? new FlutterwaveHttpTransport(
+        flutterwaveRelayUrl && flutterwaveRelayToken
+          ? { baseUrl: flutterwaveRelayUrl, relayToken: flutterwaveRelayToken, relayProtocol: flutterwaveRelayProtocol }
+          : {},
+      )
+    : undefined;
+  const flutterwaveBills = billingEnabled && flutterwaveSecretKey && flutterwaveTransport
+    ? new FlutterwaveBillsClient({ secretKey: flutterwaveSecretKey, transport: flutterwaveTransport, country: "NG" })
+    : undefined;
+
+  if (billingEnabled && flutterwaveBills && env.MASANAWA_FLUTTERWAVE_VERIFY_ON_START === "true") {
+    const categories = await flutterwaveBills.listCategories();
+    if (categories.length < 1) {
+      throw new Error("Flutterwave billing verification returned an empty catalog");
+    }
+    process.stdout.write(
+      `${JSON.stringify({
+        event: "flutterwave.billing_verified",
+        categoryCount: categories.length,
+        relay: Boolean(flutterwaveRelayUrl),
+        relayProtocol: flutterwaveRelayProtocol,
+      })}\n`,
+    );
+  }
+
+  const flutterwaveFunding = billingEnabled && flutterwaveSecretKey && flutterwaveTransport
+    ? new FlutterwaveFundingClient({ secretKey: flutterwaveSecretKey, transport: flutterwaveTransport })
+    : undefined;
+
+  let composedBillingFinancial: BillingFinancialService | undefined =
+    options.appOptions?.billingFinancial;
+  let composedBillingCheckout: BillingCheckoutService | undefined =
+    options.appOptions?.billingCheckout;
+  let composedBillingWallet: BillingWalletService | undefined =
+    options.appOptions?.billingWallet;
+  let composedBillingAssistant: AgentBillingAssistant | undefined;
+
+  const webhookHash = env.FLUTTERWAVE_WEBHOOK_SECRET_HASH?.trim();
+  const webhookUrl = env.FLUTTERWAVE_WEBHOOK_URL?.trim();
+  const actionSecret = env.MASANAWA_BILLING_ACTION_SECRET?.trim();
+  const redirectUrl =
+    env.MASANAWA_BILLING_REDIRECT_URL?.trim() ||
+    (env.MASANAWA_PUBLIC_BASE_URL?.trim()
+      ? `${env.MASANAWA_PUBLIC_BASE_URL.trim().replace(/\/$/u, "")}/billing/return`
+      : "");
+  const feeBasisPoints = Number(env.MASANAWA_BILLING_FEE_BPS ?? "0");
+  const feeFixedKobo = Number(env.MASANAWA_BILLING_FEE_FIXED_KOBO ?? "0");
+
+  if (billingEnabled && (!composedBillingFinancial || !composedBillingCheckout || !composedBillingWallet)) {
+    if (!billingCustomerAuthorizer || !billingFinancialAuthorizer || !database.billingStore ||
+        !database.billingQuotes || !database.billingWebhooks || !database.ngnWallet ||
+        !flutterwaveSecretKey || !flutterwaveBills || !flutterwaveFunding || !webhookHash ||
+        !webhookUrl || !actionSecret || !redirectUrl ||
+        !Number.isSafeInteger(feeBasisPoints) || feeBasisPoints < 0 || feeBasisPoints > 10_000 ||
+        !Number.isSafeInteger(feeFixedKobo) || feeFixedKobo < 0) {
+      await database.close().catch(() => undefined);
+      throw new TypeError(
+        "Billing is enabled but canonical customer auth, NGN wallet, or Flutterwave configuration is incomplete",
+      );
+    }
+
+    composedBillingFinancial ??= createBillingFinancialService({
+      billingStore: database.billingStore,
+      webhookRepository: database.billingWebhooks,
+      authorizer: billingFinancialAuthorizer,
+      flutterwaveSecretKey,
+      flutterwaveWebhookHash: webhookHash,
+      flutterwaveWebhookUrl: webhookUrl,
+      providerClient: flutterwaveBills,
+      billingFunding: database.billingQuotes,
+      ...(flutterwaveRelayUrl ? { flutterwaveRelayUrl } : {}),
+      ...(flutterwaveRelayToken ? { flutterwaveRelayToken } : {}),
+      ...(flutterwaveRelayProtocol === "dual-header"
+        ? { flutterwaveRelayProtocol: "dual-header" as const }
+        : {}),
+    });
+
+    composedBillingCheckout ??= createBillingCheckoutService({
+      sessions: billingCustomerAuthorizer,
+      quotes: database.billingQuotes,
+      catalog: flutterwaveBills,
+      funding: flutterwaveFunding,
+      billing: composedBillingFinancial,
+      actionSecret,
+      redirectUrl,
+      feeBasisPoints,
+      feeFixedKobo,
+      ...(twinProduction
+        ? { twinMonetization: twinProduction.monetization }
+        : {}),
+    });
+
+    composedBillingWallet ??= createBillingWalletService({
+      sessions: billingCustomerAuthorizer,
+      quotes: database.billingQuotes,
+      wallet: database.ngnWallet,
+      funding: flutterwaveFunding,
+      billing: composedBillingFinancial,
+      webhookSecretHash: webhookHash,
+      ...(twinProduction
+        ? { twinMonetization: twinProduction.monetization }
+        : {}),
+    });
+  }
+
+  if (billingEnabled && composedBillingCheckout && composedBillingFinancial && composedBillingWallet) {
+    composedBillingAssistant = createAgentBillingAssistant({
+      checkout: composedBillingCheckout,
+      billing: composedBillingFinancial,
+      wallet: composedBillingWallet,
+    });
+  }
+
+  const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
+  const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
+  const nowPaymentsEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
+  const nowPaymentsPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
+
+  const nowPaymentsRelayToken = env.MASANAWA_NOWPAYMENTS_RELAY_TOKEN?.trim();
+  const nowPaymentsRelayBaseUrl =
+    env.NOWPAYMENTS_RELAY_URL?.trim() ||
+    "https://209-38-107-173.sslip.io/v1";
+  const rawPublicBaseUrl =
+    env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
+    env.RAILWAY_STATIC_URL?.trim() ||
+    env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  const publicBaseUrl = rawPublicBaseUrl
+    ? (/^https?:\/\//iu.test(rawPublicBaseUrl)
+        ? rawPublicBaseUrl
+        : `https://${rawPublicBaseUrl}`)
+    : undefined;
+
+  const conversionProviderCodes = readCsvEnv(
+    env.NOWPAYMENTS_CONVERSION_PROVIDER_CODES,
+  );
+  const withdrawalProviderCodes = readCsvEnv(
+    env.NOWPAYMENTS_WITHDRAWAL_PROVIDER_CODES,
+  );
+  const withdrawalAllowlist = readWithdrawalAllowlist(
+    env.NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON ??
+      env.NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON,
+  );
+  const payoutFeeMode =
+    env.NOWPAYMENTS_PAYOUT_FEE_MODE === "sender" ||
+    env.NOWPAYMENTS_PAYOUT_FEE_MODE === "receiver"
+      ? env.NOWPAYMENTS_PAYOUT_FEE_MODE
+      : undefined;
+
+  let composedFinancial = options.appOptions?.financial;
+  if (
+    !composedFinancial &&
+    financialAuthorizer &&
+    database.crypto &&
+    nowPaymentsApiKey &&
+    nowPaymentsIpnSecret &&
+    nowPaymentsEmail &&
+    nowPaymentsPassword &&
+    nowPaymentsRelayToken &&
+    publicBaseUrl
+  ) {
+    const sharedProviderOptions = {
+      apiKey: nowPaymentsApiKey,
+      baseUrl: nowPaymentsRelayBaseUrl,
+      relayToken: nowPaymentsRelayToken,
+    };
+    const payments = new NowPaymentsClient(sharedProviderOptions);
+    const custody = new NowPaymentsCustodyClient({
+      ...sharedProviderOptions,
+      email: nowPaymentsEmail,
+      password: nowPaymentsPassword,
+    });
+    const payout = new NowPaymentsPayoutClient({
+      ...sharedProviderOptions,
+      email: nowPaymentsEmail,
+      password: nowPaymentsPassword,
+    });
+
+    const runtimeEvidence = () =>
+      collectNowPaymentsRuntimeEvidence({
+        payments,
+        custody,
+        payout,
+        config: {
+          conversionEnabled:
+            (env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true" ||
+              env.NOWPAYMENTS_CONVERSION_ENABLED === "true") &&
+            env.NOWPAYMENTS_CUSTODY_ENABLED === "true",
+          payoutEnabled:
+            (env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" ||
+              env.NOWPAYMENTS_PAYOUT_ENABLED === "true") &&
+            env.NOWPAYMENTS_CUSTODY_ENABLED === "true" &&
+            env.NOWPAYMENTS_PAYOUT_2FA_READY === "true",
+          ipWhitelistSatisfied:
+            env.NOWPAYMENTS_FIXED_EGRESS_CONFIRMED === "true",
+          payoutDestinationWhitelistSatisfied:
+            env.NOWPAYMENTS_DESTINATION_WHITELIST_CONFIRMED === "true",
+          conversionProviderCodes,
+          withdrawalProviderCodes,
+        },
+        signal: AbortSignal.timeout(15_000),
+      });
+
+    const fiatCurrencies = readCsvEnv(env.NOWPAYMENTS_FIAT_CURRENCIES);
+    const settlementProviderCode =
+      env.NOWPAYMENTS_FIAT_SETTLEMENT_PROVIDER_CODE?.trim().toUpperCase();
+
+    composedFinancial = createFinancialService({
+      authorizer: financialAuthorizer,
+      crypto: database.crypto,
+      nowPayments: payments,
+      nowPaymentsCustody: custody,
+      nowPaymentsPayout: payout,
+      ...((env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" ||
+          env.NOWPAYMENTS_PAYOUT_ENABLED === "true") &&
+        env.NOWPAYMENTS_CUSTODY_ENABLED === "true" &&
+        env.NOWPAYMENTS_PAYOUT_2FA_READY === "true" &&
+        payoutFeeMode !== undefined
+          ? { withdrawalEvidence: runtimeEvidence }
+          : {}),
+      ...((env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true" ||
+          env.NOWPAYMENTS_CONVERSION_ENABLED === "true") &&
+        env.NOWPAYMENTS_CUSTODY_ENABLED === "true"
+          ? { conversionEvidence: runtimeEvidence }
+          : {}),
+      ...(payoutFeeMode === undefined
+        ? {}
+        : { withdrawalNetworkFeeMode: payoutFeeMode }),
+      withdrawalDestinationApproved: async (request) =>
+        withdrawalAllowlist.has(
+          `${request.userId}|${request.providerCode}|${request.destinationAddress}`,
+        ),
+      ...(env.NOWPAYMENTS_PAYOUT_VERIFICATION_CODE?.trim()
+        ? {
+            payoutVerificationCodeProvider: async () =>
+              env.NOWPAYMENTS_PAYOUT_VERIFICATION_CODE!.trim(),
+          }
+        : {}),
+      ...(env.NOWPAYMENTS_FIAT_ONRAMP_ENABLED === "true" &&
+      fiatCurrencies.length > 0 &&
+      settlementProviderCode
+        ? {
+            fiatOnRamp: {
+              enabled: true as const,
+              fiatCurrencies,
+              settlementProviderCode,
+            },
+          }
+        : {}),
+      nowPaymentsIpnSecret,
+      publicBaseUrl,
+    });
+  }
+
+    const composedDirectory =
     options.appOptions?.agentDirectory ??
     (directoryAuthorizer && database.agentPresentations
       ? createAgentDirectoryService({
@@ -590,6 +1428,42 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedCloneOnboarding = options.appOptions?.cloneOnboarding ??
+    (creatorCloneAuthorizer && composedCreatorClone && composedDirectory &&
+     database.cloneSetups && database.personalClones &&
+     database.characterSkillAssignments && database.skills &&
+     database.skillGuides && database.skillDistribution
+      ? createCloneOnboardingService({
+          authorizer: creatorCloneAuthorizer,
+          setups: database.cloneSetups,
+          clones: composedCreatorClone,
+          directory: composedDirectory,
+          core: createAutomaticCloneCoreProvisioner({
+            authorizer: creatorCloneAuthorizer,
+            personalClones: database.personalClones,
+            assignments: database.characterSkillAssignments,
+            skills: database.skills,
+            guides: database.skillGuides,
+            distribution: database.skillDistribution,
+          }),
+        })
+      : undefined);
+
+  const composedCryptoAssistant: AgentCryptoAssistant | undefined =
+    composedFinancial && database.cryptoChatActions
+      ? createAgentCryptoAssistant({
+          financial: composedFinancial,
+          pending: database.cryptoChatActions,
+        })
+      : undefined;
+
+  const composedTeachingAssistant: AgentTeachingAssistant | undefined =
+    database.teachingProgress
+      ? createAgentTeachingAssistant({
+          repository: database.teachingProgress,
+        })
+      : undefined;
+
   const composedConversation =
     options.appOptions?.agentConversation ??
     (conversationAuthorizer &&
@@ -603,9 +1477,88 @@ export async function startGatewayService(
           strategy,
           ...(nativeAudio ? { nativeAudio } : {}),
           ...(database.mobileShell ? { mobileShell: database.mobileShell } : {}),
+          ...(twinConversationObserver ? { twinObserver: twinConversationObserver } : {}),
+          ...(composedBillingAssistant ? { billingAssistant: composedBillingAssistant } : {}),
+          ...(composedTeachingAssistant ? { teachingAssistant: composedTeachingAssistant } : {}),
+          ...(composedCryptoAssistant ? { cryptoAssistant: composedCryptoAssistant } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);
+
+  let composedCustomerChannels: CustomerChannelOptions | undefined =
+    options.appOptions?.customerChannels;
+  let linkedWhatsAppController: LinkedWhatsAppController | undefined;
+  let linkedWhatsAppAdmin:
+    | NonNullable<GatewayAppOptions["linkedWhatsApp"]>
+    | undefined;
+  const whatsappEnabled = env.MASANAWA_WHATSAPP_ENABLED === "true";
+  const telegramEnabled = env.MASANAWA_TELEGRAM_ENABLED === "true";
+  if (
+    !composedCustomerChannels &&
+    (whatsappEnabled || telegramEnabled)
+  ) {
+    if (
+      !platformTenantId ||
+      !database.platformSessions ||
+      !database.customerChannels ||
+      !database.platformAgentProfiles ||
+      !composedConversation
+    ) {
+      throw new TypeError(
+        "Customer channels require platform auth, channel storage, support agents, and Agent conversation runtime",
+      );
+    }
+
+    const bridge = createCustomerChannelBridge({
+      tenantId: platformTenantId,
+      sessions: database.platformSessions,
+      channels: database.customerChannels,
+      platformProfiles: database.platformAgentProfiles,
+      ...(database.userAgentPreferences
+        ? { userPreferences: database.userAgentPreferences }
+        : {}),
+      conversation: composedConversation,
+    });
+
+    if (whatsappEnabled) {
+      const mode = env.MASANAWA_WHATSAPP_MODE?.trim() || "linked-device";
+      if (mode !== "linked-device") {
+        throw new TypeError(
+          "MASANAWA_WHATSAPP_MODE must be linked-device; Meta Cloud transport is not the production WhatsApp mode",
+        );
+      }
+      const authDir = env.MASANAWA_WHATSAPP_AUTH_DIR?.trim();
+      const adminToken = env.MASANAWA_WHATSAPP_ADMIN_TOKEN?.trim();
+      if (!authDir || !adminToken) {
+        throw new TypeError(
+          "WhatsApp linked-device mode requires MASANAWA_WHATSAPP_AUTH_DIR and MASANAWA_WHATSAPP_ADMIN_TOKEN",
+        );
+      }
+      linkedWhatsAppController = createLinkedWhatsAppController({
+        bridge,
+        authDir,
+      });
+      linkedWhatsAppAdmin = Object.freeze({
+        controller: linkedWhatsAppController,
+        adminToken,
+      });
+    }
+
+    let telegram: CustomerChannelOptions["telegram"];
+    if (telegramEnabled) {
+      const botToken = env.MASANAWA_TELEGRAM_BOT_TOKEN?.trim();
+      const webhookSecret = env.MASANAWA_TELEGRAM_WEBHOOK_SECRET?.trim();
+      if (!botToken || !webhookSecret) {
+        throw new TypeError("Telegram is enabled but bot/webhook configuration is incomplete");
+      }
+      telegram = Object.freeze({ botToken, webhookSecret });
+    }
+
+    composedCustomerChannels = Object.freeze({
+      bridge,
+      ...(telegram ? { telegram } : {}),
+    });
+  }
 
   const composedPush =
     options.appOptions?.mobilePush ??
@@ -616,15 +1569,49 @@ export async function startGatewayService(
         })
       : undefined);
 
-  if (
-    database.mobilePush &&
-    env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON?.trim()
-  ) {
-    pushSender = createFcmPushSender({
-      serviceAccountJson: env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON,
-      repository: database.mobilePush,
-    });
-  }
+  const composedShellActionExecutor: AgentShellActionExecutor | undefined =
+    composedBillingCheckout && composedBillingWallet
+      ? Object.freeze({
+          async execute(request: Parameters<AgentShellActionExecutor["execute"]>[0]) {
+            if (request.action.actionId === "billing.wallet.confirm") {
+              const verified = await composedBillingCheckout.verifyWalletConfirmAction({
+                authorizationHeader: request.authorizationHeader,
+                documentId: request.action.documentId,
+                revision: request.action.revision,
+                actionId: request.action.actionId,
+                token: request.action.token,
+              });
+              const view = await composedBillingWallet.confirmAndPurchase({
+                authorizationHeader: request.authorizationHeader,
+                quoteId: verified.quoteId,
+                quoteRevision: verified.quoteRevision,
+              });
+              return Object.freeze({
+                accepted: true,
+                phase:
+                  view.phase === "fulfilled"
+                    ? ("fulfilled" as const)
+                    : view.phase === "failed"
+                      ? ("failed" as const)
+                      : view.phase === "awaiting-funds"
+                        ? ("submitted" as const)
+                        : ("processing" as const),
+                document: view.document,
+                message:
+                  view.phase === "awaiting-funds"
+                    ? "Temporary funding account created in chat. Masanawa will continue automatically after verified funding."
+                    : view.phase === "fulfilled"
+                      ? "Bill completed successfully."
+                      : "Bill processing.",
+              });
+            }
+            if (options.agentShellActionExecutor) {
+              return options.agentShellActionExecutor.execute(request);
+            }
+            throw new Error("agents.shell_action_unavailable");
+          },
+        })
+      : options.agentShellActionExecutor;
 
   const composedShell =
     options.appOptions?.agentShell ??
@@ -638,8 +1625,8 @@ export async function startGatewayService(
           ...(database.mobileActivity
             ? { activity: database.mobileActivity }
             : {}),
-          ...(options.agentShellActionExecutor
-            ? { actionExecutor: options.agentShellActionExecutor }
+          ...(composedShellActionExecutor
+            ? { actionExecutor: composedShellActionExecutor }
             : {}),
           minimumAppVersion: env.MASANAWA_MOBILE_MIN_VERSION ?? "1.0.0",
           recommendedAppVersion:
@@ -654,6 +1641,17 @@ export async function startGatewayService(
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
+      ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
+      ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
+      ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
+      ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedCustomerChannels
+        ? { customerChannels: composedCustomerChannels }
+        : {}),
+      ...(linkedWhatsAppAdmin
+        ? { linkedWhatsApp: linkedWhatsAppAdmin }
+        : {}),
+      ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
@@ -662,6 +1660,7 @@ export async function startGatewayService(
       ...(liveVoiceTokens ? { liveVoiceTokens } : {}),
       ...(composedPush ? { mobilePush: composedPush } : {}),
       ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),
+      ...(composedCloneOnboarding ? { cloneOnboarding: composedCloneOnboarding } : {}),
       ...(composedCreatorEconomy
         ? { creatorEconomy: composedCreatorEconomy }
         : {}),
@@ -683,18 +1682,76 @@ export async function startGatewayService(
     throw error;
   }
 
+  if (linkedWhatsAppController) {
+    try {
+      await linkedWhatsAppController.start();
+    } catch (error) {
+      await database.close().catch(() => undefined);
+      throw error;
+    }
+  }
+
   const lifecycle = await startNodeService({
     serviceName: "gateway",
     server: app,
     config,
     signals: processRef,
     ...(options.logger ? { logger: options.logger } : {}),
-    onDraining: drain.beginDraining,
-    onAfterClose: database.close,
+    onDraining: () => {
+      drain.beginDraining();
+      if (linkedWhatsAppController) {
+        void linkedWhatsAppController.stop().catch(() => undefined);
+      }
+      if (ownerAccessSweepTimer) {
+        clearInterval(ownerAccessSweepTimer);
+        ownerAccessSweepTimer = undefined;
+      }
+    },
+    onAfterClose: async () => {
+      if (linkedWhatsAppController) {
+        await linkedWhatsAppController.stop().catch(() => undefined);
+      }
+      if (ownerAccessSweepTimer) {
+        clearInterval(ownerAccessSweepTimer);
+        ownerAccessSweepTimer = undefined;
+      }
+      await database.close();
+    },
     onFatalShutdown: () => {
       processRef.exitCode = 1;
     },
   });
+
+  const runOwnerAccessSweep = async () => {
+    if (
+      ownerAccessSweepRunning ||
+      drain.isDraining() ||
+      !ownerAccessSweepTenantId ||
+      !twinProduction?.ownerAccessMaintenance
+    ) {
+      return;
+    }
+    ownerAccessSweepRunning = true;
+    try {
+      await twinProduction.ownerAccessMaintenance.sweep({
+        tenantId: ownerAccessSweepTenantId,
+        limit: 100,
+      });
+    } catch {
+      // Lifecycle maintenance is retryable and must never crash the customer
+      // Gateway. Individual request settlement remains durable/idempotent.
+    } finally {
+      ownerAccessSweepRunning = false;
+    }
+  };
+
+  if (ownerAccessSweepTenantId && twinProduction?.ownerAccessMaintenance) {
+    ownerAccessSweepTimer = setInterval(() => {
+      void runOwnerAccessSweep();
+    }, 60_000);
+    ownerAccessSweepTimer.unref();
+    void runOwnerAccessSweep();
+  }
 
   return Object.freeze({
     config,
@@ -715,7 +1772,9 @@ function isDirectExecution(): boolean {
 }
 
 if (isDirectExecution()) {
-  void startGatewayService().catch(() => {
+  void startGatewayService().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "Unknown startup error";
+    process.stderr.write(`${JSON.stringify({ event: "service.start_failed", service: "gateway", reason: message })}\n`);
     process.exitCode = 1;
   });
 }

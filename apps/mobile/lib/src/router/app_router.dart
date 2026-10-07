@@ -1,19 +1,23 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/chat/ai_chat_screen.dart';
-import '../screens/chat/chat_list_screen.dart';
-import '../screens/chat/masana_list_screen.dart';
+import '../screens/billing/billing_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
+import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/twin/twin_home_shell.dart';
+import '../finance/crypto_wallet_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../state/session_state.dart';
+import '../state/twin_directory_state.dart';
 
-/// Stripped router — auth (splash → phone → OTP → name), the chat list, one
-/// thread per configured Character, the agent list, and settings. Nothing else.
+/// Production router: auth, the utility-first Home consumer shell, direct chat
+/// and focused capability routes. Runtime internals stay behind the four root tabs.
 ///
 /// Auth rule: OTP proves ownership. A first signup may pause at `/name`
 /// after successful OTP proof but before the session is issued. All Agent
@@ -25,7 +29,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
 
       if (path == '/splash') return null;
-      if (path == '/chat') return '/chats';
+      if (path == '/chat') return '/home';
+      if (path == '/chats' || path == '/agents' || path == '/masana') {
+        return '/home';
+      }
 
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
@@ -40,7 +47,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Signed-in users never sit on login/OTP.
       if (isSignedIn && (path == '/phone-login' || path == '/otp')) {
         final user = (session as SessionSignedIn).user;
-        return user.isNewUser ? '/name' : '/chats';
+        return user.isNewUser ? '/name' : '/home';
       }
 
       // /name is first-signup only.
@@ -48,16 +55,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (session is SessionNameRequired) return null;
         if (isSignedIn) {
           final user = (session as SessionSignedIn).user;
-          return user.isNewUser ? null : '/chats';
+          return user.isNewUser ? null : '/home';
         }
         return '/phone-login';
       }
 
-      // Signed-out users can only be in auth.
-      final protected = path == '/chats' ||
+      // Signed-out users can only be in auth. Native/public share links are
+      // normally held by PendingDeepLink until a canonical session exists.
+      final protected = path == '/home' ||
+          path == '/chats' ||
           path.startsWith('/chat/') ||
-          (path == '/agents' || path == '/masana') ||
+          path.startsWith('/twin/') ||
+          path.startsWith('/owner-session/') ||
+          path == '/agents' ||
+          path == '/masana' ||
           path == '/settings' ||
+          path == '/my-twin' ||
+          path == '/billing' ||
+          path == '/crypto' ||
           path == '/clone' ||
           path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
@@ -70,18 +85,72 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: '/phone-login', builder: (_, _) => const PhoneLoginScreen()),
       GoRoute(path: '/otp', builder: (_, _) => const OtpScreen()),
       GoRoute(path: '/name', builder: (_, _) => const NameScreen()),
-      GoRoute(path: '/chats', builder: (_, _) => const ChatListScreen()),
+      GoRoute(
+        path: '/home',
+        builder: (_, state) {
+          final index = switch (state.uri.queryParameters['tab']) {
+            'explore' => 1,
+            'activity' => 2,
+            'wallet' => 3,
+            _ => 0,
+          };
+          return TwinHomeShell(initialIndex: index);
+        },
+      ),
+      GoRoute(
+        path: '/my-twin',
+        builder: (_, _) => const MyTwinRouteScreen(),
+      ),
+      GoRoute(path: '/chats', redirect: (_, __) => '/home'),
       GoRoute(
         path: '/chat/:id',
-        builder: (context, state) => AiChatScreen(
-          characterId: state.pathParameters['id']!,
+        builder: (context, state) {
+          final entry = switch (state.uri.queryParameters['entry']) {
+            'teach' => AiChatEntryMode.teach,
+            'study' => AiChatEntryMode.study,
+            'voice-note' => AiChatEntryMode.liveTalk,
+            'live-talk' => AiChatEntryMode.liveTalk,
+            'live-voice' => AiChatEntryMode.liveVoice,
+            'cafe' => AiChatEntryMode.cafe,
+            _ => AiChatEntryMode.chat,
+          };
+          final twinSetup =
+              state.uri.queryParameters['twinSetup'] == '1';
+          return AiChatScreen(
+            characterId: state.pathParameters['id']!,
+            entryMode: entry,
+            initialPrompt: state.uri.queryParameters['prompt'],
+            twinSetup: twinSetup,
+            twinGender: state.uri.queryParameters['gender'],
+            twinAge: int.tryParse(state.uri.queryParameters['age'] ?? ''),
+            twinPhotoPath: state.uri.queryParameters['photo'],
+          );
+        },
+      ),
+      GoRoute(
+        path: '/owner-session/:characterId/:requestId',
+        builder: (context, state) => OwnerAccessSessionScreen(
+          characterId: state.pathParameters['characterId']!,
+          requestId: state.pathParameters['requestId']!,
         ),
       ),
-      // Backwards-compat: the old single chat now lands on the list.
-      GoRoute(path: '/home', builder: (_, _) => const ChatListScreen()),
-      GoRoute(path: '/agents', builder: (_, _) => const AgentListScreen()),
-      GoRoute(path: '/masana', redirect: (_, __) => '/agents'),
+      GoRoute(
+        path: '/twin/:publicId',
+        builder: (context, state) => _TwinLinkResolverScreen(
+          publicId: state.pathParameters['publicId']!,
+        ),
+      ),
+      // Backwards-compatible legacy entry points now converge on the Twin shell.
+      GoRoute(path: '/agents', redirect: (_, __) => '/home'),
+      GoRoute(path: '/masana', redirect: (_, __) => '/home'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(
+        path: '/billing',
+        builder: (_, state) => BillingScreen(
+          initialService: state.uri.queryParameters['service'],
+        ),
+      ),
+      GoRoute(path: '/crypto', builder: (_, _) => const CryptoWalletScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
     ],
@@ -90,3 +159,95 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.listen(isSignedInProvider, (_, _) => router.refresh());
   return router;
 });
+
+class _TwinLinkResolverScreen extends ConsumerStatefulWidget {
+  const _TwinLinkResolverScreen({required this.publicId});
+
+  final String publicId;
+
+  @override
+  ConsumerState<_TwinLinkResolverScreen> createState() =>
+      _TwinLinkResolverScreenState();
+}
+
+class _TwinLinkResolverScreenState
+    extends ConsumerState<_TwinLinkResolverScreen> {
+  String? _error;
+  bool _resolving = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _resolve());
+  }
+
+  Future<void> _resolve() async {
+    if (!_resolving) {
+      setState(() {
+        _resolving = true;
+        _error = null;
+      });
+    }
+    try {
+      final twin = await ref.read(twinDirectoryTransportProvider).resolve(
+            publicId: widget.publicId,
+          );
+      if (!mounted) return;
+      if (twin == null) {
+        setState(() {
+          _resolving = false;
+          _error = 'This Twin is private or the share link is no longer available.';
+        });
+        return;
+      }
+      context.go('/chat/${Uri.encodeComponent(twin.characterId)}');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _resolving = false;
+        _error = 'Could not open this Twin right now.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_resolving) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Open Twin')),
+      body: SafeArea(
+        minimum: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.link_off_outlined, size: 42),
+                const SizedBox(height: 16),
+                Text(
+                  _error ?? 'This Twin link is unavailable.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: _resolve,
+                  child: const Text('Try again'),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/home'),
+                  child: const Text('Explore other Twins'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

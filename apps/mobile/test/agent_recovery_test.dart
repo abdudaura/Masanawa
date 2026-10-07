@@ -7,15 +7,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
+import 'package:masanawa/src/agents/agent_directory_cache.dart';
 import 'package:masanawa/src/agents/agent_feedback.dart';
 import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/agents/masanawa_transport.dart';
+import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
+import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+const _directoryUser = AuthUser(
+  id: 'user-directory',
+  name: 'Directory User',
+  email: 'directory@example.com',
+  locale: 'en-NG',
+  status: 'ACTIVE',
+  role: 'USER',
+  isNewUser: false,
+  createdAt: '2026-10-05T00:00:00Z',
+);
+
+const _directoryTokens = AuthTokens(
+  accessToken: 'directory-access',
+  refreshToken: 'directory-refresh',
+  accessExpiresIn: 900,
+  user: _directoryUser,
+);
+
+class _SignedInSessionController extends SessionController {
+  @override
+  SessionState build() => const SessionSignedIn(_directoryUser, _directoryTokens);
+}
+
+class _SignedOutSessionController extends SessionController {
+  @override
+  SessionState build() => const SessionSignedOut();
+}
 
 const agent = AgentDirectoryEntry(
   characterId: 'character-1',
@@ -34,6 +65,33 @@ class FakeDirectory implements AgentDirectoryTransport {
     requests.add(request);
     return request.future;
   }
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {}
+}
+
+class _NoopDirectoryCache implements AgentDirectoryCache {
+  @override
+  Future<List<AgentDirectoryEntry>?> read(String ownerId) async => null;
+
+  @override
+  Future<void> write(
+    String ownerId,
+    List<AgentDirectoryEntry> agents,
+  ) async {}
+
+  @override
+  Future<void> clear() async {}
+}
+
+Future<void> _waitForDirectoryRequests(
+  FakeDirectory transport,
+  int count,
+) async {
+  for (var attempt = 0; attempt < 20 && transport.requests.length < count; attempt++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+  expect(transport.requests, hasLength(count));
 }
 
 class RetryDirectory implements AgentDirectoryTransport {
@@ -44,6 +102,9 @@ class RetryDirectory implements AgentDirectoryTransport {
       throw const ApiException('private database error', statusCode: 503);
     return [agent];
   }
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {}
 }
 
 class RecoveringTransport implements AgentTransport {
@@ -237,6 +298,8 @@ void main() {
         ProviderScope(
           overrides: [
             agentDirectoryTransportProvider.overrideWithValue(directory),
+            agentDirectoryCacheProvider.overrideWithValue(_NoopDirectoryCache()),
+            sessionProvider.overrideWith(_SignedInSessionController.new),
           ],
           child: MaterialApp(
             theme: buildMasanawaTheme(brightness: Brightness.light),
@@ -290,11 +353,13 @@ void main() {
       final c = ProviderContainer(
         overrides: [
           agentDirectoryTransportProvider.overrideWithValue(transport),
+          agentDirectoryCacheProvider.overrideWithValue(_NoopDirectoryCache()),
+          sessionProvider.overrideWith(_SignedInSessionController.new),
         ],
       );
       addTearDown(c.dispose);
       c.read(agentDirectoryProvider);
-      await Future<void>.delayed(Duration.zero);
+      await _waitForDirectoryRequests(transport, 1);
       transport.requests[0].complete([agent]);
       await Future<void>.delayed(Duration.zero);
       final retry = c.read(agentDirectoryProvider.notifier).refresh();
@@ -316,12 +381,16 @@ void main() {
   test('older refresh cannot overwrite a recovered directory', () async {
     final transport = FakeDirectory();
     final c = ProviderContainer(
-      overrides: [agentDirectoryTransportProvider.overrideWithValue(transport)],
+      overrides: [
+      agentDirectoryTransportProvider.overrideWithValue(transport),
+      sessionProvider.overrideWith(_SignedInSessionController.new),
+    ],
     );
     addTearDown(c.dispose);
     c.read(agentDirectoryProvider);
-    await Future<void>.delayed(Duration.zero);
+    await _waitForDirectoryRequests(transport, 1);
     final next = c.read(agentDirectoryProvider.notifier).refresh();
+    await _waitForDirectoryRequests(transport, 2);
     transport.requests[1].complete([agent]);
     await next;
     transport.requests[0].completeError(const ApiException('old failure'));
@@ -335,7 +404,10 @@ void main() {
     () async {
       final transport = RecoveringTransport();
       final c = ProviderContainer(
-        overrides: [agentTransportProvider.overrideWithValue(transport)],
+        overrides: [
+        agentTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
+      ],
       );
       addTearDown(c.dispose);
       final controller = c.read(aiChatProvider.notifier);
@@ -367,7 +439,10 @@ void main() {
     final pending = Completer<AgentTurnResult>();
     final transport = RecoveringTransport(pending: pending);
     final c = ProviderContainer(
-      overrides: [agentTransportProvider.overrideWithValue(transport)],
+      overrides: [
+        agentTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
+      ],
     );
     addTearDown(c.dispose);
     final controller = c.read(aiChatProvider.notifier);
@@ -384,7 +459,10 @@ void main() {
   test('clear all closes canonical CharacterSessions before dropping local state', () async {
     final transport = RecoveringTransport();
     final c = ProviderContainer(
-      overrides: [agentTransportProvider.overrideWithValue(transport)],
+      overrides: [
+        agentTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
+      ],
     );
     addTearDown(c.dispose);
     final controller = c.read(aiChatProvider.notifier);
@@ -401,7 +479,7 @@ void main() {
   test('hosted Gateway is the default local connection address', () {
     expect(
       kAgentBaseUrl,
-      'https://nurainworker-production.up.railway.app',
+      'https://masanawa-gateway-production.up.railway.app',
     );
   });
 

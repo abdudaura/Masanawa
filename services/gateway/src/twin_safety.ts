@@ -98,7 +98,7 @@ export function createTwinSafetyService(input: {
   readonly authorizer: TwinSafetyAuthorizer;
   readonly repository: TwinSafetyRepository;
 }): TwinSafetyService {
-  return Object.freeze({
+  return Object.freeze<TwinSafetyService>({
     async block(request) {
       const id = characterId(request.characterId);
       const authority = await input.authorizer.authorize({

@@ -145,7 +145,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         children: [
           TextField(
             controller: _code,
-            autofocus: true,
+            autofocus: false,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             inputFormatters: [

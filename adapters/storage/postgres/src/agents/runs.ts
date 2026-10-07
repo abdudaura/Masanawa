@@ -479,3 +479,14 @@ export function createPostgresAgentRunRepository(
     },
   });
 }
+
+/** Reuses canonical trace/authority admission inside a composing transaction. */
+export async function readPostgresAgentRunForContext(client: PoolClient,
+  raw: AgentRunRequest): Promise<AgentRun> {
+  const request = capture(raw);
+  await admit(client, request, "read", admissionTrace(request));
+  const run = rowToRun(await loadRun(client, request, false));
+  await admit(client, request, "read", run.trace);
+  return run;
+}
+

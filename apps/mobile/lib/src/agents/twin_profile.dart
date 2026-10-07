@@ -62,7 +62,7 @@ class TwinProfile {
         .take(2)
         .toList();
     if (parts.isEmpty) return 'AI';
-    return parts.map((part) => part.characters.first.toUpperCase()).join();
+    return parts.map((part) => String.fromCharCode(part.runes.first).toUpperCase()).join();
   }
 
   factory TwinProfile.fromJson(Map<String, dynamic> json) {
@@ -96,10 +96,93 @@ class TwinProfile {
   }
 }
 
+
+class TwinProfileCustomizationPatch {
+  const TwinProfileCustomizationPatch({
+    this.displayName,
+    this.bio,
+    this.interests,
+    this.languages,
+    this.discoverable,
+  });
+
+  final String? displayName;
+  final String? bio;
+  final List<String>? interests;
+  final List<String>? languages;
+  final bool? discoverable;
+
+  Map<String, dynamic> toJson() => {
+        if (displayName != null) 'displayName': displayName,
+        if (bio != null) 'bio': bio,
+        if (interests != null) 'interests': interests,
+        if (languages != null) 'languages': languages,
+        if (discoverable != null) 'discoverable': discoverable,
+      };
+}
+
+class TwinProfileCustomizationPreview {
+  const TwinProfileCustomizationPreview({
+    required this.currentRevision,
+    required this.patch,
+    required this.requiresConfirmation,
+    required this.standingChanges,
+  });
+
+  final int currentRevision;
+  final TwinProfileCustomizationPatch patch;
+  final bool requiresConfirmation;
+  final List<String> standingChanges;
+
+  factory TwinProfileCustomizationPreview.fromJson(Map<String, dynamic> json) {
+    final revision = json['currentRevision'];
+    final patch = json['patch'];
+    final changes = json['standingChanges'];
+    if (revision is! num ||
+        revision.toInt() < 1 ||
+        patch is! Map ||
+        changes is! List ||
+        changes.any((item) => item is! String)) {
+      throw const FormatException('Invalid Twin customization preview');
+    }
+    final p = patch.cast<String, dynamic>();
+    List<String>? strings(String key) {
+      final value = p[key];
+      if (value == null) return null;
+      if (value is! List || value.any((item) => item is! String)) {
+        throw FormatException('Invalid Twin customization field: $key');
+      }
+      return value.cast<String>().toList(growable: false);
+    }
+
+    return TwinProfileCustomizationPreview(
+      currentRevision: revision.toInt(),
+      patch: TwinProfileCustomizationPatch(
+        displayName: p['displayName'] as String?,
+        bio: p['bio'] as String?,
+        interests: strings('interests'),
+        languages: strings('languages'),
+        discoverable: p['discoverable'] as bool?,
+      ),
+      requiresConfirmation: json['requiresConfirmation'] == true,
+      standingChanges: changes.cast<String>().toList(growable: false),
+    );
+  }
+}
+
 abstract class TwinProfileTransport {
   Future<TwinProfile> load();
 
   Future<TwinProfile> setDiscoverable(bool discoverable);
+
+  Future<TwinProfileCustomizationPreview> previewCustomization(
+    TwinProfileCustomizationPatch patch,
+  );
+
+  Future<TwinProfile> applyCustomization({
+    required TwinProfileCustomizationPreview preview,
+    required bool confirmed,
+  });
 }
 
 class UnavailableTwinProfileTransport implements TwinProfileTransport {
@@ -113,5 +196,20 @@ class UnavailableTwinProfileTransport implements TwinProfileTransport {
   @override
   Future<TwinProfile> setDiscoverable(bool discoverable) {
     throw StateError('My Twin is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<TwinProfileCustomizationPreview> previewCustomization(
+    TwinProfileCustomizationPatch patch,
+  ) {
+    throw StateError('My Twin customization is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<TwinProfile> applyCustomization({
+    required TwinProfileCustomizationPreview preview,
+    required bool confirmed,
+  }) {
+    throw StateError('My Twin customization is not connected to the Gateway yet');
   }
 }

@@ -211,6 +211,7 @@ class ChatThread {
     this.scrollOffset = 0,
     this.draftAttachments = const [],
     this.draftVoice,
+    this.twinInterviewFacts = const <String, dynamic>{},
   }) : updatedAt = updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   final String characterId;
@@ -226,6 +227,7 @@ class ChatThread {
   final double scrollOffset;
   final List<ChatAttachment> draftAttachments;
   final ChatAttachment? draftVoice;
+  final Map<String, dynamic> twinInterviewFacts;
 
   AiChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
@@ -243,6 +245,7 @@ class ChatThread {
     List<ChatAttachment>? draftAttachments,
     ChatAttachment? draftVoice,
     bool clearDraftVoice = false,
+    Map<String, dynamic>? twinInterviewFacts,
   }) => ChatThread(
     characterId: characterId,
     messages: messages ?? this.messages,
@@ -257,6 +260,7 @@ class ChatThread {
     scrollOffset: scrollOffset ?? this.scrollOffset,
     draftAttachments: draftAttachments ?? this.draftAttachments,
     draftVoice: clearDraftVoice ? null : (draftVoice ?? this.draftVoice),
+    twinInterviewFacts: twinInterviewFacts ?? this.twinInterviewFacts,
   );
 
   Map<String, dynamic> toJson() => {
@@ -274,6 +278,8 @@ class ChatThread {
     if (draftAttachments.isNotEmpty)
       'draftAttachments': [for (final item in draftAttachments) item.toJson()],
     if (draftVoice != null) 'draftVoice': draftVoice!.toJson(),
+    if (twinInterviewFacts.isNotEmpty)
+      'twinInterviewFacts': twinInterviewFacts,
   };
 
   factory ChatThread.fromJson(Map<String, dynamic> json) {
@@ -303,6 +309,11 @@ class ChatThread {
               (json['draftVoice'] as Map).cast<String, dynamic>(),
             )
           : null,
+      twinInterviewFacts: json['twinInterviewFacts'] is Map
+          ? Map<String, dynamic>.unmodifiable(
+              (json['twinInterviewFacts'] as Map).cast<String, dynamic>(),
+            )
+          : const <String, dynamic>{},
     );
   }
 }
@@ -365,6 +376,7 @@ class AiChatController extends Notifier<AiChatState> {
   final Map<String, EncryptedShellActionJournal> _actionJournals = {};
   String? _cacheOwnerId;
   int _cacheGeneration = 0;
+  Future<Directory?>? _documentsDirectoryFuture;
 
   @override
   AiChatState build() {
@@ -373,22 +385,15 @@ class AiChatController extends Notifier<AiChatState> {
         initialSession is SessionSignedIn ? initialSession.user.id : null;
     final initialOwner = _cacheOwnerId;
     if (initialOwner != null && initialOwner.isNotEmpty) {
-      scheduleMicrotask(() => _load(initialOwner, _cacheGeneration));
-    }
-    try {
-      _connectivitySub = Connectivity().onConnectivityChanged.listen(
-        (results) {
-          final online = !results.contains(ConnectivityResult.none);
-          if (!_disposed) state = state.copyWith(online: online);
-          if (online) {
-            unawaited(_flushQueuedMessages());
-            final open = state.openThreadId;
-            if (open != null) unawaited(syncFromServer(open));
-          }
-        },
-        onError: (_) {},
+      // Local conversation state is useful immediately. Hydrate it before
+      // starting another platform-channel dependency on slower devices.
+      unawaited(
+        _load(initialOwner, _cacheGeneration)
+            .whenComplete(_startConnectivityMonitoring),
       );
-    } catch (_) {}
+    } else {
+      scheduleMicrotask(_startConnectivityMonitoring);
+    }
     ref.onDispose(() {
       _disposed = true;
       _connectivitySub?.cancel();
@@ -425,6 +430,24 @@ class AiChatController extends Notifier<AiChatState> {
     return const AiChatState();
   }
 
+  void _startConnectivityMonitoring() {
+    if (_disposed || _connectivitySub != null) return;
+    try {
+      _connectivitySub = Connectivity().onConnectivityChanged.listen(
+        (results) {
+          final online = !results.contains(ConnectivityResult.none);
+          if (!_disposed) state = state.copyWith(online: online);
+          if (online) {
+            unawaited(_flushQueuedMessages());
+            final open = state.openThreadId;
+            if (open != null) unawaited(syncFromServer(open));
+          }
+        },
+        onError: (_) {},
+      );
+    } catch (_) {}
+  }
+
   ChatThread threadOf(String characterId) =>
       state.threads[characterId] ?? ChatThread(characterId: characterId);
 
@@ -443,7 +466,9 @@ class AiChatController extends Notifier<AiChatState> {
 
   AgentShellTransport? get _shellTransport {
     final transport = ref.read(agentTransportProvider);
-    return transport is AgentShellTransport ? transport : null;
+    return transport is AgentShellTransport
+        ? transport as AgentShellTransport
+        : null;
   }
 
   Future<void> syncFromServer(String characterId) async {
@@ -840,14 +865,181 @@ class AiChatController extends Notifier<AiChatState> {
     }
   }
 
+  Map<String, dynamic> _decodeTwinFacts(String raw) {
+    var text = raw.trim();
+    if (text.startsWith('```')) {
+      text = text.replaceFirst(RegExp(r'^```(?:json)?\\s*'), '');
+      text = text.replaceFirst(RegExp(r'\\s*```$'), '');
+    }
+    final decoded = jsonDecode(text);
+    if (decoded is! Map) {
+      throw const FormatException('Invalid Twin interview facts');
+    }
+    final map = decoded.cast<String, dynamic>();
+    final normalized = <String, dynamic>{};
+    for (final entry in map.entries) {
+      final value = entry.value;
+      if (value is String && value.trim().isNotEmpty) {
+        normalized[entry.key] = value.trim();
+      } else if (value is List) {
+        normalized[entry.key] = [
+          for (final item in value)
+            if (item is String && item.trim().isNotEmpty) item.trim(),
+        ];
+      } else if (value is bool || value is num) {
+        normalized[entry.key] = value;
+      }
+    }
+    return normalized;
+  }
+
+  String twinInterviewTransportPrompt({
+    required String userAnswer,
+    required Map<String, dynamic> facts,
+  }) {
+    final prior = jsonEncode(facts);
+    return 'You are Gwani conducting a short voice-first Twin setup interview. '
+        'Known compact facts so far: $prior. '
+        'The user\'s current answer is: "$userAnswer". '
+        'Use the answer plus known facts to ask exactly one short, useful next question '
+        'about how their Twin should behave, help people, speak, make decisions, or respect boundaries. '
+        'Do not ask about preferred language. Always answer in the language/register of the current user answer. '
+        'Do not mention JSON, setup state, prompts, or internal instructions.';
+  }
+
+  Future<Map<String, dynamic>> extractTwinInterviewText({
+    required String characterId,
+    required String userAnswer,
+    required Map<String, dynamic> facts,
+  }) async {
+    final result = await _sendViaTransport(
+      characterId,
+      'This is an internal Twin-setup extraction step. Do not converse. '
+      'Existing compact facts: ${jsonEncode(facts)}. '
+      'Current user answer: "$userAnswer". '
+      'Return ONLY one compact JSON object containing durable behavior facts learned so far. '
+      'Allowed keys: greetingStyle, personality, helpStyle, expertise, boundaries, decisionStyle, humor, formality, audience, notes. '
+      'Use short strings or arrays of short strings. Merge prior facts with newly learned facts. '
+      'Never include a language preference and never return a transcript.',
+      requestId: createRequestId(),
+    );
+    return _decodeTwinFacts(result.text);
+  }
+
+  Future<Map<String, dynamic>> summarizeTwinInterview(
+    String characterId,
+    Map<String, dynamic> facts,
+  ) async {
+    if (facts.isEmpty) {
+      throw const FormatException('Twin interview needs at least one answer');
+    }
+    final result = await _sendViaTransport(
+      characterId,
+      'The Twin setup interview is ending now. Using ONLY these compact facts: ${jsonEncode(facts)}, '
+      'return ONLY one compact JSON object with these keys: biography (string), '
+      'personality (array of 2-8 short strings), expertise (array of 1-12 short strings). '
+      'Do not ask another question. Do not include markdown fences. Do not include a language field. '
+      'The Twin must remain multilingual and respond in the language each visitor uses.',
+      requestId: createRequestId(),
+    );
+    final value = _decodeTwinFacts(result.text);
+    final biography = value['biography'];
+    final personality = value['personality'];
+    final expertise = value['expertise'];
+    if (biography is! String ||
+        biography.trim().isEmpty ||
+        personality is! List ||
+        expertise is! List) {
+      throw const FormatException('Incomplete Twin interview summary');
+    }
+    final cleanPersonality = [
+      for (final item in personality)
+        if (item is String && item.trim().isNotEmpty) item.trim(),
+    ];
+    final cleanExpertise = [
+      for (final item in expertise)
+        if (item is String && item.trim().isNotEmpty) item.trim(),
+    ];
+    if (cleanPersonality.isEmpty || cleanExpertise.isEmpty) {
+      throw const FormatException('Incomplete Twin interview summary');
+    }
+    return <String, dynamic>{
+      'biography': biography.trim(),
+      'personality': cleanPersonality,
+      'expertise': cleanExpertise,
+    };
+  }
+
+  Future<void> announceTwinReady(
+    String characterId, {
+    required String displayName,
+    required String? publicUrl,
+  }) async {
+    final link = publicUrl?.trim();
+    final result = await _sendViaTransport(
+      characterId,
+      link == null || link.isEmpty
+          ? 'The Twin named "$displayName" has now been created. '
+              'Congratulate the user briefly in the same language they have been using. '
+              'Explain verbally how people can talk to their Twin and that the share link will appear as soon as the public profile finishes syncing.'
+          : 'The Twin named "$displayName" has now been created. Its full referral link is $link. '
+              'Congratulate the user briefly in the same language they have been using. '
+              'Read and explain the link clearly and explain that they can share it so people can talk to the Twin. '
+              'Keep this short and natural for audio playback.',
+      requestId: createRequestId(),
+    );
+    ChatAttachment? replyAudio;
+    if (result.audioBytes case final audio? when audio.isNotEmpty) {
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
+      await File(path).writeAsBytes(audio, flush: true);
+      replyAudio = ChatAttachment(
+        kind: 'voice',
+        path: path,
+        durationMs: result.audioDurationMs,
+        sizeBytes: audio.length,
+        waveform: _pcmWaveform(audio),
+      );
+    }
+    await _appendAi(
+      characterId,
+      result.text,
+      parts: result.parts,
+      attachment: replyAudio,
+      agentRunId: result.agentRunId,
+    );
+  }
+
+  /// Executes an internal conversational turn in the same Character session
+  /// without adding the orchestration prompt or response to the visible chat.
+  Future<String> runInternalText(String characterId, String prompt) async {
+    final text = prompt.trim();
+    if (text.isEmpty) throw ArgumentError.value(prompt, 'prompt');
+    if (state.sendingIn.contains(characterId)) {
+      throw StateError('A conversation turn is already in progress');
+    }
+    if (await _offlineNow()) {
+      throw const ApiException('Connect to the internet to complete setup');
+    }
+    final result = await _sendViaTransport(
+      characterId,
+      text,
+      requestId: createRequestId(),
+    );
+    return result.text.trim();
+  }
+
   Future<void> sendText(
     String characterId,
     String rawText, {
     String? replyToId,
     String? replyPreview,
+    String? transportPrompt,
   }) async {
     final text = rawText.trim();
     if (text.isEmpty || state.sendingIn.contains(characterId)) return;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final message = AiChatMessage(
       id: _newId(),
       isUser: true,
@@ -858,11 +1050,20 @@ class AiChatController extends Notifier<AiChatState> {
       deliveryStatus: 'sending',
       requestId: createRequestId(),
     );
-    if (await _offlineNow()) {
+    final offline = await _offlineNow();
+    if (_disposed ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      return;
+    }
+    if (offline) {
       await _enqueueMessage(characterId, message);
       return;
     }
-    await _dispatchUserMessage(characterId, message);
+    await _dispatchUserMessage(
+      characterId,
+      message,
+      transportPrompt: transportPrompt,
+    );
   }
 
   Future<void> sendAttachment(
@@ -873,6 +1074,7 @@ class AiChatController extends Notifier<AiChatState> {
     String? replyPreview,
   }) async {
     if (state.sendingIn.contains(characterId)) return;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final message = AiChatMessage(
       id: _newId(),
       isUser: true,
@@ -884,7 +1086,12 @@ class AiChatController extends Notifier<AiChatState> {
       deliveryStatus: 'sending',
       requestId: createRequestId(),
     );
-    if (await _offlineNow()) {
+    final offline = await _offlineNow();
+    if (_disposed ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      return;
+    }
+    if (offline) {
       await _enqueueMessage(characterId, message);
       return;
     }
@@ -909,6 +1116,7 @@ class AiChatController extends Notifier<AiChatState> {
       );
       return;
     }
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final bounded = List<ChatAttachment>.unmodifiable(attachments.take(8));
     final message = AiChatMessage(
       id: _newId(),
@@ -922,7 +1130,12 @@ class AiChatController extends Notifier<AiChatState> {
       uploadProgress: 0,
       requestId: createRequestId(),
     );
-    if (await _offlineNow()) {
+    final offline = await _offlineNow();
+    if (_disposed ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      return;
+    }
+    if (offline) {
       await _enqueueMessage(characterId, message);
       return;
     }
@@ -933,6 +1146,7 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     AiChatMessage userMsg, {
     bool retry = false,
+    String? transportPrompt,
   }) async {
     final connectionGeneration = _connectionGeneration;
     final threadGeneration = _threadGenerations[characterId] ?? 0;
@@ -956,12 +1170,14 @@ class AiChatController extends Notifier<AiChatState> {
       final hasMedia = attachment != null || attachmentSet.isNotEmpty;
       final streamMessageId =
           !hasMedia ? _beginAiStream(characterId) : null;
-      final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
+      final visiblePrompt = userMsg.replyPreview?.trim().isNotEmpty == true
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
-      final mediaCaption = userMsg.replyPreview?.trim().isNotEmpty == true
-          ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
-          : userMsg.text;
+      final promptText =
+          transportPrompt?.trim().isNotEmpty == true
+              ? transportPrompt!.trim()
+              : visiblePrompt;
+      final mediaCaption = promptText;
       var livePcmStarted = false;
       DateTime? livePcmStartedAt;
       final result = !hasMedia
@@ -1149,8 +1365,9 @@ class AiChatController extends Notifier<AiChatState> {
               };
 
     final transport = ref.read(agentTransportProvider);
-    final binding = await _bindingFor(characterId, transport);
-    return transport.sendMediaTurn(
+    final hadCachedBinding = _bindings.containsKey(characterId);
+    var binding = await _bindingFor(characterId, transport);
+    Future<AgentTurnResult> send() => transport.sendMediaTurn(
       binding: binding,
       bytes: bytes,
       mimeType: mimeType,
@@ -1169,6 +1386,14 @@ class AiChatController extends Notifier<AiChatState> {
         );
       },
     );
+    try {
+      return await send();
+    } catch (error) {
+      if (!hadCachedBinding || !_isStaleSessionError(error)) rethrow;
+      _bindings.remove(characterId);
+      binding = await _bindingFor(characterId, transport);
+      return send();
+    }
   }
 
   Future<AgentTurnResult> _sendMediaSetViaTransport(
@@ -1237,6 +1462,9 @@ class AiChatController extends Notifier<AiChatState> {
     );
   }
 
+  bool _isStaleSessionError(Object error) =>
+      error is ApiException && error.statusCode == 404;
+
   Future<AgentTurnResult> _sendViaTransport(
     String characterId,
     String prompt, {
@@ -1245,14 +1473,28 @@ class AiChatController extends Notifier<AiChatState> {
     String? requestId,
   }) async {
     final transport = ref.read(agentTransportProvider);
-    final binding = await _bindingFor(characterId, transport);
-    return transport.sendTurn(
-      binding: binding,
-      text: prompt,
-      onTextDelta: onTextDelta,
-      onAudioPcmChunk: onAudioPcmChunk,
-      requestId: requestId,
-    );
+    final hadCachedBinding = _bindings.containsKey(characterId);
+    var binding = await _bindingFor(characterId, transport);
+    try {
+      return await transport.sendTurn(
+        binding: binding,
+        text: prompt,
+        onTextDelta: onTextDelta,
+        onAudioPcmChunk: onAudioPcmChunk,
+        requestId: requestId,
+      );
+    } catch (error) {
+      if (!hadCachedBinding || !_isStaleSessionError(error)) rethrow;
+      _bindings.remove(characterId);
+      binding = await _bindingFor(characterId, transport);
+      return transport.sendTurn(
+        binding: binding,
+        text: prompt,
+        onTextDelta: onTextDelta,
+        onAudioPcmChunk: onAudioPcmChunk,
+        requestId: requestId,
+      );
+    }
   }
 
   Future<AgentSessionBinding> _bindingFor(
@@ -1365,15 +1607,23 @@ class AiChatController extends Notifier<AiChatState> {
 
   void _removeStreamingPlaceholders(String characterId) {
     final thread = threadOf(characterId);
+    final removed = thread.messages
+        .where((message) =>
+            !message.isUser && message.deliveryStatus == 'streaming')
+        .length;
+    if (removed == 0) return;
     final messages = thread.messages
         .where((message) =>
             message.isUser || message.deliveryStatus != 'streaming')
         .toList();
-    if (messages.length == thread.messages.length) return;
+    final isOpen = state.openThreadId == characterId;
     state = state.copyWith(
       threads: {
         ...state.threads,
-        characterId: thread.copyWith(messages: messages),
+        characterId: thread.copyWith(
+          messages: messages,
+          unread: isOpen ? 0 : (thread.unread - removed).clamp(0, 1 << 30).toInt(),
+        ),
       },
     );
   }
@@ -1486,6 +1736,23 @@ class AiChatController extends Notifier<AiChatState> {
         characterId: thread.copyWith(
           draftVoice: attachment,
           clearDraftVoice: attachment == null,
+        ),
+      },
+    );
+    _save();
+  }
+
+  void setTwinInterviewFacts(
+    String characterId,
+    Map<String, dynamic> facts,
+  ) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          twinInterviewFacts:
+              Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(facts)),
         ),
       },
     );
@@ -1731,21 +1998,29 @@ class AiChatController extends Notifier<AiChatState> {
 
   String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
 
+  Future<Directory?> _documentsDirectory() {
+    return _documentsDirectoryFuture ??= (() async {
+      try {
+        return await getApplicationDocumentsDirectory();
+      } catch (_) {
+        return null;
+      }
+    })();
+  }
+
   Future<File?> _threadsFile(String ownerId) async {
-    try {
-      if (ownerId.isEmpty) return null;
-      final dir = await getApplicationDocumentsDirectory();
-      final owner =
-          base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
-      return File('${dir.path}/masanawa_threads_v2_$owner.json');
-    } catch (_) {
-      return null;
-    }
+    if (ownerId.isEmpty) return null;
+    final dir = await _documentsDirectory();
+    if (dir == null) return null;
+    final owner =
+        base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
+    return File('${dir.path}/masanawa_threads_v2_$owner.json');
   }
 
   Future<void> _deleteLegacyThreadCache() async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await _documentsDirectory();
+      if (dir == null) return;
       final legacy = File('${dir.path}/$_kThreadsFile');
       if (await legacy.exists()) await legacy.delete();
     } catch (_) {
@@ -1810,9 +2085,14 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<void> _load(String ownerId, int generation) async {
     try {
-      await _deleteLegacyThreadCache();
       final file = await _threadsFile(ownerId);
-      if (file == null || !await file.exists()) return;
+      if (file == null) return;
+
+      // The retired unscoped cache is never read. Keep its cleanup off the
+      // current account's hydration path so cached chats can paint first.
+      unawaited(_deleteLegacyThreadCache());
+
+      if (!await file.exists()) return;
       final raw = jsonDecode(await file.readAsString());
       final list = (raw as List? ?? [])
           .map((e) => ChatThread.fromJson((e as Map).cast<String, dynamic>()))

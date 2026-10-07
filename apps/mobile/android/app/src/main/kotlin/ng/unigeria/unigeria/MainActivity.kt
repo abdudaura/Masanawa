@@ -2,6 +2,7 @@ package ng.unigeria.unigeria
 
 import android.content.Intent
 import android.media.AudioAttributes
+import android.net.Uri
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
@@ -26,7 +27,7 @@ class MainActivity : FlutterActivity() {
             channel.setMethodCallHandler { call, result ->
                 if (call.method == "initial") {
                     val uri = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data
-                    result.success(uri?.takeIf { it.scheme == "masanawa" }?.toString())
+                    result.success(uri?.takeIf(::isSupportedDeepLink)?.toString())
                     // Only deliver the launch intent once across reinitialization.
                     intent?.data = null
                 } else {
@@ -181,10 +182,21 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         val uri = intent.data
-        if (intent.action == Intent.ACTION_VIEW && uri?.scheme == "masanawa") {
+        if (intent.action == Intent.ACTION_VIEW && isSupportedDeepLink(uri)) {
             deepLinkChannel?.invokeMethod("open", uri.toString())
             intent.data = null
         }
+    }
+
+    private fun isSupportedDeepLink(uri: Uri?): Boolean {
+        uri ?: return false
+        if (uri.scheme == "masanawa") return true
+        if (uri.scheme != "https" || !uri.host.equals("masanawa.com", ignoreCase = true)) {
+            return false
+        }
+        if (uri.port != -1) return false
+        val segments = uri.pathSegments
+        return segments.size == 2 && segments[0] == "twin" && segments[1].isNotBlank()
     }
 
     override fun onDestroy() {

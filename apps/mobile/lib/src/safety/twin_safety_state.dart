@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/providers.dart';
 import 'twin_safety.dart';
+import 'twin_safety_http_transport.dart';
 
 final twinSafetyTransportProvider = Provider<TwinSafetyTransport>(
-  (ref) => const UnavailableTwinSafetyTransport(),
+  (ref) => GatewayTwinSafetyTransport(api: ref.watch(apiClientProvider)),
 );
 
 class TwinSafetyController extends StateNotifier<AsyncValue<void>> {

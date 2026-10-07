@@ -3,6 +3,8 @@ import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import { registerCloneOnboardingRoutes } from "./clone_onboarding_routes.js";
+import type { CloneOnboardingService } from "./clone_onboarding.js";
 import type { CreatorCloneService } from "./creator_clone.js";
 import type { CreatorEconomyService } from "./creator_economy.js";
 import type { CreatorSkillService } from "./creator_skills.js";
@@ -13,7 +15,33 @@ import type {
   LiveVoiceTokenService,
 } from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
+import { registerBillingRoutes } from "./billing_routes.js";
+import type { TwinProductionRuntime } from "./twin_production_runtime.js";
+import { registerTwinProfileRoutes } from "./twin_profile_routes.js";
+import { registerTwinDirectoryRoutes } from "./twin_directory_routes.js";
+import { registerMyTwinProjectionRoutes } from "./my_twin_projection_routes.js";
+import { registerTwinActivityRoutes } from "./twin_activity_routes.js";
+import { registerWalletProjectionRoutes } from "./wallet_projection_routes.js";
+import { registerCreditTransferRoutes, registerGiftRoutes } from "./credit_transfer_routes.js";
+import { registerTwinAttributionRoutes, registerCommissionPolicyAdminRoutes } from "./twin_attribution_routes.js";
+import { registerProviderValuationAdminRoutes } from "./provider_valuation_admin_routes.js";
+import { registerPaidVoiceRoutes, registerPaidVoiceSettlementRoutes } from "./paid_voice_routes.js";
+import { registerPaidFeatureTrialAdminRoutes } from "./paid_feature_trial_admin_routes.js";
+import {
+  registerOwnerAccessRoutes,
+  registerOwnerAccessDisputeAdminRoutes,
+} from "./owner_access_routes.js";
+import { registerOwnerAccessOfferingRoutes } from "./owner_access_offering_routes.js";
+import { registerTwinSafetyRoutes } from "./twin_safety_routes.js";
+import type { BillingCheckoutService } from "./billing_checkout.js";
+import type { BillingFinancialService } from "./financial_billing.js";
+import type { BillingWalletService } from "./billing_wallet.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
+import type { FinancialService } from "./financial_service.js";
+import {
+  registerCustomerChannelRoutes,
+  type CustomerChannelOptions,
+} from "./customer_channel_routes.js";
 import {
   CustomerAuthError,
   type CustomerAuthService,
@@ -37,6 +65,7 @@ export interface GatewayAppOptions {
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
   readonly creatorClone?: CreatorCloneService;
+  readonly cloneOnboarding?: CloneOnboardingService;
   readonly creatorEconomy?: CreatorEconomyService;
   readonly creatorSkills?: CreatorSkillService;
   readonly commerceCatalog?: CommerceCatalogService;
@@ -45,6 +74,16 @@ export interface GatewayAppOptions {
   readonly liveVoiceTokens?: LiveVoiceTokenService;
   readonly mobilePush?: MobilePushRegistrationService;
   readonly customerAuth?: CustomerAuthService;
+  readonly billingCheckout?: BillingCheckoutService;
+  readonly billingFinancial?: BillingFinancialService;
+  readonly billingWallet?: BillingWalletService;
+  readonly financial?: FinancialService;
+  readonly customerChannels?: CustomerChannelOptions;
+  readonly linkedWhatsApp?: Readonly<{
+    controller: LinkedWhatsAppController;
+    adminToken: string;
+  }>;
+  readonly twinProduction?: TwinProductionRuntime;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -93,6 +132,41 @@ const AgentDirectoryEntrySchema = Type.Object(
 const AgentDirectoryResponseSchema = Type.Object(
   {
     agents: Type.Array(AgentDirectoryEntrySchema),
+  },
+  { additionalProperties: false },
+);
+
+
+const HomeAssistantSchema = Type.Object(
+  {
+    role: Type.Union([Type.Literal("gwana"), Type.Literal("gwani")]),
+    characterId: Type.String(),
+    displayName: Type.String(),
+    description: Type.String(),
+    voiceLabel: Type.Union([Type.String(), Type.Null()]),
+    avatarUrl: Type.Union([Type.String(), Type.Null()]),
+    isAvailable: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
+const HomeRoomSchema = Type.Object(
+  {
+    roomId: Type.String(),
+    title: Type.String(),
+    description: Type.String(),
+    iconKey: Type.String(),
+    continuationLabel: Type.Union([Type.String(), Type.Null()]),
+    isAvailable: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
+const HomeResponseSchema = Type.Object(
+  {
+    assistants: Type.Array(HomeAssistantSchema),
+    rooms: Type.Array(HomeRoomSchema),
+    continuations: Type.Array(Type.Unknown()),
   },
   { additionalProperties: false },
 );
@@ -182,6 +256,41 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   const now = options.now ?? nowInstant;
   const checks = options.readinessChecks ?? [];
+
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof Error && error.message === "financial.auth.unauthorized") {
+      void reply.code(401).send({
+        error: {
+          code: "financial.auth.unauthorized",
+          message: "Authentication required",
+        },
+      });
+      return;
+    }
+    const statusCode =
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      typeof (error as { readonly statusCode?: unknown }).statusCode === "number"
+        ? (error as { readonly statusCode: number }).statusCode
+        : 500;
+    if (statusCode >= 400 && statusCode < 500) {
+      void reply.code(statusCode).send({
+        error: {
+          code: statusCode === 400 ? "gateway.invalid_request" : "gateway.request_rejected",
+          message: statusCode === 400 ? "Invalid request" : "Request rejected",
+        },
+      });
+      return;
+    }
+    request.log.error(error);
+    void reply.code(500).send({
+      error: {
+        code: "gateway.internal_error",
+        message: "Internal server error",
+      },
+    });
+  });
 
   app.addHook("onRequest", async (request, reply) => {
     const correlation = admitTelemetryCorrelation({
@@ -329,6 +438,114 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           })),
         ],
       }),
+    );
+
+    app.get(
+      "/home",
+      {
+        schema: {
+          response: { 200: HomeResponseSchema },
+        },
+      },
+      async (request) => {
+        const agents = await directory.list({
+          authorizationHeader: request.headers.authorization,
+        });
+        const support = agents.filter((agent) => agent.supportAgent);
+
+        const byRole = (
+          role: "gwana" | "gwani",
+        ) => {
+          const expectedName = role === "gwana" ? "gwana" : "gwani";
+          const expectedVoice = role === "gwana" ? "sulafat" : "bodi";
+          const agent =
+            support.find(
+              (item) => item.displayName.trim().toLowerCase() === expectedName,
+            ) ??
+            support.find(
+              (item) => item.voiceName?.trim().toLowerCase() === expectedVoice,
+            );
+          if (!agent) return null;
+          return {
+            role,
+            characterId: agent.characterId,
+            displayName: agent.displayName,
+            description: agent.about || agent.roleLabel,
+            voiceLabel: agent.voiceName,
+            avatarUrl: null,
+            isAvailable: agent.presence !== "offline",
+          } as const;
+        };
+
+        const assistants = [];
+        const gwana = byRole("gwana");
+        const gwani = byRole("gwani");
+        if (gwana !== null) assistants.push(gwana);
+        if (gwani !== null) assistants.push(gwani);
+
+        return {
+          assistants,
+          rooms: [
+            {
+              roomId: "room.internet-cafe",
+              title: "Internet Cafe",
+              description: "Data, airtime, bills, applications and documents",
+              iconKey: "internet_cafe",
+              continuationLabel: null,
+              isAvailable: true,
+            },
+            {
+              roomId: "room.study-center",
+              title: "Study Center",
+              description: "Lessons, homework help and exam preparation",
+              iconKey: "study",
+              continuationLabel: null,
+              isAvailable: true,
+            },
+            {
+              roomId: "room.story-radio",
+              title: "Story Radio",
+              description: "Serialized audio stories",
+              iconKey: "story_radio",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.work-business",
+              title: "Work & Business",
+              description: "Plans, proposals, reports and project work",
+              iconKey: "work",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.research-answers",
+              title: "Research & Answers",
+              description: "Research, comparisons and sourced answers",
+              iconKey: "research",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.news",
+              title: "News",
+              description: "Current sourced news and articles",
+              iconKey: "news",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.groups",
+              title: "Group Rooms",
+              description: "Shared rooms with people and AI",
+              iconKey: "groups",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+          ],
+          continuations: [],
+        };
+      },
     );
 
     app.put(
@@ -879,6 +1096,240 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
+  if (options.financial) {
+    const financial = options.financial;
+    const auth = (request: { headers: { authorization?: string | undefined } }) =>
+      request.headers.authorization;
+
+    app.get("/v1/financial/capabilities", async (request) =>
+      financial.capabilities({ authorizationHeader: auth(request) }));
+
+    app.get("/v1/financial/crypto/routes", async (request) => ({
+      routes: (await financial.listDepositRoutes({
+        authorizationHeader: auth(request),
+      })).map((route) => ({
+        providerCode: route.providerCode,
+        asset: route.asset,
+        network: route.network,
+      })),
+    }));
+
+    app.get("/v1/financial/crypto/conversion-routes", async (request) => ({
+      routes: (await financial.listConversionRoutes({
+        authorizationHeader: auth(request),
+      })).map((route) => ({
+        providerCode: route.providerCode,
+        asset: route.asset,
+        network: route.network,
+      })),
+    }));
+
+    app.get("/v1/financial/crypto/withdrawal-routes", async (request) => ({
+      routes: (await financial.listWithdrawalRoutes({
+        authorizationHeader: auth(request),
+      })).map((route) => ({
+        providerCode: route.providerCode,
+        asset: route.asset,
+        network: route.network,
+      })),
+    }));
+
+    app.post(
+      "/v1/financial/crypto/deposits",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createDeposit({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        providerCode: request.body.providerCode,
+        amount: request.body.amount,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/purchases",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        fiatAmount: Type.String({ minLength: 1, maxLength: 32 }),
+        fiatCurrency: Type.String({ minLength: 2, maxLength: 32 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createFiatPurchase({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        fiatAmount: request.body.fiatAmount,
+        fiatCurrency: request.body.fiatCurrency,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/purchases/:requestId/refresh",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request) => financial.refreshFiatPurchase({
+        authorizationHeader: auth(request),
+        requestId: request.params.requestId,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/quote",
+      { schema: { body: Type.Object({
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+        destinationAddress: Type.String({ minLength: 1, maxLength: 512 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.quoteWithdrawal({
+        authorizationHeader: auth(request),
+        providerCode: request.body.providerCode,
+        amount: request.body.amount,
+        destinationAddress: request.body.destinationAddress,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+        destinationAddress: Type.String({ minLength: 1, maxLength: 512 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createWithdrawal({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        providerCode: request.body.providerCode,
+        amount: request.body.amount,
+        destinationAddress: request.body.destinationAddress,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/:requestId/refresh",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request) => financial.refreshWithdrawal({
+        authorizationHeader: auth(request),
+        requestId: request.params.requestId,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/conversions/quote",
+      { schema: { body: Type.Object({
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        targetProviderCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.quoteConversion({
+        authorizationHeader: auth(request),
+        providerCode: request.body.providerCode,
+        targetProviderCode: request.body.targetProviderCode,
+        amount: request.body.amount,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/conversions",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        targetProviderCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createConversion({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        providerCode: request.body.providerCode,
+        targetProviderCode: request.body.targetProviderCode,
+        amount: request.body.amount,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/conversions/:requestId/refresh",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request) => financial.refreshConversion({
+        authorizationHeader: auth(request),
+        requestId: request.params.requestId,
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/balances/:providerCode",
+      { schema: { params: Type.Object({
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.readBalance({
+        authorizationHeader: auth(request),
+        providerCode: request.params.providerCode,
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/history",
+      { schema: { querystring: Type.Object({
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+      }, { additionalProperties: false }) } },
+      async (request) => ({
+        intents: await financial.listHistory({
+          authorizationHeader: auth(request),
+          ...(request.query.limit === undefined ? {} : { limit: request.query.limit }),
+        }),
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/intents/:requestId",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request, reply) => {
+        const intent = await financial.readIntent({
+          authorizationHeader: auth(request),
+          requestId: request.params.requestId,
+        });
+        if (!intent) {
+          reply.code(404);
+          return { error: "intent_not_found" };
+        }
+        return intent;
+      },
+    );
+
+    const nowPaymentsHeaders = Type.Object(
+      { "x-nowpayments-sig": Type.String({ minLength: 128, maxLength: 128 }) },
+      { additionalProperties: true },
+    );
+    app.post(
+      "/v1/financial/nowpayments/ipn",
+      { bodyLimit: 256_000, schema: { headers: nowPaymentsHeaders, body: Type.Unknown() } },
+      async (request, reply) => {
+        await financial.handleNowPaymentsIpn({
+          signature: request.headers["x-nowpayments-sig"],
+          payload: request.body,
+        });
+        reply.code(202);
+        return { accepted: true as const };
+      },
+    );
+    app.post(
+      "/v1/financial/nowpayments/payout-ipn",
+      { bodyLimit: 256_000, schema: { headers: nowPaymentsHeaders, body: Type.Unknown() } },
+      async (request, reply) => {
+        await financial.handleNowPaymentsPayoutIpn({
+          signature: request.headers["x-nowpayments-sig"],
+          payload: request.body,
+        });
+        reply.code(202);
+        return { accepted: true as const };
+      },
+    );
+  }
+
+  if (options.cloneOnboarding) {
+    const onboarding = options.cloneOnboarding;
+    app.register(async child => { await registerCloneOnboardingRoutes(child, onboarding); });
+  }
+
   registerAgentShellRoutes(app, {
     ...(options.agentShell ? { agentShell: options.agentShell } : {}),
     ...(options.liveVoiceTokens
@@ -886,6 +1337,41 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       : {}),
     ...(options.mobilePush ? { mobilePush: options.mobilePush } : {}),
   });
+
+  registerBillingRoutes(app, {
+    ...(options.billingCheckout ? { billingCheckout: options.billingCheckout } : {}),
+    ...(options.billingFinancial ? { billingFinancial: options.billingFinancial } : {}),
+    ...(options.billingWallet ? { billingWallet: options.billingWallet } : {}),
+  });
+
+  if (options.customerChannels) {
+    registerCustomerChannelRoutes(app, options.customerChannels);
+  }
+
+  if (options.linkedWhatsApp) {
+    registerLinkedWhatsAppAdminRoutes(app, options.linkedWhatsApp);
+  }
+
+  if (options.twinProduction) {
+    const twin = options.twinProduction;
+    registerTwinProfileRoutes(app, twin.twinProfile);
+    registerTwinDirectoryRoutes(app, twin.twinDirectory);
+    registerMyTwinProjectionRoutes(app, twin.myTwin);
+    registerTwinActivityRoutes(app, twin.twinActivity);
+    registerWalletProjectionRoutes(app, twin.wallet);
+    registerCreditTransferRoutes(app, twin.creditTransfer);
+    registerGiftRoutes(app, twin.gifts);
+    registerTwinAttributionRoutes(app, twin.twinAttribution);
+    registerCommissionPolicyAdminRoutes(app, twin.commissionAdmin);
+    registerProviderValuationAdminRoutes(app, twin.providerValuationAdmin);
+    registerPaidVoiceRoutes(app, twin.paidVoice);
+    registerPaidVoiceSettlementRoutes(app, twin.voiceAdmissionGate);
+    registerPaidFeatureTrialAdminRoutes(app, twin.paidFeatureTrialAdmin);
+    registerOwnerAccessRoutes(app, twin.ownerAccess);
+    registerOwnerAccessDisputeAdminRoutes(app, twin.ownerAccessDisputes);
+    registerOwnerAccessOfferingRoutes(app, twin.ownerAccessOffering);
+    registerTwinSafetyRoutes(app, twin.twinSafety);
+  }
 
   app.get(
     "/healthz",

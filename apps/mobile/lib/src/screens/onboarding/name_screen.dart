@@ -91,7 +91,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
         children: [
           TextField(
             controller: _name,
-            autofocus: true,
+            autofocus: false,
             enabled: !_saving,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,

@@ -1,0 +1,202 @@
+import { describe, expect, it, vi } from "vitest";
+import { createCanonicalId } from "@masanawa/contracts";
+import type {
+  CustomerChannelRepository,
+  PlatformSessionRepository,
+} from "@masanawa/security";
+import type {
+  PlatformAgentProfileRepository,
+  UserAgentPreferenceRepository,
+} from "@masanawa/agents";
+import type { AgentConversationService } from "./agent_conversation_contract.js";
+import { createCustomerChannelBridge } from "./customer_channel_bridge.js";
+
+describe("Customer channel bridge", () => {
+  it("does not re-execute a provider retry whose message id already completed", async () => {
+    const conversationOpen = vi.fn();
+    const channels = {
+      async claimMessage() {
+        return { state: "completed" as const, reply: "Stored reply" };
+      },
+    } as unknown as CustomerChannelRepository;
+    const bridge = createCustomerChannelBridge({
+      tenantId: createCanonicalId("tenant"),
+      sessions: {} as PlatformSessionRepository,
+      channels,
+      platformProfiles: {} as PlatformAgentProfileRepository,
+      userPreferences: {} as UserAgentPreferenceRepository,
+      conversation: { open: conversationOpen } as unknown as AgentConversationService,
+    });
+
+    const result = await bridge.handle({
+      channel: "whatsapp",
+      messageId: "wamid.retry",
+      externalUserId: "2348012345678",
+      chatId: "2348012345678",
+      phone: "2348012345678",
+      text: "buy airtime",
+    });
+
+    expect(result.duplicate).toBe(true);
+    expect(result.reply).toBe("Stored reply");
+    expect(result.shouldDeliver).toBe(true);
+    expect(conversationOpen).not.toHaveBeenCalled();
+  });
+
+  it("does not redeliver a provider retry after outbound delivery was acknowledged", async () => {
+    const conversationOpen = vi.fn();
+    const channels = {
+      async claimMessage() {
+        return { state: "delivered" as const, reply: "Stored reply" };
+      },
+    } as unknown as CustomerChannelRepository;
+    const bridge = createCustomerChannelBridge({
+      tenantId: createCanonicalId("tenant"),
+      sessions: {} as PlatformSessionRepository,
+      channels,
+      platformProfiles: {} as PlatformAgentProfileRepository,
+      conversation: { open: conversationOpen } as unknown as AgentConversationService,
+    });
+
+    const result = await bridge.handle({
+      channel: "telegram",
+      messageId: "901",
+      externalUserId: "12345",
+      chatId: "12345",
+      text: "hello",
+    });
+
+    expect(result.duplicate).toBe(true);
+    expect(result.shouldDeliver).toBe(false);
+    expect(conversationOpen).not.toHaveBeenCalled();
+  });
+
+  it("records outbound delivery acknowledgement separately from Agent completion", async () => {
+    const markDelivered = vi.fn(async (_input: unknown) => undefined);
+    const channels = { markDelivered } as unknown as CustomerChannelRepository;
+    const bridge = createCustomerChannelBridge({
+      tenantId: createCanonicalId("tenant"),
+      sessions: {} as PlatformSessionRepository,
+      channels,
+      platformProfiles: {} as PlatformAgentProfileRepository,
+      conversation: {} as AgentConversationService,
+    });
+
+    await bridge.delivered({
+      channel: "whatsapp",
+      messageId: "wamid.done",
+    });
+
+    expect(markDelivered).toHaveBeenCalledTimes(1);
+    expect(markDelivered.mock.calls[0]![0]).toMatchObject({
+      channel: "whatsapp",
+      messageId: "wamid.done",
+    });
+  });
+  it("creates a canonical Masanawa customer on first WhatsApp contact and routes directly to Gwani", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const profile = {
+      tenantId,
+      userId,
+      name: "WhatsApp customer",
+      email: null,
+      phone: "+2348012345678",
+      locale: "ng",
+      createdAt: "2026-10-07T00:00:00.000Z",
+    };
+    const createProfile = vi.fn(async () => profile);
+    const issueSession = vi.fn(async () => undefined);
+    const revokeAccess = vi.fn(async () => undefined);
+    const sessions = {
+      async resolveProfile() {
+        return null;
+      },
+      createProfile,
+      issueSession,
+      revokeAccess,
+    } as unknown as PlatformSessionRepository;
+
+    let link: any = null;
+    const channels = {
+      async claimMessage() {
+        return { state: "claimed" as const };
+      },
+      async readLink() {
+        return null;
+      },
+      async putLink(value: unknown) {
+        link = value;
+      },
+      async setCharacterSession(value: unknown) {
+        link = { ...link, ...(value as object) };
+      },
+      async completeMessage() {},
+      async failMessage() {},
+    } as unknown as CustomerChannelRepository;
+
+    const platformProfiles = {
+      async listSupportAgents() {
+        return [{
+          characterId,
+          supportAgent: true,
+          defaultForNewUsers: true,
+          voiceName: "Bodi",
+        }];
+      },
+    } as unknown as PlatformAgentProfileRepository;
+
+    const conversation = {
+      async open() {
+        return { characterSessionId: createCanonicalId("character-session") };
+      },
+      async turn() {
+        return {
+          reply: "Welcome to Masanawa. How can I help?",
+          agentRunId: createCanonicalId("agent-run"),
+          parts: [],
+        };
+      },
+    } as unknown as AgentConversationService;
+
+    const bridge = createCustomerChannelBridge({
+      tenantId,
+      sessions,
+      channels,
+      platformProfiles,
+      conversation,
+    });
+
+    const result = await bridge.handle({
+      channel: "whatsapp",
+      messageId: "wamid.first",
+      externalUserId: "+2348012345678",
+      chatId: "2348012345678@s.whatsapp.net",
+      phone: "+2348012345678",
+      text: "Hello",
+    });
+
+    expect(createProfile).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId,
+      channel: "sms",
+      identifier: "+2348012345678",
+      name: "WhatsApp customer",
+    }));
+    expect(link).toMatchObject({
+      channel: "whatsapp",
+      externalUserId: "+2348012345678",
+      userId,
+      characterId,
+    });
+    expect(issueSession).toHaveBeenCalledTimes(1);
+    expect(revokeAccess).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      handled: true,
+      duplicate: false,
+      reply: "Welcome to Masanawa. How can I help?",
+      shouldDeliver: true,
+    });
+  });
+
+});

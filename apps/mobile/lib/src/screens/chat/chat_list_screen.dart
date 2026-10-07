@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../chat/chat_format.dart';
 import '../../chat/message_parts.dart';
+import '../../finance/crypto_wallet_screen.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
@@ -360,6 +361,17 @@ class ChatListScreen extends ConsumerWidget {
               onPressed: () => _showArchived(context, ref, directory),
             ),
           IconButton(
+            tooltip: 'Wallet',
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const CryptoWalletScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
             tooltip: 'Agents',
             icon: const Icon(Icons.groups_outlined),
             onPressed: () => context.push('/agents'),
@@ -530,7 +542,7 @@ class _EmptyChats extends StatelessWidget {
             Icon(Icons.mic_none_outlined, size: 58, color: u.brand),
             const SizedBox(height: 18),
             Text(
-              loading
+              loading && !hasAgents
                   ? 'Loading your agents…'
                   : error ??
                         (hasAgents
@@ -550,7 +562,7 @@ class _EmptyChats extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-              onPressed: loading ? null : onStart,
+              onPressed: loading && !hasAgents ? null : onStart,
               icon: const Icon(Icons.groups_outlined),
               label: Text(hasAgents ? 'Choose an agent' : 'View agents'),
             ),

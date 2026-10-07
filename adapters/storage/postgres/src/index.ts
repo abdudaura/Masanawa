@@ -17,13 +17,17 @@ export * from "./agents/configuration.js";
 export * from "./agents/runs.js";
 
 export * from "./commerce/repository.js";
+export * from "./commerce/crypto-repository.js";
+export * from "./commerce/crypto-chat.js";
 export * from "./skills/guides.js";
+export * from "./skills/teaching.js";
 export * from "./identity/personal_clone.js";
 export * from "./identity/relationships.js";
 export * from "./skills/distribution.js";
 export * from "./identity/ownerships.js";
-export * from "./agents/context.js";
-export * from "./agents/selection.js";
 
 export * from "./agents/mobile-shell.js";
-
+export * from "./commerce/billing-funding.js";
+export * from "./commerce/billing-runtime.js";
+export * from "./commerce/twin-economy.js";
+export * from "./commerce/ngn-wallet.js";

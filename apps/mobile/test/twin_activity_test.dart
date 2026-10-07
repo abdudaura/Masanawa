@@ -32,6 +32,34 @@ void main() {
     expect(view.items.single.amountCredits, 200);
   });
 
+  test('parses owner request reference for Activity actions', () {
+    final view = TwinActivityView.fromJson({
+      'hasTwin': true,
+      'characterId': 'character-1',
+      'summary': {
+        'visitors': 0,
+        'conversations': 0,
+        'earningsCredits': 0,
+        'pendingOwnerRequests': 1,
+      },
+      'items': [
+        {
+          'eventId': 'event-owner-1',
+          'referenceId': 'request-owner-1',
+          'kind': 'owner-request',
+          'status': 'pending',
+          'occurredAt': '2026-10-05T08:00:00Z',
+          'amountCredits': null,
+          'title': 'Talk-to-owner request',
+          'detail': 'Someone requested a paid conversation with you.',
+        },
+      ],
+    });
+
+    expect(view.items.single.kind, TwinActivityKind.ownerRequest);
+    expect(view.items.single.referenceId, 'request-owner-1');
+  });
+
   test('rejects unknown activity kinds instead of silently guessing', () {
     expect(
       () => TwinActivityView.fromJson({

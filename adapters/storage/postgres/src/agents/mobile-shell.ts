@@ -67,7 +67,7 @@ function action(row: any): MobileShellActionRecord {
 
 export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepository {
   return Object.freeze({
-    async claimTurn(input) {
+    async claimTurn(input: Parameters<MobileShellRepository["claimTurn"]>[0]) {
       return withTransaction(pool, async client => {
         const result = await client.query(
           `INSERT INTO agents.mobile_turn_commands(
@@ -101,7 +101,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       });
     },
 
-    async completeTurn(input) {
+    async completeTurn(input: Parameters<MobileShellRepository["completeTurn"]>[0]) {
       const result = await pool.query(
         `UPDATE agents.mobile_turn_commands
             SET state='completed', agent_run_id=$5, reply=$6, parts=$7::jsonb,
@@ -127,7 +127,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       return command(result.rows[0]);
     },
 
-    async failTurn(input) {
+    async failTurn(input: Parameters<MobileShellRepository["failTurn"]>[0]) {
       const result = await pool.query(
         `UPDATE agents.mobile_turn_commands
             SET state='failed', agent_run_id=COALESCE(agent_run_id,$5),
@@ -153,7 +153,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       return command(result.rows[0]);
     },
 
-    async readTurn(input) {
+    async readTurn(input: Parameters<MobileShellRepository["readTurn"]>[0]) {
       const result = await pool.query(
         `SELECT * FROM agents.mobile_turn_commands
           WHERE tenant_id=$1 AND user_id=$2 AND character_id=$3
@@ -163,7 +163,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       return result.rows[0] ? command(result.rows[0]) : null;
     },
 
-    async listHistory(input) {
+    async listHistory(input: Parameters<MobileShellRepository["listHistory"]>[0]) {
       if (!Number.isInteger(input.limit) || input.limit < 1 || input.limit > 200) {
         throw new RangeError("history limit out of range");
       }
@@ -193,7 +193,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       return Object.freeze(messages);
     },
 
-    async appendEvent(input) {
+    async appendEvent(input: Parameters<MobileShellRepository["appendEvent"]>[0]) {
       const result = await pool.query(
         `INSERT INTO agents.mobile_shell_events(
            tenant_id,user_id,character_id,relationship_id,character_session_id,event_type,payload
@@ -204,7 +204,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       return event(result.rows[0]);
     },
 
-    async listEvents(input) {
+    async listEvents(input: Parameters<MobileShellRepository["listEvents"]>[0]) {
       if (!Number.isInteger(input.limit) || input.limit < 1 || input.limit > 200) {
         throw new RangeError("event limit out of range");
       }
@@ -220,7 +220,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       return Object.freeze(result.rows.map(event));
     },
 
-    async claimAction(input) {
+    async claimAction(input: Parameters<MobileShellRepository["claimAction"]>[0]) {
       return withTransaction(pool, async client => {
         const result = await client.query(
           `INSERT INTO agents.mobile_shell_actions(
@@ -249,7 +249,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       });
     },
 
-    async settleAction(input) {
+    async settleAction(input: Parameters<MobileShellRepository["settleAction"]>[0]) {
       const result = await pool.query(
         `UPDATE agents.mobile_shell_actions
             SET state=$6, result=$7::jsonb, updated_at=clock_timestamp()
@@ -274,7 +274,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       return action(result.rows[0]);
     },
 
-    async readAction(input) {
+    async readAction(input: Parameters<MobileShellRepository["readAction"]>[0]) {
       const result = await pool.query(
         `SELECT * FROM agents.mobile_shell_actions
           WHERE tenant_id=$1 AND user_id=$2 AND character_id=$3 AND relationship_id=$4
@@ -290,7 +290,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
 
 export function createPostgresMobilePushRepository(pool: Pool): MobilePushRepository {
   return Object.freeze({
-    async register(input) {
+    async register(input: Parameters<MobilePushRepository["register"]>[0]) {
       if (
         input.installationId.trim().length < 16 ||
         input.installationId.length > 128 ||
@@ -320,14 +320,14 @@ export function createPostgresMobilePushRepository(pool: Pool): MobilePushReposi
         updatedAt: toInstant(row.updated_at),
       });
     },
-    async unregister(input) {
+    async unregister(input: Parameters<MobilePushRepository["unregister"]>[0]) {
       await pool.query(
         `DELETE FROM agents.mobile_push_registrations
           WHERE tenant_id=$1 AND user_id=$2 AND installation_id=$3`,
         [input.tenantId,input.userId,input.installationId],
       );
     },
-    async list(input) {
+    async list(input: Parameters<MobilePushRepository["list"]>[0]) {
       const result = await pool.query(
         `SELECT * FROM agents.mobile_push_registrations
           WHERE tenant_id=$1 AND user_id=$2
@@ -352,7 +352,7 @@ export function createPostgresMobileAgentActivityRepository(
   pool: Pool,
 ): MobileAgentActivityRepository {
   return Object.freeze({
-    async setPresence(input) {
+    async setPresence(input: Parameters<MobileAgentActivityRepository["setPresence"]>[0]) {
       if (
         !Number.isSafeInteger(input.durationMs) ||
         input.durationMs < 5_000 ||
@@ -374,7 +374,7 @@ export function createPostgresMobileAgentActivityRepository(
       );
     },
 
-    async list(input) {
+    async list(input: Parameters<MobileAgentActivityRepository["list"]>[0]) {
       if (input.characterIds.length === 0) return Object.freeze([]);
       const result = await pool.query(
         `WITH wanted AS (

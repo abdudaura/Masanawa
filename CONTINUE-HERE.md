@@ -1,5 +1,12 @@
 # Continue Here
 
+## Canonical branch rule — 2026-10-07
+
+**`main` is the only canonical product branch for local pulls/builds after the current consolidation lands.**
+Work/release branches are implementation history and must never be described as “latest” to a local developer.
+New work may use isolated branches, but it must merge back to `main`; local APK/build instructions target
+`origin/main` unless an explicit temporary development task says otherwise.
+
 ## Five-minute stale-claim lease — 2026-10-06
 
 **Mandatory for every parallel window.** Read `docs/MULTI-WINDOW-WORK.md` and
@@ -16,6 +23,7 @@ check immediately before editing, but stale ownership itself is not a blocker.
 At the 2026-10-06 16:28 WAT audit, only PR #295 and PR #136 had activity inside the
 five-minute window; the other 98 open PRs were cleared as exclusive ownership blockers.
 Always re-check live timestamps because leases can reactivate.
+
 
 
 ## Twin economy transformation checkpoint — 2026-10-05

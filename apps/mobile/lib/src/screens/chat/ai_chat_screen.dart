@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -11,8 +12,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mime/mime.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,6 +19,7 @@ import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
+import '../../chat/cafe_suggestions.dart';
 import '../../chat/message_parts.dart';
 import '../../chat/message_parts_view.dart';
 import '../../chat/shell_document.dart';
@@ -31,14 +31,40 @@ import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
+import '../../state/my_twin_state.dart';
+import '../../state/wallet_state.dart';
+import '../../voice/paid_voice.dart';
+import '../../voice/paid_voice_state.dart';
+import '../../owner_access/owner_access.dart';
+import '../../owner_access/owner_access_state.dart';
+import '../../safety/twin_safety.dart';
+import '../../safety/twin_safety_state.dart';
+import '../../twin/twin_teaching.dart';
 import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
+enum AiChatEntryMode { chat, teach, study, liveTalk, liveVoice, cafe }
+
 class AiChatScreen extends ConsumerStatefulWidget {
-  const AiChatScreen({super.key, required this.characterId});
+  const AiChatScreen({
+    super.key,
+    required this.characterId,
+    this.entryMode = AiChatEntryMode.chat,
+    this.initialPrompt,
+    this.twinSetup = false,
+    this.twinGender,
+    this.twinAge,
+    this.twinPhotoPath,
+  });
 
   final String characterId;
+  final AiChatEntryMode entryMode;
+  final String? initialPrompt;
+  final bool twinSetup;
+  final String? twinGender;
+  final int? twinAge;
+  final String? twinPhotoPath;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -48,17 +74,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
   final _imagePicker = ImagePicker();
-  final _recorder = AudioRecorder();
   bool _showEmoji = false;
   bool _hasText = false;
-  bool _recording = false;
-  bool _recordingPaused = false;
-  bool _recordingLocked = false;
-  int _recSeconds = 0;
-  Timer? _recTimer;
-  Timer? _ampTimer;
-  final List<double> _amplitudes = [];
-  ChatAttachment? _pendingVoice;
   List<ChatAttachment> _pendingAttachments = const [];
   AiChatMessage? _replyingTo;
   bool _showSearch = false;
@@ -67,8 +84,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   bool _nearBottom = true;
   int _newBelow = 0;
   Timer? _scrollPersistTimer;
+  Timer? _walletRefreshTimer;
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
+  bool _initialEntryHandled = false;
+  bool _finishingTwin = false;
+  Map<String, dynamic> _twinInterviewFacts = <String, dynamic>{};
+  String? _cafeCategory;
+  LiveVoiceSession? _inlineVoiceSession;
+  StreamSubscription<String>? _inlineTranscriptSub;
+  StreamSubscription<String>? _inlineInputTranscriptSub;
+  StreamSubscription<LiveVoiceState>? _inlineVoiceStateSub;
+  StreamSubscription<void>? _inlineTurnSub;
+  PaidVoiceAdmission? _inlinePaidAdmission;
+  AgentShellTransport? _inlineShellTransport;
+  String? _inlineVoiceCharacterId;
+  String _inlineTranscript = '';
+  String _inlineTranscriptHistory = '';
+  String _inlineCurrentTranscript = '';
+  String _hiddenTwinInput = '';
+  Future<void> _twinFactExtraction = Future<void>.value();
+  LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
+  bool _inlineVoiceClosing = false;
 
   @override
   void initState() {
@@ -96,7 +133,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             .setScrollOffset(widget.characterId, _scroll.offset);
       });
     });
+    _walletRefreshTimer = Timer.periodic(const Duration(seconds: 12), (_) {
+      if (!mounted) return;
+      unawaited(ref.read(walletProvider.notifier).refresh());
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(ref.read(walletProvider.notifier).refresh());
       final controller = ref.read(aiChatProvider.notifier);
       controller.openThread(widget.characterId);
       final thread = controller.threadOf(widget.characterId);
@@ -111,9 +153,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             for (final item in thread.draftAttachments)
               if (File(item.path).existsSync()) item,
           ];
-          final voice = thread.draftVoice;
-          _pendingVoice =
-              voice != null && File(voice.path).existsSync() ? voice : null;
+          if (widget.twinSetup) {
+            _twinInterviewFacts =
+                Map<String, dynamic>.from(thread.twinInterviewFacts);
+          }
         });
       }
       final offset = thread.scrollOffset;
@@ -133,10 +176,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   void dispose() {
-    _recTimer?.cancel();
-    _ampTimer?.cancel();
     _scrollPersistTimer?.cancel();
-    _recorder.dispose();
+    _walletRefreshTimer?.cancel();
+    _inlineTranscriptSub?.cancel();
+    _inlineInputTranscriptSub?.cancel();
+    _inlineVoiceStateSub?.cancel();
+    _inlineTurnSub?.cancel();
+    unawaited(_disposeInlineVoice());
     _input.dispose();
     _search.dispose();
     _scroll.dispose();
@@ -161,6 +207,208 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final attachments = _pendingAttachments;
     if (text.trim().isEmpty && attachments.isEmpty) return;
     final reply = _replyingTo;
+    if (widget.entryMode == AiChatEntryMode.study &&
+        attachments.isEmpty &&
+        text.trim().isNotEmpty) {
+      final visible = text.trim();
+      _input.clear();
+      ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
+      setState(() {
+        _showEmoji = false;
+        _replyingTo = null;
+      });
+      unawaited(
+        ref.read(aiChatProvider.notifier).sendText(
+              widget.characterId,
+              visible,
+              replyToId: reply?.id,
+              replyPreview: reply?.text,
+              transportPrompt: '<masanawa_study>$visible',
+            ),
+      );
+      return;
+    }
+
+    if (widget.twinSetup &&
+        attachments.isEmpty &&
+        text.trim().isNotEmpty) {
+      unawaited(_sendTwinInterviewText(text.trim(), reply));
+      _input.clear();
+      ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
+      setState(() {
+        _showEmoji = false;
+        _replyingTo = null;
+      });
+      return;
+    }
+    if (widget.entryMode == AiChatEntryMode.teach &&
+        attachments.isEmpty &&
+        text.trim().isNotEmpty) {
+      unawaited(_teachThenSend(text, reply));
+      return;
+    }
+    _commitTextSend(text, attachments, reply);
+  }
+
+  void _sendCafeSuggestion(CafeSuggestion suggestion) {
+    if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return;
+    setState(() => _cafeCategory = suggestion.key);
+    unawaited(
+      ref.read(aiChatProvider.notifier).sendText(
+            widget.characterId,
+            suggestion.message,
+          ),
+    );
+  }
+
+  bool _twinFactsReadyForCompletion(Map<String, dynamic> facts) {
+    bool has(String key) {
+      final value = facts[key];
+      if (value is String) return value.trim().isNotEmpty;
+      if (value is List) return value.any(
+        (item) => item is String && item.trim().isNotEmpty,
+      );
+      return value != null;
+    }
+
+    final hasBehavior = has('personality');
+    final hasBoundaries = has('boundaries');
+    final hasPurpose = has('expertise') || has('helpStyle');
+    final hasInteractionStyle =
+        has('greetingStyle') ||
+        has('formality') ||
+        has('humor') ||
+        has('decisionStyle') ||
+        has('audience');
+    return hasBehavior && hasBoundaries && hasPurpose && hasInteractionStyle;
+  }
+
+  void _maybeAutoFinishTwin(Map<String, dynamic> facts) {
+    if (!widget.twinSetup ||
+        _finishingTwin ||
+        !_twinFactsReadyForCompletion(facts) ||
+        !mounted) {
+      return;
+    }
+    final guide = ref.read(agentDirectoryProvider).find(widget.characterId);
+    if (guide == null) return;
+    unawaited(_finishTwinSetup(guide));
+  }
+
+  Future<void> _sendTwinInterviewText(
+    String text,
+    AiChatMessage? reply,
+  ) async {
+    final ctl = ref.read(aiChatProvider.notifier);
+    try {
+      await ctl.sendText(
+        widget.characterId,
+        text,
+        replyToId: reply?.id,
+        replyPreview: reply == null
+            ? null
+            : (reply.text.isNotEmpty ? reply.text : 'Gwani'),
+        transportPrompt: ctl.twinInterviewTransportPrompt(
+          userAnswer: text,
+          facts: _twinInterviewFacts,
+        ),
+      );
+      final next = await ctl.extractTwinInterviewText(
+        characterId: widget.characterId,
+        userAnswer: text,
+        facts: _twinInterviewFacts,
+      );
+      if (!mounted) return;
+      setState(() => _twinInterviewFacts = next);
+      ctl.setTwinInterviewFacts(widget.characterId, next);
+      _maybeAutoFinishTwin(next);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'I could not save that Twin setup answer. Please say it again.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _teachThenSend(
+    String text,
+    AiChatMessage? reply,
+  ) async {
+    final ownedTwin = await ref.read(myTwinProvider.future);
+    if (!mounted) return;
+    if (ownedTwin?.characterId != widget.characterId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Teach mode is available only in your own Twin chat.'),
+        ),
+      );
+      return;
+    }
+    final command = interpretTwinTeaching(text);
+    if (command != null) {
+      try {
+        final transport = ref.read(twinProfileTransportProvider);
+        final preview = await transport.previewCustomization(command.patch);
+        if (!mounted) return;
+        var confirmed = true;
+        if (preview.requiresConfirmation) {
+          confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Confirm standing change'),
+                  content: Text(
+                    command.summary +
+                        '. This changes how people can find your Twin until you change it again.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
+        }
+        if (!confirmed) return;
+        await transport.applyCustomization(
+          preview: preview,
+          confirmed: confirmed,
+        );
+        await ref.read(myTwinProvider.notifier).refresh();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(command.summary + '.')),
+        );
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'I could not save that Twin update. Your message was not sent; please try again.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    if (!mounted) return;
+    _commitTextSend(text, const [], reply);
+  }
+
+  void _commitTextSend(
+    String text,
+    List<ChatAttachment> attachments,
+    AiChatMessage? reply,
+  ) {
     _input.clear();
     final ctl = ref.read(aiChatProvider.notifier);
     ctl.setDraft(widget.characterId, '');
@@ -182,8 +430,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               : (reply.text.isNotEmpty
                   ? reply.text
                   : reply.allAttachments.isNotEmpty
-                  ? reply.allAttachments.first.label
-                  : 'Message'),
+                      ? reply.allAttachments.first.label
+                      : 'Message'),
         ),
       );
       return;
@@ -198,12 +446,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             : (reply.text.isNotEmpty
                 ? reply.text
                 : reply.allAttachments.isNotEmpty
-                ? reply.allAttachments.first.label
-                : 'Message'),
+                    ? reply.allAttachments.first.label
+                    : 'Message'),
       ),
     );
   }
-
   void _stageAttachments(List<ChatAttachment> attachments) {
     if (attachments.isEmpty) return;
     final merged = [
@@ -263,6 +510,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   void _openAttachSheet() {
     FocusScope.of(context).unfocus();
+    final u = context.masanawa;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -278,7 +526,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 // Token roles: brand → doc, verified → gallery, warning → camera.
                 _AttachOption(
                   icon: Icons.insert_drive_file,
-                  color: const Color(0xFF047857),
+                  color: u.success,
                   label: 'Document',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -287,7 +535,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.photo,
-                  color: const Color(0xFF1D4ED8),
+                  color: u.brand,
                   label: 'Gallery',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -296,7 +544,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.camera_alt,
-                  color: const Color(0xFFD97706),
+                  color: u.warning,
                   label: 'Camera',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -305,7 +553,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.videocam_outlined,
-                  color: const Color(0xFF7C3AED),
+                  color: u.brandStrong,
                   label: 'Video',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -431,212 +679,139 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
-  // ---- Voice notes ---------------------------------------------------------
+  Future<void> _finishTwinSetup(AgentDirectoryEntry guide) async {
+    if (_finishingTwin) return;
+    final gender = widget.twinGender;
+    final age = widget.twinAge;
+    if (gender == null || age == null) return;
 
-  Future<void> _toggleRecording() async {
-    if (_recording) {
-      await _stopRecording(send: true);
-      return;
-    }
-    await _startRecording();
-  }
-
-  Future<void> _startRecording() async {
-    if (_recording) return;
-    if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
-      return;
-    }
+    setState(() => _finishingTwin = true);
     try {
-      await _activeVoiceBubble?._pauseFromAnotherBubble();
-      final session = await AudioSession.instance;
-      await session.configure(
-        AudioSessionConfiguration(
-          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-          avAudioSessionCategoryOptions:
-              AVAudioSessionCategoryOptions.allowBluetooth,
-          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
-          androidAudioAttributes: const AndroidAudioAttributes(
-            contentType: AndroidAudioContentType.speech,
-            usage: AndroidAudioUsage.voiceCommunication,
-          ),
-          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
-        ),
-      );
-      final allowed = await _recorder.hasPermission();
-      if (!allowed) {
-        if (mounted) _comingSoon('Microphone access');
-        return;
+      if (_inlineVoiceSession != null) {
+        await _stopInlineLiveVoice(outcome: 'completed');
       }
-      final dir = await getTemporaryDirectory();
-      final path =
-          '${dir.path}/masanawa_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
-      await _recorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 64000,
-          sampleRate: 16000,
-          numChannels: 1,
-        ),
-        path: path,
+      _consumeHiddenTwinInput();
+      await _twinFactExtraction;
+      if (!mounted) return;
+      final chat = ref.read(aiChatProvider.notifier);
+      final summary = await chat.summarizeTwinInterview(
+        widget.characterId,
+        _twinInterviewFacts,
+      );
+      final session = ref.read(sessionProvider);
+      if (session is! SessionSignedIn) {
+        throw StateError('Sign in is required');
+      }
+      final ownerName = session.user.name.trim();
+      final photoPath = widget.twinPhotoPath?.trim();
+      if (photoPath == null || photoPath.isEmpty) {
+        throw StateError('Twin photo is missing');
+      }
+      final photo = File(photoPath);
+      final bytes = await photo.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 4 * 1024 * 1024) {
+        throw StateError('Twin photo is too large');
+      }
+      final mimeType = lookupMimeType(
+            photoPath,
+            headerBytes: bytes.take(16).toList(),
+          ) ??
+          'image/jpeg';
+      if (!{'image/jpeg', 'image/png', 'image/webp'}.contains(mimeType)) {
+        throw StateError('Twin photo format is unsupported');
+      }
+      final result = await ref.read(creatorCloneTransportProvider).create(
+            displayName: ownerName.isEmpty ? 'My Twin' : '$ownerName Twin',
+            biography: summary['biography'] as String,
+            gender: gender,
+            age: age,
+            avatarBase64: base64Encode(bytes),
+            avatarMimeType: mimeType,
+            personality: List<String>.from(summary['personality'] as List),
+            expertise: List<String>.from(summary['expertise'] as List),
+          );
+      await ref.read(agentDirectoryProvider.notifier).refresh();
+      await ref.read(myTwinProvider.notifier).refresh();
+      chat.setTwinInterviewFacts(widget.characterId, const <String, dynamic>{});
+      if (mounted) {
+        setState(() => _twinInterviewFacts = <String, dynamic>{});
+      }
+      await chat.announceTwinReady(
+        guide.characterId,
+        displayName: result.displayName,
+        publicUrl: result.publicUrl,
       );
       if (!mounted) return;
-      setState(() {
-        _recording = true;
-        _recordingPaused = false;
-        _recordingLocked = false;
-        _pendingVoice = null;
-        _recSeconds = 0;
-        _amplitudes.clear();
-        _showEmoji = false;
-      });
-      ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
-      FocusScope.of(context).unfocus();
-      _recTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted && !_recordingPaused) setState(() => _recSeconds++);
-      });
-      _ampTimer = Timer.periodic(const Duration(milliseconds: 140), (_) async {
-        if (!_recording || _recordingPaused) return;
-        try {
-          final amp = await _recorder.getAmplitude();
-          if (!mounted) return;
-          setState(() {
-            final normalized =
-                ((amp.current + 55) / 55).clamp(0.08, 1.0).toDouble();
-            _amplitudes.add(normalized);
-            if (_amplitudes.length > 42) _amplitudes.removeAt(0);
-          });
-        } catch (_) {}
-      });
+      final link = result.publicUrl;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 52,
+                  color: context.masanawa.brand,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Your Twin is ready',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(sheetContext).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  link == null || link.isEmpty
+                      ? 'Gwani will tell you how to use your Twin. The public link is still syncing.'
+                      : 'Share this link so anyone can talk to your Twin:',
+                  textAlign: TextAlign.center,
+                ),
+                if (link != null && link.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  SelectableText(
+                    link,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: link));
+                      if (sheetContext.mounted) {
+                        ScaffoldMessenger.of(sheetContext).showSnackBar(
+                          const SnackBar(content: Text('Twin link copied')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.copy_rounded),
+                    label: const Text('Copy Twin link'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+      if (mounted) context.go('/my-twin');
     } catch (_) {
-      if (mounted) _comingSoon('Voice notes');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'I could not finish the Twin yet. Keep this chat and try again.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _finishingTwin = false);
     }
-  }
-
-  Future<void> _onMicHoldStart(LongPressStartDetails _) async {
-    await _startRecording();
-  }
-
-  Future<void> _onMicHoldMove(LongPressMoveUpdateDetails details) async {
-    if (!_recording || _recordingLocked) return;
-    final offset = details.offsetFromOrigin;
-    if (offset.dx < -72) {
-      await _stopRecording(send: false);
-      return;
-    }
-    if (offset.dy < -72 && mounted) {
-      setState(() => _recordingLocked = true);
-    }
-  }
-
-  Future<void> _onMicHoldEnd(LongPressEndDetails _) async {
-    if (!_recording || _recordingLocked) return;
-    await _stopRecording(send: true);
-  }
-
-  Future<void> _stopRecording({required bool send}) async {
-    _recTimer?.cancel();
-    _ampTimer?.cancel();
-    String? path;
-    try {
-      path = await _recorder.stop();
-    } catch (_) {
-      path = null;
-    }
-    final seconds = _recSeconds;
-    setState(() {
-      _recording = false;
-      _recSeconds = 0;
-    });
-    if (!send) {
-      if (path != null) {
-        try {
-          await File(path).delete();
-        } catch (_) {}
-      }
-      return;
-    }
-    if (path == null || path.isEmpty) return;
-    final attachment = ChatAttachment(
-      kind: 'voice',
-      path: path!,
-      durationMs: seconds * 1000,
-      waveform: _compactWaveform(_amplitudes),
-    );
-    setState(() {
-      _pendingVoice = attachment;
-    });
-    ref
-        .read(aiChatProvider.notifier)
-        .setDraftVoice(widget.characterId, attachment);
-  }
-
-  Future<void> _togglePauseRecording() async {
-    if (!_recording) return;
-    try {
-      if (_recordingPaused) {
-        await _recorder.resume();
-      } else {
-        await _recorder.pause();
-      }
-      if (mounted) setState(() => _recordingPaused = !_recordingPaused);
-    } catch (_) {}
-  }
-
-  Future<void> _sendPendingVoice() async {
-    final pending = _pendingVoice;
-    if (pending == null) return;
-    final reply = _replyingTo;
-    setState(() {
-      _pendingVoice = null;
-      _replyingTo = null;
-    });
-    final ctl = ref.read(aiChatProvider.notifier);
-    ctl.setDraftVoice(widget.characterId, null);
-    await ctl.sendAttachment(
-      widget.characterId,
-      pending,
-      replyToId: reply?.id,
-      replyPreview: reply == null
-          ? null
-          : (reply.text.isNotEmpty
-              ? reply.text
-              : reply.allAttachments.isNotEmpty
-              ? reply.allAttachments.first.label
-              : 'Message'),
-    );
-  }
-
-  Future<void> _deletePendingVoice() async {
-    final pending = _pendingVoice;
-    setState(() => _pendingVoice = null);
-    ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
-    if (pending != null) {
-      try { await File(pending.path).delete(); } catch (_) {}
-    }
-  }
-
-  List<double> _compactWaveform(List<double> source, {int bars = 36}) {
-    if (source.isEmpty) return const [];
-    if (source.length <= bars) return List.unmodifiable(source);
-    final result = <double>[];
-    final bucket = source.length / bars;
-    for (var i = 0; i < bars; i++) {
-      final start = (i * bucket).floor();
-      final end = ((i + 1) * bucket).ceil().clamp(start + 1, source.length);
-      var peak = 0.0;
-      for (var j = start; j < end; j++) {
-        if (source[j] > peak) peak = source[j];
-      }
-      result.add(peak.clamp(0.06, 1.0).toDouble());
-    }
-    return List.unmodifiable(result);
-  }
-
-  String get _recClock {
-    final m = _recSeconds ~/ 60;
-    final s = (_recSeconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
   }
 
   // ---- Build ---------------------------------------------------------------
@@ -647,6 +822,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final directory = ref.watch(agentDirectoryProvider);
     final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
+    final wallet = ref.watch(walletProvider);
+    final ngnBalanceLabel =
+        wallet.asData?.value?.ngnBalanceLabel ?? '₦—';
     final thread = chat.threads[widget.characterId];
     final shellConfig = chat.shellConfigs[widget.characterId];
     final updateRequired = shellConfig?.requiresUpdate() ?? false;
@@ -714,6 +892,43 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           .read(aiChatProvider.notifier)
           .seedGreeting(agent.characterId, agent.greeting);
     });
+    if (!_initialEntryHandled) {
+      _initialEntryHandled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final prompt = widget.initialPrompt?.trim();
+        if (prompt != null && prompt.isNotEmpty) {
+          unawaited(
+            ref.read(aiChatProvider.notifier).sendText(
+                  widget.characterId,
+                  prompt,
+                  transportPrompt: widget.entryMode == AiChatEntryMode.study
+                      ? '<masanawa_study>$prompt'
+                      : null,
+                ),
+          );
+        }
+        switch (widget.entryMode) {
+          case AiChatEntryMode.chat:
+            break;
+          case AiChatEntryMode.teach:
+            if (_input.text.isEmpty) {
+              _input.text = '';
+            }
+            break;
+          case AiChatEntryMode.study:
+            break;
+          case AiChatEntryMode.liveTalk:
+            unawaited(_startInlineLiveVoice(agent));
+            break;
+          case AiChatEntryMode.liveVoice:
+            unawaited(_openLiveVoice(agent));
+            break;
+          case AiChatEntryMode.cafe:
+            break;
+        }
+      });
+    }
 
     ref.listen(aiChatProvider, (prev, next) {
       final before = prev?.threads[widget.characterId]?.messages.length ?? 0;
@@ -792,13 +1007,29 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      Text(
-                        workingLabel,
-                        style: TextStyle(
-                          color: sending ? u.brand : u.textMuted,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              workingLabel,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: sending ? u.brand : u.textMuted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '• $ngnBalanceLabel',
+                            style: TextStyle(
+                              color: u.brand,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -807,6 +1038,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
           actions: [
+            if (widget.twinSetup &&
+                _selectedMessageIds.isEmpty &&
+                !_showSearch)
+              TextButton.icon(
+                onPressed: _finishingTwin || _twinInterviewFacts.isEmpty
+                    ? null
+                    : () => _finishTwinSetup(agent),
+                icon: _finishingTwin
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check_rounded),
+                label: const Text('Finish Twin'),
+              ),
             if (_selectedMessageIds.isNotEmpty) ...[
               IconButton(
                 tooltip: 'Copy selected',
@@ -854,21 +1101,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
             ],
             IconButton(
-              tooltip: 'Video call',
-              icon: const Icon(Icons.videocam_outlined),
-              onPressed: () => _comingSoon('Video calls'),
-            ),
-            IconButton(
-              tooltip: 'Live voice',
+              tooltip: 'Call',
               icon: const Icon(Icons.call_outlined),
               onPressed: updateRequired || !liveVoiceEnabled
                   ? null
                   : () => _openLiveVoice(agent),
-            ),
-            IconButton(
-              tooltip: 'Agents',
-              icon: const Icon(Icons.groups_outlined),
-              onPressed: () => context.push('/agents'),
             ),
             PopupMenuButton<String>(
               tooltip: 'More',
@@ -879,20 +1116,52 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 if (value == 'pin') ctl.togglePin(widget.characterId);
                 if (value == 'archive') ctl.toggleArchive(widget.characterId);
                 if (value == 'rename') _renameConversation();
+                if (value == 'gift') await _sendTwinGift(agent);
+                if (value == 'owner') await _requestOwnerChat(agent);
+                if (value == 'block') await _blockTwin(agent);
+                if (value == 'report') await _reportTwin(agent);
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'new', child: Text('New context')),
-                PopupMenuItem(value: 'rename', child: Text('Rename chat')),
-                PopupMenuItem(value: 'pin', child: Text('Pin / unpin')),
-                PopupMenuItem(value: 'archive', child: Text('Archive / unarchive')),
-                PopupMenuDivider(),
-                PopupMenuItem(value: 'clear', child: Text('Clear chat')),
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: 'new', child: Text('New context')),
+                const PopupMenuItem(value: 'rename', child: Text('Rename chat')),
+                const PopupMenuItem(value: 'pin', child: Text('Pin / unpin')),
+                const PopupMenuItem(value: 'archive', child: Text('Archive / unarchive')),
+                if (!agent.supportAgent) ...const [
+                  PopupMenuDivider(),
+                  PopupMenuItem(value: 'gift', child: Text('Send gift')),
+                  PopupMenuItem(value: 'owner', child: Text('Talk to owner')),
+                  PopupMenuItem(value: 'block', child: Text('Block Twin')),
+                  PopupMenuItem(value: 'report', child: Text('Report Twin')),
+                ],
+                const PopupMenuDivider(),
+                const PopupMenuItem(value: 'clear', child: Text('Clear chat')),
               ],
             ),
           ],
         ),
         body: Column(
           children: [
+            if (widget.twinSetup)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                color: u.brand.withValues(alpha: .08),
+                child: Row(
+                  children: [
+                    Icon(Icons.mic_rounded, color: u.brand, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Twin interview · talk naturally. Your speech is not shown as text.',
+                        style: TextStyle(fontSize: 12.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (updateRequired)
               MaterialBanner(
                 content: Text(
@@ -917,6 +1186,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     style: TextStyle(color: u.textPrimary, fontSize: 12),
                   ),
                 ),
+              ),
+            if (widget.entryMode == AiChatEntryMode.cafe)
+              _CafeSuggestionBar(
+                selectedKey: _cafeCategory,
+                onTap: _sendCafeSuggestion,
               ),
             Expanded(
               child: messages.isEmpty && !sending
@@ -1044,6 +1318,46 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
               ),
+            if (_inlineVoiceSession != null)
+              _InlineVoicePanel(
+                agentName: agent.displayName,
+                transcript: _inlineTranscript,
+                state: _inlineVoiceState,
+                onStop: () => unawaited(
+                  _stopInlineLiveVoice(outcome: 'completed'),
+                ),
+              ),
+            if (widget.entryMode == AiChatEntryMode.study)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: u.brand.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: u.brand.withValues(alpha: .18)),
+                ),
+                child: Text(
+                  'Study · ask, answer, or speak naturally. Your learning progress is saved privately.',
+                  style: TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
+                ),
+              ),
+            if (widget.entryMode == AiChatEntryMode.teach)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: u.brand.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: u.brand.withValues(alpha: .18)),
+                ),
+                child: Text(
+                  'Teach mode: try “My bio is…”, “I speak…”, “My interests are…”, '
+                  'or “Make my Twin public/private”. Other messages stay normal chat.',
+                  style: TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
+                ),
+              ),
             if (_pendingAttachments.isNotEmpty)
               _PendingAttachmentStrip(
                 attachments: _pendingAttachments,
@@ -1054,28 +1368,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 message: _replyingTo!,
                 onClose: () => setState(() => _replyingTo = null),
               ),
-            if (_recording)
-              _RecordingBar(
-                clock: _recClock,
-                amplitudes: _amplitudes,
-                recording: true,
-                paused: _recordingPaused,
-                locked: _recordingLocked,
-                onDelete: () => _stopRecording(send: false),
-                onPause: _togglePauseRecording,
-                onStop: () => _stopRecording(send: true),
-                onSend: null,
-                onCancelSwipe: () => _stopRecording(send: false),
-                onLockSwipe: () => setState(() => _recordingLocked = true),
-              )
-            else if (_pendingVoice != null)
-              _VoicePreviewBar(
-                attachment: _pendingVoice!,
-                onDelete: _deletePendingVoice,
-                onSend: _sendPendingVoice,
-              )
-            else
-              _Composer(
+            _Composer(
                 controller: _input,
                 hasText: _hasText || _pendingAttachments.isNotEmpty,
                 sending: sending || updateRequired,
@@ -1085,11 +1378,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
                 onAttach: _openAttachSheet,
-                onCamera: () => _pickImage(ImageSource.camera),
-                onMic: updateRequired ? () {} : _toggleRecording,
-                onMicHoldStart: _onMicHoldStart,
-                onMicHoldMove: _onMicHoldMove,
-                onMicHoldEnd: _onMicHoldEnd,
+                onMic: updateRequired
+                    ? () {}
+                    : () => unawaited(_startInlineLiveVoice(agent)),
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -1100,7 +1391,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   }
                 },
               ),
-            if (_showEmoji && !_recording)
+            if (_showEmoji)
               SizedBox(
                 height: 270,
                 child: EmojiPicker(textEditingController: _input),
@@ -1271,6 +1562,709 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
+  Future<void> _sendTwinGift(AgentDirectoryEntry agent) async {
+    final amountController = TextEditingController();
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Gift ${agent.displayName}'),
+        content: TextField(
+          controller: amountController,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Credits',
+            hintText: 'Enter amount',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(amountController.text.trim());
+              if (value != null && value > 0) {
+                Navigator.of(dialogContext).pop(value);
+              }
+            },
+            child: const Text('Review gift'),
+          ),
+        ],
+      ),
+    );
+    amountController.dispose();
+    if (amount == null || !mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Send gift?'),
+        content: Text('Send $amount Credits as a gift? Gifts do not create referral commission.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final receipt = await ref.read(walletProvider.notifier).sendGift(
+      recipientCharacterId: agent.characterId,
+      amountCredits: amount,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(receipt == null ? 'Could not send gift.' : 'Gift sent.'),
+      ),
+    );
+  }
+
+  bool _ownerRequestCanDispute(OwnerAccessRequest request) {
+    final disputeBy = request.disputeBy;
+    return request.state == OwnerAccessState.settled &&
+        request.chargeMode == 'paid' &&
+        request.earningsReleasedAt == null &&
+        disputeBy != null &&
+        disputeBy.isAfter(DateTime.now());
+  }
+
+  bool _ownerRequestIsLive(OwnerAccessRequest request) {
+    return request.state == OwnerAccessState.requested ||
+        request.state == OwnerAccessState.accepted ||
+        request.state == OwnerAccessState.scheduled ||
+        request.state == OwnerAccessState.active ||
+        request.state == OwnerAccessState.disputed ||
+        request.state == OwnerAccessState.releasing ||
+        _ownerRequestCanDispute(request);
+  }
+
+  String _ownerRequestStatus(OwnerAccessRequest request) {
+    switch (request.state) {
+      case OwnerAccessState.requested:
+        return 'Waiting for the owner to respond.';
+      case OwnerAccessState.accepted:
+        return 'The owner accepted your request.';
+      case OwnerAccessState.scheduled:
+        final scheduled = request.scheduledFor;
+        return scheduled == null
+            ? 'The session is scheduled.'
+            : 'Scheduled for ${MaterialLocalizations.of(context).formatFullDate(scheduled)} at '
+                '${TimeOfDay.fromDateTime(scheduled).format(context)}.';
+      case OwnerAccessState.active:
+        return 'Your session is in progress.';
+      case OwnerAccessState.completed:
+        return 'Your session was completed.';
+      case OwnerAccessState.settled:
+        final disputeBy = request.disputeBy;
+        if (_ownerRequestCanDispute(request) && disputeBy != null) {
+          return 'Your session was completed. You can dispute it until '
+              '${MaterialLocalizations.of(context).formatFullDate(disputeBy)} at '
+              '${TimeOfDay.fromDateTime(disputeBy).format(context)}.';
+        }
+        return request.earningsReleasedAt == null
+            ? 'Your session was completed.'
+            : 'Your session was completed and the payment was released.';
+      case OwnerAccessState.releasing:
+        return 'Your session was completed. Payment release is being finalized.';
+      case OwnerAccessState.declined:
+        return 'The owner declined this request.';
+      case OwnerAccessState.expired:
+        return 'This request expired.';
+      case OwnerAccessState.cancelled:
+        return 'You cancelled this request.';
+      case OwnerAccessState.noShow:
+        return 'The scheduled session was missed.';
+      case OwnerAccessState.refunded:
+        return 'This request ended and eligible held Credits were returned.';
+      case OwnerAccessState.disputed:
+        return 'This request is under review.';
+    }
+  }
+
+  Future<void> _showOwnerRequestStatus(
+    AgentDirectoryEntry agent,
+    OwnerAccessRequest request,
+  ) async {
+    final cancellable =
+        request.state == OwnerAccessState.requested ||
+        request.state == OwnerAccessState.accepted ||
+        request.state == OwnerAccessState.scheduled;
+    final priceLabel = request.chargeMode == 'trial'
+        ? 'trial'
+        : '${request.priceCredits} Credits';
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Talk to the owner'),
+        content: Text(
+          '${_ownerRequestStatus(request)}\n\n'
+          '${request.durationMinutes} minutes · $priceLabel',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+          if (cancellable)
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+              child: const Text('Cancel request'),
+            ),
+          if (_ownerRequestCanDispute(request))
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop('dispute'),
+              child: const Text('Dispute session'),
+            ),
+          if (request.state == OwnerAccessState.active)
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop('open'),
+              child: const Text('Open human chat'),
+            ),
+        ],
+      ),
+    );
+    if (action == null || !mounted) return;
+    if (action == 'open') {
+      await context.push(
+        '/owner-session/' +
+            Uri.encodeComponent(agent.characterId) +
+            '/' +
+            Uri.encodeComponent(request.requestId),
+      );
+      return;
+    }
+    if (action == 'dispute') {
+      final reason = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => SimpleDialog(
+          title: const Text('Why are you disputing this session?'),
+          children: [
+            SimpleDialogOption(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop('service-not-delivered'),
+              child: const Text('The service was not delivered'),
+            ),
+            SimpleDialogOption(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop('service-quality'),
+              child: const Text('The service quality was unacceptable'),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop('other'),
+              child: const Text('Other reason'),
+            ),
+          ],
+        ),
+      );
+      if (reason == null || !mounted) return;
+      final updated =
+          await ref.read(ownerAccessControllerProvider.notifier).act(
+                characterId: agent.characterId,
+                requestId: request.requestId,
+                action: 'dispute',
+                disputeReason: reason,
+              );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            updated == null
+                ? 'Could not open this dispute.'
+                : 'Dispute submitted. The payment remains pending during review.',
+          ),
+        ),
+      );
+      return;
+    }
+    if (action != 'cancel') return;
+    final updated = await ref.read(ownerAccessControllerProvider.notifier).act(
+          characterId: agent.characterId,
+          requestId: request.requestId,
+          action: 'cancel',
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          updated == null
+              ? 'Could not cancel this request.'
+              : 'Talk request cancelled.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _requestOwnerChat(AgentDirectoryEntry agent) async {
+    final controller = ref.read(ownerAccessControllerProvider.notifier);
+    final existing = await controller.latest(characterId: agent.characterId);
+    if (!mounted) return;
+    if (existing != null && _ownerRequestIsLive(existing)) {
+      await _showOwnerRequestStatus(agent, existing);
+      return;
+    }
+    if (existing == null &&
+        ref.read(ownerAccessControllerProvider).error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not check your current owner request. Try again.'),
+        ),
+      );
+      return;
+    }
+
+    OwnerAccessQuote? quote;
+    for (final minutes in const [15, 30, 60, 5, 10, 45, 90, 120]) {
+      quote = await controller.quote(
+        characterId: agent.characterId,
+        modality: OwnerAccessModality.text,
+        durationMinutes: minutes,
+      );
+      if (quote != null) break;
+    }
+    if (quote == null || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The owner is not accepting requests right now.'),
+          ),
+        );
+      }
+      return;
+    }
+    final offer = quote;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Talk to the owner'),
+        content: Text(
+          offer.isTrial
+              ? 'Your ${offer.trialDurationDays}-day trial covers this ${offer.durationMinutes}-minute private text session with the real owner.'
+              : 'Request a ${offer.durationMinutes}-minute private text session with the real owner for ${offer.priceCredits} Credits. Funds are held until verified attendance and completion; otherwise eligible refunds are returned.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Send request'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true) return;
+    final request = await controller.submit(characterId: agent.characterId);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          request == null
+              ? 'Could not send owner request.'
+              : 'Owner request sent. We will notify you when it changes.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _blockTwin(AgentDirectoryEntry agent) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Block ${agent.displayName}?'),
+        content: const Text('This Twin will no longer be available to you until you unblock it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await ref.read(twinSafetyControllerProvider.notifier).block(agent.characterId);
+    if (!mounted) return;
+    if (ok) {
+      unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
+      context.go('/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not block this Twin.')),
+      );
+    }
+  }
+
+  Future<void> _reportTwin(AgentDirectoryEntry agent) async {
+    final selected = await showDialog<TwinReportReason>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Report Twin'),
+        children: [
+          for (final reason in TwinReportReason.values)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(reason),
+              child: Text(twinReportReasonLabel(reason)),
+            ),
+        ],
+      ),
+    );
+    if (selected == null) return;
+    final ok = await ref.read(twinSafetyControllerProvider.notifier).report(
+      characterId: agent.characterId,
+      reason: selected,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ok ? 'Report submitted.' : 'Could not submit report.')),
+    );
+  }
+  Future<(bool allowed, PaidVoiceAdmission? admission)> _admitInlineVoice(
+    AgentDirectoryEntry agent,
+  ) async {
+    final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
+    final requiresTwinAdmission =
+        !agent.supportAgent && ownedCharacterId != agent.characterId;
+    if (!requiresTwinAdmission) return (true, null);
+
+    final controller = ref.read(paidVoiceControllerProvider.notifier);
+    final quote = await controller.quote(
+      characterId: agent.characterId,
+      expectedSeconds: 5 * 60,
+    );
+    if (quote == null || !mounted) return (false, null);
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Voice with ${agent.displayName}'),
+        content: Text(
+          quote.isTrial
+              ? 'Your ${quote.trialDurationDays}-day voice trial covers this live conversation.'
+              : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified live time is charged.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(quote.isTrial ? 'Start voice' : 'Accept & start'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true) return (false, null);
+    final admission = await controller.accept(characterId: agent.characterId);
+    return (admission != null, admission);
+  }
+
+  void _applyInlineTranscriptChunk(String chunk) {
+    final next = chunk.trim();
+    if (next.isEmpty || !mounted) return;
+    setState(() {
+      final current = _inlineCurrentTranscript;
+      if (current.isEmpty || next.startsWith(current)) {
+        _inlineCurrentTranscript = next;
+      } else if (!current.endsWith(next)) {
+        final separator =
+            current.endsWith(' ') || next.startsWith(' ') ? '' : ' ';
+        _inlineCurrentTranscript = current + separator + next;
+      }
+      _inlineTranscript = [
+        if (_inlineTranscriptHistory.trim().isNotEmpty)
+          _inlineTranscriptHistory.trim(),
+        if (_inlineCurrentTranscript.trim().isNotEmpty)
+          _inlineCurrentTranscript.trim(),
+      ].join('\n\n');
+    });
+  }
+
+  void _finishInlineTranscriptTurn() {
+    if (!mounted) return;
+    final current = _inlineCurrentTranscript.trim();
+    if (current.isEmpty) return;
+    setState(() {
+      _inlineTranscriptHistory = [
+        if (_inlineTranscriptHistory.trim().isNotEmpty)
+          _inlineTranscriptHistory.trim(),
+        current,
+      ].join('\n\n');
+      _inlineCurrentTranscript = '';
+      _inlineTranscript = _inlineTranscriptHistory;
+    });
+  }
+
+  void _applyHiddenTwinInputChunk(String chunk) {
+    if (!widget.twinSetup) return;
+    final next = chunk.trim();
+    if (next.isEmpty) return;
+    final current = _hiddenTwinInput;
+    if (current.isEmpty || next.startsWith(current)) {
+      _hiddenTwinInput = next;
+    } else if (!current.endsWith(next)) {
+      final separator =
+          current.endsWith(' ') || next.startsWith(' ') ? '' : ' ';
+      _hiddenTwinInput = current + separator + next;
+    }
+  }
+
+  void _consumeHiddenTwinInput() {
+    if (!widget.twinSetup) return;
+    final answer = _hiddenTwinInput.trim();
+    _hiddenTwinInput = '';
+    if (answer.isEmpty) return;
+    _twinFactExtraction = _twinFactExtraction.then((_) async {
+      if (!mounted) return;
+      try {
+        final ctl = ref.read(aiChatProvider.notifier);
+        final next = await ctl.extractTwinInterviewText(
+          characterId: widget.characterId,
+          userAnswer: answer,
+          facts: _twinInterviewFacts,
+        );
+        if (!mounted) return;
+        setState(() => _twinInterviewFacts = next);
+        ctl.setTwinInterviewFacts(widget.characterId, next);
+      } catch (_) {
+        // Hidden speech is never rendered or written into the local timeline.
+      }
+    });
+  }
+
+  Future<void> _disposeInlineVoice() async {
+    if (_inlineVoiceClosing) return;
+    final session = _inlineVoiceSession;
+    if (session == null) return;
+    _inlineVoiceClosing = true;
+    final admission = _inlinePaidAdmission;
+    final shellTransport = _inlineShellTransport;
+    final characterId = _inlineVoiceCharacterId;
+    final paidController = admission == null
+        ? null
+        : ref.read(paidVoiceControllerProvider.notifier);
+    final walletController = admission == null
+        ? null
+        : ref.read(walletProvider.notifier);
+    try {
+      await _inlineTranscriptSub?.cancel();
+      await _inlineInputTranscriptSub?.cancel();
+      await _inlineVoiceStateSub?.cancel();
+      await _inlineTurnSub?.cancel();
+      _inlineTranscriptSub = null;
+      _inlineInputTranscriptSub = null;
+      _inlineVoiceStateSub = null;
+      _inlineTurnSub = null;
+      await session.close();
+      if (admission != null && paidController != null) {
+        await paidController
+            .complete(
+              admissionId: admission.admissionId,
+              outcome: 'interrupted',
+            )
+            .catchError((_) {});
+        unawaited(walletController?.refresh() ?? Future<void>.value());
+      }
+      if (shellTransport != null && characterId != null) {
+        await shellTransport
+            .setPresence(
+              characterId: characterId,
+              state: 'available',
+              durationMs: 60 * 1000,
+            )
+            .catchError((_) {});
+      }
+    } finally {
+      _inlineVoiceSession = null;
+      _inlinePaidAdmission = null;
+      _inlineShellTransport = null;
+      _inlineVoiceCharacterId = null;
+      _inlineVoiceClosing = false;
+    }
+  }
+
+  Future<void> _startInlineLiveVoice(AgentDirectoryEntry agent) async {
+    if (_inlineVoiceSession != null) {
+      await _stopInlineLiveVoice(outcome: 'completed');
+      return;
+    }
+    if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
+      return;
+    }
+    final transport = ref.read(agentTransportProvider);
+    if (transport is! AgentShellTransport) {
+      if (mounted) _comingSoon('Live voice');
+      return;
+    }
+    final admissionResult = await _admitInlineVoice(agent);
+    if (!mounted || !admissionResult.$1) return;
+    final paidAdmission = admissionResult.$2;
+
+    final shellTransport = transport as AgentShellTransport;
+    LiveVoiceSession? session;
+    try {
+      await _activeVoiceBubble?._pauseFromAnotherBubble();
+      await shellTransport.setPresence(
+        characterId: agent.characterId,
+        state: 'on_call',
+        durationMs: 5 * 60 * 1000,
+      );
+      final grant = await shellTransport.mintLiveVoiceGrant(
+        agent.characterId,
+        admissionId: paidAdmission?.admissionId,
+        purpose: widget.twinSetup ? 'twin-setup' : 'conversation',
+      );
+      if (!mounted) {
+        throw StateError('Voice screen closed before session start');
+      }
+      session = LiveVoiceSession(
+        grant: grant,
+        characterName: agent.displayName,
+        captureInputTranscription: widget.twinSetup,
+      );
+
+      _inlineTranscriptSub?.cancel();
+      _inlineInputTranscriptSub?.cancel();
+      _inlineVoiceStateSub?.cancel();
+      _inlineTurnSub?.cancel();
+      _inlineTranscriptSub =
+          session.transcripts.listen(_applyInlineTranscriptChunk);
+      if (widget.twinSetup) {
+        _inlineInputTranscriptSub =
+            session.inputTranscripts.listen(_applyHiddenTwinInputChunk);
+      }
+      _inlineTurnSub = session.turnCompletions.listen((_) {
+        _finishInlineTranscriptTurn();
+        _consumeHiddenTwinInput();
+      });
+      _inlineVoiceStateSub = session.states.listen((state) {
+        if (!mounted) return;
+        setState(() => _inlineVoiceState = state);
+        if (state == LiveVoiceState.failed || state == LiveVoiceState.ended) {
+          unawaited(_stopInlineLiveVoice(outcome: 'interrupted'));
+        }
+      });
+
+      setState(() {
+        _inlineVoiceSession = session;
+        _inlinePaidAdmission = paidAdmission;
+        _inlineShellTransport = shellTransport;
+        _inlineVoiceCharacterId = agent.characterId;
+        _inlineTranscript = '';
+        _inlineTranscriptHistory = '';
+        _inlineCurrentTranscript = '';
+        _hiddenTwinInput = '';
+        _inlineVoiceState = LiveVoiceState.connecting;
+      });
+
+      await Future.wait<void>([session.start(), session.ready]);
+      if (paidAdmission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .mediaStarted(admissionId: paidAdmission.admissionId);
+      }
+    } catch (_) {
+      await session?.close();
+      if (paidAdmission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .complete(
+              admissionId: paidAdmission.admissionId,
+              outcome: 'interrupted',
+            )
+            .catchError((_) {});
+        unawaited(ref.read(walletProvider.notifier).refresh());
+      }
+      await shellTransport
+          .setPresence(
+            characterId: agent.characterId,
+            state: 'available',
+            durationMs: 60 * 1000,
+          )
+          .catchError((_) {});
+      if (mounted) {
+        setState(() {
+          _inlineVoiceSession = null;
+          _inlinePaidAdmission = null;
+          _inlineShellTransport = null;
+          _inlineVoiceCharacterId = null;
+          _inlineVoiceState = LiveVoiceState.failed;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Live voice could not start. Check microphone access and connection.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopInlineLiveVoice({
+    required String outcome,
+  }) async {
+    if (_inlineVoiceClosing) return;
+    final session = _inlineVoiceSession;
+    if (session == null) return;
+    _inlineVoiceClosing = true;
+    final admission = _inlinePaidAdmission;
+    final shellTransport = _inlineShellTransport;
+    final characterId = _inlineVoiceCharacterId;
+    try {
+      _consumeHiddenTwinInput();
+      await _inlineTranscriptSub?.cancel();
+      await _inlineInputTranscriptSub?.cancel();
+      await _inlineVoiceStateSub?.cancel();
+      await _inlineTurnSub?.cancel();
+      _inlineTranscriptSub = null;
+      _inlineInputTranscriptSub = null;
+      _inlineVoiceStateSub = null;
+      _inlineTurnSub = null;
+      await session.close();
+      if (admission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .complete(
+              admissionId: admission.admissionId,
+              outcome: outcome,
+            )
+            .catchError((_) {});
+        unawaited(ref.read(walletProvider.notifier).refresh());
+      }
+      if (shellTransport != null && characterId != null) {
+        await shellTransport
+            .setPresence(
+              characterId: characterId,
+              state: 'available',
+              durationMs: 60 * 1000,
+            )
+            .catchError((_) {});
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _inlineVoiceSession = null;
+          _inlinePaidAdmission = null;
+          _inlineShellTransport = null;
+          _inlineVoiceCharacterId = null;
+          _inlineVoiceState = LiveVoiceState.idle;
+        });
+      }
+      _inlineVoiceClosing = false;
+    }
+  }
+
   Future<void> _openLiveVoice(AgentDirectoryEntry agent) async {
     if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
       return;
@@ -1280,17 +2274,71 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (mounted) _comingSoon('Live voice');
       return;
     }
+    final shellTransport = transport as AgentShellTransport;
+    final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
+    final requiresTwinAdmission =
+        !agent.supportAgent && ownedCharacterId != agent.characterId;
+
+    PaidVoiceAdmission? paidAdmission;
+    if (requiresTwinAdmission) {
+      final controller = ref.read(paidVoiceControllerProvider.notifier);
+      final quote = await controller.quote(
+        characterId: agent.characterId,
+        expectedSeconds: 5 * 60,
+      );
+      if (quote != null) {
+        if (!mounted) return;
+        final accepted = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text('Voice with ${agent.displayName}'),
+            content: Text(
+              quote.isTrial
+                  ? 'Your ${quote.trialDurationDays}-day voice trial covers this call. You will not be charged for trial usage.'
+                  : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified call time is charged and unused Credits are returned.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Not now'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(quote.isTrial ? 'Start trial call' : 'Accept & call'),
+              ),
+            ],
+          ),
+        );
+        if (accepted != true) return;
+        paidAdmission = await controller.accept(characterId: agent.characterId);
+        if (paidAdmission == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not reserve this voice call.')),
+            );
+          }
+          return;
+        }
+      }
+    }
+
     LiveVoiceSession? session;
+    var verifiedMediaStarted = false;
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
-      await transport.setPresence(
+      await shellTransport.setPresence(
         characterId: agent.characterId,
         state: 'on_call',
         durationMs: 5 * 60 * 1000,
       );
       unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
-      final grant = await transport.mintLiveVoiceGrant(agent.characterId);
-      if (!mounted) return;
+      final grant = await shellTransport.mintLiveVoiceGrant(
+        agent.characterId,
+        admissionId: paidAdmission?.admissionId,
+      );
+      if (!mounted) {
+        throw StateError('Voice screen closed before call start');
+      }
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
@@ -1299,9 +2347,45 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         context: context,
         isScrollControlled: true,
         enableDrag: false,
-        builder: (_) => _LiveVoiceSheet(
+        backgroundColor: Colors.transparent,
+        builder: (_) => FractionallySizedBox(
+          heightFactor: .92,
+          child: _LiveVoiceSheet(
           agent: agent,
           session: session!,
+          maxDuration: paidAdmission == null
+              ? null
+              : Duration(
+                  seconds: ref
+                      .read(paidVoiceControllerProvider)
+                      .quote
+                      ?.estimatedSeconds ??
+                      300,
+                ),
+          onMediaStarted: paidAdmission == null
+              ? null
+              : () async {
+                  try {
+                    await ref
+                        .read(paidVoiceControllerProvider.notifier)
+                        .mediaStarted(
+                          admissionId: paidAdmission!.admissionId,
+                        );
+                    verifiedMediaStarted = true;
+                  } catch (_) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Voice usage could not be verified, so this call was ended without charging you.',
+                          ),
+                        ),
+                      );
+                    }
+                    rethrow;
+                  }
+                },
+          ),
         ),
       );
     } catch (_) {
@@ -1316,7 +2400,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     } finally {
       await session?.close();
-      await transport
+      if (paidAdmission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .complete(
+              admissionId: paidAdmission.admissionId,
+              outcome: verifiedMediaStarted ? 'completed' : 'interrupted',
+            )
+            .catchError((_) {});
+        unawaited(ref.read(walletProvider.notifier).refresh());
+      }
+      await shellTransport
           .setPresence(
             characterId: agent.characterId,
             state: 'available',
@@ -1328,7 +2422,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     }
   }
-
   Future<void> _runAgentAction(AiChatMessage message, String action) async {
     final ctl = ref.read(aiChatProvider.notifier);
     final quoted = message.text;
@@ -1441,19 +2534,25 @@ class _LiveVoiceSheet extends StatefulWidget {
   const _LiveVoiceSheet({
     required this.agent,
     required this.session,
+    this.maxDuration,
+    this.onMediaStarted,
   });
 
   final AgentDirectoryEntry agent;
   final LiveVoiceSession session;
+  final Duration? maxDuration;
+  final Future<void> Function()? onMediaStarted;
 
   @override
   State<_LiveVoiceSheet> createState() => _LiveVoiceSheetState();
 }
 
 class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
+  bool _ringing = true;
   bool _muted = false;
   bool _speaker = true;
   String? _error;
+  Timer? _durationTimer;
 
   @override
   void initState() {
@@ -1462,17 +2561,52 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
       if (mounted) setState(() => _error = message);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.session.start().catchError((_) {});
+      unawaited(_beginCallExperience());
     });
+  }
+
+  Future<void> _beginCallExperience() async {
+    await Future<void>.delayed(const Duration(milliseconds: 850));
+    if (!mounted) return;
+    setState(() => _ringing = false);
+    await _startVerifiedSession();
+  }
+
+  Future<void> _startVerifiedSession() async {
+    try {
+      await Future.wait<void>([
+        widget.session.start(),
+        widget.session.ready,
+      ]);
+      await widget.onMediaStarted?.call();
+      final maxDuration = widget.maxDuration;
+      if (maxDuration != null) {
+        _durationTimer?.cancel();
+        _durationTimer = Timer(maxDuration, () async {
+          await widget.session.close();
+          if (mounted) Navigator.of(context).pop();
+        });
+      }
+    } catch (_) {
+      await widget.session.close();
+      if (!mounted) return;
+      setState(() {
+        _error ??= 'Voice session could not be verified.';
+      });
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   void dispose() {
+    _durationTimer?.cancel();
     widget.session.close();
     super.dispose();
   }
 
-  String _label(LiveVoiceState state) => switch (state) {
+  String _label(LiveVoiceState state) {
+    if (_ringing) return 'Calling…';
+    return switch (state) {
         LiveVoiceState.connecting => 'Connecting…',
         LiveVoiceState.listening => _muted ? 'Muted' : 'Listening…',
         LiveVoiceState.speaking => 'Speaking…',
@@ -1481,14 +2615,18 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
         LiveVoiceState.ended => 'Call ended',
         LiveVoiceState.idle => 'Ready',
       };
+  }
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
-        child: StreamBuilder<LiveVoiceState>(
+    return Material(
+      color: u.surfaceBg,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 34, 24, 30),
+          child: StreamBuilder<LiveVoiceState>(
           stream: widget.session.states,
           initialData: LiveVoiceState.connecting,
           builder: (context, snapshot) {
@@ -1570,7 +2708,8 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
           },
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -1651,6 +2790,128 @@ class _AttachOption extends StatelessWidget {
   }
 }
 
+class _InlineVoicePanel extends StatelessWidget {
+  const _InlineVoicePanel({
+    required this.agentName,
+    required this.transcript,
+    required this.state,
+    required this.onStop,
+  });
+
+  final String agentName;
+  final String transcript;
+  final LiveVoiceState state;
+  final VoidCallback onStop;
+
+  String get _status => switch (state) {
+        LiveVoiceState.connecting => 'Connecting…',
+        LiveVoiceState.listening => 'Listening…',
+        LiveVoiceState.speaking => 'Speaking…',
+        LiveVoiceState.interrupted => 'Listening…',
+        LiveVoiceState.failed => 'Connection problem',
+        LiveVoiceState.ended => 'Ended',
+        LiveVoiceState.idle => 'Ready',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(10, 6, 10, 2),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: u.structuralBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Icon(
+            state == LiveVoiceState.speaking
+                ? Icons.graphic_eq_rounded
+                : Icons.mic_rounded,
+            color: u.brand,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 112),
+              child: SingleChildScrollView(
+                reverse: true,
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    transcript.trim().isEmpty
+                        ? '$agentName · $_status'
+                        : transcript.trim(),
+                    style: TextStyle(
+                      color: transcript.trim().isEmpty
+                          ? u.textMuted
+                          : u.textPrimary,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Stop voice',
+            onPressed: onStop,
+            icon: const Icon(Icons.stop_circle_outlined),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CafeSuggestionBar extends StatelessWidget {
+  const _CafeSuggestionBar({
+    required this.selectedKey,
+    required this.onTap,
+  });
+
+  final String? selectedKey;
+  final ValueChanged<CafeSuggestion> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(8, 7, 8, 5),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        border: Border(
+          bottom: BorderSide(color: u.structuralBorder),
+        ),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final suggestion in kCafeSuggestions) ...[
+                ChoiceChip(
+                  label: Text(suggestion.label),
+                  selected: selectedKey == suggestion.key,
+                  onSelected: (_) => onTap(suggestion),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: 6),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -1659,11 +2920,7 @@ class _Composer extends StatelessWidget {
     required this.onSend,
     required this.onStop,
     required this.onAttach,
-    required this.onCamera,
     required this.onMic,
-    required this.onMicHoldStart,
-    required this.onMicHoldMove,
-    required this.onMicHoldEnd,
     required this.onEmojiToggle,
   });
 
@@ -1673,11 +2930,7 @@ class _Composer extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onStop;
   final VoidCallback onAttach;
-  final VoidCallback onCamera;
   final VoidCallback onMic;
-  final ValueChanged<LongPressStartDetails> onMicHoldStart;
-  final ValueChanged<LongPressMoveUpdateDetails> onMicHoldMove;
-  final ValueChanged<LongPressEndDetails> onMicHoldEnd;
   final VoidCallback onEmojiToggle;
 
   @override
@@ -1715,9 +2968,13 @@ class _Composer extends StatelessWidget {
                         textCapitalization: TextCapitalization.sentences,
                         decoration: const InputDecoration(
                           hintText: 'Message',
+                          filled: false,
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
                           isDense: true,
-                          contentPadding: EdgeInsets.fromLTRB(2, 15, 6, 14),
+                          contentPadding: EdgeInsets.fromLTRB(4, 15, 4, 14),
                         ),
                       ),
                     ),
@@ -1726,12 +2983,6 @@ class _Composer extends StatelessWidget {
                       icon: Icons.attach_file,
                       onPressed: onAttach,
                     ),
-                    if (!hasText)
-                      _ComposerIcon(
-                        tooltip: 'Camera',
-                        icon: Icons.camera_alt_outlined,
-                        onPressed: onCamera,
-                      ),
                   ],
                 ),
               ),
@@ -1739,15 +2990,8 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: 6),
             Semantics(
               button: true,
-              label: hasText ? 'Send message' : 'Record voice note',
-              child: GestureDetector(
-                onLongPressStart:
-                    sending || hasText ? null : onMicHoldStart,
-                onLongPressMoveUpdate:
-                    sending || hasText ? null : onMicHoldMove,
-                onLongPressEnd:
-                    sending || hasText ? null : onMicHoldEnd,
-                child: Material(
+              label: hasText ? 'Send message' : 'Start live voice',
+              child: Material(
                   color: u.brand,
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
@@ -1796,7 +3040,7 @@ class _ComposerIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return SizedBox(
-      width: 40,
+      width: 36,
       height: 48,
       child: IconButton(
         tooltip: tooltip,
@@ -1804,194 +3048,6 @@ class _ComposerIcon extends StatelessWidget {
         visualDensity: VisualDensity.compact,
         icon: Icon(icon, color: u.textMuted, size: 22),
         onPressed: onPressed,
-      ),
-    );
-  }
-}
-
-class _RecordingBar extends StatelessWidget {
-  const _RecordingBar({
-    required this.clock,
-    required this.amplitudes,
-    required this.recording,
-    required this.paused,
-    required this.locked,
-    required this.onDelete,
-    required this.onPause,
-    required this.onStop,
-    required this.onSend,
-    required this.onCancelSwipe,
-    required this.onLockSwipe,
-  });
-
-  final String clock;
-  final List<double> amplitudes;
-  final bool recording;
-  final bool paused;
-  final bool locked;
-  final VoidCallback onDelete;
-  final VoidCallback? onPause;
-  final VoidCallback? onStop;
-  final VoidCallback? onSend;
-  final VoidCallback onCancelSwipe;
-  final VoidCallback onLockSwipe;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return SafeArea(
-      top: false,
-      child: GestureDetector(
-        onHorizontalDragEnd: locked
-            ? null
-            : (details) {
-                if ((details.primaryVelocity ?? 0) < -250) onCancelSwipe();
-              },
-        onVerticalDragEnd: locked
-            ? null
-            : (details) {
-                if ((details.primaryVelocity ?? 0) < -250) onLockSwipe();
-              },
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          decoration: BoxDecoration(
-            color: u.surfaceCard,
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: u.structuralBorder),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: 'Delete recording',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: onDelete,
-              ),
-              if (recording)
-                Icon(
-                  locked ? Icons.lock : Icons.lock_open,
-                  size: 17,
-                  color: u.textMuted,
-                ),
-              if (recording) const SizedBox(width: 6),
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: recording && !paused ? Colors.red : u.textMuted,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 7),
-              Text(
-                clock,
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SizedBox(
-                  height: 32,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      for (final value in amplitudes.take(28))
-                        Container(
-                          width: 2,
-                          height: 4 + (value * 22),
-                          decoration: BoxDecoration(
-                            color: u.brand.withValues(alpha: .75),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      if (amplitudes.isEmpty)
-                        Text(
-                          recording
-                              ? (locked ? 'Locked recording' : '← cancel   ↑ lock')
-                              : 'Voice note ready',
-                          style: TextStyle(color: u.textMuted, fontSize: 11),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              if (onPause != null)
-                IconButton(
-                  tooltip: paused ? 'Resume' : 'Pause',
-                  icon: Icon(paused ? Icons.mic : Icons.pause),
-                  onPressed: onPause,
-                ),
-              if (onStop != null)
-                IconButton(
-                  tooltip: 'Preview',
-                  icon: const Icon(Icons.stop_circle_outlined),
-                  onPressed: onStop,
-                ),
-              if (onSend != null)
-                Material(
-                  color: u.brand,
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    tooltip: 'Send voice note',
-                    icon: const Icon(Icons.send_rounded, color: Colors.white),
-                    onPressed: onSend,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _VoicePreviewBar extends StatelessWidget {
-  const _VoicePreviewBar({
-    required this.attachment,
-    required this.onDelete,
-    required this.onSend,
-  });
-
-  final ChatAttachment attachment;
-  final VoidCallback onDelete;
-  final VoidCallback onSend;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return SafeArea(
-      top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-        decoration: BoxDecoration(
-          color: u.surfaceCard,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: u.structuralBorder),
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: 'Discard',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: onDelete,
-            ),
-            Expanded(child: _VoiceBubble(attachment: attachment)),
-            Material(
-              color: u.brand,
-              shape: const CircleBorder(),
-              child: IconButton(
-                tooltip: 'Send voice note',
-                icon: const Icon(Icons.send_rounded, color: Colors.white),
-                onPressed: onSend,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

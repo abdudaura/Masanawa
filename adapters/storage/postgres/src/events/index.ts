@@ -3,3 +3,4 @@ export * from "./outbox.js";
 export * from "./platform-events.js";
 export * from "./inbox.js";
 export * from "./reconciliation.js";
+export * from "./twin-economy.js";

@@ -45,5 +45,11 @@ jobs:
         run: pnpm typecheck
       - name: Test
         run: pnpm test:ci
+      - name: Provider qualification tooling tests
+        run: >-
+          node --test
+          scripts/flutterwave-billing-qualification-gate.test.mjs
+          scripts/flutterwave-billing-production-qualification.test.mjs
+          scripts/nowpayments-production-qualification.test.mjs
       - name: Build
         run: pnpm build

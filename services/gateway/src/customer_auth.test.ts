@@ -20,6 +20,8 @@ import type {
 } from "@masanawa/security";
 import {
   createCustomerAuthService,
+  createResendOtpDelivery,
+  renderMasanawaOtpEmail,
   createPlatformCustomerAuthorizers,
   createPlatformCustomerSessionAuthorizer,
   createPlatformSessionFinancialAuthorizer,
@@ -248,6 +250,119 @@ describe("platform-session Agent authorization", () => {
     })).rejects.toMatchObject({ code: "FORBIDDEN", statusCode: 403 });
   });
 
+
+
+  it("admits a discoverable public Twin on first contact and blocks continued chat after a safety block", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const characterVersionId = createCanonicalId("character-version");
+    const relationshipId = createCanonicalId("relationship");
+    let relationship: Awaited<ReturnType<UserRelationshipReader["readForUserCharacter"]>> = null;
+    let blocked = false;
+
+    const sessions: PlatformCustomerSessionAuthorizer = {
+      async authorize() {
+        return Object.freeze({
+          tenantId,
+          userId,
+          profile: Object.freeze({
+            tenantId,
+            userId,
+            name: "Visitor",
+            email: "visitor@example.com",
+            phone: null,
+            locale: "en-NG",
+            createdAt: "2026-10-05T00:00:00.000Z",
+          }),
+        });
+      },
+    };
+    const presentation: AgentPresentation = {
+      schemaVersion: 1,
+      tenantId,
+      characterId,
+      characterVersionId,
+      displayName: "Public Twin",
+      roleLabel: "AI twin",
+      about: "Public twin",
+      greeting: null,
+      visibleInUserApp: true,
+      sortOrder: 10,
+      revision: 1,
+    };
+
+    const authorizers = createPlatformCustomerAuthorizers({
+      sessions,
+      presentations: {
+        async readForCharacter(input) {
+          return input.characterId === characterId ? presentation : null;
+        },
+        async listAll() { return [presentation]; },
+        async listVisible() { return [presentation]; },
+        async put(input) { return input.presentation; },
+      },
+      skillAssignments: {
+        async readForCharacter() { return null; },
+        async put(input) { return input.assignment; },
+      },
+      relationships: {
+        async readForUserCharacter() { return relationship; },
+        async listForUser() { return relationship ? [relationship] : []; },
+      },
+      relationshipProvisioner: {
+        async getOrCreateForUserCharacter(input) {
+          relationship = Object.freeze({
+            tenantId,
+            relationshipId,
+            userId,
+            characterId: input.characterId,
+            state: "active" as const,
+            stage: null,
+            tone: null,
+            preferences: Object.freeze({}),
+            disclosures: Object.freeze({}),
+            permissions: Object.freeze({}),
+            revision: 1,
+            createdAt: nowInstant(),
+            updatedAt: nowInstant(),
+          });
+          return relationship;
+        },
+      },
+      platformProfiles: {
+        async readForCharacter() { return null; },
+        async listSupportAgents() { return []; },
+        async put(input) { return input.profile; },
+      },
+      publicTwinAdmission: {
+        async canChat(input) {
+          expect(input.characterId).toBe(characterId);
+          return !blocked;
+        },
+        async canContinue(input) {
+          expect(input.characterId).toBe(characterId);
+          return !blocked;
+        },
+      },
+      policyRevision: "production-v1",
+    });
+
+    await expect(authorizers.conversation.authorize({
+      authorizationHeader: "Bearer session",
+      characterId,
+    })).resolves.toMatchObject({
+      scope: { tenantId, userId, characterId, relationshipId },
+    });
+    expect(relationship).not.toBeNull();
+
+    blocked = true;
+    await expect(authorizers.conversation.authorize({
+      authorizationHeader: "Bearer session",
+      characterId,
+    })).rejects.toMatchObject({ code: "FORBIDDEN", statusCode: 403 });
+  });
+
   it("maps a rejected platform session to a mobile 401", async () => {
     const tenantId = createCanonicalId("tenant");
     const sessions: PlatformCustomerSessionAuthorizer = {
@@ -293,6 +408,16 @@ describe("platform-session Agent authorization", () => {
 });
 
 describe("customer authentication", () => {
+  it("reports session storage outages as retryable availability failures", async () => {
+    const repository = new MemorySessions();
+    repository.resolveAccess = async () => { throw new Error("private database credential"); };
+    const sessions = createPlatformCustomerSessionAuthorizer({ repository });
+    await expect(sessions.authorize({ authorizationHeader: `Bearer msw_access_${"a".repeat(64)}` }))
+      .rejects.toMatchObject({ code: "AUTH_UNAVAILABLE", statusCode: 503, message: "AUTH_UNAVAILABLE" });
+    await expect(sessions.authorize({ authorizationHeader: undefined }))
+      .rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
+  });
+
   it("advertises only OTP channels that are actually configured", () => {
     const repository = new MemorySessions();
     const service = createCustomerAuthService({
@@ -358,7 +483,7 @@ describe("customer authentication", () => {
     const rotated = await service.refresh({ refreshToken: signedIn.refreshToken });
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${signedIn.accessToken}`,
-    })).rejects.toThrow("financial.auth.unauthorized");
+    })).rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${rotated.accessToken}`,
     })).resolves.toMatchObject({ tenantId });
@@ -366,7 +491,42 @@ describe("customer authentication", () => {
     await service.logout({ authorizationHeader: `Bearer ${rotated.accessToken}` });
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${rotated.accessToken}`,
-    })).rejects.toThrow("financial.auth.unauthorized");
+    })).rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
+  });
+
+  it("renders and sends a branded Masanawa OTP email", async () => {
+    const rendered = renderMasanawaOtpEmail("123456");
+    expect(rendered.subject).toBe("Your Masanawa sign-in code");
+    expect(rendered.text).toContain("123456");
+    expect(rendered.html).toContain("Masanawa");
+    expect(rendered.html).toContain("123456");
+    expect(rendered.html).toContain("#0121D2");
+    expect(rendered.html).toContain("#1DA4FD");
+    expect(rendered.html).toContain("Security note");
+
+    let payload: Record<string, unknown> | null = null;
+    const delivery = createResendOtpDelivery({
+      apiKey: "test-key",
+      from: "Masanawa <no-reply@example.test>",
+      fetchImpl: async (_url, init) => {
+        payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return new Response(null, { status: 202 });
+      },
+    });
+
+    await delivery.send({
+      identifier: "user@example.test",
+      code: "123456",
+    });
+
+    expect(payload).toMatchObject({
+      from: "Masanawa <no-reply@example.test>",
+      to: ["user@example.test"],
+      subject: "Your Masanawa sign-in code",
+      text: expect.stringContaining("123456"),
+      html: expect.stringContaining("123456"),
+      tags: [{ name: "category", value: "authentication_otp" }],
+    });
   });
 
   it("removes a challenge when delivery fails instead of accepting an unseen OTP", async () => {
@@ -382,3 +542,4 @@ describe("customer authentication", () => {
     expect(repository.challenge).toBeNull();
   });
 });
+

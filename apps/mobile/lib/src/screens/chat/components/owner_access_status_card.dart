@@ -19,6 +19,7 @@ class OwnerAccessStatusCard extends StatelessWidget {
       case OwnerAccessState.active: return 'Happening now';
       case OwnerAccessState.completed: return 'Completed';
       case OwnerAccessState.settled: return 'Paid';
+      case OwnerAccessState.releasing: return 'Releasing payment';
       case OwnerAccessState.declined: return 'Declined';
       case OwnerAccessState.expired: return 'Expired';
       case OwnerAccessState.cancelled: return 'Cancelled';

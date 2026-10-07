@@ -75,12 +75,32 @@ describe("owner access offering service", () => {
         durationOptionsMinutes: [15],
         priceCreditsPerMinute: 1000,
       }),
+    ).rejects.toThrow();
+
+    await expect(
+      service.update({
+        authorizationHeader: "Bearer owner",
+        enabled: true,
+        modalities: ["text", "voice"],
+        durationOptionsMinutes: [15],
+        priceCreditsPerMinute: 25,
+      }),
+    ).rejects.toThrow();
+
+    await expect(
+      service.update({
+        authorizationHeader: "Bearer owner",
+        enabled: true,
+        modalities: ["text"],
+        durationOptionsMinutes: [15],
+        priceCreditsPerMinute: 1000,
+      }),
     ).rejects.toThrow("platform bounds");
 
     const updated = await service.update({
       authorizationHeader: "Bearer owner",
       enabled: true,
-      modalities: ["text", "voice"],
+      modalities: ["text"],
       durationOptionsMinutes: [30, 15],
       priceCreditsPerMinute: 25,
     });

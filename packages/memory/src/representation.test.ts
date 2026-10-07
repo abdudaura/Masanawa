@@ -1,3 +1,4 @@
+import { createCanonicalId } from "@masanawa/contracts";
 import { describe, expect, it } from "vitest";
 import type { MemoryRecordSnapshot, MemoryScope } from "./model.js";
 import {
@@ -5,12 +6,12 @@ import {
   createPublicTwinRepresentationPredicate,
 } from "./representation.js";
 
-const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
-const characterId = "character_00000000-0000-4000-8000-000000000002" as never;
+const tenantId = createCanonicalId("tenant");
+const characterId = createCanonicalId("character");
 
 function snapshot(scope: MemoryScope): MemoryRecordSnapshot {
-  const recordId = "memory-record_00000000-0000-4000-8000-000000000003" as never;
-  const revisionId = "memory-revision_00000000-0000-4000-8000-000000000004" as never;
+  const recordId = createCanonicalId("memory-record");
+  const revisionId = createCanonicalId("memory-revision");
   return {
     record: {
       tenantId,
@@ -67,11 +68,11 @@ describe("public twin representation memory", () => {
     { kind: "character-private", characterId } as const,
     {
       kind: "relationship",
-      relationshipId: "relationship_00000000-0000-4000-8000-000000000005" as never,
+      relationshipId: createCanonicalId("relationship"),
     } as const,
     {
       kind: "session",
-      characterSessionId: "character-session_00000000-0000-4000-8000-000000000006" as never,
+      characterSessionId: createCanonicalId("character-session"),
     } as const,
   ])("rejects private/bounded scope %#", (scope) => {
     expect(() =>
@@ -88,7 +89,7 @@ describe("public twin representation memory", () => {
         boundary: { tenantId, characterId },
         snapshot: snapshot({
           kind: "character-shared",
-          characterId: "character_00000000-0000-4000-8000-000000000999" as never,
+          characterId: createCanonicalId("character"),
         }),
       }),
     ).toThrow("only explicitly shared memory");

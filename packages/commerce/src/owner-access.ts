@@ -7,6 +7,7 @@ export type OwnerAccessState =
   | "active"
   | "completed"
   | "settled"
+  | "releasing"
   | "declined"
   | "expired"
   | "cancelled"
@@ -61,6 +62,13 @@ export interface OwnerAccessRequest {
   readonly scheduledFor: string | null;
   readonly startedAt: string | null;
   readonly completedAt: string | null;
+  readonly reconciliationReason?: "attendance-timeout";
+  readonly disputeBy?: string | null;
+  readonly disputedAt?: string | null;
+  readonly disputeReason?: "service-not-delivered" | "service-quality" | "other" | null;
+  readonly earningsReleasedAt?: string | null;
+  readonly disputeResolvedAt?: string | null;
+  readonly disputeResolution?: "release" | "refund" | null;
 }
 
 export interface OwnerAccessSettlementDecision {
@@ -172,7 +180,8 @@ const transitions: Readonly<Record<OwnerAccessState, readonly OwnerAccessState[]
   scheduled: ["active", "cancelled", "no-show", "expired"],
   active: ["completed", "disputed"],
   completed: ["settled", "disputed"],
-  settled: [],
+  settled: ["disputed", "releasing"],
+  releasing: ["settled"],
   declined: ["refunded"],
   expired: ["refunded"],
   cancelled: ["refunded"],

@@ -80,7 +80,7 @@ export function createCreditTransferService(input: {
   readonly guard: CreditTransferGuard;
   readonly executor: CreditTransferExecutor;
 }): CreditTransferService {
-  return Object.freeze({
+  return Object.freeze<CreditTransferService>({
     async transfer(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,

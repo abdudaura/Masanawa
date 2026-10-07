@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createCanonicalId,
   nowInstant,
@@ -293,4 +293,48 @@ describe("Alpha conversation service", () => {
 
     expect(outcomes).toEqual(["alpha.strategy_failed"]);
   });
+
+  it("rejects expired sessions before inference or financial side effects", async () => {
+    const f = fixture();
+    const expired = {
+      ...sessionFor(f),
+      expiresAt: toInstant(new Date(Date.now() - 1_000)),
+    };
+    const execute = vi.fn(async () => ({ reply: "should not run", parts: [] }));
+    const sessions: CharacterSessionRepository = {
+      async create() { return expired; },
+      async read() { return expired; },
+      async updateBindings() { throw new Error("not used"); },
+      async close() { return expired; },
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create() { throw new Error("run must not start"); },
+      async read() { throw new Error("not used"); },
+      async finish() { throw new Error("run must not finish"); },
+    };
+    const authorizer: AgentConversationAuthorizer = {
+      async authorize() { return f.admission; },
+    };
+    const service = createAgentConversationService({
+      sessions,
+      runs,
+      authorizer,
+      strategy: { execute },
+      sessionDurationMs: 60_000,
+    });
+
+    await expect(
+      service.turn({
+        authorizationHeader: "Bearer alpha",
+        characterSessionId: expired.characterSessionId,
+        characterId: f.scope.characterId,
+        text: "confirm",
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      }),
+    ).rejects.toMatchObject({ code: "agents.session_closed" });
+    expect(execute).not.toHaveBeenCalled();
+  });
+
 });

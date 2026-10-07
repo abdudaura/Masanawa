@@ -17,9 +17,9 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "ng.unigeria.unigeria"
-    // flutter_secure_storage v11 compiles against SDK 37; keep compileSdk pinned
-    // to 37 so the plugin's AAR metadata check passes (AGP 9.0.1 warns 37 is
-    // above its recommended max but compiles fine).
+    // Current Android plugins require API 37 at compile time. Runtime support
+    // remains governed by minSdk/targetSdk; compileSdk only exposes newer APIs
+    // to the compiler.
     compileSdk = 37
     ndkVersion = flutter.ndkVersion
 

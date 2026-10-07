@@ -172,6 +172,9 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:packages/contracts
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:packages/identity
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:adapters/storage/postgres
@@ -196,6 +199,8 @@ importers:
       vitest:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  adapters/crypto/nowpayments: {}
 
   adapters/storage/postgres:
     dependencies:
@@ -308,9 +313,21 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@masanawa/memory':
+        specifier: workspace:*
+        version: link:../memory
       '@masanawa/security':
         specifier: workspace:*
         version: link:../security
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:../skills
+      '@masanawa/world':
+        specifier: workspace:*
+        version: link:../world
     devDependencies:
       vitest:
         specifier: 5.0.3
@@ -479,9 +496,15 @@ importers:
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../infra/runtime/node
+      '@masanawa/nowpayments':
+        specifier: workspace:*
+        version: link:../../adapters/crypto/nowpayments
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../packages/security

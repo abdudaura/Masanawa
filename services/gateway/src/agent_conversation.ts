@@ -16,9 +16,31 @@ import type {
   AgentConversationService,
 } from "./agent_conversation_contract.js";
 import type { NativeAudioRenderer } from "./native_audio.js";
+import type { AgentBillingAssistant } from "./agent_billing_assistant.js";
+import type { AgentTeachingAssistant } from "./agent_teaching_assistant.js";
+import type { AgentCryptoAssistant } from "./agent_crypto_assistant.js";
 
 function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+
+function assertConversationSessionOpen(session: {
+  readonly state: "active" | "closed";
+  readonly expiresAt: string;
+}): void {
+  if (
+    session.state !== "active" ||
+    !Number.isFinite(Date.parse(session.expiresAt)) ||
+    Date.parse(session.expiresAt) <= Date.now()
+  ) {
+    throw new PlatformError({
+      code: "agents.session_closed",
+      category: "conflict",
+      message: "The conversation session is closed or expired.",
+      retryable: true,
+    });
+  }
 }
 
 function replayTurn(command: MobileTurnCommand) {
@@ -49,6 +71,21 @@ function replayTurn(command: MobileTurnCommand) {
   });
 }
 
+export interface TwinConversationObserver {
+  opened(input: {
+    readonly tenantId: string;
+    readonly userId: string;
+    readonly characterId: string;
+    readonly characterSessionId: string;
+  }): Promise<void>;
+  completed(input: {
+    readonly tenantId: string;
+    readonly userId: string;
+    readonly characterId: string;
+    readonly referenceId: string;
+  }): Promise<void>;
+}
+
 export function createAgentConversationService(input: {
   readonly sessions: CharacterSessionRepository;
   readonly runs: AgentRunRepository;
@@ -56,6 +93,10 @@ export function createAgentConversationService(input: {
   readonly strategy: AgentStrategy;
   readonly nativeAudio?: NativeAudioRenderer;
   readonly mobileShell?: MobileShellRepository;
+  readonly twinObserver?: TwinConversationObserver;
+  readonly billingAssistant?: AgentBillingAssistant;
+  readonly teachingAssistant?: AgentTeachingAssistant;
+  readonly cryptoAssistant?: AgentCryptoAssistant;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -82,7 +123,7 @@ export function createAgentConversationService(input: {
       .catch(() => undefined);
   }
 
-  return Object.freeze({
+  const service: AgentConversationService = {
     async open(request) {
       const characterId = parseCanonicalId("character", request.characterId);
       const admission = await input.authorizer.authorize({
@@ -102,6 +143,12 @@ export function createAgentConversationService(input: {
         durationMs: input.sessionDurationMs,
         bindings: admission.bindings,
       });
+      await input.twinObserver?.opened({
+        tenantId: admission.scope.tenantId,
+        userId: admission.scope.userId,
+        characterId: admission.scope.characterId,
+        characterSessionId,
+      }).catch(() => undefined);
       return Object.freeze({ characterSessionId });
     },
 
@@ -124,6 +171,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
         const claim = await input.mobileShell.claimTurn({
@@ -165,18 +213,66 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const teachingPreparation = await input.teachingAssistant?.prepare({
+          scope: admission.scope,
+          text,
+        });
+        const billingDirect = teachingPreparation
+          ? null
+          : await input.billingAssistant?.beforeInference({
+              authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
+              text,
+            });
+        const cryptoDirect = teachingPreparation || billingDirect
+          ? null
+          : await input.cryptoAssistant?.beforeInference({
+              authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
+              scope: admission.scope,
+              text,
+            });
+        const direct = billingDirect ?? cryptoDirect;
+        const inferenceText = teachingPreparation?.text ?? text;
+        const generated = direct ?? await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
-          ...(request.onTextDelta
+          // Machine directives are stripped after inference. Do not stream
+          // them into the user-visible chat before server consumption.
+          ...(!input.billingAssistant &&
+              !input.cryptoAssistant &&
+              !teachingPreparation &&
+              request.onTextDelta
             ? { onTextDelta: request.onTextDelta }
             : {}),
-          input: Object.freeze({ kind: "text" as const, text }),
+          input: Object.freeze({ kind: "text" as const, text: inferenceText }),
         });
+        const cryptoResult = direct || teachingPreparation
+          ? null
+          : await input.cryptoAssistant?.afterInference({
+              authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
+              scope: admission.scope,
+              modelReply: generated.reply,
+            });
+        const result = direct
+          ? direct
+          : teachingPreparation && input.teachingAssistant
+            ? await input.teachingAssistant.finish({
+                preparation: teachingPreparation,
+                modelReply: generated.reply,
+              })
+            : cryptoResult ??
+              (await input.billingAssistant?.afterInference({
+                authorizationHeader: request.authorizationHeader,
+                characterId: admission.scope.characterId,
+                modelReply: generated.reply,
+              })) ??
+              generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -207,6 +303,13 @@ export function createAgentConversationService(input: {
             },
           });
         }
+
+        await input.twinObserver?.completed({
+          tenantId: admission.scope.tenantId,
+          userId: admission.scope.userId,
+          characterId: admission.scope.characterId,
+          referenceId: request.requestId,
+        }).catch(() => undefined);
 
         const audio = await renderAudio(
           reply,
@@ -288,6 +391,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
         const claim = await input.mobileShell.claimTurn({
@@ -331,7 +435,7 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const generated = await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
@@ -345,6 +449,12 @@ export function createAgentConversationService(input: {
             dataBase64: request.dataBase64,
           }),
         });
+        const result =
+          (await input.billingAssistant?.afterInference({
+            authorizationHeader: request.authorizationHeader,
+            characterId: admission.scope.characterId,
+            modelReply: generated.reply,
+          })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -375,6 +485,13 @@ export function createAgentConversationService(input: {
             },
           });
         }
+
+        await input.twinObserver?.completed({
+          tenantId: admission.scope.tenantId,
+          userId: admission.scope.userId,
+          characterId: admission.scope.characterId,
+          referenceId: request.requestId,
+        }).catch(() => undefined);
 
         const audio = await renderAudio(reply, request.signal);
         return Object.freeze({
@@ -458,6 +575,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
         const claim = await input.mobileShell.claimTurn({
@@ -508,7 +626,7 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const generated = await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
@@ -521,6 +639,12 @@ export function createAgentConversationService(input: {
             media: Object.freeze(media),
           }),
         });
+        const result =
+          (await input.billingAssistant?.afterInference({
+            authorizationHeader: request.authorizationHeader,
+            characterId: admission.scope.characterId,
+            modelReply: generated.reply,
+          })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -604,6 +728,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
       if (session.state === "closed") return;
 
       await input.sessions.close({
@@ -613,5 +738,6 @@ export function createAgentConversationService(input: {
         expectedRevision: session.revision,
       });
     },
-  });
+  };
+  return Object.freeze(service);
 }

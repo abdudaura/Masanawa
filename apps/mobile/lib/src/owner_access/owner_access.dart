@@ -7,6 +7,7 @@ enum OwnerAccessState {
   active,
   completed,
   settled,
+  releasing,
   declined,
   expired,
   cancelled,
@@ -32,6 +33,7 @@ OwnerAccessState _state(String value) {
     case 'active': return OwnerAccessState.active;
     case 'completed': return OwnerAccessState.completed;
     case 'settled': return OwnerAccessState.settled;
+    case 'releasing': return OwnerAccessState.releasing;
     case 'declined': return OwnerAccessState.declined;
     case 'expired': return OwnerAccessState.expired;
     case 'cancelled': return OwnerAccessState.cancelled;
@@ -130,6 +132,13 @@ class OwnerAccessRequest {
     required this.requestedAt,
     required this.acceptBy,
     required this.scheduledFor,
+    this.completedAt,
+    this.disputeBy,
+    this.disputedAt,
+    this.disputeReason,
+    this.earningsReleasedAt,
+    this.disputeResolvedAt,
+    this.disputeResolution,
   });
 
   final String requestId;
@@ -144,6 +153,13 @@ class OwnerAccessRequest {
   final DateTime requestedAt;
   final DateTime acceptBy;
   final DateTime? scheduledFor;
+  final DateTime? completedAt;
+  final DateTime? disputeBy;
+  final DateTime? disputedAt;
+  final String? disputeReason;
+  final DateTime? earningsReleasedAt;
+  final DateTime? disputeResolvedAt;
+  final String? disputeResolution;
 
   factory OwnerAccessRequest.fromJson(Map<String, dynamic> json) {
     final requestId = json['requestId'];
@@ -156,6 +172,13 @@ class OwnerAccessRequest {
     final requestedAt = json['requestedAt'];
     final acceptBy = json['acceptBy'];
     final scheduledFor = json['scheduledFor'];
+    final completedAt = json['completedAt'];
+    final disputeBy = json['disputeBy'];
+    final disputedAt = json['disputedAt'];
+    final disputeReason = json['disputeReason'];
+    final earningsReleasedAt = json['earningsReleasedAt'];
+    final disputeResolvedAt = json['disputeResolvedAt'];
+    final disputeResolution = json['disputeResolution'];
     final duration = json['durationMinutes'];
     final price = json['priceCredits'];
     if (requestId is! String ||
@@ -169,7 +192,14 @@ class OwnerAccessRequest {
         acceptBy is! String ||
         duration is! num ||
         price is! num ||
-        (scheduledFor != null && scheduledFor is! String)) {
+        (scheduledFor != null && scheduledFor is! String) ||
+        (completedAt != null && completedAt is! String) ||
+        (disputeBy != null && disputeBy is! String) ||
+        (disputedAt != null && disputedAt is! String) ||
+        (disputeReason != null && disputeReason is! String) ||
+        (earningsReleasedAt != null && earningsReleasedAt is! String) ||
+        (disputeResolvedAt != null && disputeResolvedAt is! String) ||
+        (disputeResolution != null && disputeResolution is! String)) {
       throw const FormatException('Invalid owner access request');
     }
     return OwnerAccessRequest(
@@ -186,10 +216,155 @@ class OwnerAccessRequest {
       acceptBy: DateTime.parse(acceptBy).toLocal(),
       scheduledFor:
           scheduledFor == null ? null : DateTime.parse(scheduledFor).toLocal(),
+      completedAt:
+          completedAt == null ? null : DateTime.parse(completedAt).toLocal(),
+      disputeBy:
+          disputeBy == null ? null : DateTime.parse(disputeBy).toLocal(),
+      disputedAt:
+          disputedAt == null ? null : DateTime.parse(disputedAt).toLocal(),
+      disputeReason: disputeReason as String?,
+      earningsReleasedAt: earningsReleasedAt == null
+          ? null
+          : DateTime.parse(earningsReleasedAt).toLocal(),
+      disputeResolvedAt: disputeResolvedAt == null
+          ? null
+          : DateTime.parse(disputeResolvedAt).toLocal(),
+      disputeResolution: disputeResolution as String?,
     );
   }
 }
 
+class OwnerAccessRoomMessage {
+  const OwnerAccessRoomMessage({
+    required this.requestId,
+    required this.messageId,
+    required this.senderUserId,
+    required this.body,
+    required this.sentAt,
+  });
+
+  final String requestId;
+  final String messageId;
+  final String senderUserId;
+  final String body;
+  final DateTime sentAt;
+
+  factory OwnerAccessRoomMessage.fromJson(Map<String, dynamic> json) {
+    final requestId = json['requestId'];
+    final messageId = json['messageId'];
+    final senderUserId = json['senderUserId'];
+    final body = json['body'];
+    final sentAt = json['sentAt'];
+    if (requestId is! String ||
+        messageId is! String ||
+        senderUserId is! String ||
+        body is! String ||
+        sentAt is! String) {
+      throw const FormatException('Invalid owner access room message');
+    }
+    return OwnerAccessRoomMessage(
+      requestId: requestId,
+      messageId: messageId,
+      senderUserId: senderUserId,
+      body: body,
+      sentAt: DateTime.parse(sentAt).toLocal(),
+    );
+  }
+}
+
+class OwnerAccessRoomPresence {
+  const OwnerAccessRoomPresence({
+    required this.userId,
+    required this.firstSeenAt,
+    required this.lastSeenAt,
+    required this.heartbeatCount,
+  });
+
+  final String userId;
+  final DateTime firstSeenAt;
+  final DateTime lastSeenAt;
+  final int heartbeatCount;
+
+  factory OwnerAccessRoomPresence.fromJson(Map<String, dynamic> json) {
+    final userId = json['userId'];
+    final firstSeenAt = json['firstSeenAt'];
+    final lastSeenAt = json['lastSeenAt'];
+    final heartbeatCount = json['heartbeatCount'];
+    if (userId is! String ||
+        firstSeenAt is! String ||
+        lastSeenAt is! String ||
+        heartbeatCount is! num) {
+      throw const FormatException('Invalid owner access room presence');
+    }
+    return OwnerAccessRoomPresence(
+      userId: userId,
+      firstSeenAt: DateTime.parse(firstSeenAt).toLocal(),
+      lastSeenAt: DateTime.parse(lastSeenAt).toLocal(),
+      heartbeatCount: heartbeatCount.toInt(),
+    );
+  }
+}
+
+class OwnerAccessRoomStatus {
+  const OwnerAccessRoomStatus({
+    required this.attendanceVerified,
+    required this.verifiedSeconds,
+    required this.sessionEndsAt,
+    required this.realPersonSession,
+    required this.recordingAllowed,
+    required this.messageRetentionDays,
+    required this.presence,
+  });
+
+  final bool attendanceVerified;
+  final int verifiedSeconds;
+  final DateTime? sessionEndsAt;
+  final bool realPersonSession;
+  final bool recordingAllowed;
+  final int? messageRetentionDays;
+  final List<OwnerAccessRoomPresence> presence;
+
+  factory OwnerAccessRoomStatus.fromJson(Map<String, dynamic> json) {
+    final verified = json['attendanceVerified'];
+    final seconds = json['verifiedSeconds'];
+    final sessionEndsAt = json['sessionEndsAt'];
+    final realPersonSession = json['realPersonSession'];
+    final recordingAllowed = json['recordingAllowed'];
+    final messageRetentionDays = json['messageRetentionDays'];
+    final presence = json['presence'];
+    if (verified is! bool ||
+        seconds is! num ||
+        (sessionEndsAt != null && sessionEndsAt is! String) ||
+        (realPersonSession != null && realPersonSession is! bool) ||
+        (recordingAllowed != null && recordingAllowed is! bool) ||
+        (messageRetentionDays != null &&
+            (messageRetentionDays is! num ||
+                messageRetentionDays.toInt() < 1 ||
+                messageRetentionDays.toInt() > 365)) ||
+        presence is! List) {
+      throw const FormatException('Invalid owner access room status');
+    }
+    return OwnerAccessRoomStatus(
+      attendanceVerified: verified,
+      verifiedSeconds: seconds.toInt(),
+      sessionEndsAt: sessionEndsAt is String
+          ? DateTime.parse(sessionEndsAt).toLocal()
+          : null,
+      realPersonSession: realPersonSession == true,
+      recordingAllowed: recordingAllowed == true,
+      messageRetentionDays: messageRetentionDays is num
+          ? messageRetentionDays.toInt()
+          : null,
+      presence: List.unmodifiable(
+        presence.map(
+          (item) => OwnerAccessRoomPresence.fromJson(
+            (item as Map).cast<String, dynamic>(),
+          ),
+        ),
+      ),
+    );
+  }
+}
 abstract class OwnerAccessTransport {
   Future<OwnerAccessQuote> quote({
     required String characterId,
@@ -207,11 +382,34 @@ abstract class OwnerAccessTransport {
     required String requestId,
   });
 
+  Future<OwnerAccessRequest?> latest({
+    required String characterId,
+  });
+
   Future<OwnerAccessRequest> act({
     required String characterId,
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+    String? disputeReason,
+  });
+
+  Future<OwnerAccessRoomStatus> heartbeat({
+    required String characterId,
+    required String requestId,
+  });
+
+  Future<List<OwnerAccessRoomMessage>> messages({
+    required String characterId,
+    required String requestId,
+    int limit = 100,
+  });
+
+  Future<OwnerAccessRoomMessage> sendMessage({
+    required String characterId,
+    required String requestId,
+    required String messageId,
+    required String body,
   });
 }
 
@@ -244,11 +442,46 @@ class UnavailableOwnerAccessTransport implements OwnerAccessTransport {
   }
 
   @override
+  Future<OwnerAccessRequest?> latest({
+    required String characterId,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
   Future<OwnerAccessRequest> act({
     required String characterId,
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+    String? disputeReason,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<OwnerAccessRoomStatus> heartbeat({
+    required String characterId,
+    required String requestId,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<List<OwnerAccessRoomMessage>> messages({
+    required String characterId,
+    required String requestId,
+    int limit = 100,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<OwnerAccessRoomMessage> sendMessage({
+    required String characterId,
+    required String requestId,
+    required String messageId,
+    required String body,
   }) {
     throw StateError('Owner access is not connected to the Gateway yet');
   }

@@ -176,7 +176,7 @@ export function createMyTwinProjectionService(input: {
     });
   }
 
-  return Object.freeze({
+  return Object.freeze<MyTwinProjectionService>({
     async read(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,

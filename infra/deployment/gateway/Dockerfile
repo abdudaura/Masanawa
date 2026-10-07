@@ -11,6 +11,7 @@ COPY packages ./packages
 COPY adapters ./adapters
 COPY infra ./infra
 COPY services ./services
+COPY apps ./apps
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @masanawa/gateway-service... build

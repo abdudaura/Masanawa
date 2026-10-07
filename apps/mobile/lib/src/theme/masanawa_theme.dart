@@ -173,9 +173,84 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       backgroundColor: masanawa.brand,
       foregroundColor: Colors.white,
     ),
+    cardTheme: CardThemeData(
+      color: masanawa.surfaceCard,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: masanawa.structuralBorder),
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: masanawa.surfaceCard,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: masanawa.surfaceCard,
+      surfaceTintColor: Colors.transparent,
+      modalBackgroundColor: masanawa.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: masanawa.brand,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(48, 48),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: masanawa.brand,
+        minimumSize: const Size(48, 48),
+        side: BorderSide(color: masanawa.structuralBorder),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: masanawa.brand),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: masanawa.surfaceMuted,
+      selectedColor: masanawa.brand.withValues(alpha: .14),
+      side: BorderSide(color: masanawa.structuralBorder),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+      ),
+      labelStyle: TextStyle(color: masanawa.textPrimary),
+      secondaryLabelStyle: TextStyle(color: masanawa.brandStrong),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? masanawa.brandStrong
+              : masanawa.textMuted,
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? masanawa.brand.withValues(alpha: .12)
+              : masanawa.surfaceCard,
+        ),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: masanawa.structuralBorder),
+        ),
+      ),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: masanawa.surfaceMuted,
+      fillColor: masanawa.surfaceCard,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: masanawa.structuralBorder),
@@ -196,8 +271,10 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     dividerTheme: DividerThemeData(color: masanawa.structuralBorder),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: masanawa.brandStrong,
-      contentTextStyle: const TextStyle(color: Colors.white),
+      backgroundColor: isDark ? Colors.white : masanawa.textPrimary,
+      contentTextStyle: TextStyle(
+        color: isDark ? Colors.black87 : Colors.white,
+      ),
       behavior: SnackBarBehavior.floating,
     ),
     splashFactory: InkSparkle.splashFactory,

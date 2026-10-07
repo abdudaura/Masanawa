@@ -58,7 +58,7 @@ export function createAgentShellService(input: {
     return admitted;
   }
 
-  return Object.freeze({
+  const service: AgentShellService = {
     async config(request) {
       await admission(request.authorizationHeader, request.characterId);
       const capabilities = request.capabilities;
@@ -178,6 +178,7 @@ export function createAgentShellService(input: {
       let execution;
       try {
         execution = await input.actionExecutor.execute({
+          authorizationHeader: request.authorizationHeader,
           admission: admitted,
           session,
           action: request.action,
@@ -186,7 +187,7 @@ export function createAgentShellService(input: {
         // Leave pending. A side effect may have happened; callers must reconcile.
         throw new PlatformError({
           code: "agents.shell_action_outcome_unknown",
-          category: "dependency",
+          category: "unavailable",
           message: "The action outcome is not yet known.",
           retryable: true,
         });
@@ -254,5 +255,6 @@ export function createAgentShellService(input: {
         revision: request.revision,
       });
     },
-  });
+  };
+  return Object.freeze(service);
 }

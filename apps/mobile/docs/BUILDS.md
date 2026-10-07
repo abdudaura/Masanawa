@@ -6,13 +6,13 @@ All commands run from `apps/mobile`.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `API_BASE_URL` | `https://nurainworker-production.up.railway.app` | Masanawa API and OTP/session Gateway. |
-| `AGENT_BASE_URL` | `https://nurainworker-production.up.railway.app` | Masanawa Agent/creator Gateway. |
+| `API_BASE_URL` | `https://masanawa-gateway-production.up.railway.app` | Masanawa API and OTP/session Gateway. |
+| `AGENT_BASE_URL` | `https://masanawa-gateway-production.up.railway.app` | Masanawa Agent/creator Gateway. |
 
 Example:
 
 ```sh
-# Production defaults need no Dart defines.
+# Production defaults use the verified Railway Gateway and need no Dart defines.
 flutter run
 
 # Optional staging-origin override:
@@ -67,3 +67,36 @@ Vercel). For sub-path hosting pass `--base-href=/your-path/`.
 `.github/workflows/mobile-build.yml` runs analyze, tests, a debug APK, and a
 release web build on every push/PR touching `apps/mobile/**`. Release
 signing stays manual (key lives with you, never in the repo).
+
+
+## Local production APK (Windows)
+
+From the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\apps\mobile\scripts\build_production_apk.ps1
+```
+
+The script deliberately runs the full mobile qualification path before producing the APK:
+
+1. `flutter pub get`
+2. regenerates launcher/app icons from `assets/brand/masanawa_agent_logo.png`
+3. regenerates the native splash from the same approved logo
+4. `dart format --output=none --set-exit-if-changed lib test`
+5. `flutter analyze`
+6. `flutter test`
+7. release APK build against the Railway production gateway
+
+Expected output:
+
+```text
+apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+```
+
+For a faster device-development build after a previously successful full build:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\apps\mobile\scripts\build_production_apk.ps1 -Debug -SkipTests
+```
+
+Do not restore any deleted legacy brand files. The single source of truth for launcher, splash, auth and in-app brand artwork is `assets/brand/masanawa_agent_logo.png`.

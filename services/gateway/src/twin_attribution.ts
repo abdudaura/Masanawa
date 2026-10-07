@@ -68,7 +68,7 @@ export function createTwinAttributionService(input: {
   readonly authorizer: TwinAttributionAuthorizer;
   readonly quotes: TwinAttributionQuotePort;
 }): TwinAttributionService {
-  return Object.freeze({
+  return Object.freeze<TwinAttributionService>({
     async quote(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
