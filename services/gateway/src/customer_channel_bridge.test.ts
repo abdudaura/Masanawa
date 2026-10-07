@@ -93,4 +93,110 @@ describe("Customer channel bridge", () => {
       messageId: "wamid.done",
     });
   });
+  it("creates a canonical Masanawa customer on first WhatsApp contact and routes directly to Gwani", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const profile = {
+      tenantId,
+      userId,
+      name: "WhatsApp customer",
+      email: null,
+      phone: "+2348012345678",
+      locale: "ng",
+      createdAt: "2026-10-07T00:00:00.000Z",
+    };
+    const createProfile = vi.fn(async () => profile);
+    const issueSession = vi.fn(async () => undefined);
+    const revokeAccess = vi.fn(async () => undefined);
+    const sessions = {
+      async resolveProfile() {
+        return null;
+      },
+      createProfile,
+      issueSession,
+      revokeAccess,
+    } as unknown as PlatformSessionRepository;
+
+    let link: any = null;
+    const channels = {
+      async claimMessage() {
+        return { state: "claimed" as const };
+      },
+      async readLink() {
+        return null;
+      },
+      async putLink(value: unknown) {
+        link = value;
+      },
+      async setCharacterSession(value: unknown) {
+        link = { ...link, ...(value as object) };
+      },
+      async completeMessage() {},
+      async failMessage() {},
+    } as unknown as CustomerChannelRepository;
+
+    const platformProfiles = {
+      async listSupportAgents() {
+        return [{
+          characterId,
+          supportAgent: true,
+          defaultForNewUsers: true,
+          voiceName: "Bodi",
+        }];
+      },
+    } as unknown as PlatformAgentProfileRepository;
+
+    const conversation = {
+      async open() {
+        return { characterSessionId: createCanonicalId("character-session") };
+      },
+      async turn() {
+        return {
+          reply: "Welcome to Masanawa. How can I help?",
+          agentRunId: createCanonicalId("agent-run"),
+          parts: [],
+        };
+      },
+    } as unknown as AgentConversationService;
+
+    const bridge = createCustomerChannelBridge({
+      tenantId,
+      sessions,
+      channels,
+      platformProfiles,
+      conversation,
+    });
+
+    const result = await bridge.handle({
+      channel: "whatsapp",
+      messageId: "wamid.first",
+      externalUserId: "+2348012345678",
+      chatId: "2348012345678@s.whatsapp.net",
+      phone: "+2348012345678",
+      text: "Hello",
+    });
+
+    expect(createProfile).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId,
+      channel: "sms",
+      identifier: "+2348012345678",
+      name: "WhatsApp customer",
+    }));
+    expect(link).toMatchObject({
+      channel: "whatsapp",
+      externalUserId: "+2348012345678",
+      userId,
+      characterId,
+    });
+    expect(issueSession).toHaveBeenCalledTimes(1);
+    expect(revokeAccess).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      handled: true,
+      duplicate: false,
+      reply: "Welcome to Masanawa. How can I help?",
+      shouldDeliver: true,
+    });
+  });
+
 });
