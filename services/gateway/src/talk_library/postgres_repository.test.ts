@@ -47,7 +47,9 @@ describe("Postgres Talk library repository", () => {
     expect(calls[0]?.text).toContain("t.host_user_id = $2");
     expect(calls[0]?.values).toEqual(["tenant_a", "user_host", 100]);
     expect(view.live.map((talk) => talk.id)).toEqual(["talk_live"]);
+    expect(view.live[0]?.viewerIsHost).toBe(true);
     expect(view.replays.map((talk) => talk.id)).toEqual(["talk_replay"]);
+    expect(view.replays[0]?.viewerIsHost).toBe(true);
     expect(view.drafts.map((draft) => draft.id)).toEqual(["talk_draft"]);
   });
 
