@@ -3,8 +3,8 @@
 Owner/window: current ChatGPT documentation and readiness window
 Branch: `docs/mobile-global-readiness-20261008`
 Base SHA: `f990af2ad782a64ef25a0acdedc69b9791054e27`
-Last repository-visible update: 2026-10-07T23:44:40.393Z
-Status: ACTIVE — documentation only; no application/runtime/financial configuration edits.
+Last repository-visible update: 2026-10-07T23:53:05.978Z
+Status: COMPLETED / RELEASED — documentation publication complete; R01–R16 implementation ownership is unclaimed.
 
 ## Task
 Publish the user's 2026-10-08 requirements and an evidence-based continuation plan:
@@ -34,7 +34,31 @@ Current main CI fails before runner allocation (runner_id=0, steps=[]); this is 
 No active overlapping documentation PR found. Recheck main and open claims before integration.
 
 ## Verification and handoff
-Pending: publish updated contracts, check relative links/read-order consistency and
-required acceptance criteria, inspect documentation-only diff, merge reviewable PR.
-The user's current instruction is to update guiding docs first; implementations remain
-explicit tasks, not claimed fixes. Keep existing shell, human Host and ledger authority.
+
+Published nine canonical documents plus this checkpoint in PR #401. The implementation
+ledger contains R01–R16 and DEFAULT-AI-PERSONAS.md contains eight complete profiles.
+Aligned continuation, product, Talk, screen, service, shell and coordination contracts.
+Superseded blanket exclusion of public comments from AI context with bounded moderated
+event context; removed the obsolete mockup-before-implementation gate.
+
+Verification: local documentation checks passed for all nine documents, sixteen unique
+task rows, eight profiles with required fields, Markdown code fences, canonical references,
+required financial/privacy/theme criteria and removal of conflicting guidance.
+All referenced Markdown paths resolve against the repository tree/new documents.
+PR diff contains only ten owned Markdown files. No application code, provider flags,
+payments, credentials or deployed runtime changed. Historical 310-test evidence remains
+historical; no application test suite was rerun for documentation changes.
+
+Main was rechecked before integration; preserve newer commits if it moves.
+Next concrete task: claim R01 on a fresh main branch and implement shared light defaults,
+white surfaces and vibrant green; then qualify R02 authenticated Host/listener audio and
+R03 available canonical personas. Financial R05–R08 and other tasks remain explicitly
+open/partial/blocked/unverified until their acceptance evidence exists.
+
+Next-window prompt:
+Continue Baatiku/masanawa from main. Read CONTINUE-HERE.md and the canonical contracts,
+docs/MOBILE-READINESS-PLAN.md and docs/DEFAULT-AI-PERSONAS.md. Inspect current main,
+open PRs/claims and latest runtime evidence. Claim R01 or another non-overlapping
+highest-priority readiness task, resume existing foundations, implement and verify
+substantive changes, and record code/build/deployment/device evidence separately.
+Do not claim this documentation update fixed the mobile app or enabled financial rails.
