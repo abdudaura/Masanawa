@@ -1,6 +1,7 @@
 import type { TalkDiscoveryItem } from "../talks/model.js";
 import type {
   MyTalksView,
+  OwnedTalkDiscoveryItem,
   TalkDraftPreview,
   TalkLibraryRepository,
   TalkSavedState,
@@ -68,6 +69,13 @@ function discovery(row: TalkRow): TalkDiscoveryItem {
   });
 }
 
+function ownedDiscovery(row: TalkRow): OwnedTalkDiscoveryItem {
+  return Object.freeze({
+    ...discovery(row),
+    viewerIsHost: true as const,
+  });
+}
+
 function draft(row: TalkRow): TalkDraftPreview {
   return Object.freeze({
     id: row.talk_id,
@@ -113,17 +121,17 @@ export function createPostgresTalkLibraryRepository(
         [input.tenantId, input.userId, input.limit],
       );
 
-      const live: TalkDiscoveryItem[] = [];
-      const replays: TalkDiscoveryItem[] = [];
+      const live: OwnedTalkDiscoveryItem[] = [];
+      const replays: OwnedTalkDiscoveryItem[] = [];
       const drafts: TalkDraftPreview[] = [];
 
       for (const row of result.rows) {
         if (row.state === "draft") {
           drafts.push(draft(row));
         } else if (row.state === "ended") {
-          replays.push(discovery(row));
+          replays.push(ownedDiscovery(row));
         } else {
-          live.push(discovery(row));
+          live.push(ownedDiscovery(row));
         }
       }
 
