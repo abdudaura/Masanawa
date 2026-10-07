@@ -1,3 +1,4 @@
+import type { TalkAiRuntimeDispatcher } from "../talk_ai_worker/livekit_dispatch.js";
 import type { PlatformSessionIdentity } from "@masanawa/security";
 import type {
   TalkAiSeatCandidateView,
@@ -168,6 +169,7 @@ export function createTalkAiSeatService(input: Readonly<{
   repository: TalkAiSeatRepository;
   authorizer: TalkAiSeatAuthorizer;
   pricing: TalkAiSeatPricingPolicy;
+  runtimeDispatcher?: TalkAiRuntimeDispatcher;
   now?: () => string;
 }>): TalkAiSeatService {
   const pricing = normalizePolicy(input.pricing);
@@ -177,6 +179,27 @@ export function createTalkAiSeatService(input: Readonly<{
     authorizationHeader: string | undefined,
   ): Promise<PlatformSessionIdentity> {
     return input.authorizer.authorize({ authorizationHeader });
+  }
+
+  async function dispatchIfAdmitted(request: Readonly<{
+    tenantId: string;
+    talkId: string;
+    requestId: string;
+    status: TalkAiSeatConfirmView["status"] | undefined;
+  }>): Promise<void> {
+    if (request.status !== "admitted" || !input.runtimeDispatcher) return;
+    const seat = await input.repository.readRuntimeSeat({
+      tenantId: request.tenantId,
+      talkId: request.talkId,
+      requestId: request.requestId,
+    });
+    if (!seat) throw new TalkAiSeatError("talks.ai_runtime_seat_missing", 409);
+    try {
+      await input.runtimeDispatcher.dispatch(seat);
+    } catch (error) {
+      if (error instanceof TalkAiSeatError) throw error;
+      throw new TalkAiSeatError("talks.ai_runtime_unavailable", 503);
+    }
   }
 
   return Object.freeze({
@@ -247,12 +270,19 @@ export function createTalkAiSeatService(input: Readonly<{
     async confirm(request) {
       const viewer = await identity(request.authorizationHeader);
       try {
+        const talkId = bounded(request.talkId, "talk_id");
         const result = await input.repository.confirm({
           tenantId: viewer.tenantId,
           payerUserId: viewer.userId,
-          talkId: bounded(request.talkId, "talk_id"),
+          talkId,
           quoteId: bounded(request.quoteId, "quote_id"),
           now: now(),
+        });
+        await dispatchIfAdmitted({
+          tenantId: viewer.tenantId,
+          talkId,
+          requestId: result.requestId,
+          status: result.status,
         });
         return Object.freeze({
           requestId: result.requestId,
@@ -281,13 +311,21 @@ export function createTalkAiSeatService(input: Readonly<{
     async decide(request) {
       const viewer = await identity(request.authorizationHeader);
       try {
+        const talkId = bounded(request.talkId, "talk_id");
+        const requestId = bounded(request.requestId, "request_id");
         const result = await input.repository.hostDecision({
           tenantId: viewer.tenantId,
           hostUserId: viewer.userId,
-          talkId: bounded(request.talkId, "talk_id"),
-          requestId: bounded(request.requestId, "request_id"),
+          talkId,
+          requestId,
           action: request.action,
           now: now(),
+        });
+        await dispatchIfAdmitted({
+          tenantId: viewer.tenantId,
+          talkId,
+          requestId,
+          status: result.status,
         });
         return Object.freeze({ handled: result.handled });
       } catch (error) {

@@ -90,6 +90,15 @@ function repository(): TalkAiSeatRepository {
     async sweepExpired() {
       return 0;
     },
+    async readRuntimeSeat({ tenantId, talkId, requestId }) {
+      return {
+        tenantId,
+        talkId,
+        seatId: `seat_${requestId}`,
+        personaId: "expert_gwani",
+        kind: "expert",
+      };
+    },
   };
 }
 
