@@ -185,7 +185,7 @@ export interface TwinProductionRuntime {
   readonly wallet: WalletProjectionService;
   readonly creditTransfer: CreditTransferService;
   readonly gifts: GiftService;
-  readonly creditGift: {
+  readonly creditGift?: {
     execute(input: Readonly<{
       tenantId: string;
       requestId: string;
