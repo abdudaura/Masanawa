@@ -113,6 +113,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           onOpenTalk: (talkId) => context.push(
             '/talk/' + Uri.encodeComponent(talkId),
           ),
+          onOpenProfile: (handle) => context.push(
+            '/u/' + Uri.encodeComponent(handle),
+          ),
         ),
       3 => _you(),
       _ => const SizedBox.shrink(),
