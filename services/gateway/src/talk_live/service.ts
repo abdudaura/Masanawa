@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PlatformSessionIdentity } from "@masanawa/security";
+import type { TalkMediaTokenIssuer, TalkMediaCredentials } from "./livekit_media.js";
 import type {
   TalkLiveRepository,
   TalkLiveSessionView,
@@ -38,6 +39,11 @@ export interface TalkLiveService {
     authorizationHeader: string | undefined;
     talkId: string;
   }>): Promise<TalkLiveStateView>;
+  media(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+    sessionId: string;
+  }>): Promise<TalkMediaCredentials>;
 }
 
 function talkId(value: string): string {
@@ -62,6 +68,7 @@ export function createTalkLiveService(input: Readonly<{
   now?: () => string;
   reconnectGraceMs?: number;
   createSessionId?: () => string;
+  mediaTokens?: TalkMediaTokenIssuer;
 }>): TalkLiveService {
   const now = input.now ?? (() => new Date().toISOString());
   const reconnectGraceMs = input.reconnectGraceMs ?? 30_000;
@@ -116,6 +123,32 @@ export function createTalkLiveService(input: Readonly<{
       });
       if (!state) throw new TalkLiveError("talks.live.session_not_found", 404);
       return state;
+    },
+
+    async media(request) {
+      if (!input.mediaTokens) {
+        throw new TalkLiveError("talks.live.media_unavailable", 503);
+      }
+      const viewer = await identity(request.authorizationHeader);
+      const connected = await input.repository.heartbeat({
+        tenantId: viewer.tenantId,
+        userId: viewer.userId,
+        talkId: talkId(request.talkId),
+        sessionId: sessionId(request.sessionId),
+        now: now(),
+        reconnectGraceMs,
+      });
+      if (!connected) throw new TalkLiveError("talks.live.session_not_found", 404);
+      if (connected.state === "ended") {
+        throw new TalkLiveError("talks.live.ended", 409);
+      }
+      return input.mediaTokens.mint({
+        talkId: connected.talkId,
+        sessionId: connected.sessionId,
+        userId: viewer.userId,
+        role: connected.role,
+        canPublishAudio: connected.canPublishAudio,
+      });
     },
 
     async state(request) {
