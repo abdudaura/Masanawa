@@ -4,3 +4,7 @@ packages:
   - "apps/*"
   - "adapters/*/*"
   - "infra/*/*"
+
+onlyBuiltDependencies:
+  - "@whiskeysockets/baileys"
+  - "protobufjs"
