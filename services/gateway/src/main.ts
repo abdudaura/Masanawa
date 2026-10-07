@@ -199,6 +199,7 @@ import {
   type AgentCryptoAssistant,
 } from "./agent_crypto_assistant.js";
 import type { CustomerChannelOptions } from "./customer_channel_routes.js";
+import { registerAndVerifyTelegramWebhook } from "./telegram_webhook_registration.js";
 import {
   createLinkedWhatsAppController,
   type LinkedWhatsAppController,
@@ -1488,6 +1489,9 @@ export async function startGatewayService(
 
   let composedCustomerChannels: CustomerChannelOptions | undefined =
     options.appOptions?.customerChannels;
+  let telegramWebhookRegistration:
+    | Readonly<{ botToken: string; webhookSecret: string; webhookUrl: string }>
+    | undefined;
   let linkedWhatsAppController: LinkedWhatsAppController | undefined;
   let linkedWhatsAppAdmin:
     | NonNullable<GatewayAppOptions["linkedWhatsApp"]>
@@ -1590,10 +1594,30 @@ export async function startGatewayService(
     if (telegramEnabled) {
       const botToken = env.MASANAWA_TELEGRAM_BOT_TOKEN?.trim();
       const webhookSecret = env.MASANAWA_TELEGRAM_WEBHOOK_SECRET?.trim();
-      if (!botToken || !webhookSecret) {
-        throw new TypeError("Telegram is enabled but bot/webhook configuration is incomplete");
+      const explicitWebhookUrl = env.MASANAWA_TELEGRAM_WEBHOOK_URL?.trim();
+      const publicBaseUrl = env.MASANAWA_PUBLIC_BASE_URL?.trim();
+      const webhookUrl =
+        explicitWebhookUrl ||
+        (publicBaseUrl
+          ? new URL(
+              "/channels/telegram/webhook",
+              publicBaseUrl.endsWith("/") ? publicBaseUrl : `${publicBaseUrl}/`,
+            ).toString()
+          : "");
+      if (!botToken || !webhookSecret || !webhookUrl) {
+        throw new TypeError(
+          "Telegram is enabled but bot token, webhook secret, or public webhook URL is missing",
+        );
+      }
+      if (new URL(webhookUrl).protocol !== "https:") {
+        throw new TypeError("Telegram webhook URL must use HTTPS");
       }
       telegram = Object.freeze({ botToken, webhookSecret });
+      telegramWebhookRegistration = Object.freeze({
+        botToken,
+        webhookSecret,
+        webhookUrl,
+      });
     }
 
     composedCustomerChannels = Object.freeze({
@@ -1763,6 +1787,15 @@ export async function startGatewayService(
       processRef.exitCode = 1;
     },
   });
+
+  if (telegramWebhookRegistration) {
+    try {
+      await registerAndVerifyTelegramWebhook(telegramWebhookRegistration);
+    } catch (error) {
+      await lifecycle.stop("manual").catch(() => undefined);
+      throw error;
+    }
+  }
 
   const runOwnerAccessSweep = async () => {
     if (

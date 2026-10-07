@@ -473,6 +473,13 @@
       "description": "Telegram webhook secret token validated on every inbound update."
     },
     {
+      "name": "MASANAWA_TELEGRAM_WEBHOOK_URL",
+      "owner": "gateway/channels",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "HTTPS Telegram webhook URL. Optional when MASANAWA_PUBLIC_BASE_URL is configured; otherwise required when Telegram is enabled."
+    },
+    {
       "name": "MASANAWA_TEST_DATABASE_URL",
       "owner": "test",
       "classification": "secret",
