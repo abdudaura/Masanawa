@@ -158,56 +158,6 @@ export function createTalkParticipationService(input: Readonly<{
     return input.authorizer.authorize({ authorizationHeader: header });
   }
 
-  async function appendDecisionActivity(
-    decision: TalkRequestDecision,
-    action: TalkHostRequestAction,
-    talkId: string,
-    changedAt: string,
-  ): Promise<void> {
-    const activity = input.activity;
-    const userId = decision.request.requesterUserId;
-    if (!activity || !userId) return;
-    const accepted = action === "accept";
-    const human = decision.request.kind === "human_speaker";
-    try {
-      await activity.append({
-        tenantId: decision.request.requestId.split(":")[0] === "__never__"
-          ? "__never__"
-          : "",
-        activityId: `talk-activity_${decision.request.requestId}_${action}`,
-        userId,
-        kind: activityKind(decision, action),
-        title: human
-          ? accepted
-            ? "Your hand was accepted"
-            : "Your hand was declined"
-          : accepted
-            ? "AI Seat accepted"
-            : "AI Seat declined",
-        detail: human
-          ? accepted
-            ? "The Host admitted you as a Speaker."
-            : "The Host declined your request to speak."
-          : accepted
-            ? "The Host accepted the sponsored AI Seat."
-            : "The Host declined the sponsored AI Seat.",
-        createdAt: changedAt,
-        talkId,
-        ...(decision.request.personaId
-          ? { personaId: decision.request.personaId }
-          : {}),
-        ...(decision.request.amountLabel
-          ? { amountLabel: decision.request.amountLabel }
-          : {}),
-        requiresAction: false,
-        unread: true,
-      });
-    } catch {
-      // Moderation authority must not roll back because the Activity projection
-      // is temporarily unavailable. The canonical request/participant state is
-      // already durable and can be reconciled independently.
-    }
-  }
 
   return Object.freeze({
     async viewer(request) {
