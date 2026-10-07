@@ -59,9 +59,9 @@ export function createTalkReplayCoordinator(input:Readonly<{
       const media=await input.media.current(request);
       if(!media) return;
       if(media.status==="recording"){
-        try{await input.egress.stop(media.egressId);}catch{}
+        await input.egress.stop(stoppedMedia.egressId);
       }
-      try{await input.objects.deleteObject(media.objectKey);}catch{}
+      await input.objects.deleteObject(stoppedMedia.objectKey);
       await input.media.markAborted({
         tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
         completedAt:new Date().toISOString(),
@@ -76,21 +76,29 @@ export function createTalkReplayCoordinator(input:Readonly<{
         await input.replay.finalizeFromLive(request);
         return;
       }
-      if(media.status==="ready"){
+      if(media.status==="ready"||media.status==="aborted"){
         await input.replay.finalizeFromLive(request);
         return;
       }
 
-      try{await input.egress.stop(media.egressId);}catch{}
-      const checksum=await input.objects.checksumSha256(media.objectKey);
-      const segmentId=`egress_${safePart(media.egressId)}`;
+      let stoppedMedia=media;
+      if(media.status==="recording"){
+        await input.egress.stop(stoppedMedia.egressId);
+        await input.media.markStopped({
+          tenantId:request.tenantId,talkId:request.talkId,recordingId:stoppedMedia.recordingId,
+          completedAt:request.now,
+        });
+        stoppedMedia=Object.freeze({...media,status:"stopped" as const,completedAt:request.now});
+      }
+      const checksum=await input.objects.checksumSha256(stoppedMedia.objectKey);
+      const segmentId=`egress_${safePart(stoppedMedia.egressId)}`;
       const appended=await input.replay.appendSegment({
         tenantId:request.tenantId,
         talkId:request.talkId,
         segmentId,
-        startedAt:media.startedAt,
+        startedAt:stoppedMedia.startedAt,
         endedAt:request.now,
-        mediaRef:`s3:${media.objectKey}`,
+        mediaRef:`s3:${stoppedMedia.objectKey}`,
         checksumSha256:checksum,
         now:request.now,
       });
@@ -98,7 +106,7 @@ export function createTalkReplayCoordinator(input:Readonly<{
       const finalized=await input.replay.finalizeFromLive(request);
       if(!finalized) throw new Error("talks.replay.not_found");
       await input.media.markReady({
-        tenantId:request.tenantId,talkId:request.talkId,recordingId:media.recordingId,
+        tenantId:request.tenantId,talkId:request.talkId,recordingId:stoppedMedia.recordingId,
         checksumSha256:checksum,completedAt:request.now,
       });
     },
