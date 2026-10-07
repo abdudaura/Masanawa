@@ -127,6 +127,13 @@ export function createPostgresTalkSearchRepository(
            ON hp.tenant_id = t.tenant_id
           AND hp.user_id = t.host_user_id
         WHERE t.tenant_id = $1
+          AND NOT EXISTS (
+            SELECT 1 FROM talks.safety_enforcement se
+             WHERE se.tenant_id = t.tenant_id
+               AND se.target_kind = 'talk'
+               AND se.target_id = t.talk_id
+               AND se.visibility IN ('restricted','blocked')
+          )
           AND t.state IN ('live','reconnecting','ended')
           AND (
             t.title ILIKE $2 ESCAPE '\\'
@@ -168,6 +175,13 @@ export function createPostgresTalkSearchRepository(
           AND live.talk_id = p.live_talk_id
           AND live.state = 'live'
         WHERE p.tenant_id = $1
+          AND NOT EXISTS (
+            SELECT 1 FROM talks.safety_enforcement se
+             WHERE se.tenant_id = p.tenant_id
+               AND se.target_kind = 'profile'
+               AND se.target_id = p.handle
+               AND se.visibility IN ('restricted','blocked')
+          )
           AND (
             p.handle ILIKE $2 ESCAPE '\\'
             OR p.display_name ILIKE $2 ESCAPE '\\'
@@ -204,6 +218,13 @@ export function createPostgresTalkSearchRepository(
           AND twin.public_id = p.public_id
           AND twin.discoverable = true
         WHERE p.tenant_id = $1
+          AND NOT EXISTS (
+            SELECT 1 FROM talks.safety_enforcement se
+             WHERE se.tenant_id = p.tenant_id
+               AND se.target_kind = 'persona'
+               AND se.target_id = p.public_id
+               AND se.visibility IN ('restricted','blocked')
+          )
           AND ($3::text IS NULL OR p.kind = $3)
           AND (p.kind <> 'expert' OR p.is_verified = true)
           AND (p.kind <> 'twin' OR twin.public_id IS NOT NULL)

@@ -108,8 +108,15 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                 (SELECT count(*)::int FROM talks.comments c
                   WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count
            FROM talks.talks t
-          WHERE tenant_id = $1
-            AND ($2::text = 'explore' OR state = 'live')
+          WHERE t.tenant_id = $1
+            AND ($2::text = 'explore' OR t.state = 'live')
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id = t.tenant_id
+                 AND se.target_kind = 'talk'
+                 AND se.target_id = t.talk_id
+                 AND se.visibility IN ('restricted','blocked')
+            )
             AND (
               state IN ('live','reconnecting')
               OR (
@@ -139,9 +146,19 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                 (SELECT count(*)::int FROM talks.comments c
                   WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count
            FROM talks.talks t
-          WHERE tenant_id = $1 AND talk_id = $2
+          WHERE t.tenant_id = $1 AND t.talk_id = $2
             AND (
-              state <> 'ended'
+              t.host_user_id = $3
+              OR NOT EXISTS (
+                SELECT 1 FROM talks.safety_enforcement se
+                 WHERE se.tenant_id = t.tenant_id
+                   AND se.target_kind = 'talk'
+                   AND se.target_id = t.talk_id
+                   AND se.visibility IN ('restricted','blocked')
+              )
+            )
+            AND (
+              t.state <> 'ended'
               OR host_user_id = $3
               OR EXISTS (
                 SELECT 1 FROM talks.replay_sessions r
@@ -181,6 +198,13 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
            WHERE EXISTS (
              SELECT 1 FROM talks.talks t
               WHERE t.tenant_id = $1 AND t.talk_id = $2
+                AND NOT EXISTS (
+                  SELECT 1 FROM talks.safety_enforcement se
+                   WHERE se.tenant_id = t.tenant_id
+                     AND se.target_kind = 'talk'
+                     AND se.target_id = t.talk_id
+                     AND se.visibility IN ('restricted','blocked')
+                )
                 AND (
                   t.state IN ('live','reconnecting')
                   OR (

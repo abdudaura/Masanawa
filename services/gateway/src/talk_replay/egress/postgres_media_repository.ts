@@ -148,6 +148,15 @@ export function createPostgresReplayMediaRepository(pool:ReplayMediaSqlPool):Rep
           WHERE m.tenant_id=$1 AND m.talk_id=$2
             AND m.status='ready'
             AND r.recording_state='finalized'
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id=m.tenant_id
+                 AND (
+                   (se.target_kind='talk' AND se.target_id=t.talk_id)
+                   OR (se.target_kind='replay' AND se.target_id=r.recording_id)
+                 )
+                 AND se.visibility IN ('restricted','blocked')
+            )
             AND (t.host_user_id=$3 OR r.publication_state='published')
           LIMIT 1`,
         [input.tenantId,input.talkId,input.viewerUserId],
