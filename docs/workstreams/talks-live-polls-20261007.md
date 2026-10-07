@@ -1,0 +1,25 @@
+# Live Talk polls — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talks-live-polls-20261007`
+- Base SHA: `cc03bca1b8d468f31e11c25fc201ae9e445dfc22`
+- Task: implement the North-Star live audience poll primitive end-to-end.
+- Exact owned paths:
+  - `packages/talks/migrations/0012_talk_polls.sql`
+  - `services/gateway/src/talk_polls/**`
+  - `services/gateway/src/talk_poll_routes.ts`
+  - focused Gateway composition in `services/gateway/src/app.ts` and `services/gateway/src/main.ts`
+  - focused poll tests
+  - `apps/mobile/lib/src/talks/talk_polls.dart`
+  - `apps/mobile/lib/src/talks/talk_polls_http_transport.dart`
+  - `apps/mobile/lib/src/state/talk_poll_state.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_poll_sheet.dart`
+  - focused wiring/tests in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
+  - this claim file
+- Shared dependencies: customer session authorization, Talk live lifecycle and human Host identity. No ranking, gifts, questions, replay, Billing/Crypto, or AI Seat commerce changes.
+- Product bounds: one open poll per Talk; Host creates/closes; 2–4 options; one current vote per user; voting only while Talk is live and poll open; results are aggregate only.
+- Current step: implement durable repository/service/routes, compose runtime, then wire compact in-Talk mobile poll UI.
+- Last update: 2026-10-07T11:30Z
+- Implementation status: claimed
+- Verification status: pending
+- Deployment status: not deployed
