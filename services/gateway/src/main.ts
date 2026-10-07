@@ -1884,6 +1884,13 @@ export async function startGatewayService(
           authorizer: talkModerationAuthorizer,
           ...(talkMediaAdmin ? { mediaAdmin: talkMediaAdmin } : {}),
           ...(composedTalkAiSeats ? { aiSeats: composedTalkAiSeats } : {}),
+          ...(database.talkReplay
+            ? {
+                onTalkEnded: async ({tenantId,talkId,reason,now}) => {
+                  await database.talkReplay!.finalizeFromLive({tenantId,talkId,reason,now});
+                },
+              }
+            : {}),
         })
       : undefined);
 
