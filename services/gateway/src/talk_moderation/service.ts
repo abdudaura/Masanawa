@@ -194,6 +194,14 @@ export function createTalkModerationService(input: Readonly<{
       }));
       if(result===null) throw new TalkModerationError("talks.not_found",404);
       await applyMedia(request.talkId,result.mediaActions);
+      if(input.onTalkEnded){
+        await input.onTalkEnded({
+          tenantId:viewer.tenantId,
+          talkId:request.talkId,
+          reason:"host_ended",
+          now:now(),
+        });
+      }
       return Object.freeze({ended:true as const});
     },
   });
