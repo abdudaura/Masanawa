@@ -9,7 +9,10 @@
   - `services/gateway/src/talks/**`
   - `services/gateway/src/talk_routes.ts`
   - `services/gateway/src/talk_routes.test.ts`
-  - `services/gateway/src/app.ts` only for isolated Talk route registration after a fresh collision check
+  - `services/gateway/src/app.ts` for isolated Talk route registration
+  - `services/gateway/src/main.ts` for isolated Talk repository/auth composition
+  - `adapters/storage/postgres/src/readiness.ts` only to add the Talk migration root
+  - `packages/talks/migrations/**`
   - `docs/workstreams/talks-backend-domain-api-20261007.md`
 - **Explicitly not owned:** all `apps/mobile/**`; canonical Talks/mobile product docs owned by `work/talks-home-vertical-feed-20261007`; Commerce/Twin/voice/channel/security implementations; shared migrations outside the lane.
 - **Dependency:** consume existing authenticated customer identity shape and Fastify composition; no changes to mobile contract files.
