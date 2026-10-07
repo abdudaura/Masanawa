@@ -37,3 +37,14 @@ Acceptance:
 - Documented the support matrix in `docs/CHANNEL-CUSTOMER-EXPERIENCE.md`.
 
 External evidence still required: real WhatsApp/Telegram device/provider conversation smoke tests.
+
+
+## Final channel UX/safety hardening
+
+- Telegram explicit group/supergroup chats are ignored before Agent or financial execution.
+- A Telegram sender's own verified contact can provision/link the same canonical Masanawa
+  phone identity instead of requiring app-first signup.
+- Short numbered Telegram choices become a one-tap reply keyboard.
+- Twin ambiguity choices use `@publicId` buttons so the next tap performs canonical exact
+  Twin resolution.
+- WhatsApp retains reliable numbered text choices under linked-device transport.
