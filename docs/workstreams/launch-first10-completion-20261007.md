@@ -347,3 +347,28 @@ The suite covers:
 
 This complements the existing bridge tests for duplicate execution and outbound-delivery
 retries. Live provider registration/delivery remains external qualification.
+
+
+### Android local qualification tooling
+
+Added `scripts/qualify-first10-android.ps1` for the exact first-ten launch branch.
+
+On Windows it:
+
+1. verifies the current branch is `work/launch-first10-completion-20261007`;
+2. records the exact Git HEAD;
+3. runs Flutter dependency resolution, analyzer and tests;
+4. builds the release APK against the production Railway Gateway;
+5. prints APK path, size and SHA-256;
+6. with `-Install`, verifies an authorized ADB device, installs with `adb install -r`
+   and launches package `ng.unigeria.unigeria`;
+7. prints the remaining physical device acceptance checklist.
+
+Recommended local command from the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\qualify-first10-android.ps1 -Install
+```
+
+This does not replace manual real-device behavior checks, but removes branch/build/install
+ambiguity and produces exact APK evidence tied to a commit.
