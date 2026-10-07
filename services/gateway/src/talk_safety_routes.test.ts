@@ -14,6 +14,8 @@ function app(){
     },
     async readPreference(){ return {blocked:false,muted:false}; },
     async setPreference(input){ return {blocked:input.blocked,muted:input.muted}; },
+    async readUserPreference(){ return {blocked:false,muted:true}; },
+    async setUserPreference(input){ return {blocked:input.blocked,muted:input.muted}; },
     async readEnforcement(input){
       if(input.authorizationHeader!=="Bearer safety-admin"){
         throw Object.assign(new Error("FORBIDDEN"),{statusCode:403});
@@ -68,6 +70,25 @@ describe("Talk safety HTTP routes",()=>{
       },
     });
     expect(response.statusCode).toBe(400);
+  });
+
+  it("reads and updates customer safety preference by verified user id",async()=>{
+    const read=await app().inject({
+      method:"GET",
+      url:"/safety/users/user-host/preference",
+      headers:{authorization:"Bearer customer"},
+    });
+    expect(read.statusCode).toBe(200);
+    expect(read.json()).toEqual({blocked:false,muted:true});
+
+    const updated=await app().inject({
+      method:"PUT",
+      url:"/safety/users/user-host/preference",
+      headers:{authorization:"Bearer customer"},
+      payload:{blocked:true,muted:false},
+    });
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json()).toEqual({blocked:true,muted:false});
   });
 
   it("does not let customer auth mutate platform enforcement",async()=>{
