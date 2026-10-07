@@ -89,6 +89,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _home() => TalkHomeScreen(
         onOpenTalk: _openTalk,
+        onOpenSearch: () => context.push('/search'),
         onOpenGwani: _openPrivateGwani,
       );
 
