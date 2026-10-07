@@ -650,7 +650,7 @@ Most subordinate flows should be nested state/sheets instead of permanent new ro
 
 Design in this order because these screens define the whole product:
 
-1. For You
+1. Home — Explore / Live Talks
 2. Talk — listener
 3. Talk — Host
 4. Create Talk
