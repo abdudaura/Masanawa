@@ -121,7 +121,14 @@ function priceFor(
 function mapRepositoryError(error: unknown): never {
   if (error instanceof TalkAiSeatError) throw error;
   const code =
-    error instanceof Error ? error.message : "talks.ai_seat_failed";
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof (error as { readonly code?: unknown }).code === "string"
+      ? (error as { readonly code: string }).code
+      : error instanceof Error
+        ? error.message
+        : "talks.ai_seat_failed";
   const statusCode =
     code === "talks.not_found" ||
     code === "talks.persona_not_found" ||
