@@ -2132,9 +2132,29 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     } catch (_) {
       await session?.close();
+      if (paidAdmission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .complete(
+              admissionId: paidAdmission.admissionId,
+              outcome: 'interrupted',
+            )
+            .catchError((_) {});
+        unawaited(ref.read(walletProvider.notifier).refresh());
+      }
+      await shellTransport
+          .setPresence(
+            characterId: agent.characterId,
+            state: 'available',
+            durationMs: 60 * 1000,
+          )
+          .catchError((_) {});
       if (mounted) {
         setState(() {
           _inlineVoiceSession = null;
+          _inlinePaidAdmission = null;
+          _inlineShellTransport = null;
+          _inlineVoiceCharacterId = null;
           _inlineVoiceState = LiveVoiceState.failed;
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2259,7 +2279,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
 
     LiveVoiceSession? session;
-    var callSheetOpened = false;
+    var verifiedMediaStarted = false;
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
       await shellTransport.setPresence(
@@ -2277,7 +2297,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         grant: grant,
         characterName: agent.displayName,
       );
-      callSheetOpened = true;
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -2306,6 +2325,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         .mediaStarted(
                           admissionId: paidAdmission!.admissionId,
                         );
+                    verifiedMediaStarted = true;
                   } catch (_) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -2339,7 +2359,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             .read(paidVoiceControllerProvider.notifier)
             .complete(
               admissionId: paidAdmission.admissionId,
-              outcome: callSheetOpened ? 'completed' : 'interrupted',
+              outcome: verifiedMediaStarted ? 'completed' : 'interrupted',
             )
             .catchError((_) {});
         unawaited(ref.read(walletProvider.notifier).refresh());
