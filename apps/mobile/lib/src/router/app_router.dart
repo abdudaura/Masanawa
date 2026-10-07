@@ -2,26 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../screens/chat/ai_chat_screen.dart';
+import '../finance/crypto_wallet_screen.dart';
 import '../screens/billing/billing_screen.dart';
+import '../screens/chat/ai_chat_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
-import '../screens/settings/settings_screen.dart';
-import '../screens/twin/twin_home_shell.dart';
-import '../finance/crypto_wallet_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
+import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../screens/talks/create_talk_screen.dart';
+import '../screens/talks/talk_screen.dart';
+import '../screens/twin/twin_home_shell.dart';
+import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
+import '../talks/talk_models.dart';
 
-/// Production router: auth, the utility-first Home consumer shell, direct chat
-/// and focused capability routes. Runtime internals stay behind the four root tabs.
+/// Production router for the human-hosted Talk product.
 ///
-/// Auth rule: OTP proves ownership. A first signup may pause at `/name`
-/// after successful OTP proof but before the session is issued. All Agent
-/// surfaces require the resulting signed-in platform session.
+/// Root shell: Home · Create · Activity · You.
+/// Home contains Explore / Live Talks.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -37,20 +39,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
 
-      // Still loading (restore / OTP send / verify) — hold position.
       if (session is SessionRestoring ||
           session is SessionSendingOtp ||
           session is SessionVerifying) {
         return null;
       }
 
-      // Signed-in users never sit on login/OTP.
       if (isSignedIn && (path == '/phone-login' || path == '/otp')) {
         final user = (session as SessionSignedIn).user;
         return user.isNewUser ? '/name' : '/home';
       }
 
-      // /name is first-signup only.
       if (path == '/name') {
         if (session is SessionNameRequired) return null;
         if (isSignedIn) {
@@ -60,17 +59,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/phone-login';
       }
 
-      // Signed-out users can only be in auth. Native/public share links are
-      // normally held by PendingDeepLink until a canonical session exists.
       final protected = path == '/home' ||
           path == '/chats' ||
           path.startsWith('/chat/') ||
+          path.startsWith('/talk/') ||
           path.startsWith('/twin/') ||
           path.startsWith('/owner-session/') ||
           path == '/agents' ||
           path == '/masana' ||
           path == '/settings' ||
           path == '/my-twin' ||
+          path == '/wallet' ||
           path == '/billing' ||
           path == '/crypto' ||
           path == '/clone' ||
@@ -82,24 +81,52 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(
-          path: '/phone-login', builder: (_, _) => const PhoneLoginScreen()),
+        path: '/phone-login',
+        builder: (_, _) => const PhoneLoginScreen(),
+      ),
       GoRoute(path: '/otp', builder: (_, _) => const OtpScreen()),
       GoRoute(path: '/name', builder: (_, _) => const NameScreen()),
       GoRoute(
         path: '/home',
         builder: (_, state) {
           final index = switch (state.uri.queryParameters['tab']) {
-            'explore' => 1,
+            'create' => 1,
             'activity' => 2,
-            'wallet' => 3,
+            'you' => 3,
             _ => 0,
           };
           return TwinHomeShell(initialIndex: index);
         },
       ),
       GoRoute(
+        path: '/talk/create',
+        builder: (context, _) => CreateTalkScreen(
+          onCreated: (talk) => context.go(
+            '/talk/' + Uri.encodeComponent(talk.id),
+            extra: talk,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/talk/:id',
+        builder: (context, state) {
+          final extra = state.extra;
+          return TalkScreen(
+            talkId: state.pathParameters['id']!,
+            initialTalk: extra is TalkDiscoveryItem ? extra : null,
+          );
+        },
+      ),
+      GoRoute(
         path: '/my-twin',
         builder: (_, _) => const MyTwinRouteScreen(),
+      ),
+      GoRoute(
+        path: '/wallet',
+        builder: (context, _) => WalletScreen(
+          onBuyBills: () => context.push('/billing'),
+          onOpenCrypto: () => context.push('/crypto'),
+        ),
       ),
       GoRoute(path: '/chats', redirect: (_, __) => '/home'),
       GoRoute(
@@ -114,8 +141,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             'cafe' => AiChatEntryMode.cafe,
             _ => AiChatEntryMode.chat,
           };
-          final twinSetup =
-              state.uri.queryParameters['twinSetup'] == '1';
+          final twinSetup = state.uri.queryParameters['twinSetup'] == '1';
           return AiChatScreen(
             characterId: state.pathParameters['id']!,
             entryMode: entry,
@@ -140,7 +166,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
         ),
       ),
-      // Backwards-compatible legacy entry points now converge on the Twin shell.
       GoRoute(path: '/agents', redirect: (_, __) => '/home'),
       GoRoute(path: '/masana', redirect: (_, __) => '/home'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
@@ -196,11 +221,12 @@ class _TwinLinkResolverScreenState
       if (twin == null) {
         setState(() {
           _resolving = false;
-          _error = 'This Twin is private or the share link is no longer available.';
+          _error =
+              'This Twin is private or the share link is no longer available.';
         });
         return;
       }
-      context.go('/chat/${Uri.encodeComponent(twin.characterId)}');
+      context.go('/chat/' + Uri.encodeComponent(twin.characterId));
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -241,7 +267,7 @@ class _TwinLinkResolverScreenState
                 ),
                 TextButton(
                   onPressed: () => context.go('/home'),
-                  child: const Text('Explore other Twins'),
+                  child: const Text('Back home'),
                 ),
               ],
             ),
