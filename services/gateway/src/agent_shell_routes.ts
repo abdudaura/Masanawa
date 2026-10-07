@@ -201,12 +201,18 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
   if (options.liveVoiceTokens) {
     app.post("/agent/live/token", async (request) => {
       const body = request.body as Record<string, unknown>;
+      const purpose =
+        body.purpose == null ? "conversation" : text(body.purpose, "purpose", 32);
+      if (purpose !== "conversation" && purpose !== "twin-setup") {
+        throw new TypeError("Invalid live voice purpose");
+      }
       return options.liveVoiceTokens!.mint({
         authorizationHeader: request.headers.authorization,
         characterId: text(body.characterId, "characterId", 160),
         ...(body.admissionId == null
           ? {}
           : { admissionId: text(body.admissionId, "admissionId", 256) }),
+        purpose,
       });
     });
   }
