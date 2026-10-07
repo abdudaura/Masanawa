@@ -19,7 +19,7 @@ is never added permanently to public conversation context.
 - `LIVEKIT_URL`
 - `LIVEKIT_API_KEY`
 - `LIVEKIT_API_SECRET`
-- `GOOGLE_API_KEY` (or `MASANAWA_GEMINI_API_KEY`)
+- Gemini credentials: `GOOGLE_API_KEY`, `MASANAWA_GEMINI_API_KEY`, or the existing `MASANAWA_GEMINI_CREDENTIALS_JSON` pool
 - `DATABASE_URL` (or `MASANAWA_DATABASE_URL`)
 - `LIVEKIT_AGENT_NAME=masanawa-talk-ai`
 
@@ -31,3 +31,5 @@ Optional:
 
 The runtime follows the current active Host/Speaker in the room while retaining one
 Gemini Live session for the Seat, so context survives normal speaker changes.
+
+When a credential pool is provided, each AI Seat deterministically selects one key by Seat ID so concurrent Seats are distributed across the configured pool without exposing keys in dispatch metadata.
