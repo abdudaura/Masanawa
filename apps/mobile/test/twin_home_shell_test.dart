@@ -110,18 +110,18 @@ void main() {
     expect(find.text('Explore'), findsOneWidget);
     expect(find.text('Activity'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
-    expect(find.text('Create your digital twin'), findsOneWidget);
+    expect(find.text('My Twin'), findsWidgets);
     expect(find.text('Agents'), findsNothing);
     expect(find.text('Agent Float'), findsNothing);
     expect(find.text('Skills'), findsNothing);
 
     await tester.tap(find.text('Explore'));
     await tester.pump();
-    expect(find.text('Meet someone new'), findsOneWidget);
+    expect(find.text('Explore'), findsOneWidget);
 
     await tester.tap(find.text('Activity'));
     await tester.pump();
-    expect(find.text('Activity is not available yet.'), findsOneWidget);
+    expect(find.text('Your conversations will appear here.'), findsOneWidget);
 
     await tester.tap(find.text('Wallet'));
     await tester.pump();
@@ -158,8 +158,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Activity is not available yet.'), findsOneWidget);
-    expect(find.text('Create your digital twin'), findsNothing);
+    expect(find.text('Your conversations will appear here.'), findsOneWidget);
+    expect(find.text('Your conversations will appear here.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
