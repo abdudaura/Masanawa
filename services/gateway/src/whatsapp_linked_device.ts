@@ -7,6 +7,7 @@ import makeWASocket, {
   type WASocket,
 } from "@whiskeysockets/baileys";
 import QRCode from "qrcode";
+import pino from "pino";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import type {
@@ -97,6 +98,7 @@ export function createLinkedWhatsAppController(
   const socketFactory = options.socketFactory ?? makeWASocket;
   const reconnectBaseMs = Math.max(500, options.reconnectBaseMs ?? 2_000);
 
+  const logger = pino({ level: "silent" });
   let socket: WASocket | null = null;
   let stopped = true;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -138,7 +140,7 @@ export function createLinkedWhatsAppController(
         "buffer",
         {},
         {
-          logger: undefined as never,
+          logger,
           reuploadRequest: sock.updateMediaMessage,
         },
       );
@@ -206,6 +208,7 @@ export function createLinkedWhatsAppController(
       syncFullHistory: false,
       markOnlineOnConnect: true,
       generateHighQualityLinkPreview: false,
+      logger,
     });
     socket = sock;
 
