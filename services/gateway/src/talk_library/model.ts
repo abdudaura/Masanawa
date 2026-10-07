@@ -7,9 +7,12 @@ export interface TalkDraftPreview {
   readonly updatedAt: string;
 }
 
+export type OwnedTalkDiscoveryItem = TalkDiscoveryItem &
+  Readonly<{ viewerIsHost: true }>;
+
 export interface MyTalksView {
-  readonly live: readonly TalkDiscoveryItem[];
-  readonly replays: readonly TalkDiscoveryItem[];
+  readonly live: readonly OwnedTalkDiscoveryItem[];
+  readonly replays: readonly OwnedTalkDiscoveryItem[];
   readonly drafts: readonly TalkDraftPreview[];
 }
 
