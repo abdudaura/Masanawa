@@ -24,6 +24,9 @@ function fixture(){
     async resolveProfileUser({handle}){
       return handle==="amina" ? "user-amina" : null;
     },
+    async resolveProfileUserById({userId}){
+      return userId==="user-amina" ? "user-amina" : null;
+    },
     async readPreference({viewerUserId,subjectUserId}){
       return preferences.get(`${viewerUserId}:${subjectUserId}`) ?? null;
     },
@@ -106,6 +109,24 @@ describe("Talk safety service",()=>{
       authorizationHeader:"Bearer customer",
       handle:"amina",
     })).resolves.toEqual({blocked:true,muted:false});
+  });
+
+  it("resolves block/mute subject from verified public-profile user id",async()=>{
+    const {service}=fixture();
+    await expect(service.setUserPreference({
+      authorizationHeader:"Bearer customer",
+      userId:"user-amina",
+      blocked:false,
+      muted:true,
+    })).resolves.toEqual({blocked:false,muted:true});
+    await expect(service.readUserPreference({
+      authorizationHeader:"Bearer customer",
+      userId:"user-amina",
+    })).resolves.toEqual({blocked:false,muted:true});
+    await expect(service.readUserPreference({
+      authorizationHeader:"Bearer customer",
+      userId:"user-missing",
+    })).rejects.toMatchObject({statusCode:404});
   });
 
   it("keeps platform enforcement behind distinct safety authority",async()=>{

@@ -26,6 +26,10 @@ export interface TalkSafetyRepository {
     tenantId: string;
     handle: string;
   }>): Promise<string | null>;
+  resolveProfileUserById(input: Readonly<{
+    tenantId: string;
+    userId: string;
+  }>): Promise<string | null>;
   readPreference(input: Readonly<{
     tenantId: string;
     viewerUserId: string;
@@ -126,6 +130,15 @@ export function createPostgresTalkSafetyRepository(
         `SELECT user_id FROM talks.public_profiles
           WHERE tenant_id=$1 AND handle=$2 LIMIT 1`,
         [input.tenantId,input.handle],
+      );
+      return result.rows[0]?.user_id ?? null;
+    },
+
+    async resolveProfileUserById(input){
+      const result=await pool.query<{user_id:string}>(
+        `SELECT user_id FROM talks.public_profiles
+          WHERE tenant_id=$1 AND user_id=$2 LIMIT 1`,
+        [input.tenantId,input.userId],
       );
       return result.rows[0]?.user_id ?? null;
     },

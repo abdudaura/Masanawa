@@ -28,6 +28,7 @@ import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
 import 'talk_gift_sheet.dart';
 import 'talk_host_controls_sheets.dart';
+import 'talk_more_sheet.dart';
 import 'talk_participation_sheets.dart';
 import 'talk_poll_sheet.dart';
 import 'talk_question_sheet.dart';
@@ -511,6 +512,17 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _openMore(TalkDiscoveryItem talk) async {
+    await showTalkMoreSheet(
+      context,
+      talk: talk,
+      isHost: widget.isHost,
+    );
+    if (!mounted) return;
+    ref.invalidate(talkFeedProvider(TalkFeedKind.explore));
+    ref.invalidate(talkFeedProvider(TalkFeedKind.live));
+  }
+
   Future<void> _toggleSaved(bool isSaved) async {
     if (_savingTalk) return;
     setState(() => _savingTalk = true);
@@ -610,6 +622,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         savingTalk: _savingTalk,
         onToggleSaved: () => _toggleSaved(isSaved),
         onShare: () => _shareTalk(value.talk),
+        onMore: () => _openMore(value.talk),
         isHost: widget.isHost,
         liveAudioStatus: _liveAudioStatus,
         liveAudioRole: _liveAudioRole,
@@ -656,6 +669,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             savingTalk: _savingTalk,
             onToggleSaved: () => _toggleSaved(isSaved),
             onShare: () => _shareTalk(fallback),
+            onMore: () => _openMore(fallback),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -705,6 +719,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             savingTalk: _savingTalk,
             onToggleSaved: () => _toggleSaved(isSaved),
             onShare: () => _shareTalk(fallback),
+            onMore: () => _openMore(fallback),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -761,6 +776,7 @@ class _TalkBody extends StatelessWidget {
     this.savingTalk = false,
     this.onToggleSaved,
     this.onShare,
+    this.onMore,
     this.isHost = false,
     this.liveAudioStatus = TalkLiveAudioStatus.idle,
     this.liveAudioRole,
@@ -804,6 +820,7 @@ class _TalkBody extends StatelessWidget {
   final bool savingTalk;
   final VoidCallback? onToggleSaved;
   final VoidCallback? onShare;
+  final VoidCallback? onMore;
   final bool isHost;
   final TalkLiveAudioStatus liveAudioStatus;
   final TalkLiveRole? liveAudioRole;
@@ -852,6 +869,12 @@ class _TalkBody extends StatelessWidget {
             tooltip: 'Share Talk',
             onPressed: onShare,
             icon: const Icon(Icons.share_outlined),
+          ),
+          IconButton(
+            key: const ValueKey('talk-more'),
+            tooltip: 'More',
+            onPressed: onMore,
+            icon: const Icon(Icons.more_vert_rounded),
           ),
           IconButton(
             key: const ValueKey('talk-save-toggle'),

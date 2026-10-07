@@ -123,6 +123,13 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
           WHERE t.tenant_id = $1
             AND ($2::text = 'explore' OR t.state = 'live')
             AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_preferences sp
+               WHERE sp.tenant_id = t.tenant_id
+                 AND sp.viewer_user_id = $3
+                 AND sp.subject_user_id = t.host_user_id
+                 AND (sp.blocked OR sp.muted)
+            )
+            AND NOT EXISTS (
               SELECT 1 FROM talks.safety_enforcement se
                WHERE se.tenant_id = t.tenant_id
                  AND se.target_kind = 'talk'
@@ -166,12 +173,21 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
           WHERE t.tenant_id = $1 AND t.talk_id = $2
             AND (
               t.host_user_id = $3
-              OR NOT EXISTS (
-                SELECT 1 FROM talks.safety_enforcement se
+              OR (
+                NOT EXISTS (
+                  SELECT 1 FROM talks.safety_preferences sp
+                   WHERE sp.tenant_id = t.tenant_id
+                     AND sp.viewer_user_id = $3
+                     AND sp.subject_user_id = t.host_user_id
+                     AND (sp.blocked OR sp.muted)
+                )
+                AND NOT EXISTS (
+                  SELECT 1 FROM talks.safety_enforcement se
                  WHERE se.tenant_id = t.tenant_id
                    AND se.target_kind = 'talk'
                    AND se.target_id = t.talk_id
                    AND se.visibility IN ('restricted','blocked')
+                )
               )
             )
             AND (
@@ -215,6 +231,13 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
            WHERE EXISTS (
              SELECT 1 FROM talks.talks t
               WHERE t.tenant_id = $1 AND t.talk_id = $2
+                AND NOT EXISTS (
+                  SELECT 1 FROM talks.safety_preferences sp
+                   WHERE sp.tenant_id = t.tenant_id
+                     AND sp.viewer_user_id = $4
+                     AND sp.subject_user_id = t.host_user_id
+                     AND (sp.blocked OR sp.muted)
+                )
                 AND NOT EXISTS (
                   SELECT 1 FROM talks.safety_enforcement se
                    WHERE se.tenant_id = t.tenant_id
