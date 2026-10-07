@@ -351,6 +351,10 @@ export function registerCustomerChannelRoutes(
       ) {
         return { received: true };
       }
+      const chatType = (chat as Record<string, unknown>).type;
+      if (typeof chatType === "string" && chatType !== "private") {
+        return { received: true };
+      }
       const fromId = String((from as Record<string, unknown>).id ?? "");
       const chatId = String((chat as Record<string, unknown>).id ?? "");
       const messageId = String(message.message_id ?? "");
