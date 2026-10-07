@@ -6,27 +6,24 @@ import 'package:masanawa/src/talks/talk_live_audio_session.dart';
 import 'package:masanawa/src/talks/talk_live_room.dart';
 
 class _Transport implements TalkLiveTransport {
-  _Transport({
-    required this.role,
-    this.canPublishAudio = false,
-  });
+  _Transport({required this.role, this.canPublishAudio = false});
 
   final TalkLiveRole role;
-  final bool canPublishAudio;
+  bool canPublishAudio;
   int heartbeats = 0;
   int disconnects = 0;
   TalkLiveLifecycle heartbeatState = TalkLiveLifecycle.live;
 
   TalkLiveSessionView _session(TalkLiveLifecycle state) => TalkLiveSessionView(
-        sessionId: 'talk-live_test-session',
-        talkId: 'talk-1',
-        role: role,
-        state: state,
-        canPublishAudio: canPublishAudio && state == TalkLiveLifecycle.live,
-        canHearAudio: state != TalkLiveLifecycle.ended,
-        aiGenerationAllowed:
-            role == TalkLiveRole.host && state == TalkLiveLifecycle.live,
-      );
+    sessionId: 'talk-live_test-session',
+    talkId: 'talk-1',
+    role: role,
+    state: state,
+    canPublishAudio: canPublishAudio && state == TalkLiveLifecycle.live,
+    canHearAudio: state != TalkLiveLifecycle.ended,
+    aiGenerationAllowed:
+        role == TalkLiveRole.host && state == TalkLiveLifecycle.live,
+  );
 
   @override
   Future<TalkLiveSessionView> connect(String talkId) async =>
@@ -60,26 +57,23 @@ class _Transport implements TalkLiveTransport {
   Future<TalkLiveMediaCredentials> mediaToken({
     required String talkId,
     required String sessionId,
-  }) async =>
-      TalkLiveMediaCredentials(
-        serverUrl: 'wss://live.example.test',
-        participantToken: 'token',
-        roomName: talkId,
-        participantIdentity: 'user:' + sessionId,
-        expiresAt: DateTime(2030),
-      );
+  }) async => TalkLiveMediaCredentials(
+    serverUrl: 'wss://live.example.test',
+    participantToken: 'token',
+    roomName: talkId,
+    participantIdentity: 'user:' + sessionId,
+    expiresAt: DateTime(2030),
+  );
 
   @override
-  Future<TalkLiveStateView> state(String talkId) async =>
-      TalkLiveStateView(
-        talkId: talkId,
-        state: heartbeatState,
-        hostConnected: heartbeatState == TalkLiveLifecycle.live,
-        listenerCount: 1,
-        aiGenerationAllowed:
-            role == TalkLiveRole.host &&
-            heartbeatState == TalkLiveLifecycle.live,
-      );
+  Future<TalkLiveStateView> state(String talkId) async => TalkLiveStateView(
+    talkId: talkId,
+    state: heartbeatState,
+    hostConnected: heartbeatState == TalkLiveLifecycle.live,
+    listenerCount: 1,
+    aiGenerationAllowed:
+        role == TalkLiveRole.host && heartbeatState == TalkLiveLifecycle.live,
+  );
 }
 
 class _Room implements TalkLiveRoom {
@@ -107,56 +101,105 @@ class _Room implements TalkLiveRoom {
 }
 
 void main() {
-  test('listener subscribes to audio without microphone publish authority',
-      () async {
-    final transport = _Transport(role: TalkLiveRole.listener);
-    final room = _Room();
-    final session = TalkLiveAudioSession(
-      talkId: 'talk-1',
-      transport: transport,
-      room: room,
-      heartbeatInterval: const Duration(hours: 1),
-    );
+  test(
+    'listener subscribes to audio without microphone publish authority',
+    () async {
+      final transport = _Transport(role: TalkLiveRole.listener);
+      final room = _Room();
+      final session = TalkLiveAudioSession(
+        talkId: 'talk-1',
+        transport: transport,
+        room: room,
+        heartbeatInterval: const Duration(hours: 1),
+      );
 
-    await session.start();
+      await session.start();
 
-    expect(room.publishMicrophone, isFalse);
-    expect(session.role, TalkLiveRole.listener);
-    expect(session.status, TalkLiveAudioStatus.listening);
+      expect(room.publishMicrophone, isFalse);
+      expect(session.role, TalkLiveRole.listener);
+      expect(session.status, TalkLiveAudioStatus.listening);
 
-    await session.close();
-    expect(transport.disconnects, 1);
-    expect(room.closes, 1);
-  });
+      await session.close();
+      expect(transport.disconnects, 1);
+      expect(room.closes, 1);
+    },
+  );
 
-  test('Host publishes microphone and can mute without changing authority',
-      () async {
-    final transport = _Transport(
-      role: TalkLiveRole.host,
-      canPublishAudio: true,
-    );
-    final room = _Room();
-    final session = TalkLiveAudioSession(
-      talkId: 'talk-1',
-      transport: transport,
-      room: room,
-      heartbeatInterval: const Duration(hours: 1),
-    );
+  test(
+    'Host publishes microphone and can mute without changing authority',
+    () async {
+      final transport = _Transport(
+        role: TalkLiveRole.host,
+        canPublishAudio: true,
+      );
+      final room = _Room();
+      final session = TalkLiveAudioSession(
+        talkId: 'talk-1',
+        transport: transport,
+        room: room,
+        heartbeatInterval: const Duration(hours: 1),
+      );
 
-    await session.start();
-    expect(room.publishMicrophone, isTrue);
-    expect(session.status, TalkLiveAudioStatus.publishing);
+      await session.start();
+      expect(room.publishMicrophone, isTrue);
+      expect(session.status, TalkLiveAudioStatus.publishing);
 
-    await session.setMuted(true);
-    expect(session.muted, isTrue);
-    expect(room.microphone.last, isFalse);
+      await session.setMuted(true);
+      expect(session.muted, isTrue);
+      expect(room.microphone.last, isFalse);
 
-    await session.setMuted(false);
-    expect(session.muted, isFalse);
-    expect(room.microphone.last, isTrue);
+      await session.setMuted(false);
+      expect(session.muted, isFalse);
+      expect(room.microphone.last, isTrue);
 
-    await session.close();
-  });
+      await session.close();
+    },
+  );
+
+  test(
+    'admitted Speaker can publish and mute only with server permission',
+    () async {
+      final transport = _Transport(
+        role: TalkLiveRole.speaker,
+        canPublishAudio: true,
+      );
+      final room = _Room();
+      final session = TalkLiveAudioSession(
+        talkId: 'talk-1',
+        transport: transport,
+        room: room,
+        heartbeatInterval: const Duration(milliseconds: 10),
+      );
+      await session.start();
+      expect(room.publishMicrophone, isTrue);
+      await session.setMuted(true);
+      expect(room.microphone.last, isFalse);
+      await session.setMuted(false);
+      expect(room.microphone.last, isTrue);
+      transport.canPublishAudio = false;
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(session.status, TalkLiveAudioStatus.listening);
+      expect(room.microphone.last, isFalse);
+      await session.setMuted(false);
+      expect(room.microphone.last, isFalse);
+      await session.close();
+    },
+  );
+
+  test(
+    'Speaker JSON role preserves granted authority and unknown roles listen',
+    () {
+      final json = <String, dynamic>{
+        'role': 'speaker',
+        'canPublishAudio': true,
+      };
+      expect(TalkLiveSessionView.fromJson(json).role, TalkLiveRole.speaker);
+      expect(
+        TalkLiveSessionView.fromJson({...json, 'role': 'unknown'}).role,
+        TalkLiveRole.listener,
+      );
+    },
+  );
 
   test('heartbeat reconnect grace pauses Host microphone', () async {
     final transport = _Transport(
@@ -183,25 +226,27 @@ void main() {
     await session.close();
   });
 
-  test('ended heartbeat closes media instead of keeping synthetic audio alive',
-      () async {
-    final transport = _Transport(role: TalkLiveRole.listener);
-    final room = _Room();
-    final session = TalkLiveAudioSession(
-      talkId: 'talk-1',
-      transport: transport,
-      room: room,
-      heartbeatInterval: const Duration(milliseconds: 10),
-    );
+  test(
+    'ended heartbeat closes media instead of keeping synthetic audio alive',
+    () async {
+      final transport = _Transport(role: TalkLiveRole.listener);
+      final room = _Room();
+      final session = TalkLiveAudioSession(
+        talkId: 'talk-1',
+        transport: transport,
+        room: room,
+        heartbeatInterval: const Duration(milliseconds: 10),
+      );
 
-    await session.start();
-    transport.heartbeatState = TalkLiveLifecycle.ended;
+      await session.start();
+      transport.heartbeatState = TalkLiveLifecycle.ended;
 
-    await Future<void>.delayed(const Duration(milliseconds: 25));
+      await Future<void>.delayed(const Duration(milliseconds: 25));
 
-    expect(session.status, TalkLiveAudioStatus.ended);
-    expect(room.closes, greaterThan(0));
+      expect(session.status, TalkLiveAudioStatus.ended);
+      expect(room.closes, greaterThan(0));
 
-    await session.close();
-  });
+      await session.close();
+    },
+  );
 }

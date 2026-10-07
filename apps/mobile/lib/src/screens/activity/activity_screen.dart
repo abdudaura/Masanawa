@@ -33,10 +33,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     if (_busyInvitationId != null || talkId == null || talkId.isEmpty) return;
     setState(() => _busyInvitationId = item.id);
     try {
-      await ref.read(talkActivityTransportProvider).respondToInvitation(
-            talkId: talkId,
-            accept: accept,
-          );
+      await ref
+          .read(talkActivityTransportProvider)
+          .respondToInvitation(talkId: talkId, accept: accept);
       ref.invalidate(talkActivityProvider(_filter));
       await ref.read(talkActivityProvider(_filter).future);
       if (!mounted) return;
@@ -108,7 +107,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     return Scaffold(
       key: const ValueKey('talk-activity-screen'),
       backgroundColor: u.surfaceBg,
-      appBar: const AppBar(title: Text('Activity')),
+      appBar: AppBar(title: const Text('Activity')),
       body: Column(
         children: [
           _ActivityFilters(
@@ -151,8 +150,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       final item = items[index];
                       final actionableInvitation =
                           item.kind == TalkActivityKind.talkInvitation &&
-                              item.requiresAction &&
-                              item.talkId?.isNotEmpty == true;
+                          item.requiresAction &&
+                          item.talkId?.isNotEmpty == true;
                       return _ActivityItemTile(
                         key: ValueKey('activity-item-' + item.id),
                         item: item,
@@ -179,10 +178,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 }
 
 class _ActivityFilters extends StatelessWidget {
-  const _ActivityFilters({
-    required this.selected,
-    required this.onSelected,
-  });
+  const _ActivityFilters({required this.selected, required this.onSelected});
 
   final TalkActivityFilter selected;
   final ValueChanged<TalkActivityFilter> onSelected;
@@ -240,9 +236,7 @@ class _ActivityItemTile extends StatelessWidget {
     final action = item.actionLabel?.trim();
 
     return Material(
-      color: item.unread
-          ? u.brand.withValues(alpha: .045)
-          : u.surfaceCard,
+      color: item.unread ? u.brand.withValues(alpha: .045) : u.surfaceCard,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -340,10 +334,7 @@ class _ActivityItemTile extends StatelessWidget {
                       children: [
                         Text(
                           _timeLabel(item.createdAt),
-                          style: TextStyle(
-                            color: u.textMuted,
-                            fontSize: 11,
-                          ),
+                          style: TextStyle(color: u.textMuted, fontSize: 11),
                         ),
                         if (amount != null && amount.isNotEmpty) ...[
                           const SizedBox(width: 8),
@@ -376,11 +367,7 @@ class _ActivityItemTile extends StatelessWidget {
               ),
               if (canOpen) ...[
                 const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: u.textMuted,
-                  size: 20,
-                ),
+                Icon(Icons.chevron_right_rounded, color: u.textMuted, size: 20),
               ],
             ],
           ),
@@ -448,11 +435,7 @@ class _ActivityState extends StatelessWidget {
         Text(
           subtitle,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: u.textMuted,
-            fontSize: 13,
-            height: 1.35,
-          ),
+          style: TextStyle(color: u.textMuted, fontSize: 13, height: 1.35),
         ),
       ],
     );
@@ -460,62 +443,61 @@ class _ActivityState extends StatelessWidget {
 }
 
 String _filterLabel(TalkActivityFilter filter) => switch (filter) {
-      TalkActivityFilter.all => 'All',
-      TalkActivityFilter.talks => 'Talks',
-      TalkActivityFilter.money => 'Money',
-      TalkActivityFilter.social => 'Social',
-    };
+  TalkActivityFilter.all => 'All',
+  TalkActivityFilter.talks => 'Talks',
+  TalkActivityFilter.money => 'Money',
+  TalkActivityFilter.social => 'Social',
+};
 
 IconData _kindIcon(TalkActivityKind kind) => switch (kind) {
-      TalkActivityKind.talkInvitation => Icons.podcasts_rounded,
-      TalkActivityKind.raiseHandAccepted => Icons.back_hand_rounded,
-      TalkActivityKind.raiseHandDeclined => Icons.back_hand_outlined,
-      TalkActivityKind.aiSeatSponsored => Icons.person_add_alt_1_rounded,
-      TalkActivityKind.aiSeatAccepted => Icons.verified_rounded,
-      TalkActivityKind.aiSeatDeclined => Icons.person_off_outlined,
-      TalkActivityKind.follow => Icons.person_add_alt_rounded,
-      TalkActivityKind.gift => Icons.card_giftcard_rounded,
-      TalkActivityKind.twinHired => Icons.auto_awesome_rounded,
-      TalkActivityKind.earning => Icons.savings_outlined,
-      TalkActivityKind.replayMilestone => Icons.play_circle_outline_rounded,
-      TalkActivityKind.platform => Icons.notifications_none_rounded,
-    };
+  TalkActivityKind.talkInvitation => Icons.podcasts_rounded,
+  TalkActivityKind.raiseHandAccepted => Icons.back_hand_rounded,
+  TalkActivityKind.raiseHandDeclined => Icons.back_hand_outlined,
+  TalkActivityKind.aiSeatSponsored => Icons.person_add_alt_1_rounded,
+  TalkActivityKind.aiSeatAccepted => Icons.verified_rounded,
+  TalkActivityKind.aiSeatDeclined => Icons.person_off_outlined,
+  TalkActivityKind.follow => Icons.person_add_alt_rounded,
+  TalkActivityKind.gift => Icons.card_giftcard_rounded,
+  TalkActivityKind.twinHired => Icons.auto_awesome_rounded,
+  TalkActivityKind.earning => Icons.savings_outlined,
+  TalkActivityKind.replayMilestone => Icons.play_circle_outline_rounded,
+  TalkActivityKind.platform => Icons.notifications_none_rounded,
+};
 
 Color _kindColor(BuildContext context, TalkActivityKind kind) {
   final u = context.masanawa;
   return switch (kind) {
     TalkActivityKind.gift || TalkActivityKind.earning => u.success,
     TalkActivityKind.raiseHandDeclined ||
-    TalkActivityKind.aiSeatDeclined =>
-      u.textMuted,
+    TalkActivityKind.aiSeatDeclined => u.textMuted,
     _ => u.brandStrong,
   };
 }
 
 IconData _emptyIcon(TalkActivityFilter filter) => switch (filter) {
-      TalkActivityFilter.all => Icons.notifications_none_rounded,
-      TalkActivityFilter.talks => Icons.podcasts_outlined,
-      TalkActivityFilter.money => Icons.savings_outlined,
-      TalkActivityFilter.social => Icons.people_outline_rounded,
-    };
+  TalkActivityFilter.all => Icons.notifications_none_rounded,
+  TalkActivityFilter.talks => Icons.podcasts_outlined,
+  TalkActivityFilter.money => Icons.savings_outlined,
+  TalkActivityFilter.social => Icons.people_outline_rounded,
+};
 
 String _emptyTitle(TalkActivityFilter filter) => switch (filter) {
-      TalkActivityFilter.all => 'Nothing here yet.',
-      TalkActivityFilter.talks => 'No Talk activity yet.',
-      TalkActivityFilter.money => 'No money activity yet.',
-      TalkActivityFilter.social => 'No social activity yet.',
-    };
+  TalkActivityFilter.all => 'Nothing here yet.',
+  TalkActivityFilter.talks => 'No Talk activity yet.',
+  TalkActivityFilter.money => 'No money activity yet.',
+  TalkActivityFilter.social => 'No social activity yet.',
+};
 
 String _emptySubtitle(TalkActivityFilter filter) => switch (filter) {
-      TalkActivityFilter.all =>
-        'Invitations, follows, gifts and Talk updates will appear here.',
-      TalkActivityFilter.talks =>
-        'Talk invitations, Seat requests and replay updates will appear here.',
-      TalkActivityFilter.money =>
-        'Gifts, AI Seat revenue and creator earnings will appear here.',
-      TalkActivityFilter.social =>
-        'Follows and other social activity will appear here.',
-    };
+  TalkActivityFilter.all =>
+    'Invitations, follows, gifts and Talk updates will appear here.',
+  TalkActivityFilter.talks =>
+    'Talk invitations, Seat requests and replay updates will appear here.',
+  TalkActivityFilter.money =>
+    'Gifts, AI Seat revenue and creator earnings will appear here.',
+  TalkActivityFilter.social =>
+    'Follows and other social activity will appear here.',
+};
 
 String _timeLabel(DateTime value) {
   final local = value.toLocal();

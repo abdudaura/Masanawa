@@ -55,6 +55,14 @@ class _FakeTalkTransport implements TalkTransport {
   }
 
   @override
+  Future<TalkDiscoveryItem> updateTalk({
+    required String talkId,
+    String? title,
+    String? topic,
+    String? summary,
+  }) async => (await loadTalk(talkId)).talk;
+
+  @override
   Future<TalkComment> addComment({
     required String talkId,
     required String body,
@@ -72,6 +80,12 @@ class _CountingActivityTransport implements TalkActivityTransport {
   int loads = 0;
 
   @override
+  Future<void> respondToInvitation({
+    required String talkId,
+    required bool accept,
+  }) async {}
+
+  @override
   Future<List<TalkActivityItem>> load({
     required TalkActivityFilter filter,
     int limit = 60,
@@ -81,10 +95,7 @@ class _CountingActivityTransport implements TalkActivityTransport {
   }
 }
 
-Widget _app({
-  TalkActivityTransport? activity,
-  int initialIndex = 0,
-}) {
+Widget _app({TalkActivityTransport? activity, int initialIndex = 0}) {
   return ProviderScope(
     overrides: [
       talkTransportProvider.overrideWithValue(const _FakeTalkTransport()),
@@ -134,7 +145,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('initial Activity tab opens new Activity directly', (tester) async {
+  testWidgets('initial Activity tab opens new Activity directly', (
+    tester,
+  ) async {
     await tester.pumpWidget(_app(initialIndex: 2));
     await tester.pumpAndSettle();
 
@@ -147,8 +160,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('four-tab shell stays usable on narrow Android viewport',
-      (tester) async {
+  testWidgets('four-tab shell stays usable on narrow Android viewport', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {

@@ -116,8 +116,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
 
   Future<void> _startLiveAudio() async {
     if (_liveAudio != null || !mounted) return;
-    final controller =
-        ref.read(talkLiveAudioFactoryProvider)(widget.talkId);
+    final controller = ref.read(talkLiveAudioFactoryProvider)(widget.talkId);
     _liveAudio = controller;
     _liveAudioStatus = controller.status;
     _liveAudioRole = controller.role;
@@ -186,8 +185,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   TalkReplayPlaybackController _ensureReplayPlayback() {
     final existing = _replayPlayback;
     if (existing != null) return existing;
-    final controller =
-        ref.read(talkReplayPlaybackFactoryProvider)(widget.talkId);
+    final controller = ref.read(talkReplayPlaybackFactoryProvider)(
+      widget.talkId,
+    );
     _replayPlayback = controller;
     _replaySnapshot = controller.snapshot;
     _replayPlaybackSub = controller.snapshots.listen((snapshot) {
@@ -238,9 +238,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             ? request.message
             : 'Seat sponsored. Waiting for the Host to accept it.',
       TalkAiSeatRequestStatus.admitted =>
-        request.message.isNotEmpty
-            ? request.message
-            : 'AI added to the Talk.',
+        request.message.isNotEmpty ? request.message : 'AI added to the Talk.',
       TalkAiSeatRequestStatus.declined =>
         request.message.isNotEmpty
             ? request.message
@@ -254,9 +252,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             ? request.message
             : 'Seat request submitted.',
     };
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _react() async {
@@ -265,15 +263,14 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (!mounted || reaction == null) return;
     setState(() => _reacting = true);
     try {
-      await ref.read(talkParticipationTransportProvider).react(
-            talkId: widget.talkId,
-            reaction: reaction,
-          );
+      await ref
+          .read(talkParticipationTransportProvider)
+          .react(talkId: widget.talkId, reaction: reaction);
       ref.invalidate(talkParticipationProvider(widget.talkId));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(reaction + ' sent')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(reaction + ' sent')));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -288,9 +285,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (_handBusy || widget.isHost) return;
     setState(() => _handBusy = true);
     try {
-      await ref.read(talkParticipationTransportProvider).leaveSeat(
-            widget.talkId,
-          );
+      await ref
+          .read(talkParticipationTransportProvider)
+          .leaveSeat(widget.talkId);
       ref.invalidate(talkParticipationProvider(widget.talkId));
       await _retryLiveAudio();
       if (!mounted) return;
@@ -322,11 +319,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (!mounted || raised == null) return;
     setState(() => _handBusy = true);
     try {
-      final next =
-          await ref.read(talkParticipationTransportProvider).setHandRaised(
-                talkId: widget.talkId,
-                raised: raised,
-              );
+      final next = await ref
+          .read(talkParticipationTransportProvider)
+          .setHandRaised(talkId: widget.talkId, raised: raised);
       ref.invalidate(talkParticipationProvider(widget.talkId));
       if (!mounted) return;
       final message = switch (next.handStatus) {
@@ -335,9 +330,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         TalkHandStatus.declined => 'The Host declined the request.',
         TalkHandStatus.idle => 'Hand lowered.',
       };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -354,7 +349,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (!mounted || draft == null) return;
     setState(() => _pollBusy = true);
     try {
-      await ref.read(talkPollTransportProvider).create(
+      await ref
+          .read(talkPollTransportProvider)
+          .create(
             talkId: widget.talkId,
             question: draft.question,
             options: draft.options,
@@ -376,11 +373,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (poll == null || !poll.isOpen) return;
     setState(() => _pollBusy = true);
     try {
-      await ref.read(talkPollTransportProvider).vote(
-            talkId: widget.talkId,
-            pollId: poll.pollId,
-            optionId: optionId,
-          );
+      await ref
+          .read(talkPollTransportProvider)
+          .vote(talkId: widget.talkId, pollId: poll.pollId, optionId: optionId);
       ref.invalidate(talkPollProvider(widget.talkId));
     } catch (_) {
       if (!mounted) return;
@@ -398,10 +393,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (poll == null || !poll.isOpen) return;
     setState(() => _pollBusy = true);
     try {
-      await ref.read(talkPollTransportProvider).close(
-            talkId: widget.talkId,
-            pollId: poll.pollId,
-          );
+      await ref
+          .read(talkPollTransportProvider)
+          .close(talkId: widget.talkId, pollId: poll.pollId);
       ref.invalidate(talkPollProvider(widget.talkId));
     } catch (_) {
       if (!mounted) return;
@@ -418,10 +412,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     final body = await showTalkQuestionSheet(context);
     if (!mounted || body == null) return;
     try {
-      await ref.read(talkQuestionTransportProvider).submit(
-            talkId: widget.talkId,
-            body: body,
-          );
+      await ref
+          .read(talkQuestionTransportProvider)
+          .submit(talkId: widget.talkId, body: body);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Question sent to the Host.')),
@@ -441,20 +434,14 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   }
 
   Future<void> _openHostRequests() async {
-    await showTalkHostRequestsSheet(
-      context,
-      talkId: widget.talkId,
-    );
+    await showTalkHostRequestsSheet(context, talkId: widget.talkId);
     if (!mounted) return;
     ref.invalidate(talkHostControlsProvider(widget.talkId));
     ref.invalidate(talkDetailProvider(widget.talkId));
   }
 
   Future<void> _openHostManage() async {
-    await showTalkHostManageSheet(
-      context,
-      talkId: widget.talkId,
-    );
+    await showTalkHostManageSheet(context, talkId: widget.talkId);
     if (!mounted) return;
     ref.invalidate(talkHostControlsProvider(widget.talkId));
     ref.invalidate(talkDetailProvider(widget.talkId));
@@ -473,9 +460,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       if (!mounted) return;
       final popped = await Navigator.of(context).maybePop();
       if (!popped && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Talk ended.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Talk ended.')));
       }
     } catch (_) {
       if (!mounted) return;
@@ -503,10 +490,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         hostName: hostName,
         onGift: (amountCredits) async {
           try {
-            receipt = await ref.read(talkGiftTransportProvider).sendGift(
-                  talkId: widget.talkId,
-                  amountCredits: amountCredits,
-                );
+            receipt = await ref
+                .read(talkGiftTransportProvider)
+                .sendGift(talkId: widget.talkId, amountCredits: amountCredits);
             ref.invalidate(walletProvider);
             return true;
           } catch (_) {
@@ -543,7 +529,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
 
   Future<void> _shareTalk(TalkDiscoveryItem talk) async {
     try {
-      await ref.read(talkShareServiceProvider).share(
+      await ref
+          .read(talkShareServiceProvider)
+          .share(
             TalkSharePayload(
               talkId: talk.id,
               title: talk.title,
@@ -559,11 +547,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   }
 
   Future<void> _openMore(TalkDiscoveryItem talk) async {
-    await showTalkMoreSheet(
-      context,
-      talk: talk,
-      isHost: widget.isHost,
-    );
+    await showTalkMoreSheet(context, talk: talk, isHost: widget.isHost);
     if (!mounted) return;
     ref.invalidate(talkDetailProvider(widget.talkId));
     ref.invalidate(talkFeedProvider(TalkFeedKind.explore));
@@ -574,10 +558,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (_savingTalk) return;
     setState(() => _savingTalk = true);
     try {
-      final next = await ref.read(talkLibraryTransportProvider).setSaved(
-            talkId: widget.talkId,
-            saved: !isSaved,
-          );
+      final next = await ref
+          .read(talkLibraryTransportProvider)
+          .setSaved(talkId: widget.talkId, saved: !isSaved);
       ref.invalidate(talkSavedStateProvider(widget.talkId));
       ref.invalidate(savedTalksProvider);
       if (!mounted) return;
@@ -603,10 +586,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     if (body.isEmpty || _postingComment) return;
     setState(() => _postingComment = true);
     try {
-      await ref.read(talkTransportProvider).addComment(
-            talkId: widget.talkId,
-            body: body,
-          );
+      await ref
+          .read(talkTransportProvider)
+          .addComment(talkId: widget.talkId, body: body);
       _commentController.clear();
       ref.invalidate(talkDetailProvider(widget.talkId));
       if (!mounted) return;
@@ -624,36 +606,37 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(talkDetailProvider(widget.talkId));
-    final isSaved = ref.watch(talkSavedStateProvider(widget.talkId)).maybeWhen(
-          data: (value) => value.saved,
-          orElse: () => false,
+    final isSaved = ref
+        .watch(talkSavedStateProvider(widget.talkId))
+        .maybeWhen(data: (value) => value.saved, orElse: () => false);
+    final participation = ref
+        .watch(talkParticipationProvider(widget.talkId))
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const TalkParticipationState(),
         );
-    final participation =
-        ref.watch(talkParticipationProvider(widget.talkId)).maybeWhen(
-              data: (value) => value,
-              orElse: () => const TalkParticipationState(),
-            );
     final hostControls = widget.isHost
-        ? ref.watch(talkHostControlsProvider(widget.talkId)).maybeWhen(
-              data: (value) => value,
-              orElse: () => const TalkHostControlsView(),
-            )
+        ? ref
+              .watch(talkHostControlsProvider(widget.talkId))
+              .maybeWhen(
+                data: (value) => value,
+                orElse: () => const TalkHostControlsView(),
+              )
         : const TalkHostControlsView();
     final hostQuestionCount = widget.isHost
-        ? ref.watch(talkHostQuestionsProvider(widget.talkId)).maybeWhen(
-              data: (value) => value.length,
-              orElse: () => 0,
-            )
+        ? ref
+              .watch(talkHostQuestionsProvider(widget.talkId))
+              .maybeWhen(data: (value) => value.length, orElse: () => 0)
         : 0;
-    final poll = ref.watch(talkPollProvider(widget.talkId)).maybeWhen(
+    final poll = ref
+        .watch(talkPollProvider(widget.talkId))
+        .maybeWhen(data: (value) => value, orElse: () => null);
+    final ownedTwinSeats = ref
+        .watch(myDirectTwinSeatsProvider(widget.talkId))
+        .maybeWhen(
           data: (value) => value,
-          orElse: () => null,
+          orElse: () => const <DirectTwinSeat>[],
         );
-    final ownedTwinSeats =
-        ref.watch(myDirectTwinSeatsProvider(widget.talkId)).maybeWhen(
-              data: (value) => value,
-              orElse: () => const <DirectTwinSeat>[],
-            );
     final fallback = widget.initialTalk;
     final projectedTalk = detail.maybeWhen(
       data: (value) => value.talk,
@@ -699,7 +682,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         reaction: participation.reaction,
         onAddAi: _openAiSeatSheet,
         onGift: widget.isHost ? null : () => _openGift(value.talk.hostName),
-        onAskQuestion: value.talk.isLive && !widget.isHost ? _askQuestion : null,
+        onAskQuestion: value.talk.isLive && !widget.isHost
+            ? _askQuestion
+            : null,
         poll: value.talk.isLive ? poll : null,
         pollBusy: _pollBusy,
         onCreatePoll: widget.isHost && value.talk.isLive ? _createPoll : null,
@@ -747,7 +732,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
-            onAskQuestion: fallback.isLive && !widget.isHost ? _askQuestion : null,
+            onAskQuestion: fallback.isLive && !widget.isHost
+                ? _askQuestion
+                : null,
             poll: fallback.isLive ? poll : null,
             pollBusy: _pollBusy,
             onCreatePoll: widget.isHost && fallback.isLive ? _createPoll : null,
@@ -760,9 +747,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
                 : () => _raiseHand(participation.handStatus),
           );
         }
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
       error: (_, __) {
         if (fallback != null) {
@@ -800,7 +785,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
-            onAskQuestion: fallback.isLive && !widget.isHost ? _askQuestion : null,
+            onAskQuestion: fallback.isLive && !widget.isHost
+                ? _askQuestion
+                : null,
             poll: fallback.isLive ? poll : null,
             pollBusy: _pollBusy,
             onCreatePoll: widget.isHost && fallback.isLive ? _createPoll : null,
@@ -980,13 +967,14 @@ class _TalkBody extends StatelessWidget {
                     liveAudioMuted: liveAudioMuted,
                     liveAudioError: liveAudioError,
                     onRetryLiveAudio: talk.isLive ? onRetryLiveAudio : null,
-                    onToggleLiveMute:
-                        talk.isLive ? onToggleLiveMute : null,
+                    onToggleLiveMute: talk.isLive ? onToggleLiveMute : null,
                     replaySnapshot: replaySnapshot,
                     onToggleReplay: talk.isLive ? null : onToggleReplay,
                     onRetryReplay: talk.isLive ? null : onRetryReplay,
                     onSeekReplay: talk.isLive ? null : onSeekReplay,
                     hostRequestCount: talk.isLive ? hostRequestCount : 0,
+                    hostQuestionCount: talk.isLive ? hostQuestionCount : 0,
+                    onHostQuestions: talk.isLive ? onHostQuestions : null,
                     onHostRequests: onHostRequests,
                     onHostManage: onHostManage,
                     onEndTalk: onEndTalk,
@@ -1038,10 +1026,7 @@ class _TalkBody extends StatelessWidget {
                           talk.commentCount > 0
                               ? talk.commentCount.toString()
                               : comments.length.toString(),
-                          style: TextStyle(
-                            color: u.textMuted,
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: u.textMuted, fontSize: 14),
                         ),
                       ],
                     ),
@@ -1076,19 +1061,16 @@ class _TalkBody extends StatelessWidget {
                   )
                 else
                   SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index.isOdd) {
-                          return Divider(
-                            height: 1,
-                            indent: 64,
-                            color: u.structuralBorder,
-                          );
-                        }
-                        return _CommentTile(comment: comments[index ~/ 2]);
-                      },
-                      childCount: comments.length * 2 - 1,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index.isOdd) {
+                        return Divider(
+                          height: 1,
+                          indent: 64,
+                          color: u.structuralBorder,
+                        );
+                      }
+                      return _CommentTile(comment: comments[index ~/ 2]);
+                    }, childCount: comments.length * 2 - 1),
                   ),
                 const SliverToBoxAdapter(child: SizedBox(height: 18)),
               ],
@@ -1193,11 +1175,7 @@ class _TalkStage extends StatelessWidget {
                   ),
                 ),
               if (talk.isLive) const SizedBox(width: 8),
-              Icon(
-                Icons.headphones_rounded,
-                color: u.textMuted,
-                size: 16,
-              ),
+              Icon(Icons.headphones_rounded, color: u.textMuted, size: 16),
               const SizedBox(width: 4),
               Text(
                 talk.listenerCount.toString() + ' listening',
@@ -1220,7 +1198,9 @@ class _TalkStage extends StatelessWidget {
                   const SizedBox(width: 4),
                   IconButton(
                     key: const ValueKey('talk-live-mic-toggle'),
-                    tooltip: liveAudioMuted ? 'Unmute microphone' : 'Mute microphone',
+                    tooltip: liveAudioMuted
+                        ? 'Unmute microphone'
+                        : 'Mute microphone',
                     visualDensity: VisualDensity.compact,
                     onPressed: onToggleLiveMute,
                     icon: Icon(
@@ -1249,11 +1229,7 @@ class _TalkStage extends StatelessWidget {
             const SizedBox(height: 7),
             Text(
               talk.summary,
-              style: TextStyle(
-                color: u.textMuted,
-                fontSize: 14,
-                height: 1.35,
-              ),
+              style: TextStyle(color: u.textMuted, fontSize: 14, height: 1.35),
             ),
           ],
           if (!talk.isLive) ...[
@@ -1339,15 +1315,15 @@ class _TalkStage extends StatelessWidget {
                     icon: handStatus == TalkHandStatus.raised
                         ? Icons.back_hand_rounded
                         : handStatus == TalkHandStatus.accepted
-                            ? Icons.mic_rounded
-                            : Icons.back_hand_outlined,
+                        ? Icons.mic_rounded
+                        : Icons.back_hand_outlined,
                     label: handBusy
                         ? 'Updating…'
                         : handStatus == TalkHandStatus.raised
-                            ? 'Hand raised'
-                            : handStatus == TalkHandStatus.accepted
-                                ? 'Leave seat'
-                                : 'Raise hand',
+                        ? 'Hand raised'
+                        : handStatus == TalkHandStatus.accepted
+                        ? 'Leave seat'
+                        : 'Raise hand',
                     onTap: onRaiseHand,
                   ),
                 ),
@@ -1457,9 +1433,7 @@ class _ReplayPlaybackBar extends StatelessWidget {
                   child: Slider(
                     key: const ValueKey('talk-replay-seek'),
                     value: durationKnown ? snapshot.progress : 0,
-                    onChanged: durationKnown && onSeek != null
-                        ? onSeek
-                        : null,
+                    onChanged: durationKnown && onSeek != null ? onSeek : null,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -1510,8 +1484,8 @@ class _LiveAudioStatusChip extends StatelessWidget {
     return Tooltip(
       message: failed
           ? (error?.trim().isNotEmpty == true
-              ? error!
-              : 'Live audio is unavailable right now.')
+                ? error!
+                : 'Live audio is unavailable right now.')
           : label,
       child: InkWell(
         key: const ValueKey('talk-live-audio-status'),
@@ -1523,8 +1497,8 @@ class _LiveAudioStatusChip extends StatelessWidget {
             color: failed
                 ? u.emergency.withValues(alpha: .10)
                 : reconnecting
-                    ? u.surfaceMuted
-                    : u.brand.withValues(alpha: .10),
+                ? u.surfaceMuted
+                : u.brand.withValues(alpha: .10),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Row(
@@ -1541,10 +1515,10 @@ class _LiveAudioStatusChip extends StatelessWidget {
                   failed
                       ? Icons.wifi_off_rounded
                       : reconnecting
-                          ? Icons.sync_rounded
-                          : role == TalkLiveRole.host
-                              ? Icons.graphic_eq_rounded
-                              : Icons.headphones_rounded,
+                      ? Icons.sync_rounded
+                      : role == TalkLiveRole.host
+                      ? Icons.graphic_eq_rounded
+                      : Icons.headphones_rounded,
                   size: 13,
                   color: failed ? u.emergency : u.brandStrong,
                 ),
@@ -1590,10 +1564,7 @@ class _SimpleHost extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            Text(
-              'Host',
-              style: TextStyle(color: u.brandStrong, fontSize: 12),
-            ),
+            Text('Host', style: TextStyle(color: u.brandStrong, fontSize: 12)),
           ],
         ),
       ],
@@ -1626,15 +1597,16 @@ class _Seat extends StatelessWidget {
             backgroundColor: participant.kind == TalkParticipantKind.human
                 ? u.brandStrong
                 : u.surfaceMuted,
-            backgroundImage:
-                image != null && image.isNotEmpty ? NetworkImage(image) : null,
+            backgroundImage: image != null && image.isNotEmpty
+                ? NetworkImage(image)
+                : null,
             child: image == null || image.isEmpty
                 ? Icon(
                     participant.kind == TalkParticipantKind.human
                         ? Icons.person_rounded
                         : participant.kind == TalkParticipantKind.expert
-                            ? Icons.verified_rounded
-                            : Icons.auto_awesome_rounded,
+                        ? Icons.verified_rounded
+                        : Icons.auto_awesome_rounded,
                     color: participant.kind == TalkParticipantKind.human
                         ? Colors.white
                         : u.brandStrong,
@@ -1667,11 +1639,7 @@ class _Seat extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _ActionButton({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
@@ -1719,8 +1687,9 @@ class _CommentTile extends StatelessWidget {
           CircleAvatar(
             radius: 18,
             backgroundColor: u.surfaceMuted,
-            backgroundImage:
-                image != null && image.isNotEmpty ? NetworkImage(image) : null,
+            backgroundImage: image != null && image.isNotEmpty
+                ? NetworkImage(image)
+                : null,
             child: image == null || image.isEmpty
                 ? Icon(Icons.person_rounded, color: u.textMuted, size: 18)
                 : null,
@@ -1786,9 +1755,7 @@ class _CommentComposer extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: u.surfaceCard,
-          border: Border(
-            top: BorderSide(color: u.structuralBorder),
-          ),
+          border: Border(top: BorderSide(color: u.structuralBorder)),
         ),
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
         child: Row(
@@ -1854,10 +1821,7 @@ class _TalkUnavailable extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            FilledButton(
-              onPressed: onRetry,
-              child: const Text('Try again'),
-            ),
+            FilledButton(onPressed: onRetry, child: const Text('Try again')),
           ],
         ),
       ),

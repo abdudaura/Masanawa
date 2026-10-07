@@ -45,8 +45,9 @@ class OnboardingScaffold extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxHeight < 640;
-              final horizontalPadding =
-                  constraints.maxWidth >= 600 ? 40.0 : 24.0;
+              final horizontalPadding = constraints.maxWidth >= 600
+                  ? 40.0
+                  : 24.0;
               final verticalPadding = compact ? 16.0 : 28.0;
               // Scaffold.adjustResize already removes keyboard space. Adding
               // viewInsets again here pushed auth fields upward twice.
@@ -67,6 +68,7 @@ class OnboardingScaffold extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: minContentHeight),
                   child: Stack(
+                    alignment: Alignment.center,
                     children: [
                       Center(
                         child: ConstrainedBox(
@@ -94,9 +96,9 @@ class OnboardingScaffold extends StatelessWidget {
                                       fontSize: MasanawaTokens.fontSize['xl'],
                                       fontWeight: FontWeight.w700,
                                       height: 1.15,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                 ],
@@ -108,9 +110,9 @@ class OnboardingScaffold extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: MasanawaTokens.fontSize['md'],
                                       height: 1.45,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],

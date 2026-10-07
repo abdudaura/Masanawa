@@ -48,7 +48,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1300));
     await tester.pumpAndSettle();
     expect(find.byType(PhoneLoginScreen), findsOneWidget);
-    expect(find.text('What number should we use?'), findsOneWidget);
+    expect(find.text('Welcome to Masanawa'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

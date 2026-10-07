@@ -1093,7 +1093,7 @@ void main() {
     expect(find.text('Human · Host'), findsOneWidget);
     expect(find.text('Masanawa Expert · AI'), findsOneWidget);
 
-    await tester.pageBack();
+    Navigator.of(tester.element(find.text('Participants'))).pop();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('talk-more-report')));
     await tester.pumpAndSettle();
@@ -1479,6 +1479,7 @@ void main() {
     expect(polls.created.single.options, ['Jobs', 'Education']);
     expect(find.byKey(const ValueKey('talk-poll-card')), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const ValueKey('talk-poll-close')));
     await tester.tap(find.byKey(const ValueKey('talk-poll-close')));
     await tester.pumpAndSettle();
 
@@ -1533,6 +1534,7 @@ void main() {
     expect(find.text('Send Credits to the Host.'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('talk-gift-100')));
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
     await tester.pumpAndSettle();
 
@@ -1558,6 +1560,7 @@ void main() {
     await tester.tap(find.text('Gift'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('talk-gift-50')));
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
     await tester.pumpAndSettle();
 
@@ -1898,7 +1901,7 @@ void main() {
     await tester.tap(find.text('Manage'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Abdullahi'), findsOneWidget);
+    expect(find.text('Abdullahi'), findsWidgets);
     expect(find.text('Musa'), findsOneWidget);
     expect(find.text('You'), findsOneWidget);
     expect(

@@ -40,7 +40,9 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
     if (topic.isEmpty || _creating) return;
     setState(() => _creating = true);
     try {
-      final talk = await ref.read(talkTransportProvider).createTalk(
+      final talk = await ref
+          .read(talkTransportProvider)
+          .createTalk(
             topic: topic,
             title: _title.text.trim().isEmpty ? null : _title.text.trim(),
           );
@@ -65,7 +67,7 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: const AppBar(title: Text('Create a Talk')),
+      appBar: AppBar(title: const Text('Create a Talk')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 110),
@@ -86,7 +88,8 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
               maxLines: 5,
               maxLength: 220,
               decoration: const InputDecoration(
-                hintText: 'Say it naturally — Gwani can help shape the conversation.',
+                hintText:
+                    'Say it naturally — Gwani can help shape the conversation.',
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -143,10 +146,7 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
                   Expanded(
                     child: Text(
                       'Up to 6 active Seats, with no more than 3 AI Seats.',
-                      style: TextStyle(
-                        color: u.textMuted,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: u.textMuted, fontSize: 13),
                     ),
                   ),
                 ],
@@ -204,10 +204,7 @@ class _ParticipantAction extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: TextStyle(
-            color: u.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           subtitle,

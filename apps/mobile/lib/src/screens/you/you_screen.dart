@@ -29,7 +29,7 @@ class YouScreen extends StatelessWidget {
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: const AppBar(title: Text('You')),
+      appBar: AppBar(title: const Text('You')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: [
@@ -103,11 +103,7 @@ class YouScreen extends StatelessWidget {
 }
 
 class _YouRow extends StatelessWidget {
-  const _YouRow({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _YouRow({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
@@ -123,15 +119,10 @@ class _YouRow extends StatelessWidget {
         leading: Icon(icon, color: u.brandStrong),
         title: Text(
           label,
-          style: TextStyle(
-            color: u.textPrimary,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w500),
         ),
         trailing: Icon(Icons.chevron_right_rounded, color: u.textMuted),
-        shape: Border(
-          bottom: BorderSide(color: u.structuralBorder, width: .7),
-        ),
+        shape: Border(bottom: BorderSide(color: u.structuralBorder, width: .7)),
       ),
     );
   }

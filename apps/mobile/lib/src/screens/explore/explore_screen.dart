@@ -6,11 +6,7 @@ import '../../state/twin_directory_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
-  const ExploreScreen({
-    super.key,
-    this.onOpenTwin,
-    this.onOpenInternetCafe,
-  });
+  const ExploreScreen({super.key, this.onOpenTwin, this.onOpenInternetCafe});
 
   final void Function(TwinDirectoryEntry twin)? onOpenTwin;
   final VoidCallback? onOpenInternetCafe;
@@ -51,7 +47,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: const AppBar(title: Text('Explore')),
+      appBar: AppBar(title: const Text('Explore')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(twinDirectoryProvider.notifier).loadInitial(),
         child: ListView(
@@ -72,7 +68,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       : IconButton(
                           onPressed: () {
                             _search.clear();
-                            ref.read(twinDirectoryProvider.notifier).setQuery('');
+                            ref
+                                .read(twinDirectoryProvider.notifier)
+                                .setQuery('');
                             setState(() {});
                           },
                           icon: const Icon(Icons.close_rounded),
@@ -112,7 +110,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               _ExploreState(
                 text: 'Couldn’t refresh public Twins.',
                 action: 'Try again',
-                onTap: () => ref.read(twinDirectoryProvider.notifier).loadInitial(),
+                onTap: () =>
+                    ref.read(twinDirectoryProvider.notifier).loadInitial(),
               )
             else if (twins.isEmpty)
               _ExploreState(
@@ -177,9 +176,7 @@ class _ExploreRow extends StatelessWidget {
                 style: TextStyle(color: u.textMuted, fontSize: 12.5),
               ),
         trailing: Icon(Icons.chevron_right_rounded, color: u.textMuted),
-        shape: Border(
-          bottom: BorderSide(color: u.structuralBorder, width: .7),
-        ),
+        shape: Border(bottom: BorderSide(color: u.structuralBorder, width: .7)),
       ),
     );
   }
@@ -255,7 +252,9 @@ class _TwinRow extends StatelessWidget {
                 tooltip: favorite ? 'Remove favorite' : 'Favorite',
                 onPressed: onFavorite,
                 icon: Icon(
-                  favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  favorite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
                   color: favorite ? u.brandStrong : u.textMuted,
                   size: 20,
                 ),

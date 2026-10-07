@@ -10,11 +10,7 @@ import '../talks/talk_home_screen.dart';
 enum _MyTalksMode { live, replays, drafts }
 
 class MyTalksScreen extends ConsumerStatefulWidget {
-  const MyTalksScreen({
-    super.key,
-    this.onOpenTalk,
-    this.onOpenDraft,
-  });
+  const MyTalksScreen({super.key, this.onOpenTalk, this.onOpenDraft});
 
   final void Function(TalkDiscoveryItem talk)? onOpenTalk;
   final void Function(TalkDraftPreview draft)? onOpenDraft;
@@ -39,7 +35,7 @@ class _MyTalksScreenState extends ConsumerState<MyTalksScreen> {
     return Scaffold(
       key: const ValueKey('my-talks-screen'),
       backgroundColor: u.surfaceBg,
-      appBar: const AppBar(title: Text('My Talks')),
+      appBar: AppBar(title: const Text('My Talks')),
       body: asyncView.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => _LibraryState(
@@ -68,23 +64,23 @@ class _MyTalksScreenState extends ConsumerState<MyTalksScreen> {
                   onRefresh: _refresh,
                   child: switch (_mode) {
                     _MyTalksMode.live => _TalkList(
-                        talks: view.live,
-                        emptyTitle: 'You’re not live right now.',
-                        emptySubtitle:
-                            'Start a Talk when you have something worth discussing.',
-                        onOpenTalk: widget.onOpenTalk,
-                      ),
+                      talks: view.live,
+                      emptyTitle: 'You’re not live right now.',
+                      emptySubtitle:
+                          'Start a Talk when you have something worth discussing.',
+                      onOpenTalk: widget.onOpenTalk,
+                    ),
                     _MyTalksMode.replays => _TalkList(
-                        talks: view.replays,
-                        emptyTitle: 'No replays yet.',
-                        emptySubtitle:
-                            'Ended Talks that remain published will appear here.',
-                        onOpenTalk: widget.onOpenTalk,
-                      ),
+                      talks: view.replays,
+                      emptyTitle: 'No replays yet.',
+                      emptySubtitle:
+                          'Ended Talks that remain published will appear here.',
+                      onOpenTalk: widget.onOpenTalk,
+                    ),
                     _MyTalksMode.drafts => _DraftList(
-                        drafts: view.drafts,
-                        onOpenDraft: widget.onOpenDraft,
-                      ),
+                      drafts: view.drafts,
+                      onOpenDraft: widget.onOpenDraft,
+                    ),
                   },
                 ),
               ),
@@ -176,10 +172,7 @@ class _TalkList extends StatelessWidget {
 }
 
 class _DraftList extends StatelessWidget {
-  const _DraftList({
-    required this.drafts,
-    required this.onOpenDraft,
-  });
+  const _DraftList({required this.drafts, required this.onOpenDraft});
 
   final List<TalkDraftPreview> drafts;
   final void Function(TalkDraftPreview draft)? onOpenDraft;
@@ -198,14 +191,13 @@ class _DraftList extends StatelessWidget {
         final label = draft.title.trim().isNotEmpty
             ? draft.title.trim()
             : draft.topic.trim().isNotEmpty
-                ? draft.topic.trim()
-                : 'Untitled Talk';
+            ? draft.topic.trim()
+            : 'Untitled Talk';
         return Material(
           color: u.surfaceCard,
           child: ListTile(
             key: ValueKey('talk-draft-' + draft.id),
-            onTap:
-                onOpenDraft == null ? null : () => onOpenDraft!(draft),
+            onTap: onOpenDraft == null ? null : () => onOpenDraft!(draft),
             leading: CircleAvatar(
               backgroundColor: u.surfaceMuted,
               child: Icon(Icons.edit_outlined, color: u.brandStrong),

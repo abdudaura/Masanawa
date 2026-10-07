@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:masanawa/src/theme/masanawa_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/chat/components/twin_chat_actions_sheet.dart';
 
 void main() {
-  testWidgets('keeps monetization actions in one compact sheet', (tester) async {
+  testWidgets('keeps monetization actions in one compact sheet', (
+    tester,
+  ) async {
     var gift = false;
     var buy = false;
     var owner = false;
@@ -11,6 +14,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildMasanawaTheme(brightness: Brightness.light),
         home: Scaffold(
           body: TwinChatActionsSheet(
             ownerName: 'Amina',
@@ -42,6 +46,7 @@ void main() {
   testWidgets('hides unavailable gift and owner actions', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildMasanawaTheme(brightness: Brightness.light),
         home: Scaffold(
           body: TwinChatActionsSheet(
             ownerName: 'Amina',

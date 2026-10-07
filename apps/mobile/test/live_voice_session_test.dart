@@ -17,13 +17,24 @@ void main() {
     when(() => recorder.stop()).thenAnswer((_) async => null);
     when(() => recorder.dispose()).thenAnswer((_) async {});
     session = LiveVoiceSession(
-      grant: AgentLiveVoiceGrant(token: 'unused',
-          websocketUrl: 'wss://example.invalid', model: 'test', voiceName: 'Bodi',
-          expiresAt: DateTime.now().add(const Duration(minutes: 1))),
-      characterName: 'Gwani', recorder: recorder,
+      grant: AgentLiveVoiceGrant(
+        token: 'unused',
+        websocketUrl: 'wss://example.invalid',
+        model: 'test',
+        voiceName: 'Bodi',
+        expiresAt: DateTime.now().add(const Duration(minutes: 1)),
+      ),
+      characterName: 'Gwani',
+      recorder: recorder,
     );
   });
   tearDown(() async => session.close());
+
+  test('closing preserves readiness failure for callers', () async {
+    final failure = expectLater(session.ready, throwsStateError);
+    await session.close();
+    await failure;
+  });
 
   test('mute selected before setup remains selected', () async {
     await session.mute(true);
@@ -33,12 +44,15 @@ void main() {
     verifyNever(() => recorder.hasPermission());
   });
 
-  test('concurrent closure releases the recorder once and prevents restart', () async {
-    await Future.wait([session.close(), session.close()]);
-    await session.start();
-    verify(() => recorder.dispose()).called(1);
-    verifyNever(() => recorder.hasPermission());
-  });
+  test(
+    'concurrent closure releases the recorder once and prevents restart',
+    () async {
+      await Future.wait([session.close(), session.close()]);
+      await session.start();
+      verify(() => recorder.dispose()).called(1);
+      verifyNever(() => recorder.hasPermission());
+    },
+  );
 
   test('backgrounding ends the call and releases microphone custody', () async {
     session.didChangeAppLifecycleState(AppLifecycleState.paused);

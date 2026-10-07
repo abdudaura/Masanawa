@@ -16,9 +16,11 @@ Future<void> showTalkHostRequestsSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => FractionallySizedBox(
-      heightFactor: .78,
-      child: _HostRequestsSheet(talkId: talkId),
+    builder: (_) => ScaffoldMessenger(
+      child: FractionallySizedBox(
+        heightFactor: .78,
+        child: _HostRequestsSheet(talkId: talkId),
+      ),
     ),
   );
 }
@@ -31,9 +33,11 @@ Future<void> showTalkHostManageSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => FractionallySizedBox(
-      heightFactor: .78,
-      child: _HostManageSheet(talkId: talkId),
+    builder: (_) => ScaffoldMessenger(
+      child: FractionallySizedBox(
+        heightFactor: .78,
+        child: _HostManageSheet(talkId: talkId),
+      ),
     ),
   );
 }
@@ -81,7 +85,9 @@ class _HostRequestsSheetState extends ConsumerState<_HostRequestsSheet> {
     if (_busyId != null) return;
     setState(() => _busyId = request.requestId);
     try {
-      await ref.read(talkHostControlsTransportProvider).actOnRequest(
+      await ref
+          .read(talkHostControlsTransportProvider)
+          .actOnRequest(
             talkId: widget.talkId,
             requestId: request.requestId,
             action: action,
@@ -141,10 +147,8 @@ class _HostRequestsSheetState extends ConsumerState<_HostRequestsSheet> {
               return _HostRequestTile(
                 request: request,
                 busy: busy,
-                onAccept: () =>
-                    _act(request, TalkHostRequestAction.accept),
-                onDecline: () =>
-                    _act(request, TalkHostRequestAction.decline),
+                onAccept: () => _act(request, TalkHostRequestAction.accept),
+                onDecline: () => _act(request, TalkHostRequestAction.decline),
               );
             },
           );
@@ -187,15 +191,16 @@ class _HostRequestTile extends StatelessWidget {
           CircleAvatar(
             radius: 21,
             backgroundColor: u.surfaceMuted,
-            backgroundImage:
-                image != null && image.isNotEmpty ? NetworkImage(image) : null,
+            backgroundImage: image != null && image.isNotEmpty
+                ? NetworkImage(image)
+                : null,
             child: image == null || image.isEmpty
                 ? Icon(
                     isHuman
                         ? Icons.person_rounded
                         : request.kind == TalkHostRequestKind.sponsoredExpert
-                            ? Icons.verified_rounded
-                            : Icons.auto_awesome_rounded,
+                        ? Icons.verified_rounded
+                        : Icons.auto_awesome_rounded,
                     color: u.brandStrong,
                   )
                 : null,
@@ -273,55 +278,21 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
 
   Future<void> _inviteHuman() async {
     if (_busyId != null) return;
-    final controller = TextEditingController();
     final handle = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Invite human'),
-        content: TextField(
-          key: const ValueKey('host-invite-human-handle'),
-          controller: controller,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(
-            labelText: 'Profile handle',
-            hintText: '@amina',
-          ),
-          onSubmitted: (value) {
-            final normalized = value.trim().replaceFirst(RegExp(r'^@'), '');
-            if (normalized.isNotEmpty) Navigator.of(context).pop(normalized);
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            key: const ValueKey('host-invite-human-send'),
-            onPressed: () {
-              final normalized =
-                  controller.text.trim().replaceFirst(RegExp(r'^@'), '');
-              if (normalized.isNotEmpty) Navigator.of(context).pop(normalized);
-            },
-            child: const Text('Send invite'),
-          ),
-        ],
-      ),
+      builder: (_) => const _HumanInvitationDialog(),
     );
-    controller.dispose();
     if (!mounted || handle == null || handle.isEmpty) return;
 
     setState(() => _busyId = 'invite-human');
     try {
-      await ref.read(talkHostControlsTransportProvider).inviteHuman(
-            talkId: widget.talkId,
-            handle: handle,
-          );
+      await ref
+          .read(talkHostControlsTransportProvider)
+          .inviteHuman(talkId: widget.talkId, handle: handle);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invitation sent to @$handle.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Invitation sent to @$handle.')));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -342,21 +313,24 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
         : participant.personaId?.trim();
     if (targetId == null || targetId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reporting is unavailable for this participant.')),
+        const SnackBar(
+          content: Text('Reporting is unavailable for this participant.'),
+        ),
       );
       return;
     }
     final reason = await showModalBottomSheet<TalkSafetyReportReason>(
       context: context,
       useSafeArea: true,
-      builder: (_) => _ParticipantReportReasonSheet(
-        displayName: participant.displayName,
-      ),
+      builder: (_) =>
+          _ParticipantReportReasonSheet(displayName: participant.displayName),
     );
     if (!mounted || reason == null) return;
     setState(() => _busyId = participant.participantId);
     try {
-      await ref.read(talkSafetyTransportProvider).reportTarget(
+      await ref
+          .read(talkSafetyTransportProvider)
+          .reportTarget(
             targetKind: targetKind,
             targetId: targetId,
             reason: reason,
@@ -378,13 +352,12 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
 
   Future<void> _block(TalkHostParticipant participant) async {
     final userId = participant.userId?.trim();
-    if (
-      _busyId != null ||
-      participant.isHost ||
-      participant.kind != TalkParticipantKind.human ||
-      userId == null ||
-      userId.isEmpty
-    ) return;
+    if (_busyId != null ||
+        participant.isHost ||
+        participant.kind != TalkParticipantKind.human ||
+        userId == null ||
+        userId.isEmpty)
+      return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -410,9 +383,12 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
 
     setState(() => _busyId = participant.participantId);
     try {
-      final current =
-          await ref.read(talkSafetyTransportProvider).loadUserPreference(userId);
-      await ref.read(talkSafetyTransportProvider).setUserPreference(
+      final current = await ref
+          .read(talkSafetyTransportProvider)
+          .loadUserPreference(userId);
+      await ref
+          .read(talkSafetyTransportProvider)
+          .setUserPreference(
             userId: userId,
             blocked: true,
             muted: current.muted,
@@ -420,7 +396,9 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
       ref.invalidate(talkSafetyPreferenceProvider(userId));
 
       try {
-        await ref.read(talkHostControlsTransportProvider).actOnParticipant(
+        await ref
+            .read(talkHostControlsTransportProvider)
+            .actOnParticipant(
               talkId: widget.talkId,
               participantId: participant.participantId,
               action: TalkHostParticipantAction.remove,
@@ -459,7 +437,9 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
     if (_busyId != null || participant.isHost) return;
     setState(() => _busyId = participant.participantId);
     try {
-      await ref.read(talkHostControlsTransportProvider).actOnParticipant(
+      await ref
+          .read(talkHostControlsTransportProvider)
+          .actOnParticipant(
             talkId: widget.talkId,
             participantId: participant.participantId,
             action: action,
@@ -527,7 +507,8 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
                 participant: participant,
                 busy: busy,
                 onReport: () => _report(participant),
-                onBlock: participant.kind == TalkParticipantKind.human &&
+                onBlock:
+                    participant.kind == TalkParticipantKind.human &&
                         participant.userId?.trim().isNotEmpty == true &&
                         participant.profileHandle?.trim().isNotEmpty == true
                     ? () => _block(participant)
@@ -572,8 +553,7 @@ class _ParticipantTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final kind = switch (participant.kind) {
-      TalkParticipantKind.human =>
-        participant.isHost ? 'Host' : 'Speaker',
+      TalkParticipantKind.human => participant.isHost ? 'Host' : 'Speaker',
       TalkParticipantKind.expert => 'Expert',
       TalkParticipantKind.twin => 'Twin',
     };
@@ -582,16 +562,15 @@ class _ParticipantTile extends StatelessWidget {
       key: ValueKey('host-participant-' + participant.participantId),
       contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       leading: CircleAvatar(
-        backgroundColor:
-            participant.kind == TalkParticipantKind.human
-                ? u.brandStrong
-                : u.surfaceMuted,
+        backgroundColor: participant.kind == TalkParticipantKind.human
+            ? u.brandStrong
+            : u.surfaceMuted,
         child: Icon(
           participant.kind == TalkParticipantKind.human
               ? Icons.person_rounded
               : participant.kind == TalkParticipantKind.expert
-                  ? Icons.verified_rounded
-                  : Icons.auto_awesome_rounded,
+              ? Icons.verified_rounded
+              : Icons.auto_awesome_rounded,
           color: participant.kind == TalkParticipantKind.human
               ? Colors.white
               : u.brandStrong,
@@ -614,7 +593,9 @@ class _ParticipantTile extends StatelessWidget {
               ),
             )
           : PopupMenuButton<_ParticipantMenuAction>(
-              key: ValueKey('host-participant-menu-' + participant.participantId),
+              key: ValueKey(
+                'host-participant-menu-' + participant.participantId,
+              ),
               enabled: !busy,
               onSelected: (action) {
                 if (action == _ParticipantMenuAction.muteToggle) {
@@ -637,13 +618,17 @@ class _ParticipantTile extends StatelessWidget {
                   child: Text('Remove'),
                 ),
                 PopupMenuItem(
-                  key: ValueKey('host-participant-report-' + participant.participantId),
+                  key: ValueKey(
+                    'host-participant-report-' + participant.participantId,
+                  ),
                   value: _ParticipantMenuAction.report,
                   child: const Text('Report'),
                 ),
                 if (onBlock != null)
                   PopupMenuItem(
-                    key: ValueKey('host-participant-block-' + participant.participantId),
+                    key: ValueKey(
+                      'host-participant-block-' + participant.participantId,
+                    ),
                     value: _ParticipantMenuAction.block,
                     child: const Text('Block'),
                   ),
@@ -693,7 +678,6 @@ class _HostSheetState extends StatelessWidget {
   }
 }
 
-
 class _ParticipantReportReasonSheet extends StatelessWidget {
   const _ParticipantReportReasonSheet({required this.displayName});
 
@@ -723,7 +707,9 @@ class _ParticipantReportReasonSheet extends StatelessWidget {
               children: [
                 for (final reason in TalkSafetyReportReason.values)
                   ListTile(
-                    key: ValueKey('host-participant-report-reason-' + reason.wire),
+                    key: ValueKey(
+                      'host-participant-report-reason-' + reason.wire,
+                    ),
                     contentPadding: EdgeInsets.zero,
                     title: Text(reason.label),
                     onTap: () => Navigator.of(context).pop(reason),
@@ -733,6 +719,59 @@ class _ParticipantReportReasonSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HumanInvitationDialog extends StatefulWidget {
+  const _HumanInvitationDialog();
+  @override
+  State<_HumanInvitationDialog> createState() => _HumanInvitationDialogState();
+}
+
+class _HumanInvitationDialogState extends State<_HumanInvitationDialog> {
+  final controller = TextEditingController();
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Invite human'),
+      content: TextField(
+        key: const ValueKey('host-invite-human-handle'),
+        controller: controller,
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        decoration: const InputDecoration(
+          labelText: 'Profile handle',
+          hintText: '@amina',
+        ),
+        onSubmitted: (value) {
+          final normalized = value.trim().replaceFirst(RegExp(r'^@'), '');
+          if (normalized.isNotEmpty) Navigator.of(context).pop(normalized);
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: const ValueKey('host-invite-human-send'),
+          onPressed: () {
+            final normalized = controller.text.trim().replaceFirst(
+              RegExp(r'^@'),
+              '',
+            );
+            if (normalized.isNotEmpty) Navigator.of(context).pop(normalized);
+          },
+          child: const Text('Send invite'),
+        ),
+      ],
     );
   }
 }
