@@ -30,7 +30,10 @@ import {
   readRequiredEnv,
   type TenantId,
 } from "@masanawa/contracts";
-import type { PlatformSessionRepository } from "@masanawa/security";
+import type {
+  CustomerChannelRepository,
+  PlatformSessionRepository,
+} from "@masanawa/security";
 import {
   FlutterwaveBillsClient,
   FlutterwaveFundingClient,
@@ -67,6 +70,7 @@ import {
   createPostgresUserRelationshipReader,
   createPostgresUserRelationshipProvisioner,
   createPostgresPlatformSessionRepository,
+  createPostgresCustomerChannelRepository,
   createPostgresServiceDependency,
   createPostgresMobileShellRepository,
   createPostgresMobilePushRepository,
@@ -180,6 +184,8 @@ import {
   createAgentTeachingAssistant,
   type AgentTeachingAssistant,
 } from "./agent_teaching_assistant.js";
+import { createCustomerChannelBridge } from "./customer_channel_bridge.js";
+import type { CustomerChannelOptions } from "./customer_channel_routes.js";
 import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
@@ -214,6 +220,7 @@ export interface ServiceDatabaseDependency {
   readonly relationships?: UserRelationshipReader;
   readonly relationshipProvisioner?: UserRelationshipProvisioner;
   readonly platformSessions?: PlatformSessionRepository;
+  readonly customerChannels?: CustomerChannelRepository;
   readonly commerce?: CommerceRepository;
   readonly crypto?: CryptoRepository;
   readonly ownerships?: CharacterOwnershipReader;
@@ -356,6 +363,7 @@ function createDefaultDatabaseDependency(
     relationshipProvisioner:
       createPostgresUserRelationshipProvisioner(database.pool),
     platformSessions: createPostgresPlatformSessionRepository(database.pool),
+    customerChannels: createPostgresCustomerChannelRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
@@ -605,6 +613,7 @@ export async function startGatewayService(
 
   const platformTenantRaw = env.MASANAWA_PLATFORM_TENANT_ID?.trim();
   const otpPepper = env.MASANAWA_AUTH_OTP_PEPPER?.trim();
+  let platformTenantId: TenantId | undefined;
   if (
     platformTenantRaw &&
     otpPepper &&
@@ -615,7 +624,8 @@ export async function startGatewayService(
     database.relationshipProvisioner &&
     database.platformAgentProfiles
   ) {
-    const platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
+    platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
+    const activePlatformTenantId = platformTenantId;
 
     if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
       if (!database.platformAgentIdentity || !database.skillDistribution) {
@@ -625,7 +635,7 @@ export async function startGatewayService(
         );
       }
       await ensureDefaultPlatformAgents({
-        tenantId: platformTenantId,
+        tenantId: activePlatformTenantId,
         identity: database.platformAgentIdentity,
         presentations: database.agentPresentations,
         profiles: database.platformAgentProfiles,
@@ -652,7 +662,7 @@ export async function startGatewayService(
       const smsToken = env.MASANAWA_AUTH_SMS_TOKEN?.trim();
       customerAuth = createCustomerAuthService({
         repository: database.platformSessions,
-        tenantId: platformTenantId,
+        tenantId: activePlatformTenantId,
         otpPepper,
         ...(resendApiKey && resendFrom
           ? {
@@ -823,7 +833,7 @@ export async function startGatewayService(
       });
     }
     if (twinProduction?.ownerAccessMaintenance) {
-      ownerAccessSweepTenantId = platformTenantId;
+      ownerAccessSweepTenantId = activePlatformTenantId;
     }
 
     if (database.twinProfiles && database.twinEvents) {
@@ -1432,6 +1442,73 @@ export async function startGatewayService(
         })
       : undefined);
 
+  let composedCustomerChannels: CustomerChannelOptions | undefined =
+    options.appOptions?.customerChannels;
+  const whatsappEnabled = env.MASANAWA_WHATSAPP_ENABLED === "true";
+  const telegramEnabled = env.MASANAWA_TELEGRAM_ENABLED === "true";
+  if (
+    !composedCustomerChannels &&
+    (whatsappEnabled || telegramEnabled)
+  ) {
+    if (
+      !platformTenantId ||
+      !database.platformSessions ||
+      !database.customerChannels ||
+      !database.platformAgentProfiles ||
+      !composedConversation
+    ) {
+      throw new TypeError(
+        "Customer channels require platform auth, channel storage, support agents, and Agent conversation runtime",
+      );
+    }
+
+    const bridge = createCustomerChannelBridge({
+      tenantId: platformTenantId,
+      sessions: database.platformSessions,
+      channels: database.customerChannels,
+      platformProfiles: database.platformAgentProfiles,
+      ...(database.userAgentPreferences
+        ? { userPreferences: database.userAgentPreferences }
+        : {}),
+      conversation: composedConversation,
+    });
+
+    let whatsapp: CustomerChannelOptions["whatsapp"];
+    if (whatsappEnabled) {
+      const verifyToken = env.MASANAWA_WHATSAPP_VERIFY_TOKEN?.trim();
+      const appSecret = env.MASANAWA_WHATSAPP_APP_SECRET?.trim();
+      const accessToken = env.MASANAWA_WHATSAPP_ACCESS_TOKEN?.trim();
+      const phoneNumberId = env.MASANAWA_WHATSAPP_PHONE_NUMBER_ID?.trim();
+      const graphVersion = env.MASANAWA_WHATSAPP_GRAPH_VERSION?.trim();
+      if (!verifyToken || !appSecret || !accessToken || !phoneNumberId || !graphVersion) {
+        throw new TypeError("WhatsApp is enabled but webhook/delivery configuration is incomplete");
+      }
+      whatsapp = Object.freeze({
+        verifyToken,
+        appSecret,
+        accessToken,
+        phoneNumberId,
+        graphVersion,
+      });
+    }
+
+    let telegram: CustomerChannelOptions["telegram"];
+    if (telegramEnabled) {
+      const botToken = env.MASANAWA_TELEGRAM_BOT_TOKEN?.trim();
+      const webhookSecret = env.MASANAWA_TELEGRAM_WEBHOOK_SECRET?.trim();
+      if (!botToken || !webhookSecret) {
+        throw new TypeError("Telegram is enabled but bot/webhook configuration is incomplete");
+      }
+      telegram = Object.freeze({ botToken, webhookSecret });
+    }
+
+    composedCustomerChannels = Object.freeze({
+      bridge,
+      ...(whatsapp ? { whatsapp } : {}),
+      ...(telegram ? { telegram } : {}),
+    });
+  }
+
   const composedPush =
     options.appOptions?.mobilePush ??
     (conversationAuthorizer && database.mobilePush
@@ -1517,6 +1594,9 @@ export async function startGatewayService(
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedCustomerChannels
+        ? { customerChannels: composedCustomerChannels }
+        : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
