@@ -24,13 +24,13 @@ class _DirectTwinSheet extends StatefulWidget {
 }
 
 class _DirectTwinSheetState extends State<_DirectTwinSheet> {
-  late DirectTwinSeat _seat=widget.seats.first;
+  late DirectTwinSeat _seat;
   DirectTwinInstruction? _current;
   final _controller=TextEditingController();
   bool _busy=false;
   Object? _error;
   static const _quick=['Challenge that','Ask for evidence','Defend my position','Be more concise','Stop agreeing','Push the strongest counterargument'];
-  @override void initState(){super.initState();_load();}
+  @override void initState(){super.initState();_seat=widget.seats.first;_load();}
   @override void dispose(){_controller.dispose();super.dispose();}
   Future<void> _load() async {
     setState(()=>_error=null);
