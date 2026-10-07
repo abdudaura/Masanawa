@@ -110,7 +110,19 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
            FROM talks.talks t
           WHERE tenant_id = $1
             AND ($2::text = 'explore' OR state = 'live')
-            AND state IN ('live','ended','reconnecting')
+            AND (
+              state IN ('live','reconnecting')
+              OR (
+                state = 'ended'
+                AND EXISTS (
+                  SELECT 1 FROM talks.replay_sessions r
+                   WHERE r.tenant_id=t.tenant_id
+                     AND r.talk_id=t.talk_id
+                     AND r.recording_state='finalized'
+                     AND r.publication_state='published'
+                )
+              )
+            )
           ORDER BY CASE WHEN state = 'live' THEN 0 ELSE 1 END,
                    COALESCE(started_at, created_at) DESC
           LIMIT $3`,
@@ -128,8 +140,19 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                   WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count
            FROM talks.talks t
           WHERE tenant_id = $1 AND talk_id = $2
+            AND (
+              state <> 'ended'
+              OR host_user_id = $3
+              OR EXISTS (
+                SELECT 1 FROM talks.replay_sessions r
+                 WHERE r.tenant_id=t.tenant_id
+                   AND r.talk_id=t.talk_id
+                   AND r.recording_state='finalized'
+                   AND r.publication_state='published'
+              )
+            )
           LIMIT 1`,
-        [input.tenantId, input.talkId],
+        [input.tenantId, input.talkId, input.viewerUserId],
       );
       const row = result.rows[0];
       return row

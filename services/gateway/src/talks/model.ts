@@ -82,6 +82,7 @@ export interface TalkRepository {
   getTalk(input: Readonly<{
     tenantId: string;
     talkId: string;
+    viewerUserId: string;
   }>): Promise<Readonly<{ talk: TalkRecord; commentCount: number }> | null>;
   listComments(input: Readonly<{
     tenantId: string;

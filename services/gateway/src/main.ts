@@ -158,6 +158,8 @@ import {
 } from "./mobile_push.js";
 import { createTalkService, type TalkAuthorizer } from "./talks/service.js";
 import { createPostgresTalkRepository } from "./talks/postgres_repository.js";
+import { createTalkReplayService, type TalkReplayAuthorizer } from "./talk_replay/service.js";
+import { createPostgresTalkReplayRepository } from "./talk_replay/postgres_repository.js";
 import {
   createTalkLiveService,
   type TalkLiveAuthorizer,
@@ -284,6 +286,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
+  readonly talkReplay?: ReturnType<typeof createPostgresTalkReplayRepository>;
   readonly talkLive?: ReturnType<typeof createPostgresTalkLiveRepository>;
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
@@ -434,6 +437,7 @@ function createDefaultDatabaseDependency(
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
+    talkReplay: createPostgresTalkReplayRepository(database.pool),
     talkLive: createPostgresTalkLiveRepository(database.pool),
     talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
@@ -577,6 +581,7 @@ export async function startGatewayService(
     | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
     | undefined;
   let talkAuthorizer: TalkAuthorizer | undefined;
+  let talkReplayAuthorizer: TalkReplayAuthorizer | undefined;
   let talkLiveAuthorizer: TalkLiveAuthorizer | undefined;
   let talkModerationAuthorizer: TalkModerationAuthorizer | undefined;
   let talkAiSeatAuthorizer: TalkAiSeatAuthorizer | undefined;
@@ -718,6 +723,7 @@ export async function startGatewayService(
     });
     billingCustomerAuthorizer = customerSessions;
     talkAuthorizer = customerSessions;
+    talkReplayAuthorizer = customerSessions;
     talkLiveAuthorizer = customerSessions;
     talkModerationAuthorizer = customerSessions;
     talkAiSeatAuthorizer = customerSessions;
@@ -1881,6 +1887,15 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkReplay =
+    options.appOptions?.talkReplay ??
+    (database.talkReplay && talkReplayAuthorizer
+      ? createTalkReplayService({
+          repository: database.talkReplay,
+          authorizer: talkReplayAuthorizer,
+        })
+      : undefined);
+
   const composedTalks =
     options.appOptions?.talks ??
     (database.talks && talkAuthorizer
@@ -1896,6 +1911,7 @@ export async function startGatewayService(
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
+      ...(composedTalkReplay ? { talkReplay: composedTalkReplay } : {}),
       ...(composedTalkModeration ? { talkModeration: composedTalkModeration } : {}),
       ...(composedTalkAiSeats ? { talkAiSeats: composedTalkAiSeats } : {}),
       ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
