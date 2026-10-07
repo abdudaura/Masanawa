@@ -13,7 +13,7 @@ import path from "node:path";
 import type {
   CustomerChannelBridge,
   CustomerChannelInbound,
-} from "./customer_channel_routes.js";
+} from "./customer_channel_bridge.js";
 
 export interface LinkedWhatsAppSnapshot {
   readonly mode: "linked-device";
