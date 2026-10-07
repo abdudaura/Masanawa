@@ -92,6 +92,18 @@ export function createPostgresCustomerChannelRepository(
         [input.channel,input.messageId],
       );
       const row = existing.rows[0];
+      if (row?.state === "failed") {
+        const reclaimed = await pool.query(
+          `UPDATE security.customer_channel_messages
+              SET state='processing',reply=NULL,updated_at=$3
+            WHERE channel=$1 AND message_id=$2 AND state='failed'
+            RETURNING message_id`,
+          [input.channel,input.messageId,input.receivedAt],
+        );
+        if (reclaimed.rowCount === 1) {
+          return Object.freeze({ state: "claimed" as const, reply: null });
+        }
+      }
       return Object.freeze({
         state: row?.state === "completed"
           ? ("completed" as const)
