@@ -178,6 +178,11 @@ import {
 } from "./talk_activity/service.js";
 import { createPostgresTalkActivityRepository } from "./talk_activity/postgres_repository.js";
 import {
+  createTalkSearchService,
+  type TalkSearchAuthorizer,
+} from "./talk_search/service.js";
+import { createPostgresTalkSearchRepository } from "./talk_search/postgres_repository.js";
+import {
   createGatewayApp,
   type GatewayAppOptions,
   type ReadinessCheck,
@@ -281,6 +286,7 @@ export interface ServiceDatabaseDependency {
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
+  readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   close(): Promise<void>;
 }
 
@@ -429,6 +435,7 @@ function createDefaultDatabaseDependency(
     talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
+    talkSearch: createPostgresTalkSearchRepository(database.pool),
     close: database.close,
   });
 }
@@ -570,6 +577,7 @@ export async function startGatewayService(
   let talkModerationAuthorizer: TalkModerationAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
+  let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
@@ -709,6 +717,7 @@ export async function startGatewayService(
     talkModerationAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
+    talkSearchAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
@@ -1764,6 +1773,15 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkSearch =
+    options.appOptions?.talkSearch ??
+    (database.talkSearch && talkSearchAuthorizer
+      ? createTalkSearchService({
+          repository: database.talkSearch,
+          authorizer: talkSearchAuthorizer,
+        })
+      : undefined);
+
   const liveKitServerUrl = env.LIVEKIT_URL?.trim();
   const liveKitApiKey = env.LIVEKIT_API_KEY?.trim();
   const liveKitApiSecret = env.LIVEKIT_API_SECRET?.trim();
@@ -1823,6 +1841,7 @@ export async function startGatewayService(
       ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
+      ...(composedTalkSearch ? { talkSearch: composedTalkSearch } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
