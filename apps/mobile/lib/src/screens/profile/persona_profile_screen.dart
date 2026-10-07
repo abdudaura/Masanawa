@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../social/talk_social_profiles.dart';
 import '../../state/talk_social_profile_state.dart';
+import '../../state/talk_safety_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
+import 'profile_safety_sheet.dart';
 
 class PersonaProfileScreen extends ConsumerWidget {
   const PersonaProfileScreen({
@@ -13,12 +15,14 @@ class PersonaProfileScreen extends ConsumerWidget {
     this.onOpenTalk,
     this.onOpenOwner,
     this.onUsePersona,
+    required this.onSafety,
   });
 
   final String publicId;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String handle)? onOpenOwner;
   final void Function(PersonaProfile persona)? onUsePersona;
+  final VoidCallback onSafety;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,6 +46,13 @@ class PersonaProfileScreen extends ConsumerWidget {
           onOpenTalk: onOpenTalk,
           onOpenOwner: onOpenOwner,
           onUsePersona: onUsePersona,
+          onSafety: () => showProfileSafetySheet(
+            context,
+            transport: ref.read(talkSafetyTransportProvider),
+            targetKind: 'persona',
+            targetId: profile.publicId,
+            preferenceHandle: profile.ownerHandle,
+          ),
         );
       },
     );
@@ -72,6 +83,14 @@ class _PersonaBody extends StatelessWidget {
       backgroundColor: u.surfaceBg,
       appBar: AppBar(
         title: Text(isExpert ? 'Expert' : 'Twin'),
+        actions: [
+          IconButton(
+            key: const ValueKey('persona-profile-safety'),
+            tooltip: 'Safety',
+            onPressed: onSafety,
+            icon: const Icon(Icons.more_vert_rounded),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 18, 12, 28),
