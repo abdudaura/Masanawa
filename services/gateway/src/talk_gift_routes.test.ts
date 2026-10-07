@@ -12,6 +12,7 @@ function app(input: Readonly<{
   viewerUserId?: string;
   replayed?: boolean;
   fail?: Error;
+  activityFail?: boolean;
 }> = {}) {
   const activity: Parameters<TalkGiftActivitySink["append"]>[0][] = [];
   const executions: Parameters<TalkGiftExecutor["execute"]>[0][] = [];
@@ -71,6 +72,7 @@ function app(input: Readonly<{
       executor,
       activity: {
         async append(event) {
+          if (input.activityFail) throw new Error('activity unavailable');
           activity.push(event);
         },
       },
@@ -169,6 +171,27 @@ describe("Talk Host gift route", () => {
 
     expect(response.statusCode).toBe(200);
     expect(activity).toHaveLength(0);
+  });
+
+  it("does not turn a completed ledger gift into failure if Activity is down", async () => {
+    const { server, executions } = app({ activityFail: true });
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "gift-request-activity-down",
+        amountCredits: 100,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(executions).toHaveLength(1);
+    expect(response.json()).toMatchObject({
+      giftId: "ledger_1",
+      amountCredits: 100,
+      status: "completed",
+    });
   });
 
   it("returns a friendly conflict for insufficient Credits", async () => {
