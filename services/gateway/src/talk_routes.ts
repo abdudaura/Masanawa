@@ -34,17 +34,19 @@ export function registerTalkRoutes(app: FastifyInstance, talks: TalkService): vo
           {
             topic: Type.String({ minLength: 1, maxLength: 240 }),
             title: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+            recordReplay: Type.Optional(Type.Boolean()),
           },
           { additionalProperties: false },
         ),
       },
     },
     async (request, reply) => {
-      const body = request.body as { topic: string; title?: string };
+      const body = request.body as { topic: string; title?: string; recordReplay?: boolean };
       const created = await talks.create({
         authorizationHeader: request.headers.authorization,
         topic: body.topic,
         ...(body.title === undefined ? {} : { title: body.title }),
+        recordReplay: body.recordReplay === true,
       });
       reply.code(201);
       return created;
