@@ -1,7 +1,5 @@
-import {
-  createCanonicalId,
-  type CharacterSessionScope,
-} from "@masanawa/agents";
+import type { CharacterSessionScope } from "@masanawa/agents";
+import { createCanonicalId } from "@masanawa/contracts";
 import type {
   CryptoChatAction,
   CryptoChatActionRepository,
@@ -146,7 +144,7 @@ function parseDirective(reply: string): Directive | null {
   return null;
 }
 
-function scope(input: CharacterSessionScope) {
+function scope(input: CharacterSessionScope | CryptoChatAction) {
   return Object.freeze({
     tenantId: input.tenantId,
     userId: input.userId,
