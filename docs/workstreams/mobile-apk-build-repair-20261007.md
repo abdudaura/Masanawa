@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T22:22:18.220Z
+Last update: 2026-10-07T22:27:13.158Z
 Status: active.
 
 ## Exact owned paths
@@ -81,3 +81,5 @@ User additionally requested real LiveKit configuration and chose a new LiveKit C
 APK assembly has passed dependency-graph resolution after the SDK repair. Flutter release code and icon assets compiled; CMake 3.22.1 installed successfully. Native output continues growing (935 MB); await APK packaging and signature validation. LiveKit Cloud remains at the initial signup screen for secure user completion.
 
 LiveKit project Masanawa p_5gjzrshbvnb is now signed in, with an existing API key. Its secret is creation-only and cannot be retrieved later. Preparing the bounded server credential setup. APK packaging is resumed offline after verifying Google's core-ktx 1.16.0 AAR against its published SHA-1; build environment repository override uses the exact cached official artifact.
+
+APK build dependencies now also include checksum-verified official annotation-jvm 1.8.2 metadata/JAR in the local build-only repository; resuming cached assembly. No source changes. LiveKit new-key form is prepared for browser security confirmation; the existing secret is unrecoverable by provider design. Gateway remains ready with database schema healthy.
