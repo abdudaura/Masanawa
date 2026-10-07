@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
+import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/home/home_models.dart';
 import 'package:masanawa/src/home/home_state.dart';
@@ -12,6 +13,28 @@ import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/state/twin_activity_state.dart';
 import 'package:masanawa/src/state/twin_directory_state.dart';
 import 'package:masanawa/src/state/wallet_state.dart';
+
+const _user = AuthUser(
+  id: 'test-owner',
+  name: 'Test Owner',
+  email: 'owner@example.test',
+  locale: 'en-NG',
+  status: 'ACTIVE',
+  role: 'USER',
+  isNewUser: false,
+  createdAt: '2026-10-07T00:00:00Z',
+);
+const _tokens = AuthTokens(
+  accessToken: 'test-access',
+  refreshToken: 'test-refresh',
+  accessExpiresIn: 900,
+  user: _user,
+);
+
+class _Session extends SessionController {
+  @override
+  SessionState build() => const SessionSignedIn(_user, _tokens);
+}
 
 class _Adapter implements HttpClientAdapter {
   _Adapter(this.handler);
@@ -45,6 +68,7 @@ void main() {
       final seenPaths = <String>[];
       final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
       dio.httpClientAdapter = _Adapter((options) async {
+        expect(options.headers['Authorization'], 'Bearer test-access');
         seenPaths.add(options.path);
         switch (options.path) {
           case '/home':
@@ -139,7 +163,10 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          apiClientProvider.overrideWithValue(ApiClient(dio: dio)),
+          apiClientProvider.overrideWithValue(
+            ApiClient(dio: dio)..accessToken = 'test-access',
+          ),
+          sessionProvider.overrideWith(_Session.new),
           isSignedInProvider.overrideWithValue(true),
         ],
       );
