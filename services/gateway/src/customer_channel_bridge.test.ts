@@ -207,4 +207,75 @@ describe("Customer channel bridge", () => {
     });
   });
 
+
+  it("creates a canonical customer when Telegram supplies the sender's verified contact", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const profile = {
+      tenantId,
+      userId,
+      name: "Telegram customer",
+      email: null,
+      phone: "+2348012345678",
+      locale: "ng",
+      createdAt: "2026-10-07T00:00:00.000Z",
+    };
+    const createProfile = vi.fn(async () => profile);
+    const sessions = {
+      async resolveProfile() { return null; },
+      createProfile,
+      async issueSession() {},
+      async revokeAccess() {},
+    } as unknown as PlatformSessionRepository;
+    let link: any = null;
+    const channels = {
+      async claimMessage() { return { state: "claimed" as const }; },
+      async readLink() { return null; },
+      async putLink(value: unknown) { link = value; },
+      async setCharacterSession(value: unknown) { link = { ...link, ...(value as object) }; },
+      async completeMessage() {},
+      async failMessage() {},
+    } as unknown as CustomerChannelRepository;
+    const platformProfiles = {
+      async listSupportAgents() {
+        return [{ characterId, supportAgent: true, defaultForNewUsers: true, voiceName: "Bodi" }];
+      },
+      async readForCharacter() {
+        return { characterId, supportAgent: true, defaultForNewUsers: true, voiceName: "Bodi" };
+      },
+    } as unknown as PlatformAgentProfileRepository;
+    const conversation = {
+      async open() { return { characterSessionId: createCanonicalId("character-session") }; },
+      async turn() {
+        return { reply: "Connected.", agentRunId: createCanonicalId("agent-run"), parts: [] };
+      },
+    } as unknown as AgentConversationService;
+
+    const bridge = createCustomerChannelBridge({
+      tenantId,
+      sessions,
+      channels,
+      platformProfiles,
+      conversation,
+    });
+
+    const result = await bridge.handle({
+      channel: "telegram",
+      messageId: "12",
+      externalUserId: "123",
+      chatId: "123",
+      phone: "+2348012345678",
+      text: "Connect my Telegram account.",
+    });
+
+    expect(createProfile).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId,
+      identifier: "+2348012345678",
+      name: "Telegram customer",
+    }));
+    expect(link).toMatchObject({ userId, characterId, channel: "telegram" });
+    expect(result.reply).toBe("Connected.");
+  });
+
 });
