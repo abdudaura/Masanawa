@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../state/talk_participation_state.dart';
 import '../../state/talk_state.dart';
 import '../../talks/talk_ai_seat.dart';
+import '../../talks/talk_participation.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
+import 'talk_participation_sheets.dart';
 
 class TalkScreen extends ConsumerStatefulWidget {
   const TalkScreen({
@@ -32,6 +35,8 @@ class TalkScreen extends ConsumerStatefulWidget {
 class _TalkScreenState extends ConsumerState<TalkScreen> {
   final _commentController = TextEditingController();
   bool _postingComment = false;
+  bool _reacting = false;
+  bool _handBusy = false;
 
   @override
   void dispose() {
@@ -79,6 +84,68 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     );
   }
 
+  Future<void> _react() async {
+    if (_reacting) return;
+    final reaction = await showTalkReactionPicker(context);
+    if (!mounted || reaction == null) return;
+    setState(() => _reacting = true);
+    try {
+      await ref.read(talkParticipationTransportProvider).react(
+            talkId: widget.talkId,
+            reaction: reaction,
+          );
+      ref.invalidate(talkParticipationProvider(widget.talkId));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(reaction + ' sent')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t send your reaction.')),
+      );
+    } finally {
+      if (mounted) setState(() => _reacting = false);
+    }
+  }
+
+  Future<void> _raiseHand(TalkHandStatus status) async {
+    final callback = widget.onRaiseHand;
+    if (callback != null) {
+      callback();
+      return;
+    }
+    if (_handBusy || widget.isHost) return;
+    final raised = await showRaiseHandSheet(context, status: status);
+    if (!mounted || raised == null) return;
+    setState(() => _handBusy = true);
+    try {
+      final next =
+          await ref.read(talkParticipationTransportProvider).setHandRaised(
+                talkId: widget.talkId,
+                raised: raised,
+              );
+      ref.invalidate(talkParticipationProvider(widget.talkId));
+      if (!mounted) return;
+      final message = switch (next.handStatus) {
+        TalkHandStatus.raised => 'Hand raised. Waiting for the Host.',
+        TalkHandStatus.accepted => 'The Host accepted you as a Speaker.',
+        TalkHandStatus.declined => 'The Host declined the request.',
+        TalkHandStatus.idle => 'Hand lowered.',
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t update your hand right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _handBusy = false);
+    }
+  }
+
   Future<void> _postComment() async {
     final body = _commentController.text.trim();
     if (body.isEmpty || _postingComment) return;
@@ -105,6 +172,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(talkDetailProvider(widget.talkId));
+    final participation =
+        ref.watch(talkParticipationProvider(widget.talkId)).maybeWhen(
+              data: (value) => value,
+              orElse: () => const TalkParticipationState(),
+            );
     final fallback = widget.initialTalk;
 
     return detail.when(
@@ -114,9 +186,15 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         controller: _commentController,
         postingComment: _postingComment,
         onPostComment: _postComment,
+        onReact: _react,
+        reaction: participation.reaction,
         onAddAi: _openAiSeatSheet,
         onGift: widget.onGift,
-        onRaiseHand: widget.onRaiseHand,
+        handStatus: participation.handStatus,
+        handBusy: _handBusy,
+        onRaiseHand: widget.isHost
+            ? null
+            : () => _raiseHand(participation.handStatus),
       ),
       loading: () {
         if (fallback != null) {
@@ -127,9 +205,15 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            onReact: _react,
+            reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.onGift,
-            onRaiseHand: widget.onRaiseHand,
+            handStatus: participation.handStatus,
+            handBusy: _handBusy,
+            onRaiseHand: widget.isHost
+                ? null
+                : () => _raiseHand(participation.handStatus),
           );
         }
         return const Scaffold(
@@ -145,9 +229,15 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            onReact: _react,
+            reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.onGift,
-            onRaiseHand: widget.onRaiseHand,
+            handStatus: participation.handStatus,
+            handBusy: _handBusy,
+            onRaiseHand: widget.isHost
+                ? null
+                : () => _raiseHand(participation.handStatus),
           );
         }
         return Scaffold(
@@ -170,8 +260,12 @@ class _TalkBody extends StatelessWidget {
     required this.onPostComment,
     this.loadingComments = false,
     this.commentsUnavailable = false,
+    this.onReact,
+    this.reaction,
     this.onAddAi,
     this.onGift,
+    this.handStatus = TalkHandStatus.idle,
+    this.handBusy = false,
     this.onRaiseHand,
   });
 
@@ -182,8 +276,12 @@ class _TalkBody extends StatelessWidget {
   final VoidCallback onPostComment;
   final bool loadingComments;
   final bool commentsUnavailable;
+  final VoidCallback? onReact;
+  final String? reaction;
   final VoidCallback? onAddAi;
   final VoidCallback? onGift;
+  final TalkHandStatus handStatus;
+  final bool handBusy;
   final VoidCallback? onRaiseHand;
 
   @override
@@ -213,8 +311,12 @@ class _TalkBody extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: _TalkStage(
                     talk: talk,
+                    onReact: onReact,
+                    reaction: reaction,
                     onAddAi: onAddAi,
                     onGift: onGift,
+                    handStatus: handStatus,
+                    handBusy: handBusy,
                     onRaiseHand: onRaiseHand,
                   ),
                 ),
@@ -306,14 +408,22 @@ class _TalkBody extends StatelessWidget {
 class _TalkStage extends StatelessWidget {
   const _TalkStage({
     required this.talk,
+    this.onReact,
+    this.reaction,
     this.onAddAi,
     this.onGift,
+    this.handStatus = TalkHandStatus.idle,
+    this.handBusy = false,
     this.onRaiseHand,
   });
 
   final TalkDiscoveryItem talk;
+  final VoidCallback? onReact;
+  final String? reaction;
   final VoidCallback? onAddAi;
   final VoidCallback? onGift;
+  final TalkHandStatus handStatus;
+  final bool handBusy;
   final VoidCallback? onRaiseHand;
 
   @override
@@ -397,15 +507,27 @@ class _TalkStage extends StatelessWidget {
             children: [
               Expanded(
                 child: _ActionButton(
-                  icon: Icons.favorite_border_rounded,
-                  label: 'React',
-                  onTap: () {},
+                  icon: reaction == null
+                      ? Icons.favorite_border_rounded
+                      : Icons.favorite_rounded,
+                  label: reaction ?? 'React',
+                  onTap: onReact,
                 ),
               ),
               Expanded(
                 child: _ActionButton(
-                  icon: Icons.back_hand_outlined,
-                  label: 'Raise hand',
+                  icon: handStatus == TalkHandStatus.raised
+                      ? Icons.back_hand_rounded
+                      : handStatus == TalkHandStatus.accepted
+                          ? Icons.mic_rounded
+                          : Icons.back_hand_outlined,
+                  label: handBusy
+                      ? 'Updating…'
+                      : handStatus == TalkHandStatus.raised
+                          ? 'Hand raised'
+                          : handStatus == TalkHandStatus.accepted
+                              ? 'Speaker'
+                              : 'Raise hand',
                   onTap: onRaiseHand,
                 ),
               ),
