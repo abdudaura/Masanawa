@@ -264,6 +264,47 @@ function billing(quotes: MemoryQuotes): BillingFinancialService {
         lastEvidenceAt: "2026-10-04T20:02:00.000Z",
       };
     },
+    async purchaseOwned(request) {
+      const owner = identity();
+      if (request.tenantId !== owner.tenantId || request.userId !== owner.userId) {
+        throw new Error("financial.billing_not_found");
+      }
+      await quotes.reserveConfirmedBill({
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        quoteId: request.quoteId as never,
+        quoteRevision: request.quoteRevision,
+        fulfillmentReference: request.requestId,
+        categoryCode: request.categoryCode ?? null,
+        billerCode: request.billerCode,
+        itemCode: request.itemCode,
+        customerId: request.customerId,
+        amount: request.amount,
+        currency: "NGN",
+      });
+      await quotes.settleBill({
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        fulfillmentReference: request.requestId,
+        state: "succeeded",
+        providerReference: "BILL-1",
+      });
+      return {
+        fulfillmentReference: request.requestId,
+        billerCode: request.billerCode,
+        itemCode: request.itemCode,
+        itemName: request.itemName,
+        customerId: request.customerId,
+        customerName: null,
+        amount: request.amount,
+        currency: "NGN",
+        revision: 2,
+        state: "succeeded",
+        providerReference: "BILL-1",
+        providerStatus: "successful",
+        lastEvidenceAt: "2026-10-04T20:02:00.000Z",
+      };
+    },
     async readPurchase() { throw new Error("unused"); },
     async reconcileOwnedPurchase(request) {
       const current = quotes.quote;
