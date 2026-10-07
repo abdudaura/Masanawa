@@ -42,6 +42,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
   Timer? _heartbeatTimer;
   Future<void>? _starting;
   Future<void>? _closing;
+  Future<void>? _heartbeatInFlight;
   String? _sessionId;
   TalkLiveRole? _role;
   TalkLiveAudioStatus _status = TalkLiveAudioStatus.idle;
@@ -120,12 +121,25 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
 
       _heartbeatTimer = Timer.periodic(
         heartbeatInterval,
-        (_) => unawaited(_heartbeat()),
+        (_) => _scheduleHeartbeat(),
       );
     } catch (_) {
       _fail('Live audio is unavailable right now.');
       await _closeMediaOnly();
     }
+  }
+
+  void _scheduleHeartbeat() {
+    if (_closed || _heartbeatInFlight != null) return;
+    final future = _heartbeat();
+    _heartbeatInFlight = future;
+    unawaited(
+      future.whenComplete(() {
+        if (identical(_heartbeatInFlight, future)) {
+          _heartbeatInFlight = null;
+        }
+      }),
+    );
   }
 
   Future<void> _heartbeat() async {
@@ -221,6 +235,12 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
     _closed = true;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    try {
+      await _heartbeatInFlight;
+    } catch (_) {
+      // A failed in-flight heartbeat must not block teardown.
+    }
+    _heartbeatInFlight = null;
 
     final sessionId = _sessionId;
     _sessionId = null;
