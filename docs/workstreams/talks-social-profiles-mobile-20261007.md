@@ -31,3 +31,50 @@ Owned:
 - Simplicity: no dashboard grids.
 
 Status: active.
+
+
+## Implementation checkpoint
+
+Implemented:
+- human Person Profile with handle, bio, follower/following counts and Follow toggle;
+- live indicator / Listen live affordance when a live Talk target is present;
+- optional Twin preview from the human profile;
+- one-column vertical public Talk history;
+- shared Expert/Twin Persona Profile with explicit identity labels;
+- Masanawa Expert verification presentation;
+- Twin owner attribution;
+- Seat fee and availability presentation;
+- topic chips and vertical Talk appearance history;
+- `/u/:handle` and `/persona/:publicId` mobile routes;
+- Activity follow events can open human profiles;
+- focused widget coverage.
+
+## Mobile-facing backend contract
+
+Human profile:
+- `GET /profiles/:handle`
+- `POST /profiles/:handle/follow` with `{ following: boolean }`
+
+Human projection:
+- `handle, displayName, bio?, avatarUrl?`
+- `followerCount, followingCount, isFollowing`
+- `isLive, liveTalkId?`
+- `twinPublicId?, twinDisplayName?`
+- `talks[]` using the existing Talk discovery projection.
+
+Persona profile:
+- `GET /personas/:publicId`
+
+Persona projection:
+- `publicId, displayName, kind: expert|twin`
+- `seatFeeLabel, isAvailable`
+- `role?, bio?, avatarUrl?`
+- for Twins: `ownerHandle?, ownerDisplayName?`
+- `topics[]`
+- `appearances[]` using Talk discovery projection
+- `isVerified`.
+
+The backend remains authoritative for follow relationship isolation, counts, public
+visibility, persona availability and Seat pricing. Follow mutations must be idempotent.
+
+Status: mobile social profile slice implemented; backend projection remains independent work.
