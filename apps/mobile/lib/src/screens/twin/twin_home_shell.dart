@@ -123,7 +123,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         unawaited(_openServiceChat(entry: 'cafe'));
       case 'study':
         unawaited(_openServiceChat(
-          entry: 'teach',
+          entry: 'study',
           prompt: 'I want to learn something. Help me start a lesson.',
         ));
       case 'story_radio':
