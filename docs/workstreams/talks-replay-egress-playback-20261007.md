@@ -8,6 +8,7 @@
   - `services/gateway/src/talk_replay/egress/**`
   - `services/gateway/src/talk_replay/playback/**`
   - isolated replay service/route/composition additions
+  - `packages/talks/migrations/0007_talk_replay_media.sql`
   - focused egress/playback tests
   - this workstream
 - **Reuses:** merged replay persistence/runtime, LiveKit room credentials, existing Talk Host authority.
