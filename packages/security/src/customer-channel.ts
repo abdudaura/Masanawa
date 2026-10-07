@@ -20,7 +20,7 @@ export interface CustomerChannelLink {
 }
 
 export interface CustomerChannelMessageClaim {
-  readonly state: "claimed" | "completed" | "processing";
+  readonly state: "claimed" | "completed" | "delivered" | "processing";
   readonly reply: string | null;
 }
 
@@ -52,6 +52,12 @@ export interface CustomerChannelRepository {
     messageId: string;
     reply: string;
     completedAt: string;
+  }>): Promise<void>;
+
+  markDelivered(input: Readonly<{
+    channel: CustomerChannel;
+    messageId: string;
+    deliveredAt: string;
   }>): Promise<void>;
 
   failMessage(input: Readonly<{
