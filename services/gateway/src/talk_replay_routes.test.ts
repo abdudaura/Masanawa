@@ -2,20 +2,20 @@ import { describe,expect,it } from "vitest";
 import Fastify from "fastify";
 import { registerTalkReplayRoutes } from "./talk_replay_routes.js";
 import { createTalkReplayService } from "./talk_replay/service.js";
-import type { TalkReplayRepository } from "./talk_replay/model.js";
+import type { TalkReplayHostView, TalkReplayRepository } from "./talk_replay/model.js";
 
 function repository():TalkReplayRepository{
-  let state={
+  let state:TalkReplayHostView={
     talkId:"talk_1",recordingId:"recording_1",
-    recordingState:"recording" as const,publicationState:"not_ready" as const,
-    publicationPreference:"publish" as const,segmentCount:0,durationSeconds:0,revision:1,
+    recordingState:"recording",publicationState:"not_ready",
+    publicationPreference:"publish",segmentCount:0,durationSeconds:0,revision:1,
     isPublic:false,startedAt:"2026-10-07T10:00:00.000Z",
   };
   return {
     async start(){return state;},
     async hostView(){return state;},
     async hostAction(input){
-      state={...state,publicationState:input.action==="publish"?"published":"private",isPublic:input.action==="publish",revision:state.revision+1} as typeof state;
+      state={...state,publicationState:input.action==="publish"?"published":"private",isPublic:input.action==="publish",revision:state.revision+1};
       return state;
     },
     async appendSegment(){return state;},
