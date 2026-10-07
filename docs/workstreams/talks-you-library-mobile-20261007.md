@@ -35,3 +35,48 @@ Not owned:
 - No Rooms, Skills, Agent directories or old Twin-first history should return.
 
 Status: active.
+
+
+## Implementation checkpoint
+
+Implemented:
+- compact You hub now wires **My Talks** and **Saved Talks**;
+- `/my-talks` route;
+- `/saved-talks` route;
+- My Talks projection with **Live** and **Replays**;
+- **Drafts** chip appears only when durable drafts are actually returned;
+- owned Talk cards remain single-column vertical and preserve Host projection;
+- Saved Talks is a simple vertical listening list;
+- raw transport failures remain hidden behind friendly refreshable states;
+- Wallet & earnings, Bills, Crypto, My Twin and Settings remain in the compact You hub;
+- focused model, screen and You-entry tests.
+
+## Mobile-facing backend contract
+
+`GET /me/talks`
+
+Response:
+`{ live: TalkDiscoveryItem[], replays: TalkDiscoveryItem[], drafts?: TalkDraftPreview[] }`
+
+Owned live/replay Talk projections should set `viewerIsHost: true` for the authenticated
+Host so entering the Talk restores Host controls.
+
+Optional draft projection:
+- `id`
+- `topic`
+- optional `title`
+- `updatedAt`
+
+The mobile app only shows the Drafts filter when drafts are present. Draft editing is not
+invented locally; a durable draft-edit contract should be added before making draft rows
+actionable.
+
+`GET /me/saved-talks`
+
+Response: `TalkDiscoveryItem[]`.
+
+The server remains authoritative for ownership, replay publication, saved state, visibility
+and Tenant/user isolation. A 404 fails soft to an empty library while backend projections
+land independently.
+
+Status: You/library mobile slice implemented; backend library projections remain independent work.
