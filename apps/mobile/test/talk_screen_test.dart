@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/src/library/talk_library.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
+import 'package:masanawa/src/state/talk_library_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
 import 'package:masanawa/src/state/talk_live_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
@@ -16,6 +18,31 @@ import 'package:masanawa/src/talks/talk_live_audio_session.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/talks/talk_participation.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _LibraryTransport implements TalkLibraryTransport {
+  bool saved;
+
+  _LibraryTransport({this.saved = false});
+
+  @override
+  Future<MyTalksView> loadMyTalks() async => const MyTalksView();
+
+  @override
+  Future<List<TalkDiscoveryItem>> loadSavedTalks() async => const [];
+
+  @override
+  Future<TalkSavedState> loadSavedState(String talkId) async =>
+      TalkSavedState(talkId: talkId, saved: saved);
+
+  @override
+  Future<TalkSavedState> setSaved({
+    required String talkId,
+    required bool saved,
+  }) async {
+    this.saved = saved;
+    return TalkSavedState(talkId: talkId, saved: saved);
+  }
+}
 
 class _SeatTransport implements TalkAiSeatTransport {
   const _SeatTransport();
@@ -280,6 +307,7 @@ Widget _app({
   _ParticipationTransport? participation,
   _HostControlsTransport? hostControls,
   _FakeLiveAudioController? liveAudio,
+  _LibraryTransport? library,
 }) {
   return ProviderScope(
     overrides: [
@@ -292,6 +320,9 @@ Widget _app({
       ),
       talkHostControlsTransportProvider.overrideWithValue(
         hostControls ?? _HostControlsTransport(),
+      ),
+      talkLibraryTransportProvider.overrideWithValue(
+        library ?? _LibraryTransport(),
       ),
       talkLiveAudioFactoryProvider.overrideWithValue(
         (_) => liveAudio ??
@@ -325,6 +356,33 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Share your thoughts…'), findsOneWidget);
+  });
+
+  testWidgets('Talk can be saved and unsaved from the app bar', (tester) async {
+    final transport = _TalkTransport();
+    final library = _LibraryTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        library: library,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Save Talk'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('talk-save-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(library.saved, isTrue);
+    expect(find.byTooltip('Remove from Saved'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-save-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(library.saved, isFalse);
+    expect(find.byTooltip('Save Talk'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('listener can post a comment without leaving the Talk',
