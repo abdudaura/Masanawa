@@ -62,4 +62,6 @@ class MyTalksView {
 abstract interface class TalkLibraryTransport {
   Future<MyTalksView> loadMyTalks();
   Future<List<TalkDiscoveryItem>> loadSavedTalks();
+  Future<bool> isSaved(String talkId);
+  Future<bool> setSaved(String talkId, {required bool saved});
 }
