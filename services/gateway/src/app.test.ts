@@ -111,6 +111,7 @@ describe("gateway service bootstrap", () => {
         return [];
       },
       async reconcileFulfillment() { return null; },
+      async verifyWalletConfirmAction() { throw new Error("unused"); },
       async executeShellAction() { throw new Error("unused"); },
     };
     const app = createGatewayApp({ billingCheckout });
