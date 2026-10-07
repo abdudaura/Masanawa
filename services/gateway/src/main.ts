@@ -159,6 +159,11 @@ import {
 import { createTalkService, type TalkAuthorizer } from "./talks/service.js";
 import { createPostgresTalkRepository } from "./talks/postgres_repository.js";
 import {
+  createTalkProfileService,
+  type TalkProfileAuthorizer,
+} from "./talk_profiles/service.js";
+import { createPostgresTalkProfileRepository } from "./talk_profiles/postgres_repository.js";
+import {
   createTalkActivityService,
   type TalkActivityAuthorizer,
 } from "./talk_activity/service.js";
@@ -263,6 +268,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
+  readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   close(): Promise<void>;
 }
@@ -408,6 +414,7 @@ function createDefaultDatabaseDependency(
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
+    talkProfiles: createPostgresTalkProfileRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     close: database.close,
   });
@@ -546,6 +553,7 @@ export async function startGatewayService(
     | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
     | undefined;
   let talkAuthorizer: TalkAuthorizer | undefined;
+  let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
@@ -682,6 +690,7 @@ export async function startGatewayService(
     });
     billingCustomerAuthorizer = customerSessions;
     talkAuthorizer = customerSessions;
+    talkProfileAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
@@ -1729,6 +1738,15 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkProfiles =
+    options.appOptions?.talkProfiles ??
+    (database.talkProfiles && talkProfileAuthorizer
+      ? createTalkProfileService({
+          repository: database.talkProfiles,
+          authorizer: talkProfileAuthorizer,
+        })
+      : undefined);
+
   const composedTalks =
     options.appOptions?.talks ??
     (database.talks && talkAuthorizer
@@ -1744,6 +1762,7 @@ export async function startGatewayService(
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
+      ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
