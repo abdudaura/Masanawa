@@ -16,3 +16,10 @@ final myTalksProvider = FutureProvider<MyTalksView>(
 final savedTalksProvider = FutureProvider<List<TalkDiscoveryItem>>(
   (ref) => ref.watch(talkLibraryTransportProvider).loadSavedTalks(),
 );
+
+
+final talkSavedStateProvider =
+    FutureProvider.family<TalkSavedState, String>(
+  (ref, talkId) =>
+      ref.watch(talkLibraryTransportProvider).loadSavedState(talkId),
+);
