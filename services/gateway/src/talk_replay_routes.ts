@@ -4,7 +4,7 @@ import type { TalkReplayService } from "./talk_replay/service.js";
 
 const TalkParams=Type.Object({talkId:Type.String({minLength:1,maxLength:240})},{additionalProperties:false});
 
-export function registerTalkReplayRoutes(app:FastifyInstance,service:TalkReplayService):void{
+export function registerTalkReplayRoutes(app:FastifyInstance,service:TalkReplayService,options:{readonly includeMyTalks?:boolean}={}):void{
   app.post("/talks/:talkId/replay/recording",{
     schema:{params:TalkParams,body:Type.Object({
       consent:Type.Literal(true),
@@ -41,10 +41,14 @@ export function registerTalkReplayRoutes(app:FastifyInstance,service:TalkReplayS
     return service.publication({authorizationHeader:request.headers.authorization,talkId,action});
   });
 
+  // The full gateway uses TalkLibraryService for this shared endpoint.
+  // Keep the replay-only contract for compositions without a library.
+  if(options.includeMyTalks!==false){
   app.get("/me/talks",{
     schema:{querystring:Type.Object({limit:Type.Optional(Type.Integer({minimum:1,maximum:100}))},{additionalProperties:false})},
   },async request=>{
     const query=request.query as {limit?:number};
     return service.myTalks({authorizationHeader:request.headers.authorization,limit:query.limit??60});
   });
+  }
 }
