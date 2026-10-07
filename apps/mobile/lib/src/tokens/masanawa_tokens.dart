@@ -1,6 +1,6 @@
-/// Masanawa design tokens — Agent Blue (ratified 2026-10-04).
+/// Masanawa design tokens — WhatsApp-derived green identity.
 ///
-/// Canonical mobile color source for the Masanawa agent-blue identity.
+/// Canonical mobile color source for the Masanawa WhatsApp-like identity.
 /// No raw hex in widget code — always read from this file.
 library;
 
@@ -53,36 +53,36 @@ final class MasanawaTokens {
   const MasanawaTokens._();
 
   static const ColorTokens light = ColorTokens(
-    brandPrimary: '#0A6FFA',
-    // Light mode stays white/grey/blue; no deep navy accent.
-    brandStrong: '#0A6FFA',
-    brandGradient: TokenGradient('#0A6FFA', '#1DA4FD'),
-    verified: '#0A6FFA',
-    emergency: '#DC2626',
-    warning: '#D97706',
-    success: '#16A34A',
-    textPrimary: '#0A1830',
-    textMuted: '#526A86',
-    surfaceBg: '#FFFFFF',
+    // Familiar WhatsApp palette, deliberately adopted end-to-end.
+    brandPrimary: '#25D366',
+    brandStrong: '#075E54',
+    brandGradient: TokenGradient('#25D366', '#128C7E'),
+    verified: '#128C7E',
+    emergency: '#D32F2F',
+    warning: '#F59E0B',
+    success: '#25D366',
+    textPrimary: '#111B21',
+    textMuted: '#667781',
+    surfaceBg: '#F0F2F5',
     surfaceCard: '#FFFFFF',
-    surfaceMuted: '#EAF4FF',
+    surfaceMuted: '#E7FCEB',
     structuralBorder: '#E9EDEF',
   );
 
   static const ColorTokens dark = ColorTokens(
-    brandPrimary: '#36C0FF',
-    brandStrong: '#79DBFF',
-    brandGradient: TokenGradient('#034EF6', '#24B9FF'),
-    verified: '#5BCBFF',
-    emergency: '#F87171',
-    warning: '#FBBF24',
-    success: '#4ADE80',
-    textPrimary: '#F3F8FF',
-    textMuted: '#9AB7D8',
-    surfaceBg: '#06132C',
-    surfaceCard: '#0B1E3F',
-    surfaceMuted: '#102B52',
-    structuralBorder: '#1F4F87',
+    brandPrimary: '#00A884',
+    brandStrong: '#00A884',
+    brandGradient: TokenGradient('#00A884', '#25D366'),
+    verified: '#53BDEB',
+    emergency: '#F15C6D',
+    warning: '#F7B928',
+    success: '#00A884',
+    textPrimary: '#E9EDEF',
+    textMuted: '#8696A0',
+    surfaceBg: '#111B21',
+    surfaceCard: '#202C33',
+    surfaceMuted: '#2A3942',
+    structuralBorder: '#2F3B43',
   );
 
   /// 4px spacing grid.
