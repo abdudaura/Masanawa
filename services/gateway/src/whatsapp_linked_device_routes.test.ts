@@ -125,4 +125,39 @@ describe("linked WhatsApp admin routes", () => {
 
     await app.close();
   });
+
+  it("accepts an authorized platform admin session without exposing the server admin token", async () => {
+    const app = Fastify();
+    const state = controller();
+    const authorizeSession = vi.fn(async (header: string | undefined) =>
+      header === "Bearer platform-admin-session"
+    );
+    registerLinkedWhatsAppAdminRoutes(app, {
+      controller: state.controller,
+      authorizeSession,
+    });
+
+    const denied = await app.inject({
+      method: "GET",
+      url: "/admin/channels/whatsapp/status",
+      headers: { authorization: "Bearer normal-customer" },
+    });
+    expect(denied.statusCode).toBe(401);
+
+    const accepted = await app.inject({
+      method: "GET",
+      url: "/admin/channels/whatsapp/status",
+      headers: { authorization: "Bearer platform-admin-session" },
+    });
+    expect(accepted.statusCode).toBe(200);
+    expect(authorizeSession).toHaveBeenCalled();
+    expect(accepted.json()).toMatchObject({
+      mode: "linked-device",
+      status: "qr",
+      qrReady: true,
+    });
+
+    await app.close();
+  });
+
 });
