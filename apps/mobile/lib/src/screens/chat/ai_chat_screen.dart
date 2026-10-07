@@ -950,9 +950,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         if (didPop) setState(() => _showEmoji = false);
       },
       child: Scaffold(
-        backgroundColor: u.surfaceBg,
+        backgroundColor: Theme.of(context).brightness == Brightness.light
+            ? const Color(0xFFEFEAE2)
+            : u.surfaceBg,
         appBar: AppBar(
-          backgroundColor: u.surfaceCard,
+          backgroundColor: u.brandStrong,
+          foregroundColor: Colors.white,
           elevation: 0,
           leadingWidth: 40,
           leading: IconButton(
@@ -983,11 +986,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               children: [
                 CircleAvatar(
                   radius: 17,
-                  backgroundColor: u.brand,
+                  backgroundColor: Colors.white,
                   child: Text(
                     agent.initial,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: u.brandStrong,
                       fontWeight: FontWeight.w800,
                       fontSize: 15,
                     ),
@@ -1002,34 +1005,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         agent.displayName,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: u.textPrimary,
+                          color: Colors.white,
                           fontSize: 16.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              workingLabel,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: sending ? u.brand : u.textMuted,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '• $ngnBalanceLabel',
-                            style: TextStyle(
-                              color: u.brand,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        workingLabel,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: .82),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                     ],
                   ),
@@ -2946,7 +2934,7 @@ class _Composer extends StatelessWidget {
           children: [
             Expanded(
               child: Container(
-                constraints: const BoxConstraints(minHeight: 52),
+                constraints: const BoxConstraints(minHeight: 48),
                 decoration: BoxDecoration(
                   color: u.surfaceCard,
                   borderRadius: BorderRadius.circular(26),
@@ -2999,8 +2987,8 @@ class _Composer extends StatelessWidget {
                   child: InkWell(
                     onTap: sending ? onStop : (hasText ? onSend : onMic),
                     child: SizedBox(
-                      width: 52,
-                      height: 52,
+                      width: 48,
+                      height: 48,
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 160),
                         child: Icon(
@@ -3367,7 +3355,9 @@ class _ChatBubble extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: isUser
-                    ? Color.lerp(u.surfaceCard, u.success, 0.18)!
+                    ? (Theme.of(context).brightness == Brightness.light
+                        ? const Color(0xFFD9FDD3)
+                        : const Color(0xFF005C4B))
                     : u.surfaceCard,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(14),
@@ -3380,9 +3370,7 @@ class _ChatBubble extends StatelessWidget {
                         color: highlighted ? u.warning : u.brand,
                         width: 2,
                       )
-                    : isUser
-                    ? null
-                    : Border.all(color: u.structuralBorder),
+                    : null,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
