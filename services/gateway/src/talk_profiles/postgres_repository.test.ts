@@ -51,6 +51,31 @@ describe("Postgres Talk profile repository", () => {
     expect(calls[0]?.text).toContain("follower_user_id = $2");
   });
 
+  it("reads a human profile by canonical user id with viewer follow state", async () => {
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const pool: TalkProfileSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
+        return { rowCount: 1, rows: [humanRow()] as unknown as Row[] };
+      },
+    };
+
+    const profile =
+        await createPostgresTalkProfileRepository(pool).readHumanByUserId({
+      tenantId: "tenant_a",
+      viewerUserId: "user_viewer",
+      userId: "user_target",
+    });
+
+    expect(profile).toMatchObject({ handle: "amina", isFollowing: false });
+    expect(calls[0]?.values).toEqual([
+      "tenant_a",
+      "user_viewer",
+      "user_target",
+    ]);
+    expect(calls[0]?.text).toContain("p.user_id = $3");
+  });
+
   it("uses insert-on-conflict for idempotent follow and scoped delete for unfollow", async () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     let reads = 0;
@@ -91,6 +116,46 @@ describe("Postgres Talk profile repository", () => {
     });
     expect(calls.some((call) => call.text.includes("DELETE FROM talks.follows"))).toBe(true);
     expect(reads).toBe(2);
+  });
+
+  it("uses the same idempotent follow table for canonical user-id targets", async () => {
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const pool: TalkProfileSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
+        if (text.includes("SELECT p.user_id, p.handle")) {
+          return {
+            rowCount: 1,
+            rows: [{ user_id: "user_target", handle: "amina" }] as unknown as Row[],
+          };
+        }
+        if (text.includes("SELECT p.tenant_id")) {
+          return {
+            rowCount: 1,
+            rows: [humanRow({ is_following: true, follower_count: 5 })] as unknown as Row[],
+          };
+        }
+        return { rowCount: 1, rows: [] as unknown as Row[] };
+      },
+    };
+    const repository = createPostgresTalkProfileRepository(pool);
+
+    const followed = await repository.setFollowingByUserId({
+      tenantId: "tenant_a",
+      viewerUserId: "user_viewer",
+      userId: "user_target",
+      following: true,
+      changedAt: "2026-10-07T09:00:00.000Z",
+    });
+
+    expect(followed).toMatchObject({ isFollowing: true, followerCount: 5 });
+    expect(calls.some((call) => call.text.includes("ON CONFLICT"))).toBe(true);
+    expect(
+      calls.some((call) =>
+        call.values?.includes("user_target") &&
+        call.text.includes("talks.public_profiles"),
+      ),
+    ).toBe(true);
   });
 
   it("rejects following yourself before mutating the relationship table", async () => {
