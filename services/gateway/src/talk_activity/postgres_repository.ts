@@ -89,7 +89,7 @@ function categoryPredicate(filter: TalkActivityFilter): readonly string[] {
 export function createPostgresTalkActivityRepository(
   pool: TalkActivitySqlPool,
 ): TalkActivityRepository {
-  return Object.freeze({
+  return Object.freeze<TalkActivityRepository>({
     async list(input) {
       const kinds = categoryPredicate(input.filter);
       const result = await pool.query<ActivityRow>(
