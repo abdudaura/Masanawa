@@ -163,6 +163,7 @@ import {
   type TalkLiveAuthorizer,
 } from "./talk_live/service.js";
 import { createPostgresTalkLiveRepository } from "./talk_live/postgres_repository.js";
+import { createLiveKitTalkMediaTokenIssuer } from "./talk_live/livekit_media.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -1720,12 +1721,25 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const liveKitServerUrl = env.LIVEKIT_URL?.trim();
+  const liveKitApiKey = env.LIVEKIT_API_KEY?.trim();
+  const liveKitApiSecret = env.LIVEKIT_API_SECRET?.trim();
+  const talkMediaTokens =
+    liveKitServerUrl && liveKitApiKey && liveKitApiSecret
+      ? createLiveKitTalkMediaTokenIssuer({
+          serverUrl: liveKitServerUrl,
+          apiKey: liveKitApiKey,
+          apiSecret: liveKitApiSecret,
+        })
+      : undefined;
+
   const composedTalkLive =
     options.appOptions?.talkLive ??
     (database.talkLive && talkLiveAuthorizer
       ? createTalkLiveService({
           repository: database.talkLive,
           authorizer: talkLiveAuthorizer,
+          ...(talkMediaTokens ? { mediaTokens: talkMediaTokens } : {}),
         })
       : undefined);
 
