@@ -41,7 +41,7 @@ Analyzer confirms compile blockers in these exact paths. Product behavior and ot
 - apps/mobile/test/talk_live_audio_session_test.dart
 - apps/mobile/lib/src/core/live_voice_session.dart
 - apps/mobile/test/live_voice_session_test.dart
-- apps/mobile/lib/src/widgets/onboarding_scaffold.dart
+- apps/mobile/lib/src/ui/components/onboarding_scaffold.dart
 - apps/mobile/test/twin_identity_banner_test.dart
 - apps/mobile/test/twin_chat_actions_sheet_test.dart
 - apps/mobile/test/twin_share_sheet_test.dart
