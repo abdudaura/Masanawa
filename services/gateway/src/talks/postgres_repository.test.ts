@@ -93,6 +93,9 @@ describe("Postgres Talk repository", () => {
     expect(calls[1]?.values).toEqual(["tenant_a", "explore", 50]);
     expect(calls[0]?.text).toContain("tenant_id = $1");
     expect(calls[0]?.text).toContain("state = 'live'");
+    expect(calls[0]?.text).toContain("talks.replays");
+    expect(calls[0]?.text).toContain("publicationState");
+    expect(calls[0]?.text).toContain("provider_status='complete'");
   });
 
   it("returns null when a comment target Talk does not exist", async () => {
