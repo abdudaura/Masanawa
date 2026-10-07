@@ -86,3 +86,23 @@ Implemented end to end:
 - no acquisition commission is created by a voluntary Talk Host gift.
 
 Status: implementation complete; ready for integration qualification/merge.
+
+
+## Qualification evidence
+
+GitHub Actions on the completed Gift branch:
+- Mobile Build run `37609809954`: failed before any job step (`steps = null`);
+- Foundation CI run `37609809966`: failed before any job step (`steps = null`).
+
+This matches the repository-wide runner/service-startup failure pattern. No Flutter,
+TypeScript, test, or build step ran, so the result is not evidence of an application
+failure and no successful CI execution is claimed.
+
+Current main advanced with Talk safety, discovery/notification policy and real replay
+Egress/private playback. Conflict review found:
+- replay Egress touched `services/gateway/src/main.ts` but not Talk Gift/mobile/Twin
+  runtime files;
+- GitHub reports the Gift branch mergeable against current main;
+- Gift composition is additive and preserves current replay/Egress authorities.
+
+Status: implementation complete; merge-ready with CI infrastructure limitation recorded.
