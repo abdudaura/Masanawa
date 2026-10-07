@@ -43,6 +43,7 @@ async function currentState(
   tenantId: string,
   talkId: string,
   now: string,
+  reconnectGraceMs: number,
 ): Promise<TalkLiveStateView | null> {
   const talk = await pool.query<TalkRow>(
     `SELECT host_user_id, state
@@ -66,7 +67,7 @@ async function currentState(
     [tenantId, talkId, now, staleBefore],
   );
   if (stale.rows.some((row) => row.role === "host")) {
-    const graceEndsAt = new Date(Date.parse(now) + 30_000).toISOString();
+    const graceEndsAt = new Date(Date.parse(now) + reconnectGraceMs).toISOString();
     await pool.query(
       `INSERT INTO talks.live_runtime (
         tenant_id, talk_id, host_user_id, state,
@@ -220,7 +221,7 @@ export function createPostgresTalkLiveRepository(
         );
       }
 
-      const state = await currentState(pool, input.tenantId, input.talkId, input.now);
+      const state = await currentState(pool, input.tenantId, input.talkId, input.now, input.reconnectGraceMs);
       return sessionView(
         {
           session_id: input.sessionId,
@@ -273,7 +274,7 @@ export function createPostgresTalkLiveRepository(
         );
       }
 
-      const state = await currentState(pool, input.tenantId, input.talkId, input.now);
+      const state = await currentState(pool, input.tenantId, input.talkId, input.now, input.reconnectGraceMs);
       return state ? sessionView(row, state, input.talkId) : null;
     },
 
@@ -322,11 +323,11 @@ export function createPostgresTalkLiveRepository(
         );
       }
 
-      return currentState(pool, input.tenantId, input.talkId, input.now);
+      return currentState(pool, input.tenantId, input.talkId, input.now, input.reconnectGraceMs);
     },
 
     async state(input) {
-      return currentState(pool, input.tenantId, input.talkId, input.now);
+      return currentState(pool, input.tenantId, input.talkId, input.now, input.reconnectGraceMs);
     },
   });
 }
