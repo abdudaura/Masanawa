@@ -66,13 +66,6 @@ TwinTeachingCommand? interpretTwinTeaching(String raw) {
     ),
     (
       pattern: RegExp(
-        r'^(?:i speak|my languages are)\s+(.+)$',
-        caseSensitive: false,
-      ),
-      kind: 'languages',
-    ),
-    (
-      pattern: RegExp(
         r"^(?:i am interested in|i'm interested in|my interests are)\s+(.+)$",
         caseSensitive: false,
       ),
@@ -95,13 +88,6 @@ TwinTeachingCommand? interpretTwinTeaching(String raw) {
         return TwinTeachingCommand(
           patch: TwinProfileCustomizationPatch(bio: value),
           summary: 'Update your public Twin bio',
-        );
-      case 'languages':
-        final values = _list(value).take(12).toList(growable: false);
-        if (values.isEmpty) return null;
-        return TwinTeachingCommand(
-          patch: TwinProfileCustomizationPatch(languages: values),
-          summary: 'Set your Twin languages to ' + values.join(', '),
         );
       case 'interests':
         final values = _list(value);
