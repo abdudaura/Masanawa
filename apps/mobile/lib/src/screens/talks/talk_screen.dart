@@ -902,11 +902,17 @@ class _LiveAudioStatusChip extends StatelessWidget {
       TalkLiveAudioStatus.failed => 'Audio unavailable',
     };
 
-    return InkWell(
-      key: const ValueKey('talk-live-audio-status'),
-      onTap: failed ? onRetry : null,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
+    return Tooltip(
+      message: failed
+          ? (error?.trim().isNotEmpty == true
+              ? error!
+              : 'Live audio is unavailable right now.')
+          : label,
+      child: InkWell(
+        key: const ValueKey('talk-live-audio-status'),
+        onTap: failed ? onRetry : null,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
           color: failed
@@ -949,6 +955,7 @@ class _LiveAudioStatusChip extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
