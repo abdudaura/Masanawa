@@ -61,8 +61,8 @@ class WalletScreen extends ConsumerWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: onBuyBills,
-                            icon: const Icon(Icons.receipt_long_outlined),
-                            label: const Text('Bills'),
+                            icon: const Icon(Icons.chat_bubble_outline),
+                            label: const Text('Internet Cafe'),
                           ),
                         ),
                       if (onBuyBills != null && onOpenCrypto != null)
