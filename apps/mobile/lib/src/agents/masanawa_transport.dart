@@ -729,11 +729,13 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(
     String characterId, {
     String? admissionId,
+    String purpose = 'conversation',
   }) async {
     final data = await _client.post(
       '/agent/live/token',
       {
         'characterId': characterId,
+        'purpose': purpose,
         if (admissionId != null && admissionId.isNotEmpty)
           'admissionId': admissionId,
       },
