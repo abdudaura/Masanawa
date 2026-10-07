@@ -372,3 +372,35 @@ powershell -ExecutionPolicy Bypass -File .\scripts\qualify-first10-android.ps1 -
 
 This does not replace manual real-device behavior checks, but removes branch/build/install
 ambiguity and produces exact APK evidence tied to a commit.
+
+
+### WhatsApp transport direction corrected — linked Gwani number
+
+The production WhatsApp direction was explicitly changed from Meta Cloud webhook transport
+back to the original admin-linked device model.
+
+Implemented on this branch:
+
+- one dedicated Gwani/Masanawa WhatsApp account is linked by an administrator;
+- Baileys v7 linked-device session transport with QR generation and reconnect handling;
+- persistent auth directory configured by `MASANAWA_WHATSAPP_AUTH_DIR`;
+- protected admin status/QR/reset endpoints using `MASANAWA_WHATSAPP_ADMIN_TOKEN`;
+- production startup now requires `MASANAWA_WHATSAPP_MODE=linked-device` rather than
+  Meta app secret/access token/phone-number ID configuration;
+- old Meta Cloud production environment declarations were removed;
+- direct inbound text, audio, image and document messages flow through the existing
+  `CustomerChannelBridge`;
+- durable message claim/completion/delivery semantics remain unchanged, so provider retries
+  cannot repeat Agent or financial execution;
+- first-contact direct WhatsApp users are provisioned into the canonical Masanawa customer
+  identity from their WhatsApp phone number and can later sign into the mobile app with the
+  same number to reach the same account;
+- Telegram remains on its existing bot/webhook transport and is not coupled to this change.
+
+Operational details are in `docs/WHATSAPP-LINKED-GWANI.md`.
+
+The Gateway package now declares the linked-device dependencies. The root pnpm lockfile has
+not been regenerated in this remote GitHub-only session, so a frozen-lockfile production
+install is not yet claimed. Before deployment, run `pnpm install` on this exact branch,
+commit the resulting `pnpm-lock.yaml`, then run `pnpm check`. This is a packaging
+qualification requirement, not an unfinished product-flow decision.
