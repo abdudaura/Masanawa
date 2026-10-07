@@ -183,7 +183,10 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   Widget _page(int index) {
     return switch (index) {
       0 => _home(),
-      1 => ExploreScreen(onOpenTwin: _openTwin),
+      1 => ExploreScreen(
+          onOpenTwin: _openTwin,
+          onOpenInternetCafe: () => unawaited(_openServiceChat(entry: 'cafe')),
+        ),
       2 => const ActivityScreen(),
       3 => WalletScreen(
           onSend: () => unawaited(_openServiceChat(prompt: 'Send Credits')),
