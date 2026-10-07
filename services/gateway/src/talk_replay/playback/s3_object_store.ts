@@ -109,7 +109,7 @@ export function createReplayObjectStore(input:Readonly<{
     };
   }
 
-  return Object.freeze({
+  return Object.freeze<ReplayObjectStore>({
     async checksumSha256(objectKey){
       const url=objectUrl(objectKey);
       for(let attempt=1;attempt<=availabilityAttempts;attempt+=1){

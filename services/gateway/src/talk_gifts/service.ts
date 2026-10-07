@@ -49,7 +49,7 @@ export function createTalkGiftService(input: Readonly<{
   executor: TalkGiftExecutor;
   activity?: TalkGiftActivitySink;
 }>): TalkGiftService {
-  return Object.freeze({
+  return Object.freeze<TalkGiftService>({
     async gift(request) {
       const viewer = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,

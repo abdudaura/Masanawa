@@ -48,7 +48,7 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
     throw new TypeError("LiveKit token TTL must be between 30 and 900 seconds");
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkLiveMedia>({
     async mint(request) {
       const issued = Math.floor(now().getTime() / 1000);
       const expires = issued + ttlSeconds;

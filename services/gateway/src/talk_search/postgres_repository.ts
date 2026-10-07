@@ -108,7 +108,7 @@ function persona(row: PersonaRow): TalkSearchPersona {
 export function createPostgresTalkSearchRepository(
   pool: TalkSearchSqlPool,
 ): TalkSearchRepository {
-  return Object.freeze({
+  return Object.freeze<TalkSearchRepository>({
     async searchTalks(input) {
       const escaped = escapedLike(input.query);
       const contains = `%${escaped}%`;

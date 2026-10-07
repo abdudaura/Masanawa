@@ -56,7 +56,7 @@ export function createLiveKitTalkMediaAdmin(input:Readonly<{
     }
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkModerationMedia>({
     async setCanPublish(request){
       await call("UpdateParticipant",request.room,{
         room:request.room,

@@ -164,7 +164,7 @@ async function persistTransition(
 export function createPostgresTalkReplayRepository(
   pool:TalkReplaySqlPool,
 ):TalkReplayRepository{
-  return Object.freeze({
+  return Object.freeze<TalkReplayRepository>({
     async start(input){
       const talkRow=await talk(pool,input.tenantId,input.talkId);
       if(!talkRow) return null;

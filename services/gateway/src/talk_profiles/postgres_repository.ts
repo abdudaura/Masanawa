@@ -175,7 +175,7 @@ export function createPostgresTalkProfileRepository(
     return result.rows[0] ? human(result.rows[0]) : null;
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkProfileRepository>({
     readHuman,
     readHumanByUserId,
 

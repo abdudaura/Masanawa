@@ -80,7 +80,7 @@ export function createLiveKitReplayEgress(input:Readonly<{
     return await response.json() as Record<string,unknown>;
   }
 
-  return Object.freeze({
+  return Object.freeze<LiveKitReplayEgress>({
     async start(request){
       const payload=await call("StartEgress",{
         room_name:request.roomName,

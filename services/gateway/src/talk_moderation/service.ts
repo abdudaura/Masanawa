@@ -172,7 +172,7 @@ export function createTalkModerationService(input: Readonly<{
     }
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkModerationService>({
     async participation(request){
       const viewer=await identity(request.authorizationHeader);
       const result=await guarded(()=>input.repository.participation({

@@ -264,7 +264,7 @@ async function canonical(
 export function createPostgresTalkModerationRepository(
   pool:TalkModerationSqlPool,
 ):TalkModerationRepository{
-  return Object.freeze({
+  return Object.freeze<TalkModerationRepository>({
     async participation(input){
       const talk=await readTalk(pool,input.tenantId,input.talkId);
       if(!talk) return null;

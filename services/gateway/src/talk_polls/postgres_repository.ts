@@ -170,7 +170,7 @@ async function readById(
 export function createPostgresTalkPollRepository(
   pool: TalkPollSqlPool,
 ): TalkPollRepository {
-  return Object.freeze({
+  return Object.freeze<TalkPollRepository>({
     async current(input) {
       const result = await pool.query<PollRow>(
         `SELECT p.poll_id,p.question,p.options_json,p.status,p.created_at,p.closed_at

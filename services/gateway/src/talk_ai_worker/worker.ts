@@ -155,7 +155,7 @@ export function createTalkAiSeatWorker(input: Readonly<{
   let stopped = false;
   const controllers = new Set<AbortController>();
 
-  return Object.freeze({
+  return Object.freeze<TalkAiSeatWorker>({
     async handleTurn(request) {
       if (stopped) {
         return Object.freeze({

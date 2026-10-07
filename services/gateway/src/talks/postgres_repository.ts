@@ -133,7 +133,7 @@ const talkColumns = `
 `;
 
 export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository {
-  return Object.freeze({
+  return Object.freeze<TalkRepository>({
     async createTalk(input) {
       const result = await pool.query<TalkRow>(
         `INSERT INTO talks.talks (

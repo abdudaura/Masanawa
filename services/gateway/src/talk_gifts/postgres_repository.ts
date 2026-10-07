@@ -34,7 +34,7 @@ function target(row: GiftTargetRow): TalkGiftTarget {
 export function createPostgresTalkGiftRepository(
   pool: TalkGiftSqlPool,
 ): TalkGiftRepository {
-  return Object.freeze({
+  return Object.freeze<TalkGiftRepository>({
     async resolveTarget(input) {
       const result = await pool.query<GiftTargetRow>(
         `SELECT t.talk_id, t.title, t.host_user_id, t.host_name

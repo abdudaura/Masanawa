@@ -105,7 +105,7 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
     return response.json();
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkAiRuntimeDispatcher>({
     async dispatch(request) {
       const metadata = JSON.stringify({
         schemaVersion: 1,
@@ -130,7 +130,12 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
       const dispatches = listed.agent_dispatches ?? listed.agentDispatches ?? [];
       if (
         dispatches.some((item) => {
-          const name = "agent_name" in item ? item.agent_name : item.agentName;
+          const name =
+            "agent_name" in item
+              ? item.agent_name
+              : "agentName" in item
+                ? item.agentName
+                : undefined;
           return name === agentName && sameSeat(item.metadata, request.seatId);
         })
       ) {

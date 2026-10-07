@@ -24,7 +24,7 @@ export function createTalkActivityService(input: Readonly<{
   repository: TalkActivityRepository;
   authorizer: TalkActivityAuthorizer;
 }>): TalkActivityService {
-  return Object.freeze({
+  return Object.freeze<TalkActivityService>({
     async read(request) {
       const identity = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,

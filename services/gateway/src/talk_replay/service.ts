@@ -82,7 +82,7 @@ export function createTalkReplayService(input:Readonly<{
   async function guarded<T>(fn:()=>Promise<T>):Promise<T>{
     try{return await fn();}catch(error){return mapError(error);}
   }
-  return Object.freeze({
+  return Object.freeze<TalkReplayService>({
     async start(request){
       const viewer=await identity(request.authorizationHeader);
       if(!input.coordinator) throw new TalkReplayError("talks.replay.recording_unavailable",503);
