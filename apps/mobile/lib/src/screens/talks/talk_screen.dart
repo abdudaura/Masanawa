@@ -332,7 +332,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
 
   Future<void> _votePoll(String optionId) async {
     if (_pollBusy) return;
-    final poll = ref.read(talkPollProvider(widget.talkId)).valueOrNull;
+    final poll = ref.read(talkPollProvider(widget.talkId)).asData?.value;
     if (poll == null || !poll.isOpen) return;
     setState(() => _pollBusy = true);
     try {
@@ -354,7 +354,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
 
   Future<void> _closePoll() async {
     if (!widget.isHost || _pollBusy) return;
-    final poll = ref.read(talkPollProvider(widget.talkId)).valueOrNull;
+    final poll = ref.read(talkPollProvider(widget.talkId)).asData?.value;
     if (poll == null || !poll.isOpen) return;
     setState(() => _pollBusy = true);
     try {
