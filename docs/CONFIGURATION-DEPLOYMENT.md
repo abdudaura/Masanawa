@@ -192,3 +192,24 @@ Agent session.
 Both channel switches fail startup closed when enabled with incomplete signing
 or delivery configuration. Secrets stay in the deployment platform and must
 never be committed.
+
+
+## Telegram automatic webhook registration
+
+When `MASANAWA_TELEGRAM_ENABLED=true`, the Gateway now registers and verifies the
+Telegram Bot API webhook during startup. Manual `setWebhook` calls are no longer part of
+normal deployment.
+
+Required server secrets remain:
+
+- `MASANAWA_TELEGRAM_BOT_TOKEN`
+- `MASANAWA_TELEGRAM_WEBHOOK_SECRET`
+
+The public webhook URL is resolved in this order:
+
+1. `MASANAWA_TELEGRAM_WEBHOOK_URL`, when explicitly set;
+2. otherwise `MASANAWA_PUBLIC_BASE_URL` plus `/channels/telegram/webhook`.
+
+The resolved URL must use HTTPS. Startup calls `setWebhook` with the configured secret
+token and allowed update type `message`, then calls `getWebhookInfo` and fails closed
+unless Telegram reports the exact same active URL. Pending updates are preserved.
