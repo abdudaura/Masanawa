@@ -67,3 +67,16 @@ human-host requirement, durable Talk/comment storage, and live/replay policy.
 ## Current verification status
 
 Implementation is committed and ready for CI/review. No production deployment from this lane.
+
+
+## CI evidence
+
+PR #335 triggered Mobile Build run 37597769296 and Foundation CI run 37597769307.
+Both jobs failed before exposing any workflow steps. The same zero-step failure pattern is
+already present on current main (for example Mobile Build 37579699618 and Foundation CI
+37592247418), so it is recorded as pre-existing CI infrastructure evidence rather than a
+branch-specific application failure.
+
+The mobile Talk feed also fails soft on a 404 `/talks` response so an older production
+Gateway renders an honest empty discovery state while the backend lane lands, instead of
+surfacing a transport exception.
