@@ -261,6 +261,40 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
+  bool _twinFactsReadyForCompletion(Map<String, dynamic> facts) {
+    bool has(String key) {
+      final value = facts[key];
+      if (value is String) return value.trim().isNotEmpty;
+      if (value is List) return value.any(
+        (item) => item is String && item.trim().isNotEmpty,
+      );
+      return value != null;
+    }
+
+    final hasBehavior = has('personality');
+    final hasBoundaries = has('boundaries');
+    final hasPurpose = has('expertise') || has('helpStyle');
+    final hasInteractionStyle =
+        has('greetingStyle') ||
+        has('formality') ||
+        has('humor') ||
+        has('decisionStyle') ||
+        has('audience');
+    return hasBehavior && hasBoundaries && hasPurpose && hasInteractionStyle;
+  }
+
+  void _maybeAutoFinishTwin(Map<String, dynamic> facts) {
+    if (!widget.twinSetup ||
+        _finishingTwin ||
+        !_twinFactsReadyForCompletion(facts) ||
+        !mounted) {
+      return;
+    }
+    final guide = ref.read(agentDirectoryProvider).find(widget.characterId);
+    if (guide == null) return;
+    unawaited(_finishTwinSetup(guide));
+  }
+
   Future<void> _sendTwinInterviewText(
     String text,
     AiChatMessage? reply,
@@ -287,6 +321,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (!mounted) return;
       setState(() => _twinInterviewFacts = next);
       ctl.setTwinInterviewFacts(widget.characterId, next);
+      _maybeAutoFinishTwin(next);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
