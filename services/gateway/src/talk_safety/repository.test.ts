@@ -29,6 +29,27 @@ describe("Postgres Talk safety repository",()=>{
     expect(call?.text).toContain("ON CONFLICT(tenant_id,reporter_user_id,client_request_id)");
   });
 
+  it("verifies a user-id safety subject through public profiles",async()=>{
+    let call:{text:string;values?:unknown[]}|undefined;
+    const pool:TalkSafetySqlPool={
+      async query<Row>(text:string,values?:unknown[]){
+        call={text,values};
+        return {
+          rowCount:1,
+          rows:[{user_id:"user-host"}] as unknown as Row[],
+        };
+      },
+    };
+    const repository=createPostgresTalkSafetyRepository(pool);
+    await expect(repository.resolveProfileUserById({
+      tenantId:"tenant-1",
+      userId:"user-host",
+    })).resolves.toBe("user-host");
+    expect(call?.text).toContain("FROM talks.public_profiles");
+    expect(call?.text).toContain("user_id=$2");
+    expect(call?.values).toEqual(["tenant-1","user-host"]);
+  });
+
   it("CAS-updates enforcement by current revision",async()=>{
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:TalkSafetySqlPool={
