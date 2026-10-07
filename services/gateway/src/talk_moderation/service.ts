@@ -91,7 +91,7 @@ function mapRepositoryError(error: unknown): never {
   if (error instanceof TalkModerationError) throw error;
   const code=error instanceof Error ? error.message : "talks.moderation_failed";
   const status =
-    code === "talks.host_forbidden" ? 403 :
+    code === "talks.host_forbidden" || code === "talks.blocked_by_host" ? 403 :
     code === "talks.not_found" ? 404 :
     code === "talks.request_not_found" || code === "talks.participant_not_found" ||
     code === "talks.question_not_found" ? 404 :
