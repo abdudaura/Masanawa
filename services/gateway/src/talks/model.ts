@@ -22,6 +22,7 @@ export interface TalkDiscoveryItem {
   readonly listenerCount: number;
   readonly commentCount: number;
   readonly durationSeconds: number | null;
+  readonly startedAt: string | null;
   readonly viewerIsHost?: boolean;
   readonly participants: readonly TalkParticipantPreview[];
 }
@@ -51,6 +52,7 @@ export interface TalkRecord {
   readonly state: TalkLifecycleState;
   readonly listenerCount: number;
   readonly durationSeconds: number | null;
+  readonly startedAt?: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -135,6 +137,7 @@ export function toTalkDiscoveryItem(
     listenerCount: talk.listenerCount,
     commentCount: row.commentCount,
     durationSeconds: talk.durationSeconds,
+    startedAt: talk.startedAt ?? null,
     participants: Object.freeze([
       Object.freeze({
         id: talk.hostUserId,
