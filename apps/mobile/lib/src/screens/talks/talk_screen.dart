@@ -391,8 +391,8 @@ class _TalkBody extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: _TalkStage(
                     talk: talk,
-                    isHost: isHost,
-                    hostRequestCount: hostRequestCount,
+                    isHost: isHost && talk.isLive,
+                    hostRequestCount: talk.isLive ? hostRequestCount : 0,
                     onHostRequests: onHostRequests,
                     onHostManage: onHostManage,
                     onEndTalk: onEndTalk,
