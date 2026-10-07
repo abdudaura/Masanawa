@@ -70,6 +70,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/agents' ||
           path == '/masana' ||
           path == '/settings' ||
+          path == '/my-twin' ||
           path == '/billing' ||
           path == '/crypto' ||
           path == '/clone' ||
@@ -96,6 +97,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return TwinHomeShell(initialIndex: index);
         },
       ),
+      GoRoute(
+        path: '/my-twin',
+        builder: (_, _) => const MyTwinRouteScreen(),
+      ),
       GoRoute(path: '/chats', redirect: (_, __) => '/home'),
       GoRoute(
         path: '/chat/:id',
@@ -108,9 +113,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             'cafe' => AiChatEntryMode.cafe,
             _ => AiChatEntryMode.chat,
           };
+          final twinSetup =
+              state.uri.queryParameters['twinSetup'] == '1';
           return AiChatScreen(
             characterId: state.pathParameters['id']!,
             entryMode: entry,
+            initialPrompt: state.uri.queryParameters['prompt'],
+            twinSetup: twinSetup,
+            twinGender: state.uri.queryParameters['gender'],
+            twinAge: int.tryParse(state.uri.queryParameters['age'] ?? ''),
+            twinPhotoPath: state.uri.queryParameters['photo'],
           );
         },
       ),
