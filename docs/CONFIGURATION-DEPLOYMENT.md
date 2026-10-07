@@ -135,3 +135,60 @@ never the provider or database credentials.
 For a hosted test APK, use the generated HTTPS service domain as
 `AGENT_BASE_URL`; the Android debug cleartext exception exists only for a
 laptop-hosted local HTTP Gateway.
+
+
+## 10. Customer channels: WhatsApp and Telegram
+
+WhatsApp and Telegram are Gateway ingress adapters over the same canonical
+Masanawa customer identity, Character, Relationship, Agent session, Skills,
+Commerce and Wallet runtime used by the mobile app. They are not separate bot
+accounts or separate memory stores.
+
+### WhatsApp
+
+Enable with:
+
+- `MASANAWA_WHATSAPP_ENABLED=true`
+- `MASANAWA_WHATSAPP_VERIFY_TOKEN`
+- `MASANAWA_WHATSAPP_APP_SECRET`
+- `MASANAWA_WHATSAPP_ACCESS_TOKEN`
+- `MASANAWA_WHATSAPP_PHONE_NUMBER_ID`
+- `MASANAWA_WHATSAPP_GRAPH_VERSION`
+
+Configure Meta's callback URL as:
+
+`<MASANAWA_PUBLIC_BASE_URL>/channels/whatsapp/webhook`
+
+The GET challenge is validated with the verify token. Every POST delivery is
+validated with Meta's `X-Hub-Signature-256` HMAC before processing. The
+sender's WhatsApp phone number must already exist as the phone identity of a
+Masanawa account; otherwise Gwani tells the user to sign in with that number
+first. Provider message IDs are persisted before execution so webhook retries
+cannot duplicate a bill payment, crypto action or Agent turn.
+
+### Telegram
+
+Enable with:
+
+- `MASANAWA_TELEGRAM_ENABLED=true`
+- `MASANAWA_TELEGRAM_BOT_TOKEN`
+- `MASANAWA_TELEGRAM_WEBHOOK_SECRET`
+
+Configure Telegram's webhook URL as:
+
+`<MASANAWA_PUBLIC_BASE_URL>/channels/telegram/webhook`
+
+Set the same configured webhook secret as Telegram's
+`secret_token`; the Gateway requires the
+`X-Telegram-Bot-Api-Secret-Token` header on every update.
+
+Telegram user IDs are not treated as Masanawa identities. An unlinked user is
+asked to share their Telegram contact. The Gateway accepts the contact only
+when its Telegram `user_id` equals the sender and the shared phone matches an
+existing Masanawa phone-auth profile. That creates the durable channel link;
+later messages resume the same canonical customer/Character relationship and
+Agent session.
+
+Both channel switches fail startup closed when enabled with incomplete signing
+or delivery configuration. Secrets stay in the deployment platform and must
+never be committed.
