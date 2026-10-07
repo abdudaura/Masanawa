@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T23:04:39.195Z
+Last update: 2026-10-07T23:13:53.103Z
 Status: active.
 
 ## Exact owned paths
@@ -95,3 +95,5 @@ Resumed packaging from the preserved local caches after the last process ended. 
 ## Packaging asset repair ownership
 
 AAPT2 reproducibly segfaults compiling the committed launcher PNG; Pillow cannot decode the brand logo or 30 copied launcher/splash PNGs. Their bytes match repository blobs: this is committed asset corruption, not a download error. PNG IDAT declares 65536 bytes but the file is only 5621 bytes and has no IEND. Recovered the actual approved blue agent-conversation logo from the user's original /Masanawa/logo.png; it decodes correctly (136x110 RGBA, 8000 bytes). Own apps/mobile/assets/brand/masanawa_agent_logo.png and the generated launcher/splash PNGs and XML under apps/mobile/android/app/src/main/res/ for bounded regeneration using the existing official Flutter asset generators. No logo redesign, theme change, or overlapping active PR exists.
+
+Packaging asset repair is published in 1064674554b02c524567adcecd3c9c57b27c44a0: restored approved original logo, regenerated density-specific Android launcher/splash assets, all 34 PNG resources decode, and formerly crashing AAPT2 compile now succeeds. Release assembly continues restoring standalone plugin dependency versions (including profileinstaller and Java annotations); no source dependency changes. No APK yet; continue using the preserved workspace tools.
