@@ -48,7 +48,7 @@ export interface TalkSafetyReplayBridge {
 export function createPostgresTalkSafetyReplayBridge(
   pool:TalkSafetyReplaySqlPool,
 ):TalkSafetyReplayBridge{
-  return Object.freeze({
+  return Object.freeze<TalkSafetyReplayBridge>({
     async blockByRecording(input){
       const tenantId=text(input.tenantId,"tenantId");
       const recordingId=text(input.recordingId,"recordingId");
@@ -113,7 +113,7 @@ export function withReplayBlockSynchronization(
   service: TalkSafetyService,
   bridge: TalkSafetyReplayBridge,
 ): TalkSafetyService {
-  return Object.freeze({
+  return Object.freeze<TalkSafetyService>({
     ...service,
     async setEnforcement(request) {
       const result = await service.setEnforcement(request);
