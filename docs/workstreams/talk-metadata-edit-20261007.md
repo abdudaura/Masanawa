@@ -1,0 +1,29 @@
+# Host Talk metadata editing — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-metadata-edit-20261007`
+- Base SHA: `aa2be174c5615be99b92a3630ce73f34d9266e9c`
+- Task: implement Host-only editing of simple Talk metadata for live Talks and replays.
+- Exact owned paths:
+  - `services/gateway/src/talks/model.ts`
+  - `services/gateway/src/talks/postgres_repository.ts`
+  - `services/gateway/src/talks/service.ts`
+  - `services/gateway/src/talk_routes.ts`
+  - focused Talk service/repository/route tests
+  - `apps/mobile/lib/src/talks/talk_models.dart`
+  - `apps/mobile/lib/src/talks/talk_http_transport.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_more_sheet.dart`
+  - focused Talk screen/transport tests
+  - this claim file
+- Contract:
+  - only the real Host may edit;
+  - editable fields: title, topic, summary;
+  - title max 160, topic max 240, summary max 1000;
+  - at least one field must be supplied;
+  - edits preserve Talk identity and replay identity;
+  - no lifecycle/Seat/payment authority is changed.
+- UX: Host sees **Edit Talk details** in existing More sheet; no new top-level screen or action-row button.
+- Current step: add host-authorized repository/service/route mutation, then mobile edit sheet.
+- Last update: 2026-10-07T12:05Z
+- Implementation status: claimed
+- Verification status: pending
