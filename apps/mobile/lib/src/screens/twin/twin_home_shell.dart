@@ -1,24 +1,22 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../agents/agent_directory.dart';
-import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
-import '../../home/home_models.dart';
-import '../../home/home_screen.dart';
-import '../../home/home_state.dart';
 import '../../state/agent_directory_state.dart';
-import '../../state/my_twin_state.dart';
+import '../../talks/talk_models.dart';
 import '../activity/activity_screen.dart';
-import '../explore/explore_screen.dart';
-import '../wallet/wallet_screen.dart';
+import '../talks/create_talk_screen.dart';
+import '../talks/talk_home_screen.dart';
+import '../you/you_screen.dart';
 import 'my_twin_screen.dart';
-import 'twin_share_sheet.dart';
 
+/// Compatibility class name retained while the consumer shell is migrated.
+///
+/// Product shell is now: Home · Create · Activity · You.
+/// Home owns the Explore / Live Talks tabs.
 class TwinHomeShell extends ConsumerStatefulWidget {
   const TwinHomeShell({super.key, this.initialIndex = 0});
   final int initialIndex;
@@ -36,11 +34,6 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     super.initState();
     _index = widget.initialIndex.clamp(0, 3).toInt();
     _visitedTabs = <int>{_index};
-  }
-
-  void _openTwin(TwinDirectoryEntry twin) {
-    ref.read(agentDirectoryProvider.notifier).primeTwin(twin);
-    context.push('/chat/${Uri.encodeComponent(twin.characterId)}');
   }
 
   AgentDirectoryEntry? _supportAgent() {
@@ -67,10 +60,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return _supportAgent();
   }
 
-  Future<void> _openServiceChat({
-    String? prompt,
-    String? entry,
-  }) async {
+  Future<void> _openPrivateGwani() async {
     final agent = await _ensureSupportAgent();
     if (!mounted) return;
     if (agent == null) {
@@ -79,125 +69,40 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       );
       return;
     }
-    final params = <String, String>{};
-    if (entry != null && entry.isNotEmpty) params['entry'] = entry;
-    if (prompt != null && prompt.trim().isNotEmpty) params['prompt'] = prompt.trim();
-    final query = params.isEmpty ? '' : '?${Uri(queryParameters: params).query}';
-    context.push('/chat/${Uri.encodeComponent(agent.characterId)}$query');
+    context.push('/chat/' + Uri.encodeComponent(agent.characterId));
   }
 
-  void _assistantAction(
-    HomeAssistantCardModel assistant,
-    HomeAssistantAction action,
-  ) {
-    final entry = switch (action) {
-      HomeAssistantAction.chat => null,
-      HomeAssistantAction.talk => 'live-talk',
-      HomeAssistantAction.liveVoice => 'live-voice',
-    };
-    final query = entry == null ? '' : '?entry=$entry';
-    context.push('/chat/${Uri.encodeComponent(assistant.characterId)}$query');
-  }
-
-  void _quickService(HomeQuickService service) {
-    switch (service) {
-      case HomeQuickService.data:
-        unawaited(_openServiceChat(prompt: 'I want to buy data.', entry: 'cafe'));
-      case HomeQuickService.airtime:
-        unawaited(_openServiceChat(prompt: 'I want to buy airtime.', entry: 'cafe'));
-      case HomeQuickService.electricity:
-        unawaited(_openServiceChat(
-          prompt: 'I want to pay for electricity.',
-          entry: 'cafe',
-        ));
-      case HomeQuickService.tv:
-        unawaited(_openServiceChat(prompt: 'I want to pay for TV.', entry: 'cafe'));
-      case HomeQuickService.crypto:
-        unawaited(_openServiceChat(prompt: 'Help me with crypto.'));
-    }
-  }
-
-  void _openRoom(HomeRoomCardModel room) {
-    switch (room.iconKey) {
-      case 'internet_cafe':
-        unawaited(_openServiceChat(entry: 'cafe'));
-      case 'study':
-        unawaited(_openServiceChat(
-          entry: 'study',
-          prompt: 'I want to learn something. Help me start a lesson.',
-        ));
-      case 'story_radio':
-        unawaited(_openServiceChat(prompt: 'Open Story Radio for me.'));
-      case 'news':
-        unawaited(_openServiceChat(prompt: 'Show me the latest news.'));
-      default:
-        unawaited(_openServiceChat(
-          prompt: 'Open ${room.title} and help me with what I need there.',
-        ));
-    }
-  }
-
-  void _openContinuation(HomeContinuationModel item) {
-    final characterId = item.characterId;
-    if (characterId != null && characterId.isNotEmpty) {
-      context.push('/chat/${Uri.encodeComponent(characterId)}');
-      return;
-    }
-    final roomId = item.roomId;
-    if (roomId != null && roomId.isNotEmpty) {
-      unawaited(_openServiceChat(prompt: 'Continue my work in $roomId.'));
-    }
-  }
-
-  Future<void> _openMyTwin() async {
-    final twin = await ref.read(myTwinProvider.future);
-    if (!mounted) return;
-    if (twin == null || !twin.hasTwin) {
-      context.push('/clone');
-      return;
-    }
-    context.push('/my-twin');
-  }
-
-  Widget _home() {
-    final asyncHome = ref.watch(homeProvider);
-    final state = asyncHome.when(
-      loading: () => const HomeViewState.loading(),
-      error: (_, __) => const HomeViewState.error(),
-      data: HomeViewState.ready,
-    );
-    return HomeScreen(
-      state: state,
-      onRetry: () {
-        ref.invalidate(homeProvider);
-        unawaited(ref.read(homeProvider.notifier).refresh());
-      },
-      onRefresh: () => ref.read(homeProvider.notifier).refresh(),
-      onAssistantAction: _assistantAction,
-      onQuickService: _quickService,
-      onOpenRoom: _openRoom,
-      onOpenMyTwin: _openMyTwin,
-      onCreateMyTwin: () => context.push('/clone'),
-      onOpenContinuation: _openContinuation,
-      onOpenProfile: () => context.push('/settings'),
+  void _openTalk(TalkDiscoveryItem talk) {
+    context.push(
+      '/talk/' + Uri.encodeComponent(talk.id),
+      extra: talk,
     );
   }
+
+  Widget _home() => TalkHomeScreen(
+        onOpenTalk: _openTalk,
+        onOpenGwani: _openPrivateGwani,
+      );
+
+  Widget _create() => CreateTalkScreen(
+        onCreated: _openTalk,
+      );
+
+  Widget _you() => YouScreen(
+        onOpenProfile: () => context.push('/profile'),
+        onOpenMyTwin: () => context.push('/my-twin'),
+        onOpenWallet: () => context.push('/wallet'),
+        onOpenBills: () => context.push('/billing'),
+        onOpenCrypto: () => context.push('/crypto'),
+        onOpenSettings: () => context.push('/settings'),
+      );
 
   Widget _page(int index) {
     return switch (index) {
       0 => _home(),
-      1 => ExploreScreen(
-          onOpenTwin: _openTwin,
-          onOpenInternetCafe: () => unawaited(_openServiceChat(entry: 'cafe')),
-        ),
+      1 => _create(),
       2 => const ActivityScreen(),
-      3 => WalletScreen(
-          onAddMoney: () => unawaited(_openServiceChat(prompt: 'Add money')),
-          onSend: () => unawaited(_openServiceChat(prompt: 'Send Credits')),
-          onWithdraw: () => unawaited(_openServiceChat(prompt: 'Withdraw money')),
-          onBuyBills: () => unawaited(_openServiceChat(entry: 'cafe')),
-          onOpenCrypto: () => unawaited(_openServiceChat(prompt: 'Help me with crypto')),
-        ),
+      3 => _you(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -225,23 +130,23 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Explore',
+            icon: Icon(Icons.add_circle_outline_rounded),
+            selectedIcon: Icon(Icons.add_circle_rounded),
+            label: 'Create',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_none_outlined),
-            selectedIcon: Icon(Icons.notifications),
+            selectedIcon: Icon(Icons.notifications_rounded),
             label: 'Activity',
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Wallet',
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'You',
           ),
         ],
       ),
@@ -256,14 +161,16 @@ class MyTwinRouteScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     void openChat(String characterId, {bool teach = false}) {
       final query = teach ? '?entry=teach' : '';
-      context.push('/chat/${Uri.encodeComponent(characterId)}$query');
+      context.push('/chat/' + Uri.encodeComponent(characterId) + query);
     }
 
     Future<void> share(TwinProfile profile) async {
       final url = profile.publicUrl;
       if (url == null || url.isEmpty) return;
       await SharePlus.instance.share(
-        ShareParams(text: 'Talk to ${profile.displayName} on Masanawa: $url'),
+        ShareParams(
+          text: 'Talk to ' + profile.displayName + ' on Masanawa: ' + url,
+        ),
       );
     }
 
