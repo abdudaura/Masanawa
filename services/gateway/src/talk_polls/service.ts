@@ -94,7 +94,7 @@ export function createTalkPollService(input: Readonly<{
   const identity = (authorizationHeader: string | undefined) =>
     input.authorizer.authorize({ authorizationHeader });
 
-  return Object.freeze({
+  return Object.freeze<TalkPollService>({
     async current(request) {
       const viewer = await identity(request.authorizationHeader);
       return input.repository.current({
