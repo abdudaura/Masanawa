@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
+import 'package:masanawa/src/state/talk_host_controls_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
+import 'package:masanawa/src/talks/talk_host_controls.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/talks/talk_participation.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
@@ -54,6 +56,69 @@ class _SeatTransport implements TalkAiSeatTransport {
         status: TalkAiSeatRequestStatus.pendingHost,
         message: 'Waiting for the Host.',
       );
+}
+
+class _HostControlsTransport implements TalkHostControlsTransport {
+  int accepted = 0;
+  int muted = 0;
+  int ended = 0;
+
+  @override
+  Future<TalkHostControlsView> load(String talkId) async =>
+      const TalkHostControlsView(
+        requests: [
+          TalkHostRequest(
+            requestId: 'request-1',
+            kind: TalkHostRequestKind.humanSpeaker,
+            displayName: 'Amina',
+            detail: 'Wants to join the discussion',
+          ),
+        ],
+        participants: [
+          TalkHostParticipant(
+            participantId: 'host',
+            displayName: 'Abdullahi',
+            kind: TalkParticipantKind.human,
+            isHost: true,
+            isMuted: false,
+          ),
+          TalkHostParticipant(
+            participantId: 'speaker',
+            displayName: 'Musa',
+            kind: TalkParticipantKind.human,
+            isHost: false,
+            isMuted: false,
+          ),
+        ],
+      );
+
+  @override
+  Future<TalkHostControlsView> actOnRequest({
+    required String talkId,
+    required String requestId,
+    required TalkHostRequestAction action,
+  }) async {
+    if (action == TalkHostRequestAction.accept) accepted += 1;
+    return const TalkHostControlsView();
+  }
+
+  @override
+  Future<TalkHostControlsView> actOnParticipant({
+    required String talkId,
+    required String participantId,
+    required TalkHostParticipantAction action,
+  }) async {
+    if (participantId == 'speaker' &&
+        action == TalkHostParticipantAction.mute) {
+      muted += 1;
+    }
+    return await load(talkId);
+  }
+
+  @override
+  Future<void> endTalk(String talkId) async {
+    ended += 1;
+  }
 }
 
 class _ParticipationTransport implements TalkParticipationTransport {
@@ -159,6 +224,7 @@ Widget _app({
   required TalkTransport talkTransport,
   Widget? home,
   _ParticipationTransport? participation,
+  _HostControlsTransport? hostControls,
 }) {
   return ProviderScope(
     overrides: [
@@ -168,6 +234,9 @@ Widget _app({
       ),
       talkParticipationTransportProvider.overrideWithValue(
         participation ?? _ParticipationTransport(),
+      ),
+      talkHostControlsTransportProvider.overrideWithValue(
+        hostControls ?? _HostControlsTransport(),
       ),
     ],
     child: MaterialApp(
@@ -292,6 +361,103 @@ void main() {
     expect(participation.raised, isFalse);
     expect(find.text('Raise hand'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host sees moderation controls instead of Raise Hand',
+      (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Requests 1'), findsOneWidget);
+    expect(find.text('Manage'), findsOneWidget);
+    expect(find.text('End'), findsOneWidget);
+    expect(find.text('Raise hand'), findsNothing);
+
+    await tester.tap(find.text('Requests 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Amina'), findsOneWidget);
+    expect(find.text('Wants to speak · Free'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey('host-request-accept-request-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(host.accepted, 1);
+  });
+
+  testWidgets('Host can manage a Speaker but has no self-removal control',
+      (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Abdullahi'), findsOneWidget);
+    expect(find.text('Musa'), findsOneWidget);
+    expect(find.text('You'), findsOneWidget);
+    expect(find.byType(PopupMenuButton<TalkHostParticipantAction>), findsOneWidget);
+
+    await tester.tap(find.byType(PopupMenuButton<TalkHostParticipantAction>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mute'));
+    await tester.pumpAndSettle();
+
+    expect(host.muted, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host End Talk requires explicit confirmation', (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('End'));
+    await tester.pumpAndSettle();
+    expect(find.text('End this Talk?'), findsOneWidget);
+    expect(host.ended, 0);
+
+    await tester.tap(find.byKey(const ValueKey('end-talk-confirm')));
+    await tester.pumpAndSettle();
+    expect(host.ended, 1);
   });
 
   testWidgets('host opens direct Add AI semantics', (tester) async {
