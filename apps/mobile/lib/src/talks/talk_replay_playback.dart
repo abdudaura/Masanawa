@@ -54,7 +54,7 @@ class TalkReplayPlaybackSnapshot {
 
   double get progress {
     if (duration.inMilliseconds <= 0) return 0;
-    return (position.inMilliseconds / duration.inMilliseconds).clamp(0, 1);
+    return (position.inMilliseconds / duration.inMilliseconds)\n        .clamp(0.0, 1.0)\n        .toDouble();
   }
 
   TalkReplayPlaybackSnapshot copyWith({
