@@ -72,7 +72,6 @@ interface RequestRow extends Record<string,unknown>{
   kind:"human_speaker"|"sponsored_expert"|"sponsored_twin";
   requester_user_id:string|null;
   persona_id:string|null;
-  profile_handle:string|null;
   display_name:string;
   detail:string|null;
   avatar_url:string|null;
@@ -85,6 +84,7 @@ interface SeatRow extends Record<string,unknown>{
   kind:"human"|"expert"|"twin";
   user_id:string|null;
   persona_id:string|null;
+  profile_handle:string|null;
   display_name:string;
   avatar_url:string|null;
   is_host:boolean;
