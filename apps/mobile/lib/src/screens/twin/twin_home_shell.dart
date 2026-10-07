@@ -189,6 +189,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         ),
       2 => const ActivityScreen(),
       3 => WalletScreen(
+          onAddMoney: () => unawaited(_openServiceChat(prompt: 'Add money')),
           onSend: () => unawaited(_openServiceChat(prompt: 'Send Credits')),
           onWithdraw: () => unawaited(_openServiceChat(prompt: 'Withdraw money')),
           onBuyBills: () => unawaited(_openServiceChat(entry: 'cafe')),
