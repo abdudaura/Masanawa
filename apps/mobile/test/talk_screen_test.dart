@@ -1166,6 +1166,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Host participant sheet stays read-only',
+      (tester) async {
+    final transport = _TalkTransport();
+    final social = _SocialProfiles();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        social: social,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-more-participants')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Human · Speaker'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('talk-participant-follow-user-speaker')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Talk More updates Host mute and block preferences',
       (tester) async {
     final transport = _TalkTransport();
