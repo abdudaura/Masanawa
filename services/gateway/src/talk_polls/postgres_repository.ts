@@ -295,7 +295,7 @@ export function createPostgresTalkPollRepository(
       }
       const result = await pool.query<PollRow>(
         `UPDATE talks.polls
-            SET status='closed',closed_at=$5
+            SET status='closed',closed_at=$4
           WHERE tenant_id=$1
             AND talk_id=$2
             AND poll_id=$3
@@ -305,7 +305,6 @@ export function createPostgresTalkPollRepository(
           input.tenantId,
           input.talkId,
           input.pollId,
-          input.hostUserId,
           input.now,
         ],
       );
