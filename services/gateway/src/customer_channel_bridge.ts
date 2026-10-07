@@ -84,11 +84,7 @@ export function createCustomerChannelBridge(input: Readonly<{
     if (requested) {
       const voice = requested === "gwana" ? "sulafat" : "bodi";
       const named = support.find(
-        (agent) =>
-          agent.voiceName.trim().toLowerCase() === voice ||
-          ("displayName" in agent &&
-            typeof agent.displayName === "string" &&
-            agent.displayName.trim().toLowerCase() === requested),
+        (agent) => agent.voiceName.trim().toLowerCase() === voice,
       );
       if (named) return named.characterId;
     }
@@ -384,12 +380,21 @@ export function createCustomerChannelBridge(input: Readonly<{
               if (!input.twinDirectory) {
                 return "Public Twin chat is not available on this channel right now.";
               }
-              const candidates = await input.twinDirectory.search({
-                authorizationHeader,
-                query: navigation.query,
-                limit: 8,
-              });
-              const selected = chooseTwin(navigation.query, candidates);
+              let selected: PublicTwinDirectoryItem | null = null;
+              if (/^[a-z0-9][a-z0-9_-]{2,63}$/iu.test(navigation.query)) {
+                selected = await input.twinDirectory.resolve({
+                  authorizationHeader,
+                  publicId: navigation.query,
+                }).catch(() => null);
+              }
+              const candidates = selected
+                ? [selected]
+                : await input.twinDirectory.search({
+                    authorizationHeader,
+                    query: navigation.query,
+                    limit: 8,
+                  });
+              selected ??= chooseTwin(navigation.query, candidates);
               if (!selected) {
                 if (candidates.length === 0) {
                   return `I couldn't find a public Twin matching "${navigation.query}". Try the person's Twin name or share link.`;
