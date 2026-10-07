@@ -47,7 +47,6 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
         credentials.participantToken,
         connectOptions: const ConnectOptions(autoSubscribe: true),
       );
-      _room = room;
       _mayPublishMicrophone = publishMicrophone;
       if (publishMicrophone) {
         final participant = room.localParticipant;
@@ -56,7 +55,10 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
         }
         await participant.setMicrophoneEnabled(true);
       }
+      _room = room;
     } catch (_) {
+      _room = null;
+      _mayPublishMicrophone = false;
       await room.dispose();
       rethrow;
     }
