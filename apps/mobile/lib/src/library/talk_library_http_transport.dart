@@ -26,6 +26,36 @@ class GatewayTalkLibraryTransport implements TalkLibraryTransport {
   }
 
   @override
+  Future<bool> isSaved(String talkId) async {
+    try {
+      final response = await api.dio.get<dynamic>(
+        '/talks/' + Uri.encodeComponent(talkId) + '/saved',
+      );
+      final data = response.data;
+      if (data is Map && data['saved'] is bool) {
+        return data['saved'] as bool;
+      }
+      throw const FormatException('Invalid saved Talk state');
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return false;
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> setSaved(String talkId, {required bool saved}) async {
+    final response = await api.dio.post<dynamic>(
+      '/talks/' + Uri.encodeComponent(talkId) + '/saved',
+      data: {'saved': saved},
+    );
+    final data = response.data;
+    if (data is Map && data['saved'] is bool) {
+      return data['saved'] as bool;
+    }
+    throw const FormatException('Invalid saved Talk update');
+  }
+
+  @override
   Future<List<TalkDiscoveryItem>> loadSavedTalks() async {
     try {
       final response = await api.dio.get<dynamic>('/me/saved-talks');
