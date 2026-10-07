@@ -289,3 +289,42 @@ the actual first-ten integration branch instead of remaining disconnected accept
 
 The branch remains draft because executable CI, Android device validation and live provider
 qualification are still external evidence requirements; no test pass is fabricated.
+
+
+## Provider qualification continuation
+
+Additional launch-readiness work was integrated into the first-ten branch after the
+initial code-complete handoff.
+
+### Flutterwave qualification
+
+Reconciled the stale Lane B qualification tooling into this branch:
+
+- `scripts/flutterwave-billing-qualification-gate.mjs`
+- `scripts/flutterwave-billing-qualification-gate.test.mjs`
+- `scripts/flutterwave-billing-production-qualification.mjs`
+- `scripts/flutterwave-billing-production-qualification.test.mjs`
+
+The production runner is deliberately read-only. It requires real Cable and Electricity
+validation targets through `FLUTTERWAVE_QUALIFICATION_TARGETS_JSON`, runs the existing
+catalog/recipient-validation collector, persists the temporary redacted report with mode
+0600, evaluates all four launch families, and fails closed with exit code 2 when launch
+evidence is incomplete. It never invokes purchase/refund/checkout paths.
+
+### NOWPayments qualification
+
+Added a current-branch read-only production preflight:
+
+- `scripts/nowpayments-production-qualification.mjs`
+- `scripts/nowpayments-production-qualification.test.mjs`
+
+The preflight uses the current production environment names and relay convention. It
+checks provider status and dynamic currencies, reports provider ERC-20 listings without
+treating them as launch routes, and when custody/payouts are enabled it authenticates and
+reads custody balance. It never creates a payout, conversion, payment or invoice. The
+runtime adapter in `adapters/crypto/nowpayments/src/catalog.ts` remains the route-policy
+authority and excludes the Ethereum network by default.
+
+Foundation CI now includes these provider-qualification tooling tests. Hosted CI runner
+allocation is still a separate external blocker; no green run is claimed until a runner
+actually executes steps.
