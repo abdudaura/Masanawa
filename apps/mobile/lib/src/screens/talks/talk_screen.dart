@@ -280,6 +280,29 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _leaveSeat() async {
+    if (_handBusy || widget.isHost) return;
+    setState(() => _handBusy = true);
+    try {
+      await ref.read(talkParticipationTransportProvider).leaveSeat(
+            widget.talkId,
+          );
+      ref.invalidate(talkParticipationProvider(widget.talkId));
+      await _retryLiveAudio();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You’re back in the Audience.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t leave the Speaker seat.')),
+      );
+    } finally {
+      if (mounted) setState(() => _handBusy = false);
+    }
+  }
+
   Future<void> _raiseHand(TalkHandStatus status) async {
     final callback = widget.onRaiseHand;
     if (callback != null) {
@@ -287,6 +310,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       return;
     }
     if (_handBusy || widget.isHost) return;
+    if (status == TalkHandStatus.accepted) {
+      await _leaveSeat();
+      return;
+    }
     final raised = await showRaiseHandSheet(context, status: status);
     if (!mounted || raised == null) return;
     setState(() => _handBusy = true);
@@ -1314,7 +1341,7 @@ class _TalkStage extends StatelessWidget {
                         : handStatus == TalkHandStatus.raised
                             ? 'Hand raised'
                             : handStatus == TalkHandStatus.accepted
-                                ? 'Speaker'
+                                ? 'Leave seat'
                                 : 'Raise hand',
                     onTap: onRaiseHand,
                   ),
