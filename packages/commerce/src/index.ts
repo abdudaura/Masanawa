@@ -21,3 +21,4 @@ export * from "./billing-wallet.js";
 export * from "./provider-valuation.js";
 
 export * from "./crypto-chat.js";
+export * from "./talk-ai-seat.js";
