@@ -59,29 +59,7 @@ class MyTalksView {
   }
 }
 
-class TalkSavedState {
-  const TalkSavedState({
-    required this.talkId,
-    required this.saved,
-  });
-
-  final String talkId;
-  final bool saved;
-
-  factory TalkSavedState.fromJson(Map<String, dynamic> json) {
-    return TalkSavedState(
-      talkId: json['talkId'] as String? ?? '',
-      saved: json['saved'] == true,
-    );
-  }
-}
-
 abstract interface class TalkLibraryTransport {
   Future<MyTalksView> loadMyTalks();
   Future<List<TalkDiscoveryItem>> loadSavedTalks();
-  Future<TalkSavedState> loadSavedState(String talkId);
-  Future<TalkSavedState> setSaved({
-    required String talkId,
-    required bool saved,
-  });
 }
