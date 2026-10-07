@@ -6,7 +6,7 @@ Base: `025666690e41c8cde69ba67451591b0690fa220f`
 
 ## Scope
 
-Wire the Talk screen to the active live-presence/media contract from PR #345 using
+Wire the Talk screen to the canonical live-presence/media contract now merged from PR #345 using
 LiveKit audio on mobile.
 
 Owned:
@@ -98,7 +98,7 @@ cannot receive client-side publish authority and that Host/reconnect/end lifecyc
 is deterministic without requiring a physical microphone.
 
 Final qualification still requires:
-- PR #345 merged/deployed with `LIVEKIT_URL`, `LIVEKIT_API_KEY`,
+- the merged live backend deployed with `LIVEKIT_URL`, `LIVEKIT_API_KEY`,
   `LIVEKIT_API_SECRET`;
 - a real LiveKit room connection from Android;
 - two physical/logical clients confirming remote audio is audible;
@@ -110,5 +110,5 @@ The repository Mobile Build workflow currently has a known zero-step GitHub Acti
 pattern on main; branch qualification must distinguish that infrastructure failure from an
 actual Flutter analyze/test/build failure.
 
-Status: mobile live-audio implementation complete for the PR #345 contract; physical media
-qualification and backend deployment remain integration work.
+Status: mobile live-audio implementation complete against the merged backend contract; physical media
+qualification and production LiveKit deployment remain integration work.
