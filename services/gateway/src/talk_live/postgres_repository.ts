@@ -229,6 +229,19 @@ async function currentState(
   );
   const hostConnected = Number(counts.rows[0]?.host_count ?? 0) > 0;
   const listenerCount = Number(counts.rows[0]?.listener_count ?? 0);
+  let endReason: "host_grace_expired" | "host_ended" | "platform_ended" | null = null;
+  if(state==="ended"){
+    const canonical=await pool.query<{end_reason:string|null}>(
+      `SELECT session_json->>'endReason' AS end_reason
+         FROM talks.live_canonical
+        WHERE tenant_id=$1 AND talk_id=$2 LIMIT 1`,
+      [tenantId,talkId],
+    );
+    const value=canonical.rows[0]?.end_reason;
+    if(value==="host_grace_expired"||value==="host_ended"||value==="platform_ended"){
+      endReason=value;
+    }
+  }
 
   return Object.freeze({
     talkId,
@@ -237,6 +250,7 @@ async function currentState(
     listenerCount,
     aiGenerationAllowed: state === "live" && hostConnected,
     reconnectGraceEndsAt: grace,
+    endReason,
   });
 }
 
@@ -255,6 +269,7 @@ function sessionView(
     canHearAudio: state.state !== "ended",
     aiGenerationAllowed: state.aiGenerationAllowed,
     reconnectGraceEndsAt: state.reconnectGraceEndsAt,
+    endReason: state.endReason,
   });
 }
 

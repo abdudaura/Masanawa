@@ -15,6 +15,12 @@ export interface TalkReplayHostView {
   readonly publishedAt?: string;
 }
 
+export interface TalkReplayPlaybackView {
+  readonly url: string;
+  readonly expiresAt: string;
+  readonly contentType: "audio/ogg";
+}
+
 export interface MyTalksView {
   readonly live: readonly TalkDiscoveryItem[];
   readonly replays: readonly TalkDiscoveryItem[];

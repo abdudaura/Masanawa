@@ -160,6 +160,10 @@ import { createTalkService, type TalkAuthorizer } from "./talks/service.js";
 import { createPostgresTalkRepository } from "./talks/postgres_repository.js";
 import { createTalkReplayService, type TalkReplayAuthorizer } from "./talk_replay/service.js";
 import { createPostgresTalkReplayRepository } from "./talk_replay/postgres_repository.js";
+import { createPostgresReplayMediaRepository } from "./talk_replay/egress/postgres_media_repository.js";
+import { createLiveKitReplayEgress } from "./talk_replay/egress/livekit_egress.js";
+import { createReplayObjectStore } from "./talk_replay/playback/s3_object_store.js";
+import { createTalkReplayCoordinator } from "./talk_replay/egress/coordinator.js";
 import {
   createTalkLiveService,
   type TalkLiveAuthorizer,
@@ -292,6 +296,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
   readonly talkReplay?: ReturnType<typeof createPostgresTalkReplayRepository>;
+  readonly talkReplayMedia?: ReturnType<typeof createPostgresReplayMediaRepository>;
   readonly talkLive?: ReturnType<typeof createPostgresTalkLiveRepository>;
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
@@ -444,6 +449,7 @@ function createDefaultDatabaseDependency(
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
     talkReplay: createPostgresTalkReplayRepository(database.pool),
+    talkReplayMedia: createPostgresReplayMediaRepository(database.pool),
     talkLive: createPostgresTalkLiveRepository(database.pool),
     talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
@@ -1832,6 +1838,71 @@ export async function startGatewayService(
         })
       : undefined;
 
+  const replayS3Endpoint = env.MASANAWA_TALK_REPLAY_S3_ENDPOINT?.trim();
+  const replayS3Region = env.MASANAWA_TALK_REPLAY_S3_REGION?.trim();
+  const replayS3Bucket = env.MASANAWA_TALK_REPLAY_S3_BUCKET?.trim();
+  const replayS3AccessKey = env.MASANAWA_TALK_REPLAY_S3_ACCESS_KEY?.trim();
+  const replayS3Secret = env.MASANAWA_TALK_REPLAY_S3_SECRET?.trim();
+  const replayS3Values = [
+    replayS3Endpoint,
+    replayS3Region,
+    replayS3Bucket,
+    replayS3AccessKey,
+    replayS3Secret,
+  ];
+  const replayS3Any = replayS3Values.some((value) => Boolean(value));
+  const replayS3All = replayS3Values.every((value) => Boolean(value));
+  if (replayS3Any && !replayS3All) {
+    throw new TypeError("Talk replay S3 configuration must be complete");
+  }
+
+  const replayObjectStore =
+    replayS3All
+      ? createReplayObjectStore({
+          endpoint: replayS3Endpoint!,
+          region: replayS3Region!,
+          bucket: replayS3Bucket!,
+          accessKey: replayS3AccessKey!,
+          secret: replayS3Secret!,
+        })
+      : undefined;
+
+  const replayEgress =
+    replayS3All && liveKitServerUrl && liveKitApiKey && liveKitApiSecret
+      ? createLiveKitReplayEgress({
+          serverUrl: liveKitServerUrl,
+          apiKey: liveKitApiKey,
+          apiSecret: liveKitApiSecret,
+          s3: {
+            endpoint: replayS3Endpoint!,
+            region: replayS3Region!,
+            bucket: replayS3Bucket!,
+            accessKey: replayS3AccessKey!,
+            secret: replayS3Secret!,
+          },
+        })
+      : undefined;
+
+  const talkReplayCoordinator =
+    database.talkReplay &&
+    database.talkReplayMedia &&
+    replayObjectStore &&
+    replayEgress
+      ? createTalkReplayCoordinator({
+          replay: database.talkReplay,
+          media: database.talkReplayMedia,
+          egress: replayEgress,
+          objects: replayObjectStore,
+          playbackTtlSeconds: boundedEnvInteger(
+            env.MASANAWA_TALK_REPLAY_PLAYBACK_TTL_SECONDS,
+            300,
+            30,
+            900,
+            "MASANAWA_TALK_REPLAY_PLAYBACK_TTL_SECONDS",
+          ),
+        })
+      : undefined;
+
   const composedTalkLive =
     options.appOptions?.talkLive ??
     (database.talkLive && talkLiveAuthorizer
@@ -1839,6 +1910,17 @@ export async function startGatewayService(
           repository: database.talkLive,
           authorizer: talkLiveAuthorizer,
           ...(talkMediaTokens ? { mediaTokens: talkMediaTokens } : {}),
+          ...(database.talkReplay
+            ? {
+                onTalkEnded: async ({tenantId,talkId,reason,now}) => {
+                  if(talkReplayCoordinator){
+                    await talkReplayCoordinator.finalize({tenantId,talkId,reason,now});
+                  }else{
+                    await database.talkReplay!.finalizeFromLive({tenantId,talkId,reason,now});
+                  }
+                },
+              }
+            : {}),
         })
       : undefined);
 
@@ -1905,7 +1987,11 @@ export async function startGatewayService(
           ...(database.talkReplay
             ? {
                 onTalkEnded: async ({tenantId,talkId,reason,now}) => {
-                  await database.talkReplay!.finalizeFromLive({tenantId,talkId,reason,now});
+                  if(talkReplayCoordinator){
+                    await talkReplayCoordinator.finalize({tenantId,talkId,reason,now});
+                  }else{
+                    await database.talkReplay!.finalizeFromLive({tenantId,talkId,reason,now});
+                  }
                 },
               }
             : {}),
@@ -1918,6 +2004,7 @@ export async function startGatewayService(
       ? createTalkReplayService({
           repository: database.talkReplay,
           authorizer: talkReplayAuthorizer,
+          ...(talkReplayCoordinator ? { coordinator: talkReplayCoordinator } : {}),
         })
       : undefined);
 

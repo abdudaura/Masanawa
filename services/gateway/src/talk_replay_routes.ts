@@ -26,6 +26,11 @@ export function registerTalkReplayRoutes(app:FastifyInstance,service:TalkReplayS
     return service.view({authorizationHeader:request.headers.authorization,talkId});
   });
 
+  app.get("/talks/:talkId/replay/playback",{schema:{params:TalkParams}},async request=>{
+    const {talkId}=request.params as {talkId:string};
+    return service.playback({authorizationHeader:request.headers.authorization,talkId});
+  });
+
   app.post("/talks/:talkId/replay/publication",{
     schema:{params:TalkParams,body:Type.Object({
       action:Type.Union([Type.Literal("publish"),Type.Literal("unpublish"),Type.Literal("discard")]),
