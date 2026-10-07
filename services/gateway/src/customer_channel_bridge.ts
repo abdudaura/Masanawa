@@ -42,6 +42,13 @@ function instant(offsetMs = 0): string {
   return new Date(Date.now() + offsetMs).toISOString();
 }
 
+
+function recoverableSessionFailure(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+  return code === "agents.session_not_found" || code === "agents.session_closed";
+}
+
 function normalizePhone(value: string): string {
   const compact = value.trim().replace(/[\s()-]/gu, "");
   const international = compact.startsWith("+") ? compact : `+${compact}`;
@@ -279,7 +286,8 @@ export function createCustomerChannelBridge(input: Readonly<{
 
           try {
             return await turn();
-          } catch {
+          } catch (error) {
+            if (!recoverableSessionFailure(error)) throw error;
             await open();
             return turn();
           }
