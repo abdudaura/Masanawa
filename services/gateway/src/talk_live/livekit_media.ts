@@ -43,7 +43,7 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
   if (apiSecret.length < 16) throw new TypeError("LIVEKIT_API_SECRET is too short");
 
   const now = input.now ?? (() => new Date());
-  const ttlSeconds = input.ttlSeconds ?? 300;
+  const ttlSeconds = input.ttlSeconds ?? 30;
   if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds < 30 || ttlSeconds > 900) {
     throw new TypeError("LiveKit token TTL must be between 30 and 900 seconds");
   }
