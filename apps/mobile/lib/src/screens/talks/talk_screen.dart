@@ -519,6 +519,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       isHost: widget.isHost,
     );
     if (!mounted) return;
+    ref.invalidate(talkDetailProvider(widget.talkId));
     ref.invalidate(talkFeedProvider(TalkFeedKind.explore));
     ref.invalidate(talkFeedProvider(TalkFeedKind.live));
   }
