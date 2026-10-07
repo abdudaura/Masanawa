@@ -103,6 +103,12 @@ export function createTalkModerationService(input: Readonly<{
   now?: () => string;
   mediaAdmin?: TalkMediaAdmin;
   aiSeats?: TalkAiSeatHostBridge;
+  onTalkEnded?: (input: Readonly<{
+    tenantId: string;
+    talkId: string;
+    reason: "host_ended";
+    now: string;
+  }>) => Promise<void>;
 }>): TalkModerationService {
   const now=input.now ?? (()=>new Date().toISOString());
 
