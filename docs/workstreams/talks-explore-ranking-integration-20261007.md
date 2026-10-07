@@ -11,6 +11,7 @@ Owned:
 - `services/gateway/src/talks/service.ts`
 - `services/gateway/src/talks/postgres_repository.ts`
 - focused Talk service/repository tests
+- compatibility update to `services/gateway/src/talk_safety/enforcement_integration.test.ts`
 - this handoff
 
 Not owned:
