@@ -20,3 +20,20 @@ Acceptance:
 - channel link/session state persists the currently selected Character for continuity;
 - tests cover surface context, app-only handoff constraints, Twin switch, return-to-Gwani,
   duplicate/exact-once behavior, and unauthorized/non-public Twin rejection.
+
+
+## Implemented
+
+- Added `mobile | whatsapp | telegram` surface context to the provider-neutral Agent strategy seam.
+- Added `platform-agent | public-twin` representation context.
+- Production strategy now injects channel-specific UX rules and explicit capability boundaries.
+- Channel bridge passes surface/representation on text and media turns.
+- Added deterministic public Twin navigation from names, `@publicId`, and share links.
+- Exact IDs resolve before fuzzy name search; ambiguous names return choices.
+- Hidden/blocked/non-discoverable Twins remain inaccessible through the canonical directory.
+- Selected Character is persisted on the channel link and the previous CharacterSession is closed when possible.
+- Added return-to-Gwani/Gwana routing.
+- Added focused strategy and channel Twin-routing tests.
+- Documented the support matrix in `docs/CHANNEL-CUSTOMER-EXPERIENCE.md`.
+
+External evidence still required: real WhatsApp/Telegram device/provider conversation smoke tests.
