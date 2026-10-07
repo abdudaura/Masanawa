@@ -67,6 +67,29 @@ class GatewayTalkTransport implements TalkTransport {
   }
 
   @override
+  Future<TalkDiscoveryItem> updateTalk({
+    required String talkId,
+    String? title,
+    String? topic,
+    String? summary,
+  }) async {
+    final response = await api.dio.patch<dynamic>(
+      '/talks/' + Uri.encodeComponent(talkId),
+      data: {
+        if (title != null) 'title': title.trim(),
+        if (topic != null) 'topic': topic.trim(),
+        if (summary != null) 'summary': summary.trim(),
+      },
+    );
+    final data = response.data;
+    if (data is Map<String, dynamic>) return TalkDiscoveryItem.fromJson(data);
+    if (data is Map) {
+      return TalkDiscoveryItem.fromJson(data.cast<String, dynamic>());
+    }
+    throw const FormatException('Invalid Talk update response');
+  }
+
+  @override
   Future<TalkComment> addComment({
     required String talkId,
     required String body,

@@ -93,6 +93,15 @@ export interface TalkRepository {
     talkId: string;
     viewerUserId: string;
   }>): Promise<Readonly<{ talk: TalkRecord; commentCount: number }> | null>;
+  updateMetadata(input: Readonly<{
+    tenantId: string;
+    talkId: string;
+    hostUserId: string;
+    title?: string;
+    topic?: string;
+    summary?: string;
+    updatedAt: string;
+  }>): Promise<TalkRecord | null>;
   listComments(input: Readonly<{
     tenantId: string;
     talkId: string;
