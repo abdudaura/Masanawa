@@ -211,6 +211,8 @@ import { createPostgresTalkSafetyRepository } from "./talk_safety/repository.js"
 import { createTalkSafetyService, type TalkSafetyCustomerAuthorizer, type TalkSafetyPlatformAuthority } from "./talk_safety/service.js";
 import { createPrincipalTalkSafetyPlatformAuthority } from "./talk_safety/platform_authority.js";
 import { createPostgresTalkSafetyReplayBridge, withReplayBlockSynchronization } from "./talk_safety/replay_bridge.js";
+import { createDirectTwinService } from "./talk_direct_twin/service.js";
+import { createPostgresDirectTwinRepository } from "./talk_direct_twin/postgres_repository.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -324,6 +326,7 @@ export interface ServiceDatabaseDependency {
   readonly talkPolls?: ReturnType<typeof createPostgresTalkPollRepository>;
   readonly talkSafety?: ReturnType<typeof createPostgresTalkSafetyRepository>;
   readonly talkSafetyReplay?: ReturnType<typeof createPostgresTalkSafetyReplayBridge>;
+  readonly directTwin?: ReturnType<typeof createPostgresDirectTwinRepository>;
   readonly talkPushDedupe?: ReturnType<typeof createPostgresTalkPushDedupeRepository>;
   close(): Promise<void>;
 }
@@ -484,6 +487,7 @@ function createDefaultDatabaseDependency(
     talkPolls: createPostgresTalkPollRepository(database.pool),
     talkSafety: createPostgresTalkSafetyRepository(database.pool),
     talkSafetyReplay: createPostgresTalkSafetyReplayBridge(database.pool),
+    directTwin: createPostgresDirectTwinRepository(database.pool),
     close: database.close,
   });
 }
@@ -1884,6 +1888,15 @@ export async function startGatewayService(
         })()
       : undefined);
 
+  const composedDirectTwin =
+    options.appOptions?.directTwin ??
+    (database.directTwin && talkSafetyCustomerAuthorizer
+      ? createDirectTwinService({
+          repository: database.directTwin,
+          authorizer: talkSafetyCustomerAuthorizer,
+        })
+      : undefined);
+
   const composedTalkPolls =
     options.appOptions?.talkPolls ??
     (database.talkPolls && talkPollAuthorizer
@@ -2141,6 +2154,7 @@ export async function startGatewayService(
       ...(composedTalkGifts ? { talkGifts: composedTalkGifts } : {}),
       ...(composedTalkPolls ? { talkPolls: composedTalkPolls } : {}),
       ...(composedTalkSafety ? { talkSafety: composedTalkSafety } : {}),
+      ...(composedDirectTwin ? { directTwin: composedDirectTwin } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),

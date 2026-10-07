@@ -100,6 +100,34 @@ export function createPostgresDirectTwinRepository(
       return result.rows[0] ? seat(result.rows[0]) : null;
     },
 
+    async listOwnedTwinSeats(input) {
+      const result = await pool.query<SeatRow>(
+        `SELECT s.tenant_id,
+                s.talk_id,
+                s.participant_id AS seat_id,
+                s.persona_id,
+                s.kind,
+                owner.user_id AS owner_user_id,
+                s.active AS admitted,
+                NOT s.active AS removed
+           FROM talks.talk_seats s
+           JOIN talks.persona_profiles p
+             ON p.tenant_id = s.tenant_id
+            AND p.public_id = s.persona_id
+           JOIN talks.public_profiles owner
+             ON owner.tenant_id = p.tenant_id
+            AND owner.handle = p.owner_handle
+          WHERE s.tenant_id = $1
+            AND s.talk_id = $2
+            AND s.kind = 'twin'
+            AND s.active = TRUE
+            AND owner.user_id = $3
+          ORDER BY s.participant_id ASC`,
+        [input.tenantId, input.talkId, input.ownerUserId],
+      );
+      return Object.freeze(result.rows.map(seat));
+    },
+
     async readInstruction(input) {
       const result = await pool.query<InstructionRow>(
         `SELECT tenant_id,talk_id,seat_id,persona_id,owner_user_id,

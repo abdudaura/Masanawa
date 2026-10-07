@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/library/talk_library.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
+import 'package:masanawa/src/state/talk_direct_twin_state.dart';
 import 'package:masanawa/src/state/talk_gift_state.dart';
 import 'package:masanawa/src/state/talk_library_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
@@ -17,6 +18,7 @@ import 'package:masanawa/src/state/talk_replay_playback_state.dart';
 import 'package:masanawa/src/state/talk_safety_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
+import 'package:masanawa/src/talks/talk_direct_twin.dart';
 import 'package:masanawa/src/talks/talk_gift.dart';
 import 'package:masanawa/src/talks/talk_host_controls.dart';
 import 'package:masanawa/src/talks/talk_live.dart';
@@ -72,6 +74,59 @@ class _ShareService implements TalkShareService {
   @override
   Future<void> share(TalkSharePayload payload) async {
     payloads.add(payload);
+  }
+}
+
+class _DirectTwinTransport implements DirectTwinTransport {
+  _DirectTwinTransport({this.seats = const []});
+
+  final List<DirectTwinSeat> seats;
+  int revision = 0;
+  String? instruction;
+  final List<String> updates = [];
+
+  @override
+  Future<List<DirectTwinSeat>> mine(String talkId) async => seats;
+
+  @override
+  Future<DirectTwinInstruction> load({
+    required String talkId,
+    required String seatId,
+  }) async => DirectTwinInstruction(
+        revision: revision,
+        instruction: instruction,
+      );
+
+  @override
+  Future<DirectTwinInstruction> set({
+    required String talkId,
+    required String seatId,
+    required int revision,
+    required String instruction,
+  }) async {
+    expect(revision, this.revision);
+    updates.add(instruction);
+    this.instruction = instruction;
+    this.revision += 1;
+    return DirectTwinInstruction(
+      revision: this.revision,
+      instruction: instruction,
+    );
+  }
+
+  @override
+  Future<DirectTwinInstruction> clear({
+    required String talkId,
+    required String seatId,
+    required int revision,
+  }) async {
+    expect(revision, this.revision);
+    instruction = null;
+    this.revision += 1;
+    return DirectTwinInstruction(
+      revision: this.revision,
+      instruction: null,
+    );
   }
 }
 
@@ -642,6 +697,7 @@ Widget _app({
   _GiftTransport? gift,
   _ShareService? share,
   _SafetyTransport? safety,
+  _DirectTwinTransport? directTwin,
 }) {
   return ProviderScope(
     overrides: [
@@ -672,6 +728,9 @@ Widget _app({
       ),
       talkSafetyTransportProvider.overrideWithValue(
         safety ?? _SafetyTransport(),
+      ),
+      directTwinTransportProvider.overrideWithValue(
+        directTwin ?? _DirectTwinTransport(),
       ),
       talkLiveAudioFactoryProvider.overrideWithValue(
         (_) => liveAudio ??
@@ -743,6 +802,33 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Share your thoughts…'), findsOneWidget);
+  });
+
+  testWidgets('owned active Twin Seat exposes private Direct Twin control',
+      (tester) async {
+    final transport = _TalkTransport();
+    final directTwin = _DirectTwinTransport(
+      seats: const [
+        DirectTwinSeat(seatId: 'seat-twin-1', personaId: 'twin-1'),
+      ],
+    );
+
+    await tester.pumpWidget(
+      _app(talkTransport: transport, directTwin: directTwin),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-direct-twin')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('talk-direct-twin')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Direct Twin'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ActionChip, 'Challenge that'));
+    await tester.pumpAndSettle();
+
+    expect(directTwin.updates, ['Challenge that']);
+    expect(find.text('Twin direction updated.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('live Talk shares canonical public URL with title and Host',

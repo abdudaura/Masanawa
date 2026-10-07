@@ -13,6 +13,12 @@ function app() {
         kind:"twin",ownerUserId:"owner-1",admitted:true,removed:false,
       };
     },
+    async listOwnedTwinSeats() {
+      return [{
+        tenantId:"tenant-1",talkId:"talk-1",seatId:"seat-1",personaId:"twin-1",
+        kind:"twin",ownerUserId:"owner-1",admitted:true,removed:false,
+      }];
+    },
     async readInstruction() { return record; },
     async writeInstruction(input) {
       const revision=(record?.revision ?? 0)+1;
@@ -47,6 +53,16 @@ function app() {
 }
 
 describe("Direct Twin HTTP API",()=>{
+  it("projects owned active Twin Seats without exposing instructions",async()=>{
+    const response=await app().inject({
+      method:"GET",
+      url:"/talks/talk-1/twin-seats/mine",
+      headers:{authorization:"Bearer owner"},
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([{seatId:"seat-1",personaId:"twin-1"}]);
+  });
+
   it("requires authenticated Twin owner and supports read/set/clear",async()=>{
     const server=app();
     const denied=await server.inject({

@@ -31,6 +31,10 @@ function setup(input: {
   let current = input.instruction ?? null;
   const repository: DirectTwinRepository = {
     readSeat: vi.fn(async () => input.seat === undefined ? twinSeat : input.seat),
+    listOwnedTwinSeats: vi.fn(async () => {
+      const seat = input.seat === undefined ? twinSeat : input.seat;
+      return seat ? [seat] : [];
+    }),
     readInstruction: vi.fn(async () => current),
     writeInstruction: vi.fn(async (request) => {
       const revision = (current?.revision ?? 0) + 1;
@@ -58,6 +62,19 @@ function setup(input: {
 }
 
 describe("Direct Twin private control", () => {
+  it("lists only the current owner's active Twin Seats for mobile control", async () => {
+    const { service, repository } = setup();
+    await expect(service.mine({
+      authorizationHeader: "Bearer x",
+      talkId: "talk-1",
+    })).resolves.toEqual([{ seatId: "seat-1", personaId: "twin-1" }]);
+    expect(repository.listOwnedTwinSeats).toHaveBeenCalledWith({
+      tenantId: "tenant-1",
+      talkId: "talk-1",
+      ownerUserId: "owner-1",
+    });
+  });
+
   it("lets only the canonical Twin owner set a short-lived private instruction", async () => {
     const { service, repository } = setup();
     const result = await service.set({
