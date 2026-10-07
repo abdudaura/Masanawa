@@ -106,6 +106,7 @@ function hostParticipant(talk:TalkRow):HostParticipantView{
     kind:"human" as const,
     isHost:true,
     isMuted:false,
+    userId:talk.host_user_id,
   });
 }
 function requestView(row:RequestRow):HostRequestView{
@@ -125,6 +126,8 @@ function seatView(row:SeatRow):HostParticipantView{
     kind:row.kind,
     isHost:row.is_host,
     isMuted:row.is_muted,
+    ...(row.user_id===null?{}:{userId:row.user_id}),
+    ...(row.persona_id===null?{}:{personaId:row.persona_id}),
     ...(row.avatar_url===null?{}:{avatarUrl:row.avatar_url}),
   });
 }
@@ -260,6 +263,18 @@ export function createPostgresTalkModerationRepository(
       if(!talk) return null;
       if(talk.host_user_id===input.userId) throw new Error("talks.host_cannot_raise_hand");
       if(talk.state==="ended") throw new Error("talks.not_live");
+      if(input.raised){
+        const blocked=await pool.query<{blocked:boolean}>(
+          `SELECT blocked FROM talks.safety_preferences
+            WHERE tenant_id=$1
+              AND viewer_user_id=$2
+              AND subject_user_id=$3
+              AND blocked=true
+            LIMIT 1`,
+          [input.tenantId,talk.host_user_id,input.userId],
+        );
+        if(blocked.rows[0]?.blocked===true) throw new Error("talks.blocked_by_host");
+      }
       await requireLiveRuntime(pool,input.tenantId,input.talkId);
 
       const current=await pool.query<ParticipationRow>(
