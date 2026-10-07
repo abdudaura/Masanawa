@@ -1,6 +1,6 @@
 # Consumer Services
 
-Status: **canonical consumer service scope — 2026-10-07**
+Status: **canonical consumer service scope — 2026-10-08**
 
 Masanawa has exactly two standalone consumer service families:
 
@@ -26,6 +26,18 @@ sheet can launch a private transaction flow and return the user to the Talk.
 Financial values/actions must never be spoken into the public Talk unless the user
 explicitly chooses to disclose them as ordinary speech.
 
+## Global scope and qualification
+
+Masanawa is a global platform. User locale, conversation language, recipient country,
+native currency and provider account capability are separate. Nigeria's live service
+qualification is a priority, not a platform-wide country/NGN restriction. Other markets
+become available only after exact catalog/operation/account qualification; unsupported
+rails have honest status and an alternative, never fabricated success.
+
+Providers supply qualified capabilities; the server remains authority for limits,
+identity requirements, recipient formats, fees and currencies. Preserve the existing
+NGN adapter and ledger history while extending shared currency-aware interfaces.
+
 ## Billing
 
 Provider direction: **Flutterwave**, subject to live account and product qualification.
@@ -40,7 +52,7 @@ Required purchase shape:
 
 1. user names/selects service;
 2. collect only missing recipient/account/plan/amount;
-3. server validates current catalog/eligibility;
+3. server validates current country/catalog/currency/recipient eligibility;
 4. show/read back exact quote;
 5. explicit confirmation;
 6. execute once with durable idempotency;
@@ -93,6 +105,7 @@ Required transaction shape:
 
 The user can conceptually hold:
 
+- qualified fiat balances, each with its own native currency/precision;
 - spendable Masanawa balance/credits, if enabled;
 - creator earnings;
 - crypto assets.
@@ -127,3 +140,24 @@ Do not create standalone screens for:
 
 Those capabilities may still exist internally and can be used by Gwani or an Expert when
 appropriate.
+
+## Required recovery and release evidence
+
+The current open financial tasks are R05–R08 in `MOBILE-READINESS-PLAN.md`:
+working wallet actions/native balances, quote-scoped funding reuse/restoration, durable
+credit-to-bill continuation, correct webhook error classification, scheduled bounded
+reconciliation, four-family live billing qualification and exact crypto capabilities.
+Every flow needs one operation identity, exact terms, explicit confirmation, pending/
+unknown handling, receipt/refund and support reference. No duplicated parallel ledger.
+
+Fiat uses native currency metadata/exact minor units; crypto uses asset/network precision.
+No float arithmetic, silent FX or assumption all currencies have two decimals. Optional
+preferred display-currency totals are labeled estimates with rate/time, not spendable
+balance. Language is never a substitute for country or financial eligibility.
+
+A configured credential, flag name or returned category list is not live fulfillment
+qualification. Verify duplicate/concurrent action, lost callback, timeout and restart,
+refund and real provider receipts before enabling advertised operations.
+Digital AI Seat/Credit/gift purchases require their own Google Play payment classification;
+do not route all product categories through utility billing by assumption. Release
+channel/regional policy and provider eligibility are acceptance gates, not extra Services.
