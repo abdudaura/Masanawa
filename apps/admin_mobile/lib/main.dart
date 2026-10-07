@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'src/core/admin_api.dart';
 import 'src/core/admin_auth_api.dart';
 import 'src/core/admin_session.dart';
+import 'src/core/whatsapp_channel_api.dart';
 import 'src/screens/admin_shell.dart';
 import 'src/screens/login_screen.dart';
 import 'src/theme/masanawa_theme.dart';
@@ -43,10 +44,10 @@ class _MasanawaAdminAppState extends State<MasanawaAdminApp> {
     try {
       final refreshed = await _auth.refresh(stored.refreshToken);
       await _persist(refreshed);
-      await AdminApi(
+      await WhatsAppChannelApi(
         token: refreshed.accessToken,
         refreshAccessToken: _refreshAccessToken,
-      ).platformSummary();
+      ).status();
     } catch (_) {
       await _session.clear();
       _accessToken = null;
@@ -66,7 +67,10 @@ class _MasanawaAdminAppState extends State<MasanawaAdminApp> {
   }
 
   Future<void> _authenticate(AdminAuthTokens tokens) async {
-    await AdminApi(token: tokens.accessToken).platformSummary();
+    await WhatsAppChannelApi(
+      token: tokens.accessToken,
+      refreshAccessToken: () async => tokens.accessToken,
+    ).status();
     await _persist(tokens);
     if (mounted) setState(() {});
   }
