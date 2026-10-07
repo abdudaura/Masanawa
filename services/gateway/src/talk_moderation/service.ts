@@ -75,9 +75,15 @@ export interface TalkModerationService {
   }>): Promise<{ readonly ended: true }>;
 }
 
-function bounded(value: string, label: string, maxLength = 160): string {
+function bounded(value: string, label: string): string {
+  const normalized=value.trim();
+  if(!normalized || normalized.length>160) throw new TalkModerationError(`talks.${label}_invalid`,400);
+  return normalized;
+}
+
+function boundedQuestion(value: string): string {
   const normalized=value.trim().replace(/\s+/gu," ");
-  if(!normalized || normalized.length>maxLength) throw new TalkModerationError(`talks.${label}_invalid`,400);
+  if(!normalized || normalized.length>500) throw new TalkModerationError("talks.question_invalid",400);
   return normalized;
 }
 
@@ -165,7 +171,7 @@ export function createTalkModerationService(input: Readonly<{
       const result=await guarded(()=>input.repository.submitQuestion({
         tenantId:viewer.tenantId,userId:viewer.userId,displayName:viewer.profile.name,
         talkId:bounded(request.talkId,"talk_id"),questionId:`question_${randomUUID()}`,
-        body:bounded(request.body,"question",500),now:now(),
+        body:boundedQuestion(request.body),now:now(),
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
       return result;
