@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createTalkSearchService,
-  TalkSearchError,
-} from "./service.js";
+import { createTalkSearchService } from "./service.js";
 import type { TalkSearchRepository } from "./model.js";
 
 function repository() {
@@ -135,7 +132,7 @@ describe("Talk search service", () => {
         type: "all",
         limit: 30,
       }),
-    ).rejects.toMatchObject<TalkSearchError>({
+    ).rejects.toMatchObject({
       code: "search.query_invalid",
       statusCode: 400,
     });
@@ -147,7 +144,7 @@ describe("Talk search service", () => {
         type: "all",
         limit: 30,
       }),
-    ).rejects.toMatchObject<TalkSearchError>({
+    ).rejects.toMatchObject({
       code: "search.query_invalid",
       statusCode: 400,
     });
