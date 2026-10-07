@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_host_controls_state.dart';
+import '../../state/talk_library_state.dart';
 import '../../state/talk_live_state.dart';
 import '../../state/talk_participation_state.dart';
 import '../../state/talk_state.dart';
@@ -17,6 +18,8 @@ import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
 import 'talk_host_controls_sheets.dart';
 import 'talk_participation_sheets.dart';
+
+enum _TalkMoreAction { toggleSaved }
 
 class TalkScreen extends ConsumerStatefulWidget {
   const TalkScreen({
@@ -46,6 +49,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   bool _reacting = false;
   bool _handBusy = false;
   bool _endingTalk = false;
+  bool _savingTalk = false;
   TalkLiveAudioController? _liveAudio;
   StreamSubscription<TalkLiveAudioStatus>? _liveAudioSub;
   TalkLiveAudioStatus _liveAudioStatus = TalkLiveAudioStatus.idle;
@@ -296,6 +300,32 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _toggleSaved(bool currentlySaved) async {
+    if (_savingTalk) return;
+    setState(() => _savingTalk = true);
+    try {
+      final saved = await ref.read(talkLibraryTransportProvider).setSaved(
+            widget.talkId,
+            saved: !currentlySaved,
+          );
+      ref.invalidate(talkSavedProvider(widget.talkId));
+      ref.invalidate(savedTalksProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(saved ? 'Talk saved.' : 'Removed from Saved Talks.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t update Saved Talks right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingTalk = false);
+    }
+  }
+
   Future<void> _postComment() async {
     final body = _commentController.text.trim();
     if (body.isEmpty || _postingComment) return;
@@ -333,6 +363,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
               orElse: () => const TalkHostControlsView(),
             )
         : const TalkHostControlsView();
+    final savedState = ref.watch(talkSavedProvider(widget.talkId)).maybeWhen(
+          data: (value) => value,
+          orElse: () => null,
+        );
     final fallback = widget.initialTalk;
     final projectedTalk = detail.maybeWhen(
       data: (value) => value.talk,
@@ -349,6 +383,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         controller: _commentController,
         postingComment: _postingComment,
         onPostComment: _postComment,
+        saved: savedState,
+        savingSaved: _savingTalk,
+        onToggleSaved:
+            savedState == null ? null : () => _toggleSaved(savedState),
         isHost: widget.isHost,
         liveAudioStatus: _liveAudioStatus,
         liveAudioRole: _liveAudioRole,
@@ -379,6 +417,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            saved: savedState,
+            savingSaved: _savingTalk,
+            onToggleSaved:
+                savedState == null ? null : () => _toggleSaved(savedState),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -414,6 +456,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            saved: savedState,
+            savingSaved: _savingTalk,
+            onToggleSaved:
+                savedState == null ? null : () => _toggleSaved(savedState),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -456,6 +502,9 @@ class _TalkBody extends StatelessWidget {
     required this.onPostComment,
     this.loadingComments = false,
     this.commentsUnavailable = false,
+    this.saved,
+    this.savingSaved = false,
+    this.onToggleSaved,
     this.isHost = false,
     this.liveAudioStatus = TalkLiveAudioStatus.idle,
     this.liveAudioRole,
@@ -483,6 +532,9 @@ class _TalkBody extends StatelessWidget {
   final VoidCallback onPostComment;
   final bool loadingComments;
   final bool commentsUnavailable;
+  final bool? saved;
+  final bool savingSaved;
+  final VoidCallback? onToggleSaved;
   final bool isHost;
   final TalkLiveAudioStatus liveAudioStatus;
   final TalkLiveRole? liveAudioRole;
@@ -514,9 +566,41 @@ class _TalkBody extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          IconButton(
+          PopupMenuButton<_TalkMoreAction>(
+            key: const ValueKey('talk-more-menu'),
             tooltip: 'More',
-            onPressed: () {},
+            onSelected: (action) {
+              if (action == _TalkMoreAction.toggleSaved &&
+                  saved != null &&
+                  !savingSaved) {
+                onToggleSaved?.call();
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem<_TalkMoreAction>(
+                value: _TalkMoreAction.toggleSaved,
+                enabled: saved != null && !savingSaved,
+                child: Row(
+                  children: [
+                    Icon(
+                      saved == true
+                          ? Icons.bookmark_remove_outlined
+                          : Icons.bookmark_add_outlined,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      savingSaved
+                          ? 'Updating…'
+                          : saved == null
+                              ? 'Saved Talks unavailable'
+                              : saved == true
+                                  ? 'Remove from saved'
+                                  : 'Save Talk',
+                    ),
+                  ],
+                ),
+              ),
+            ],
             icon: const Icon(Icons.more_vert_rounded),
           ),
         ],
