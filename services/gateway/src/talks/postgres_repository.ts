@@ -27,6 +27,7 @@ interface TalkRow extends Record<string, unknown> {
   state: "draft" | "live" | "reconnecting" | "ended";
   listener_count: number;
   duration_seconds: number | null;
+  started_at: string | Date | null;
   created_at: string | Date;
   updated_at: string | Date;
   comment_count?: string | number;
@@ -61,6 +62,7 @@ function mapTalk(row: TalkRow): TalkRecord {
     state: row.state,
     listenerCount: Number(row.listener_count),
     durationSeconds: row.duration_seconds === null ? null : Number(row.duration_seconds),
+    startedAt: row.started_at == null ? null : iso(row.started_at),
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
   });
@@ -129,7 +131,7 @@ function mapComment(row: CommentRow): TalkCommentRecord {
 
 const talkColumns = `
   tenant_id, talk_id, host_user_id, host_name, title, topic, summary,
-  state, listener_count, duration_seconds, created_at, updated_at
+  state, listener_count, duration_seconds, started_at, created_at, updated_at
 `;
 
 export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository {
