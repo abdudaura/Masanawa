@@ -54,17 +54,12 @@ class _TalkMoreSheetState extends ConsumerState<_TalkMoreSheet> {
     if (hostUserId == null || _busy) return;
     setState(() => _busy = true);
     try {
-      final updated =
-          await ref.read(talkSafetyTransportProvider).setUserPreference(
-                userId: hostUserId,
-                blocked: blocked ?? current.blocked,
-                muted: muted ?? current.muted,
-              );
+      await ref.read(talkSafetyTransportProvider).setUserPreference(
+            userId: hostUserId,
+            blocked: blocked ?? current.blocked,
+            muted: muted ?? current.muted,
+          );
       ref.invalidate(talkSafetyPreferenceProvider(hostUserId));
-      ref.read(talkSafetyPreferenceProvider(hostUserId).future).ignore();
-      if (!mounted) return;
-      setState(() {});
-
       if (!mounted) return;
       final hiding = (blocked ?? current.blocked) || (muted ?? current.muted);
       ScaffoldMessenger.of(context).showSnackBar(
