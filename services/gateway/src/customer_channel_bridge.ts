@@ -12,7 +12,6 @@ import {
   normalizePlatformAuthIdentifier,
   type CustomerChannel,
   type CustomerChannelRepository,
-  type PlatformAuthProfile,
   type PlatformSessionRepository,
 } from "@masanawa/security";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
