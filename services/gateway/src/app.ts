@@ -81,7 +81,10 @@ export interface GatewayAppOptions {
   readonly customerChannels?: CustomerChannelOptions;
   readonly linkedWhatsApp?: Readonly<{
     controller: LinkedWhatsAppController;
-    adminToken: string;
+    adminToken?: string;
+    authorizeSession?: (
+      authorizationHeader: string | undefined,
+    ) => Promise<boolean>;
   }>;
   readonly twinProduction?: TwinProductionRuntime;
 }

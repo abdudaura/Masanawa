@@ -1,18 +1,28 @@
 import type { FastifyInstance } from "fastify";
 import type { LinkedWhatsAppController } from "./whatsapp_linked_device.js";
 
+export interface LinkedWhatsAppAdminAuthorization {
+  readonly adminToken?: string;
+  readonly authorizeSession?: (
+    authorizationHeader: string | undefined,
+  ) => Promise<boolean>;
+}
+
 export function registerLinkedWhatsAppAdminRoutes(
   app: FastifyInstance,
   input: Readonly<{
     controller: LinkedWhatsAppController;
-    adminToken: string;
-  }>,
+  }> & LinkedWhatsAppAdminAuthorization,
 ): void {
-  const authorized = (header: string | undefined): boolean =>
-    header === `Bearer ${input.adminToken}`;
+  const authorized = async (header: string | undefined): Promise<boolean> => {
+    if (input.adminToken && header === `Bearer ${input.adminToken}`) {
+      return true;
+    }
+    return await input.authorizeSession?.(header) === true;
+  };
 
   app.get("/admin/channels/whatsapp/status", async (request, reply) => {
-    if (!authorized(request.headers.authorization)) {
+    if (!await authorized(request.headers.authorization)) {
       return reply.code(401).send({ error: "unauthorized" });
     }
     const state = input.controller.snapshot();
@@ -28,7 +38,7 @@ export function registerLinkedWhatsAppAdminRoutes(
   });
 
   app.get("/admin/channels/whatsapp/qr", async (request, reply) => {
-    if (!authorized(request.headers.authorization)) {
+    if (!await authorized(request.headers.authorization)) {
       return reply.code(401).send({ error: "unauthorized" });
     }
     const state = input.controller.snapshot();
@@ -43,7 +53,7 @@ export function registerLinkedWhatsAppAdminRoutes(
   });
 
   app.post("/admin/channels/whatsapp/reset", async (request, reply) => {
-    if (!authorized(request.headers.authorization)) {
+    if (!await authorized(request.headers.authorization)) {
       return reply.code(401).send({ error: "unauthorized" });
     }
     await input.controller.reset();
