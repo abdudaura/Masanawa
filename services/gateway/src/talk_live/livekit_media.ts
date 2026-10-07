@@ -13,7 +13,7 @@ export interface TalkMediaTokenIssuer {
     talkId: string;
     sessionId: string;
     userId: string;
-    role: "host" | "listener";
+    role: "host" | "speaker" | "listener";
     canPublishAudio: boolean;
   }>): Promise<TalkMediaCredentials>;
 }
@@ -64,10 +64,10 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
         video: {
           roomJoin: true,
           room: roomName,
-          canPublish: request.role === "host" && request.canPublishAudio,
+          canPublish: request.role !== "listener" && request.canPublishAudio,
           canSubscribe: true,
           canPublishData: false,
-          ...(request.role === "host" && request.canPublishAudio
+          ...(request.role !== "listener" && request.canPublishAudio
             ? { canPublishSources: ["microphone"] }
             : {}),
         },

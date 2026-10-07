@@ -24,8 +24,9 @@ interface TalkRow extends Record<string, unknown> {
 
 interface SessionRow extends Record<string, unknown> {
   session_id: string;
-  role: "host" | "listener";
+  role: "host" | "speaker" | "listener";
   connection_state: "connected" | "disconnected";
+  is_muted: boolean;
 }
 
 interface RuntimeRow extends Record<string, unknown> {
@@ -158,7 +159,8 @@ function sessionView(
     talkId,
     role: row.role,
     state: state.state,
-    canPublishAudio: row.role === "host" && state.state === "live",
+    canPublishAudio:
+      row.role !== "listener" && !row.is_muted && state.state === "live",
     canHearAudio: state.state !== "ended",
     aiGenerationAllowed: state.aiGenerationAllowed,
     reconnectGraceEndsAt: state.reconnectGraceEndsAt,
@@ -181,18 +183,35 @@ export function createPostgresTalkLiveRepository(
       if (!talkRow) return null;
       if (talkRow.state === "ended") throw new Error("talks.live.ended");
 
-      const role = talkRow.host_user_id === input.userId ? "host" : "listener";
+      let role: "host" | "speaker" | "listener" =
+        talkRow.host_user_id === input.userId ? "host" : "listener";
+      let isMuted = false;
+      if (role !== "host") {
+        const seat = await pool.query<{ is_muted: boolean }>(
+          `SELECT is_muted
+             FROM talks.talk_seats
+            WHERE tenant_id = $1 AND talk_id = $2
+              AND user_id = $3 AND active = true AND kind = 'human'
+            LIMIT 1`,
+          [input.tenantId, input.talkId, input.userId],
+        );
+        if (seat.rows[0]) {
+          role = "speaker";
+          isMuted = seat.rows[0].is_muted;
+        }
+      }
       await pool.query(
         `INSERT INTO talks.live_sessions (
-          tenant_id, talk_id, session_id, user_id, role,
+          tenant_id, talk_id, session_id, user_id, role, is_muted,
           connection_state, connected_at, last_seen_at
-        ) VALUES ($1,$2,$3,$4,$5,'connected',$6,$6)`,
+        ) VALUES ($1,$2,$3,$4,$5,$6,'connected',$7,$7)`,
         [
           input.tenantId,
           input.talkId,
           input.sessionId,
           input.userId,
           role,
+          isMuted,
           input.now,
         ],
       );
@@ -227,6 +246,7 @@ export function createPostgresTalkLiveRepository(
           session_id: input.sessionId,
           role,
           connection_state: "connected",
+          is_muted: isMuted,
         },
         state!,
         input.talkId,
@@ -242,7 +262,7 @@ export function createPostgresTalkLiveRepository(
             AND talk_id = $2
             AND session_id = $3
             AND user_id = $4
-          RETURNING session_id, role, connection_state`,
+          RETURNING session_id, role, connection_state, is_muted`,
         [
           input.tenantId,
           input.talkId,
@@ -289,7 +309,7 @@ export function createPostgresTalkLiveRepository(
             AND session_id = $3
             AND user_id = $4
             AND connection_state = 'connected'
-          RETURNING session_id, role, connection_state`,
+          RETURNING session_id, role, connection_state, is_muted`,
         [
           input.tenantId,
           input.talkId,

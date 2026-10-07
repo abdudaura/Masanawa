@@ -1,5 +1,5 @@
 export type TalkLiveState = "live" | "reconnecting" | "ended";
-export type TalkLiveRole = "host" | "listener";
+export type TalkLiveRole = "host" | "speaker" | "listener";
 
 export interface TalkLiveSessionView {
   readonly sessionId: string;
