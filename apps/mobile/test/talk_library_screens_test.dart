@@ -9,6 +9,7 @@ import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class _LibraryTransport implements TalkLibraryTransport {
+  bool savedState = false;
   static const live = TalkDiscoveryItem(
     id: 'live-owned',
     title: 'My live Talk',
@@ -50,6 +51,15 @@ class _LibraryTransport implements TalkLibraryTransport {
 
   @override
   Future<List<TalkDiscoveryItem>> loadSavedTalks() async => const [saved];
+
+  @override
+  Future<bool> isSaved(String talkId) async => savedState;
+
+  @override
+  Future<bool> setSaved(String talkId, {required bool saved}) async {
+    savedState = saved;
+    return savedState;
+  }
 }
 
 Widget _app({
