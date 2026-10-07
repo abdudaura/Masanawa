@@ -155,6 +155,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       context,
       talkId: widget.talkId,
     );
+    if (!mounted) return;
     ref.invalidate(talkHostControlsProvider(widget.talkId));
     ref.invalidate(talkDetailProvider(widget.talkId));
   }
@@ -164,6 +165,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       context,
       talkId: widget.talkId,
     );
+    if (!mounted) return;
     ref.invalidate(talkHostControlsProvider(widget.talkId));
     ref.invalidate(talkDetailProvider(widget.talkId));
   }
