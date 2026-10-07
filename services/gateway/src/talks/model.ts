@@ -55,6 +55,13 @@ export interface TalkRecord {
   readonly updatedAt: string;
 }
 
+export interface TalkListRow {
+  readonly talk: TalkRecord;
+  readonly commentCount: number;
+  readonly reactionCount: number;
+  readonly followedHost: boolean;
+}
+
 export interface TalkCommentRecord {
   readonly tenantId: string;
   readonly talkId: string;
@@ -77,9 +84,10 @@ export interface TalkRepository {
   }>): Promise<TalkRecord>;
   listTalks(input: Readonly<{
     tenantId: string;
+    viewerUserId: string;
     feed: TalkFeedKind;
     limit: number;
-  }>): Promise<readonly Readonly<{ talk: TalkRecord; commentCount: number }>[]>;
+  }>): Promise<readonly TalkListRow[]>;
   getTalk(input: Readonly<{
     tenantId: string;
     talkId: string;
