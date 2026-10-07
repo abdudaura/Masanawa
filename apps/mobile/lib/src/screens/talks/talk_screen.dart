@@ -4,6 +4,7 @@ import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../state/talk_direct_twin_state.dart';
 import '../../state/talk_gift_state.dart';
 import '../../state/talk_host_controls_state.dart';
 import '../../state/talk_library_state.dart';
@@ -12,9 +13,11 @@ import '../../state/talk_participation_state.dart';
 import '../../state/talk_poll_state.dart';
 import '../../state/talk_question_state.dart';
 import '../../state/talk_replay_playback_state.dart';
+import '../../state/talk_safety_state.dart';
 import '../../state/talk_state.dart';
 import '../../state/wallet_state.dart';
 import '../../talks/talk_ai_seat.dart';
+import '../../talks/talk_direct_twin.dart';
 import '../../talks/talk_gift.dart';
 import '../../talks/talk_host_controls.dart';
 import '../../talks/talk_live.dart';
@@ -26,11 +29,13 @@ import '../../talks/talk_share.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
+import 'talk_direct_twin_sheet.dart';
 import 'talk_gift_sheet.dart';
 import 'talk_host_controls_sheets.dart';
 import 'talk_participation_sheets.dart';
 import 'talk_poll_sheet.dart';
 import 'talk_question_sheet.dart';
+import 'talk_safety_sheet.dart';
 
 final talkShareServiceProvider = Provider<TalkShareService>(
   (_) => const SystemTalkShareService(),
@@ -511,6 +516,31 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _reportTalk(TalkDiscoveryItem talk) async {
+    final sent = await showTalkReportSheet(
+      context,
+      transport: ref.read(talkSafetyTransportProvider),
+      targetKind: talk.isLive ? 'talk' : 'replay',
+      targetId: talk.id,
+    );
+    if (!mounted || !sent) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Report received. Thank you.')),
+    );
+  }
+
+  Future<void> _openDirectTwin(List<DirectTwinSeat> seats) async {
+    if (seats.isEmpty) return;
+    await showDirectTwinSheet(
+      context,
+      talkId: widget.talkId,
+      seats: seats,
+      transport: ref.read(directTwinTransportProvider),
+    );
+    if (!mounted) return;
+    ref.invalidate(myDirectTwinSeatsProvider(widget.talkId));
+  }
+
   Future<void> _toggleSaved(bool isSaved) async {
     if (_savingTalk) return;
     setState(() => _savingTalk = true);
@@ -590,6 +620,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
           data: (value) => value,
           orElse: () => null,
         );
+    final ownedTwinSeats =
+        ref.watch(myDirectTwinSeatsProvider(widget.talkId)).maybeWhen(
+              data: (value) => value,
+              orElse: () => const <DirectTwinSeat>[],
+            );
     final fallback = widget.initialTalk;
     final projectedTalk = detail.maybeWhen(
       data: (value) => value.talk,
@@ -610,6 +645,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         savingTalk: _savingTalk,
         onToggleSaved: () => _toggleSaved(isSaved),
         onShare: () => _shareTalk(value.talk),
+        onReport: () => _reportTalk(value.talk),
+        onDirectTwin: value.talk.isLive && ownedTwinSeats.isNotEmpty
+            ? () => _openDirectTwin(ownedTwinSeats)
+            : null,
         isHost: widget.isHost,
         liveAudioStatus: _liveAudioStatus,
         liveAudioRole: _liveAudioRole,
@@ -656,6 +695,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             savingTalk: _savingTalk,
             onToggleSaved: () => _toggleSaved(isSaved),
             onShare: () => _shareTalk(fallback),
+            onReport: () => _reportTalk(fallback),
+            onDirectTwin: fallback.isLive && ownedTwinSeats.isNotEmpty
+                ? () => _openDirectTwin(ownedTwinSeats)
+                : null,
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -705,6 +748,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             savingTalk: _savingTalk,
             onToggleSaved: () => _toggleSaved(isSaved),
             onShare: () => _shareTalk(fallback),
+            onReport: () => _reportTalk(fallback),
+            onDirectTwin: fallback.isLive && ownedTwinSeats.isNotEmpty
+                ? () => _openDirectTwin(ownedTwinSeats)
+                : null,
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -761,6 +808,8 @@ class _TalkBody extends StatelessWidget {
     this.savingTalk = false,
     this.onToggleSaved,
     this.onShare,
+    this.onReport,
+    this.onDirectTwin,
     this.isHost = false,
     this.liveAudioStatus = TalkLiveAudioStatus.idle,
     this.liveAudioRole,
@@ -804,6 +853,8 @@ class _TalkBody extends StatelessWidget {
   final bool savingTalk;
   final VoidCallback? onToggleSaved;
   final VoidCallback? onShare;
+  final VoidCallback? onReport;
+  final VoidCallback? onDirectTwin;
   final bool isHost;
   final TalkLiveAudioStatus liveAudioStatus;
   final TalkLiveRole? liveAudioRole;
@@ -847,11 +898,24 @@ class _TalkBody extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          if (onDirectTwin != null)
+            IconButton(
+              key: const ValueKey('talk-direct-twin'),
+              tooltip: 'Direct Twin',
+              onPressed: onDirectTwin,
+              icon: const Icon(Icons.bolt_rounded),
+            ),
           IconButton(
             key: const ValueKey('talk-share'),
             tooltip: 'Share Talk',
             onPressed: onShare,
             icon: const Icon(Icons.share_outlined),
+          ),
+          IconButton(
+            key: const ValueKey('talk-report'),
+            tooltip: 'Report',
+            onPressed: onReport,
+            icon: const Icon(Icons.flag_outlined),
           ),
           IconButton(
             key: const ValueKey('talk-save-toggle'),
