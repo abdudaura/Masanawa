@@ -48,3 +48,14 @@ External evidence still required: real WhatsApp/Telegram device/provider convers
 - Twin ambiguity choices use `@publicId` buttons so the next tap performs canonical exact
   Twin resolution.
 - WhatsApp retains reliable numbered text choices under linked-device transport.
+
+
+## Verification status
+
+GitHub Foundation CI run 37575539440 failed before runner assignment:
+`runner_id=0`, empty runner name and `steps=[]`. This is the existing hosted-runner
+allocation failure and is not a code/test execution result.
+
+A manual type review caught and fixed typed Vitest mock argument issues in the new
+surface and Telegram reply-keyboard tests before merge. No green hosted execution is
+claimed until GitHub actually assigns a runner.
