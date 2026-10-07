@@ -30,6 +30,28 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
     return _preference(response.data);
   }
 
+  Future<void> _report({
+    required String targetKind,
+    required String targetId,
+    required TalkSafetyReportReason reason,
+    String? detail,
+    required String requestPrefix,
+  }) async {
+    final normalizedDetail = detail?.trim();
+    await api.dio.post<dynamic>(
+      '/safety/reports',
+      data: {
+        'targetKind': targetKind,
+        'targetId': targetId,
+        'reason': reason.wire,
+        if (normalizedDetail != null && normalizedDetail.isNotEmpty)
+          'detail': normalizedDetail,
+        'clientRequestId':
+            requestPrefix + '-' + DateTime.now().microsecondsSinceEpoch.toString(),
+      },
+    );
+  }
+
   @override
   Future<void> reportTalk({
     required String talkId,
@@ -37,18 +59,28 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
     required TalkSafetyReportReason reason,
     String? detail,
   }) async {
-    final normalizedDetail = detail?.trim();
-    await api.dio.post<dynamic>(
-      '/safety/reports',
-      data: {
-        'targetKind': isReplay ? 'replay' : 'talk',
-        'targetId': talkId,
-        'reason': reason.wire,
-        if (normalizedDetail != null && normalizedDetail.isNotEmpty)
-          'detail': normalizedDetail,
-        'clientRequestId':
-            'talk-report-' + DateTime.now().microsecondsSinceEpoch.toString(),
-      },
+    await _report(
+      targetKind: isReplay ? 'replay' : 'talk',
+      targetId: talkId,
+      reason: reason,
+      detail: detail,
+      requestPrefix: 'talk-report',
+    );
+  }
+
+  @override
+  Future<void> reportTarget({
+    required TalkSafetyTargetKind targetKind,
+    required String targetId,
+    required TalkSafetyReportReason reason,
+    String? detail,
+  }) async {
+    await _report(
+      targetKind: targetKind.wire,
+      targetId: targetId,
+      reason: reason,
+      detail: detail,
+      requestPrefix: 'participant-report',
     );
   }
 
