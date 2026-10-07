@@ -263,6 +263,13 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                      AND (sp.blocked OR sp.muted)
                 )
                 AND NOT EXISTS (
+                  SELECT 1 FROM talks.safety_preferences host_block
+                   WHERE host_block.tenant_id = t.tenant_id
+                     AND host_block.viewer_user_id = t.host_user_id
+                     AND host_block.subject_user_id = $4
+                     AND host_block.blocked
+                )
+                AND NOT EXISTS (
                   SELECT 1 FROM talks.safety_enforcement se
                    WHERE se.tenant_id = t.tenant_id
                      AND se.target_kind = 'talk'

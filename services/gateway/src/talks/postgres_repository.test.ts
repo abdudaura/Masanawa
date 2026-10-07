@@ -217,5 +217,8 @@ describe("Postgres Talk repository", () => {
     expect(sql).toContain("talks.safety_preferences");
     expect(sql).toContain("sp.viewer_user_id = $4");
     expect(sql).toContain("(sp.blocked OR sp.muted)");
+    expect(sql).toContain("host_block.viewer_user_id = t.host_user_id");
+    expect(sql).toContain("host_block.subject_user_id = $4");
+    expect(sql).toContain("host_block.blocked");
   });
 });

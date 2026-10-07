@@ -33,19 +33,32 @@ void main() {
           'isMuted': false,
         },
         {
+          'participantId': 'speaker',
+          'displayName': 'Amina',
+          'kind': 'human',
+          'isHost': false,
+          'isMuted': false,
+          'userId': 'user-amina',
+          'profileHandle': 'amina',
+        },
+        {
           'participantId': 'expert',
           'displayName': 'Economist',
           'kind': 'expert',
           'isHost': false,
           'isMuted': true,
+          'personaId': 'expert-economist',
         },
       ],
     });
 
     expect(view.participants.first.isHost, isTrue);
     expect(view.participants.first.kind, TalkParticipantKind.human);
+    expect(view.participants[1].userId, 'user-amina');
+    expect(view.participants[1].profileHandle, 'amina');
     expect(view.participants.last.isHost, isFalse);
     expect(view.participants.last.kind, TalkParticipantKind.expert);
     expect(view.participants.last.isMuted, isTrue);
+    expect(view.participants.last.personaId, 'expert-economist');
   });
 }

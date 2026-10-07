@@ -1,3 +1,12 @@
+enum TalkSafetyTargetKind { profile, persona }
+
+extension TalkSafetyTargetKindWire on TalkSafetyTargetKind {
+  String get wire => switch (this) {
+        TalkSafetyTargetKind.profile => 'profile',
+        TalkSafetyTargetKind.persona => 'persona',
+      };
+}
+
 enum TalkSafetyReportReason {
   spam,
   harassment,
@@ -68,6 +77,13 @@ abstract interface class TalkSafetyTransport {
   Future<void> reportTalk({
     required String talkId,
     required bool isReplay,
+    required TalkSafetyReportReason reason,
+    String? detail,
+  });
+
+  Future<void> reportTarget({
+    required TalkSafetyTargetKind targetKind,
+    required String targetId,
     required TalkSafetyReportReason reason,
     String? detail,
   });
