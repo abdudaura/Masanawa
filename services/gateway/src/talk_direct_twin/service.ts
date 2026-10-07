@@ -164,7 +164,7 @@ export function createDirectTwinService(input: Readonly<{
     return { identity, seat, talkId: normalizedTalkId, seatId: normalizedSeatId };
   }
 
-  return Object.freeze({
+  return Object.freeze<DirectTwinService>({
     async mine(request) {
       const identity = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
