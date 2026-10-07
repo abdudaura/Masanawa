@@ -202,6 +202,9 @@ import {
   type TalkGiftAuthorizer,
 } from "./talk_gifts/service.js";
 import { createPostgresTalkGiftRepository } from "./talk_gifts/postgres_repository.js";
+import { createPostgresTalkSafetyRepository } from "./talk_safety/repository.js";
+import { createTalkSafetyService, type TalkSafetyCustomerAuthorizer, type TalkSafetyPlatformAuthority } from "./talk_safety/service.js";
+import { createPrincipalTalkSafetyPlatformAuthority } from "./talk_safety/platform_authority.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -312,6 +315,7 @@ export interface ServiceDatabaseDependency {
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
   readonly talkGifts?: ReturnType<typeof createPostgresTalkGiftRepository>;
+  readonly talkSafety?: ReturnType<typeof createPostgresTalkSafetyRepository>;
   readonly talkPushDedupe?: ReturnType<typeof createPostgresTalkPushDedupeRepository>;
   close(): Promise<void>;
 }
@@ -469,6 +473,7 @@ function createDefaultDatabaseDependency(
     talkLibrary: createPostgresTalkLibraryRepository(database.pool),
     talkPushDedupe: createPostgresTalkPushDedupeRepository(database.pool),
     talkGifts: createPostgresTalkGiftRepository(database.pool),
+    talkSafety: createPostgresTalkSafetyRepository(database.pool),
     close: database.close,
   });
 }
@@ -617,6 +622,8 @@ export async function startGatewayService(
   let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
   let talkLibraryAuthorizer: TalkLibraryAuthorizer | undefined;
   let talkGiftAuthorizer: TalkGiftAuthorizer | undefined;
+  let talkSafetyCustomerAuthorizer: TalkSafetyCustomerAuthorizer | undefined;
+  let talkSafetyPlatformAuthority: TalkSafetyPlatformAuthority | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
@@ -766,6 +773,15 @@ export async function startGatewayService(
     talkSearchAuthorizer = customerSessions;
     talkLibraryAuthorizer = customerSessions;
     talkGiftAuthorizer = customerSessions;
+    talkSafetyCustomerAuthorizer = customerSessions;
+    talkSafetyPlatformAuthority = createPrincipalTalkSafetyPlatformAuthority({
+      sessions: customerSessions,
+      adminPrincipals: readPrincipalSet(
+        env.MASANAWA_ADMIN_PRINCIPALS ??
+          env.MASANAWA_ADMIN_USER_IDS ??
+          env.MASANAWA_ADMIN_EMAILS,
+      ),
+    });
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
@@ -1839,6 +1855,18 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkSafety =
+    options.appOptions?.talkSafety ??
+    (database.talkSafety &&
+    talkSafetyCustomerAuthorizer &&
+    talkSafetyPlatformAuthority
+      ? createTalkSafetyService({
+          repository: database.talkSafety,
+          customerAuthorizer: talkSafetyCustomerAuthorizer,
+          platformAuthority: talkSafetyPlatformAuthority,
+        })
+      : undefined);
+
   const composedTalkGifts =
     options.appOptions?.talkGifts ??
     (database.talkGifts && talkGiftAuthorizer && twinProduction?.creditGift
@@ -2085,6 +2113,7 @@ export async function startGatewayService(
       ...(composedTalkSearch ? { talkSearch: composedTalkSearch } : {}),
       ...(composedTalkLibrary ? { talkLibrary: composedTalkLibrary } : {}),
       ...(composedTalkGifts ? { talkGifts: composedTalkGifts } : {}),
+      ...(composedTalkSafety ? { talkSafety: composedTalkSafety } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
