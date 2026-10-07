@@ -47,18 +47,15 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Masanawa'),
         actions: [
           IconButton(
-            tooltip: 'Profile',
+            tooltip: 'Profile and settings',
             onPressed: onOpenProfile,
-            icon: const Icon(Icons.account_circle_outlined),
+            icon: const Icon(Icons.more_vert_rounded),
           ),
         ],
       ),
       body: switch (state.status) {
         HomeLoadStatus.loading => const _HomeLoading(),
-        HomeLoadStatus.error => _HomeError(
-            message: state.errorMessage,
-            onRetry: onRetry,
-          ),
+        HomeLoadStatus.error => _HomeError(onRetry: onRetry),
         HomeLoadStatus.ready => _HomeReady(
             snapshot: state.snapshot!,
             onRefresh: onRefresh,
@@ -67,7 +64,6 @@ class HomeScreen extends StatelessWidget {
             onOpenRoom: onOpenRoom,
             onOpenMyTwin: onOpenMyTwin,
             onCreateMyTwin: onCreateMyTwin,
-            onOpenContinuation: onOpenContinuation,
           ),
       },
     );
@@ -83,7 +79,6 @@ class _HomeReady extends StatelessWidget {
     required this.onOpenRoom,
     required this.onOpenMyTwin,
     required this.onCreateMyTwin,
-    required this.onOpenContinuation,
   });
 
   final HomeSnapshot snapshot;
@@ -93,95 +88,81 @@ class _HomeReady extends StatelessWidget {
   final HomeRoomCallback? onOpenRoom;
   final VoidCallback? onOpenMyTwin;
   final VoidCallback? onCreateMyTwin;
-  final HomeContinuationCallback? onOpenContinuation;
 
   @override
   Widget build(BuildContext context) {
-    if (!snapshot.hasMeaningfulContent) {
-      return const _HomeEmpty();
-    }
-
-    final gwana = snapshot.assistantFor(HomeAssistantRole.gwana);
     final gwani = snapshot.assistantFor(HomeAssistantRole.gwani);
+    final gwana = snapshot.assistantFor(HomeAssistantRole.gwana);
+    final rooms = _orderedRooms(snapshot.rooms)
+        .where((room) => room.iconKey != 'groups')
+        .toList(growable: false);
 
     final list = ListView(
       key: const ValueKey('home-content'),
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      padding: const EdgeInsets.only(bottom: 24),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _AssistantCard(
-                role: HomeAssistantRole.gwana,
-                assistant: gwana,
-                onAction: onAssistantAction,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: _AssistantTile(
+                  role: HomeAssistantRole.gwani,
+                  assistant: gwani,
+                  onAction: onAssistantAction,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _AssistantCard(
-                role: HomeAssistantRole.gwani,
-                assistant: gwani,
-                onAction: onAssistantAction,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _AssistantTile(
+                  role: HomeAssistantRole.gwana,
+                  assistant: gwana,
+                  onAction: onAssistantAction,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 2),
         _QuickServices(onTap: onQuickService),
         if (snapshot.myTwin case final twin?) ...[
-          const SizedBox(height: 22),
-          _TwinCard(
-            model: twin,
-            onOpen: twin.hasTwin ? onOpenMyTwin : onCreateMyTwin,
+          const Divider(height: 10),
+          _HomeRow(
+            key: const ValueKey('home-my-twin'),
+            icon: Icons.auto_awesome_rounded,
+            title: twin.title,
+            trailing: twin.hasTwin
+                ? Icons.chevron_right_rounded
+                : Icons.add_circle_outline_rounded,
+            onTap: twin.hasTwin ? onOpenMyTwin : onCreateMyTwin,
           ),
         ],
-        if (snapshot.continuations.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          ...snapshot.continuations.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _ContinuationCard(
-                item: item,
-                onTap: onOpenContinuation == null
-                    ? null
-                    : () => onOpenContinuation!(item),
-              ),
-            ),
+        if (rooms.isNotEmpty) const Divider(height: 10),
+        for (final room in rooms)
+          _RoomRow(
+            room: room,
+            onTap: onOpenRoom == null ? null : () => onOpenRoom!(room),
           ),
-        ],
-        const SizedBox(height: 14),
-        for (final room in _orderedRooms(snapshot.rooms)) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _RoomCard(
-              room: room,
-              displayTitle: _roomDisplayTitle(room),
-              onTap: onOpenRoom == null ? null : () => onOpenRoom!(room),
-            ),
-          ),
-          if (room.iconKey == 'internet_cafe')
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _CryptoTokensCard(
-                onTap: onQuickService == null
-                    ? null
-                    : () => onQuickService!(HomeQuickService.crypto),
-              ),
-            ),
-        ],
+        _HomeRow(
+          key: const ValueKey('home-room-crypto-tokens'),
+          icon: Icons.currency_bitcoin_rounded,
+          title: 'Crypto',
+          onTap: onQuickService == null
+              ? null
+              : () => onQuickService!(HomeQuickService.crypto),
+        ),
       ],
     );
+
     return onRefresh == null
         ? list
         : RefreshIndicator(onRefresh: onRefresh!, child: list);
   }
 }
 
-class _AssistantCard extends StatelessWidget {
-  const _AssistantCard({
+class _AssistantTile extends StatelessWidget {
+  const _AssistantTile({
     required this.role,
     required this.assistant,
     required this.onAction,
@@ -194,193 +175,232 @@ class _AssistantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final fallbackName = role == HomeAssistantRole.gwana ? 'Gwana' : 'Gwani';
+    final fallback = role == HomeAssistantRole.gwani ? 'Gwani' : 'Gwana';
     final model = assistant;
     final available = model?.isAvailable == true;
 
-    return Container(
-      key: ValueKey('home-assistant-' + role.name),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: u.surfaceCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: u.structuralBorder),
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: u.brand.withValues(alpha: .12),
-            child: Text(
-              model?.initials ?? fallbackName.substring(0, 1),
-              style: TextStyle(
-                color: u.brand,
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+    return Material(
+      color: u.surfaceCard,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        key: ValueKey('home-assistant-' + role.name),
+        borderRadius: BorderRadius.circular(12),
+        onTap: !available || model == null || onAction == null
+            ? null
+            : () => onAction!(model, HomeAssistantAction.chat),
+        child: Container(
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: u.structuralBorder),
           ),
-          const SizedBox(height: 6),
-          Text(
-            model?.displayName ?? fallbackName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: u.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (available && model!.voiceLabel?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 5),
-            Text(
-              model.voiceLabel!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: u.textMuted, fontSize: 11),
-            ),
-          ],
-          const SizedBox(height: 8),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 4,
-            runSpacing: 4,
+          child: Row(
             children: [
-              _AssistantAction(
-                tooltip: 'Chat',
-                icon: Icons.chat_bubble_outline,
-                enabled: available,
-                onTap: model == null || onAction == null
-                    ? null
-                    : () => onAction!(model, HomeAssistantAction.chat),
+              CircleAvatar(
+                radius: 17,
+                backgroundColor: u.brandStrong,
+                child: Text(
+                  model?.initials ?? fallback.substring(0, 1),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-              _AssistantAction(
-                tooltip: 'Talk',
-                icon: Icons.mic_none_rounded,
-                enabled: available,
-                onTap: model == null || onAction == null
-                    ? null
-                    : () => onAction!(model, HomeAssistantAction.talk),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      model?.displayName ?? fallback,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      available ? 'available' : 'offline',
+                      style: TextStyle(
+                        color: available ? u.brandStrong : u.textMuted,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              _AssistantAction(
-                tooltip: 'Live voice',
-                icon: Icons.call_outlined,
-                enabled: available,
-                onTap: model == null || onAction == null
-                    ? null
-                    : () => onAction!(model, HomeAssistantAction.liveVoice),
-              ),
+              if (model != null && onAction != null)
+                InkResponse(
+                  radius: 19,
+                  onTap: available
+                      ? () => onAction!(model, HomeAssistantAction.liveVoice)
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(5),
+                    child: Icon(
+                      Icons.call_rounded,
+                      color: available ? u.brandStrong : u.textMuted,
+                      size: 19,
+                    ),
+                  ),
+                ),
             ],
           ),
-        ],
+        ),
       ),
-    );
-  }
-}
-
-class _AssistantAction extends StatelessWidget {
-  const _AssistantAction({
-    required this.tooltip,
-    required this.icon,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String tooltip;
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return IconButton(
-      tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      onPressed: enabled ? onTap : null,
-      style: IconButton.styleFrom(
-        backgroundColor: u.surfaceMuted,
-        foregroundColor: u.brand,
-      ),
-      icon: Icon(icon, size: 19),
     );
   }
 }
 
 class _QuickServices extends StatelessWidget {
   const _QuickServices({required this.onTap});
-
   final HomeQuickServiceCallback? onTap;
 
   static const _items = <(HomeQuickService, String, IconData)>[
-    (HomeQuickService.data, 'Data', Icons.signal_cellular_alt),
-    (HomeQuickService.airtime, 'Airtime', Icons.phone_android_outlined),
-    (HomeQuickService.electricity, 'Electricity', Icons.bolt_outlined),
-    (HomeQuickService.tv, 'TV', Icons.tv_outlined),
+    (HomeQuickService.data, 'Data', Icons.signal_cellular_alt_rounded),
+    (HomeQuickService.airtime, 'Airtime', Icons.phone_android_rounded),
+    (HomeQuickService.electricity, 'Power', Icons.bolt_rounded),
+    (HomeQuickService.tv, 'TV', Icons.tv_rounded),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    final u = context.masanawa;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Row(
         children: [
-          for (final item in _items) ...[
-            _QuickServiceButton(
-              service: item.$1,
-              label: item.$2,
-              icon: item.$3,
-              onTap: onTap == null ? null : () => onTap!(item.$1),
+          for (final item in _items)
+            Expanded(
+              child: InkWell(
+                key: ValueKey('home-quick-' + item.$1.name),
+                borderRadius: BorderRadius.circular(10),
+                onTap: onTap == null ? null : () => onTap!(item.$1),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(item.$3, color: u.brandStrong, size: 21),
+                      const SizedBox(height: 3),
+                      Text(
+                        item.$2,
+                        style: TextStyle(
+                          color: u.textPrimary,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 8),
-          ],
         ],
       ),
     );
   }
 }
 
-class _QuickServiceButton extends StatelessWidget {
-  const _QuickServiceButton({
-    required this.service,
-    required this.label,
+class _RoomRow extends StatelessWidget {
+  const _RoomRow({required this.room, required this.onTap});
+  final HomeRoomCardModel room;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = switch (room.iconKey) {
+      'internet_cafe' => 'Internet Cafe',
+      'study' => 'Study',
+      'story_radio' => 'Audio Stories',
+      'news' => 'News',
+      'work' => 'Work & Business',
+      'research' => 'Research',
+      _ => room.title,
+    };
+    return _HomeRow(
+      key: ValueKey('home-room-' + room.roomId),
+      icon: _roomIcon(room.iconKey),
+      title: title,
+      enabled: room.isAvailable,
+      onTap: room.isAvailable ? onTap : null,
+      trailing: room.isAvailable ? Icons.chevron_right_rounded : null,
+      status: room.isAvailable ? null : 'Soon',
+    );
+  }
+
+  IconData _roomIcon(String key) => switch (key) {
+        'internet_cafe' => Icons.language_rounded,
+        'study' => Icons.school_rounded,
+        'story_radio' => Icons.headphones_rounded,
+        'work' => Icons.work_outline_rounded,
+        'research' => Icons.travel_explore_rounded,
+        'news' => Icons.newspaper_rounded,
+        _ => Icons.grid_view_rounded,
+      };
+}
+
+class _HomeRow extends StatelessWidget {
+  const _HomeRow({
+    super.key,
     required this.icon,
-    required this.onTap,
+    required this.title,
+    this.onTap,
+    this.trailing = Icons.chevron_right_rounded,
+    this.status,
+    this.enabled = true,
   });
 
-  final HomeQuickService service;
-  final String label;
   final IconData icon;
+  final String title;
   final VoidCallback? onTap;
+  final IconData? trailing;
+  final String? status;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return Material(
-      color: u.surfaceMuted,
-      borderRadius: BorderRadius.circular(999),
+      color: u.surfaceCard,
       child: InkWell(
-        key: ValueKey('home-quick-' + service.name),
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: u.structuralBorder),
+            border: Border(
+              bottom: BorderSide(color: u.structuralBorder, width: .7),
+            ),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: u.brand, size: 17),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              CircleAvatar(
+                radius: 17,
+                backgroundColor: u.surfaceMuted,
+                child: Icon(icon, size: 18, color: u.brandStrong),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: enabled ? u.textPrimary : u.textMuted,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
+              if (status != null)
+                Text(status!, style: TextStyle(color: u.textMuted, fontSize: 11.5))
+              else if (trailing != null)
+                Icon(trailing, color: u.textMuted, size: 19),
             ],
           ),
         ),
@@ -389,169 +409,23 @@ class _QuickServiceButton extends StatelessWidget {
   }
 }
 
-class _CryptoTokensCard extends StatelessWidget {
-  const _CryptoTokensCard({required this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Material(
-      color: u.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: u.structuralBorder),
-      ),
-      child: ListTile(
-        key: const ValueKey('home-room-crypto-tokens'),
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: u.surfaceMuted,
-          child: Icon(Icons.currency_bitcoin, color: u.brand),
-        ),
-        title: const Text('Crypto Tokens'),
-        trailing: const Icon(Icons.chevron_right),
-      ),
-    );
-  }
-}
-
-class _TwinCard extends StatelessWidget {
-  const _TwinCard({required this.model, required this.onOpen});
-
-  final HomeTwinCardModel model;
-  final VoidCallback? onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Material(
-      color: u.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: u.structuralBorder),
-      ),
-      child: ListTile(
-        key: const ValueKey('home-my-twin'),
-        onTap: onOpen,
-        leading: CircleAvatar(
-          backgroundColor: u.brand.withValues(alpha: .12),
-          child: Icon(Icons.auto_awesome_outlined, color: u.brand),
-        ),
-        title: Text(model.title),
-        subtitle: Text(model.subtitle),
-        trailing: Icon(
-          model.hasTwin ? Icons.chevron_right : Icons.add_circle_outline,
-          color: u.brand,
-        ),
-      ),
-    );
-  }
-}
-
-class _ContinuationCard extends StatelessWidget {
-  const _ContinuationCard({required this.item, required this.onTap});
-
-  final HomeContinuationModel item;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Material(
-      color: u.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: u.structuralBorder),
-      ),
-      child: ListTile(
-        key: ValueKey('home-continuation-' + item.id),
-        onTap: onTap,
-        leading: Icon(Icons.play_circle_outline, color: u.brand),
-        title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          item.subtitle,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: const Icon(Icons.chevron_right),
-      ),
-    );
-  }
-}
-
-String _roomDisplayTitle(HomeRoomCardModel room) => switch (room.iconKey) {
-      'story_radio' => 'Audio Stories',
-      'news' => 'News Updates',
-      _ => room.title,
-    };
-
 List<HomeRoomCardModel> _orderedRooms(List<HomeRoomCardModel> rooms) {
-  const order = ['story_radio', 'news'];
-  int rank(HomeRoomCardModel room) {
-    final index = order.indexOf(room.iconKey);
-    return index == -1 ? order.length : index;
-  }
+  const order = [
+    'internet_cafe',
+    'study',
+    'story_radio',
+    'news',
+    'work',
+    'research',
+    'groups',
+  ];
   final sorted = [...rooms];
-  sorted.sort((a, b) => rank(a).compareTo(rank(b)));
-  return sorted;
-}
-
-class _RoomCard extends StatelessWidget {
-  const _RoomCard({
-    required this.room,
-    required this.displayTitle,
-    required this.onTap,
+  sorted.sort((a, b) {
+    final ai = order.indexOf(a.iconKey);
+    final bi = order.indexOf(b.iconKey);
+    return (ai < 0 ? 999 : ai).compareTo(bi < 0 ? 999 : bi);
   });
-
-  final HomeRoomCardModel room;
-  final String displayTitle;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    final enabled = room.isAvailable && onTap != null;
-    return Material(
-      color: u.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: u.structuralBorder),
-      ),
-      child: ListTile(
-        key: ValueKey('home-room-' + room.roomId),
-        enabled: room.isAvailable,
-        onTap: enabled ? onTap : null,
-        leading: CircleAvatar(
-          backgroundColor: u.surfaceMuted,
-          child: Icon(_roomIcon(room.iconKey), color: u.brand),
-        ),
-        title: Text(displayTitle),
-        subtitle: Text(
-          room.continuationLabel?.trim().isNotEmpty == true
-              ? room.continuationLabel!
-              : room.description,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: room.isAvailable
-            ? const Icon(Icons.chevron_right)
-            : Text('Soon', style: TextStyle(color: u.textMuted, fontSize: 12)),
-      ),
-    );
-  }
-
-  IconData _roomIcon(String key) => switch (key) {
-        'internet_cafe' => Icons.language_outlined,
-        'study' => Icons.school_outlined,
-        'story_radio' => Icons.headphones_outlined,
-        'work' => Icons.work_outline,
-        'research' => Icons.travel_explore_outlined,
-        'news' => Icons.newspaper_outlined,
-        'groups' => Icons.groups_outlined,
-        _ => Icons.grid_view_outlined,
-      };
+  return sorted;
 }
 
 class _HomeLoading extends StatelessWidget {
@@ -561,78 +435,35 @@ class _HomeLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return ListView(
-      key: const ValueKey('home-loading'),
-      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(12),
       children: [
-        Container(
-          height: 210,
-          decoration: BoxDecoration(
-            color: u.surfaceMuted,
-            borderRadius: BorderRadius.circular(20),
-          ),
+        Row(
+          children: [
+            for (var i = 0; i < 2; i++) ...[
+              Expanded(
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: u.surfaceMuted,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              if (i == 0) const SizedBox(width: 8),
+            ],
+          ],
         ),
-        const SizedBox(height: 14),
-        LinearProgressIndicator(
-          minHeight: 3,
-          borderRadius: BorderRadius.circular(99),
-        ),
+        const SizedBox(height: 18),
+        const Center(child: CircularProgressIndicator()),
       ],
     );
   }
 }
 
 class _HomeError extends StatelessWidget {
-  const _HomeError({required this.message, required this.onRetry});
-
-  final String? message;
+  const _HomeError({required this.onRetry});
   final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return _CenteredState(
-      key: const ValueKey('home-error'),
-      icon: Icons.cloud_off_outlined,
-      title: 'Home could not load',
-      message: message?.trim().isNotEmpty == true
-          ? message!
-          : 'Check your connection and try again.',
-      actionLabel: 'Try again',
-      onAction: onRetry,
-    );
-  }
-}
-
-class _HomeEmpty extends StatelessWidget {
-  const _HomeEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredState(
-      key: ValueKey('home-empty'),
-      icon: Icons.home_outlined,
-      title: 'Nothing to show yet',
-      message: 'Your assistants and Rooms will appear here when available.',
-      actionLabel: 'Refresh',
-      onAction: null,
-    );
-  }
-}
-
-class _CenteredState extends StatelessWidget {
-  const _CenteredState({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final String actionLabel;
-  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -641,33 +472,32 @@ class _CenteredState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(28),
       children: [
-        SizedBox(height: MediaQuery.sizeOf(context).height * .12),
-        Icon(icon, size: 42, color: u.brand),
-        const SizedBox(height: 14),
+        SizedBox(height: MediaQuery.sizeOf(context).height * .17),
+        Icon(Icons.wifi_off_rounded, size: 42, color: u.textMuted),
+        const SizedBox(height: 12),
         Text(
-          title,
+          'Couldn’t refresh Masanawa',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: u.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 6),
         Text(
-          message,
+          'Check your connection and try again.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: u.textMuted, height: 1.4),
+          style: TextStyle(color: u.textMuted, fontSize: 14),
         ),
-        if (onAction != null) ...[
-          const SizedBox(height: 18),
-          Center(
-            child: FilledButton(
-              onPressed: onAction,
-              child: Text(actionLabel),
-            ),
+        const SizedBox(height: 18),
+        Center(
+          child: FilledButton(
+            key: const ValueKey('home-retry'),
+            onPressed: onRetry,
+            child: const Text('Try again'),
           ),
-        ],
+        ),
       ],
     );
   }

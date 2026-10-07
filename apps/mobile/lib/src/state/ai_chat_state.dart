@@ -1463,7 +1463,11 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   bool _isStaleSessionError(Object error) =>
-      error is ApiException && error.statusCode == 404;
+      error is ApiException &&
+      (error.statusCode == 404 ||
+          error.statusCode == 409 ||
+          error.code == 'agents.session_not_found' ||
+          error.code == 'agents.session_closed');
 
   Future<AgentTurnResult> _sendViaTransport(
     String characterId,

@@ -24,17 +24,16 @@ void main() {
     ],
     myTwin: HomeTwinCardModel(
       title: 'My Twin',
-      subtitle: 'Teach and manage your twin',
+      subtitle: '',
       hasTwin: true,
       characterId: 'my-twin-from-server',
     ),
     continuations: [
       HomeContinuationModel(
-        id: 'continue-1',
-        title: 'Continue lesson',
-        subtitle: 'Fractions',
-        kind: 'study',
-        roomId: 'study-room',
+        id: 'old-chat-history',
+        title: 'Old conversation',
+        subtitle: 'Must not render on Home',
+        kind: 'chat',
       ),
     ],
     rooms: [
@@ -58,114 +57,76 @@ void main() {
         home: child,
       );
 
-  testWidgets('renders Gwana left and Gwani right from server projection',
-      (tester) async {
+  testWidgets('renders compact Gwani and Gwana side by side', (tester) async {
     await tester.pumpWidget(
       app(const HomeScreen(state: HomeViewState.ready(snapshot))),
     );
 
-    final gwana = tester.getTopLeft(
-      find.byKey(const ValueKey('home-assistant-gwana')),
-    );
-    final gwani = tester.getTopLeft(
-      find.byKey(const ValueKey('home-assistant-gwani')),
-    );
-
-    expect(gwana.dx, lessThan(gwani.dx));
-    expect(find.text('Bodi'), findsOneWidget);
-    expect(find.text('Sulafat'), findsOneWidget);
+    final gwani = find.byKey(const ValueKey('home-assistant-gwani'));
+    final gwana = find.byKey(const ValueKey('home-assistant-gwana'));
+    expect(gwani, findsOneWidget);
+    expect(gwana, findsOneWidget);
+    expect(tester.getTopLeft(gwani).dy, tester.getTopLeft(gwana).dy);
+    expect(tester.getSize(gwani).height, lessThanOrEqualTo(72));
+    expect(find.text('Bodi'), findsNothing);
+    expect(find.text('Sulafat'), findsNothing);
   });
 
-  testWidgets('assistant actions preserve exact server character identity',
-      (tester) async {
+  testWidgets('assistant tile opens exact server Character chat', (tester) async {
     HomeAssistantCardModel? selected;
-    HomeAssistantAction? selectedAction;
-
+    HomeAssistantAction? action;
     await tester.pumpWidget(
       app(
         HomeScreen(
           state: const HomeViewState.ready(snapshot),
-          onAssistantAction: (assistant, action) {
+          onAssistantAction: (assistant, value) {
             selected = assistant;
-            selectedAction = action;
+            action = value;
           },
         ),
       ),
     );
 
-    final gwanaCard = find.byKey(const ValueKey('home-assistant-gwana'));
-    final chat = find.descendant(
-      of: gwanaCard,
-      matching: find.byTooltip('Chat'),
-    );
-    await tester.tap(chat);
+    await tester.tap(find.byKey(const ValueKey('home-assistant-gwani')));
     await tester.pump();
 
-    expect(selected?.characterId, 'gwana-from-server');
-    expect(selectedAction, HomeAssistantAction.chat);
+    expect(selected?.characterId, 'gwani-from-server');
+    expect(action, HomeAssistantAction.chat);
   });
 
-  testWidgets('Crypto Tokens sits directly after Internet Cafe',
-      (tester) async {
-    HomeQuickService? selected;
-
+  testWidgets('assistant call affordance emits live voice intent', (tester) async {
+    HomeAssistantAction? action;
     await tester.pumpWidget(
       app(
         HomeScreen(
           state: const HomeViewState.ready(snapshot),
-          onQuickService: (service) => selected = service,
+          onAssistantAction: (_, value) => action = value,
         ),
       ),
     );
 
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('home-room-crypto-tokens')),
-      300,
-    );
-
-    final cafe = tester.getTopLeft(
-      find.byKey(const ValueKey('home-room-internet-cafe-server-id')),
-    );
-    final crypto = tester.getTopLeft(
-      find.byKey(const ValueKey('home-room-crypto-tokens')),
-    );
-    expect(crypto.dy, greaterThan(cafe.dy));
-
-    await tester.tap(find.byKey(const ValueKey('home-room-crypto-tokens')));
+    final tile = find.byKey(const ValueKey('home-assistant-gwani'));
+    await tester.tap(find.descendant(of: tile, matching: find.byIcon(Icons.call_rounded)));
     await tester.pump();
-    expect(selected, HomeQuickService.crypto);
 
+    expect(action, HomeAssistantAction.liveVoice);
+  });
+
+  testWidgets('Home never renders conversation history or verbose section labels',
+      (tester) async {
+    await tester.pumpWidget(
+      app(const HomeScreen(state: HomeViewState.ready(snapshot))),
+    );
+
+    expect(find.text('Old conversation'), findsNothing);
+    expect(find.text('Must not render on Home'), findsNothing);
     expect(find.text('Your assistants'), findsNothing);
     expect(find.text('Quick services'), findsNothing);
     expect(find.text('Rooms'), findsNothing);
   });
 
-  testWidgets('assistant Talk action emits live talk intent',
-      (tester) async {
-    HomeAssistantAction? selectedAction;
-
-    await tester.pumpWidget(
-      app(
-        HomeScreen(
-          state: const HomeViewState.ready(snapshot),
-          onAssistantAction: (_, action) => selectedAction = action,
-        ),
-      ),
-    );
-
-    final gwaniCard = find.byKey(const ValueKey('home-assistant-gwani'));
-    await tester.tap(
-      find.descendant(of: gwaniCard, matching: find.byTooltip('Talk')),
-    );
-    await tester.pump();
-
-    expect(selectedAction, HomeAssistantAction.talk);
-  });
-
-  testWidgets('quick services emit intent only and do not execute billing',
-      (tester) async {
+  testWidgets('quick services preserve intent-only routing', (tester) async {
     HomeQuickService? selected;
-
     await tester.pumpWidget(
       app(
         HomeScreen(
@@ -174,17 +135,13 @@ void main() {
         ),
       ),
     );
-
     await tester.tap(find.byKey(const ValueKey('home-quick-data')));
     await tester.pump();
-
     expect(selected, HomeQuickService.data);
   });
 
-  testWidgets('room cards return server room model to integration owner',
-      (tester) async {
+  testWidgets('server room identity remains intact', (tester) async {
     HomeRoomCardModel? opened;
-
     await tester.pumpWidget(
       app(
         HomeScreen(
@@ -193,43 +150,33 @@ void main() {
         ),
       ),
     );
-
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('home-room-news-server-id')),
-      300,
+      find.byKey(const ValueKey('home-room-internet-cafe-server-id')),
+      200,
     );
-    await tester.tap(find.byKey(const ValueKey('home-room-news-server-id')));
-    await tester.pump();
-
-    expect(opened?.roomId, 'news-server-id');
+    await tester.tap(
+      find.byKey(const ValueKey('home-room-internet-cafe-server-id')),
+    );
+    expect(opened?.roomId, 'internet-cafe-server-id');
   });
 
-  testWidgets('loading, error and empty states are explicit', (tester) async {
-    await tester.pumpWidget(
-      app(const HomeScreen(state: HomeViewState.loading())),
-    );
-    expect(find.byKey(const ValueKey('home-loading')), findsOneWidget);
-
-    await tester.pumpWidget(
-      app(const HomeScreen(state: HomeViewState.error('Offline'))),
-    );
-    expect(find.byKey(const ValueKey('home-error')), findsOneWidget);
-    expect(find.text('Offline'), findsOneWidget);
-
+  testWidgets('error state never exposes transport exception details',
+      (tester) async {
     await tester.pumpWidget(
       app(
         const HomeScreen(
-          state: HomeViewState.ready(
-            HomeSnapshot(assistants: [], rooms: []),
+          state: HomeViewState.error(
+            'DioException [connection error]: socket failed',
           ),
         ),
       ),
     );
-    expect(find.byKey(const ValueKey('home-empty')), findsOneWidget);
+    expect(find.text('Couldn’t refresh Masanawa'), findsOneWidget);
+    expect(find.textContaining('DioException'), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
   });
 
-  testWidgets('assistant cards stay side by side on a narrow phone',
-      (tester) async {
+  testWidgets('compact assistant row remains usable at 320dp', (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -238,14 +185,13 @@ void main() {
     await tester.pumpWidget(
       app(const HomeScreen(state: HomeViewState.ready(snapshot))),
     );
-
     expect(tester.takeException(), isNull);
-    final gwana = tester.getTopLeft(
-      find.byKey(const ValueKey('home-assistant-gwana')),
-    );
     final gwani = tester.getTopLeft(
       find.byKey(const ValueKey('home-assistant-gwani')),
     );
-    expect(gwana.dy, gwani.dy);
+    final gwana = tester.getTopLeft(
+      find.byKey(const ValueKey('home-assistant-gwana')),
+    );
+    expect(gwani.dy, gwana.dy);
   });
 }

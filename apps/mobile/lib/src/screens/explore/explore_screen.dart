@@ -22,8 +22,6 @@ class ExploreScreen extends ConsumerStatefulWidget {
 class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   final _search = TextEditingController();
   final Set<String> _favorites = <String>{};
-  bool _searching = false;
-  int _matchIndex = 0;
 
   @override
   void initState() {
@@ -39,16 +37,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     super.dispose();
   }
 
-  void _spin(List<TwinDirectoryEntry> twins) {
-    if (twins.isEmpty) return;
-    setState(() => _matchIndex = (_matchIndex + 1) % twins.length);
-  }
-
   void _toggleFavorite(TwinDirectoryEntry twin) {
     setState(() {
-      if (!_favorites.add(twin.publicId)) {
-        _favorites.remove(twin.publicId);
-      }
+      if (!_favorites.add(twin.publicId)) _favorites.remove(twin.publicId);
     });
   }
 
@@ -57,132 +48,93 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final u = context.masanawa;
     final state = ref.watch(twinDirectoryProvider);
     final twins = state.items;
-    if (_matchIndex >= twins.length && twins.isNotEmpty) {
-      _matchIndex = 0;
-    }
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(
-        title: const Text('Explore'),
-        actions: [
-          IconButton(
-            tooltip: _searching ? 'Close search' : 'Search Twins',
-            onPressed: () {
-              setState(() => _searching = !_searching);
-              if (!_searching) {
-                _search.clear();
-                ref.read(twinDirectoryProvider.notifier).setQuery('');
-              }
-            },
-            icon: Icon(_searching ? Icons.close : Icons.search),
-          ),
-        ],
-      ),
+      appBar: const AppBar(title: Text('Explore')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(twinDirectoryProvider.notifier).loadInitial(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+          padding: const EdgeInsets.only(bottom: 24),
           children: [
-            _ExploreCafeCard(onTap: widget.onOpenInternetCafe),
-            const SizedBox(height: 14),
-            if (_searching) ...[
-              TextField(
+            Container(
+              color: u.surfaceCard,
+              padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+              child: TextField(
                 controller: _search,
-                autofocus: true,
                 onChanged: ref.read(twinDirectoryProvider.notifier).setQuery,
-                decoration: const InputDecoration(
-                  hintText: 'Find a Twin',
-                  prefixIcon: Icon(Icons.search),
+                decoration: InputDecoration(
+                  hintText: 'Search Twins',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _search.text.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _search.clear();
+                            ref.read(twinDirectoryProvider.notifier).setQuery('');
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                  filled: true,
+                  fillColor: u.surfaceBg,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: u.brandStrong),
+                  ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 11),
                 ),
               ),
-              const SizedBox(height: 16),
-            ] else ...[
-              Text(
-                'Meet someone new',
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Spin through public Twins and start a conversation instantly.',
-                style: TextStyle(color: u.textMuted, height: 1.4),
-              ),
-              const SizedBox(height: 18),
-            ],
+            ),
+            _ExploreRow(
+              key: const ValueKey('explore-room-internet-cafe'),
+              title: 'Internet Cafe',
+              subtitle: 'Data, airtime, bills and crypto',
+              icon: Icons.language_rounded,
+              onTap: widget.onOpenInternetCafe,
+            ),
             if (state.loading && twins.isEmpty)
               const Padding(
-                padding: EdgeInsets.only(top: 90),
+                padding: EdgeInsets.all(36),
                 child: Center(child: CircularProgressIndicator()),
               )
             else if (state.error != null && twins.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 72),
-                child: Text(
-                  state.error!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: u.textMuted),
-                ),
+              _ExploreState(
+                text: 'Couldn’t refresh public Twins.',
+                action: 'Try again',
+                onTap: () => ref.read(twinDirectoryProvider.notifier).loadInitial(),
               )
             else if (twins.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 72),
-                child: Text(
-                  state.query.isEmpty
-                      ? 'No public Twins are available yet.'
-                      : 'No Twins match your search.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: u.textMuted),
-                ),
+              _ExploreState(
+                text: state.query.isEmpty
+                    ? 'No public Twins yet.'
+                    : 'No Twins match your search.',
               )
-            else if (_searching)
-              ...twins.map(
-                (twin) => Padding(
-                  padding: const EdgeInsets.only(bottom: 9),
-                  child: _SearchTwinTile(
-                    twin: twin,
-                    favorite: _favorites.contains(twin.publicId),
-                    onFavorite: () => _toggleFavorite(twin),
-                    onTap: () => widget.onOpenTwin?.call(twin),
-                  ),
+            else
+              for (final twin in twins)
+                _TwinRow(
+                  twin: twin,
+                  favorite: _favorites.contains(twin.publicId),
+                  onFavorite: () => _toggleFavorite(twin),
+                  onTap: () => widget.onOpenTwin?.call(twin),
                 ),
-              )
-            else ...[
-              _SpinRail(
-                twins: twins,
-                selectedIndex: _matchIndex,
-                onSelect: (index) => setState(() => _matchIndex = index),
+            if (state.nextCursor != null)
+              TextButton(
+                onPressed: state.loadingMore
+                    ? null
+                    : () => ref.read(twinDirectoryProvider.notifier).loadMore(),
+                child: Text(state.loadingMore ? 'Loading…' : 'Load more'),
               ),
-              const SizedBox(height: 18),
-              _MatchedTwinCard(
-                twin: twins[_matchIndex],
-                favorite: _favorites.contains(twins[_matchIndex].publicId),
-                onFavorite: () => _toggleFavorite(twins[_matchIndex]),
-                onChat: () => widget.onOpenTwin?.call(twins[_matchIndex]),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () => _spin(twins),
-                icon: const Icon(Icons.cyclone_rounded),
-                label: const Text('Spin for another Twin'),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                ),
-              ),
-              if (state.nextCursor != null) ...[
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: state.loadingMore
-                      ? null
-                      : () => ref.read(twinDirectoryProvider.notifier).loadMore(),
-                  child: Text(state.loadingMore ? 'Finding more…' : 'Find more Twins'),
-                ),
-              ],
-            ],
           ],
         ),
       ),
@@ -190,9 +142,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 }
 
-class _ExploreCafeCard extends StatelessWidget {
-  const _ExploreCafeCard({required this.onTap});
-
+class _ExploreRow extends StatelessWidget {
+  const _ExploreRow({
+    super.key,
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    this.onTap,
+  });
+  final String title;
+  final String? subtitle;
+  final IconData icon;
   final VoidCallback? onTap;
 
   @override
@@ -200,214 +160,38 @@ class _ExploreCafeCard extends StatelessWidget {
     final u = context.masanawa;
     return Material(
       color: u.surfaceCard,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        key: const ValueKey('explore-room-internet-cafe'),
-        borderRadius: BorderRadius.circular(18),
+      child: ListTile(
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: u.structuralBorder),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 23,
-                backgroundColor: u.brand.withValues(alpha: .10),
-                child: Icon(Icons.language_outlined, color: u.brand),
+        leading: CircleAvatar(
+          radius: 22,
+          backgroundColor: u.surfaceMuted,
+          child: Icon(icon, color: u.brandStrong),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: subtitle == null
+            ? null
+            : Text(
+                subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: u.textMuted, fontSize: 12.5),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Internet Cafe',
-                      style: TextStyle(
-                        color: u.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Data, airtime, electricity, TV, crypto & more with Gwani',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: u.textMuted, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: u.textMuted),
-            ],
-          ),
+        trailing: Icon(Icons.chevron_right_rounded, color: u.textMuted),
+        shape: Border(
+          bottom: BorderSide(color: u.structuralBorder, width: .7),
         ),
       ),
     );
   }
 }
 
-class _SpinRail extends StatelessWidget {
-  const _SpinRail({
-    required this.twins,
-    required this.selectedIndex,
-    required this.onSelect,
-  });
-
-  final List<TwinDirectoryEntry> twins;
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    final visible = twins.take(7).toList(growable: false);
-    return SizedBox(
-      height: 82,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: visible.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final selected = index == selectedIndex;
-          final twin = visible[index];
-          return GestureDetector(
-            onTap: () => onSelect(index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: selected ? 70 : 58,
-              height: selected ? 70 : 58,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected ? u.brand.withValues(alpha: .12) : u.surfaceCard,
-                border: Border.all(
-                  color: selected ? u.brand : u.structuralBorder,
-                  width: selected ? 2 : 1,
-                ),
-              ),
-              child: Text(
-                twin.initials,
-                style: TextStyle(
-                  color: selected ? u.brand : u.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: selected ? 18 : 15,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _MatchedTwinCard extends StatelessWidget {
-  const _MatchedTwinCard({
-    required this.twin,
-    required this.favorite,
-    required this.onFavorite,
-    required this.onChat,
-  });
-
-  final TwinDirectoryEntry twin;
-  final bool favorite;
-  final VoidCallback onFavorite;
-  final VoidCallback onChat;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-      decoration: BoxDecoration(
-        color: u.surfaceCard,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: u.structuralBorder),
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 52,
-            backgroundColor: u.brand.withValues(alpha: .10),
-            child: Text(
-              twin.initials,
-              style: TextStyle(
-                color: u.brand,
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            twin.displayName,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: u.textPrimary,
-              fontSize: 21,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (twin.bio.isNotEmpty) ...[
-            const SizedBox(height: 7),
-            Text(
-              twin.bio,
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: u.textMuted, height: 1.4),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (twin.voiceEnabled)
-                const _MiniTag(icon: Icons.graphic_eq, label: 'Voice'),
-              if (twin.voiceEnabled && twin.ownerAccessEnabled)
-                const SizedBox(width: 7),
-              if (twin.ownerAccessEnabled)
-                const _MiniTag(icon: Icons.person_outline, label: 'Owner access'),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              IconButton.outlined(
-                tooltip: favorite ? 'Remove favorite' : 'Favorite Twin',
-                onPressed: onFavorite,
-                icon: Icon(favorite ? Icons.favorite : Icons.favorite_border),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onChat,
-                  icon: const Icon(Icons.chat_bubble_outline),
-                  label: const Text('Chat now'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchTwinTile extends StatelessWidget {
-  const _SearchTwinTile({
+class _TwinRow extends StatelessWidget {
+  const _TwinRow({
     required this.twin,
     required this.favorite,
     required this.onFavorite,
     required this.onTap,
   });
-
   final TwinDirectoryEntry twin;
   final bool favorite;
   final VoidCallback onFavorite;
@@ -418,52 +202,92 @@ class _SearchTwinTile extends StatelessWidget {
     final u = context.masanawa;
     return Material(
       color: u.surfaceCard,
-      borderRadius: BorderRadius.circular(18),
-      child: ListTile(
+      child: InkWell(
         onTap: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: u.structuralBorder),
-        ),
-        leading: CircleAvatar(
-          backgroundColor: u.brand.withValues(alpha: .10),
-          child: Text(twin.initials),
-        ),
-        title: Text(twin.displayName),
-        subtitle: twin.bio.isEmpty
-            ? null
-            : Text(twin.bio, maxLines: 2, overflow: TextOverflow.ellipsis),
-        trailing: IconButton(
-          tooltip: favorite ? 'Remove favorite' : 'Favorite Twin',
-          onPressed: onFavorite,
-          icon: Icon(favorite ? Icons.favorite : Icons.favorite_border),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: u.structuralBorder, width: .7),
+            ),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 23,
+                backgroundColor: u.brandStrong,
+                child: Text(
+                  twin.initials,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      twin.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (twin.bio.trim().isNotEmpty)
+                      Text(
+                        twin.bio,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: u.textMuted, fontSize: 12.5),
+                      ),
+                  ],
+                ),
+              ),
+              if (twin.voiceEnabled)
+                Icon(Icons.mic_rounded, size: 17, color: u.brandStrong),
+              IconButton(
+                tooltip: favorite ? 'Remove favorite' : 'Favorite',
+                onPressed: onFavorite,
+                icon: Icon(
+                  favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: favorite ? u.brandStrong : u.textMuted,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _MiniTag extends StatelessWidget {
-  const _MiniTag({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
+class _ExploreState extends StatelessWidget {
+  const _ExploreState({required this.text, this.action, this.onTap});
+  final String text;
+  final String? action;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: u.surfaceMuted,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 42),
+      child: Column(
         children: [
-          Icon(icon, size: 13, color: u.textMuted),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(color: u.textMuted, fontSize: 11)),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: u.textMuted),
+          ),
+          if (action != null && onTap != null)
+            TextButton(onPressed: onTap, child: Text(action!)),
         ],
       ),
     );

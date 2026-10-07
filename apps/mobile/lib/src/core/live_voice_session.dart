@@ -162,14 +162,14 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'model': 'models/${grant.model}',
             'generationConfig': {
               'responseModalities': ['AUDIO'],
-              'outputAudioTranscription': {},
-              if (captureInputTranscription) 'inputAudioTranscription': {},
               'speechConfig': {
                 'voiceConfig': {
                   'prebuiltVoiceConfig': {'voiceName': grant.voiceName},
                 },
               },
             },
+            'outputAudioTranscription': {},
+            if (captureInputTranscription) 'inputAudioTranscription': {},
             'systemInstruction': {
               'parts': [
                 {
