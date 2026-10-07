@@ -275,6 +275,113 @@ describe("Postgres Talk moderation repository", () => {
     expect(calls.some((text) => text.includes("talks.talk_seats"))).toBe(true);
   });
 
+  it("returns an admitted human Speaker to Audience without disconnecting", async () => {
+    const initial = createTalkLiveSession({
+      tenantId: "tenant_1" as never,
+      talkId: "talk_1" as never,
+      hostUserId: "user_host" as never,
+      hostSeatId: "host_user_host" as never,
+      startedAt: toInstant("2026-10-07T10:00:00.000Z"),
+    });
+    const admitted = {
+      ...initial,
+      revision: 2,
+      seats: [
+        ...initial.seats,
+        {
+          seatId: "seat_speaker" as never,
+          kind: "human" as const,
+          userId: "user_speaker" as never,
+          admittedAt: toInstant("2026-10-07T10:01:00.000Z"),
+        },
+      ],
+    } as unknown as TalkLiveSession;
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    let canonicalReads = 0;
+
+    const pool: TalkModerationSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, values });
+        if (text.includes("FROM talks.talks")) {
+          return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.live_runtime")) {
+          return { rowCount: 1, rows: [{ state: "live" }] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.talk_seats s") && text.includes("s.user_id=$3")) {
+          return {
+            rowCount: 1,
+            rows: [{
+              participant_id: "seat_speaker",
+              kind: "human",
+              user_id: "user_speaker",
+              persona_id: null,
+              profile_handle: "speaker",
+              display_name: "Speaker",
+              avatar_url: null,
+              is_host: false,
+              is_muted: false,
+            }] as unknown as Row[],
+          };
+        }
+        if (text.includes("SELECT revision,session_json")) {
+          canonicalReads += 1;
+          return {
+            rowCount: 1,
+            rows: [{
+              revision: admitted.revision,
+              session_json: admitted,
+            }] as unknown as Row[],
+          };
+        }
+        if (text.includes("WITH canonical AS") && text.includes("hand_request")) {
+          return {
+            rowCount: 1,
+            rows: [{
+              applied: true,
+              user_id: "user_speaker",
+              session_id: "session_speaker",
+            }] as unknown as Row[],
+          };
+        }
+        if (text.includes("SELECT hand_status,reaction")) {
+          return {
+            rowCount: 1,
+            rows: [{ hand_status: "idle", reaction: "👏" }] as unknown as Row[],
+          };
+        }
+        return { rowCount: 0, rows: [] as unknown as Row[] };
+      },
+    };
+
+    const result =
+        await createPostgresTalkModerationRepository(pool).leaveHumanSeat({
+      tenantId: "tenant_1",
+      userId: "user_speaker",
+      talkId: "talk_1",
+      now: "2026-10-07T10:05:00.000Z",
+    });
+
+    expect(canonicalReads).toBeGreaterThan(0);
+    expect(result?.participation).toEqual({
+      handStatus: "idle",
+      reaction: "👏",
+    });
+    expect(result?.mediaActions).toEqual([
+      {
+        type: "publish",
+        identity: "user_speaker:session_speaker",
+        canPublish: false,
+      },
+    ]);
+    const mutation = calls.find((call) =>
+      call.text.includes("WITH canonical AS") && call.text.includes("hand_request")
+    );
+    expect(mutation?.text).toContain("role='listener'");
+    expect(mutation?.text).toContain("status='withdrawn'");
+    expect(mutation?.text).toContain("status='left'");
+  });
+
   it("rejects Raise Hand when the human Host has blocked that user", async () => {
     const calls: string[] = [];
     const pool: TalkModerationSqlPool = {
