@@ -1,0 +1,34 @@
+# Human Talk invitations — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-human-invitations-20261007`
+- Base SHA: `31b49fbeb88b64531aea430c7c6f233b0c0b97ce`
+- Task: implement the required Host **Invite human** control end to end.
+- Exact owned paths:
+  - new talks migration for durable human invitations
+  - `services/gateway/src/talk_moderation/model.ts`
+  - `services/gateway/src/talk_moderation/postgres_repository.ts`
+  - `services/gateway/src/talk_moderation/service.ts`
+  - `services/gateway/src/talk_moderation_routes.ts`
+  - focused moderation route/repository tests
+  - isolated Talk Activity producer/composition additions
+  - `apps/mobile/lib/src/talks/talk_host_controls.dart`
+  - `apps/mobile/lib/src/talks/talk_host_controls_http_transport.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_host_controls_sheets.dart`
+  - `apps/mobile/lib/src/activity/talk_activity.dart`
+  - `apps/mobile/lib/src/activity/talk_activity_http_transport.dart`
+  - `apps/mobile/lib/src/screens/activity/activity_screen.dart`
+  - focused mobile tests
+  - this claim file
+- Contract:
+  - Host sends a free human Speaker invitation by verified public profile handle;
+  - one durable current invitation per Talk + invitee;
+  - recipient sees actionable `talk_invitation` in Activity;
+  - recipient accepts or declines as themselves;
+  - accept uses canonical `human_seat_admitted` transition, durable Talk Seat and LiveKit publish promotion;
+  - decline grants no Seat;
+  - Host cannot invite itself, blocked relationships are denied, ended/non-live Talks are denied;
+  - no Commerce charge for human Seats.
+- Current step: add durable invitation state + canonical accept/decline repository/service routes, then wire Activity and Host mobile controls.
+- Last update: 2026-10-07T13:13Z
+- Status: active
