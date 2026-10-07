@@ -1386,7 +1386,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     registerTalkRoutes(app, options.talks);
   }
   if (options.talkReplay) {
-    registerTalkReplayRoutes(app, options.talkReplay);
+    registerTalkReplayRoutes(app, options.talkReplay, {
+      includeMyTalks: !options.talkLibrary,
+    });
   }
   if (options.talkModeration) {
     registerTalkModerationRoutes(app, options.talkModeration);
