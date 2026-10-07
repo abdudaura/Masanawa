@@ -110,6 +110,13 @@ const humanSelect = `
          ) AS is_following
     FROM talks.public_profiles p
    WHERE p.tenant_id = $1 AND p.handle = $3
+     AND NOT EXISTS (
+       SELECT 1 FROM talks.safety_enforcement se
+        WHERE se.tenant_id = p.tenant_id
+          AND se.target_kind = 'profile'
+          AND se.target_id = p.handle
+          AND se.visibility IN ('restricted','blocked')
+     )
    LIMIT 1
 `;
 
@@ -134,8 +141,16 @@ export function createPostgresTalkProfileRepository(
 
     async setFollowing(input) {
       const target = await pool.query<{ user_id: string }>(
-        `SELECT user_id FROM talks.public_profiles
-          WHERE tenant_id = $1 AND handle = $2 LIMIT 1`,
+        `SELECT p.user_id FROM talks.public_profiles p
+          WHERE p.tenant_id = $1 AND p.handle = $2
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id = p.tenant_id
+                 AND se.target_kind = 'profile'
+                 AND se.target_id = p.handle
+                 AND se.visibility IN ('restricted','blocked')
+            )
+          LIMIT 1`,
         [input.tenantId, input.handle],
       );
       const targetUserId = target.rows[0]?.user_id;
@@ -175,8 +190,15 @@ export function createPostgresTalkProfileRepository(
         `SELECT tenant_id, public_id, display_name, kind, seat_fee_label,
                 is_available, role, bio, avatar_url, owner_handle,
                 owner_display_name, topics_json, appearances_json, is_verified
-           FROM talks.persona_profiles
-          WHERE tenant_id = $1 AND public_id = $2
+           FROM talks.persona_profiles p
+          WHERE p.tenant_id = $1 AND p.public_id = $2
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id = p.tenant_id
+                 AND se.target_kind = 'persona'
+                 AND se.target_id = p.public_id
+                 AND se.visibility IN ('restricted','blocked')
+            )
           LIMIT 1`,
         [input.tenantId, input.publicId],
       );
