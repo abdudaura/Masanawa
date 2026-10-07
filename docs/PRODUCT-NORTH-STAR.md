@@ -1,6 +1,6 @@
 # Masanawa Product North Star
 
-Status: **canonical consumer product direction — 2026-10-07**
+Status: **canonical consumer product direction — 2026-10-08**
 
 ## One sentence
 
@@ -241,6 +241,27 @@ The only dedicated consumer service families are:
 
 They share the same private wallet/confirmation/receipt discipline as the existing
 commerce foundation.
+
+## Global product and visual direction
+
+Masanawa serves global users. UI locale, conversation language, service country and native
+wallet currency are independent. Agents follow the current speaker's language, not a
+fixed English/Hausa list. Fiat currencies and crypto networks are enabled only when the
+actual provider/account operation is qualified; Nigeria remains a priority supported market.
+
+The default app is WhatsApp-style white/light with vibrant green accents, compact controls
+and minimal copy. No automatic dark-background fallback. Keep the approved Masanawa logo.
+
+Default personas, their full profiles, provisioning and runtime context follow
+`DEFAULT-AI-PERSONAS.md`. Authorized audience reactions, hands, questions, participant
+changes, gifts, polls and relevant moderated public comments are visible to AI as bounded
+context. Awareness does not mean interrupting or reading every event aloud; private
+assistant work and financial data remain excluded.
+
+Interactive gifts acknowledge authoritative settlement through synchronized short
+animations and useful AI awareness. No fake earnings or client-authoritative success.
+Settings must support language/locale, privacy, account deletion and support without
+expanding the root shell. `MOBILE-READINESS-PLAN.md` governs completion and evidence.
 
 ## Product boundaries
 

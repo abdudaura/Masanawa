@@ -1,6 +1,6 @@
 # App Shell Contract
 
-Status: **canonical consumer shell — 2026-10-07**
+Status: **canonical consumer shell — 2026-10-08**
 
 ## Primary navigation
 
@@ -52,7 +52,8 @@ Gwani can operate the app, prepare Talks, find Experts/Twins, perform general AI
 
 The Talk screen is immersive and may hide root navigation. One Talk route adapts to listener, Host, human Speaker, Twin Director and replay roles.
 
-A public **Comments** section is part of the Talk experience. It is visible beneath/alongside the live stage without replacing the live audio experience. Comments are not AI speech and do not automatically enter AI context.
+A public **Comments** section is part of the Talk experience. It is visible beneath/alongside the live stage without replacing the live audio experience. Comments are not automatically AI speech. Relevant moderated public comments may
+enter bounded AI context as untrusted data; private assistant chats never do.
 
 ## No Rooms
 
@@ -71,6 +72,21 @@ Only Bills and Crypto are standalone service families, reached from You/Wallet o
 - familiar icons plus short labels;
 - sheets for secondary actions;
 - loading/error/empty are states, not destinations.
+
+## Current visual and integration acceptance
+
+Default surfaces are white/light with vibrant WhatsApp-style green, including sheets,
+auth, Talk, wallet/services and system bars; no automatic dark-background fallback.
+Preserve the approved Masanawa logo. Localized text/RTL must fit the same compact shell.
+
+Every visible action must work or present an actual eligibility/recovery state. Create's
+Add Expert, Invite person and Add My Twin, Talk audience/Host controls and global wallet
+actions are release contracts, not decorative rows. Persona catalog/readiness, audio,
+event-aware AI, animated gifts, global wallet/languages, deletion and financial recovery
+follow `MOBILE-READINESS-PLAN.md` and `DEFAULT-AI-PERSONAS.md`.
+
+Account deletion, language, privacy and support belong in existing Settings. Do not add
+root tabs, service families or duplicate screen trees to implement these requirements.
 
 ## Suggested routes
 
