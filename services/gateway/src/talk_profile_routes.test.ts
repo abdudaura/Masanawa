@@ -24,8 +24,43 @@ function repo(): TalkProfileRepository {
         talks: [],
       };
     },
+    async readHumanByUserId({ userId }) {
+      if (userId !== "user_am") return null;
+      return {
+        handle: "amina",
+        displayName: "Amina",
+        bio: "Host",
+        avatarUrl: null,
+        followerCount: following ? 11 : 10,
+        followingCount: 2,
+        isFollowing: following,
+        isLive: true,
+        liveTalkId: "talk_live",
+        twinPublicId: "persona_twin",
+        twinDisplayName: "Amina Twin",
+        talks: [],
+      };
+    },
     async setFollowing({ handle, following: next }) {
       if (handle !== "amina") return null;
+      following = next;
+      return {
+        handle: "amina",
+        displayName: "Amina",
+        bio: "Host",
+        avatarUrl: null,
+        followerCount: following ? 11 : 10,
+        followingCount: 2,
+        isFollowing: following,
+        isLive: true,
+        liveTalkId: "talk_live",
+        twinPublicId: "persona_twin",
+        twinDisplayName: "Amina Twin",
+        talks: [],
+      };
+    },
+    async setFollowingByUserId({ userId, following: next }) {
+      if (userId !== "user_am") return null;
       following = next;
       return {
         handle: "amina",
@@ -129,6 +164,35 @@ describe("Talk social profile API", () => {
     });
     expect(first.json()).toMatchObject({ isFollowing: true, followerCount: 11 });
     expect(replay.json()).toMatchObject({ isFollowing: true, followerCount: 11 });
+  });
+
+  it("reads and follows a Host through canonical user-id addressing", async () => {
+    const server = app();
+
+    const profile = await server.inject({
+      method: "GET",
+      url: "/profiles/by-user/user_am",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(profile.statusCode).toBe(200);
+    expect(profile.json()).toMatchObject({
+      handle: "amina",
+      isFollowing: false,
+      followerCount: 10,
+    });
+
+    const followed = await server.inject({
+      method: "POST",
+      url: "/profiles/by-user/user_am/follow",
+      headers: { authorization: "Bearer viewer" },
+      payload: { following: true },
+    });
+    expect(followed.statusCode).toBe(200);
+    expect(followed.json()).toMatchObject({
+      handle: "amina",
+      isFollowing: true,
+      followerCount: 11,
+    });
   });
 
   it("serves explicit verified Expert persona identity", async () => {
