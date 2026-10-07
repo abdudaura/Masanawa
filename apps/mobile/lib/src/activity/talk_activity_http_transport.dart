@@ -9,6 +9,17 @@ class GatewayTalkActivityTransport implements TalkActivityTransport {
   final ApiClient api;
 
   @override
+  Future<void> respondToInvitation({
+    required String talkId,
+    required bool accept,
+  }) async {
+    await api.dio.post<dynamic>(
+      '/talks/' + Uri.encodeComponent(talkId) + '/invitation-response',
+      data: {'action': accept ? 'accept' : 'decline'},
+    );
+  }
+
+  @override
   Future<List<TalkActivityItem>> load({
     required TalkActivityFilter filter,
     int limit = 60,

@@ -117,6 +117,11 @@ class TalkHostControlsView {
 abstract interface class TalkHostControlsTransport {
   Future<TalkHostControlsView> load(String talkId);
 
+  Future<void> inviteHuman({
+    required String talkId,
+    required String handle,
+  });
+
   Future<TalkHostControlsView> actOnRequest({
     required String talkId,
     required String requestId,

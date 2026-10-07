@@ -44,6 +44,25 @@ export interface HostControlsView {
   readonly participants: readonly HostParticipantView[];
 }
 
+export type HumanInvitationStatus = "pending" | "accepted" | "declined";
+
+export interface HumanInvitationView {
+  readonly talkId: string;
+  readonly talkTitle: string;
+  readonly hostName: string;
+  readonly inviteeUserId: string;
+  readonly inviteeHandle: string;
+  readonly inviteeDisplayName: string;
+  readonly status: HumanInvitationStatus;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface HumanInvitationDecision {
+  readonly invitation: HumanInvitationView;
+  readonly mediaActions: readonly TalkMediaAction[];
+}
+
 export type TalkMediaAction =
   | Readonly<{ type: "publish"; identity: string; canPublish: boolean }>
   | Readonly<{ type: "remove"; identity: string }>;
@@ -106,6 +125,20 @@ export interface TalkModerationRepository {
     hostUserId: string;
     talkId: string;
   }>): Promise<HostControlsView | null>;
+  inviteHuman(input: Readonly<{
+    tenantId: string;
+    hostUserId: string;
+    talkId: string;
+    handle: string;
+    now: string;
+  }>): Promise<HumanInvitationView | null>;
+  respondHumanInvitation(input: Readonly<{
+    tenantId: string;
+    inviteeUserId: string;
+    talkId: string;
+    action: "accept" | "decline";
+    now: string;
+  }>): Promise<HumanInvitationDecision | null>;
   actOnRequest(input: Readonly<{
     tenantId: string;
     hostUserId: string;

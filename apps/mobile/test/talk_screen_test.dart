@@ -449,9 +449,18 @@ class _ReplayTalkTransport implements TalkTransport {
 
 class _HostControlsTransport implements TalkHostControlsTransport {
   int accepted = 0;
+  final List<({String talkId, String handle})> invitations = [];
   int muted = 0;
   int removed = 0;
   int ended = 0;
+
+  @override
+  Future<void> inviteHuman({
+    required String talkId,
+    required String handle,
+  }) async {
+    invitations.add((talkId: talkId, handle: handle));
+  }
 
   @override
   Future<TalkHostControlsView> load(String talkId) async =>
@@ -1611,6 +1620,40 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(host.accepted, 1);
+  });
+
+  testWidgets('Host invites a verified human from Manage', (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('host-invite-human')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('host-invite-human-handle')),
+      '@amina',
+    );
+    await tester.tap(find.byKey(const ValueKey('host-invite-human-send')));
+    await tester.pumpAndSettle();
+
+    expect(host.invitations, [(talkId: 'talk-1', handle: 'amina')]);
+    expect(find.text('Invitation sent to @amina.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Host can review and resolve audience questions',

@@ -2117,6 +2117,29 @@ export async function startGatewayService(
           authorizer: talkModerationAuthorizer,
           ...(talkMediaAdmin ? { mediaAdmin: talkMediaAdmin } : {}),
           ...(composedTalkAiSeats ? { aiSeats: composedTalkAiSeats } : {}),
+          ...(database.talkActivity
+            ? {
+                invitationActivity: {
+                  async append(request) {
+                    await database.talkActivity!.append({
+                      tenantId: request.tenantId,
+                      activityId: request.activityId,
+                      userId: request.userId,
+                      kind: "talk_invitation",
+                      title: request.title,
+                      detail: request.detail,
+                      createdAt: request.createdAt,
+                      talkId: request.talkId,
+                      requiresAction: request.requiresAction,
+                      ...(request.actionLabel
+                        ? { actionLabel: request.actionLabel }
+                        : {}),
+                      unread: request.unread,
+                    });
+                  },
+                },
+              }
+            : {}),
           ...(database.talkReplay
             ? {
                 onTalkEnded: async ({tenantId,talkId,reason,now}) => {

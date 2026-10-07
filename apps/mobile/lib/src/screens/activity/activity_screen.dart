@@ -23,6 +23,39 @@ class ActivityScreen extends ConsumerStatefulWidget {
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   TalkActivityFilter _filter = TalkActivityFilter.all;
+  String? _busyInvitationId;
+
+  Future<void> _respondToInvitation(
+    TalkActivityItem item, {
+    required bool accept,
+  }) async {
+    final talkId = item.talkId?.trim();
+    if (_busyInvitationId != null || talkId == null || talkId.isEmpty) return;
+    setState(() => _busyInvitationId = item.id);
+    try {
+      await ref.read(talkActivityTransportProvider).respondToInvitation(
+            talkId: talkId,
+            accept: accept,
+          );
+      ref.invalidate(talkActivityProvider(_filter));
+      await ref.read(talkActivityProvider(_filter).future);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            accept ? 'Invitation accepted.' : 'Invitation declined.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t update this invitation.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busyInvitationId = null);
+    }
+  }
 
   Future<void> _refresh() async {
     ref.invalidate(talkActivityProvider(_filter));
@@ -116,11 +149,22 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     ),
                     itemBuilder: (context, index) {
                       final item = items[index];
+                      final actionableInvitation =
+                          item.kind == TalkActivityKind.talkInvitation &&
+                              item.requiresAction &&
+                              item.talkId?.isNotEmpty == true;
                       return _ActivityItemTile(
                         key: ValueKey('activity-item-' + item.id),
                         item: item,
                         canOpen: _canOpen(item),
+                        busy: _busyInvitationId == item.id,
                         onTap: _canOpen(item) ? () => _open(item) : null,
+                        onAccept: actionableInvitation
+                            ? () => _respondToInvitation(item, accept: true)
+                            : null,
+                        onDecline: actionableInvitation
+                            ? () => _respondToInvitation(item, accept: false)
+                            : null,
                       );
                     },
                   );
@@ -176,12 +220,18 @@ class _ActivityItemTile extends StatelessWidget {
     super.key,
     required this.item,
     required this.canOpen,
+    this.busy = false,
     this.onTap,
+    this.onAccept,
+    this.onDecline,
   });
 
   final TalkActivityItem item;
   final bool canOpen;
+  final bool busy;
   final VoidCallback? onTap;
+  final VoidCallback? onAccept;
+  final VoidCallback? onDecline;
 
   @override
   Widget build(BuildContext context) {
@@ -257,6 +307,32 @@ class _ActivityItemTile extends StatelessWidget {
                           fontSize: 12.5,
                           height: 1.3,
                         ),
+                      ),
+                    ],
+                    if (onAccept != null && onDecline != null) ...[
+                      const SizedBox(height: 9),
+                      Row(
+                        children: [
+                          OutlinedButton(
+                            key: ValueKey('activity-invite-decline-' + item.id),
+                            onPressed: busy ? null : onDecline,
+                            child: const Text('Decline'),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            key: ValueKey('activity-invite-accept-' + item.id),
+                            onPressed: busy ? null : onAccept,
+                            child: busy
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Accept'),
+                          ),
+                        ],
                       ),
                     ],
                     const SizedBox(height: 6),

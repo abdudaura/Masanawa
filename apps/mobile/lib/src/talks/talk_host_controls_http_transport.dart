@@ -24,6 +24,17 @@ class GatewayTalkHostControlsTransport implements TalkHostControlsTransport {
   }
 
   @override
+  Future<void> inviteHuman({
+    required String talkId,
+    required String handle,
+  }) async {
+    await api.dio.post<dynamic>(
+      '/talks/' + Uri.encodeComponent(talkId) + '/invitations',
+      data: {'handle': handle},
+    );
+  }
+
+  @override
   Future<TalkHostControlsView> actOnRequest({
     required String talkId,
     required String requestId,
