@@ -24,7 +24,13 @@ import type {
   UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import type { BillingQuoteRepository, CommerceRepository, CryptoRepository, NgnWalletRepository } from "@masanawa/commerce";
+import type {
+  BillingQuoteRepository,
+  CommerceRepository,
+  CryptoChatActionRepository,
+  CryptoRepository,
+  NgnWalletRepository,
+} from "@masanawa/commerce";
 import {
   parseCanonicalId,
   readRequiredEnv,
@@ -59,6 +65,7 @@ import {
   createPostgresIdentityRepository,
   createPostgresCommerceRepository,
   createPostgresCryptoRepository,
+  createPostgresCryptoChatActionRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
   createPostgresTeachingProgressRepository,
@@ -185,6 +192,11 @@ import {
   type AgentTeachingAssistant,
 } from "./agent_teaching_assistant.js";
 import { createCustomerChannelBridge } from "./customer_channel_bridge.js";
+import {
+  CRYPTO_AGENT_SYSTEM_INSTRUCTIONS,
+  createAgentCryptoAssistant,
+  type AgentCryptoAssistant,
+} from "./agent_crypto_assistant.js";
 import type { CustomerChannelOptions } from "./customer_channel_routes.js";
 import {
   ensureDefaultPlatformAgents,
@@ -223,6 +235,7 @@ export interface ServiceDatabaseDependency {
   readonly customerChannels?: CustomerChannelRepository;
   readonly commerce?: CommerceRepository;
   readonly crypto?: CryptoRepository;
+  readonly cryptoChatActions?: CryptoChatActionRepository;
   readonly ownerships?: CharacterOwnershipReader;
   readonly mobileShell?: MobileShellRepository;
   readonly mobilePush?: MobilePushRepository;
@@ -366,6 +379,7 @@ function createDefaultDatabaseDependency(
     customerChannels: createPostgresCustomerChannelRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
+    cryptoChatActions: createPostgresCryptoChatActionRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
     mobileShell: createPostgresMobileShellRepository(database.pool),
     mobilePush: createPostgresMobilePushRepository(database.pool),
@@ -992,6 +1006,7 @@ export async function startGatewayService(
         guides: database.skillGuides,
         systemInstructions: Object.freeze([
           ...TEACHING_AGENT_SYSTEM_INSTRUCTIONS,
+          ...CRYPTO_AGENT_SYSTEM_INSTRUCTIONS,
           ...(env.FLUTTERWAVE_BILLS_ENABLED === "true"
             ? BILLING_AGENT_SYSTEM_INSTRUCTIONS
             : []),
@@ -1415,6 +1430,14 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedCryptoAssistant: AgentCryptoAssistant | undefined =
+    composedFinancial && database.cryptoChatActions
+      ? createAgentCryptoAssistant({
+          financial: composedFinancial,
+          pending: database.cryptoChatActions,
+        })
+      : undefined;
+
   const composedTeachingAssistant: AgentTeachingAssistant | undefined =
     database.teachingProgress
       ? createAgentTeachingAssistant({
@@ -1438,6 +1461,7 @@ export async function startGatewayService(
           ...(twinConversationObserver ? { twinObserver: twinConversationObserver } : {}),
           ...(composedBillingAssistant ? { billingAssistant: composedBillingAssistant } : {}),
           ...(composedTeachingAssistant ? { teachingAssistant: composedTeachingAssistant } : {}),
+          ...(composedCryptoAssistant ? { cryptoAssistant: composedCryptoAssistant } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);
