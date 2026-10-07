@@ -69,6 +69,30 @@ export function registerTalkLiveRoutes(
     },
   );
 
+  app.post(
+    "/talks/:talkId/live/media-token",
+    {
+      schema: {
+        params: Params,
+        body: Type.Object(
+          { sessionId: Type.String({ minLength: 8, maxLength: 120 }) },
+          { additionalProperties: false },
+        ),
+      },
+    },
+    async (request, reply) => {
+      const { talkId } = request.params as { talkId: string };
+      const { sessionId } = request.body as { sessionId: string };
+      const credentials = await service.media({
+        authorizationHeader: request.headers.authorization,
+        talkId,
+        sessionId,
+      });
+      reply.code(201);
+      return credentials;
+    },
+  );
+
   app.get(
     "/talks/:talkId/live/state",
     { schema: { params: Params } },
