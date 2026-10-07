@@ -497,17 +497,56 @@ export function createPostgresTalkParticipationRepository(
       }
 
       const accepted = await pool.query<RequestRow>(
-        `WITH accepted AS (
-           UPDATE talks.seat_requests
-              SET status = 'accepted',
-                  updated_at = $4
+        `WITH host_lock AS MATERIALIZED (
+           SELECT host_user_id
+             FROM talks.talks
             WHERE tenant_id = $1
               AND talk_id = $2
-              AND request_id = $3
-              AND status = 'pending'
-            RETURNING request_id, requester_user_id, kind, display_name, detail,
-                      avatar_url, amount_label, participant_id, participant_kind,
-                      persona_id, commerce_authorization_id, status
+              AND host_user_id = $3
+              AND state IN ('live','reconnecting')
+            FOR UPDATE
+         ),
+         counts AS MATERIALIZED (
+           SELECT count(*)::int AS total_count,
+                  count(*) FILTER (
+                    WHERE p.kind IN ('expert','twin')
+                  )::int AS ai_count
+             FROM talks.participants p
+             CROSS JOIN host_lock h
+            WHERE p.tenant_id = $1
+              AND p.talk_id = $2
+              AND p.state = 'active'
+         ),
+         candidate AS MATERIALIZED (
+           SELECT r.*
+             FROM talks.seat_requests r
+             CROSS JOIN host_lock h
+             CROSS JOIN counts c
+            WHERE r.tenant_id = $1
+              AND r.talk_id = $2
+              AND r.request_id = $4
+              AND r.status = 'pending'
+              AND (1 + c.total_count) < $6
+              AND (
+                r.participant_kind = 'human'
+                OR c.ai_count < $7
+              )
+              AND (
+                r.kind = 'human_speaker'
+                OR r.commerce_authorization_id IS NOT NULL
+              )
+         ),
+         accepted AS (
+           UPDATE talks.seat_requests r
+              SET status = 'accepted',
+                  updated_at = $5
+             FROM candidate c
+            WHERE r.tenant_id = c.tenant_id
+              AND r.request_id = c.request_id
+            RETURNING r.request_id, r.requester_user_id, r.kind,
+                      r.display_name, r.detail, r.avatar_url, r.amount_label,
+                      r.participant_id, r.participant_kind, r.persona_id,
+                      r.commerce_authorization_id, r.status
          ),
          admitted AS (
            INSERT INTO talks.participants (
@@ -515,7 +554,7 @@ export function createPostgresTalkParticipationRepository(
              avatar_url, is_muted, state, source_request_id, joined_at, updated_at
            )
            SELECT $1,$2,a.participant_id,a.requester_user_id,a.participant_kind,
-                  a.display_name,a.avatar_url,false,'active',a.request_id,$4,$4
+                  a.display_name,a.avatar_url,false,'active',a.request_id,$5,$5
              FROM accepted a
            ON CONFLICT (tenant_id, talk_id, participant_id) DO UPDATE
              SET user_id = EXCLUDED.user_id,
@@ -537,12 +576,56 @@ export function createPostgresTalkParticipationRepository(
         [
           input.tenantId,
           input.talkId,
+          input.hostUserId,
           input.requestId,
           input.changedAt,
+          input.maxSeats,
+          input.maxAiSeats,
         ],
       );
-      const row = accepted.rows[0];
-      if (!row) throw new Error("talks.request_finalized");
+      let row = accepted.rows[0];
+      if (!row) {
+        const refreshed = await requestById(
+          pool,
+          input.tenantId,
+          input.talkId,
+          input.requestId,
+        );
+        if (!refreshed) throw new Error("talks.request_not_found");
+        if (refreshed.status !== "pending") {
+          if (!finalizedActionMatches(refreshed, input.action)) {
+            throw new Error("talks.request_finalized");
+          }
+          const controls = await readHostControls(pool, input);
+          if (!controls) return null;
+          return Object.freeze({ request: refreshed, controls });
+        }
+        if (
+          refreshed.participantKind !== "human" &&
+          !refreshed.commerceAuthorizationId
+        ) {
+          throw new Error("talks.ai_commerce_required");
+        }
+        const latestCounts = await pool.query<CountRow>(
+          `SELECT count(*)::int AS total_count,
+                  count(*) FILTER (WHERE kind IN ('expert','twin'))::int AS ai_count
+             FROM talks.participants
+            WHERE tenant_id = $1 AND talk_id = $2 AND state = 'active'`,
+          [input.tenantId, input.talkId],
+        );
+        const latestTotal = Number(latestCounts.rows[0]?.total_count ?? 0);
+        const latestAi = Number(latestCounts.rows[0]?.ai_count ?? 0);
+        if (1 + latestTotal >= input.maxSeats) {
+          throw new Error("talks.seat_capacity");
+        }
+        if (
+          refreshed.participantKind !== "human" &&
+          latestAi >= input.maxAiSeats
+        ) {
+          throw new Error("talks.ai_seat_capacity");
+        }
+        throw new Error("talks.request_finalized");
+      }
 
       if (row.requester_user_id) {
         await pool.query(
