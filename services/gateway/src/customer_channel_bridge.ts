@@ -12,10 +12,13 @@ import {
   normalizePlatformAuthIdentifier,
   type CustomerChannel,
   type CustomerChannelRepository,
-  type PlatformAuthProfile,
   type PlatformSessionRepository,
 } from "@masanawa/security";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import type {
+  PublicTwinDirectoryItem,
+  TwinDirectoryService,
+} from "./twin_directory.js";
 
 export interface CustomerChannelInbound {
   readonly channel: CustomerChannel;
@@ -63,6 +66,7 @@ export function createCustomerChannelBridge(input: Readonly<{
   platformProfiles: PlatformAgentProfileRepository;
   userPreferences?: UserAgentPreferenceRepository;
   conversation: AgentConversationService;
+  twinDirectory?: TwinDirectoryService;
 }>): Readonly<{
   handle(request: CustomerChannelInbound): Promise<CustomerChannelResult>;
   delivered(input: Readonly<{
@@ -71,28 +75,97 @@ export function createCustomerChannelBridge(input: Readonly<{
   }>): Promise<void>;
 }> {
   async function chooseCharacter(
-    profile: PlatformAuthProfile,
+    identity: Readonly<{ tenantId: string; userId: string }>,
+    requested?: "gwani" | "gwana",
   ): Promise<CharacterId> {
+    const support = await input.platformProfiles.listSupportAgents({
+      tenantId: identity.tenantId as never,
+    });
+    if (requested) {
+      const voice = requested === "gwana" ? "sulafat" : "bodi";
+      const named = support.find(
+        (agent) => agent.voiceName.trim().toLowerCase() === voice,
+      );
+      if (named) return named.characterId;
+    }
     const preference = await input.userPreferences?.readForUser({
-      tenantId: profile.tenantId,
-      userId: profile.userId,
+      tenantId: identity.tenantId as never,
+      userId: identity.userId as never,
     });
     if (preference) {
       const selected = await input.platformProfiles.readForCharacter({
-        tenantId: profile.tenantId,
+        tenantId: identity.tenantId as never,
         characterId: preference.defaultPlatformCharacterId,
       });
       if (selected?.supportAgent) return selected.characterId;
     }
-    const support = await input.platformProfiles.listSupportAgents({
-      tenantId: profile.tenantId,
-    });
     const preferred =
       support.find((agent) => agent.defaultForNewUsers) ??
       support.find((agent) => agent.voiceName.trim().toLowerCase() === "bodi") ??
       support[0];
     if (!preferred) throw new Error("channels.support_agent_unavailable");
     return preferred.characterId;
+  }
+
+  type ChannelNavigation =
+    | Readonly<{ kind: "support"; requested?: "gwani" | "gwana" }>
+    | Readonly<{ kind: "twin"; query: string }>;
+
+  function navigationIntent(text: string): ChannelNavigation | null {
+    const value = text.trim().replace(/\s+/gu, " ");
+    if (!value || value.length > 240) return null;
+    const lower = value.toLowerCase();
+    if (
+      /^(?:go\s+)?back\s+to\s+(?:gwani|masanawa|support)[.!?]?$/iu.test(value) ||
+      /^(?:talk|chat|switch)(?:\s+me)?\s+(?:to|with)\s+gwani[.!?]?$/iu.test(value)
+    ) {
+      return Object.freeze({ kind: "support", requested: "gwani" as const });
+    }
+    if (
+      /^(?:talk|chat|switch)(?:\s+me)?\s+(?:to|with)\s+gwana[.!?]?$/iu.test(value)
+    ) {
+      return Object.freeze({ kind: "support", requested: "gwana" as const });
+    }
+    if (/^(?:go\s+)?back\s+to\s+(?:my\s+)?(?:assistant|agent)[.!?]?$/iu.test(value)) {
+      return Object.freeze({ kind: "support" });
+    }
+
+    const url = /\/twin\/([a-z0-9][a-z0-9_-]{2,63})/iu.exec(value);
+    if (url?.[1]) return Object.freeze({ kind: "twin", query: url[1] });
+
+    const patterns = [
+      /^(?:talk|chat|switch)(?:\s+me)?\s+(?:to|with)\s+(.+?)(?:['’]s)?\s+twin[.!?]?$/iu,
+      /^(?:talk|chat|switch)(?:\s+me)?\s+(?:to|with)\s+(?:the\s+)?twin\s+(?:of\s+)?(.+?)[.!?]?$/iu,
+    ];
+    for (const pattern of patterns) {
+      const match = pattern.exec(value);
+      const query = match?.[1]?.trim();
+      if (query && !["gwani","gwana","masanawa","support"].includes(query.toLowerCase())) {
+        return Object.freeze({ kind: "twin", query });
+      }
+    }
+    if (lower.startsWith("@") && /^[a-z0-9@_-]{4,65}$/iu.test(lower)) {
+      return Object.freeze({ kind: "twin", query: value.slice(1) });
+    }
+    return null;
+  }
+
+  function normalizeLookup(value: string): string {
+    return value.trim().toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim();
+  }
+
+  function chooseTwin(
+    query: string,
+    candidates: readonly PublicTwinDirectoryItem[],
+  ): PublicTwinDirectoryItem | null {
+    const wanted = normalizeLookup(query);
+    const exact = candidates.filter(
+      (item) =>
+        normalizeLookup(item.displayName) === wanted ||
+        normalizeLookup(item.publicId) === wanted,
+    );
+    if (exact.length === 1) return exact[0]!;
+    return candidates.length === 1 ? candidates[0]! : null;
   }
 
   async function resolveOrLink(
@@ -123,13 +196,20 @@ export function createCustomerChannelBridge(input: Readonly<{
     // to the linked WhatsApp account. Treat WhatsApp as a first-class Masanawa
     // signup surface instead of forcing the customer to install the mobile app
     // before Gwani can help them.
-    if (!profile && request.channel === "whatsapp") {
+    if (
+      !profile &&
+      (request.channel === "whatsapp" ||
+        (request.channel === "telegram" && request.phone))
+    ) {
       try {
         profile = await input.sessions.createProfile({
           tenantId: input.tenantId as never,
           channel: "sms",
           identifier: phone,
-          name: "WhatsApp customer",
+          name:
+            request.channel === "whatsapp"
+              ? "WhatsApp customer"
+              : "Telegram customer",
           locale: "ng",
           createdAt: instant(),
         });
@@ -279,6 +359,97 @@ export function createCustomerChannelBridge(input: Readonly<{
           });
         }
 
+        const navigation = request.media ? null : navigationIntent(request.text);
+        if (navigation) {
+          const navigationReply = await withInternalSession(
+            link,
+            async (authorizationHeader) => {
+              if (navigation.kind === "support") {
+                if (link.characterSessionId) {
+                  await input.conversation.close({
+                    authorizationHeader,
+                    characterSessionId: link.characterSessionId,
+                    characterId: link.characterId,
+                  }).catch(() => undefined);
+                }
+                const characterId = await chooseCharacter(
+                  { tenantId: link.tenantId, userId: link.userId },
+                  navigation.requested,
+                );
+                await input.channels.putLink({
+                  ...link,
+                  characterId,
+                  characterSessionId: null,
+                  updatedAt: instant(),
+                });
+                const label =
+                  navigation.requested === "gwana"
+                    ? "Gwana"
+                    : navigation.requested === "gwani"
+                      ? "Gwani"
+                      : "your Masanawa assistant";
+                return `You're back with ${label}. How can I help?`;
+              }
+
+              if (!input.twinDirectory) {
+                return "Public Twin chat is not available on this channel right now.";
+              }
+              let selected: PublicTwinDirectoryItem | null = null;
+              if (/^[a-z0-9][a-z0-9_-]{2,63}$/iu.test(navigation.query)) {
+                selected = await input.twinDirectory.resolve({
+                  authorizationHeader,
+                  publicId: navigation.query,
+                }).catch(() => null);
+              }
+              const candidates = selected
+                ? [selected]
+                : await input.twinDirectory.search({
+                    authorizationHeader,
+                    query: navigation.query,
+                    limit: 8,
+                  });
+              selected ??= chooseTwin(navigation.query, candidates);
+              if (!selected) {
+                if (candidates.length === 0) {
+                  return `I couldn't find a public Twin matching "${navigation.query}". Try the person's Twin name or share link.`;
+                }
+                const choices = candidates
+                  .slice(0, 5)
+                  .map((item, index) => `${index + 1}. ${item.displayName} (@${item.publicId})`)
+                  .join("\n");
+                return `I found several public Twins. Tell me the name or @ID you want:\n${choices}`;
+              }
+              if (link.characterSessionId) {
+                await input.conversation.close({
+                  authorizationHeader,
+                  characterSessionId: link.characterSessionId,
+                  characterId: link.characterId,
+                }).catch(() => undefined);
+              }
+              await input.channels.putLink({
+                ...link,
+                characterId: selected.characterId as never,
+                characterSessionId: null,
+                updatedAt: instant(),
+              });
+              return `You're now chatting with ${selected.displayName}'s AI Twin. Text chat here is free. The real owner is not present.\n\nSend your message, or say "back to Gwani" anytime.`;
+            },
+          );
+          await input.channels.completeMessage({
+            channel: request.channel,
+            messageId,
+            reply: navigationReply,
+            completedAt: instant(),
+          });
+          return Object.freeze({
+            handled: true,
+            duplicate: false,
+            reply: navigationReply,
+            requestContact: false,
+            shouldDeliver: true,
+          });
+        }
+
         const requestId = createCanonicalId("request");
         const correlationId = createCanonicalId("correlation");
 
@@ -302,6 +473,14 @@ export function createCustomerChannelBridge(input: Readonly<{
 
           const turn = async () => {
             if (!characterSessionId) throw new Error("channels.session_missing");
+            const activeProfile = await input.platformProfiles.readForCharacter({
+              tenantId: link.tenantId,
+              characterId: link.characterId,
+            });
+            const representation =
+              activeProfile?.supportAgent === true
+                ? ("platform-agent" as const)
+                : ("public-twin" as const);
             if (request.media) {
               return input.conversation.mediaTurn({
                 authorizationHeader,
@@ -312,6 +491,8 @@ export function createCustomerChannelBridge(input: Readonly<{
                 dataBase64: request.media.dataBase64,
                 requestId,
                 correlationId,
+                surface: request.channel,
+                representation,
               });
             }
             return input.conversation.turn({
@@ -321,6 +502,8 @@ export function createCustomerChannelBridge(input: Readonly<{
               text: request.text,
               requestId,
               correlationId,
+              surface: request.channel,
+              representation,
             });
           };
 

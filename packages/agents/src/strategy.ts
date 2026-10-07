@@ -39,8 +39,14 @@ export interface AgentStrategyPresentation {
   readonly about: string;
 }
 
+export type AgentConversationSurface = "mobile" | "whatsapp" | "telegram";
+
+export type AgentConversationRepresentation = "platform-agent" | "public-twin";
+
 export interface AgentStrategyRequest {
   readonly onTextDelta?: (delta: string) => void | Promise<void>;
+  readonly surface?: AgentConversationSurface;
+  readonly representation?: AgentConversationRepresentation;
   readonly signal?: AbortSignal;
   readonly agentRunId: AgentRunId;
   readonly characterSessionId: CharacterSessionId;
