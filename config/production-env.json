@@ -774,6 +774,27 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Production configuration for SUPABASE_URL."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_MODE",
+      "owner": "gateway/channels",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production WhatsApp transport mode. Must be linked-device when WhatsApp is enabled."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_AUTH_DIR",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Persistent filesystem directory for the encrypted linked-device WhatsApp authentication state."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_ADMIN_TOKEN",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Bearer token protecting linked-device WhatsApp QR, status, and reset administration routes."
     }
   ]
 }
