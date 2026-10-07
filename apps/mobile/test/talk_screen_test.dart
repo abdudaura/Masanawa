@@ -2,9 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
+import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
+import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _SeatTransport implements TalkAiSeatTransport {
+  const _SeatTransport();
+
+  @override
+  Future<List<TalkAiSeatCandidate>> loadCandidates({
+    required String talkId,
+  }) async =>
+      const [
+        TalkAiSeatCandidate(
+          personaId: 'expert-1',
+          displayName: 'Education Expert',
+          kind: TalkAiPersonaKind.expert,
+          seatFeeLabel: '₦300',
+          subtitle: 'Learning · Schools',
+        ),
+      ];
+
+  @override
+  Future<TalkAiSeatQuote> createQuote({
+    required String talkId,
+    required String personaId,
+    required TalkAiSeatMode mode,
+  }) async =>
+      TalkAiSeatQuote(
+        quoteId: 'quote-1',
+        personaId: personaId,
+        displayName: 'Education Expert',
+        kind: TalkAiPersonaKind.expert,
+        mode: mode,
+        totalLabel: '₦300',
+        expiresAt: DateTime(2030, 1, 1, 12, 30),
+        requiresHostApproval: mode == TalkAiSeatMode.sponsor,
+      );
+
+  @override
+  Future<TalkAiSeatRequest> confirmQuote({
+    required String talkId,
+    required String quoteId,
+  }) async =>
+      const TalkAiSeatRequest(
+        requestId: 'request-1',
+        status: TalkAiSeatRequestStatus.pendingHost,
+        message: 'Waiting for the Host.',
+      );
+  testWidgets('listener opens Sponsor Seat sheet from Add AI', (tester) async {
+    final transport = _TalkTransport();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          talkTransportProvider.overrideWithValue(transport),
+          talkAiSeatTransportProvider.overrideWithValue(
+            const _SeatTransport(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          home: const TalkScreen(
+            talkId: 'talk-1',
+            initialTalk: _TalkTransport.talk,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add AI'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sponsor a Seat'), findsOneWidget);
+    expect(find.text('Education Expert'), findsWidgets);
+    expect(find.text('Sponsor'), findsOneWidget);
+  });
+}
 
 class _TalkTransport implements TalkTransport {
   final List<TalkComment> comments = [
@@ -76,7 +152,12 @@ void main() {
     final transport = _TalkTransport();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [talkTransportProvider.overrideWithValue(transport)],
+        overrides: [
+          talkTransportProvider.overrideWithValue(transport),
+          talkAiSeatTransportProvider.overrideWithValue(
+            const _SeatTransport(),
+          ),
+        ],
         child: MaterialApp(
           theme: buildMasanawaTheme(brightness: Brightness.light),
           home: const TalkScreen(
@@ -104,7 +185,12 @@ void main() {
     final transport = _TalkTransport();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [talkTransportProvider.overrideWithValue(transport)],
+        overrides: [
+          talkTransportProvider.overrideWithValue(transport),
+          talkAiSeatTransportProvider.overrideWithValue(
+            const _SeatTransport(),
+          ),
+        ],
         child: MaterialApp(
           theme: buildMasanawaTheme(brightness: Brightness.light),
           home: const TalkScreen(talkId: 'talk-1'),
