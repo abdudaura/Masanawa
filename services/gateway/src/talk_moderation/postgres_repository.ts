@@ -16,6 +16,7 @@ import type {
   HostRequestView,
   TalkModerationRepository,
   TalkParticipationView,
+  TalkQuestionView,
   TalkReaction,
 } from "./model.js";
 
@@ -38,6 +39,14 @@ interface TalkRow extends Record<string,unknown>{
 interface ParticipationRow extends Record<string,unknown>{
   hand_status:"idle"|"raised"|"accepted"|"declined";
   reaction:TalkReaction|null;
+}
+interface QuestionRow extends Record<string,unknown>{
+  question_id:string;
+  author_name:string;
+  body:string;
+  status:"pending"|"answered"|"dismissed";
+  created_at:string|Date;
+  resolved_at:string|Date|null;
 }
 interface RequestRow extends Record<string,unknown>{
   request_id:string;
@@ -75,6 +84,16 @@ function participationView(row:ParticipationRow|undefined):TalkParticipationView
   return Object.freeze({
     handStatus:row.hand_status,
     ...(row.reaction===null?{}:{reaction:row.reaction}),
+  });
+}
+function questionView(row:QuestionRow):TalkQuestionView{
+  return Object.freeze({
+    questionId:row.question_id,
+    authorName:row.author_name,
+    body:row.body,
+    status:row.status,
+    createdAt:row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString(),
+    ...(row.resolved_at===null?{}:{resolvedAt:row.resolved_at instanceof Date ? row.resolved_at.toISOString() : new Date(row.resolved_at).toISOString()}),
   });
 }
 function mediaIdentities(rows:readonly SessionIdentityRow[]):readonly string[]{
@@ -281,6 +300,66 @@ export function createPostgresTalkModerationRepository(
         );
       }
       return participationView(result.rows[0]);
+    },
+
+    async submitQuestion(input){
+      const talk=await readTalk(pool,input.tenantId,input.talkId);
+      if(!talk) return null;
+      if(talk.host_user_id===input.userId) throw new Error("talks.host_cannot_question");
+      if(talk.state==="ended") throw new Error("talks.not_live");
+      await requireLiveRuntime(pool,input.tenantId,input.talkId);
+      const result=await pool.query<QuestionRow>(
+        `INSERT INTO talks.questions(
+           tenant_id,talk_id,question_id,author_user_id,author_name,body,status,created_at
+         )
+         SELECT $1,$2,$3,$4,$5,$6,'pending',$7
+          WHERE (
+            SELECT count(*) FROM talks.questions
+             WHERE tenant_id=$1 AND talk_id=$2 AND author_user_id=$4 AND status='pending'
+          ) < 3
+         RETURNING question_id,author_name,body,status,created_at,resolved_at`,
+        [input.tenantId,input.talkId,input.questionId,input.userId,input.displayName,input.body,input.now],
+      );
+      if(!result.rows[0]) throw new Error("talks.question_rate_limited");
+      return questionView(result.rows[0]);
+    },
+
+    async listQuestions(input){
+      const talk=await readTalk(pool,input.tenantId,input.talkId);
+      if(!talk) return null;
+      requireHost(talk,input.hostUserId);
+      const result=await pool.query<QuestionRow>(
+        `SELECT question_id,author_name,body,status,created_at,resolved_at
+           FROM talks.questions
+          WHERE tenant_id=$1 AND talk_id=$2 AND status='pending'
+          ORDER BY created_at ASC,question_id ASC
+          LIMIT 100`,
+        [input.tenantId,input.talkId],
+      );
+      return Object.freeze(result.rows.map(questionView));
+    },
+
+    async resolveQuestion(input){
+      const talk=await readTalk(pool,input.tenantId,input.talkId);
+      if(!talk) return null;
+      requireHost(talk,input.hostUserId);
+      const updated=await pool.query<QuestionRow>(
+        `UPDATE talks.questions
+            SET status=$4,resolved_at=$5
+          WHERE tenant_id=$1 AND talk_id=$2 AND question_id=$3 AND status='pending'
+          RETURNING question_id,author_name,body,status,created_at,resolved_at`,
+        [input.tenantId,input.talkId,input.questionId,input.action,input.now],
+      );
+      if(!updated.rows[0]) throw new Error("talks.question_not_found");
+      const remaining=await pool.query<QuestionRow>(
+        `SELECT question_id,author_name,body,status,created_at,resolved_at
+           FROM talks.questions
+          WHERE tenant_id=$1 AND talk_id=$2 AND status='pending'
+          ORDER BY created_at ASC,question_id ASC
+          LIMIT 100`,
+        [input.tenantId,input.talkId],
+      );
+      return Object.freeze(remaining.rows.map(questionView));
     },
 
     async hostControls(input){
