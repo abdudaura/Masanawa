@@ -1,4 +1,5 @@
 import { Pool, type PoolConfig } from "pg";
+export type { Pool, PoolClient } from "pg";
 
 export interface PostgresPoolOptions {
   readonly connectionString: string;
