@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../core/network/api_client.dart';
 import 'talk_models.dart';
 
@@ -8,21 +10,29 @@ class GatewayTalkTransport implements TalkTransport {
 
   @override
   Future<List<TalkDiscoveryItem>> loadFeed(TalkFeedKind feed) async {
-    final response = await api.dio.get<dynamic>(
-      '/talks',
-      queryParameters: {
-        'feed': feed == TalkFeedKind.live ? 'live' : 'explore',
-      },
-    );
-    final data = response.data;
-    if (data is! List) {
-      throw const FormatException('Invalid Talk feed response');
+    try {
+      final response = await api.dio.get<dynamic>(
+        '/talks',
+        queryParameters: {
+          'feed': feed == TalkFeedKind.live ? 'live' : 'explore',
+        },
+      );
+      final data = response.data;
+      if (data is! List) {
+        throw const FormatException('Invalid Talk feed response');
+      }
+      return [
+        for (final item in data)
+          if (item is Map)
+            TalkDiscoveryItem.fromJson(item.cast<String, dynamic>()),
+      ];
+    } on DioException catch (error) {
+      // Safe rollout while the Talk backend is landing independently.
+      // A stale Gateway should render an honest empty Home rather than a raw
+      // transport failure. Other status codes still surface as real errors.
+      if (error.response?.statusCode == 404) return const [];
+      rethrow;
     }
-    return [
-      for (final item in data)
-        if (item is Map)
-          TalkDiscoveryItem.fromJson(item.cast<String, dynamic>()),
-    ];
   }
 
   @override
