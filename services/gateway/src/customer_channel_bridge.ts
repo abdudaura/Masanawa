@@ -358,6 +358,13 @@ export function createCustomerChannelBridge(input: Readonly<{
             link,
             async (authorizationHeader) => {
               if (navigation.kind === "support") {
+                if (link.characterSessionId) {
+                  await input.conversation.close({
+                    authorizationHeader,
+                    characterSessionId: link.characterSessionId,
+                    characterId: link.characterId,
+                  }).catch(() => undefined);
+                }
                 const characterId = await chooseCharacter(
                   { tenantId: link.tenantId, userId: link.userId },
                   navigation.requested,
@@ -404,6 +411,13 @@ export function createCustomerChannelBridge(input: Readonly<{
                   .map((item, index) => `${index + 1}. ${item.displayName} (@${item.publicId})`)
                   .join("\n");
                 return `I found several public Twins. Tell me the name or @ID you want:\n${choices}`;
+              }
+              if (link.characterSessionId) {
+                await input.conversation.close({
+                  authorizationHeader,
+                  characterSessionId: link.characterSessionId,
+                  characterId: link.characterId,
+                }).catch(() => undefined);
               }
               await input.channels.putLink({
                 ...link,
