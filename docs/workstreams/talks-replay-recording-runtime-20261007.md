@@ -4,9 +4,9 @@
 - **Branch:** `work/talks-replay-recording-runtime-main-20261007`
 - **Base SHA:** `a2068fdd2d893044e7602d76aebd5df94bd5d77c`
 - **Original claim:** `work/talks-replay-recording-runtime-20261007` from `025666690e41c8cde69ba67451591b0690fa220f`
-- **Resynchronized:** 2026-10-07 09:50 UTC after Talk backend/runtime merges moved canonical `main`
-- **Lane:** recording lifecycle + replay publication policy/state
-- **Lease:** active
+- **PR:** #349 — Add Talk recording and replay publication runtime
+- **Last repository-visible update:** 2026-10-07 09:52 UTC
+- **Lease:** released with implementation handoff
 
 ## Owned paths
 
@@ -40,10 +40,34 @@
 - Replays can be private or unpublished without deleting finalized recording custody.
 - This runtime consumes terminal live outcomes but does not duplicate PR #345 live-presence authority.
 
-## Tests
+## Verification
 
-Focused tests cover Host consent, disabled recording policy, ordered segment custody, overlap rejection, auto-publication rules, policy block, Host-only mutations, unpublish/discard, platform enforcement, empty recordings, terminal segment rejection, stale revisions, malformed checksums, duration bounds and backwards time.
+- PR #349 is reported **mergeable** by GitHub against current `main`.
+- Foundation CI run `37603277231` failed before creating any workflow steps; job `112732570159` has an empty step list and no job logs. This matches the existing repository-wide zero-step CI infrastructure failure already documented by the Talk backend/runtime lanes.
+- Focused tests are committed for:
+  - Host consent and disabled recording policy;
+  - ordered segment custody and overlap rejection;
+  - auto-publication vs private preference;
+  - server publication policy block;
+  - Host-only publish/unpublish/discard;
+  - platform enforcement and Host non-override;
+  - empty-recording non-publication;
+  - terminal segment rejection;
+  - stale revisions;
+  - malformed checksum and duration bounds;
+  - backwards transition time.
+- Diff against current main is isolated to the four claimed paths.
+- No production deployment, Gateway composition, persistence migration or media storage operation was performed.
 
-## Status
+## Handoff
 
-Implementation complete on current-main synchronized branch. PR handoff pending final mergeability/CI evidence.
+The next replay integration owner should:
+1. persist `TalkReplaySession` revisions atomically;
+2. feed finalized media-segment metadata from the real media plane;
+3. call `live_finalized` only from the canonical Talk/live terminal outcome;
+4. project only `isReplayPubliclyVisible(session) === true` into public replay discovery;
+5. preserve Host-only publish/unpublish/discard checks at the authenticated service boundary;
+6. map platform moderation enforcement to `platform_block`;
+7. keep media authorization/storage URLs outside this public runtime contract.
+
+**Implementation status:** complete for the claimed replay/recording runtime slice.
