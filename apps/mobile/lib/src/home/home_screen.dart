@@ -499,9 +499,14 @@ List<HomeRoomCardModel> _orderedRooms(List<HomeRoomCardModel> rooms) {
 }
 
 class _RoomCard extends StatelessWidget {
-  const _RoomCard({required this.room, required this.onTap});
+  const _RoomCard({
+    required this.room,
+    required this.displayTitle,
+    required this.onTap,
+  });
 
   final HomeRoomCardModel room;
+  final String displayTitle;
   final VoidCallback? onTap;
 
   @override
