@@ -39,6 +39,10 @@ import type { BillingWalletService } from "./billing_wallet.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
 import {
+  registerCustomerChannelRoutes,
+  type CustomerChannelOptions,
+} from "./customer_channel_routes.js";
+import {
   CustomerAuthError,
   type CustomerAuthService,
 } from "./customer_auth.js";
@@ -74,6 +78,7 @@ export interface GatewayAppOptions {
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
   readonly financial?: FinancialService;
+  readonly customerChannels?: CustomerChannelOptions;
   readonly twinProduction?: TwinProductionRuntime;
 }
 
@@ -1324,6 +1329,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     ...(options.billingFinancial ? { billingFinancial: options.billingFinancial } : {}),
     ...(options.billingWallet ? { billingWallet: options.billingWallet } : {}),
   });
+
+  if (options.customerChannels) {
+    registerCustomerChannelRoutes(app, options.customerChannels);
+  }
 
   if (options.twinProduction) {
     const twin = options.twinProduction;
