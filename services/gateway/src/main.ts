@@ -1523,6 +1523,9 @@ export async function startGatewayService(
         ? { userPreferences: database.userAgentPreferences }
         : {}),
       conversation: composedConversation,
+      ...(twinProduction
+        ? { twinDirectory: twinProduction.twinDirectory }
+        : {}),
     });
 
     if (whatsappEnabled) {
