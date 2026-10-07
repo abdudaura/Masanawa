@@ -5,6 +5,10 @@
 - Base SHA: `233ef88eaf55c8affbed4f0101a88afd175daca9`
 - Task: expose launch-critical Talk safety controls in the mobile Talk experience using the existing canonical safety backend.
 - Exact owned paths:
+  - `services/gateway/src/talk_safety/service.ts`
+  - `services/gateway/src/talk_safety/repository.ts`
+  - `services/gateway/src/talk_safety_routes.ts`
+  - focused Talk safety route/service/repository tests
   - `apps/mobile/lib/src/talks/talk_safety.dart`
   - `apps/mobile/lib/src/talks/talk_safety_http_transport.dart`
   - `apps/mobile/lib/src/state/talk_safety_state.dart`
@@ -12,7 +16,7 @@
   - focused Talk-screen wiring/tests in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
   - focused mobile tests
   - this claim file
-- Shared authority: existing Gateway Talk safety/reporting/preferences endpoints only; no new backend mutations or policy bypasses.
+- Shared authority: existing canonical Talk safety/reporting/preferences service and tables. Add a user-ID preference route that verifies the subject exists in `talks.public_profiles`; no new safety table or policy bypass.
 - Product scope:
   - compact More surface, not more persistent Talk chrome;
   - Report Talk;
@@ -20,7 +24,7 @@
   - Mute/unmute Host;
   - View participants with clear Human / Expert / Twin labels;
   - no financial or moderation authority is delegated to listeners.
-- Current step: inspect existing Talk safety route contract and map it to mobile transport/state/sheet.
+- Current step: add verified user-ID preference addressing on the canonical safety backend, then map report/block/mute/participants to the mobile More sheet.
 - Last update: 2026-10-07T11:46Z
 - Implementation status: claimed
 - Verification status: pending
