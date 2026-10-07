@@ -302,6 +302,45 @@ describe("Talk AI Seat commerce", () => {
     });
   });
 
+  it("requires expiry/release once a held authorization reaches its deadline", () => {
+    const quoted = createTalkAiSeatQuote(expertInput());
+    const pending = transitionTalkAiSeatQuote(
+      quoted,
+      {
+        type: "confirm",
+        requestId: "confirm-expiring",
+        expectedRevision: quoted.revision,
+        actorUserId: sponsorUserId,
+      },
+      toInstant("2026-10-07T10:01:00.000Z"),
+    ).quote;
+
+    expect(() =>
+      transitionTalkAiSeatQuote(
+        pending,
+        {
+          type: "decline",
+          requestId: "late-decline",
+          expectedRevision: pending.revision,
+          actorUserId: hostUserId,
+        },
+        expiresAt,
+      ),
+    ).toThrow("authorization has expired");
+
+    const expired = transitionTalkAiSeatQuote(
+      pending,
+      {
+        type: "expire",
+        requestId: "expire-held-at-deadline",
+        expectedRevision: pending.revision,
+      },
+      expiresAt,
+    );
+    expect(expired.quote.state).toBe("expired");
+    expect(expired.settlement).toMatchObject({ kind: "release", reason: "expired" });
+  });
+
   it("models Host-added AI as held pending direct admission, never Host approval", () => {
     const quoted = createTalkAiSeatQuote(expertInput("host_add"));
     const pending = transitionTalkAiSeatQuote(
