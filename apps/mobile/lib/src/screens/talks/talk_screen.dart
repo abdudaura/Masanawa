@@ -169,7 +169,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
 
   Future<void> _toggleLiveMute() async {
     final controller = _liveAudio;
-    if (controller == null || controller.role != TalkLiveRole.host) return;
+    if (controller == null ||
+        (controller.role != TalkLiveRole.host &&
+            controller.role != TalkLiveRole.speaker)) {
+      return;
+    }
     await controller.setMuted(!controller.muted);
     if (!mounted || !identical(_liveAudio, controller)) return;
     setState(() {
@@ -1208,7 +1212,8 @@ class _TalkStage extends StatelessWidget {
                   error: liveAudioError,
                   onRetry: onRetryLiveAudio,
                 ),
-                if (liveAudioRole == TalkLiveRole.host &&
+                if ((liveAudioRole == TalkLiveRole.host ||
+                        liveAudioRole == TalkLiveRole.speaker) &&
                     liveAudioStatus != TalkLiveAudioStatus.connecting &&
                     liveAudioStatus != TalkLiveAudioStatus.ended &&
                     liveAudioStatus != TalkLiveAudioStatus.failed) ...[
