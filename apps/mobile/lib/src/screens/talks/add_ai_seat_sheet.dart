@@ -454,7 +454,15 @@ class _QuoteConfirmation extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              _QuoteRow(label: 'Seat fee', value: quote.totalLabel),
+              _QuoteRow(
+                label: 'Seat fee',
+                value: quote.totalLabel.isEmpty ? '—' : quote.totalLabel,
+              ),
+              const SizedBox(height: 10),
+              _QuoteRow(
+                label: 'Quote valid until',
+                value: _formatQuoteExpiry(quote.expiresAt),
+              ),
               const Divider(height: 26),
               Text(
                 quote.requiresHostApproval
@@ -527,6 +535,12 @@ class _QuoteRow extends StatelessWidget {
       ],
     );
   }
+}
+
+String _formatQuoteExpiry(DateTime value) {
+  final local = value.toLocal();
+  String two(int number) => number.toString().padLeft(2, '0');
+  return two(local.hour) + ':' + two(local.minute);
 }
 
 class _SeatState extends StatelessWidget {
