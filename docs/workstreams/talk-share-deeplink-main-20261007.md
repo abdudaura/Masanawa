@@ -1,0 +1,26 @@
+# Talk sharing + deep links — reclaimed 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-share-deeplink-main-20261007`
+- Base SHA: `233ef88eaf55c8affbed4f0101a88afd175daca9`
+- Reclaims stale PR #374 / branch `work/talk-share-deeplink-20261007`.
+- Stale head: `eb2070728662625f9a17686650a21e095d1fe215`; last visible PR update 2026-10-07T11:16:10Z, beyond the 5-minute claim lease.
+- Task: complete canonical native Talk sharing plus trusted Talk deep-link routing on current main.
+- Exact owned paths:
+  - `apps/mobile/lib/src/core/shell_deep_link.dart`
+  - `apps/mobile/test/shell_deep_link_test.dart`
+  - `apps/mobile/android/app/src/main/AndroidManifest.xml`
+  - Talk Share additions only in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
+  - focused `apps/mobile/test/talk_screen_test.dart`
+  - this claim file
+- No Gateway authority change: shared links only navigate; authenticated Talk read remains canonical authority.
+- Contract:
+  - canonical URL `https://masanawa.com/talk/<talkId>`;
+  - native share text contains Talk title, Host, and canonical URL;
+  - HTTPS and `masanawa://talk/<talkId>` resolve only after strict validation;
+  - credentials, ports, fragments, query-bearing links, malformed IDs and foreign hosts are rejected;
+  - live/replay Talks share the same stable identity;
+  - deep links continue through existing pending-authentication handling.
+- Current step: transplant stale inbound-link work onto current main, add missing native Share UX and tests, then close stale PR #374 and open a clean current-main PR.
+- Last update: 2026-10-07T11:43Z
+- Status: active.
