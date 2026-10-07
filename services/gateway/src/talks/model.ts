@@ -22,6 +22,7 @@ export interface TalkDiscoveryItem {
   readonly listenerCount: number;
   readonly commentCount: number;
   readonly durationSeconds: number | null;
+  readonly viewerIsHost?: boolean;
   readonly participants: readonly TalkParticipantPreview[];
 }
 
