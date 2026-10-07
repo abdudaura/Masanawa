@@ -74,6 +74,107 @@ function service(rows: readonly TalkListRow[]) {
   });
 }
 
+describe("Talk Host metadata editing", () => {
+  it("passes the authenticated user as the only Host mutation authority", async () => {
+    let updateInput:
+      | Parameters<TalkRepository["updateMetadata"]>[0]
+      | undefined;
+    const updatedTalk = talk({
+      talkId: "talk-edit",
+      hostUserId: "viewer-1",
+      title: "Updated title",
+      topic: "Updated topic",
+      summary: "Updated summary",
+    });
+    const repo = repository([]);
+    repo.updateMetadata = async (input) => {
+      updateInput = input;
+      return updatedTalk;
+    };
+    repo.getTalk = async () => ({ talk: updatedTalk, commentCount: 3 });
+
+    const result = await createTalkService({
+      repository: repo,
+      authorizer: {
+        async authorize() {
+          return {
+            tenantId: "tenant-1" as never,
+            userId: "viewer-1" as never,
+            profile: {
+              tenantId: "tenant-1" as never,
+              userId: "viewer-1" as never,
+              name: "Viewer",
+              email: null,
+              phone: null,
+              locale: "en",
+              createdAt: "2026-10-07T00:00:00.000Z",
+            },
+          };
+        },
+      },
+      now: () => "2026-10-07T12:10:00.000Z",
+    }).update({
+      authorizationHeader: "Bearer viewer",
+      talkId: "talk-edit",
+      title: " Updated title ",
+      topic: " Updated topic ",
+      summary: " Updated summary ",
+    });
+
+    expect(updateInput).toMatchObject({
+      tenantId: "tenant-1",
+      talkId: "talk-edit",
+      hostUserId: "viewer-1",
+      title: "Updated title",
+      topic: "Updated topic",
+      summary: "Updated summary",
+      updatedAt: "2026-10-07T12:10:00.000Z",
+    });
+    expect(result).toMatchObject({
+      id: "talk-edit",
+      title: "Updated title",
+      topic: "Updated topic",
+      summary: "Updated summary",
+      commentCount: 3,
+    });
+  });
+
+  it("rejects a metadata update when the repository cannot match that Host", async () => {
+    const repo = repository([]);
+    repo.updateMetadata = async () => null;
+
+    await expect(
+      createTalkService({
+        repository: repo,
+        authorizer: {
+          async authorize() {
+            return {
+              tenantId: "tenant-1" as never,
+              userId: "viewer-1" as never,
+              profile: {
+                tenantId: "tenant-1" as never,
+                userId: "viewer-1" as never,
+                name: "Viewer",
+                email: null,
+                phone: null,
+                locale: "en",
+                createdAt: "2026-10-07T00:00:00.000Z",
+              },
+            };
+          },
+        },
+      }).update({
+        authorizationHeader: "Bearer viewer",
+        talkId: "talk-other-host",
+        title: "Not mine",
+      }),
+    ).rejects.toMatchObject({
+      code: "talks.host_forbidden",
+      statusCode: 403,
+    });
+  });
+});
+
 describe("Talk Explore feed ranking integration", () => {
   it("lets meaningful engagement outrank pure recency in Explore", async () => {
     const rows: TalkListRow[] = [
