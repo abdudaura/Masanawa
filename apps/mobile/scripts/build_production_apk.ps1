@@ -11,7 +11,7 @@ $MobileRoot = Resolve-Path (Join-Path $Here "..")
 Set-Location $MobileRoot
 
 $RepoRoot = Resolve-Path (Join-Path $MobileRoot "..\..")
-$ExpectedBranch = "work/launch-first10-completion-20261007"
+$ExpectedBranch = "main"
 $CurrentBranch = (& git -C $RepoRoot rev-parse --abbrev-ref HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw "Unable to determine Git branch." }
 if (-not $AllowDifferentBranch -and $CurrentBranch -ne $ExpectedBranch) {
