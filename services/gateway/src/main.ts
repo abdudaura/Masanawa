@@ -998,6 +998,19 @@ export async function startGatewayService(
         );
       }
 
+      const cryptoConversationConfigured = Boolean(
+        options.appOptions?.financial ||
+          (financialAuthorizer &&
+            database.crypto &&
+            env.NOWPAYMENTS_API_KEY?.trim() &&
+            env.NOWPAYMENTS_IPN_SECRET?.trim() &&
+            env.NOWPAYMENTS_PAYOUT_EMAIL?.trim() &&
+            env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim() &&
+            env.MASANAWA_NOWPAYMENTS_RELAY_TOKEN?.trim() &&
+            (env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
+              env.RAILWAY_STATIC_URL?.trim() ||
+              env.RAILWAY_PUBLIC_DOMAIN?.trim())),
+      );
       strategy = createProductionAgentStrategy({
         inference: createGeminiCredentialPoolInferenceProvider({
           pool: productionGeminiPool,
@@ -1006,7 +1019,9 @@ export async function startGatewayService(
         guides: database.skillGuides,
         systemInstructions: Object.freeze([
           ...TEACHING_AGENT_SYSTEM_INSTRUCTIONS,
-          ...CRYPTO_AGENT_SYSTEM_INSTRUCTIONS,
+          ...(cryptoConversationConfigured
+            ? CRYPTO_AGENT_SYSTEM_INSTRUCTIONS
+            : []),
           ...(env.FLUTTERWAVE_BILLS_ENABLED === "true"
             ? BILLING_AGENT_SYSTEM_INSTRUCTIONS
             : []),
