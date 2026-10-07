@@ -28,6 +28,27 @@ describe("Postgres Direct Twin repository",()=>{
     expect(calls[0]).toContain("talks.public_profiles");
   });
 
+  it("lists only active Twin Seats owned by the current user",async()=>{
+    let call:{text:string;values?:unknown[]}|undefined;
+    const pool:DirectTwinSqlPool={
+      async query<Row>(text:string,values?:unknown[]){
+        call={text,values};
+        return {rowCount:1,rows:[{
+          tenant_id:"tenant-1",talk_id:"talk-1",seat_id:"seat-1",
+          persona_id:"twin-1",kind:"twin",owner_user_id:"owner-1",
+          admitted:true,removed:false,
+        }] as unknown as Row[]};
+      },
+    };
+    const result=await createPostgresDirectTwinRepository(pool).listOwnedTwinSeats({
+      tenantId:"tenant-1",talkId:"talk-1",ownerUserId:"owner-1",
+    });
+    expect(result).toHaveLength(1);
+    expect(call?.text).toContain("s.kind = 'twin'");
+    expect(call?.text).toContain("s.active = TRUE");
+    expect(call?.values).toEqual(["tenant-1","talk-1","owner-1"]);
+  });
+
   it("uses compare-and-swap revision when replacing an instruction",async()=>{
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:DirectTwinSqlPool={
