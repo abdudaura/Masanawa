@@ -78,7 +78,7 @@ export function createTalkProfileService(input: Readonly<{
     return input.authorizer.authorize({ authorizationHeader: header });
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkProfileService>({
     async human(request) {
       const viewer = await identity(request.authorizationHeader);
       const profile = await input.repository.readHuman({
