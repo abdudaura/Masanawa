@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
-import type { TeachingProgressRepository } from "@masanawa/skills";
+import type {
+  TeachingProgress,
+  TeachingProgressRepository,
+} from "@masanawa/skills";
 import { createAgentTeachingAssistant } from "./agent_teaching_assistant.js";
 
 describe("Agent Teaching assistant", () => {
   it("strips hidden learning state and persists relationship-scoped progress", async () => {
-    const upsert = vi.fn(async () => undefined);
+    const upsert = vi.fn(async (_progress: TeachingProgress) => undefined);
     const repository: TeachingProgressRepository = {
       async read() { return null; },
       upsert,
