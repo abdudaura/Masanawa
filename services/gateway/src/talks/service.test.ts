@@ -175,6 +175,89 @@ describe("Talk Host metadata editing", () => {
   });
 });
 
+describe("Talk participant discovery projection", () => {
+  it("keeps the Host first and includes human Expert and Twin Seats once", async () => {
+    const rows: TalkListRow[] = [
+      {
+        talk: talk({
+          talkId: "talk-table",
+          hostUserId: "user_host",
+          hostName: "Host",
+        }),
+        commentCount: 0,
+        reactionCount: 0,
+        followedHost: false,
+        participants: [
+          {
+            id: "user_host",
+            name: "Duplicate Host Seat",
+            kind: "human",
+            avatarUrl: null,
+            isHost: false,
+          },
+          {
+            id: "user_speaker",
+            name: "Amina",
+            kind: "human",
+            avatarUrl: null,
+            isHost: false,
+          },
+          {
+            id: "persona_economist",
+            name: "Economist",
+            kind: "expert",
+            avatarUrl: null,
+            isHost: false,
+          },
+          {
+            id: "persona_twin",
+            name: "Amina Twin",
+            kind: "twin",
+            avatarUrl: null,
+            isHost: false,
+          },
+        ],
+      },
+    ];
+
+    const result = await service(rows).list({
+      authorizationHeader: "Bearer viewer",
+      feed: "live",
+    });
+
+    expect(result[0]?.participants).toEqual([
+      {
+        id: "user_host",
+        name: "Host",
+        kind: "human",
+        avatarUrl: null,
+        isHost: true,
+      },
+      {
+        id: "user_speaker",
+        name: "Amina",
+        kind: "human",
+        avatarUrl: null,
+        isHost: false,
+      },
+      {
+        id: "persona_economist",
+        name: "Economist",
+        kind: "expert",
+        avatarUrl: null,
+        isHost: false,
+      },
+      {
+        id: "persona_twin",
+        name: "Amina Twin",
+        kind: "twin",
+        avatarUrl: null,
+        isHost: false,
+      },
+    ]);
+  });
+});
+
 describe("Talk Explore feed ranking integration", () => {
   it("lets meaningful engagement outrank pure recency in Explore", async () => {
     const rows: TalkListRow[] = [

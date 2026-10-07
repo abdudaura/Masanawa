@@ -60,6 +60,7 @@ export interface TalkListRow {
   readonly commentCount: number;
   readonly reactionCount: number;
   readonly followedHost: boolean;
+  readonly participants?: readonly TalkParticipantPreview[];
 }
 
 export interface TalkCommentRecord {
@@ -142,6 +143,9 @@ export function toTalkDiscoveryItem(
         avatarUrl: null,
         isHost: true,
       }),
+      ...(row.participants ?? []).filter((participant) =>
+        !(participant.kind === "human" && participant.id === talk.hostUserId)
+      ),
     ]),
   });
 }

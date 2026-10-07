@@ -152,6 +152,83 @@ describe("Postgres Talk repository", () => {
     expect(calls[0]?.text).toContain("state = 'live'");
   });
 
+  it("projects active human and AI Seats with canonical identities", async () => {
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const pool: TalkSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
+        return {
+          rowCount: 1,
+          rows: [row({
+            comment_count: 2,
+            reaction_count: 3,
+            followed_host: false,
+            participants_json: [
+              {
+                id: "user_speaker",
+                name: "Amina",
+                kind: "human",
+                avatarUrl: null,
+                isHost: false,
+              },
+              {
+                id: "persona_economist",
+                name: "Economist",
+                kind: "expert",
+                avatarUrl: "https://example.test/economist.png",
+                isHost: false,
+              },
+              {
+                id: "persona_twin",
+                name: "Amina Twin",
+                kind: "twin",
+                avatarUrl: null,
+                isHost: false,
+              },
+            ],
+          })] as unknown as Row[],
+        };
+      },
+    };
+
+    const [result] = await createPostgresTalkRepository(pool).listTalks({
+      tenantId: "tenant_a",
+      viewerUserId: "user_viewer",
+      feed: "live",
+      limit: 50,
+    });
+
+    expect(result?.participants).toEqual([
+      {
+        id: "user_speaker",
+        name: "Amina",
+        kind: "human",
+        avatarUrl: null,
+        isHost: false,
+      },
+      {
+        id: "persona_economist",
+        name: "Economist",
+        kind: "expert",
+        avatarUrl: "https://example.test/economist.png",
+        isHost: false,
+      },
+      {
+        id: "persona_twin",
+        name: "Amina Twin",
+        kind: "twin",
+        avatarUrl: null,
+        isHost: false,
+      },
+    ]);
+    expect(calls[0]?.text).toContain("FROM talks.talk_seats s");
+    expect(calls[0]?.text).toContain("s.active=true OR t.state='ended'");
+    expect(calls[0]?.text).toContain(
+      "CASE WHEN s.kind='human' THEN s.user_id ELSE s.persona_id END",
+    );
+    expect(calls[0]?.text).toContain("s.is_host=false");
+  });
+
   it("applies viewer safety preferences to direct Talk reads", async () => {
     let sql = "";
     const pool: TalkSqlPool = {
@@ -173,6 +250,48 @@ describe("Postgres Talk repository", () => {
     expect(sql).toContain("sp.viewer_user_id = $3");
     expect(sql).toContain("sp.subject_user_id = t.host_user_id");
     expect(sql).toContain("(sp.blocked OR sp.muted)");
+  });
+
+  it("uses the same participant projection for direct Talk detail reads", async () => {
+    let sql = "";
+    const pool: TalkSqlPool = {
+      async query<Row>(text: string) {
+        sql = text;
+        return {
+          rowCount: 1,
+          rows: [row({
+            comment_count: 1,
+            participants_json: [
+              {
+                id: "user_speaker",
+                name: "Amina",
+                kind: "human",
+                avatarUrl: null,
+                isHost: false,
+              },
+            ],
+          })] as unknown as Row[],
+        };
+      },
+    };
+
+    const result = await createPostgresTalkRepository(pool).getTalk({
+      tenantId: "tenant_a",
+      talkId: "talk_a",
+      viewerUserId: "user_viewer",
+    });
+
+    expect(result?.participants).toEqual([
+      {
+        id: "user_speaker",
+        name: "Amina",
+        kind: "human",
+        avatarUrl: null,
+        isHost: false,
+      },
+    ]);
+    expect(sql).toContain("participants_json");
+    expect(sql).toContain("FROM talks.talk_seats s");
   });
 
   it("returns null when a comment target Talk does not exist", async () => {
