@@ -75,13 +75,21 @@ export function createTalkProfileService(input: Readonly<{
 
     async follow(request) {
       const viewer = await identity(request.authorizationHeader);
-      const profile = await input.repository.setFollowing({
-        tenantId: viewer.tenantId,
-        viewerUserId: viewer.userId,
-        handle: normalizeHandle(request.handle),
-        following: request.following,
-        changedAt: now(),
-      });
+      let profile: HumanProfileView | null;
+      try {
+        profile = await input.repository.setFollowing({
+          tenantId: viewer.tenantId,
+          viewerUserId: viewer.userId,
+          handle: normalizeHandle(request.handle),
+          following: request.following,
+          changedAt: now(),
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "profiles.cannot_follow_self") {
+          throw new TalkProfileError("profiles.cannot_follow_self", 409);
+        }
+        throw error;
+      }
       if (!profile) throw new TalkProfileError("profiles.not_found", 404);
       return profile;
     },
