@@ -125,6 +125,7 @@ export function createTalkLiveService(input: Readonly<{
         userId: viewer.userId,
         talkId: talkId(request.talkId),
         now: now(),
+        reconnectGraceMs,
       });
       if (!state) throw new TalkLiveError("talks.not_found", 404);
       return state;
