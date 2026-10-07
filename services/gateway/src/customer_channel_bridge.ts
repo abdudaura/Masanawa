@@ -223,7 +223,11 @@ export function createCustomerChannelBridge(input: Readonly<{
             claim.state === "completed" || claim.state === "delivered"
               ? claim.reply
               : null,
-          requestContact: false,
+          requestContact:
+            request.channel === "telegram" &&
+            claim.state === "completed" &&
+            claim.reply ===
+              "To connect Telegram securely, share the same phone number you use for your Masanawa account.",
           shouldDeliver: claim.state === "completed" && claim.reply !== null,
         });
       }
