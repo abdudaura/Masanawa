@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../social/talk_social_profiles.dart';
 import '../../state/talk_social_profile_state.dart';
+import '../../state/talk_safety_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
+import 'profile_safety_sheet.dart';
 
 class PersonProfileScreen extends ConsumerStatefulWidget {
   const PersonProfileScreen({
@@ -54,6 +56,16 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
     }
   }
 
+  Future<void> _openSafety(HumanProfile profile) {
+    return showProfileSafetySheet(
+      context,
+      transport: ref.read(talkSafetyTransportProvider),
+      targetKind: 'profile',
+      targetId: profile.handle,
+      preferenceHandle: profile.handle,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final asyncProfile = ref.watch(humanProfileProvider(widget.handle));
@@ -75,6 +87,7 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
           followBusy: _followBusy,
           onFollow: () => _toggleFollow(profile),
           onRefresh: _refresh,
+          onSafety: () => _openSafety(profile),
           onOpenTalk: widget.onOpenTalk,
           onOpenTwin: widget.onOpenTwin,
         );
@@ -89,6 +102,7 @@ class _PersonProfileBody extends StatelessWidget {
     required this.followBusy,
     required this.onFollow,
     required this.onRefresh,
+    required this.onSafety,
     this.onOpenTalk,
     this.onOpenTwin,
   });
@@ -97,6 +111,7 @@ class _PersonProfileBody extends StatelessWidget {
   final bool followBusy;
   final VoidCallback onFollow;
   final Future<void> Function() onRefresh;
+  final VoidCallback onSafety;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String publicId)? onOpenTwin;
 
@@ -108,7 +123,17 @@ class _PersonProfileBody extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(title: Text('@' + profile.handle)),
+      appBar: AppBar(
+        title: Text('@' + profile.handle),
+        actions: [
+          IconButton(
+            key: const ValueKey('person-profile-safety'),
+            tooltip: 'Safety',
+            onPressed: onSafety,
+            icon: const Icon(Icons.more_vert_rounded),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: ListView(
