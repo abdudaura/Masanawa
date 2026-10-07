@@ -6,6 +6,8 @@ import type {
   RequestId,
 } from "@masanawa/contracts";
 import type {
+  AgentConversationRepresentation,
+  AgentConversationSurface,
   CharacterSessionBindings,
   CharacterSessionScope,
 } from "@masanawa/agents";
@@ -43,6 +45,8 @@ export interface AgentConversationService {
     readonly text: string;
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
+    readonly surface?: AgentConversationSurface;
+    readonly representation?: AgentConversationRepresentation;
     readonly onTextDelta?: (delta: string) => void | Promise<void>;
     readonly onAudioPcmChunk?: (dataBase64: string) => void | Promise<void>;
     readonly signal?: AbortSignal;
@@ -64,6 +68,8 @@ export interface AgentConversationService {
     readonly dataBase64: string;
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
+    readonly surface?: AgentConversationSurface;
+    readonly representation?: AgentConversationRepresentation;
     readonly signal?: AbortSignal;
   }): Promise<{
     readonly reply: string;
@@ -86,6 +92,8 @@ export interface AgentConversationService {
     }[];
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
+    readonly surface?: AgentConversationSurface;
+    readonly representation?: AgentConversationRepresentation;
     readonly signal?: AbortSignal;
   }): Promise<{
     readonly reply: string;
