@@ -35,3 +35,55 @@ server money movement or persistence. Another active window may implement those 
 as long as it does not edit the mobile files owned here.
 
 Status: active.
+
+
+## Implementation checkpoint
+
+Implemented:
+- AI Seat catalog model with explicit Expert/Twin identity;
+- audience vs Host mode (`sponsor` vs `host_add`);
+- fail-soft candidate catalog loading while backend rolls out;
+- fresh server quote model with total + expiry + Host-approval flag;
+- explicit confirmation before consequential Seat action;
+- Add AI / Sponsor Seat bottom sheet with **Experts** and **Twins** tabs;
+- search by name/topic;
+- one-column persona list with seat fee labels;
+- audience copy makes Host acceptance explicit;
+- created Talks enter the Talk route as Host;
+- Talk projections preserve `viewerIsHost` when the server knows the viewer owns the Talk;
+- Talk screen now opens the correct Add/Sponsor flow;
+- focused model, sheet and Talk integration tests.
+
+## Mobile-facing backend contract
+
+A backend/Commerce lane can implement the following without touching this lane's mobile files:
+
+- `GET /talks/:talkId/ai-seats`
+  - returns an array of candidates:
+    `personaId, displayName, kind(expert|twin), seatFeeLabel, subtitle?, avatarUrl?, topics[], isAvailable`
+  - catalog price text is discovery only, never payment authority.
+
+- `POST /talks/:talkId/ai-seat-quotes`
+  - request: `{ personaId, mode: "host_add" | "sponsor" }`
+  - response:
+    `quoteId, personaId, displayName, kind, mode, totalLabel, expiresAt, requiresHostApproval`
+  - quote must be server-derived, bounded and tied to authenticated viewer/Talk/persona.
+
+- `POST /talks/:talkId/ai-seat-quotes/:quoteId/confirm`
+  - response: `requestId, status, message`
+  - supported status projection:
+    `pending_host | admitted | declined | expired`
+  - confirmation must be idempotent and use canonical Commerce authority.
+  - sponsor confirmation must not bypass Host acceptance.
+  - decline/expiry must release/refund authorization safely.
+
+The backend remains authoritative for:
+- capacity (6 total / max 3 AI policy);
+- exact fee/currency/tax;
+- wallet sufficiency;
+- creator/Twin-owner/platform split;
+- hold/refund/release;
+- Host acceptance;
+- idempotency and reconciliation.
+
+Status: mobile implementation complete for this slice; awaiting independent backend lane.
