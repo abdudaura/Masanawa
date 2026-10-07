@@ -5,11 +5,23 @@ import {
   type CustomerChannelRepository,
 } from "@masanawa/security";
 
+type ReadLinkInput = Parameters<CustomerChannelRepository["readLink"]>[0];
+type SetCharacterSessionInput =
+  Parameters<CustomerChannelRepository["setCharacterSession"]>[0];
+type ClaimMessageInput =
+  Parameters<CustomerChannelRepository["claimMessage"]>[0];
+type CompleteMessageInput =
+  Parameters<CustomerChannelRepository["completeMessage"]>[0];
+type MarkDeliveredInput =
+  Parameters<CustomerChannelRepository["markDelivered"]>[0];
+type FailMessageInput =
+  Parameters<CustomerChannelRepository["failMessage"]>[0];
+
 export function createPostgresCustomerChannelRepository(
   pool: Pool,
 ): CustomerChannelRepository {
   return Object.freeze({
-    async readLink(input) {
+    async readLink(input: ReadLinkInput) {
       const result = await pool.query<{
         channel: "whatsapp" | "telegram";
         external_user_id: string;
@@ -62,7 +74,7 @@ export function createPostgresCustomerChannelRepository(
       );
     },
 
-    async setCharacterSession(input) {
+    async setCharacterSession(input: SetCharacterSessionInput) {
       await pool.query(
         `UPDATE security.customer_channel_links
             SET character_session_id=$4,updated_at=$5
@@ -74,7 +86,7 @@ export function createPostgresCustomerChannelRepository(
       );
     },
 
-    async claimMessage(input) {
+    async claimMessage(input: ClaimMessageInput) {
       const inserted = await pool.query(
         `INSERT INTO security.customer_channel_messages(
            channel,message_id,external_user_id,state,reply,received_at,updated_at
@@ -115,7 +127,7 @@ export function createPostgresCustomerChannelRepository(
       });
     },
 
-    async completeMessage(input) {
+    async completeMessage(input: CompleteMessageInput) {
       await pool.query(
         `UPDATE security.customer_channel_messages
             SET state='completed',reply=$3,updated_at=$4
@@ -124,7 +136,7 @@ export function createPostgresCustomerChannelRepository(
       );
     },
 
-    async markDelivered(input) {
+    async markDelivered(input: MarkDeliveredInput) {
       await pool.query(
         `UPDATE security.customer_channel_messages
             SET state='delivered',updated_at=$3
@@ -133,7 +145,7 @@ export function createPostgresCustomerChannelRepository(
       );
     },
 
-    async failMessage(input) {
+    async failMessage(input: FailMessageInput) {
       await pool.query(
         `UPDATE security.customer_channel_messages
             SET state='failed',updated_at=$3
