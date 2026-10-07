@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import type { PlatformSessionIdentity } from "@masanawa/security";
-import type { MyTalksView, TalkReplayHostView, TalkReplayRepository } from "./model.js";
+import type { TalkReplayCoordinator } from "./egress/coordinator.js";
+import type {
+  MyTalksView,
+  TalkReplayHostView,
+  TalkReplayPlaybackView,
+  TalkReplayRepository,
+} from "./model.js";
 
 export interface TalkReplayAuthorizer {
   authorize(input: Readonly<{
@@ -35,6 +41,10 @@ export interface TalkReplayService {
     authorizationHeader:string|undefined;
     limit:number;
   }>):Promise<MyTalksView>;
+  playback(input: Readonly<{
+    authorizationHeader:string|undefined;
+    talkId:string;
+  }>):Promise<TalkReplayPlaybackView>;
   appendSegment(input: Parameters<TalkReplayRepository["appendSegment"]>[0]):ReturnType<TalkReplayRepository["appendSegment"]>;
   finalizeFromLive(input: Parameters<TalkReplayRepository["finalizeFromLive"]>[0]):ReturnType<TalkReplayRepository["finalizeFromLive"]>;
   platformBlock(input: Parameters<TalkReplayRepository["platformBlock"]>[0]):ReturnType<TalkReplayRepository["platformBlock"]>;
@@ -62,6 +72,7 @@ export function createTalkReplayService(input:Readonly<{
   authorizer:TalkReplayAuthorizer;
   now?:()=>string;
   createRecordingId?:()=>string;
+  coordinator?:TalkReplayCoordinator;
 }>):TalkReplayService{
   const now=input.now??(()=>new Date().toISOString());
   const createRecordingId=input.createRecordingId??(()=>`recording_${randomUUID()}`);
@@ -74,6 +85,8 @@ export function createTalkReplayService(input:Readonly<{
   return Object.freeze({
     async start(request){
       const viewer=await identity(request.authorizationHeader);
+      if(!input.coordinator) throw new TalkReplayError("talks.replay.recording_unavailable",503);
+      const startedAt=now();
       const result=await guarded(()=>input.repository.start({
         tenantId:viewer.tenantId,
         hostUserId:viewer.userId,
@@ -81,9 +94,24 @@ export function createTalkReplayService(input:Readonly<{
         recordingId:createRecordingId(),
         hostRecordingConsent:request.consent,
         publicationPreference:request.publicationPreference,
-        now:now(),
+        now:startedAt,
       }));
       if(!result) throw new TalkReplayError("talks.not_found",404);
+      if(result.recordingState!=="recording") return result;
+      try{
+        await input.coordinator.start({
+          tenantId:viewer.tenantId,talkId:result.talkId,
+          recordingId:result.recordingId,startedAt:result.startedAt,
+        });
+      }catch{
+        try{
+          await input.repository.hostAction({
+            tenantId:viewer.tenantId,hostUserId:viewer.userId,talkId:result.talkId,
+            action:"discard",now:now(),
+          });
+        }catch{}
+        throw new TalkReplayError("talks.replay.recording_unavailable",503);
+      }
       return result;
     },
     async view(request){
@@ -101,11 +129,25 @@ export function createTalkReplayService(input:Readonly<{
         action:request.action,now:now(),
       }));
       if(!result) throw new TalkReplayError("talks.replay.not_found",404);
+      if(request.action==="discard"&&input.coordinator){
+        await guarded(()=>input.coordinator!.abort({
+          tenantId:viewer.tenantId,talkId:result.talkId,recordingId:result.recordingId,
+        }));
+      }
       return result;
     },
     async myTalks(request){
       const viewer=await identity(request.authorizationHeader);
       return input.repository.myTalks({tenantId:viewer.tenantId,hostUserId:viewer.userId,limit:request.limit});
+    },
+    async playback(request){
+      const viewer=await identity(request.authorizationHeader);
+      if(!input.coordinator) throw new TalkReplayError("talks.replay.playback_unavailable",503);
+      const result=await guarded(()=>input.coordinator!.playback({
+        tenantId:viewer.tenantId,talkId:bounded(request.talkId,"talk_id"),viewerUserId:viewer.userId,
+      }));
+      if(!result) throw new TalkReplayError("talks.replay.not_found",404);
+      return result;
     },
     appendSegment(request){return guarded(()=>input.repository.appendSegment(request));},
     finalizeFromLive(request){return guarded(()=>input.repository.finalizeFromLive(request));},
