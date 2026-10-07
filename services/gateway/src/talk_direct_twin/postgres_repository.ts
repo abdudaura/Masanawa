@@ -73,7 +73,7 @@ function instruction(row: InstructionRow): DirectTwinInstructionRecord {
 export function createPostgresDirectTwinRepository(
   pool: DirectTwinSqlPool,
 ): DirectTwinRepository {
-  return Object.freeze({
+  return Object.freeze<DirectTwinRepository>({
     async readSeat(input) {
       const result = await pool.query<SeatRow>(
         `SELECT s.tenant_id,
