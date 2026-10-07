@@ -913,49 +913,49 @@ class _LiveAudioStatusChip extends StatelessWidget {
         onTap: failed ? onRetry : null,
         borderRadius: BorderRadius.circular(999),
         child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        decoration: BoxDecoration(
-          color: failed
-              ? u.emergency.withValues(alpha: .10)
-              : reconnecting
-                  ? u.surfaceMuted
-                  : u.brand.withValues(alpha: .10),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (status == TalkLiveAudioStatus.connecting)
-              const SizedBox(
-                width: 11,
-                height: 11,
-                child: CircularProgressIndicator(strokeWidth: 1.5),
-              )
-            else
-              Icon(
-                failed
-                    ? Icons.wifi_off_rounded
-                    : reconnecting
-                        ? Icons.sync_rounded
-                        : role == TalkLiveRole.host
-                            ? Icons.graphic_eq_rounded
-                            : Icons.headphones_rounded,
-                size: 13,
-                color: failed ? u.emergency : u.brandStrong,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: failed
+                ? u.emergency.withValues(alpha: .10)
+                : reconnecting
+                    ? u.surfaceMuted
+                    : u.brand.withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (status == TalkLiveAudioStatus.connecting)
+                const SizedBox(
+                  width: 11,
+                  height: 11,
+                  child: CircularProgressIndicator(strokeWidth: 1.5),
+                )
+              else
+                Icon(
+                  failed
+                      ? Icons.wifi_off_rounded
+                      : reconnecting
+                          ? Icons.sync_rounded
+                          : role == TalkLiveRole.host
+                              ? Icons.graphic_eq_rounded
+                              : Icons.headphones_rounded,
+                  size: 13,
+                  color: failed ? u.emergency : u.brandStrong,
+                ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: failed ? u.emergency : u.textPrimary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: failed ? u.emergency : u.textPrimary,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
