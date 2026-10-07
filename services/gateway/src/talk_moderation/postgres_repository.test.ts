@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   createTalkLiveSession,
+  launchTalkLivePolicy,
+  transitionTalkLiveSession,
   type TalkLiveSession,
+  type TalkSeatId,
 } from "@masanawa/agents";
 import { toInstant } from "@masanawa/contracts";
 import {
@@ -283,19 +286,17 @@ describe("Postgres Talk moderation repository", () => {
       hostSeatId: "host_user_host" as never,
       startedAt: toInstant("2026-10-07T10:00:00.000Z"),
     });
-    const admitted = {
-      ...initial,
-      revision: 2,
-      seats: [
-        ...initial.seats,
-        {
-          seatId: "seat_speaker" as never,
-          kind: "human" as const,
-          userId: "user_speaker" as never,
-          admittedAt: toInstant("2026-10-07T10:01:00.000Z"),
-        },
-      ],
-    } as unknown as TalkLiveSession;
+    const admitted = transitionTalkLiveSession(
+      initial,
+      {
+        type: "human_seat_admitted",
+        expectedRevision: initial.revision,
+        seatId: "seat_speaker" as TalkSeatId,
+        userId: "user_speaker" as never,
+      },
+      toInstant("2026-10-07T10:01:00.000Z"),
+      launchTalkLivePolicy,
+    ).session;
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     let canonicalReads = 0;
 
