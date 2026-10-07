@@ -18,6 +18,7 @@ import type {
 import type { NativeAudioRenderer } from "./native_audio.js";
 import type { AgentBillingAssistant } from "./agent_billing_assistant.js";
 import type { AgentTeachingAssistant } from "./agent_teaching_assistant.js";
+import type { AgentCryptoAssistant } from "./agent_crypto_assistant.js";
 
 function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -76,6 +77,7 @@ export function createAgentConversationService(input: {
   readonly twinObserver?: TwinConversationObserver;
   readonly billingAssistant?: AgentBillingAssistant;
   readonly teachingAssistant?: AgentTeachingAssistant;
+  readonly cryptoAssistant?: AgentCryptoAssistant;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -195,13 +197,22 @@ export function createAgentConversationService(input: {
           scope: admission.scope,
           text,
         });
-        const direct = teachingPreparation
+        const cryptoDirect = teachingPreparation
+          ? null
+          : await input.cryptoAssistant?.beforeInference({
+              authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
+              scope: admission.scope,
+              text,
+            });
+        const billingDirect = teachingPreparation || cryptoDirect
           ? null
           : await input.billingAssistant?.beforeInference({
               authorizationHeader: request.authorizationHeader,
               characterId: admission.scope.characterId,
               text,
             });
+        const direct = cryptoDirect ?? billingDirect;
         const inferenceText = teachingPreparation?.text ?? text;
         const generated = direct ?? await input.strategy.execute({
           agentRunId,
@@ -213,12 +224,21 @@ export function createAgentConversationService(input: {
           // Machine directives are stripped after inference. Do not stream
           // them into the user-visible chat before server consumption.
           ...(!input.billingAssistant &&
+              !input.cryptoAssistant &&
               !teachingPreparation &&
               request.onTextDelta
             ? { onTextDelta: request.onTextDelta }
             : {}),
           input: Object.freeze({ kind: "text" as const, text: inferenceText }),
         });
+        const cryptoResult = direct || teachingPreparation
+          ? null
+          : await input.cryptoAssistant?.afterInference({
+              authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
+              scope: admission.scope,
+              modelReply: generated.reply,
+            });
         const result = direct
           ? direct
           : teachingPreparation && input.teachingAssistant
@@ -226,11 +246,13 @@ export function createAgentConversationService(input: {
                 preparation: teachingPreparation,
                 modelReply: generated.reply,
               })
-            : (await input.billingAssistant?.afterInference({
+            : cryptoResult ??
+              (await input.billingAssistant?.afterInference({
                 authorizationHeader: request.authorizationHeader,
                 characterId: admission.scope.characterId,
                 modelReply: generated.reply,
-              })) ?? generated;
+              })) ??
+              generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
