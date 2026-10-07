@@ -24,6 +24,25 @@ function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
+
+function assertConversationSessionOpen(session: {
+  readonly state: "active" | "closed";
+  readonly expiresAt: string;
+}): void {
+  if (
+    session.state !== "active" ||
+    !Number.isFinite(Date.parse(session.expiresAt)) ||
+    Date.parse(session.expiresAt) <= Date.now()
+  ) {
+    throw new PlatformError({
+      code: "agents.session_closed",
+      category: "conflict",
+      message: "The conversation session is closed or expired.",
+      retryable: true,
+    });
+  }
+}
+
 function replayTurn(command: MobileTurnCommand) {
   if (
     command.state === "completed" &&
@@ -152,6 +171,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
         const claim = await input.mobileShell.claimTurn({
@@ -371,6 +391,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
         const claim = await input.mobileShell.claimTurn({
@@ -554,6 +575,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
         const claim = await input.mobileShell.claimTurn({
@@ -706,6 +728,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertConversationSessionOpen(session);
       if (session.state === "closed") return;
 
       await input.sessions.close({
