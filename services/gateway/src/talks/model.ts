@@ -120,7 +120,7 @@ export interface TalkRepository {
 }
 
 export function toTalkDiscoveryItem(
-  row: Readonly<{ talk: TalkRecord; commentCount: number }>,
+  row: Readonly<{ talk: TalkRecord; commentCount: number; participants?: readonly TalkParticipantPreview[] }>,
 ): TalkDiscoveryItem {
   const talk = row.talk;
   return Object.freeze({
