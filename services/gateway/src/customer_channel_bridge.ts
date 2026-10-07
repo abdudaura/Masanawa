@@ -196,13 +196,20 @@ export function createCustomerChannelBridge(input: Readonly<{
     // to the linked WhatsApp account. Treat WhatsApp as a first-class Masanawa
     // signup surface instead of forcing the customer to install the mobile app
     // before Gwani can help them.
-    if (!profile && request.channel === "whatsapp") {
+    if (
+      !profile &&
+      (request.channel === "whatsapp" ||
+        (request.channel === "telegram" && request.phone))
+    ) {
       try {
         profile = await input.sessions.createProfile({
           tenantId: input.tenantId as never,
           channel: "sms",
           identifier: phone,
-          name: "WhatsApp customer",
+          name:
+            request.channel === "whatsapp"
+              ? "WhatsApp customer"
+              : "Telegram customer",
           locale: "ng",
           createdAt: instant(),
         });
