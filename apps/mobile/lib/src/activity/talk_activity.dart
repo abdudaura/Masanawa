@@ -86,4 +86,9 @@ abstract interface class TalkActivityTransport {
     required TalkActivityFilter filter,
     int limit = 60,
   });
+
+  Future<void> respondToInvitation({
+    required String talkId,
+    required bool accept,
+  });
 }
