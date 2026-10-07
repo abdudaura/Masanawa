@@ -110,7 +110,19 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
            FROM talks.talks t
           WHERE tenant_id = $1
             AND ($2::text = 'explore' OR state = 'live')
-            AND state IN ('live','ended','reconnecting')
+            AND (
+              state IN ('live','reconnecting')
+              OR (
+                state = 'ended'
+                AND EXISTS (
+                  SELECT 1 FROM talks.replay_sessions r
+                   WHERE r.tenant_id=t.tenant_id
+                     AND r.talk_id=t.talk_id
+                     AND r.recording_state='finalized'
+                     AND r.publication_state='published'
+                )
+              )
+            )
           ORDER BY CASE WHEN state = 'live' THEN 0 ELSE 1 END,
                    COALESCE(started_at, created_at) DESC
           LIMIT $3`,
@@ -128,8 +140,19 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                   WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count
            FROM talks.talks t
           WHERE tenant_id = $1 AND talk_id = $2
+            AND (
+              state <> 'ended'
+              OR host_user_id = $3
+              OR EXISTS (
+                SELECT 1 FROM talks.replay_sessions r
+                 WHERE r.tenant_id=t.tenant_id
+                   AND r.talk_id=t.talk_id
+                   AND r.recording_state='finalized'
+                   AND r.publication_state='published'
+              )
+            )
           LIMIT 1`,
-        [input.tenantId, input.talkId],
+        [input.tenantId, input.talkId, input.viewerUserId],
       );
       const row = result.rows[0];
       return row
@@ -156,9 +179,24 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
          )
          SELECT $1,$2,$3,$4,$5,$6,$7
            WHERE EXISTS (
-             SELECT 1 FROM talks.talks
-              WHERE tenant_id = $1 AND talk_id = $2
-                AND state IN ('live','reconnecting','ended')
+             SELECT 1 FROM talks.talks t
+              WHERE t.tenant_id = $1 AND t.talk_id = $2
+                AND (
+                  t.state IN ('live','reconnecting')
+                  OR (
+                    t.state = 'ended'
+                    AND (
+                      t.host_user_id = $4
+                      OR EXISTS (
+                        SELECT 1 FROM talks.replay_sessions r
+                         WHERE r.tenant_id=t.tenant_id
+                           AND r.talk_id=t.talk_id
+                           AND r.recording_state='finalized'
+                           AND r.publication_state='published'
+                      )
+                    )
+                  )
+                )
            )
          RETURNING tenant_id, talk_id, comment_id, author_user_id, author_name, body, created_at`,
         [

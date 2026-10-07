@@ -22,6 +22,7 @@ export interface TalkDiscoveryItem {
   readonly listenerCount: number;
   readonly commentCount: number;
   readonly durationSeconds: number | null;
+  readonly viewerIsHost?: boolean;
   readonly participants: readonly TalkParticipantPreview[];
 }
 
@@ -82,6 +83,7 @@ export interface TalkRepository {
   getTalk(input: Readonly<{
     tenantId: string;
     talkId: string;
+    viewerUserId: string;
   }>): Promise<Readonly<{ talk: TalkRecord; commentCount: number }> | null>;
   listComments(input: Readonly<{
     tenantId: string;
