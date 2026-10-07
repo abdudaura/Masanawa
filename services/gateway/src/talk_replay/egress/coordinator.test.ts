@@ -37,6 +37,7 @@ describe("Talk replay Egress coordinator",()=>{
       async current(){return null;},
       async currentForTalk(){return null;},
       async createStarted(){throw new Error("db down");},
+      async markStopped(){},
       async markReady(){},
       async markAborted(){},
       async playbackObject(){return null;},
@@ -70,10 +71,11 @@ describe("Talk replay Egress coordinator",()=>{
         return {
           tenantId:"tenant_1",talkId:"talk_1",recordingId:"recording_1",
           egressId:"EG_1",objectKey:"talk-replays/talk_1/recording_1.ogg",
-          status:"recording",startedAt:"2026-10-07T10:00:00.000Z",completedAt:null,checksumSha256:null,
+          status:"stopped",startedAt:"2026-10-07T10:00:00.000Z",completedAt:"2026-10-07T10:00:10.000Z",checksumSha256:null,
         };
       },
       async createStarted(){throw new Error("unused");},
+      async markStopped(){throw new Error("should not restop");},
       async markReady(){ready=true;},
       async markAborted(){},
       async playbackObject(){return null;},
@@ -83,7 +85,7 @@ describe("Talk replay Egress coordinator",()=>{
       media,
       egress:{
         async start(){throw new Error("unused");},
-        async stop(){throw new Error("already stopped");},
+        async stop(){throw new Error("should not stop again");},
       },
       objects:{
         async checksumSha256(){return "b".repeat(64);},
