@@ -16,6 +16,7 @@ import type {
   HostMutationResult,
   HostParticipantView,
   HostRequestView,
+  SelfSeatLeaveResult,
   TalkModerationRepository,
   TalkParticipationView,
   TalkQuestionView,
@@ -45,7 +46,7 @@ interface InvitationRow extends Record<string,unknown>{
   invitee_user_id:string;
   invitee_handle:string;
   invitee_display_name:string;
-  status:"pending"|"accepted"|"declined";
+  status:"pending"|"accepted"|"declined"|"left";
   created_at:string|Date;
   updated_at:string|Date;
 }
@@ -354,6 +355,127 @@ export function createPostgresTalkModerationRepository(
         );
       }
       return participationView(result.rows[0]);
+    },
+
+    async leaveHumanSeat(input): Promise<SelfSeatLeaveResult | null> {
+      const talk=await readTalk(pool,input.tenantId,input.talkId);
+      if(!talk) return null;
+      if(talk.host_user_id===input.userId) throw new Error("talks.host_immutable");
+      if(talk.state==="ended") throw new Error("talks.not_live");
+      await requireLiveRuntime(pool,input.tenantId,input.talkId);
+
+      const seatResult=await pool.query<SeatRow>(
+        `SELECT s.participant_id,s.kind,s.user_id,s.persona_id,p.handle AS profile_handle,
+                s.display_name,s.avatar_url,s.is_host,s.is_muted
+           FROM talks.talk_seats s
+           LEFT JOIN talks.public_profiles p
+             ON p.tenant_id=s.tenant_id AND p.user_id=s.user_id
+          WHERE s.tenant_id=$1
+            AND s.talk_id=$2
+            AND s.user_id=$3
+            AND s.kind='human'
+            AND s.is_host=false
+            AND s.active=true
+          LIMIT 1`,
+        [input.tenantId,input.talkId,input.userId],
+      );
+      const seat=seatResult.rows[0];
+      if(!seat) throw new Error("talks.not_speaker");
+
+      const session=await canonical(pool,input.tenantId,input.talkId,talk,input.now);
+      const transitioned=transitionTalkLiveSession(
+        session,
+        {
+          type:"seat_removed",
+          expectedRevision:session.revision,
+          seatId:seat.participant_id as TalkSeatId,
+        },
+        toInstant(input.now),
+        launchTalkLivePolicy,
+      );
+
+      const result=await pool.query<SessionIdentityRow & {applied:boolean}>(
+        `WITH canonical AS (
+           UPDATE talks.live_canonical
+              SET revision=$4,session_json=$5::jsonb,updated_at=$6
+            WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3
+            RETURNING 1
+         ), removed AS (
+           UPDATE talks.talk_seats
+              SET active=false,removed_at=$6,is_muted=false
+            WHERE tenant_id=$1
+              AND talk_id=$2
+              AND participant_id=$7
+              AND user_id=$8
+              AND kind='human'
+              AND is_host=false
+              AND active=true
+              AND EXISTS(SELECT 1 FROM canonical)
+            RETURNING user_id
+         ), sessions AS (
+           UPDATE talks.live_sessions
+              SET role='listener',is_muted=false
+            WHERE tenant_id=$1
+              AND talk_id=$2
+              AND user_id=$8
+              AND connection_state='connected'
+              AND EXISTS(SELECT 1 FROM removed)
+            RETURNING user_id,session_id
+         ), participation AS (
+           UPDATE talks.participation
+              SET hand_status='idle',updated_at=$6
+            WHERE tenant_id=$1 AND talk_id=$2 AND user_id=$8
+              AND EXISTS(SELECT 1 FROM removed)
+            RETURNING 1
+         ), hand_request AS (
+           UPDATE talks.host_requests
+              SET status='withdrawn',updated_at=$6
+            WHERE tenant_id=$1 AND talk_id=$2
+              AND requester_user_id=$8
+              AND kind='human_speaker'
+              AND status='accepted'
+              AND EXISTS(SELECT 1 FROM removed)
+            RETURNING 1
+         ), invitation AS (
+           UPDATE talks.human_invitations
+              SET status='left',updated_at=$6
+            WHERE tenant_id=$1 AND talk_id=$2
+              AND invitee_user_id=$8
+              AND status='accepted'
+              AND EXISTS(SELECT 1 FROM removed)
+            RETURNING 1
+         )
+         SELECT true AS applied,user_id,session_id FROM sessions
+         UNION ALL
+         SELECT true AS applied,'' AS user_id,'' AS session_id
+          WHERE EXISTS(SELECT 1 FROM canonical)
+            AND EXISTS(SELECT 1 FROM removed)
+            AND NOT EXISTS(SELECT 1 FROM sessions)`,
+        [
+          input.tenantId,input.talkId,session.revision,transitioned.session.revision,
+          JSON.stringify(transitioned.session),input.now,seat.participant_id,input.userId,
+        ],
+      );
+      if(!result.rows[0]?.applied) throw new Error("Talk live revision conflict");
+
+      const participation=await pool.query<ParticipationRow>(
+        `SELECT hand_status,reaction
+           FROM talks.participation
+          WHERE tenant_id=$1 AND talk_id=$2 AND user_id=$3
+          LIMIT 1`,
+        [input.tenantId,input.talkId,input.userId],
+      );
+      const identities=mediaIdentities(
+        result.rows.filter(row=>row.user_id&&row.session_id),
+      );
+      return Object.freeze({
+        participation:participationView(participation.rows[0]),
+        mediaActions:Object.freeze(
+          identities.map(identity=>
+            Object.freeze({type:"publish" as const,identity,canPublish:false}),
+          ),
+        ),
+      });
     },
 
     async submitQuestion(input){
