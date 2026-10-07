@@ -4,7 +4,7 @@ export interface ReplayMediaJob {
   readonly recordingId:string;
   readonly egressId:string;
   readonly objectKey:string;
-  readonly status:"recording"|"ready"|"aborted";
+  readonly status:"recording"|"stopped"|"ready"|"aborted";
   readonly startedAt:string;
   readonly completedAt:string|null;
   readonly checksumSha256:string|null;
@@ -26,7 +26,7 @@ interface JobRow extends Record<string,unknown>{
   recording_id:string;
   egress_id:string;
   object_key:string;
-  status:"recording"|"ready"|"aborted";
+  status:"recording"|"stopped"|"ready"|"aborted";
   started_at:string|Date;
   completed_at:string|Date|null;
   checksum_sha256:string|null;
@@ -55,6 +55,9 @@ export interface ReplayMediaRepository{
   createStarted(input:Readonly<{
     tenantId:string;talkId:string;recordingId:string;egressId:string;objectKey:string;startedAt:string;
   }>):Promise<ReplayMediaJob>;
+  markStopped(input:Readonly<{
+    tenantId:string;talkId:string;recordingId:string;completedAt:string;
+  }>):Promise<void>;
   markReady(input:Readonly<{
     tenantId:string;talkId:string;recordingId:string;checksumSha256:string;completedAt:string;
   }>):Promise<void>;
@@ -105,6 +108,16 @@ export function createPostgresReplayMediaRepository(pool:ReplayMediaSqlPool):Rep
         throw new Error("talks.replay.media_identity_conflict");
       }
       return created;
+    },
+    async markStopped(input){
+      const result=await pool.query(
+        `UPDATE talks.replay_media_jobs
+            SET status='stopped',completed_at=$4
+          WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3
+            AND status='recording'`,
+        [input.tenantId,input.talkId,input.recordingId,input.completedAt],
+      );
+      if((result.rowCount??0)!==1) throw new Error("talks.replay.media_stop_conflict");
     },
     async markReady(input){
       const result=await pool.query(
