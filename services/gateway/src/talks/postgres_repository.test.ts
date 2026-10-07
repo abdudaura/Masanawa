@@ -252,6 +252,48 @@ describe("Postgres Talk repository", () => {
     expect(sql).toContain("(sp.blocked OR sp.muted)");
   });
 
+  it("uses the same participant projection for direct Talk detail reads", async () => {
+    let sql = "";
+    const pool: TalkSqlPool = {
+      async query<Row>(text: string) {
+        sql = text;
+        return {
+          rowCount: 1,
+          rows: [row({
+            comment_count: 1,
+            participants_json: [
+              {
+                id: "user_speaker",
+                name: "Amina",
+                kind: "human",
+                avatarUrl: null,
+                isHost: false,
+              },
+            ],
+          })] as unknown as Row[],
+        };
+      },
+    };
+
+    const result = await createPostgresTalkRepository(pool).getTalk({
+      tenantId: "tenant_a",
+      talkId: "talk_a",
+      viewerUserId: "user_viewer",
+    });
+
+    expect(result?.participants).toEqual([
+      {
+        id: "user_speaker",
+        name: "Amina",
+        kind: "human",
+        avatarUrl: null,
+        isHost: false,
+      },
+    ]);
+    expect(sql).toContain("participants_json");
+    expect(sql).toContain("FROM talks.talk_seats s");
+  });
+
   it("returns null when a comment target Talk does not exist", async () => {
     const pool: TalkSqlPool = {
       async query<Row>() {
