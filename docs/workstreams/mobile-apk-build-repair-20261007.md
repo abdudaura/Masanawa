@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T22:48:35.941Z
+Last update: 2026-10-07T23:00:55.272Z
 Status: active.
 
 ## Exact owned paths
@@ -89,3 +89,5 @@ LiveKit credentials configured only on production gateway. Authenticated RoomSer
 Final build dependency resolution still active: project-plugin configurations require additional legacy AndroidX versions and Kotlin coroutines 1.7.3. Resolve the exact official Maven coordinates with checksum verification and bounded retries for intermittent vendor 502s. Local Maven repository exposes cached artifacts without changes to application manifests or dependencies. LiveKit dashboard also confirms the self-hosted agent with one worker.
 
 All declared AndroidX archive gaps in the restored cache were checksum-verified and filled in a batch. Native plugin compilation is now resolving its final Kotlin coroutines 1.8.1 platform dependencies. Continue bounded packaging attempts and signature verification; do not claim APK completion before the artifact exists. LiveKit worker remains registered and verified.
+
+Resumed packaging from the preserved local caches after the last process ended. The current remaining missing coordinate is Kotlin coroutines Android 1.8.1, needed by url_launcher_android. No app source changes. Do not restart SDK/dependency restoration; use the preserved workspace build-tools and official verified local Maven artifacts. Final APK and signature checks are still pending.
