@@ -73,7 +73,7 @@ export function createTalkLibraryService(input: Readonly<{
     return input.authorizer.authorize({ authorizationHeader: header });
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkLibraryService>({
     async myTalks(request) {
       const viewer = await identity(request.authorizationHeader);
       const rows = await input.repository.listOwned({
