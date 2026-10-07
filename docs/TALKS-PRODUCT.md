@@ -186,7 +186,7 @@ Secondary actions can live behind “More”:
 - Block/mute
 - View participants
 
-Do not put every capability on the main live screen.
+Comments belong to the Talk itself and remain available during Live and Replay. They must not automatically become spoken content or AI context. Do not put every capability on the main live screen.
 
 ## 10. Host controls
 
