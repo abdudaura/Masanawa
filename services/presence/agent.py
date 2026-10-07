@@ -10,13 +10,11 @@ from livekit.agents import (
     Agent,
     AgentServer,
     AgentSession,
-    ChatContext,
-    ChatMessage,
     JobContext,
-    StopResponse,
     cli,
     room_io,
 )
+from livekit.agents.llm import ChatContext, ChatMessage, StopResponse
 from livekit.plugins import google
 
 from runtime_store import PersonaRuntime, RuntimeStore
@@ -177,17 +175,17 @@ async def entrypoint(ctx: JobContext) -> None:
                 model=model,
                 voice=_voice(initial),
                 api_key=google_api_key,
-                instructions=_instructions(initial),
             ),
+        )
+        room_options = room_io.RoomOptions(
+            close_on_disconnect=False,
+            video_input=False,
+            **({"participant_identity": linked} if linked else {}),
         )
         await session.start(
             room=ctx.room,
             agent=TalkPersonaAgent(dispatch, store, initial),
-            room_options=room_io.RoomOptions(
-                participant_identity=linked,
-                close_on_disconnect=False,
-                video_input=False,
-            ),
+            room_options=room_options,
         )
 
         def switch_to_active(speakers: list[rtc.Participant]) -> None:
