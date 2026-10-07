@@ -9,6 +9,8 @@ import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
+import '../screens/profile/person_profile_screen.dart';
+import '../screens/profile/persona_profile_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
@@ -63,6 +65,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/chats' ||
           path.startsWith('/chat/') ||
           path.startsWith('/talk/') ||
+          path.startsWith('/u/') ||
+          path.startsWith('/persona/') ||
           path.startsWith('/twin/') ||
           path.startsWith('/owner-session/') ||
           path == '/agents' ||
@@ -119,6 +123,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 initialTalk?.viewerIsHost == true,
           );
         },
+      ),
+      GoRoute(
+        path: '/u/:handle',
+        builder: (context, state) => PersonProfileScreen(
+          handle: state.pathParameters['handle']!,
+          onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
+          onOpenTwin: (publicId) => context.push('/persona/' + Uri.encodeComponent(publicId)),
+        ),
+      ),
+      GoRoute(
+        path: '/persona/:publicId',
+        builder: (context, state) => PersonaProfileScreen(
+          publicId: state.pathParameters['publicId']!,
+          onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
+          onOpenOwner: (handle) => context.push('/u/' + Uri.encodeComponent(handle)),
+        ),
       ),
       GoRoute(
         path: '/my-twin',
