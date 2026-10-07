@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS talks.questions (
   talk_id text NOT NULL,
   question_id text NOT NULL,
   author_user_id text NOT NULL,
-  author_name text NOT NULL,
-  body text NOT NULL,
+  author_name text NOT NULL CHECK (length(btrim(author_name)) BETWEEN 1 AND 160),
+  body text NOT NULL CHECK (length(btrim(body)) BETWEEN 1 AND 500),
   status text NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending','answered','dismissed')),
   created_at timestamptz NOT NULL,
