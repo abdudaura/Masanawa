@@ -3,8 +3,8 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T23:13:53.103Z
-Status: active.
+Last update: 2026-10-07T23:14:41.895Z
+Status: completed.
 
 ## Exact owned paths
 
@@ -97,3 +97,9 @@ Resumed packaging from the preserved local caches after the last process ended. 
 AAPT2 reproducibly segfaults compiling the committed launcher PNG; Pillow cannot decode the brand logo or 30 copied launcher/splash PNGs. Their bytes match repository blobs: this is committed asset corruption, not a download error. PNG IDAT declares 65536 bytes but the file is only 5621 bytes and has no IEND. Recovered the actual approved blue agent-conversation logo from the user's original /Masanawa/logo.png; it decodes correctly (136x110 RGBA, 8000 bytes). Own apps/mobile/assets/brand/masanawa_agent_logo.png and the generated launcher/splash PNGs and XML under apps/mobile/android/app/src/main/res/ for bounded regeneration using the existing official Flutter asset generators. No logo redesign, theme change, or overlapping active PR exists.
 
 Packaging asset repair is published in 1064674554b02c524567adcecd3c9c57b27c44a0: restored approved original logo, regenerated density-specific Android launcher/splash assets, all 34 PNG resources decode, and formerly crashing AAPT2 compile now succeeds. Release assembly continues restoring standalone plugin dependency versions (including profileinstaller and Java annotations); no source dependency changes. No APK yet; continue using the preserved workspace tools.
+
+## Completed release verification
+
+Universal Android release APK 1.0.1+2 built successfully with Flutter 3.47.6 / Dart 3.13.5, Java 17, Android compile SDK 37 / target SDK 36. Artifact size 109174964 bytes; SHA-256 402293f8e774e96adcfcb39d92ba743ccc0ee229d232b915b195294a60e2ff12. ZIP CRC and APK v2 signature verification pass; ARM64, ARMv7 and x86_64 included. Release uses the repository's debug signing fallback for installation testing; no production signing keystore was supplied. API_BASE_URL and AGENT_BASE_URL use the healthy generated Railway domain. LiveKit API secrets exist only in Railway variables, never in the APK.
+
+All 310 Flutter tests passed; analyzer reported zero errors with 379 non-fatal existing/style notices. All regenerated Android PNGs decode and AAPT2 resource compilation passes. LiveKit authenticated RoomService returned 200, production deployment succeeded, and masanawa-talk-ai registered; dashboard shows one worker. Physical handset installation and end-to-end microphone/speaker testing remain for the user. Preserve existing main product direction and no application dependency upgrades were made.
