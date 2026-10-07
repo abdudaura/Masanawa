@@ -1598,6 +1598,38 @@ void main() {
     expect(find.text('Muted'), findsOneWidget);
   });
 
+  testWidgets('Speaker live audio exposes microphone mute control',
+      (tester) async {
+    final transport = _TalkTransport();
+    final liveAudio = _FakeLiveAudioController(
+      role: TalkLiveRole.speaker,
+      initialStatus: TalkLiveAudioStatus.publishing,
+    );
+    final participation = _ParticipationTransport()
+      ..state = const TalkParticipationState(
+        handStatus: TalkHandStatus.accepted,
+      );
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        liveAudio: liveAudio,
+        participation: participation,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('On mic'), findsOneWidget);
+    expect(find.byKey(const ValueKey('talk-live-mic-toggle')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-live-mic-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(liveAudio.muted, isTrue);
+    expect(find.text('Muted'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('accepted human Speaker can return to the Audience',
       (tester) async {
     final transport = _TalkTransport();
