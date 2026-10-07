@@ -22,6 +22,7 @@ import '../../talks/talk_live_audio_session.dart';
 import '../../talks/talk_participation.dart';
 import '../../talks/talk_polls.dart';
 import '../../talks/talk_replay_playback.dart';
+import '../../talks/talk_share.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
@@ -30,6 +31,10 @@ import 'talk_host_controls_sheets.dart';
 import 'talk_participation_sheets.dart';
 import 'talk_poll_sheet.dart';
 import 'talk_question_sheet.dart';
+
+final talkShareServiceProvider = Provider<TalkShareService>(
+  (_) => const SystemTalkShareService(),
+);
 
 class TalkScreen extends ConsumerStatefulWidget {
   const TalkScreen({
@@ -489,6 +494,23 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     );
   }
 
+  Future<void> _shareTalk(TalkDiscoveryItem talk) async {
+    try {
+      await ref.read(talkShareServiceProvider).share(
+            TalkSharePayload(
+              talkId: talk.id,
+              title: talk.title,
+              hostName: talk.hostName,
+            ),
+          );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t open sharing right now.')),
+      );
+    }
+  }
+
   Future<void> _toggleSaved(bool isSaved) async {
     if (_savingTalk) return;
     setState(() => _savingTalk = true);
@@ -587,6 +609,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         isSaved: isSaved,
         savingTalk: _savingTalk,
         onToggleSaved: () => _toggleSaved(isSaved),
+        onShare: () => _shareTalk(value.talk),
         isHost: widget.isHost,
         liveAudioStatus: _liveAudioStatus,
         liveAudioRole: _liveAudioRole,
@@ -632,6 +655,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             isSaved: isSaved,
             savingTalk: _savingTalk,
             onToggleSaved: () => _toggleSaved(isSaved),
+            onShare: () => _shareTalk(fallback),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -680,6 +704,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             isSaved: isSaved,
             savingTalk: _savingTalk,
             onToggleSaved: () => _toggleSaved(isSaved),
+            onShare: () => _shareTalk(fallback),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -735,6 +760,7 @@ class _TalkBody extends StatelessWidget {
     this.isSaved = false,
     this.savingTalk = false,
     this.onToggleSaved,
+    this.onShare,
     this.isHost = false,
     this.liveAudioStatus = TalkLiveAudioStatus.idle,
     this.liveAudioRole,
@@ -777,6 +803,7 @@ class _TalkBody extends StatelessWidget {
   final bool isSaved;
   final bool savingTalk;
   final VoidCallback? onToggleSaved;
+  final VoidCallback? onShare;
   final bool isHost;
   final TalkLiveAudioStatus liveAudioStatus;
   final TalkLiveRole? liveAudioRole;
@@ -820,6 +847,12 @@ class _TalkBody extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          IconButton(
+            key: const ValueKey('talk-share'),
+            tooltip: 'Share Talk',
+            onPressed: onShare,
+            icon: const Icon(Icons.share_outlined),
+          ),
           IconButton(
             key: const ValueKey('talk-save-toggle'),
             tooltip: isSaved ? 'Remove from Saved' : 'Save Talk',
