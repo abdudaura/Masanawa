@@ -1,10 +1,11 @@
 # Multi-window Work Coordination
 
-## Current product coordination overlay — 2026-10-07
+## Current product coordination overlay — 2026-10-08
 
 Consumer work must follow `CONTINUE-HERE.md`, `docs/PRODUCT-NORTH-STAR.md`,
 `docs/TALKS-PRODUCT.md`, `docs/MOBILE-SCREEN-ARCHITECTURE.md` and
-`docs/CONSUMER-SERVICES.md`.
+`docs/CONSUMER-SERVICES.md`, `docs/APP-SHELL-CONTRACT.md`,
+`docs/MOBILE-READINESS-PLAN.md` and `docs/DEFAULT-AI-PERSONAS.md`.
 
 Older Twin-first and Room-first product plans are no longer canonical. Preserve reusable
 Twin/runtime/commerce implementation, but translate it into the current
@@ -16,7 +17,9 @@ Status: mandatory implementation coordination guidance.
 
 1. Read CONTINUE-HERE.md, including newer checkpoints.
 2. Read docs/PRODUCT-NORTH-STAR.md, docs/TALKS-PRODUCT.md and docs/CONSUMER-SERVICES.md.
-3. Follow the handoff's canonical architecture/task read order.
+3. Read the current screen/shell contracts, docs/MOBILE-READINESS-PLAN.md and
+   docs/DEFAULT-AI-PERSONAS.md, then relevant handoffs. The readiness ledger's R01–R16
+   supersedes older theme/NGN-only/no-event-context assumptions; it does not undo merged foundations.
 4. Inspect current main HEAD, relevant active branches/PRs and CI.
 5. Inspect docs/workstreams/ claims before selecting a workstream.
 6. Resume partial work; never restart completed work or infer completion from a plan.
@@ -35,6 +38,8 @@ Status: mandatory implementation coordination guidance.
 | crypto-nowpayments | private deposit/buy/convert/withdraw eligibility and settlement | crypto/provider adapters + private mobile flow |
 | channels | private WhatsApp/Telegram assistance, identity linking and receipts | channel adapters + Gateway routing |
 | mobile-shell | Home · Create · Activity · You, global Gwani, auth and shared UX | apps/mobile shell and shared presentation |
+| identity-privacy | account deletion, session/device/channel revocation, data lifecycle and external request path | canonical identity/security/storage + Settings, coordinated with integration |
+| localization | shared UI resources, locale/RTL/formatting and dynamic multilingual acceptance | mobile presentation + server capability contracts |
 | integration | composition, migrations, release evidence and production qualification | shared Gateway, migrations, deployment docs |
 
 These are ownership categories, not separate runtime authorities or new numbered milestones.
@@ -132,3 +137,12 @@ active workstream claims, branches/PRs and recent commits. Select and publish on
 non-overlapping workstream claim, preserve existing features, and continue substantive
 implementation on an isolated branch. Coordinate shared contracts and deployment;
 record exact checks, remaining gaps and a recoverable handoff.
+
+## Current readiness task coordination
+
+Use R01–R16 from `MOBILE-READINESS-PLAN.md` in claims and checkpoints; it is the single
+current improvement ledger. Full profiles/context are in `DEFAULT-AI-PERSONAS.md`.
+Documentation publication is not implementation ownership for all tasks. Claim bounded
+paths, coordinate token/router/Gateway/ledger/event/migration changes, and record code,
+build, deployment, provider and device evidence separately. Do not turn empty catalogs,
+manual refresh or a worker registration into a DONE integration claim.
