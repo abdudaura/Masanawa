@@ -130,6 +130,115 @@ describe("Postgres Talk moderation repository", () => {
     expect(calls.some((text) => text.includes("revision=$4"))).toBe(true);
   });
 
+  it("persists bounded pending audience questions for a live Talk", async () => {
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const pool: TalkModerationSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, values });
+        if (text.includes("FROM talks.talks")) {
+          return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.live_runtime")) {
+          return { rowCount: 1, rows: [{ state: "live" }] as unknown as Row[] };
+        }
+        if (text.includes("INSERT INTO talks.questions")) {
+          return {
+            rowCount: 1,
+            rows: [{
+              question_id: "question_1",
+              author_name: "Listener",
+              body: "What changed?",
+              status: "pending",
+              created_at: "2026-10-07T10:01:00.000Z",
+              resolved_at: null,
+            }] as unknown as Row[],
+          };
+        }
+        return { rowCount: 0, rows: [] as unknown as Row[] };
+      },
+    };
+
+    const question =
+        await createPostgresTalkModerationRepository(pool).submitQuestion({
+      tenantId: "tenant_1",
+      talkId: "talk_1",
+      userId: "user_listener",
+      displayName: "Listener",
+      questionId: "question_1",
+      body: "What changed?",
+      now: "2026-10-07T10:01:00.000Z",
+    });
+
+    expect(question).toMatchObject({
+      questionId: "question_1",
+      authorName: "Listener",
+      body: "What changed?",
+      status: "pending",
+    });
+    const insert = calls.find((call) =>
+      call.text.includes("INSERT INTO talks.questions")
+    );
+    expect(insert?.text).toContain("status='pending'");
+    expect(insert?.text).toContain("< 3");
+  });
+
+  it("returns the remaining Host question queue after resolution", async () => {
+    let questionReads = 0;
+    const pool: TalkModerationSqlPool = {
+      async query<Row>(text: string) {
+        if (text.includes("FROM talks.talks")) {
+          return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
+        }
+        if (text.includes("UPDATE talks.questions")) {
+          return {
+            rowCount: 1,
+            rows: [{
+              question_id: "question_1",
+              author_name: "Listener",
+              body: "First?",
+              status: "answered",
+              created_at: "2026-10-07T10:01:00.000Z",
+              resolved_at: "2026-10-07T10:02:00.000Z",
+            }] as unknown as Row[],
+          };
+        }
+        if (text.includes("FROM talks.questions")) {
+          questionReads += 1;
+          return {
+            rowCount: 1,
+            rows: [{
+              question_id: "question_2",
+              author_name: "Second listener",
+              body: "Second?",
+              status: "pending",
+              created_at: "2026-10-07T10:01:30.000Z",
+              resolved_at: null,
+            }] as unknown as Row[],
+          };
+        }
+        return { rowCount: 0, rows: [] as unknown as Row[] };
+      },
+    };
+
+    const remaining =
+        await createPostgresTalkModerationRepository(pool).resolveQuestion({
+      tenantId: "tenant_1",
+      talkId: "talk_1",
+      hostUserId: "user_host",
+      questionId: "question_1",
+      action: "answered",
+      now: "2026-10-07T10:02:00.000Z",
+    });
+
+    expect(questionReads).toBe(1);
+    expect(remaining).toEqual([
+      expect.objectContaining({
+        questionId: "question_2",
+        status: "pending",
+      }),
+    ]);
+  });
+
   it("never lets moderation remove the Host Seat", async () => {
     const pool: TalkModerationSqlPool = {
       async query<Row>(text: string) {
