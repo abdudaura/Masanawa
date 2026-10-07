@@ -70,6 +70,41 @@ export function registerTalkRoutes(app: FastifyInstance, talks: TalkService): vo
     },
   );
 
+  app.patch(
+    "/talks/:talkId",
+    {
+      schema: {
+        params: Type.Object(
+          { talkId: Type.String({ minLength: 8, maxLength: 128 }) },
+          { additionalProperties: false },
+        ),
+        body: Type.Object(
+          {
+            title: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+            topic: Type.Optional(Type.String({ minLength: 1, maxLength: 240 })),
+            summary: Type.Optional(Type.String({ maxLength: 1000 })),
+          },
+          { additionalProperties: false, minProperties: 1 },
+        ),
+      },
+    },
+    async (request) => {
+      const params = request.params as { talkId: string };
+      const body = request.body as {
+        title?: string;
+        topic?: string;
+        summary?: string;
+      };
+      return talks.update({
+        authorizationHeader: request.headers.authorization,
+        talkId: params.talkId,
+        ...(body.title === undefined ? {} : { title: body.title }),
+        ...(body.topic === undefined ? {} : { topic: body.topic }),
+        ...(body.summary === undefined ? {} : { summary: body.summary }),
+      });
+    },
+  );
+
   app.post(
     "/talks/:talkId/comments",
     {
