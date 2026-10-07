@@ -8,6 +8,8 @@ import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class _ActivityTransport implements TalkActivityTransport {
   final List<TalkActivityFilter> loads = [];
+  final List<({String talkId, bool accept})> decisions = [];
+  bool invitationPending = true;
 
   @override
   Future<List<TalkActivityItem>> load({
@@ -24,8 +26,8 @@ class _ActivityTransport implements TalkActivityTransport {
             detail: 'Should AI be taught in secondary school?',
             createdAt: DateTime(2026, 10, 7, 8),
             talkId: 'talk-1',
-            requiresAction: true,
-            actionLabel: 'Open Talk',
+            requiresAction: invitationPending,
+            actionLabel: invitationPending ? 'Respond' : null,
             unread: true,
           ),
           TalkActivityItem(
@@ -70,9 +72,26 @@ class _ActivityTransport implements TalkActivityTransport {
         ],
     };
   }
+
+  @override
+  Future<void> respondToInvitation({
+    required String talkId,
+    required bool accept,
+  }) async {
+    decisions.add((talkId: talkId, accept: accept));
+    invitationPending = false;
+  }
 }
 
 class _FailingActivityTransport implements TalkActivityTransport {
+  @override
+  Future<void> respondToInvitation({
+    required String talkId,
+    required bool accept,
+  }) {
+    throw Exception('DioException socket transport exploded');
+  }
+
   @override
   Future<List<TalkActivityItem>> load({
     required TalkActivityFilter filter,
@@ -138,6 +157,46 @@ void main() {
     expect(find.text('Musa followed you'), findsOneWidget);
     expect(find.text('Creator earnings available'), findsNothing);
     expect(transport.loads, contains(TalkActivityFilter.social));
+  });
+
+  testWidgets('recipient accepts a Talk invitation directly in Activity',
+      (tester) async {
+    final transport = _ActivityTransport();
+    await tester.pumpWidget(_app(transport: transport));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('activity-invite-accept-invite-1')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('activity-invite-accept-invite-1')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(transport.decisions, [(talkId: 'talk-1', accept: true)]);
+    expect(find.text('Invitation accepted.'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('activity-invite-accept-invite-1')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('recipient can decline a Talk invitation directly in Activity',
+      (tester) async {
+    final transport = _ActivityTransport();
+    await tester.pumpWidget(_app(transport: transport));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('activity-invite-decline-invite-1')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(transport.decisions, [(talkId: 'talk-1', accept: false)]);
+    expect(find.text('Invitation declined.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Talk activity opens the related Talk', (tester) async {
