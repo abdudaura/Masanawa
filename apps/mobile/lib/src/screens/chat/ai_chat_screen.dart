@@ -44,7 +44,7 @@ import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
-enum AiChatEntryMode { chat, teach, liveTalk, liveVoice, cafe }
+enum AiChatEntryMode { chat, teach, study, liveTalk, liveVoice, cafe }
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({
@@ -207,6 +207,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final attachments = _pendingAttachments;
     if (text.trim().isEmpty && attachments.isEmpty) return;
     final reply = _replyingTo;
+    if (widget.entryMode == AiChatEntryMode.study &&
+        attachments.isEmpty &&
+        text.trim().isNotEmpty) {
+      final visible = text.trim();
+      _input.clear();
+      ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
+      setState(() {
+        _showEmoji = false;
+        _replyingTo = null;
+      });
+      unawaited(
+        ref.read(aiChatProvider.notifier).sendText(
+              widget.characterId,
+              visible,
+              replyToId: reply?.id,
+              replyPreview: reply?.text,
+              transportPrompt: '<masanawa_study>$visible',
+            ),
+      );
+      return;
+    }
+
     if (widget.twinSetup &&
         attachments.isEmpty &&
         text.trim().isNotEmpty) {
@@ -839,6 +861,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ref.read(aiChatProvider.notifier).sendText(
                   widget.characterId,
                   prompt,
+                  transportPrompt: widget.entryMode == AiChatEntryMode.study
+                      ? '<masanawa_study>$prompt'
+                      : null,
                 ),
           );
         }
@@ -849,6 +874,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             if (_input.text.isEmpty) {
               _input.text = '';
             }
+            break;
+          case AiChatEntryMode.study:
             break;
           case AiChatEntryMode.liveTalk:
             unawaited(_startInlineLiveVoice(agent));
@@ -1257,6 +1284,21 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 state: _inlineVoiceState,
                 onStop: () => unawaited(
                   _stopInlineLiveVoice(outcome: 'completed'),
+                ),
+              ),
+            if (widget.entryMode == AiChatEntryMode.study)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: u.brand.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: u.brand.withValues(alpha: .18)),
+                ),
+                child: Text(
+                  'Study · ask, answer, or speak naturally. Your learning progress is saved privately.',
+                  style: TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
                 ),
               ),
             if (widget.entryMode == AiChatEntryMode.teach)
