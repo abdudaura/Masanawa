@@ -76,3 +76,19 @@ pnpm check
 ```
 
 Do not deploy a linked-device build from a stale lockfile.
+
+
+## Admin mobile control
+
+The Masanawa Admin Flutter app is restored under `apps/admin_mobile` and exposes
+**Channels → WhatsApp**. It uses the administrator's normal Masanawa OTP/session token;
+the linked-device server token and Baileys auth state are never embedded in the APK.
+
+Gateway access is allowed only when the signed-in platform identity matches one of the
+configured admin principals (`MASANAWA_ADMIN_PRINCIPALS`,
+`MASANAWA_ADMIN_USER_IDS`, or `MASANAWA_ADMIN_EMAILS`). The existing
+`MASANAWA_WHATSAPP_ADMIN_TOKEN` remains an optional server/operator fallback.
+
+The page displays connection state, linked number, last event and reconnect attempts,
+renders the server QR for pairing, and requires confirmation before resetting/replacing
+the linked number.
