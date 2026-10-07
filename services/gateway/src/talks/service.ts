@@ -1,4 +1,8 @@
 import { randomUUID } from "node:crypto";
+import {
+  diversifyRankedTalks,
+  rankTalksForExplore,
+} from "../talk_ranking/ranking.js";
 import type { PlatformSessionIdentity } from "@masanawa/security";
 import {
   toTalkCommentView,
@@ -76,10 +80,35 @@ export function createTalkService(input: Readonly<{
       const viewer = await identity(request.authorizationHeader);
       const rows = await input.repository.listTalks({
         tenantId: viewer.tenantId,
+        viewerUserId: viewer.userId,
         feed: request.feed,
-        limit: 50,
+        limit: request.feed === "explore" ? 200 : 50,
       });
-      return Object.freeze(rows.map(toTalkDiscoveryItem));
+      if (request.feed === "live") {
+        return Object.freeze(rows.slice(0, 50).map(toTalkDiscoveryItem));
+      }
+
+      const ranked = rankTalksForExplore(
+        rows.map((row) => Object.freeze({
+          talkId: row.talk.talkId,
+          hostId: row.talk.hostUserId,
+          state: row.talk.state === "draft" ? "ended" as const : row.talk.state,
+          listenerCount: row.talk.listenerCount,
+          commentCount: row.commentCount,
+          reactionCount: row.reactionCount,
+          startedAt: row.talk.createdAt,
+          updatedAt: row.talk.updatedAt,
+          followedHost: row.followedHost,
+          languageMatch: 0,
+          relevance: 0,
+          row,
+        })),
+        { now: now() },
+      );
+      const diversified = diversifyRankedTalks(ranked, 2);
+      return Object.freeze(
+        diversified.slice(0, 50).map((entry) => toTalkDiscoveryItem(entry.item.row)),
+      );
     },
 
     async create(request) {
