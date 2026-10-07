@@ -960,6 +960,73 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Host edits Talk title topic and summary from More',
+      (tester) async {
+    final transport = _TalkTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-more-edit')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('talk-more-edit')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('talk-edit-title')),
+      'AI and education: what changes next',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('talk-edit-topic')),
+      'Education and AI',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('talk-edit-summary')),
+      'A concise summary for people discovering the replay later.',
+    );
+    await tester.tap(find.byKey(const ValueKey('talk-edit-save')));
+    await tester.pumpAndSettle();
+
+    expect(transport.updates, hasLength(1));
+    expect(transport.updates.single.talkId, 'talk-1');
+    expect(
+      transport.updates.single.title,
+      'AI and education: what changes next',
+    );
+    expect(transport.updates.single.topic, 'Education and AI');
+    expect(
+      transport.updates.single.summary,
+      'A concise summary for people discovering the replay later.',
+    );
+    expect(find.byKey(const ValueKey('talk-more-edit')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener does not see Host-only Talk metadata editing',
+      (tester) async {
+    final transport = _TalkTransport();
+
+    await tester.pumpWidget(_app(talkTransport: transport));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-more-edit')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('listener can send a live question to the Host', (tester) async {
     final transport = _TalkTransport();
     final questions = _QuestionTransport();
