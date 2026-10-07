@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens/masanawa_tokens.dart';
 
-/// Resolves the Masanawa Agent Blue palette for the active brightness.
+/// Resolves the Masanawa WhatsApp-derived green palette for the active brightness.
 ///
 /// The palette is token-driven only — semantic roles fixed by BRAND-KIT §3.
 /// Widget code never reads raw hex; it reads this extension off the Theme.
@@ -121,7 +121,7 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
   }
 }
 
-/// Extension: `context.masanawa` — the Agent Blue semantic palette from the
+/// Extension: `context.masanawa` — the WhatsApp-green semantic palette from the
 /// active ThemeData. Widget code reads colors from here only (design DoD).
 extension MasanawaContext on BuildContext {
   MasanawaColors get masanawa => Theme.of(this).extension<MasanawaColors>()!;
@@ -157,16 +157,38 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
           displayColor: scheme.onSurface,
         ),
     appBarTheme: AppBarTheme(
-      backgroundColor: masanawa.surfaceCard,
-      foregroundColor: masanawa.textPrimary,
+      backgroundColor: isDark ? masanawa.surfaceCard : masanawa.brandStrong,
+      foregroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      iconTheme: const IconThemeData(color: Colors.white),
+      actionsIconTheme: const IconThemeData(color: Colors.white),
+      titleTextStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: masanawa.surfaceCard,
-      indicatorColor: masanawa.brand.withValues(alpha: 0.14),
-      labelTextStyle: WidgetStatePropertyAll(
-        TextStyle(color: masanawa.textPrimary),
+      indicatorColor: Colors.transparent,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? masanawa.brandStrong
+              : masanawa.textMuted,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          color: states.contains(WidgetState.selected)
+              ? masanawa.brandStrong
+              : masanawa.textMuted,
+          fontSize: 12,
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w500,
+        ),
       ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -178,8 +200,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: masanawa.structuralBorder),
+        borderRadius: BorderRadius.circular(12),
       ),
     ),
     dialogTheme: DialogThemeData(
@@ -203,7 +224,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
         foregroundColor: Colors.white,
         minimumSize: const Size(48, 48),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     ),
@@ -213,7 +234,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
         minimumSize: const Size(48, 48),
         side: BorderSide(color: masanawa.structuralBorder),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     ),
@@ -252,11 +273,11 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       fillColor: masanawa.surfaceCard,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: masanawa.structuralBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: masanawa.brand, width: 1.6),
       ),
     ),
@@ -276,6 +297,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
         color: isDark ? Colors.black87 : Colors.white,
       ),
       behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
     splashFactory: InkSparkle.splashFactory,
     visualDensity: VisualDensity.standard,
