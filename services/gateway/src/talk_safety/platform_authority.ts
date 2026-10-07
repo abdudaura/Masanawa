@@ -7,7 +7,7 @@ export function createPrincipalTalkSafetyPlatformAuthority(input: Readonly<{
   sessions: TalkSafetyCustomerAuthorizer;
   adminPrincipals: ReadonlySet<string>;
 }>): TalkSafetyPlatformAuthority {
-  return Object.freeze({
+  return Object.freeze<TalkSafetyPlatformAuthority>({
     async authorize(request) {
       const identity = await input.sessions.authorize(request);
       const candidates = [
