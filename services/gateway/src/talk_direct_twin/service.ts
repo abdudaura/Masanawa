@@ -29,6 +29,11 @@ export interface DirectTwinRepository {
     talkId: string;
     seatId: string;
   }>): Promise<DirectTwinSeatRecord | null>;
+  listOwnedTwinSeats(input: Readonly<{
+    tenantId: string;
+    talkId: string;
+    ownerUserId: string;
+  }>): Promise<readonly DirectTwinSeatRecord[]>;
   readInstruction(input: Readonly<{
     tenantId: string;
     talkId: string;
@@ -54,6 +59,11 @@ export interface DirectTwinAuthorizer {
 }
 
 export interface DirectTwinService {
+  mine(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+  }>): Promise<readonly Readonly<{ seatId: string; personaId: string }>[]>;
+
   read(input: Readonly<{
     authorizationHeader: string | undefined;
     talkId: string;
@@ -155,6 +165,23 @@ export function createDirectTwinService(input: Readonly<{
   }
 
   return Object.freeze({
+    async mine(request) {
+      const identity = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+      });
+      const talkId = id(request.talkId, "talkId");
+      const seats = await input.repository.listOwnedTwinSeats({
+        tenantId: identity.tenantId,
+        talkId,
+        ownerUserId: identity.userId,
+      });
+      return Object.freeze(
+        seats
+          .filter((seat) => seat.kind === "twin" && seat.admitted && !seat.removed)
+          .map((seat) => Object.freeze({ seatId: seat.seatId, personaId: seat.personaId })),
+      );
+    },
+
     async read(request) {
       const { identity, seat, talkId, seatId } = await scope(
         request.authorizationHeader,
