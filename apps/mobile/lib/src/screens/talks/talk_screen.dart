@@ -9,6 +9,7 @@ import '../../state/talk_host_controls_state.dart';
 import '../../state/talk_library_state.dart';
 import '../../state/talk_live_state.dart';
 import '../../state/talk_participation_state.dart';
+import '../../state/talk_poll_state.dart';
 import '../../state/talk_question_state.dart';
 import '../../state/talk_replay_playback_state.dart';
 import '../../state/talk_state.dart';
@@ -19,6 +20,7 @@ import '../../talks/talk_host_controls.dart';
 import '../../talks/talk_live.dart';
 import '../../talks/talk_live_audio_session.dart';
 import '../../talks/talk_participation.dart';
+import '../../talks/talk_polls.dart';
 import '../../talks/talk_replay_playback.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
@@ -26,6 +28,7 @@ import 'add_ai_seat_sheet.dart';
 import 'talk_gift_sheet.dart';
 import 'talk_host_controls_sheets.dart';
 import 'talk_participation_sheets.dart';
+import 'talk_poll_sheet.dart';
 import 'talk_question_sheet.dart';
 
 class TalkScreen extends ConsumerStatefulWidget {
@@ -57,6 +60,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   bool _handBusy = false;
   bool _endingTalk = false;
   bool _savingTalk = false;
+  bool _pollBusy = false;
   TalkLiveAudioController? _liveAudio;
   StreamSubscription<TalkLiveAudioStatus>? _liveAudioSub;
   TalkLiveAudioStatus _liveAudioStatus = TalkLiveAudioStatus.idle;
@@ -304,6 +308,71 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _createPoll() async {
+    if (!widget.isHost || _pollBusy) return;
+    final draft = await showCreateTalkPollSheet(context);
+    if (!mounted || draft == null) return;
+    setState(() => _pollBusy = true);
+    try {
+      await ref.read(talkPollTransportProvider).create(
+            talkId: widget.talkId,
+            question: draft.question,
+            options: draft.options,
+          );
+      ref.invalidate(talkPollProvider(widget.talkId));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t start the poll. Try again.')),
+      );
+    } finally {
+      if (mounted) setState(() => _pollBusy = false);
+    }
+  }
+
+  Future<void> _votePoll(String optionId) async {
+    if (_pollBusy) return;
+    final poll = ref.read(talkPollProvider(widget.talkId)).asData?.value;
+    if (poll == null || !poll.isOpen) return;
+    setState(() => _pollBusy = true);
+    try {
+      await ref.read(talkPollTransportProvider).vote(
+            talkId: widget.talkId,
+            pollId: poll.pollId,
+            optionId: optionId,
+          );
+      ref.invalidate(talkPollProvider(widget.talkId));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t record your vote. Try again.')),
+      );
+    } finally {
+      if (mounted) setState(() => _pollBusy = false);
+    }
+  }
+
+  Future<void> _closePoll() async {
+    if (!widget.isHost || _pollBusy) return;
+    final poll = ref.read(talkPollProvider(widget.talkId)).asData?.value;
+    if (poll == null || !poll.isOpen) return;
+    setState(() => _pollBusy = true);
+    try {
+      await ref.read(talkPollTransportProvider).close(
+            talkId: widget.talkId,
+            pollId: poll.pollId,
+          );
+      ref.invalidate(talkPollProvider(widget.talkId));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t close the poll. Try again.')),
+      );
+    } finally {
+      if (mounted) setState(() => _pollBusy = false);
+    }
+  }
+
   Future<void> _askQuestion() async {
     if (widget.isHost) return;
     final body = await showTalkQuestionSheet(context);
@@ -495,6 +564,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
               orElse: () => 0,
             )
         : 0;
+    final poll = ref.watch(talkPollProvider(widget.talkId)).maybeWhen(
+          data: (value) => value,
+          orElse: () => null,
+        );
     final fallback = widget.initialTalk;
     final projectedTalk = detail.maybeWhen(
       data: (value) => value.talk,
@@ -536,6 +609,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         onAddAi: _openAiSeatSheet,
         onGift: widget.isHost ? null : () => _openGift(value.talk.hostName),
         onAskQuestion: value.talk.isLive && !widget.isHost ? _askQuestion : null,
+        poll: value.talk.isLive ? poll : null,
+        pollBusy: _pollBusy,
+        onCreatePoll: widget.isHost && value.talk.isLive ? _createPoll : null,
+        onVotePoll: !widget.isHost && value.talk.isLive ? _votePoll : null,
+        onClosePoll: widget.isHost && value.talk.isLive ? _closePoll : null,
         handStatus: participation.handStatus,
         handBusy: _handBusy,
         onRaiseHand: widget.isHost
@@ -574,6 +652,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             onAddAi: _openAiSeatSheet,
             onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
             onAskQuestion: fallback.isLive && !widget.isHost ? _askQuestion : null,
+            poll: fallback.isLive ? poll : null,
+            pollBusy: _pollBusy,
+            onCreatePoll: widget.isHost && fallback.isLive ? _createPoll : null,
+            onVotePoll: !widget.isHost && fallback.isLive ? _votePoll : null,
+            onClosePoll: widget.isHost && fallback.isLive ? _closePoll : null,
             handStatus: participation.handStatus,
             handBusy: _handBusy,
             onRaiseHand: widget.isHost
@@ -617,6 +700,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             onAddAi: _openAiSeatSheet,
             onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
             onAskQuestion: fallback.isLive && !widget.isHost ? _askQuestion : null,
+            poll: fallback.isLive ? poll : null,
+            pollBusy: _pollBusy,
+            onCreatePoll: widget.isHost && fallback.isLive ? _createPoll : null,
+            onVotePoll: !widget.isHost && fallback.isLive ? _votePoll : null,
+            onClosePoll: widget.isHost && fallback.isLive ? _closePoll : null,
             handStatus: participation.handStatus,
             handBusy: _handBusy,
             onRaiseHand: widget.isHost
@@ -669,6 +757,11 @@ class _TalkBody extends StatelessWidget {
     this.onAddAi,
     this.onGift,
     this.onAskQuestion,
+    this.poll,
+    this.pollBusy = false,
+    this.onCreatePoll,
+    this.onVotePoll,
+    this.onClosePoll,
     this.handStatus = TalkHandStatus.idle,
     this.handBusy = false,
     this.onRaiseHand,
@@ -706,6 +799,11 @@ class _TalkBody extends StatelessWidget {
   final VoidCallback? onAddAi;
   final VoidCallback? onGift;
   final VoidCallback? onAskQuestion;
+  final TalkPoll? poll;
+  final bool pollBusy;
+  final VoidCallback? onCreatePoll;
+  final ValueChanged<String>? onVotePoll;
+  final VoidCallback? onClosePoll;
   final TalkHandStatus handStatus;
   final bool handBusy;
   final VoidCallback? onRaiseHand;
@@ -776,6 +874,26 @@ class _TalkBody extends StatelessWidget {
                     onRaiseHand: onRaiseHand,
                   ),
                 ),
+                if (talk.isLive && (poll != null || isHost))
+                  SliverToBoxAdapter(
+                    child: poll != null
+                        ? TalkPollCard(
+                            poll: poll!,
+                            isHost: isHost,
+                            busy: pollBusy,
+                            onVote: onVotePoll,
+                            onClose: onClosePoll,
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+                            child: OutlinedButton.icon(
+                              key: const ValueKey('talk-poll-start'),
+                              onPressed: pollBusy ? null : onCreatePoll,
+                              icon: const Icon(Icons.poll_outlined),
+                              label: const Text('Start poll'),
+                            ),
+                          ),
+                  ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),

@@ -35,6 +35,8 @@ import { registerTalkLibraryRoutes } from "./talk_library_routes.js";
 import type { TalkLibraryService } from "./talk_library/service.js";
 import { registerTalkGiftRoutes } from "./talk_gift_routes.js";
 import type { TalkGiftService } from "./talk_gifts/service.js";
+import { registerTalkPollRoutes } from "./talk_poll_routes.js";
+import type { TalkPollService } from "./talk_polls/service.js";
 import { registerTalkSafetyRoutes } from "./talk_safety_routes.js";
 import type { TalkSafetyService } from "./talk_safety/service.js";
 import type { TalkService } from "./talks/service.js";
@@ -108,6 +110,7 @@ export interface GatewayAppOptions {
   readonly talkSearch?: TalkSearchService;
   readonly talkLibrary?: TalkLibraryService;
   readonly talkGifts?: TalkGiftService;
+  readonly talkPolls?: TalkPollService;
   readonly talkSafety?: TalkSafetyService;
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
@@ -1405,6 +1408,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   }
   if (options.talkGifts) {
     registerTalkGiftRoutes(app, options.talkGifts);
+  }
+  if (options.talkPolls) {
+    registerTalkPollRoutes(app, options.talkPolls);
   }
   if (options.talkSafety) {
     registerTalkSafetyRoutes(app, options.talkSafety);
