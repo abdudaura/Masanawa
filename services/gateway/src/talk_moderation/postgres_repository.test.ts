@@ -115,6 +115,7 @@ describe("Postgres Talk moderation repository", () => {
         kind: "human",
         isHost: true,
         isMuted: false,
+        userId: "user_host",
       },
       {
         participantId: "seat_hand_user_speaker",
@@ -122,12 +123,45 @@ describe("Postgres Talk moderation repository", () => {
         kind: "human",
         isHost: false,
         isMuted: false,
+        userId: "user_speaker",
       },
     ]);
     expect(result?.mediaActions).toEqual([
       { type: "publish", identity: "user_speaker:session_1", canPublish: true },
     ]);
     expect(calls.some((text) => text.includes("revision=$4"))).toBe(true);
+  });
+
+  it("rejects Raise Hand when the human Host has blocked that user", async () => {
+    const calls: string[] = [];
+    const pool: TalkModerationSqlPool = {
+      async query<Row>(text: string) {
+        calls.push(text);
+        if (text.includes("FROM talks.talks")) {
+          return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.safety_preferences")) {
+          return {
+            rowCount: 1,
+            rows: [{ blocked: true }] as unknown as Row[],
+          };
+        }
+        return { rowCount: 0, rows: [] as unknown as Row[] };
+      },
+    };
+
+    await expect(
+      createPostgresTalkModerationRepository(pool).setRaised({
+        tenantId: "tenant_1",
+        talkId: "talk_1",
+        userId: "user_blocked",
+        displayName: "Blocked listener",
+        raised: true,
+        now: "2026-10-07T10:01:00.000Z",
+      }),
+    ).rejects.toThrow("talks.blocked_by_host");
+
+    expect(calls.some((text) => text.includes("INSERT INTO talks.host_requests"))).toBe(false);
   });
 
   it("persists bounded pending audience questions for a live Talk", async () => {
