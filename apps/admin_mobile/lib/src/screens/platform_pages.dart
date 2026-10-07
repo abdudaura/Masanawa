@@ -1278,8 +1278,8 @@ class ModulesAdminPage extends StatelessWidget {
     _ModuleStatus(
       'WhatsApp & Telegram',
       Icons.forum_outlined,
-      'Integration in progress',
-      'Channel ingress, identity linking and receipts are being implemented in the canonical channel workstream.',
+      'WhatsApp control ready',
+      'WhatsApp uses the admin-linked Gwani number with live status, QR pairing and relink controls. Telegram remains on its canonical bot transport.',
     ),
     _ModuleStatus(
       'Devices',
