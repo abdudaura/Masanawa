@@ -21,3 +21,16 @@ Owned paths:
 - Startup fails closed when Telegram reports a mismatched URL or registration failure.
 - Bot token and webhook secret remain server-side only.
 - No message processing/runtime duplication is introduced.
+
+
+## Completed implementation
+
+- Added deterministic Telegram `setWebhook` registration and `getWebhookInfo` verification.
+- Uses an explicit `MASANAWA_TELEGRAM_WEBHOOK_URL` or derives the canonical endpoint from `MASANAWA_PUBLIC_BASE_URL`.
+- HTTPS is mandatory.
+- Webhook secret is registered as Telegram's secret token.
+- Only message updates are requested and pending updates are not discarded.
+- Gateway startup fails closed if registration fails or Telegram reports a different URL.
+- Added focused registration tests for success, URL mismatch and non-HTTPS rejection.
+
+Remaining external evidence: deploy with a real bot token and confirm Telegram delivery to the production Gateway.
