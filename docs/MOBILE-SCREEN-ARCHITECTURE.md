@@ -23,15 +23,15 @@ The separate Masanawa Admin app is out of scope here.
 
 ## Bottom navigation
 
-Exactly five primary destinations:
+Exactly four primary destinations:
 
-1. **For You**
-2. **Live**
-3. **Create** — visually prominent center action
-4. **Activity**
-5. **You**
+1. **Home** — contains **Explore** and **Live Talks**
+2. **Create** — visually prominent action
+3. **Activity**
+4. **You**
 
-Create opens the Talk composer rather than requiring a persistent blank tab.
+Home discovery is always one vertical column of full-width Talk cards. Do not introduce
+horizontal Talk rails, horizontal card carousels or grid discovery. Create opens the Talk composer.
 
 ## Global private Gwani
 
@@ -91,30 +91,29 @@ standalone screens.
 
 # C. Discovery
 
-### S10 — For You
+### S10 — Home / Explore
 
-Primary app home.
+Default Home tab.
 
-Vertical/simple feed mixing:
+A TikTok-like **vertical** sequence of full-width Talk cards mixing:
 - Live Talks;
 - strong replays;
 - followed creators;
 - relevant topics.
 
-Cards are compact and audio-first.
-
+One Talk follows another down the page. Never use horizontal Talk grids/carousels.
 Primary action: **Listen**.
 
-### S11 — Live
+### S11 — Home / Live Talks
 
-Intentional browsing of Talks happening now.
+Second Home tab. It uses the same vertical card language but contains only Talks happening now.
 
-Compact filters/chips:
+Compact filters/chips may include:
 - Trending
 - Following
 - topics/categories
 
-No Room directory.
+Filters may scroll horizontally; Talk content itself may not. No Room directory.
 
 ### S12 — Search
 
@@ -627,8 +626,7 @@ inside Talks without their own app sections.
 
 Exact identifiers can change, but the route hierarchy should remain small:
 
-- `/for-you`
-- `/live`
+- `/home`
 - `/talk/create`
 - `/talk/:talkId`
 - `/talk/:talkId/analytics`
@@ -650,12 +648,12 @@ Most subordinate flows should be nested state/sheets instead of permanent new ro
 
 Design in this order because these screens define the whole product:
 
-1. For You
+1. Home — Explore / Live Talks
 2. Talk — listener
 3. Talk — Host
 4. Create Talk
 5. Add AI / Sponsor Seat sheet
-6. Live
+6. Home / Live Talks state
 7. Person profile
 8. Persona profile
 9. Activity
