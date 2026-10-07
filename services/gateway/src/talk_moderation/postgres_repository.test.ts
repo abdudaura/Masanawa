@@ -335,7 +335,7 @@ describe("Postgres Talk moderation repository", () => {
             }] as unknown as Row[],
           };
         }
-        if (text.includes("WITH canonical AS") && text.includes("hand_request")) {
+        if (text.includes("WITH eligible AS") && text.includes("hand_request")) {
           return {
             rowCount: 1,
             rows: [{
@@ -376,7 +376,7 @@ describe("Postgres Talk moderation repository", () => {
       },
     ]);
     const mutation = calls.find((call) =>
-      call.text.includes("WITH canonical AS") && call.text.includes("hand_request")
+      call.text.includes("WITH eligible AS") && call.text.includes("hand_request")
     );
     expect(mutation?.text).toContain("role='listener'");
     expect(mutation?.text).toContain("status='withdrawn'");
