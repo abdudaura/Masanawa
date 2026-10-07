@@ -1,0 +1,23 @@
+# Talk participant projection — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-participant-projection-20261007`
+- Base SHA: `7f77a50481ac46142ac170e3a60ea80837780811`
+- Task: project the real active Talk table into canonical feed/detail participant metadata.
+- Exact owned paths:
+  - `services/gateway/src/talks/model.ts`
+  - `services/gateway/src/talks/postgres_repository.ts`
+  - focused Talk repository/service tests
+  - existing mobile Talk model tests only if needed
+  - this claim file
+- Contract:
+  - Host remains first and explicitly human/Host;
+  - active human Speaker Seats expose canonical user ID;
+  - active Expert/Twin Seats expose canonical persona ID;
+  - duplicate Host Seat is never projected;
+  - labels remain Human / Expert / Twin;
+  - feed and direct detail use the same participant projection;
+  - no Seat lifecycle or moderation authority changes.
+- Current step: extend Talk repository rows with active Seat projection and make discovery/detail serialization consume it.
+- Last update: 2026-10-07T15:08Z
+- Status: active
