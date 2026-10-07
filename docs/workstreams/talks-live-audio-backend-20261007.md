@@ -10,6 +10,7 @@
   - focused Talk live-audio tests
   - isolated inherited additions to `services/gateway/src/app.ts` and `services/gateway/src/main.ts`
   - `packages/talks/migrations/0004_talk_live_sessions.sql`
+  - isolated Talk lifecycle SQL updates performed only through the new Talk-live repository
   - this handoff
 - Reuse: existing Gemini Live token/session/security foundations; do not create another voice provider stack.
 - Not owned: mobile files; AI Seat Commerce; search/ranking; host moderation; replay storage; existing private-agent voice flows.
