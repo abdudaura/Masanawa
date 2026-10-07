@@ -1,0 +1,26 @@
+# Mobile Talk safety controls — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-mobile-safety-controls-20261007`
+- Base SHA: `233ef88eaf55c8affbed4f0101a88afd175daca9`
+- Task: expose launch-critical Talk safety controls in the mobile Talk experience using the existing canonical safety backend.
+- Exact owned paths:
+  - `apps/mobile/lib/src/talks/talk_safety.dart`
+  - `apps/mobile/lib/src/talks/talk_safety_http_transport.dart`
+  - `apps/mobile/lib/src/state/talk_safety_state.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_more_sheet.dart`
+  - focused Talk-screen wiring/tests in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
+  - focused mobile tests
+  - this claim file
+- Shared authority: existing Gateway Talk safety/reporting/preferences endpoints only; no new backend mutations or policy bypasses.
+- Product scope:
+  - compact More surface, not more persistent Talk chrome;
+  - Report Talk;
+  - Block/unblock Host;
+  - Mute/unmute Host;
+  - View participants with clear Human / Expert / Twin labels;
+  - no financial or moderation authority is delegated to listeners.
+- Current step: inspect existing Talk safety route contract and map it to mobile transport/state/sheet.
+- Last update: 2026-10-07T11:46Z
+- Implementation status: claimed
+- Verification status: pending
