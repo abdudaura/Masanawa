@@ -197,7 +197,14 @@ export function createAgentConversationService(input: {
           scope: admission.scope,
           text,
         });
-        const cryptoDirect = teachingPreparation
+        const billingDirect = teachingPreparation
+          ? null
+          : await input.billingAssistant?.beforeInference({
+              authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
+              text,
+            });
+        const cryptoDirect = teachingPreparation || billingDirect
           ? null
           : await input.cryptoAssistant?.beforeInference({
               authorizationHeader: request.authorizationHeader,
@@ -205,14 +212,7 @@ export function createAgentConversationService(input: {
               scope: admission.scope,
               text,
             });
-        const billingDirect = teachingPreparation || cryptoDirect
-          ? null
-          : await input.billingAssistant?.beforeInference({
-              authorizationHeader: request.authorizationHeader,
-              characterId: admission.scope.characterId,
-              text,
-            });
-        const direct = cryptoDirect ?? billingDirect;
+        const direct = billingDirect ?? cryptoDirect;
         const inferenceText = teachingPreparation?.text ?? text;
         const generated = direct ?? await input.strategy.execute({
           agentRunId,
