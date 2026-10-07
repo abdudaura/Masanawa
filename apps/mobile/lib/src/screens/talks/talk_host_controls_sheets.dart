@@ -546,15 +546,14 @@ class _ParticipantTile extends StatelessWidget {
               key: ValueKey('host-participant-menu-' + participant.participantId),
               enabled: !busy,
               onSelected: (action) {
-                switch (action) {
-                  case _ParticipantMenuAction.muteToggle:
-                    onMuteToggle();
-                  case _ParticipantMenuAction.remove:
-                    onRemove();
-                  case _ParticipantMenuAction.report:
-                    onReport();
-                  case _ParticipantMenuAction.block:
-                    onBlock?.call();
+                if (action == _ParticipantMenuAction.muteToggle) {
+                  onMuteToggle();
+                } else if (action == _ParticipantMenuAction.remove) {
+                  onRemove();
+                } else if (action == _ParticipantMenuAction.report) {
+                  onReport();
+                } else {
+                  onBlock?.call();
                 }
               },
               itemBuilder: (_) => [
