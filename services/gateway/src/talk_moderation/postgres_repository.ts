@@ -395,14 +395,9 @@ export function createPostgresTalkModerationRepository(
       );
 
       const result=await pool.query<SessionIdentityRow & {applied:boolean}>(
-        `WITH canonical AS (
-           UPDATE talks.live_canonical
-              SET revision=$4,session_json=$5::jsonb,updated_at=$6
-            WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3
-            RETURNING 1
-         ), removed AS (
-           UPDATE talks.talk_seats
-              SET active=false,removed_at=$6,is_muted=false
+        `WITH eligible AS (
+           SELECT participant_id
+             FROM talks.talk_seats
             WHERE tenant_id=$1
               AND talk_id=$2
               AND participant_id=$7
@@ -410,6 +405,19 @@ export function createPostgresTalkModerationRepository(
               AND kind='human'
               AND is_host=false
               AND active=true
+            LIMIT 1
+         ), canonical AS (
+           UPDATE talks.live_canonical
+              SET revision=$4,session_json=$5::jsonb,updated_at=$6
+            WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3
+              AND EXISTS(SELECT 1 FROM eligible)
+            RETURNING 1
+         ), removed AS (
+           UPDATE talks.talk_seats
+              SET active=false,removed_at=$6,is_muted=false
+            WHERE tenant_id=$1
+              AND talk_id=$2
+              AND participant_id=(SELECT participant_id FROM eligible LIMIT 1)
               AND EXISTS(SELECT 1 FROM canonical)
             RETURNING user_id
          ), sessions AS (
