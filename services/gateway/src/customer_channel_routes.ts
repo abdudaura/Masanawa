@@ -144,6 +144,20 @@ async function whatsappMedia(
   });
 }
 
+function telegramReplyChoices(text: string): readonly string[] {
+  const choices: string[] = [];
+  for (const line of text.split(/\r?\n/u)) {
+    const match = /^\s*\d{1,2}[.)]\s+(.{1,120})\s*$/u.exec(line);
+    const label = match?.[1]?.trim();
+    if (!label) continue;
+    const publicId = /\(@([a-z0-9][a-z0-9_-]{2,63})\)/iu.exec(label)?.[1];
+    const value = publicId ? `@${publicId}` : label;
+    if (!choices.includes(value)) choices.push(value);
+    if (choices.length >= 6) break;
+  }
+  return choices.length >= 2 ? Object.freeze(choices) : Object.freeze([]);
+}
+
 async function sendTelegram(
   config: TelegramChannelConfig,
   chatId: string,
@@ -160,17 +174,27 @@ async function sendTelegram(
         body: JSON.stringify({
           chat_id: chatId,
           text: chunks[index],
-          ...(requestContact && index === chunks.length - 1
-            ? {
-                reply_markup: {
-                  keyboard: [[{
-                    text: "Connect my Masanawa number",
-                    request_contact: true,
-                  }]],
-                  resize_keyboard: true,
-                  one_time_keyboard: true,
-                },
-              }
+          ...(index === chunks.length - 1
+            ? requestContact
+              ? {
+                  reply_markup: {
+                    keyboard: [[{
+                      text: "Connect my Masanawa number",
+                      request_contact: true,
+                    }]],
+                    resize_keyboard: true,
+                    one_time_keyboard: true,
+                  },
+                }
+              : telegramReplyChoices(text).length > 0
+                ? {
+                    reply_markup: {
+                      keyboard: telegramReplyChoices(text).map((choice) => [{ text: choice }]),
+                      resize_keyboard: true,
+                      one_time_keyboard: true,
+                    },
+                  }
+                : {}
             : {}),
         }),
       },
