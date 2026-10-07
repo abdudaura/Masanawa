@@ -14,6 +14,7 @@ import 'package:masanawa/src/state/talk_participation_state.dart';
 import 'package:masanawa/src/state/talk_poll_state.dart';
 import 'package:masanawa/src/state/talk_question_state.dart';
 import 'package:masanawa/src/state/talk_replay_playback_state.dart';
+import 'package:masanawa/src/state/talk_safety_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/talks/talk_gift.dart';
@@ -25,7 +26,44 @@ import 'package:masanawa/src/talks/talk_participation.dart';
 import 'package:masanawa/src/talks/talk_polls.dart';
 import 'package:masanawa/src/talks/talk_questions.dart';
 import 'package:masanawa/src/talks/talk_replay_playback.dart';
+import 'package:masanawa/src/talks/talk_safety.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _SafetyTransport implements TalkSafetyTransport {
+  TalkSafetyPreference preference =
+      const TalkSafetyPreference(blocked: false, muted: false);
+  final List<({
+    String talkId,
+    bool isReplay,
+    TalkSafetyReportReason reason,
+  })> reports = [];
+  final List<({String userId, bool blocked, bool muted})> preferences = [];
+
+  @override
+  Future<TalkSafetyPreference> loadUserPreference(String userId) async =>
+      preference;
+
+  @override
+  Future<TalkSafetyPreference> setUserPreference({
+    required String userId,
+    required bool blocked,
+    required bool muted,
+  }) async {
+    preference = TalkSafetyPreference(blocked: blocked, muted: muted);
+    preferences.add((userId: userId, blocked: blocked, muted: muted));
+    return preference;
+  }
+
+  @override
+  Future<void> reportTalk({
+    required String talkId,
+    required bool isReplay,
+    required TalkSafetyReportReason reason,
+    String? detail,
+  }) async {
+    reports.add((talkId: talkId, isReplay: isReplay, reason: reason));
+  }
+}
 
 class _GiftTransport implements TalkGiftTransport {
   _GiftTransport({this.fail = false});
@@ -592,6 +630,7 @@ Widget _app({
   _FakeReplayPlaybackController? replayPlayback,
   _LibraryTransport? library,
   _GiftTransport? gift,
+  _SafetyTransport? safety,
 }) {
   return ProviderScope(
     overrides: [
@@ -616,6 +655,9 @@ Widget _app({
       ),
       talkGiftTransportProvider.overrideWithValue(
         gift ?? _GiftTransport(),
+      ),
+      talkSafetyTransportProvider.overrideWithValue(
+        safety ?? _SafetyTransport(),
       ),
       talkLiveAudioFactoryProvider.overrideWithValue(
         (_) => liveAudio ??
@@ -687,6 +729,117 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Share your thoughts…'), findsOneWidget);
+  });
+
+  testWidgets('Talk More shows labeled participants and reports privately',
+      (tester) async {
+    final transport = _TalkTransport();
+    final safety = _SafetyTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        safety: safety,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Talk options'), findsOneWidget);
+    expect(find.text('View participants'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('talk-more-participants')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Participants'), findsOneWidget);
+    expect(find.text('Human · Host'), findsOneWidget);
+    expect(find.text('Masanawa Expert · AI'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-more-report')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-report-harassment')));
+    await tester.pumpAndSettle();
+
+    expect(safety.reports, hasLength(1));
+    expect(safety.reports.single.talkId, 'talk-1');
+    expect(safety.reports.single.isReplay, isFalse);
+    expect(
+      safety.reports.single.reason,
+      TalkSafetyReportReason.harassment,
+    );
+    expect(find.text('Report received. Thank you.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Talk More updates Host mute and block preferences',
+      (tester) async {
+    final transport = _TalkTransport();
+    final safety = _SafetyTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        safety: safety,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mute Host'), findsOneWidget);
+    expect(find.text('Block Host'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-mute-host')));
+    await tester.pumpAndSettle();
+
+    expect(
+      safety.preferences.last,
+      (userId: 'host', blocked: false, muted: true),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-block-host')));
+    await tester.pumpAndSettle();
+
+    expect(
+      safety.preferences.last,
+      (userId: 'host', blocked: true, muted: true),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('replay report uses replay safety target', (tester) async {
+    final transport = _ReplayTalkTransport();
+    final safety = _SafetyTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        safety: safety,
+        home: const TalkScreen(
+          talkId: 'replay-1',
+          initialTalk: _ReplayTalkTransport.talk,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+    expect(find.text('Report replay'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-report')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-report-spam')));
+    await tester.pumpAndSettle();
+
+    expect(safety.reports.single.talkId, 'replay-1');
+    expect(safety.reports.single.isReplay, isTrue);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('listener can send a live question to the Host', (tester) async {
