@@ -111,6 +111,17 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
           WHERE tenant_id = $1
             AND ($2::text = 'explore' OR state = 'live')
             AND state IN ('live','ended','reconnecting')
+            AND (
+              state <> 'ended'
+              OR EXISTS (
+                SELECT 1
+                  FROM talks.replays replay
+                 WHERE replay.tenant_id=t.tenant_id
+                   AND replay.talk_id=t.talk_id
+                   AND replay.provider_status='complete'
+                   AND replay.session_json->>'publicationState'='published'
+              )
+            )
           ORDER BY CASE WHEN state = 'live' THEN 0 ELSE 1 END,
                    COALESCE(started_at, created_at) DESC
           LIMIT $3`,
