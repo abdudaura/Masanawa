@@ -81,7 +81,7 @@ export function createPostgresReplayMediaRepository(pool:ReplayMediaSqlPool):Rep
     return result.rows[0]?map(result.rows[0]):null;
   }
 
-  return Object.freeze({
+  return Object.freeze<ReplayMediaRepository>({
     current,
     async currentForTalk(input){
       const result=await pool.query<JobRow>(
