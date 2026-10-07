@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,12 +8,14 @@ import '../../state/talk_host_controls_state.dart';
 import '../../state/talk_library_state.dart';
 import '../../state/talk_live_state.dart';
 import '../../state/talk_participation_state.dart';
+import '../../state/talk_replay_playback_state.dart';
 import '../../state/talk_state.dart';
 import '../../talks/talk_ai_seat.dart';
 import '../../talks/talk_host_controls.dart';
 import '../../talks/talk_live.dart';
 import '../../talks/talk_live_audio_session.dart';
 import '../../talks/talk_participation.dart';
+import '../../talks/talk_replay_playback.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
@@ -55,6 +58,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   bool _liveAudioMuted = false;
   String? _liveAudioError;
   bool _liveAudioStartScheduled = false;
+  TalkReplayPlaybackController? _replayPlayback;
+  StreamSubscription<TalkReplayPlaybackSnapshot>? _replayPlaybackSub;
+  TalkReplayPlaybackSnapshot _replaySnapshot =
+      const TalkReplayPlaybackSnapshot();
 
   @override
   void initState() {
@@ -71,6 +78,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     final liveAudio = _liveAudio;
     _liveAudio = null;
     if (liveAudio != null) unawaited(liveAudio.close());
+    unawaited(_replayPlaybackSub?.cancel());
+    final replayPlayback = _replayPlayback;
+    _replayPlayback = null;
+    if (replayPlayback != null) unawaited(replayPlayback.close());
     super.dispose();
   }
 
@@ -147,6 +158,42 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       _liveAudioMuted = controller.muted;
       _liveAudioError = controller.errorMessage;
     });
+  }
+
+  TalkReplayPlaybackController _ensureReplayPlayback() {
+    final existing = _replayPlayback;
+    if (existing != null) return existing;
+    final controller =
+        ref.read(talkReplayPlaybackFactoryProvider)(widget.talkId);
+    _replayPlayback = controller;
+    _replaySnapshot = controller.snapshot;
+    _replayPlaybackSub = controller.snapshots.listen((snapshot) {
+      if (!mounted || !identical(_replayPlayback, controller)) return;
+      setState(() => _replaySnapshot = snapshot);
+    });
+    return controller;
+  }
+
+  Future<void> _toggleReplayPlayback() async {
+    final controller = _ensureReplayPlayback();
+    await controller.toggle();
+    if (!mounted || !identical(_replayPlayback, controller)) return;
+    setState(() => _replaySnapshot = controller.snapshot);
+  }
+
+  Future<void> _retryReplayPlayback() async {
+    final controller = _ensureReplayPlayback();
+    await controller.retry();
+    if (!mounted || !identical(_replayPlayback, controller)) return;
+    setState(() => _replaySnapshot = controller.snapshot);
+  }
+
+  Future<void> _seekReplayPlayback(double fraction) async {
+    final controller = _replayPlayback;
+    if (controller == null) return;
+    await controller.seekTo(fraction);
+    if (!mounted || !identical(_replayPlayback, controller)) return;
+    setState(() => _replaySnapshot = controller.snapshot);
   }
 
   Future<void> _openAiSeatSheet() async {
@@ -393,6 +440,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         liveAudioError: _liveAudioError,
         onRetryLiveAudio: _retryLiveAudio,
         onToggleLiveMute: _toggleLiveMute,
+        replaySnapshot: _replaySnapshot,
+        onToggleReplay: _toggleReplayPlayback,
+        onRetryReplay: _retryReplayPlayback,
+        onSeekReplay: _seekReplayPlayback,
         hostRequestCount: hostControls.requests.length,
         onHostRequests: _openHostRequests,
         onHostManage: _openHostManage,
@@ -426,6 +477,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             liveAudioError: _liveAudioError,
             onRetryLiveAudio: _retryLiveAudio,
             onToggleLiveMute: _toggleLiveMute,
+            replaySnapshot: _replaySnapshot,
+            onToggleReplay: _toggleReplayPlayback,
+            onRetryReplay: _retryReplayPlayback,
+            onSeekReplay: _seekReplayPlayback,
             hostRequestCount: hostControls.requests.length,
             onHostRequests: _openHostRequests,
             onHostManage: _openHostManage,
@@ -464,6 +519,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             liveAudioError: _liveAudioError,
             onRetryLiveAudio: _retryLiveAudio,
             onToggleLiveMute: _toggleLiveMute,
+            replaySnapshot: _replaySnapshot,
+            onToggleReplay: _toggleReplayPlayback,
+            onRetryReplay: _retryReplayPlayback,
+            onSeekReplay: _seekReplayPlayback,
             hostRequestCount: hostControls.requests.length,
             onHostRequests: _openHostRequests,
             onHostManage: _openHostManage,
@@ -509,6 +568,10 @@ class _TalkBody extends StatelessWidget {
     this.liveAudioError,
     this.onRetryLiveAudio,
     this.onToggleLiveMute,
+    this.replaySnapshot = const TalkReplayPlaybackSnapshot(),
+    this.onToggleReplay,
+    this.onRetryReplay,
+    this.onSeekReplay,
     this.hostRequestCount = 0,
     this.onHostRequests,
     this.onHostManage,
@@ -539,6 +602,10 @@ class _TalkBody extends StatelessWidget {
   final String? liveAudioError;
   final VoidCallback? onRetryLiveAudio;
   final VoidCallback? onToggleLiveMute;
+  final TalkReplayPlaybackSnapshot replaySnapshot;
+  final VoidCallback? onToggleReplay;
+  final VoidCallback? onRetryReplay;
+  final ValueChanged<double>? onSeekReplay;
   final int hostRequestCount;
   final VoidCallback? onHostRequests;
   final VoidCallback? onHostManage;
@@ -599,6 +666,10 @@ class _TalkBody extends StatelessWidget {
                     onRetryLiveAudio: talk.isLive ? onRetryLiveAudio : null,
                     onToggleLiveMute:
                         talk.isLive ? onToggleLiveMute : null,
+                    replaySnapshot: replaySnapshot,
+                    onToggleReplay: talk.isLive ? null : onToggleReplay,
+                    onRetryReplay: talk.isLive ? null : onRetryReplay,
+                    onSeekReplay: talk.isLive ? null : onSeekReplay,
                     hostRequestCount: talk.isLive ? hostRequestCount : 0,
                     onHostRequests: onHostRequests,
                     onHostManage: onHostManage,
@@ -707,6 +778,10 @@ class _TalkStage extends StatelessWidget {
     this.liveAudioError,
     this.onRetryLiveAudio,
     this.onToggleLiveMute,
+    this.replaySnapshot = const TalkReplayPlaybackSnapshot(),
+    this.onToggleReplay,
+    this.onRetryReplay,
+    this.onSeekReplay,
     this.hostRequestCount = 0,
     this.onHostRequests,
     this.onHostManage,
@@ -728,6 +803,10 @@ class _TalkStage extends StatelessWidget {
   final String? liveAudioError;
   final VoidCallback? onRetryLiveAudio;
   final VoidCallback? onToggleLiveMute;
+  final TalkReplayPlaybackSnapshot replaySnapshot;
+  final VoidCallback? onToggleReplay;
+  final VoidCallback? onRetryReplay;
+  final ValueChanged<double>? onSeekReplay;
   final int hostRequestCount;
   final VoidCallback? onHostRequests;
   final VoidCallback? onHostManage;
@@ -833,6 +912,15 @@ class _TalkStage extends StatelessWidget {
               ),
             ),
           ],
+          if (!talk.isLive) ...[
+            const SizedBox(height: 14),
+            _ReplayPlaybackBar(
+              snapshot: replaySnapshot,
+              onToggle: onToggleReplay,
+              onRetry: onRetryReplay,
+              onSeek: onSeekReplay,
+            ),
+          ],
           const SizedBox(height: 16),
           if (talk.participants.isEmpty)
             _SimpleHost(hostName: talk.hostName)
@@ -928,6 +1016,103 @@ class _TalkStage extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _ReplayPlaybackBar extends StatelessWidget {
+  const _ReplayPlaybackBar({
+    required this.snapshot,
+    this.onToggle,
+    this.onRetry,
+    this.onSeek,
+  });
+
+  final TalkReplayPlaybackSnapshot snapshot;
+  final VoidCallback? onToggle;
+  final VoidCallback? onRetry;
+  final ValueChanged<double>? onSeek;
+
+  String _time(Duration value) {
+    final totalSeconds = value.inSeconds < 0 ? 0 : value.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final loading = snapshot.status == TalkReplayPlaybackStatus.loading;
+    final failed = snapshot.status == TalkReplayPlaybackStatus.failed;
+    final playing = snapshot.status == TalkReplayPlaybackStatus.playing;
+    final durationKnown = snapshot.duration > Duration.zero;
+
+    return Container(
+      key: const ValueKey('talk-replay-player'),
+      padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+      decoration: BoxDecoration(
+        color: u.surfaceBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: u.structuralBorder),
+      ),
+      child: failed
+          ? Row(
+              children: [
+                Icon(Icons.error_outline_rounded, color: u.textMuted, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    snapshot.errorMessage ?? 'Replay audio is unavailable.',
+                    style: TextStyle(color: u.textMuted, fontSize: 12.5),
+                  ),
+                ),
+                TextButton(
+                  key: const ValueKey('talk-replay-retry'),
+                  onPressed: onRetry,
+                  child: const Text('Retry'),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                IconButton(
+                  key: const ValueKey('talk-replay-toggle'),
+                  tooltip: playing ? 'Pause replay' : 'Play replay',
+                  onPressed: loading ? null : onToggle,
+                  icon: loading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          playing
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                          color: u.brandStrong,
+                        ),
+                ),
+                Expanded(
+                  child: Slider(
+                    key: const ValueKey('talk-replay-seek'),
+                    value: durationKnown ? snapshot.progress : 0,
+                    onChanged: durationKnown && onSeek != null
+                        ? onSeek
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${_time(snapshot.position)} / ${_time(snapshot.duration)}',
+                  style: TextStyle(
+                    color: u.textMuted,
+                    fontSize: 11.5,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
