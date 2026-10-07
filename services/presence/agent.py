@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -49,6 +50,57 @@ class Dispatch:
             kind=value["kind"],
         )
 
+
+
+def _credential_values(value: object, depth: int = 0) -> list[str]:
+    if depth > 8 or value is None:
+        return []
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized and len(normalized) <= 256 and not any(ch.isspace() for ch in normalized):
+            return [normalized]
+        if 1 < len(normalized) < 1_000_000 and normalized[:1] in ("[", "{"):
+            try:
+                return _credential_values(json.loads(normalized), depth + 1)
+            except Exception:
+                return []
+        return []
+    if isinstance(value, list):
+        result: list[str] = []
+        for item in value:
+            result.extend(_credential_values(item, depth + 1))
+        return result
+    if isinstance(value, dict):
+        result: list[str] = []
+        for item in value.values():
+            result.extend(_credential_values(item, depth + 1))
+        return result
+    return []
+
+
+def _google_api_key(seat_id: str) -> str:
+    direct = (
+        os.environ.get("GOOGLE_API_KEY")
+        or os.environ.get("MASANAWA_GEMINI_API_KEY")
+    )
+    if direct and direct.strip():
+        return direct.strip()
+
+    raw = os.environ.get("MASANAWA_GEMINI_CREDENTIALS_JSON", "").strip()
+    if raw:
+        try:
+            candidates = list(dict.fromkeys(_credential_values(json.loads(raw))))
+        except Exception:
+            candidates = []
+        if candidates:
+            digest = hashlib.sha256(seat_id.encode("utf-8")).digest()
+            index = int.from_bytes(digest[:4], "big") % len(candidates)
+            return candidates[index]
+
+    raise RuntimeError(
+        "GOOGLE_API_KEY, MASANAWA_GEMINI_API_KEY, or "
+        "MASANAWA_GEMINI_CREDENTIALS_JSON is required"
+    )
 
 def _voice(runtime: PersonaRuntime) -> str:
     normalized = runtime.display_name.strip().lower()
@@ -163,12 +215,7 @@ async def entrypoint(ctx: JobContext) -> None:
             "MASANAWA_TALK_GEMINI_LIVE_MODEL",
             "gemini-3.1-flash-live-preview",
         )
-        google_api_key = (
-            os.environ.get("GOOGLE_API_KEY")
-            or os.environ.get("MASANAWA_GEMINI_API_KEY")
-        )
-        if not google_api_key:
-            raise RuntimeError("GOOGLE_API_KEY or MASANAWA_GEMINI_API_KEY is required")
+        google_api_key = _google_api_key(dispatch.seat_id)
 
         session = AgentSession(
             llm=google.beta.realtime.RealtimeModel(
