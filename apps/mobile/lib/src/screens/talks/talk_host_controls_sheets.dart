@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_host_controls_state.dart';
+import '../../state/talk_safety_state.dart';
 import '../../talks/talk_host_controls.dart';
+import '../../talks/talk_safety.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -269,6 +271,126 @@ class _HostManageSheet extends ConsumerStatefulWidget {
 class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
   String? _busyId;
 
+  Future<void> _report(TalkHostParticipant participant) async {
+    if (_busyId != null || participant.isHost) return;
+    final targetKind = participant.kind == TalkParticipantKind.human
+        ? TalkSafetyTargetKind.profile
+        : TalkSafetyTargetKind.persona;
+    final targetId = participant.kind == TalkParticipantKind.human
+        ? participant.profileHandle?.trim()
+        : participant.personaId?.trim();
+    if (targetId == null || targetId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reporting is unavailable for this participant.')),
+      );
+      return;
+    }
+    final reason = await showModalBottomSheet<TalkSafetyReportReason>(
+      context: context,
+      useSafeArea: true,
+      builder: (_) => _ParticipantReportReasonSheet(
+        displayName: participant.displayName,
+      ),
+    );
+    if (!mounted || reason == null) return;
+    setState(() => _busyId = participant.participantId);
+    try {
+      await ref.read(talkSafetyTransportProvider).reportTarget(
+            targetKind: targetKind,
+            targetId: targetId,
+            reason: reason,
+            detail: 'Reported by Talk Host from ' + widget.talkId,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Report received. Thank you.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t send the report right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
+
+  Future<void> _block(TalkHostParticipant participant) async {
+    final userId = participant.userId?.trim();
+    if (
+      _busyId != null ||
+      participant.isHost ||
+      participant.kind != TalkParticipantKind.human ||
+      userId == null ||
+      userId.isEmpty
+    ) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Block ' + participant.displayName + '?'),
+        content: const Text(
+          'They will be removed from this Talk and won’t be able to raise a hand or comment on your Talks while blocked.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const ValueKey('host-participant-block-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Block and remove'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+
+    setState(() => _busyId = participant.participantId);
+    try {
+      final current =
+          await ref.read(talkSafetyTransportProvider).loadUserPreference(userId);
+      await ref.read(talkSafetyTransportProvider).setUserPreference(
+            userId: userId,
+            blocked: true,
+            muted: current.muted,
+          );
+      ref.invalidate(talkSafetyPreferenceProvider(userId));
+
+      try {
+        await ref.read(talkHostControlsTransportProvider).actOnParticipant(
+              talkId: widget.talkId,
+              participantId: participant.participantId,
+              action: TalkHostParticipantAction.remove,
+            );
+        ref.invalidate(talkHostControlsProvider(widget.talkId));
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Participant blocked, but live removal failed. Try Remove again.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Participant blocked and removed.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t block this participant.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
+
   Future<void> _act(
     TalkHostParticipant participant,
     TalkHostParticipantAction action,
@@ -334,6 +456,11 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
               return _ParticipantTile(
                 participant: participant,
                 busy: busy,
+                onReport: () => _report(participant),
+                onBlock: participant.kind == TalkParticipantKind.human &&
+                        participant.userId?.trim().isNotEmpty == true
+                    ? () => _block(participant)
+                    : null,
                 onMuteToggle: () => _act(
                   participant,
                   participant.isMuted
@@ -351,18 +478,24 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
   }
 }
 
+enum _ParticipantMenuAction { muteToggle, remove, report, block }
+
 class _ParticipantTile extends StatelessWidget {
   const _ParticipantTile({
     required this.participant,
     required this.busy,
     required this.onMuteToggle,
     required this.onRemove,
+    required this.onReport,
+    this.onBlock,
   });
 
   final TalkHostParticipant participant;
   final bool busy;
   final VoidCallback onMuteToggle;
   final VoidCallback onRemove;
+  final VoidCallback onReport;
+  final VoidCallback? onBlock;
 
   @override
   Widget build(BuildContext context) {
@@ -409,26 +542,41 @@ class _ParticipantTile extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             )
-          : PopupMenuButton<TalkHostParticipantAction>(
+          : PopupMenuButton<_ParticipantMenuAction>(
+              key: ValueKey('host-participant-menu-' + participant.participantId),
               enabled: !busy,
               onSelected: (action) {
-                if (action == TalkHostParticipantAction.remove) {
-                  onRemove();
-                } else {
-                  onMuteToggle();
+                switch (action) {
+                  case _ParticipantMenuAction.muteToggle:
+                    onMuteToggle();
+                  case _ParticipantMenuAction.remove:
+                    onRemove();
+                  case _ParticipantMenuAction.report:
+                    onReport();
+                  case _ParticipantMenuAction.block:
+                    onBlock?.call();
                 }
               },
               itemBuilder: (_) => [
                 PopupMenuItem(
-                  value: participant.isMuted
-                      ? TalkHostParticipantAction.unmute
-                      : TalkHostParticipantAction.mute,
+                  value: _ParticipantMenuAction.muteToggle,
                   child: Text(participant.isMuted ? 'Unmute' : 'Mute'),
                 ),
                 const PopupMenuItem(
-                  value: TalkHostParticipantAction.remove,
+                  value: _ParticipantMenuAction.remove,
                   child: Text('Remove'),
                 ),
+                PopupMenuItem(
+                  key: ValueKey('host-participant-report-' + participant.participantId),
+                  value: _ParticipantMenuAction.report,
+                  child: const Text('Report'),
+                ),
+                if (onBlock != null)
+                  PopupMenuItem(
+                    key: ValueKey('host-participant-block-' + participant.participantId),
+                    value: _ParticipantMenuAction.block,
+                    child: const Text('Block'),
+                  ),
               ],
             ),
     );
@@ -471,6 +619,50 @@ class _HostSheetState extends StatelessWidget {
           style: TextStyle(color: u.textMuted, fontSize: 13),
         ),
       ],
+    );
+  }
+}
+
+
+class _ParticipantReportReasonSheet extends StatelessWidget {
+  const _ParticipantReportReasonSheet({required this.displayName});
+
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 22),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Report ' + displayName,
+            style: TextStyle(
+              color: u.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final reason in TalkSafetyReportReason.values)
+                  ListTile(
+                    key: ValueKey('host-participant-report-reason-' + reason.wire),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(reason.label),
+                    onTap: () => Navigator.of(context).pop(reason),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
