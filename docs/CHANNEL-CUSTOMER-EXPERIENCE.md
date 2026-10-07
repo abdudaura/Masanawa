@@ -26,6 +26,7 @@ WhatsApp/Telegram Characters must:
 - follow the user's current language dynamically;
 - accept voice notes/media without asking the user to retype understood information;
 - use short numbered choices when selection is useful;
+- on Telegram, short numbered choice lists are promoted to a one-tap reply keyboard;
 - hand off to the app only when the current runtime truly cannot complete an action.
 
 ## Chat-capable services
@@ -84,8 +85,23 @@ WhatsApp- or Telegram-specific business logic.
 
 ## Continuity
 
+WhatsApp direct messages can create the canonical User from the dedicated linked-number identity.
+Telegram remains private-chat-only; when a sender shares their own Telegram contact
+(`contact.user_id == sender.id`), that verified phone can create/link the same canonical
+Masanawa User. Group and supergroup messages are acknowledged without entering the
+Agent/financial runtime.
+
 WhatsApp and Telegram resolve to canonical Masanawa Users. Teaching progress, durable
 service state, Wallet/Commerce authority and Character/Relationship context therefore
 remain canonical across surfaces. Channel transport state contains only the external
 channel link and active CharacterSession reference; it does not own duplicate Memory,
 Wallet or Agent state.
+
+
+## Transport-specific safety
+
+- WhatsApp linked-device ingress ignores groups and Status/broadcast messages.
+- Telegram customer service ignores explicit group/supergroup/channel chats.
+- Telegram phone linking accepts a contact only when Telegram states that the contact belongs
+  to the same sender.
+- Financial and Agent execution therefore stays in a one-user private conversation boundary.
