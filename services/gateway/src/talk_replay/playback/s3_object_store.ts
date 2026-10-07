@@ -2,6 +2,7 @@ import { createHash, createHmac } from "node:crypto";
 
 export interface ReplayObjectStore {
   checksumSha256(objectKey:string):Promise<string>;
+  deleteObject(objectKey:string):Promise<void>;
   presignGet(objectKey:string,ttlSeconds:number):Promise<{
     readonly url:string;
     readonly expiresAt:string;
@@ -66,13 +67,13 @@ export function createReplayObjectStore(input:Readonly<{
     return url;
   }
 
-  function authHeaders(url:URL,date:Date):Record<string,string>{
+  function authHeaders(url:URL,date:Date,method:"GET"|"DELETE"):Record<string,string>{
     const {date:datePart,timestamp}=amzTimestamp(date);
     const payloadHash=sha256("");
     const canonicalHeaders=`host:${url.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${timestamp}\n`;
     const signedHeaders="host;x-amz-content-sha256;x-amz-date";
     const canonicalRequest=[
-      "GET",
+      method,
       url.pathname,
       "",
       canonicalHeaders,
@@ -99,7 +100,7 @@ export function createReplayObjectStore(input:Readonly<{
   return Object.freeze({
     async checksumSha256(objectKey){
       const url=objectUrl(objectKey);
-      const response=await fetchImpl(url,{headers:authHeaders(url,now())});
+      const response=await fetchImpl(url,{headers:authHeaders(url,now(),"GET")});
       if(!response.ok||!response.body){
         throw new Error("talks.replay.object_unavailable");
       }
@@ -119,6 +120,17 @@ export function createReplayObjectStore(input:Readonly<{
       }
       if(bytes===0) throw new Error("talks.replay.object_empty");
       return digest.digest("hex");
+    },
+
+    async deleteObject(objectKey){
+      const url=objectUrl(objectKey);
+      const response=await fetchImpl(url,{
+        method:"DELETE",
+        headers:authHeaders(url,now(),"DELETE"),
+      });
+      if(!response.ok&&response.status!==404){
+        throw new Error("talks.replay.object_delete_failed");
+      }
     },
 
     async presignGet(objectKey,ttlSeconds){
