@@ -191,6 +191,7 @@ class TalkFeedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final image = talk.heroImageUrl?.trim();
+    final timing = _talkTimingLabel(talk);
 
     return Material(
       color: u.surfaceCard,
@@ -244,6 +245,23 @@ class TalkFeedCard extends StatelessWidget {
                             fontSize: 12.5,
                           ),
                         ),
+                        if (timing != null) ...[
+                          const SizedBox(width: 9),
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 14,
+                            color: u.textMuted,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            timing,
+                            key: ValueKey('talk-card-timing-' + talk.id),
+                            style: TextStyle(
+                              color: u.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -491,4 +509,32 @@ String _compactCount(int value) {
     return number.toStringAsFixed(number >= 10 ? 0 : 1) + 'K';
   }
   return value.toString();
+}
+
+
+String? _talkTimingLabel(TalkDiscoveryItem talk) {
+  if (talk.isLive) {
+    final startedAt = talk.startedAt;
+    if (startedAt == null) return null;
+    final elapsed = DateTime.now().difference(startedAt);
+    if (elapsed.isNegative) return null;
+    return _compactDuration(elapsed.inSeconds);
+  }
+
+  final durationSeconds = talk.durationSeconds;
+  if (durationSeconds == null || durationSeconds <= 0) return null;
+  return _compactDuration(durationSeconds);
+}
+
+String _compactDuration(int totalSeconds) {
+  if (totalSeconds < 60) return '<1m';
+  final hours = totalSeconds ~/ 3600;
+  final minutes = (totalSeconds % 3600) ~/ 60;
+  if (hours > 0) {
+    return hours.toString() +
+        'h ' +
+        minutes.toString().padLeft(2, '0') +
+        'm';
+  }
+  return minutes.toString() + 'm';
 }
