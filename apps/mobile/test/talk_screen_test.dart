@@ -1669,14 +1669,160 @@ void main() {
     expect(find.text('Abdullahi'), findsOneWidget);
     expect(find.text('Musa'), findsOneWidget);
     expect(find.text('You'), findsOneWidget);
-    expect(find.byType(PopupMenuButton<TalkHostParticipantAction>), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('host-participant-menu-speaker')),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.byType(PopupMenuButton<TalkHostParticipantAction>));
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-menu-speaker')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Mute'));
     await tester.pumpAndSettle();
 
     expect(host.muted, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host reports a human Speaker using the public profile target',
+      (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+    final safety = _SafetyTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        safety: safety,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-menu-speaker')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-report-speaker')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(
+        const ValueKey('host-participant-report-reason-harassment'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(safety.targetReports, hasLength(1));
+    expect(
+      safety.targetReports.single.targetKind,
+      TalkSafetyTargetKind.profile,
+    );
+    expect(safety.targetReports.single.targetId, 'musa');
+    expect(
+      safety.targetReports.single.reason,
+      TalkSafetyReportReason.harassment,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host can block and remove a human Speaker',
+      (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+    final safety = _SafetyTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        safety: safety,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-menu-speaker')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-block-speaker')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Block Musa?'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-block-confirm')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      safety.preferences.last,
+      (userId: 'user-speaker', blocked: true, muted: false),
+    );
+    expect(host.removed, 1);
+    expect(find.text('Participant blocked and removed.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host reports AI by persona identity and never gets Block',
+      (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+    final safety = _SafetyTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        safety: safety,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-menu-expert')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('host-participant-block-expert')),
+      findsNothing,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-report-expert')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('host-participant-report-reason-spam')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(safety.targetReports.single.targetKind, TalkSafetyTargetKind.persona);
+    expect(safety.targetReports.single.targetId, 'expert-economist');
     expect(tester.takeException(), isNull);
   });
 
