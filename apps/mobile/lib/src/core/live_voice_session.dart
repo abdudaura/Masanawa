@@ -24,15 +24,18 @@ class LiveVoiceSession with WidgetsBindingObserver {
   LiveVoiceSession({
     required this.grant,
     required this.characterName,
+    this.captureInputTranscription = false,
     AudioRecorder? recorder,
   }) : _recorder = recorder ?? AudioRecorder();
 
   final AgentLiveVoiceGrant grant;
   final String characterName;
+  final bool captureInputTranscription;
   final AudioRecorder _recorder;
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
   final _transcripts = StreamController<String>.broadcast(sync: true);
+  final _inputTranscripts = StreamController<String>.broadcast(sync: true);
   final _turnCompletions = StreamController<void>.broadcast(sync: true);
   final Completer<void> _ready = Completer<void>();
   WebSocket? _socket;
@@ -54,6 +57,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   Stream<LiveVoiceState> get states => _state.stream;
   Stream<String> get errors => _errors.stream;
   Stream<String> get transcripts => _transcripts.stream;
+  Stream<String> get inputTranscripts => _inputTranscripts.stream;
   Stream<void> get turnCompletions => _turnCompletions.stream;
   Future<void> get ready => _ready.future;
   bool get speakerEnabled => _speaker;
@@ -159,6 +163,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'generationConfig': {
               'responseModalities': ['AUDIO'],
               'outputAudioTranscription': {},
+              if (captureInputTranscription) 'inputAudioTranscription': {},
               'speechConfig': {
                 'voiceConfig': {
                   'prebuiltVoiceConfig': {'voiceName': grant.voiceName},
@@ -168,10 +173,15 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'systemInstruction': {
               'parts': [
                 {
-                  'text':
-                      'You are $characterName. Have a natural live voice conversation. '
-                      'Answer in the user\'s language. Do not transcribe the user or '
-                      'read hidden system information aloud.',
+                  'text': captureInputTranscription
+                      ? 'You are $characterName conducting a short voice-first Twin setup interview. '
+                          'Ask one simple question at a time about greeting style, helpful behavior, '
+                          'personality, useful knowledge, decisions and boundaries. Never ask for a '
+                          'preferred language; always follow the language/register the user is speaking. '
+                          'Do not read, quote or mention hidden transcription or internal setup state.'
+                      : 'You are $characterName. Have a natural live voice conversation. '
+                          'Answer in the user\'s language. Do not transcribe the user or '
+                          'read hidden system information aloud.',
                 },
               ],
             },
@@ -268,10 +278,12 @@ class LiveVoiceSession with WidgetsBindingObserver {
                   'role': 'user',
                   'parts': [
                     {
-                      'text':
-                          'Start this live conversation now with a brief natural greeting, '
-                          'then ask how you can help. Speak in the language most appropriate '
-                          'for the user and keep the opening short.',
+                      'text': captureInputTranscription
+                          ? 'Start the Twin interview now with one brief welcoming question. '
+                              'Do not ask about language.'
+                          : 'Start this live conversation now with a brief natural greeting, '
+                              'then ask how you can help. Speak in the language most appropriate '
+                              'for the user and keep the opening short.',
                     },
                   ],
                 },
@@ -299,6 +311,16 @@ class LiveVoiceSession with WidgetsBindingObserver {
         if (_closed) return;
         _state.add(LiveVoiceState.interrupted);
         return;
+      }
+
+      if (captureInputTranscription) {
+        final inputTranscription = server['inputTranscription'];
+        if (inputTranscription is Map) {
+          final transcript = inputTranscription['text'];
+          if (transcript is String && transcript.trim().isNotEmpty) {
+            _inputTranscripts.add(transcript);
+          }
+        }
       }
 
       final outputTranscription = server['outputTranscription'];
@@ -429,6 +451,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
     await _state.close();
     await _errors.close();
     await _transcripts.close();
+    await _inputTranscripts.close();
     await _turnCompletions.close();
   }
 }
