@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T16:52:00Z
+Last update: 2026-10-07T21:41:00Z
 Status: active.
 
 ## Exact owned paths
@@ -63,3 +63,7 @@ Local tests reproduce disposed TextEditingControllers during question/invitation
 ## Verification checkpoint
 
 All 310 Flutter tests pass locally. Flutter analyze --no-fatal-infos --no-fatal-warnings reports no errors (379 pre-existing/style notices remain). Host poll interaction scrolls clear of the fixed comment composer. Leaving a Speaker seat completes participation state before audio reconnection and reports reconnection failures as audio failures. Release APK build is in progress after installing the missing full Java 17 compiler; initial environment had JRE only.
+
+## Resumed APK compilation
+
+The scratch source and intermediate mobile outputs survived the inactive interval, while /tmp SDKs, JDK and home-directory caches did not. No final APK was produced. Restore tools in the conversation workspace, verify sources against the published head, and finish the actual release build. No other open PR or active mobile repair lane exists at resume.
