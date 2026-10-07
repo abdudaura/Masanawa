@@ -31,3 +31,40 @@ Gateway composition and introduced `0006_talk_replay.sql`.
 PR #357 is superseded by this replay-aware integration and must not be merged.
 
 Status: active.
+
+
+## Implementation checkpoint
+
+Implemented end to end:
+- durable `talks.saved_talks` tenant/user/Talk references in migration
+  `0007_talk_library.sql`, after replay migration `0006`;
+- authenticated `GET /me/talks`;
+- authenticated `GET /me/saved-talks`;
+- authenticated saved-state GET + idempotent PUT save / DELETE unsave;
+- My Talks separates live/reconnecting from ended Host-owned Talks and projects
+  `viewerIsHost=true`;
+- Saved Talks retains live/reconnecting Talks but exposes ended Talks only when the
+  canonical replay row is finalized **and** published;
+- repeated Save uses `ON CONFLICT DO NOTHING`, preserving the original saved ordering;
+- Gateway production composition preserves replay, moderation, AI Seat, LiveKit, search,
+  profiles and Activity services;
+- mobile saved-state model/transport/provider;
+- Talk app-bar bookmark replaces the previous dead More action;
+- save/unsave invalidates Saved Talks and the current saved-state projection;
+- focused Gateway route, PostgreSQL isolation/replay-visibility and mobile widget tests.
+
+## Qualification evidence
+
+GitHub Actions for the current branch:
+- Foundation CI run `37608392503`: infrastructure failure before any step
+  (`steps = null`);
+- Mobile Build run `37608392574`: infrastructure failure before any step
+  (`steps = null`).
+
+This is the repository-wide zero-step runner/service-startup failure pattern and is not
+evidence of a TypeScript, Flutter, test, or build failure. No successful CI execution is
+claimed.
+
+PR #357 diverged after replay PR #358 landed and is superseded by this branch.
+
+Status: implementation complete and integration-clean against replay-enabled main; ready to merge.
