@@ -66,7 +66,7 @@ describe("Postgres Talk search repository", () => {
     });
   });
 
-  it("never returns unverified Expert persona projections", async () => {
+  it("requires canonical discoverability for Twins and verification for Experts", async () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkSearchSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
@@ -84,6 +84,11 @@ describe("Postgres Talk search repository", () => {
 
     expect(calls[0]?.text).toContain(
       "(p.kind <> 'expert' OR p.is_verified = true)",
+    );
+    expect(calls[0]?.text).toContain("identity.twin_profiles");
+    expect(calls[0]?.text).toContain("twin.discoverable = true");
+    expect(calls[0]?.text).toContain(
+      "(p.kind <> 'twin' OR twin.public_id IS NOT NULL)",
     );
     expect(calls[0]?.values?.[2]).toBe("expert");
   });
