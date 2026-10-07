@@ -93,6 +93,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   String? _cafeCategory;
   LiveVoiceSession? _inlineVoiceSession;
   StreamSubscription<String>? _inlineTranscriptSub;
+  StreamSubscription<String>? _inlineInputTranscriptSub;
   StreamSubscription<LiveVoiceState>? _inlineVoiceStateSub;
   StreamSubscription<void>? _inlineTurnSub;
   PaidVoiceAdmission? _inlinePaidAdmission;
@@ -101,6 +102,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   String _inlineTranscript = '';
   String _inlineTranscriptHistory = '';
   String _inlineCurrentTranscript = '';
+  String _hiddenTwinInput = '';
+  Future<void> _twinFactExtraction = Future<void>.value();
   LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
   bool _inlineVoiceClosing = false;
 
@@ -176,6 +179,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _scrollPersistTimer?.cancel();
     _walletRefreshTimer?.cancel();
     _inlineTranscriptSub?.cancel();
+    _inlineInputTranscriptSub?.cancel();
     _inlineVoiceStateSub?.cancel();
     _inlineTurnSub?.cancel();
     unawaited(_disposeInlineVoice());
@@ -1918,6 +1922,43 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     });
   }
 
+  void _applyHiddenTwinInputChunk(String chunk) {
+    if (!widget.twinSetup) return;
+    final next = chunk.trim();
+    if (next.isEmpty) return;
+    final current = _hiddenTwinInput;
+    if (current.isEmpty || next.startsWith(current)) {
+      _hiddenTwinInput = next;
+    } else if (!current.endsWith(next)) {
+      final separator =
+          current.endsWith(' ') || next.startsWith(' ') ? '' : ' ';
+      _hiddenTwinInput = current + separator + next;
+    }
+  }
+
+  void _consumeHiddenTwinInput() {
+    if (!widget.twinSetup) return;
+    final answer = _hiddenTwinInput.trim();
+    _hiddenTwinInput = '';
+    if (answer.isEmpty) return;
+    _twinFactExtraction = _twinFactExtraction.then((_) async {
+      if (!mounted) return;
+      try {
+        final ctl = ref.read(aiChatProvider.notifier);
+        final next = await ctl.extractTwinInterviewText(
+          characterId: widget.characterId,
+          userAnswer: answer,
+          facts: _twinInterviewFacts,
+        );
+        if (!mounted) return;
+        setState(() => _twinInterviewFacts = next);
+        ctl.setTwinInterviewFacts(widget.characterId, next);
+      } catch (_) {
+        // Hidden speech is never rendered or written into the local timeline.
+      }
+    });
+  }
+
   Future<void> _disposeInlineVoice() async {
     if (_inlineVoiceClosing) return;
     final session = _inlineVoiceSession;
@@ -1934,9 +1975,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         : ref.read(walletProvider.notifier);
     try {
       await _inlineTranscriptSub?.cancel();
+      await _inlineInputTranscriptSub?.cancel();
       await _inlineVoiceStateSub?.cancel();
       await _inlineTurnSub?.cancel();
       _inlineTranscriptSub = null;
+      _inlineInputTranscriptSub = null;
       _inlineVoiceStateSub = null;
       _inlineTurnSub = null;
       await session.close();
@@ -1996,20 +2039,29 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       final grant = await shellTransport.mintLiveVoiceGrant(
         agent.characterId,
         admissionId: paidAdmission?.admissionId,
+        purpose: widget.twinSetup ? 'twin-setup' : 'conversation',
       );
       if (!mounted) return;
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
+        captureInputTranscription: widget.twinSetup,
       );
 
       _inlineTranscriptSub?.cancel();
+      _inlineInputTranscriptSub?.cancel();
       _inlineVoiceStateSub?.cancel();
       _inlineTurnSub?.cancel();
       _inlineTranscriptSub =
           session.transcripts.listen(_applyInlineTranscriptChunk);
-      _inlineTurnSub =
-          session.turnCompletions.listen((_) => _finishInlineTranscriptTurn());
+      if (widget.twinSetup) {
+        _inlineInputTranscriptSub =
+            session.inputTranscripts.listen(_applyHiddenTwinInputChunk);
+      }
+      _inlineTurnSub = session.turnCompletions.listen((_) {
+        _finishInlineTranscriptTurn();
+        _consumeHiddenTwinInput();
+      });
       _inlineVoiceStateSub = session.states.listen((state) {
         if (!mounted) return;
         setState(() => _inlineVoiceState = state);
@@ -2026,6 +2078,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         _inlineTranscript = '';
         _inlineTranscriptHistory = '';
         _inlineCurrentTranscript = '';
+        _hiddenTwinInput = '';
         _inlineVoiceState = LiveVoiceState.connecting;
       });
 
@@ -2065,9 +2118,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final characterId = _inlineVoiceCharacterId;
     try {
       await _inlineTranscriptSub?.cancel();
+      await _inlineInputTranscriptSub?.cancel();
       await _inlineVoiceStateSub?.cancel();
       await _inlineTurnSub?.cancel();
       _inlineTranscriptSub = null;
+      _inlineInputTranscriptSub = null;
       _inlineVoiceStateSub = null;
       _inlineTurnSub = null;
       await session.close();
