@@ -61,6 +61,6 @@ Mobile:
 ## Status
 
 - Implementation status: complete pending CI/review evidence.
-- Verification status: focused tests written; GitHub checks pending PR execution.
+- Verification status: focused tests written; GitHub Foundation CI and Mobile Build both failed before executing any steps on repeated PR runs (zero-step runner/startup failure), so no code-failure signal was produced. PR mergeability remained clean.
 - Deployment status: not deployed.
-- Handoff: safe to review/merge if checks and mergeability are clean; production migration/device qualification remains deployment work.
+- Handoff: PR #376 is mergeable. Static integration audit caught and fixed a migration sequence collision by moving questions to `0011_talk_questions.sql`; production migration/device qualification remains deployment work.
