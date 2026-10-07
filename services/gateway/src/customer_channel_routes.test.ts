@@ -254,4 +254,39 @@ describe("customer channel webhook routes", () => {
     });
     await app.close();
   });
+
+  it("ignores Telegram group and supergroup messages before Agent execution", async () => {
+    const app = Fastify();
+    const channelBridge = bridge();
+    registerCustomerChannelRoutes(app, {
+      bridge: channelBridge,
+      telegram: {
+        botToken: "bot-token",
+        webhookSecret: "telegram-secret",
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/channels/telegram/webhook",
+      headers: {
+        "content-type": "application/json",
+        "x-telegram-bot-api-secret-token": "telegram-secret",
+      },
+      payload: {
+        update_id: 3,
+        message: {
+          message_id: 11,
+          from: { id: 123 },
+          chat: { id: -100123, type: "supergroup" },
+          text: "buy airtime for me",
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(channelBridge.handle).not.toHaveBeenCalled();
+    await app.close();
+  });
+
 });
