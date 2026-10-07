@@ -194,7 +194,12 @@ export function createTalkAiSeatService(input: Readonly<{
       requestId: request.requestId,
     });
     if (!seat) throw new TalkAiSeatError("talks.ai_runtime_seat_missing", 409);
-    await input.runtimeDispatcher.dispatch(seat);
+    try {
+      await input.runtimeDispatcher.dispatch(seat);
+    } catch (error) {
+      if (error instanceof TalkAiSeatError) throw error;
+      throw new TalkAiSeatError("talks.ai_runtime_unavailable", 503);
+    }
   }
 
   return Object.freeze({
