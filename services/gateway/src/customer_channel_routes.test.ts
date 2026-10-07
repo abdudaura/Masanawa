@@ -299,11 +299,12 @@ describe("customer channel webhook routes", () => {
       shouldDeliver: true,
       requestContact: false,
     });
-    const fetchMock = vi.fn(async () =>
-      new Response(JSON.stringify({ ok: true, result: {} }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(JSON.stringify({ ok: true, result: {} }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
     );
     vi.stubGlobal("fetch", fetchMock);
     registerCustomerChannelRoutes(app, {
