@@ -13,6 +13,12 @@ final humanProfileProvider = FutureProvider.family<HumanProfile?, String>(
       ref.watch(talkSocialProfileTransportProvider).loadHuman(handle),
 );
 
+final humanProfileByUserIdProvider =
+    FutureProvider.family<HumanProfile?, String>(
+  (ref, userId) =>
+      ref.watch(talkSocialProfileTransportProvider).loadHumanByUserId(userId),
+);
+
 final personaProfileProvider = FutureProvider.family<PersonaProfile?, String>(
   (ref, publicId) =>
       ref.watch(talkSocialProfileTransportProvider).loadPersona(publicId),
