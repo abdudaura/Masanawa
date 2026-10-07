@@ -79,6 +79,10 @@ export interface GatewayAppOptions {
   readonly billingWallet?: BillingWalletService;
   readonly financial?: FinancialService;
   readonly customerChannels?: CustomerChannelOptions;
+  readonly linkedWhatsApp?: Readonly<{
+    controller: LinkedWhatsAppController;
+    adminToken: string;
+  }>;
   readonly twinProduction?: TwinProductionRuntime;
 }
 
@@ -1342,6 +1346,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   if (options.customerChannels) {
     registerCustomerChannelRoutes(app, options.customerChannels);
+  }
+
+  if (options.linkedWhatsApp) {
+    registerLinkedWhatsAppAdminRoutes(app, options.linkedWhatsApp);
   }
 
   if (options.twinProduction) {
