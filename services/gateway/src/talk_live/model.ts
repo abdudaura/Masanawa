@@ -51,5 +51,6 @@ export interface TalkLiveRepository {
     userId: string;
     talkId: string;
     now: string;
+    reconnectGraceMs: number;
   }>): Promise<TalkLiveStateView | null>;
 }
