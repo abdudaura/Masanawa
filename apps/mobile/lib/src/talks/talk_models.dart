@@ -46,6 +46,7 @@ class TalkDiscoveryItem {
     this.hostAvatarUrl,
     this.commentCount = 0,
     this.durationSeconds,
+    this.startedAt,
     this.viewerIsHost = false,
     this.participants = const [],
   });
@@ -61,6 +62,7 @@ class TalkDiscoveryItem {
   final int listenerCount;
   final int commentCount;
   final int? durationSeconds;
+  final DateTime? startedAt;
   final bool viewerIsHost;
   final List<TalkParticipantPreview> participants;
 
@@ -78,6 +80,7 @@ class TalkDiscoveryItem {
       listenerCount: (json['listenerCount'] as num?)?.toInt() ?? 0,
       commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
       durationSeconds: (json['durationSeconds'] as num?)?.toInt(),
+      startedAt: DateTime.tryParse(json['startedAt'] as String? ?? ''),
       viewerIsHost: json['viewerIsHost'] == true,
       participants: rawParticipants is List
           ? [
