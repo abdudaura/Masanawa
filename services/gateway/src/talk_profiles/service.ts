@@ -25,9 +25,18 @@ export interface TalkProfileService {
     authorizationHeader: string | undefined;
     handle: string;
   }>): Promise<HumanProfileView>;
+  humanByUserId(input: Readonly<{
+    authorizationHeader: string | undefined;
+    userId: string;
+  }>): Promise<HumanProfileView>;
   follow(input: Readonly<{
     authorizationHeader: string | undefined;
     handle: string;
+    following: boolean;
+  }>): Promise<HumanProfileView>;
+  followUser(input: Readonly<{
+    authorizationHeader: string | undefined;
+    userId: string;
     following: boolean;
   }>): Promise<HumanProfileView>;
   persona(input: Readonly<{
@@ -40,6 +49,14 @@ function normalizeHandle(handle: string): string {
   const value = handle.trim().toLowerCase().replace(/^@/u, "");
   if (!/^[a-z0-9_][a-z0-9_.-]{1,39}$/u.test(value)) {
     throw new TalkProfileError("profiles.handle_invalid", 400);
+  }
+  return value;
+}
+
+function normalizeUserId(userId: string): string {
+  const value = userId.trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.:-]{2,255}$/u.test(value)) {
+    throw new TalkProfileError("profiles.user_id_invalid", 400);
   }
   return value;
 }
@@ -73,6 +90,17 @@ export function createTalkProfileService(input: Readonly<{
       return profile;
     },
 
+    async humanByUserId(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const profile = await input.repository.readHumanByUserId({
+        tenantId: viewer.tenantId,
+        viewerUserId: viewer.userId,
+        userId: normalizeUserId(request.userId),
+      });
+      if (!profile) throw new TalkProfileError("profiles.not_found", 404);
+      return profile;
+    },
+
     async follow(request) {
       const viewer = await identity(request.authorizationHeader);
       let profile: HumanProfileView | null;
@@ -81,6 +109,27 @@ export function createTalkProfileService(input: Readonly<{
           tenantId: viewer.tenantId,
           viewerUserId: viewer.userId,
           handle: normalizeHandle(request.handle),
+          following: request.following,
+          changedAt: now(),
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "profiles.cannot_follow_self") {
+          throw new TalkProfileError("profiles.cannot_follow_self", 409);
+        }
+        throw error;
+      }
+      if (!profile) throw new TalkProfileError("profiles.not_found", 404);
+      return profile;
+    },
+
+    async followUser(request) {
+      const viewer = await identity(request.authorizationHeader);
+      let profile: HumanProfileView | null;
+      try {
+        profile = await input.repository.setFollowingByUserId({
+          tenantId: viewer.tenantId,
+          viewerUserId: viewer.userId,
+          userId: normalizeUserId(request.userId),
           following: request.following,
           changedAt: now(),
         });
