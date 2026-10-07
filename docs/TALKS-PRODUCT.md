@@ -172,6 +172,7 @@ Ask an Expert or Casual, but these are templates—not separate Rooms/products.
 Audience controls should remain compact:
 
 - React
+- Comment
 - Raise hand
 - Ask
 - Add AI
