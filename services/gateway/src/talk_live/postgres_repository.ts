@@ -269,14 +269,14 @@ function sessionView(
     canHearAudio: state.state !== "ended",
     aiGenerationAllowed: state.aiGenerationAllowed,
     reconnectGraceEndsAt: state.reconnectGraceEndsAt,
-    endReason: state.endReason,
+    endReason: state.endReason ?? null,
   });
 }
 
 export function createPostgresTalkLiveRepository(
   pool: TalkLiveSqlPool,
 ): TalkLiveRepository {
-  return Object.freeze({
+  return Object.freeze<TalkLiveRepository>({
     async connect(input) {
       const talk = await pool.query<TalkRow>(
         `SELECT host_user_id, state
