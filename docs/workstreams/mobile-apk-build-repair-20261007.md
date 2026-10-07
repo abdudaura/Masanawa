@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T21:55:00Z
+Last update: 2026-10-07T22:00:28.630Z
 Status: active.
 
 ## Exact owned paths
@@ -71,3 +71,5 @@ The scratch source and intermediate mobile outputs survived the inactive interva
 SDK and full JDK restored; production readiness remains 200. Restore hosted dependencies directly from locked package archives with SHA-256 checks, then compile using the restored caches. No implementation scope expansion.
 
 Restored-environment verification: all 310 tests pass in 24 seconds. The integration fixture now supplies an isolated signed-in SessionController and asserts Authorization headers, avoiding native secure-storage access. Analyzer again reports no errors with 379 non-fatal existing/style notices. APK Gradle assembly is active with Android dependencies being cached; no final artifact yet.
+
+Release assembly remains active while Gradle restores native plugin build-tool dependencies (multiple Android/Kotlin plugin versions). Cache has reached 3.5 GB and Java compiler activity is ongoing. All 310 tests and no-error analyzer verification remain valid; no production source edits since the last successful checks.
