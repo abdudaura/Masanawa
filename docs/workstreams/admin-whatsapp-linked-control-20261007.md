@@ -29,3 +29,16 @@ Shared dependencies:
 - No WhatsApp credentials or linked auth state are embedded in the APK.
 - Existing canonical Gateway/Gwani runtime remains the only Agent/service authority.
 - Useful stale Admin mobile code is preserved; unrelated stale runtime work is not merged.
+
+
+## Completed implementation
+
+- Reclaimed the stale Admin Flutter control-plane shell only; stale Ops server history was not merged.
+- Added secure platform-session authorization for linked WhatsApp administration using configured admin principals.
+- Kept the existing server/operator admin token as an optional fallback.
+- Added Admin **Channels → WhatsApp** UI with status, linked number, reconnect count, QR display and confirmed relink/reset.
+- Admin APK never receives the Baileys auth state or server admin token.
+- Admin sign-in validates against the current Gateway channel authority instead of depending on the stale Ops summary endpoint.
+- Added Gateway regression coverage for platform-session WhatsApp admin authorization.
+
+Remaining external evidence: build the Admin APK and exercise a real WhatsApp QR scan against a persistent Gateway deployment.
