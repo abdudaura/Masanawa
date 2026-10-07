@@ -5,7 +5,10 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "declaration": false,
-    "sourceMap": true
+    "sourceMap": true,
+    "skipLibCheck": true
   },
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": [
+    "src/**/*.test.ts"
+  ]
 }
