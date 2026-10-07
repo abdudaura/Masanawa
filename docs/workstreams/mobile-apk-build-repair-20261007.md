@@ -49,3 +49,13 @@ Analyzer confirms compile blockers in these exact paths. Product behavior and ot
 - apps/mobile/test/twin_teaching_test.dart
 
 Evidence: speaker role referenced by live screen but absent from model; speaker publishing/mute must preserve server canPublishAudio grant. Closing a never-started LiveVoiceSession completes an unobserved readiness future with an error. Widget tests omit required app theme, onboarding is vertically imbalanced, and legacy language-teaching expectation conflicts with dynamic language policy. Apply bounded corrections and rerun suite.
+
+## Talk interaction regression ownership (2026-10-07T16:45Z)
+
+- apps/mobile/lib/src/screens/talks/talk_question_sheet.dart
+- apps/mobile/lib/src/screens/talks/talk_host_controls_sheets.dart
+- apps/mobile/lib/src/screens/talks/talk_screen.dart: question control propagation and tested interaction wiring
+- apps/mobile/test/talk_screen_test.dart: current sheet controls and interaction frames
+- apps/mobile/test/app_mount_test.dart: current auth title
+
+Local tests reproduce disposed TextEditingControllers during question/invitation dismissal, missing Host question control propagation, duplicate feedback from nested sheet Scaffolds, stale test navigation/selectors, and stale creator follow-up route expectations. Preserve product contracts; fix the lifecycle and fixture evidence rather than reintroducing retired UI.
