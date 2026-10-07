@@ -8,4 +8,19 @@
 - Preserve canonical Talk lifecycle, human Host presence, commerce authorization, LiveKit room authority and current mobile contracts.
 - No autonomous AI-only Talk continuation.
 
-Status: active.
+## Implemented
+- Gateway explicitly dispatches each canonically admitted Expert/Twin Seat to the named LiveKit agent runtime.
+- Dispatch is idempotent per Seat and carries only canonical IDs/kind as job metadata.
+- Direct Host-added admission dispatches immediately; sponsored admission dispatches only after Host acceptance.
+- Runtime dispatch outages surface as retryable 503s; canonical admission remains retry-safe.
+- `services/presence` now hosts the server-side LiveKit Agent using Gemini Live native audio.
+- The agent follows the current active human Host/Speaker while keeping one conversation session.
+- Every user turn rechecks Seat active/mute state, live Host presence, Talk live state and admitted commercial authorization.
+- Twin owner direction is fetched fresh per turn and injected only for that response.
+- Gwani/Gwana/default voice names and Gemini Live model are environment-configurable.
+- Railway container/config added for the Presence service.
+
+## External runtime requirements
+Railway Presence service needs the same LiveKit and PostgreSQL credentials as Gateway plus a Google Gemini key. No user laptop changes are required for server runtime composition.
+
+Status: implementation complete; pending repository CI/merge.
