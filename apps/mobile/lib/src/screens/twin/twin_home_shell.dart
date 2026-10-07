@@ -99,7 +99,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _you() => YouScreen(
         onOpenProfile: () => context.push('/profile'),
+        onOpenMyTalks: () => context.push('/my-talks'),
         onOpenMyTwin: () => context.push('/my-twin'),
+        onOpenSaved: () => context.push('/saved-talks'),
         onOpenWallet: () => context.push('/wallet'),
         onOpenBills: () => context.push('/billing'),
         onOpenCrypto: () => context.push('/crypto'),

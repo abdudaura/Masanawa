@@ -18,6 +18,8 @@ import '../screens/splash/splash_screen.dart';
 import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
+import '../screens/you/my_talks_screen.dart';
+import '../screens/you/saved_talks_screen.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
@@ -75,6 +77,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/masana' ||
           path == '/settings' ||
           path == '/my-twin' ||
+          path == '/my-talks' ||
+          path == '/saved-talks' ||
           path == '/wallet' ||
           path == '/billing' ||
           path == '/crypto' ||
@@ -156,6 +160,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
           onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
           onOpenOwner: (handle) => context.push('/u/' + Uri.encodeComponent(handle)),
+        ),
+      ),
+      GoRoute(
+        path: '/my-talks',
+        builder: (context, _) => MyTalksScreen(
+          onOpenTalk: (talk) => context.push(
+            '/talk/' + Uri.encodeComponent(talk.id),
+            extra: talk,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/saved-talks',
+        builder: (context, _) => SavedTalksScreen(
+          onOpenTalk: (talk) => context.push(
+            '/talk/' + Uri.encodeComponent(talk.id),
+            extra: talk,
+          ),
         ),
       ),
       GoRoute(
