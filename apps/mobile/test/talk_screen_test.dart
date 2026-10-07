@@ -450,6 +450,7 @@ class _ReplayTalkTransport implements TalkTransport {
 class _HostControlsTransport implements TalkHostControlsTransport {
   int accepted = 0;
   int muted = 0;
+  int removed = 0;
   int ended = 0;
 
   @override
@@ -477,6 +478,16 @@ class _HostControlsTransport implements TalkHostControlsTransport {
             kind: TalkParticipantKind.human,
             isHost: false,
             isMuted: false,
+            userId: 'user-speaker',
+            profileHandle: 'musa',
+          ),
+          TalkHostParticipant(
+            participantId: 'expert',
+            displayName: 'Economist',
+            kind: TalkParticipantKind.expert,
+            isHost: false,
+            isMuted: false,
+            personaId: 'expert-economist',
           ),
         ],
       );
@@ -500,6 +511,9 @@ class _HostControlsTransport implements TalkHostControlsTransport {
     if (participantId == 'speaker' &&
         action == TalkHostParticipantAction.mute) {
       muted += 1;
+    }
+    if (action == TalkHostParticipantAction.remove) {
+      removed += 1;
     }
     return await load(talkId);
   }
