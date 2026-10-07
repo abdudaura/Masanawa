@@ -159,6 +159,11 @@ import {
 import { createTalkService, type TalkAuthorizer } from "./talks/service.js";
 import { createPostgresTalkRepository } from "./talks/postgres_repository.js";
 import {
+  createTalkLiveService,
+  type TalkLiveAuthorizer,
+} from "./talk_live/service.js";
+import { createPostgresTalkLiveRepository } from "./talk_live/postgres_repository.js";
+import {
   createGatewayApp,
   type GatewayAppOptions,
   type ReadinessCheck,
@@ -258,6 +263,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
+  readonly talkLive?: ReturnType<typeof createPostgresTalkLiveRepository>;
   close(): Promise<void>;
 }
 
@@ -402,6 +408,7 @@ function createDefaultDatabaseDependency(
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
+    talkLive: createPostgresTalkLiveRepository(database.pool),
     close: database.close,
   });
 }
@@ -539,6 +546,7 @@ export async function startGatewayService(
     | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
     | undefined;
   let talkAuthorizer: TalkAuthorizer | undefined;
+  let talkLiveAuthorizer: TalkLiveAuthorizer | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
@@ -674,6 +682,7 @@ export async function startGatewayService(
     });
     billingCustomerAuthorizer = customerSessions;
     talkAuthorizer = customerSessions;
+    talkLiveAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
@@ -1711,6 +1720,15 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkLive =
+    options.appOptions?.talkLive ??
+    (database.talkLive && talkLiveAuthorizer
+      ? createTalkLiveService({
+          repository: database.talkLive,
+          authorizer: talkLiveAuthorizer,
+        })
+      : undefined);
+
   const composedTalks =
     options.appOptions?.talks ??
     (database.talks && talkAuthorizer
@@ -1726,6 +1744,7 @@ export async function startGatewayService(
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
+      ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
