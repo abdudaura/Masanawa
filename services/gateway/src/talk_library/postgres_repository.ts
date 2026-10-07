@@ -158,8 +158,7 @@ export function createPostgresTalkLibraryRepository(
           `INSERT INTO talks.saved_talks (
              tenant_id, user_id, talk_id, saved_at
            ) VALUES ($1,$2,$3,$4)
-           ON CONFLICT (tenant_id, user_id, talk_id) DO UPDATE
-             SET saved_at = EXCLUDED.saved_at`,
+           ON CONFLICT (tenant_id, user_id, talk_id) DO NOTHING`,
           [input.tenantId, input.userId, input.talkId, input.changedAt],
         );
         return true;
