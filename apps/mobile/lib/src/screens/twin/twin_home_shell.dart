@@ -163,12 +163,15 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     final asyncHome = ref.watch(homeProvider);
     final state = asyncHome.when(
       loading: () => const HomeViewState.loading(),
-      error: (error, _) => HomeViewState.error(error.toString()),
+      error: (_, __) => const HomeViewState.error(),
       data: HomeViewState.ready,
     );
     return HomeScreen(
       state: state,
-      onRetry: () => unawaited(ref.read(homeProvider.notifier).refresh()),
+      onRetry: () {
+        ref.invalidate(homeProvider);
+        unawaited(ref.read(homeProvider.notifier).refresh());
+      },
       onRefresh: () => ref.read(homeProvider.notifier).refresh(),
       onAssistantAction: _assistantAction,
       onQuickService: _quickService,
