@@ -113,7 +113,7 @@ async function visibleTalkExists(
 export function createPostgresTalkLibraryRepository(
   pool: TalkLibrarySqlPool,
 ): TalkLibraryRepository {
-  return Object.freeze({
+  return Object.freeze<TalkLibraryRepository>({
     async listOwned(input) {
       const result = await pool.query<TalkRow>(
         `SELECT ${projection}
