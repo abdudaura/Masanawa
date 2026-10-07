@@ -16,10 +16,10 @@ Owned:
 - focused Gateway/PostgreSQL tests
 - minimal fresh-read composition edits in `services/gateway/src/app.ts` and
   `services/gateway/src/main.ts`
-- mobile library/save-state transport + compact Talk save control if no newer mobile
-  owner appears before that edit
-- focused mobile tests
 - this handoff
+
+Mobile save-state transport and compact Talk Save/Remove UI are owned by the earlier
+end-to-end PR #355 and are intentionally not duplicated here.
 
 Not owned:
 - replay recording PR/runtime
@@ -47,4 +47,19 @@ Not owned:
 - owned Talk projections set `viewerIsHost=true`;
 - library state does not become a second Talk lifecycle authority.
 
-Status: active.
+## Implementation checkpoint
+
+Implemented:
+- durable tenant/user-scoped `talks.saved_talks` references;
+- canonical My Talks projection from Host-owned Talk rows;
+- owned projections preserve `viewerIsHost=true`;
+- canonical Saved Talks projection over still-visible Talk states;
+- authenticated saved-state read;
+- idempotent PUT save and DELETE unsave;
+- repeated save does **not** rewrite `saved_at`, so retries never reorder the library;
+- Gateway route registration and production `main.ts` composition;
+- focused route and PostgreSQL tenant/user isolation tests.
+
+Mobile Save/Remove wiring continues in PR #355 against this backend contract.
+
+Status: backend complete; ready to merge.
