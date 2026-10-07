@@ -51,6 +51,7 @@ export function createTalkReplayCoordinator(input:Readonly<{
         });
       }catch(error){
         try{await input.egress.stop(started.egressId);}catch{}
+        try{await input.objects.deleteObject(objectKey);}catch{}
         throw error;
       }
     },
