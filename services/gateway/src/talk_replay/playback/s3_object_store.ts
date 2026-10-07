@@ -45,6 +45,9 @@ export function createReplayObjectStore(input:Readonly<{
   fetchImpl?:typeof fetch;
   now?:()=>Date;
   maxObjectBytes?:number;
+  availabilityAttempts?:number;
+  availabilityDelayMs?:number;
+  sleep?: (milliseconds:number)=>Promise<void>;
 }>):ReplayObjectStore{
   const endpoint=new URL(input.endpoint);
   if(endpoint.protocol!=="https:"||endpoint.pathname!=="/"){
@@ -58,6 +61,15 @@ export function createReplayObjectStore(input:Readonly<{
   const fetchImpl=input.fetchImpl??fetch;
   const now=input.now??(()=>new Date());
   const maxObjectBytes=input.maxObjectBytes??2*1024*1024*1024;
+  const availabilityAttempts=input.availabilityAttempts??8;
+  const availabilityDelayMs=input.availabilityDelayMs??500;
+  const sleep=input.sleep??((milliseconds:number)=>new Promise<void>((resolve)=>setTimeout(resolve,milliseconds)));
+  if(!Number.isSafeInteger(availabilityAttempts)||availabilityAttempts<1||availabilityAttempts>30){
+    throw new TypeError("Replay object availability attempts are invalid");
+  }
+  if(!Number.isSafeInteger(availabilityDelayMs)||availabilityDelayMs<0||availabilityDelayMs>5000){
+    throw new TypeError("Replay object availability delay is invalid");
+  }
 
   function objectUrl(objectKey:string):URL{
     const key=objectKey.trim();
@@ -100,26 +112,40 @@ export function createReplayObjectStore(input:Readonly<{
   return Object.freeze({
     async checksumSha256(objectKey){
       const url=objectUrl(objectKey);
-      const response=await fetchImpl(url,{headers:authHeaders(url,now(),"GET")});
-      if(!response.ok||!response.body){
-        throw new Error("talks.replay.object_unavailable");
+      for(let attempt=1;attempt<=availabilityAttempts;attempt+=1){
+        const response=await fetchImpl(url,{headers:authHeaders(url,now(),"GET")});
+        if(response.status===404){
+          if(attempt<availabilityAttempts){
+            await sleep(availabilityDelayMs*attempt);
+            continue;
+          }
+          throw new Error("talks.replay.object_unavailable");
+        }
+        if(!response.ok||!response.body){
+          throw new Error("talks.replay.object_unavailable");
+        }
+        const length=response.headers.get("content-length");
+        if(length!==null&&Number(length)>maxObjectBytes){
+          throw new Error("talks.replay.object_too_large");
+        }
+        const digest=createHash("sha256");
+        let bytes=0;
+        const reader=response.body.getReader();
+        while(true){
+          const {done,value}=await reader.read();
+          if(done) break;
+          bytes+=value.byteLength;
+          if(bytes>maxObjectBytes) throw new Error("talks.replay.object_too_large");
+          digest.update(value);
+        }
+        if(bytes>0) return digest.digest("hex");
+        if(attempt<availabilityAttempts){
+          await sleep(availabilityDelayMs*attempt);
+          continue;
+        }
+        throw new Error("talks.replay.object_empty");
       }
-      const length=response.headers.get("content-length");
-      if(length!==null&&Number(length)>maxObjectBytes){
-        throw new Error("talks.replay.object_too_large");
-      }
-      const digest=createHash("sha256");
-      let bytes=0;
-      const reader=response.body.getReader();
-      while(true){
-        const {done,value}=await reader.read();
-        if(done) break;
-        bytes+=value.byteLength;
-        if(bytes>maxObjectBytes) throw new Error("talks.replay.object_too_large");
-        digest.update(value);
-      }
-      if(bytes===0) throw new Error("talks.replay.object_empty");
-      return digest.digest("hex");
+      throw new Error("talks.replay.object_unavailable");
     },
 
     async deleteObject(objectKey){
