@@ -6,8 +6,10 @@ import {
 import { toInstant } from "@masanawa/contracts";
 import {
   createPostgresTalkSafetyReplayBridge,
+  withReplayBlockSynchronization,
   type TalkSafetyReplaySqlPool,
 } from "./replay_bridge.js";
+import type { TalkSafetyService } from "./service.js";
 
 function replay():TalkReplaySession{
   return createTalkReplaySession({
@@ -18,7 +20,73 @@ function replay():TalkReplaySession{
     hostRecordingConsent:true,
     publicationPreference:"publish",
     startedAt:toInstant("2026-10-07T10:00:00.000Z"),
+    it("synchronizes only successful blocked replay enforcement",async()=>{
+    const calls:string[]=[];
+    const enforcement={
+      schemaVersion:1 as const,
+      tenantId:"tenant_1",
+      target:{kind:"replay" as const,id:"recording_1"},
+      revision:2,
+      visibility:"blocked" as const,
+      reasonCode:"policy",
+      updatedAt:"2026-10-07T11:00:00.000Z",
+    };
+    const service={
+      async setEnforcement(){
+        calls.push("enforcement");
+        return enforcement;
+      },
+    } as unknown as TalkSafetyService;
+    const wrapped=withReplayBlockSynchronization(service,{
+      async blockByRecording(input){
+        calls.push(`replay:${input.recordingId}`);
+        return true;
+      },
+    });
+
+    await expect(wrapped.setEnforcement({
+      authorizationHeader:"Bearer admin",
+      targetKind:"replay",
+      targetId:"recording_1",
+      expectedRevision:1,
+      visibility:"blocked",
+      reasonCode:"policy",
+    })).resolves.toEqual(enforcement);
+    expect(calls).toEqual(["enforcement","replay:recording_1"]);
   });
+
+  it("does not mutate replay state for restricted enforcement",async()=>{
+    let replayCalls=0;
+    const service={
+      async setEnforcement(){
+        return {
+          schemaVersion:1 as const,
+          tenantId:"tenant_1",
+          target:{kind:"replay" as const,id:"recording_1"},
+          revision:2,
+          visibility:"restricted" as const,
+          reasonCode:"review",
+          updatedAt:"2026-10-07T11:00:00.000Z",
+        };
+      },
+    } as unknown as TalkSafetyService;
+    const wrapped=withReplayBlockSynchronization(service,{
+      async blockByRecording(){
+        replayCalls+=1;
+        return true;
+      },
+    });
+    await wrapped.setEnforcement({
+      authorizationHeader:"Bearer admin",
+      targetKind:"replay",
+      targetId:"recording_1",
+      expectedRevision:1,
+      visibility:"restricted",
+      reasonCode:"review",
+    });
+    expect(replayCalls).toBe(0);
+  });
+});
 }
 
 describe("Talk safety replay bridge",()=>{
