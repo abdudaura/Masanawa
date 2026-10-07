@@ -11,6 +11,7 @@
   - `packages/talks/migrations/0006_talk_replay.sql`
   - isolated additions to `services/gateway/src/app.ts`, `services/gateway/src/main.ts`
   - isolated replay projection additions to existing Talk read paths when needed
+  - isolated Host-end terminal hook in Talk moderation service/composition so a consented recording finalizes from the canonical live terminal outcome
   - this workstream
 - **Reuses:** merged `@masanawa/agents` Talk replay runtime from PR #349 and merged live/moderation runtime.
 - **Not owned:** mobile files; actual LiveKit egress worker/deployment; AI Seat Commerce; search/ranking ownership; Billing/Crypto/Twin/channel code.
