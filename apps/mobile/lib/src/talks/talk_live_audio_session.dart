@@ -148,6 +148,14 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       }
 
       if (session.state == TalkLiveLifecycle.reconnecting) {
+        if (session.role == TalkLiveRole.host) {
+          try {
+            await room.setMicrophoneEnabled(false);
+          } catch (_) {
+            // Reconnection state is still authoritative even if local media
+            // is already torn down.
+          }
+        }
         _setStatus(TalkLiveAudioStatus.reconnecting);
         return;
       }
