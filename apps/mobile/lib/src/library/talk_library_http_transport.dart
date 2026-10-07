@@ -43,34 +43,4 @@ class GatewayTalkLibraryTransport implements TalkLibraryTransport {
       rethrow;
     }
   }
-
-  @override
-  Future<TalkSavedState> loadSavedState(String talkId) async {
-    final response = await api.dio.get<dynamic>(
-      '/me/saved-talks/' + Uri.encodeComponent(talkId),
-    );
-    final data = response.data;
-    if (data is Map<String, dynamic>) return TalkSavedState.fromJson(data);
-    if (data is Map) {
-      return TalkSavedState.fromJson(data.cast<String, dynamic>());
-    }
-    throw const FormatException('Invalid Saved Talk state response');
-  }
-
-  @override
-  Future<TalkSavedState> setSaved({
-    required String talkId,
-    required bool saved,
-  }) async {
-    final path = '/me/saved-talks/' + Uri.encodeComponent(talkId);
-    final response = saved
-        ? await api.dio.put<dynamic>(path)
-        : await api.dio.delete<dynamic>(path);
-    final data = response.data;
-    if (data is Map<String, dynamic>) return TalkSavedState.fromJson(data);
-    if (data is Map) {
-      return TalkSavedState.fromJson(data.cast<String, dynamic>());
-    }
-    throw const FormatException('Invalid Saved Talk mutation response');
-  }
 }
