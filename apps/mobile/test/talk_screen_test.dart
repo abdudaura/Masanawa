@@ -10,6 +10,7 @@ import 'package:masanawa/src/state/talk_library_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
 import 'package:masanawa/src/state/talk_live_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
+import 'package:masanawa/src/state/talk_replay_playback_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/talks/talk_host_controls.dart';
@@ -17,6 +18,7 @@ import 'package:masanawa/src/talks/talk_live.dart';
 import 'package:masanawa/src/talks/talk_live_audio_session.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/talks/talk_participation.dart';
+import 'package:masanawa/src/talks/talk_replay_playback.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class _LibraryTransport implements TalkLibraryTransport {
@@ -137,6 +139,108 @@ class _FakeLiveAudioController implements TalkLiveAudioController {
     _status = TalkLiveAudioStatus.ended;
     await _states.close();
   }
+}
+
+class _FakeReplayPlaybackController
+    implements TalkReplayPlaybackController {
+  final _snapshots =
+      StreamController<TalkReplayPlaybackSnapshot>.broadcast(sync: true);
+  TalkReplayPlaybackSnapshot _snapshot = const TalkReplayPlaybackSnapshot(
+    duration: Duration(minutes: 2),
+  );
+  int toggles = 0;
+  int retries = 0;
+  int closes = 0;
+
+  @override
+  TalkReplayPlaybackSnapshot get snapshot => _snapshot;
+
+  @override
+  Stream<TalkReplayPlaybackSnapshot> get snapshots => _snapshots.stream;
+
+  @override
+  Future<void> toggle() async {
+    toggles += 1;
+    _snapshot = _snapshot.copyWith(
+      status: _snapshot.status == TalkReplayPlaybackStatus.playing
+          ? TalkReplayPlaybackStatus.paused
+          : TalkReplayPlaybackStatus.playing,
+    );
+    _snapshots.add(_snapshot);
+  }
+
+  @override
+  Future<void> retry() async {
+    retries += 1;
+    _snapshot = _snapshot.copyWith(
+      status: TalkReplayPlaybackStatus.playing,
+      clearError: true,
+    );
+    _snapshots.add(_snapshot);
+  }
+
+  @override
+  Future<void> seekTo(double fraction) async {
+    _snapshot = _snapshot.copyWith(
+      position: Duration(
+        milliseconds:
+            (_snapshot.duration.inMilliseconds * fraction).round(),
+      ),
+    );
+    _snapshots.add(_snapshot);
+  }
+
+  @override
+  Future<void> close() async {
+    closes += 1;
+    await _snapshots.close();
+  }
+}
+
+class _ReplayTalkTransport implements TalkTransport {
+  static const talk = TalkDiscoveryItem(
+    id: 'replay-1',
+    title: 'A finished Talk worth hearing again',
+    hostName: 'Amina',
+    isLive: false,
+    listenerCount: 920,
+    durationSeconds: 120,
+    participants: [
+      TalkParticipantPreview(
+        id: 'host',
+        name: 'Amina',
+        kind: TalkParticipantKind.human,
+        isHost: true,
+      ),
+    ],
+  );
+
+  @override
+  Future<List<TalkDiscoveryItem>> loadFeed(TalkFeedKind feed) async =>
+      const [talk];
+
+  @override
+  Future<TalkDetail> loadTalk(String talkId) async =>
+      const TalkDetail(talk: talk);
+
+  @override
+  Future<TalkDiscoveryItem> createTalk({
+    required String topic,
+    String? title,
+  }) async =>
+      talk;
+
+  @override
+  Future<TalkComment> addComment({
+    required String talkId,
+    required String body,
+  }) async =>
+      TalkComment(
+        id: 'comment-replay',
+        authorName: 'You',
+        body: body,
+        createdAt: DateTime(2026, 10, 7, 10),
+      );
 }
 
 class _HostControlsTransport implements TalkHostControlsTransport {
@@ -307,6 +411,7 @@ Widget _app({
   _ParticipationTransport? participation,
   _HostControlsTransport? hostControls,
   _FakeLiveAudioController? liveAudio,
+  _FakeReplayPlaybackController? replayPlayback,
   _LibraryTransport? library,
 }) {
   return ProviderScope(
@@ -328,6 +433,9 @@ Widget _app({
         (_) => liveAudio ??
             _FakeLiveAudioController(role: TalkLiveRole.listener),
       ),
+      talkReplayPlaybackFactoryProvider.overrideWithValue(
+        (_) => replayPlayback ?? _FakeReplayPlaybackController(),
+      ),
     ],
     child: MaterialApp(
       theme: buildMasanawaTheme(brightness: Brightness.light),
@@ -341,6 +449,41 @@ Widget _app({
 }
 
 void main() {
+  testWidgets('replay Talk shows native playback without LiveKit autoplay',
+      (tester) async {
+    final transport = _ReplayTalkTransport();
+    final liveAudio = _FakeLiveAudioController(role: TalkLiveRole.listener);
+    final replay = _FakeReplayPlaybackController();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        liveAudio: liveAudio,
+        replayPlayback: replay,
+        home: const TalkScreen(
+          talkId: 'replay-1',
+          initialTalk: _ReplayTalkTransport.talk,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Talk Replay'), findsOneWidget);
+    expect(find.byKey(const ValueKey('talk-replay-player')), findsOneWidget);
+    expect(find.byKey(const ValueKey('talk-replay-toggle')), findsOneWidget);
+    expect(find.byKey(const ValueKey('talk-live-mic-toggle')), findsNothing);
+    expect(liveAudio.starts, 0);
+    expect(replay.toggles, 0);
+
+    await tester.tap(find.byKey(const ValueKey('talk-replay-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(replay.toggles, 1);
+    expect(find.byTooltip('Pause replay'), findsOneWidget);
+    expect(liveAudio.starts, 0);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Talk keeps live controls and comments on one screen',
       (tester) async {
     final transport = _TalkTransport();
