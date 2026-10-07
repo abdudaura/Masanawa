@@ -25,17 +25,25 @@ Status: mandatory implementation coordination guidance.
 
 | Key | Responsibility | Main boundaries |
 | --- | --- | --- |
-| commerce-core | reserves, funding, attribution, settlement, refunds, idempotency | packages/commerce, commerce storage |
-| crypto-nowpayments | asset/network catalog, customer balances, deposit/convert/withdraw adapters | crypto/provider adapters and scoped contracts |
-| bills-flutterwave | bill catalog, recipient validation, fulfillment/requery | billing/provider adapters |
-| chat-actions | selectable cards, action protocol, app renderers, voice selection | message contracts and apps/mobile |
-| channels | mandatory WhatsApp and Telegram ingress, identity linking, options and receipts | channel adapters and Gateway routing |
-| skills-clones | Core teaching/provisioning, enrollment, certification, support/clone configuration | Skills/Agents/Identity boundaries |
-| integration | composition, migrations, evidence, cross-stream contracts and guiding docs | shared integration points |
+| talks-feed | Explore/Live vertical feeds, Talk cards, ranking, save/share/replay discovery | Talk feed/domain + mobile Home |
+| talks-live | live Talk lifecycle, human Host/Speaker/Audience state, moderation and Presence | Talk live runtime + Gateway + mobile Talk |
+| talks-ai-seats | Expert/Twin Seat admission, sponsor flow, Direct Twin and AI runtime dispatch | AI Seat/Persona/Presence boundaries |
+| talks-social | comments, reactions, questions, polls, follow, gifts, activity and profiles | Talk social APIs + mobile social surfaces |
+| talks-replay | recording, replay publication/playback, metadata and analytics | replay/egress/storage + mobile replay |
+| commerce-core | AI Seat/gift settlement, funding, refunds, idempotency and creator earnings | packages/commerce, wallet/ledger storage |
+| bills-flutterwave | private airtime/data/electricity/TV purchase flows | billing/provider adapters + private mobile flow |
+| crypto-nowpayments | private deposit/buy/convert/withdraw eligibility and settlement | crypto/provider adapters + private mobile flow |
+| channels | private WhatsApp/Telegram assistance, identity linking and receipts | channel adapters + Gateway routing |
+| mobile-shell | Home · Create · Activity · You, global Gwani, auth and shared UX | apps/mobile shell and shared presentation |
+| integration | composition, migrations, release evidence and production qualification | shared Gateway, migrations, deployment docs |
 
 These are ownership categories, not separate runtime authorities or new numbered milestones.
 Choose one workstream per window. Shared files (Gateway composition, package exports,
 migrations registry, root configs, canonical docs) require coordinated integration.
+
+`main` is the only source used for local pulls, APK builds and release qualification.
+A work branch exists only while its lane is active; once the work is complete it must be
+merged to `main`, and an unmerged stale branch must never be presented as required local code.
 
 ## Claim protocol
 
