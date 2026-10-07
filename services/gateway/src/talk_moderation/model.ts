@@ -1,5 +1,15 @@
 export type ParticipationHandStatus = "idle" | "raised" | "accepted" | "declined";
 export type TalkReaction = "❤️" | "👏" | "😂" | "💯" | "🤔" | "🔥";
+export type TalkQuestionStatus = "pending" | "answered" | "dismissed";
+
+export interface TalkQuestionView {
+  readonly questionId: string;
+  readonly authorName: string;
+  readonly body: string;
+  readonly status: TalkQuestionStatus;
+  readonly createdAt: string;
+  readonly resolvedAt?: string;
+}
 
 export interface TalkParticipationView {
   readonly handStatus: ParticipationHandStatus;
@@ -66,6 +76,28 @@ export interface TalkModerationRepository {
     raised: boolean;
     now: string;
   }>): Promise<TalkParticipationView | null>;
+  submitQuestion(input: Readonly<{
+    tenantId: string;
+    userId: string;
+    displayName: string;
+    talkId: string;
+    questionId: string;
+    body: string;
+    now: string;
+  }>): Promise<TalkQuestionView | null>;
+  listQuestions(input: Readonly<{
+    tenantId: string;
+    hostUserId: string;
+    talkId: string;
+  }>): Promise<readonly TalkQuestionView[] | null>;
+  resolveQuestion(input: Readonly<{
+    tenantId: string;
+    hostUserId: string;
+    talkId: string;
+    questionId: string;
+    action: "answered" | "dismissed";
+    now: string;
+  }>): Promise<readonly TalkQuestionView[] | null>;
   hostControls(input: Readonly<{
     tenantId: string;
     hostUserId: string;
