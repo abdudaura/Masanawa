@@ -10,6 +10,7 @@
   - `apps/mobile/lib/src/core/shell_deep_link.dart`
   - `apps/mobile/test/shell_deep_link_test.dart`
   - `apps/mobile/android/app/src/main/AndroidManifest.xml`
+  - `apps/mobile/lib/src/talks/talk_share.dart`
   - Talk Share additions only in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
   - focused `apps/mobile/test/talk_screen_test.dart`
   - this claim file
