@@ -21,7 +21,7 @@ export const launchTalkReplayPolicy: TalkReplayPolicy = Object.freeze({
   recordingAllowed: true,
   publicationAllowed: true,
   maxSegments: 4096,
-  maxSegmentDurationMs: 10 * 60 * 1000,
+  maxSegmentDurationMs: 12 * 60 * 60 * 1000,
 });
 
 export interface TalkRecordingSegment {
@@ -132,7 +132,7 @@ function assertPolicy(policy: TalkReplayPolicy): void {
   }
   if (!Number.isSafeInteger(policy.maxSegmentDurationMs) ||
       policy.maxSegmentDurationMs < 1 ||
-      policy.maxSegmentDurationMs > 60 * 60 * 1000) {
+      policy.maxSegmentDurationMs > 24 * 60 * 60 * 1000) {
     throw new RangeError("Talk replay segment duration bound is invalid");
   }
 }
