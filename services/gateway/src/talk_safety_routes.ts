@@ -89,6 +89,45 @@ export function registerTalkSafetyRoutes(
   );
 
   app.get(
+    "/safety/users/:userId/preference",
+    {
+      schema:{
+        params:Type.Object({userId:Type.String({minLength:3,maxLength:256})},{additionalProperties:false}),
+      },
+    },
+    async(request)=>{
+      const params=request.params as {userId:string};
+      return service.readUserPreference({
+        authorizationHeader:request.headers.authorization,
+        userId:params.userId,
+      });
+    },
+  );
+
+  app.put(
+    "/safety/users/:userId/preference",
+    {
+      schema:{
+        params:Type.Object({userId:Type.String({minLength:3,maxLength:256})},{additionalProperties:false}),
+        body:Type.Object({
+          blocked:Type.Boolean(),
+          muted:Type.Boolean(),
+        },{additionalProperties:false}),
+      },
+    },
+    async(request)=>{
+      const params=request.params as {userId:string};
+      const body=request.body as {blocked:boolean;muted:boolean};
+      return service.setUserPreference({
+        authorizationHeader:request.headers.authorization,
+        userId:params.userId,
+        blocked:body.blocked,
+        muted:body.muted,
+      });
+    },
+  );
+
+  app.get(
     "/admin/talk-safety/:kind/:targetId",
     {
       schema:{
