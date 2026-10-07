@@ -44,6 +44,7 @@ describe("Postgres Talk moderation repository", () => {
               kind: "human_speaker",
               requester_user_id: "user_speaker",
               persona_id: null,
+              profile_handle: "speaker",
               display_name: "Speaker",
               detail: null,
               avatar_url: null,
@@ -124,6 +125,7 @@ describe("Postgres Talk moderation repository", () => {
         isHost: false,
         isMuted: false,
         userId: "user_speaker",
+        profileHandle: "speaker",
       },
     ]);
     expect(result?.mediaActions).toEqual([
