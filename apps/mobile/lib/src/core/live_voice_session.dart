@@ -270,7 +270,9 @@ class LiveVoiceSession with WidgetsBindingObserver {
         if (_closed) return;
         // Only model output transcription is enabled. User microphone audio is
         // intentionally never requested or rendered as text.
-        socket.add(
+        final pendingSocket = _socket;
+        if (pendingSocket == null || _closed) return;
+        pendingSocket.add(
           jsonEncode({
             'clientContent': {
               'turns': [

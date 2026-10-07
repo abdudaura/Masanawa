@@ -2854,6 +2854,7 @@ class _InlineVoicePanel extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
             ),
           ),
           IconButton(
@@ -3017,7 +3018,6 @@ class _Composer extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
