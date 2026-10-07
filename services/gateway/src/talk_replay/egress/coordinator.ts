@@ -11,7 +11,7 @@ export interface TalkReplayCoordinator {
     tenantId:string;talkId:string;reason:"host_ended"|"host_grace_expired"|"platform_ended";now:string;
   }>):Promise<void>;
   abort(input:Readonly<{
-    tenantId:string;talkId:string;recordingId:string;
+    tenantId:string;talkId:string;recordingId:string;now?:string;
   }>):Promise<void>;
   playback(input:Readonly<{
     tenantId:string;talkId:string;viewerUserId:string;
@@ -64,7 +64,7 @@ export function createTalkReplayCoordinator(input:Readonly<{
       await input.objects.deleteObject(media.objectKey);
       await input.media.markAborted({
         tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
-        completedAt:new Date().toISOString(),
+        completedAt:request.now??new Date().toISOString(),
       });
     },
 
