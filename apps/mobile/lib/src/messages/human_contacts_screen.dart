@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/session_state.dart';
 import 'human_contacts_controller.dart';
 import 'human_contacts_transport.dart';
+import 'human_request_privacy_screen.dart';
 
 /// C01's human-contact management surface. The R17/C08 shell owner installs
 /// this at the final /messages contact-discovery entry; it is not an AI chat.
@@ -51,6 +52,23 @@ class _HumanContactsScreenState extends ConsumerState<HumanContactsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Card(
+              child: ListTile(
+                key: const ValueKey('u24-open-request-privacy'),
+                leading: const Icon(Icons.mark_email_unread_outlined),
+                title: const Text('Requests and privacy'),
+                subtitle: const Text(
+                  'Manage received requests, sent requests, and who can find you.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const HumanRequestPrivacyScreen(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             const Text(
               'Find a person by their exact @handle. '
               'A contact request never starts a public Talk or authorizes a payment.',
