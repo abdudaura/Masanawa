@@ -998,7 +998,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   },
                 )
               : InkWell(
-            onTap: () => context.push('/agents'),
+            onTap: widget.embeddedInShell
+                ? widget.onOpenAgents
+                : () => context.push('/agents'),
             child: Row(
               children: [
                 CircleAvatar(
