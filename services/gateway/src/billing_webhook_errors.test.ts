@@ -3,16 +3,19 @@ import Fastify from "fastify";
 import { FlutterwaveWebhookError } from "@masanawa/providers";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
+import type { BillingWalletService } from "./billing_wallet.js";
 import { registerBillingRoutes } from "./billing_routes.js";
 
 describe("Flutterwave webhook HTTP retry contract (R05)", () => {
   async function deliver(
     billing: Pick<BillingFinancialService, "receiveWebhook">,
     checkout?: Pick<BillingCheckoutService, "reconcileFulfillment">,
+    wallet?: Pick<BillingWalletService, "receiveFundingWebhook">,
   ) {
     const app = Fastify();
     registerBillingRoutes(app, {
       billingFinancial: billing as BillingFinancialService,
+      ...(wallet ? { billingWallet: wallet as BillingWalletService } : {}),
       ...(checkout
         ? { billingCheckout: checkout as BillingCheckoutService }
         : {}),
@@ -67,6 +70,39 @@ describe("Flutterwave webhook HTTP retry contract (R05)", () => {
     expect(response.json()).toEqual({
       error: "billing_webhook_processing_unavailable",
     });
+  });
+
+  it("returns 503 when already-credited wallet continuation fails, so Flutterwave can retry", async () => {
+    const billingReceive = vi.fn(async () => ({ duplicate: false, reference: null }));
+    const receiveFundingWebhook = vi.fn(async () => {
+      throw new Error("fulfillment unavailable after credit");
+    });
+    const response = await deliver(
+      { receiveWebhook: billingReceive },
+      undefined,
+      { receiveFundingWebhook },
+    );
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({ error: "billing_webhook_processing_unavailable" });
+    expect(billingReceive).not.toHaveBeenCalled();
+    expect(receiveFundingWebhook).toHaveBeenCalledOnce();
+  });
+
+  it("acknowledges an idempotently resumed wallet transfer only after completion", async () => {
+    const billingReceive = vi.fn(async () => ({ duplicate: false, reference: null }));
+    const receiveFundingWebhook = vi.fn(async () => ({
+      handled: true, duplicate: true, resumed: true,
+    }));
+    const response = await deliver(
+      { receiveWebhook: billingReceive },
+      undefined,
+      { receiveFundingWebhook },
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      accepted: true, duplicate: true, funding: true, resumed: true,
+    });
+    expect(billingReceive).not.toHaveBeenCalled();
   });
 
   it("acknowledges only completed processing including duplicate delivery", async () => {
