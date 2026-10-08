@@ -232,7 +232,8 @@ class HumanChatCache {
         last_sequence=MAX(threads.last_sequence,excluded.last_sequence),
         preview=CASE WHEN excluded.updated_at_ms >= threads.updated_at_ms
           THEN excluded.preview ELSE threads.preview END,
-        unread_count=excluded.unread_count
+        unread_count=CASE WHEN excluded.updated_at_ms >= threads.updated_at_ms
+          THEN excluded.unread_count ELSE threads.unread_count END
     ''', [
       thread.conversationId,
       thread.peerUserId,
@@ -294,7 +295,7 @@ class HumanChatCache {
       for (final item in messages) {
         final previous = await tx.query(
           'messages',
-          columns: ['conversation_id', 'sequence'],
+          columns: ['conversation_id', 'sequence', 'deleted'],
           where: 'message_id = ?',
           whereArgs: [item.messageId],
           limit: 1,
@@ -303,6 +304,13 @@ class HumanChatCache {
             (previous.single['conversation_id'] != conversationId ||
                 previous.single['sequence'] != item.sequence)) {
           throw StateError('Server message identity/sequence changed');
+        }
+        // Once a server tombstone is observed, replay of an older cached
+        // history page must never restore the deleted plaintext.
+        if (previous.isNotEmpty &&
+            previous.single['deleted'] == 1 &&
+            !item.deleted) {
+          continue;
         }
         final row = <String, Object?>{
           'message_id': item.messageId,
