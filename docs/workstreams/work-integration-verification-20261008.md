@@ -110,3 +110,28 @@ Full `pnpm build` did not qualify: initial scratch dependency symlink and nested
 
 ## Firebase unification claim — 2026-10-08T13:11Z
 User authorizes complete consolidation, preservation of every substantive change, cleanup of superseded branches after verified integration, and local-agent insertion of Firebase values. Claim integration of exact ten paths from #461 head 11de436 plus scripts/qualify-first10-android.ps1 optional Firebase defines-file wiring and docs/FIREBASE-LOCAL-COMPILATION-HANDOFF.md. Preserve current main changes while resolving old Firebase branch; no service-account secrets or live credentials stored. Native/device acceptance deferred to local compilation explicitly requested by user. Active windows must retain their claims; stale superseded work is audited before closure. Current open PR inventory includes new #498 R19 and changed #493 source head, so older snapshots are not treated as current.
+
+
+## Firebase preserved and next safety integration batch
+Firebase reconciled at 357c26b8fb976bbae1c2319ff3cb436efc23ba23. Both original architecture identity tests pass. Local values handoff is docs/FIREBASE-LOCAL-COMPILATION-HANDOFF.md; native device and PowerShell acceptance unexecuted, user authorizes local agent values.
+
+Next claim: source/test subsets of stale PRs #448/#449/#452/#453/#455/#456/#484, exact paths:
+- `services/gateway/src/talk_ai_worker/worker.test.ts`
+- `services/gateway/src/talk_ai_worker/worker.ts`
+- `services/gateway/src/talk_ai_worker/livekit_dispatch.test.ts`
+- `services/gateway/src/talk_ai_worker/livekit_dispatch.ts`
+- `services/gateway/src/talk_ai_worker/postgres_stage_repository.test.ts`
+- `services/gateway/src/talk_ai_worker/postgres_stage_repository.ts`
+- `services/gateway/src/talk_replay/egress/coordinator.test.ts`
+- `services/gateway/src/talk_replay/egress/coordinator.ts`
+- `services/gateway/src/talk_replay/egress/postgres_media_repository.test.ts`
+- `services/gateway/src/talk_replay/egress/postgres_media_repository.ts`
+- `apps/mobile/android/app/src/main/AndroidManifest.xml`
+- `apps/mobile/android/app/src/main/res/xml/masanawa_data_extraction_rules.xml`
+- `apps/mobile/android/app/src/main/res/xml/masanawa_network_security_config.xml`
+- `tests/security/android-private-data-release.test.ts`
+- `apps/mobile/lib/src/talks/talk_live_audio_session.dart`
+- `apps/mobile/test/talk_live_audio_session_test.dart`
+- `apps/mobile/lib/src/screens/talks/talk_gift_sheet.dart`
+- `apps/mobile/test/talk_gift_sheet_recovery_test.dart`
+Preserve existing integration fixtures, apply-check each patch, execute affected suites, and publish only reviewed reconciled content. No SQL schema/composer or transfer authority changes. Open PRs are not closed until unique changes are preserved and integration status is explicit.
