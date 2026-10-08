@@ -1,6 +1,21 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import Type from "typebox";
 import type { HumanContactService } from "./service.js";
+
+/** Reject extra input before Fastify's default AJV removes it. */
+function strictBody(allowed: readonly string[]) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body;
+    if (body !== null && typeof body === "object" && !Array.isArray(body) &&
+        Object.keys(body).some((key) => !allowed.includes(key))) {
+      return reply.code(400).send({
+        statusCode: 400,
+        error: "Bad Request",
+        message: "Unsupported contact request fields",
+      });
+    }
+  };
+}
 
 /** Register only when real contact repository and canonical session authorizer exist. */
 export function registerHumanContactRoutes(app: FastifyInstance, service: HumanContactService): void {
@@ -16,6 +31,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   }));
 
   app.patch("/messages/contacts/preferences", {
+    preValidation: strictBody(["policy", "discoverableByHandle"]),
     schema: { body: Type.Object({
       policy: Type.Optional(Type.Union([Type.Literal("anyone"), Type.Literal("requests"), Type.Literal("nobody")])),
       discoverableByHandle: Type.Optional(Type.Boolean()),
@@ -26,6 +42,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   }));
 
   app.post("/messages/contacts/requests", {
+    preValidation: strictBody(["handle"]),
     schema: { body: Type.Object({ handle: Type.String({ minLength: 2, maxLength: 41 }) }, { additionalProperties: false }) },
   }, async (request) => service.request({
     authorizationHeader: request.headers.authorization,
@@ -33,6 +50,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   }));
 
   app.post("/messages/contacts/requests/:requesterId/response", {
+    preValidation: strictBody(["accept", "requestRevision"]),
     schema: {
       params: Type.Object({ requesterId: Type.String({ minLength: 3, maxLength: 256 }) }, { additionalProperties: false }),
       body: Type.Object({
@@ -56,8 +74,12 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
 
   app.get("/messages/contacts", {
     schema: { querystring: Type.Object({ limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) }, { additionalProperties: false }) },
-  }, async (request) => service.list({
-    authorizationHeader: request.headers.authorization,
-    limit: (request.query as { limit?: number }).limit,
-  }));
+  }, async (request) => {
+    const { limit } = request.query as { limit?: number };
+    return service.list({
+      authorizationHeader: request.headers.authorization,
+      ...(limit === undefined ? {} : { limit }),
+    });
+  });
 }
+
