@@ -1,4 +1,4 @@
-import { normalizeCryptoAmount, normalizeCryptoAsset } from "@masanawa/commerce";
+import { normalizeCryptoAmount, normalizeCryptoAsset, type InternalTransferReceipt } from "@masanawa/commerce";
 import { parseCanonicalId } from "@masanawa/contracts";
 import type { InternalTransferRepository } from "@masanawa/postgres";
 import type { CreditRecipientResolver } from "./credit_transfer.js";
@@ -6,10 +6,10 @@ import type { FinancialAuthorizer, FinancialService } from "./financial_service.
 
 export interface InternalCryptoTransferService {
   quote(input: { authorizationHeader?: string; requestId: string;
-    recipient: string; providerCode: string; amount: string }): Promise<unknown>;
+    recipient: string; providerCode: string; amount: string }): Promise<InternalTransferReceipt>;
   confirm(input: { authorizationHeader?: string; requestId: string;
-    confirmationToken: string }): Promise<unknown>;
-  read(input: { authorizationHeader?: string; requestId: string }): Promise<unknown>;
+    confirmationToken: string }): Promise<InternalTransferReceipt>;
+  read(input: { authorizationHeader?: string; requestId: string }): Promise<InternalTransferReceipt | null>;
 }
 export function createInternalCryptoTransferService(input: {
   authorizer: FinancialAuthorizer;
@@ -24,7 +24,7 @@ export function createInternalCryptoTransferService(input: {
     if (!capabilities.deposits) throw new Error("crypto.transfer.custody_unavailable");
     const routes = await input.financial.listDepositRoutes({ authorizationHeader });
     const route = routes.find(item => item.providerCode === providerCode);
-    if (!route || route.asset.toUpperCase() === "ETH" || route.network?.toLowerCase() === "erc20") {
+    if (!route || route.network?.toLowerCase() === "erc20") {
       throw new Error("crypto.transfer.route_unavailable");
     }
     return { asset: normalizeCryptoAsset(route.asset), network: route.network };
@@ -78,7 +78,7 @@ export function createInternalCryptoTransferService(input: {
       });
       if (!input.enabled || !capabilities.deposits ||
           !routes.some(route => route.asset === quote.asset && route.network === quote.network &&
-            route.asset.toUpperCase() !== "ETH" && route.network?.toLowerCase() !== "erc20")) {
+            route.network?.toLowerCase() !== "erc20")) {
         throw new Error("crypto.transfer.route_unavailable");
       }
       return input.repository.confirm({
