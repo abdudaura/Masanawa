@@ -26,12 +26,13 @@ describeDatabase("R05 quote-scoped NGN funding creation", () => {
   function inputFor(owner: { tenantId: string; userId: string; quoteId: string },
     reference: string, amountKobo = 10_000) {
     const createdAt = new Date().toISOString();
+    const uniqueRef = `${owner.userId}-${reference}`;
     return {
       tenantId: owner.tenantId,
       userId: owner.userId,
       quoteId: owner.quoteId,
-      fundingReference: `funding-${reference}`,
-      txRef: `wallet-${reference}`,
+      fundingReference: `funding-${uniqueRef}`,
+      txRef: `wallet-${uniqueRef}`,
       amountKobo,
       expiresAt: new Date(Date.parse(createdAt) + 30 * 60_000).toISOString(),
       createdAt,
@@ -91,8 +92,8 @@ describeDatabase("R05 quote-scoped NGN funding creation", () => {
     const [first, second] = await Promise.all([
       repo.createFundingIntent({ ...topup, quoteId: null }),
       repo.createFundingIntent({
-        ...topup, fundingReference: "funding-topup-two",
-        txRef: "wallet-topup-two", quoteId: null,
+        ...topup, fundingReference: `funding-${userId}-topup-two`,
+        txRef: `wallet-${userId}-topup-two`, quoteId: null,
       }),
     ]);
     expect(first.fundingReference).not.toBe(second.fundingReference);
