@@ -71,9 +71,9 @@ export function registerAssistantWorkspaceRoutes(
       authorizationHeader: request.headers.authorization,
       role: role(body.role),
       characterSessionId: parseCanonicalId(
-        "character-session", params.sessionId,
+        "character-session", text(params.sessionId),
       ),
-      requestId: parseCanonicalId("request", body.requestId),
+      requestId: parseCanonicalId("request", text(body.requestId)),
       correlationId: createCanonicalId("correlation"),
       text: text(body.text),
     });
@@ -85,7 +85,7 @@ export function registerAssistantWorkspaceRoutes(
     return service.turnStatus({
       authorizationHeader: request.headers.authorization,
       role: role(query.role),
-      requestId: parseCanonicalId("request", params.requestId),
+      requestId: parseCanonicalId("request", text(params.requestId)),
     });
   });
 }
