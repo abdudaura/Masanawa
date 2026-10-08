@@ -15,9 +15,9 @@ export interface AccountDeletionRepository {
     tenantId: string;
     userId: string;
     expectedRevision: number;
-    target: AccountDeletionPhase;
+    /** Verification is exclusively owned by the atomic challenge repository. */
+    target: Exclude<AccountDeletionPhase, "requested" | "identity-verified">;
     now: string;
-    identityReauthenticated?: boolean;
     cleanupComplete?: boolean;
     outstandingObligations?: readonly string[];
     errorCode?: string;
