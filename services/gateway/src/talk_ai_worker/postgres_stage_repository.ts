@@ -97,18 +97,28 @@ export function createPostgresTalkAiStageEventRepository(
           [tenantId, talkId],
         ),
         pool.query<ReactionRow>(
-          "SELECT reaction,COUNT(*)::integer AS total,MAX(reaction_updated_at) AS latest " +
-          "FROM talks.participation WHERE tenant_id=$1 AND talk_id=$2 AND reaction IS NOT NULL " +
-          "AND reaction_updated_at <= $3 AND reaction_updated_at >= $4 " +
-          "GROUP BY reaction ORDER BY latest DESC LIMIT 6",
+          "SELECT p.reaction,COUNT(*)::integer AS total,MAX(p.reaction_updated_at) AS latest " +
+          "FROM talks.participation p JOIN talks.talks t " +
+          "ON t.tenant_id=p.tenant_id AND t.talk_id=p.talk_id " +
+          "WHERE p.tenant_id=$1 AND p.talk_id=$2 AND p.reaction IS NOT NULL " +
+          "AND p.reaction_updated_at <= $3 AND p.reaction_updated_at >= $4 " +
+          "AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp " +
+          "WHERE sp.tenant_id=p.tenant_id AND sp.viewer_user_id=t.host_user_id " +
+          "AND sp.subject_user_id=p.user_id AND sp.blocked=true) " +
+          "GROUP BY p.reaction ORDER BY latest DESC LIMIT 6",
           scope,
         ),
         pool.query<HandRow>(
-          "SELECT hand_status,COUNT(*)::integer AS total,MAX(updated_at) AS latest " +
-          "FROM talks.participation WHERE tenant_id=$1 AND talk_id=$2 " +
-          "AND hand_status IN ('raised','accepted','declined') " +
-          "AND updated_at <= $3 AND updated_at >= $4 " +
-          "GROUP BY hand_status ORDER BY latest DESC LIMIT 3",
+          "SELECT p.hand_status,COUNT(*)::integer AS total,MAX(p.updated_at) AS latest " +
+          "FROM talks.participation p JOIN talks.talks t " +
+          "ON t.tenant_id=p.tenant_id AND t.talk_id=p.talk_id " +
+          "WHERE p.tenant_id=$1 AND p.talk_id=$2 " +
+          "AND p.hand_status IN ('raised','accepted','declined') " +
+          "AND p.updated_at <= $3 AND p.updated_at >= $4 " +
+          "AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp " +
+          "WHERE sp.tenant_id=p.tenant_id AND sp.viewer_user_id=t.host_user_id " +
+          "AND sp.subject_user_id=p.user_id AND sp.blocked=true) " +
+          "GROUP BY p.hand_status ORDER BY latest DESC LIMIT 3",
           scope,
         ),
         pool.query<QuestionRow>(
