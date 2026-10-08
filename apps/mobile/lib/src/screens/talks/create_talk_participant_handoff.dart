@@ -2,11 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_state.dart';
+import '../../state/session_state.dart';
 import '../../talks/talk_ai_seat.dart';
 import '../../talks/talk_create_action_store.dart';
 import '../../talks/talk_models.dart';
 import '../../talks/talk_share.dart';
 import 'add_ai_seat_sheet.dart';
+
+/// A route query such as ?host=1 is not authorization. Only the server's
+/// canonical Host user ID compared to this authenticated account enables
+/// persisted post-create actions to be offered.
+abstract interface class TalkCreateHostGuard {
+  Future<bool> isHost(String talkId);
+}
+
+class ServerTalkCreateHostGuard implements TalkCreateHostGuard {
+  const ServerTalkCreateHostGuard({
+    required this.transport,
+    required this.viewerUserId,
+  });
+
+  final TalkTransport transport;
+  final String viewerUserId;
+
+  @override
+  Future<bool> isHost(String talkId) async {
+    if (viewerUserId.isEmpty) return false;
+    final detail = await transport.loadTalk(talkId);
+    return detail.talk.participants.any((person) =>
+        person.isHost &&
+        person.kind == TalkParticipantKind.human &&
+        person.id == viewerUserId);
+  }
+}
+
+final talkCreateHostGuardProvider = Provider<TalkCreateHostGuard>((ref) {
+  final userId = ref.watch(sessionProvider.select(
+    (session) => session is SessionSignedIn ? session.user.id : '',
+  ));
+  return ServerTalkCreateHostGuard(
+    transport: ref.watch(talkTransportProvider),
+    viewerUserId: userId,
+  );
+});
 
 typedef PresentCreatedAiSeat = Future<TalkAiSeatRequest?> Function(
   BuildContext context, {
@@ -45,6 +83,7 @@ class _TalkCreateParticipantHandoffState
   List<TalkCreateParticipantAction> _pending = const [];
   ScaffoldFeatureController<MaterialBanner, MaterialBannerClosedReason>? _banner;
   bool _working = false;
+  bool _authorizedHost = false;
   int _loadVersion = 0;
 
   @override
@@ -61,6 +100,7 @@ class _TalkCreateParticipantHandoffState
       _banner?.close();
       _banner = null;
       _pending = const [];
+      _authorizedHost = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => _restore());
     }
   }
@@ -84,9 +124,15 @@ class _TalkCreateParticipantHandoffState
     if (!mounted || !widget.isHost) return;
     final version = ++_loadVersion;
     try {
+      final authorized = await ref.read(talkCreateHostGuardProvider)
+          .isHost(widget.talkId);
+      if (!mounted || version != _loadVersion || !authorized) return;
       final actions = await ref.read(talkCreateActionStoreProvider).load(widget.talkId);
       if (!mounted || version != _loadVersion) return;
-      setState(() => _pending = actions);
+      setState(() {
+        _authorizedHost = true;
+        _pending = actions;
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
     } catch (_) {
       if (!mounted || version != _loadVersion) return;
@@ -110,7 +156,7 @@ class _TalkCreateParticipantHandoffState
   };
 
   void _offerNext() {
-    if (!mounted || !widget.isHost || _pending.isEmpty ||
+    if (!mounted || !widget.isHost || !_authorizedHost || _pending.isEmpty ||
         _working || _banner != null) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) return;
