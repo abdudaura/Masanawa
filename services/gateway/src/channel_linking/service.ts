@@ -105,7 +105,7 @@ export function createLinkingService(input: Readonly<{
     prefer: (owner, channel) => input.repository.setPreferred(owner, channel, now()),
     async consumeVerifiedInbound(sender) {
       if (!/^[a-zA-Z0-9:_+.-]{1,256}$/u.test(sender.externalUserId) ||
-          !/^[a-zA-Z0-9:_+.-]{1,256}$/u.test(sender.chatId) ||
+          !/^[a-zA-Z0-9:_+@.-]{1,256}$/u.test(sender.chatId) ||
           !/^[a-zA-Z0-9:_+.-]{1,512}$/u.test(sender.messageId)) return false;
       const code = sender.text.trim().toUpperCase();
       if (!codePattern.test(code)) return false;
