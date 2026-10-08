@@ -11,11 +11,14 @@ class TalkHomeScreen extends ConsumerWidget {
     this.onOpenTalk,
     this.onOpenSearch,
     this.onOpenGwani,
+    this.embeddedInShell = false,
   });
 
   final void Function(TalkDiscoveryItem talk)? onOpenTalk;
   final VoidCallback? onOpenSearch;
   final VoidCallback? onOpenGwani;
+  /// Hide the inner toolbar when the shared root header is visible.
+  final bool embeddedInShell;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,8 +28,9 @@ class TalkHomeScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: u.surfaceBg,
         appBar: AppBar(
-          title: const Text('Masanawa'),
-          actions: [
+          toolbarHeight: embeddedInShell ? 0 : null,
+          title: embeddedInShell ? null : const Text('Masanawa'),
+          actions: embeddedInShell ? null : [
             IconButton(
               tooltip: 'Search',
               onPressed: onOpenSearch,
