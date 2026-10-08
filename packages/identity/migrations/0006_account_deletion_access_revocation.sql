@@ -5,10 +5,14 @@ CREATE TABLE identity.account_deletion_access_revocations (
   tenant_id text NOT NULL,
   user_id text NOT NULL,
   completed_at timestamptz NOT NULL,
+  clearance_reference text NOT NULL CHECK (length(clearance_reference) BETWEEN 8 AND 160),
+  clearance_checked_at timestamptz NOT NULL,
   FOREIGN KEY (tenant_id, user_id, request_id)
     REFERENCES identity.account_deletion_requests(tenant_id, user_id, request_id)
 );
 
+-- Financial clearance must be current when the revocation is committed.
+-- Its reference points to durable private reconciliation evidence.
 CREATE OR REPLACE FUNCTION identity.reject_account_deletion_revocation_mutation()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
