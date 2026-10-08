@@ -24,9 +24,9 @@ class AvatarCrop {
     }
     final side = (width < height ? width : height) / zoom;
     final left = (centerX.clamp(0.0, 1.0) * width - side / 2)
-        .clamp(0.0, width - side);
+        .clamp(0.0, width - side).toDouble();
     final top = (centerY.clamp(0.0, 1.0) * height - side / 2)
-        .clamp(0.0, height - side);
+        .clamp(0.0, height - side).toDouble();
     return Rect.fromLTWH(left, top, side, side);
   }
 
