@@ -39,6 +39,7 @@ export function sanitizeAvatarPng(input: Buffer): SanitizedAvatar {
   if (input.byteLength > 2 * 1024 * 1024 || input.byteLength < 60 ||
       !input.subarray(0, 8).equals(pngSignature)) throw invalid();
   let offset = 8;
+  let chunks = 0;
   let width = 0;
   let height = 0;
   let channels = 0;
@@ -48,6 +49,7 @@ export function sanitizeAvatarPng(input: Buffer): SanitizedAvatar {
   let idatEnded = false;
   const idat: Buffer[] = [];
   while (offset < input.length) {
+    if (++chunks > 256) throw invalid();
     if (offset + 12 > input.length) throw invalid();
     const length = input.readUInt32BE(offset);
     if (length > input.length - offset - 12) throw invalid();
