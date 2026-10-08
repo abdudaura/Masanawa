@@ -78,7 +78,22 @@ export function createHumanDmRealtimeService(input: {
         });
         if (shouldStop?.() || result.events.length || initialSnapshot ||
             Date.now() >= deadline) {
-          return { ...result, resetRequired: initialSnapshot };
+          // Session revocation can race the database read. Reauthorize just
+          // before releasing private event metadata to the caller.
+          const finalPrincipal = await input.authorizer.authorize({
+            authorizationHeader,
+          });
+          if (finalPrincipal.tenantId !== tenantId ||
+              finalPrincipal.userId !== userId) {
+            throw new HumanDmRealtimeError("messages.sync_session_changed",401);
+          }
+          if (shouldStop?.()) return {
+            events:[],nextCursor:after,hasMore:false,resetRequired:false,
+          };
+          return {
+            ...result,
+            resetRequired: initialSnapshot || result.resetRequired,
+          };
         }
         await sleep(Math.min(750,Math.max(1,deadline-Date.now())));
       }
