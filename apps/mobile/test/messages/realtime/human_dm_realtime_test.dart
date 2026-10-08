@@ -86,7 +86,7 @@ HumanDmRealtimeSync _sync(_Store store,_Projection projection,_Transport transpo
 
 void main() {
   test('only validated metadata accepted; no message text may be parsed',(){
-    expect(()=>HumanDmRealtimePage.fromJson({
+    expect(HumanDmRealtimePage.fromJson({
       'events':[{
         'eventId':'1','conversationId':'thread_a',
         'kind':'message_added','actorUserId':'user_b',
