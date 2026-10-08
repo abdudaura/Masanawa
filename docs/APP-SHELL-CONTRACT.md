@@ -1,80 +1,52 @@
 # App Shell Contract
 
-Status: **canonical consumer shell — 2026-10-08; latest user-approved navigation**
-Supersedes the previous Create/Activity/You bottom-navigation arrangement.
+Status: **OWNER-APPROVED FIVE-TAB TARGET — 2026-10-08; Flutter app migration OPEN / UNVERIFIED**.
+Supersedes the previously approved Home · Agents · Wallet · Talk root arrangement and earlier conditional Home · Chats · Wallet · Talk proposal **for planned architecture**, not a claim that the current APK already follows the new navigation. Implement **one** final shell through R17 + C08, with active-PR/file ownership coordination; no throwaway intermediate navigation. See **END-TO-END-UX-ARCHITECTURE.md** for full destinations, action placement, route compatibility and acceptance.
 
 ## Bottom navigation
-Exactly four destinations: **Home · Agents · Wallet · Talk**.
-Use **Talk**, never “Talk to AI”, as the private assistant tab label.
-A public Talk and private Talk tab have explicit mode labels within their respective
-screens; this tab never starts a public broadcast or silently enables the microphone.
 
-- Home: Explore and Live Talks, each a single vertical column of full-width cards.
-- Agents: two tabs, **Masanawa Agents** and **Twins**, with compact searchable profiles,
-  role/type/availability and private Talk/Type actions. Public paid Add/Sponsor Seat is
-  a separate explicit confirmed action; browsing/chatting does not purchase a Seat.
-- Wallet: separate native fiat, Credits, pending/available earnings and asset/network
-  crypto balances; immediate history plus voice-first financial assistance.
-- Talk: private Gwani/Gwana voice-first workspace, with Type instead and deliberate
-  microphone start. Continue the same private task when entering from a service shortcut.
+**Exactly five destinations from left to right: Talks · Chats · Assistant · Wallet · Agents.**
 
-## Header and creation
-Header right: Activity/notification bell beside profile avatar.
-Bell opens the existing Activity screen with useful unread state and accessible label.
-Avatar opens the upgraded You/profile hub and Settings. A three-dot menu, if needed,
-contains contextual actions only; do not duplicate Profile/Activity/Settings everywhere.
-Both are reachable on normal root screens; immersive Talk may use a compact overflow.
-Provide a default avatar, loading/error handling, back-navigation and restored tab state.
+1. **Talks** — *the previous Home Explore/Live Talk feed*, now a single public audio Talk destination with Explore/Live sub-tabs, full-width vertical cards, human-hosted stage, recordings/replays and green **Start Talk** FAB. Never substitute a private AI conversation for public Talk.
+2. **Chats** — human-to-human private text/voice-note/media conversations only, local-first durable recent history, unread indicator, contact search and **New message**. No AI-character chat list and no transfer on the message Send arrow.
+3. **Assistant (CENTER)** — the one primary **private Gwani/Gwana chat interface**, visual center emphasis, deliberate voice or complete typing/tap path, switch **Gwani ↔ Gwana inside the same conversation**. Same durable user-owned assistant workspace and task state; record per-message persona attribution. Never start mic, public Talk or spend on tab entry. Qualified action/quote/confirmation and session privacy still server-owned.
+4. **Wallet** — native fiat / Credits / available vs pending creator earnings / crypto assets kept separate, actual history and qualified crypto/bill actions. Exact receipts/status without waiting for AI. Money never merges across domains.
+5. **Agents** — full **Masanawa Agents** and **Twins** directory/search, availability/profiles/private character conversations, My Twin management, and explicit public Talk Seat sponsor/invite actions. Discovering an Expert or Twin does not mean switching the privileged Gwani/Gwana Assistant persona or authorizing a paid Seat.
 
-A green **Start Talk** FAB opens the public Talk composer. It does not instantly broadcast.
-Avoid covering cards, bottom navigation, microphone controls or keyboard. Show on appropriate
-root surfaces; hide during immersive public audio or active private transaction/recording.
-Use one composer and existing human Host, free human Seat and paid AI Seat authority.
+**There is no separate Home tab, fifth feature duplication, hidden sixth navigation or Rooms/Skills/Workflows directory.** Talks inherits previous Home's Explore/Live full-width discovery and becomes the first landing root. Chats contains only human private messages; Agents retains AI persona/Twin discovery, Assistant is the *only* centrally supported Gwani/Gwana operator conversation, and Talks owns all public audio. Assistant is deliberately centered with two tabs on either side.
+
+## Header, creation and profile
+
+Root header: Activity/notification bell + profile avatar; search where relevant. Bell opens Talk/social/payment/platform Activity with useful unread states; DM unread belongs to Chats (not duplicated inbox). Profile avatar opens You/profile/Settings; full avatar upload/replace/crop/remove and handle/display name/bio persist and refresh cross-surface (R18). My Talks, My Twin, Saved Talks, Earnings, security/privacy/notification/language/support/deletion remain accessible from You/Settings, not new root tabs.
+
+**Start Talk** green FAB appears on the **Talks** discovery root, opens public Talk composer, and requires later explicit Go Live. Never present it in Chats, Assistant, Wallet or Agents, or as an ambiguous global action. **New message** is the primary Chats action. Contextual agent invitation, qualified transfer and shopping actions remain inside relevant profile, Talk or Wallet surfaces. No controls cover mic/keyboard/bottom labels; measure 320dp widths, large text, RTL and accessible targets.
+
+Public Talks remain human-led, free human speaker Seats with Host admission, paid AI Seats only by explicit quote/consent, moderated participation, gifts and qualified replays. A human DM never automatically admits a person to a public Talk.
+
+## Single central Assistant and contextual entry
+
+Inside **one** Assistant chat UI, show active **Gwani** or **Gwana** identity and a visible switch; persist chosen identity for the user and attribute replies by actual persona. Preserve the shared authorized assistant conversation, drafts and pending task identity across switching. Changes of persona cannot auto-approve or replay a sensitive payment, expose other users' DMs, import a private Expert/Twin chat, or create a new hidden assistant thread. Offer Type instead, deliberate native-audio mic control, accessible cards and recoverable action states. A globally reachable 'Ask Assistant' affordance reuses the same authenticated task from Talks, Chats, Wallet and Agents without starting the mic or changing public audio permissions.
+
+Agents tab **does not duplicate** this root Assistant: an Expert or Twin's separately authorized persona chat opens by name from its profile, without inheriting Gwani/Gwana's universal operator privileges or disguising a paid public Talk Seat as private chat.
 
 ## Wallet service ordering and handoff
-Show **Crypto** first (Buy/Deposit/Convert/Withdraw), then **Data bundles**, **Airtime**,
-**Electricity**, and **TV / Cable**, followed by supported funding/send/withdraw and history.
-Eligibility depends on actual market/provider/account capability; no fabricated global rails.
-These are shortcuts for the two Billing/Crypto families, not extra root service products.
 
-Selecting a shortcut opens the private assistant with that validated intent selected.
-Do not ask which service the user already selected; ask only missing details. Selection
-never pays, authorizes a withdrawal, enables the microphone or publishes private speech.
-Preserve balance/task state and return navigation. Read-only balances/history work without AI.
+Show **Crypto** first; then **Data bundles**, **Airtime**, **Electricity**, **TV/Cable**, plus actual qualified Add funds, Send crypto/other explicitly named currency, external Withdraw and History. Billing and Crypto are the **only** standalone services. Server capability/account/market/asset/network/KYC policies determine availability. A shortcut can preselect a verified Assistant/Walet intent, asks only missing details, but never pays, authorizes, turns on mic or changes voice permissions when opened.
 
-## Profile completeness
-Header profile is a fully editable hub, not a read-only identity card.
-Upload/replace/crop/remove photo; edit display name, handle and bio; validate clearly,
-show upload/save/retry states and retain changes across restart and cross-device refresh.
-Public profile, Talk stage, comments and Twin owner presentation converge on canonical
-saved identity. Default avatar works after removal. See R18 in MOBILE-READINESS-PLAN.md.
+DM **Transfer** opens the same qualified Wallet internal crypto task with exact authenticated recipient, asset/network, server terms, fresh explicit risk-appropriate confirmation, once-only ledger settlement and both receipts. A generic chat Send arrow is **text/voice-note only**. Internal book transfers are not automatically an on-chain send. No credits/fiat/earnings/crypto mixing or model-authoritative balance.
 
-## Existing boundaries
-No Rooms/Skills/Workflows/provider internals as consumer destinations. Retain human-led
-public Talks, private assistant isolation, compact sheets, white surfaces and vibrant
-green. Root Agents is a supported discovery surface, not a replacement for Home Talks.
-Financial flows follow VOICE-FIRST-INTERACTIONS.md, with spoken terms and silent parity.
-Profile carries account, language, privacy, support and deletion; no fifth root tab.
+## Route continuity and state restoration (must pass tests)
 
-## Conditional future Chats entry — staged, no current shell redesign
+Use **named** destinations and typed IDs, never reuse old numeric shell indices:
 
-Human-to-human private DMs, voice notes and user-to-user crypto sending are approved additive functionality (`COMMUNICATIONS-EXTENSION-PLAN.md` C01–C08), **not permission to replace the current four tabs while the implementation is incomplete**. First make private messaging accessible via person profile Message action and a compact existing-shell entry. `Home · Chats · Wallet · Talk` can supersede `Home · Agents · Wallet · Talk` only after C02–C05 two-device, offline sync, cached history, privacy and end-to-end navigation checks plus C08 measured user testing.
+- **Talks** root new '/talks'; old '/home' and '/home?tab=home' map to Talks Explore. Keep '/talk/create' and '/talk/:id' public stage semantics unchanged.
+- **Chats** human-only root new '/messages'; authenticated DM '/messages/:conversationId'. Prior '/chats' is currently a *private AI* alias and **must map to Assistant for backward compatibility**, not silently become human chat. No '/chat/:characterId' repurposing: that is an AI persona thread.
+- **Assistant** root '/assistant'; legacy '/home?tab=talk', old '/chat' and historical '/chats' aliases map to this private Assistant workspace, preserving sign-in and appropriate deep-link behavior.
+- **Wallet** '/wallet' and '/home?tab=wallet'; **Agents** '/agents', '/masana' and '/home?tab=agents'. Preserve '/persona/:publicId', '/my-twin', '/u/:handle', '/activity', '/you', '/settings', '/crypto', '/billing' and valid receipts/invite links; legacy '?tab=create|activity|you' retains its historical action.
+- Notification links and tasks use typed **PersonRef, PersonaRef, ConversationRef, PublicTalkRef, FinancialTaskRef**. Correct auth on launch/switch, no wrong-account cached content or public/private deep-link misrouting. Back returns to real prior screen with scroll, drafts, Talk role and unfinished task identity preserved.
 
-If the tab changes, Chats prominently lists human chats with retained **Masanawa Agents / Twins** discovery, ownership and paid-seat entry; Talk remains the **private** Gwani/Gwana workspace, while public Talks/Start Talk remain in Home. Keep Activity bell, profile hub, balance/service shortcuts, route/link continuity, white/green theme, notification deep links and no fifth tab. If feature readiness or discoverability fails, retain Agents tab and improve contextual chat access instead.
+## Acceptance, ownership and evidence
 
-The C07 operator is globally accessible from existing contexts by **voice, typed command and taps** to the same authorized backend operation, including chat draft/send and eligible internal transfers. Never silently turn on mic, send a financial instruction, change navigation or reveal private DM content on a public Talk. Global assistants and human DMs are distinct privacy domains.
+**Only an explicitly claimed R17/C08 shared shell integration owner** updates Flutter root tab enum/router/nav/localization and shared deep link interfaces, coordinating active R work and C01–C07 owners under MULTI-WINDOW-WORK.md's five-minute lease. Underlying R01–R19 and C01–C08 requirements are unchanged and still separately checked. Do not infer mobile implementation from this target document.
 
-## Route continuity
-Keep existing deep links for Activity/You/Profile/Create/Talk/Wallet/services/Settings.
-Add or reuse an Agents root and private assistant route as implementation requires.
-Do not confuse a private assistant route with /talk/:talkId public participation.
-Changing navigation must not break notification, receipt or invitation links.
-
-Acceptance: all four destinations, header actions, FAB, both agent tabs and every
-advertised profile/service action work after login, restart, permissions failure and
-back navigation. Record implementation/build/deployment/device evidence separately.
-
-## Final architecture review for coordinated sign-off (not yet a shell amendment)
-
-The owner requested a *complete*, up-front review to avoid implementing C01–C08 and later reworking navigation. `END-TO-END-UX-ARCHITECTURE.md` supplies the proposed permanent destination/route/action/return-stack and end-to-end journey matrix. It specifically recommends **Home · Chats · Wallet · Assistant**, retaining human-hosted public Talks, visible Masanawa Agents/Twins within Chats, and one globally private Gwani/Gwana operator. The label **Assistant** is proposed to distinguish private AI operation from the publicly hosted **Talk** object. This proposal **does not silently supersede the owner-approved four tabs above**; that decision must be recorded explicitly and propagated once to R17 and C08 before dependent screen code. Do not ship an interim screen arrangement intended to be redesigned later.
-
+Pass five-tab screen-reader/RTL/low-end Android tests, Chats authentic two-account text/voice/cache/push tests, Gwani→Gwana→Gwani switch preserving scoped history and nonduplicate approval, Agents/Twins discovery and paid Seat gating, Talks live/audio/gifts/replay, Wallet funding/crypto/billing exact quote, back and deep-link compatibility. Document source/build/deploy/device evidence, fail closed on restricted capabilities, and do not count CI #457 zero-step failures as passing application tests.
