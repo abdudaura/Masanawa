@@ -4,20 +4,26 @@ Masanawa is the greenfield canonical platform for persistent AI characters, agen
 
 The platform is a clean implementation of validated capabilities. Donor projects are reference systems, never runtime boundaries.
 
+## Latest mobile product/navigation direction — 2026-10-08
+
+Owner-approved final five-tab shell: **Talks · Chats · Assistant · Wallet · Agents**, with **Assistant centered** and an in-chat Gwani/Gwana switch. There is **no separate Home root**: previous Explore/Live public audio discovery belongs to Talks. Chats is private human messaging; Wallet is finance; Agents retains full Expert/Twin discovery. The target mobile implementation and Android acceptance remain **open/unverified**. Start at `CONTINUE-HERE.md`, then `docs/APP-SHELL-CONTRACT.md`, `docs/END-TO-END-UX-ARCHITECTURE.md`, and `docs/README.md` **before** historic vision/phase/workstream documents. Old phase status and previous bottom-nav guides are historical unless explicitly reconfirmed by current canonical contracts.
+
 ## Start here
 
 Every implementation session MUST read:
 1. `CONTINUE-HERE.md`
-2. `docs/VISION.md`
-3. `docs/PRODUCT-NORTH-STAR.md`
-4. `docs/PRODUCT-PROJECT-STRUCTURE.md`
-5. `docs/PRODUCTION-MASTER-TASKS.md`
-6. `docs/ARCHITECTURE.md`
-7. `docs/AGENT-PHONE-EMBODIMENT.md`
-8. `docs/TECHNOLOGY.md`
-9. `docs/SOURCE-OWNERSHIP.md`
-10. `docs/REWRITE-PLAN.md`
-11. active files under `docs/migration/`.
+2. `docs/APP-SHELL-CONTRACT.md` and `docs/END-TO-END-UX-ARCHITECTURE.md`
+3. `docs/MOBILE-READINESS-PLAN.md` and `docs/COMMUNICATIONS-EXTENSION-PLAN.md`
+4. `docs/VISION.md`
+5. `docs/PRODUCT-NORTH-STAR.md`
+6. `docs/PRODUCT-PROJECT-STRUCTURE.md`
+7. `docs/PRODUCTION-MASTER-TASKS.md`
+8. `docs/ARCHITECTURE.md`
+9. `docs/AGENT-PHONE-EMBODIMENT.md`
+10. `docs/TECHNOLOGY.md`
+11. `docs/SOURCE-OWNERSHIP.md`
+12. `docs/REWRITE-PLAN.md`
+13. active files under `docs/migration/` (historic/technical unless scoped by current contract).
 
 ## Reference source vault
 
