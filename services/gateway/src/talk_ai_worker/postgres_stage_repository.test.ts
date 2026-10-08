@@ -59,7 +59,7 @@ describe("canonical PostgreSQL Talk stage context source", () => {
 
     expect(query).toHaveBeenCalledTimes(6);
     for (const [sql, params] of query.mock.calls) {
-      expect(sql).toContain("tenant_id=$1 AND talk_id=$2");
+      expect(sql).toMatch(/(?:q\\.)?tenant_id=\\$1 AND (?:q\\.)?talk_id=\\$2/);
       expect(params?.slice(0, 2)).toEqual(["tenant-1", "talk-1"]);
       expect(sql).not.toContain("FROM talks.comments");
       expect(sql).not.toContain("FROM talks.activity");
