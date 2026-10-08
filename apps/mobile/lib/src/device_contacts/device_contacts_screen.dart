@@ -76,7 +76,9 @@ class _DeviceContactsBodyState extends State<_DeviceContactsBody>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final visible = controller.visible;
+    return Scaffold(
     appBar: AppBar(
       title: const Text('Phone contacts'),
       actions: [
@@ -146,9 +148,9 @@ class _DeviceContactsBodyState extends State<_DeviceContactsBody>
                   ? const Center(child: Text('No phone numbers found.'))
                   : ListView.builder(
                       key: const ValueKey('device-phonebook-list'),
-                      itemCount: controller.visible.length,
+                      itemCount: visible.length,
                       itemBuilder: (context, index) {
-                        final person = controller.visible[index];
+                        final person = visible[index];
                         return Semantics(
                           label: 'Phone contact ' + person.name,
                           child: ListTile(
@@ -183,5 +185,6 @@ class _DeviceContactsBodyState extends State<_DeviceContactsBody>
                       },
                     )),
             ]),
-  );
+    );
+  }
 }
