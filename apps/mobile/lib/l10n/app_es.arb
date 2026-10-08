@@ -58,5 +58,11 @@
   "authRateLimited": "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
   "authSendFailed": "No se pudo enviar el código. Comprueba tu conexión e inténtalo de nuevo.",
   "authVerifyFailed": "No se pudo verificar el código. Inténtalo de nuevo.",
-  "authProfileFailed": "No se pudo completar tu perfil. Comprueba tus datos e inténtalo de nuevo."
+  "authProfileFailed": "No se pudo completar tu perfil. Comprueba tus datos e inténtalo de nuevo.",
+  "languageAction": "Idioma de la aplicación",
+  "languageDialogTitle": "Elegir idioma de la aplicación",
+  "languageSystem": "Usar el idioma del dispositivo",
+  "languageSaveFailed": "No se pudo guardar el idioma. Inténtalo de nuevo.",
+  "languagePreviewNotice": "Algunas pantallas todavía no están completamente traducidas.",
+  "languageHausaUnavailable": "Se está completando la interfaz en hausa."
 }
