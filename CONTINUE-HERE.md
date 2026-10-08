@@ -1,10 +1,18 @@
 # Continue Here
 
+## Owner-approved final five-tab navigation — 2026-10-08
+
+**The final mobile navigation target is exactly five tabs, left to right: Talks · Chats · Assistant · Wallet · Agents.** The **Assistant is the center tab** with two tabs on each side. [docs/APP-SHELL-CONTRACT.md](docs/APP-SHELL-CONTRACT.md) and [docs/END-TO-END-UX-ARCHITECTURE.md](docs/END-TO-END-UX-ARCHITECTURE.md) are canonical for every R17/C08 and C01–C08 implementation window. This **supersedes** earlier four-tab plans and conditional Chats redesign proposals **as the target product architecture**, not as a claim that the current APK implements it. Do not build a temporary alternative shell that will require a second redesign.
+
+**Talks** inherits former Home Explore/Live public audio feeds, Host/Seat/gift/replay and sole Start Talk FAB; there is **no separate Home tab**. **Chats** is authenticated private **human-to-human** text/voice-note messaging. **Assistant** is **one private Gwani/Gwana chat interface** with an in-chat Gwani ↔ Gwana switch preserving allowed conversation/task continuity and per-message persona attribution; voice, typing and tap parity. **Wallet** owns distinct financial balances, Billing/Crypto and qualified transfers. **Agents** is the complete Masanawa Agents/Experts and Twins discovery/management area; do not bury it inside Chats. Preserve old route meanings/deep links with typed aliases and avoid duplicating public Talks, human DMs or money state.
+
+The owner approved the five-tab architecture on 2026-10-08; **Flutter migration, service wiring, end-to-end tests, CI and Android qualification remain OPEN/UNVERIFIED**. One R17/C08 integration owner must coordinate shared router/tab/notification/profile and root UI edits with existing R01–R19/C01–C08 owners under the five-minute lease rule. Feature implementation must honor privacy, financial authorization, native live audio and offline/history requirements; a document is not delivery evidence.
+
 ## Approved additive communication and voice-first operator extension — 2026-10-08
 
 **Mandatory reading for every implementation window:** [docs/COMMUNICATIONS-EXTENSION-PLAN.md](docs/COMMUNICATIONS-EXTENSION-PLAN.md) is the canonical **C01–C08** cross-window ledger for person-to-person private text/voice messaging, durable fast chat history and low-data caching, contact privacy/realtime/notifications, qualified in-app crypto transfers, and Gwani/Gwana's authorized cross-app actions with **voice, typing and taps** equally complete. It carries concrete acceptance, dependencies, task ownership and a copyable window prompt. Owner-approved extension discussion is tracked in issues [#462](https://github.com/Baatiku/masanawa/issues/462) and [#463](https://github.com/Baatiku/masanawa/issues/463). **Plans are not implementation evidence.**
 
-Keep all R01–R19 work and the current **Home · Agents · Wallet · Talk** shell unchanged during implementation. **Home · Chats · Wallet · Talk** is a *conditional later option*, gated on working human DMs and no loss of Agents/Twins discovery; no premature navigation overhaul or fifth tab. Human-hosted public Talks, full personas, creator earnings, private assistant isolation, Billing/Crypto, WhatsApp/Telegram channels and current UI identity remain mandatory. Implement new services additively, reusing real auth, Postgres, event, agent and wallet/ledger authority. New extensions are **not DONE** because these instructions exist.
+Preserve all R01–R19 work and implement C01–C08 against the **single owner-approved Talks · Chats · Assistant · Wallet · Agents target**. Coordinate one root-shell migration through R17/C08 with real messaging and persona-switch readiness; do not ship a temporary four-tab arrangement or reinterpret old AI chat links as human DMs. Human-hosted public Talks, full personas, creator earnings, private assistant isolation, Billing/Crypto, WhatsApp/Telegram channels and current UI identity remain mandatory. Implement new services additively, reusing real auth, Postgres, event, agent and wallet/ledger authority. New extensions are **not DONE** because these instructions exist.
 
 Independent windows may claim bounded C01–C08 lanes under `docs/MULTI-WINDOW-WORK.md` with the five-minute repository-visible lease; avoid overlapping active R lanes, shared migrations, Gateway, financial authority or mobile shell. Shared Actions/billing/runner recovery remains with owner Work as documented in #457; do not merge unverified PRs.
 
@@ -26,16 +34,14 @@ unverified implementation PRs draft/unmerged and preserve the 5-minute claim rul
 
 ## Current improvement sequence — 2026-10-08
 
-Latest approved shell: **Home · Agents · Wallet · Talk**. Profile avatar and Activity
-bell move to the header; Start Talk moves to a FAB. The private assistant tab is named
-**Talk**. This supersedes earlier bottom-navigation rules. Follow APP-SHELL-CONTRACT.md.
+Latest approved navigation target: **Talks · Chats · Assistant · Wallet · Agents**, with **Assistant at the center**; Talks owns public Explore/Live, Chats owns private person-to-person messages, and Agents retains Experts/Twins. Activity and profile remain in the header, and **Start Talk** FAB belongs only to Talks. Assistant is one private chat with Gwani/Gwana switch inside it. This supersedes previous bottom-navigation rules for future implementation; see APP-SHELL-CONTRACT.md. The current Flutter source still uses the prior shell and must be migrated and qualified without feature regressions.
 Profile photo editing and complete identity/settings actions are mandatory. Default
 personas must be compelling through competence, natural style and role consistency,
 with clear AI identity and respectful exits. See R17–R19 in the readiness ledger.
 
-The human-hosted Talk product remains locked; the latest shell arrangement above is approved. The user's latest mobile acceptance exposed
+The human-hosted Talk product remains locked; the five-tab end-state above is approved, with R17/C08 code migration still open. The user's latest mobile acceptance exposed
 unavailable audio/personas and inactive participant actions; the current work is to
-complete integration, not redesign the shell or restart merged foundations.
+complete the approved target architecture with one coordinated migration, not restart merged foundations.
 
 Read the canonical documents below, then **docs/MOBILE-READINESS-PLAN.md** and
 **docs/DEFAULT-AI-PERSONAS.md**. Their 2026-10-08 requirements supersede older dark-theme,
@@ -98,7 +104,7 @@ Read these first for any consumer-product work:
 - Financial actions are always private, confirmed and server-authorized. They never leak
   into the public Talk transcript/audio simply because the user invokes Gwani.
 - Private assistant conversations and public Talks are explicitly separate modes.
-- The primary mobile shell is **Home · Agents · Wallet · Talk**. Home contains two tabs: **Explore** and **Live Talks**.
+- The approved final mobile shell is **Talks · Chats · Assistant · Wallet · Agents**. Talks contains **Explore** and **Live Talks**; Assistant at center has one Gwani/Gwana-switchable private chat.
 - A private Gwani entry point is globally reachable without creating another top-level tab.
 - Simplicity is a product requirement: prefer one adaptive screen plus sheets/states over
   several nearly identical screens.
@@ -187,7 +193,7 @@ actual Audio unavailable failure, and R03 must qualify an available default pers
 ## Deferred web implementation
 
 `docs/WEB-APP-PLAN.md` defines the later consumer web experience and W01–W06 phases.
-It follows Home · Agents · Wallet · Talk, seventeen personas, voice-first services and
+It follows the approved Talks · Chats · Assistant · Wallet · Agents target, seventeen personas, voice-first services and
 shared account/financial authority. Existing apps/web is a foundation scaffold, not a
 completed consumer app. Web implementation is explicitly DEFERRED; preserve current
 mobile R01–R19 and shared integration priorities. Planning reserves no web code paths.

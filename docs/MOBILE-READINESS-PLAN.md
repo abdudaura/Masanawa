@@ -6,7 +6,7 @@ This is the current improvement plan, not a declaration that the work is complet
 
 ## 1. Current approved requirements
 
-Masanawa remains a human-hosted live AI conversation network with **Home · Agents · Wallet · Talk**, vertical Explore/Live Talks feeds, free human Seats, and limited paid
+Masanawa remains a human-hosted live AI conversation network. Its **owner-approved five-tab navigation target is Talks · Chats · Assistant · Wallet · Agents**, with centered switchable Gwani/Gwana Assistant, vertical Explore/Live Talks within Talks, free human Seats, and limited paid
 Expert/Twin Seats. Billing and Crypto are the only standalone service families.
 Keep one adaptive public Talk screen and compact sheets; do not add utility dashboards.
 Activity bell and profile avatar are in the header, Start Talk creation is a FAB,
@@ -85,7 +85,7 @@ Dependencies are integration order, not permission to reserve overlapping files.
 | R14 / P1 | Remote notifications/activity — BLOCKED/PARTIAL | Matching Firebase client/server setup, token refresh, permission, background/foreground delivery, deep links and dedupe; private amounts excluded from public/lock-screen content by default. |
 | R15 / P1 | Safety/support/channel journeys — UNVERIFIED completeness | Report/block/mute and platform enforcement across live/discovery/replay; in-app AI feedback/report path; private WhatsApp/Telegram linking, unlinking and private receipts qualified. |
 | R16 / P1 | Global release qualification — OPEN | Secure production signing/AAB and versioning, launch matrix, store declarations/payment classification, logs/alerts/recovery jobs and exact deploy evidence; remaining device dependencies explicit. |
-| R17 / P0 | Approved root/header/FAB and service intent routing — OPEN | Home/Agents/Wallet/Talk, Masanawa Agents/Twins tabs, header Activity/profile and Start Talk FAB; selected service hands off once to private assistant without charge/mic activation; existing deep links preserved. |
+| R17 / P0 | Owner-approved five-tab root/header/FAB and service intent routing — OPEN | **Talks/Chats/Assistant/Wallet/Agents**, Assistant centered with single in-chat Gwani/Gwana switch; public Explore/Live within Talks; human-only Chats, separate Agents/Twins discovery; header Activity/profile and **Start Talk FAB only in Talks**; selected service hands off once to same private Assistant task without charge/mic activation; typed old routes/deep links preserved, small-screen/accessibility and back-stack verified. Coordinate C08. |
 | R18 / P0 | Complete editable profile — reported failure, root cause UNVERIFIED | Upload/replace/crop/remove avatar, edit name/handle/bio, authenticated persistence, clear validation/progress/retry, fallback avatar and cross-surface refresh after restart; account/settings controls work. |
 | R19 / P1 | Persona role performance — planned, UNVERIFIED | Seventeen distinct natural roles with accurate capability/context, humor/tone adaptation, interruption handling, multilingual pronunciation and consented continuity; clear AI disclosure and no fabricated identity or pressure to remain. |
 
@@ -335,16 +335,16 @@ deletable and never copied into public Talk context by default.
 
 The owner additionally approved ordinary **private human messaging**, lightweight fast chat access with protected locally cached history and server delta sync, secure **in-platform crypto transfers**, and Gwani/Gwana as **voice-first but never voice-only operators** throughout Masanawa. These are defined with individual dependencies and release tests in `COMMUNICATIONS-EXTENSION-PLAN.md`; issues #462/#463 retain the discussion and initial messaging/performance handoff.
 
-**Do not merge C items into an existing R row or mark an R item complete by planning alone.** R01–R19 retain their current priorities, owners, evidence, approvals and production gates. C01 identity/privacy complements R12/R15/R18; C02–C04 DM/realtime/media complement R14; C05 cache/performance complements R16/R17; C06 internal crypto transfer depends on R06/R08 and the **same ledger/custody**; C07 cross-app voice/text/tap operations reuses R04/R06–R08/R11/R17/R19; C08 conditional Chats navigation follows functional C02–C05. Existing R01/R02/R03/R05 priority work continues under the multi-window protocol.
+**Do not merge C items into an existing R row or mark an R item complete by planning alone.** R01–R19 retain their current priorities, owners, evidence, approvals and production gates. C01 identity/privacy complements R12/R15/R18; C02–C04 DM/realtime/media complement R14; C05 cache/performance complements R16/R17; C06 internal crypto transfer depends on R06/R08 and the **same ledger/custody**; C07 cross-app voice/text/tap operations reuses R04/R06–R08/R11/R17/R19; C08 implements the approved **five-tab** shell integration with C02–C05 and R17, not a conditional optional four-tab redesign. Existing R01/R02/R03/R05 priority work continues under the multi-window protocol.
 
-Navigation is **still Home · Agents · Wallet · Talk**. **Home · Chats · Wallet · Talk** is a later validated option, not a replacement instruction or a reason to halt current R17. Preserve the public human-hosted Talks, agents/Twins/monetization, light green UI, WhatsApp/Telegram channels, wallet service ordering and app shell. No duplicate billing, crypto or AI authority.
+**The final approved navigation is Talks · Chats · Assistant · Wallet · Agents, in this exact order, with Assistant centered.** The **current Flutter shell is not yet migrated**. Do not implement a disposable interim four-tab UI: plan one coordinated R17/C08 route/component migration and ship only with real, qualified human DMs, one Gwani/Gwana-switchable Assistant chat, Talks and Agents preservation. Preserve public human-hosted Talks, agents/Twins/monetization, light green UI, WhatsApp/Telegram channels, wallet service ordering, deep links and all R requirements. No duplicate billing, crypto or AI authority.
 
 C acceptance is **not verified** until real authenticated backend, app, Android performance, privacy, recovery, international/accessibility and provider-specific checks are recorded. No manual backup/restore UI is required merely to meet conversation speed, but persistent server history, per-user protected cache, startup budgets and real weak-network sync are required. Share GitHub Actions verification with the #457 owner, without weakening checks.
 
 ## Deferred web implementation
 
 `WEB-APP-PLAN.md` defines the later consumer web experience and W01–W06 phases.
-It follows Home · Agents · Wallet · Talk, seventeen personas, voice-first services and
+It follows the approved Talks · Chats · Assistant · Wallet · Agents end-state, seventeen personas, voice-first services and
 shared account/financial authority. Existing apps/web is a foundation scaffold, not a
 completed consumer app. Web implementation is explicitly DEFERRED; preserve current
 mobile R01–R19 and shared integration priorities. Planning reserves no web code paths.

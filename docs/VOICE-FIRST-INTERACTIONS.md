@@ -12,7 +12,7 @@ A private conversation with Gwani/Gwana is the main way to operate Wallet, Billi
 Crypto. Small interactive cards accompany the conversation. Forms are an optional
 expanded editing mode, not the mandatory checkout architecture.
 
-Keep Home · Agents · Wallet · Talk. Existing wallet/service routes become scoped
+The owner-approved final shell is **Talks · Chats · Assistant · Wallet · Agents**, with **Assistant centered** as one switchable Gwani/Gwana chat (the Flutter migration is not yet verified). Existing wallet/service routes become scoped
 private assistant workspaces, within the approved root shell, not separate chatbot products.
 Use the same authenticated assistant, capabilities and durable task authority everywhere.
 A returning user can open balances/history immediately without speaking or waiting for AI.
@@ -175,13 +175,12 @@ The owner extends **voice-first, not voice-only** interaction beyond Wallet: pri
 
 Example: inside a private chat with Ibrahim, “send him five USDT” must resolve the **actual saved person**, exact custody-backed asset/network/account, fees/limits/expiry and display/read-back recipient and quote; ask for fresh transaction-specific approval and appropriate authentication before **one** ledger transfer. “Send Ibrahim a message about tonight’s Talk” can be drafted and reviewed then sent by the user's authorized action, with a server delivery receipt. Pronouns/ordinals bind to the **active versioned context**, never an old conversation. A silent typed instruction and buttons complete the same task, without microphone permission.
 
-Protected human DMs are not public Talk transcripts, AI participant context or general model memory. Public audio recording and private voice-note/assistant audio use separate consent and track routing. No long address accepted solely from uncertain speech; no “yes” heard from background authorizes payment. See C06/C07 and `COMMUNICATIONS-EXTENSION-PLAN.md`. Do not change the current shell just to add this contract.
+Protected human DMs are not public Talk transcripts, AI participant context or general model memory. Public audio recording and private voice-note/assistant audio use separate consent and track routing. No long address accepted solely from uncertain speech; no “yes” heard from background authorizes payment. See C06/C07 and `COMMUNICATIONS-EXTENSION-PLAN.md`. Implement the approved five-tab target once under R17/C08, not an interim four-tab shell.
 
-## Approved shell entry points
+## Approved five-tab shell entry points and one Assistant chat
 
-Bottom navigation is Home · Agents · Wallet · Talk. The Talk tab is private assistance;
-Start Talk FAB opens public creation. Header has Activity bell and profile avatar.
-Wallet orders Crypto, Data bundles, Airtime, Electricity, TV/Cable shortcuts. Selection
-sets the private task's intent; no automatic payment or microphone activation. Agents
-uses Masanawa Agents/Twins tabs and opens a private persona conversation; a paid public
-Seat remains separate. Preserve chosen persona, language, task and back navigation.
+Bottom navigation is **Talks · Chats · Assistant · Wallet · Agents**, with Assistant visually centered. **Talks** contains the former Home **Explore / Live Talks** feeds and its sole public **Start Talk** FAB; Chats is for human person-to-person threads and voice notes only; **Agents** contains Experts/Twins browsing and their distinct private persona chats.
+
+**Assistant is the single private Gwani/Gwana operator conversation**, not separate Gwani and Gwana chat tabs. Show a visible **switch between Gwani and Gwana inside the chat header**; preserve the same user-owned, scope-authorized conversation, per-message speaker attribution, drafts, pending tasks, voice/text/tap parity and correct permission/consent across switches. Do not treat switching as a new payment approval or privileged agent identity. No microphone starts simply by visiting Assistant.
+
+The root header has Activity bell and profile avatar. Wallet orders **Crypto, Data bundles, Airtime, Electricity, TV/Cable**; selecting any verified action sets the same private Assistant/Wallet task intent and never pays or activates the microphone automatically. Public Expert/Twin Seat admission requires explicit host policy and quote/consent. Preserve named old deep links, return state, selected persona, language and task context. Shipping and device evidence remain separately required.

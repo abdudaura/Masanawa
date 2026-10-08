@@ -183,18 +183,17 @@ Replays use the same Talk identity rather than becoming a separate media product
 
 ## App shell
 
-The primary navigation is intentionally small:
+The owner-approved permanent mobile bottom navigation is **five destinations, in this exact left-to-right order**:
 
-**Home · Agents · Wallet · Talk**
+**Talks · Chats · Assistant · Wallet · Agents**
 
-- **Home** — Explore and Live Talks, both vertical feeds.
-- **Agents** — Masanawa Agents and Twins tabs, discovery and private chat.
-- **Wallet** — balances/history and voice-first Billing/Crypto shortcuts.
-- **Talk** — private voice-first assistance, with a complete Type instead path.
+- **Talks** — primary landing destination for **Explore** and **Live Talks**, public human-hosted audio, replays, gifts and the green **Start Talk** FAB. It is the full former Home feed; there is **no separate Home tab**.
+- **Chats** — private **person-to-person** messages, voice notes, contacts, history and delivery; no mixed AI-persona threads or payment on composer Send.
+- **Assistant (CENTER)** — one private voice-first chat with Gwani/Gwana. The user switches **Gwani ↔ Gwana inside the same familiar conversation interface**, preserving authorized history, drafts and durable task state. All operations have text/tap paths and fresh sensitive-action confirmations.
+- **Wallet** — qualified billing/crypto, transfers, balances, receipts and creator earnings, never merging fiat/Credits/earnings/asset networks.
+- **Agents** — Masanawa Experts and Twins directory/search, private persona chats, My Twin and paid public Seat selection where allowed, separate from the universal Assistant.
 
-Activity bell and profile avatar live in the header. A Start Talk FAB opens the public
-composer. Public Talk hosting remains human-led; private Talk tab is not a broadcast.
-Profile editing and persona quality follow R18/R19 in MOBILE-READINESS-PLAN.md.
+The Activity bell and profile avatar remain in the root header; public **Start Talk** FAB belongs **only on Talks**, while **New message** belongs in Chats. One assistant is available contextually across screens, but is neither a second Chat directory nor a public Talk. Preserve typed legacy `/home` and `/chat/:characterId` meanings with explicit redirects; `/messages` is the private human messaging namespace. See `APP-SHELL-CONTRACT.md`, `END-TO-END-UX-ARCHITECTURE.md`, and C08/R17 for acceptance. This is a **target product decision, not implementation or APK test evidence**.
 
 ## No Rooms
 
@@ -284,7 +283,7 @@ Masanawa also gives real people a **private, simple person-to-person chat experi
 
 The only dedicated financial service families stay **Billing and Crypto**; account-to-account crypto sending extends the qualified wallet, not a new service or second ledger. A user-created audio Talk and its earning features remain a central product, never demoted by messaging.
 
-Preserve **Home · Agents · Wallet · Talk** during current readiness. **Home · Chats · Wallet · Talk** is a possible *later* compact arrangement only if Chats is functioning end to end and Masanawa Agents/Twins remain obvious, accessible and unchanged in capability. Follow `COMMUNICATIONS-EXTENSION-PLAN.md` C01–C08 plus the unchanged R01–R19 ledger.
+Implement the **owner-approved Talks · Chats · Assistant · Wallet · Agents** as **one final five-tab target**. Talks retains prior Home Explore/Live; Agents/Twins remain their own visible destination, Chats is human-only, and the center Assistant has one Gwani/Gwana-switchable private chat. The old four-tab conditional proposal is superseded; production deployment still requires all R01–R19 plus C01–C08 acceptance. Follow `END-TO-END-UX-ARCHITECTURE.md`, `APP-SHELL-CONTRACT.md` and `COMMUNICATIONS-EXTENSION-PLAN.md`.
 
 ## Product boundaries
 

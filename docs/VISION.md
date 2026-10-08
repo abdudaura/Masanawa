@@ -41,20 +41,13 @@ The network creates economic value around:
 A useful Twin becomes an owned AI persona other people may pay to bring to their table.
 The owner can privately direct that Twin while it participates.
 
-## Simple consumer shape
+## Simple consumer shape — owner-approved 2026-10-08
 
-Primary navigation:
+**Final bottom navigation, exactly five destinations, left to right: Talks · Chats · Assistant · Wallet · Agents.**
 
-**For You · Live · Create · Activity · You**
+**Assistant is the center destination** with a **single private, switchable Gwani/Gwana conversation**, not two near-duplicate chat tabs. **Talks** contains prior Home's Explore and Live Talks, human-led public audio, replays and the sole **Start Talk** FAB. **Chats** holds private human-to-human text and voice notes. **Wallet** handles qualified services/transfers and separate financial balances. **Agents** retains the full Masanawa Expert/Twin discovery, owner Twin management and Talk Seat actions. The old `For You · Live · Create · Activity · You` primary navigation is historical and **must not be implemented**; Activity/You belong to the header and public Talk creation belongs inside Talks.
 
-The app should optimize for:
-1. finding something worth listening to;
-2. starting a Talk with almost no setup;
-3. participating without friction;
-4. following people/personas;
-5. earning when audiences value the contribution.
-
-The product is not organized around Rooms, Skills, Tools, agents or workflows.
+Optimize for quick public discovery, genuine messaging, safe private AI assistance, real creator economics, straightforward qualified money, low-end Android and accessible voice/type/tap interaction. Read `APP-SHELL-CONTRACT.md`, `END-TO-END-UX-ARCHITECTURE.md`, `MOBILE-READINESS-PLAN.md` and `COMMUNICATIONS-EXTENSION-PLAN.md` before UI work. **This is the approved target, not a claim mobile code or services are device-verified.**
 
 ## Private assistant
 

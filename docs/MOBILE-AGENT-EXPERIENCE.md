@@ -1,6 +1,6 @@
 # Mobile AI Experience
 
-Status: **current consumer AI interaction model — 2026-10-07**
+Status: **canonical AI interaction model, updated for approved 2026-10-08 five-tab target**
 
 ## Two explicit modes
 
@@ -11,14 +11,14 @@ Audio intended for an audience. Human Host required. Human and AI participants o
 limited Seats.
 
 ### Private assistant
-A user's private conversation with Gwani for platform operation, personal questions,
+A user's **single switchable Gwani/Gwana conversation** in the **center Assistant tab** for platform operation, personal questions,
 services and general AI capability.
 
 Content never crosses from private to public without a deliberate user action.
 
-## Gwani
+## Gwani and Gwana: one central Assistant chat
 
-Gwani is the default private Masanawa assistant.
+Gwani is the default private Masanawa assistant. Gwana is selectable **inside the same private Assistant chat interface**, retaining authorized conversation history, drafts and pending task IDs. Replies must disclose and attribute the active persona; switching cannot duplicate payment approval or leak a human DM or public Talk. Users can speak, type or tap without mandatory voice, and each persona shares only explicit permission-scoped operator tools.
 
 Gwani should be reachable globally and should understand natural requests rather than
 forcing users to navigate feature taxonomies.
@@ -36,9 +36,7 @@ Gwani can use internal Skills/Tools/Providers, but the user should not see those
 
 ## Gwana and other platform personas
 
-Gwana may remain an available Masanawa persona/Expert, and administrators may configure
-platform personas. They should appear naturally through persona search/Add AI rather than
-forcing permanent large Home cards.
+Gwana is an **approved selectable operator persona within the single center Assistant chat**, not a separate app root or competing chat screen. The full 17-persona Masanawa Expert roster and user-owned Twins remain discoverable in the dedicated **Agents** tab for private persona interactions and separately authorized public Talk Seats. No permanent agent cards on the public Talks feed.
 
 ## Language
 
@@ -85,7 +83,7 @@ explicitly speaks/shares them.
 ## Files and advanced work
 
 Files, search, research, teaching, translation, writing and other capabilities can return
-inside the private Gwani conversation when needed.
+inside the **same switchable private Gwani/Gwana Assistant conversation** when needed.
 
 Do not give them primary navigation or Rooms.
 
@@ -100,3 +98,7 @@ Use concise states:
 - “We couldn't confirm that payment yet. Checking status.”
 
 Retain operation/session identity so Retry does not duplicate consequential actions.
+
+## Final navigation placement and release boundary
+
+Approved five-tab mobile target: **Talks · Chats · Assistant · Wallet · Agents**, with Assistant centered. Talks is public human-hosted audio; Chats human DMs only; Assistant is one private Gwani/Gwana operator conversation; Wallet is finance; Agents are Experts/Twins. This is a design contract, **not evidence that the current APK or real services implement it**. Source/navigation ownership and qualified acceptance are in `APP-SHELL-CONTRACT.md`, `END-TO-END-UX-ARCHITECTURE.md`, R17 and C08.
