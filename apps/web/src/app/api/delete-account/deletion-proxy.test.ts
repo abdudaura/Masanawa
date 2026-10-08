@@ -108,6 +108,36 @@ describe("external account deletion proxy", () => {
     });
   });
 
+  it("revokes the Gateway session when ending the temporary browser session", async () => {
+    const upstream = vi.fn(async (..._args: unknown[]) =>
+      new Response("{}", { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", upstream);
+    const req = request("end-session", {}, {
+      cookie: `masanawa_deletion_access=${accessToken}`,
+    });
+    const result = await POST(req.request, req.context);
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ ok: true });
+    expect(result.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(upstream).toHaveBeenCalledTimes(1);
+    const [url, options] = upstream.mock.calls[0]!;
+    expect(String(url)).toBe(`${gatewayBase}/auth/logout`);
+    expect((options as RequestInit).headers).toMatchObject({
+      authorization: `Bearer ${accessToken}`,
+    });
+  });
+
+  it("clears deletion browser cookies even when session revocation fails", async () => {
+    const upstream = vi.fn(async (..._args: unknown[]) => { throw new Error("offline"); });
+    vi.stubGlobal("fetch", upstream);
+    const req = request("end-session", {}, {
+      cookie: `masanawa_deletion_access=${accessToken}`,
+    });
+    const result = await POST(req.request, req.context);
+    expect(result.status).toBe(200);
+    expect(result.headers.get("set-cookie")).toContain("Max-Age=0");
+  });
+
   it("does not forward arbitrary browser routes or misconfigured URLs", async () => {
     const upstream = vi.fn();
     vi.stubGlobal("fetch", upstream);
