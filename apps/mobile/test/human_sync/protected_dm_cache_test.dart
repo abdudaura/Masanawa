@@ -106,7 +106,7 @@ void main() {
     String? owner = 'owner-a';
     final coordinator = DmSyncCoordinator(
         cache: cache, currentOwnerId: () => owner,
-        transport: _DeferredTransport());
+        currentTenantId: () => 'tenant-a', transport: _DeferredTransport());
     owner = 'owner-b';
     await expectLater(coordinator.enqueue(conversationId: 'thread-a',
         requestId: 'request_unique_123456', text: 'Not another user'),

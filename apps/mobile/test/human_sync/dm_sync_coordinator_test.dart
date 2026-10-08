@@ -18,7 +18,8 @@ void main() {
       tenantId: 'tenant-a', ownerId: 'user-a');
     server = _Server();
     coordinator = DmSyncCoordinator(
-        cache: cache, transport: server, currentOwnerId: () => 'user-a');
+        cache: cache, transport: server, currentOwnerId: () => 'user-a',
+        currentTenantId: () => 'tenant-a');
   });
   tearDown(() => coordinator.close());
 

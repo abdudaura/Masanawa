@@ -22,14 +22,17 @@ class DmSyncCoordinator {
     required this.cache,
     required this.transport,
     required this.currentOwnerId,
+    required this.currentTenantId,
   });
   final ProtectedDmCache cache;
   final DmSyncTransport transport;
   final String? Function() currentOwnerId;
+  final String? Function() currentTenantId;
   bool _closed = false;
   final Set<String> _inFlight = {};
 
-  bool get active => !_closed && currentOwnerId() == cache.ownerId;
+  bool get active => !_closed && currentOwnerId() == cache.ownerId &&
+      currentTenantId() == cache.tenantId;
 
   void _requireActive() {
     if (!active) throw StateError('Authenticated DM owner changed');
@@ -48,6 +51,10 @@ class DmSyncCoordinator {
       if (error.response?.statusCode == 401 ||
           error.response?.statusCode == 403) {
         await close();
+        if (error.response?.statusCode == 403) {
+          await ProtectedDmCache.wipeAccount(
+              tenantId: cache.tenantId, ownerId: cache.ownerId);
+        }
       }
       rethrow;
     }
@@ -110,6 +117,12 @@ class DmSyncCoordinator {
       }
       await cache.mark(item.requestId, 'uncertain');
       return DmSendOutcome.uncertain;
+    } on FormatException {
+      if (!active) return DmSendOutcome.accountChanged;
+      // A mismatched server principal/request ACK is a security anomaly.
+      // Do not automatically repeat the request or fabricate confirmation.
+      await cache.mark(item.requestId, 'rejected');
+      return DmSendOutcome.rejected;
     } on StateError {
       return DmSendOutcome.accountChanged;
     } catch (_) {

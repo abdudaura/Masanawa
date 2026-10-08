@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -26,6 +27,24 @@ class ProtectedDmCache {
   static const int maxCachedThreads = 1200;
   static const int maxQueued = 500;
   static final AesGcm _aead = AesGcm.with256bits();
+  static final Map<String, Future<void>> _keyLocks = {};
+
+  /// Serializes key creation and deletion within the UI isolate/process.
+  /// A separate background isolate must coordinate through the same owner.
+  static Future<T> _keyExclusive<T>(String namespace,
+      Future<T> Function() action) async {
+    final previous = _keyLocks[namespace];
+    final done = Completer<void>();
+    final ticket = done.future;
+    _keyLocks[namespace] = ticket;
+    if (previous != null) await previous;
+    try {
+      return await action();
+    } finally {
+      done.complete();
+      if (identical(_keyLocks[namespace], ticket)) _keyLocks.remove(namespace);
+    }
+  }
 
   static String _digest(String value) =>
       hashes.sha256.convert(utf8.encode(value)).toString();
@@ -46,6 +65,7 @@ class ProtectedDmCache {
     required String ownerId,
   }) async {
     final ns = _namespace(tenantId, ownerId);
+    return _keyExclusive(ns, () async {
     final databasePath = path.join(await getDatabasesPath(), 'masanawa-dm-' + ns + '.db');
     final secretName = 'masanawa.dm.cache.aes.v1.' + ns;
     final existing = await _keys.read(key: secretName);
@@ -74,6 +94,7 @@ class ProtectedDmCache {
       // Never delete a key if a concurrent opener could own this database.
       rethrow;
     }
+    });
   }
 
   /// Enables real-SQLite/real-crypto regression tests without a fake data store.
@@ -377,9 +398,11 @@ class ProtectedDmCache {
     required String ownerId,
   }) async {
     final ns = _namespace(tenantId, ownerId);
-    await _keys.delete(key: 'masanawa.dm.cache.aes.v1.' + ns);
-    await deleteDatabase(path.join(await getDatabasesPath(),
-        'masanawa-dm-' + ns + '.db'));
+    await _keyExclusive(ns, () async {
+      await _keys.delete(key: 'masanawa.dm.cache.aes.v1.' + ns);
+      await deleteDatabase(path.join(await getDatabasesPath(),
+          'masanawa-dm-' + ns + '.db'));
+    });
   }
 }
 
