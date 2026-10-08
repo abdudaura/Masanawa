@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,21 +44,35 @@ class HumanDmController extends StateNotifier<HumanDmState> {
   bool _closed=false;
   bool _refreshing=false;
   final Set<String> _inFlight={};
+  Future<void> _storageChain=Future<void>.value();
+  Future<T> _withStorageLock<T>(Future<T> Function() operation) async {
+    final preceding=_storageChain;
+    final released=Completer<void>();
+    _storageChain=released.future;
+    await preceding;
+    try { return await operation(); } finally { released.complete(); }
+  }
   String _error(Object e) => e.toString().replaceFirst(RegExp(r'^ApiException:\s*'),'');
   Future<void> load() async {
     if(_refreshing||_closed)return;
     _refreshing=true;
     try {
-      final pending=await outbox.load(userId,conversationId);
+      final pending=await _withStorageLock(() => outbox.load(userId,conversationId));
       if(_closed)return;
       state=state.copyWith(pending:pending,loading:true,clearError:true);
       final page=await transport.history(conversationId);
       if(_closed)return;
       final acknowledged={for(final m in page.messages) m.clientMessageId};
-      final remaining=pending.where((p)=>!acknowledged.contains(p.id)).toList();
-      if(remaining.length!=pending.length) await outbox.save(userId,conversationId,remaining);
+      final remaining=await _withStorageLock(() async {
+        final latest=await outbox.load(userId,conversationId);
+        final remaining=latest.where((p)=>!acknowledged.contains(p.id)).toList();
+        if(remaining.length!=latest.length) await outbox.save(userId,conversationId,remaining);
+        return remaining;
+      });
       if(_closed)return;
-      state=state.copyWith(messages:page.messages,pending:remaining,
+      final merged={for(final m in state.messages)m.messageId:m};
+      for(final m in page.messages){merged[m.messageId]=m;}
+      state=state.copyWith(messages:merged.values.toList()..sort((a,b)=>b.sequence.compareTo(a.sequence)),pending:remaining,
         loading:false,nextBeforeSequence:page.nextBeforeSequence,
         clearCursor:page.nextBeforeSequence==null,clearError:true);
       await _acknowledge(page.messages);
@@ -91,16 +106,22 @@ class HumanDmController extends StateNotifier<HumanDmState> {
   Future<void> send(String raw) async {
     final text=raw.trim();
     if(text.isEmpty||text.length>4096||_closed)return;
-    if(state.pending.length>=50) {state=state.copyWith(error:'Too many unsent messages. Retry those first.');return;}
     final pending=HumanDmPending(createHumanDmRequestId(),text,DateTime.now().toUtc());
-    final next=[...state.pending,pending];
-    try{
-      // Durable write BEFORE any HTTP request; a failed local write sends nothing.
-      await outbox.save(userId,conversationId,next);
-    }catch(_){if(!_closed)state=state.copyWith(error:'Cannot securely save your message. Nothing was sent.');return;}
-    if(_closed)return;
-    state=state.copyWith(pending:next,clearError:true);
-    await retry(pending.id);
+    try {
+      final next=await _withStorageLock(() async {
+        final latest=await outbox.load(userId,conversationId);
+        if(latest.length>=50)throw StateError('Outbox is full');
+        final rows=[...latest,pending];
+        // Commit encrypted pending intent BEFORE any network action.
+        await outbox.save(userId,conversationId,rows);
+        if(!_closed)state=state.copyWith(pending:rows,clearError:true);
+        return rows;
+      });
+      if(_closed||!next.any((row)=>row.id==pending.id))return;
+      await retry(pending.id);
+    } catch(_) {
+      if(!_closed)state=state.copyWith(error:'Cannot securely queue your message. Nothing new was sent.');
+    }
   }
   Future<void> retry(String clientMessageId) async {
     if(_closed||!_inFlight.add(clientMessageId))return;
@@ -111,8 +132,12 @@ class HumanDmController extends StateNotifier<HumanDmState> {
       final acknowledged=await transport.send(conversationId,
         clientMessageId:pending.id,text:pending.text);
       if(_closed)return;
-      final next=state.pending.where((p)=>p.id!=clientMessageId).toList();
-      await outbox.save(userId,conversationId,next);
+      final next=await _withStorageLock(() async {
+        final latest=await outbox.load(userId,conversationId);
+        final rows=latest.where((p)=>p.id!=clientMessageId).toList();
+        await outbox.save(userId,conversationId,rows);
+        return rows;
+      });
       if(_closed)return;
       final messages={for(final m in state.messages)m.messageId:m};
       messages[acknowledged.messageId]=acknowledged;
