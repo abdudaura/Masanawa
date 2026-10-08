@@ -448,3 +448,29 @@ User authorized continued verification while other windows hand off. Latest main
 - `docs/workstreams/f09-r13-awaiting-seek-authority-20261008.md`
 - `services/gateway/src/api_compatibility.ts`
 - `docs/API-LIFECYCLE.json`
+
+
+## Handed-off U25/U27 backend verification claim
+Continue onto exact isolated scheduler package/routes and privileged Ops source from #517/#516, preserving their existing authority and disabled mutation/provider defaults. Claims were last handed off at19:27Z/19:26Z; no newer source head on fresh inventory. No scheduler registration, timers, real push, native screens or admin writes activated. Verify tests/typecheck before any inclusion. Gateway composition and consumer/router/mobile UI remain outside this batch. Exact paths:
+- `docs/workstreams/u27-agent-admin-control-20261008.md`
+- `services/ops/src/app.ts`
+- `services/ops/src/main.ts`
+- `services/ops/src/operator_admin/agent_control.test.ts`
+- `services/ops/src/operator_admin/agent_control.ts`
+- `services/ops/src/operator_admin/routes.ts`
+- `docs/workstreams/u25-proactive-task-scheduler-20261008.md`
+- `packages/operator-scheduling/README.md`
+- `packages/operator-scheduling/migrations/0001_operator_schedules.sql`
+- `packages/operator-scheduling/package.json`
+- `packages/operator-scheduling/src/domain.test.ts`
+- `packages/operator-scheduling/src/domain.ts`
+- `packages/operator-scheduling/src/index.ts`
+- `packages/operator-scheduling/src/repository.ts`
+- `packages/operator-scheduling/src/service.test.ts`
+- `packages/operator-scheduling/src/service.ts`
+- `packages/operator-scheduling/src/worker.test.ts`
+- `packages/operator-scheduling/src/worker.ts`
+- `packages/operator-scheduling/tsconfig.build.json`
+- `packages/operator-scheduling/tsconfig.json`
+- `services/gateway/src/operator_scheduling/routes.test.ts`
+- `services/gateway/src/operator_scheduling/routes.ts`
