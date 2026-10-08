@@ -11,15 +11,18 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
     handle: (request.params as { handle: string }).handle,
   }));
 
-  app.get("/messages/contacts/preferences", async (request) => service.ownPolicy({
+  app.get("/messages/contacts/preferences", async (request) => service.ownPreferences({
     authorizationHeader: request.headers.authorization,
   }));
 
-  app.put("/messages/contacts/preferences", {
-    schema: { body: Type.Object({ policy: Type.Union([Type.Literal("anyone"), Type.Literal("requests"), Type.Literal("nobody")]) }, { additionalProperties: false }) },
-  }, async (request) => service.updatePolicy({
+  app.patch("/messages/contacts/preferences", {
+    schema: { body: Type.Object({
+      policy: Type.Optional(Type.Union([Type.Literal("anyone"), Type.Literal("requests"), Type.Literal("nobody")])),
+      discoverableByHandle: Type.Optional(Type.Boolean()),
+    }, { additionalProperties: false, minProperties: 1 }) },
+  }, async (request) => service.updatePreferences({
     authorizationHeader: request.headers.authorization,
-    policy: (request.body as { policy: "anyone" | "requests" | "nobody" }).policy,
+    ...(request.body as { policy?: "anyone" | "requests" | "nobody"; discoverableByHandle?: boolean }),
   }));
 
   app.post("/messages/contacts/requests", {
