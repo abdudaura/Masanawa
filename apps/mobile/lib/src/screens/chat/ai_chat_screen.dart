@@ -220,6 +220,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
+  Future<void> _openSelectedServiceEditor() async {
+    final selection = widget.pendingServiceIntent;
+    if (selection == null) return;
+    // Route change alone does not dispose an IndexedStack chat. Stop private
+    // recording/playback before showing financial recipient/amount fields.
+    await _stopInlineLiveVoice(outcome: 'completed');
+    await _activeVoiceBubble?._pauseFromAnotherBubble();
+    if (!mounted) return;
+    widget.onOpenServiceEditor?.call(selection);
+  }
+
   Future<void> _continuePrivateService() async {
     final selection = widget.pendingServiceIntent;
     if (selection == null) return;
@@ -1231,12 +1242,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 intent: widget.pendingServiceIntent!.intent,
                 canContinue: !sending && !updateRequired,
                 onContinue: _continuePrivateService,
-                onOpenEditor: () {
-                  final selection = widget.pendingServiceIntent;
-                  if (selection != null) {
-                    widget.onOpenServiceEditor?.call(selection);
-                  }
-                },
+                onOpenEditor: () => unawaited(_openSelectedServiceEditor()),
                 onDismiss: () {
                   final selection = widget.pendingServiceIntent;
                   if (selection != null) {
