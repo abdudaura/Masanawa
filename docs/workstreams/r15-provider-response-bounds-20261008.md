@@ -41,3 +41,7 @@ Status: **IMPLEMENTED_UNVERIFIED for the R15 outbound provider-response budget s
 | FULL_R15_DONE / WHATSAPP_TELEGRAM_E2E_DONE | NO / NO |
 
 **Rollback:** revert the bounded provider response helper/deadline changes without touching migrations, persistent messages or secrets; failing closed may increase webhook retries until Work confirms provider result semantics. The original provider response cap and webhook identity commitments remain intact.
+
+## Review URL / immutable implementation reference
+- New child draft PR **#488**: https://github.com/Baatiku/masanawa/pull/488 (stacked base parent draft **#451**, no direct merge to main). Parent branch at reclaim: `eb14419a5290c52680fe0896418a199383dd8532`.
+- Code/test source commit `488220f68920d56b4671866066fe550a9788b8c5`; initial full handoff commit `12314df58d5507a1c8ce1598c2a40442c095294b`. Latest checkpoint is the PR head. Connector verified three changed paths, all within this workstream claim. No other PR source overwritten; no tests executed, no CI retry or production deploy.
