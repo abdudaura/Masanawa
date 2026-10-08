@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/request_id.dart';
 import '../../state/session_state.dart';
 import '../../state/talk_safety_state.dart';
 import '../../talks/talk_safety.dart';
@@ -38,8 +39,6 @@ class _PersonaReportSheet extends ConsumerStatefulWidget {
 }
 
 class _PersonaReportSheetState extends ConsumerState<_PersonaReportSheet> {
-  static int _sequence = 0;
-
   final _detail = TextEditingController();
   TalkSafetyReportReason? _reason;
   bool _busy = false;
@@ -50,9 +49,7 @@ class _PersonaReportSheetState extends ConsumerState<_PersonaReportSheet> {
   bool _ready = false;
   String? _journalOwner;
   String? _journalError;
-  late String _requestId =
-      'persona-report-' + DateTime.now().microsecondsSinceEpoch.toString() +
-      '-' + (++_sequence).toString();
+  late String _requestId = createRequestId();
 
   @override
   void initState() {
