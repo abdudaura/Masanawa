@@ -14,8 +14,11 @@ enum AgentPresence {
         'listening' => AgentPresence.listening,
         'working' => AgentPresence.working,
         'on_call' => AgentPresence.onCall,
+        'available' => AgentPresence.available,
         'offline' => AgentPresence.offline,
-        _ => AgentPresence.available,
+        // Missing or unrecognized server presence must never be presented as
+        // positive availability, especially for an unprovisioned AI Expert.
+        _ => AgentPresence.offline,
       };
 
   String get label => switch (this) {
