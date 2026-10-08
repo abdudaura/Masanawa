@@ -10,14 +10,14 @@
 
 ## Actual code changes
 
-**Source commit checkpoint:** `6b7082d326cfd4be495e6486643ced699e688070` (after the preceding source commits `ade2ef9`, `854efd0`, `ee17443`).
+**Latest source/test checkpoint:** `82faaba6520e6a2d084f9589e63bf8330bf57d47` (original lifecycle commits `ade2ef9`, `854efd0`, `ee17443`, `6b7082d`; follow-up race guard `23f9070` and seventh test `82faaba`).
 
 1. `apps/mobile/lib/src/human_media/human_voice_controller.dart`
    - Exclusive `begin()` admission while a mic permission prompt, native recorder start, or native stop remains pending. Prevents duplicate taps from racing two recorders.
    - Cancellation generation fences and explicitly stops a native recorder whose `start()` returns **after** account logout, a conversation dismissal or discard. Deletes the late original/output private file. Handles exception after attempted native start by attempting stop and cleanup.
    - `stop()` tracks pending native stop, invalidates output after session cancellation and erases any alternate output path; existing size and text fallback checks preserved.
-   - `discard()` becomes a tracked cancellation operation; `shutdown()` joins in-progress discard/start/stop **before** native recorder dispose. Recording/temp media state is erased; no new automatic microphone capture or unsupported codec assertions.
-2. New `apps/mobile/test/human_media_recorder_lifecycle_test.dart`: **six authored regression cases** using delayed permissions/recorder operations and a temporary real local file. Covers late start after logout, duplicate begin, discard during start, pending stop during shutdown, shutdown during discard and shutdown during OS permission dialog. Tests verify recorder stop/dispose count and file erasure, not microphone OS efficacy.
+   - `discard()` becomes a tracked cancellation operation; `shutdown()` joins in-progress discard/start/stop **before** native recorder dispose. New recording, preview and sending are refused while discard is still awaiting native stop. Recording/temp media state is erased; no new automatic microphone capture or unsupported codec assertions.
+2. New `apps/mobile/test/human_media_recorder_lifecycle_test.dart`: **seven authored regression cases** using delayed permissions/recorder operations and a temporary real local file. Covers late start after logout, duplicate begin, discard during start, pending stop during shutdown, shutdown during discard, new start rejected during pending discard, and shutdown during OS permission dialog. Tests verify recorder stop/dispose count and file erasure, not microphone OS efficacy.
 
 ## Verification — precise truth
 
