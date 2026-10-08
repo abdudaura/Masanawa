@@ -55,10 +55,17 @@ class GatewayTalkGiftTransport implements TalkGiftTransport {
     }
 
     final normalizedItemId = catalogItemId?.trim();
-    if (catalogItemId != null && (normalizedItemId == null ||
-        !RegExp(r'^[a-z][a-z0-9_-]{0,47}
-    final requestId =
-        _pendingRequestIds.putIfAbsent(fingerprint, _requestId);
+    if (catalogItemId != null &&
+        (normalizedItemId == null ||
+            !RegExp(r'^[a-z][a-z0-9_-]{0,47}$').hasMatch(normalizedItemId))) {
+      throw const FormatException('Gift option is invalid');
+    }
+    final fingerprint = [
+      normalizedTalkId,
+      normalizedItemId ?? 'legacy',
+      amountCredits.toString(),
+    ].join(':');
+    final requestId = _pendingRequestIds.putIfAbsent(fingerprint, _requestId);
 
     try {
       final response = await api.dio.post<dynamic>(
@@ -72,43 +79,15 @@ class GatewayTalkGiftTransport implements TalkGiftTransport {
       final receipt = TalkGiftReceipt.fromJson(_map(response.data));
       if (receipt.talkId != normalizedTalkId ||
           receipt.amountCredits != amountCredits ||
-          (normalizedItemId != null && receipt.catalogItemId != normalizedItemId)) {
+          (normalizedItemId != null &&
+              receipt.catalogItemId != normalizedItemId)) {
         throw const FormatException('Gift receipt does not match confirmed terms');
       }
       _pendingRequestIds.remove(fingerprint);
       return receipt;
     } catch (_) {
-      // Keep the same request id after an ambiguous failure. The server owns
-      // canonical idempotency, so a retry cannot debit twice.
-      rethrow;
-    }
-  }
-}
-).hasMatch(normalizedItemId))) {
-      throw const FormatException('Gift option is invalid');
-    }
-    final fingerprint = [
-      normalizedTalkId,
-      normalizedItemId ?? 'legacy',
-      amountCredits.toString(),
-    ].join(':');
-    final requestId =
-        _pendingRequestIds.putIfAbsent(fingerprint, _requestId);
-
-    try {
-      final response = await api.dio.post<dynamic>(
-        '/talks/' + Uri.encodeComponent(normalizedTalkId) + '/gifts',
-        data: {
-          'requestId': requestId,
-          'amountCredits': amountCredits,
-        },
-      );
-      final receipt = TalkGiftReceipt.fromJson(_map(response.data));
-      _pendingRequestIds.remove(fingerprint);
-      return receipt;
-    } catch (_) {
-      // Keep the same request id after an ambiguous failure. The server owns
-      // canonical idempotency, so a retry cannot debit twice.
+      // Keep the same request ID after an uncertain response; never create
+      // another charge just because the receipt was lost in transit.
       rethrow;
     }
   }
