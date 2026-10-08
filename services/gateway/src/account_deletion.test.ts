@@ -128,6 +128,14 @@ function harness(options: { deliveryFails?: boolean; email?: boolean; failVerifi
     setUser(user: typeof userId) { activeUser = user; },
     advance(ms: number) { currentAt = new Date(Date.parse(currentAt) + ms).toISOString(); },
     current() { return record; },
+    markFailed() {
+      if (!record) throw new Error("Request not opened");
+      record = transitionAccountDeletion(record, {
+        target: "failed", expectedRevision: record.revision,
+        now: currentAt, errorCode: "provider_unavailable",
+        outstandingObligations: ["unsettled provider transfer"],
+      });
+    },
     challenge() { return challenge; },
   };
 }
@@ -240,6 +248,26 @@ describe("R12 authenticated deletion intake", () => {
     await expect(h.service.verify({
       authorizationHeader: auth, code: h.deliveries[0]!,
     })).rejects.toMatchObject({ code: "ACCOUNT_DELETION_ALREADY_VERIFIED" });
+  });
+
+  it("re-verifies failed requests without losing audit revision or settlement holds", async () => {
+    const h = harness();
+    const first = await h.service.request(auth);
+    h.markFailed();
+    expect(h.current()?.phase).toBe("failed");
+    expect(h.current()?.outstandingObligations).toEqual(["unsettled provider transfer"]);
+    h.advance(61_000);
+    const retry = await h.service.request(auth);
+    expect(retry.request.requestId).toBe(first.request.requestId);
+    expect(retry.request.phase).toBe("failed");
+    expect(retry.verificationSent).toBe(true);
+    const refreshed = await h.service.verify({
+      authorizationHeader: auth, code: h.deliveries[1]!,
+    });
+    expect(refreshed.phase).toBe("identity-verified");
+    expect(refreshed.revision).toBe(3);
+    expect(h.current()?.outstandingObligations).toEqual(["unsettled provider transfer"]);
+    expect(refreshed).not.toHaveProperty("outstandingObligations");
   });
 
   it("supports verified contact fallback over SMS", async () => {
