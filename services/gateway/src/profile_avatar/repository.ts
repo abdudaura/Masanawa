@@ -21,7 +21,10 @@ export function createPostgresAvatarRepository(pool: AvatarSqlPool): ProfileAvat
       await pool.query(
         `INSERT INTO talks.profile_avatar_objects
           (tenant_id,user_id,object_key,public_url,state)
-         VALUES ($1,$2,$3,$4,'staged')`,
+         VALUES ($1,$2,$3,$4,'staged')
+         ON CONFLICT (object_key) DO UPDATE
+           SET state='staged',updated_at=clock_timestamp()
+         WHERE talks.profile_avatar_objects.state='orphaned'`,
         [input.tenantId, input.userId, input.key, input.url],
       );
     },
@@ -80,7 +83,7 @@ export function createPostgresAvatarRepository(pool: AvatarSqlPool): ProfileAvat
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
         throw new TypeError("profiles.avatar.invalid_cleanup_batch");
       }
-      const result = await pool.query<{ object_key: string }>(
+      const result = await pool.query<{ object_key: string; tenant_id: string; user_id: string }>(
         `WITH candidates AS (
           SELECT object_key FROM talks.profile_avatar_objects
            WHERE (state='orphaned' OR
@@ -94,10 +97,12 @@ export function createPostgresAvatarRepository(pool: AvatarSqlPool): ProfileAvat
            SET state='deleting',updated_at=clock_timestamp()
           FROM candidates
          WHERE avatar.object_key=candidates.object_key
-         RETURNING avatar.object_key`,
+         RETURNING avatar.object_key,avatar.tenant_id,avatar.user_id`,
         [limit],
       );
-      return result.rows.map(row => row.object_key);
+      return result.rows.map(row => ({
+        key: row.object_key, tenantId: row.tenant_id, userId: row.user_id,
+      }));
     },
     async finalizeDeleted(key) {
       await pool.query(
