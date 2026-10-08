@@ -34,9 +34,8 @@ CREATE TABLE talks.human_dm_voice_objects (
  FOREIGN KEY (tenant_id,uploader_user_id)
    REFERENCES identity.users(tenant_id,user_id) ON DELETE CASCADE,
  FOREIGN KEY (tenant_id,message_id)
-   REFERENCES talks.human_dm_messages(tenant_id,message_id) ON DELETE SET NULL,
- CHECK ((state='attached' AND message_id IS NOT NULL)
-      OR (state<>'attached'))
+   REFERENCES talks.human_dm_messages(tenant_id,message_id) ON DELETE SET NULL (message_id),
+ CHECK (state IN ('staged','attached','orphaned','deleting'))
 );
 CREATE UNIQUE INDEX human_dm_voice_attached_id_idx
  ON talks.human_dm_voice_objects(tenant_id,message_id) WHERE message_id IS NOT NULL;
