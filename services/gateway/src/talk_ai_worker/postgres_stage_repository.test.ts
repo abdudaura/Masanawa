@@ -59,7 +59,7 @@ describe("canonical PostgreSQL Talk stage context source", () => {
 
     expect(query).toHaveBeenCalledTimes(6);
     for (const [sql, params] of query.mock.calls) {
-      expect(sql).toMatch(/(?:q\.)?tenant_id=\$1 AND (?:q\.)?talk_id=\$2/);
+      expect(sql).toMatch(/(?:(?:q|p)\.)?tenant_id=\$1 AND (?:(?:q|p)\.)?talk_id=\$2/);
       expect(params?.slice(0, 2)).toEqual(["tenant-1", "talk-1"]);
       expect(sql).not.toContain("FROM talks.comments");
       expect(sql).not.toContain("FROM talks.activity");
@@ -70,8 +70,9 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     expect(allSql).toContain("status='answered'");
     expect(allSql).toContain("sp.viewer_user_id=t.host_user_id");
     expect(allSql).toContain("sp.blocked=true");
-    expect(allSql).toContain("GROUP BY reaction");
-    expect(allSql).toContain("GROUP BY hand_status");
+    expect(allSql).toContain("sp.subject_user_id=p.user_id");
+    expect(allSql).toContain("GROUP BY p.reaction");
+    expect(allSql).toContain("GROUP BY p.hand_status");
     expect(allSql).toContain("LIMIT 16");
     expect(allSql).toContain("LIMIT 6");
   });
