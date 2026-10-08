@@ -82,6 +82,11 @@ class _HumanVoiceNotesPanelState extends State<HumanVoiceNotesPanel> {
             );
           },
         )),
+      if(controls.canLoadOlder&&!controls.loading)
+        TextButton.icon(
+          onPressed:controls.older,icon:const Icon(Icons.history),
+          label:const Text('Load older voice notes'),
+        ),
       if(controls.loading)
         const LinearProgressIndicator(minHeight:2),
       if(controls.recording)
