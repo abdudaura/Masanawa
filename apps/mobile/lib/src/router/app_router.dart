@@ -19,6 +19,7 @@ import '../screens/splash/splash_screen.dart';
 import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
+import '../screens/twin/shell_tab.dart';
 import '../screens/you/my_talks_screen.dart';
 import '../screens/you/you_screen.dart';
 import '../screens/you/saved_talks_screen.dart';
@@ -29,12 +30,8 @@ import '../talks/talk_models.dart';
 
 /// The approved four root destinations. These are navigation indices only,
 /// not a pricing, identity or task-authority contract.
-int shellRootTabIndex(String? tab) => switch (tab) {
-      'agents' => 1,
-      'wallet' => 2,
-      'talk' => 3,
-      _ => 0,
-    };
+int shellRootTabIndex(String? tab) =>
+    MasanawaRootTab.fromQuery(tab).index;
 
 /// Old shell links must not be reinterpreted as different current tabs.
 String? legacyShellDestination(String? tab) => switch (tab) {
