@@ -20,3 +20,9 @@ Focused tests added/extended: `talk_ai_seat_models_test.dart`, `talk_ai_seat_htt
 **Verification status:** source/commit readback completed, but Dart/Flutter tests, lint/format and Android device tests were NOT executed because this connector session has no Flutter SDK. Production/deployment: NOT done. Do not merge this as release-qualified until CI-enabled checks pass. Server quote/settlement remain canonical; no commerce contracts or migrations changed. User's R04 Create/Host pre-Talk selection and persisted invitations are still OPEN and require separate shared-integration ownership.
 
 Latest branch commits include `b8a5374`, `f70eaf8`, `b82034c`, `ad7de44`, `c9c574f`, `ab86868`, `f325651`, `202583b`, `3ef96d5`, `6625a87`.
+
+## Final review addendum — 2026-10-08
+
+PR #414 opened as DRAFT. Full GitHub diff read back: seven owned paths only (model, HTTP transport, confirmation sheet, three focused tests, this claim). The server-confirmed expired/declined status disables old quote resubmission and cancels local expiry timer (commit `693a89d`); mismatched fee, persona kind, host approval or missing request identity are not accepted as successful paid participation.
+
+GitHub Actions on PR #414 at `1acd408` reported Foundation CI and Mobile Build `failure`, but the returned Mobile Build job lasted about two seconds and exposed **zero steps**. Newest `693a89d` workflows were queued when checked; these results do not prove a Flutter test failure or pass. Do not merge based on an unexecuted test suite. Remaining R04 pre-Talk picker/invitation and native device acceptance require new coordination with the root-shell and live Talk windows.
