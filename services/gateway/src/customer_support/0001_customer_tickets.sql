@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS support.customer_tickets (
   summary TEXT NOT NULL CHECK (char_length(summary) BETWEEN 20 AND 1000),
   status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','reviewing','resolved','closed')),
   resolution TEXT,
+  CONSTRAINT resolved_ticket_requires_reason CHECK (status <> 'resolved' OR char_length(resolution) BETWEEN 20 AND 1000),
   consented_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -29,4 +30,17 @@ CREATE INDEX IF NOT EXISTS idx_support_customer_tickets_history
 -- This is a queue for human triage, not a claim that an email/webhook has been delivered.
 CREATE INDEX IF NOT EXISTS idx_support_customer_tickets_queue
   ON support.customer_tickets(tenant_id, created_at ASC, id ASC) WHERE status IN ('queued','reviewing');
+CREATE TABLE IF NOT EXISTS support.ticket_events (
+  event_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  ticket_id UUID NOT NULL,
+  actor_id TEXT NOT NULL,
+  previous_status TEXT NOT NULL,
+  next_status TEXT NOT NULL,
+  resolution TEXT,
+  at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  FOREIGN KEY (tenant_id, ticket_id) REFERENCES support.customer_tickets(tenant_id,id)
+);
+CREATE INDEX IF NOT EXISTS idx_support_ticket_events
+  ON support.ticket_events(tenant_id,ticket_id,event_id DESC);
 COMMIT;
