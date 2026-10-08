@@ -18,5 +18,6 @@
   "raiseHand": "Lever la main",
   "speakerSeats": "{count, plural, =0{Aucun siège d'intervenant} =1{1 siège d'intervenant} other{{count} sièges d'intervenant}}",
   "walletAmount": "{amount} {currency}",
-  "appTitle": "Masanawa"
+  "appTitle": "Masanawa",
+  "splashTagline": "Conversations en direct entre humains et IA"
 }
