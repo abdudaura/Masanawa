@@ -1,5 +1,10 @@
 # Voice-First Interaction Contract
 
+## Latest AI-first product scope — 2026-10-08
+
+**Owner 2026-10-08 operator quality expansion:** speech, typing and taps must all address the same durable authenticated task, explicit review/consent, actual Gateway operation and receipt with recovery. Gwani/Gwana may prepare Talks, lessons, verified files, permitted person-message drafts and qualified financial quotes. Never treat model speech, an ambient yes or public Talk microphone as approval. Read [canonical action/task specification](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [product K journeys](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md) and [U01–U20 scopes](20-WINDOW-AI-CHAT-EXECUTION-20261008.md). Native media tests remain required.
+
+
 Status: **canonical approved experience — 2026-10-08**
 Implementation: OPEN/PARTIAL; this document does not enable transactions.
 Applies across the consumer app, especially R04–R12 and R15 in MOBILE-READINESS-PLAN.md.

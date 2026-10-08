@@ -1,5 +1,10 @@
 # Mandatory cross-window handoff and one-window final integration
 
+## Owner-approved U01–U20 expansion — 2026-10-08
+
+The owner lifts blanket source-work freeze and authorizes twenty isolated U01–U20 development windows while Work usage resets. Later Work must inventory all new U draft PR heads/handoffs, compare them with existing R01–R19/C01–C08, preserve #497/Firebase #461, elect one U01 contract/task ledger/Gateway composition, resolve C02/C05 migration duplications, integrate Flutter root once, run K01–K12 + J01–J11 on real backend/device/provider, and merge only genuinely verified code. See [20-window plan](20-WINDOW-AI-CHAT-EXECUTION-20261008.md) and [merge/check matrix](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). Old global freeze historical; exact-path owner and security rules still apply.
+
+
 **Owner decision: 2026-10-08. Status: coordination instructions, NOT implementation or release proof.**
 
 This file is the durable, common handoff contract for **every** R01–R19, C01–C08, documentation, CI, database, Android, and shared integration window in `Baatiku/masanawa`. Read it alongside `CONTINUE-HERE.md`, `docs/MULTI-WINDOW-WORK.md`, `docs/IMPLEMENTATION-KICKOFF-20261008.md`, and the domain contracts. **All windows must leave a repository-visible, SHA-specific handoff.** A chat response by itself is not a handoff.

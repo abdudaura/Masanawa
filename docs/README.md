@@ -1,5 +1,10 @@
 # Masanawa Documentation
 
+## AI-first expansion and development reopened (2026-10-08)
+
+The owner lifted the global pause for twenty separately assigned isolated windows. New canonical reading: [product outcomes](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [one authorized action/task protocol](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human Chats and opt-in AI assistance](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md), [twenty U01–U20 implementation assignments](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [K01–K12 integration acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). R/C/J ledgers, Flutter, five-tab navigation and safety still govern. Work #497 remains draft; source can progress in scoped branches but verification/merges remain evidence-gated.
+
+
 ## Flutter-first mobile updates and Shorebird release governance — 2026-10-08
 
 **Owner decision:** no React Native second app. Preserve `apps/mobile` Flutter consumer and its separate Flutter admin companion. [`FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md`](FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md) governs the three change classes (versioned server content, Shorebird signed compatible Dart patch, signed Android/iOS binary), patch signing, version/engine/asset/native compatibility, app-store rules, release/patch provenance, compatibility, incident control, staging and rollback. [`../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md`](../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md) gives the required proof and CLI sequence. **Planning and policy only: no Shorebird binary/patch, account or devices have been verified.** This does not override the active Work #497 consolidation freeze or CI #457 and does not mark any R/C lane done.

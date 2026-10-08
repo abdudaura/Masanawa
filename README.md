@@ -1,5 +1,12 @@
 # Masanawa
 
+## Owner directive — 20 parallel AI-first product windows (2026-10-08)
+
+**Copy/paste the numbered launch instructions:** [20 exact prompts for 20 windows](docs/20-WINDOW-LAUNCH-PROMPTS-20261008.md).
+
+**Implementation pause lifted for isolated feature work.** Allocate exactly one U01–U20 scope to each window from [20-window implementation plan](docs/20-WINDOW-AI-CHAT-EXECUTION-20261008.md), with [AI-first requirements](docs/AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [agent action/task contract](docs/AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human messaging/AI privacy](docs/HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md) and [K01–K12 gates](docs/20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). Existing R01–R19/C01–C08 drafts, Work #497/Firebase, Flutter/five-tab shell and shared owners must be preserved. No unverified feature PR merge, production deployment or false success claim.
+
+
 ## Mobile update and release decision — 2026-10-08
 
 **Flutter is the sole consumer mobile implementation.** The owner cancelled the parallel React Native plan (unmerged PR #504 closed). Future remote updates use *server-driven, versioned Gateway data* for compatible content/feature presentation and **Shorebird-signed Dart-only code patches** for eligible fixes; native/asset/Flutter-engine changes still require a signed app-store release. **Shorebird is planned, not installed or tested**. Read [canonical Flutter/Shorebird policy](docs/FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md) and [operational runbook](apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md) before touching distribution, signing or OTA. `CONTINUE-HERE.md` consolidation freeze and Work #497 remain controlling; no production release until real device/provider/CI verification.

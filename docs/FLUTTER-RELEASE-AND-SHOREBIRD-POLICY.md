@@ -1,5 +1,10 @@
 # Flutter-first mobile release and Shorebird update policy
 
+## Owner-approved U01–U20 expansion — 2026-10-08
+
+New U01–U20 work is source-only until independently integrated/qualified. Flutter-first Shorebird signing, exact version compatibility, QA patch/restart/rollback and native/asset/engine app-store release rules remain unchanged. CI/device/provider/finance/voice qualification still mandatory. U20 owns release evidence, not production patch keys or deployment authority. See [development plan](20-WINDOW-AI-CHAT-EXECUTION-20261008.md) and [acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md).
+
+
 **Status: owner-approved policy / implementation NOT STARTED / verification NOT DONE.** Adopted 2026-10-08. This document is the canonical release/update policy for the **consumer Flutter app** at `apps/mobile`. It is not evidence that Shorebird has been initialized, that a patchable APK exists, or that a production release is safe. The separate Flutter admin app at `apps/admin_mobile` needs an independent release/patching qualification before inclusion. Web and desktop deployments follow their own pipelines.
 
 ## 1. Architectural decision and non-goals
