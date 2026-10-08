@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'device_contacts_model.dart';
+import 'device_contacts_consent_store.dart';
 
 /// No disk persistence or Gateway calls. Caller supplies the current signed-in
 /// account ID; changing account or disabling opt-in synchronously clears RAM.
@@ -9,14 +10,17 @@ class DeviceContactsController extends ChangeNotifier {
     required DeviceContactsPlatform platform,
     required DeviceContactsInvite invite,
     required String? accountId,
-  }) : _platform = platform, _invite = invite, _accountId = accountId;
+    DeviceContactsConsentStore? consentStore,
+  }) : _consentStore = consentStore, _platform = platform, _invite = invite, _accountId = accountId;
 
+  final DeviceContactsConsentStore? _consentStore;
   final DeviceContactsPlatform _platform;
   final DeviceContactsInvite _invite;
   String? _accountId;
   bool _disposed = false;
   int _epoch = 0;
   bool optedIn = false;
+  bool rememberedConsent = false;
   bool busy = false;
   bool sharing = false;
   DeviceContactsPermission permission = DeviceContactsPermission.unknown;
@@ -48,6 +52,7 @@ class DeviceContactsController extends ChangeNotifier {
     _epoch++;
     _accountId = id;
     optedIn = false;
+    rememberedConsent = false;
     busy = false;
     sharing = false;
     permission = DeviceContactsPermission.unknown;
@@ -62,23 +67,72 @@ class DeviceContactsController extends ChangeNotifier {
     _emit();
   }
 
-  /// Called only by explicit user tap following the in-product rationale.
-  Future<void> enable() async {
-    if (busy || !isSignedIn) return;
-    optedIn = true;
-    await refresh(requestIfNeeded: true);
+  bool _sameAccount(int epoch, String owner) =>
+      !_disposed && _epoch == epoch && _accountId == owner;
+
+  /// Read only the boolean preference, never automatically scan the device on
+  /// launch. A new visible tap is still needed before each view starts reading.
+  Future<void> restoreConsent() async {
+    final owner = _accountId;
+    final store = _consentStore;
+    if (owner == null || store == null || optedIn) return;
+    final epoch = _epoch;
+    try {
+      final saved = await store.optedIn(owner);
+      if (!_sameAccount(epoch, owner) || optedIn) return;
+      rememberedConsent = saved;
+      _emit();
+    } catch (_) {
+      // A failed secure-store read fails closed: no permission or phone IO.
+    }
   }
 
-  /// Revocation purges immediately even if the native permission is still set.
-  void disable() {
+  /// Called only by explicit user tap following the in-product rationale.
+  Future<void> enable() async {
+    final owner = _accountId;
+    if (busy || optedIn || owner == null) return;
+    final epoch = ++_epoch;
+    busy = true;
+    error = null;
+    _emit();
+    try {
+      await _consentStore?.setOptedIn(owner, true);
+      if (!_sameAccount(epoch, owner)) return;
+      optedIn = true;
+      rememberedConsent = true;
+      busy = false;
+      _emit();
+      await refresh(requestIfNeeded: true);
+    } catch (_) {
+      if (_sameAccount(epoch, owner)) {
+        busy = false;
+        error = 'Could not save phone contacts consent securely.';
+        _emit();
+      }
+    }
+  }
+
+  /// Revocation purges the OS directory synchronously; then removes consent.
+  Future<void> disable() async {
+    final owner = _accountId;
     ++_epoch;
     optedIn = false;
+    rememberedConsent = false;
     busy = false;
     sharing = false;
     contacts = const [];
     search = '';
     error = null;
     _emit();
+    if (owner == null) return;
+    try {
+      await _consentStore?.setOptedIn(owner, false);
+    } catch (_) {
+      if (!_disposed && _accountId == owner && !optedIn) {
+        error = 'Contacts are off, but the saved preference could not be cleared.';
+        _emit();
+      }
+    }
   }
 
   /// Call on resume (OS permission may have been revoked in Settings).
