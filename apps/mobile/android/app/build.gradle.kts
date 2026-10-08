@@ -7,12 +7,39 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release signing key (gitignored, see docs/BUILDS.md §Phone). Absent on CI
-// and fresh clones — release then falls back to debug keys for local runs.
+// Local release APKs may use debug signing for handset testing. Store AABs
+// must never silently fall back to debug signing.
+// Supply -PmasanawaStoreRelease=true when building a distributable package.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+val storeReleaseRequested = providers.gradleProperty("masanawaStoreRelease")
+    .map { it.equals("true", ignoreCase = true) }
+    .getOrElse(false)
+val bundleReleaseRequested = gradle.startParameter.taskNames.any { task ->
+    task.substringAfterLast(':').equals("bundleRelease", ignoreCase = true)
+}
+val requiresStoreSigning = storeReleaseRequested || bundleReleaseRequested
+
+if (requiresStoreSigning) {
+    val requiredFields = listOf("keyAlias", "keyPassword", "storeFile", "storePassword")
+    val missingFields = requiredFields.filter { key ->
+        keystoreProperties.getProperty(key).isNullOrBlank()
+    }
+    check(keystorePropertiesFile.isFile && missingFields.isEmpty()) {
+        "Store release requires android/key.properties with valid signing fields; " +
+            "missing: " + (if (!keystorePropertiesFile.isFile) "key.properties" else missingFields.joinToString())
+    }
+    val configuredStore = file(keystoreProperties.getProperty("storeFile"))
+    check(configuredStore.isFile) {
+        "Store release signing keystore does not exist at the configured storeFile path."
+    }
+    check(!configuredStore.name.equals("debug.keystore", ignoreCase = true)) {
+        "Store release cannot use the Android debug keystore."
+    }
 }
 
 android {
@@ -54,10 +81,8 @@ android {
 
     buildTypes {
         release {
-            // Real key when key.properties exists; debug keys for local
-            // `flutter run --release` otherwise.
-            // BLOCKING FOR STORE: add key.properties before any Play upload.
-            // Do NOT publish an APK signed with debug keys.
+            // Debug fallback is only for local APK testing. bundleRelease and
+            // explicitly marked store builds require a configured private key.
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {

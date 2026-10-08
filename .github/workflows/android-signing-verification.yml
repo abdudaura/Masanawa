@@ -1,0 +1,33 @@
+name: Android release signing verifier
+
+on:
+  pull_request:
+    paths:
+      - 'apps/mobile/android/app/build.gradle.kts'
+      - 'tools/verify-android-store-bundle.sh'
+      - 'tools/tests/test-verify-android-store-bundle.sh'
+      - '.github/workflows/android-signing-verification.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/android/app/build.gradle.kts'
+      - 'tools/verify-android-store-bundle.sh'
+      - 'tools/tests/test-verify-android-store-bundle.sh'
+      - '.github/workflows/android-signing-verification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signing-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify signing gate negative and positive cases
+        run: bash tools/tests/test-verify-android-store-bundle.sh
