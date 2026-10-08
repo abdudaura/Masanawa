@@ -29,6 +29,8 @@ function respondError(reply: FastifyReply, error: unknown) {
   }
   if (code === "crypto.internal.recipient_unavailable")
     return reply.code(404).send({ code: "crypto.internal.recipient_unavailable" });
+  if (code === "crypto.internal.account_inactive")
+    return reply.code(403).send({ code: "crypto.internal.account_inactive" });
   if (code === "crypto.insufficient_balance")
     return reply.code(409).send({ code });
   if (code === "crypto.internal.quote_expired" ||
