@@ -71,6 +71,16 @@ describe("C04 private human voice-note mutation and access contracts",()=>{
   await expect(v.service.read({authorizationHeader:"x",messageId}))
     .rejects.toMatchObject({statusCode:503});
  });
+ it("does not mark private media erased when S3 deletion is uncertain",async()=>{
+  const v=fixture();
+  v.repository.stale.mockResolvedValueOnce([{objectKey:"dm-voice/test-object"}]);
+  v.objects.delete.mockRejectedValueOnce(new Error("provider timeout"));
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:0,failed:1});
+  expect(v.repository.deleted).toHaveBeenCalledWith("dm-voice/test-object",false);
+  v.repository.stale.mockResolvedValueOnce([{objectKey:"dm-voice/test-object"}]);
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:1,failed:0});
+  expect(v.repository.deleted).toHaveBeenCalledWith("dm-voice/test-object",true);
+ });
  it("rejects malformed cursor and bounds without touching repository",async()=>{
   const v=fixture();
   await expect(v.service.list({authorizationHeader:"x",conversationId,before:"9223372036854775808"}))
