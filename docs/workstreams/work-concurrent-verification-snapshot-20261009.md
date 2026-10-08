@@ -8,10 +8,10 @@ Owner instruction: verify while independent windows finish, then pause new chang
 
 - Snapshot source: GitHub authenticated `GET /repos/Baatiku/masanawa/pulls?state=open` pages 1–4, observed 2026-10-09; **70 open PRs** at collection time.
 - Main commit observed: `5e758673ae91082520b21b3153da53791ae2cbf3`. Main still does not contain the draft central work.
-- Central Work integration: [#497](https://github.com/Baatiku/masanawa/pull/497), branch `work/work-lane-consolidation-20261008`, `98a6cba6515d52214d064a651a3cddad62439c1d` when the PR snapshot was fetched. It has 448 filenames changed relative to main (GitHub paginated PR file inventory), including code/test/doc, but *filename presence is not blob equivalence*.
+- Central Work integration: [#497](https://github.com/Baatiku/masanawa/pull/497), branch `work/work-lane-consolidation-20261008`, `98a6cba6515d52214d064a651a3cddad62439c1d` when the PR snapshot was fetched. At this concurrent backend handoff it has 522 filenames changed relative to main (GitHub paginated PR file inventory), including code/test/doc, but *filename presence is not blob equivalence*.
 - The central branch is deliberately draft and must remain so while independently owned feature work and external qualification are outstanding. More than 100 historical branches were observed in an initial branch-search page with a continuation cursor: this inventory enumerates **open PRs, not every remote branch**. Count and audit all remote branches separately before cleanup.
 - GitHub Foundation CI on earlier central head `a423b11bb3589503109fbc9d99a1a710c84f9735`: failed job with **zero steps, runner_id 0**; hosted CI #457 quota exhaustion remains distinct from runtime source failures. Vercel also reports a separate failed status on that earlier head. Do not call either a passing test, and do not retry quota-blocked jobs.
-- #497 description reports **1,516 backend passed, 185 skipped, zero failed** at earlier source head `4c961231dac737d8e0915cd5117581e4d2185b6e`, Gateway strict typecheck and production build succeeded at that earlier head; an earlier mobile checkpoint reports 652 Flutter passes. **These results do not qualify the current or final branch after additional commits.** Device, live providers, PG18 and FCM are still not verified by this snapshot.
+- #497's latest handoff reports **1,609 backend passed, 186 skipped, zero failed** at code head `98a6cba6515d52214d064a651a3cddad62439c1d`; Gateway, Ops and scheduler strict TypeScript checks and production builds passed at that code head. These runs are documented evidence, not independently rerun by this audit window. An earlier mobile checkpoint reports 652 Flutter passes. **No reported result qualifies the future full composite, real DB, devices or providers.** Device, live providers, PG18 and FCM are still not verified by this snapshot.
 
 ## Firebase preservation — do not delete #461 yet
 
@@ -24,7 +24,7 @@ Owner instruction: verify while independent windows finish, then pause new chang
 
 | PR source | File paths present in #497 / PR total | Required semantic disposition |
 | --- | ---: | --- |
-| #468 C01 contacts | 19/20 | Compare latest pagination/auth repository semantics and missing F14 handoff; maintain 0016 and work with #510 without overwriting UI |
+| #468 C01 contacts | 20/20 | Pagination and handoff paths present; still review exact auth/migration behavior with #510 |
 | #472 C02 canonical DM | 18/18 | Reconcile with #475's divergent 0017/contract; exact same path does not prove latest |
 | #475 alternate C02 | 10/19 | Salvage unique Flutter/chat/outbox and tests; never install a second competing migration |
 | #473 C03 earlier | 12/13 | Source ancestry only; use staged #483 then #486, do not merge all three independently |
@@ -36,19 +36,19 @@ Owner instruction: verify while independent windows finish, then pause new chang
 | #487 C06 canonical crypto | 13/17 | Backend selected with risk policy fail-closed; four mobile transfer paths not in central changed-file inventory |
 | #490 C06 alternate ledger | 10/20 | 11-file direct overlap with #487; reject duplicate 0110, compare unique domain tests |
 | #493 five-tab shell | 26/26 | Present paths need final Flutter/runtime acceptance and fresh head comparison |
-| #503 replay/seek | 6/7 | Newly authored F09 replay-authorization handoff not in central file inventory; check latest source deltas |
+| #503 replay/seek | 7/7 | Post-await seek authority paths present; Flutter tests and device seek proof pending |
 | #508 U21 Contacts Hub | 0/4 | Entire module pending |
 | #509 U22 on-device address book | 0/8 | Entire consented module pending; reconcile pubspec and native permissions |
 | #510 U24 message privacy | 2/6 | Existing contact-controller/screen overlap; remaining private screen/tests/handoff missing |
-| #511 U23 invitations | 0/16 | Entire module pending |
-| #512 U29 customer support | 0/17 | Entire module pending |
-| #513 U30 discovery | 0/10 | Entire module pending |
-| #514 U28 governed research | 0/14 | Entire module pending |
-| #515 U26 channel linking | 0/15 | Entire module pending |
-| #516 U27 Ops admin | 0/11 | Entire module pending; privileged remove remains disabled without audited mutation writer |
-| #517 U25 scheduler | 0/21 | Entire module pending; default unregistered worker / FCM integration must remain inactive |
+| #511 U23 invitations | 9/16 | Backend/docs present; five Flutter and two web paths remain |
+| #512 U29 customer support | 12/17 | Backend/docs present; five Flutter paths remain |
+| #513 U30 discovery | 4/10 | Backend/docs present; six Flutter paths remain |
+| #514 U28 governed research | 11/14 | Backend/docs present; three Flutter paths remain |
+| #515 U26 channel linking | 12/15 | Backend/docs present; three Flutter paths remain |
+| #516 U27 Ops admin | 6/11 | Ops backend/docs present; five admin Flutter paths remain; mutation disabled without atomic-audit writer |
+| #517 U25 scheduler | 16/21 | Backend/package/docs present; five Flutter paths remain; worker/FCM still unregistered |
 
-**Important:** Ratios compare only GitHub changed-filename sets. A path may be present on both branches with *different content or semantics*; zero overlap does not imply safe runtime composition. #497's latest handoff includes future claims to verify U23/U25/U26/U27/U28/U29/U30 code; claims are not proof that these sources were merged, tested or safe to enable.
+**Important:** Ratios compare only GitHub changed-filename sets. A path may be present on both branches with *different content or semantics*; zero overlap does not imply safe runtime composition. #497 now has backend source recovery and handoff test evidence for these modules, but not their absent Flutter/web paths or integration readiness.
 
 ## Required pre-merge and cleanup sequence
 
@@ -137,4 +137,4 @@ All rows below are **OPEN** at time of collection. A draft/open flag alone is no
 | [#516](https://github.com/Baatiku/masanawa/pull/516) | `4e16c5957e8b` | Draft | U27: privilege-fenced agent operations catalog and safe skill removal (partial, unverified) |
 | [#517](https://github.com/Baatiku/masanawa/pull/517) | `a0d7e83f4f9d` | Draft | U25: consented durable operator reminders with safe occurrence leasing (DRAFT) |
 
-Current audit result: **one narrow release-qualification source/handoff correction committed on #497**; all other open PRs retained, no financial/provider activation, no native secrets changed, no unverified automatic merge/deletion or claims of completed combined tests.
+Current audit result: **one release-qualification source correction and this all-PR ledger committed on #497**, in parallel with a separate backend-recovery handoff; all other open PRs retained, no financial/provider activation, no native secrets changed, no unverified automatic merge/deletion or claims of completed combined tests.
