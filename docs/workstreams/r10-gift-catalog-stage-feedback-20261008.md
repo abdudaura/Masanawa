@@ -60,5 +60,20 @@ No Gateway main composition, shared ledger, migration, root shell, billing/crypt
 
 Continuing R10: harden account-scoped persistence to survive app restarts after an ambiguous payment. Implementation branch is recoverable in draft PR #418. Preserve R10 boundary; another non-overlapping window can take next lane without modifying these unfinished files.
 
+## Continuation checkpoint — durable gift safety and live catalog (2026-10-08)
+
+Latest implementation SHA before this checkpoint: `732879b6538ee766e241950bc15628da63bd4716`.
+PR #418: `https://github.com/Baatiku/masanawa/pull/418`.
+
+- Existing mobile retry ID cache was **only in memory**, risking new debit IDs after a crash or an uncertain server response. New encrypted `SecureTalkGiftPendingStore` persists `pending:<id>` **before** HTTP POST, scoped to authenticated account + talk/option/amount. A reinstalled process recovers the same ID; a confirmed completed response advances to `completed:<id>` so the next deliberate send can use a fresh ID. Failed/missing secure storage never falls back to a new money request.
+- In-flight same-option requests share one Future, preventing client double-taps from racing different IDs. Generated IDs include cryptographically secure entropy; no account/token data is embedded in the request ID. Transport checks for account changes during secure IO and before issuing a POST.
+- Added crash/restart, lost receipt, second intentional gift, concurrent confirmation, account-switch, malformed-record and secure-storage-failure regression tests in `apps/mobile/test/talk_gift_pending_store_test.dart`. Tests are **authored and committed, NOT executed**.
+- Added `TalkGiftCatalogSource` extension point for exact tenant/Talk-qualified server policy. Every catalog GET and POST re-reads live authoritative options, checks selection and price before settlement. Dynamic reprice, empty catalog and policy-source outage tests prove **intended fail-closed behavior**; they still need execution. Production composition currently uses validated server-side launch defaults because an admin/persistent policy source has not yet been wired.
+- The Gift sheet now advises checking authoritative Wallet history, not recipient Activity, after an uncertain response. R09 owner was notified in PR #417 that eventual shared stage animation/AI event must originate from authoritative settled gift outbox, not local optimistic events. This R10 lane does not change R09 worker code.
+- Latest observed CI for PR #418 continues failing before runner steps; no typecheck, Vitest, Flutter tests, APK build, real Credits settlement or handset check has passed in this environment.
+- Main advanced during the lane. Before merge, reconcile current main, execute full relevant checks, review any checkout conflicts, and qualify sender/recipient behavior after lost responses. Do not use a mergeable GitHub metadata flag as a substitute for these release gates.
+
+**Integration status:** Source on draft PR #418, no release deployment, no executed tests, no merge. Remains R10 PARTIAL.
+
 ## Handoff policy
 Record exact branch HEAD, tests executed vs unexecuted and unresolved provider/device/AI-event dependencies before leaving. Do not mark R10 release accepted without real-device and server settlement evidence.
