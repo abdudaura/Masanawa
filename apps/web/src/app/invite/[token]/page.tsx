@@ -4,7 +4,6 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Masanawa invitation",
   robots: { index: false, follow: false, nocache: true },
-  referrer: "no-referrer",
 };
 
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u;
