@@ -166,6 +166,7 @@ const AgentDirectoryEntrySchema = Type.Object(
       Type.Literal("working"),
       Type.Literal("on_call"),
       Type.Literal("offline"),
+      Type.Literal("unknown"),
     ]),
     activeWorkCount: Type.Integer({ minimum: 0 }),
     supportAgent: Type.Boolean(),
