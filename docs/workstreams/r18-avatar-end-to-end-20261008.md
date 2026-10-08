@@ -41,3 +41,11 @@ Still unimplemented: safe rename of existing handles (requires persistent alias/
 ## Rename ownership expansion
 
 Reviewed `talks.public_profiles`, `talks.human_invitations`, `talks.persona_profiles`, and `talks.safety_enforcement` schema. No open PR currently owns shared talk profile files. This branch will add a persistent alias-reservation table and a transactional handle-rename contract that preserves old public links while updating current Twin owner names, outstanding invitation handles and active safety enforcement; historical safety reports remain immutable. Never simply update a username string without rekeying policy and keeping aliases. The claim expansion precedes all rename file edits.
+
+## Handle rename safety audit / hold
+
+The schema and runtime audit found that `talks.safety_enforcement` and `talks.safety_reports` use exact profile handle strings; `talk_safety/repository.ts` resolves profile user IDs by exact `public_profiles.handle` and reads/writes enforcement by exact `target_id`. Pending `talks.human_invitations.invitee_handle` and `talks.persona_profiles.owner_handle` also embed handles. **A simple UPDATE public_profiles.handle would bypass moderation rules and break old links.** Work on a future alias reservation/migration must atomically preserve old-handle resolution, reserve retired handles, preserve immutable safety-report evidence, rekey or canonically resolve enforcement and invitation/Twin lookups, and reject collisions/races. Safe rename is NOT implemented and must not be enabled by mobile UI alone. Public display name/avatar does synchronize across header and Settings, while authenticated account/legal-name storage remains separate by design.
+
+### Last focused review
+
+Version parsing uses `AvatarMutationError` (commit `b0cf88f`). API validates PNG signature before passing it to merged Sharp normalizer (commits `b0f5a11`, `854a404`). Flutter crop Rect coordinates use exact double arithmetic and preserve portrait aspect in decoder (commits `6816047`, `e7a27d4`). Legacy PATCH removal captures previous avatar under a row lock, with dedicated test assertions (commits `494ce55`, `eb7bc34`). PR #435 remains draft pending executable CI and S3/CDN qualification; no deployment, real-value transactions, or Android APK tested.
