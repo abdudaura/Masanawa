@@ -3,6 +3,7 @@ import type {
   TalkGiftActivitySink,
   TalkGiftCatalog,
   TalkGiftCatalogItem,
+  TalkGiftCatalogSource,
   TalkGiftExecutor,
   TalkGiftReceipt,
   TalkGiftRepository,
@@ -46,7 +47,7 @@ export const defaultTalkGiftCatalog: readonly TalkGiftCatalogItem[] = Object.fre
 function checkedCatalog(items: readonly TalkGiftCatalogItem[]): readonly TalkGiftCatalogItem[] {
   const ids = new Set<string>();
   const visuals = new Set(["applause", "heart", "flower", "spark", "crown", "celebration"]);
-  if (items.length === 0 || items.length > 24) throw new Error("Invalid Talk gift catalog");
+  if (items.length > 24) throw new Error("Invalid Talk gift catalog");
   return Object.freeze(items.map(item => {
     if (!/^[a-z][a-z0-9_-]{0,47}$/.test(item.id) || ids.has(item.id) ||
         !item.name.trim() || item.name.length > 80 ||
@@ -81,8 +82,14 @@ export function createTalkGiftService(input: Readonly<{
   executor: TalkGiftExecutor;
   activity?: TalkGiftActivitySink;
   catalog?: readonly TalkGiftCatalogItem[];
+  catalogSource?: TalkGiftCatalogSource;
 }>): TalkGiftService {
-  const catalogItems = checkedCatalog(input.catalog ?? defaultTalkGiftCatalog);
+  const fallbackCatalog = checkedCatalog(input.catalog ?? defaultTalkGiftCatalog);
+  async function catalogFor(tenantId: string, talkId: string) {
+    const source = input.catalogSource;
+    if (!source) return fallbackCatalog;
+    return checkedCatalog(await source.load({ tenantId, talkId }));
+  }
   async function authorizedTarget(authorizationHeader: string | undefined, rawTalkId: string) {
     const viewer = await input.authorizer.authorize({ authorizationHeader });
     const talkId = text(rawTalkId, "talk_id", 160);
@@ -95,8 +102,11 @@ export function createTalkGiftService(input: Readonly<{
   }
   return Object.freeze<TalkGiftService>({
     async catalog(request) {
-      const { talkId } = await authorizedTarget(request.authorizationHeader, request.talkId);
-      return Object.freeze({ talkId, currency: "Credits" as const, items: catalogItems });
+      const { viewer, talkId } = await authorizedTarget(
+        request.authorizationHeader, request.talkId,
+      );
+      const items = await catalogFor(viewer.tenantId, talkId);
+      return Object.freeze({ talkId, currency: "Credits" as const, items });
     },
     async gift(request) {
       const { viewer, talkId, target } = await authorizedTarget(
@@ -104,6 +114,7 @@ export function createTalkGiftService(input: Readonly<{
       );
       const requestId = text(request.requestId, "request_id");
       const amountCredits = amount(request.amountCredits);
+      const catalogItems = await catalogFor(viewer.tenantId, talkId);
       const catalogItemId = request.catalogItemId === undefined
         ? undefined
         : text(request.catalogItemId, "catalog_item_id", 48);
