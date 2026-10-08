@@ -163,8 +163,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _wallet() => WalletScreen(
         embeddedInShell: true,
-        onBuyBills: () => context.push('/billing'),
         onOpenCrypto: () => context.push('/crypto'),
+        onOpenBillingService: (service) => context.push(
+          '/billing?service=' + Uri.encodeQueryComponent(service)),
       );
 
   Widget _privateTalk() {
