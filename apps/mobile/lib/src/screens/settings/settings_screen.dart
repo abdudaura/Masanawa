@@ -137,22 +137,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     'Choose who handles support and platform guidance',
                   ),
                 ),
+                if (directory.loading || directory.error != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(
+                      directory.loading
+                          ? 'Checking your saved agent…'
+                          : 'Selection unverified. Refresh the agent directory before changing it.',
+                      style: TextStyle(color: u.textMuted),
+                    ),
+                  ),
                 const Divider(height: 1),
                 for (var index = 0; index < supportAgents.length; index++) ...[
                   Builder(
                     builder: (context) {
                       final agent = supportAgents[index];
                       final selected = agent.defaultPlatformAgent;
-                      final saving =
-                          _savingDefaultAgentId == agent.characterId;
+                      final saving = _savingDefaultAgentId != null;
                       final voice =
                           agent.voiceName == null || agent.voiceName!.isEmpty
                               ? null
                               : agent.voiceName;
                       return RadioListTile<String>(
+                        key: Key('settings-support-agent-${agent.characterId}'),
                         value: agent.characterId,
                         groupValue: selectedSupportAgentId,
-                        onChanged: saving
+                        onChanged: saving || directory.loading || directory.error != null || user == null
                             ? null
                             : (value) async {
                                 if (value == null || selected) return;
@@ -161,12 +171,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 );
                                 try {
                                   await ref
-                                      .read(agentDirectoryTransportProvider)
-                                      .setDefaultPlatformAgent(value);
-                                  await ref
                                       .read(agentDirectoryProvider.notifier)
-                                      .refresh();
-                                  if (context.mounted) {
+                                      .changeDefaultSupportAgent(value);
+                                  final current = ref.read(sessionProvider);
+                                  if (context.mounted &&
+                                      current is SessionSignedIn &&
+                                      current.user.id == user.id) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
