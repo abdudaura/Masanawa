@@ -47,3 +47,8 @@ Status: **IMPLEMENTED_UNVERIFIED for this bounded R16 disposable-database freshn
 | DEPLOYED / MERGED / GLOBAL_R16_DONE | NO / NO / NO |
 
 **Rollback/risk:** No migration changed or ran, so reverting this guard's new code is source-only; use conservative runtime refusals rather than force/skip flags when unexpected objects exist. Do not point `bootstrap:test` at a database merely named like a disposable DB that has any meaningful data.
+
+## Final repository-visible review identity
+- Draft stacked PR: https://github.com/Baatiku/masanawa/pull/485 (base `work/r16-schema-portability-20261008`; parent draft https://github.com/Baatiku/masanawa/pull/479).
+- Commit containing initial Work handoff: `24927599f0d5900f3ed92770353e6babfa3daf50`; last application/test-source code commit `13143480e67a2807595c53b08a4139716d3aa86b`.
+- GitHub verified four changed paths in PR #485 (three implementation/test files and this handoff), all within the ownership claim. PR remains draft. No merge, test, device, provider or deployment evidence.
