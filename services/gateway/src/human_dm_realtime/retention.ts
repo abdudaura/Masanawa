@@ -4,7 +4,7 @@
  */
 export interface PruneSqlPool {
   query<T extends Record<string, unknown> = Record<string, unknown>>(
-    sql: string, values?: readonly unknown[],
+    sql: string, values?: unknown[],
   ): Promise<{ rows: T[]; rowCount: number | null }>;
 }
 export interface PruneResult {
