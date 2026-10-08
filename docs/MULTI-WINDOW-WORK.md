@@ -1,5 +1,10 @@
 # Multi-window Work Coordination
 
+## CURRENT OWNER OVERRIDE — twenty scoped windows reopened (2026-10-08)
+
+**The blanket 13:44Z Work consolidation pause is superseded, but all exact-path ownership, five-minute leases and safety gates remain.** Launch separately numbered U01–U20 feature windows using [U execution workbook](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [AI-first product](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [operator contract](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [Chat/AI privacy](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md) and [evidence gates](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). No duplicate C02 migrations, global router, main.ts/app.ts composer, financial ledger or Firebase owner; isolated source + realistic tests + repository-visible claim and SHA-specific draft PR handoff. Preserve Work #497, all R/C pending code and actual CI #457/device/provider blockers; later one Work window aligns/tests without making a fake 80% completion claim.
+
+
 ## Mandatory permanent handoff and final single-Work consolidation — 2026-10-08
 
 **Binding on every implementation window, every R/C lane and shared owner.** The detailed template, immutable evidence expectations, known competing PRs, and the final one-window reconciliation procedure are in [`docs/FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md`](FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md). **Read it before claiming a lane and again before ending or switching lanes.**
