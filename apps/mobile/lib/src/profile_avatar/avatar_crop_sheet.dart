@@ -2,8 +2,46 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'avatar_image.dart';
+
+/// Platform media picker, followed by an actual interactive pixel crop. Nothing
+/// is saved until the caller uploads the returned PNG and receives success.
+Future<Uint8List?> pickAndCropAvatar(BuildContext context) async {
+  final source = await showModalBottomSheet<ImageSource>(
+    context: context,
+    useSafeArea: true,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Choose from gallery'),
+            onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt_outlined),
+            title: const Text('Take a photo'),
+            onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (source == null || !context.mounted) return null;
+  final selected = await ImagePicker().pickImage(
+    source: source, maxWidth: 2048, maxHeight: 2048, imageQuality: 94,
+  );
+  if (selected == null || !context.mounted) return null;
+  final bytes = await selected.readAsBytes();
+  if (bytes.lengthInBytes > 12 * 1024 * 1024) {
+    throw const FormatException('Choose an image smaller than 12 MB');
+  }
+  if (!context.mounted) return null;
+  return showAvatarCropSheet(context, sourceBytes: bytes);
+}
 
 Future<Uint8List?> showAvatarCropSheet(
   BuildContext context, {required Uint8List sourceBytes},
