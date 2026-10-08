@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,8 +8,8 @@ import '../core/providers.dart';
 import '../core/network/api_client.dart';
 
 abstract interface class ProfileAvatarTransport {
-  Future<String> upload(Uint8List png);
-  Future<void> remove();
+  Future<String> upload(Uint8List png, {required String? expectedUrl});
+  Future<void> remove({required String expectedUrl});
 }
 
 class GatewayProfileAvatarTransport implements ProfileAvatarTransport {
@@ -16,7 +17,7 @@ class GatewayProfileAvatarTransport implements ProfileAvatarTransport {
   final ApiClient api;
 
   @override
-  Future<String> upload(Uint8List png) async {
+  Future<String> upload(Uint8List png, {required String? expectedUrl}) async {
     if (png.isEmpty || png.lengthInBytes > 2 * 1024 * 1024) {
       throw const FormatException('The cropped photo is too large');
     }
@@ -25,7 +26,10 @@ class GatewayProfileAvatarTransport implements ProfileAvatarTransport {
       data: Stream<List<int>>.value(png),
       options: Options(
         contentType: 'image/png',
-        headers: {Headers.contentLengthHeader: png.length},
+        headers: {
+          Headers.contentLengthHeader: png.length,
+          'x-avatar-expected': 'v1:' + base64Url.encode(utf8.encode(expectedUrl ?? '')).replaceAll('=', ''),
+        },
       ),
     );
     final data = response.data;
@@ -42,8 +46,13 @@ class GatewayProfileAvatarTransport implements ProfileAvatarTransport {
   }
 
   @override
-  Future<void> remove() async {
-    final response = await api.dio.delete<dynamic>('/profiles/me/avatar');
+  Future<void> remove({required String expectedUrl}) async {
+    final response = await api.dio.delete<dynamic>(
+      '/profiles/me/avatar',
+      options: Options(headers: {
+        'x-avatar-expected': 'v1:' + base64Url.encode(utf8.encode(expectedUrl)).replaceAll('=', ''),
+      }),
+    );
     if (response.data is! Map || (response.data as Map)['avatarUrl'] != null) {
       throw const FormatException('Could not confirm photo removal');
     }
