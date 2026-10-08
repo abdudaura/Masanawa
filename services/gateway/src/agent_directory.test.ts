@@ -3,6 +3,7 @@ import type {
   AgentPresentation,
   AgentPresentationRepository,
   MobileAgentActivityRepository,
+  MobileAgentActivity,
   PlatformAgentProfileRepository,
   UserAgentPreferenceRepository,
 } from "@masanawa/agents";
@@ -73,7 +74,7 @@ describe("mobile agent directory", () => {
         roleLabel: "Sales & Outreach",
         about: "Handles prospecting",
         greeting: "What should we work on?",
-        presence: "available",
+        presence: "unknown",
         activeWorkCount: 0,
         supportAgent: false,
         defaultPlatformAgent: false,
@@ -88,7 +89,7 @@ describe("mobile agent directory", () => {
     const started: string[] = [];
     let resolvePreference!: (value: null) => void;
     let resolveProfile!: (value: null) => void;
-    let resolveActivity!: (value: readonly []) => void;
+    let resolveActivity!: (value: readonly MobileAgentActivity[]) => void;
 
     const preference = new Promise<null>((resolve) => {
       resolvePreference = resolve;
@@ -96,7 +97,7 @@ describe("mobile agent directory", () => {
     const profile = new Promise<null>((resolve) => {
       resolveProfile = resolve;
     });
-    const activity = new Promise<readonly []>((resolve) => {
+    const activity = new Promise<readonly MobileAgentActivity[]>((resolve) => {
       resolveActivity = resolve;
     });
 
@@ -156,7 +157,11 @@ describe("mobile agent directory", () => {
 
     resolvePreference(null);
     resolveProfile(null);
-    resolveActivity(Object.freeze([]));
+    resolveActivity(Object.freeze([{
+      characterId: presentation.characterId,
+      presence: "available",
+      activeWorkCount: 0,
+    }]));
     const entries = await pending;
 
     expect(entries).toHaveLength(1);

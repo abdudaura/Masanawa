@@ -8,14 +8,19 @@ enum AgentPresence {
   listening,
   working,
   onCall,
-  offline;
+  offline,
+  unknown;
 
   static AgentPresence parse(String? value) => switch (value) {
         'listening' => AgentPresence.listening,
         'working' => AgentPresence.working,
         'on_call' => AgentPresence.onCall,
+        'available' => AgentPresence.available,
         'offline' => AgentPresence.offline,
-        _ => AgentPresence.available,
+        'unknown' => AgentPresence.unknown,
+        // Missing or unrecognized server presence is not proof that a visible
+        // persona is offline or ready to chat. Do not invent availability.
+        _ => AgentPresence.unknown,
       };
 
   String get label => switch (this) {
@@ -24,6 +29,7 @@ enum AgentPresence {
         AgentPresence.working => 'Working',
         AgentPresence.onCall => 'On a call',
         AgentPresence.offline => 'Offline',
+        AgentPresence.unknown => 'Status unverified',
       };
 }
 
@@ -60,6 +66,24 @@ class AgentDirectoryEntry {
   final String? voiceProvider;
   final String? voiceName;
 
+  /// Saved roster metadata is useful before refresh, but saved presence is
+  /// historical. Never present it as a current runtime/voice availability check.
+  AgentDirectoryEntry withUnverifiedPresence() => AgentDirectoryEntry(
+        characterId: characterId,
+        characterVersionId: characterVersionId,
+        displayName: displayName,
+        roleLabel: roleLabel,
+        about: about,
+        presence: AgentPresence.unknown,
+        avatarUrl: avatarUrl,
+        greeting: greeting,
+        activeWorkCount: 0,
+        supportAgent: supportAgent,
+        defaultPlatformAgent: defaultPlatformAgent,
+        voiceProvider: voiceProvider,
+        voiceName: voiceName,
+      );
+
   String get initial =>
       displayName.trim().isEmpty ? 'M' : displayName.trim()[0].toUpperCase();
 
@@ -82,6 +106,7 @@ class AgentDirectoryEntry {
           AgentPresence.working => 'working',
           AgentPresence.onCall => 'on_call',
           AgentPresence.offline => 'offline',
+          AgentPresence.unknown => 'unknown',
         },
         if (avatarUrl != null) 'avatarUrl': avatarUrl,
         if (greeting != null) 'greeting': greeting,
@@ -108,7 +133,9 @@ class AgentDirectoryEntry {
       displayName: requiredString('displayName'),
       roleLabel: requiredString('roleLabel'),
       about: (json['about'] as String? ?? '').trim(),
-      presence: AgentPresence.parse(json['presence'] as String?),
+      presence: AgentPresence.parse(
+        json['presence'] is String ? json['presence'] as String : null,
+      ),
       avatarUrl: (json['avatarUrl'] as String?)?.trim(),
       greeting: (json['greeting'] as String?)?.trim(),
       activeWorkCount: work is int && work >= 0 ? work : 0,

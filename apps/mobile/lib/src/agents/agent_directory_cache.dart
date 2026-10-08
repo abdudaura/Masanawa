@@ -37,7 +37,8 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
       for (final value in values) {
         if (value is! Map) return null;
         agents.add(
-          AgentDirectoryEntry.fromJson(value.cast<String, dynamic>()),
+          AgentDirectoryEntry.fromJson(value.cast<String, dynamic>())
+              .withUnverifiedPresence(),
         );
       }
       return List.unmodifiable(agents);
@@ -55,7 +56,11 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
       await temp.writeAsString(
         jsonEncode({
           'ownerId': ownerId,
-          'agents': [for (final agent in agents) agent.toJson()],
+          // Persist identity/presentation only. Live presence and workload
+          // expire with the request that observed them.
+          'agents': [
+            for (final agent in agents) agent.withUnverifiedPresence().toJson(),
+          ],
         }),
         flush: true,
       );
