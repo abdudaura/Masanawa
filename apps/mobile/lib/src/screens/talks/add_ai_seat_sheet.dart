@@ -47,6 +47,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   TalkAiSeatQuote? _quote;
   TalkAiSeatCandidate? _selectedCandidate;
   Timer? _quoteExpiryTimer;
+  bool _quoteExpired = false;
   bool _loadingQuote = false;
   bool _confirming = false;
   String? _error;
@@ -94,10 +95,13 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
       setState(() {
         _selectedCandidate = candidate;
         _quote = quote;
+        _quoteExpired = false;
       });
       if (untilExpiry > Duration.zero) {
         _quoteExpiryTimer = Timer(untilExpiry, () {
-          if (mounted && _quote?.quoteId == quote.quoteId) setState(() {});
+          if (mounted && _quote?.quoteId == quote.quoteId) {
+            setState(() => _quoteExpired = true);
+          }
         });
       }
     } catch (_) {
@@ -119,7 +123,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   Future<void> _confirm() async {
     final quote = _quote;
     if (quote == null || _confirming || _loadingQuote) return;
-    if (quote.isExpiredAt(DateTime.now())) {
+    if (_quoteExpired || quote.isExpiredAt(DateTime.now())) {
       setState(() => _error = 'Quote expired. Get a new quote before confirming.');
       return;
     }
@@ -162,12 +166,13 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         isHost: widget.isHost,
         confirming: _confirming,
         refreshing: _loadingQuote,
-        expired: quote.isExpiredAt(DateTime.now()),
+        expired: _quoteExpired || quote.isExpiredAt(DateTime.now()),
         error: _error,
         onBack: () {
           _quoteExpiryTimer?.cancel();
           setState(() {
             _quote = null;
+            _quoteExpired = false;
             _error = null;
           });
         },
