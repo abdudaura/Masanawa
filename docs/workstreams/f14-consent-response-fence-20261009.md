@@ -1,0 +1,11 @@
+# F14 / C01 — consent response state-transition fence (2026-10-09)
+
+**CLAIM — ACTIVE · 2026-10-09T00:42+01:00 · inherited draft PR #468**. Continue the existing F14/C01 branch; do not create a second contact schema, runner, integration PR or migration.
+
+- GitHub scope: https://github.com/Baatiku/masanawa/pull/468, branch `work/c01-private-contact-admission-20261008`, head before claim `fefd2443dfd54ec86f05fb4694762b9141c1b3f7`. Latest inspected `main`: `5e758673ae91082520b21b3153da53791ae2cbf3`. Claim time is after previous branch's last visible update 2026-10-08T19:29Z (>5 minutes).
+- Selected workstream: **F14 / C01 (P0)**. Privacy/consent correctness of recipient response. Preserve earlier owner pagination, revocation/reconnection, requestRevision CAS, U21 and U24 developments.
+- Exclusive implementation paths being claimed: `services/gateway/src/human_contacts/postgres_repository.ts`, `services/gateway/src/human_contacts/postgres_repository.test.ts`, `services/gateway/src/human_contacts/postgres_integration.test.ts`, this exact handoff file. No other path and no shared gateway composer, migration, root/router, Firebase, provider, finance or production system.
+- Confirmed gap in existing SQL: current `respond` allows a declined edge to become accepted and an accepted edge to become declined **with the same request revision**, not just processing a pending invite or idempotent retry. This undermines explicit consent/revocation UX and can reorder paginated contacts on duplicate retries.
+- Intended narrowly-scoped fix: only `pending -> accepted/declined` or exact-result idempotent retry; never cross final states via stale response. Preserve updated_at on exact-result retry. Add SQL contract test and disposable DB regression proving decline cannot be silently accepted, acceptance cannot be rewritten by stale decline, and retries retain timestamp. Keep revoker-only explicit reconnect revision semantics.
+- Recheck exact-path ownership before edits. **Source not yet modified** as of this claim. Claim publication/readback must precede code changes.
+- Evidence pending: code push and GitHub readback; local pnpm/PG/test runners unavailable in current GitHub connector-only environment; no CI/device/provider verification implied. No merge, production deployment, Firebase or money changes.
