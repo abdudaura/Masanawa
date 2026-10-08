@@ -27,6 +27,7 @@ describe("avatar binary HTTP boundary", () => {
       headers: {
         authorization: "Bearer owner",
         "content-type": "image/png",
+        "x-avatar-expected": "v1:",
       },
       payload: validAvatarPng(),
     });
@@ -37,7 +38,8 @@ describe("avatar binary HTTP boundary", () => {
     expect(seen).toBe(true);
     const removed = await app.inject({
       method: "DELETE", url: "/profiles/me/avatar",
-      headers: { authorization: "Bearer owner" },
+      headers: { authorization: "Bearer owner",
+        "x-avatar-expected": "v1:" + Buffer.from("https://images.example/avatar.png").toString("base64url") },
     });
     expect(removed.statusCode).toBe(200);
     expect(removed.json()).toEqual({ avatarUrl: null });
