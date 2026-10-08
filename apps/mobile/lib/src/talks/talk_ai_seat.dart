@@ -138,6 +138,10 @@ class TalkAiSeatRequest {
   final String message;
 
   factory TalkAiSeatRequest.fromJson(Map<String, dynamic> json) {
+    final requestId = json['requestId'];
+    if (requestId is! String || requestId.trim().isEmpty) {
+      throw const FormatException('AI Seat confirmation ID is missing');
+    }
     final status = switch (json['status']) {
       'pending_host' => TalkAiSeatRequestStatus.pendingHost,
       'admitted' => TalkAiSeatRequestStatus.admitted,
@@ -146,7 +150,7 @@ class TalkAiSeatRequest {
       _ => TalkAiSeatRequestStatus.unknown,
     };
     return TalkAiSeatRequest(
-      requestId: json['requestId'] as String? ?? '',
+      requestId: requestId.trim(),
       status: status,
       message: json['message'] as String? ?? '',
     );
