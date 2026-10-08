@@ -1,3 +1,4 @@
+import { observeSessionOpen } from "./agent_session_diagnostics.js";
 import { createHash } from "node:crypto";
 import {
   PlatformError,
@@ -126,23 +127,23 @@ export function createAgentConversationService(input: {
   const service: AgentConversationService = {
     async open(request) {
       const characterId = parseCanonicalId("character", request.characterId);
-      const admission = await input.authorizer.authorize({
+      const admission = await observeSessionOpen("admission", () => input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         characterId,
-      });
+      }));
       if (admission.scope.characterId !== characterId) {
         throw new TypeError("Agent conversation admission Character mismatch");
       }
 
       const characterSessionId = createCanonicalId("character-session");
-      await input.sessions.create({
+      await observeSessionOpen("session-create", () => input.sessions.create({
         authority: admission.authority,
         scope: admission.scope,
         characterSessionId,
         characterVersionId: admission.characterVersionId,
         durationMs: input.sessionDurationMs,
         bindings: admission.bindings,
-      });
+      }));
       await input.twinObserver?.opened({
         tenantId: admission.scope.tenantId,
         userId: admission.scope.userId,
