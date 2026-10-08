@@ -137,6 +137,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/messages', builder: (_, __) =>
           const TwinHomeShell(initialIndex: 1)),
       GoRoute(
+        path: '/messages/new',
+        builder: (_, state) => HumanNewMessageScreen(
+          initialHandle: state.uri.queryParameters['handle'],
+        ),
+      ),
+      GoRoute(
         path: '/messages/:conversationId',
         builder: (_, state) => HumanDmThreadScreen(
           conversationId: state.pathParameters['conversationId']!,
