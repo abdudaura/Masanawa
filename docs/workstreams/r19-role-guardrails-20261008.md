@@ -154,3 +154,42 @@ After final source push, [Foundation CI run 37779827593](https://github.com/Baat
 
 ## Claim extension — R19 streaming pre-dispatch error repair (2026-10-08 13:00 UTC)
 After checking main and live PR timestamps, C01 #468 and central Work #497 have no GitHub-visible activity within the previous five minutes. Their previous `app.ts` additions remain protected; this branch claims **only** the existing `/agent/sessions/:id/turn-stream` error emission hunk in `services/gateway/src/app.ts`, new `services/gateway/src/agent_turn_stream_error.ts` + unit test, and exact `apps/mobile/lib/src/agents/masanawa_transport.dart` streaming error parser and tests. Preserve semantic content of #468 contact and #435 profile composer (both unmerged); Work #497 must reconcile additions by hunk, never blindly overwrite the shared composer. Fresh lease from this claim push. Purpose: propagate only whitelisted **pre-dispatch** stale-session codes as machine-readable NDJSON without leaking raw errors and without auto-replaying partial streams/unknown outcomes. This does not change ledger, auth admissions, public Talk, root navigation or financial retry semantics. Status stays PARTIAL_IMPLEMENTATION while implementing and unverified when tests are unavailable.
+
+
+## R19 streamed-turn pre-dispatch recovery — completed source checkpoint (2026-10-08 UTC)
+
+**Current feature-source status: IMPLEMENTED_UNVERIFIED for this bounded R19 slice, NOT full R19.** At the checkpoint before this paragraph was committed, `main` remained `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`; branch comparison was 33 commits ahead / 0 behind with 18 changed files. The final handoff commit (then any comment/body updates) becomes the branch HEAD; inspect PR #498 HEAD rather than treating this intermediate SHA as final.
+
+**Discovered real source gap (now implemented, not verified):** existing `services/gateway/src/app.ts` sent `{type:"error",code:"turn_failed"}` for all NDJSON streamed text failures. The frontend therefore could not distinguish a definitely pre-inference `agents.session_persona_changed` from an ambiguous failed turn, so the original Flutter text-session recovery was disconnected in the common streaming path. New code repairs this by transferring only three safe pre-dispatch session codes (closed, not-found, persona-changed) and only when no text/audio event has been emitted. Other errors—including scope denial, financial unknown, late model/stream error—remain generic. Streaming errors contain no raw exception text.
+
+**Exact incremental paths since prior handoff:**
+- `services/gateway/src/agent_turn_stream_error.ts` (new): allowlisted `PlatformError` pre-dispatch classification with output fence.
+- `services/gateway/src/agent_turn_stream_error.test.ts` (new): typed session errors vs output/unknown/financial/scope branches.
+- `services/gateway/src/agent_turn_stream_http.test.ts` (new): Fastify NDJSON route tests for stale preflight, prior delta and ambiguous errors; **unexecuted**, actual hijacked reply behavior must be verified.
+- `services/gateway/src/app.ts`: **narrow STREAM ROUTE HUNK ONLY**; mark delta/audio output before writing; emit safe code. Because C01 #468 and R18 #435 also add unrelated shared composer code, cherry-pick/semantic integration with both is mandatory. Full-file overwrite prohibited; no other part of the Gateway composer changed.
+- `apps/mobile/lib/src/agents/agent_session_recovery.dart`: strict classification; removed dangerous bare HTTP 404 retry (could be deleted/unauthorized persona instead of expired session). New safe typed NDJSON error conversion, generic outcomes preserve original request instead of blind resend.
+- `apps/mobile/lib/src/agents/masanawa_transport.dart`: tracks *any* received audio or text before considering typed automatic reopen; typed NDJSON codes are converted to pre-dispatch ApiException, unknown errors remain "outcome unknown." Existing request ID and authorization/cancel transport intact.
+- `apps/mobile/test/agent_session_recovery_test.dart`: 404 fail-closed, streamed before/after output, unknown codes and sanitized messages.
+- `services/gateway/src/production_persona_role.test.ts`: corrected an incorrect case-sensitive prompt assertion before executable checks.
+
+**Recovery end-to-end source path:** current tenant auth → typed character/session/version validation in `agent_conversation.ts` before `mobileShell.claimTurn` or `runs.create` → `app.ts` streams only an allowlisted pre-dispatch denial → Flutter NDJSON decoder creates exact machine code only before delta/audio → `ai_chat_state.dart` invalidates cached binding and reopens the currently authenticated profile → resends original text/voice/multi-file with same client request ID → existing canonical mobile Shell persistence/readback. For any partial stream, unknown conflict, pending turn, financial uncertainty, or ambiguous 404, no automatic resend occurs; explicit user recovery/status reconciliation remains necessary. This code does not itself prove exactly-once behavior across service restarts; test against canonical persistence.
+
+**Required executable checks on current exact PR HEAD (none executed):**
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @masanawa/gateway-service typecheck
+pnpm exec vitest run services/gateway/src/production_persona_role.test.ts services/gateway/src/agent_conversation.test.ts services/gateway/src/agent_turn_stream_error.test.ts services/gateway/src/agent_turn_stream_http.test.ts
+pnpm typecheck && pnpm test:ci
+cd apps/mobile
+flutter pub get
+flutter analyze
+flutter test test/ai_persona_status_label_test.dart test/agent_session_recovery_test.dart
+flutter test
+flutter build apk --release
+```
+
+**Specific live checks required:** signed-in A and B with distinct tenant, current/stale persona version, Postgres-backed session/open/read/claim, stream first response 200 with typed NDJSON `agents.session_persona_changed`, client reopen and exactly one persisted send/record; verify late error after text/audio does NOT retry; network disconnect after provider or wallet side effect does NOT replay. Verify malicious wrong session/user cannot use stale recovery as unauthorized member, accounts switching mid-reopen fence in `ai_chat_state.dart`, and cached outbox/request IDs through Android process death. Run Flutter Android/Gemini and actual service/provider qualifications. No local checkout or runner exists in this window; network cannot resolve private GitHub from container and GitHub Actions #457 steps still blocked. **Tests NOT EXECUTED; no false PASS.**
+
+**Reconciliation for Work #497:** #498 now touches `app.ts`; C01 #468 and R18 #435 compose there. Preserve their router/service registrations AND this one NDJSON error hunk. Do not ship only C01 or only this change; do not infer full release readiness from 200-stream status. Centered Assistant C07 #480 and five-tab C08 #493 must preserve this status/AI identity for their own distinct workspace. **R19 overall stays PARTIAL_IMPLEMENTATION:** all 17-role real model/audio/language QA, consented memory and staging/deployment remain open.
+
+**Release gates:** bounded source written YES, LOCAL_TESTED NO, CI_EXECUTED NO, authenticated Postgres E2E UNVERIFIED, app source wired YES but Android integration UNVERIFIED, provider/model QA NO, DEPLOYED NO, MERGED NO. Draft #498 remains unmerged.
