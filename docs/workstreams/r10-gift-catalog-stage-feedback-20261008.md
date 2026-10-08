@@ -11,12 +11,13 @@ Status: CLAIMED — implementation ongoing. Verification: NOT RUN. Deployment: N
 - `services/gateway/src/talk_gifts/model.ts`
 - `services/gateway/src/talk_gifts/service.ts`
 - `services/gateway/src/talk_gift_routes.ts`
-- `services/gateway/src/talk_gifts/service.test.ts` (existing only when applicable)
+- `services/gateway/src/talk_gift_routes.test.ts` (focused catalog and settlement tests)
 - `apps/mobile/lib/src/talks/talk_gift.dart`
 - `apps/mobile/lib/src/talks/talk_gift_http_transport.dart`
 - `apps/mobile/lib/src/screens/talks/talk_gift_sheet.dart`
 - `apps/mobile/lib/src/screens/talks/talk_screen.dart` (gift-only code)
 - `apps/mobile/lib/src/screens/talks/talk_gift_stage_overlay.dart` (new)
+- `apps/mobile/test/talk_screen_test.dart` (gift test fake and focused gift assertions)
 - `apps/mobile/test/talk_gift_http_transport_test.dart`
 - `apps/mobile/test/talk_gift_sheet_test.dart` (new)
 - `apps/mobile/test/talk_gift_stage_overlay_test.dart` (new)
