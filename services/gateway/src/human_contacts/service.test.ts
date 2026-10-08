@@ -127,4 +127,48 @@ describe("C01 authenticated human-contact consent", () => {
     await expect(svc().updatePreferences({ authorizationHeader: "Bearer okay", policy: "unlimited" as never })).rejects.toBeInstanceOf(HumanContactError);
     await expect(svc().list({ authorizationHeader: "Bearer okay", limit: 50000 })).rejects.toMatchObject({ statusCode: 400 });
   });
+
+  it("paginates only for the fresh session owner; rejects forged or stale account cursors", async () => {
+    const { svc, repo } = harness();
+    const timestamp = "2026-10-08T11:00:00.123456Z";
+    const seen: unknown[] = [];
+    Object.assign(repo, {
+      async listPage({ tenantId, userId, limit, after }: {
+        tenantId: string; userId: string; limit: number;
+        after: { updatedAt: string; userId: string } | null;
+      }) {
+        seen.push({ tenantId, userId, limit, after });
+        return {
+          contacts: [], next: after === null
+            ? { updatedAt: timestamp, userId: "user_bo" } : null,
+        };
+      },
+    });
+    const first = await svc().page({ authorizationHeader: "Bearer okay", limit: 2 });
+    expect(first.contacts).toEqual([]);
+    expect(first.nextCursor).toMatch(/^[A-Za-z0-9_-]+$/);
+    const second = await svc().page({
+      authorizationHeader: "Bearer okay", limit: 2, cursor: first.nextCursor!,
+    });
+    expect(second.nextCursor).toBeNull();
+    expect(seen).toEqual([
+      { tenantId: "tenant_1", userId: "user_al", limit: 2, after: null },
+      { tenantId: "tenant_1", userId: "user_al", limit: 2,
+        after: { updatedAt: timestamp, userId: "user_bo" } },
+    ]);
+    await expect(svc("user_bo").page({
+      authorizationHeader: "Bearer okay", cursor: first.nextCursor!,
+    })).rejects.toMatchObject({ statusCode: 400, code: "messages.invalid_page_cursor" });
+    await expect(svc("user_al", "another_tenant").page({
+      authorizationHeader: "Bearer okay", cursor: first.nextCursor!,
+    })).rejects.toMatchObject({ statusCode: 400 });
+    for (const cursor of ["!", "AAAA", "x".repeat(1025),
+      Buffer.from(JSON.stringify(["tenant_1", "user_al", "2026-10-08T11:00:00.123Z", "user_bo"])).toString("base64url"),
+      Buffer.from(JSON.stringify(["tenant_1", "user_al", timestamp, ""])).toString("base64url")]) {
+      await expect(svc().page({ authorizationHeader: "Bearer okay", cursor }))
+        .rejects.toMatchObject({ statusCode: 400 });
+    }
+    await expect(svc().page({ authorizationHeader: undefined })).rejects.toMatchObject({ statusCode: 401 });
+    await expect(svc().page({ authorizationHeader: "Bearer okay", limit: 101 })).rejects.toMatchObject({ statusCode: 400 });
+  });
 });
