@@ -7,6 +7,7 @@ import '../screens/activity/activity_screen.dart';
 import '../screens/billing/billing_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
 import '../messages/human_dm_screen.dart';
+import '../messages/human_new_message_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
