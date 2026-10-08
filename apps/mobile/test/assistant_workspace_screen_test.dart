@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
@@ -37,7 +38,7 @@ class AgentsForWidget implements AgentTransport {
     required String text,
     String? requestId,
     void Function(String)? onTextDelta,
-    Future<void> Function(dynamic chunk)? onAudioPcmChunk,
+    Future<void> Function(Uint8List chunk)? onAudioPcmChunk,
   }) async {
     sent.add(text);
     return const AgentTurnResult(text: 'Server replied');
