@@ -31,3 +31,9 @@
 - **Two active C05 drafts:** [#474](https://github.com/Baatiku/masanawa/pull/474) and [#476](https://github.com/Baatiku/masanawa/pull/476); both touch `apps/mobile/pubspec.yaml` and independent cache/outbox models. Require one integrated per-account encryption and crash recovery contract; do not ship duplicate durable message journals.
 - **Other concurrent lane owners:** C03 #473 and C07 #480; C06 custody requires R06/R08 exclusive finance authority; C08 shared shell remains one R17/C08 integration owner. After this live check no unclaimed independent consumer messaging lane can safely be taken without finance/shared-file coordination; leave existing owners' code untouched.
 - The PR HEAD SHA changes with every subsequent claim update. Work should inspect the branch's **live** SHA, not reuse the earlier commit as the final head.
+
+## Reclaimed ownership checkpoint (2026-10-08T11:39:24.041Z)
+
+- Same original C04 PR #478 and branch reused to avoid duplicate implementation; prior lease inactive >5 minutes when inspected. Reclaim owner: this ChatGPT implementation window. Current base main is `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`; existing branch head before reclaim: `0d84328cc1fb7e29ef6e625a0272587a430d8502`. Preserve all original C04 files and C01/C02/C05 parallel branches.
+- Scoped new work: fix C04-owned voice routes/storage replay, private-media runtime composition and tests, prevent media/provisioning leaks, extend exact handoff. No changes to shared Flutter router, Gateway app.ts/main.ts, C02 0017, R18, C03/C05, or financial authority until shared owner coordination.
+- Evidence status remains PARTIAL_IMPLEMENTATION / UNVERIFIED; re-evaluate after source changes, do not report E2E completion merely from pushed code. The PR stays draft.
