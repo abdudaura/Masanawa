@@ -6,6 +6,19 @@ export function registerTalkGiftRoutes(
   app: FastifyInstance,
   gifts: TalkGiftService,
 ): void {
+  app.get(
+    "/talks/:talkId/gifts/catalog",
+    {
+      schema: {
+        params: Type.Object({ talkId: Type.String({ minLength: 1, maxLength: 160 }) }, { additionalProperties: false }),
+      },
+    },
+    async (request) => {
+      const params = request.params as { talkId: string };
+      return gifts.catalog({ authorizationHeader: request.headers.authorization, talkId: params.talkId });
+    },
+  );
+
   app.post(
     "/talks/:talkId/gifts",
     {
@@ -17,6 +30,7 @@ export function registerTalkGiftRoutes(
         body: Type.Object(
           {
             requestId: Type.String({ minLength: 1, maxLength: 256 }),
+            catalogItemId: Type.Optional(Type.String({ minLength: 1, maxLength: 48 })),
             amountCredits: Type.Integer({
               minimum: 1,
               maximum: 1_000_000_000_000,
@@ -31,12 +45,14 @@ export function registerTalkGiftRoutes(
       const body = request.body as {
         requestId: string;
         amountCredits: number;
+        catalogItemId?: string;
       };
       return gifts.gift({
         authorizationHeader: request.headers.authorization,
         talkId: params.talkId,
         requestId: body.requestId,
         amountCredits: body.amountCredits,
+        catalogItemId: body.catalogItemId,
       });
     },
   );

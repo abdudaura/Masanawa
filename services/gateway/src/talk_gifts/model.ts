@@ -1,3 +1,28 @@
+export type TalkGiftVisual = "applause" | "heart" | "flower" | "spark" | "crown" | "celebration";
+
+export interface TalkGiftCatalogItem {
+  readonly id: string;
+  readonly name: string;
+  readonly visual: TalkGiftVisual;
+  readonly amountCredits: number;
+  readonly available: boolean;
+}
+
+/** Qualified, server-owned options for the exact tenant and giftable Talk.
+ * A failed source must fail closed; do not substitute made-up client prices. */
+export interface TalkGiftCatalogSource {
+  load(input: Readonly<{
+    tenantId: string;
+    talkId: string;
+  }>): Promise<readonly TalkGiftCatalogItem[]>;
+}
+
+export interface TalkGiftCatalog {
+  readonly talkId: string;
+  readonly currency: "Credits";
+  readonly items: readonly TalkGiftCatalogItem[];
+}
+
 export interface TalkGiftTarget {
   readonly talkId: string;
   readonly talkTitle: string;
@@ -12,6 +37,7 @@ export interface TalkGiftReceipt {
   readonly recipientName: string;
   readonly amountCredits: number;
   readonly status: "completed";
+  readonly catalogItemId?: string;
   readonly completedAt: string;
 }
 
