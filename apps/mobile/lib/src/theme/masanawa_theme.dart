@@ -292,6 +292,24 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
         borderSide: BorderSide(color: masanawa.brand, width: 1.6),
       ),
     ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected)
+              ? masanawa.brand
+              : masanawa.surfaceCard),
+      checkColor: WidgetStatePropertyAll(masanawa.textPrimary),
+      side: BorderSide(color: masanawa.textMuted, width: 1.5),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected)
+              ? masanawa.textPrimary
+              : masanawa.surfaceCard),
+      trackColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected)
+              ? masanawa.brand
+              : masanawa.surfaceMuted),
+    ),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: masanawa.brand,
       selectionColor: masanawa.brand.withValues(alpha: 0.22),
