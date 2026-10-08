@@ -118,8 +118,8 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     required this.transport,
     required this.player,
     DateTime Function()? now,
-    bool Function()? canAccess,
-  }) : _canAccess = canAccess ?? _allowForIsolatedTests,
+    required bool Function() canAccess,
+  }) : _canAccess = canAccess,
        _now = now ?? DateTime.now {
     _subscriptions.add(player.positions.listen(_positionChanged));
     _subscriptions.add(player.durations.listen(_durationChanged));
@@ -132,8 +132,6 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   final TalkReplayAudioPlayer player;
   final DateTime Function() _now;
   final bool Function() _canAccess;
-
-  static bool _allowForIsolatedTests() => true;
 
   bool _authorized() {
     try {
