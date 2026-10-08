@@ -119,6 +119,14 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         sessionId: session.sessionId,
       );
       if (_closed) return;
+      final endpoint = Uri.tryParse(credentials.serverUrl);
+      if (credentials.participantToken.trim().isEmpty ||
+          endpoint == null ||
+          (endpoint.scheme != 'wss' && endpoint.scheme != 'ws') ||
+          endpoint.host.isEmpty ||
+          !credentials.expiresAt.isAfter(DateTime.now())) {
+        throw const FormatException('Talk live media credentials are invalid or expired');
+      }
 
       final mayPublish =
           session.role != TalkLiveRole.listener &&
