@@ -40,6 +40,28 @@ export function createPostgresHumanDmRealtimeRepository(
       // A revoked/blocked/deleted peer cannot receive another message event;
       // "access_changed" remains visible to the existing conversation member
       // precisely so their private local cache can be invalidated.
+      // C03 0020 stores each member's durable floor and latest committed
+      // event. A pruned or forged far-future cursor must cause an entire C02
+      // inbox/history snapshot, never an empty 200 that drops new messages.
+      // Only the authenticated tenant/member can read this metadata.
+      const checkpoint = await pool.query<{
+        latest_event_id: string | number;
+        pruned_through_event_id: string | number;
+      }>(`
+        SELECT s.latest_event_id,s.pruned_through_event_id
+        FROM talks.human_dm_event_checkpoints s
+        JOIN identity.users me ON me.tenant_id=s.tenant_id
+          AND me.user_id=s.recipient_user_id AND me.state='active'
+        WHERE s.tenant_id=$1 AND s.recipient_user_id=$2
+      `, [tenantId,userId]);
+      const tip = String(checkpoint.rows[0]?.latest_event_id ?? "0");
+      const floor = String(checkpoint.rows[0]?.pruned_through_event_id ?? "0");
+      if (BigInt(after) < BigInt(floor) || BigInt(after) > BigInt(tip)) {
+        return Object.freeze({
+          events:Object.freeze([]),nextCursor:tip,
+          hasMore:false,resetRequired:true,
+        });
+      }
       const result = await pool.query<Row>(`
         SELECT e.event_id,e.conversation_id,e.kind,e.actor_user_id,
           e.message_id,e.message_sequence
