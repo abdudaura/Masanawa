@@ -299,16 +299,28 @@ export function createPostgresMobilePushRepository(pool: Pool): MobilePushReposi
       ) {
         throw new TypeError("Invalid push registration");
       }
-      const result = await pool.query(
-        `INSERT INTO agents.mobile_push_registrations(
-          tenant_id,user_id,installation_id,platform,token
-        ) VALUES($1,$2,$3,$4,$5)
-        ON CONFLICT (tenant_id,user_id,installation_id)
-        DO UPDATE SET platform=EXCLUDED.platform, token=EXCLUDED.token,
-                      updated_at=clock_timestamp()
-        RETURNING *`,
-        [input.tenantId,input.userId,input.installationId,input.platform,input.token],
-      );
+      const result = await withTransaction(pool, async (client) => {
+        // A revocation may race mobile token refresh. The same User row lock
+        // forces registration either before deletion (then removed) or denied.
+        const user = await client.query<{ state: string }>(
+          `SELECT state FROM identity.users
+            WHERE tenant_id=$1 AND user_id=$2 FOR SHARE`,
+          [input.tenantId,input.userId],
+        );
+        if (user.rows[0]?.state !== "active") {
+          throw new Error("push.account_inactive");
+        }
+        return client.query(
+          `INSERT INTO agents.mobile_push_registrations(
+             tenant_id,user_id,installation_id,platform,token
+           ) VALUES($1,$2,$3,$4,$5)
+           ON CONFLICT (tenant_id,user_id,installation_id)
+           DO UPDATE SET platform=EXCLUDED.platform,token=EXCLUDED.token,
+                         updated_at=clock_timestamp()
+           RETURNING *`,
+          [input.tenantId,input.userId,input.installationId,input.platform,input.token],
+        );
+      });
       const row = result.rows[0]!;
       return Object.freeze({
         tenantId: parseCanonicalId("tenant", row.tenant_id),
