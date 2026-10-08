@@ -22,14 +22,15 @@ describe("C01 SQL contact admission", () => {
   it("requests exactly once with pair uniqueness and without reset after decline", async () => {
     let sql = "";
     const pool: HumanContactSqlPool = {
-      async query(query) { sql = query; return { rows: [{ status: "pending", inserted: false }] as never, rowCount: 1 }; },
+      async query(query) { sql = query; return { rows: [{ status: "pending", requested_by: "user_bo" }] as never, rowCount: 1 }; },
     };
     const value = await createPostgresHumanContactRepository(pool).request({ tenantId: "t", requesterId: "user_al", handle: "bob" });
     expect(value).toBe("existing");
-    expect(sql).toContain("ON CONFLICT (tenant_id,first_user_id,second_user_id) DO NOTHING");
+    expect(sql).toContain("ON CONFLICT (tenant_id,first_user_id,second_user_id)");
+    expect(sql).toContain("DO UPDATE SET status=talks.human_dm_contact_requests.status");
     expect(sql).toContain("LEAST($2,user_id)");
     expect(sql).toContain("admission_policy");
-    expect(sql).toContain("NOT EXISTS (SELECT 1 FROM created)");
+    expect(sql).toContain("RETURNING status, requested_by");
     expect(sql).toContain("sp.blocked = true");
   });
   it("accept/decline only pending request from the other person and fail closed on block", async () => {
