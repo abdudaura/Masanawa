@@ -100,6 +100,7 @@ describe("C03 human DM realtime",()=>{
     expect(params).toEqual(["tenant_a","user_al","11",51]);
     expect(sql).toContain("me.state='active'");
     expect(sql).toContain("sp.blocked=true");
+    expect(sql).toContain("e.recipient_user_id=$2");
     expect(sql).toContain("revoked.status='declined'");
     expect(sql).toContain("e.kind='access_changed'");
     expect(sql).not.toContain("m.body");
