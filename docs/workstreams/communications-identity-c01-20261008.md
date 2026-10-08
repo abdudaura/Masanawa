@@ -65,3 +65,10 @@ MASANAWA_C01_ENABLE_DB_TESTS=yes MASANAWA_C01_TEST_DATABASE_URL='postgresql://te
 ```
 
 Use real local test-only credentials in the runner, never copy a production database URL into this command and never commit a secret. The integration test **has not run**; the other six C01 backend/Flutter test files also remain unexecuted. Work must record any migration extension/schema/transaction failures and fix them on the draft branch before release.
+
+
+### Additional review risks, not release claims
+
+- Exact-handle lookup now maps **only** the Gateway's structured `messages.contact_unavailable` 404 to a private not-found; a generic 404 from an undeployed `/messages/contacts` route propagates as a transport error. Flutter regression coverage added.
+- **Shared auth interceptor caution:** `ApiClient` owns 401 refresh/retry for every Dio request. Flutter C01 suppresses stale A→B results and checks current owner before actions, but a cross-account sign-in *during* 401 replay needs a dedicated shared-client identity-fencing test and, if necessary, coordinated fix under canonical auth ownership. Do not equate UI stale-response suppression with proof that no request can be sent under a changed principal. Run the A→B mid-401 request test before deployment.
+- The `HumanContactsScreen` is a real, **isolated** C01 widget—not currently reachable from an approved route. C08 integration and C02 delivery are hard prerequisites; do not describe its presence in source as an end-to-end shipped contact journey.
