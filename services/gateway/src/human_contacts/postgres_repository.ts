@@ -3,7 +3,7 @@ import type { HumanContact, HumanContactPolicy, HumanContactRepository, HumanCon
 interface SqlResult<Row> { readonly rows: Row[]; readonly rowCount: number | null }
 export interface HumanContactSqlPool {
   query<Row extends Record<string, unknown> = Record<string, unknown>>(
-    text: string, values?: readonly unknown[],
+    text: string, values?: unknown[],
   ): Promise<SqlResult<Row>>;
 }
 
@@ -115,39 +115,36 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
     },
 
     async request({ tenantId, requesterId, handle }) {
-      // INSERT only when the currently active subject admits a request. A declined
-      // request stays declined; replay cannot reset it or spam the recipient.
-      const result = await pool.query<{ status: "pending" | "accepted" | "declined"; inserted: boolean } & Record<string, unknown>>(`
+      // A single upsert is atomic on the unique user pair even when two devices
+      // request concurrently. A replay must never reset a decline/acceptance or
+      // generate an additional contact request.
+      const result = await pool.query<{
+        status: "pending" | "accepted" | "declined";
+        requested_by: string;
+      } & Record<string, unknown>>(`
         WITH permitted AS MATERIALIZED (
           SELECT p.user_id, COALESCE(pref.admission_policy,'requests') AS admission_policy
           ${visibleTarget}
             AND COALESCE(pref.admission_policy,'requests') <> 'nobody'
           LIMIT 1
         ),
-        created AS (
+        upserted AS (
           INSERT INTO talks.human_dm_contact_requests
              (tenant_id,first_user_id,second_user_id,requested_by,status)
           SELECT $1, LEAST($2,user_id), GREATEST($2,user_id), $2,
                  CASE WHEN admission_policy='anyone' THEN 'accepted' ELSE 'pending' END
             FROM permitted
-          ON CONFLICT (tenant_id,first_user_id,second_user_id) DO NOTHING
-          RETURNING status
+          ON CONFLICT (tenant_id,first_user_id,second_user_id)
+          DO UPDATE SET status=talks.human_dm_contact_requests.status
+          RETURNING status, requested_by
         )
-        SELECT c.status, true AS inserted FROM created c
-        UNION ALL
-        SELECT e.status, false AS inserted
-          FROM talks.human_dm_contact_requests e
-          JOIN permitted p
-            ON e.first_user_id=LEAST($2,p.user_id)
-           AND e.second_user_id=GREATEST($2,p.user_id)
-         WHERE e.tenant_id=$1
-           AND NOT EXISTS (SELECT 1 FROM created)
-        LIMIT 1
+        SELECT status, requested_by FROM upserted
       `, [tenantId, requesterId, handle]);
       const row = result.rows[0];
       if (!row) return "unavailable";
       if (row.status === "accepted") return "accepted";
-      return row.inserted && row.status === "pending" ? "pending" : "existing";
+      if (row.status === "pending" && row.requested_by === requesterId) return "pending";
+      return "existing";
     },
 
     async respond({ tenantId, recipientId, requesterId, accept }) {
