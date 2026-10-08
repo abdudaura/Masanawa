@@ -38,3 +38,8 @@
 - R18 owns editable avatar/profile persistence; R14 owns real notification unread/push qualification. Current header entry points do not complete those tasks.
 - Confirm app flow on Android 320px and normal width, Talk audio stop/resume, Profile/Activity navigation, Agent/Twin discovery, billing eligibility, recovery across restart, and provider caps.
 - Before merge: run `cd apps/mobile && flutter analyze`, `flutter test test/twin_home_shell_test.dart test/wallet_service_shortcuts_test.dart test/app_shell_route_compatibility_test.dart`, full mobile suite, and build/handset acceptance. Repair failures and refresh ownership if this 5-minute lease becomes stale.
+
+## 2026-10-08 continuation — reclaimed R17 review
+- Latest main remains `265f2c5f6db81d076f57ca32dd47db3ff7fb0ad6`; open PRs #406–#414 checked. R17 PR #411 last repository work predates this continuation by over five minutes; retaining its exact branch and code rather than restarting.
+- Existing bounded R17 owned paths remain unchanged; review targets navigation to Activity/You, public Twin chat's agent-detail readiness, and high-value tests. No R01/R11/R03 or financial authority code edits.
+- Fresh workstream activity: this checkpoint. Implementation from previous pass is PARTIAL; all actual Flutter tests/build and device qualification remain unverified.
