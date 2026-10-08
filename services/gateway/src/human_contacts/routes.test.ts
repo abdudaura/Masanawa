@@ -1,0 +1,85 @@
+import { describe, expect, it } from "vitest";
+import Fastify from "fastify";
+import { registerHumanContactRoutes } from "./routes.js";
+import { createHumanContactService } from "./service.js";
+import type { HumanContactRepository } from "./model.js";
+
+function harness() {
+  const pool: HumanContactRepository = {
+    async lookup({ handle }) {
+      if (handle !== "bob") return null;
+      return { userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null, canMessage: false, status: "none" };
+    },
+    async getOwnPolicy() { return "requests"; },
+    async setOwnPolicy({ policy }) { return policy; },
+    async request({ handle }) { return handle === "bob" ? "pending" : "unavailable"; },
+    async respond({ requesterId }) { return requesterId === "user_al"; },
+    async list() { return []; },
+  };
+  const svc = createHumanContactService({
+    repository: pool,
+    authorizer: {
+      async authorize({ authorizationHeader }) {
+        if (authorizationHeader !== "Bearer valid") {
+          throw Object.assign(new Error("UNAUTHORIZED"), { statusCode: 401 });
+        }
+        return { tenantId: "tenant_1", userId: "user_al" } as never;
+      },
+    },
+  });
+  const app = Fastify();
+  registerHumanContactRoutes(app, svc);
+  return app;
+}
+
+describe("C01 contact HTTP surface", () => {
+  it("never discovers a private contact without authentication", async () => {
+    const app = harness();
+    const response = await app.inject({ method: "GET", url: "/messages/contacts/lookup/bob" });
+    expect(response.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it("normalizes an exact handle and exposes action eligibility rather than private policy", async () => {
+    const app = harness();
+    const response = await app.inject({
+      method: "GET", url: "/messages/contacts/lookup/%40BoB", headers: { authorization: "Bearer valid" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null,
+      canMessage: false, status: "none",
+    });
+    expect(JSON.stringify(response.json())).not.toContain("admission_policy");
+    await app.close();
+  });
+
+  it("accepts policy updates only with exact allowlisted body", async () => {
+    const app = harness();
+    const opts = { method: "PUT" as const, url: "/messages/contacts/preferences", headers: { authorization: "Bearer valid" } };
+    const ok = await app.inject({ ...opts, payload: { policy: "nobody" } });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toEqual({ policy: "nobody" });
+    for (const invalid of [{ policy: "all_users" }, { policy: "anyone", userId: "user_bo" }, {}]) {
+      const denied = await app.inject({ ...opts, payload: invalid });
+      expect(denied.statusCode).toBe(400);
+    }
+    await app.close();
+  });
+
+  it("requires explicit request before contact, with bounded list and incoming response", async () => {
+    const app = harness();
+    const headers = { authorization: "Bearer valid" };
+    const sent = await app.inject({ method: "POST", url: "/messages/contacts/requests", headers, payload: { handle: "bob" } });
+    expect(sent.statusCode).toBe(200);
+    expect(sent.json()).toEqual({ status: "pending" });
+    const returned = await app.inject({ method: "POST", url: "/messages/contacts/requests/user_al/response", headers, payload: { accept: true } });
+    expect(returned.statusCode).toBe(200);
+    expect(returned.json()).toEqual({ status: "accepted" });
+    const invalid = await app.inject({ method: "GET", url: "/messages/contacts?limit=2000", headers });
+    expect(invalid.statusCode).toBe(400);
+    const list = await app.inject({ method: "GET", url: "/messages/contacts?limit=30", headers });
+    expect(list.json()).toEqual({ contacts: [] });
+    await app.close();
+  });
+});
