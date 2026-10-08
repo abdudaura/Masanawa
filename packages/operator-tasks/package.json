@@ -8,6 +8,11 @@
       "types": "./src/index.ts",
       "production": "./dist/index.js",
       "default": "./src/index.ts"
+    },
+    "./postgres": {
+      "types": "./src/postgres.ts",
+      "production": "./dist/postgres.js",
+      "default": "./src/postgres.ts"
     }
   },
   "scripts": {
@@ -15,7 +20,11 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@masanawa/contracts": "workspace:*"
+    "@masanawa/contracts": "workspace:*",
+    "pg": "8.23.0"
   },
-  "devDependencies": { "vitest": "5.0.3" }
+  "devDependencies": {
+    "vitest": "5.0.3",
+    "@types/pg": "8.23.1"
+  }
 }
