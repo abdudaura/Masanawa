@@ -143,8 +143,8 @@ void main() {
     ));
     await tester.pumpAndSettle();
     final context = tester.element(find.byType(HumanNewMessageScreen));
-    ProviderScope.containerOf(context).read(sessionProvider.notifier)
-        .simulateLogout();
+    (ProviderScope.containerOf(context).read(sessionProvider.notifier)
+        as _SessionForWidgetTest).simulateLogout();
     await tester.pumpAndSettle();
     expect(find.text('Sign in to find private contacts.'), findsOneWidget);
     expect(find.text('Amina'), findsNothing);
