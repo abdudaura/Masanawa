@@ -9,7 +9,7 @@ export type TalkStageEvent =
   | Readonly<StageEventBase & { kind: "question"; action: "approved" | "answered"; body: string }>
   | Readonly<StageEventBase & { kind: "seat"; action: "joined" | "left"; role: "human" | "expert" | "twin" }>
   | Readonly<StageEventBase & { kind: "gift"; action: "settled"; giftName: string }>
-  | Readonly<StageEventBase & { kind: "poll"; action: "opened" | "closed"; question: string }>
+  | Readonly<StageEventBase & { kind: "poll"; action: "opened" | "closed"; question: string; tallies?: readonly Readonly<{ label: string; votes: number }>[] }>
   | Readonly<StageEventBase & { kind: "comment"; body: string }>;
 
 export interface StageEventBase {
@@ -103,9 +103,20 @@ function describe(event: TalkStageEvent): string | null {
       // Only settled gifts; no amounts, balances, payouts or purchase intents.
       return event.action === "settled" && clean(event.giftName, 64)
         ? "Settled public gift: " + clean(event.giftName, 64) : null;
-    case "poll":
-      return ["opened", "closed"].includes(event.action) && clean(event.question, 180)
-        ? "Public poll " + event.action + ": " + clean(event.question, 180) : null;
+    case "poll": {
+      const question = clean(event.question, 160);
+      if (!["opened", "closed"].includes(event.action) || !question) return null;
+      // Ballots and voter identifiers remain private. Only aggregate option
+      // totals from the authorized projection may enter the AI context.
+      const tallies = (event.tallies ?? [])
+        .slice(0, 4)
+        .filter((item) => clean(item.label, 40) &&
+          Number.isSafeInteger(item.votes) && item.votes >= 0)
+        .map((item) => clean(item.label, 40) + ": " + Math.min(item.votes, 1000000))
+        .join("; ");
+      return "Public poll " + event.action + ": " + question +
+        (tallies ? " | Votes: " + tallies : "");
+    }
     case "comment": {
       const body = clean(event.body, 220);
       return event.visibility === "moderated_public" && body
