@@ -1,6 +1,6 @@
 # C06 internal crypto custody-book transfer — ChatGPT Work verification handoff
 
-**Truthful status: IMPLEMENTED IN SOURCE, END-TO-END NOT VERIFIED. NOT DONE.**
+**Truthful status: PARTIAL_IMPLEMENTATION / UNVERIFIED / NOT DONE.** Source implementation covers ledger/Gateway/Wallet, but integrated C01 reciprocal consent, J09 provider policy approval, C07 Assistant/DM cross-entry, real end-to-end checks and C08 release shell remain separate owner dependencies.
 **PR:** https://github.com/Baatiku/masanawa/pull/490 (**DRAFT, UNMERGED**)
 **Owner branch:** `work/c06-internal-crypto-book-transfer-20261008`.
 **Base main SHA:** `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`.
