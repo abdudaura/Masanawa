@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,6 +45,8 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   late final TabController _tabs;
   final _search = TextEditingController();
   TalkAiSeatQuote? _quote;
+  TalkAiSeatCandidate? _selectedCandidate;
+  Timer? _quoteExpiryTimer;
   bool _loadingQuote = false;
   bool _confirming = false;
   String? _error;
@@ -58,6 +62,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
 
   @override
   void dispose() {
+    _quoteExpiryTimer?.cancel();
     _tabs.dispose();
     _search.dispose();
     super.dispose();
@@ -77,7 +82,24 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
                 widget.isHost ? TalkAiSeatMode.hostAdd : TalkAiSeatMode.sponsor,
           );
       if (!mounted) return;
-      setState(() => _quote = quote);
+      if (quote.personaId != candidate.personaId ||
+          quote.mode != (widget.isHost
+              ? TalkAiSeatMode.hostAdd
+              : TalkAiSeatMode.sponsor) ||
+          quote.isExpiredAt(DateTime.now())) {
+        throw const FormatException('AI Seat quote is stale or mismatched');
+      }
+      _quoteExpiryTimer?.cancel();
+      final untilExpiry = quote.expiresAt.difference(DateTime.now());
+      setState(() {
+        _selectedCandidate = candidate;
+        _quote = quote;
+      });
+      if (untilExpiry > Duration.zero) {
+        _quoteExpiryTimer = Timer(untilExpiry, () {
+          if (mounted && _quote?.quoteId == quote.quoteId) setState(() {});
+        });
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -88,9 +110,19 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
     }
   }
 
+  Future<void> _refreshQuote() async {
+    final candidate = _selectedCandidate;
+    if (candidate == null || _loadingQuote || _confirming) return;
+    await _select(candidate);
+  }
+
   Future<void> _confirm() async {
     final quote = _quote;
-    if (quote == null || _confirming) return;
+    if (quote == null || _confirming || _loadingQuote) return;
+    if (quote.isExpiredAt(DateTime.now())) {
+      setState(() => _error = 'Quote expired. Get a new quote before confirming.');
+      return;
+    }
     setState(() {
       _confirming = true;
       _error = null;
@@ -101,11 +133,19 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
             quoteId: quote.quoteId,
           );
       if (!mounted) return;
+      if (request.status == TalkAiSeatRequestStatus.expired ||
+          request.status == TalkAiSeatRequestStatus.declined ||
+          request.status == TalkAiSeatRequestStatus.unknown) {
+        setState(() => _error = request.message.isEmpty
+            ? 'This Seat request could not be completed. Check its status.'
+            : request.message);
+        return;
+      }
       Navigator.of(context).pop(request);
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Couldn’t confirm this Seat. No duplicate request was sent.';
+        _error = 'Couldn’t verify this Seat request. Check the Talk or retry this same quote; don’t start a new purchase.';
       });
     } finally {
       if (mounted) setState(() => _confirming = false);
@@ -121,11 +161,17 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         quote: quote,
         isHost: widget.isHost,
         confirming: _confirming,
+        refreshing: _loadingQuote,
+        expired: quote.isExpiredAt(DateTime.now()),
         error: _error,
-        onBack: () => setState(() {
-          _quote = null;
-          _error = null;
-        }),
+        onBack: () {
+          _quoteExpiryTimer?.cancel();
+          setState(() {
+            _quote = null;
+            _error = null;
+          });
+        },
+        onRefresh: _refreshQuote,
         onConfirm: _confirm,
       );
     }
@@ -403,16 +449,22 @@ class _QuoteConfirmation extends StatelessWidget {
     required this.quote,
     required this.isHost,
     required this.confirming,
+    required this.refreshing,
+    required this.expired,
     required this.error,
     required this.onBack,
+    required this.onRefresh,
     required this.onConfirm,
   });
 
   final TalkAiSeatQuote quote;
   final bool isHost;
   final bool confirming;
+  final bool refreshing;
+  final bool expired;
   final String? error;
   final VoidCallback onBack;
+  final VoidCallback onRefresh;
   final VoidCallback onConfirm;
 
   @override
@@ -424,7 +476,7 @@ class _QuoteConfirmation extends StatelessWidget {
         title: Text(isHost ? 'Confirm AI Seat' : 'Confirm sponsorship'),
         leading: IconButton(
           tooltip: 'Back',
-          onPressed: confirming ? null : onBack,
+          onPressed: confirming || refreshing ? null : onBack,
           icon: const Icon(Icons.arrow_back_rounded),
         ),
       ),
