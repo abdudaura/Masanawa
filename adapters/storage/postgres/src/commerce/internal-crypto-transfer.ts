@@ -121,6 +121,15 @@ export function createPostgresInternalCryptoTransferStore(pool: Pool): InternalC
         );
         if (new Set(identities.rows.map(row => row.user_id)).size !== 2)
           throw new Error("crypto.internal.recipient_unavailable");
+        // Quotes must reflect current spendability; the execution transaction
+        // still rechecks after acquiring the shared custody advisory balance lock.
+        const spendable = await client.query<{ sufficient: boolean }>(
+          "SELECT COALESCE(SUM(CASE direction WHEN 'credit' THEN amount ELSE -amount END),0) >= $5::numeric AS sufficient " +
+          "FROM commerce.crypto_all_ledger_entries WHERE tenant_id=$1 AND user_id=$2 AND asset=$3 " +
+          "AND network IS NOT DISTINCT FROM $4",
+          [input.tenantId, input.senderUserId, input.asset, input.network, input.amount],
+        );
+        if (!spendable.rows[0]?.sufficient) throw new Error("crypto.insufficient_balance");
         const quoteId = createCanonicalId("request");
         const posted = await client.query(
           "INSERT INTO commerce.crypto_internal_transfer_quotes " +
