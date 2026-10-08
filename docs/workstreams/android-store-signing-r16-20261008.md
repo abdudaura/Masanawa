@@ -61,3 +61,12 @@
 - `ee50da2a`: reject non-ZIP and signed-but-not-AAB inputs by checking `BundleConfig.pb` and `base/manifest/AndroidManifest.xml` prior to signature inspection. This is an early structural sanity check, **not a replacement for bundletool validation**.
 - `681da8a3`: update disposable signed test artifact to include minimum AAB paths and add arbitrary-signed-JAR rejection. Corrected signing fixture line continuation in `f6ff6a23`.
 - No newly verified CI execution or Android build evidence. Leave PR draft until a real CI runner executes tests and a real release bundle passes structural, signature and device/store gates.
+
+## Executed local Java signing regression — 2026-10-08
+
+- Independently staged the current verifier and fixture harness in a Linux JDK 21 environment with `keytool`, `jarsigner`, `jar`, and `zip` installed; bash syntax checks passed.
+- **Executed result: PASS** — valid signed AAB-shaped fixture accepted, unsigned bundle rejected, malformed/mismatched SHA-256 rejected, tampered signed payload rejected, appended unsigned content rejected, non-AAB signed JAR rejected, debug signer rejected.
+- Additional attack case: `keytool -printcert -jarfile` exposes multiple signer records for a dually signed archive. Commit `8c983503` now requires exactly one signing identity; test commit `21e1f071` signs a fixture with a second independent key and proves rejection.
+- **Executed result after new case: PASS** — output: `Verified: signed bundle matches pinned release certificate SHA-256.` and `PASS: valid release, unsigned, wrong fingerprint, tampered artifact, mixed entries, non-AAB, multiple signers, debug signer`.
+- Scope: local JDK 21 signing harness tests, **not** Gradle compilation, Play signature acceptance, Android handset testing, or full CI. GitHub Actions runner failure remains unresolved.
+- Next: verify Gradle release configuration under installed Flutter/Android SDK, validate actual production AAB using bundletool and pinned upload certificate, then confirm CI runner allocations and merge readiness.
