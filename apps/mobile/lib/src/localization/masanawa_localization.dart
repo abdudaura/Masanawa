@@ -23,15 +23,28 @@ abstract final class MasanawaLocalization {
     GlobalWidgetsLocalizations.delegate,
   ];
 
-  /// Honor the device's languages in preference order; never infer country,
-  /// wallet currency, or the assistant's conversational language from them.
-  /// Unsupported UI languages fall back to English, without preventing users
-  /// from speaking any language supported by the live model.
-  static Locale resolve(Locale? deviceLocale, Iterable<Locale> supported) {
-    if (deviceLocale == null) return const Locale('en');
-    for (final locale in supported) {
-      if (locale.languageCode == deviceLocale.languageCode) return locale;
+  /// Negotiate against every OS language in its declared preference order.
+  /// UI language does not determine country, wallet currency or AI speech.
+  static Locale resolvePreferred(
+    Iterable<Locale>? deviceLocales,
+    Iterable<Locale> supported,
+  ) {
+    final candidates = supported.toList(growable: false);
+    for (final requested in deviceLocales ?? const <Locale>[]) {
+      for (final available in candidates) {
+        if (available.languageCode == requested.languageCode) {
+          return available;
+        }
+      }
     }
-    return const Locale('en');
+    for (final available in candidates) {
+      if (available.languageCode == 'en') return available;
+    }
+    return candidates.first;
   }
+
+  static Locale resolve(Locale? deviceLocale, Iterable<Locale> supported) =>
+      resolvePreferred(
+        deviceLocale == null ? null : [deviceLocale], supported,
+      );
 }
