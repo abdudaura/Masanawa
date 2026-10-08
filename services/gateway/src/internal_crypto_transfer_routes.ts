@@ -42,7 +42,7 @@ export function registerInternalCryptoTransferRoutes(
       try {
         return await service.quote({
           authorizationHeader: req.headers.authorization,
-          ...req.body,
+          ...(req.body as { requestId: string; recipient: string; providerCode: string; amount: string }),
         });
       } catch (error) { return failure(error, reply); }
     });
@@ -52,7 +52,7 @@ export function registerInternalCryptoTransferRoutes(
       try {
         const value = await service.read({
           authorizationHeader: req.headers.authorization,
-          requestId: req.params.requestId,
+          requestId: (req.params as {requestId:string}).requestId,
         });
         if (!value) { reply.code(404); return { error: "crypto.transfer.quote_not_found" }; }
         return value;
@@ -65,7 +65,7 @@ export function registerInternalCryptoTransferRoutes(
         const result = await service.confirm({
           authorizationHeader: req.headers.authorization,
           requestId: req.params.requestId,
-          confirmationToken: req.body.confirmationToken,
+          confirmationToken: (req.body as {confirmationToken:string}).confirmationToken,
         });
         // Fail closed for guessed or invalid tokens even though the durable
         // attempt counter itself is committed on PostgreSQL.
