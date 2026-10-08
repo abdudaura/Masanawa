@@ -125,6 +125,31 @@ describeDb("C06 real PostgreSQL atomic internal crypto transfer acceptance", () 
     )).rejects.toThrow(/immutable/i);
   });
 
+  it("serializes two concurrent attempts to consume one quote", async () => {
+    const store = createPostgresInternalCryptoTransferStore(pool);
+    const quote = await store.quote({
+      tenantId, senderUserId, recipientUserId,
+      quoteRequestId: createCanonicalId("request"),
+      asset, network, amount: "1", policyRevision: "verified-test-policy",
+    });
+    const executions = await Promise.allSettled([
+      store.execute({ tenantId, senderUserId,
+        requestId: createCanonicalId("request"), quoteId: quote.quoteId,
+        policyRevision: "verified-test-policy" }),
+      store.execute({ tenantId, senderUserId,
+        requestId: createCanonicalId("request"), quoteId: quote.quoteId,
+        policyRevision: "verified-test-policy" }),
+    ]);
+    expect(executions.filter(item => item.status === "fulfilled")).toHaveLength(1);
+    expect(executions.filter(item => item.status === "rejected")).toHaveLength(1);
+    const checked = await pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM commerce.crypto_internal_transfers " +
+      "WHERE tenant_id=$1 AND quote_id=$2",
+      [tenantId, quote.quoteId],
+    );
+    expect(checked.rows[0]?.count).toBe("1");
+  });
+
   it("rejects self-transfers, unsupported terms, and insufficient sender funds", async () => {
     const store = createPostgresInternalCryptoTransferStore(pool);
     await expect(store.quote({
