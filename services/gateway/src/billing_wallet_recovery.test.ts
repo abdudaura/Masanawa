@@ -179,3 +179,75 @@ describe("R05 credit-before-bill crash recovery", () => {
     })).rejects.toThrow("Flutterwave webhook signature is invalid");
   });
 });
+
+
+describe("R05 quote-scoped virtual account replay", () => {
+  it("uses the existing persisted provider txRef and account binding reference", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const quoteId = createCanonicalId("quote");
+    const createdAt = new Date(Date.now() - 60_000).toISOString();
+    const expiresAt = new Date(Date.now() + 120_000).toISOString();
+    const original = createBillingQuote({
+      tenantId, userId, quoteId, categoryCode: "AIRTIME",
+      billerCode: "BIL119", itemCode: "AIRTIME", itemName: "Airtime",
+      customerId: "07010102053", serviceAmountKobo: 10000,
+      feeAmountKobo: 0, createdAt, expiresAt,
+    });
+    const quote: BillingQuote = { ...original, state: "confirmed", confirmedAt: createdAt };
+    const persisted: NgnFundingIntent = {
+      tenantId, userId, quoteId,
+      fundingReference: "funding-existing-123",
+      txRef: "wallet-existing-123",
+      amountKobo: 10000,
+      state: "creating",
+      accountNumber: null, bankName: null,
+      providerOrderRef: null, providerReference: null,
+      providerTransactionId: null,
+      expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
+      createdAt, updatedAt: createdAt,
+    };
+    const createFundingIntent = vi.fn(async () => persisted);
+    const createDynamicVirtualAccount = vi.fn(async () => ({
+      txRef: persisted.txRef,
+      amount: "100",
+      accountNumber: "0123456789",
+      bankName: "Test Bank",
+      orderRef: "provider-order-1",
+      providerReference: "provider-1",
+      expiryDate: persisted.expiresAt,
+    }));
+    const bindFundingAccount = vi.fn(async () => ({
+      ...persisted, state: "awaiting" as const,
+      accountNumber: "0123456789", bankName: "Test Bank",
+    }));
+    const service = createBillingWalletService({
+      sessions: { async authorize() { return { tenantId, userId }; } },
+      quotes: { async readQuote() { return quote; } } as unknown as BillingQuoteRepository,
+      wallet: {
+        async readBalance() { return 0; },
+        createFundingIntent,
+        bindFundingAccount,
+      } as unknown as NgnWalletRepository,
+      funding: { createDynamicVirtualAccount } as unknown as FlutterwaveFundingClient,
+      billing: {} as BillingFinancialService,
+      webhookSecretHash: "valid-test-webhook-secret",
+    });
+    const view = await service.confirmAndPurchase({
+      authorizationHeader: "Bearer test",
+      quoteId, quoteRevision: 1,
+    });
+    expect(view.phase).toBe("awaiting-funds");
+    expect(view.funding?.txRef).toBe(persisted.txRef);
+    expect(createFundingIntent).toHaveBeenCalledOnce();
+    expect(createDynamicVirtualAccount).toHaveBeenCalledWith(
+      expect.objectContaining({ txRef: persisted.txRef, amount: "100" }),
+    );
+    expect(bindFundingAccount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fundingReference: persisted.fundingReference,
+        tenantId, userId,
+      }),
+    );
+  });
+});
