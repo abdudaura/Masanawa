@@ -42,3 +42,7 @@ Claim additionally owns these bounded baseline test repairs:
 - `services/gateway/src/main.test.ts`
 
 These repair stale imports, canonical SQL mocks, timestamp fixtures and finalization fixtures; production security guards remain intact. Independent read-only diagnostics also identified genuine worker stop races (coordinate with #448) and request validation/profile persistence failures (not yet claimed). No feature production source or other PR branch is owned or overwritten. PR #455 remains preserved/unverified. Hosted CI still blocked by quota; no merges or DONE claims.
+
+## Verified bounded repairs — 2026-10-08T07:27:19.859Z
+
+Eight claimed test repairs implemented. Targeted checks: replay 2 files/14 tests; social safety/ranking/channels 4 files/23 tests; deletion/startup 2 files/10 tests, all passed. Agents package typecheck passed. Full workspace typecheck in progress. No production security rule was relaxed. Flutter baseline analyze executed: 481 issues; tests/build qualification remains open. No hosted CI execution or merge.
