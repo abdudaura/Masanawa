@@ -116,4 +116,42 @@ void main() {
     expect(directory.current, 'character-a');
     expect(find.text('Gwana'), findsWidgets);
   });
+  testWidgets('shared draft survives persona switch but never leaks to another account',
+      (tester) async {
+    final directory = DirectoryForWidget();
+    final agents = AgentsForWidget();
+    final shell = ShellForWidget();
+    final journal = JournalForWidget();
+    final drafts = DraftsForWidget();
+    drafts.saved['user-a'] = 'My private A draft';
+    drafts.saved['user-b'] = 'An unrelated B draft';
+    Widget surface(String owner) => MaterialApp(
+      home: AssistantWorkspaceScreen(
+        ownerId: owner, directory: directory,
+        agents: agents, shell: shell,
+        journal: journal, drafts: drafts,
+      ),
+    );
+
+    await tester.pumpWidget(surface('user-a'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'My private A draft');
+    await tester.tap(find.byTooltip('Switch assistant'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Switch to Gwana'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'My private A draft');
+
+    await tester.pumpWidget(surface('user-b'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'An unrelated B draft');
+    await tester.pumpWidget(surface('user-a'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'My private A draft');
+  });
+
 }
