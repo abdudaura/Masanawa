@@ -8,7 +8,8 @@ enum AgentPresence {
   listening,
   working,
   onCall,
-  offline;
+  offline,
+  unknown;
 
   static AgentPresence parse(String? value) => switch (value) {
         'listening' => AgentPresence.listening,
@@ -16,9 +17,10 @@ enum AgentPresence {
         'on_call' => AgentPresence.onCall,
         'available' => AgentPresence.available,
         'offline' => AgentPresence.offline,
-        // Missing or unrecognized server presence must never be presented as
-        // positive availability, especially for an unprovisioned AI Expert.
-        _ => AgentPresence.offline,
+        'unknown' => AgentPresence.unknown,
+        // Missing or unrecognized server presence is not proof that a visible
+        // persona is offline or ready to chat. Do not invent availability.
+        _ => AgentPresence.unknown,
       };
 
   String get label => switch (this) {
@@ -27,6 +29,7 @@ enum AgentPresence {
         AgentPresence.working => 'Working',
         AgentPresence.onCall => 'On a call',
         AgentPresence.offline => 'Offline',
+        AgentPresence.unknown => 'Status unverified',
       };
 }
 
@@ -85,6 +88,7 @@ class AgentDirectoryEntry {
           AgentPresence.working => 'working',
           AgentPresence.onCall => 'on_call',
           AgentPresence.offline => 'offline',
+          AgentPresence.unknown => 'unknown',
         },
         if (avatarUrl != null) 'avatarUrl': avatarUrl,
         if (greeting != null) 'greeting': greeting,
