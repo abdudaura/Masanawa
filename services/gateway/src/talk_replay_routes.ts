@@ -26,7 +26,12 @@ export function registerTalkReplayRoutes(app:FastifyInstance,service:TalkReplayS
     return service.view({authorizationHeader:request.headers.authorization,talkId});
   });
 
-  app.get("/talks/:talkId/replay/playback",{schema:{params:TalkParams}},async request=>{
+  app.get("/talks/:talkId/replay/playback",{schema:{params:TalkParams}},async (request,reply)=>{
+    // Per-user signed S3 links must never be reused from a shared HTTP cache
+    // across logout, account switch, replay unpublish or moderation changes.
+    reply.header("Cache-Control","private, no-store, max-age=0");
+    reply.header("Pragma","no-cache");
+    reply.header("Vary","Authorization");
     const {talkId}=request.params as {talkId:string};
     return service.playback({authorizationHeader:request.headers.authorization,talkId});
   });
