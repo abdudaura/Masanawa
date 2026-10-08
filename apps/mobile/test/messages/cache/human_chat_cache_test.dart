@@ -187,6 +187,17 @@ void main() {
     )).single;
     expect(view.deleted, isTrue);
     expect(view.body, isNull);
+    // An older page may arrive after a deletion event; it must not
+    // resurrect the plaintext after an app restart/reconnect.
+    await cache.applyServerPage(
+      tenantId: tenant, userId: owner, conversationId: threadId,
+      messages: [message()], nextSyncSequence: 2,
+    );
+    final retained = (await cache.history(
+      tenantId: tenant, userId: owner, conversationId: threadId,
+    )).single;
+    expect(retained.deleted, isTrue);
+    expect(retained.body, isNull);
     await expectLater(
       cache.applyServerPage(
         tenantId: tenant, userId: owner, conversationId: threadId,
