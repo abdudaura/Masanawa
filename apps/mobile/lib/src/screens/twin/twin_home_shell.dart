@@ -276,12 +276,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   void _beginPrivateService(PrivateServiceIntent intent) {
     final session = ref.read(sessionProvider);
     if (session is! SessionSignedIn) return;
-    final prior = ref.read(pendingPrivateServiceIntentProvider);
-    ref.read(pendingPrivateServiceIntentProvider.notifier).state =
-        PendingPrivateServiceIntent(
+    ref.read(pendingPrivateServiceIntentProvider.notifier).select(
           intent: intent,
           ownerUserId: session.user.id,
-          revision: (prior?.revision ?? 0) + 1,
         );
     // This only selects a private tab. No audio capture, quote or charge.
     _selectTab(MasanawaRootTab.talk.index);
@@ -299,10 +296,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   }
 
   void _clearServiceIntent(PendingPrivateServiceIntent request) {
-    final current = ref.read(pendingPrivateServiceIntentProvider);
-    if (identical(current, request)) {
-      ref.read(pendingPrivateServiceIntentProvider.notifier).state = null;
-    }
+    ref.read(pendingPrivateServiceIntentProvider.notifier).consume(request);
   }
 
   Widget _wallet() => WalletScreen(
@@ -383,14 +377,6 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(sessionProvider, (_, next) {
-      final current = ref.read(pendingPrivateServiceIntentProvider);
-      if (current != null &&
-          (next is! SessionSignedIn ||
-              !current.belongsTo(next.user.id))) {
-        ref.read(pendingPrivateServiceIntentProvider.notifier).state = null;
-      }
-    });
     final strings = AppLocalizations.of(context);
     final session = ref.watch(sessionProvider);
     final publicProfile = session is SessionSignedIn
