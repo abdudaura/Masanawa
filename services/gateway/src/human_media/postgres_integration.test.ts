@@ -96,6 +96,19 @@ function approved(value:string|undefined) {
     sha256:digest,sizeBytes:500,durationMs:1000})).toBe("forbidden");
   await pool.query(`DELETE FROM talks.safety_preferences WHERE tenant_id=$1`,[tenantId]);
  });
+ it("revoked contacts lose permission for private voice playback despite retained DB objects",async()=>{
+  const repo=createPostgresVoiceNoteRepository(pool);
+  const available=await repo.list({tenantId,userId:peerId,conversationId,limit:30});
+  expect(available).toHaveLength(1);
+  await pool.query(`INSERT INTO talks.human_dm_contact_requests
+    (tenant_id,first_user_id,second_user_id,requested_by,status)
+    VALUES($1,LEAST($2,$3),GREATEST($2,$3),$2,'declined')`,
+    [tenantId,userId,peerId]);
+  expect(await repo.find({tenantId,userId,messageId:available![0]!.messageId})).toBeNull();
+  expect(await repo.list({tenantId,userId:peerId,conversationId,limit:30})).toBeNull();
+  await pool.query(`DELETE FROM talks.human_dm_contact_requests WHERE tenant_id=$1`,
+    [tenantId]);
+ });
  it("tombstones deleted audio, denies playback and durably collects its S3 key",async()=>{
   const repo=createPostgresVoiceNoteRepository(pool);
   const page=await repo.list({tenantId,userId,conversationId,limit:30});
