@@ -13,6 +13,7 @@ import '../chat/ai_chat_screen.dart';
 import '../talks/talk_home_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'my_twin_screen.dart';
+import 'shell_tab.dart';
 
 /// Filters the server-provided roster by presentation data only. A search
 /// result never grants AI Seat eligibility, a role or a service capability.
@@ -254,10 +255,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         key: ValueKey('private-talk-' + agent.characterId),
         characterId: agent.characterId,
         embeddedInShell: true,
-        onOpenAgents: () => setState(() {
-          _index = 1;
-          _visitedTabs.add(1);
-        }),
+        onOpenAgents: () => _selectTab(MasanawaRootTab.agents.index),
         onOpenActivity: _openActivity,
         onOpenProfile: _openYou,
       );
@@ -293,6 +291,15 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         3 => _privateTalk(),
         _ => const SizedBox.shrink(),
       };
+
+  void _selectTab(int index) {
+    if (index == _index) return;
+    setState(() {
+      _index = index;
+      _visitedTabs.add(index);
+    });
+    context.go(MasanawaRootTab.values[index].location);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -338,12 +345,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (value) {
-          setState(() {
-            _index = value;
-            _visitedTabs.add(value);
-          });
-        },
+        onDestinationSelected: _selectTab,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
