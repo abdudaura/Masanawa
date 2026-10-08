@@ -20,3 +20,9 @@
 5. Verify security, multi-account switch/tenant isolation, hidden lookup and responses and actual Android/network acceptance; record SHA/build/deployed evidence separately.
 
 **Status: CODE IMPLEMENTED IN AN ISOLATED BRANCH; TESTED / INTEGRATED / DEPLOYED / DEVICE-VERIFIED = NO. Do not merge unverified implementation; no new R/C gate marked DONE.** After this checkpoint, merge/integration ownership requires a fresh 5-minute lease check and preservation of #435's edits.
+
+## Fresh scoped shared Gateway integration claim — 2026-10-08
+- Rechecked open PR changed paths: **only R18 #435** currently overlaps `services/gateway/src/app.ts` and `services/gateway/src/main.ts`, and #435's latest repository-visible update is **2026-10-08 05:53 UTC**, more than five minutes old. Its avatar work is preserved, unmerged, and must not be overwritten.
+- Published coordination notice to #435 with exactly the additive C01 imports, optional service injection, real database repository and session authorizer composition; no modifications to its avatar/S3/profile logic.
+- Narrow additional owned paths after fresh claim: `services/gateway/src/app.ts` and `services/gateway/src/main.ts`, **only** the non-overlapping humanContact imports/interfaces/repo factory/auth wiring/route registration segments; no other shared platform paths.
+- Re-read fresh main blob SHAs immediately before every edit; on conflict merge rather than force. No CI workaround or unverified release/merge.
