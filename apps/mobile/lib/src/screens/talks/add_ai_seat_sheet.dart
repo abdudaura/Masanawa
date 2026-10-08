@@ -534,6 +534,13 @@ class _QuoteConfirmation extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
+              if (expired) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'This price has expired. Get a new quote to continue.',
+                  style: TextStyle(color: u.emergency),
+                ),
+              ],
               if (error != null) ...[
                 const SizedBox(height: 14),
                 Text(
@@ -542,9 +549,17 @@ class _QuoteConfirmation extends StatelessWidget {
                 ),
               ],
               const Spacer(),
+              if (expired) ...[
+                FilledButton.tonal(
+                  key: const ValueKey('ai-seat-refresh-quote'),
+                  onPressed: confirming || refreshing ? null : onRefresh,
+                  child: Text(refreshing ? 'Refreshing…' : 'Get new quote'),
+                ),
+                const SizedBox(height: 8),
+              ],
               FilledButton(
                 key: const ValueKey('ai-seat-confirm'),
-                onPressed: confirming ? null : onConfirm,
+                onPressed: confirming || refreshing || expired ? null : onConfirm,
                 child: confirming
                     ? const SizedBox(
                         width: 19,
