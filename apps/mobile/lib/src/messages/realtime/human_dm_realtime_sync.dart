@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 
 import 'human_dm_realtime_transport.dart';
+import '../../core/network/api_client.dart';
 
 /// Storage is owned by C05's protected per-tenant/per-user cache. The cursor
 /// MUST be written only AFTER its corresponding server events have been applied.
@@ -28,7 +29,7 @@ abstract interface class HumanDmRealtimeProjection {
   Future<void> invalidateConversation(String conversationId);
 }
 
-enum HumanDmRealtimeStatus { connecting, synchronized, retrying, stopped }
+enum HumanDmRealtimeStatus { connecting, synchronized, retrying, authenticationRequired, stopped }
 
 class HumanDmRealtimeSync {
   HumanDmRealtimeSync({
@@ -185,6 +186,24 @@ class HumanDmRealtimeSync {
         await _sleep(const Duration(milliseconds: 250));
       } on DioException catch (error) {
         if (!active || CancelToken.isCancel(error)) return;
+        if (error.response?.statusCode == 401 ||
+            error.response?.statusCode == 403) {
+          // A revoked session must not loop forever or attempt a new
+          // authenticated account's messages on the old cursor.
+          _active = false;
+          onStatus?.call(HumanDmRealtimeStatus.authenticationRequired);
+          return;
+        }
+        _failureCount++;
+        onStatus?.call(HumanDmRealtimeStatus.retrying);
+        await _sleep(_backoff());
+      } on ApiException catch (error) {
+        if (!active) return;
+        if (error.statusCode == 401 || error.statusCode == 403) {
+          _active = false;
+          onStatus?.call(HumanDmRealtimeStatus.authenticationRequired);
+          return;
+        }
         _failureCount++;
         onStatus?.call(HumanDmRealtimeStatus.retrying);
         await _sleep(_backoff());
