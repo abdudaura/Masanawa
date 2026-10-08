@@ -1,5 +1,5 @@
 import type { PlatformSessionIdentity } from "@masanawa/security";
-import type { HumanContact, HumanContactPolicy, HumanContactRepository, HumanContactRequest } from "./model.js";
+import type { HumanContact, HumanContactPolicy, HumanContactPreferences, HumanContactRepository, HumanContactRequest } from "./model.js";
 
 export class HumanContactError extends Error {
   constructor(readonly code: string, readonly statusCode: number) {
@@ -14,8 +14,8 @@ export interface HumanContactAuthorizer {
 
 export interface HumanContactService {
   lookup(input: { authorizationHeader: string | undefined; handle: string }): Promise<HumanContact>;
-  ownPolicy(input: { authorizationHeader: string | undefined }): Promise<{ policy: HumanContactPolicy }>;
-  updatePolicy(input: { authorizationHeader: string | undefined; policy: HumanContactPolicy }): Promise<{ policy: HumanContactPolicy }>;
+  ownPreferences(input: { authorizationHeader: string | undefined }): Promise<HumanContactPreferences>;
+  updatePreferences(input: { authorizationHeader: string | undefined; policy?: HumanContactPolicy; discoverableByHandle?: boolean }): Promise<HumanContactPreferences>;
   request(input: { authorizationHeader: string | undefined; handle: string }): Promise<{ status: "accepted" | "pending" | "existing" }>;
   respond(input: { authorizationHeader: string | undefined; requesterId: string; accept: boolean }): Promise<{ status: "accepted" | "declined" }>;
   list(input: { authorizationHeader: string | undefined; limit?: number }): Promise<{ contacts: readonly HumanContactRequest[] }>;
@@ -53,14 +53,23 @@ export function createHumanContactService(input: Readonly<{
       if (!result) throw new HumanContactError("messages.contact_unavailable", 404);
       return result;
     },
-    async ownPolicy({ authorizationHeader }) {
+    async ownPreferences({ authorizationHeader }) {
       const who = await principal(authorizationHeader);
-      return { policy: await input.repository.getOwnPolicy(who) };
+      return input.repository.getOwnPreferences(who);
     },
-    async updatePolicy({ authorizationHeader, policy }) {
-      if (!VALID_POLICY.has(policy)) throw new HumanContactError("messages.invalid_policy", 400);
+    async updatePreferences({ authorizationHeader, policy, discoverableByHandle }) {
+      if (policy !== undefined && !VALID_POLICY.has(policy)) throw new HumanContactError("messages.invalid_policy", 400);
+      if (discoverableByHandle !== undefined && typeof discoverableByHandle !== "boolean") {
+        throw new HumanContactError("messages.invalid_discoverability", 400);
+      }
+      if (policy === undefined && discoverableByHandle === undefined) {
+        throw new HumanContactError("messages.empty_preferences", 400);
+      }
       const who = await principal(authorizationHeader);
-      return { policy: await input.repository.setOwnPolicy({ ...who, policy }) };
+      return input.repository.setOwnPreferences({ ...who,
+        ...(policy !== undefined ? { policy } : {}),
+        ...(discoverableByHandle !== undefined ? { discoverableByHandle } : {}),
+      });
     },
     async request({ authorizationHeader, handle: raw }) {
       const who = await principal(authorizationHeader);
