@@ -116,6 +116,7 @@ void main() {
 
     final cached = container.read(agentDirectoryProvider);
     expect(cached.agents.single.displayName, 'Gwani');
+    expect(cached.agents.single.presence, AgentPresence.unknown);
     expect(cached.loading, isTrue);
     expect(transport.requests, hasLength(1));
 
@@ -217,4 +218,61 @@ void main() {
     expect(restored.defaultPlatformAgent, isTrue);
     expect(restored.voiceName, 'Bodi');
   });
+  test('transient directory outage preserves identity but not live presence', () async {
+    final cache = _MemoryCache(ownerId: _user.id, agents: const [_agent]);
+    final transport = _PendingTransport();
+    final container = ProviderContainer(overrides: [
+      agentDirectoryCacheProvider.overrideWithValue(cache),
+      agentDirectoryTransportProvider.overrideWithValue(transport),
+      sessionProvider.overrideWith(_SessionController.new),
+    ]);
+    addTearDown(container.dispose);
+
+    container.read(agentDirectoryProvider);
+    await _settle();
+    transport.requests.single.completeError(
+      const ApiException('temporarily offline', statusCode: 503),
+    );
+    await _settle();
+
+    final state = container.read(agentDirectoryProvider);
+    expect(state.loading, isFalse);
+    expect(state.agents.single.displayName, 'Gwani');
+    expect(state.agents.single.presence, AgentPresence.unknown);
+    expect(state.error, isNotNull);
+  });
+
+  test('refresh revokes stale available presence until server confirms', () async {
+    final cache = _MemoryCache(ownerId: _user.id, agents: const [_agent]);
+    final transport = _PendingTransport();
+    final container = ProviderContainer(overrides: [
+      agentDirectoryCacheProvider.overrideWithValue(cache),
+      agentDirectoryTransportProvider.overrideWithValue(transport),
+      sessionProvider.overrideWith(_SessionController.new),
+    ]);
+    addTearDown(container.dispose);
+
+    container.read(agentDirectoryProvider);
+    await _settle();
+    transport.requests.single.complete(const [_agent]);
+    await _settle();
+    expect(
+      container.read(agentDirectoryProvider).agents.single.presence,
+      AgentPresence.available,
+    );
+
+    final refresh = container.read(agentDirectoryProvider.notifier).refresh();
+    expect(
+      container.read(agentDirectoryProvider).agents.single.presence,
+      AgentPresence.unknown,
+    );
+    expect(transport.requests, hasLength(2));
+    transport.requests.last.complete(const [_agent]);
+    await refresh;
+    expect(
+      container.read(agentDirectoryProvider).agents.single.presence,
+      AgentPresence.available,
+    );
+  });
+
 }
