@@ -46,6 +46,23 @@ interface PollRow extends Record<string, unknown> {
   question: string;
   status: "open" | "closed";
   event_at: Date | string;
+  tallies_json: unknown;
+}
+
+function publicPollTallies(value: unknown): readonly Readonly<{ label: string; votes: number }>[] {
+  // pg parses JSONB automatically. Reject malformed projections instead of
+  // guessing vote counts or passing raw JSON into the model.
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 4).flatMap((item): Readonly<{ label: string; votes: number }>[] => {
+    if (!item || typeof item !== "object") return [];
+    const candidate = item as { readonly label?: unknown; readonly votes?: unknown };
+    const votes = typeof candidate.votes === "number"
+      ? candidate.votes : Number.NaN;
+    if (typeof candidate.label !== "string" ||
+        !candidate.label.trim() ||
+        !Number.isSafeInteger(votes) || votes < 0) return [];
+    return [Object.freeze({ label: candidate.label, votes })];
+  });
 }
 
 function timestamp(value: string | Date): string {
@@ -139,10 +156,16 @@ export function createPostgresTalkAiStageEventRepository(
           scope,
         ),
         pool.query<PollRow>(
-          "SELECT poll_id,question,status,COALESCE(closed_at,created_at) AS event_at " +
-          "FROM talks.polls WHERE tenant_id=$1 AND talk_id=$2 " +
-          "AND COALESCE(closed_at,created_at) <= $3 " +
-          "AND COALESCE(closed_at,created_at) >= $4 " +
+          "SELECT p.poll_id,p.question,p.status,COALESCE(p.closed_at,p.created_at) AS event_at, " +
+          "COALESCE((SELECT jsonb_agg(jsonb_build_object( " +
+          "'label', opt->>'label', 'votes', " +
+          "(SELECT COUNT(*)::integer FROM talks.poll_votes v " +
+          "WHERE v.tenant_id=p.tenant_id AND v.talk_id=p.talk_id " +
+          "AND v.poll_id=p.poll_id AND v.option_id=opt->>'optionId'))) " +
+          "FROM jsonb_array_elements(p.options_json) opt), '[]'::jsonb) AS tallies_json " +
+          "FROM talks.polls p WHERE p.tenant_id=$1 AND p.talk_id=$2 " +
+          "AND COALESCE(p.closed_at,p.created_at) <= $3 " +
+          "AND COALESCE(p.closed_at,p.created_at) >= $4 " +
           "ORDER BY event_at DESC LIMIT 16",
           scope,
         ),
@@ -193,6 +216,7 @@ export function createPostgresTalkAiStageEventRepository(
           kind: "poll",
           action: poll.status === "open" ? "opened" : "closed",
           question: poll.question,
+          tallies: publicPollTallies(poll.tallies_json),
         })),
       ];
       return Object.freeze<TalkAuthorizedStage>({
