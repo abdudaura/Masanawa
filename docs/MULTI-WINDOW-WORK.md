@@ -1,5 +1,12 @@
 # Multi-window Work Coordination
 
+## Cross-feature final UX review / target-navigation gate — 2026-10-08
+
+Read `docs/END-TO-END-UX-ARCHITECTURE.md` before assigning **R17 or C01–C08** work on root tabs, person profiles, AI chats, `/chats` redirects, notification/deep links, service entry, and global Gwani/Gwana invocation. The complete **proposed** four-tab end-state and route/action matrix must be decided in one coordinated product/R17/C08 gate. In particular, don't rename Agents to Chats, reuse AI character `/chat/:id` for human DMs, or inherit the public Talk FAB on a future Chats tab without resolving the documented conflicts.
+
+The review recommends **Home · Chats · Wallet · Assistant** but this is not an owner-approved replacement yet. Existing approved APP-SHELL-CONTRACT and owner CI #457 remain binding until the design decision is signed off; no code workstream gains ownership from publishing this docs proposal. Shared router, profile, assistant and wallet action integration belongs to one designated owner with nonoverlapping lane claims. **Build toward a frozen final flow, never a knowingly temporary UX followed by a second redesign.**
+
+
 ## Shared CI / ChatGPT Work owner handoff — 2026-10-08
 
 **Repository-level coordination:** The owner will use **ChatGPT Work** to resolve
