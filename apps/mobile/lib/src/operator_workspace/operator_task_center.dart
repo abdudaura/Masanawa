@@ -282,7 +282,7 @@ class _OperatorTaskCenterState extends State<OperatorTaskCenter> {
                   itemCount: rows.length + 1,
                   itemBuilder: (ctx, index) {
                     if (index < rows.length) return taskCard(rows[index]);
-                    if (rows.isEmpty) {
+                    if (rows.isEmpty && (!c.hasMore || section == 0 && c.tasks.isEmpty)) {
                       return Padding(
                         padding: const EdgeInsets.all(28),
                         child: Text(c.error != null
@@ -291,7 +291,7 @@ class _OperatorTaskCenterState extends State<OperatorTaskCenter> {
                             textAlign: TextAlign.center),
                       );
                     }
-                    if (!c.hasMore || section != 2) {
+                    if (!c.hasMore) {
                       return const SizedBox(height: 24);
                     }
                     return Center(child: TextButton(
