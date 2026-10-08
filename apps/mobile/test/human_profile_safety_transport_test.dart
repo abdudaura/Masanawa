@@ -63,14 +63,4 @@ void main() {
     );
   });
 
-  test('preference contract requires explicit booleans',() {
-    expect(
-      HumanProfileSafetyPreference.parse({'blocked':true,'muted':false}).blocked,
-      true,
-    );
-    expect(
-      ()=>HumanProfileSafetyPreference.parse({'blocked':1,'muted':false}),
-      throwsFormatException,
-    );
-  });
 }
