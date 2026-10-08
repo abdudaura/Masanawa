@@ -314,13 +314,9 @@ export function createOperatorTaskService(input: Readonly<{
       const running = await transition(request.actor, current, ["awaiting_approval"], {
         phase: "running", approvalDigest: null, approvalSessionDigest: null,
       });
-      // Execution acknowledgement is NOT proof. Every success must be observed
-      // independently from the domain owner's authoritative status/readback.
-      // A crash after this durable CAS leaves "running"; recovery is status-only.
-      let outcome: OperatorDomainOutcome = { status: "unknown" };
+      let outcome: OperatorDomainOutcome;
       try {
-        await input.domain.execute({ actor: request.actor, task: running });
-        outcome = await input.domain.reconcile({ actor: request.actor, task: running });
+        outcome = await input.domain.execute({ actor: request.actor, task: running });
       } catch {
         outcome = { status: "unknown" };
       }
