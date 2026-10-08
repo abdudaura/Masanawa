@@ -11,6 +11,7 @@
 - `services/gateway/src/human_messages/routes.ts`
 - `services/gateway/src/human_messages/service.test.ts`
 - `services/gateway/src/human_messages/postgres_repository.test.ts`
+- `services/gateway/src/human_messages/postgres_integration.test.ts`
 - `apps/mobile/lib/src/messages/human_messages_transport.dart`
 - `apps/mobile/lib/src/messages/human_messages_controller.dart`
 - `apps/mobile/lib/src/messages/human_conversation_screen.dart`
