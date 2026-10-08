@@ -15,6 +15,7 @@ interface LookupRow extends Record<string, unknown> {
   admission_policy: HumanContactPolicy;
   status: "pending" | "accepted" | "declined" | null;
   requested_by: string | null;
+  revoked_by: string | null;
 }
 interface RequestRow extends Record<string, unknown> {
   user_id: string;
@@ -69,13 +70,14 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
       const result = await pool.query<LookupRow>(`
         SELECT p.user_id, p.handle, p.display_name, p.avatar_url,
                COALESCE(pref.admission_policy,'requests') AS admission_policy,
-               edge.status, edge.requested_by
+               edge.status, edge.requested_by, edge.revoked_by
         ${visibleTarget}
         LIMIT 1
       `, [tenantId, viewerId, handle]);
       const row = result.rows[0];
       if (!row) return null;
-      const status = row.status === "accepted" ? "accepted"
+      const status = row.revoked_by === viewerId ? "revoked"
+        : row.status === "accepted" ? "accepted"
         : row.status === "pending"
           ? row.requested_by === viewerId ? "outgoing" : "incoming"
           : row.status === "declined" ? "declined" : "none";
@@ -155,7 +157,19 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
                  CASE WHEN admission_policy='anyone' THEN 'accepted' ELSE 'pending' END
             FROM permitted
           ON CONFLICT (tenant_id,first_user_id,second_user_id)
-          DO UPDATE SET status=talks.human_dm_contact_requests.status
+          DO UPDATE SET
+            requested_by=CASE
+              WHEN talks.human_dm_contact_requests.revoked_by=EXCLUDED.requested_by THEN EXCLUDED.requested_by
+              ELSE talks.human_dm_contact_requests.requested_by END,
+            status=CASE
+              WHEN talks.human_dm_contact_requests.revoked_by=EXCLUDED.requested_by THEN 'pending'
+              ELSE talks.human_dm_contact_requests.status END,
+            revoked_by=CASE
+              WHEN talks.human_dm_contact_requests.revoked_by=EXCLUDED.requested_by THEN NULL
+              ELSE talks.human_dm_contact_requests.revoked_by END,
+            updated_at=CASE
+              WHEN talks.human_dm_contact_requests.revoked_by=EXCLUDED.requested_by THEN clock_timestamp()
+              ELSE talks.human_dm_contact_requests.updated_at END
           RETURNING status, requested_by
         )
         SELECT status, requested_by FROM upserted
@@ -177,6 +191,8 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
            AND e.first_user_id=LEAST($2,$3)
            AND e.second_user_id=GREATEST($2,$3)
            AND e.requested_by=$3
+           -- A revocation invalidates any earlier response authority.
+           AND e.revoked_by IS NULL
            AND $2<>$3
            AND (e.status='pending' OR e.status=$4
              OR (e.status='declined' AND $4='accepted')
@@ -204,12 +220,14 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
       const result = await pool.query<Record<string, unknown>>(`
         UPDATE talks.human_dm_contact_requests e
            SET status='declined',
-               updated_at=CASE WHEN e.status='declined' THEN e.updated_at ELSE clock_timestamp() END
+               revoked_by=$2,
+               updated_at=CASE WHEN e.revoked_by=$2 THEN e.updated_at ELSE clock_timestamp() END
          WHERE e.tenant_id=$1
            AND e.first_user_id=LEAST($2,$3)
            AND e.second_user_id=GREATEST($2,$3)
            AND $2<>$3
            AND ($2=e.first_user_id OR $2=e.second_user_id)
+           AND (e.revoked_by IS NULL OR e.revoked_by=$2)
         RETURNING e.first_user_id
       `, [tenantId, actorId, otherUserId]);
       return (result.rowCount ?? result.rows.length) > 0;
@@ -233,7 +251,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
          WHERE edge.tenant_id=$1
            AND (edge.first_user_id=$2 OR edge.second_user_id=$2)
            AND (edge.status IN ('pending','accepted')
-             OR (edge.status='declined' AND edge.requested_by<>$2))
+             OR (edge.status='declined' AND edge.revoked_by IS NULL AND edge.requested_by<>$2))
            AND NOT EXISTS (
              SELECT 1 FROM talks.safety_preferences sp
               WHERE sp.tenant_id=$1 AND sp.blocked=true

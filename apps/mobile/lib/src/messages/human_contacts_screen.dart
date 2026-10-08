@@ -279,6 +279,7 @@ class _ContactTile extends StatelessWidget {
       HumanContactStatus.incoming => 'Wants to connect',
       HumanContactStatus.outgoing => 'Waiting for approval',
       HumanContactStatus.declined => 'Request unavailable',
+      HumanContactStatus.revoked => 'You removed this connection',
       HumanContactStatus.none => 'Not connected',
     };
     return Card(
@@ -307,12 +308,14 @@ class _ContactTile extends StatelessWidget {
                   ),
                 ],
               )
-            else if (status == HumanContactStatus.none && foundBySearch)
+            else if ((status == HumanContactStatus.none ||
+                status == HumanContactStatus.revoked) && foundBySearch)
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton(
                   onPressed: busy ? null : onRequest,
-                  child: const Text('Request contact'),
+                  child: Text(status == HumanContactStatus.revoked
+                    ? 'Request reconnect' : 'Request contact'),
                 ),
               )
             else if (status == HumanContactStatus.accepted ||

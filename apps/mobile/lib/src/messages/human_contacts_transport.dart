@@ -5,7 +5,7 @@ import '../core/network/api_client.dart';
 /// Human-only contacts. These IDs are platform user IDs, never persona IDs.
 enum HumanContactPolicy { anyone, requests, nobody }
 
-enum HumanContactStatus { none, incoming, outgoing, accepted, declined }
+enum HumanContactStatus { none, incoming, outgoing, accepted, declined, revoked }
 
 HumanContactPolicy _policy(dynamic value) => switch (value) {
   'anyone' => HumanContactPolicy.anyone,
@@ -20,6 +20,7 @@ HumanContactStatus _status(dynamic value) => switch (value) {
   'outgoing' => HumanContactStatus.outgoing,
   'accepted' => HumanContactStatus.accepted,
   'declined' => HumanContactStatus.declined,
+  'revoked' => HumanContactStatus.revoked,
   _ => throw const FormatException('Invalid contact status'),
 };
 

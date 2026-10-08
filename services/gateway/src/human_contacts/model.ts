@@ -1,6 +1,6 @@
 /** C01 human-only contact discovery. No PersonaId or public Talk membership. */
 export type HumanContactPolicy = "anyone" | "requests" | "nobody";
-export type HumanContactStatus = "none" | "incoming" | "outgoing" | "accepted" | "declined";
+export type HumanContactStatus = "none" | "incoming" | "outgoing" | "accepted" | "declined" | "revoked";
 export interface HumanContactPreferences {
   readonly policy: HumanContactPolicy;
   readonly discoverableByHandle: boolean;

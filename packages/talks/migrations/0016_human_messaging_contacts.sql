@@ -17,11 +17,14 @@ CREATE TABLE talks.human_dm_contact_requests (
   second_user_id text NOT NULL,
   requested_by text NOT NULL,
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','declined')),
+  -- A revocation is a durable tombstone, unlike an ordinary decline.
+  revoked_by text,
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY (tenant_id,first_user_id,second_user_id),
   CHECK (first_user_id < second_user_id),
   CHECK (requested_by IN (first_user_id,second_user_id)),
+  CHECK (revoked_by IS NULL OR (status='declined' AND revoked_by IN (first_user_id,second_user_id))),
   FOREIGN KEY (tenant_id,first_user_id) REFERENCES identity.users(tenant_id,user_id) ON DELETE CASCADE,
   FOREIGN KEY (tenant_id,second_user_id) REFERENCES identity.users(tenant_id,user_id) ON DELETE CASCADE
 );
