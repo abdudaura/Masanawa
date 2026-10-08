@@ -11,10 +11,10 @@ import {
   type AgentDirectoryAuthorizer,
 } from "./agent_directory.js";
 
-const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as TenantId;
-const otherTenant = "tenant_00000000-0000-4000-8000-000000000009" as TenantId;
-const userId = "user_00000000-0000-4000-8000-000000000002" as UserId;
-const characterId = "character_00000000-0000-4000-8000-000000000003" as CharacterId;
+const tenantId = "tenant_00000000-0000-7000-8000-000000000001" as TenantId;
+const otherTenant = "tenant_00000000-0000-7000-8000-000000000009" as TenantId;
+const userId = "user_00000000-0000-7000-8000-000000000002" as UserId;
+const characterId = "character_00000000-0000-7000-8000-000000000003" as CharacterId;
 
 function fixture(options: {
   visible?: boolean;
@@ -27,7 +27,7 @@ function fixture(options: {
     schemaVersion: 1,
     tenantId,
     characterId,
-    characterVersionId: "character-version_00000000-0000-4000-8000-000000000004",
+    characterVersionId: "character-version_00000000-0000-7000-8000-000000000004",
     displayName: "Gwana",
     roleLabel: "Masanawa Support",
     about: "Platform support",

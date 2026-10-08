@@ -72,6 +72,23 @@ export function createAgentDirectoryService(input: {
   readonly userPreferences?: UserAgentPreferenceRepository;
   readonly activity?: MobileAgentActivityRepository;
 }): AgentDirectoryService {
+  async function readPreference(authority: AgentDirectoryAuthority) {
+    if (!input.userPreferences) return null;
+    try {
+      const preference = await input.userPreferences.readForUser({
+        tenantId: authority.tenantId,
+        userId: authority.userId,
+      });
+      if (preference && (preference.tenantId !== authority.tenantId ||
+          preference.userId !== authority.userId)) {
+        throw new Error("Preference scope mismatch");
+      }
+      return preference;
+    } catch {
+      throw new AgentDirectoryPreferenceError(503, "Preference outcome unknown; refresh and retry");
+    }
+  }
+
   return Object.freeze<AgentDirectoryService>({
     async list(
       request: Parameters<AgentDirectoryService["list"]>[0],
@@ -88,15 +105,14 @@ export function createAgentDirectoryService(input: {
         : null;
       const visible = presentations.filter(
         (presentation) =>
-          allowed === null || allowed.has(presentation.characterId),
+          presentation.tenantId === authority.tenantId &&
+          presentation.visibleInUserApp &&
+          (allowed === null || allowed.has(presentation.characterId)),
       );
 
       const characterIds = visible.map((item) => item.characterId);
       const [preference, profiles, activity] = await Promise.all([
-        input.userPreferences?.readForUser({
-          tenantId: authority.tenantId,
-          userId: authority.userId,
-        }) ?? Promise.resolve(null),
+        readPreference(authority),
         Promise.all(
           visible.map(async (presentation) => ({
             characterId: presentation.characterId,
@@ -116,8 +132,25 @@ export function createAgentDirectoryService(input: {
           : Promise.resolve([]),
       ]);
       const profileByCharacter = new Map(
-        profiles.map(({ characterId, profile }) => [characterId, profile]),
+        profiles.map(({ characterId, profile }) => [
+          characterId,
+          profile?.tenantId === authority.tenantId &&
+          profile.characterId === characterId ? profile : null,
+        ] as const),
       );
+      const preferredId = preference?.defaultPlatformCharacterId;
+      const preferredIsEligible = preferredId !== undefined &&
+        visible.some((item) => item.characterId === preferredId &&
+          profileByCharacter.get(item.characterId)?.supportAgent === true);
+      // A stale saved choice must not suppress an explicitly configured
+      // platform fallback. Never rewrite the user's durable preference here.
+      // Ambiguous defaults fail closed rather than depending on list order.
+      const configuredDefaults = visible.filter((item) => {
+        const profile = profileByCharacter.get(item.characterId);
+        return profile?.supportAgent === true && profile.defaultForNewUsers;
+      });
+      const resolvedDefaultId = preferredIsEligible ? preferredId :
+        configuredDefaults.length === 1 ? configuredDefaults[0]?.characterId : undefined;
       const activityByCharacter = new Map(
         activity.map((item) => [item.characterId, item] as const),
       );
@@ -130,10 +163,7 @@ export function createAgentDirectoryService(input: {
             activityByCharacter.get(presentation.characterId) ?? null;
           const defaultPlatformAgent =
             profile?.supportAgent === true &&
-            (preference
-              ? preference.defaultPlatformCharacterId ===
-                presentation.characterId
-              : profile.defaultForNewUsers);
+            resolvedDefaultId === presentation.characterId;
 
           return Object.freeze({
             characterId: presentation.characterId,
@@ -179,21 +209,20 @@ export function createAgentDirectoryService(input: {
       const visible = await input.presentations.listVisible({
         tenantId: authority.tenantId,
       });
-      if (!visible.some((item) => item.characterId === characterId)) {
+      if (!visible.some((item) => item.tenantId === authority.tenantId &&
+          item.visibleInUserApp && item.characterId === characterId)) {
         throw new AgentDirectoryPreferenceError(404, "Character is not available to this user");
       }
       const profile = await input.platformProfiles.readForCharacter({
         tenantId: authority.tenantId,
         characterId,
       });
-      if (!profile?.supportAgent) {
+      if (!profile?.supportAgent || profile.tenantId !== authority.tenantId ||
+          profile.characterId !== characterId) {
         throw new AgentDirectoryPreferenceError(409, "Selected Character is not a platform support agent");
       }
 
-      const existing = await input.userPreferences.readForUser({
-        tenantId: authority.tenantId,
-        userId: authority.userId,
-      });
+      const existing = await readPreference(authority);
       // Selecting the current value is idempotent, avoids an unnecessary CAS
       // and remains safe when two devices repeat a successful request.
       if (existing?.defaultPlatformCharacterId === characterId) {
@@ -217,10 +246,7 @@ export function createAgentDirectoryService(input: {
       }
       // Never tell Flutter that the choice persisted merely because a write
       // call returned; verify the authoritative per-user tenant-scoped state.
-      const committed = await input.userPreferences.readForUser({
-        tenantId: authority.tenantId,
-        userId: authority.userId,
-      });
+      const committed = await readPreference(authority);
       if (committed?.defaultPlatformCharacterId !== characterId) {
         throw new AgentDirectoryPreferenceError(503, "Default agent change could not be verified; refresh and retry");
       }
