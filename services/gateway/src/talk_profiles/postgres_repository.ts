@@ -179,6 +179,36 @@ export function createPostgresTalkProfileRepository(
     readHuman,
     readHumanByUserId,
 
+    async updateOwnHuman(input) {
+      const fields: string[] = [];
+      const values: unknown[] = [input.tenantId, input.userId];
+      if (input.displayName !== undefined) {
+        values.push(input.displayName);
+        fields.push(`display_name = ${values.length}`);
+      }
+      if (input.bio !== undefined) {
+        values.push(input.bio);
+        fields.push(`bio = ${values.length}`);
+      }
+      if (input.removeAvatar === true) {
+        fields.push("avatar_url = NULL");
+      }
+      if (fields.length === 0) return null;
+      const updated = await pool.query<{ user_id: string }>(
+        `UPDATE talks.public_profiles
+            SET ${fields.join(", ")}, updated_at = clock_timestamp()
+          WHERE tenant_id = $1 AND user_id = $2
+          RETURNING user_id`,
+        values,
+      );
+      if (!updated.rows[0]) return null;
+      return readHumanByUserId({
+        tenantId: input.tenantId,
+        viewerUserId: input.userId,
+        userId: input.userId,
+      });
+    },
+
     async setFollowing(input) {
       const target = await pool.query<{ user_id: string }>(
         `SELECT p.user_id FROM talks.public_profiles p
