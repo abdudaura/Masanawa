@@ -171,6 +171,7 @@ void main() {
 
   test('HTTP transport preserves supplied request ID, payload and customer bearer', () async {
     final dio = Dio(BaseOptions(baseUrl: 'https://example.invalid'));
+    final api = ApiClient(dio: dio)..accessToken = 'customer-access-token';
     RequestOptions? sent;
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
@@ -180,7 +181,6 @@ void main() {
         ));
       },
     ));
-    final api = ApiClient(dio: dio)..accessToken = 'customer-access-token';
     await GatewayTalkSafetyTransport(api: api).reportTarget(
       targetKind: TalkSafetyTargetKind.persona,
       targetId: 'persona-public-7',
