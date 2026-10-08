@@ -217,14 +217,18 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
               ? session.user.id
               : null),
       (previous, next) {
-        if (next == _openingAccountId) return;
-        _authRevision++;
+        if (!mounted || next == _openingAccountId) return;
         _quoteExpiryTimer?.cancel();
-        _quote = null;
-        _selectedCandidate = null;
-        _loadingQuote = false;
-        _confirming = false;
-        _error = 'Account changed. Reopen Add AI to get a new quote.';
+        setState(() {
+          _authRevision++;
+          _quote = null;
+          _selectedCandidate = null;
+          _quoteExpired = false;
+          _terminalQuote = false;
+          _loadingQuote = false;
+          _confirming = false;
+          _error = 'Account changed. Reopen Add AI to get a new quote.';
+        });
         // A standalone sheet embedded in test/demo navigation has no modal to
         // dismiss; the actual payment-capable modal is closed after the frame.
         WidgetsBinding.instance.addPostFrameCallback((_) {
