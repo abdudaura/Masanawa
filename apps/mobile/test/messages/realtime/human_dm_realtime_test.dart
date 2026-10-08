@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/messages/realtime/human_dm_realtime_sync.dart';
 import 'package:masanawa/src/messages/realtime/human_dm_realtime_transport.dart';
 
@@ -30,12 +31,16 @@ class _Store implements HumanDmRealtimeCursorStore {
 class _Projection implements HumanDmRealtimeProjection {
   int full = 0;
   bool fail = false;
+  bool failFull = false;
   final changed = <String>[];
   final invalidated = <String>[];
   final receipts = <String>[];
 
   @override
-  Future<void> refreshAll() async { full++; }
+  Future<void> refreshAll() async {
+    if (failFull) throw StateError('C02 full resnapshot unavailable');
+    full++;
+  }
 
   @override
   Future<void> refreshConversation(String id) async {
@@ -74,6 +79,17 @@ class _Transport implements HumanDmRealtimeTransport {
     if (waiting != null) return waiting!.future;
     if (responses.isEmpty) throw StateError('No test response');
     return responses.removeAt(0);
+  }
+}
+
+
+class _RevokedTransport implements HumanDmRealtimeTransport {
+  @override
+  Future<HumanDmRealtimePage> poll({
+    String? cursor, int limit = 50, int waitMs = 10000,
+    CancelToken? cancelToken,
+  }) async {
+    throw const ApiException('Session revoked', statusCode:401);
   }
 }
 
@@ -281,4 +297,46 @@ void main() {
     expect(store.cursor, '9');
     sync.stop();
   });
+
+  test('expired journal cursor forces a real C02 resnapshot before ACK', () async {
+    final store = _Store()..cursor = '12';
+    final projection = _Projection()..failFull = true;
+    final transport = _Transport()
+      ..responses.add(_page(cursor:'30', reset:true));
+    final sync = _sync(store, projection, transport);
+    await expectLater(sync.syncOnce(), throwsStateError);
+    expect(store.cursor, '12');
+    expect(store.saves, 0);
+    sync.stop();
+
+    final retryTransport = _Transport()
+      ..responses.add(_page(cursor:'30', reset:true));
+    projection.failFull = false;
+    final recovery = _sync(store, projection, retryTransport);
+    await recovery.syncOnce();
+    expect(projection.full, 1);
+    expect(store.cursor, '30');
+    expect(store.saves, 1);
+    recovery.stop();
+  });
+
+  test('revoked bearer permanently stops realtime retries', () async {
+    final statuses = <HumanDmRealtimeStatus>[];
+    final sync = HumanDmRealtimeSync(
+      tenantId: 'tenant_a', userId: 'user_a',
+      transport: _RevokedTransport(),
+      store: _Store()..cursor = '1',
+      projection: _Projection(),
+      isCurrentSession: () => true,
+      onStatus: statuses.add,
+      sleep: (_) => throw StateError('Auth errors must not retry'),
+    );
+    await sync.runWhileForeground();
+    expect(sync.active, isFalse);
+    expect(statuses, [
+      HumanDmRealtimeStatus.connecting,
+      HumanDmRealtimeStatus.authenticationRequired,
+    ]);
+  });
+
 }
