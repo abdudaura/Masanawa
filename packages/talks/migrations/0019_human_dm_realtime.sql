@@ -16,7 +16,9 @@ CREATE TABLE talks.human_dm_events (
   CHECK (
     ((kind IN ('message_added','message_changed','message_deleted'))
        AND message_id IS NOT NULL AND message_sequence IS NOT NULL)
-    OR (kind IN ('read_changed','access_changed')
+    OR (kind='read_changed'
+       AND message_id IS NULL AND message_sequence IS NOT NULL)
+    OR (kind='access_changed'
        AND message_id IS NULL AND message_sequence IS NULL)
   )
 );
@@ -68,7 +70,7 @@ RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF TG_OP='INSERT' OR NEW.last_read_sequence IS DISTINCT FROM OLD.last_read_sequence THEN
     PERFORM talks.emit_human_dm_event(NEW.tenant_id,NEW.conversation_id,
-      'read_changed',NEW.user_id);
+      'read_changed',NEW.user_id,NULL,NEW.last_read_sequence);
   END IF;
   RETURN NULL;
 END;
