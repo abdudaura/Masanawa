@@ -10,11 +10,10 @@ bool isRecoverableAgentSessionError(Object error) {
     case 'agents.session_closed':
     case 'agents.session_persona_changed':
       return true;
-    case null:
-      // Backward compatibility for older Gateway builds that omit an error
-      // code from a missing-session 404.
-      return error.statusCode == 404;
     default:
+      // A bare 404 is ambiguous: it may be an unauthorized character,
+      // removed account or unrelated route. Re-opening and resending the
+      // original request would be unsafe without a precise pre-dispatch code.
       return false;
   }
 }
