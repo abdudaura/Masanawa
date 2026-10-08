@@ -44,3 +44,9 @@
 - Foundation CI run `37712108680` completed with failure but job `113100136711` had no steps or log URL. This is not evidence of an app-level test assertion failure.
 - **Code state:** persisted quote-scoped reuse and billing webhook recovery implemented, unit and DB integration tests committed. **Verification state:** workspace typecheck, Vitest, DB concurrency integration, real provider behavior and deployment remain UNVERIFIED. No production activity undertaken.
 - Latest source ownership remains services/gateway billing-wallet and billing-routes, adapters/storage/postgres ngn-wallet, and three focused tests. Additional R05 wallet/mobile reconciliation work requires a separately coordinated follow-on claim; no shared migration edited.
+
+## Final pre-merge invariant review
+
+- Explicit user request to merge the bounded R05 PR. Additional source review found `reserveConfirmedBill` could newly reserve an expired confirmed wallet quote. This can authorize a purchase under stale economics outside the duplicate-webhook branch's new expiry check.
+- Expanded owned paths: `adapters/storage/postgres/src/commerce/billing-funding.ts` and `adapters/storage/postgres/src/commerce/billing-funding.integration.test.ts` exclusively for wallet quote expiry invariant and regression. Other open PRs do not edit them as checked at claim update.
+- Preserve payment-verified legacy checkout and already-reserved idempotent reconciliation by checking expiry only before a **new** NGN wallet reserve. No retroactive expiry on in-flight authorized transactions.
