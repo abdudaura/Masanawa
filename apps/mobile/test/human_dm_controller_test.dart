@@ -103,4 +103,19 @@ void main() {
     expect(saved.map((p)=>p.id).toSet().length,2);
     controller.dispose();
   });
+
+  test('a switched or signed-out account cannot send under the new bearer',() async {
+    final api=_Transport();
+    final box=_Outbox();
+    var active=true;
+    final controller=HumanDmController('user_alice','thread-id',api,box,
+      isAccountCurrent:()=>active);
+    await drain();
+    active=false;
+    await controller.send('Alice private text');
+    expect(api.attempts,0);
+    expect(api.sent,isEmpty);
+    expect(await box.load('user_alice','thread-id'),isEmpty);
+    controller.dispose();
+  });
 }
