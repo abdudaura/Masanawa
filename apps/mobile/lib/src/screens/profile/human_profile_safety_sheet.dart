@@ -89,8 +89,10 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
     if(_busy || !_authorized || _loading)return;
     setState((){_busy=true;_error=null;});
     try {
+      final requestedBlocked=_blocked;
+      final requestedMuted=_muted;
       final transport=ref.read(humanProfileSafetyTransportProvider);
-      await transport.set(widget.handle,blocked:_blocked,muted:_muted);
+      await transport.set(widget.handle,blocked:requestedBlocked,muted:requestedMuted);
       // A 2xx alone is not an authoritative settings readback.
       final saved=await transport.read(widget.handle);
       if(!mounted || !_authorized)return;
@@ -99,7 +101,7 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
         _savedMuted=saved.muted;
         _blocked=saved.blocked;
         _muted=saved.muted;
-        if(saved.blocked!=_blocked || saved.muted!=_muted){
+        if(saved.blocked!=requestedBlocked || saved.muted!=requestedMuted){
           _error='Server settings changed. Review before saving again.';
         }
       });
