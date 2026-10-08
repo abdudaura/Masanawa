@@ -33,6 +33,7 @@ class GatewayHumanProfileSafetyTransport implements HumanProfileSafetyTransport 
     required TalkSafetyReportReason reason,
     required String requestId,
     required String detail,
+    required String reporterUserId,
   }) async {
     if(api.accessToken==null || api.accessToken!.isEmpty){
       throw StateError('Sign in required');
