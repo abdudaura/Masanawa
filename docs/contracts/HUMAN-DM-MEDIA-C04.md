@@ -44,3 +44,41 @@ flutter build apk --debug
 ```
 
 **Status:** Code paths and tests are source-authored, unexecuted, not composed into production Gateway or five-tab Flutter. C04 = `PARTIAL_IMPLEMENTATION` pending independent and integration ownership. Not `VERIFIED_E2E`, not release-ready.
+
+
+## Private-object deletion and background reconciliation — C04 follow-up source checkpoint
+
+The unmerged `0018_human_dm_media.sql` now records `storage_erased_at` and installs
+`human_dm_voice_object_erasure_guard`. A direct row deletion, or an account/
+conversation cascading deletion, raises SQLSTATE `23503` unless the private
+storage object was confirmed deleted. A successful `PrivateVoiceObjectStore.delete`
+is followed by **one SQL transaction** recording the erasure timestamp and
+removing the journal row; DB rollback/crash leaves a retryable key and does not
+claim that an object was erased. Failed object DELETE returns the row to
+`orphaned` for durable retries. Never bypass this guard to make R12 appear
+complete: the R12 deletion coordinator must request/await private object
+erasure before deleting the linked identity/conversation.
+
+`installHumanVoiceModule(app,{pool,authorizer,privateS3})` in
+`services/gateway/src/human_media/runtime.ts` is the sole C04-owned
+Gateway mount/worker hook. It requires the canonical C01/C02 membership and
+session adapter and all five private S3 fields before registering the HTTP
+routes, starts a bounded startup+periodic GC worker and joins Fastify
+`onClose` to prevent task leaks. Multiple worker instances are protected by
+the repository's `SKIP LOCKED`/state cooldown. An optional payload-free
+failure signal reports errors without media IDs, key names or private bytes.
+**It has not been invoked from shared `main.ts/app.ts`**, which have competing
+R18/C01/C02 owners. This mount is source-ready, not deployed or tested.
+
+Add to the Work verification suite:
+
+```sh
+corepack pnpm exec vitest run services/gateway/src/human_media/runtime.test.ts
+MASANAWA_C04_ENABLE_DB_TESTS=yes MASANAWA_C04_TEST_DATABASE_URL=postgresql://.../masanawa_c04_test corepack pnpm exec vitest run services/gateway/src/human_media/postgres_integration.test.ts
+```
+
+On the disposable DB verify SQLSTATE `23503` for premature direct/media
+cascade deletion, remote S3 delete failure and retry, successful delete and
+journal removal, and R12 account deletion only **after** confirmed erasure.
+No external S3 policy, full backup/recovery, migrated C01+C02+C04 schema,
+Android or live two-person proof exists in this window.
