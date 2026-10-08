@@ -33,3 +33,10 @@ Last repository-visible activity: 2026-10-08T00:53:00Z (last branch work during 
 - Added token expiry and endpoint rejection regression cases. These tests are source-level only; no Flutter/Dart executable is available in this connector window.
 - Inspected latest PR Actions: Mobile Build and Foundation CI are marked failed while job metadata exposes zero steps, and GitHub job log fetch returned 404 BlobNotFound. Do **not** misreport these runs as passing or as a demonstrated Dart/test failure.
 - Latest implementation commits: `41d4ce7`, `3f5b970`, `af6b431`, `d6192f8`. No deploy/device verification. Future R02 work requires an executable Flutter job, Gateway/LiveKit readiness probe and authenticated Android audio diagnostics.
+
+## Fail-closed heartbeat audit
+
+- Commit `ac8c1c0`: heartbeat network failure immediately revokes local microphone publication authority, attempts to disable the track and transitions into reconnecting. Server-ended heartbeat also revokes local permission and cancels further heartbeats; closing a session revokes permission before waiting on in-flight requests.
+- Commit `637d3ab`: focused regression test exercises failed host heartbeat, disabled microphone, blocked client unmute during outage, and clean close.
+- No Dart/Flutter SDK exists in the available execution container, so these tests remain **not executed**. Do not merge as release-qualified merely because files and test cases were committed.
+- Workstream is checkpointed for CI-enabled reviewer / Android test. R03 may be claimed by an independent window; this window owns only R02 paths above.
