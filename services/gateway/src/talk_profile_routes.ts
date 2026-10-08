@@ -12,6 +12,35 @@ export function registerTalkProfileRoutes(
     });
   });
 
+  app.put(
+    "/profiles/me",
+    {
+      schema: {
+        body: Type.Object(
+          {
+            handle: Type.String({ minLength: 2, maxLength: 40 }),
+            displayName: Type.String({ minLength: 2, maxLength: 80 }),
+            bio: Type.String({ maxLength: 300 }),
+          },
+          { additionalProperties: false },
+        ),
+      },
+    },
+    async (request, reply) => {
+      const body = request.body as {
+        handle: string;
+        displayName: string;
+        bio: string;
+      };
+      const created = await service.createSelf({
+        authorizationHeader: request.headers.authorization,
+        ...body,
+      });
+      reply.code(201);
+      return created;
+    },
+  );
+
   app.patch(
     "/profiles/me",
     {
