@@ -40,6 +40,13 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
     accept: (request.body as { accept: boolean }).accept,
   }));
 
+  app.delete("/messages/contacts/:otherUserId", {
+    schema: { params: Type.Object({ otherUserId: Type.String({ minLength: 3, maxLength: 256 }) }, { additionalProperties: false }) },
+  }, async (request) => service.revoke({
+    authorizationHeader: request.headers.authorization,
+    otherUserId: (request.params as { otherUserId: string }).otherUserId,
+  }));
+
   app.get("/messages/contacts", {
     schema: { querystring: Type.Object({ limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) }, { additionalProperties: false }) },
   }, async (request) => service.list({
