@@ -10,6 +10,14 @@ Final branch HEAD: see live [draft PR #489](https://github.com/Baatiku/masanawa/
 PR: [#489](https://github.com/Baatiku/masanawa/pull/489), **draft/unmerged**, against current main.
 Trace: R15; T05, N05, P05, M10, Q privacy/security; integrated journeys J06/J11 (persona discovery/safety isolation). **No credit towards full R15/J11 acceptance.**
 
+## Late-discovered concurrent duplicate: MERGE STOP (#491)
+
+**At this checkpoint, a second active independent R15 persona-report PR [#491](https://github.com/Baatiku/masanawa/pull/491) emerged at virtually the same time as #489. Both originated from the exact same main SHA; #489 opened at 11:48:36Z and #491 at 11:48:54Z on 2026-10-08. This is an ownership collision requiring integration reconciliation, not permission to merge either or delete historical work.** Current observed #491 head `5fe1fa31791d2c742d79b4d12bef3847fbc7a10f`; its branch is `work/r15-persona-reporting-20261008-gpt6`. #489 base/main `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`.
+
+**Precisely overlapping paths**: persona public profile screen, new persona report sheet, talk safety transport/interface. **Unique #489 assets**: `apps/mobile/test/persona_report_flow_test.dart`, `services/gateway/src/talk_safety_routes.test.ts` persona HTTP auth/target validation, secure UUIDv7-style request IDs from `createRequestId()`, and more explicit bounded error copy. **Unique #491 assets**: account/persona-scoped encrypted local pending-report journal `persona_report_journal.dart` for crash recovery, session-switch guards, server 202/receipt body validation, stronger target/request validation, and extra Flutter/Gateway tests. #491 generates its initial report ID with timestamp + in-process counter instead of secure randomness; when reconciling prefer #489's `createRequestId()` secure factory. Consider combining the best validated tests and retry semantics, preserving deletion/privacy boundaries and Android keystore evidence. This handoff names differences from a **static diff review only**, not test evidence.
+
+**Mandatory final Work action:** Compare #489 and #491 **before any cherry-pick**; select one authoritative persona report client contract/implementation (favor full account-scoped journal and receipt checks if verified), carry over secure request IDs and unique negative tests, run both suites and actual Postgres/Android checks at integrated SHA. Avoid applying both variants as separate report flows. Leave both DRAFT / UNMERGED while unresolved; #489 is **superseded pending reconciliation** and its source is NOT approved for independent merging. Source status of this branch remains as previously written, but overall release status remains UNVERIFIED and R15 PARTIAL.
+
 ## Scope, claims and non-overlap
 
 Exact modified/created source:
