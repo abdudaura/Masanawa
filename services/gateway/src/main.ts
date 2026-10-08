@@ -2363,6 +2363,10 @@ export async function startGatewayService(
         clearInterval(talkPushDedupePurgeTimer);
         talkPushDedupePurgeTimer = undefined;
       }
+      if (avatarCleanupTimer) {
+        clearInterval(avatarCleanupTimer);
+        avatarCleanupTimer = undefined;
+      }
       await database.close();
     },
     onFatalShutdown: () => {
@@ -2385,7 +2389,13 @@ export async function startGatewayService(
     }
     avatarCleanupRunning = true;
     try {
-      await composedProfileAvatar.collectGarbage(20);
+      const outcome = await composedProfileAvatar.collectGarbage(20);
+      if (outcome.failed > 0) {
+        process.stderr.write(JSON.stringify({
+          event: "profile.avatar.cleanup_retry_pending",
+          failedCount: outcome.failed,
+        }) + "\n");
+      }
     } catch {
       // Durable leases survive process restarts and are retried on next sweep.
       process.stderr.write(JSON.stringify({
