@@ -137,10 +137,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved.')),
       );
+    } on DioException catch (error) {
+      if (!mounted) return;
+      final status = error.response?.statusCode;
+      setState(() {
+        if (status == 409) {
+          _error = _creatingProfile
+              ? 'This handle may be taken, or your profile already exists. '
+                'Choose another handle or reload your profile.'
+              : 'Your profile changed elsewhere. Reload before saving again.';
+        } else if (status == 401 || status == 403) {
+          _error = 'Your session needs to be renewed. Sign in and reload.';
+        } else {
+          _error = 'Could not confirm whether your changes saved. '
+              'Reload your profile before trying again.';
+        }
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _error =
-          'Could not save your profile. Your previous details are unchanged.');
+          'Could not confirm whether your changes saved. '
+          'Reload your profile before trying again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -269,7 +286,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               'and invitation references can be migrated safely.',
                             ),
                           ),
-                        if (_error != null)
+                        if (_error != null) ...[
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: Text(
@@ -277,6 +294,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               style: TextStyle(color: u.emergency),
                             ),
                           ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              key: const ValueKey('profile-reload'),
+                              onPressed: _saving ? null : _load,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Reload from server'),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         FilledButton(
                           key: const ValueKey('profile-edit-save'),
