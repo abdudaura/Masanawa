@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import type { MigrationRoot } from "../migrations.js";
+import { readMigrationManifest, type MigrationRoot } from "../migrations.js";
 
 export interface SchemaMigration {
   readonly owner: string;
@@ -38,6 +38,14 @@ export async function loadSchemaManifest(roots: readonly MigrationRoot[]): Promi
     }
   }
   result.sort((a,b)=>a.owner===b.owner?a.name.localeCompare(b.name):a.owner.localeCompare(b.owner));
+  // Guard against accidentally diverging from the existing production migration
+  // resolver/order, or migration files changing during this operator approval.
+  const canonical=await readMigrationManifest(roots);
+  if(canonical.length!==result.length || canonical.some((m,i)=>
+    m.owner!==result[i]?.owner || m.name!==result[i]?.name ||
+    m.sha256!==result[i]?.sha256)){
+    throw new Error("schema.manifest_resolver_mismatch");
+  }
   // Stable regardless of checkout path or filesystem timestamps. Pin this in an approval.
   const fingerprint=result.map(m=>[m.owner,m.name,m.sha256].join("/")).join("\n")+"\n";
   return Object.freeze({
