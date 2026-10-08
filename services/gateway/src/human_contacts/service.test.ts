@@ -113,6 +113,15 @@ describe("C01 authenticated human-contact consent", () => {
     expect(await svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).toMatchObject({ canMessage: false });
     await expect(svc().revoke({ authorizationHeader: "Bearer okay", otherUserId: "user_al" })).rejects.toMatchObject({ statusCode: 404 });
   });
+  it("rejects missing, malformed or overflowing response revision", async () => {
+    const { svc } = harness();
+    for (const revision of ["", "0", "-1", "1.2", "9223372036854775808", undefined]) {
+      await expect(svc("user_bo").respond({
+        authorizationHeader: "Bearer okay", requesterId: "user_al",
+        requestRevision: revision as string, accept: true,
+      })).rejects.toMatchObject({ statusCode: 400 });
+    }
+  });
   it("validates policy and page sizes rather than trusting requests", async () => {
     const { svc } = harness();
     await expect(svc().updatePreferences({ authorizationHeader: "Bearer okay", policy: "unlimited" as never })).rejects.toBeInstanceOf(HumanContactError);

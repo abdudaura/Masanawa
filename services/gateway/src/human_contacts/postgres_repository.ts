@@ -219,6 +219,16 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
                 AND ((sp.viewer_user_id=$2 AND sp.subject_user_id=$3)
                   OR (sp.viewer_user_id=$3 AND sp.subject_user_id=$2))
            )
+           -- Moderation may intervene after invitation; reauthorize both profiles.
+           AND NOT EXISTS (
+             SELECT 1 FROM talks.public_profiles p
+             JOIN talks.safety_enforcement se
+               ON se.tenant_id=p.tenant_id
+              AND se.target_kind='profile'
+              AND se.target_id=p.handle
+              AND se.visibility IN ('restricted','blocked')
+             WHERE p.tenant_id=$1 AND p.user_id IN ($2,$3)
+           )
         RETURNING e.first_user_id
       `, [tenantId, recipientId, requesterId, accept ? "accepted" : "declined", requestRevision]);
       return (result.rowCount ?? result.rows.length) > 0;

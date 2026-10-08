@@ -98,6 +98,8 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("(e.status='pending' OR e.status=$4)");
     expect(sql).toContain("e.revoked_by IS NULL");
     expect(sql).toContain("sp.blocked=true");
+    expect(sql).toContain("se.visibility IN ('restricted','blocked')");
+    expect(sql).toContain("p.user_id IN ($2,$3)");
     expect(sql).toContain("u.state='active'");
   });
   it("removes blocked contacts from list and makes limit parameterized", async () => {

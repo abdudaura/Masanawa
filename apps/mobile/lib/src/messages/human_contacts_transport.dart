@@ -87,7 +87,8 @@ class HumanContact {
     final lastUpdate = json['updatedAt'];
     if (requestRevision != null &&
         (requestRevision is! String ||
-            !RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(requestRevision))) {
+            !RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(requestRevision) ||
+            BigInt.parse(requestRevision) > BigInt.parse('9223372036854775807'))) {
       throw const FormatException('Invalid contact request revision');
     }
     if (!fromLookup && requestRevision == null) {
@@ -249,7 +250,8 @@ class GatewayHumanContactsTransport implements HumanContactsTransport {
     required String requestRevision,
   }) async {
     _requireAuth();
-    if (!RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(requestRevision)) {
+    if (!RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(requestRevision) ||
+        BigInt.parse(requestRevision) > BigInt.parse('9223372036854775807')) {
       throw const FormatException('Invalid contact request revision');
     }
     final response = await api.dio.post<dynamic>(

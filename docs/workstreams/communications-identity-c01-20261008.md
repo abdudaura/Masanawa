@@ -106,3 +106,8 @@ Use real local test-only credentials in the runner, never copy a production data
 ### Static review and source repair — 2026-10-08T12:00:09.823Z
 
 Static source review (NOT executed tests) found a regression introduced by the prior revision edit: JavaScript replacement-string interpolation of a Dart regex appended duplicated stale source into `human_contacts_transport.dart`. Rebuilt that file from its pre-revision clean blob `0e276622ac660175894e6a402d635474bd29784a` and reapplied intended DTO, parser and transport changes using literal callback replacements. Corrected the `respond` transport test to send the required revision; added service non-string revision defense. This commit supersedes the corrupted intermediate version. **No executable tests passed**; Work must still run Dart analyzer and full tests. The PR remains draft/unmerged.
+
+
+### Moderation and request-revision hardening — 2026-10-08T12:01:43.948Z
+
+C01 PostgreSQL recipient approval now checks current `talks.safety_enforcement` restrictions on either public profile as well as reciprocal safety blocks and active identities. A person restricted between request and approval cannot gain consent through a stale screen. Added SQL assertion and service missing/malformed/overflow revision tests. Flutter rejects request revisions outside signed 64-bit PostgreSQL range. This is source/test creation ONLY: no executable Postgres, Vitest, Flutter or Android result; original #457 runner exhaustion unchanged. C02 must still enforce safety at **actual message send**, not trust approved contact projection. Stay draft/unmerged.
