@@ -111,7 +111,7 @@ export async function POST(
       headers: { "cache-control": "no-store" },
     });
     result.cookies.set(SESSION_COOKIE, "", {
-      httpOnly: true, sameSite: "strict", secure: request.nextUrl.protocol === "https:",
+      httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production" || request.nextUrl.protocol === "https:",
       path: COOKIE_PATH, maxAge: 0,
     });
     return result;
@@ -167,7 +167,7 @@ export async function POST(
         headers: { "cache-control": "no-store" },
       });
       success.cookies.set(SESSION_COOKIE, accessToken, {
-        httpOnly: true, sameSite: "strict", secure: request.nextUrl.protocol === "https:",
+        httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production" || request.nextUrl.protocol === "https:",
         path: COOKIE_PATH, maxAge: 900,
       });
       return success;
