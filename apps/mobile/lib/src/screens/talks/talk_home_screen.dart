@@ -26,7 +26,7 @@ class TalkHomeScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: u.surfaceBg,
+        backgroundColor: u.surfaceCard,
         appBar: AppBar(
           toolbarHeight: embeddedInShell ? 0 : null,
           primary: !embeddedInShell,

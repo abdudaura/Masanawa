@@ -69,7 +69,7 @@ class _PersonaBody extends StatelessWidget {
     final ownerHandle = profile.ownerHandle?.trim();
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(
         title: Text(isExpert ? 'Expert' : 'Twin'),
       ),

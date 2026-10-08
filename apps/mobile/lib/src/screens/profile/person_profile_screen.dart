@@ -107,7 +107,7 @@ class _PersonProfileBody extends StatelessWidget {
     final twinId = profile.twinPublicId?.trim();
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(title: Text('@' + profile.handle)),
       body: RefreshIndicator(
         onRefresh: onRefresh,
