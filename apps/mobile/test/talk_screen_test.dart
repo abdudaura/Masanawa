@@ -1519,7 +1519,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('talk-gift-error')), findsOneWidget);
     expect(
-      find.text('Couldn’t confirm this gift. Check Activity before retrying or refresh options.'),
+      find.text('Couldn’t confirm this gift. Check Wallet history before retrying.'),
       findsOneWidget,
     );
     expect(find.textContaining('DioException'), findsNothing);
