@@ -146,19 +146,22 @@ class _TalkCreateParticipantHandoffState
 
   Future<void> _complete(TalkCreateParticipantAction action) async {
     if (_working || _pending.isEmpty || _pending.first != action) return;
+    final talkId = widget.talkId;
     _working = true;
     try {
       final remaining = _pending.skip(1).toList(growable: false);
-      await ref.read(talkCreateActionStoreProvider).save(widget.talkId, remaining);
-      if (!mounted) return;
+      await ref.read(talkCreateActionStoreProvider).save(talkId, remaining);
+      if (!mounted || widget.talkId != talkId) return;
       _banner?.close();
       _banner = null;
       setState(() => _pending = remaining);
-      WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
     } catch (_) {
       _message('Couldn’t save your choice. Please retry; no payment was started.');
     } finally {
       _working = false;
+      if (mounted && widget.talkId == talkId) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
+      }
     }
   }
 
