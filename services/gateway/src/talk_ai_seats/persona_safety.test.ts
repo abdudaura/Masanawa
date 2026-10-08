@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
+import { createTalkAiSeatQuote, type TalkAiSeatQuote } from "@masanawa/commerce";
 import { createPostgresTalkAiSeatRepository } from "./postgres_repository.js";
 
 interface RecordedQuery {
@@ -7,7 +8,7 @@ interface RecordedQuery {
   values?: unknown[];
 }
 
-function fixture(safetyAllowed: boolean) {
+function fixture(safetyAllowed: boolean, existingQuote?: TalkAiSeatQuote) {
   const calls: RecordedQuery[] = [];
   let releases = 0;
   const persona = {
@@ -31,6 +32,9 @@ function fixture(safetyAllowed: boolean) {
         started_at: "2026-10-08T05:00:00Z",
         live_state: "live",
       }] as unknown as Row[] };
+    }
+    if (text.includes("FROM commerce.talk_ai_seat_quotes") && existingQuote) {
+      return { rowCount: 1, rows: [{definition:existingQuote,request_id:"request_existing"}] as unknown as Row[] };
     }
     if (text.includes("FROM talks.persona_profiles p")) {
       return { rowCount: 1, rows: [persona] as unknown as Row[] };
@@ -108,5 +112,50 @@ describe("AI Seat moderation and financial authorization boundary", () => {
     expect(query?.text).toContain("talks.safety_enforcement se");
     expect(query?.text).toContain("se.target_id=talks.talk_seats.persona_id");
     expect(query?.values).toEqual(["tenant-a", "talk-a", "seat_request-a"]);
+  });
+ 
+  it("rejects confirmation of a pre-restriction quote without debiting held Credits", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const quote = createTalkAiSeatQuote({
+      tenantId,
+      quoteId: createCanonicalId("quote"),
+      talkId: "talk-a",
+      personaId: "expert_gwani",
+      personaKind: "expert",
+      mode: "host_add",
+      payerUserId: userId,
+      hostUserId: userId,
+      twinOwnerUserId: null,
+      priceCredits: 100,
+      hostShareCredits: 20,
+      twinOwnerShareCredits: 0,
+      platformShareCredits: 80,
+      createdAt: "2026-10-08T05:00:00.000Z" as never,
+      expiresAt: "2026-10-08T06:30:00.000Z" as never,
+    });
+    const f = fixture(false, quote);
+    await expect(f.repository.confirm({
+      tenantId,
+      payerUserId: userId,
+      talkId: "talk-a",
+      quoteId: quote.quoteId,
+      now: "2026-10-08T06:00:00.000Z",
+    })).rejects.toThrow("talks.persona_unavailable");
+    const lockedQuote = f.calls.findIndex((call) =>
+      call.text.includes("FROM commerce.talk_ai_seat_quotes"),
+    );
+    const guard = f.calls.findIndex((call) =>
+      call.text.includes("pg_advisory_xact_lock"),
+    );
+    const persona = f.calls.findIndex((call) =>
+      call.text.includes("FROM talks.persona_profiles p"),
+    );
+    expect(lockedQuote).toBeGreaterThanOrEqual(0);
+    expect(guard).toBeGreaterThan(lockedQuote);
+    expect(persona).toBeGreaterThan(guard);
+    expect(f.calls.some((call) => call.text.includes("INSERT INTO commerce.ledger"))).toBe(false);
+    expect(f.calls.some((call) => call.text.includes("UPDATE commerce.talk_ai_seat_quotes"))).toBe(false);
+    expect(f.calls.some((call) => call.text === "ROLLBACK")).toBe(true);
   });
 });
