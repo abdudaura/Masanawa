@@ -217,7 +217,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Talks'), findsOneWidget);
+    expect(find.text('Talks'), findsWidgets);
     expect(find.text('Chats'), findsOneWidget);
     expect(find.text('Assistant'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
@@ -261,7 +261,7 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    expect(find.text('Talks'), findsOneWidget);
+    expect(find.text('Talks'), findsWidgets);
     expect(find.text('Explore'), findsOneWidget);
     expect(find.text('Live Talks'), findsOneWidget);
     expect(find.text('Is university still worth it?'), findsOneWidget);
@@ -350,10 +350,30 @@ void main() {
   });
 
 
+  testWidgets('Start Talk FAB is exclusive to public Talks and never present in private roots', (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+    expect(find.text('Sign in to view private messages.'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+    expect(find.text('Sign in to open your private Assistant.'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.account_balance_wallet_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+    await tester.tap(find.byIcon(Icons.smart_toy_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+  });
+
   testWidgets('Arabic locale translates shell navigation without changing route semantics', (tester) async {
     await tester.pumpWidget(_app(uiLocale: const Locale('ar')));
     await tester.pumpAndSettle();
-    expect(find.text('نقاشات'), findsOneWidget);
+    expect(find.text('نقاشات'), findsWidgets);
     expect(find.text('الوكلاء'), findsOneWidget);
     expect(find.text('المحفظة'), findsOneWidget);
     expect(find.text('المساعد'), findsOneWidget);
@@ -381,7 +401,7 @@ void main() {
     });
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
-    expect(find.text('Talks'), findsOneWidget);
+    expect(find.text('Talks'), findsWidgets);
     expect(find.text('Chats'), findsOneWidget);
     expect(find.text('Agents'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
