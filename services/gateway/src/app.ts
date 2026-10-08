@@ -1160,8 +1160,14 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     const auth = (request: { headers: { authorization?: string | undefined } }) =>
       request.headers.authorization;
 
-    app.get("/v1/financial/capabilities", async (request) =>
-      financial.capabilities({ authorizationHeader: auth(request) }));
+    app.get("/v1/financial/capabilities", async (request) => {
+      const authorizationHeader = auth(request);
+      const capabilities = await financial.capabilities({authorizationHeader});
+      const internalTransfers = options.internalCryptoTransfers
+        ? await options.internalCryptoTransfers.available({authorizationHeader})
+        : false;
+      return {...capabilities, internalTransfers};
+    });
 
     app.get("/v1/financial/crypto/routes", async (request) => ({
       routes: (await financial.listDepositRoutes({
