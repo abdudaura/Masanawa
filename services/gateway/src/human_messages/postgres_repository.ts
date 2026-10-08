@@ -50,9 +50,14 @@ const sendPermission = `
       OR COALESCE((SELECT p.admission_policy FROM talks.human_dm_preferences p
         WHERE p.tenant_id=$1
           AND p.user_id=CASE WHEN c.first_user_id=$2 THEN c.second_user_id ELSE c.first_user_id END),'requests')='anyone'
-      OR EXISTS (SELECT 1 FROM talks.human_dm_messages prior
-        WHERE prior.tenant_id=c.tenant_id AND prior.conversation_id=c.conversation_id
-          AND prior.sender_user_id<>$2)
+      OR (
+        COALESCE((SELECT p.admission_policy FROM talks.human_dm_preferences p
+          WHERE p.tenant_id=$1 AND p.user_id=CASE WHEN c.first_user_id=$2
+            THEN c.second_user_id ELSE c.first_user_id END),'requests')<>'nobody'
+        AND EXISTS (SELECT 1 FROM talks.human_dm_messages prior
+          WHERE prior.tenant_id=c.tenant_id AND prior.conversation_id=c.conversation_id
+            AND prior.sender_user_id<>$2)
+      )
     )
 `;
 async function transact<T>(pool: HumanDmPool, cb:(q:Client)=>Promise<T>):Promise<T> {
