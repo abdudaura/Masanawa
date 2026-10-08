@@ -69,6 +69,9 @@ function fixture() {
       async admit() {
         if(admissionDenied) throw new OperatorTaskError("CAPABILITY_NOT_QUALIFIED",403);
       },
+      async authorizeConfirmation() {
+        if(admissionDenied) throw new OperatorTaskError("CAPABILITY_REVOKED",403);
+      },
       async execute() { executes++; return executed; },
       async reconcile() { return readback; },
     },
@@ -189,7 +192,23 @@ describe("U02 durable operator task state/security contract", () => {
       expectedVersion:p.task.version,approvalToken:p.approvalToken})).rejects.toMatchObject({statusCode:409});
   });
 
-  it("paginates task events in version order and refuses invalid cursors", async () => {
+  it("rechecks permission at approval and refuses revoked actions", async () => {
+    const f=fixture(), task=await f.propose(), p=await f.prepare(task.taskId,task.version);
+    f.denyAdmission();
+    await expect(f.service.confirm({actor:f.account,taskId:task.taskId,
+      expectedVersion:p.task.version,approvalToken:p.approvalToken})).rejects.toMatchObject({code:"CAPABILITY_REVOKED"});
+    expect(f.executions()).toBe(0);
+  });
+
+  it("rotates lost approval tokens and rejects the old revision", async () => {
+    const f=fixture(), task=await f.propose(), first=await f.prepare(task.taskId,task.version);
+    const next=await f.prepare(task.taskId,first.task.version);
+    await expect(f.service.confirm({actor:f.account,taskId:task.taskId,
+      expectedVersion:next.task.version,approvalToken:first.approvalToken})).rejects.toMatchObject({statusCode:403});
+    expect(next.task.operationId).not.toBe(first.task.operationId);
+  });
+
+    it("paginates task events in version order and refuses invalid cursors", async () => {
     const f=fixture(), task=await f.propose();
     await f.prepare(task.taskId,task.version);
     const events=await f.service.events({actor:f.account,taskId:task.taskId,afterVersion:1,limit:10});
