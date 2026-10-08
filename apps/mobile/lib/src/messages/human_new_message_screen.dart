@@ -78,6 +78,7 @@ class _HumanNewMessageScreenState
   bool _acting = false;
   String? _owner;
   int _generation = 0;
+  int _lookupEpoch = 0;
 
   @override
   void initState() {
@@ -163,7 +164,8 @@ class _HumanNewMessageScreenState
       setState(() => _error = 'Enter a valid exact @handle.');
       return;
     }
-    final epoch = ++_generation;
+    final epoch = _generation;
+    final lookupEpoch = ++_lookupEpoch;
     setState(() {
       _searching = true;
       _result = null;
@@ -175,13 +177,13 @@ class _HumanNewMessageScreenState
         '/messages/contacts/lookup/' + Uri.encodeComponent(handle),
       );
       final found = _ContactCandidate.parse(response.data, fromLookup: true);
-      if (!_current(owner, epoch)) return;
+      if (!_current(owner, epoch) || lookupEpoch != _lookupEpoch) return;
       setState(() => _result = found);
     } catch (error) {
-      if (!_current(owner, epoch)) return;
+      if (!_current(owner, epoch) || lookupEpoch != _lookupEpoch) return;
       setState(() => _error = _errorMessage(error));
     } finally {
-      if (_current(owner, epoch)) setState(() => _searching = false);
+      if (_current(owner, epoch) && lookupEpoch == _lookupEpoch) setState(() => _searching = false);
     }
   }
 
@@ -240,6 +242,7 @@ class _HumanNewMessageScreenState
     final owner = session is SessionSignedIn ? session.user.id : null;
     if (_owner != owner) {
       ++_generation;
+      ++_lookupEpoch;
       _owner = owner;
       _contacts = const [];
       _result = null;
