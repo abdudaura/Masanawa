@@ -36,12 +36,22 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     subtitle: 'Owned by Amina',
     topics: ['Technology', 'Startups'],
     isAvailable: true,
+    isOwnedByViewer: true,
+  );
+
+  static const foreignTwin = TalkAiSeatCandidate(
+    personaId: 'twin-foreign',
+    displayName: 'Someone Else Twin',
+    kind: TalkAiPersonaKind.twin,
+    seatFeeLabel: '20 Credits',
+    isAvailable: true,
+    isOwnedByViewer: false,
   );
 
   @override
   Future<List<TalkAiSeatCandidate>> loadCandidates({
     required String talkId,
-  }) async => emptyCatalog ? const [] : const [expert, twin];
+  }) async => emptyCatalog ? const [] : const [expert, twin, foreignTwin];
 
   @override
   Future<TalkAiSeatQuote> createQuote({
@@ -88,6 +98,7 @@ Widget _app({
   required TalkAiSeatTransport transport,
   required bool isHost,
   TalkAiPersonaKind initialKind = TalkAiPersonaKind.expert,
+  bool onlyOwnedTwin = false,
 }) {
   return ProviderScope(
     overrides: [
@@ -99,6 +110,7 @@ Widget _app({
         talkId: 'talk-1',
         isHost: isHost,
         initialKind: initialKind,
+        onlyOwnedTwin: onlyOwnedTwin,
       ),
     ),
   );
@@ -162,6 +174,22 @@ void main() {
     expect(find.text('Amina Twin'), findsOneWidget);
     expect(find.text('Economist'), findsNothing);
     expect(transport.quoteCount, 0);
+    expect(transport.confirmationCalls, 0);
+  });
+
+  testWidgets('Add My Twin cannot show other people’s public Twins',
+      (tester) async {
+    final transport = _FakeSeatTransport();
+    await tester.pumpWidget(_app(
+      transport: transport,
+      isHost: true,
+      onlyOwnedTwin: true,
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('My Twin'), findsOneWidget);
+    expect(find.text('Amina Twin'), findsOneWidget);
+    expect(find.text('Someone Else Twin'), findsNothing);
+    expect(find.text('Economist'), findsNothing);
     expect(transport.confirmationCalls, 0);
   });
 
