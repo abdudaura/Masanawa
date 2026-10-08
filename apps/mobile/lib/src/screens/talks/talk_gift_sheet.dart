@@ -65,7 +65,7 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
 
     setState(() {
       _sending = false;
-      _error = 'Gift couldn’t be sent. Check your balance or gift price and try again.';
+      _error = 'Couldn’t confirm this gift. Check Activity before retrying or refresh options.';
       // A price/availability conflict should be resolved by explicitly reloading
       // the catalog, never by silently charging a different amount.
     });
@@ -75,7 +75,8 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
+        child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -205,6 +206,7 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
               },
             ),
           ],
+        ),
         ),
       ),
     );
