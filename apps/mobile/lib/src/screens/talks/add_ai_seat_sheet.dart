@@ -75,8 +75,8 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   bool _sameAccount(int revision) =>
       mounted &&
       revision == _authRevision &&
-      (_openingAccountId == null ||
-          _activeAccountId() == _openingAccountId);
+      _openingAccountId != null &&
+      _activeAccountId() == _openingAccountId;
 
   @override
   void initState() {
@@ -217,7 +217,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
               ? session.user.id
               : null),
       (previous, next) {
-        if (_openingAccountId == null || next == _openingAccountId) return;
+        if (next == _openingAccountId) return;
         _authRevision++;
         _quoteExpiryTimer?.cancel();
         _quote = null;
