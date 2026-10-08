@@ -203,6 +203,25 @@ export function createAgentBillingAssistant(input: Readonly<{
   wallet: BillingWalletService;
 }>): AgentBillingAssistant {
 
+  async function pendingForCharacter(
+    authorizationHeader: string | undefined,
+    characterId: string,
+  ) {
+    const history = await input.checkout.list({ authorizationHeader, limit: 50 });
+    const pending = history.filter((entry) =>
+      entry.phase === "quoted" &&
+      entry.quote.originatingCharacterId === characterId &&
+      Number.isFinite(Date.parse(entry.quote.expiresAt)) &&
+      Date.parse(entry.quote.expiresAt) > Date.now(),
+    );
+    // Do not silently choose the "first" quote when there might be a second
+    // pending one beyond the bounded recent-history window.
+    return Object.freeze({
+      quote: history.length < 50 && pending.length === 1 ? pending[0] ?? null : null,
+      ambiguous: pending.length > 1 || history.length >= 50,
+    });
+  }
+
   async function executeDirective(
     authorizationHeader: string | undefined,
     characterId: string,
@@ -223,20 +242,15 @@ export function createAgentBillingAssistant(input: Readonly<{
     }
 
     if (directive.type === "billing.confirm") {
-      const history = await input.checkout.list({
-        authorizationHeader,
-        limit: 10,
-      });
-      const pending = history.find((entry) =>
-        entry.phase === "quoted" &&
-        entry.quote.originatingCharacterId === characterId &&
-        Date.parse(entry.quote.expiresAt) > Date.now(),
-      );
-      if (!pending) return result("There is no pending bill to confirm.");
+      const selection = await pendingForCharacter(authorizationHeader, characterId);
+      if (selection.ambiguous) {
+        return result("I found several recent bills. Open the exact bill in Payments and confirm it there to avoid paying the wrong recipient.");
+      }
+      if (!selection.quote) return result("There is no pending bill to confirm.");
       const view = await input.wallet.confirmAndPurchase({
         authorizationHeader,
-        quoteId: pending.quote.quoteId,
-        quoteRevision: pending.quote.revision,
+        quoteId: selection.quote.quote.quoteId,
+        quoteRevision: selection.quote.quote.revision,
       });
       return result(walletReply(view), view.document);
     }
@@ -257,10 +271,12 @@ export function createAgentBillingAssistant(input: Readonly<{
     );
     const biller = bestBiller(billers, directive.provider);
     if (!biller) {
+      const available = [...new Set(billers.map((item) => item.name.trim()))]
+        .filter(Boolean).slice(0, 8);
       return result(
-        directive.service === "airtime" || directive.service === "data"
-          ? "Which network should I use: MTN, Airtel, Glo, or 9mobile?"
-          : `I could not match "${directive.provider}" to a live provider. Please tell me the provider/company name.`,
+        available.length === 0
+          ? "No provider is available for that service on the live billing account."
+          : `I could not uniquely match "${directive.provider}". Which live provider do you mean: ${available.join(", ")}?`,
       );
     }
 
@@ -272,18 +288,30 @@ export function createAgentBillingAssistant(input: Readonly<{
     );
     const item = bestItem(items, directive);
     if (!item) {
+      const options = [...new Set(items.map((row) => row.name.trim()))]
+        .filter(Boolean).slice(0, 8);
       return result(
-        directive.service === "data"
-          ? "Which data bundle do you want? You can say the size or plan, for example 1GB."
-          : directive.service === "tv"
-            ? "Which TV package do you want?"
-            : "I need the exact service option before I can continue.",
+        options.length === 0
+          ? "No bill package is currently available for that provider."
+          : `I need one exact ${directive.service} option before quoting. Available: ${options.join(", ")}. Which one do you want?`,
       );
     }
 
+    const requestedAmount = directive.amount?.trim() ?? "";
+    let fixedAmountKobo: number;
+    try {
+      fixedAmountKobo = Number(item.amount) > 0 ? parseNgnKobo(item.amount) : 0;
+      if (fixedAmountKobo > 0 && requestedAmount &&
+          parseNgnKobo(requestedAmount) !== fixedAmountKobo) {
+        return result(
+          `The live price of ${item.name} is ₦${item.amount}, not ₦${requestedAmount}. Please confirm the actual package amount before I create a quote.`,
+        );
+      }
+    } catch {
+      return result("The requested amount or live package price could not be verified. Please check the bill details.");
+    }
     const resolvedAmount =
-      directive.amount?.trim() ||
-      (Number(item.amount) > 0 ? item.amount : "");
+      fixedAmountKobo > 0 ? item.amount : requestedAmount;
     if (!resolvedAmount) {
       return result("How much should I pay for this service?");
     }
@@ -306,21 +334,18 @@ export function createAgentBillingAssistant(input: Readonly<{
       const text = normalize(request.text);
       if (!text) return null;
 
-      if (/^(?:yes|yeah|yep|confirm|confirmed|okay|ok|do it|proceed|continue|na am|naam|eh|e)$/u.test(text)) {
-        const history = await input.checkout.list({
-          authorizationHeader: request.authorizationHeader,
-          limit: 10,
-        });
-        const pending = history.find((entry) =>
-          entry.phase === "quoted" &&
-          entry.quote.originatingCharacterId === request.characterId &&
-          Date.parse(entry.quote.expiresAt) > Date.now(),
+      if (isExplicitPaymentConsent(request.text)) {
+        const selection = await pendingForCharacter(
+          request.authorizationHeader, request.characterId,
         );
-        if (!pending) return null;
+        if (selection.ambiguous) {
+          return result("More than one recent bill needs confirmation. Open the exact bill in Payments so I do not charge the wrong recipient.");
+        }
+        if (!selection.quote) return null;
         const view = await input.wallet.confirmAndPurchase({
           authorizationHeader: request.authorizationHeader,
-          quoteId: pending.quote.quoteId,
-          quoteRevision: pending.quote.revision,
+          quoteId: selection.quote.quote.quoteId,
+          quoteRevision: selection.quote.quote.revision,
         });
         return result(walletReply(view), view.document);
       }
@@ -342,6 +367,12 @@ export function createAgentBillingAssistant(input: Readonly<{
     async afterInference(request) {
       const directive = parseDirective(request.modelReply);
       if (!directive) return null;
+      // The model can propose a quote or request a balance, but it cannot
+      // synthesize the user's consent to spend money.
+      if (directive.type === "billing.confirm" &&
+          !isExplicitPaymentConsent(request.userText ?? "")) {
+        return result("Please explicitly confirm the pending bill before I can proceed.");
+      }
       return executeDirective(
         request.authorizationHeader,
         request.characterId,
