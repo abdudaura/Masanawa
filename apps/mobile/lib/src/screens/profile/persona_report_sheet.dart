@@ -104,7 +104,7 @@ class _PersonaReportSheetState extends ConsumerState<_PersonaReportSheet> {
     final session = ref.watch(sessionProvider);
     final signedIn = session is SessionSignedIn;
     final accountChanged = _senderId != null &&
-        (!signedIn || session.user.id != _senderId);
+        (session is! SessionSignedIn || session.user.id != _senderId);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16, 12, 16, 16 + MediaQuery.viewInsetsOf(context).bottom,
