@@ -56,7 +56,11 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
       await temp.writeAsString(
         jsonEncode({
           'ownerId': ownerId,
-          'agents': [for (final agent in agents) agent.toJson()],
+          // Persist identity/presentation only. Live presence and workload
+          // expire with the request that observed them.
+          'agents': [
+            for (final agent in agents) agent.withUnverifiedPresence().toJson(),
+          ],
         }),
         flush: true,
       );
