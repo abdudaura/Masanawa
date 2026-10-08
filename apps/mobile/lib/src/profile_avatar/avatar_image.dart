@@ -50,8 +50,9 @@ Future<ui.Image> decodeAvatarSource(Uint8List bytes) async {
   }
   final codec = await ui.instantiateImageCodec(
     bytes,
+    // Picker already constrains both edges; decoder downsamples wide images.
+    // Do not specify both dimensions here, which would distort portraits.
     targetWidth: 2048,
-    targetHeight: 2048,
     allowUpscaling: false,
   );
   try {
