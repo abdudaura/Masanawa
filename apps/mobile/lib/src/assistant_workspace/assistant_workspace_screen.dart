@@ -111,13 +111,14 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
   void _saveDraftDebounced() {
     _draftTimer?.cancel();
     final owner = widget.ownerId;
+    final store = widget.drafts;
     final captured = input.text;
     final generation = _draftGeneration;
     _draftTimer = Timer(const Duration(milliseconds: 350), () {
       // Serialize keystore writes: an older async write must never win over a
       // newer draft or the empty draft written after a confirmed send.
       _draftWrites = _draftWrites.then((_) =>
-          widget.drafts.write(owner, captured)).catchError((Object _) {
+          store.write(owner, captured)).catchError((Object _) {
         if (mounted && generation == _draftGeneration &&
             widget.ownerId == owner) {
           setState(() => _draftError =
