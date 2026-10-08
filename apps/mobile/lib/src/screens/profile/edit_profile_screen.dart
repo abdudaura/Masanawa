@@ -83,7 +83,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final name = _name.text.trim();
       final bio = _bio.text.trim();
       final updated = await ref.read(ownProfileTransportProvider).updateSelf(
-        ifNameChanged(current, name),
+        displayName: name == current.displayName ? null : name,
         bio: bio == current.bio ? null : bio,
         removeAvatar: _removeAvatar,
       );
@@ -230,7 +230,4 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
     );
   }
-
-  String? ifNameChanged(HumanProfile current, String name) =>
-      name == current.displayName ? null : name;
 }
