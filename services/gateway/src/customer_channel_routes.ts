@@ -36,6 +36,10 @@ export interface CustomerChannelOptions {
 // Webhook envelopes contain metadata only. Media bytes are downloaded through
 // their authenticated provider endpoints, not embedded in the webhook POST.
 const WEBHOOK_BODY_LIMIT = 1_048_576;
+// External provider metadata/replies must not be read without a byte or time
+// budget. Provider media keeps its existing separate 8 MiB content cap.
+const PROVIDER_JSON_LIMIT = 256 * 1024;
+const PROVIDER_HTTP_TIMEOUT_MS = 15_000;
 
 function exactHeader(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -47,31 +51,25 @@ function safeEqual(left: string, right: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-async function fetchJson(url: string, init: RequestInit): Promise<Record<string, unknown>> {
-  const response = await fetch(url, init);
-  const body = await response.json().catch(() => ({})) as Record<string, unknown>;
-  if (!response.ok) {
-    throw new Error(`channels.provider_http_${response.status}`);
-  }
-  return body;
-}
-
-async function download(
-  url: string,
-  headers: Readonly<Record<string, string>>,
-  maxBytes = 8 * 1024 * 1024,
+/**
+ * Read HTTP responses within a fixed allocation cap, regardless of a missing
+ * or dishonest Content-Length. Cancels the stream on overflow or read failure.
+ * Fetch's deadline signal also bounds a stalled response/body when the runtime
+ * supports standard AbortSignal.timeout (Node >= 20).
+ */
+async function readProviderBody(
+  response: Response,
+  maxBytes: number,
+  oversizedCode: string,
+  emptyCode: string,
 ): Promise<Buffer> {
-  const response = await fetch(url, { headers });
-  if (!response.ok) throw new Error(`channels.media_http_${response.status}`);
   const length = Number(response.headers.get("content-length") ?? "0");
   if (Number.isFinite(length) && length > maxBytes) {
-    throw new RangeError("channels.media_too_large");
+    await response.body?.cancel().catch(() => undefined);
+    throw new RangeError(oversizedCode);
   }
-  // Content-Length is advisory: providers/CDNs may omit it or stream more
-  // bytes than advertised. Enforce the cap *while reading*, rather than
-  // allocating an arbitrarily large arrayBuffer and checking afterwards.
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("channels.media_empty_response");
+  if (!reader) throw new Error(emptyCode);
   const chunks: Buffer[] = [];
   let size = 0;
   try {
@@ -80,9 +78,7 @@ async function download(
       if (done) break;
       if (!value || value.byteLength === 0) continue;
       size += value.byteLength;
-      if (size > maxBytes) {
-        throw new RangeError("channels.media_too_large");
-      }
+      if (size > maxBytes) throw new RangeError(oversizedCode);
       chunks.push(Buffer.from(value));
     }
   } catch (error) {
@@ -91,8 +87,52 @@ async function download(
   } finally {
     reader.releaseLock();
   }
-  if (size === 0) throw new RangeError("channels.media_too_large");
+  if (size === 0) throw new Error(emptyCode);
   return Buffer.concat(chunks, size);
+}
+
+async function fetchJson(url: string, init: RequestInit): Promise<Record<string, unknown>> {
+  const response = await fetch(url, {
+    ...init,
+    signal: AbortSignal.timeout(PROVIDER_HTTP_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new Error(`channels.provider_http_${response.status}`);
+  }
+  const data = await readProviderBody(
+    response, PROVIDER_JSON_LIMIT,
+    "channels.provider_json_too_large", "channels.provider_json_empty",
+  );
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(data.toString("utf8")) as unknown;
+  } catch {
+    throw new Error("channels.provider_invalid_json");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("channels.provider_invalid_json");
+  }
+  return parsed as Record<string, unknown>;
+}
+
+async function download(
+  url: string,
+  headers: Readonly<Record<string, string>>,
+  maxBytes = 8 * 1024 * 1024,
+): Promise<Buffer> {
+  const response = await fetch(url, {
+    headers,
+    signal: AbortSignal.timeout(PROVIDER_HTTP_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new Error(`channels.media_http_${response.status}`);
+  }
+  return readProviderBody(
+    response, maxBytes,
+    "channels.media_too_large", "channels.media_empty_response",
+  );
 }
 
 function splitText(value: string, max = 3500): readonly string[] {
