@@ -32,23 +32,47 @@ class WalletScreen extends ConsumerWidget {
     final u = context.masanawa;
     final wallet = ref.watch(walletProvider);
 
+    // Loading or a balance failure must not remove entry to separate,
+    // independently qualified Billing/Crypto routes.
+    Widget pendingOrUnavailableWallet({bool loading = false}) => ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      children: [
+        WalletServiceShortcuts(
+          onOpenCrypto: onOpenCrypto,
+          onBuyBills: onBuyBills,
+          onOpenBillingService: onOpenBillingService,
+        ),
+        const SizedBox(height: 80),
+        if (loading)
+          const Center(child: CircularProgressIndicator())
+        else ...[
+          Text(
+            'Wallet balances are unavailable right now.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: u.textMuted),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: OutlinedButton(
+              onPressed: () => ref.read(walletProvider.notifier).refresh(),
+              child: const Text('Retry'),
+            ),
+          ),
+        ],
+      ],
+    );
+
     return Scaffold(
       backgroundColor: u.surfaceBg,
       appBar: embeddedInShell ? null : AppBar(title: const Text('Wallet')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
         child: wallet.when(
-          loading: () => const _ScrollableCenter(
-            child: CircularProgressIndicator(),
-          ),
-          error: (_, __) => _ScrollableCenter(
-            child: Text(
-              'Wallet is not available yet.',
-              style: TextStyle(color: u.textMuted),
-            ),
-          ),
+          loading: () => pendingOrUnavailableWallet(loading: true),
+          error: (_, __) => pendingOrUnavailableWallet(),
           data: (value) {
-            if (value == null) return const SizedBox.shrink();
+            if (value == null) return pendingOrUnavailableWallet();
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               children: [
