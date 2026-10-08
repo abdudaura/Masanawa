@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
@@ -7,7 +8,7 @@ class _Adapter implements HttpClientAdapter {
   _Adapter(this.handler);
   final ResponseBody Function(RequestOptions request) handler;
   @override
-  Future<ResponseBody> fetch(RequestOptions options,Stream<List<int>>? requestStream,Future<void>? cancelFuture) async => handler(options);
+  Future<ResponseBody> fetch(RequestOptions options,Stream<Uint8List>? requestStream,Future<void>? cancelFuture) async => handler(options);
   @override
   void close({bool force=false}){}
 }

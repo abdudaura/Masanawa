@@ -31,6 +31,12 @@ database("C02 human DMs against real temporary PostgreSQL",()=>{
   },120000);
   afterAll(async()=>{
     if(!url)return;
+    await pool.query("DELETE FROM talks.human_dm_read_cursors WHERE tenant_id=$1",[tenant]);
+    await pool.query("DELETE FROM talks.human_dm_messages WHERE tenant_id=$1",[tenant]);
+    await pool.query("DELETE FROM talks.human_dm_threads WHERE tenant_id=$1",[tenant]);
+    await pool.query("DELETE FROM talks.human_dm_contact_requests WHERE tenant_id=$1",[tenant]);
+    await pool.query("DELETE FROM talks.public_profiles WHERE tenant_id=$1",[tenant]);
+    await pool.query("DELETE FROM identity.users WHERE tenant_id=$1",[tenant]);
     await pool.query("DELETE FROM identity.tenants WHERE tenant_id=$1",[tenant]);
     await pool.end();
   });

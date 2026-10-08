@@ -119,7 +119,7 @@ export function createPostgresHumanDmRepository(pool: HumanDmSqlPool): HumanDmRe
           (SELECT COUNT(*)::bigint FROM talks.human_dm_messages msg
            WHERE msg.tenant_id=t.tenant_id AND msg.conversation_id=t.conversation_id
              AND msg.sequence>COALESCE(cursor.last_read_sequence,0)
-             AND msg.sender_user_id<>$2) AS unread_count
+             AND msg.sender_user_id<>$2 AND msg.deleted_at IS NULL) AS unread_count
         FROM talks.human_dm_threads t
         JOIN identity.users viewer ON viewer.tenant_id=t.tenant_id AND viewer.user_id=$2 AND viewer.state='active'
         LEFT JOIN talks.public_profiles p ON p.tenant_id=t.tenant_id AND p.user_id=
