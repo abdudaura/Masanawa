@@ -151,6 +151,7 @@ class _SafetyTransport implements TalkSafetyTransport {
     required String targetId,
     required TalkSafetyReportReason reason,
     String? detail,
+    String? clientRequestId,
   }) async {
     targetReports.add((
       targetKind: targetKind,
@@ -296,6 +297,7 @@ class _SeatTransport implements TalkAiSeatTransport {
   }) async => const [
     TalkAiSeatCandidate(
       personaId: 'expert-1',
+      isAvailable: true,
       displayName: 'Education Expert',
       kind: TalkAiPersonaKind.expert,
       seatFeeLabel: '₦300',
@@ -2100,3 +2102,4 @@ void main() {
     expect(find.text('Sponsor a Seat'), findsNothing);
   });
 }
+

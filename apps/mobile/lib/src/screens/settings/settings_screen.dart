@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/mobile_push.dart';
-import '../../core/providers.dart';
+import '../../localization/language_picker_button.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
@@ -148,22 +148,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     'Choose who handles support and platform guidance',
                   ),
                 ),
+                if (directory.loading || directory.error != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            directory.loading
+                                ? 'Checking your saved agent…'
+                                : 'Selection unverified. Refresh before changing it.',
+                            style: TextStyle(color: u.textMuted),
+                          ),
+                        ),
+                        if (!directory.loading && directory.error != null)
+                          TextButton(
+                            onPressed: () => ref
+                                .read(agentDirectoryProvider.notifier)
+                                .refresh(),
+                            child: const Text('Refresh'),
+                          ),
+                      ],
+                    ),
+                  ),
                 const Divider(height: 1),
                 for (var index = 0; index < supportAgents.length; index++) ...[
                   Builder(
                     builder: (context) {
                       final agent = supportAgents[index];
                       final selected = agent.defaultPlatformAgent;
-                      final saving =
-                          _savingDefaultAgentId == agent.characterId;
+                      final saving = _savingDefaultAgentId != null;
                       final voice =
                           agent.voiceName == null || agent.voiceName!.isEmpty
                               ? null
                               : agent.voiceName;
                       return RadioListTile<String>(
+                        key: Key('settings-support-agent-${agent.characterId}'),
                         value: agent.characterId,
                         groupValue: selectedSupportAgentId,
-                        onChanged: saving
+                        onChanged: saving || directory.loading || directory.error != null || user == null
                             ? null
                             : (value) async {
                                 if (value == null || selected) return;
@@ -172,12 +195,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 );
                                 try {
                                   await ref
-                                      .read(agentDirectoryTransportProvider)
-                                      .setDefaultPlatformAgent(value);
-                                  await ref
                                       .read(agentDirectoryProvider.notifier)
-                                      .refresh();
-                                  if (context.mounted) {
+                                      .changeDefaultSupportAgent(value);
+                                  final current = ref.read(sessionProvider);
+                                  if (context.mounted &&
+                                      current is SessionSignedIn &&
+                                      current.user.id == user.id) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -187,7 +210,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     );
                                   }
                                 } catch (_) {
-                                  if (context.mounted) {
+                                  final current = ref.read(sessionProvider);
+                                  if (context.mounted &&
+                                      current is SessionSignedIn &&
+                                      current.user.id == user.id) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -226,6 +252,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ],
+          const SizedBox(height: 16),
+          // This is the same encrypted device preference exposed during
+          // onboarding, not a second per-account language or money locale.
+          // The picker saves before changing the root app's UI locale.
+          const _Card(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: LanguagePickerButton(),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           _Card(
             children: [

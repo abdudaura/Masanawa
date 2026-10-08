@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../agents/agent_directory.dart';
 import '../../agents/agent_shell.dart';
 import '../../assistant_workspace/assistant_workspace_screen.dart';
+import '../../services/private_service_intent.dart';
 import '../../core/providers.dart';
 import '../../messages/human_dm_screen.dart';
 import '../../agents/twin_directory.dart';
@@ -275,12 +276,29 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     context.push('/chat/' + Uri.encodeComponent(agent.characterId));
   }
 
+  void _beginPrivateService(PrivateServiceIntent intent) {
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn) return;
+    ref.read(pendingPrivateServiceIntentProvider.notifier).select(
+      intent: intent, ownerUserId: session.user.id);
+    _selectTab(MasanawaRootTab.assistant.index);
+  }
+
+  void _beginBillingService(String code) {
+    final intent = PrivateServiceIntent.fromBillingCode(code);
+    if (intent == null) return;
+    _beginPrivateService(intent);
+  }
+
+  void _clearServiceIntent(PendingPrivateServiceIntent request) {
+    ref.read(pendingPrivateServiceIntentProvider.notifier).consume(request);
+  }
+
   Widget _wallet() => WalletScreen(
-        embeddedInShell: true,
-        onOpenCrypto: () => context.push('/crypto'),
-        onOpenBillingService: (service) => context.push(
-          '/billing?service=' + Uri.encodeQueryComponent(service)),
-      );
+    embeddedInShell: true,
+    onOpenCrypto: () => _beginPrivateService(PrivateServiceIntent.crypto),
+    onOpenBillingService: _beginBillingService,
+  );
 
   // Human inbox is strictly the authenticated server-backed C02 transport.
   Widget _chats() => HumanDmInboxScreen(
@@ -290,6 +308,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   Widget _assistant() {
     final session = ref.watch(sessionProvider);
     final transport = ref.read(agentTransportProvider);
+    final selected = ref.watch(pendingPrivateServiceIntentProvider);
     if (session is! SessionSignedIn || transport is! AgentShellTransport) {
       return const Scaffold(
         body: Center(child: Text('Sign in to open your private Assistant.')),
@@ -300,6 +319,12 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return AssistantWorkspaceScreen(
       key: ValueKey('assistant-owner-' + session.user.id),
       ownerId: session.user.id,
+      pendingServiceIntent: selected?.belongsTo(session.user.id) == true ? selected : null,
+      onServiceIntentConsumed: _clearServiceIntent,
+      onOpenServiceEditor: (request) {
+        _clearServiceIntent(request);
+        context.push(request.intent.editorLocation);
+      },
       directory: ref.read(agentDirectoryTransportProvider),
       agents: transport,
       shell: transport as AgentShellTransport,

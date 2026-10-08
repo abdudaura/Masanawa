@@ -53,8 +53,9 @@ class WalletEntry {
     if (id is! String ||
         kind is! String ||
         title is! String ||
-        amount is! num ||
+        amount is! int ||
         amount < 0 ||
+        amount > 9007199254740991 ||
         createdAt is! String) {
       throw const FormatException('Invalid wallet entry');
     }
@@ -62,7 +63,7 @@ class WalletEntry {
       id: id,
       kind: _kind(kind),
       title: title,
-      amountCredits: amount.toInt(),
+      amountCredits: amount,
       incoming: json['incoming'] == true,
       createdAt: DateTime.parse(createdAt).toLocal(),
     );
@@ -75,16 +76,21 @@ class WalletView {
     required this.pendingEarningsCredits,
     required this.availableEarningsCredits,
     required this.ngnBalanceKobo,
+    this.ngnBalanceVerified = false,
     required this.entries,
   });
 
   final int spendableCredits;
   final int pendingEarningsCredits;
   final int availableEarningsCredits;
+  /// Only the authenticated native NGN ledger can verify this balance.
+  /// Zero must not stand in for an unreachable/unsupported balance endpoint.
   final int ngnBalanceKobo;
+  final bool ngnBalanceVerified;
   final List<WalletEntry> entries;
 
   String get ngnBalanceLabel {
+    if (!ngnBalanceVerified) return 'NGN balance unavailable';
     final naira = ngnBalanceKobo ~/ 100;
     final kobo = (ngnBalanceKobo % 100).toString().padLeft(2, '0');
     return '₦$naira.$kobo';
@@ -93,21 +99,27 @@ class WalletView {
   factory WalletView.fromJson(Map<String, dynamic> json) {
     int credits(String key) {
       final value = json[key];
-      if (value is! num || value < 0) {
+      if (value is! int || value < 0 || value > 9007199254740991) {
         throw FormatException('Invalid wallet balance: $key');
       }
-      return value.toInt();
+      return value;
     }
     final entries = json['entries'];
     if (entries is! List) throw const FormatException('Invalid wallet history');
+    final nativeNgn = json['ngnBalanceKobo'];
+    final nativeNgnPresent = json.containsKey('ngnBalanceKobo');
+    if (nativeNgnPresent &&
+        (nativeNgn is! int || nativeNgn < 0 ||
+            nativeNgn > 9007199254740991)) {
+      // Never coerce a fractional, negative or malformed monetary balance to 0.
+      throw const FormatException('Invalid native NGN balance');
+    }
     return WalletView(
       spendableCredits: credits('spendableCredits'),
       pendingEarningsCredits: credits('pendingEarningsCredits'),
       availableEarningsCredits: credits('availableEarningsCredits'),
-      ngnBalanceKobo: (json['ngnBalanceKobo'] is num &&
-              (json['ngnBalanceKobo'] as num) >= 0)
-          ? (json['ngnBalanceKobo'] as num).toInt()
-          : 0,
+      ngnBalanceKobo: nativeNgnPresent ? nativeNgn as int : 0,
+      ngnBalanceVerified: nativeNgnPresent,
       entries: [
         for (final item in entries)
           if (item is Map)
@@ -177,8 +189,9 @@ class CreditTransferReceipt {
     final completedAt = json['completedAt'];
     if (transferId is! String ||
         recipientUserId is! String ||
-        amount is! num ||
+        amount is! int ||
         amount < 1 ||
+        amount > 9007199254740991 ||
         completedAt is! String) {
       throw const FormatException('Invalid Credit transfer receipt');
     }
@@ -215,8 +228,9 @@ class GiftReceipt {
     if (giftId is! String ||
         recipientUserId is! String ||
         characterId is! String ||
-        amount is! num ||
+        amount is! int ||
         amount < 1 ||
+        amount > 9007199254740991 ||
         completedAt is! String) {
       throw const FormatException('Invalid gift receipt');
     }
@@ -229,3 +243,4 @@ class GiftReceipt {
     );
   }
 }
+

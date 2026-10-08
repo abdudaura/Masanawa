@@ -136,6 +136,75 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
     );
   }
 
+  /// Change an authenticated user's default support agent. This is a server
+  /// preference, not an optimistic local radio-button toggle. A successful PUT
+  /// is followed by a fresh authorized GET before acknowledging the choice.
+  /// On unknown network outcomes the UI remains unchanged and offers retry.
+  Future<void> changeDefaultSupportAgent(String characterId) async {
+    if (_disposed) throw StateError('Agent directory is no longer available');
+    final session = ref.read(sessionProvider);
+    final ownerId = session is SessionSignedIn ? session.user.id : null;
+    if (ownerId == null || ownerId != _ownerId) {
+      throw StateError('Sign in before changing your default agent');
+    }
+    final candidate = state.find(characterId);
+    if (candidate == null || !candidate.supportAgent) {
+      throw StateError('This support agent is not in your current directory');
+    }
+
+    // Invalidate in-flight directory refreshes while the preference is saved.
+    final request = ++_request;
+    final transport = ref.read(agentDirectoryTransportProvider);
+    bool stillOwner() {
+      if (_disposed || request != _request || _ownerId != ownerId) {
+        return false;
+      }
+      final current = ref.read(sessionProvider);
+      return current is SessionSignedIn && current.user.id == ownerId;
+    }
+
+    try {
+      await transport.setDefaultPlatformAgent(characterId);
+      if (!stillOwner()) throw StateError('Account changed while saving');
+      final authoritative = await transport.loadDirectory();
+      if (!stillOwner()) throw StateError('Account changed while saving');
+
+      final selections = authoritative
+          .where((agent) => agent.defaultPlatformAgent)
+          .toList(growable: false);
+      if (selections.length != 1 ||
+          selections.single.characterId != characterId ||
+          !selections.single.supportAgent) {
+        throw StateError(
+          'Could not verify the saved agent. Refresh before retrying.',
+        );
+      }
+      final verified = List<AgentDirectoryEntry>.unmodifiable(authoritative);
+      state = AgentDirectoryState(agents: verified, loading: false);
+      // Keep the last authorized snapshot for offline first paint; it is not
+      // treated as fresh availability when restored on another launch.
+      if (stillOwner()) {
+        // Disk cache is best-effort. A cache IO failure cannot change the
+        // server-confirmed result into an apparent failed write.
+        await ref.read(agentDirectoryCacheProvider)
+            .write(ownerId, verified)
+            .catchError((_) {});
+      }
+    } catch (_) {
+      if (stillOwner()) {
+        state = state.copyWith(
+          agents: List.unmodifiable([
+            for (final agent in state.agents) agent.withUnverifiedPresence(),
+          ]),
+          loading: false,
+          error: 'Default agent not verified. Refresh your directory and retry.',
+          recovery: AgentRecovery.retry,
+        );
+      }
+      rethrow;
+    }
+  }
+
   Future<void> refresh() async {
     if (_disposed) return;
     final session = ref.read(sessionProvider);
@@ -226,3 +295,4 @@ final agentDirectoryProvider =
     NotifierProvider<AgentDirectoryController, AgentDirectoryState>(
       AgentDirectoryController.new,
     );
+

@@ -23,7 +23,7 @@ class SavedTalksScreen extends ConsumerWidget {
 
     return Scaffold(
       key: const ValueKey('saved-talks-screen'),
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(title: const Text('Saved Talks')),
       body: RefreshIndicator(
         onRefresh: refresh,
@@ -108,3 +108,4 @@ class _SavedState extends StatelessWidget {
     );
   }
 }
+

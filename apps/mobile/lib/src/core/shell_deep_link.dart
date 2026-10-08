@@ -6,13 +6,14 @@
 /// route performs an authenticated, privacy-aware Gateway lookup before opening
 /// the canonical Character conversation.
 String? shellDeepLinkRoute(Uri uri) {
-  if (uri.userInfo.isNotEmpty || uri.hasPort || uri.fragment.isNotEmpty) {
+  if (uri.userInfo.isNotEmpty || uri.hasPort || uri.fragment.isNotEmpty ||
+      uri.pathSegments.any((segment) => segment == '.' || segment == '..')) {
     return null;
   }
 
   if (uri.scheme == 'https') {
     if (uri.host.toLowerCase() != 'masanawa.com' ||
-        uri.queryParameters.isNotEmpty ||
+        uri.hasQuery ||
         uri.pathSegments.length != 2) {
       return null;
     }
@@ -49,7 +50,7 @@ String? shellDeepLinkRoute(Uri uri) {
   }
 
   if (uri.host == 'twin') {
-    if (uri.pathSegments.length != 1 || uri.queryParameters.isNotEmpty) {
+    if (uri.pathSegments.length != 1 || uri.hasQuery) {
       return null;
     }
     final publicId = uri.pathSegments.single;
@@ -69,7 +70,7 @@ String? shellDeepLinkRoute(Uri uri) {
   }
 
   if (uri.host == 'talk') {
-    if (uri.pathSegments.length != 1 || uri.queryParameters.isNotEmpty) {
+    if (uri.pathSegments.length != 1 || uri.hasQuery) {
       return null;
     }
     final talkId = uri.pathSegments.single;
@@ -78,14 +79,14 @@ String? shellDeepLinkRoute(Uri uri) {
   }
 
   if (uri.host == 'activity') {
-    if (uri.pathSegments.isNotEmpty || uri.queryParameters.isNotEmpty) {
+    if (uri.pathSegments.isNotEmpty || uri.hasQuery) {
       return null;
     }
     return '/home?tab=activity';
   }
 
   if (uri.host == 'owner-session') {
-    if (uri.pathSegments.length != 2 || uri.queryParameters.isNotEmpty) {
+    if (uri.pathSegments.length != 2 || uri.hasQuery) {
       return null;
     }
     final characterId = uri.pathSegments[0];
@@ -102,14 +103,19 @@ String? shellDeepLinkRoute(Uri uri) {
 
   String? characterId;
   if (uri.host == 'chat') {
-    if (uri.pathSegments.length != 1 || uri.queryParameters.isNotEmpty) {
+    if (uri.pathSegments.length != 1 || uri.hasQuery) {
       return null;
     }
     characterId = uri.pathSegments.single;
   } else {
-    characterId = uri.queryParameters['characterId'];
-    if (characterId == null) return '/chats';
-    if (uri.queryParameters.length != 1) return null;
+    // Reject unknown and repeated query keys instead of silently treating an
+    // untrusted action URL as an ordinary AI chat navigation request.
+    if (!uri.hasQuery) return '/chats';
+    if (uri.queryParametersAll.length != 1 ||
+        uri.queryParametersAll['characterId']?.length != 1) {
+      return null;
+    }
+    characterId = uri.queryParametersAll['characterId']!.single;
   }
 
   if (!_validCharacterId(characterId)) return null;

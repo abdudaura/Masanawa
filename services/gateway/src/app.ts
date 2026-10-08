@@ -1,8 +1,11 @@
+import { AgentDirectoryPreferenceError } from './agent_directory.js';
+import { strictRequestBody } from './strict_request_body.js';
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import { safeAgentTurnStreamErrorCode } from "./agent_turn_stream_error.js";
 import { registerCloneOnboardingRoutes } from "./clone_onboarding_routes.js";
 import type { CloneOnboardingService } from "./clone_onboarding.js";
 import type { CreatorCloneService } from "./creator_clone.js";
@@ -321,6 +324,13 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   const checks = options.readinessChecks ?? [];
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AgentDirectoryPreferenceError) {
+      void reply.code(error.statusCode).send({ error: {
+        code: "gateway.agent_preference_rejected",
+        message: error.statusCode === 503 ? "Preference outcome unknown; refresh and retry" : "Preference rejected",
+      }});
+      return;
+    }
     if (error instanceof HumanContactError || error instanceof HumanDmError ||
         error instanceof HumanDmRealtimeError) {
       // Exact private contact status (missing / hidden / blocked) shares one
@@ -630,6 +640,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     app.put(
       "/agent/preferences/default",
       {
+        preValidation: strictRequestBody(["characterId"]),
         schema: {
           body: Type.Object(
             { characterId: Type.String() },
@@ -1012,6 +1023,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.setHeader("cache-control", "no-cache, no-transform");
         reply.raw.setHeader("x-content-type-options", "nosniff");
 
+        let outputEmitted = false;
         const controller = new AbortController();
         let finished = false;
         const abort = () => {
@@ -1039,10 +1051,14 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
               request.headers["x-correlation-id"] as string,
             ),
             onTextDelta: async (delta) => {
-              if (delta) emit({ type: "delta", text: delta });
+              if (delta) {
+                outputEmitted = true;
+                emit({ type: "delta", text: delta });
+              }
             },
             onAudioPcmChunk: async (dataBase64) => {
               if (dataBase64) {
+                outputEmitted = true;
                 emit({
                   type: "audio",
                   mimeType: "audio/pcm;rate=24000",
@@ -1054,8 +1070,11 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             signal: controller.signal,
           });
           emit({ type: "done", ...resultBody(result) });
-        } catch {
-          emit({ type: "error", code: "turn_failed" });
+        } catch (error) {
+          emit({
+            type: "error",
+            code: safeAgentTurnStreamErrorCode(error, outputEmitted),
+          });
         } finally {
           finished = true;
           reply.raw.off("close", abort);

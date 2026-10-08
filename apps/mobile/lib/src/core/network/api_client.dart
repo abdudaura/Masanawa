@@ -247,6 +247,13 @@ class ApiClient {
     return BillingWalletActionView.fromJson(data);
   }
 
+  /// Read-only, signed-in recovery; never creates a new funding instruction.
+  Future<BillingWalletActionView> billingWalletStatus(String quoteId) async {
+    final id = Uri.encodeComponent(quoteId);
+    final data = await _get('/v1/commerce/bills/quotes/$id/wallet-status');
+    return BillingWalletActionView.fromJson(data);
+  }
+
   Future<BillingWalletActionView> createWalletFunding({
     required String amount,
   }) async {
@@ -1110,3 +1117,4 @@ String _validationMessage(Object? issues) {
   }
   return 'Please check the details you entered and try again.';
 }
+

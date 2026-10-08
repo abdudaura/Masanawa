@@ -342,4 +342,174 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get assistantTab => 'Assistente';
+
+  @override
+  String get billingRecent => 'Pagamentos recentes';
+
+  @override
+  String get billingRefreshHistory => 'Atualizar histórico';
+
+  @override
+  String get billingNoPayments => 'Nenhum pagamento ainda';
+
+  @override
+  String get billingRecipientLabel => 'Destinatário';
+
+  @override
+  String get billingServiceAmountLabel => 'Serviço';
+
+  @override
+  String get billingFeeLabel => 'Taxa';
+
+  @override
+  String get billingTotalLabel => 'Total';
+
+  @override
+  String get billingStatusLabel => 'Status';
+
+  @override
+  String get billingProviderRef => 'Referência do fornecedor';
+
+  @override
+  String get billingTokenLabel => 'Token / código';
+
+  @override
+  String get billingRefundedInfo => 'O pagamento verificado foi reembolsado.';
+
+  @override
+  String get billingSuccess => 'Conta paga com sucesso.';
+
+  @override
+  String get billingStatusQuoted => 'Cotação pronta';
+
+  @override
+  String get billingStatusAwaiting => 'Aguardando pagamento';
+
+  @override
+  String get billingStatusFunded => 'Pagamento confirmado';
+
+  @override
+  String get billingStatusProcessing => 'Processando';
+
+  @override
+  String get billingStatusCompleted => 'Concluído';
+
+  @override
+  String get billingStatusRefundProcessing => 'Reembolso em andamento';
+
+  @override
+  String get billingStatusRefunded => 'Reembolsado';
+
+  @override
+  String get billingStatusExpired => 'Expirado';
+
+  @override
+  String get billingStatusFailed => 'Falhou';
+
+  @override
+  String get billingStatusAwaitingFunds => 'Aguardando fundos';
+
+  @override
+  String get billingStatusUnknown => 'Status indisponível';
+
+  @override
+  String get billingTitle => 'Contas e pagamentos';
+
+  @override
+  String get billingNew => 'Nova conta';
+
+  @override
+  String get billingPayTitle => 'Pagar uma conta';
+
+  @override
+  String get billingInstructions =>
+      'Escolha um serviço disponível. O pagamento é feito pela sua carteira Masanawa no aplicativo.';
+
+  @override
+  String get billingCategory => 'Categoria';
+
+  @override
+  String get billingProvider => 'Fornecedor';
+
+  @override
+  String get billingService => 'Serviço';
+
+  @override
+  String get billingPhone => 'Número de telefone';
+
+  @override
+  String get billingRecipient => 'Número do cliente / medidor / cartão';
+
+  @override
+  String get billingAmount => 'Valor (NGN)';
+
+  @override
+  String get billingVariableHelp => 'Informe um valor aceito pelo fornecedor.';
+
+  @override
+  String get billingFixedHelp => 'Valor fixado pelo fornecedor.';
+
+  @override
+  String get billingReview => 'Revisar cotação';
+
+  @override
+  String billingConfirmWallet(String amount) {
+    return 'Confirmar $amount pela carteira';
+  }
+
+  @override
+  String billingAddFunds(String amount) {
+    return 'Adicionar $amount';
+  }
+
+  @override
+  String get billingTransferInstructions =>
+      'Transfira o valor exato abaixo. A Masanawa continuará o pagamento automaticamente após confirmar a transferência.';
+
+  @override
+  String get billingExpires => 'Expira em:';
+
+  @override
+  String get billingRefresh => 'Atualizar status';
+
+  @override
+  String get billingAnother => 'Pagar outra conta';
+
+  @override
+  String get billingUnavailable => 'Pagamentos indisponíveis no momento.';
+
+  @override
+  String get billingProvidersUnavailable =>
+      'Não foi possível carregar os fornecedores.';
+
+  @override
+  String get billingServicesUnavailable =>
+      'Não foi possível carregar os serviços.';
+
+  @override
+  String get billingSelectionRequired =>
+      'Escolha categoria, fornecedor e serviço.';
+
+  @override
+  String get billingInvalidDetails => 'Informe dados e valor válidos.';
+
+  @override
+  String get billingQuoteFailed => 'Não foi possível criar a cotação.';
+
+  @override
+  String get billingPurchaseFailed =>
+      'Não foi possível concluir a compra pela carteira.';
+
+  @override
+  String get billingRefreshFailed => 'Não foi possível atualizar o status.';
+
+  @override
+  String get billingDetailsFailed =>
+      'Não foi possível carregar os detalhes da conta.';
+
+  @override
+  String get billingSignInAgain => 'Sua sessão expirou. Entre novamente.';
+
+  @override
+  String get billingExpiredTryAgain => 'Esta cotação expirou. Solicite outra.';
 }

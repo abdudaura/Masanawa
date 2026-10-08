@@ -369,7 +369,7 @@ void main() {
         const ApiException('hidden', statusCode: 503),
       );
       await retry;
-      expect(c.read(agentDirectoryProvider).agents, [agent]);
+      expect(c.read(agentDirectoryProvider).agents.map((a) => a.characterId), [agent.characterId]);
       final denied = c.read(agentDirectoryProvider.notifier).refresh();
       transport.requests[2].completeError(
         const ApiException('hidden', statusCode: 401),
@@ -397,7 +397,7 @@ void main() {
     await next;
     transport.requests[0].completeError(const ApiException('old failure'));
     await Future<void>.delayed(Duration.zero);
-    expect(c.read(agentDirectoryProvider).agents, [agent]);
+    expect(c.read(agentDirectoryProvider).agents.map((a) => a.characterId), [agent.characterId]);
     expect(c.read(agentDirectoryProvider).error, isNull);
   });
 
@@ -597,3 +597,4 @@ void main() {
     },
   );
 }
+

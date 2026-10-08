@@ -20,7 +20,7 @@ class AgentListScreen extends ConsumerWidget {
     final directory = ref.watch(agentDirectoryProvider);
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(
         backgroundColor: u.surfaceCard,
         elevation: 0,
@@ -206,8 +206,8 @@ class _AgentAvatar extends StatelessWidget {
           child: image == null || image.isEmpty
               ? Text(
                   agent.initial,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: u.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
                   ),
@@ -225,7 +225,7 @@ class _AgentAvatar extends StatelessWidget {
                   ? u.textMuted
                   : u.success,
               shape: BoxShape.circle,
-              border: Border.all(color: u.surfaceBg, width: 2),
+              border: Border.all(color: u.surfaceCard, width: 2),
             ),
           ),
         ),
@@ -233,3 +233,4 @@ class _AgentAvatar extends StatelessWidget {
     );
   }
 }
+

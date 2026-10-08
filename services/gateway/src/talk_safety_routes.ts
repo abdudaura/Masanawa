@@ -1,6 +1,16 @@
+import { strictRequestBody } from './strict_request_body.js';
+import type { FastifyRequest } from 'fastify';
 import type { FastifyInstance } from "fastify";
 import Type from "typebox";
 import type { TalkSafetyService } from "./talk_safety/service.js";
+
+async function validatePreference(request: FastifyRequest): Promise<void> {
+  await strictRequestBody(["blocked", "muted"])(request);
+  const body = request.body as { blocked?: unknown; muted?: unknown } | null;
+  if (!body || typeof body.blocked !== "boolean" || typeof body.muted !== "boolean") {
+    throw Object.assign(new Error("Invalid preference"), { statusCode: 400 });
+  }
+}
 
 const targetKind=Type.Union([
   Type.Literal("talk"),
@@ -29,6 +39,7 @@ export function registerTalkSafetyRoutes(
           ]),
           detail:Type.Optional(Type.Union([Type.String({minLength:1,maxLength:2000}),Type.Null()])),
           clientRequestId:Type.String({minLength:1,maxLength:256}),
+          expectedReporterUserId:Type.Optional(Type.String({minLength:3,maxLength:256})),
         },{additionalProperties:false}),
       },
     },
@@ -39,6 +50,7 @@ export function registerTalkSafetyRoutes(
         reason:"spam"|"harassment"|"hate"|"sexual"|"violence"|"self-harm"|"fraud"|"impersonation"|"privacy"|"other";
         detail?:string|null;
         clientRequestId:string;
+        expectedReporterUserId?:string;
       };
       const result=await service.report({
         authorizationHeader:request.headers.authorization,
@@ -68,6 +80,7 @@ export function registerTalkSafetyRoutes(
   app.put(
     "/safety/profiles/:handle/preference",
     {
+      preValidation: validatePreference,
       schema:{
         params:Type.Object({handle:Type.String({minLength:2,maxLength:40})},{additionalProperties:false}),
         body:Type.Object({
@@ -107,6 +120,7 @@ export function registerTalkSafetyRoutes(
   app.put(
     "/safety/users/:userId/preference",
     {
+      preValidation: validatePreference,
       schema:{
         params:Type.Object({userId:Type.String({minLength:3,maxLength:256})},{additionalProperties:false}),
         body:Type.Object({
@@ -188,3 +202,4 @@ export function registerTalkSafetyRoutes(
     },
   );
 }
+

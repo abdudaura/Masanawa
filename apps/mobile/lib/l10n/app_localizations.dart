@@ -681,6 +681,324 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assistant'**
   String get assistantTab;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent bills'**
+  String get billingRecent;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh history'**
+  String get billingRefreshHistory;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'No bill payments yet'**
+  String get billingNoPayments;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient'**
+  String get billingRecipientLabel;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Service'**
+  String get billingServiceAmountLabel;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get billingFeeLabel;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get billingTotalLabel;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get billingStatusLabel;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider ref'**
+  String get billingProviderRef;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Token / code'**
+  String get billingTokenLabel;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'The verified payment was refunded.'**
+  String get billingRefundedInfo;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill completed successfully.'**
+  String get billingSuccess;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote ready'**
+  String get billingStatusQuoted;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting payment'**
+  String get billingStatusAwaiting;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment verified'**
+  String get billingStatusFunded;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get billingStatusProcessing;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get billingStatusCompleted;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund processing'**
+  String get billingStatusRefundProcessing;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get billingStatusRefunded;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get billingStatusExpired;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get billingStatusFailed;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting funds'**
+  String get billingStatusAwaitingFunds;
+
+  /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.
+  ///
+  /// In en, this message translates to:
+  /// **'Status unavailable'**
+  String get billingStatusUnknown;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills & payments'**
+  String get billingTitle;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'New bill'**
+  String get billingNew;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay a bill'**
+  String get billingPayTitle;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.'**
+  String get billingInstructions;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get billingCategory;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get billingProvider;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Service'**
+  String get billingService;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get billingPhone;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer / meter / smartcard number'**
+  String get billingRecipient;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (NGN)'**
+  String get billingAmount;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the provider-supported amount.'**
+  String get billingVariableHelp;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed by the provider.'**
+  String get billingFixedHelp;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Review quote'**
+  String get billingReview;
+
+  /// Display authorized exact NGN amount verbatim; do not calculate or convert.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm {amount} from wallet'**
+  String billingConfirmWallet(String amount);
+
+  /// Display authorized exact NGN amount verbatim; do not calculate or convert.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {amount}'**
+  String billingAddFunds(String amount);
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer the exact amount below. Masanawa will continue this bill automatically after the transfer is verified.'**
+  String get billingTransferInstructions;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires:'**
+  String get billingExpires;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh status'**
+  String get billingRefresh;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay another bill'**
+  String get billingAnother;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing is unavailable right now.'**
+  String get billingUnavailable;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load providers.'**
+  String get billingProvidersUnavailable;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load services.'**
+  String get billingServicesUnavailable;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a category, provider and service.'**
+  String get billingSelectionRequired;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter valid recipient details and amount.'**
+  String get billingInvalidDetails;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create this quote.'**
+  String get billingQuoteFailed;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete this purchase from your wallet.'**
+  String get billingPurchaseFailed;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh status.'**
+  String get billingRefreshFailed;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load bill details.'**
+  String get billingDetailsFailed;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has expired. Sign in again.'**
+  String get billingSignInAgain;
+
+  /// Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned.
+  ///
+  /// In en, this message translates to:
+  /// **'This quote has expired. Request a new quote.'**
+  String get billingExpiredTryAgain;
 }
 
 class _AppLocalizationsDelegate

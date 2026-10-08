@@ -34,7 +34,7 @@ class _MyTalksScreenState extends ConsumerState<MyTalksScreen> {
 
     return Scaffold(
       key: const ValueKey('my-talks-screen'),
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(title: const Text('My Talks')),
       body: asyncView.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -275,3 +275,4 @@ String _dateLabel(DateTime value) {
       '/' +
       local.year.toString();
 }
+

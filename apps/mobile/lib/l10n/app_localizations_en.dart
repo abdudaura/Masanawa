@@ -338,4 +338,173 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantTab => 'Assistant';
+
+  @override
+  String get billingRecent => 'Recent bills';
+
+  @override
+  String get billingRefreshHistory => 'Refresh history';
+
+  @override
+  String get billingNoPayments => 'No bill payments yet';
+
+  @override
+  String get billingRecipientLabel => 'Recipient';
+
+  @override
+  String get billingServiceAmountLabel => 'Service';
+
+  @override
+  String get billingFeeLabel => 'Fee';
+
+  @override
+  String get billingTotalLabel => 'Total';
+
+  @override
+  String get billingStatusLabel => 'Status';
+
+  @override
+  String get billingProviderRef => 'Provider ref';
+
+  @override
+  String get billingTokenLabel => 'Token / code';
+
+  @override
+  String get billingRefundedInfo => 'The verified payment was refunded.';
+
+  @override
+  String get billingSuccess => 'Bill completed successfully.';
+
+  @override
+  String get billingStatusQuoted => 'Quote ready';
+
+  @override
+  String get billingStatusAwaiting => 'Awaiting payment';
+
+  @override
+  String get billingStatusFunded => 'Payment verified';
+
+  @override
+  String get billingStatusProcessing => 'Processing';
+
+  @override
+  String get billingStatusCompleted => 'Completed';
+
+  @override
+  String get billingStatusRefundProcessing => 'Refund processing';
+
+  @override
+  String get billingStatusRefunded => 'Refunded';
+
+  @override
+  String get billingStatusExpired => 'Expired';
+
+  @override
+  String get billingStatusFailed => 'Failed';
+
+  @override
+  String get billingStatusAwaitingFunds => 'Awaiting funds';
+
+  @override
+  String get billingStatusUnknown => 'Status unavailable';
+
+  @override
+  String get billingTitle => 'Bills & payments';
+
+  @override
+  String get billingNew => 'New bill';
+
+  @override
+  String get billingPayTitle => 'Pay a bill';
+
+  @override
+  String get billingInstructions =>
+      'Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.';
+
+  @override
+  String get billingCategory => 'Category';
+
+  @override
+  String get billingProvider => 'Provider';
+
+  @override
+  String get billingService => 'Service';
+
+  @override
+  String get billingPhone => 'Phone number';
+
+  @override
+  String get billingRecipient => 'Customer / meter / smartcard number';
+
+  @override
+  String get billingAmount => 'Amount (NGN)';
+
+  @override
+  String get billingVariableHelp => 'Enter the provider-supported amount.';
+
+  @override
+  String get billingFixedHelp => 'Fixed by the provider.';
+
+  @override
+  String get billingReview => 'Review quote';
+
+  @override
+  String billingConfirmWallet(String amount) {
+    return 'Confirm $amount from wallet';
+  }
+
+  @override
+  String billingAddFunds(String amount) {
+    return 'Add $amount';
+  }
+
+  @override
+  String get billingTransferInstructions =>
+      'Transfer the exact amount below. Masanawa will continue this bill automatically after the transfer is verified.';
+
+  @override
+  String get billingExpires => 'Expires:';
+
+  @override
+  String get billingRefresh => 'Refresh status';
+
+  @override
+  String get billingAnother => 'Pay another bill';
+
+  @override
+  String get billingUnavailable => 'Billing is unavailable right now.';
+
+  @override
+  String get billingProvidersUnavailable => 'Could not load providers.';
+
+  @override
+  String get billingServicesUnavailable => 'Could not load services.';
+
+  @override
+  String get billingSelectionRequired =>
+      'Choose a category, provider and service.';
+
+  @override
+  String get billingInvalidDetails =>
+      'Enter valid recipient details and amount.';
+
+  @override
+  String get billingQuoteFailed => 'Could not create this quote.';
+
+  @override
+  String get billingPurchaseFailed =>
+      'Could not complete this purchase from your wallet.';
+
+  @override
+  String get billingRefreshFailed => 'Could not refresh status.';
+
+  @override
+  String get billingDetailsFailed => 'Could not load bill details.';
+
+  @override
+  String get billingSignInAgain => 'Your session has expired. Sign in again.';
+
+  @override
+  String get billingExpiredTryAgain =>
+      'This quote has expired. Request a new quote.';
 }

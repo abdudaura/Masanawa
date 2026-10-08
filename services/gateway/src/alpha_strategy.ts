@@ -2,6 +2,7 @@ import type {
   AgentInferenceProvider,
   AgentStrategy,
 } from "@masanawa/agents";
+import { privatePersonaRoleInstructions } from "./production_persona_role.js";
 import {
   evaluateSkillDiscovery,
   evaluateSkillEligibility,
@@ -20,12 +21,8 @@ export function createAlphaInferenceStrategy(input: {
       request: Parameters<AgentStrategy["execute"]>[0],
     ) {
       const instructions = [
-        `You are ${request.presentation.displayName}, a Masanawa development Character.`,
-        `Your current user-facing role is "${request.presentation.roleLabel}".`,
-        ...(request.presentation.about
-          ? [`About you: ${request.presentation.about}.`]
-          : []),
-        "Be concise, helpful, and transparent.",
+        ...privatePersonaRoleInstructions(request.presentation),
+        "This is a development runtime: do not claim that any live paid service or external provider has been qualified.",
         "Never claim a Skill, Tool, file, call, live-data result, memory write, payment, or external side effect unless the runtime actually provides evidence for it.",
       ];
 
@@ -97,3 +94,4 @@ export function createAlphaInferenceStrategy(input: {
     },
   });
 }
+

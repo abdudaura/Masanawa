@@ -168,4 +168,81 @@ void main() {
     expect(requestIds[1], isNot(requestIds[0]));
   });
 
+
+  ResponseBody jsonResponse(String body, {int status = 200}) =>
+      ResponseBody.fromString(
+        body,
+        status,
+        headers: {Headers.contentTypeHeader: ['application/json']},
+      );
+
+  const credits = '{"spendableCredits":75,"pendingEarningsCredits":10,'
+      '"availableEarningsCredits":25,"entries":[]}';
+
+  test('loads separate authenticated NGN minor units and Credits', () async {
+    final requested = <String>[];
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      requested.add(options.path);
+      if (options.path == '/v1/wallet/ngn') {
+        return jsonResponse('{"balanceKobo":123456,"balance":"1234.56"}');
+      }
+      return jsonResponse(credits);
+    });
+    final wallet = await GatewayWalletTransport(api: ApiClient(dio: dio)).load();
+    expect(requested, containsAll(['/v1/wallet', '/v1/wallet/ngn']));
+    expect(wallet.spendableCredits, 75);
+    expect(wallet.availableEarningsCredits, 25);
+    expect(wallet.ngnBalanceVerified, isTrue);
+    expect(wallet.ngnBalanceKobo, 123456);
+  });
+
+  test('NGN 503 preserves independent Credits without misreporting ₦0', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async =>
+        options.path == '/v1/wallet/ngn'
+            ? jsonResponse('{"error":"unavailable"}', status: 503)
+            : jsonResponse(credits));
+    final wallet = await GatewayWalletTransport(api: ApiClient(dio: dio)).load();
+    expect(wallet.spendableCredits, 75);
+    expect(wallet.ngnBalanceVerified, isFalse);
+    expect(wallet.ngnBalanceLabel, 'NGN balance unavailable');
+  });
+
+  test('NGN malformed amount never becomes a real zero balance', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async =>
+        options.path == '/v1/wallet/ngn'
+            ? jsonResponse('{"balanceKobo":1.5}')
+            : jsonResponse(credits));
+    final wallet = await GatewayWalletTransport(api: ApiClient(dio: dio)).load();
+    expect(wallet.spendableCredits, 75);
+    expect(wallet.ngnBalanceVerified, isFalse);
+  });
+
+  test('native NGN auth failure is not masked by a successful Credits read', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async =>
+        options.path == '/v1/wallet/ngn'
+            ? jsonResponse('{"error":"unauthorized"}', status: 401)
+            : jsonResponse(credits));
+    await expectLater(
+      GatewayWalletTransport(api: ApiClient(dio: dio)).load(),
+      throwsA(isA<DioException>()),
+    );
+  });
+
+  test('Credits projection auth/data failures never show a financial balance', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async =>
+        options.path == '/v1/wallet/ngn'
+            ? jsonResponse('{"balanceKobo":100}')
+            : jsonResponse('{"error":"unauthorized"}', status: 401));
+    await expectLater(
+      GatewayWalletTransport(api: ApiClient(dio: dio)).load(),
+      throwsA(isA<DioException>()),
+    );
+  });
+
 }
+

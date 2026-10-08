@@ -6,6 +6,8 @@ import '../agents/agent_directory.dart';
 import '../agents/agent_session.dart';
 import '../agents/agent_shell.dart';
 import 'assistant_workspace_controller.dart';
+import '../services/private_service_intent.dart';
+import '../screens/chat/private_service_intent_prompt.dart';
 import 'assistant_draft_store.dart';
 import 'secure_assistant_pending_journal.dart';
 
@@ -21,8 +23,14 @@ class AssistantWorkspaceScreen extends StatefulWidget {
     this.journal = const SecureAssistantPendingJournal(),
     this.drafts = const SecureAssistantDraftStore(),
     this.onStartNativeVoice,
+    this.pendingServiceIntent,
+    this.onServiceIntentConsumed,
+    this.onOpenServiceEditor,
   });
 
+  final PendingPrivateServiceIntent? pendingServiceIntent;
+  final void Function(PendingPrivateServiceIntent)? onServiceIntentConsumed;
+  final void Function(PendingPrivateServiceIntent)? onOpenServiceEditor;
   final String ownerId;
   final AgentDirectoryTransport directory;
   final AgentTransport agents;
@@ -222,6 +230,27 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
       ),
       body: SafeArea(
         child: Column(children: [
+          if (widget.pendingServiceIntent?.belongsTo(widget.ownerId) == true)
+            PrivateServiceIntentPrompt(
+              key: ValueKey('assistant-service-' + widget.pendingServiceIntent!.revision.toString()),
+              intent: widget.pendingServiceIntent!.intent,
+              canContinue: workspace.canSend,
+              onContinue: () async {
+                final request = widget.pendingServiceIntent!;
+                if (!workspace.canSend || !request.belongsTo(workspace.ownerId)) return;
+                await workspace.sendText(request.intent.helpRequest);
+                if (!mounted || !request.belongsTo(workspace.ownerId)) return;
+                if (workspace.pending != null ||
+                    workspace.notice == 'Server acknowledged your message.' ||
+                    workspace.notice == 'Sent; history will refresh when connectivity returns.') {
+                  widget.onServiceIntentConsumed?.call(request);
+                } else {
+                  throw StateError('Service request was not stored or acknowledged');
+                }
+              },
+              onOpenEditor: () => widget.onOpenServiceEditor?.call(widget.pendingServiceIntent!),
+              onDismiss: () => widget.onServiceIntentConsumed?.call(widget.pendingServiceIntent!),
+            ),
           if (workspace.busy) const LinearProgressIndicator(),
           if (workspace.error != null)
             MaterialBanner(

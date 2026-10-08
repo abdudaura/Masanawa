@@ -297,13 +297,13 @@ class ChatListScreen extends ConsumerWidget {
         item.$2.status == 'waiting_for_input').length;
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(
-        backgroundColor: u.brand,
-        foregroundColor: Colors.white,
+        backgroundColor: u.surfaceCard,
+        foregroundColor: u.textPrimary,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const MasanawaWordmark(light: true),
+        title: const MasanawaWordmark(light: false),
         bottom: activity.isEmpty && chat.online
             ? null
             : PreferredSize(
@@ -314,7 +314,7 @@ class ChatListScreen extends ConsumerWidget {
                       : () => _showActivity(context, directory, activity),
                   child: Container(
                     width: double.infinity,
-                    color: Colors.white.withValues(alpha: .13),
+                    color: u.surfaceMuted,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 8,
@@ -325,7 +325,7 @@ class ChatListScreen extends ConsumerWidget {
                           chat.online
                               ? Icons.work_outline
                               : Icons.cloud_off_outlined,
-                          color: Colors.white,
+                          color: u.brandStrong,
                           size: 17,
                         ),
                         const SizedBox(width: 8),
@@ -336,16 +336,16 @@ class ChatListScreen extends ConsumerWidget {
                                 : attention > 0
                                     ? '$attention need attention · ${activity.length} active'
                                     : '${activity.length} active work item${activity.length == 1 ? '' : 's'}',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: u.textPrimary,
                               fontSize: 12.5,
                             ),
                           ),
                         ),
                         if (activity.isNotEmpty)
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
-                            color: Colors.white,
+                            color: u.textMuted,
                             size: 18,
                           ),
                       ],
@@ -380,11 +380,11 @@ class ChatListScreen extends ConsumerWidget {
             tooltip: 'Settings & profile',
             icon: CircleAvatar(
               radius: 14,
-              backgroundColor: Colors.white.withValues(alpha: 0.25),
+              backgroundColor: u.surfaceMuted,
               child: Text(
                 userName.isNotEmpty ? userName[0].toUpperCase() : 'M',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: u.brandStrong,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -427,8 +427,8 @@ class ChatListScreen extends ConsumerWidget {
                           ? null
                           : Text(
                               agent.initial,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: u.textPrimary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 20,
                               ),
@@ -509,7 +509,7 @@ class ChatListScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         tooltip: 'Start conversation',
         backgroundColor: u.brand,
-        foregroundColor: Colors.white,
+        foregroundColor: u.textPrimary,
         onPressed: () => context.push('/agents'),
         child: const Icon(Icons.mic_none_outlined),
       ),
@@ -572,3 +572,4 @@ class _EmptyChats extends StatelessWidget {
     );
   }
 }
+

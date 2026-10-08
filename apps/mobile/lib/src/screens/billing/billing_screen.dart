@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../core/api/billing_models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
@@ -24,6 +27,22 @@ BillCategory? billingCategoryForHomeService(
   }
   return null;
 }
+
+/// Map only known authoritative quote phases to localized status labels.
+/// Never infer financial success from a client action or unknown state.
+String billingStatusLabel(String state, AppLocalizations l) => switch (state) {
+  'quoted' => l.billingStatusQuoted,
+  'checkout-created' || 'awaiting' => l.billingStatusAwaiting,
+  'awaiting-funds' => l.billingStatusAwaitingFunds,
+  'funded' => l.billingStatusFunded,
+  'reserved' || 'processing' || 'pending' => l.billingStatusProcessing,
+  'succeeded' || 'fulfilled' => l.billingStatusCompleted,
+  'refund-pending' || 'refund-dispatching' || 'refund-submitted' => l.billingStatusRefundProcessing,
+  'refunded' => l.billingStatusRefunded,
+  'expired' => l.billingStatusExpired,
+  'failed' => l.billingStatusFailed,
+  _ => l.billingStatusUnknown,
+};
 
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key, this.initialService});
@@ -50,8 +69,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   bool busy = false;
   bool loading = true;
   String? error;
+  Timer? _fundingExpiryTimer;
+  int _selectionEpoch = 0;
 
   ApiClient get api => ref.read(apiClientProvider);
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -61,15 +83,22 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   @override
   void dispose() {
+    _fundingExpiryTimer?.cancel();
     customer.dispose();
     amount.dispose();
     super.dispose();
   }
 
-  String safeError(Object value, String fallback) =>
-      value is ApiException && value.message.trim().isNotEmpty
-          ? value.message
-          : fallback;
+  // Do not surface untrusted provider text or internal exception details.
+  // Only recognized stable financial errors have localized recovery copy.
+  String safeError(Object value, String fallback) {
+    if (value is ApiException) {
+      if (value.message == 'financial.auth.unauthorized' ||
+          value.message == 'UNAUTHORIZED') return l.billingSignInAgain;
+      if (value.message.contains('quote_expired')) return l.billingExpiredTryAgain;
+    }
+    return fallback;
+  }
 
   Future<void> load() async {
     if (mounted) setState(() { loading = true; error = null; });
@@ -91,7 +120,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (!mounted) return;
       setState(() {
         loading = false;
-        error = safeError(value, 'Billing is unavailable right now.');
+        error = safeError(value, l.billingUnavailable);
       });
     }
   }
@@ -113,7 +142,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final next = await api.billingBillers(value.code);
       if (mounted) setState(() => billers = next);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not load providers.'));
+      if (mounted) setState(() => error = safeError(value, l.billingProvidersUnavailable));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -134,7 +163,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final next = await api.billingItems(value.billerCode);
       if (mounted) setState(() => items = next);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not load services.'));
+      if (mounted) setState(() => error = safeError(value, l.billingServicesUnavailable));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -151,17 +180,19 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> createQuote() async {
+    ++_selectionEpoch;
+    _fundingExpiryTimer?.cancel();
     final selectedCategory = category;
     final selectedBiller = biller;
     final selectedItem = item;
     final recipient = customer.text.trim();
     final rawAmount = amount.text.trim();
     if (selectedCategory == null || selectedBiller == null || selectedItem == null) {
-      setState(() => error = 'Choose a category, provider and service.');
+      setState(() => error = l.billingSelectionRequired);
       return;
     }
     if (recipient.isEmpty || (num.tryParse(rawAmount) ?? 0) <= 0) {
-      setState(() => error = 'Enter valid recipient details and amount.');
+      setState(() => error = l.billingInvalidDetails);
       return;
     }
     setState(() { busy = true; error = null; });
@@ -175,7 +206,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       );
       if (mounted) setState(() => current = view);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not create this quote.'));
+      if (mounted) setState(() => error = safeError(value, l.billingQuoteFailed));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -192,32 +223,86 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       );
       if (!mounted) return;
       setState(() => walletAction = next);
+      _scheduleFundingExpiry();
       await ref.read(walletProvider.notifier).refresh();
-      await refreshCurrent(silent: true);
+      // The immediate wallet response owns fresh bank details; refreshing the
+      // quote must not discard it while the status endpoint is unavailable.
+      await refreshCurrent(silent: true, restoreFunding: false);
     } catch (value) {
       if (mounted) {
         setState(() => error = safeError(
           value,
-          'Could not complete this purchase from your wallet.',
+          l.billingPurchaseFailed,
         ));
       }
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
-  Future<void> refreshCurrent({bool silent = false}) async {
+  Future<void> refreshCurrent({
+    bool silent = false,
+    bool restoreFunding = true,
+  }) async {
     final view = current;
     if (view == null) return;
     if (!silent) setState(() { busy = true; error = null; });
     try {
-      final next = await api.billingQuote(view.quote.quoteId);
-      if (mounted) setState(() => current = next);
+      await readOwnedBill(view.quote.quoteId, restoreFunding: restoreFunding);
       await reloadHistory();
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not refresh status.'));
+      if (mounted) {
+        setState(() => error = safeError(
+          value, l.billingRefreshFailed,
+        ));
+      }
     } finally {
       if (!silent && mounted) setState(() => busy = false);
     }
+  }
+
+  /// Restores bank instructions only from an authenticated, authoritative
+  /// owner-scoped read. No confirmation, virtual account creation or payment.
+  Future<void> readOwnedBill(String quoteId, {
+    bool restoreFunding = true,
+  }) async {
+    final capturedEpoch = _selectionEpoch;
+    // Clear before the first network await, including when the quote GET
+    // fails. Displaying a stale account after authentication failure is unsafe.
+    if (restoreFunding && mounted) setState(() => walletAction = null);
+    final detail = await api.billingQuote(quoteId);
+    final status = restoreFunding && !detail.isTerminal
+        ? await api.billingWalletStatus(quoteId)
+        : null;
+    if (!mounted || capturedEpoch != _selectionEpoch) return;
+    setState(() {
+      current = detail;
+      if (restoreFunding || detail.isTerminal) walletAction = status;
+    });
+    _scheduleFundingExpiry();
+  }
+
+  void _scheduleFundingExpiry() {
+    _fundingExpiryTimer?.cancel();
+    final funding = walletAction?.funding;
+    final quote = current?.quote;
+    if (funding == null || quote == null) return;
+    final fundingExpiry = DateTime.tryParse(funding.expiresAt);
+    final quoteExpiry = DateTime.tryParse(quote.expiresAt);
+    if (fundingExpiry == null || quoteExpiry == null) return;
+    final deadline = fundingExpiry.isBefore(quoteExpiry)
+        ? fundingExpiry : quoteExpiry;
+    final remaining = deadline.difference(DateTime.now());
+    if (remaining <= Duration.zero) {
+      setState(() => walletAction = null);
+      return;
+    }
+    // Stop rendering bank coordinates the moment either authority expires,
+    // even if the user leaves the same screen open without interacting.
+    _fundingExpiryTimer = Timer(remaining + const Duration(milliseconds: 10), () {
+      if (!mounted) return;
+      setState(() => walletAction = null);
+      unawaited(refreshCurrent(silent: true));
+    });
   }
 
   Future<void> reloadHistory() async {
@@ -228,18 +313,20 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> restore(BillingCheckoutView entry) async {
+    ++_selectionEpoch;
+    _fundingExpiryTimer?.cancel();
     setState(() { busy = true; error = null; });
     try {
-      final detail = await api.billingQuote(entry.quote.quoteId);
-      if (mounted) setState(() => current = detail);
+      await readOwnedBill(entry.quote.quoteId);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not load bill details.'));
+      if (mounted) setState(() => error = safeError(value, l.billingDetailsFailed));
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   void newBill() {
+    ++_selectionEpoch;
     setState(() {
       current = null;
       category = null;
@@ -252,24 +339,29 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       walletAction = null;
       error = null;
     });
+    _fundingExpiryTimer?.cancel();
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bills & payments'),
+        title: Text(strings.billingTitle),
         actions: [
           if (current != null)
             IconButton(
-              tooltip: 'New bill',
+              tooltip: strings.billingNew,
               onPressed: busy ? null : newBill,
               icon: const Icon(Icons.add),
             ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: load,
+        onRefresh: () async {
+          await load();
+          if (current != null) await refreshCurrent(silent: true);
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -292,19 +384,19 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             const SizedBox(height: 28),
             Row(
               children: [
-                Text('Recent bills', style: Theme.of(context).textTheme.titleMedium),
+                Text(strings.billingRecent, style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'Refresh history',
+                  tooltip: strings.billingRefreshHistory,
                   onPressed: busy ? null : reloadHistory,
                   icon: const Icon(Icons.refresh),
                 ),
               ],
             ),
             if (history.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 28),
-                child: Center(child: Text('No bill payments yet')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: Center(child: Text(strings.billingNoPayments)),
               )
             else
               for (final entry in history)
@@ -313,7 +405,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                     leading: const Icon(Icons.receipt_long_outlined),
                     title: Text(entry.quote.itemName),
                     subtitle: Text(
-                      entry.quote.customerId + ' · ' + stateLabel(entry.quote.state),
+                      entry.quote.customerId + ' · ' + billingStatusLabel(entry.quote.state, strings),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -332,13 +424,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Pay a bill', style: Theme.of(context).textTheme.headlineSmall),
+        Text(l.billingPayTitle, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 6),
-        const Text('Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.'),
+        Text(l.billingInstructions),
         const SizedBox(height: 18),
         DropdownButtonFormField<BillCategory>(
           value: category,
-          decoration: const InputDecoration(labelText: 'Category'),
+          decoration: InputDecoration(labelText: l.billingCategory),
           items: categories.map((value) => DropdownMenuItem(
             value: value,
             child: Text(value.name),
@@ -348,7 +440,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         const SizedBox(height: 12),
         DropdownButtonFormField<BillBiller>(
           value: biller,
-          decoration: const InputDecoration(labelText: 'Provider'),
+          decoration: InputDecoration(labelText: l.billingProvider),
           items: billers.map((value) => DropdownMenuItem(
             value: value,
             child: Text(value.name),
@@ -359,7 +451,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         DropdownButtonFormField<BillItem>(
           value: item,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Service'),
+          decoration: InputDecoration(labelText: l.billingService),
           items: items.map((value) => DropdownMenuItem(
             value: value,
             child: Text(
@@ -379,8 +471,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               labelText: selectedItem.labelName?.trim().isNotEmpty == true
                   ? selectedItem.labelName
                   : (category?.code == 'AIRTIME' || category?.code == 'MOBILEDATA')
-                      ? 'Phone number'
-                      : 'Customer / meter / smartcard number',
+                      ? l.billingPhone
+                      : l.billingRecipient,
             ),
           ),
           const SizedBox(height: 12),
@@ -389,17 +481,17 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             readOnly: !selectedItem.variableAmount,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText: 'Amount (NGN)',
+              labelText: l.billingAmount,
               helperText: selectedItem.variableAmount
-                  ? 'Enter the provider-supported amount.'
-                  : 'Fixed by the provider.',
+                  ? l.billingVariableHelp
+                  : l.billingFixedHelp,
             ),
           ),
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: busy ? null : createQuote,
             icon: const Icon(Icons.receipt_long_outlined),
-            label: const Text('Review quote'),
+            label: Text(l.billingReview),
           ),
         ],
       ],
@@ -408,19 +500,35 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   Widget buildTransaction(BillingCheckoutView view) {
     final quote = view.quote;
-    final funding = walletAction?.funding;
     final walletPhase = walletAction?.phase;
+    final quoteExpiry = DateTime.tryParse(quote.expiresAt);
+    final quoteFresh = quoteExpiry != null && quoteExpiry.isAfter(DateTime.now());
+    final candidate = walletAction?.funding;
+    final expiry = DateTime.tryParse(candidate?.expiresAt ?? '');
+    // A displayed virtual account must remain provider-bound and unexpired,
+    // including while a user leaves this screen open beyond its validity.
+    final funding = walletPhase == 'awaiting-funds' && quoteFresh &&
+            expiry != null && expiry.isAfter(DateTime.now()) &&
+            candidate != null && candidate.accountNumber.trim().isNotEmpty &&
+            candidate.bankName.trim().isNotEmpty
+        ? candidate
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         BillDetails(view: view),
-        if (view.phase == 'quoted') ...[
+        if (view.phase == 'quoted' && quoteFresh &&
+            (walletPhase == null || walletPhase == 'ready')) ...[
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: busy ? null : confirmFromWallet,
             icon: const Icon(Icons.account_balance_wallet_outlined),
-            label: Text('Confirm ₦' + quote.totalAmount + ' from wallet'),
+            label: Text(l.billingConfirmWallet('₦' + quote.totalAmount)),
           ),
+        ],
+        if (view.phase == 'quoted' && !quoteFresh) ...[
+          const SizedBox(height: 12),
+          Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(l.billingExpiredTryAgain))),
         ],
         if (funding != null) ...[
           const SizedBox(height: 14),
@@ -430,30 +538,44 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Add ₦' + funding.amount, style: Theme.of(context).textTheme.titleMedium),
+                  Text(l.billingAddFunds('₦' + funding.amount), style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 6),
-                  const Text('Transfer the exact amount below. Masanawa will continue this bill automatically after the transfer is verified.'),
+                  Text(l.billingTransferInstructions),
                   const SizedBox(height: 12),
                   SelectableText(funding.bankName, style: const TextStyle(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   SelectableText(funding.accountNumber, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 6),
-                  Text('Expires: ' + funding.expiresAt),
+                  Text(l.billingExpires + ' ' + funding.expiresAt),
                 ],
               ),
             ),
           ),
         ],
+        if (walletPhase == 'processing') ...[
+          const SizedBox(height: 12),
+          const Card(child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Text('Your transfer or bill is being verified. Refresh to check progress; do not send another payment.'),
+          )),
+        ],
+        if (walletPhase == 'awaiting-funds' && funding == null) ...[
+          const SizedBox(height: 12),
+          const Card(child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Text('The funding instructions are unavailable or expired. Refresh your status before transferring.'),
+          )),
+        ],
         if (walletPhase == 'fulfilled') ...[
           const SizedBox(height: 12),
-          const Card(child: Padding(padding: EdgeInsets.all(14), child: Text('Bill completed successfully.'))),
+          Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(l.billingSuccess))),
         ],
-        if (view.phase == 'processing' || walletPhase == 'processing' || walletPhase == 'awaiting-funds') ...[
+        if (view.phase == 'processing' || walletPhase == 'processing' || walletPhase == 'awaiting-funds' || walletPhase == 'ready') ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(
             onPressed: busy ? null : refreshCurrent,
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh status'),
+            label: Text(l.billingRefresh),
           ),
         ],
         if (view.isTerminal || walletPhase == 'fulfilled' || walletPhase == 'failed') ...[
@@ -461,24 +583,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           OutlinedButton.icon(
             onPressed: busy ? null : newBill,
             icon: const Icon(Icons.add),
-            label: const Text('Pay another bill'),
+            label: Text(l.billingAnother),
           ),
         ],
       ],
     );
   }
-  String stateLabel(String state) => switch (state) {
-        'quoted' => 'Quote ready',
-        'checkout-created' => 'Awaiting payment',
-        'funded' => 'Payment verified',
-        'reserved' => 'Processing',
-        'succeeded' => 'Completed',
-        'refund-pending' || 'refund-dispatching' || 'refund-submitted' =>
-          'Refund processing',
-        'refunded' => 'Refunded',
-        'expired' => 'Expired',
-        _ => state,
-      };
+
 }
 
 class BillDetails extends StatelessWidget {
@@ -487,6 +598,7 @@ class BillDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final quote = view.quote;
     final token = view.purchase?.deliveryCode?.trim();
     return Card(
@@ -497,27 +609,28 @@ class BillDetails extends StatelessWidget {
           children: [
             Text(quote.itemName, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            line('Recipient', quote.customerId),
-            line('Service', '₦' + quote.serviceAmount),
-            line('Fee', '₦' + quote.feeAmount),
+            line(strings.billingRecipientLabel, quote.customerId, identifier: true),
+            line(strings.billingServiceAmountLabel, '₦' + quote.serviceAmount),
+            line(strings.billingFeeLabel, '₦' + quote.feeAmount),
             const Divider(),
-            line('Total', '₦' + quote.totalAmount, strong: true),
-            line('Status', view.phase),
+            line(strings.billingTotalLabel, '₦' + quote.totalAmount, strong: true),
+            line(strings.billingStatusLabel, billingStatusLabel(view.phase, strings)),
             if (quote.billProviderReference != null)
-              line('Provider ref', quote.billProviderReference!),
+              line(strings.billingProviderRef, quote.billProviderReference!, identifier: true),
             if (token != null && token.isNotEmpty) ...[
               const Divider(),
-              const Text('Token / code'),
+              Text(strings.billingTokenLabel),
               const SizedBox(height: 6),
               SelectableText(
                 token,
+                textDirection: TextDirection.ltr,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
             if (view.phase == 'refunded')
-              const Padding(
-                padding: EdgeInsets.only(top: 10),
-                child: Text('The verified payment was refunded.'),
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(strings.billingRefundedInfo),
               ),
           ],
         ),
@@ -525,7 +638,7 @@ class BillDetails extends StatelessWidget {
     );
   }
 
-  Widget line(String label, String value, {bool strong = false}) => Padding(
+  Widget line(String label, String value, {bool strong = false, bool identifier = false}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,6 +648,7 @@ class BillDetails extends StatelessWidget {
               child: Text(
                 value,
                 textAlign: TextAlign.right,
+                textDirection: identifier ? TextDirection.ltr : null,
                 style: strong ? const TextStyle(fontWeight: FontWeight.w700) : null,
               ),
             ),
@@ -542,3 +656,4 @@ class BillDetails extends StatelessWidget {
         ),
       );
 }
+

@@ -19,6 +19,7 @@ import '../screens/settings/clone_setup_screen.dart';
 import '../screens/search/talk_search_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../screens/talks/create_talk_participant_handoff.dart';
 import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
@@ -202,11 +203,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra;
           final initialTalk = extra is TalkDiscoveryItem ? extra : null;
-          return TalkScreen(
-            talkId: state.pathParameters['id']!,
+          final talkId = state.pathParameters['id']!;
+          final isHost = state.uri.queryParameters['host'] == '1' ||
+              initialTalk?.viewerIsHost == true;
+          return TalkCreateParticipantHandoff(
+            talkId: talkId,
             initialTalk: initialTalk,
-            isHost: state.uri.queryParameters['host'] == '1' ||
-                initialTalk?.viewerIsHost == true,
+            isHost: isHost,
+            child: TalkScreen(
+              talkId: talkId,
+              initialTalk: initialTalk,
+              isHost: isHost,
+            ),
           );
         },
       ),

@@ -1,6 +1,8 @@
+import 'package:masanawa/src/localization/masanawa_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:masanawa/src/screens/talks/add_ai_seat_sheet.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
@@ -15,6 +17,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
   TalkAiSeatRequestStatus confirmationStatus = TalkAiSeatRequestStatus.pendingHost;
   bool failConfirmation = false;
   bool mismatchedQuote = false;
+  bool emptyCatalog = false;
 
   static const expert = TalkAiSeatCandidate(
     personaId: 'expert-economist',
@@ -34,13 +37,22 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     subtitle: 'Owned by Amina',
     topics: ['Technology', 'Startups'],
     isAvailable: true,
+    isOwnedByViewer: true,
+  );
+
+  static const foreignTwin = TalkAiSeatCandidate(
+    personaId: 'twin-foreign',
+    displayName: 'Someone Else Twin',
+    kind: TalkAiPersonaKind.twin,
+    seatFeeLabel: '20 Credits',
+    isAvailable: true,
+    isOwnedByViewer: false,
   );
 
   @override
   Future<List<TalkAiSeatCandidate>> loadCandidates({
     required String talkId,
-  }) async =>
-      const [expert, twin];
+  }) async => emptyCatalog ? const [] : const [expert, twin, foreignTwin];
 
   @override
   Future<TalkAiSeatQuote> createQuote({
@@ -86,16 +98,19 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
 Widget _app({
   required TalkAiSeatTransport transport,
   required bool isHost,
+  TalkAiPersonaKind initialKind = TalkAiPersonaKind.expert,
+  bool onlyOwnedTwin = false,
 }) {
   return ProviderScope(
     overrides: [
       talkAiSeatTransportProvider.overrideWithValue(transport),
     ],
-    child: MaterialApp(
-      theme: buildMasanawaTheme(brightness: Brightness.light),
+    child: MaterialApp(theme: buildMasanawaTheme(brightness: Brightness.light), localizationsDelegates: MasanawaLocalization.delegates, supportedLocales: MasanawaLocalization.supportedLocales, 
       home: AddAiSeatSheet(
         talkId: 'talk-1',
         isHost: isHost,
+        initialKind: initialKind,
+        onlyOwnedTwin: onlyOwnedTwin,
       ),
     ),
   );
@@ -145,6 +160,77 @@ void main() {
       find.textContaining('available AI Seat'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('preselected Twin opens the real Twin catalog without quoting',
+      (tester) async {
+    final transport = _FakeSeatTransport();
+    await tester.pumpWidget(_app(
+      transport: transport,
+      isHost: true,
+      initialKind: TalkAiPersonaKind.twin,
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Amina Twin'), findsOneWidget);
+    expect(find.text('Economist'), findsNothing);
+    expect(transport.quoteCount, 0);
+    expect(transport.confirmationCalls, 0);
+  });
+
+  testWidgets('Add My Twin cannot show other people’s public Twins',
+      (tester) async {
+    final transport = _FakeSeatTransport();
+    await tester.pumpWidget(_app(
+      transport: transport,
+      isHost: true,
+      onlyOwnedTwin: true,
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('My Twin'), findsOneWidget);
+    expect(find.text('Amina Twin'), findsOneWidget);
+    expect(find.text('Someone Else Twin'), findsNothing);
+    expect(find.text('Economist'), findsNothing);
+    expect(transport.confirmationCalls, 0);
+  });
+
+  testWidgets('missing Twin opens the real My Twin creation route',
+      (tester) async {
+    final transport = _FakeSeatTransport()..emptyCatalog = true;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () => showAddAiSeatSheet(
+                context,
+                talkId: 'talk-1',
+                isHost: true,
+                initialKind: TalkAiPersonaKind.twin,
+              ),
+              child: const Text('Open picker'),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/my-twin',
+          builder: (_, __) => const Scaffold(body: Text('Twin creator')),
+        ),
+      ],
+    );
+    await tester.pumpWidget(ProviderScope(
+      overrides: [talkAiSeatTransportProvider.overrideWithValue(transport)],
+      child: MaterialApp.router(theme: buildMasanawaTheme(brightness: Brightness.light), localizationsDelegates: MasanawaLocalization.delegates, supportedLocales: MasanawaLocalization.supportedLocales, routerConfig: router),
+    ));
+    await tester.tap(find.text('Open picker'));
+    await tester.pumpAndSettle();
+    expect(find.text('Create My Twin'), findsOneWidget);
+    await tester.tap(find.text('Create My Twin'));
+    await tester.pumpAndSettle();
+    expect(find.text('Twin creator'), findsOneWidget);
+    expect(transport.confirmationCalls, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
+    router.dispose();
   });
 
   testWidgets('Twins tab filters the catalog without a new screen',
@@ -273,3 +359,4 @@ void main() {
   });
 
 }
+

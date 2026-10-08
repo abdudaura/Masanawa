@@ -19,6 +19,26 @@ void main() {
     expect(candidate.topics, ['Policy', 'Africa']);
   });
 
+  test('Twin ownership must be verified by the server, not inferred', () {
+    final raw = <String, dynamic>{
+      'personaId': 'twin-1',
+      'displayName': 'My Twin',
+      'kind': 'twin',
+      'seatFeeLabel': '12 Credits',
+      'isAvailable': true,
+    };
+    expect(TalkAiSeatCandidate.fromJson(raw).isOwnedByViewer, isFalse);
+    expect(TalkAiSeatCandidate.fromJson({
+      ...raw, 'isOwnedByViewer': 'true',
+    }).isOwnedByViewer, isFalse);
+    expect(TalkAiSeatCandidate.fromJson({
+      ...raw, 'isOwnedByViewer': true,
+    }).isOwnedByViewer, isTrue);
+    expect(TalkAiSeatCandidate.fromJson({
+      ...raw, 'kind': 'expert', 'isOwnedByViewer': true,
+    }).isOwnedByViewer, isFalse);
+  });
+
   test('sponsor quote always carries explicit Host approval flag', () {
     final quote = TalkAiSeatQuote.fromJson({
       'quoteId': 'quote-1',
@@ -124,3 +144,4 @@ void main() {
   });
 
 }
+

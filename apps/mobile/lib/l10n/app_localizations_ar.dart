@@ -340,4 +340,169 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get assistantTab => 'المساعد';
+
+  @override
+  String get billingRecent => 'الفواتير الأخيرة';
+
+  @override
+  String get billingRefreshHistory => 'تحديث السجل';
+
+  @override
+  String get billingNoPayments => 'لا توجد مدفوعات فواتير بعد';
+
+  @override
+  String get billingRecipientLabel => 'المستفيد';
+
+  @override
+  String get billingServiceAmountLabel => 'الخدمة';
+
+  @override
+  String get billingFeeLabel => 'الرسوم';
+
+  @override
+  String get billingTotalLabel => 'الإجمالي';
+
+  @override
+  String get billingStatusLabel => 'الحالة';
+
+  @override
+  String get billingProviderRef => 'مرجع المزود';
+
+  @override
+  String get billingTokenLabel => 'الرمز / التوكن';
+
+  @override
+  String get billingRefundedInfo => 'تم رد المبلغ المدفوع بعد التحقق منه.';
+
+  @override
+  String get billingSuccess => 'اكتمل دفع الفاتورة بنجاح.';
+
+  @override
+  String get billingStatusQuoted => 'عرض السعر جاهز';
+
+  @override
+  String get billingStatusAwaiting => 'بانتظار الدفع';
+
+  @override
+  String get billingStatusFunded => 'تم التحقق من الدفع';
+
+  @override
+  String get billingStatusProcessing => 'قيد المعالجة';
+
+  @override
+  String get billingStatusCompleted => 'مكتمل';
+
+  @override
+  String get billingStatusRefundProcessing => 'جارٍ رد المبلغ';
+
+  @override
+  String get billingStatusRefunded => 'تم رد المبلغ';
+
+  @override
+  String get billingStatusExpired => 'منتهي الصلاحية';
+
+  @override
+  String get billingStatusFailed => 'فشل';
+
+  @override
+  String get billingStatusAwaitingFunds => 'بانتظار التمويل';
+
+  @override
+  String get billingStatusUnknown => 'الحالة غير متاحة';
+
+  @override
+  String get billingTitle => 'الفواتير والمدفوعات';
+
+  @override
+  String get billingNew => 'فاتورة جديدة';
+
+  @override
+  String get billingPayTitle => 'دفع فاتورة';
+
+  @override
+  String get billingInstructions =>
+      'اختر خدمة متاحة من المزود. يتم الدفع من محفظة Masanawa داخل التطبيق.';
+
+  @override
+  String get billingCategory => 'الفئة';
+
+  @override
+  String get billingProvider => 'المزود';
+
+  @override
+  String get billingService => 'الخدمة';
+
+  @override
+  String get billingPhone => 'رقم الهاتف';
+
+  @override
+  String get billingRecipient => 'رقم العميل / العداد / البطاقة';
+
+  @override
+  String get billingAmount => 'المبلغ (NGN)';
+
+  @override
+  String get billingVariableHelp => 'أدخل مبلغًا يدعمه المزود.';
+
+  @override
+  String get billingFixedHelp => 'المبلغ ثابت لدى المزود.';
+
+  @override
+  String get billingReview => 'مراجعة عرض السعر';
+
+  @override
+  String billingConfirmWallet(String amount) {
+    return 'تأكيد $amount من المحفظة';
+  }
+
+  @override
+  String billingAddFunds(String amount) {
+    return 'إضافة $amount';
+  }
+
+  @override
+  String get billingTransferInstructions =>
+      'حوّل المبلغ المحدد أدناه. ستتابع Masanawa دفع الفاتورة تلقائيًا بعد التحقق من التحويل.';
+
+  @override
+  String get billingExpires => 'تنتهي الصلاحية:';
+
+  @override
+  String get billingRefresh => 'تحديث الحالة';
+
+  @override
+  String get billingAnother => 'دفع فاتورة أخرى';
+
+  @override
+  String get billingUnavailable => 'خدمة دفع الفواتير غير متاحة الآن.';
+
+  @override
+  String get billingProvidersUnavailable => 'تعذر تحميل المزودين.';
+
+  @override
+  String get billingServicesUnavailable => 'تعذر تحميل الخدمات.';
+
+  @override
+  String get billingSelectionRequired => 'اختر الفئة والمزود والخدمة.';
+
+  @override
+  String get billingInvalidDetails => 'أدخل بيانات المستفيد والمبلغ بشكل صحيح.';
+
+  @override
+  String get billingQuoteFailed => 'تعذر إنشاء عرض السعر.';
+
+  @override
+  String get billingPurchaseFailed => 'تعذر إكمال الشراء من محفظتك.';
+
+  @override
+  String get billingRefreshFailed => 'تعذر تحديث الحالة.';
+
+  @override
+  String get billingDetailsFailed => 'تعذر تحميل تفاصيل الفاتورة.';
+
+  @override
+  String get billingSignInAgain => 'انتهت جلستك. سجّل الدخول مجددًا.';
+
+  @override
+  String get billingExpiredTryAgain => 'انتهت صلاحية العرض. اطلب عرضًا جديدًا.';
 }

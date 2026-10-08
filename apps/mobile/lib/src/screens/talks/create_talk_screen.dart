@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_state.dart';
 import '../../talks/talk_models.dart';
+import '../../talks/talk_create_action_store.dart';
 import '../../theme/masanawa_theme.dart';
 
 class CreateTalkScreen extends ConsumerStatefulWidget {
@@ -27,6 +28,18 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
   final _topic = TextEditingController();
   final _title = TextEditingController();
   bool _creating = false;
+  final Set<TalkCreateParticipantAction> _pendingActions = {};
+
+  void _toggleAction(TalkCreateParticipantAction action, VoidCallback? override) {
+    if (_creating) return;
+    if (override != null) {
+      override();
+      return;
+    }
+    setState(() {
+      if (!_pendingActions.add(action)) _pendingActions.remove(action);
+    });
+  }
 
   @override
   void dispose() {
@@ -48,6 +61,24 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
           );
       ref.invalidate(talkFeedProvider(TalkFeedKind.explore));
       ref.invalidate(talkFeedProvider(TalkFeedKind.live));
+      // The Talk must exist before it can be shared or its actual AI Seat
+      // candidates/price can be resolved. Never perform paid work on draft.
+      try {
+        await ref.read(talkCreateActionStoreProvider).save(
+          talk.id,
+          TalkCreateParticipantAction.values
+              .where(_pendingActions.contains)
+              .toList(growable: false),
+        );
+      } catch (_) {
+        if (mounted && _pendingActions.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Talk started. Add participants from the live Talk.'),
+            ),
+          );
+        }
+      }
       if (!mounted) return;
       widget.onCreated?.call(talk);
     } catch (_) {
@@ -116,21 +147,42 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
             _ParticipantAction(
               icon: Icons.verified_outlined,
               title: 'Add Expert',
-              subtitle: 'Bring a Masanawa specialist to the table',
-              onTap: widget.onAddExpert,
+              subtitle: 'Choose a paid AI Seat after your Talk starts',
+              selected: _pendingActions.contains(TalkCreateParticipantAction.addExpert),
+              onTap: () => _toggleAction(
+                TalkCreateParticipantAction.addExpert,
+                widget.onAddExpert,
+              ),
             ),
             _ParticipantAction(
               icon: Icons.person_add_alt_1_rounded,
               title: 'Invite person',
-              subtitle: 'Human speaker Seats are free',
-              onTap: widget.onInvitePerson,
+              subtitle: 'Share a free invitation after starting',
+              selected: _pendingActions.contains(TalkCreateParticipantAction.invitePerson),
+              onTap: () => _toggleAction(
+                TalkCreateParticipantAction.invitePerson,
+                widget.onInvitePerson,
+              ),
             ),
             _ParticipantAction(
               icon: Icons.auto_awesome_rounded,
               title: 'Add My Twin',
-              subtitle: 'Bring your Twin into a paid AI Seat',
-              onTap: widget.onAddTwin,
+              subtitle: 'Choose your Twin after your Talk starts',
+              selected: _pendingActions.contains(TalkCreateParticipantAction.addTwin),
+              onTap: () => _toggleAction(
+                TalkCreateParticipantAction.addTwin,
+                widget.onAddTwin,
+              ),
             ),
+            if (_pendingActions.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Selected actions will be ready in your live Talk. No one '
+                'is invited or charged until you complete the next step.',
+                key: const ValueKey('create-talk-pending-actions'),
+                style: TextStyle(color: u.textMuted, fontSize: 12.5),
+              ),
+            ],
             const SizedBox(height: 18),
             Container(
               padding: const EdgeInsets.all(13),
@@ -184,12 +236,14 @@ class _ParticipantAction extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.onTap,
+    this.selected = false,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -210,9 +264,14 @@ class _ParticipantAction extends StatelessWidget {
           subtitle,
           style: TextStyle(color: u.textMuted, fontSize: 12.5),
         ),
-        trailing: Icon(Icons.chevron_right_rounded, color: u.textMuted),
+        trailing: Icon(
+          selected ? Icons.check_circle_rounded : Icons.chevron_right_rounded,
+          color: selected ? u.brandStrong : u.textMuted,
+        ),
+        selected: selected,
         onTap: onTap,
       ),
     );
   }
 }
+

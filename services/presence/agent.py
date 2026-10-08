@@ -19,6 +19,7 @@ from livekit.agents.llm import ChatContext, ChatMessage, StopResponse
 from livekit.plugins import google
 
 from runtime_store import PersonaRuntime, RuntimeStore
+from stage_context import public_stage_context
 
 log = logging.getLogger("masanawa-talk-ai")
 server = AgentServer()
@@ -146,6 +147,26 @@ class TalkPersonaAgent(Agent):
         if not runtime.generation_allowed:
             raise StopResponse()
 
+        # The connected Host and paid Seat are reauthorized above. Load only
+        # the approved public-stage projection; an optional context query error
+        # must not fabricate data or accidentally authorize a muted Seat.
+        stage = None
+        try:
+            stage = await self._store.read_public_stage(
+                tenant_id=self._dispatch.tenant_id,
+                talk_id=self._dispatch.talk_id,
+                seat_id=self._dispatch.seat_id,
+                persona_id=self._dispatch.persona_id,
+                kind=self._dispatch.kind,
+            )
+        except Exception:
+            log.warning("Public Talk context temporarily unavailable")
+        public_data = public_stage_context(stage)
+        if public_data:
+            # USER level: public names/topics/questions are untrusted DATA,
+            # never a developer/system instruction or a new audio trigger.
+            turn_ctx.add_message(role="user", content=public_data)
+
         if runtime.kind == "twin" and runtime.direct_instruction:
             turn_ctx.add_message(
                 role="developer",
@@ -174,7 +195,7 @@ def _initial_human(room: rtc.Room) -> str | None:
             return participant.identity
     for participant in participants:
         role = _participant_role(participant)
-        if role in ("speaker", "listener"):
+        if role == "speaker":
             return participant.identity
     return None
 
@@ -253,3 +274,4 @@ async def entrypoint(ctx: JobContext) -> None:
 
 if __name__ == "__main__":
     cli.run_app(server)
+

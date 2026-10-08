@@ -347,4 +347,177 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get assistantTab => 'Asistente';
+
+  @override
+  String get billingRecent => 'Pagos recientes';
+
+  @override
+  String get billingRefreshHistory => 'Actualizar historial';
+
+  @override
+  String get billingNoPayments => 'Todavía no hay pagos';
+
+  @override
+  String get billingRecipientLabel => 'Destinatario';
+
+  @override
+  String get billingServiceAmountLabel => 'Servicio';
+
+  @override
+  String get billingFeeLabel => 'Comisión';
+
+  @override
+  String get billingTotalLabel => 'Total';
+
+  @override
+  String get billingStatusLabel => 'Estado';
+
+  @override
+  String get billingProviderRef => 'Referencia del proveedor';
+
+  @override
+  String get billingTokenLabel => 'Token / código';
+
+  @override
+  String get billingRefundedInfo => 'El pago verificado fue reembolsado.';
+
+  @override
+  String get billingSuccess => 'Factura pagada correctamente.';
+
+  @override
+  String get billingStatusQuoted => 'Cotización lista';
+
+  @override
+  String get billingStatusAwaiting => 'Esperando pago';
+
+  @override
+  String get billingStatusFunded => 'Pago verificado';
+
+  @override
+  String get billingStatusProcessing => 'Procesando';
+
+  @override
+  String get billingStatusCompleted => 'Completado';
+
+  @override
+  String get billingStatusRefundProcessing => 'Reembolso en curso';
+
+  @override
+  String get billingStatusRefunded => 'Reembolsado';
+
+  @override
+  String get billingStatusExpired => 'Vencido';
+
+  @override
+  String get billingStatusFailed => 'Fallido';
+
+  @override
+  String get billingStatusAwaitingFunds => 'Esperando fondos';
+
+  @override
+  String get billingStatusUnknown => 'Estado no disponible';
+
+  @override
+  String get billingTitle => 'Facturas y pagos';
+
+  @override
+  String get billingNew => 'Nueva factura';
+
+  @override
+  String get billingPayTitle => 'Pagar una factura';
+
+  @override
+  String get billingInstructions =>
+      'Elige un servicio disponible. El pago se realiza desde tu billetera Masanawa en la aplicación.';
+
+  @override
+  String get billingCategory => 'Categoría';
+
+  @override
+  String get billingProvider => 'Proveedor';
+
+  @override
+  String get billingService => 'Servicio';
+
+  @override
+  String get billingPhone => 'Número de teléfono';
+
+  @override
+  String get billingRecipient => 'Número de cliente / medidor / tarjeta';
+
+  @override
+  String get billingAmount => 'Importe (NGN)';
+
+  @override
+  String get billingVariableHelp =>
+      'Introduce un importe admitido por el proveedor.';
+
+  @override
+  String get billingFixedHelp => 'Importe fijo del proveedor.';
+
+  @override
+  String get billingReview => 'Revisar cotización';
+
+  @override
+  String billingConfirmWallet(String amount) {
+    return 'Confirmar $amount desde la billetera';
+  }
+
+  @override
+  String billingAddFunds(String amount) {
+    return 'Añadir $amount';
+  }
+
+  @override
+  String get billingTransferInstructions =>
+      'Transfiere el importe exacto indicado. Masanawa continuará el pago automáticamente cuando se verifique la transferencia.';
+
+  @override
+  String get billingExpires => 'Vence:';
+
+  @override
+  String get billingRefresh => 'Actualizar estado';
+
+  @override
+  String get billingAnother => 'Pagar otra factura';
+
+  @override
+  String get billingUnavailable => 'Los pagos no están disponibles ahora.';
+
+  @override
+  String get billingProvidersUnavailable =>
+      'No se pudieron cargar los proveedores.';
+
+  @override
+  String get billingServicesUnavailable =>
+      'No se pudieron cargar los servicios.';
+
+  @override
+  String get billingSelectionRequired =>
+      'Elige una categoría, un proveedor y un servicio.';
+
+  @override
+  String get billingInvalidDetails =>
+      'Introduce un destinatario y un importe válidos.';
+
+  @override
+  String get billingQuoteFailed => 'No se pudo crear esta cotización.';
+
+  @override
+  String get billingPurchaseFailed =>
+      'No se pudo completar la compra desde tu billetera.';
+
+  @override
+  String get billingRefreshFailed => 'No se pudo actualizar el estado.';
+
+  @override
+  String get billingDetailsFailed => 'No se pudieron cargar los detalles.';
+
+  @override
+  String get billingSignInAgain =>
+      'Tu sesión ha caducado. Inicia sesión de nuevo.';
+
+  @override
+  String get billingExpiredTryAgain =>
+      'Esta cotización ha caducado. Solicita otra.';
 }

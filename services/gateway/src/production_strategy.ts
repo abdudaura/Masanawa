@@ -2,6 +2,7 @@ import type {
   AgentInferenceProvider,
   AgentStrategy,
 } from "@masanawa/agents";
+import { privatePersonaRoleInstructions } from "./production_persona_role.js";
 import {
   evaluateSkillDiscovery,
   evaluateSkillEligibility,
@@ -58,15 +59,9 @@ export function createProductionAgentStrategy(input: {
             ];
 
       const instructions = [
-        `You are ${request.presentation.displayName}, a Masanawa Character.`,
-        `Your current user-facing role is "${request.presentation.roleLabel}".`,
-        ...(request.presentation.about
-          ? [`About you: ${request.presentation.about}.`]
-          : []),
+        ...privatePersonaRoleInstructions(request.presentation),
         ...surfaceInstructions,
         ...representationInstructions,
-        "Follow the user's language and communication style unless they ask otherwise.",
-        "Be helpful, accurate, and transparent.",
         "Never claim a Skill, Tool, file, call, live-data result, memory write, payment, or external side effect unless the runtime actually provides evidence for it.",
         ...(input.systemInstructions ?? []),
       ];
@@ -135,3 +130,4 @@ export function createProductionAgentStrategy(input: {
   };
   return Object.freeze(strategy);
 }
+

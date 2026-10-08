@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/network/api_client.dart';
 import '../core/request_id.dart';
+import '../state/session_state.dart';
 import '../theme/masanawa_theme.dart';
 import '../tokens/masanawa_tokens.dart';
 import 'crypto_models.dart';
@@ -372,6 +373,25 @@ class CryptoWalletScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionProvider);
+    if (session is! SessionSignedIn) {
+      // Do not even subscribe to financial state while another account is
+      // restoring or the user is signed out. Cached balances stay private.
+      return Scaffold(
+        appBar: AppBar(title: const Text('Crypto Wallet')),
+        body: Center(
+          child: session is SessionRestoring
+              ? const CircularProgressIndicator()
+              : const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Sign in to view your crypto balance and transactions.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+        ),
+      );
+    }
     final wallet = ref.watch(cryptoWalletProvider);
     final u = context.masanawa;
     return Scaffold(
@@ -1194,3 +1214,4 @@ class _WithdrawInput {
   final String amount;
   final String address;
 }
+

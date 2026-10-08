@@ -341,4 +341,173 @@ class AppLocalizationsHa extends AppLocalizations {
 
   @override
   String get assistantTab => 'Mataimaki';
+
+  @override
+  String get billingRecent => 'Biyan kuɗi na baya-bayan nan';
+
+  @override
+  String get billingRefreshHistory => 'Sabunta tarihin biya';
+
+  @override
+  String get billingNoPayments => 'Babu biyan kuɗi tukuna';
+
+  @override
+  String get billingRecipientLabel => 'Mai karɓa';
+
+  @override
+  String get billingServiceAmountLabel => 'Sabis';
+
+  @override
+  String get billingFeeLabel => 'Kuɗin hidima';
+
+  @override
+  String get billingTotalLabel => 'Jimilla';
+
+  @override
+  String get billingStatusLabel => 'Hali';
+
+  @override
+  String get billingProviderRef => 'Lambar mai bayarwa';
+
+  @override
+  String get billingTokenLabel => 'Lambar token / code';
+
+  @override
+  String get billingRefundedInfo =>
+      'An mayar da kuɗin da aka tabbatar an biya.';
+
+  @override
+  String get billingSuccess => 'An kammala biyan kuɗin.';
+
+  @override
+  String get billingStatusQuoted => 'An shirya farashi';
+
+  @override
+  String get billingStatusAwaiting => 'Ana jiran biya';
+
+  @override
+  String get billingStatusFunded => 'An tabbatar da biya';
+
+  @override
+  String get billingStatusProcessing => 'Ana sarrafawa';
+
+  @override
+  String get billingStatusCompleted => 'An kammala';
+
+  @override
+  String get billingStatusRefundProcessing => 'Ana mayar da kuɗi';
+
+  @override
+  String get billingStatusRefunded => 'An mayar da kuɗi';
+
+  @override
+  String get billingStatusExpired => 'Ya ƙare';
+
+  @override
+  String get billingStatusFailed => 'Ya gaza';
+
+  @override
+  String get billingStatusAwaitingFunds => 'Ana jiran kuɗi';
+
+  @override
+  String get billingStatusUnknown => 'Ba a samu halin biya ba';
+
+  @override
+  String get billingTitle => 'Biyan kuɗi da takardun biya';
+
+  @override
+  String get billingNew => 'Sabon biyan kuɗi';
+
+  @override
+  String get billingPayTitle => 'Biya kuɗi';
+
+  @override
+  String get billingInstructions =>
+      'Zaɓi sabis na mai bayarwa da yake aiki. Ana biyan kuɗin daga walat ɗin Masanawa a manhaja.';
+
+  @override
+  String get billingCategory => 'Rukuni';
+
+  @override
+  String get billingProvider => 'Mai bayarwa';
+
+  @override
+  String get billingService => 'Sabis';
+
+  @override
+  String get billingPhone => 'Lambar waya';
+
+  @override
+  String get billingRecipient => 'Lambar abokin ciniki / mita / kati';
+
+  @override
+  String get billingAmount => 'Adadi (NGN)';
+
+  @override
+  String get billingVariableHelp =>
+      'Shigar da adadin da mai bayarwa ya amince da shi.';
+
+  @override
+  String get billingFixedHelp => 'Mai bayarwa ne ya kayyade adadin.';
+
+  @override
+  String get billingReview => 'Duba farashin';
+
+  @override
+  String billingConfirmWallet(String amount) {
+    return 'Tabbatar da $amount daga walat';
+  }
+
+  @override
+  String billingAddFunds(String amount) {
+    return 'Ƙara $amount';
+  }
+
+  @override
+  String get billingTransferInstructions =>
+      'Tura ainihin adadin da ke ƙasa. Masanawa za ta ci gaba da biyan kuɗin bayan an tabbatar da turawar.';
+
+  @override
+  String get billingExpires => 'Zai ƙare:';
+
+  @override
+  String get billingRefresh => 'Sabunta halin biyan kuɗi';
+
+  @override
+  String get billingAnother => 'Sake biyan wani kuɗi';
+
+  @override
+  String get billingUnavailable => 'Ba a samun sabis ɗin biya a yanzu.';
+
+  @override
+  String get billingProvidersUnavailable => 'Ba a iya ɗauko masu bayarwa ba.';
+
+  @override
+  String get billingServicesUnavailable => 'Ba a iya ɗauko sabis ba.';
+
+  @override
+  String get billingSelectionRequired => 'Zaɓi rukuni, mai bayarwa da sabis.';
+
+  @override
+  String get billingInvalidDetails =>
+      'Shigar da bayanan mai karɓa da adadi masu inganci.';
+
+  @override
+  String get billingQuoteFailed => 'Ba a iya ƙirƙirar farashi ba.';
+
+  @override
+  String get billingPurchaseFailed => 'Ba a iya kammala biyan daga walat ba.';
+
+  @override
+  String get billingRefreshFailed => 'Ba a iya sabunta hali ba.';
+
+  @override
+  String get billingDetailsFailed => 'Ba a iya ɗauko bayanan biyan ba.';
+
+  @override
+  String get billingSignInAgain => 'Lokacin zamanka ya ƙare. Sake shiga.';
+
+  @override
+  String get billingExpiredTryAgain =>
+      'Lokacin farashin ya ƙare. Nemi sabon farashi.';
 }

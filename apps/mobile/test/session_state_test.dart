@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -21,6 +22,8 @@ void main() {
   final storageMap = <String, String>{};
   final storageReads = <String>[];
   var storageReadAlls = 0;
+  Completer<void>? sessionWriteGate;
+  Completer<void>? sessionWriteStarted;
 
   ProviderContainer makeContainer() {
     final container = ProviderContainer(overrides: [
@@ -35,6 +38,8 @@ void main() {
     storageMap.clear();
     storageReads.clear();
     storageReadAlls = 0;
+    sessionWriteGate = null;
+    sessionWriteStarted = null;
     final dio = Dio(BaseOptions(
       baseUrl: 'https://example.test',
       validateStatus: (s) => s != null && s >= 200 && s < 300,
@@ -58,8 +63,14 @@ void main() {
             storageReadAlls += 1;
             return Map<String, String>.from(storageMap);
           case 'write':
-            storageMap[call.arguments['key'] as String] =
-                call.arguments['value'] as String;
+            final key = call.arguments['key'] as String;
+            if (key == 'auth_session_v2' && sessionWriteGate != null) {
+              final gate = sessionWriteGate!;
+              sessionWriteGate = null;
+              sessionWriteStarted?.complete();
+              await gate.future;
+            }
+            storageMap[key] = call.arguments['value'] as String;
             return true;
           case 'delete':
             storageMap.remove(call.arguments['key'] as String);
@@ -403,12 +414,143 @@ void main() {
     expect(awaiting.identifier, phone);
     expect(awaiting.resendInSeconds, 41);
   });
+  test('auto-submit and Verify tap produce exactly one OTP verification',
+      () async {
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    adapter.holdVerify();
+
+    final first = controller.verifyOtp(code, email: email);
+    final second = controller.verifyOtp(code, email: email);
+    await adapter.verifyStarted!.future;
+    expect(adapter.requests.where((r) => r == 'POST /auth/verify'), hasLength(1));
+    adapter.completeVerify({
+      'accessToken': 'single',
+      'refreshToken': 'single-refresh',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    await Future.wait([first, second]);
+    expect(container.read(sessionProvider), isA<SessionSignedIn>());
+    expect(storageMap['auth_session_v2'], isNotNull);
+  });
+
+  test('logout fences a late OTP response and deletes secure credentials',
+      () async {
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    adapter.holdVerify();
+    final verifying = controller.verifyOtp(code, email: email);
+    await controller.logout();
+
+    adapter.completeVerify({
+      'accessToken': 'too-late',
+      'refreshToken': 'never-store-me',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    await verifying;
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+    expect(storageMap.containsKey('auth_session_v2'), isFalse);
+    expect(api.accessToken, isNull);
+  });
+
+  test('resend or identity change fences stale invalid OTP result', () async {
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    adapter.holdVerify();
+    final old = controller.verifyOtp(code, email: email);
+    adapter.respond('/auth/otp', {'email': 'another@example.com', 'resendInSeconds': 45});
+    await controller.sendOtp(email: 'another@example.com');
+    final awaiting = container.read(sessionProvider) as SessionAwaitingOtp;
+    expect(awaiting.identifier, 'another@example.com');
+
+    adapter.completeVerify({
+      'error': {'code': 'OTP_INVALID', 'message': 'Old code was wrong'}
+    }, statusCode: 401);
+    await old;
+    final now = container.read(sessionProvider) as SessionAwaitingOtp;
+    expect(now.identifier, 'another@example.com');
+    expect(now.resendInSeconds, 45);
+  });
+
+  test('duplicate send while sending same OTP context has one network call',
+      () async {
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    adapter.holdSend();
+    final first = controller.sendOtp(phone: phone);
+    final duplicate = controller.sendOtp(phone: phone);
+    await adapter.sendStarted!.future;
+    expect(adapter.requests.where((r) => r == 'POST /auth/otp'), hasLength(1));
+    adapter.completeSend({'phone': phone, 'resendInSeconds': 60});
+    await Future.wait([first, duplicate]);
+    expect(container.read(sessionProvider), isA<SessionAwaitingOtp>());
+  });
+
+  test('logout authorization failure does not start a token refresh', () async {
+    storageMap['auth_session_v2'] = jsonEncode({
+      'accessToken': 'test-access',
+      'refreshToken': 'test-refresh',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final container = makeContainer();
+    container.read(sessionProvider);
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(sessionProvider), isA<SessionSignedIn>());
+    adapter.respond('/auth/logout', {
+      'error': {'code': 'UNAUTHORIZED', 'message': 'expired'}
+    }, statusCode: 401);
+    await container.read(sessionProvider.notifier).logout();
+    expect(adapter.requests.where((r) => r == 'POST /auth/refresh'),
+        isEmpty);
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+    expect(storageMap.containsKey('auth_session_v2'), isFalse);
+    expect(api.onUnauthorized, isNull);
+  });
+
+  test('logout queues behind already-started encrypted verify write',
+      () async {
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    adapter.respond('/auth/verify', {
+      'accessToken': 'racing',
+      'refreshToken': 'racing-refresh',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final pausedWrite = Completer<void>();
+    sessionWriteGate = pausedWrite;
+    sessionWriteStarted = Completer<void>();
+    final verify = controller.verifyOtp(code, email: email);
+    // Await the intercepted native write deterministically (not clock ticks).
+    await sessionWriteStarted!.future;
+    expect(sessionWriteGate, isNull);
+    final signOut = controller.logout();
+    pausedWrite.complete();
+    await Future.wait([verify, signOut]);
+
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+    expect(storageMap.containsKey('auth_session_v2'), isFalse);
+    expect(api.accessToken, isNull);
+  });
+
 }
 
 /// Minimal Dio adapter: records requests and replays canned contract-shaped
 /// responses. Dio's MockAdapter needs a package dep; this keeps the test lean.
 class _FakeAdapter implements HttpClientAdapter {
   final _requests = <String>[];
+  Completer<ResponseBody>? _verifyGate;
+  Completer<void>? verifyStarted;
+  Completer<void>? sendStarted;
+  Completer<ResponseBody>? _sendGate;
   _Route _next = _Route(
     path: '/',
     statusCode: 200,
@@ -419,6 +561,31 @@ class _FakeAdapter implements HttpClientAdapter {
     _next = _Route(path: path, statusCode: statusCode, body: body);
   }
 
+
+  void holdVerify() { _verifyGate = Completer<ResponseBody>(); verifyStarted = Completer<void>(); }
+  void holdSend() { _sendGate = Completer<ResponseBody>(); sendStarted = Completer<void>(); }
+
+  void completeVerify(Map<String, dynamic> body, {int statusCode = 200}) {
+    final pending = _verifyGate!;
+    _verifyGate = null;
+    pending.complete(_response(body, statusCode));
+  }
+
+  void completeSend(Map<String, dynamic> body, {int statusCode = 200}) {
+    final pending = _sendGate!;
+    _sendGate = null;
+    pending.complete(_response(body, statusCode));
+  }
+
+  ResponseBody _response(Map<String, dynamic> body, int statusCode) =>
+      ResponseBody.fromString(
+        jsonEncode(body),
+        statusCode,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+
   List<String> get requests => List.unmodifiable(_requests);
 
   @override
@@ -428,6 +595,14 @@ class _FakeAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     _requests.add('${options.method} ${options.path}');
+    if (options.path == '/auth/verify' && _verifyGate != null) {
+      if (!verifyStarted!.isCompleted) verifyStarted!.complete();
+      return _verifyGate!.future;
+    }
+    if (options.path == '/auth/otp' && _sendGate != null) {
+      if (!sendStarted!.isCompleted) sendStarted!.complete();
+      return _sendGate!.future;
+    }
     final route = _next;
     final body = jsonEncode(route.body);
     return ResponseBody.fromString(
@@ -449,3 +624,4 @@ class _Route {
   final int statusCode;
   final Map<String, dynamic> body;
 }
+

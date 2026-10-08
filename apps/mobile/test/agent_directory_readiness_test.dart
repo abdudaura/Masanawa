@@ -34,7 +34,7 @@ void main() {
 
   test('malformed presence does not crash the whole agent directory', () {
     final entry = AgentDirectoryEntry.fromJson(entryWithPresence(123));
-    expect(entry.presence, AgentPresence.offline);
+    expect(entry.presence, AgentPresence.unknown);
   });
 
   test('all recognized nonavailable states remain intact', () {
@@ -79,3 +79,4 @@ void main() {
   });
 
 }
+
