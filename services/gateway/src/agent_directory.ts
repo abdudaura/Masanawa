@@ -27,7 +27,8 @@ export interface MobileAgentDirectoryEntry {
   readonly roleLabel: string;
   readonly about: string;
   readonly greeting: string | null;
-  readonly presence: "available" | "listening" | "working" | "on_call" | "offline";
+  /** Presence is transient activity, not proof of model, voice or Seat readiness. */
+  readonly presence: "available" | "listening" | "working" | "on_call" | "offline" | "unknown";
   readonly activeWorkCount: number;
   readonly supportAgent: boolean;
   readonly defaultPlatformAgent: boolean;
@@ -52,8 +53,9 @@ export interface AgentDirectoryService {
  * Authorized projection only. It never exposes Character Skill assignments:
  * runtime eligibility/authority stays server-side.
  *
- * Presence/work facts are intentionally conservative placeholders until the
- * canonical Presence/AgentRun projections can supply them.
+ * Presence is informational activity. Missing activity is unknown rather than
+ * "available": a visible Character is not necessarily provisioned or online.
+ * Presence must never be used as a voice or paid-Seat admission guarantee.
  */
 export function createAgentDirectoryService(input: {
   readonly presentations: AgentPresentationRepository;
@@ -132,7 +134,7 @@ export function createAgentDirectoryService(input: {
             roleLabel: presentation.roleLabel,
             about: presentation.about,
             greeting: presentation.greeting,
-            presence: currentActivity?.presence ?? ("available" as const),
+            presence: currentActivity?.presence ?? ("unknown" as const),
             activeWorkCount: currentActivity?.activeWorkCount ?? 0,
             supportAgent: profile?.supportAgent ?? false,
             defaultPlatformAgent,
