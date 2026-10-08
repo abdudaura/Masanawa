@@ -269,12 +269,12 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
       const request = identity(raw);
       const key = JSON.stringify([request.tenantId, request.talkId, request.seatId]);
       const uncertain = uncertainSeats.get(key);
-      if (uncertain && !matches(uncertain, request)) {
+      if (uncertain && !matches({...uncertain}, request)) {
         throw new Error("talks.ai_dispatch_identity_conflict");
       }
       const existing = pendingSeats.get(key);
       if (existing) {
-        if (!matches(existing.metadata, request)) {
+        if (!matches({...existing.metadata}, request)) {
           throw new Error("talks.ai_dispatch_identity_conflict");
         }
         return existing.promise;

@@ -190,6 +190,10 @@ import { createPostgresAvatarRepository } from "./profile_avatar/repository.js";
 import { createS3AvatarObjectStore } from "./profile_avatar/s3_store.js";
 import { createProfileAvatarService } from "./profile_avatar/service.js";
 import { createPostgresHumanContactRepository } from "./human_contacts/postgres_repository.js";
+import { createPostgresHumanDmRepository } from "./human_messages/postgres_repository.js";
+import { createHumanDmService } from "./human_messages/service.js";
+import { createPostgresHumanDmRealtimeRepository } from "./human_dm_realtime/postgres_repository.js";
+import { createHumanDmRealtimeService } from "./human_dm_realtime/service.js";
 import { createHumanContactService, type HumanContactAuthorizer } from "./human_contacts/service.js";
 import {
   createTalkActivityService,
@@ -340,6 +344,8 @@ export interface ServiceDatabaseDependency {
   readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly profileAvatars?: ReturnType<typeof createPostgresAvatarRepository>;
+  readonly humanDm?: ReturnType<typeof createPostgresHumanDmRepository>;
+  readonly humanDmRealtime?: ReturnType<typeof createPostgresHumanDmRealtimeRepository>;
   readonly humanContacts?: ReturnType<typeof createPostgresHumanContactRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
@@ -506,6 +512,8 @@ function createDefaultDatabaseDependency(
     talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
     profileAvatars: createPostgresAvatarRepository(database.pool),
+    humanDm: createPostgresHumanDmRepository(database.pool),
+    humanDmRealtime: createPostgresHumanDmRealtimeRepository(database.pool),
     humanContacts: createPostgresHumanContactRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
@@ -1971,6 +1979,15 @@ export async function startGatewayService(
         })()
       : undefined);
 
+  const composedHumanDm = options.appOptions?.humanDm ??
+    (database.humanDm && talkSafetyCustomerAuthorizer
+      ? createHumanDmService({repository: database.humanDm,
+          authorizer: talkSafetyCustomerAuthorizer}) : undefined);
+  const composedHumanDmRealtime = options.appOptions?.humanDmRealtime ??
+    (database.humanDmRealtime && talkSafetyCustomerAuthorizer
+      ? createHumanDmRealtimeService({repository: database.humanDmRealtime,
+          authorizer: talkSafetyCustomerAuthorizer}) : undefined);
+
   const composedDirectTwin =
     options.appOptions?.directTwin ??
     (database.directTwin && talkSafetyCustomerAuthorizer
@@ -2305,6 +2322,8 @@ export async function startGatewayService(
       ...(composedTalkPolls ? { talkPolls: composedTalkPolls } : {}),
       ...(composedTalkSafety ? { talkSafety: composedTalkSafety } : {}),
       ...(composedDirectTwin ? { directTwin: composedDirectTwin } : {}),
+      ...(composedHumanDm ? { humanDm: composedHumanDm } : {}),
+      ...(composedHumanDmRealtime ? { humanDmRealtime: composedHumanDmRealtime } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
@@ -2527,5 +2546,6 @@ if (isDirectExecution()) {
     process.exitCode = 1;
   });
 }
+
 
 

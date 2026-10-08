@@ -29,6 +29,10 @@ import { registerTalkProfileRoutes } from "./talk_profile_routes.js";
 import { registerProfileAvatarRoutes } from "./profile_avatar/routes.js";
 import type { createProfileAvatarService } from "./profile_avatar/service.js";
 import { registerHumanContactRoutes } from "./human_contacts/routes.js";
+import { registerHumanDmRoutes } from "./human_messages/routes.js";
+import { HumanDmError, type HumanDmService } from "./human_messages/service.js";
+import { registerHumanDmRealtimeRoutes } from "./human_dm_realtime/routes.js";
+import { HumanDmRealtimeError, type HumanDmRealtimeService } from "./human_dm_realtime/service.js";
 import { HumanContactError, type HumanContactService } from "./human_contacts/service.js";
 import type { TalkProfileService } from "./talk_profiles/service.js";
 import { registerTalkActivityRoutes } from "./talk_activity_routes.js";
@@ -117,6 +121,8 @@ export interface GatewayAppOptions {
   readonly talkProfiles?: TalkProfileService;
   readonly profileAvatar?: ReturnType<typeof createProfileAvatarService>;
   readonly humanContacts?: HumanContactService;
+  readonly humanDm?: HumanDmService;
+  readonly humanDmRealtime?: HumanDmRealtimeService;
   readonly talkActivity?: TalkActivityService;
   readonly talkSearch?: TalkSearchService;
   readonly talkLibrary?: TalkLibraryService;
@@ -312,7 +318,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   const checks = options.readinessChecks ?? [];
 
   app.setErrorHandler((error, request, reply) => {
-    if (error instanceof HumanContactError) {
+    if (error instanceof HumanContactError || error instanceof HumanDmError ||
+        error instanceof HumanDmRealtimeError) {
       // Exact private contact status (missing / hidden / blocked) shares one
       // indistinguishable response. Codes contain no other user's private policy.
       void reply.code(error.statusCode).send({
@@ -1433,6 +1440,12 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   if (options.humanContacts) {
     registerHumanContactRoutes(app, options.humanContacts);
   }
+  if (options.humanDm) {
+    registerHumanDmRoutes(app, options.humanDm);
+  }
+  if (options.humanDmRealtime) {
+    registerHumanDmRealtimeRoutes(app, options.humanDmRealtime);
+  }
   if (options.talkActivity) {
     registerTalkActivityRoutes(app, options.talkActivity);
   }
@@ -1565,5 +1578,6 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   return app;
 }
+
 
 

@@ -230,3 +230,8 @@ Claim C02 #472 plus C03 #483 and stacked #486 source paths, Gateway app.ts/main.
 - `services/gateway/src/human_dm_realtime/retention_config.test.ts`
 - `services/gateway/src/human_dm_realtime/retention_config.ts`
 Register both canonical services using existing pool/session authorizer; no separate server/auth. Preserve the #473 continuation in #483, cursor retention operator in #486. DB migration and real-device delivery remain unexecuted.
+
+
+## Executed C02/C03 composition results
+C02 canonical core #472 + C03 #483/#486 now registered in shared app/main with existing pool/authorizer and mapped domain errors. 56 focused backend tests passed,9 database skipped; 18 Flutter tests passed; Gateway production build passed. Includes real shared-Gateway route registration/forged actor-field rejection. Fixed Object.freeze generic contextual typing and explicit undefined authorization inputs without weakening authorization; reject extra C02 body fields before AJV strips them; C03 query extras/invalid cursor schema rejected. Fixed prior #449 typed metadata matching by copying a typed metadata record, preserving comparisons.
+No alternate0017 from#475 was applied; final shell adapter remains to be reconciled. Actual PostgreSQL migration/restart/realtime/voice/device acceptance still not claimed.
