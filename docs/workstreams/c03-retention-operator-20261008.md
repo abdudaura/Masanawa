@@ -1,0 +1,9 @@
+# C03 operator-only retention runner — independent continuation claim
+
+Updated UTC: 2026-10-08T11:36:03.964Z; owner/window GPT-6. Parent: **draft PR #483**, base commit 65c91bb239f9f8e9bf177a1f707f98c7fa391e78; main at first review 1d6a67ea3c182455b55a7d1d07eacdb4311682e3. This is a STACKED branch: work/c03-retention-operator-20261008-gpt6, targeting work/c03-reclaim-realtime-20261008-gpt6, not main until #483 is reviewed.
+
+Scope/lease: newly introduced `services/gateway/src/human_dm_realtime/retention.ts`, `retention_cli.ts`, `retention.test.ts`, this workstream claim and documentation specific to the operator only. Five-minute visible-activity lease; no exclusive ownership of existing C03/SQL/app.ts/main.ts/mobile/realtime and no edits to #483. C03 M02/M06/M08/M10, N06/N08, Q06/Q08 and J03/J04/J10/J11, plus Q09/Q10 operations.
+
+Collision: Original C03 #473 was reclaimed in newer-main #483 at 11:33 UTC; independent work from 11:29 on unmerged `work/c03-retention-recovery-20261008-gpt6` duplicated the same 0020/sync changes. **Do not merge, cherry-pick or open a competing PR from that earlier branch**. It is historical evidence only. This stacked contribution reuses #483's existing `talks.trim_human_dm_events` function and writes no duplicate migrations or reset code. Canonical C02 #472/#475/#477 and C05 #474/#476 decisions remain unresolved; #457 CI quota remains blocked. No source is currently verified.
+
+Intent: provide deliberately opt-in, admin-only, tenant-scoped, age/batch/time-bounded operator execution of the already-reviewed database retention function; no HTTP route, no automatic cron, no client deletion authority. Tests and final Work handoff will be committed here. Scheduled production retention requires backup/restore rehearsal, database privileges and deploy/monitoring owner.
