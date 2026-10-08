@@ -14,13 +14,20 @@ command -v jarsigner >/dev/null || { echo "Missing JDK jarsigner" >&2; exit 69; 
 command -v keytool >/dev/null || { echo "Missing JDK keytool" >&2; exit 69; }
 
 # An unsigned bundle or a tampered entry must fail verification.
-verification="$(jarsigner -verify "$artifact" 2>&1)" || {
+verification="$(jarsigner -verify -verbose "$artifact" 2>&1)" || {
   echo "Bundle signature verification failed" >&2
   exit 1
 }
 # jarsigner can return zero for an unsigned jar; require positive verification.
 if ! grep -qi 'jar verified' <<<"$verification"; then
   echo "Bundle is unsigned or was not verified" >&2
+  exit 1
+fi
+# jarsigner permits mixed signed/unsigned archives by default. A release AAB
+# must not contain any unsigned payload entries (except unsigned META-INF
+# manifest/signature bookkeeping).
+if grep -Eiq 'contains unsigned entries|unsigned entries which have not been integrity-checked' <<<"$verification"; then
+  echo "Bundle contains unsigned payload entries" >&2
   exit 1
 fi
 certificate="$(keytool -printcert -jarfile "$artifact" 2>&1)" || {
