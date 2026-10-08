@@ -80,6 +80,26 @@ async function lockCustodyBalance(client: PoolClient, input: {
     input.asset + ":" + (input.network ?? "-"),
   ]);
 }
+async function assertActiveParties(
+  client: PoolClient, tenantId: string, senderUserId: string, recipientUserId: string,
+): Promise<void> {
+  // Lock current canonical identities alongside each financial quote/transfer.
+  // Deactivation or tenant shutdown cannot race a committed transfer.
+  const tenant = await client.query(
+    "SELECT tenant_id FROM identity.tenants WHERE tenant_id=$1 AND state='active' FOR SHARE",
+    [tenantId],
+  );
+  if (tenant.rowCount !== 1) throw new Error("crypto.internal.account_inactive");
+  const users = await client.query<{ user_id: string }>(
+    "SELECT user_id FROM identity.users " +
+    "WHERE tenant_id=$1 AND user_id=ANY($2::text[]) AND state='active' " +
+    "ORDER BY user_id FOR SHARE",
+    [tenantId, [senderUserId, recipientUserId]],
+  );
+  if (new Set(users.rows.map(row => row.user_id)).size !== 2)
+    throw new Error("crypto.internal.account_inactive");
+}
+
 export function createPostgresInternalCryptoTransferStore(pool: Pool): InternalCryptoTransferStore {
   return Object.freeze<InternalCryptoTransferStore>({
     async quote(raw) {
@@ -130,6 +150,9 @@ export function createPostgresInternalCryptoTransferStore(pool: Pool): InternalC
           [input.tenantId, input.senderUserId, input.asset, input.network, input.amount],
         );
         if (!spendable.rows[0]?.sufficient) throw new Error("crypto.insufficient_balance");
+        await assertActiveParties(
+          client, input.tenantId, input.senderUserId, input.recipientUserId,
+        );
         const quoteId = createCanonicalId("request");
         const posted = await client.query(
           "INSERT INTO commerce.crypto_internal_transfer_quotes " +
@@ -199,6 +222,9 @@ export function createPostgresInternalCryptoTransferStore(pool: Pool): InternalC
         );
         if (new Set(participants.rows.map(row => row.user_id)).size !== 2)
           throw new Error("crypto.internal.recipient_unavailable");
+        await assertActiveParties(
+          client, tenantId, quote.senderUserId, quote.recipientUserId,
+        );
         await lockCustodyBalance(client, {
           tenantId, userId: senderUserId, asset: quote.asset, network: quote.network,
         });
