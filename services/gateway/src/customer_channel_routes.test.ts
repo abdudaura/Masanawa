@@ -487,4 +487,66 @@ describe("customer channel webhook routes", () => {
     await app.close();
   });
 
+  it("caps provider media streaming despite a falsely small Content-Length header", async () => {
+    const app = Fastify();
+    const channelBridge = bridge();
+    let streamedChunks = 0;
+    const largeStream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        streamedChunks += 1;
+        controller.enqueue(new Uint8Array(1_048_576));
+      },
+    });
+    const fetchMock = vi.fn(async (target: RequestInfo | URL) => {
+      const url = String(target);
+      if (url.includes("/getFile?")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          result: { file_path: "voice/file.ogg" },
+        }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response(largeStream, {
+        status: 200,
+        headers: { "content-length": "1", "content-type": "audio/ogg" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      registerCustomerChannelRoutes(app, {
+        bridge: channelBridge,
+        telegram: { botToken: "bot-token", webhookSecret: "telegram-secret" },
+      });
+      const response = await app.inject({
+        method: "POST",
+        url: "/channels/telegram/webhook",
+        headers: {
+          "content-type": "application/json",
+          "x-telegram-bot-api-secret-token": "telegram-secret",
+        },
+        payload: {
+          update_id: 10,
+          message: {
+            message_id: 20,
+            from: { id: 123 },
+            chat: { id: 123, type: "private" },
+            voice: { file_id: "file-1", mime_type: "audio/ogg" },
+          },
+        },
+      });
+      // Current channel transport treats oversized provider media as retryable.
+      // It must never deliver an oversized buffer to model inference.
+      expect(response.statusCode).toBeGreaterThanOrEqual(400);
+      expect(channelBridge.handle).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(streamedChunks).toBeLessThanOrEqual(11);
+    } finally {
+      vi.unstubAllGlobals();
+      await app.close();
+    }
+  });
+
+
 });
