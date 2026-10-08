@@ -88,5 +88,9 @@
         "type": "String"
       }
     }
+  },
+  "splashTagline": "Live conversations with people and AI",
+  "@splashTagline": {
+    "description": "Short splash-screen subtitle describing public live human-hosted Talks with AI participants; not a transaction or private assistant claim"
   }
 }
