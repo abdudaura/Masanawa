@@ -61,18 +61,17 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (loading)
-                    if (reducedMotion)
-                      Icon(Icons.hourglass_empty, size: 20, color: foreground)
-                    else
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(foreground),
-                        ),
-                      )
+                  if (loading && reducedMotion)
+                    Icon(Icons.hourglass_empty, size: 20, color: foreground)
+                  else if (loading)
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(foreground),
+                      ),
+                    )
                   else if (icon != null)
                     Icon(icon, size: 20, color: foreground),
                   if (loading || icon != null) const SizedBox(width: 8),
