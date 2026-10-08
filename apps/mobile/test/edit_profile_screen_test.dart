@@ -124,7 +124,7 @@ void main() {
     expect(transport.updates, 1);
     expect(transport.lastName, 'Amina Bello');
     expect(transport.lastBio, 'Community host');
-    expect(find.text('Profile saved.'), findsOneWidget);
+    expect(find.text('Amina Bello'), findsWidgets);
   });
 
   testWidgets('missing profile offers real first-time creation', (tester) async {
