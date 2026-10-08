@@ -233,12 +233,15 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String providerCode,
     required String amount,
     required String destinationAddress,
-  }) {
-    return _transport.quoteWithdrawal(
+  }) async {
+    final owner = _ownerId();
+    final result = await _transport.quoteWithdrawal(
       providerCode: providerCode,
       amount: amount,
       destinationAddress: destinationAddress,
     );
+    _ensureOwner(owner);
+    return result;
   }
 
   Future<CryptoIntent> createWithdrawal({
@@ -263,12 +266,15 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String providerCode,
     required String targetProviderCode,
     required String amount,
-  }) {
-    return _transport.quoteConversion(
+  }) async {
+    final owner = _ownerId();
+    final result = await _transport.quoteConversion(
       providerCode: providerCode,
       targetProviderCode: targetProviderCode,
       amount: amount,
     );
+    _ensureOwner(owner);
+    return result;
   }
 
   Future<CryptoIntent> createConversion({
