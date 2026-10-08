@@ -171,7 +171,7 @@ export default function DeleteAccountPage() {
 
   return (
     <main className="deletion-shell">
-      <div className="deletion-brand"><span className="deletion-mark" aria-hidden="true">M</span>Masanawa</div>
+      <div className="deletion-brand">Masanawa</div>
       <section className="deletion-panel" aria-labelledby="delete-title">
         <p className="deletion-eyebrow">Account & privacy</p>
         <h1 id="delete-title">Request account deletion</h1>
