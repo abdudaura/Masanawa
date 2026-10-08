@@ -101,14 +101,24 @@ export function createTalkLiveService(input: Readonly<{
   return Object.freeze<TalkLiveService>({
     async connect(request) {
       const viewer = await identity(request.authorizationHeader);
-      const connected = await input.repository.connect({
-        tenantId: viewer.tenantId,
-        userId: viewer.userId,
-        talkId: talkId(request.talkId),
-        sessionId: createSessionId(),
-        now: now(),
-        reconnectGraceMs,
-      });
+      let connected: TalkLiveSessionView | null;
+      try {
+        connected = await input.repository.connect({
+          tenantId: viewer.tenantId,
+          userId: viewer.userId,
+          talkId: talkId(request.talkId),
+          sessionId: createSessionId(),
+          now: now(),
+          reconnectGraceMs,
+        });
+      } catch (error) {
+        // A persisted ended Talk is a domain conflict, not an internal outage.
+        // Preserve all unknown storage/provider errors as real server failures.
+        if (error instanceof Error && error.message === "talks.live.ended") {
+          throw new TalkLiveError("talks.live.ended", 409);
+        }
+        throw error;
+      }
       if (!connected) throw new TalkLiveError("talks.not_found", 404);
       return connected;
     },
