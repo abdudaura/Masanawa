@@ -45,6 +45,8 @@ describe("public profile edits SQL ownership", () => {
     expect(calls[0]!.text).toMatch(
       /UPDATE talks\.public_profiles[\s\S]*WHERE tenant_id = \$1 AND user_id = \$2/u,
     );
+    expect(calls[0]!.text).toContain("display_name = $3");
+    expect(calls[0]!.text).toContain("bio = $4");
     expect(calls[0]!.text).toContain("avatar_url = NULL");
     expect(calls[0]!.values).toEqual([
       "tenant_1", "user_owner", "New name", "About",
