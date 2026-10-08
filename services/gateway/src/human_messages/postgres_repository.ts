@@ -133,9 +133,19 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
             ORDER BY sequence DESC LIMIT 1) l ON true
         WHERE c.tenant_id=$1 AND $2 IN(c.first_user_id,c.second_user_id)
           AND c.last_sequence>0 AND ($3::bigint IS NULL OR c.last_sequence<$3::bigint)
-          AND EXISTS (SELECT 1 FROM talks.human_dm_conversations v
-             WHERE v.tenant_id=c.tenant_id AND v.conversation_id=c.conversation_id
-               AND ${eligibleReader.replaceAll("c.","v.")})
+          AND EXISTS (SELECT 1 FROM identity.users a WHERE a.tenant_id=c.tenant_id
+                AND a.user_id=c.first_user_id AND a.state='active')
+          AND EXISTS (SELECT 1 FROM identity.users b WHERE b.tenant_id=c.tenant_id
+                AND b.user_id=c.second_user_id AND b.state='active')
+          AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp
+              WHERE sp.tenant_id=c.tenant_id AND sp.blocked=true
+                AND ((sp.viewer_user_id=c.first_user_id AND sp.subject_user_id=c.second_user_id)
+                  OR (sp.viewer_user_id=c.second_user_id AND sp.subject_user_id=c.first_user_id)))
+          AND NOT EXISTS (SELECT 1 FROM talks.safety_enforcement se
+              JOIN talks.public_profiles pp ON pp.tenant_id=se.tenant_id AND pp.handle=se.target_id
+              WHERE se.tenant_id=c.tenant_id AND se.target_kind='profile'
+                AND se.visibility IN ('blocked','restricted')
+                AND pp.user_id IN (c.first_user_id,c.second_user_id))
         ORDER BY c.last_sequence DESC LIMIT $4
       `,[tenantId,userId,before??null,limit]);
       return r.rows.map(x=>Object.freeze<HumanDmConversation>({
