@@ -64,5 +64,6 @@
   "languageSystem": "Usar el idioma del dispositivo",
   "languageSaveFailed": "No se pudo guardar el idioma. Inténtalo de nuevo.",
   "languagePreviewNotice": "Algunas pantallas todavía no están completamente traducidas.",
-  "languageHausaUnavailable": "Se está completando la interfaz en hausa."
+  "languageHausaUnavailable": "Se está completando la interfaz en hausa.",
+  "languageSelected": "Seleccionado"
 }
