@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createCanonicalId, PlatformError } from "@masanawa/contracts";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
 import { createGatewayApp } from "./app.js";
+import { CustomerAuthError } from "./customer_auth.js";
 
 const apps: ReturnType<typeof createGatewayApp>[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
@@ -62,6 +63,15 @@ describe("R19 Gateway NDJSON streamed persona recovery", () => {
       { type: "error", code: "turn_failed" },
     ]);
     expect(response.body).not.toContain("Sensitive internal error detail");
+  });
+
+  it("provides only a sanitized pre-output login prompt for expired auth", async () => {
+    const response = await streamedTurn(async () => {
+      throw new CustomerAuthError("UNAUTHORIZED", 401);
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.body.trim()).toBe('{"type":"error","code":"auth_required"}');
+    expect(response.body).not.toContain("UNAUTHORIZED");
   });
 
   it("keeps cross-account and financial ambiguity as generic failure", async () => {
