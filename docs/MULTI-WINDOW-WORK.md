@@ -1,5 +1,20 @@
 # Multi-window Work Coordination
 
+## Shared CI / ChatGPT Work owner handoff — 2026-10-08
+
+**Repository-level coordination:** The owner will use **ChatGPT Work** to resolve
+the shared GitHub Actions incident and qualify blocked PRs. This is not a claim
+that a Work session is running. Read `docs/WORK-CI-RECOVERY-HANDOFF.md`
+and [issue #457](https://github.com/Baatiku/masanawa/issues/457) for representative
+zero-step Foundation CI/Mobile Build evidence, next actions and exact acceptance.
+Development windows continue non-overlapping code and test implementation under
+the normal 5-minute lease but avoid independent repository/org Actions runner,
+billing, settings, permissions, secrets, workflow-bypass or release integration
+changes. Report new evidence and let Work investigate/coordinate infrastructure;
+never treat CI failure before execution as proof of failing or passing code.
+No unverified implementation should merge merely because CI is unavailable.
+
+
 ## Current product coordination overlay — 2026-10-08
 
 Consumer work must follow `CONTINUE-HERE.md`, `docs/PRODUCT-NORTH-STAR.md`,
