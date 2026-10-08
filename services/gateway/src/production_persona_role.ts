@@ -19,7 +19,8 @@ export function privatePersonaRoleInstructions(
   }
 
   // JSON preserves punctuation and prevents multiline biography text being
-  // concatenated into the platform's own instruction lines.
+  // concatenated into the platform's own instruction lines. It does not
+  // guarantee a model will resist all prompt-injection attempts.
   const identity = JSON.stringify({
     schemaVersion: 1,
     displayName,
