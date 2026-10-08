@@ -34,7 +34,7 @@ CREATE TABLE talks.human_dm_messages (
  UNIQUE (tenant_id,conversation_id,sender_user_id,client_request_id),
  FOREIGN KEY (tenant_id,conversation_id) REFERENCES talks.human_dm_conversations(tenant_id,conversation_id) ON DELETE CASCADE,
  FOREIGN KEY (tenant_id,sender_user_id) REFERENCES identity.users(tenant_id,user_id) ON DELETE CASCADE,
- CHECK ((deleted_at IS NULL AND length(btrim(body)) BETWEEN 1 AND 4000)
+ CHECK ((deleted_at IS NULL AND body IS NOT NULL AND length(btrim(body)) BETWEEN 1 AND 4000)
      OR (deleted_at IS NOT NULL AND body IS NULL))
 );
 CREATE INDEX human_dm_messages_sender_rate_idx ON talks.human_dm_messages(tenant_id,sender_user_id,created_at DESC);
