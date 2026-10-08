@@ -55,3 +55,9 @@
 - Locally exercised the new verifier's equivalent signature/identity/fingerprint core against temporary signed/mixed artifacts: valid signed => accepted, mixed => rejected. This is **not** a full run of the repository's test harness and not a signed AAB build.
 - New head workflow run `37710863394` reported failure; job `113096204794` returned no step details or log URL. Existing Foundation/Mobile workflows similarly report failure, so runner/CI environment remains unqualified. Do not classify as passing tests or a release regression without job logs.
 - Release gate remains: run the checked-in script tests on GitHub Actions or an isolated checkout, run real Gradle/Flutter build, independently verify a real AAB with pinned public SHA-256 cert fingerprint, inspect output and install test-signed APK on Android. Release candidate must not be distributed before these steps pass.
+
+## AAB input validation
+
+- `ee50da2a`: reject non-ZIP and signed-but-not-AAB inputs by checking `BundleConfig.pb` and `base/manifest/AndroidManifest.xml` prior to signature inspection. This is an early structural sanity check, **not a replacement for bundletool validation**.
+- `681da8a3`: update disposable signed test artifact to include minimum AAB paths and add arbitrary-signed-JAR rejection. Corrected signing fixture line continuation in `f6ff6a23`.
+- No newly verified CI execution or Android build evidence. Leave PR draft until a real CI runner executes tests and a real release bundle passes structural, signature and device/store gates.
