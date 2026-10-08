@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
 import '../../talks/talk_safety.dart';
@@ -64,6 +65,7 @@ class GatewayHumanProfileSafetyTransport implements HumanProfileSafetyTransport 
     final result=await api.dio.put<dynamic>(
       '/safety/profiles/${Uri.encodeComponent(_handle(handle))}/preference',
       data:{'blocked':blocked,'muted':muted},
+      options:Options(extra:{'masanawaAuthRetried':true}),
     );
     return HumanProfileSafetyPreference.parse(result.data);
   }
@@ -84,7 +86,7 @@ class GatewayHumanProfileSafetyTransport implements HumanProfileSafetyTransport 
       'reason':reason.wire,
       if(detail.trim().isNotEmpty) 'detail':detail.trim(),
       'clientRequestId':requestId,
-    });
+    },options:Options(extra:{'masanawaAuthRetried':true}));
     final data=result.data;
     if(result.statusCode!=202 || data is! Map ||
        data['accepted']!=true || data['reportId'] is! String ||
