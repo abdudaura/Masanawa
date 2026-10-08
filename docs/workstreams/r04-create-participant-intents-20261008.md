@@ -5,7 +5,7 @@
 - **Base main SHA:** `88e67cc6c79de1ca09e02f11e929065dcfb2ea82`
 - **Lane:** R04 / talks-live mobile Create/Host participant intent flow
 - **Status:** ACTIVE; 5-minute repository-visible lease; draft PR #433
-- **Last repository-visible update:** 2026-10-08T05:40:47.815Z
+- **Last repository-visible update:** 2026-10-08T05:43:01.500Z
 
 ## Exact owned paths
 - `apps/mobile/lib/src/screens/talks/create_talk_screen.dart`
@@ -67,3 +67,10 @@ The existing public `GET /talks/:talkId/ai-seats` catalog contains public Twins 
 - The normal public Add/Sponsor Twin catalog remains unchanged, but the Create action's `onlyOwnedTwin` sheet shows only the verified owner Twin and a real creator route if none qualifies.
 - Added Gateway route regression for owner and nonowner responses, model tests for strict flag parsing, and picker widget test that a foreign public Twin is not selectable from `Add My Twin`.
 - These backend + mobile changes require compatible Gateway and APK deployment; old Gateway does **not** prove an owned Twin. Still untested due absent enabled CI runners/Flutter runtime.
+
+## Host authenticity and account isolation
+
+- Canonical `toTalkDiscoveryItem` does **not** currently serialize `viewerIsHost`; client route hint `?host=1` is not authorization. Queued Create actions are now offered only after an authenticated `GET /talks/:id` detail read confirms that the canonical human Host participant ID exactly matches the current session's user ID. A forged `?host=1` cannot restore a prior Host's queued actions.
+- Secure-store keys include the signed-in user ID **and** Talk ID, so changing accounts on the same device cannot cross-contaminate pending actions. The provider watches authenticated session identity; unsigned sessions fail closed.
+- Tests cover forged Host route hints and server-side identity comparison. The broader existing `TalkScreen` uses separate UI hints; full Host role reconciliation belongs to R02/integration, not the R04 queued-intent overlay.
+- Recheck actual Gateway/API projection, device restart and auth switch in the acceptance suite; these tests remain authored but not executed.
