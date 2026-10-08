@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:masanawa/src/activity/talk_activity.dart';
 import 'package:masanawa/src/agents/twin_directory.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
 import 'package:masanawa/src/screens/twin/twin_home_shell.dart';
+import 'package:masanawa/src/screens/activity/activity_screen.dart';
+import 'package:masanawa/src/screens/you/you_screen.dart';
 import 'package:masanawa/src/state/talk_activity_state.dart';
 import 'package:masanawa/src/state/twin_directory_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
@@ -138,9 +141,31 @@ Widget _app({TalkActivityTransport? activity, int initialIndex = 0}) {
         const _FakeTwinDirectoryTransport(),
       ),
     ],
-    child: MaterialApp(
+    child: MaterialApp.router(
       theme: buildMasanawaTheme(brightness: Brightness.light),
-      home: TwinHomeShell(initialIndex: initialIndex),
+      routerConfig: GoRouter(
+        initialLocation: '/home',
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (_, __) => TwinHomeShell(initialIndex: initialIndex),
+          ),
+          GoRoute(
+            path: '/activity',
+            builder: (_, __) => const ActivityScreen(),
+          ),
+          GoRoute(
+            path: '/you',
+            builder: (_, __) => const YouScreen(),
+          ),
+          GoRoute(
+            path: '/persona/:id',
+            builder: (_, state) => Scaffold(
+              body: Text('Profile ${state.pathParameters['id']}'),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
