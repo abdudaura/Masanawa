@@ -95,8 +95,8 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       title: 'Masanawa',
       debugShowCheckedModeBanner: false,
       theme: buildMasanawaTheme(brightness: Brightness.light),
-      darkTheme: buildMasanawaTheme(brightness: Brightness.dark),
-      themeMode: ThemeMode.system,
+      // R01: a dark device setting must not silently re-theme the app.
+      themeMode: ThemeMode.light,
       routerConfig: router,
     );
   }

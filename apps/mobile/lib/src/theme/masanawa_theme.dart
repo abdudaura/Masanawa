@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../tokens/masanawa_tokens.dart';
 
@@ -129,12 +130,14 @@ extension MasanawaContext on BuildContext {
 
 /// The Masanawa ThemeData — every screen renders from this (design DoD).
 ThemeData buildMasanawaTheme({required Brightness brightness}) {
+  // Theme construction follows the requested palette. Selecting the default
+  // experience belongs to MaterialApp, not the semantic color factory.
   final isDark = brightness == Brightness.dark;
   final masanawa = isDark ? MasanawaColors.dark() : MasanawaColors.light();
   final scheme = ColorScheme(
     brightness: brightness,
     primary: masanawa.brand,
-    onPrimary: isDark ? Colors.black87 : Colors.white,
+    onPrimary: isDark ? Colors.black87 : masanawa.textPrimary,
     secondary: masanawa.brandStrong,
     onSecondary: isDark ? Colors.black87 : Colors.white,
     error: masanawa.emergency,
@@ -150,21 +153,31 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
-    scaffoldBackgroundColor: masanawa.surfaceBg,
+    // Normal app surfaces are white in light mode; keep the canonical
+    // muted background token for components that need secondary surfaces.
+    scaffoldBackgroundColor: masanawa.surfaceCard,
     extensions: [masanawa],
     textTheme: Typography.material2021(platform: TargetPlatform.android).black.apply(
           bodyColor: scheme.onSurface,
           displayColor: scheme.onSurface,
         ),
     appBarTheme: AppBarTheme(
-      backgroundColor: isDark ? masanawa.surfaceCard : masanawa.brandStrong,
-      foregroundColor: Colors.white,
+      backgroundColor: masanawa.surfaceCard,
+      foregroundColor: masanawa.textPrimary,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      iconTheme: const IconThemeData(color: Colors.white),
-      actionsIconTheme: const IconThemeData(color: Colors.white),
-      titleTextStyle: const TextStyle(
-        color: Colors.white,
+      // Light Android system bar with dark status icons, matching this header.
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: masanawa.surfaceCard,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      ),
+      iconTheme: IconThemeData(color: masanawa.textPrimary),
+      actionsIconTheme: IconThemeData(color: masanawa.textPrimary),
+      titleTextStyle: TextStyle(
+        color: masanawa.textPrimary,
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
@@ -193,7 +206,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: masanawa.brand,
-      foregroundColor: Colors.white,
+      foregroundColor: masanawa.textPrimary,
     ),
     cardTheme: CardThemeData(
       color: masanawa.surfaceCard,
@@ -221,7 +234,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: masanawa.brand,
-        foregroundColor: Colors.white,
+        foregroundColor: masanawa.textPrimary,
         minimumSize: const Size(48, 48),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -230,7 +243,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: masanawa.brand,
+        foregroundColor: masanawa.brandStrong,
         minimumSize: const Size(48, 48),
         side: BorderSide(color: masanawa.structuralBorder),
         shape: RoundedRectangleBorder(
@@ -239,7 +252,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: masanawa.brand),
+      style: TextButton.styleFrom(foregroundColor: masanawa.brandStrong),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: masanawa.surfaceMuted,
@@ -281,6 +294,24 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
         borderSide: BorderSide(color: masanawa.brand, width: 1.6),
       ),
     ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected)
+              ? masanawa.brand
+              : masanawa.surfaceCard),
+      checkColor: WidgetStatePropertyAll(masanawa.textPrimary),
+      side: BorderSide(color: masanawa.textMuted, width: 1.5),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected)
+              ? masanawa.textPrimary
+              : masanawa.surfaceCard),
+      trackColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.selected)
+              ? masanawa.brand
+              : masanawa.surfaceMuted),
+    ),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: masanawa.brand,
       selectionColor: masanawa.brand.withValues(alpha: 0.22),
@@ -292,9 +323,9 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     dividerTheme: DividerThemeData(color: masanawa.structuralBorder),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: isDark ? Colors.white : masanawa.textPrimary,
+      backgroundColor: masanawa.textPrimary,
       contentTextStyle: TextStyle(
-        color: isDark ? Colors.black87 : Colors.white,
+        color: Colors.white,
       ),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
