@@ -35,6 +35,8 @@ void main() {
   test('requests, verifies and reads authenticated canonical status', () async {
     final paths = <String>[];
     final dio = Dio(BaseOptions(baseUrl: 'https://localhost.invalid'));
+    final api = ApiClient(dio: dio);
+    api.accessToken = 'session-token';
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (request, handler) {
         expect(request.headers['Authorization'], 'Bearer session-token');
@@ -61,8 +63,6 @@ void main() {
         ));
       },
     ));
-    final api = ApiClient(dio: dio);
-    api.accessToken = 'session-token';
     final read = await api.accountDeletionStatus();
     expect(read?.phase, 'requested');
     final sent = await api.requestAccountDeletion();
