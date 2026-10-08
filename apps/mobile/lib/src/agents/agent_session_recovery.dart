@@ -17,3 +17,28 @@ bool isRecoverableAgentSessionError(Object error) {
       return false;
   }
 }
+
+
+/// NDJSON is already HTTP 200 when a turn fails. Only a trusted, typed
+/// pre-dispatch denial before ANY delta/audio can trigger automatic recovery.
+/// In all other cases the original request outcome must be reconciled first.
+ApiException streamedAgentTurnError(
+  Map<String, dynamic> event, {
+  required bool outputReceived,
+}) {
+  final code = event['code'];
+  if (!outputReceived &&
+      (code == 'agents.session_not_found' ||
+          code == 'agents.session_closed' ||
+          code == 'agents.session_persona_changed')) {
+    return ApiException(
+      'This AI conversation changed. Reconnecting is required.',
+      statusCode: 409,
+      code: code as String,
+    );
+  }
+  return const ApiException(
+    'The agent response ended unexpectedly. Check the conversation before retrying.',
+    code: 'AGENT_TURN_OUTCOME_UNKNOWN',
+  );
+}
