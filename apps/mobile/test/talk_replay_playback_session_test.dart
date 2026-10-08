@@ -90,6 +90,7 @@ void main() {
     final transport = _Transport();
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -118,6 +119,7 @@ void main() {
     final transport = _Transport();
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -138,6 +140,7 @@ void main() {
     final transport = _Transport()..fail = true;
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -159,6 +162,7 @@ void main() {
     final transport = _Transport();
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -195,6 +199,7 @@ void main() {
       ..expiry = clock.add(const Duration(minutes: 5));
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1', transport: transport, player: player,
       now: () => clock,
     );
@@ -221,6 +226,7 @@ void main() {
       ..expiry = clock.add(const Duration(minutes: 2));
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1', transport: transport, player: player,
       now: () => clock,
     );
@@ -246,6 +252,7 @@ void main() {
     final transport = _Transport()..expiry = clock.add(const Duration(seconds: 10));
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1', transport: transport, player: player,
       now: () => clock,
     );
@@ -262,6 +269,7 @@ void main() {
       ..expiry = clock.add(const Duration(minutes: 2));
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1', transport: transport, player: player,
       now: () => clock,
     );
@@ -281,6 +289,7 @@ void main() {
     final transport = _Transport();
     final player = _Player()..holdPlay = Completer<void>();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1', transport: transport, player: player,
     );
     await session.toggle();
