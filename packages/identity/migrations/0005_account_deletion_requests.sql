@@ -46,3 +46,23 @@ $$;
 CREATE TRIGGER account_deletion_events_append_only
   BEFORE UPDATE OR DELETE ON identity.account_deletion_events
   FOR EACH ROW EXECUTE FUNCTION identity.reject_account_deletion_event_mutation();
+
+-- Deletion verification cannot reuse sign-in OTPs.
+-- The hash is a purpose-bound HMAC computed by the trusted Gateway.
+CREATE TABLE identity.account_deletion_challenges (
+  tenant_id text NOT NULL,
+  user_id text NOT NULL,
+  request_id uuid NOT NULL,
+  code_hash text NOT NULL CHECK (code_hash ~ '^[0-9a-f]{64}$'),
+  channel text NOT NULL CHECK (channel IN ('email','sms')),
+  attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  max_attempts integer NOT NULL DEFAULT 5 CHECK (max_attempts BETWEEN 1 AND 10),
+  created_at timestamptz NOT NULL,
+  expires_at timestamptz NOT NULL,
+  resend_after timestamptz NOT NULL,
+  consumed_at timestamptz,
+  PRIMARY KEY (tenant_id,user_id),
+  FOREIGN KEY (tenant_id,user_id,request_id)
+    REFERENCES identity.account_deletion_requests(tenant_id,user_id,request_id),
+  CHECK (expires_at > created_at AND resend_after > created_at)
+);
