@@ -44,6 +44,10 @@ class SelfProfileDraft {
       };
 }
 
+class ProfileHandleTaken implements Exception {
+  const ProfileHandleTaken();
+}
+
 abstract interface class SelfProfileEditTransport {
   Future<HumanProfile> save(SelfProfileDraft draft);
 }
@@ -67,7 +71,7 @@ class GatewaySelfProfileEditTransport implements SelfProfileEditTransport {
       throw const FormatException('Invalid profile response');
     } on DioException catch (error) {
       if (error.response?.statusCode == 409) {
-        throw StateError('This handle is already taken. Choose another.');
+        throw const ProfileHandleTaken();
       }
       rethrow;
     }
