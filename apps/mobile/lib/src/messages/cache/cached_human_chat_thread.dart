@@ -94,7 +94,12 @@ class _CachedHumanChatThreadState extends State<CachedHumanChatThread> {
       final pending = await widget.sync.cachedOutbox(widget.conversationId);
       if (!mounted || token != _epoch) return;
       setState(() {
-        _messages = page;
+        // Merge the fresh window without dropping older pages already viewed.
+        // Stable server IDs prevent duplicate cells across reconnect.
+        final known = {for (final m in _messages) m.messageId: m};
+        for (final m in page) { known[m.messageId] = m; }
+        _messages = known.values.toList()
+          ..sort((a, b) => b.sequence.compareTo(a.sequence));
         _outbox = pending;
         _hasMoreCached = page.length >= 40;
         _warning = null;
