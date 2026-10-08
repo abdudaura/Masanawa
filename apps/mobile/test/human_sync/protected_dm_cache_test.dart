@@ -1,4 +1,3 @@
-import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/human_sync/protected_dm_cache.dart';
 import 'package:masanawa/src/human_sync/dm_sync_coordinator.dart';
@@ -114,6 +113,21 @@ void main() {
         throwsStateError);
     expect(await cache.pending(), isEmpty);
     await coordinator.close();
+  });
+
+
+  test('authoritative revocation erases thread, inbox and all pending drafts', () async {
+    await cache.putMessages('thread-a', [item(1)]);
+    await cache.putInbox([{
+      'conversationId': 'thread-a', 'otherUserId': 'other',
+      'updatedAt': '2026-10-08T10:00:00Z',
+    }]);
+    await cache.queue(conversationId: 'thread-a', requestId: 'request_unique_123456',
+        text: 'Draft');
+    await cache.revokeConversation('thread-a');
+    expect(await cache.messages('thread-a'), isEmpty);
+    expect(await cache.inbox(), isEmpty);
+    expect(await cache.pending(), isEmpty);
   });
 
   test('different tenant/user storage never shares the same key namespace', () async {

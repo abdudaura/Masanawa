@@ -11,6 +11,7 @@ abstract class DmSyncTransport {
   Future<List<Map<String, dynamic>>> history(String conversationId, {String? before});
   Future<Map<String, dynamic>> send(
       String conversationId, String requestId, String body);
+  void cancelPendingRequests() {}
 }
 
 /// Verifies the current signed-in identity before and after awaited requests.
@@ -67,9 +68,8 @@ class DmSyncCoordinator {
         await close();
       } else if (error.response?.statusCode == 403 ||
           error.response?.statusCode == 404) {
-        // Server revocation is authoritative. No stale offline access after
-        // positive denial. An isolated thread purge can be added to the cache.
-        await close();
+        // A verified server denial revokes all cached content for this thread.
+        await cache.revokeConversation(conversationId);
       }
       rethrow;
     }
@@ -138,6 +138,7 @@ class DmSyncCoordinator {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+    transport.cancelPendingRequests();
     await cache.close();
   }
 }

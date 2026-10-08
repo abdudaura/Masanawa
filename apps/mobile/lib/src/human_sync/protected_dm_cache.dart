@@ -20,7 +20,6 @@ class ProtectedDmCache {
   final String ownerId;
   final String tenantId;
   bool _closed = false;
-  final Set<String> _sending = <String>{};
 
   static const FlutterSecureStorage _keys = FlutterSecureStorage();
   static const int maxCachedMessages = 120000;
@@ -53,14 +52,19 @@ class ProtectedDmCache {
     if (existing == null && await File(databasePath).exists()) {
       throw StateError('Private cache encryption key unavailable; clear cache to recover');
     }
+    final secureRandom = Random.secure();
     final keyBytes = existing == null
-        ? List<int>.generate(32, (_) => Random.secure().nextInt(256))
+        ? List<int>.generate(32, (_) => secureRandom.nextInt(256))
         : base64Decode(existing);
     if (keyBytes.length != 32) {
       throw const FormatException('Invalid private cache encryption key');
     }
     if (existing == null) {
       await _keys.write(key: secretName, value: base64Encode(keyBytes));
+      // A second isolate/device session must not silently replace the key.
+      if (await _keys.read(key: secretName) != base64Encode(keyBytes)) {
+        throw StateError('Private cache key changed during initialization');
+      }
     }
     try {
       final db = await openDatabase(databasePath, version: 1,
@@ -335,6 +339,22 @@ class ProtectedDmCache {
     }
     await putMessages(queued['conversationId'] as String, [serverMessage]);
     await _db.delete('dm_outbox', where: 'request_id = ?', whereArgs: [requestId]);
+  }
+
+
+  /// Upon a verified 403/404 from the authority, erase stale thread content,
+  /// drafts and inbox preview. Never use a cached thread to override a denial.
+  Future<void> revokeConversation(String conversationId) async {
+    _ensureOpen();
+    final thread = _thread(conversationId);
+    await _db.transaction((txn) async {
+      await txn.delete('dm_messages',
+          where: 'conversation_key = ?', whereArgs: [thread]);
+      await txn.delete('dm_inbox',
+          where: 'conversation_key = ?', whereArgs: [thread]);
+      await txn.delete('dm_outbox',
+          where: 'conversation_key = ?', whereArgs: [thread]);
+    });
   }
 
   Future<void> discard(String requestId) async {
