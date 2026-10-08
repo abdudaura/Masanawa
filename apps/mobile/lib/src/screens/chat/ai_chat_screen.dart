@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
+import 'components/ai_persona_status_label.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/cafe_suggestions.dart';
 import '../../chat/message_parts.dart';
@@ -1029,9 +1030,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      Text(
-                        'AI · $workingLabel',
-                        overflow: TextOverflow.ellipsis,
+                      AiPersonaStatusLabel(
+                        status: workingLabel,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: .82),
                           fontSize: 12,
