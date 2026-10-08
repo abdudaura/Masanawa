@@ -47,7 +47,7 @@ BEGIN
   INSERT INTO talks.human_dm_event_checkpoints(
     tenant_id,recipient_user_id,latest_event_id)
   SELECT tenant_id,recipient_user_id,max(event_id)
-  FROM emitted GROUP BY tenant_id,recipient_user_id
+  FROM emitted WHERE true GROUP BY tenant_id,recipient_user_id
   ON CONFLICT (tenant_id,recipient_user_id) DO UPDATE
   SET latest_event_id=GREATEST(
     talks.human_dm_event_checkpoints.latest_event_id,EXCLUDED.latest_event_id),
@@ -86,7 +86,7 @@ BEGIN
   ), recorded AS (
     INSERT INTO talks.human_dm_event_checkpoints(
       tenant_id,recipient_user_id,latest_event_id,pruned_through_event_id)
-    SELECT tenant_id,recipient_user_id,max_removed,max_removed FROM watermark
+    SELECT tenant_id,recipient_user_id,max_removed,max_removed FROM watermark WHERE true
     ON CONFLICT (tenant_id,recipient_user_id) DO UPDATE
     SET latest_event_id=GREATEST(
       talks.human_dm_event_checkpoints.latest_event_id,EXCLUDED.latest_event_id),
