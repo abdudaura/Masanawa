@@ -51,8 +51,7 @@ class _PublicDiscoveryScreenState extends State<PublicDiscoveryScreen> {
   void didUpdateWidget(covariant PublicDiscoveryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.ownerId != widget.ownerId ||
-        !identical(oldWidget.transport, widget.transport) ||
-        false) {
+        !identical(oldWidget.transport, widget.transport)) {
       _controller.removeListener(_changed);
       _controller.dispose();
       _query.clear();
@@ -215,7 +214,9 @@ class _PublicDiscoveryScreenState extends State<PublicDiscoveryScreen> {
                             return ListTile(
                               key: ValueKey('${item.kind.name}:${item.id}'),
                               leading: CircleAvatar(
-                                child: Icon(switch (item.kind) {
+                                backgroundImage: item.avatarUrl == null
+                                    ? null : NetworkImage(item.avatarUrl!),
+                                child: item.avatarUrl != null ? null : Icon(switch (item.kind) {
                                   PublicDiscoveryKind.talk => Icons.mic,
                                   PublicDiscoveryKind.person => Icons.person_outline,
                                   PublicDiscoveryKind.expert => Icons.smart_toy_outlined,
