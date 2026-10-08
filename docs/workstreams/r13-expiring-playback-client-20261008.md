@@ -1,0 +1,7 @@
+# R13 signed replay playback reauthorization — active claim
+
+Window: GPT-6 R13 Flutter playback recovery, 2026-10-08. Initial base main: `226d0c58632b243661ab24904cca75700ed474d4`. Branch: `work/r13-replay-expiring-playback-20261008-gpt6`. Status: PARTIAL_IMPLEMENTATION (work in progress), tests unexecuted.
+
+Five-minute lease: this repository-visible claim commit starts the lease. Own only `apps/mobile/lib/src/talks/talk_replay_playback.dart`, `apps/mobile/test/talk_replay_playback_session_test.dart`, `apps/mobile/lib/src/state/talk_replay_playback_state.dart` and this handoff/claim. No shared Gateway composer, replay DB/migrations, Flutter root router, storage/provider/CI changes. Exact scope: validated HTTPS signed audio envelopes, expiry-aware authenticated refetch for paused/seeked replay, safe concurrent load/close/error recovery and test evidence. Existing server playback endpoint is `GET /talks/:talkId/replay/playback`, authorized through tenant/session and replay media/publication SQL. Full R13 media publication remains owned by historical draft [#453](https://github.com/Baatiku/masanawa/pull/453); preserve it, do not duplicate its coordinator or media repository edits. Relevant canonical: R13/T08/J05/J11. CI incident [#457](https://github.com/Baatiku/masanawa/issues/457).
+
+Next: implement focused source/tests, commit and link draft PR; never call entire R13 DONE without recording S3/LiveKit, SQL, real user and Android evidence.
