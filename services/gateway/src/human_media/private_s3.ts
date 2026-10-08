@@ -69,7 +69,7 @@ export function createPrivateVoiceS3(input:Readonly<{
         const next=await reader.read();
         if(next.done)break;
         size+=next.value.byteLength;
-        if(size>maxBytes)throw new Error("messages.voice.storage_oversize");
+        if(size>maxBytes){await reader.cancel();throw new Error("messages.voice.storage_oversize");}
         chunks.push(next.value);
       }
     } finally {reader.releaseLock();}
