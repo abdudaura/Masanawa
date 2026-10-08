@@ -170,7 +170,12 @@ export function projectTalkAiStageContext(input: Readonly<{
     topic: clean(stage.topic, 250),
     hostName: clean(stage.hostName, 70),
     participants: Object.freeze(participants),
-    events: Object.freeze(events.reverse()),
+    // Preserve the insertion order of events with identical timestamps while
+    // presenting chronological history. Reverse() would invert same-time
+    // events and create inconsistent contexts on an outbox replay.
+    events: Object.freeze(events.sort(
+      (a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt),
+    )),
     contentTrust: "public-untrusted-data" as const,
   });
 }
