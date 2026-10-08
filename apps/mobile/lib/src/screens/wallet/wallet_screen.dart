@@ -13,6 +13,8 @@ class WalletScreen extends ConsumerWidget {
     this.onWithdraw,
     this.onBuyBills,
     this.onOpenCrypto,
+    this.onOpenBillingService,
+    this.embeddedInShell = false,
   });
 
   final VoidCallback? onAddMoney;
@@ -20,62 +22,73 @@ class WalletScreen extends ConsumerWidget {
   final VoidCallback? onWithdraw;
   final VoidCallback? onBuyBills;
   final VoidCallback? onOpenCrypto;
+  /// Opens the existing qualified Billing category; selecting it does not pay.
+  final ValueChanged<String>? onOpenBillingService;
+  /// Root owns the header when this surface is selected as a bottom tab.
+  final bool embeddedInShell;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final wallet = ref.watch(walletProvider);
 
+    // Loading or a balance failure must not remove entry to separate,
+    // independently qualified Billing/Crypto routes.
+    Widget pendingOrUnavailableWallet({bool loading = false}) => ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      children: [
+        WalletServiceShortcuts(
+          onOpenCrypto: onOpenCrypto,
+          onBuyBills: onBuyBills,
+          onOpenBillingService: onOpenBillingService,
+        ),
+        const SizedBox(height: 80),
+        if (loading)
+          const Center(child: CircularProgressIndicator())
+        else ...[
+          Text(
+            'Wallet balances are unavailable right now.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: u.textMuted),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: OutlinedButton(
+              onPressed: () => ref.read(walletProvider.notifier).refresh(),
+              child: const Text('Retry'),
+            ),
+          ),
+        ],
+      ],
+    );
+
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(title: const Text('Wallet')),
+      appBar: embeddedInShell ? null : AppBar(title: const Text('Wallet')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
         child: wallet.when(
-          loading: () => const _ScrollableCenter(
-            child: CircularProgressIndicator(),
-          ),
-          error: (_, __) => _ScrollableCenter(
-            child: Text(
-              'Wallet is not available yet.',
-              style: TextStyle(color: u.textMuted),
-            ),
-          ),
+          loading: () => pendingOrUnavailableWallet(loading: true),
+          error: (_, __) => pendingOrUnavailableWallet(),
           data: (value) {
-            if (value == null) return const SizedBox.shrink();
+            if (value == null) return pendingOrUnavailableWallet();
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               children: [
                 _Balances(view: value),
                 const SizedBox(height: 12),
-                _Actions(
-                  onAddMoney: onAddMoney,
-                  onSend: onSend,
-                  onWithdraw: onWithdraw,
+                WalletServiceShortcuts(
+                  onOpenCrypto: onOpenCrypto,
+                  onBuyBills: onBuyBills,
+                  onOpenBillingService: onOpenBillingService,
                 ),
-                if (onBuyBills != null || onOpenCrypto != null) ...[
+                if (onAddMoney != null || onSend != null || onWithdraw != null) ...[
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (onBuyBills != null)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: onBuyBills,
-                            icon: const Icon(Icons.chat_bubble_outline),
-                            label: const Text('Internet Cafe'),
-                          ),
-                        ),
-                      if (onBuyBills != null && onOpenCrypto != null)
-                        const SizedBox(width: 8),
-                      if (onOpenCrypto != null)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: onOpenCrypto,
-                            icon: const Icon(Icons.currency_bitcoin),
-                            label: const Text('Crypto'),
-                          ),
-                        ),
-                    ],
+                  _Actions(
+                    onAddMoney: onAddMoney,
+                    onSend: onSend,
+                    onWithdraw: onWithdraw,
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -177,6 +190,63 @@ class _SmallBalance extends StatelessWidget {
   }
 }
 
+/// Shared service links remain navigation-only until the private durable
+/// voice-first financial task contract is integrated (R06/R07).
+class WalletServiceShortcuts extends StatelessWidget {
+  const WalletServiceShortcuts({
+    super.key,
+    this.onOpenCrypto,
+    this.onBuyBills,
+    this.onOpenBillingService,
+  });
+
+  final VoidCallback? onOpenCrypto;
+  final VoidCallback? onBuyBills;
+  final ValueChanged<String>? onOpenBillingService;
+
+  @override
+  Widget build(BuildContext context) {
+    final billing = onOpenBillingService;
+    if (onOpenCrypto == null && onBuyBills == null && billing == null) {
+      return const SizedBox.shrink();
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        if (onOpenCrypto != null)
+          ActionChip(
+            avatar: const Icon(Icons.currency_bitcoin, size: 18),
+            label: const Text('Crypto'),
+            onPressed: onOpenCrypto,
+          ),
+        if (billing != null) ...[
+          ActionChip(
+            label: const Text('Data bundles'),
+            onPressed: () => billing('data'),
+          ),
+          ActionChip(
+            label: const Text('Airtime'),
+            onPressed: () => billing('airtime'),
+          ),
+          ActionChip(
+            label: const Text('Electricity'),
+            onPressed: () => billing('electricity'),
+          ),
+          ActionChip(
+            label: const Text('TV / Cable'),
+            onPressed: () => billing('tv'),
+          ),
+        ] else if (onBuyBills != null)
+          ActionChip(
+            label: const Text('Billing'),
+            onPressed: onBuyBills,
+          ),
+      ],
+    );
+  }
+}
+
 class _Actions extends StatelessWidget {
   const _Actions({
     required this.onAddMoney,
@@ -262,24 +332,6 @@ class _WalletEntryTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ScrollableCenter extends StatelessWidget {
-  const _ScrollableCenter({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        SizedBox(
-          height: MediaQuery.sizeOf(context).height * .55,
-          child: Center(child: child),
-        ),
-      ],
     );
   }
 }

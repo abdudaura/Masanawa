@@ -11,11 +11,14 @@ class TalkHomeScreen extends ConsumerWidget {
     this.onOpenTalk,
     this.onOpenSearch,
     this.onOpenGwani,
+    this.embeddedInShell = false,
   });
 
   final void Function(TalkDiscoveryItem talk)? onOpenTalk;
   final VoidCallback? onOpenSearch;
   final VoidCallback? onOpenGwani;
+  /// Hide the inner toolbar when the shared root header is visible.
+  final bool embeddedInShell;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,8 +28,10 @@ class TalkHomeScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: u.surfaceBg,
         appBar: AppBar(
-          title: const Text('Masanawa'),
-          actions: [
+          toolbarHeight: embeddedInShell ? 0 : null,
+          primary: !embeddedInShell,
+          title: embeddedInShell ? null : const Text('Masanawa'),
+          actions: embeddedInShell ? null : [
             IconButton(
               tooltip: 'Search',
               onPressed: onOpenSearch,
@@ -50,10 +55,12 @@ class TalkHomeScreen extends ConsumerWidget {
             _TalkFeed(
               feed: TalkFeedKind.explore,
               onOpenTalk: onOpenTalk,
+              bottomInset: embeddedInShell ? 100 : 28,
             ),
             _TalkFeed(
               feed: TalkFeedKind.live,
               onOpenTalk: onOpenTalk,
+              bottomInset: embeddedInShell ? 100 : 28,
             ),
           ],
         ),
@@ -66,10 +73,12 @@ class _TalkFeed extends ConsumerWidget {
   const _TalkFeed({
     required this.feed,
     required this.onOpenTalk,
+    required this.bottomInset,
   });
 
   final TalkFeedKind feed;
   final void Function(TalkDiscoveryItem talk)? onOpenTalk;
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -85,7 +94,7 @@ class _TalkFeed extends ConsumerWidget {
         loading: () => ListView(
           key: ValueKey('talk-feed-' + feed.name),
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
+          padding: EdgeInsets.fromLTRB(12, 12, 12, bottomInset),
           children: const [
             _TalkCardSkeleton(),
             SizedBox(height: 12),
@@ -95,7 +104,7 @@ class _TalkFeed extends ConsumerWidget {
         error: (_, __) => ListView(
           key: ValueKey('talk-feed-' + feed.name),
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(24, 80, 24, 32),
+          padding: EdgeInsets.fromLTRB(24, 80, 24, bottomInset),
           children: [
             Icon(Icons.wifi_off_rounded, color: u.textMuted, size: 38),
             const SizedBox(height: 12),
@@ -121,7 +130,7 @@ class _TalkFeed extends ConsumerWidget {
             return ListView(
               key: ValueKey('talk-feed-' + feed.name),
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 96, 24, 32),
+              padding: EdgeInsets.fromLTRB(24, 96, 24, bottomInset),
               children: [
                 Icon(
                   feed == TalkFeedKind.live
@@ -159,7 +168,7 @@ class _TalkFeed extends ConsumerWidget {
           return ListView.separated(
             key: ValueKey('talk-feed-' + feed.name),
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 28),
+            padding: EdgeInsets.fromLTRB(10, 10, 10, bottomInset),
             itemCount: talks.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
