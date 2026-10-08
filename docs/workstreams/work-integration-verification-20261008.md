@@ -58,3 +58,7 @@ Flutter3.47.6/Dart3.13.5 SDK bootstrap succeeded. Mobile text sources recovered;
 
 ## Remaining baseline contract gate — scoped registry repair
 Source/test repair commit 4c3698007e9238c9aa6fee0bd66a423a1affb4af: four affected suites/68 tests passed; broader recovered backend set now 1207 passed,2 failed,143 skipped. Claim additionally owns config/production-env.json and test/architecture/environment-contracts.test.ts only: register the 16 already-read production configuration names with public/secret classifications and conditional descriptions, recognizing the three existing LIVEKIT names in naming validation. Do not disable the scan or store values. The remaining API lifecycle failure (73 unversioned routes not in compatibility manifest) stays open pending canonical version/compatibility integration; no blanket exemption added.
+
+
+## Flaky test discovered after registry repair
+Latest broader run: 1207 passed,2 failed,143 skipped; environment gate passed, API lifecycle still fails. Second failure is random fixture nondeterminism: talk_ai_seat_routes.test.ts repository mock chooses admitted vs pending_host from a random quote ID suffix. Claim this test file only; production AI Seat service, ledger and #433 source remain untouched. Replace probabilistic fixture with explicit confirmation-status input and exercise both branches. Flutter dependency downloads continue; no executable mobile proof yet.
