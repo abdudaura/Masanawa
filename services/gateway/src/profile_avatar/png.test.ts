@@ -56,7 +56,7 @@ describe("Avatar PNG image safety and metadata removal", () => {
 
   it("refuses invalid checksums and trailing foreign bytes", () => {
     const broken = Buffer.from(fixture());
-    broken[50]! ^= 1;
+    broken[50] = broken[50]! ^ 1;
     expect(() => sanitizeAvatarPng(broken)).toThrow();
     expect(() => sanitizeAvatarPng(Buffer.concat([fixture(), Buffer.from("junk")]))).toThrow();
   });
