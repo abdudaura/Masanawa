@@ -2,7 +2,7 @@ import type { ProfileAvatarRepository } from "./service.js";
 
 export interface AvatarSqlPool {
   query<Row extends Record<string, unknown> = Record<string, unknown>>(
-    sql: string, values?: readonly unknown[],
+    sql: string, values?: unknown[],
   ): Promise<{ readonly rows: Row[]; readonly rowCount: number | null }>;
 }
 
