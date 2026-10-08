@@ -158,7 +158,9 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
            AND e.second_user_id=GREATEST($2,$3)
            AND e.requested_by=$3
            AND $2<>$3
-           AND (e.status='pending' OR e.status=$4)
+           AND (e.status='pending' OR e.status=$4
+             OR (e.status='declined' AND $4='accepted')
+             OR (e.status='accepted' AND $4='declined'))
            AND EXISTS (
              SELECT 1 FROM identity.users u
               WHERE u.tenant_id=$1 AND u.user_id=$2 AND u.state='active'
@@ -175,6 +177,21 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
            )
         RETURNING e.first_user_id
       `, [tenantId, recipientId, requesterId, accept ? "accepted" : "declined"]);
+      return (result.rowCount ?? result.rows.length) > 0;
+    },
+
+    async revoke({ tenantId, actorId, otherUserId }) {
+      const result = await pool.query<Record<string, unknown>>(`
+        UPDATE talks.human_dm_contact_requests e
+           SET status='declined',
+               updated_at=CASE WHEN e.status='declined' THEN e.updated_at ELSE clock_timestamp() END
+         WHERE e.tenant_id=$1
+           AND e.first_user_id=LEAST($2,$3)
+           AND e.second_user_id=GREATEST($2,$3)
+           AND $2<>$3
+           AND ($2=e.first_user_id OR $2=e.second_user_id)
+        RETURNING e.first_user_id
+      `, [tenantId, actorId, otherUserId]);
       return (result.rowCount ?? result.rows.length) > 0;
     },
 
@@ -195,7 +212,8 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
            AND viewer.state='active'
          WHERE edge.tenant_id=$1
            AND (edge.first_user_id=$2 OR edge.second_user_id=$2)
-           AND edge.status IN ('pending','accepted')
+           AND (edge.status IN ('pending','accepted')
+             OR (edge.status='declined' AND edge.requested_by<>$2))
            AND NOT EXISTS (
              SELECT 1 FROM talks.safety_preferences sp
               WHERE sp.tenant_id=$1 AND sp.blocked=true
