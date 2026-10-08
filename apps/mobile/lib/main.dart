@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'src/localization/masanawa_localization.dart';
 import 'src/core/mobile_push.dart';
 import 'src/core/pending_deep_link.dart';
 import 'src/core/shell_deep_link.dart';
@@ -97,6 +98,10 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       theme: buildMasanawaTheme(brightness: Brightness.light),
       darkTheme: buildMasanawaTheme(brightness: Brightness.dark),
       themeMode: ThemeMode.system,
+      supportedLocales: MasanawaLocalization.supportedLocales,
+      localizationsDelegates: MasanawaLocalization.delegates,
+      localeResolutionCallback: (deviceLocale, supportedLocales) =>
+          MasanawaLocalization.resolve(deviceLocale, supportedLocales),
       routerConfig: router,
     );
   }
