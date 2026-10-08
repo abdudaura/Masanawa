@@ -720,6 +720,14 @@ speech and private commands distinct. Cards/states are not additional permanent 
 Test permission denial, audio privacy, barge-in, low literacy, RTL, interruptions and
 app restart; never require reading or typing to finish an advertised voice journey.
 
+## Additive communication screens and performance (C01–C08)
+
+The current S01–S107 design and root navigation remain in force. Add an adaptive **human Chats list** and **human DM conversation** as reusable routed states/sheets, rather than a new root tab or a duplicate UI for voice versus text. A person profile gets a conditional **Message** action; contact lookup and privacy, unread state, mute/block/report, send text and record/play voice notes reuse existing compact chat styling. AI-character conversation, public Talk comments and private human DMs remain different data/security realms. Do not reuse AI chat local history as an unproven human DM store.
+
+History is **server durable** with protected per-account **on-device indexed recent cache**, background delta sync, paginated older-message loading, lazy media, queued sends accurately marked pending and safe account-change cache clearing. Profile against provisional targets: cached Chats list under 1 second p95 warm navigation and cached thread under 500 ms p95 tap on representative low-cost Android; measure cold start, memory, frame times and network bytes. Do not block the first useful frame on wallet, AI or provider refresh. No manual backup/restore flow is demanded; history must still be accessible after restart and on another authenticated device. See C05.
+
+A contextual **Send** from a DM opens the *existing* eligible wallet quote/confirmation/receipt journey; it never executes directly from an untrusted message bubble. Gwani/Gwana commands entered by voice or typing invoke those same server-owned actions (C06/C07). A possible later Home · Chats · Wallet · Talk shell is **gated** by complete DM readiness and preserved Agent/Twin discovery (C08). Keep Home's vertical Explore/Live feeds, FAB, header controls and no extra tab.
+
 ## Latest shell, profile and persona acceptance
 
 APP-SHELL-CONTRACT.md supersedes older root placement in historical mockups.
