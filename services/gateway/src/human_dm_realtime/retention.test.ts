@@ -68,6 +68,28 @@ describe("C03 bounded private-message retention operator",()=>{
     expect(requests).toEqual([["tenant; DROP",30,50]]);
     expect(result).toEqual({deleted:4,batches:1,possiblyMore:false});
   });
+  it("propagates database failure and never advances extra batches",async()=>{
+    let calls=0;
+    const pool={async query(){
+      calls++;
+      if(calls===2)throw new Error("test transaction unavailable");
+      return {rows:[{deleted:2}],rowCount:1};
+    }};
+    await expect(pruneHumanDmJournal({
+      pool,tenantId:"tenant_a",batchSize:2,maxBatches:4,
+    })).rejects.toThrow("test transaction unavailable");
+    expect(calls).toBe(2);
+  });
+  it("rejects NULL, absent and nondecimal database replies instead of logging zero",async()=>{
+    for(const raw of [null,undefined,"",true,"01",1.5,-1,1001,"0.0"]) {
+      const pool={async query(){return {
+        rows:[{deleted:raw}],rowCount:1,
+      };}};
+      await expect(pruneHumanDmJournal({
+        pool,tenantId:"tenant_a",batchSize:1000,
+      })).rejects.toThrow("Invalid C03 prune result");
+    }
+  });
   it("caps runtime and reports possible remaining journal rows",async()=>{
     let calls=0;
     const result=await pruneHumanDmJournal({
