@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { ProfileAvatarError, type createProfileAvatarService } from "./service.js";
+import { AvatarMutationError, type createProfileAvatarService } from "./service.js";
 
 type AvatarService = ReturnType<typeof createProfileAvatarService>;
 
