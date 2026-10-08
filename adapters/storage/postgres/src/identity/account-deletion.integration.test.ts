@@ -194,6 +194,54 @@ describeDatabase("R12 durable PostgreSQL deletion request", () => {
     expect(result.rows[0]?.consumed_at).toBeNull();
   });
 
+  it("re-verifies a failed request without clearing existing settlement obligations", async () => {
+    const profile = await createPostgresPlatformSessionRepository(pool).createProfile({
+      tenantId, channel: "email",
+      identifier: `delete-recovery-${randomUUID()}@example.com`,
+      name: "Recovery Customer", locale: "en", createdAt,
+    });
+    const requests = createPostgresAccountDeletionRepository(pool);
+    const opened = await requests.open({
+      tenantId, userId: profile.userId, requestId: randomUUID(), now: createdAt,
+    });
+    const failed = await requests.transition({
+      tenantId, userId: profile.userId, expectedRevision: opened.revision,
+      target: "failed", now: createdAt, errorCode: "provider_unavailable",
+      outstandingObligations: ["unsettled transfer"],
+    });
+    const challenge = createPostgresAccountDeletionChallengeRepository(pool);
+    const codeHash = "e".repeat(64);
+    await challenge.put({
+      tenantId, userId: profile.userId, requestId: opened.requestId,
+      codeHash, channel: "email", now: createdAt,
+      expiresAt: new Date(Date.parse(createdAt) + 600000).toISOString(),
+      resendAfter: new Date(Date.parse(createdAt) + 60000).toISOString(),
+    });
+    const verified = await challenge.verify({
+      tenantId, userId: profile.userId, requestId: opened.requestId,
+      codeHash, expectedRevision: failed.revision, now: createdAt,
+    });
+    expect(verified.result).toBe("accepted");
+    if (verified.result !== "accepted") throw new Error("Expected accepted retry");
+    expect(verified.request.revision).toBe(3);
+    expect(verified.request.phase).toBe("identity-verified");
+    expect(verified.request.outstandingObligations).toEqual(["unsettled transfer"]);
+    await expect(requests.transition({
+      tenantId, userId: profile.userId, expectedRevision: 3,
+      target: "processing", now: createdAt,
+    })).rejects.toThrow("account_deletion.outstanding_obligations");
+    const audit = await pool.query<{ revision: string; phase: string }>(
+      `SELECT revision::text,phase FROM identity.account_deletion_events
+       WHERE request_id=$1::uuid ORDER BY revision`,
+      [opened.requestId],
+    );
+    expect(audit.rows).toEqual([
+      { revision: "1", phase: "requested" },
+      { revision: "2", phase: "failed" },
+      { revision: "3", phase: "identity-verified" },
+    ]);
+  });
+
   it("refuses audit-event tampering", async () => {
     const request = await createPostgresAccountDeletionRepository(pool).read({ tenantId, userId });
     await expect(pool.query(
