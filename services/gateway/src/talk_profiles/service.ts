@@ -21,6 +21,9 @@ export class TalkProfileError extends Error {
 }
 
 export interface TalkProfileService {
+  self(input: Readonly<{
+    authorizationHeader: string | undefined;
+  }>): Promise<HumanProfileView>;
   human(input: Readonly<{
     authorizationHeader: string | undefined;
     handle: string;
@@ -85,6 +88,17 @@ export function createTalkProfileService(input: Readonly<{
   }
 
   return Object.freeze<TalkProfileService>({
+    async self(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const profile = await input.repository.readHumanByUserId({
+        tenantId: viewer.tenantId,
+        viewerUserId: viewer.userId,
+        userId: viewer.userId,
+      });
+      if (!profile) throw new TalkProfileError("profiles.not_found", 404);
+      return profile;
+    },
+
     async human(request) {
       const viewer = await identity(request.authorizationHeader);
       const profile = await input.repository.readHuman({
