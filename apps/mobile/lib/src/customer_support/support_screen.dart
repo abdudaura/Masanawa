@@ -105,8 +105,14 @@ class _CustomerSupportScreenState extends ConsumerState<CustomerSupportScreen> {
       final tickets = await widget.transport.tickets();
       SupportOperationStatus? status;
       if (widget.operationKind != null && widget.operationReference != null) {
-        status = await widget.transport.operationStatus(
-          widget.operationKind!, widget.operationReference!);
+        // An unavailable or unowned operation must not hide past support tickets.
+        // New requests become GENERAL until the financial owner verifies it.
+        try {
+          status = await widget.transport.operationStatus(
+            widget.operationKind!, widget.operationReference!);
+        } catch (_) {
+          status = null;
+        }
       }
       if (!_current(owner, revision)) return;
       setState(() {
@@ -145,8 +151,8 @@ class _CustomerSupportScreenState extends ConsumerState<CustomerSupportScreen> {
       // This is the ONLY write. No transaction is retried, refunded or dispatched.
       final ticket = await widget.transport.submit(
         requestKey: requestKey,
-        kind: widget.operationKind?.code ?? 'general',
-        reference: widget.operationReference,
+        kind: _operation == null ? 'general' : widget.operationKind!.code,
+        reference: _operation == null ? null : widget.operationReference,
         summary: text,
         shareWithSupport: true,
       );
@@ -199,7 +205,7 @@ class _CustomerSupportScreenState extends ConsumerState<CustomerSupportScreen> {
                   if (widget.operationKind != null) ...[
                     Text(widget.operationKind!.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                     if (_operation == null)
-                      const Text('Payment status not confirmed. Do not duplicate the payment.')
+                      const Text('Payment status cannot be verified here. You may send a general support request without linking an unverified reference; do not repeat the payment.')
                     else ...[
                       Text('Reference: ${_operation!.referenceMask}'),
                       Text('Verified record: ${_operation!.phase}'),
