@@ -16,6 +16,24 @@ import '../wallet/wallet_screen.dart';
 import '../you/you_screen.dart';
 import 'my_twin_screen.dart';
 
+/// Filters the server-provided roster by presentation data only. A search
+/// result never grants AI Seat eligibility, a role or a service capability.
+List<AgentDirectoryEntry> matchingAgentEntries(
+  Iterable<AgentDirectoryEntry> entries,
+  String query,
+) {
+  final normalized = query.trim().toLowerCase();
+  if (normalized.isEmpty) return entries.toList(growable: false);
+  return [
+    for (final agent in entries)
+      if ([agent.displayName, agent.roleLabel, agent.about]
+          .join(' ')
+          .toLowerCase()
+          .contains(normalized))
+        agent,
+  ];
+}
+
 /// Compatibility class name retained while the consumer shell is migrated.
 ///
 /// Approved root shell: Home · Agents · Wallet · Talk.
@@ -109,15 +127,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _agents() {
     final directory = ref.watch(agentDirectoryProvider);
-    final agents = directory.agents.where((agent) {
-      if (_agentQuery.isEmpty) return true;
-      final searchable = [
-        agent.displayName,
-        agent.roleLabel,
-        agent.about,
-      ].join(' ').toLowerCase();
-      return searchable.contains(_agentQuery);
-    }).toList();
+    final agents = matchingAgentEntries(directory.agents, _agentQuery);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
