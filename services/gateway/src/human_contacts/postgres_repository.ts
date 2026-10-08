@@ -85,7 +85,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
         displayName: row.display_name,
         avatarUrl: row.avatar_url,
         status,
-        canMessage: row.status === "accepted" || row.admission_policy === "anyone",
+        canMessage: row.status === "accepted" || (row.admission_policy === "anyone" && row.status !== "declined"),
       });
     },
 
