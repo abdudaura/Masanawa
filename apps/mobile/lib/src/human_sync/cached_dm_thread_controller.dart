@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../core/request_id.dart';
@@ -62,9 +63,26 @@ class CachedDmThreadController extends ChangeNotifier {
       _active();
       if (myRevision != _revision) return;
       await restore();
+    } on DioException catch (e) {
+      if (!_disposed && myRevision == _revision) {
+        if (e.response?.statusCode == 403 || e.response?.statusCode == 404) {
+          // C05 store already revoked the thread; erase in-memory copies too.
+          messages = const [];
+          outbox = const [];
+          nextBefore = null;
+          error = 'Conversation is unavailable or access was revoked.';
+        } else {
+          error = 'Could not refresh messages. Cached history may be out of date.';
+        }
+      }
     } catch (_) {
       if (!_disposed && myRevision == _revision) {
-        error = 'Could not refresh messages. Cached history may be out of date.';
+        if (!sync.active) {
+          messages = const [];
+          outbox = const [];
+          nextBefore = null;
+        }
+        error = 'Could not refresh messages. Retry when connected.';
       }
     } finally {
       refreshing = false; _emit();

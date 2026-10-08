@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'dm_sync_coordinator.dart';
@@ -43,9 +44,19 @@ class CachedDmInboxController extends ChangeNotifier {
       await sync.refreshInbox();
       if (_disposed || !sync.active || epoch != _epoch) return;
       conversations = await sync.cache.inbox();
+    } on DioException catch (e) {
+      if (!_disposed && epoch == _epoch) {
+        if (e.response?.statusCode == 403) {
+          conversations = const [];
+          error = 'Chats unavailable; access was revoked.';
+        } else {
+          error = 'Could not update chats. Offline previews may be stale.';
+        }
+      }
     } catch (_) {
       if (!_disposed && epoch == _epoch) {
-        error = 'Could not update chats. Offline previews may be stale.';
+        if (!sync.active) conversations = const [];
+        error = 'Could not update chats. Retry when connected.';
       }
     } finally {
       if (!_disposed && epoch == _epoch) {

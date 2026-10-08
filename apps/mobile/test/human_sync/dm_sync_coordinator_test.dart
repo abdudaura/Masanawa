@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/human_sync/dm_sync_coordinator.dart';
+import 'package:masanawa/src/human_sync/cached_dm_thread_controller.dart';
 import 'package:masanawa/src/human_sync/protected_dm_cache.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -39,6 +40,24 @@ void main() {
     expect((await cache.messages('thread-a')).single['body'], 'Hello B');
   });
 
+  test('server revocation erases cached and in-memory conversation', () async {
+    await cache.putMessages('thread-a', [{
+      'messageId': 'one', 'conversationId': 'thread-a', 'sequence': '1',
+      'senderUserId': 'user-a', 'clientRequestId': 'request_unique_123456',
+      'body': 'Must not survive blocked status',
+      'createdAt': '2026-10-08T12:00:00Z',
+    }]);
+    final controller = CachedDmThreadController(
+        conversationId: 'thread-a', sync: coordinator);
+    await controller.restore();
+    expect(controller.messages, hasLength(1));
+    server.rejectHistory = true;
+    await controller.refresh();
+    expect(controller.messages, isEmpty);
+    expect(await cache.messages('thread-a'), isEmpty);
+    controller.dispose();
+  });
+
   test('same user across a different tenant is never accepted as same session', () async {
     final switched = DmSyncCoordinator(
       cache: cache, transport: server, currentOwnerId: () => 'user-a',
@@ -64,11 +83,21 @@ void main() {
 class _Server extends DmSyncTransport {
   bool loseResponse = false;
   bool reject = false;
+  bool rejectHistory = false;
   final List<String> ids = [];
   @override
   Future<List<Map<String, dynamic>>> inbox() async => [];
   @override
-  Future<List<Map<String, dynamic>>> history(String id, {String? before}) async => [];
+  Future<List<Map<String, dynamic>>> history(String id, {String? before}) async {
+    if (rejectHistory) {
+      throw DioException(
+        requestOptions: RequestOptions(path: '/messages'),
+        response: Response(requestOptions: RequestOptions(path: '/messages'),
+            statusCode: 403),
+        type: DioExceptionType.badResponse);
+    }
+    return [];
+  }
   @override
   Future<Map<String, dynamic>> send(String conversationId,
       String requestId, String body) async {
