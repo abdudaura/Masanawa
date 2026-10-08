@@ -30,13 +30,16 @@ language, country and currency are independent; support localized/RTL layouts.
 
 Exactly four primary destinations:
 
-1. **Home** — contains **Explore** and **Live Talks**
-2. **Create** — visually prominent action
-3. **Activity**
-4. **You**
+1. **Home** — Explore and Live Talks
+2. **Agents** — Masanawa Agents and Twins
+3. **Wallet** — balances, history and service intents
+4. **Talk** — private voice-first assistance
+
+Header: Activity bell + profile avatar. Start Talk is a green FAB that opens the public
+composer. Activity and You remain header destinations, not bottom tabs.
 
 Home discovery is always one vertical column of full-width Talk cards. Do not introduce
-horizontal Talk rails, horizontal card carousels or grid discovery. Create opens the Talk composer.
+horizontal Talk rails, horizontal card carousels or grid discovery. Start Talk FAB opens the Talk composer.
 
 ## Global private Gwani
 
@@ -51,12 +54,12 @@ Examples:
 - “Explain this.”
 - “Help me prepare for my Talk.”
 
-Gwani is not another bottom-navigation destination.
+The Talk root is the private assistant destination; contextual Gwani entries reuse it.
 
 ## Global wallet entry
 
-A compact balance/wallet entry may appear in You and relevant purchase contexts. Do not
-place wallet clutter in every header.
+Wallet is a bottom-navigation destination. Compact balance links may also appear in
+Profile/purchase contexts; do not duplicate financial clutter across every header.
 
 ---
 
@@ -716,3 +719,16 @@ actions use contextual voice commands with complete silent alternatives. Keep pu
 speech and private commands distinct. Cards/states are not additional permanent routes.
 Test permission denial, audio privacy, barge-in, low literacy, RTL, interruptions and
 app restart; never require reading or typing to finish an advertised voice journey.
+
+## Latest shell, profile and persona acceptance
+
+APP-SHELL-CONTRACT.md supersedes older root placement in historical mockups.
+Agents has Masanawa Agents/Twins tabs; service shortcuts initiate the private assistant
+with the selected intent. Crypto comes first in Wallet, followed by Data bundles,
+Airtime, Electricity and TV/Cable. Profile editing must upload/replace/crop/remove photo
+and save name/handle/bio, with permission denial, progress, retry, validation, restart and
+cross-surface propagation. Do not count a decorative edit icon as a working feature.
+
+An accessible private/public label resolves the shared word Talk. Keep existing routes
+for Activity/Profile and deep-link targets. Avatar removal yields a fallback, not a broken
+image. Full persona behavior acceptance is R19/DEFAULT-AI-PERSONAS.md.
