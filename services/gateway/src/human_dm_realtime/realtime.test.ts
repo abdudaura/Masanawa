@@ -167,4 +167,53 @@ describe("C03 human DM realtime",()=>{
     expect(attempts).toBe(2);
   });
 
+  it("requires C02 resnapshot for pruned cursors without replaying a partial page",async()=>{
+    const repo=createPostgresHumanDmRealtimeRepository({
+      async query() {
+        return {rows:[{
+          trimmed_through:"30",event_id:null,conversation_id:null,
+          kind:null,actor_user_id:null,message_id:null,message_sequence:null,
+        }] as never,rowCount:1};
+      },
+    });
+    expect(await repo.sync({tenantId:"t",userId:"u",after:"12",limit:50})).toEqual({
+      events:[],nextCursor:"30",hasMore:false,resetRequired:true,
+    });
+    const page=await repo.sync({tenantId:"t",userId:"u",after:"30",limit:50});
+    expect(page).toMatchObject({events:[],nextCursor:"30",resetRequired:false});
+  });
+
+  it("preserves DB-triggered resetRequired through the Gateway service",async()=>{
+    const {app}=harness({async sync(){return {
+      events:[],nextCursor:"99",hasMore:false,resetRequired:true,
+    };}});
+    const response=await app.inject({
+      method:"GET",url:"/messages/sync?cursor=10",
+      headers:{authorization:"Bearer good"},
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      resetRequired:true,nextCursor:"99",events:[],
+    });
+    await app.close();
+  });
+
+  it("refuses private event metadata if session revoked while SQL was in flight",async()=>{
+    let called=0;
+    const service=createHumanDmRealtimeService({
+      repository:{async sync(){return {
+        events:[{eventId:"1",conversationId:"c",kind:"access_changed",
+          actorUserId:"u",messageId:null,messageSequence:null}],
+        nextCursor:"1",hasMore:false,resetRequired:false,
+      };}},
+      authorizer:{async authorize(){
+        called++;
+        if(called>1)throw Object.assign(new Error("expired"),{statusCode:401});
+        return {tenantId:"t",userId:"u"} as never;
+      }},
+    });
+    await expect(service.sync({cursor:"0"})).rejects.toMatchObject({statusCode:401});
+    expect(called).toBe(2);
+  });
+
 });
