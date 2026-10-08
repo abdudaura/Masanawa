@@ -60,6 +60,7 @@ Future<void> createHumanChatCacheSchema(Database db, int version) async {
     CREATE TABLE threads (
       conversation_id TEXT PRIMARY KEY,
       peer_user_id TEXT NOT NULL,
+      display_name TEXT,
       updated_at_ms INTEGER NOT NULL,
       last_sequence INTEGER NOT NULL DEFAULT 0 CHECK(last_sequence >= 0),
       preview TEXT,
@@ -239,10 +240,12 @@ class HumanChatCache {
     final db = _forAccount(tenantId, userId);
     await db.rawInsert('''
       INSERT INTO threads
-        (conversation_id,peer_user_id,updated_at_ms,last_sequence,preview,unread_count)
-      VALUES (?,?,?,?,?,?)
+        (conversation_id,peer_user_id,display_name,updated_at_ms,last_sequence,preview,unread_count)
+      VALUES (?,?,?,?,?,?,?)
       ON CONFLICT(conversation_id) DO UPDATE SET
         peer_user_id=excluded.peer_user_id,
+        display_name=CASE WHEN excluded.updated_at_ms >= threads.updated_at_ms
+          THEN excluded.display_name ELSE threads.display_name END,
         updated_at_ms=MAX(threads.updated_at_ms,excluded.updated_at_ms),
         last_sequence=MAX(threads.last_sequence,excluded.last_sequence),
         preview=CASE WHEN excluded.updated_at_ms >= threads.updated_at_ms
@@ -252,6 +255,7 @@ class HumanChatCache {
     ''', [
       thread.conversationId,
       thread.peerUserId,
+      thread.displayName,
       thread.updatedAtMs,
       thread.lastSequence,
       thread.preview,
