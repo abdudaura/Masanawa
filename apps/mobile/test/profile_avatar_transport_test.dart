@@ -30,6 +30,7 @@ void main() {
       expect(options.path, '/profiles/me/avatar');
       expect(options.method, 'POST');
       expect(options.contentType, 'image/png');
+      expect(options.headers['x-avatar-expected'], 'v1:');
       expect(options.data, isA<Stream<List<int>>>());
       return _json(
         '{"avatarUrl":"https://images.masanawa.example/profile.png"}',
@@ -60,6 +61,7 @@ void main() {
     dio.httpClientAdapter = _Adapter((options) async {
       expect(options.method, 'DELETE');
       expect(options.path, '/profiles/me/avatar');
+      expect(options.headers['x-avatar-expected'], startsWith('v1:'));
       return _json('{"avatarUrl":null}');
     });
     await GatewayProfileAvatarTransport(api: ApiClient(dio: dio)).remove(expectedUrl: 'https://images.masanawa.example/old.png');
