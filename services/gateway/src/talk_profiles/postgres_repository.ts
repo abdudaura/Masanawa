@@ -222,15 +222,19 @@ export function createPostgresTalkProfileRepository(
       const statement = input.removeAvatar === true
         ? [
             "WITH previous AS (",
-            "SELECT avatar_url FROM talks.public_profiles",
+            "SELECT user_id,avatar_url FROM talks.public_profiles",
             "WHERE tenant_id=$1 AND user_id=$2 FOR UPDATE",
-            "), updated AS (", updateSql,
+            "), updated AS (",
+            "UPDATE talks.public_profiles p SET " + fields.join(", ") +
+              ",updated_at=clock_timestamp()",
+            "FROM previous WHERE p.tenant_id=$1 AND p.user_id=$2",
+            "AND previous.user_id=p.user_id",
+            "RETURNING p.user_id,previous.avatar_url AS prior_url",
             "), orphaned AS (",
             "UPDATE talks.profile_avatar_objects",
             "SET state='orphaned', updated_at=clock_timestamp()",
             "WHERE tenant_id=$1 AND user_id=$2 AND state='active'",
-            "AND public_url=(SELECT avatar_url FROM previous)",
-            "AND EXISTS (SELECT 1 FROM updated)",
+            "AND public_url=(SELECT prior_url FROM updated)",
             "RETURNING object_key",
             ") SELECT user_id FROM updated",
           ].join(" ")
