@@ -405,5 +405,17 @@
         "type": "int"
       }
     }
+  },
+  "twinShareText": "Talk with {name} on Masanawa: {url}",
+  "@twinShareText": {
+    "description": "Explicit share message for a public user-owned Twin; preserve exact name and canonical URL unchanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "url": {
+        "type": "String"
+      }
+    }
   }
 }
