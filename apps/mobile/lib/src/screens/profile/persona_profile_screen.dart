@@ -5,6 +5,7 @@ import '../../social/talk_social_profiles.dart';
 import '../../state/talk_social_profile_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
+import 'persona_report_sheet.dart';
 
 class PersonaProfileScreen extends ConsumerWidget {
   const PersonaProfileScreen({
@@ -72,6 +73,20 @@ class _PersonaBody extends StatelessWidget {
       backgroundColor: u.surfaceBg,
       appBar: AppBar(
         title: Text(isExpert ? 'Expert' : 'Twin'),
+        actions: [
+          IconButton(
+            key: const ValueKey('persona-profile-report'),
+            tooltip: 'Report AI persona',
+            icon: const Icon(Icons.flag_outlined),
+            onPressed: profile.publicId.trim().isEmpty
+                ? null
+                : () => showPersonaReportSheet(
+                      context,
+                      publicId: profile.publicId,
+                      displayName: profile.displayName,
+                    ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 18, 12, 28),
