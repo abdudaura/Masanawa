@@ -72,6 +72,16 @@ void main() {
     );
   });
 
+  test('revocation projection requires explicit request and cannot auto-message', () async {
+    final api = _client((options) async => _json(
+      '{"userId":"user_b","handle":"bob","displayName":"Bob",'
+      '"avatarUrl":null,"status":"revoked","canMessage":false}',
+    ));
+    final result = await GatewayHumanContactsTransport(api: api).lookup('bob');
+    expect(result?.status, HumanContactStatus.revoked);
+    expect(result?.canMessage, isFalse);
+  });
+
   test('do not send any request without canonical signed-in bearer', () async {
     var calls = 0;
     final api = _client((options) async {

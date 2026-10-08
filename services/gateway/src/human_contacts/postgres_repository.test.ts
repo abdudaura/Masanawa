@@ -20,6 +20,36 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("p.user_id <> $2");
     expect(result).toMatchObject({ status: "outgoing", canMessage: false });
   });
+  it("revoker sees explicit recovery eligibility without auto-granted messaging", async () => {
+    const pool: HumanContactSqlPool = {
+      async query() {
+        return { rows: [{
+          user_id: "user_bo", handle: "bob", display_name: "Bob",
+          avatar_url: null, admission_policy: "anyone", status: "declined",
+          requested_by: "user_al", revoked_by: "user_al",
+        }] as never, rowCount: 1 };
+      },
+    };
+    const repo = createPostgresHumanContactRepository(pool);
+    expect(await repo.lookup({ tenantId: "t", viewerId: "user_al", handle: "bob" }))
+      .toMatchObject({ status: "revoked", canMessage: false });
+    expect(await repo.lookup({ tenantId: "t", viewerId: "user_bo", handle: "bob" }))
+      .toMatchObject({ status: "declined", canMessage: false });
+  });
+
+  it("a revoke records the actor and cannot be replaced by the peer", async () => {
+    let sql = ""; let params: unknown[] = [];
+    const pool: HumanContactSqlPool = {
+      async query(q, v) { sql=q; params=v??[]; return { rows: [{ first_user_id: "user_al" }] as never, rowCount: 1 }; },
+    };
+    expect(await createPostgresHumanContactRepository(pool).revoke({
+      tenantId: "t", actorId: "user_al", otherUserId: "user_bo",
+    })).toBe(true);
+    expect(params).toEqual(["t", "user_al", "user_bo"]);
+    expect(sql).toContain("revoked_by=$2");
+    expect(sql).toContain("e.revoked_by IS NULL OR e.revoked_by=$2");
+  });
+
   it("updates one privacy field without resetting the other", async () => {
     let sql = ""; let params: unknown[] = [];
     const pool: HumanContactSqlPool = {
@@ -45,7 +75,10 @@ describe("C01 SQL contact admission", () => {
     const value = await createPostgresHumanContactRepository(pool).request({ tenantId: "t", requesterId: "user_al", handle: "bob" });
     expect(value).toBe("existing");
     expect(sql).toContain("ON CONFLICT (tenant_id,first_user_id,second_user_id)");
-    expect(sql).toContain("DO UPDATE SET status=talks.human_dm_contact_requests.status");
+    expect(sql).toContain("revoked_by=EXCLUDED.requested_by");
+    expect(sql).toContain("THEN 'pending'");
+    expect(sql).toContain("revoked_by=CASE");
+    expect(sql).toContain("updated_at=CASE");
     expect(sql).toContain("LEAST($2,user_id)");
     expect(sql).toContain("admission_policy");
     expect(sql).toContain("RETURNING status, requested_by");
@@ -61,6 +94,7 @@ describe("C01 SQL contact admission", () => {
     expect(params).toEqual(["t", "user_bo", "user_al", "accepted"]);
     expect(sql).toContain("e.requested_by=$3");
     expect(sql).toContain("(e.status='pending' OR e.status=$4)");
+    expect(sql).toContain("e.revoked_by IS NULL");
     expect(sql).toContain("sp.blocked=true");
     expect(sql).toContain("u.state='active'");
   });
@@ -74,5 +108,6 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("NOT EXISTS");
     expect(sql).toContain("sp.blocked=true");
     expect(params).toEqual(["t","user_al",30]);
+    expect(sql).toContain("edge.revoked_by IS NULL");
   });
 });

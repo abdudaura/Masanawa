@@ -141,7 +141,31 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
       tenantId: tenant, actorId: alice, otherUserId: bob,
     })).toBe(true);
     expect(await repo.lookup({ tenantId: tenant, viewerId: alice, handle: bobHandle }))
+      .toMatchObject({ status: "revoked", canMessage: false });
+    expect(await repo.lookup({ tenantId: tenant, viewerId: bob, handle: aliceHandle }))
       .toMatchObject({ status: "declined", canMessage: false });
+    // A past invitation response cannot override the revoker's choice.
+    expect(await repo.respond({
+      tenantId: tenant, recipientId: bob, requesterId: alice, accept: true,
+    })).toBe(false);
+    expect(await repo.request({ tenantId: tenant, requesterId: bob, handle: aliceHandle }))
+      .toBe("existing");
+    // Reconnect is a new pending consent flow, never automatic acceptance.
+    await repo.setOwnPreferences({ tenantId: tenant, userId: bob, policy: "anyone" });
+    expect(await repo.request({ tenantId: tenant, requesterId: alice, handle: bobHandle }))
+      .toBe("pending");
+    expect(await repo.lookup({ tenantId: tenant, viewerId: alice, handle: bobHandle }))
+      .toMatchObject({ status: "outgoing", canMessage: false });
+    expect(await repo.respond({
+      tenantId: tenant, recipientId: bob, requesterId: alice, accept: true,
+    })).toBe(true);
+    // Now Bob revokes; Alice cannot approve the previous relationship again.
+    expect(await repo.revoke({
+      tenantId: tenant, actorId: bob, otherUserId: alice,
+    })).toBe(true);
+    expect(await repo.respond({
+      tenantId: tenant, recipientId: bob, requesterId: alice, accept: true,
+    })).toBe(false);
   });
 
   it("checks reciprocal block and disabled accounts at authoritative query time", async () => {

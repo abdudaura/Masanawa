@@ -33,6 +33,7 @@ class _TestSessionController extends SessionController {
 class _ContactApi implements HumanContactsTransport {
   int requests = 0;
   bool fail = false;
+  bool wasRevoked = false;
   HumanContactPreferences prefs = const HumanContactPreferences(
     policy: HumanContactPolicy.requests,
     discoverableByHandle: true,
@@ -47,9 +48,11 @@ class _ContactApi implements HumanContactsTransport {
   @override
   Future<HumanContact?> lookup(String handle) async {
     if (handle != 'bob') return null;
-    return const HumanContact(
+    return HumanContact(
       userId: 'user_b', handle: 'bob', displayName: 'Bob',
-      avatarUrl: null, status: HumanContactStatus.none, canMessage: false,
+      avatarUrl: null,
+      status: wasRevoked ? HumanContactStatus.revoked : HumanContactStatus.none,
+      canMessage: false,
     );
   }
 
@@ -104,6 +107,28 @@ void main() {
     expect(api.requests, 1);
     expect(find.text('Contact request sent.'), findsOneWidget);
     expect(find.text('Request contact'), findsNothing);
+  });
+
+  testWidgets('revoked contact reconnect sends a new real request',
+      (tester) async {
+    final api = _ContactApi()..wasRevoked = true;
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        sessionProvider.overrideWith(_TestSessionController.new),
+        humanContactsTransportProvider.overrideWithValue(api),
+      ],
+      child: const MaterialApp(home: HumanContactsScreen()),
+    ));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'bob');
+    await tester.tap(find.text('Find'));
+    await tester.pumpAndSettle();
+    expect(find.text('You removed this connection'), findsOneWidget);
+    expect(find.text('Request reconnect'), findsOneWidget);
+    await tester.tap(find.text('Request reconnect'));
+    await tester.pumpAndSettle();
+    expect(api.requests, 1);
+    expect(find.text('Contact request sent.'), findsOneWidget);
   });
 
   testWidgets('request denial surfaces error, not false sent confirmation',
