@@ -86,6 +86,8 @@
 
 **Never delete unresolved evidence, auto-close all PRs or force-apply stale branch diffs to current main.** Later Work must produce final open/closed/merged accounting.
 
+**Reference-only messaging PR #467:** existing open [messaging UX benchmark and implementation guide](https://github.com/Baatiku/masanawa/pull/467) is an **unmerged advisory/reference document**, not a new C02 authority. **F15/F16/U10/U19** should inspect its useful UX/performance evidence before replacing it or treating its benchmarks as executed tests. It must receive a documented merge/supersede disposition just like code PRs.
+
 ## 6. Remaining platform-wide problems outside individual R/C feature PRs
 
 - **DB/restore/portability:** production-safe migration-only path; PG18/pgvector extension/roles/manifests; `/readyz` vs `/healthz`; real encrypted off-account backup and restored copy; no demo bootstrap; worker outbox reconciliation; no split-brain after cutover. Account/provider-level verification still not done.
