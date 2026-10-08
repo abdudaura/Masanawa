@@ -20,6 +20,11 @@ export interface TransferRiskPolicy {
   }): Promise<{ allowed: boolean; revision: string }>;
 }
 export interface InternalCryptoTransferService {
+  capabilities(input: { authorizationHeader: string | undefined }): Promise<{
+    enabled: boolean; reason: string | null; routes: readonly {
+      providerCode: string; asset: string; network: string | null;
+    }[];
+  }>;
   quote(input: {
     authorizationHeader: string | undefined; quoteRequestId: string;
     recipientUserId: string; providerCode: string; amount: string;
@@ -88,6 +93,24 @@ export function createInternalCryptoTransferService(input: {
     return a;
   }
   return Object.freeze<InternalCryptoTransferService>({
+    async capabilities(request) {
+      await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
+      if (!input.policy) return { enabled: false,
+        reason: "kyc_aml_limits_policy_not_configured", routes: [] };
+      try {
+        const eligible = await input.financial.listWithdrawalRoutes({
+          authorizationHeader: request.authorizationHeader,
+        });
+        return { enabled: eligible.length > 0,
+          reason: eligible.length === 0 ? "custody_route_not_qualified" : null,
+          routes: eligible.map(route => ({
+            providerCode: route.providerCode, asset: route.asset, network: route.network,
+          })),
+        };
+      } catch {
+        return { enabled: false, reason: "custody_evidence_unavailable", routes: [] };
+      }
+    },
     async quote(request) {
       const q = requestId(request.quoteRequestId);
       let terms;
