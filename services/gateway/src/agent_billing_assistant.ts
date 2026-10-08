@@ -167,6 +167,7 @@ function categoryCode(service: Extract<Directive, { type: "billing.quote" }>["se
 }
 
 type PayableQuote = Readonly<{ quote: Readonly<{
+  itemName: string;
   customerId: string;
   totalAmountKobo: number;
 }> }>;
@@ -174,16 +175,20 @@ type PayableQuote = Readonly<{ quote: Readonly<{
 function quoteBoundConsentPhrase(view: PayableQuote): string {
   // The amount is formatted from canonical integer kobo. The actual provider
   // recipient and price must be repeated to prevent incidental "yes" spending.
-  return `Confirm bill to ${view.quote.customerId} for ${formatNgnKobo(view.quote.totalAmountKobo)} naira`;
+  return `Confirm ${view.quote.itemName} bill to ${view.quote.customerId} for ${formatNgnKobo(view.quote.totalAmountKobo)} naira`;
 }
 
 function matchesQuoteBoundConsent(userText: string, view: PayableQuote): boolean {
   if (userText.length > 512) return false;
   const spoken = userText.trim().replace(/\s+/gu, " ");
-  const match = /^(?:confirm bill to (.+?) for ([0-9]+(?:\.[0-9]{1,2})?) (?:naira|ngn)|tabbatar da biya ga (.+?) na ([0-9]+(?:\.[0-9]{1,2})?) naira)$/iu.exec(spoken);
+  const match = /^(?:confirm (.+?) bill to (.+?) for ([0-9]+(?:\.[0-9]{1,2})?) (?:naira|ngn)|tabbatar da biya ga (.+?) ga (.+?) na ([0-9]+(?:\.[0-9]{1,2})?) naira)$/iu.exec(spoken);
   if (!match) return false;
-  const recipient = (match[1] ?? match[3] ?? "").trim();
-  const amount = match[2] ?? match[4] ?? "";
+  const itemName = (match[1] ?? match[4] ?? "").trim();
+  const recipient = (match[2] ?? match[5] ?? "").trim();
+  const amount = match[3] ?? match[6] ?? "";
+  if (itemName.toLowerCase() !== view.quote.itemName.trim().toLowerCase()) {
+    return false;
+  }
   // Case folding is presentation-only; purchase uses the verbatim immutable
   // customerId already stored in the owner-authenticated server quote.
   if (recipient.toLowerCase() !== view.quote.customerId.trim().toLowerCase()) {
@@ -370,7 +375,7 @@ export function createAgentBillingAssistant(input: Readonly<{
       // Spoken and typed approvals share the exact same server quote guard.
       // Do not treat a generic answer to some other agent question as consent.
       if (isExplicitPaymentConsent(request.text) ||
-          /^confirm bill to /iu.test(request.text.trim()) ||
+          /^confirm .+ bill to /iu.test(request.text.trim()) ||
           /^tabbatar da biya ga /iu.test(request.text.trim())) {
         return executeDirective(
           request.authorizationHeader,
