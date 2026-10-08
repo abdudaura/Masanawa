@@ -20,7 +20,7 @@ const otherUserId = createCanonicalId("user");
 const beginAt = "2026-10-08T01:00:00.000Z";
 const pepper = "A-long-server-side-deletion-purpose-pepper-0123456789";
 
-function harness(options: { deliveryFails?: boolean; email?: boolean } = {}) {
+function harness(options: { deliveryFails?: boolean; email?: boolean; failVerificationTransition?: boolean } = {}) {
   let currentAt = beginAt;
   let activeUser = userId;
   let record: AccountDeletionRequest | null = null;
@@ -29,6 +29,7 @@ function harness(options: { deliveryFails?: boolean; email?: boolean } = {}) {
     expiresAt: string; attempts: number; consumed: boolean;
   } | null = null;
   const deliveries: string[] = [];
+  let failTransitionOnce = options.failVerificationTransition === true;
 
   const sessions: PlatformCustomerSessionAuthorizer = {
     async authorize({ authorizationHeader }) {
@@ -93,6 +94,10 @@ function harness(options: { deliveryFails?: boolean; email?: boolean } = {}) {
       }
       // The double simulates the single durable transaction in PostgreSQL:
       // transition first, then consume; no half-success visible to callers.
+      if (failTransitionOnce) {
+        failTransitionOnce = false;
+        throw new Error("simulated verification transaction rollback");
+      }
       record = transitionAccountDeletion(record, {
         target: "identity-verified", expectedRevision: input.expectedRevision,
         identityReauthenticated: true, now: input.now,
@@ -215,15 +220,20 @@ describe("R12 authenticated deletion intake", () => {
     expect(result.request).not.toHaveProperty("outstandingObligations");
   });
 
-  it("does not consume a valid code if the state update fails", async () => {
-    const h = harness();
+  it("retains the valid code across failed transactional update and supports retry", async () => {
+    const h = harness({ failVerificationTransition: true });
     await h.service.request(auth);
-    // The production transaction enforces this; the fake exercises the
-    // replay contract: one correct verify and no second acceptance.
-    const first = await h.service.verify({
+    await expect(h.service.verify({
+      authorizationHeader: auth, code: h.deliveries[0]!,
+    })).rejects.toThrow("simulated verification transaction rollback");
+    expect(h.current()?.phase).toBe("requested");
+    expect(h.challenge()?.consumed).toBe(false);
+
+    const afterRetry = await h.service.verify({
       authorizationHeader: auth, code: h.deliveries[0]!,
     });
-    expect(first.revision).toBe(2);
+    expect(afterRetry.phase).toBe("identity-verified");
+    expect(afterRetry.revision).toBe(2);
     expect(h.challenge()?.consumed).toBe(true);
     await expect(h.service.verify({
       authorizationHeader: auth, code: h.deliveries[0]!,
