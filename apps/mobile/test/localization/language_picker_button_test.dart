@@ -40,6 +40,40 @@ Future<void> _mountPicker(
 }
 
 void main() {
+  testWidgets('changing a saved UI language rebuilds translated labels live',
+      (tester) async {
+    final store = _TestStore();
+    final controller = LocalePreferenceController(store);
+    await controller.load();
+    await tester.pumpWidget(
+      ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) => LocalePreferenceScope(
+          controller: controller,
+          child: MaterialApp(
+            locale: controller.override,
+            supportedLocales: MasanawaLocalization.supportedLocales,
+            localizationsDelegates: MasanawaLocalization.delegates,
+            home: const Scaffold(body: LanguagePickerButton()),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('App language'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('language-picker')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('language-fr')));
+    await tester.tap(find.byKey(const Key('language-fr')));
+    await tester.pumpAndSettle();
+
+    expect(store.value, 'fr');
+    expect(find.text('Langue de l’application'), findsOneWidget);
+    expect(find.text('App language'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
   testWidgets('language picker stores an explicit UI language choice',
       (tester) async {
     final store = _TestStore();
