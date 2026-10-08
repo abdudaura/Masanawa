@@ -45,6 +45,25 @@ export class OperatorReadbackFailure extends Error {
   }
 }
 
+export interface AuditedSkillRemoval {
+  /** MUST check tenant/operator approval and atomically CAS + journal audit.
+   * An implementation that only logs after writing is not permitted. */
+  removeAndAudit(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly characterId: string;
+    readonly skillVersionId: string;
+    readonly expectedRevision: number;
+    readonly remainingSkillVersionIds: readonly string[];
+  }): Promise<{ readonly revision: number }>;
+}
+
+export class OperatorMutationNotConfigured extends Error {
+  constructor() {
+    super("Audited operator mutation is unavailable");
+    this.name = "OperatorMutationNotConfigured";
+  }
+}
+
 export interface OperatorAgentControl {
   snapshot(input: { authorizationHeader: string | undefined }): Promise<OperatorAgentSnapshot>;
   detachSkill(input: {
@@ -77,6 +96,7 @@ function requiredId(value: string): string {
 export function createOperatorAgentControl(input: {
   readonly admin: AgentAdminService;
   readonly authorizer: AgentAdminAuthorizer;
+  readonly auditedRemoval?: AuditedSkillRemoval;
   readonly now?: () => string;
 }): OperatorAgentControl {
   const now = input.now ?? (() => new Date().toISOString());
@@ -146,16 +166,16 @@ export function createOperatorAgentControl(input: {
         throw new OperatorRevisionConflict();
       }
       const remaining = current.skillVersionIds.filter((id) => id !== request.skillVersionId);
-      // Do not rewrite the assignment on an already-removed/no-op mutation.
-      const result = await input.admin.putSkillAssignment({
+      // Never perform an unaudited privileged mutation. The injected writer
+      // must commit the assignment CAS and durable operator audit together in
+      // one authorized transaction; the ordinary admin repository cannot.
+      if (!input.auditedRemoval) throw new OperatorMutationNotConfigured();
+      const result = await input.auditedRemoval.removeAndAudit({
         authorizationHeader: request.authorizationHeader,
+        characterId: current.characterId,
+        skillVersionId: request.skillVersionId,
         expectedRevision: current.revision,
-        assignment: {
-          schemaVersion: 1,
-          characterId: current.characterId,
-          skillVersionIds: remaining,
-          revision: current.revision,
-        },
+        remainingSkillVersionIds: remaining,
       });
       const confirmed = await input.admin.readSkillAssignment({
         authorizationHeader: request.authorizationHeader,
