@@ -30,7 +30,7 @@ function store(fetchImpl: typeof fetch) {
 
 describe("R18 owner-scoped private S3 avatar writes", () => {
   it("signs the exact WebP payload, fixes content type and returns a CDN URL", async () => {
-    const mock = vi.fn(async (_url: URL | string, _init?: RequestInit) => new Response(null, { status: 200 }));
+    const mock = vi.fn(async (_url: URL | string, _init: RequestInit) => new Response(null, { status: 200 }));
     const result = await store(mock as unknown as typeof fetch).put(owner, avatar);
     expect(mock).toHaveBeenCalledOnce();
     const [url, init] = mock.mock.calls[0]!;
@@ -55,7 +55,7 @@ describe("R18 owner-scoped private S3 avatar writes", () => {
   });
 
   it("rejects mismatching digest and owner escape without requesting S3", async () => {
-    const mock = vi.fn(async (_url: URL | string, _init?: RequestInit) => new Response(null, { status: 200 }));
+    const mock = vi.fn(async (_url: URL | string, _init: RequestInit) => new Response(null, { status: 200 }));
     const storage = store(mock as unknown as typeof fetch);
     await expect(storage.put(owner, { ...avatar, sha256: "a".repeat(64) }))
       .rejects.toThrow("checksum");
@@ -68,13 +68,13 @@ describe("R18 owner-scoped private S3 avatar writes", () => {
   });
 
   it("does not expose a success URL until object PUT succeeded", async () => {
-    const mock = vi.fn(async (_url: URL | string, _init?: RequestInit) => new Response(null, { status: 503 }));
+    const mock = vi.fn(async (_url: URL | string, _init: RequestInit) => new Response(null, { status: 503 }));
     await expect(store(mock as unknown as typeof fetch).put(owner, avatar))
       .rejects.toThrow("profile.avatar.object_write_failed");
   });
 
   it("deletes only a generated immutable key and treats already missing keys as deleted", async () => {
-    const mock = vi.fn(async (_url: URL | string, _init?: RequestInit) => new Response(null, { status: 404 }));
+    const mock = vi.fn(async (_url: URL | string, _init: RequestInit) => new Response(null, { status: 404 }));
     const storage = store(mock as unknown as typeof fetch);
     await storage.delete(owner, digest);
     expect(mock).toHaveBeenCalledOnce();
