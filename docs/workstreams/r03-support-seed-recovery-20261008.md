@@ -20,7 +20,7 @@ The original full Gwani+Gwana empty-tenant bootstrap behavior remains; new recov
 - `9a9f73f6af279a36ecd8d1d6d796aa1637b708e7` — partial support, admin default/voice, hidden presentation cases.
 - `d95e96b9c86c0844e520bae6699ee7d9303ab5fd` — missing-profile presentation reuse and same-name admin specialist regression tests.
 - Readback checked modified source and **7 authored Vitest cases** total in the existing suite. This is source inspection, not successful unit or integration execution.
-- Foundation CI workflow #37735324997 had a job with zero recorded steps when inspected; completion/runner status must be checked again. The remote workflows consistently fail before job steps, and this environment has no checked-out repository or installed Node 24/pnpm 12 dependencies. **Do not claim passing typecheck/test/build.**
+- Foundation CI workflow #37735371016 completed **failure**, with job steps empty and log fetch returning a 404 BlobNotFound. This did not execute tests or reveal a code failure. The earlier run #37735324997 was also observed with zero steps. The remote workflows consistently fail before job steps, and this environment has no checked-out repository or installed Node 24/pnpm 12 dependencies. **Do not claim passing typecheck/test/build.**
 
 ## Required follow-on work
 
