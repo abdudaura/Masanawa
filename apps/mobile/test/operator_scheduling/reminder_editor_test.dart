@@ -17,7 +17,7 @@ void main() {
     expect(tester.widget<FilledButton>(button).onPressed,isNotNull);
     await tester.tap(button);
     await tester.pumpAndSettle();
-    expect(captured,singleElement);
+    expect(captured,hasLength(1));
     expect(captured.single['optedIn'],true);
     expect(captured.single['kind'],'talk_reminder');
     expect(captured.single.containsKey('amount'),false);

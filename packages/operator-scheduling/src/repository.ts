@@ -192,8 +192,7 @@ export function createPostgresScheduleRepository(pool: SqlPool): ScheduleReposit
           const s = record(row);
           const when = s.nextDueAt!;
           const next = nextOccurrence(s,Math.max(now.getTime(),Date.parse(when)));
-          const sequence = Number(row["sequence"] ?? 0) + 1;
-          // sequence is not among public fields; increment atomically and fetch.
+          // Sequence is incremented atomically by the database.
           const changed = await c.query<{sequence: number}>(
             `UPDATE operator_scheduling.schedules
              SET sequence=sequence+1,next_due_at=$2,updated_at=clock_timestamp()
@@ -205,7 +204,7 @@ export function createPostgresScheduleRepository(pool: SqlPool): ScheduleReposit
              SELECT $1,schedule_id,tenant_id,user_id,$2,revision,$3,'claimed',$4,$5
              FROM operator_scheduling.schedules WHERE schedule_id=$6
              RETURNING ${occurrenceFields}`,
-            [randomUUID(),changed.rows[0]?.sequence ?? sequence,when,randomUUID(),
+            [randomUUID(),changed.rows[0]!.sequence,when,randomUUID(),
              new Date(now.getTime()+30_000).toISOString(),s.id]);
           all.push(occurrence(item.rows[0]!));
         }
@@ -239,15 +238,15 @@ export function createPostgresScheduleRepository(pool: SqlPool): ScheduleReposit
     async markStarted(item, now) {
       const result = await pool.query<{occurrence_id:string}>(
         `UPDATE operator_scheduling.occurrences o
-         SET state='sending',sending_at=$4,lease_until=NULL
+         SET state='sending',sending_at=$3,lease_until=NULL
          WHERE o.occurrence_id=$1 AND o.lease_token=$2 AND o.state='claimed'
-           AND o.lease_until>=$4
+           AND o.lease_until>=$3
            AND EXISTS(SELECT 1 FROM operator_scheduling.schedules s
               WHERE s.schedule_id=o.schedule_id AND s.tenant_id=o.tenant_id
                 AND s.user_id=o.user_id AND s.state='active'
                 AND s.revision=o.schedule_revision)
          RETURNING occurrence_id`,
-        [item.occurrenceId,item.leaseToken,item.scheduleId,now.toISOString()]);
+        [item.occurrenceId,item.leaseToken,now.toISOString()]);
       return result.rows.length === 1;
     },
     async markSkipped(item, now) {

@@ -1,12 +1,18 @@
 import type {FastifyInstance} from "fastify";
 import Type from "typebox";
-import type {ScheduleService} from "@masanawa/operator-scheduling";
+/** Structural service seam; composer/manifest owned by F18. */
+export interface OperatorScheduleApi {
+  list(header: string | undefined): Promise<readonly unknown[]>;
+  create(input: {authorizationHeader: string | undefined;requestId: string;spec: unknown}): Promise<unknown>;
+  change(input: {authorizationHeader: string | undefined;scheduleId: string;
+    revision: number;action: "pause" | "resume" | "cancel"}): Promise<unknown>;
+}
 
 /** Standalone plugin. F11/F18 must compose only after identity and
  * reference-access adapters, DB migration, R14 push, and worker are live.
  */
 export function registerOperatorSchedulingRoutes(
-  app: FastifyInstance, schedules: ScheduleService,
+  app: FastifyInstance, schedules: OperatorScheduleApi,
 ): void {
   app.get("/v1/operator/schedules", async (request) => ({
     schedules: await schedules.list(request.headers.authorization),

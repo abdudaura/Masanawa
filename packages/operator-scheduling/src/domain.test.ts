@@ -31,8 +31,8 @@ describe("U25 civil scheduling and privacy",()=>{
   });
   it("chooses only one minute in the fallback ambiguous hour",()=>{
     const spec=validateSpec({...daily,timezone:"Europe/Berlin",localTime:"02:30"},now);
-    const first=nextOccurrence(spec,Date.parse("2027-10-25T00:00:00Z"));
-    expect(first).toBe("2027-10-25T01:30:00.000Z");
+    const first=nextOccurrence(spec,Date.parse("2027-10-31T00:00:00Z"));
+    expect(first).toBe("2027-10-31T00:30:00.000Z");
   });
   it("rejects one-off schedule with wrong syntax or historical time",()=>{
     const once={...daily,frequency:"once",runAt:"2026-10-08T14:30:00Z"};
