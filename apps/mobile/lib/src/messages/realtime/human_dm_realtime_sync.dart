@@ -111,13 +111,22 @@ class HumanDmRealtimeSync {
           cancelToken:cancel,
         );
         _checkActive();
-        if (page.resetRequired && _cursor != null) {
+        // The authoritative journal may have pruned an old cursor or
+        // rejected an implausible future cursor (e.g. account-scoped store
+        // corruption). Refresh the COMPLETE authorized C02 inbox/history
+        // before saving the server's recovery checkpoint. Only this explicit
+        // reset can legitimately move a previous cursor backward.
+        final recovering = page.resetRequired && _cursor != null;
+        if (recovering) {
           await projection.refreshAll();
           _checkActive();
         }
         final previous = int.parse(_cursor ?? '0');
-        if (int.parse(page.nextCursor) < previous ||
-            (page.hasMore && page.events.isEmpty)) {
+        if ((int.parse(page.nextCursor) < previous && !recovering) ||
+            (page.hasMore && page.events.isEmpty) ||
+            (recovering && page.events.isNotEmpty &&
+                int.parse(page.events.first.eventId) <= int.parse(page.nextCursor) &&
+                int.parse(page.nextCursor) < previous)) {
           throw const FormatException('Invalid private message sync advance');
         }
         // Group repeated message events by thread; access changes take
