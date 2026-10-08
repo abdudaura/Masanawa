@@ -19,3 +19,7 @@
 - **Verification:** Source readback and SQL-shape check only. No Vitest, TypeScript typecheck, PostgreSQL integration test or Android/deployed acceptance was executable from this GitHub connector. Must run `pnpm exec vitest run services/gateway/src/talks/replay_visibility.test.ts services/gateway/src/talks/postgres_repository.test.ts services/gateway/src/talk_safety/enforcement_integration.test.ts`, Gateway typecheck/build and actual DB safety filter tests.
 - **Remaining:** authenticated end-to-end feed/detail/comment with real publishing/moderation races, safety-hidden existing comments and cache invalidation, replay audio access, channel/moderation rollout. Do not claim full R15 success.
 - **Ownership:** limited to the above SQL hunks and regression file; no activity in other owners' live backend, financial or mobile paths. Branch must remain draft pending executable proof.
+
+## Additional isolated feed/detail block audit
+
+An authorized viewer's personal block of a Host was already honored in feeds and detail. The inverse Host-blocks-viewer relationship was enforced for new comments but **not** for Talk discovery/detail. The same owned `listTalks/getTalk` SQL hunks and `replay_visibility.test.ts` will now enforce bidirectional block before public visibility; Host-own access and existing muted-subject behavior remain intact. This expands the current claim before editing, does not modify shared financial/live files, and is still subject to real DB/CI verification.
