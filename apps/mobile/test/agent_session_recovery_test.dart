@@ -106,4 +106,20 @@ void main() {
     }
   });
 
+  test('401 in an empty streamed turn requires sign-in but never blind replay', () {
+    final denied = streamedAgentTurnError(
+      {'type': 'error', 'code': 'auth_required'},
+      outputReceived: false,
+    );
+    expect(denied.statusCode, 401);
+    expect(denied.code, 'AUTH_REQUIRED');
+    expect(isRecoverableAgentSessionError(denied), isFalse);
+    final ambiguous = streamedAgentTurnError(
+      {'type': 'error', 'code': 'auth_required'},
+      outputReceived: true,
+    );
+    expect(ambiguous.code, 'AGENT_TURN_OUTCOME_UNKNOWN');
+    expect(isRecoverableAgentSessionError(ambiguous), isFalse);
+  });
+
 }
