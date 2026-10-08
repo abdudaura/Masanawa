@@ -29,6 +29,7 @@ export function registerTalkSafetyRoutes(
           ]),
           detail:Type.Optional(Type.Union([Type.String({minLength:1,maxLength:2000}),Type.Null()])),
           clientRequestId:Type.String({minLength:1,maxLength:256}),
+          expectedReporterUserId:Type.Optional(Type.String({minLength:3,maxLength:256})),
         },{additionalProperties:false}),
       },
     },
@@ -39,6 +40,7 @@ export function registerTalkSafetyRoutes(
         reason:"spam"|"harassment"|"hate"|"sexual"|"violence"|"self-harm"|"fraud"|"impersonation"|"privacy"|"other";
         detail?:string|null;
         clientRequestId:string;
+        expectedReporterUserId?:string;
       };
       const result=await service.report({
         authorizationHeader:request.headers.authorization,
