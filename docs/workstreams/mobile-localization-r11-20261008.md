@@ -3,7 +3,7 @@
 Owner: ChatGPT R11 localization window
 Branch: `work/mobile-locale-foundation-r11-20261008`
 Base main SHA: `265f2c5f6db81d076f57ca32dd47db3ff7fb0ad6`
-Last code commit: `62ad3ba24c0a46bcf430e82b306c7c3d5a9ca38b`
+Last code commit: `1a4d88621edca4ad3aeb5623eb7cdd652dbef86f`
 Owned: `apps/mobile/l10n.yaml`, `apps/mobile/lib/l10n/app_*.arb`, `apps/mobile/lib/src/localization/*`, `apps/mobile/lib/main.dart`, `apps/mobile/pubspec.yaml`, `apps/mobile/test/localization/*`, this claim.
 Out of scope: theme R01 (#406), router/shell, shared backend, finances, migrations.
 
@@ -12,6 +12,8 @@ Out of scope: theme R01 (#406), router/shell, shared backend, finances, migratio
 - ARB sources for English, Hausa, Arabic, French, Spanish and Portuguese. English template contains translation context, ICU pluralization, typed money-label placeholders; each locale contains corresponding translations. Initial vocabulary only, not full app localization.
 - `generate: true`, `intl`, `l10n.yaml`, and generated delegate wired into `MaterialApp`.
 - Device-locale negotiation with English fallback; Arabic RTL uses Flutter Widgets delegate.
+- Added secure persisted manual UI locale selection controller, null=follow OS locale, save-before-apply semantics, graceful storage-read failure, and lifecycle-safe MaterialApp rebuilding without resetting router. This is infrastructure only: settings selector has not yet been wired.
+- Added focused controller tests for restart persistence, clearing overrides, corrupt storage, write failure, unsupported locales.
 - Added generated-resource, ICU plural, formatting and RTL tests.
 - Presentation-only formatters for numbers/dates/native financial amounts; never convert balances or decide currency based on language.
 - Deliberate Hausa restriction: stock Flutter Material/Cupertino localizations lack Hausa. Its ARB app-language messages exist but native dialog/calendar controls require a correctly audited Hausa framework delegate. Current MaterialApp supportedLocales remain en/ar/fr/es/pt; Hausa is **not** claimed working.
@@ -33,7 +35,7 @@ Merge with theme PR #406 carefully: both PRs touch `main.dart` while owning diff
 ## Completion requirements (R11 still OPEN)
 1. Proper Hausa Material/Cupertino translations and locale delegate tests; do not alias Hausa to a different language silently.
 2. Move entire UI to generated typed keys (including auth, Talk/Seats, profiles, finance, errors, permissions, receipts, privacy and support), avoid untranslated fallback in release.
-3. Persist manual locale preference with device-language default and implement OS locale updates.
+3. Add a working Settings language selector wired to the persisted controller (currently controller exists but no user-facing selection route), and verify runtime OS locale changes on device.
 4. Unit/RTL/golden/widget/device tests for long strings, dynamic currency/date formats, bidi identifiers, screen reader/accessibility and large text.
 5. Native translators review copy, including Hausa terminology and safety/financial consent phrases. Confirm correct plural/RTL in context.
 6. Keep UI language, conversation/code switching, account jurisdiction and provider currencies completely separate.
