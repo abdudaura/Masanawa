@@ -87,4 +87,18 @@ describeDb("C02 human DM real PostgreSQL concurrency/privacy",()=>{
     expect(await repo.history({tenantId:tenant,userId:a,conversationId,limit:30})).toBeNull();
     expect(await repo.inbox({tenantId:tenant,userId:a,limit:30})).toEqual([]);
   });
+  it("contact revocation revokes old message history and unauthorized retries",async()=>{
+    await pool.query(`DELETE FROM talks.safety_preferences
+      WHERE tenant_id=$1 AND viewer_user_id=$2 AND subject_user_id=$3`,[tenant,b,a]);
+    await pool.query(`INSERT INTO talks.human_dm_contact_requests
+      (tenant_id,first_user_id,second_user_id,requested_by,status)
+      VALUES ($1,LEAST($2,$3),GREATEST($2,$3),$2,'declined')`,[tenant,a,b]);
+    const repo=createPostgresHumanDmRepository(pool);
+    expect(await repo.history({tenantId:tenant,userId:a,conversationId,limit:40})).toBeNull();
+    expect(await repo.inbox({tenantId:tenant,userId:a,limit:40})).toEqual([]);
+    const body="revoked send";
+    expect(await repo.send({tenantId:tenant,userId:a,conversationId,
+      clientRequestId:"request_"+randomUUID().replaceAll("-",""),body,
+      sha256:createHash("sha256").update(body).digest("hex")})).toBe("forbidden");
+  });
 });
