@@ -330,3 +330,11 @@ role collapse, Host departure/removal, private/public separation and a user's go
 Agents can be immersive without claiming to be human, hiding their nature, inventing
 memories or manipulating attachment. Persistent private memory is consented/editable/
 deletable and never copied into public Talk context by default.
+
+## Deferred web implementation
+
+`docs/WEB-APP-PLAN.md` (refer to WEB-APP-PLAN.md from this directory) defines the later consumer web experience and W01–W06 phases.
+It follows Home · Agents · Wallet · Talk, seventeen personas, voice-first services and
+shared account/financial authority. Existing apps/web is a foundation scaffold, not a
+completed consumer app. Web implementation is explicitly DEFERRED; preserve current
+mobile R01–R19 and shared integration priorities. Planning reserves no web code paths.
