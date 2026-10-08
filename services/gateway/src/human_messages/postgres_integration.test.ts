@@ -28,7 +28,7 @@ describeDb("C02 human DM real PostgreSQL concurrency/privacy",()=>{
       await pool.query(`INSERT INTO identity.users(tenant_id,user_id,created_at,updated_at)
         VALUES($1,$2,$3,$3)`,[tenant,user,now]);
       await pool.query(`INSERT INTO talks.public_profiles(tenant_id,user_id,handle,display_name)
-        VALUES($1,$2,$3,$4)`,[tenant,user,"c02"+user.slice(-18),user]);
+        VALUES($1,$2,$3,$4)`,[tenant,user,user.replace(/[^a-z0-9]/g,"").slice(0,38),user]);
     }
     await pool.query(`INSERT INTO talks.human_dm_preferences(tenant_id,user_id,admission_policy)
       VALUES($1,$2,'anyone')`,[tenant,b]);
