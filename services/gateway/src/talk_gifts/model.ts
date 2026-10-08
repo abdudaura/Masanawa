@@ -1,3 +1,19 @@
+export type TalkGiftVisual = "applause" | "heart" | "flower" | "spark" | "crown" | "celebration";
+
+export interface TalkGiftCatalogItem {
+  readonly id: string;
+  readonly name: string;
+  readonly visual: TalkGiftVisual;
+  readonly amountCredits: number;
+  readonly available: boolean;
+}
+
+export interface TalkGiftCatalog {
+  readonly talkId: string;
+  readonly currency: "Credits";
+  readonly items: readonly TalkGiftCatalogItem[];
+}
+
 export interface TalkGiftTarget {
   readonly talkId: string;
   readonly talkTitle: string;
@@ -12,6 +28,7 @@ export interface TalkGiftReceipt {
   readonly recipientName: string;
   readonly amountCredits: number;
   readonly status: "completed";
+  readonly catalogItemId?: string;
   readonly completedAt: string;
 }
 
