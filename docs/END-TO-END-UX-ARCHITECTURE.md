@@ -1,5 +1,10 @@
 # Masanawa: Owner-Approved Five-Tab Experience and End-to-End UX Architecture
 
+## Whole-product acceptance traceability (2026-10-08)
+
+This product architecture is frozen as **Talks · Chats · Assistant · Wallet · Agents**, Assistant centered. Validate every promised entry point, condition and privacy/return flow against `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` before shared shell implementation. Crosswalk IDs **P/N/T/M/A/W/Q** and integrated **J01–J11** extend the existing R01–R19/C01–C08 acceptance without another root-tab redesign or a second money/message/assistant authority. A user's camera-shy/low-literacy/quiet-phone journey, A→B human DM/cache, Gwani↔Gwana switch, public Talk earnings, and internal crypto transfer must each complete end-to-end with truthful status and returning navigation. Ideas only implied by WhatsApp comparisons (groups/direct calls/E2EE) remain explicitly unapproved—not secretly built or promised.
+
+
 **Product navigation decision: APPROVED by owner on 2026-10-08. Implementation and device qualification: OPEN / UNVERIFIED.** This is the single target architecture, not an interim four-tab layout and not a claim that the app has been changed. Applicable to R01–R19 and C01–C08, with the mobile R17 + C08 integration owner controlling shared routing.
 
 ## 1. Unambiguous permanent information architecture
