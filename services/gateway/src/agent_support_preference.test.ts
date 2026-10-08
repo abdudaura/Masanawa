@@ -21,6 +21,7 @@ function fixture(options: {
   support?: boolean;
   allowed?: boolean;
   staleReadback?: boolean;
+  tenant?: TenantId;
 } = {}) {
   const presentation = {
     schemaVersion: 1,
@@ -89,7 +90,7 @@ function fixture(options: {
         throw new Error("unauthorized");
       }
       return {
-        tenantId, userId,
+        tenantId: options.tenant ?? tenantId, userId,
         ...(options.allowed === false ? { characterIds: [] } : {}),
       };
     }),
@@ -129,6 +130,13 @@ describe("R03 — authorized durable default support agent preference", () => {
     const f = fixture({ allowed: false });
     await expect(save(f.service)).rejects.toThrow("not available");
     expect(f.presentations.listVisible).not.toHaveBeenCalled();
+  });
+
+  it("cannot select a Character from another tenant even with the same public ID", async () => {
+    const f = fixture({ tenant: otherTenant });
+    await expect(save(f.service)).rejects.toThrow("not available");
+    expect(f.presentations.listVisible).toHaveBeenCalledWith({ tenantId: otherTenant });
+    expect(f.preferences.put).not.toHaveBeenCalled();
   });
 
   it("rejects non-support and unknown profiles even if public", async () => {
