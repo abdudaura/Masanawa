@@ -108,10 +108,12 @@ class CryptoIntent {
     required this.withdrawalFeePayer,
     required this.createdAt,
     required this.updatedAt,
+    this.transferDirection,
   });
 
   final String requestId;
   final String operation;
+  final String? transferDirection;
   final String asset;
   final String? network;
   final String amount;
@@ -136,6 +138,7 @@ class CryptoIntent {
     return CryptoIntent(
       requestId: (json['requestId'] as String? ?? '').trim(),
       operation: (json['operation'] as String? ?? '').trim(),
+      transferDirection: json['transferDirection'] as String?,
       asset: (json['asset'] as String? ?? '').trim(),
       network: (json['network'] as String?)?.trim(),
       amount: _decimal(json['amount']),
