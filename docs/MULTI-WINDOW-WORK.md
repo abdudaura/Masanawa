@@ -1,5 +1,16 @@
 # Multi-window Work Coordination
 
+## Mandatory permanent handoff and final single-Work consolidation — 2026-10-08
+
+**Binding on every implementation window, every R/C lane and shared owner.** The detailed template, immutable evidence expectations, known competing PRs, and the final one-window reconciliation procedure are in [`docs/FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md`](FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md). **Read it before claiming a lane and again before ending or switching lanes.**
+
+Each window must **push** its branch, commit/update a feature-specific `docs/workstreams/<scope>.md` handoff, and link that exact handoff/HEAD SHA in its PR body or comment. Record base + HEAD commit IDs, exact touched paths by layer, implemented vs missing source, tests with executable results vs commands not run, DB/auth/privacy/financial/recovery risks, duplicate PRs/conflicting contracts, current five-minute claim, dependencies, blockers, and next precise Work steps. Chat-only claims, uncommitted drafts, a generic PR description, or a failure labeled "CI blocked" are insufficient.
+
+Keep classifications separate: `PARTIAL_IMPLEMENTATION` while required owned code is unwritten or disconnected; `IMPLEMENTED_UNVERIFIED` only after every applicable owned code/test layer is implemented but real checks are blocked; `VERIFIED_E2E` only with executed feature proof; `DEPLOYED_VERIFIED` only with deployment and required operational qualification. **Do not stop implementable source work just because CI/credentials/device verification failed**; document blocked tests once rather than retrying endlessly. Never mark a feature DONE on a draft, screenshot, mock, or status note.
+
+**After development**, the owner may use **one designated ChatGPT Work window** to inventory *all* handoffs/PRs, de-duplicate overlapping implementations, reconcile migrations/Gateway/Flutter/financial authorities, complete remaining implementable gaps, execute missing tests and Android/provisioning/provider checks, and merge in validated dependency order. This is not a reservation of active feature paths today. The final window must preserve old branch evidence and unmerged work; unresolved items stay draft/unmerged with precise documented blockers. Known collision alerts to resolve include C02 #472/#475, C05 #474/#476, and C01 #468 vs shared Gateway integration #435; see the live PRs, not only this dated snapshot.
+
+
 ## Full-stack feature ownership and verification-blocked checkpoint — 2026-10-08
 
 The backend audit is documented at `docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md`; the **safe** portable restore protocol is `docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md`, and the per-feature required Flutter→Gateway→auth→Postgres/media/events evidence record is `docs/BACKEND-FEATURE-TRACEABILITY-20261008.md`. **These add cross-cutting verification, not extra R/C lanes.** Do not overlap active finance, migration, app shell or Gateway PR owners; coordinate integration only.

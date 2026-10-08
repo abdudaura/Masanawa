@@ -1,5 +1,10 @@
 # Masanawa — Definitive Implementation Kickoff (2026-10-08)
 
+## Mandatory all-window checkpoint and one final Work handoff
+
+**Before claiming, switching or ending any R01–R19/C01–C08/shared lane, read [`docs/FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md`](FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md).** All windows must commit/push a `docs/workstreams/` handoff containing exact PR/branch/SHAs, implementation vs missing production code, executed/unexecuted tests, dependencies, conflicts, blockers and reproducible next steps, and link that record in the PR. The owner will later initiate **one** ChatGPT Work integration window to collect all branches/PRs, reconcile overlapping implementations and migrations, complete implementation gaps, run blocked verification and merge only genuinely verified changes. This does **not** exempt windows from implementing their whole owned source slice now or allow PARTIAL_IMPLEMENTATION to be called DONE.
+
+
 ## Backend-to-database acceptance overlay and stop conditions
 
 **Mandatory before starting each owned slice:** inspect `docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md`, `docs/BACKEND-FEATURE-TRACEABILITY-20261008.md`, and `docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md` when your feature has schema/media/provider/deployment impact. Existing R01–R19/C01–C08 and 77 P/N/T/M/A/W/Q IDs remain the sole task ownership/requirements ledger. An actionable feature is **Flutter screen + typed API + Gateway registration + tenant/auth + domain service + PostgreSQL/media/outbox + authoritative readback + offline/negative/restart recovery**, all implemented in **one owned lane** or explicitly coordinated owned dependencies. Build the whole owned code scope, not a tiny code edit.
