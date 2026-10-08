@@ -36,19 +36,45 @@ class PlatformHumanVoiceCapture implements HumanVoiceCapture {
   @override Future<void> dispose()=>_recorder.dispose();
 }
 
+/// The just_audio play future normally completes when playback finishes, not
+/// when it starts. Keep it outside the controller's user-action Future so a
+/// Stop button can interrupt a long note immediately.
+abstract interface class HumanVoicePlayer {
+  Future<void> loadFile(String path);
+  Future<void> play();
+  Future<void> stop();
+  Future<void> dispose();
+}
+class JustAudioHumanVoicePlayer implements HumanVoicePlayer {
+  final AudioPlayer _audio = AudioPlayer();
+  @override Future<void> loadFile(String path) async {
+    await _audio.setFilePath(path);
+  }
+  @override Future<void> play() => _audio.play();
+  @override Future<void> stop() => _audio.stop();
+  @override Future<void> dispose() => _audio.dispose();
+}
+
 /// Device-private preview file; removable on cancel, send or session end.
 /// Pending uploads preserve the same request ID after uncertain errors.
 class HumanVoiceController extends ChangeNotifier {
   HumanVoiceController({
     required this.conversationId, required this.ownerUserId,
     required this.transport, HumanVoiceCapture? capture,
-    AudioPlayer? player,
-  }):_capture=capture??PlatformHumanVoiceCapture(),_player=player??AudioPlayer();
+    HumanVoicePlayer? player,
+    Future<String> Function()? privatePath,
+  }):_capture=capture??PlatformHumanVoiceCapture(),
+     _player=player??JustAudioHumanVoicePlayer(),
+     _pathFactory=privatePath;
 
   final String conversationId,ownerUserId;
   final HumanVoiceTransport transport;
   final HumanVoiceCapture _capture;
-  final AudioPlayer _player;
+  final HumanVoicePlayer _player;
+  final Future<String> Function()? _pathFactory;
+  int _playGeneration=0;
+  String? _downloadedPlaybackFile;
+  String? playingMessageId;
   final List<HumanVoiceNote> _notes=[];
   List<HumanVoiceNote> get notes=>List.unmodifiable(_notes);
 
@@ -58,10 +84,11 @@ class HumanVoiceController extends ChangeNotifier {
   Timer? _limitTimer;
   bool recording=false,review=false,sending=false,loading=false,playing=false,closed=false;
   bool canLoadOlder=false;
-  bool get canSend=>review&&!sending&&!recording&&_localFile!=null;
+  bool get canSend=>review&&!sending&&!recording&&!playing&&_localFile!=null;
   void _notify(){if(!closed)notifyListeners();}
   void _fail(String reason){error=reason;_notify();}
   Future<String> _privatePath() async {
+    if(_pathFactory!=null)return _pathFactory();
     final dir=await getTemporaryDirectory();
     return '${dir.path}/masanawa-private-note-${_requestId()}.ogg';
   }
@@ -103,16 +130,59 @@ class HumanVoiceController extends ChangeNotifier {
       error=null;_notify();
     }catch(_){await discard();_fail('Voice recording failed. Please retry or type a message.');}
   }
+  // Match completed/failed playback to its request: a delayed completion
+  // after Stop, logout, or a different note must not restore stale state.
+  Future<void> _finishPlayback(int generation,{String? failedMessage}) async {
+    if(generation!=_playGeneration)return;
+    ++_playGeneration;
+    try{await _player.stop();}catch(_){}
+    await _clearDownloadedPlayback();
+    playing=false;playingMessageId=null;
+    if(failedMessage!=null&&!closed)_fail(failedMessage);
+    else _notify();
+  }
+
+  Future<void> _clearDownloadedPlayback() async {
+    final path=_downloadedPlaybackFile;
+    _downloadedPlaybackFile=null;
+    if(path!=null){try{await File(path).delete();}catch(_){}}
+  }
+
+  void _runPlayer(int generation,String errorMessage) {
+    if(closed||generation!=_playGeneration)return;
+    try{
+      unawaited(_player.play().then((_) =>
+          _finishPlayback(generation)).catchError((Object _) =>
+          _finishPlayback(generation,failedMessage:errorMessage)));
+    }catch(_){
+      unawaited(_finishPlayback(generation,failedMessage:errorMessage));
+    }
+  }
+
+  Future<void> stopPlayback() async {
+    if(!playing)return;
+    ++_playGeneration;
+    playing=false;playingMessageId=null;
+    _notify();
+    try{await _player.stop();}catch(_){}
+    await _clearDownloadedPlayback();
+  }
+
   Future<void> preview() async {
     final path=_localFile;
     if(closed||!review||path==null||playing)return;
-    playing=true;error=null;_notify();
+    final generation=++_playGeneration;
+    playing=true;playingMessageId=null;error=null;_notify();
     try{
-      await _player.setFilePath(path);
-      await _player.play();
-    }catch(_){_fail('Could not preview this recording.');}
-    finally{playing=false;_notify();}
+      await _player.loadFile(path);
+      if(closed||generation!=_playGeneration)return;
+      _runPlayer(generation,'Could not preview this recording.');
+    }catch(_){
+      await _finishPlayback(generation,
+          failedMessage:'Could not preview this recording.');
+    }
   }
+
   Future<void> send() async {
     final path=_localFile,id=_request;
     if(closed||!canSend||path==null||id==null)return;
@@ -159,20 +229,30 @@ class HumanVoiceController extends ChangeNotifier {
   }
   Future<void> play(HumanVoiceNote note) async {
     if(closed||playing||note.conversationId!=conversationId)return;
-    playing=true;_notify();
+    final generation=++_playGeneration;
+    playing=true;playingMessageId=note.messageId;error=null;_notify();
     String? path;
     try{
+      // Authorization for every private media read stays on the Gateway.
       final bytes=await transport.read(note.messageId);
-      if(closed)return;
+      if(closed||generation!=_playGeneration)return;
       path=await _privatePath();
+      if(closed||generation!=_playGeneration)return;
+      _downloadedPlaybackFile=path;
       await File(path).writeAsBytes(bytes,flush:true);
-      await _player.setFilePath(path);
-      await _player.play();
-    }catch(_){if(!closed)_fail('Voice note unavailable, deleted or access revoked.');}
-    finally{
-      await _player.stop();
-      if(path!=null){try{await File(path).delete();}catch(_){}}
-      playing=false;_notify();
+      if(closed||generation!=_playGeneration){
+        try{await File(path).delete();}catch(_){}
+        return;
+      }
+      await _player.loadFile(path);
+      if(closed||generation!=_playGeneration)return;
+      _runPlayer(generation,'Voice note unavailable, deleted or access revoked.');
+    }catch(_){
+      if(path!=null&&generation!=_playGeneration){
+        try{await File(path).delete();}catch(_){}
+      }
+      await _finishPlayback(generation,
+          failedMessage:'Voice note unavailable, deleted or access revoked.');
     }
   }
   Future<void> delete(HumanVoiceNote note) async {
@@ -185,11 +265,13 @@ class HumanVoiceController extends ChangeNotifier {
     }catch(_){_fail('Could not remove voice note. Retry.');}
   }
   Future<void> _dropFile() async {
+    await stopPlayback();
     try{await _player.stop();}catch(_){}
     final path=_localFile;_localFile=null;_request=null;
     if(path!=null){try{await File(path).delete();}catch(_){}}
   }
   Future<void> discard() async {
+    await stopPlayback();
     _limitTimer?.cancel();_limitTimer=null;
     if(recording){try{await _capture.stop();}catch(_){}}
     recording=false;review=false;
@@ -200,10 +282,12 @@ class HumanVoiceController extends ChangeNotifier {
   /// media and does not let late replies restore old account's private state.
   Future<void> shutdown() async {
     if(closed)return;
-    closed=true;_limitTimer?.cancel();_limitTimer=null;
+    closed=true;++_playGeneration;
+    _limitTimer?.cancel();_limitTimer=null;
     if(recording){try{await _capture.stop();}catch(_){}}
     _notes.clear();canLoadOlder=false;recording=false;review=false;
     await _dropFile();
+    await _clearDownloadedPlayback();
     await _player.dispose();
     await _capture.dispose();
     super.dispose();
