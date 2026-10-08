@@ -29,6 +29,7 @@ class TalkHomeScreen extends ConsumerWidget {
         backgroundColor: u.surfaceBg,
         appBar: AppBar(
           toolbarHeight: embeddedInShell ? 0 : null,
+          primary: !embeddedInShell,
           title: embeddedInShell ? null : const Text('Masanawa'),
           actions: embeddedInShell ? null : [
             IconButton(
