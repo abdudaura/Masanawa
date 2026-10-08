@@ -40,3 +40,6 @@
 2. Run `pnpm exec vitest run services/gateway/src/mobile_push.test.ts`, `pnpm --filter @masanawa/gateway-service typecheck`, repository typecheck/build and relevant notification integration checks once runners are usable.
 3. Fix any compile/behavior errors. Verify outgoing FCM requests against a project/test device with consent and that no duplicates/privacy regressions occur.
 4. Merge to main only after reviewable verification, then continue R14 remaining gates; ledger stays PARTIAL/BLOCKED until production qualification.
+
+## Stale lease reclaim — 2026-10-08, bounded FCM network deadlines
+Reclaimed existing PR #436 after more than five minutes inactive (prior `2026-10-08T11:19:27Z`, head `a4cf91004afd277857edff7f5ab2e73771ce40e8`); reviewed main `1d6a67ea3c182455b55a7d1d07eacdb4311682e3` and C03 #473/#483/#486 changed paths. Exclusive claim `services/gateway/src/mobile_push.ts`, `services/gateway/src/mobile_push.test.ts`, this handoff; does not touch C03 route/schema, R12 token repository, Gateway composition, Android router or Firebase secrets. Planned full bounded source/test: 15-second OAuth and each FCM HTTP attempt AbortSignal deadlines, fail closed for ambiguous FCM timeouts without replay, continue eligible following devices. Tests and production provider verification not executed; keep draft.
