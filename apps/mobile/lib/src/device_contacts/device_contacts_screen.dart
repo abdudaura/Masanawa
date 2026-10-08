@@ -1,15 +1,18 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/session_state.dart';
 import 'device_contacts_controller.dart';
+import 'device_contacts_consent_store.dart';
 import 'device_contacts_model.dart';
 import 'device_contacts_native.dart';
 
 /// Nested Chats feature, not a sixth tab. F12 owns root route registration.
 class DeviceContactsScreen extends ConsumerWidget {
-  const DeviceContactsScreen({super.key, this.platform, this.invite});
+  const DeviceContactsScreen({super.key, this.platform, this.invite, this.consentStore});
   final DeviceContactsPlatform? platform;
   final DeviceContactsInvite? invite;
+  final DeviceContactsConsentStore? consentStore;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,6 +22,7 @@ class DeviceContactsScreen extends ConsumerWidget {
       key: ValueKey(accountId), accountId: accountId,
       platform: platform ?? const NativeDeviceContactsPlatform(),
       invite: invite ?? const NativeDeviceContactsInvite(),
+      consentStore: consentStore ?? const SecureDeviceContactsConsentStore(),
     );
   }
 }
@@ -26,10 +30,12 @@ class DeviceContactsScreen extends ConsumerWidget {
 class _DeviceContactsBody extends StatefulWidget {
   const _DeviceContactsBody({
     super.key, required this.accountId, required this.platform, required this.invite,
+    required this.consentStore,
   });
   final String? accountId;
   final DeviceContactsPlatform platform;
   final DeviceContactsInvite invite;
+  final DeviceContactsConsentStore consentStore;
 
   @override
   State<_DeviceContactsBody> createState() => _DeviceContactsBodyState();
@@ -45,8 +51,10 @@ class _DeviceContactsBodyState extends State<_DeviceContactsBody>
     super.initState();
     controller = DeviceContactsController(
       platform: widget.platform, invite: widget.invite, accountId: widget.accountId,
+      consentStore: widget.consentStore,
     );
     controller.addListener(_rebuild);
+    unawaited(controller.restoreConsent());
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -103,7 +111,10 @@ class _DeviceContactsBodyState extends State<_DeviceContactsBody>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                FilledButton(onPressed: controller.enable,
+                if (controller.rememberedConsent)
+                  const Text('Previously enabled. Tap again to view contacts on this device.'),
+                if (controller.error != null) Text(controller.error!),
+                FilledButton(onPressed: controller.busy ? null : controller.enable,
                   child: const Text('Continue to phone permission')),
                 const SizedBox(height: 12),
                 const Text('You can still message Masanawa contacts without this permission.'),
