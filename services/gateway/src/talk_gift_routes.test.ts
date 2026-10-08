@@ -211,4 +211,79 @@ describe("Talk Host gift route", () => {
       message: "talks.gift.insufficient_credits",
     });
   });
+
+  it("serves only server-priced options to signed-in eligible viewers", async () => {
+    const { server } = app();
+    const unauthenticated = await server.inject({
+      method: "GET", url: "/talks/talk_12345678/gifts/catalog",
+    });
+    expect(unauthenticated.statusCode).toBe(401);
+
+    const response = await server.inject({
+      method: "GET", url: "/talks/talk_12345678/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      talkId: "talk_12345678",
+      currency: "Credits",
+      items: [
+        { id: "applause", name: "Applause", visual: "applause", amountCredits: 50, available: true },
+        { id: "heart", name: "Heart", visual: "heart", amountCredits: 100, available: true },
+        { id: "flower", name: "Flower", visual: "flower", amountCredits: 150, available: true },
+        { id: "spark", name: "Spark", visual: "spark", amountCredits: 250, available: true },
+        { id: "crown", name: "Crown", visual: "crown", amountCredits: 500, available: true },
+        { id: "celebration", name: "Celebration", visual: "celebration", amountCredits: 1000, available: true },
+      ],
+    });
+    const own = app({ viewerUserId: "host_1" });
+    expect((await own.server.inject({
+      method: "GET", url: "/talks/talk_12345678/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    })).statusCode).toBe(409);
+    expect((await server.inject({
+      method: "GET", url: "/talks/talk_missing/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    })).statusCode).toBe(404);
+  });
+
+  it("binds item identity to exact authoritative Credits before any transfer", async () => {
+    const { server, executions } = app();
+    async function send(catalogItemId: string, amountCredits: number) {
+      return server.inject({
+        method: "POST", url: "/talks/talk_12345678/gifts",
+        headers: { authorization: "Bearer viewer" },
+        payload: { requestId: "item-test-1", catalogItemId, amountCredits },
+      });
+    }
+    const wrongPrice = await send("heart", 50);
+    expect(wrongPrice.statusCode).toBe(409);
+    expect(wrongPrice.json()).toMatchObject({ message: "talks.gift.price_changed" });
+    expect((await send("unknown", 100)).statusCode).toBe(409);
+    expect(executions).toHaveLength(0);
+
+    const paid = await send("heart", 100);
+    expect(paid.statusCode).toBe(200);
+    expect(paid.json()).toMatchObject({
+      giftId: "ledger_1", catalogItemId: "heart",
+      amountCredits: 100, status: "completed",
+    });
+    expect(executions).toHaveLength(1);
+    expect(executions[0]?.amountCredits).toBe(100);
+  });
+
+  it("rejects recipient and catalog client-authority injection", async () => {
+    const { server, executions } = app();
+    const injected = await server.inject({
+      method: "POST", url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "item-test-2", catalogItemId: "heart",
+        amountCredits: 100, currency: "USD", recipientUserId: "attacker",
+      },
+    });
+    expect(injected.statusCode).toBe(400);
+    expect(executions).toHaveLength(0);
+  });
+
 });
