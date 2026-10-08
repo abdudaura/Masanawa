@@ -1,4 +1,4 @@
-import type { HumanContact, HumanContactPolicy, HumanContactRepository, HumanContactRequest } from "./model.js";
+import type { HumanContact, HumanContactPolicy, HumanContactPreferences, HumanContactRepository, HumanContactRequest } from "./model.js";
 
 interface SqlResult<Row> { readonly rows: Row[]; readonly rowCount: number | null }
 export interface HumanContactSqlPool {
@@ -45,6 +45,7 @@ const visibleTarget = `
   WHERE p.tenant_id = $1
     AND p.handle = $3
     AND p.user_id <> $2
+    AND COALESCE(pref.discoverable_by_handle, true) = true
     AND NOT EXISTS (
       SELECT 1 FROM talks.safety_preferences sp
        WHERE sp.tenant_id = p.tenant_id AND sp.blocked = true
@@ -88,30 +89,49 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
       });
     },
 
-    async getOwnPolicy({ tenantId, userId }) {
-      const r = await pool.query<{ policy: HumanContactPolicy } & Record<string, unknown>>(`
-        SELECT COALESCE(p.admission_policy,'requests') AS policy
+    async getOwnPreferences({ tenantId, userId }) {
+      const r = await pool.query<{
+        policy: HumanContactPolicy;
+        discoverable_by_handle: boolean;
+      } & Record<string, unknown>>(`
+        SELECT COALESCE(p.admission_policy,'requests') AS policy,
+               COALESCE(p.discoverable_by_handle,true) AS discoverable_by_handle
           FROM identity.users u
           LEFT JOIN talks.human_dm_preferences p
             ON p.tenant_id = u.tenant_id AND p.user_id = u.user_id
          WHERE u.tenant_id=$1 AND u.user_id=$2 AND u.state='active'
       `, [tenantId, userId]);
-      // No policy is returned for inactive/deleted accounts.
       if (!r.rows[0]) throw new Error("messages.owner_unavailable");
-      return r.rows[0].policy;
+      return Object.freeze<HumanContactPreferences>({
+        policy: r.rows[0].policy,
+        discoverableByHandle: r.rows[0].discoverable_by_handle,
+      });
     },
 
-    async setOwnPolicy({ tenantId, userId, policy }) {
-      const result = await pool.query<{ admission_policy: HumanContactPolicy } & Record<string, unknown>>(`
-        INSERT INTO talks.human_dm_preferences (tenant_id,user_id,admission_policy)
-        SELECT tenant_id,user_id,$3 FROM identity.users
+    async setOwnPreferences({ tenantId, userId, policy, discoverableByHandle }) {
+      // Supplying one optional field does NOT reset the user's other preference.
+      const result = await pool.query<{
+        admission_policy: HumanContactPolicy;
+        discoverable_by_handle: boolean;
+      } & Record<string, unknown>>(`
+        INSERT INTO talks.human_dm_preferences
+          (tenant_id,user_id,admission_policy,discoverable_by_handle)
+        SELECT tenant_id,user_id,COALESCE($3::text,'requests'),COALESCE($4::boolean,true)
+          FROM identity.users
          WHERE tenant_id=$1 AND user_id=$2 AND state='active'
         ON CONFLICT (tenant_id,user_id)
-        DO UPDATE SET admission_policy=excluded.admission_policy, updated_at=clock_timestamp()
-        RETURNING admission_policy
-      `, [tenantId, userId, policy]);
-      if (!result.rows[0]) throw new Error("messages.owner_unavailable");
-      return result.rows[0].admission_policy;
+        DO UPDATE SET
+          admission_policy=COALESCE($3::text,talks.human_dm_preferences.admission_policy),
+          discoverable_by_handle=COALESCE($4::boolean,talks.human_dm_preferences.discoverable_by_handle),
+          updated_at=clock_timestamp()
+        RETURNING admission_policy,discoverable_by_handle
+      `, [tenantId, userId, policy ?? null, discoverableByHandle ?? null]);
+      const row = result.rows[0];
+      if (!row) throw new Error("messages.owner_unavailable");
+      return Object.freeze<HumanContactPreferences>({
+        policy: row.admission_policy,
+        discoverableByHandle: row.discoverable_by_handle,
+      });
     },
 
     async request({ tenantId, requesterId, handle }) {
