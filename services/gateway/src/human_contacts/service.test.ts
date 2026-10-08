@@ -33,6 +33,12 @@ function harness(tenant = "tenant_1", actor = "user_al") {
       if (pending) { pending = false; accepted = accept; declined = !accept; return true; }
       return accept ? accepted : declined;
     },
+    async revoke({ tenantId, actorId, otherUserId }) {
+      if (tenantId !== tenant || blocked || ![actor, receiverId].includes(actorId) ||
+          ![actor, receiverId].includes(otherUserId) || actorId === otherUserId ||
+          (!pending && !accepted && !declined)) return false;
+      accepted = false; pending = false; declined = true; return true;
+    },
     async list({ tenantId, userId }) {
       if (tenantId !== tenant || blocked || (!pending && !accepted)) return [];
       return [{
@@ -95,6 +101,14 @@ describe("C01 authenticated human-contact consent", () => {
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "accepted" });
     block();
     await expect(svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).rejects.toMatchObject({ statusCode: 404 });
+  });
+  it("lets either member revoke an accepted relationship, then denies messaging", async () => {
+    const { svc } = harness();
+    await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" });
+    await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: true });
+    expect(await svc().revoke({ authorizationHeader: "Bearer okay", otherUserId: "user_bo" })).toEqual({ status: "revoked" });
+    expect(await svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).toMatchObject({ canMessage: false });
+    await expect(svc().revoke({ authorizationHeader: "Bearer okay", otherUserId: "user_al" })).rejects.toMatchObject({ statusCode: 404 });
   });
   it("validates policy and page sizes rather than trusting requests", async () => {
     const { svc } = harness();
