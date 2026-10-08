@@ -41,6 +41,7 @@ export interface InternalCryptoTransferStore {
     tenantId: string; senderUserId: string; requestId: string;
     quoteId: string; policyRevision: string;
   }): Promise<InternalTransferReceipt>;
+  readByRequest(input: { tenantId: string; senderUserId: string; requestId: string }): Promise<InternalTransferReceipt | null>;
   read(input: { tenantId: string; userId: string; transferId: string }): Promise<InternalTransferReceipt | null>;
   history(input: { tenantId: string; userId: string; limit: number }): Promise<readonly InternalTransferReceipt[]>;
 }
@@ -216,6 +217,16 @@ export function createPostgresInternalCryptoTransferStore(pool: Pool): InternalC
         );
         return receiptRow(result.rows[0]);
       });
+    },
+
+    async readByRequest(input) {
+      const result = await pool.query(
+        "SELECT * FROM commerce.crypto_internal_transfers " +
+        "WHERE tenant_id=$1 AND sender_user_id=$2 AND request_id=$3",
+        [nonempty(input.tenantId, "tenant"), nonempty(input.senderUserId, "sender"),
+          nonempty(input.requestId, "request")],
+      );
+      return result.rows[0] ? receiptRow(result.rows[0]) : null;
     },
 
     async read(input) {
