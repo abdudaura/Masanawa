@@ -17,7 +17,7 @@ export interface TransferRiskPolicy {
     tenantId: string; senderUserId: string; recipientUserId: string;
     asset: string; network: string | null; amount: string;
     operation: "internal-crypto-transfer";
-  }): Promise<{ allowed: boolean; revision: string }>;
+  }): Promise<{ allowed: boolean; revision: string; fee: string }>;
 }
 export interface InternalCryptoTransferService {
   capabilities(input: { authorizationHeader: string | undefined }): Promise<{
@@ -80,6 +80,10 @@ export function createInternalCryptoTransferService(input: {
       recipientUserId, asset: providerCode, network, amount: normalizedAmount,
       operation: "internal-crypto-transfer",
     });
+    // C06 v1 has no platform-fee posting leg. Never silently drop a configured
+    // policy fee: zero-fee book transfers are the only safely balanced shape.
+    if (result.allowed && result.fee !== "0")
+      deny("crypto.internal.fee_policy_unsupported", 503);
     if (!result.allowed || typeof result.revision !== "string" ||
         result.revision.trim().length === 0 || result.revision.length > 128)
       deny("crypto.internal.policy_denied", 403);
