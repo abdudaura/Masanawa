@@ -37,7 +37,7 @@ function count(n: number | undefined): number {
   return n;
 }
 function sequence(s: string): string {
-  if (!/^[1-9][0-9]{0,18}$/u.test(s)) throw new HumanDmError("messages.sequence_invalid",400);
+  if (!/^[1-9][0-9]{0,18}$/u.test(s) || BigInt(s)>9223372036854775807n) throw new HumanDmError("messages.sequence_invalid",400);
   return s;
 }
 export function createHumanDmService(input: { repository: HumanDmRepository; authorizer: HumanDmAuthorizer }): HumanDmService {
