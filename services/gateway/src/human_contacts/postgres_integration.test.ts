@@ -88,6 +88,7 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
       // Only delete ephemeral, randomly named test tenants created above.
       for (const id of [tenant, otherTenant]) {
         await pool.query(`DELETE FROM talks.safety_preferences WHERE tenant_id=$1`, [id]);
+        await pool.query(`DELETE FROM talks.safety_enforcement WHERE tenant_id=$1`, [id]);
         await pool.query(`DELETE FROM talks.human_dm_contact_requests WHERE tenant_id=$1`, [id]);
         await pool.query(`DELETE FROM talks.human_dm_preferences WHERE tenant_id=$1`, [id]);
         await pool.query(`DELETE FROM talks.public_profiles WHERE tenant_id=$1`, [id]);
@@ -132,6 +133,21 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     expect(await repo.respond({
       tenantId: tenant, recipientId: alice, requesterId: bob, requestRevision: "1", accept: true,
     })).toBe(false);
+    // Moderation intervening after request creation must deny stale approval.
+    await pool.query(
+      `INSERT INTO talks.safety_enforcement
+       (tenant_id,target_kind,target_id,revision,visibility,reason_code,updated_at)
+       VALUES ($1,'profile',$2,1,'restricted','moderation',clock_timestamp())`,
+      [tenant, aliceHandle],
+    );
+    expect(await repo.respond({
+      tenantId: tenant, recipientId: bob, requesterId: alice, requestRevision: "1", accept: true,
+    })).toBe(false);
+    await pool.query(
+      `DELETE FROM talks.safety_enforcement
+       WHERE tenant_id=$1 AND target_kind='profile' AND target_id=$2`,
+      [tenant, aliceHandle],
+    );
     expect(await repo.respond({
       tenantId: tenant, recipientId: bob, requesterId: alice, requestRevision: "1", accept: true,
     })).toBe(true);

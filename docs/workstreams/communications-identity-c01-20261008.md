@@ -111,3 +111,8 @@ Static source review (NOT executed tests) found a regression introduced by the p
 ### Moderation and request-revision hardening — 2026-10-08T12:01:43.948Z
 
 C01 PostgreSQL recipient approval now checks current `talks.safety_enforcement` restrictions on either public profile as well as reciprocal safety blocks and active identities. A person restricted between request and approval cannot gain consent through a stale screen. Added SQL assertion and service missing/malformed/overflow revision tests. Flutter rejects request revisions outside signed 64-bit PostgreSQL range. This is source/test creation ONLY: no executable Postgres, Vitest, Flutter or Android result; original #457 runner exhaustion unchanged. C02 must still enforce safety at **actual message send**, not trust approved contact projection. Stay draft/unmerged.
+
+
+### Disposable PostgreSQL moderation regression — 2026-10-08T12:02:55.295Z
+
+The guarded opt-in real `postgres_integration.test.ts` now sets an actual `talks.safety_enforcement` `restricted` profile on the requester *after* the recipient has received the request, asserts acceptance is refused, removes that isolated fixture, then checks a legitimately permitted acceptance. Fixture teardown includes `safety_enforcement` rows for the ephemeral tenant. SQL source assertions alone are not used as a substitute for DB verification. **The DB suite remains UNEXECUTED** pending disposable loopback `*_test` PostgreSQL and #457 Work verification.
