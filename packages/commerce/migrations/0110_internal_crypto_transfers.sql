@@ -72,3 +72,25 @@ END $$;
 CREATE TRIGGER crypto_internal_transfer_quote_guard
  BEFORE UPDATE OR DELETE ON commerce.crypto_internal_transfer_quotes
  FOR EACH ROW EXECUTE FUNCTION commerce.prevent_crypto_transfer_quote_tamper();
+
+-- Commerce migration remains independently deployable: PL/pgSQL resolves
+-- identity.users at execution, not at migration creation. A missing identity
+-- schema therefore rejects actual transfers without breaking schema bootstrap.
+CREATE OR REPLACE FUNCTION commerce.require_internal_transfer_accounts()
+RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE active_count integer;
+BEGIN
+ SELECT count(*) INTO active_count FROM (
+  SELECT u.user_id FROM identity.users AS u
+  WHERE u.tenant_id=NEW.tenant_id
+    AND u.user_id IN (NEW.sender_user_id,NEW.recipient_user_id)
+    AND u.state='active' FOR SHARE
+ ) AS active_users;
+ IF active_count <> 2 THEN
+  RAISE EXCEPTION 'crypto.transfer.account_unavailable' USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER crypto_internal_transfer_active_accounts
+ BEFORE INSERT ON commerce.crypto_internal_transfer_quotes
+ FOR EACH ROW EXECUTE FUNCTION commerce.require_internal_transfer_accounts();
