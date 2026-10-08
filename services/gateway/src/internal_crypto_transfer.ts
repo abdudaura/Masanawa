@@ -28,6 +28,9 @@ export interface InternalCryptoTransferService {
     authorizationHeader: string | undefined; quoteId: string; requestId: string;
     confirmed: boolean;
   }): Promise<InternalTransferReceipt>;
+  readByRequest(input: {
+    authorizationHeader: string | undefined; requestId: string;
+  }): Promise<InternalTransferReceipt | null>;
   read(input: {
     authorizationHeader: string | undefined; transferId: string;
   }): Promise<InternalTransferReceipt | null>;
@@ -109,6 +112,15 @@ export function createInternalCryptoTransferService(input: {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
       });
+      // A client can repeat an ambiguous request without a second debit, even
+      // after quote expiry or loss of provider eligibility following commitment.
+      const prior = await input.store.readByRequest({
+        tenantId: authority.tenantId, senderUserId: authority.userId, requestId: id,
+      });
+      if (prior) {
+        if (prior.quoteId !== quoteId) deny("crypto.internal.replay_conflict", 409);
+        return prior;
+      }
       // The quote cannot be read by its ID until the authenticated sender matches.
       const quote = await input.store.readQuote({
         tenantId: authority.tenantId, senderUserId: authority.userId, quoteId,
@@ -120,6 +132,15 @@ export function createInternalCryptoTransferService(input: {
       return input.store.execute({
         tenantId: authority.tenantId, senderUserId: authority.userId,
         requestId: id, quoteId, policyRevision: qualified.revision,
+      });
+    },
+    async readByRequest(request) {
+      const auth = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+      });
+      return input.store.readByRequest({
+        tenantId: auth.tenantId, senderUserId: auth.userId,
+        requestId: requestId(request.requestId),
       });
     },
     async read(request) {
