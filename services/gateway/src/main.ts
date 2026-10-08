@@ -186,7 +186,7 @@ import {
 } from "./talk_profiles/service.js";
 import { createPostgresTalkProfileRepository } from "./talk_profiles/postgres_repository.js";
 import { createPostgresAvatarRepository } from "./profile_avatar/repository.js";
-import { createS3AvatarStore } from "./profile_avatar/s3_store.js";
+import { createS3AvatarObjectStore } from "./profile_avatar/s3_store.js";
 import { createProfileAvatarService } from "./profile_avatar/service.js";
 import {
   createTalkActivityService,
@@ -1898,7 +1898,7 @@ export async function startGatewayService(
       ? createProfileAvatarService({
           authorizer: talkProfileAuthorizer,
           repository: database.profileAvatars,
-          objects: createS3AvatarStore({
+          objects: createS3AvatarObjectStore({
             endpoint: avatarConfig[0]!,
             region: avatarConfig[1]!,
             bucket: avatarConfig[2]!,
