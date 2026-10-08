@@ -56,7 +56,7 @@ describeDb("R12 durable reconciliation leases",()=>{
 
   it("reclaims expired leases, rejects stale acknowledgments, and records review only once",async()=>{
     const queue=createPostgresAccountDeletionQueue(pool);
-    const first=await queue.claim();
+    const first=await queue.claim(tenantId);
     expect(first?.requestId).toBe(requestId);
     expect(first?.attempt).toBe(1);
     await pool.query(
@@ -64,7 +64,7 @@ describeDb("R12 durable reconciliation leases",()=>{
           SET leased_until=clock_timestamp()-interval '1 second'
         WHERE request_id=$1::uuid`,[requestId],
     );
-    const second=await queue.claim();
+    const second=await queue.claim(tenantId);
     expect(second?.attempt).toBe(2);
     expect(second?.token).not.toBe(first?.token);
     if(!first||!second)throw new Error("Expected two claims");
@@ -90,7 +90,7 @@ describeDb("R12 durable reconciliation leases",()=>{
     expect(history.rows.map(row=>row.phase)).toEqual([
       "requested","identity-verified","awaiting-settlement",
     ]);
-    const after=await queue.claim();
+    const after=await queue.claim(tenantId);
     expect(after).toBeNull();
   });
 });
