@@ -27,8 +27,13 @@ export function registerAccountDeletionRoutes(
     }
   });
   app.post("/account/deletion/request", {
-    schema: { body: Type.Object({}, { additionalProperties: false }) },
+    schema: { body: Type.Object({}, { additionalProperties: true }) },
   }, async (request, reply) => {
+    const body = request.body as Record<string, unknown>;
+    if (!body || Object.keys(body).length !== 0) {
+      reply.code(400);
+      return { code: "ACCOUNT_DELETION_BODY_INVALID", message: "Unexpected fields" };
+    }
     try {
       return await service.request(request.headers.authorization);
     } catch (error) {
