@@ -29,6 +29,12 @@ export interface TalkProfileService {
     authorizationHeader: string | undefined;
     userId: string;
   }>): Promise<HumanProfileView>;
+  updateSelf(input: Readonly<{
+    authorizationHeader: string | undefined;
+    displayName?: string;
+    bio?: string;
+    removeAvatar?: boolean;
+  }>): Promise<HumanProfileView>;
   follow(input: Readonly<{
     authorizationHeader: string | undefined;
     handle: string;
@@ -99,6 +105,34 @@ export function createTalkProfileService(input: Readonly<{
       });
       if (!profile) throw new TalkProfileError("profiles.not_found", 404);
       return profile;
+    },
+
+    async updateSelf(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const displayName = request.displayName === undefined
+        ? undefined
+        : request.displayName.trim().replace(/\s+/gu, " ");
+      if (displayName !== undefined &&
+          (displayName.length < 2 || displayName.length > 80)) {
+        throw new TalkProfileError("profiles.display_name_invalid", 400);
+      }
+      const bio = request.bio === undefined ? undefined : request.bio.trim();
+      if (bio !== undefined && bio.length > 300) {
+        throw new TalkProfileError("profiles.bio_invalid", 400);
+      }
+      if (displayName === undefined && bio === undefined &&
+          request.removeAvatar !== true) {
+        throw new TalkProfileError("profiles.update_empty", 400);
+      }
+      const updated = await input.repository.updateOwnHuman({
+        tenantId: viewer.tenantId,
+        userId: viewer.userId,
+        ...(displayName === undefined ? {} : { displayName }),
+        ...(bio === undefined ? {} : { bio }),
+        ...(request.removeAvatar === true ? { removeAvatar: true } : {}),
+      });
+      if (!updated) throw new TalkProfileError("profiles.not_found", 404);
+      return updated;
     },
 
     async follow(request) {
