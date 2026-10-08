@@ -33,6 +33,12 @@ export interface BillingWalletService {
     authorizationHeader: string | undefined;
   }>): Promise<Readonly<{ balanceKobo: number; balance: string }>>;
 
+  /** GET is strictly read-only and must never create a payment or retry fulfillment. */
+  readQuoteFunding(input: Readonly<{
+    authorizationHeader: string | undefined;
+    quoteId: string;
+  }>): Promise<BillingWalletView>;
+
   createFunding(input: Readonly<{
     authorizationHeader: string | undefined;
     amount: string;
@@ -350,6 +356,47 @@ export function createBillingWalletService(input: Readonly<{
       const identity = await owner(request.authorizationHeader);
       const balanceKobo = await currentBalance(identity);
       return Object.freeze({ balanceKobo, balance: formatNgnKobo(balanceKobo) });
+    },
+
+    async readQuoteFunding(request) {
+      const identity = await owner(request.authorizationHeader);
+      const quote = await input.quotes.readQuote({
+        tenantId: identity.tenantId,
+        userId: identity.userId,
+        quoteId: request.quoteId as BillingQuote["quoteId"],
+      });
+      if (!quote) throw new Error("financial.billing.quote_not_found");
+      const latest = await input.wallet.readLatestQuoteFunding({
+        tenantId: identity.tenantId,
+        userId: identity.userId,
+        quoteId: quote.quoteId,
+      });
+      const validExpiry = latest !== null &&
+        Number.isFinite(Date.parse(latest.expiresAt)) &&
+        Date.parse(latest.expiresAt) > Date.now();
+      const active = latest?.state === "awaiting" && validExpiry &&
+        Boolean(latest.accountNumber?.trim()) && Boolean(latest.bankName?.trim());
+      const pending = latest?.state === "creating" || latest?.state === "credited" ||
+        (latest?.state === "awaiting" && validExpiry);
+      const phase: BillingWalletView["phase"] =
+        quote.state === "succeeded" ? "fulfilled" :
+        ["failed", "reversed", "refunded", "expired"].includes(quote.state) ? "failed" :
+        quote.state === "reserved" || quote.state === "funded" ? "processing" :
+        active ? "awaiting-funds" : pending ? "processing" : "ready";
+      const balanceKobo = await currentBalance(identity);
+      // Return bank coordinates only while the signed-in owner has an active
+      // provider-bound funding instruction. Credited, expired and failed
+      // instructions must never encourage a second transfer.
+      const funding = active && phase === "awaiting-funds" ? latest : null;
+      return Object.freeze({
+        balanceKobo,
+        balance: formatNgnKobo(balanceKobo),
+        phase,
+        quoteId: quote.quoteId,
+        funding,
+        purchase: null,
+        document: walletDocument(balanceKobo, phase, funding, quote, null),
+      });
     },
 
     async createFunding(request) {
