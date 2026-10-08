@@ -259,14 +259,26 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> logout() async {
-    // Cancel both network and storage completions BEFORE awaiting logout.
+    // Invalidate old HTTP completions before any awaited network operation.
     final generation = ++_authGeneration;
+    state = const SessionSignedOut();
+
+    // Start server revocation using the current bearer, then immediately
+    // reserve local deletion in the ordered credential queue. A subsequent
+    // sign-in's native write cannot be erased by an older delayed logout.
+    Future<Map<String, dynamic>>? remoteLogout;
     try {
-      await ref.read(apiClientProvider).logout();
+      remoteLogout = ref.read(apiClientProvider).logout();
     } catch (_) {
-      // Sign-out always completes locally when network is unavailable.
+      // Local logout must still complete if the transport fails synchronously.
     }
-    await _clear();
+    final localClear = _clear();
+    try {
+      await remoteLogout;
+    } catch (_) {
+      // Sign-out is completed locally when the network is unavailable.
+    }
+    await localClear;
     if (generation == _authGeneration) state = const SessionSignedOut();
   }
 
@@ -383,7 +395,6 @@ class SessionController extends Notifier<SessionState> {
           _storage.delete(key: _kUser),
         ]);
       });
-
 }
 
 final sessionProvider =
