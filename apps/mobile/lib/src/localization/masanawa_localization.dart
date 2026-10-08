@@ -5,9 +5,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 /// Add translated application resources before claiming an entire locale is
 /// translated. Flutter's stock Material/Cupertino labels are localized now.
 abstract final class MasanawaLocalization {
+  // Hausa needs a dedicated Material/Cupertino delegate; stock Flutter
+  // does not support 'ha'. Keep English UI fallback until integrated.
   static const supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ha'),
     Locale('ar'),
     Locale('fr'),
     Locale('es'),
