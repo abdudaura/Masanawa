@@ -62,11 +62,15 @@ export function createTalkReplayCoordinator(input:Readonly<{
       if(media.status==="recording"){
         await input.egress.stop(media.egressId);
       }
-      await input.objects.deleteObject(media.objectKey);
+      // Revoke authoritative playback access before attempting external
+      // object deletion. A failed delete must never leave a ready/recording
+      // database row capable of serving a signed replay URL. Retrying abort
+      // reattempts deletion for an already-aborted job without re-stopping it.
       await input.media.markAborted({
         tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
         completedAt:request.now??new Date().toISOString(),
       });
+      await input.objects.deleteObject(media.objectKey);
     },
 
     async finalize(request){
