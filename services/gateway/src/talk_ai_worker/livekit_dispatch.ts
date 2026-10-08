@@ -177,26 +177,38 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
     room: string,
     body: Readonly<Record<string, unknown>>,
   ): Promise<unknown> {
-    const response = await fetchImpl(
-      `${url}/twirp/livekit.AgentDispatchService/${method}`,
-      {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${roomAdminToken({
-            apiKey,
-            apiSecret,
-            room,
-            now: now(),
-          })}`,
-          "content-type": "application/json",
+    const operation = method.toLowerCase();
+    let response: Response;
+    try {
+      response = await fetchImpl(
+        `${url}/twirp/livekit.AgentDispatchService/${method}`,
+        {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${roomAdminToken({
+              apiKey,
+              apiSecret,
+              room,
+              now: now(),
+            })}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`talks.ai_dispatch_${method.toLowerCase()}_failed`);
+      );
+    } catch {
+      // Network failure can occur after the server accepted CreateDispatch.
+      // Never copy provider exception text that might contain credentials.
+      throw new Error(`talks.ai_dispatch_${operation}_unconfirmed`);
     }
-    return response.json();
+    if (!response.ok) {
+      throw new Error(`talks.ai_dispatch_${operation}_failed`);
+    }
+    try {
+      return await response.json();
+    } catch {
+      throw new Error(`talks.ai_dispatch_${operation}_invalid_response`);
+    }
   }
 
   async function dispatchOnce(request: DispatchMetadata): Promise<void> {
