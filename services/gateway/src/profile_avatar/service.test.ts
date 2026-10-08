@@ -88,11 +88,11 @@ describe("durable profile avatar lifecycle", () => {
   it("authenticates before storage and publishes sanitized private metadata-free PNG", async () => {
     const h = setup();
     await expect(h.service.upload({
-      authorizationHeader: undefined, png: validAvatarPng(),
+      authorizationHeader: undefined, png: validAvatarPng(), expectedUrl: null,
     })).rejects.toMatchObject({ statusCode: 401 });
     expect(h.repo.staged).toHaveLength(0);
     const accepted = await h.service.upload({
-      ...authorized, png: validAvatarPng({ metadata: true }),
+      ...authorized, png: validAvatarPng({ metadata: true }), expectedUrl: null,
     });
     expect(accepted.avatarUrl).toContain(keyBase.slice(0, 16));
     expect(h.repo.staged).toHaveLength(1);
@@ -104,7 +104,7 @@ describe("durable profile avatar lifecycle", () => {
   it("does not publish invalid images or create junk objects", async () => {
     const h = setup();
     await expect(h.service.upload({
-      ...authorized, png: Buffer.alloc(200),
+      ...authorized, png: Buffer.alloc(200), expectedUrl: null,
     })).rejects.toMatchObject({ statusCode: 422 });
     expect(h.repo.staged).toHaveLength(0);
     expect(h.writes).toHaveLength(0);
@@ -114,7 +114,7 @@ describe("durable profile avatar lifecycle", () => {
     const h = setup();
     h.setFailPut(true);
     await expect(h.service.upload({
-      ...authorized, png: validAvatarPng(),
+      ...authorized, png: validAvatarPng(), expectedUrl: null,
     })).rejects.toThrow("storage failed");
     expect(h.repo.staged).toHaveLength(1);
     expect(h.repo.mutations).toBe(0);
@@ -124,7 +124,7 @@ describe("durable profile avatar lifecycle", () => {
     const h = setup();
     h.repo.rejectAttach = true;
     await expect(h.service.upload({
-      ...authorized, png: validAvatarPng(),
+      ...authorized, png: validAvatarPng(), expectedUrl: null,
     })).rejects.toMatchObject({ statusCode: 409 });
     expect(h.repo.url).toBeNull();
     expect(h.repo.staged).toHaveLength(1);
@@ -134,13 +134,13 @@ describe("durable profile avatar lifecycle", () => {
   it("revokes avatar URL only for its authenticated owner", async () => {
     const h = setup();
     const { avatarUrl } = await h.service.upload({
-      ...authorized, png: validAvatarPng(),
+      ...authorized, png: validAvatarPng(), expectedUrl: null,
     });
     expect(h.repo.url).toBe(avatarUrl);
-    await expect(h.service.remove({ authorizationHeader: undefined }))
+    await expect(h.service.remove({ authorizationHeader: undefined, expectedUrl: avatarUrl }))
       .rejects.toMatchObject({ statusCode: 401 });
     expect(h.repo.url).toBe(avatarUrl);
-    expect(await h.service.remove(authorized)).toEqual({ avatarUrl: null });
+    expect(await h.service.remove({ ...authorized, expectedUrl: avatarUrl })).toEqual({ avatarUrl: null });
     expect(h.repo.url).toBeNull();
   });
 
