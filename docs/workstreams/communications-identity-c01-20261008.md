@@ -131,3 +131,16 @@ Narrow claimed repair paths: services/gateway/src/human_contacts/routes.ts, rout
 
 ## Work Flutter execution — scoped test repair
 Tested source ee4e7372745ba1efa01736c0dff88d4f9d94d1f6 on Node24/pnpm12 plus Flutter3.47.6/Dart3.13.5. C01 backend 21 passed / 3 PostgreSQL skipped. Flutter C01: 20 passed / 1 failed. Failure is an obsolete exact-text finder: UI correctly renders `@bob · You removed this connection`, while test expects a separate bare status Text widget. Claim only apps/mobile/test/human_contacts_screen_test.dart plus this handoff for assertion repair; no C01 production widget change. Full Flutter analyzer executed: 484 issues in combined recovered main+C01; C01 paths have 3 info-level lint findings, no errors or warnings. Most main errors include pre-existing corrupt gift transport/store and shadowed locale annotation already repaired on #460; Work #497 preserves/revalidates those separately. Native PostgreSQL18 cannot start under sandbox user-switch permissions. No C01 E2E/device/deployment/merge acceptance.
+
+
+## Work execution checkpoint — 2026-10-08
+
+Verified source head `f4551467d46e4fc708e4f3bbafbebc17aaf68a36` on recovered main `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`, with C01 source overlaid. Node 24.19.0, pnpm 12.8.2; Flutter 3.47.6/Dart 3.13.5.
+
+- C01 backend focused suite: 21 passed, 3 database tests skipped. Strict request-body injection regression tests pass.
+- Flutter `test/human_contacts_transport_test.dart test/human_contacts_controller_test.dart test/human_contacts_screen_test.dart`: 21 passed. Fixed stale text finder against the composite revoked-contact subtitle; production behavior unchanged.
+- Gateway typecheck: same 74 errors as recovered main, zero additional C01 errors. This is NOT a passing typecheck.
+- Full mobile analyzer: 484 issues in recovered main+C01; C01 paths have only 3 informational lints, no error/warning. Pre-existing gift-source syntax corruption and other main issues still block global analyzer.
+- Database execution, multi-device contacts, migration ordering with R18, final Gateway/root composition, APK/device and provider qualification remain OPEN. Native PostgreSQL cannot initialize under the available sandbox user restrictions. Hosted Actions quota remains blocked by #457.
+
+C01 is locally verified for the listed unit/widget scope, not DONE or merged. Work integration evidence continues in PR #497.
