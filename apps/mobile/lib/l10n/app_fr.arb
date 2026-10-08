@@ -64,5 +64,6 @@
   "languageSystem": "Utiliser la langue de l’appareil",
   "languageSaveFailed": "Impossible d’enregistrer la langue. Réessayez.",
   "languagePreviewNotice": "Certaines pages ne sont pas encore entièrement traduites.",
-  "languageHausaUnavailable": "La traduction de l’interface en haoussa est en cours."
+  "languageHausaUnavailable": "La traduction de l’interface en haoussa est en cours.",
+  "languageSelected": "Sélectionné"
 }
