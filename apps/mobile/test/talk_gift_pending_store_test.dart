@@ -114,9 +114,11 @@ void main() {
   test('concurrent confirmations of the same option share a single network request', () async {
     final store = _Store();
     final awaiting = Completer<ResponseBody>();
+    final started = Completer<void>();
     var calls = 0;
     final transport = _transport(store: store, handler: (opts) {
       calls++;
+      if (!started.isCompleted) started.complete();
       return awaiting.future;
     });
     final first = transport.sendGift(
@@ -125,9 +127,8 @@ void main() {
     final second = transport.sendGift(
       talkId: 'talk-1', amountCredits: 100, catalogItemId: 'heart',
     );
-    // The durable write and request happen asynchronously.
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
+    // Wait for the actual request boundary, never for scheduler timing.
+    await started.future;
     expect(calls, 1);
     awaiting.complete(_completed());
     final both = await Future.wait([first, second]);
