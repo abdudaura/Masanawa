@@ -43,6 +43,15 @@ if bash "$verify" tampered.aab "$fingerprint" >/dev/null 2>&1; then
   echo "FAIL: modified signed bundle accepted" >&2; exit 1
 fi
 
+# Mixed-signature archives are not release artifacts even when their original
+# payload and certificate remain valid.
+cp signed.aab mixed.aab
+printf 'extra unsigned payload\\n' > extra.txt
+zip -q mixed.aab extra.txt
+if bash "$verify" mixed.aab "$fingerprint" >/dev/null 2>&1; then
+  echo "FAIL: mixed signed and unsigned entries accepted" >&2; exit 1
+fi
+
 keytool -genkeypair -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 2 \
   -keystore debug.p12 -storetype PKCS12 -storepass changeit -keypass changeit \
   -dname "CN=Android Debug, OU=Android, O=Android, C=US" -noprompt >/dev/null 2>&1
@@ -54,4 +63,4 @@ debugfingerprint="$(keytool -list -v -keystore debug.p12 -storepass changeit -al
 if bash "$verify" debug.aab "$debugfingerprint" >/dev/null 2>&1; then
   echo "FAIL: Android debug signer accepted" >&2; exit 1
 fi
-echo "PASS: valid release, unsigned, wrong fingerprint, tampered artifact, debug signer"
+echo "PASS: valid release, unsigned, wrong fingerprint, tampered artifact, mixed entries, debug signer"
