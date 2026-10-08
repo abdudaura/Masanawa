@@ -97,3 +97,8 @@ flutter build apk --release
 ## R19 ownership extension (new five-minute claim, 2026-10-08 UTC)
 
 During the bounded implementation review, `services/gateway/src/agent_conversation.ts` was found to admit a session and check only active/expiration before invoking strategy, without a local explicit check that returned persisted session's tenant/user/character/relationship and persona version still match fresh authorization. Extend this exact R19 claim to `services/gateway/src/agent_conversation.ts` and `services/gateway/src/agent_conversation.test.ts` only, for fail-closed isolation and recovery. Existing C07 #480 is a separate workspace and does not edit these files; no edits to shared composers or financial authority. This extension is **PARTIAL_IMPLEMENTATION** until coded/test cases committed and recorded, and does NOT authorize claiming whole R19 DONE. The previous SHA-specific handoff remains historical evidence; this section and subsequent final checkpoint supersede its eight-file scope.
+
+
+## R19 recovery claim extension (2026-10-08 UTC)
+
+The new server `agents.session_persona_changed` response must have a **working Flutter recovery path**, not an indefinite Retry loop. Add exclusive R19 paths `apps/mobile/lib/src/state/ai_chat_state.dart`, `apps/mobile/lib/src/agents/agent_session_recovery.dart`, `apps/mobile/test/agent_session_recovery_test.dart` to support safe new-session acquisition for text, voice and multi-media across a stale profile update, while avoiding blind retries of arbitrary financial/turn-pending HTTP 409s. Do not edit shared root shell/voice provider/ledger. This claim remains active only with repository-visible changes and expires after five minutes of inactivity.
