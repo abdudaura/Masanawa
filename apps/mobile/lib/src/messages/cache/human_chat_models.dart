@@ -4,6 +4,7 @@ class CachedHumanThread {
   const CachedHumanThread({
     required this.conversationId,
     required this.peerUserId,
+    this.displayName,
     required this.updatedAtMs,
     this.lastSequence = 0,
     this.preview,
@@ -11,6 +12,7 @@ class CachedHumanThread {
   });
   final String conversationId;
   final String peerUserId;
+  final String? displayName;
   final int updatedAtMs;
   final int lastSequence;
   final String? preview;
@@ -20,6 +22,7 @@ class CachedHumanThread {
       CachedHumanThread(
         conversationId: row['conversation_id'] as String,
         peerUserId: row['peer_user_id'] as String,
+        displayName: row['display_name'] as String?,
         updatedAtMs: row['updated_at_ms'] as int,
         lastSequence: row['last_sequence'] as int,
         preview: row['preview'] as String?,
