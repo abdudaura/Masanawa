@@ -41,6 +41,7 @@ async function lockActiveOwner(db: SqlClient, owner: LinkIdentity): Promise<void
 
 export interface PersistentLinkRepository extends LinkRepository {
   resolveChallengeOwner(channel: LinkChannel, hash: string, at: Date): Promise<LinkIdentity | null>;
+  isVerifiedSender(owner: LinkIdentity, channel: LinkChannel, externalUserId: string, chatId: string): Promise<boolean>;
 }
 
 export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkRepository {
@@ -52,7 +53,7 @@ export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkR
       }>(
         "SELECT choices.channel, " +
         "(SELECT max(l.updated_at) FROM security.customer_channel_links l " +
-        "WHERE l.tenant_id=$1 AND l.user_id=$2 AND l.channel=choices.channel) AS linked_at, " +
+        "WHERE l.tenant_id=$1 AND l.user_id=$2 AND l.channel=choices.channel AND EXISTS (SELECT 1 FROM security.channel_link_intents v WHERE v.tenant_id=l.tenant_id AND v.user_id=l.user_id AND v.channel=l.channel AND v.verified_external_id=l.external_user_id AND v.verified_chat_id=l.chat_id)) AS linked_at, " +
         "(SELECT i.expires_at FROM security.channel_link_intents i " +
         "WHERE i.tenant_id=$1 AND i.user_id=$2 AND i.channel=choices.channel " +
         "AND i.consumed_at IS NULL AND i.code_hash IS NOT NULL AND i.expires_at>$3) AS pending_until, " +
@@ -68,6 +69,19 @@ export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkR
         linkedAt: row.linked_at ? date(row.linked_at).toISOString() : null,
         pendingUntil: row.pending_until ? date(row.pending_until).toISOString() : null,
       })));
+    },
+
+    async isVerifiedSender(owner, channel, externalUserId, chatId) {
+      const result = await pool.query(
+        "SELECT 1 FROM security.channel_link_intents i " +
+        "JOIN security.customer_channel_links l ON " +
+        "l.tenant_id=i.tenant_id AND l.user_id=i.user_id AND l.channel=i.channel " +
+        "AND l.external_user_id=i.verified_external_id AND l.chat_id=i.verified_chat_id " +
+        "WHERE i.tenant_id=$1 AND i.user_id=$2 AND i.channel=$3 " +
+        "AND i.verified_external_id=$4 AND i.verified_chat_id=$5",
+        [owner.tenantId, owner.userId, channel, externalUserId, chatId],
+      );
+      return result.rows.length > 0;
     },
 
     async begin({ owner, channel, codeHash, now, expiresAt }) {
@@ -159,9 +173,10 @@ export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkR
         );
         if (inserted.rowCount !== 1) throw new LinkError("LINK_CONFLICT", 409);
         await db.query(
-          "UPDATE security.channel_link_intents SET code_hash=NULL,consumed_at=$4 " +
+          "UPDATE security.channel_link_intents SET code_hash=NULL,consumed_at=$4, " +
+          "verified_external_id=$5,verified_chat_id=$6 " +
           "WHERE tenant_id=$1 AND user_id=$2 AND channel=$3",
-          [owner.tenantId, owner.userId, channel, at],
+          [owner.tenantId, owner.userId, channel, at, externalUserId, chatId],
         );
         return true;
       });
@@ -179,7 +194,8 @@ export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkR
           [owner.tenantId, owner.userId, channel],
         );
         await db.query(
-          "UPDATE security.channel_link_intents SET code_hash=NULL,consumed_at=$4 " +
+          "UPDATE security.channel_link_intents SET code_hash=NULL,consumed_at=$4, " +
+          "verified_external_id=NULL,verified_chat_id=NULL " +
           "WHERE tenant_id=$1 AND user_id=$2 AND channel=$3",
           [owner.tenantId, owner.userId, channel, at],
         );
@@ -190,8 +206,8 @@ export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkR
       await transaction(pool, async (db) => {
         await lockActiveOwner(db, owner);
         const linked = await db.query(
-          "SELECT 1 FROM security.customer_channel_links " +
-          "WHERE tenant_id=$1 AND user_id=$2 AND channel=$3 LIMIT 1",
+          "SELECT 1 FROM security.customer_channel_links l " +
+          "WHERE l.tenant_id=$1 AND l.user_id=$2 AND l.channel=$3 AND EXISTS (SELECT 1 FROM security.channel_link_intents v WHERE v.tenant_id=l.tenant_id AND v.user_id=l.user_id AND v.channel=l.channel AND v.verified_external_id=l.external_user_id AND v.verified_chat_id=l.chat_id) LIMIT 1",
           [owner.tenantId, owner.userId, channel],
         );
         if (!linked.rows.length) throw new LinkError("LINK_NOT_FOUND", 409);
