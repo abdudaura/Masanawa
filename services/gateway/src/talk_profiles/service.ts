@@ -32,6 +32,12 @@ export interface TalkProfileService {
     authorizationHeader: string | undefined;
     userId: string;
   }>): Promise<HumanProfileView>;
+  createSelf(input: Readonly<{
+    authorizationHeader: string | undefined;
+    handle: string;
+    displayName: string;
+    bio: string;
+  }>): Promise<HumanProfileView>;
   updateSelf(input: Readonly<{
     authorizationHeader: string | undefined;
     displayName?: string;
@@ -119,6 +125,36 @@ export function createTalkProfileService(input: Readonly<{
       });
       if (!profile) throw new TalkProfileError("profiles.not_found", 404);
       return profile;
+    },
+
+    async createSelf(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const handle = normalizeHandle(request.handle);
+      const displayName = request.displayName.trim().replace(/\s+/gu, " ");
+      const bio = request.bio.trim();
+      if (displayName.length < 2 || displayName.length > 80) {
+        throw new TalkProfileError("profiles.display_name_invalid", 400);
+      }
+      if (bio.length > 300) {
+        throw new TalkProfileError("profiles.bio_invalid", 400);
+      }
+      try {
+        const created = await input.repository.createOwnHuman({
+          tenantId: viewer.tenantId,
+          userId: viewer.userId,
+          handle,
+          displayName,
+          bio,
+        });
+        if (!created) throw new TalkProfileError("profiles.already_exists", 409);
+        return created;
+      } catch (error) {
+        if (error instanceof Error &&
+            "code" in error && error.code === "23505") {
+          throw new TalkProfileError("profiles.handle_taken", 409);
+        }
+        throw error;
+      }
     },
 
     async updateSelf(request) {
