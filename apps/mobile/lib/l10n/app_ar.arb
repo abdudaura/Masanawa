@@ -1,0 +1,21 @@
+{
+  "@@locale": "ar",
+  "home": "الرئيسية",
+  "agents": "الوكلاء",
+  "wallet": "المحفظة",
+  "talk": "تحدث",
+  "explore": "استكشف",
+  "liveTalks": "محادثات مباشرة",
+  "startTalk": "ابدأ محادثة",
+  "activity": "النشاط",
+  "profile": "الملف الشخصي",
+  "settings": "الإعدادات",
+  "retry": "حاول مجددًا",
+  "cancel": "إلغاء",
+  "confirm": "تأكيد",
+  "loading": "جارٍ التحميل…",
+  "listen": "استمع",
+  "raiseHand": "ارفع يدك",
+  "speakerSeats": "{count, plural, =0{لا توجد مقاعد للمتحدثين} =1{مقعد واحد للمتحدث} =2{مقعدان للمتحدثين} few{{count} مقاعد للمتحدثين} many{{count} مقعدًا للمتحدثين} other{{count} مقعد للمتحدثين}}",
+  "walletAmount": "{amount} {currency}"
+}
