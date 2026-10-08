@@ -177,6 +177,14 @@ Digital AI Seat/Credit/gift purchases require their own Google Play payment clas
 do not route all product categories through utility billing by assumption. Release
 channel/regional policy and provider eligibility are acceptance gates, not extra Services.
 
+## Human-to-human transfers within the existing Crypto family
+
+The communications extension adds **eligible user-to-user internal crypto transfers** (C06 in `COMMUNICATIONS-EXTENSION-PLAN.md`, issue #462) to Crypto's supported operations; it does **not** add a third standalone service, invent a new wallet or turn crypto into the social Credit. Extend the **same canonical custody-backed exact asset/network ledger** used by R06/R08, after funding and balances are truly qualified.
+
+A transfer recipient is an authenticated eligible account/handle, resolved privately with blocked-user and risk controls. The server owns spendable funds, exact network/asset, fee/limits/market/identity eligibility, fresh quote, confirmation, atomic balanced debit/credit, idempotency, reconciliation and immutable receipt on both sides. It can be initiated from a conversation, Wallet or private Gwani/Gwana by **voice, text or tap**, but all use the same authority. Internal book transfers are not on-chain withdrawals; explain that difference, and never promise globally free/instant external transfers or unsupported region/asset rails.
+
+Secure chat storage is independent of money custody. No human DM content or wallet amount automatically enters public Talk/AI stage. Existing fiat, Masanawa Credits and creator pending/available earnings stay visibly separate from crypto.
+
 ## Root Wallet shortcuts
 
 Wallet is a root destination. Order Crypto first, then Data bundles, Airtime, Electricity
