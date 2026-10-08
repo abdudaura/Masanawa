@@ -15,7 +15,7 @@ class FakeShare implements InviteSystemShare {
 }
 
 void main() {
-  const validToken = 'YWJjZGVmMTIz.NOPQRST_123';
+  const validToken = 'v1.YWJjZGVmMTIz.NOPQRST_123.NOPQRST_123';
   test('generic share is public, contains no phonebook material', () {
     final link = InviteShareLink.generic();
     expect(link.uri.toString(), 'https://masanawa.com/invite');
