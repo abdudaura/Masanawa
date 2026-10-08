@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'src/localization/masanawa_localization.dart';
+import 'src/localization/locale_preference.dart';
 import 'src/core/mobile_push.dart';
 import 'src/core/pending_deep_link.dart';
 import 'src/core/shell_deep_link.dart';
@@ -29,10 +30,13 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
   final _pendingLink = PendingDeepLink();
   bool _linkDrainScheduled = false;
   late final GoRouter _router;
+  late final LocalePreferenceController _localePreference;
 
   @override
   void initState() {
     super.initState();
+    _localePreference = LocalePreferenceController(SecureLocalePreferenceStore());
+    unawaited(_localePreference.load());
     _links = MobilePushService.instance.deepLinks.listen(_openDeepLink);
     final initial = MobilePushService.instance.takeInitialDeepLink();
     if (initial != null) _pendingLink.offer(initial);
@@ -78,6 +82,7 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
   @override
   void dispose() {
     _links?.cancel();
+    _localePreference.dispose();
     _router.routeInformationProvider
         .removeListener(_scheduleLinkDrain);
     super.dispose();
@@ -92,17 +97,21 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       _scheduleLinkDrain();
     });
     final router = ref.watch(appRouterProvider);
-    return MaterialApp.router(
+    return ListenableBuilder(
+      listenable: _localePreference,
+      builder: (context, _) => MaterialApp.router(
       title: 'Masanawa',
       debugShowCheckedModeBanner: false,
       theme: buildMasanawaTheme(brightness: Brightness.light),
       darkTheme: buildMasanawaTheme(brightness: Brightness.dark),
       themeMode: ThemeMode.system,
+      locale: _localePreference.override,
       supportedLocales: MasanawaLocalization.supportedLocales,
       localizationsDelegates: MasanawaLocalization.delegates,
       localeResolutionCallback: (deviceLocale, supportedLocales) =>
           MasanawaLocalization.resolve(deviceLocale, supportedLocales),
       routerConfig: router,
+      ),
     );
   }
 }
