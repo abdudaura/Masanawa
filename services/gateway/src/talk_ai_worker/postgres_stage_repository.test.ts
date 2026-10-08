@@ -10,6 +10,11 @@ function fixture(available = true) {
     if (sql.includes("FROM talks.talks ")) {
       return { rows: available ? [{ topic: "Climate policy", host_name: "Host" }] : [] };
     }
+    if (sql.includes("FROM talks.talk_seats ") && sql.includes("s.active=false")) return { rows: [
+      { participant_id: "seat-departed", kind: "human", display_name: "Former speaker",
+        is_host: false, admitted_at: "2026-10-08T04:58:00Z",
+        removed_at: "2026-10-08T04:59:05Z" },
+    ] };
     if (sql.includes("FROM talks.talk_seats ")) return { rows: [
       { participant_id: "seat-host", kind: "human", display_name: "Host",
         is_host: true, admitted_at: "2026-10-08T04:59:00Z" },
@@ -50,8 +55,9 @@ describe("canonical PostgreSQL Talk stage context source", () => {
       tenantId: "tenant-1", talkId: "talk-1", before, stage,
     });
     expect(context?.events.map((event) => event.kind)).toEqual([
-      "seat", "reaction", "hand", "question", "poll",
+      "seat", "seat", "reaction", "hand", "question", "poll",
     ]);
+    expect(context?.events[1]?.summary).toBe("human seat left");
     expect(context?.events.find((e) => e.kind === "reaction")?.summary)
       .toBe("👏 reactions: 13");
     expect(context?.events.find((e) => e.kind === "question")?.summary)
@@ -60,7 +66,7 @@ describe("canonical PostgreSQL Talk stage context source", () => {
       .toContain("Option A: 7; Option B: 3");
     expect(context?.contentTrust).toBe("public-untrusted-data");
 
-    expect(query).toHaveBeenCalledTimes(6);
+    expect(query).toHaveBeenCalledTimes(7);
     for (const [sql, params] of query.mock.calls) {
       expect(sql).toMatch(/(?:(?:q|p|s)\.)?tenant_id=\$1 AND (?:(?:q|p|s)\.)?talk_id=\$2/);
       expect(params?.slice(0, 2)).toEqual(["tenant-1", "talk-1"]);
@@ -76,6 +82,8 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     expect(allSql).toContain("sp.subject_user_id=p.user_id");
     expect(allSql).toContain("GROUP BY p.reaction");
     expect(allSql).toContain("GROUP BY p.hand_status");
+    expect(allSql).toContain("s.removed_at <= $3");
+    expect(allSql).toContain("s.active=false");
     expect(allSql).toContain("COUNT(*)::integer FROM talks.poll_votes v");
     expect(allSql).toContain("v.option_id=opt->>'optionId'");
     expect(allSql).not.toContain("SELECT v.user_id");
