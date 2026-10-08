@@ -56,7 +56,7 @@ class _LanguagePickerButtonState extends State<LanguagePickerButton> {
                 leading: const Icon(Icons.settings_suggest_outlined),
                 title: Text(strings.languageSystem),
                 trailing: currentCode == _deviceChoice
-                    ? const Icon(Icons.check, semanticLabel: 'Selected')
+                    ? Icon(Icons.check, semanticLabel: strings.languageSelected)
                     : null,
                 onTap: () => Navigator.of(sheetContext).pop(_deviceChoice),
               ),
