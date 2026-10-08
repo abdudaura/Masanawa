@@ -38,7 +38,7 @@ describeDatabase("R12 identity-privacy access revocation", () => {
     const identity = { tenantId, userId, profile };
     accessHash = randomUUID().replace(/-/gu, "").padEnd(64, "a");
     await security.issueSession({
-      identity, accessHash, refreshHash: "b".repeat(64),
+      identity, accessHash, refreshHash: randomUUID().replace(/-/gu, "").padEnd(64, "b"),
       accessExpiresAt: new Date(Date.parse(createdAt) + 3600_000).toISOString(),
       refreshExpiresAt: new Date(Date.parse(createdAt) + 86400_000).toISOString(),
       issuedAt: createdAt,
