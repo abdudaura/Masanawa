@@ -15,7 +15,7 @@ class TalkGiftCatalog {
     final rawItems = json['items'];
     if (talkId is! String || talkId.trim().isEmpty ||
         currency != 'Credits' || rawItems is! List ||
-        rawItems.isEmpty || rawItems.length > 24) {
+        rawItems.length > 24) {
       throw const FormatException('Invalid Talk gift catalog');
     }
     final seen = <String>{};
