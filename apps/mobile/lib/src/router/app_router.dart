@@ -216,6 +216,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           handle: state.pathParameters['handle']!,
           onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
           onOpenTwin: (publicId) => context.push('/persona/' + Uri.encodeComponent(publicId)),
+          onOpenMessage: (handle) => context.push(
+            '/messages/new?handle=' + Uri.encodeQueryComponent(handle)),
         ),
       ),
       GoRoute(
