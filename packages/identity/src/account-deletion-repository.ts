@@ -33,10 +33,19 @@ export interface AccountDeletionChallengeRepository {
     codeHash: string; channel: "email" | "sms";
     now: string; expiresAt: string; resendAfter: string;
   }>): Promise<void>;
-  consume(input: Readonly<{
+  /**
+   * Single durable transaction: lock the request first, validate the challenge,
+   * consume it, transition to identity-verified and append audit before commit.
+   * On transaction failure the code remains usable. A successful result is
+   * never returned unless the request and audit are durably updated.
+   */
+  verify(input: Readonly<{
     tenantId: string; userId: string; requestId: string;
-    codeHash: string; now: string;
-  }>): Promise<AccountDeletionChallengeResult>;
+    expectedRevision: number; codeHash: string; now: string;
+  }>): Promise<
+    | Readonly<{ result: "accepted"; request: AccountDeletionRequest }>
+    | Readonly<{ result: Exclude<AccountDeletionChallengeResult, "accepted"> | "already-verified" | "conflict" }>
+  >;
   cancel(input: Readonly<{
     tenantId: string; userId: string; codeHash: string;
   }>): Promise<void>;
