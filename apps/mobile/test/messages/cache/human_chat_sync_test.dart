@@ -26,6 +26,7 @@ class _Remote implements HumanChatRemote {
   );
   bool timeout = false;
   bool denied = false;
+  bool revoked = false;
   Completer<HumanChatDelta>? gate;
 
   @override
@@ -37,7 +38,10 @@ class _Remote implements HumanChatRemote {
     required String conversationId,
     required int afterSequence,
     int limit = 50,
-  }) async => gate == null ? delta : gate!.future;
+  }) async {
+    if (revoked) throw const HumanChatRejected('ACCESS_REVOKED');
+    return gate == null ? delta : gate!.future;
+  }
 
   @override
   Future<CachedHumanMessage> sendText({
@@ -159,6 +163,17 @@ void main() {
     expect(await cache.syncCursor(
       tenantId: 't', userId: 'a', conversationId: thread,
     ), 0);
+  });
+
+  test('verified revocation wipes only that thread, including queued drafts',
+      () async {
+    await sync.queueText(thread, 'unsent');
+    remote.revoked = true;
+    await expectLater(sync.catchUp(thread),
+        throwsA(isA<HumanChatRejected>()));
+    expect(await sync.cachedHistory(thread), isEmpty);
+    expect(await sync.cachedOutbox(thread), isEmpty);
+    expect(await sync.cachedThreads(), isEmpty);
   });
 
   test('request IDs have UUIDv4 syntax and do not repeat', () {
