@@ -1,5 +1,10 @@
 # Mobile Readiness and Global Integration Plan
 
+## Owner conversation acceptance coverage overlay (2026-10-08)
+
+For every R01–R19 row, use `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` to ensure **nothing from the owner-approved end-user vision is lost**: voice-only accessibility with complete text/tap parity, camera-free audio creation/earnings, authentic person-to-person messaging with fast durable history, the exact five-tab shell and switchable one-chat Gwani/Gwana operator, qualified crypto internal transfers and billing/crypto recovery, full Agent/Twin/public stage, cross-screen privacy and real Android performance. Trace IDs and J01–J11 are crosschecks, **not new R milestones, skipped dependencies or acceptance credit**. A live user journey is not done until actual backend/mobile/deployment/device/provider gates for the relevant R and C rows are proven.
+
+
 Status: **canonical implementation ledger — 2026-10-08 (Africa/Lagos)**
 Owner: each task must be claimed through `MULTI-WINDOW-WORK.md`.
 This is the current improvement plan, not a declaration that the work is complete.

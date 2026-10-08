@@ -1,5 +1,8 @@
 # Golden Journeys
 
+> **2026-10-08 whole-platform acceptance extension:** This file's original GJ-01–GJ-17 Talk/service journeys remain valid. The owner's later **five-tab Talks · Chats · Assistant · Wallet · Agents** requirements, one switchable Gwani/Gwana Assistant chat, human private DMs/voice notes/cache, internal crypto transfer, camera-free creator entry and low-literacy full voice/text parity are traced in `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and tested across destinations by `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` **J01–J11**. Read those before treating the historical 17 journeys as comprehensive; no implementation/device success is implied.
+
+
 Status: **canonical consumer acceptance journeys — 2026-10-07**
 
 These journeys define the experiences the product must ultimately make reliable.

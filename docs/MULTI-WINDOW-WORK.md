@@ -1,5 +1,10 @@
 # Multi-window Work Coordination
 
+## Required conversation-to-code traceability (2026-10-08)
+
+In every R01–R19 / C01–C08 claim, read `docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md`. Attach applicable **P/N/T/M/A/W/Q** IDs and **J01–J11** to the PR and checkpoint. Demonstrate the actual **entry → action → authoritative outcome → error/restart recovery → return state**; test silent typed/tap path wherever voice works; keep public Talk, private human DM, Expert/Twin persona thread, Gwani/Gwana Assistant and finance in their own authority domains. No requirement is "done" because a documentation row exists. C/R IDs remain the only implementation gates; new traceability IDs are **references**, not workstream claims. Only the designated R17/C08 owner changes the shared five-tab router and only financial R06/R08/C06 owners change ledger authority after coordinating claims. Retain the five-minute lease and #457 CI qualification.
+
+
 ## Owner-approved five-tab target / integration gate — 2026-10-08
 
 **Mandatory:** before R17 or any C01–C08 root UI, router, profile messaging, notification or voice/finance handoff changes, read `docs/APP-SHELL-CONTRACT.md` and `docs/END-TO-END-UX-ARCHITECTURE.md`. The owner approved **Talks · Chats · Assistant · Wallet · Agents**, exactly five bottom destinations, with **Assistant in the center**. Talks replaces former Home Explore/Live public discovery; Chats is **human-only DMs**; Assistant is a **single private Gwani/Gwana conversation with a visible in-chat persona switch** and no duplicate task state; Wallet owns qualified money/services; Agents retains complete Expert/Twin browsing and owner actions. These are the final end-state design requirements, **not existing APK or release evidence**.
