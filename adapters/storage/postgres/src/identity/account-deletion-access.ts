@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../transaction.js";
 
 /**
@@ -18,7 +18,28 @@ export interface AccountDeletionAccessRevocationInput {
 export interface AccountDeletionAccessRevocationReceipt {
   readonly requestId: string;
   readonly completedAt: string;
+  readonly clearanceReference: string;
   readonly alreadyRevoked: boolean;
+}
+
+/**
+ * Mandatory transactional financial preflight. The implementation must
+ * reconcile and lock every applicable spendable balance, outstanding payout,
+ * charge, settlement and provider operation before returning clear=true.
+ * No default or permissive implementation is provided in production.
+ */
+export interface AccountDeletionFinancialClearance {
+  check(input: Readonly<{
+    client: PoolClient;
+    tenantId: string;
+    userId: string;
+    requestId: string;
+    at: string;
+  }>): Promise<Readonly<{
+    clear: boolean;
+    checkedAt: string;
+    reference: string;
+  }>>;
 }
 
 type RequestRow = {
@@ -26,9 +47,15 @@ type RequestRow = {
   revision: string;
   outstanding_obligations: unknown;
 };
-type ReceiptRow = { completed_at: Date | string };
+type ReceiptRow = { completed_at: Date | string; clearance_reference: string };
 
-export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
+export function createPostgresAccountDeletionAccessRevoker(
+  pool: Pool,
+  financialClearance: AccountDeletionFinancialClearance,
+) {
+  if (!financialClearance || typeof financialClearance.check !== "function") {
+    throw new Error("account_deletion.financial_clearance_required");
+  }
   return Object.freeze({
     async revoke(input: AccountDeletionAccessRevocationInput): Promise<AccountDeletionAccessRevocationReceipt> {
       if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 1 ||
@@ -49,7 +76,7 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
         if (!row) throw new Error("account_deletion.not_found");
 
         const previous = await client.query<ReceiptRow>(
-          `SELECT completed_at
+          `SELECT completed_at,clearance_reference
              FROM identity.account_deletion_access_revocations
             WHERE request_id=$1::uuid AND tenant_id=$2 AND user_id=$3`,
           [input.requestId,input.tenantId,input.userId],
@@ -58,6 +85,7 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
           return Object.freeze({
             requestId: input.requestId,
             completedAt: new Date(previous.rows[0].completed_at).toISOString(),
+            clearanceReference: previous.rows[0].clearance_reference,
             alreadyRevoked: true,
           });
         }
@@ -69,9 +97,32 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
           throw new Error("account_deletion.access_not_authorized");
         }
 
+        // Guard is executed under the same DB transaction and request lock.
+        // Any missing, stale or incomplete financial reconciliation fails closed
+        // before identity, channel or device access is modified.
+        const clearance = await financialClearance.check({
+          client,
+          tenantId: input.tenantId,
+          userId: input.userId,
+          requestId: input.requestId,
+          at: input.now,
+        });
+        const verifiedAt = Date.parse(clearance.checkedAt);
+        const requestedAt = Date.parse(input.now);
+        if (!clearance.clear ||
+            !Number.isFinite(verifiedAt) ||
+            verifiedAt > requestedAt ||
+            verifiedAt < requestedAt - 5 * 60_000 ||
+            !/^[A-Za-z0-9:_-]{8,160}$/u.test(clearance.reference)) {
+          throw new Error("account_deletion.financial_clearance_required");
+        }
+
         const scope = [input.tenantId,input.userId];
         const scopeAtTime = [input.tenantId,input.userId,input.now];
-        const receiptValues = [input.tenantId,input.userId,input.requestId,input.now];
+        const receiptValues = [
+          input.tenantId,input.userId,input.requestId,input.now,
+          clearance.reference,clearance.checkedAt,
+        ];
 
         // Disabling canonical identity is the authorization barrier for normal
         // access-token resolution and refresh rotation. It must commit with
@@ -140,13 +191,14 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
         // a statement that financial, processor or private-data cleanup ended.
         await client.query(
           `INSERT INTO identity.account_deletion_access_revocations
-             (request_id,tenant_id,user_id,completed_at)
-           VALUES ($3::uuid,$1,$2,$4)`,
+             (request_id,tenant_id,user_id,completed_at,clearance_reference,clearance_checked_at)
+           VALUES ($3::uuid,$1,$2,$4,$5,$6)`,
           receiptValues,
         );
         return Object.freeze({
           requestId: input.requestId,
           completedAt: new Date(input.now).toISOString(),
+          clearanceReference: clearance.reference,
           alreadyRevoked: false,
         });
       });
