@@ -19,7 +19,7 @@ Status: CLAIMED — implementation ongoing. Verification: NOT RUN. Deployment: N
 - `apps/mobile/lib/src/screens/talks/talk_gift_stage_overlay.dart` (new)
 - `apps/mobile/test/talk_screen_test.dart` (gift test fake and focused gift assertions)
 - `apps/mobile/test/talk_gift_http_transport_test.dart`
-- `apps/mobile/test/talk_gift_sheet_test.dart` (new)
+- `apps/mobile/test/talk_gift_models_test.dart` (new)
 - `apps/mobile/test/talk_gift_stage_overlay_test.dart` (new)
 - `docs/workstreams/r10-gift-catalog-stage-feedback-20261008.md`
 
