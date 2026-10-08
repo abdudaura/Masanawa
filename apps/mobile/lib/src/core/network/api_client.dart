@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../api/models.dart';
 import '../api/billing_models.dart';
+import '../api/account_deletion_models.dart';
 
 /// Masanawa production Gateway. A build may override this for staging, but
 /// users never configure runtime URLs or credentials inside the app.
@@ -155,6 +156,36 @@ class ApiClient {
 
   Future<Map<String, dynamic>> logout() async {
     return _post('/auth/logout', const {});
+  }
+
+  // ---- Account deletion (R12) ----
+
+  Future<AccountDeletionRequestView?> accountDeletionStatus() async {
+    final data = await _get('/account/deletion');
+    final request = data['request'];
+    if (request == null) return null;
+    if (request is! Map) {
+      throw const ApiException('Account deletion status is unavailable');
+    }
+    return AccountDeletionRequestView.fromJson(
+      Map<String, dynamic>.from(request),
+    );
+  }
+
+  Future<AccountDeletionDeliveryView> requestAccountDeletion() async {
+    final data = await _post('/account/deletion/request', const {});
+    return AccountDeletionDeliveryView.fromJson(data);
+  }
+
+  Future<AccountDeletionRequestView> verifyAccountDeletion(String code) async {
+    final data = await _post('/account/deletion/verify', {'code': code});
+    final request = data['request'];
+    if (request is! Map) {
+      throw const ApiException('Account deletion verification is unavailable');
+    }
+    return AccountDeletionRequestView.fromJson(
+      Map<String, dynamic>.from(request),
+    );
   }
 
   // ---- Billing ----

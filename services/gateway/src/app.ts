@@ -44,6 +44,8 @@ import type { DirectTwinService } from "./talk_direct_twin/service.js";
 import type { TalkService } from "./talks/service.js";
 import type { TwinProductionRuntime } from "./twin_production_runtime.js";
 import { registerTwinProfileRoutes } from "./twin_profile_routes.js";
+import { registerAccountDeletionRoutes } from "./account_deletion_routes.js";
+import type { AccountDeletionService } from "./account_deletion.js";
 import { registerTwinDirectoryRoutes } from "./twin_directory_routes.js";
 import { registerMyTwinProjectionRoutes } from "./my_twin_projection_routes.js";
 import { registerTwinActivityRoutes } from "./twin_activity_routes.js";
@@ -102,6 +104,7 @@ export interface GatewayAppOptions {
   readonly liveVoiceTokens?: LiveVoiceTokenService;
   readonly mobilePush?: MobilePushRegistrationService;
   readonly customerAuth?: CustomerAuthService;
+  readonly accountDeletion?: AccountDeletionService;
   readonly talks?: TalkService;
   readonly talkReplay?: TalkReplayService;
   readonly talkModeration?: TalkModerationService;
@@ -358,6 +361,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     reply.headers(headers);
   });
 
+
+  if (options.accountDeletion) {
+    registerAccountDeletionRoutes(app, options.accountDeletion);
+  }
 
   if (options.customerAuth) {
     const auth = options.customerAuth;

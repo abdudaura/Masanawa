@@ -7,3 +7,6 @@ export * from "./personal-clone.js";
 export * from "./clone-setup.js";
 
 export * from "./twin-profile.js";
+
+export * from "./account-deletion.js";
+export * from "./account-deletion-repository.js";
