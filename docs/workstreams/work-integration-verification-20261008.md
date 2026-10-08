@@ -46,3 +46,11 @@ PR #460 has existing recoverable baseline repairs. Latest activity 07:31 UTC is 
 - `services/gateway/src/talk_safety/enforcement_integration.test.ts`
 - `services/gateway/src/talk_safety/replay_bridge.test.ts`
 All patches pass git apply --check against recovered current main. Existing feature owners' app.ts/main.ts, mobile, migrations, finance and domain repos remain untouched. This is recovery of #460's strict request validation and obsolete test fixtures, not a competing feature authority. Next execute affected suites, publish preserved patches/evidence, and leave draft while remaining baseline/Flutter/DB/provider gates are unresolved.
+
+
+## Baseline reuse results and next scoped repair — 2026-10-08T12:36:00Z
+Preserved #460 backend patch subset committed as e99f4392c6eefad02da3f72c3754a4265bcc5769. 10 affected suites / 68 tests passed. Broad backend rerun: 228 files passed, 6 failed, 20 skipped; 1203 tests passed, 6 failed, 143 skipped. Missing-fixture errors resolved. Remaining real gates include unregistered environment variables (16) and undeclared API version compatibility (73 routes); do not weaken those gates.
+
+Next four narrowly claimed stale test paths: services/gateway/src/billing_checkout.test.ts; services/gateway/src/financial_billing.test.ts; services/gateway/src/twin_production_runtime.test.ts; services/gateway/src/talk_ai_worker/worker.test.ts. Preserve production behavior: hosted checkout recovery test must use explicit legacy startCheckout API because current quote correctly emits wallet.confirm, not hosted-start; independently test missing quote and funding authorities in their actual validation order; include existing creditGift/providerValuationAdmin runtime surface; synchronize inference-start test via explicit promise instead of assuming one microtask reaches inference. This does NOT fix/admit the separate stop-during-admission worker race; production worker is under existing #448 and must be qualified independently.
+
+Flutter3.47.6/Dart3.13.5 SDK bootstrap succeeded. Mobile text sources recovered; Flutter artifact extraction hit sandbox tar ownership error, now using TAR_OPTIONS=--no-same-owner for scratch-only archives. Dependency resolution running, no Flutter test pass yet. Native PostgreSQL18 remains blocked by OS permissions; no DB evidence upgrade.
