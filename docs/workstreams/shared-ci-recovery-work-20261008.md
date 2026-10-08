@@ -26,3 +26,19 @@ Next: recover exact immutable source and dependency toolchain; run main baseline
 ## Executable recovery update — 2026-10-08T07:11:00Z
 
 Installed repository-pinned pnpm 12.8.2 (actual version verified) with Node 24.19.0. Official Flutter stable source checkout succeeded at 5fc346839b5d0eef006ed8404392afb4dfae428d; Dart engine SDK downloaded, Flutter tool dependency bootstrap is running. Connector snapshot recovery has passed 800 files at immutable main tree 7971269d71c13227f3667bc1a8233395d4b81ada. Browser archive did not materialize; no success inferred. Reviewed exact PR #455 changed files and diff; no duplicate R16 implementation. Current queue has 25 feature PRs plus this coordination PR, all draft/unmerged. Ubuntu packaged PostgreSQL is 16.15, not required PostgreSQL 18; no canonical DB test pass inferred from that version.
+
+## Baseline diagnosis and bounded repair claim — 2026-10-08T07:25:38.966Z
+
+Pinned pnpm frozen install passed. Flutter 3.47.6 / Dart 3.13.5 bootstrapped with CI analytics disabled; pub get completed, SDK-generated config changes are not implementation. Main typecheck fails on a test importing TalkId from the wrong module. Main Vitest: 219 files passed, 15 failed, 20 skipped; 1186 tests passed, 22 failed, 143 skipped. PostgreSQL18 integration remains unexecuted. Logs retained in Work workspace.
+
+Claim additionally owns these bounded baseline test repairs:
+- `packages/agents/src/talk-replay.test.ts`
+- `services/gateway/src/talk_safety/replay_bridge.test.ts`
+- `services/gateway/src/talk_profiles/postgres_repository.test.ts`
+- `services/gateway/src/talk_ranking/ranking.test.ts`
+- `services/gateway/src/talk_safety/enforcement_integration.test.ts`
+- `services/gateway/src/customer_channel_twin_routing.test.ts`
+- `packages/identity/src/account-deletion.test.ts`
+- `services/gateway/src/main.test.ts`
+
+These repair stale imports, canonical SQL mocks, timestamp fixtures and finalization fixtures; production security guards remain intact. Independent read-only diagnostics also identified genuine worker stop races (coordinate with #448) and request validation/profile persistence failures (not yet claimed). No feature production source or other PR branch is owned or overwritten. PR #455 remains preserved/unverified. Hosted CI still blocked by quota; no merges or DONE claims.
