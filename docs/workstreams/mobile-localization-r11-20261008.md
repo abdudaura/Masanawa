@@ -44,6 +44,18 @@ Additional bounded R11 ownership: `apps/mobile/lib/src/ui/components/onboarding_
 - Flutter SDK/Dart are not available in the execution container; direct GitHub clone also fails due to network name resolution. GitHub Actions Mobile Build run `37731016920` and Foundation CI run `37731017213` on the PR head both reported failure with no job steps/logs returned. Do **not** classify these as Flutter/application test failures or as successful validation.
 - Real compilation, generated delegate validation, accessibility/RTL device QA, native-speaker review and full-screen translation remain **unverified/open**; do not merge until checked. Theme R01 PR #406 and shell R17 PR #411 still require semantic integration of shared app-root behavior.
 
+## 2026-10-08 follow-on — locale chooser, bidi and integration recovery
+
+- Added `locale_preference_scope.dart` to expose one persisted device UI-locale controller to router descendants without a second source of state.
+- Added `language_picker_button.dart`, placed in signed-out `phone_login_screen.dart`. It supports explicit en/ar/fr/es/pt and device-language mode; Hausa is shown disabled with an honest explanation, and partial translation coverage is disclosed. Language names use native autonyms, with localized screen-reader selected state.
+- Added `language_picker_button_test.dart`: save/restore, reset to device locale, write failure, Arabic RTL, and a live French UI-label update. Tests are committed but **not executed**.
+- Added `bidi_display.dart` and `bidi_display_test.dart` so OTP destination email/phone references display safely inside right-to-left translated sentences. Source authentication values are unchanged; bidi override characters are stripped only from the display projection.
+- Each of the six ARB sources now has **66** translated message keys. GitHub API readback found no missing resources, template descriptions, or declared placeholders (a structural source check, not linguistic QA or code generation).
+- Reviewed upstream R01 merged changes and updated this branch's `apps/mobile/lib/main.dart` to retain `ThemeMode.light`; do not restore `ThemeMode.system` or introduce automatic OS-dark styling.
+- Branch integration blocker: main advanced past original base `265f2c5` to newer commits (observed `849e46cb` and further activity). GitHub reports PR #407 non-mergeable on stale history. The only overlapping upstream path identified at that checkpoint was `apps/mobile/lib/main.dart`; other upstream edits include billing, Android store signing, Talk audio and theme. Reconcile by merging current main **into the R11 branch** while retaining R11 locale scope and R01 light policy; do not force-push or replace unrelated files. GitHub connector does not offer automatic merge-main-into-branch and exposes no main tree SHA for safe explicit tree merge.
+- The current environment has **no Flutter/Dart SDK** and cannot resolve github.com for a git checkout. GitHub Actions build/foundation checks for the earlier branch commit reported failure without surfaced steps/logs. Therefore no verified compilation, app test, device acceptance, deployment or merge.
+- Next gates: regenerate localizations and lockfile on a Flutter-capable runner; run analyzer/unit/widget tests; fix errors; complete Hausa native Material/Cupertino support through a properly reviewed implementation, migrate other screens, add the user-facing Settings language control in coordination with the R12 owner, check screen-reader and mixed RTL data on a handset. Keep PR draft.
+
 ## Required validation before merging
 ```sh
 cd apps/mobile
