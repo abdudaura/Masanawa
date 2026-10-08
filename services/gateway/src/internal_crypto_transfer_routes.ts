@@ -38,6 +38,13 @@ export function registerInternalCryptoTransferRoutes(
   app: FastifyInstance,
   service: InternalCryptoTransferService,
 ): void {
+  app.get("/v1/financial/crypto/internal/capabilities", async (request, reply) => {
+    try {
+      return await service.capabilities({
+        authorizationHeader: request.headers.authorization,
+      });
+    } catch (error) { return respondError(reply, error); }
+  });
   app.post("/v1/financial/crypto/internal/quotes", async (request, reply) => {
     try {
       const body = object(request.body);
