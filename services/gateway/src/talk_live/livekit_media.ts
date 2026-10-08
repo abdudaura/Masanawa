@@ -107,15 +107,20 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
       throw new Error("talks.live.media_admin_list_failed");
     }
     const decoded: unknown = await list.json();
-    if (!decoded || typeof decoded !== "object" ||
-        !("participants" in decoded) ||
-        !Array.isArray(decoded.participants)) {
+    if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
+      throw new Error("talks.live.media_admin_invalid_participants");
+    }
+    // Protobuf JSON may omit empty repeated fields rather than emit [].
+    const participants = "participants" in decoded
+      ? decoded.participants
+      : [];
+    if (!Array.isArray(participants)) {
       throw new Error("talks.live.media_admin_invalid_participants");
     }
     const prefix = `${request.userId}:talk-live_`;
     const currentIdentity = `${request.userId}:${request.sessionId}`;
     const previous = new Set<string>();
-    for (const item of decoded.participants) {
+    for (const item of participants) {
       if (!item || typeof item !== "object" ||
           typeof item.identity !== "string") {
         throw new Error("talks.live.media_admin_invalid_participants");
@@ -149,7 +154,7 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
 
   return Object.freeze<TalkMediaTokenIssuer>({
     async mint(request) {
-      if (request.role === "host" && request.canPublishAudio) {
+      if (request.role === "host") {
         await evictPreviousHostSessions(request);
       }
       const issued = Math.floor(now().getTime() / 1000);
