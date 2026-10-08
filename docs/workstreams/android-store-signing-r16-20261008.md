@@ -6,6 +6,17 @@
 - Task: R16 release qualification, specifically prevent accidental store package signed with debug credentials.
 - Exact owned code paths: `apps/mobile/android/app/build.gradle.kts`; claim/checkpoint path `docs/workstreams/android-store-signing-r16-20261008.md`.
 - Non-owned dependencies: R01 theme and R11 locale `main.dart`, R02 audio; no Gateway, financial, deployment or APK edits.
-- Current step: implement isolated Gradle store-release signing guard while retaining explicitly identified test APK path.
+- Current step: implementation committed; awaiting Gradle/build verification.
 - Status: implementation in progress; Gradle/Android device validation not run in connector environment; no production deployment.
 - Last repository-visible update: this claim commit; renew only on new repository commits.
+
+## Implementation checkpoint
+
+- Code commit: `3f353dacd34a876e849ff1a4c35629235f9ca9c7`.
+- Guard runs for `bundleRelease` tasks (store AAB path), or when `-PmasanawaStoreRelease=true` is passed for another release task.
+- Requires all four signing properties, verifies the configured keystore file exists, and refuses a file named `debug.keystore`.
+- Local `flutter build apk --release` retains the existing debug fallback for handset testing when no release key is present. Such APKs are **not** qualified for distribution.
+- Store candidate command: `flutter build appbundle --release` (checks the Gradle bundleRelease task); test APK command with strict store signing: `cd android && ./gradlew assembleRelease -PmasanawaStoreRelease=true`.
+- Verification: connector readback of the modified Gradle script; **Gradle, Flutter build, Play signing certificate inspection and device testing NOT RUN**. A physical certificate check and store declarations are still required; this is bounded R16 progress, not R16 acceptance.
+- Deploy: none. Other R16 work remains open.
+- Last repository-visible activity: implementation/checkpoint commits on this branch.
