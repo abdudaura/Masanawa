@@ -47,8 +47,6 @@ void main(){
     expect(pending.value?.text,'Hello');
     expect(find.text('Delivery not confirmed'),findsOneWidget);
     // Recover persisted request rather than treating the failed POST as success.
-    await tester.tap(find.byKey(const ValueKey('human-dm-pending')).hitTestable());
-    await tester.pumpAndSettle();
     expect(pending.value?.text,'Hello');
     final retry=find.widgetWithText(TextButton,'Retry').first;
     await tester.tap(retry);
