@@ -48,6 +48,7 @@ const base = {
   reason:"impersonation" as const,
   detail:"This person is pretending to be another creator.",
   clientRequestId:"human-profile-abc123",
+  expectedReporterUserId:"user-reporter",
 };
 
 describe("R15 public human profile report",()=>{
@@ -80,6 +81,12 @@ describe("R15 public human profile report",()=>{
       .rejects.toMatchObject({statusCode:400});
     await expect(service.report({...base,authorizationHeader:undefined}))
       .rejects.toMatchObject({statusCode:401});
+    expect(reports.size).toBe(0);
+  });
+  it("rejects a stale report after token replay under a different account",async()=>{
+    const {service,reports}=harness();
+    await expect(service.report({...base,expectedReporterUserId:"user-other"}))
+      .rejects.toMatchObject({statusCode:409});
     expect(reports.size).toBe(0);
   });
   it("cannot report a profile from another tenant",async()=>{
