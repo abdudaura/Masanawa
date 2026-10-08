@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../finance/crypto_wallet_screen.dart';
+import '../screens/activity/activity_screen.dart';
 import '../screens/billing/billing_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
 import '../screens/onboarding/name_screen.dart';
@@ -19,6 +20,7 @@ import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
 import '../screens/you/my_talks_screen.dart';
+import '../screens/you/you_screen.dart';
 import '../screens/you/saved_talks_screen.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
@@ -27,7 +29,7 @@ import '../talks/talk_models.dart';
 
 /// Production router for the human-hosted Talk product.
 ///
-/// Root shell: Home · Create · Activity · You.
+/// Root shell: Home · Agents · Wallet · Talk; legacy entry points stay valid.
 /// Home contains Explore / Live Talks.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -36,10 +38,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
 
       if (path == '/splash') return null;
-      if (path == '/chat') return '/home';
-      if (path == '/chats' || path == '/agents' || path == '/masana') {
-        return '/home';
-      }
+      if (path == '/chat' || path == '/chats') return '/home?tab=talk';
+      if (path == '/agents' || path == '/masana') return '/home?tab=agents';
 
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
@@ -65,6 +65,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final protected = path == '/home' ||
+          path == '/activity' ||
+          path == '/you' ||
           path == '/search' ||
           path == '/chats' ||
           path.startsWith('/chat/') ||
@@ -86,6 +88,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
 
+      // Legacy shell deep links must retain their previous action.
+      if (path == '/home') {
+        switch (state.uri.queryParameters['tab']) {
+          case 'create': return '/talk/create';
+          case 'activity': return '/activity';
+          case 'you': return '/you';
+        }
+      }
       return null;
     },
     routes: [
@@ -100,13 +110,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/home',
         builder: (_, state) {
           final index = switch (state.uri.queryParameters['tab']) {
-            'create' => 1,
-            'activity' => 2,
-            'you' => 3,
+            'agents' => 1,
+            'wallet' => 2,
+            'talk' => 3,
             _ => 0,
           };
           return TwinHomeShell(initialIndex: index);
         },
+      ),
+      GoRoute(
+        path: '/activity',
+        builder: (context, _) => ActivityScreen(
+          onOpenTalk: (id) => context.push('/talk/' + Uri.encodeComponent(id)),
+          onOpenProfile: (handle) => context.push(
+            '/u/' + Uri.encodeComponent(handle)),
+        ),
+      ),
+      GoRoute(
+        path: '/you',
+        builder: (context, _) => YouScreen(
+          onOpenProfile: () => context.push('/profile'),
+          onOpenMyTalks: () => context.push('/my-talks'),
+          onOpenMyTwin: () => context.push('/my-twin'),
+          onOpenSaved: () => context.push('/saved-talks'),
+          onOpenWallet: () => context.push('/wallet'),
+          onOpenBills: () => context.push('/billing'),
+          onOpenCrypto: () => context.push('/crypto'),
+          onOpenSettings: () => context.push('/settings'),
+        ),
       ),
       GoRoute(
         path: '/search',
@@ -191,7 +222,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           onOpenCrypto: () => context.push('/crypto'),
         ),
       ),
-      GoRoute(path: '/chats', redirect: (_, __) => '/home'),
+      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=talk'),
       GoRoute(
         path: '/chat/:id',
         builder: (context, state) {
@@ -229,8 +260,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
         ),
       ),
-      GoRoute(path: '/agents', redirect: (_, __) => '/home'),
-      GoRoute(path: '/masana', redirect: (_, __) => '/home'),
+      GoRoute(path: '/agents', redirect: (_, __) => '/home?tab=agents'),
+      GoRoute(path: '/masana', redirect: (_, __) => '/home?tab=agents'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/billing',
