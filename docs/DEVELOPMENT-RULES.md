@@ -1,5 +1,10 @@
 # Development Rules
 
+## Flutter OTA and release safety (owner-approved 2026-10-08)
+
+Every change in `apps/mobile` must declare its intended delivery tier: **server-driven versioned configuration** (supported existing client contract), **Shorebird candidate** (signed, release-compatible Dart-only code change), or **new signed Android/iOS store binary** (native/plugin/asset/engine/permission and policy-sensitive functionality changes). Flutter remains canonical; do not introduce a parallel React Native consumer. Release code must never be marked complete from source review, patch build or docs alone. Never expose signing keys, Firebase values or release secrets in Git. No `--allow-native-diffs`/`--allow-asset-diffs` bypass. Mandatory gates: [mobile Shorebird policy](FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md) and [qualification runbook](../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md). Respect active consolidation ownership and real device/provider/rollback evidence.
+
+
 ## Before coding
 
 1. Read CONTINUE-HERE.

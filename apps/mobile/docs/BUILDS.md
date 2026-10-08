@@ -1,5 +1,10 @@
 # Builds — phone + web
 
+## Flutter production distribution and future Shorebird (policy adopted 2026-10-08)
+
+**Existing commands on this page are for normal development/manual Flutter artifacts**; a plain `flutter build` output is **not** a Shorebird patchable production baseline. Once explicitly implemented/verified, consumer `apps/mobile` will build its first signed patchable base through `shorebird release android` or `shorebird release ios` (with owner-controlled patch public-key embedding) and later distribute eligible, signed, version-specific Dart patches after staging and two-launch testing. Play/App Store artifact submission and native/plugin/asset/engine updates still require new signed releases; old ordinary/debug-signed APKs cannot automatically receive Shorebird patches. **Do not change signing/build scripts or use the sample commands for production before release qualification.** Full [canonical policy](../../../docs/FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md) and [qualification procedure](SHOREBIRD-QUALIFICATION-RUNBOOK.md). Current Work #497, CI #457 and Firebase local compilation/device acceptance remain outstanding.
+
+
 All commands run from `apps/mobile`.
 
 ## Build flags

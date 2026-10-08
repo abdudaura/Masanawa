@@ -1,5 +1,10 @@
 # Masanawa Documentation
 
+## Flutter-first mobile updates and Shorebird release governance — 2026-10-08
+
+**Owner decision:** no React Native second app. Preserve `apps/mobile` Flutter consumer and its separate Flutter admin companion. [`FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md`](FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md) governs the three change classes (versioned server content, Shorebird signed compatible Dart patch, signed Android/iOS binary), patch signing, version/engine/asset/native compatibility, app-store rules, release/patch provenance, compatibility, incident control, staging and rollback. [`../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md`](../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md) gives the required proof and CLI sequence. **Planning and policy only: no Shorebird binary/patch, account or devices have been verified.** This does not override the active Work #497 consolidation freeze or CI #457 and does not mark any R/C lane done.
+
+
 ## Backend/database portability and full-stack acceptance audit (2026-10-08)
 
 **All feature owners must read these along with the owner requirement trace and J journeys:** `BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md` (source + Railway evidence and exact unresolved portability/deployment risks), `DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md` (safe fresh-account encrypted backup, migration/restore and financial job-fencing rehearsal), and `BACKEND-FEATURE-TRACEABILITY-20261008.md` (every tab's Flutter→API→auth→repository→migration/media/outbox→readback test contract). They add evidence gates to existing R01–R19/C01–C08 owners, **not a new competing product plan**.

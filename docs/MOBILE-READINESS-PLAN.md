@@ -1,5 +1,10 @@
 # Mobile Readiness and Global Integration Plan
 
+## Mobile OTA delivery qualification overlay — 2026-10-08
+
+Owner cancelled the separate React Native initiative and approved a **Flutter-first/Shorebird** release plan. This is a delivery-safety overlay, **not** an additional R/C lane or a claim that code push currently works. For every release-bound R01–R19/C01–C08 task, record whether it requires (a) authorized versioned Gateway data only, (b) signed Shorebird-compatible Dart patch to a pre-existing Shorebird release or (c) newly signed Play/App Store binary. Before shipping first patchable release: complete consolidation, Firebase/native config, actual Android and iOS signing, backend/DB/provider/device golden journeys, QA two-launch patch/rollback proof, signed patch key custody and release metadata. **No native code/plugin/permission/asset/engine patch shortcuts;** older non-Shorebird APKs need a normal signed binary upgrade first. Detailed contract: [`FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md`](FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md); runbook [`../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md`](../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md). Nothing here promotes current R/C statuses or clears CI #457/Work #497 blockers.
+
+
 ## Owner conversation acceptance coverage overlay (2026-10-08)
 
 For every R01–R19 row, use `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` to ensure **nothing from the owner-approved end-user vision is lost**: voice-only accessibility with complete text/tap parity, camera-free audio creation/earnings, authentic person-to-person messaging with fast durable history, the exact five-tab shell and switchable one-chat Gwani/Gwana operator, qualified crypto internal transfers and billing/crypto recovery, full Agent/Twin/public stage, cross-screen privacy and real Android performance. Trace IDs and J01–J11 are crosschecks, **not new R milestones, skipped dependencies or acceptance credit**. A live user journey is not done until actual backend/mobile/deployment/device/provider gates for the relevant R and C rows are proven.
