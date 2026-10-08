@@ -64,5 +64,6 @@
   "languageSystem": "استخدام لغة الجهاز",
   "languageSaveFailed": "تعذّر حفظ تفضيل اللغة. حاول مجددًا.",
   "languagePreviewNotice": "بعض الشاشات لم تُترجم بالكامل بعد.",
-  "languageHausaUnavailable": "جارٍ استكمال دعم واجهة التطبيق باللغة الهوساوية."
+  "languageHausaUnavailable": "جارٍ استكمال دعم واجهة التطبيق باللغة الهوساوية.",
+  "languageSelected": "محدد"
 }
