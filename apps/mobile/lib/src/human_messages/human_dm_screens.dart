@@ -64,7 +64,7 @@ class _HumanDmThreadScreenState extends State<HumanDmThreadScreen> {
           if(controller.error!=null)
             MaterialBanner(content:Text(controller.error!),actions:[
               if(controller.pendingRequestId!=null)
-                TextButton(onPressed:controller.sending?null:()=>controller.send(controller.pendingBody!),
+                TextButton(onPressed:controller.sending?null:send,
                   child:const Text('Retry same message')),
               if(controller.pendingRequestId!=null)
                 TextButton(onPressed:controller.sending?null:controller.discardPending,
@@ -136,7 +136,7 @@ class HumanDmInboxScreen extends StatefulWidget {
 }
 class _HumanDmInboxScreenState extends State<HumanDmInboxScreen>{
   late Future<List<HumanDmConversation>> conversations;
-  @override void initState(){super.initState();refresh();}
+  @override void initState(){super.initState();conversations=widget.transport.inbox();}
   void refresh(){setState(()=>conversations=widget.transport.inbox());}
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:const Text('Chats'),
@@ -154,7 +154,7 @@ class _HumanDmInboxScreenState extends State<HumanDmInboxScreen>{
         return ListView.builder(itemCount:items.length,itemBuilder:(context,i){
           final item=items[i];
           return ListTile(
-            title:Text(item.otherUserId),
+            title:Text(item.otherDisplayName),
             subtitle:Text(item.preview??'Message deleted',maxLines:1,
               overflow:TextOverflow.ellipsis),
             trailing:item.unreadCount>0?CircleAvatar(radius:14,
@@ -163,7 +163,7 @@ class _HumanDmInboxScreenState extends State<HumanDmInboxScreen>{
               await Navigator.of(context).push(MaterialPageRoute<void>(
                 builder:(_)=>HumanDmThreadScreen(
                   conversationId:item.conversationId,
-                  otherDisplayName:item.otherUserId,
+                  otherDisplayName:item.otherDisplayName,
                   currentUserId:widget.currentUserId,transport:widget.transport)));
               if(mounted)refresh();
             },
