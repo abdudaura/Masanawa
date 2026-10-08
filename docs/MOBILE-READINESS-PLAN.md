@@ -14,7 +14,10 @@ Keep one adaptive Talk screen and compact sheets; do not add utility dashboards.
 The new requirements are:
 - WhatsApp-style **white light surfaces and vibrant green** throughout; light is the
   default even when the device is dark. Preserve the approved Masanawa logo.
-- Available, fully profiled server-managed AI personas; a topic must lead to usable
+- Available, fully profiled server-managed AI personas using the user's approved 17-name
+  roster (9 male, 8 female), with distinct professional, serious/playful styles inspired
+  by their names. See DEFAULT-AI-PERSONAS.md; this supersedes the earlier English-named
+  proposals. A topic must lead to usable
   human audio and, when explicitly selected/authorized, a responding AI participant.
 - Every exposed action works or gives a clear eligibility reason and recovery action.
 - Animated, interactive gifts and agent awareness of authorized audience participation.
@@ -63,7 +66,7 @@ Dependencies are integration order, not permission to reserve overlapping files.
 | --- | --- | --- |
 | R01 / P0 | Global light theme — OPEN | White default on every normal surface, vibrant green, readable buttons, status/navigation bars and all sheets; screenshot/device matrix. |
 | R02 / P0 | Live audio failure — UNVERIFIED root cause | A signed-in Host creates a Talk, joins, unmutes and is heard by a second device; admitted human and AI audio work; permission/network retry preserves identity. |
-| R03 / P0 | Default personas — PARTIAL | Server catalog contains enabled canonical profiles; picker/search shows real availability; one selected persona joins, identifies its role and responds audibly. See DEFAULT-AI-PERSONAS.md. |
+| R03 / P0 | Default personas — PARTIAL | Server catalog uses all 17 approved canonical profiles with distinct identity/gender/voice/tone; picker/search reflects real availability. Qualify one complete admission/audio path first, then all 17 or document individual blockers; test name pronunciation and humor adaptation. See DEFAULT-AI-PERSONAS.md. |
 | R04 / P0 | Create/Host action wiring — PARTIAL | Add Expert, Invite person and Add My Twin work before and during Talk; selected participants survive creation/restart; free human invitation and explicit AI quote/confirmation enforced. Depends R02/R03. |
 | R05 / P0 | Billing funding/recovery — PARTIAL | Quote-scoped funding reuse, restored bank details, one credit/fulfillment after crash or duplicate callback, typed webhook failures, unattended retries and correct receipt. |
 | R06 / P0 | Global wallet and qualified actions — PARTIAL | Currency-aware API/projection/UI, visible native balances, Add Money/Send/Withdraw based on capabilities; no Credits/earnings/crypto mixing. Shared ledger contract lands before dependent UI. |
