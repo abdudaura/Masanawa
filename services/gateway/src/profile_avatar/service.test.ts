@@ -154,4 +154,18 @@ describe("durable profile avatar lifecycle", () => {
     expect(await h.service.collectGarbage()).toEqual({ deleted: 1, failed: 0 });
     expect(h.deletes).toHaveLength(1);
   });
+  it("rejects stale client photos before reserving or uploading an S3 object", async () => {
+    const h = setup();
+    h.repo.url = "https://cdn.example.test/replaced-on-other-phone.png";
+    await expect(h.service.upload({
+      ...authorized, png: validAvatarPng(), expectedUrl: null,
+    })).rejects.toMatchObject({ statusCode: 409 });
+    expect(h.repo.staged).toHaveLength(0);
+    expect(h.writes).toHaveLength(0);
+    await expect(h.service.remove({
+      ...authorized, expectedUrl: "https://cdn.example.test/old.png",
+    })).rejects.toMatchObject({ statusCode: 409 });
+    expect(h.repo.url).toBe("https://cdn.example.test/replaced-on-other-phone.png");
+  });
+
 });
