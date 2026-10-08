@@ -72,6 +72,21 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
     otherUserId: (request.params as { otherUserId: string }).otherUserId,
   }));
 
+  // Additive cursor API. The old /messages/contacts response remains unchanged.
+  app.get("/messages/contacts/page", {
+    schema: { querystring: Type.Object({
+      limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+      cursor: Type.Optional(Type.String({ minLength: 8, maxLength: 1024, pattern: "^[A-Za-z0-9_-]+$" })),
+    }, { additionalProperties: false }) },
+  }, async request => {
+    const { limit, cursor } = request.query as { limit?: number; cursor?: string };
+    return service.page({
+      authorizationHeader: request.headers.authorization,
+      ...(limit === undefined ? {} : { limit }),
+      ...(cursor === undefined ? {} : { cursor }),
+    });
+  });
+
   app.get("/messages/contacts", {
     schema: { querystring: Type.Object({ limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) }, { additionalProperties: false }) },
   }, async (request) => {
