@@ -44,7 +44,7 @@ void main() {
       {...request.toJson(), 'version': 20},
       {...request.toJson(), 'reason': 'unknown'},
       {...request.toJson(), 'clientRequestId': ''},
-      {...request.toJson(), 'detail': 'x' * 2001},
+      {...request.toJson(), 'detail': List<String>.filled(2001, 'x').join()},
     ]) {
       expect(
         () => PendingPersonaReport.parse(
