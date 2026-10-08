@@ -8,6 +8,7 @@ Owner: GPT-6 independent C06 window; source branch `work/c06-internal-crypto-tra
 - `packages/commerce/migrations/0110_crypto_internal_transfers.sql`: tenant-scoped immutable quotes, receipts and matching debit/credit entries, expiry and uniqueness, deferred commit-time balance trigger; `commerce.crypto_all_ledger_entries` union preserves custody wallet liabilities.
 - `adapters/storage/postgres/src/commerce/internal-crypto-transfer.ts`: canonical asset+network and exact decimal validation, sender+recipient profile existence, idempotent quote, quote lock, expiry, policy revision, shared provider withdrawal/conversion advisory balance lock, numeric balance assertion, atomic and balanced transfer, request-id retry, participant-scoped receipt and history.
 - `adapters/storage/postgres/src/commerce/crypto-repository.ts`: three existing readBalance/readAggregateLiability/readPlatformAggregateLiability queries now include real internal entries. This change is **essential** and must not be dropped in cherry-pick.
+- The C06 PostgreSQL store now also checks `identity.tenants.state='active'` and both canonical `identity.users.state='active'` with `FOR SHARE` locks while quoting and committing; disabled/deactivated parties are denied. Quotes also check actual spendability before confirmation (execution rechecks under custody lock).
 - `adapters/storage/postgres/src/index.ts`: exports the store.
 - `services/gateway/src/internal_crypto_transfer.ts`: session-scoped admission, fresh live qualified custody route, injected KYC/AML/limits eligibility policy with revision + explicitly supplied zero fee, quote, approve, requalify, request replay readback, scoped history.
 - `services/gateway/src/internal_crypto_transfer_routes.ts`: HTTP availability/quote/approve/receipt/recovery/history, typed fail-closed errors and no raw SQL exception leakage.
@@ -18,6 +19,7 @@ Owner: GPT-6 independent C06 window; source branch `work/c06-internal-crypto-tra
 - `docs/contracts/INTERNAL-CRYPTO-TRANSFER-C06.md`: exact API, security and release limitations.
 
 **Tests written, not executed:**
+- PostgreSQL fixtures include both Security and canonical Identity migrations; negative coverage also checks disabled recipients and races.
 - `services/gateway/src/internal_crypto_transfer.test.ts`: HTTP unauthorized denial, policy disabled, custody disallowed, self-transfer, refusal without fresh consent, replay and conflict.
 - `adapters/storage/postgres/src/commerce/internal-crypto-transfer.integration.test.ts`: real PostgreSQL migration + custody-backed deposit event, balanced sender and recipient, constant aggregate liability, replay, cross-user privacy, immutable financial rows, concurrent quote consumption and insufficient balance.
 - `apps/mobile/test/finance/internal_crypto_transfer_models_test.dart`: parse disabled capabilities and reject fake quotes/receipts.
@@ -54,6 +56,10 @@ flutter build apk --debug
 ```
 
 Then execute on **two real authenticated Android user accounts**: wallet quote/cancel/confirm, recipient lookup/consent, balance and provider custody invariant before and after, network loss after POST, app kill/restart with encrypted journal, retry same request, session revocation/account switch, both receipt histories and alerts, account disable/deletion, old URLs, limits and market denial, fresh policy revision invalidation, concurrent transfers and withdrawal racing over the same balance, and rollback/restore rehearsal. Verify no funds are sent on-chain; verify platform custody liabilities stay covered across tenants and network. Only then consider release and merge.
+
+## Concurrent C06 PR collision — never merge both migrations
+
+At the final inventory, **draft [#490](https://github.com/Baatiku/masanawa/pull/490)** appeared after this C06 claim. Its branch `work/c06-internal-crypto-book-transfer-20261008`, last observed head `532b158e77909d0c8c81ffe59124e673663ab876`, uses a **different `0110_internal_crypto_transfers.sql`** schema based on ordinary crypto intents, alternative `@masanawa/commerce` quote/consent primitives, and overlapping files (`app.ts`, `main.ts`, `internal_crypto_transfer.ts`, storage, Flutter). Its own PR body explicitly yields to active #487 and asks ChatGPT Work to compare both. **#487 and #490 MUST NOT BE MERGED TOGETHER AS-IS.** Work must choose one canonical financial migration, prove migration drift/recovery, retain one exact ownership ledger and review the other PR for unique consent-token/security tests. The sibling's SHA256 consent token is stronger than this branch's client Boolean; preserve this as an explicit security-review requirement, not a claim that it has been adopted here.
 
 ## Integration collisions and ordering
 
