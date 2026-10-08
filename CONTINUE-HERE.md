@@ -1,5 +1,13 @@
 # Continue Here
 
+## Approved additive communication and voice-first operator extension — 2026-10-08
+
+**Mandatory reading for every implementation window:** [docs/COMMUNICATIONS-EXTENSION-PLAN.md](docs/COMMUNICATIONS-EXTENSION-PLAN.md) is the canonical **C01–C08** cross-window ledger for person-to-person private text/voice messaging, durable fast chat history and low-data caching, contact privacy/realtime/notifications, qualified in-app crypto transfers, and Gwani/Gwana's authorized cross-app actions with **voice, typing and taps** equally complete. It carries concrete acceptance, dependencies, task ownership and a copyable window prompt. Owner-approved extension discussion is tracked in issues [#462](https://github.com/Baatiku/masanawa/issues/462) and [#463](https://github.com/Baatiku/masanawa/issues/463). **Plans are not implementation evidence.**
+
+Keep all R01–R19 work and the current **Home · Agents · Wallet · Talk** shell unchanged during implementation. **Home · Chats · Wallet · Talk** is a *conditional later option*, gated on working human DMs and no loss of Agents/Twins discovery; no premature navigation overhaul or fifth tab. Human-hosted public Talks, full personas, creator earnings, private assistant isolation, Billing/Crypto, WhatsApp/Telegram channels and current UI identity remain mandatory. Implement new services additively, reusing real auth, Postgres, event, agent and wallet/ledger authority. New extensions are **not DONE** because these instructions exist.
+
+Independent windows may claim bounded C01–C08 lanes under `docs/MULTI-WINDOW-WORK.md` with the five-minute repository-visible lease; avoid overlapping active R lanes, shared migrations, Gateway, financial authority or mobile shell. Shared Actions/billing/runner recovery remains with owner Work as documented in #457; do not merge unverified PRs.
+
 ## Shared GitHub Actions verification incident — owner using ChatGPT Work (2026-10-08)
 
 The repository owner has decided to use **ChatGPT Work** to investigate shared
@@ -66,6 +74,7 @@ Read these first for any consumer-product work:
 - `docs/MOBILE-READINESS-PLAN.md`
 - `docs/DEFAULT-AI-PERSONAS.md`
 - `docs/VOICE-FIRST-INTERACTIONS.md`
+- `docs/COMMUNICATIONS-EXTENSION-PLAN.md`
 
 ### Non-negotiable consumer rules
 
@@ -167,7 +176,8 @@ the current product documents listed above.
 
 ## Immediate product sequence
 
-Follow R01–R16 in `docs/MOBILE-READINESS-PLAN.md`. Preserve the implemented shell,
+Follow R01–R19 in `docs/MOBILE-READINESS-PLAN.md` and C01–C08 in
+`docs/COMMUNICATIONS-EXTENSION-PLAN.md` without displacing the existing priorities. Preserve the implemented shell,
 vertical discovery, Talk persistence, audio/AI dispatch, social/safety, commerce and
 provider foundations. A merged feature or registered worker is not end-to-end acceptance.
 Claim one non-overlapping task and record implemented/tested/deployed/device states separately.
