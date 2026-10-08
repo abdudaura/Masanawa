@@ -193,7 +193,7 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
     notice: (status) => switch (status) {
       'accepted' => 'Contact connection accepted.',
       'pending' => 'Contact request sent.',
-      _ => 'Request already exists. Await the other person\'s decision.',
+      _ => 'No new request was created. Review the existing request.',
     },
   );
 
