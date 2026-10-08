@@ -21,15 +21,15 @@ void main() {
 
   test('missing agent presence is not advertised as available', () {
     final entry = AgentDirectoryEntry.fromJson(entryWithPresence(null));
-    expect(entry.presence, AgentPresence.offline);
-    expect(entry.presenceLabel, 'Offline');
+    expect(entry.presence, AgentPresence.unknown);
+    expect(entry.presenceLabel, 'Status unverified');
   });
 
   test('unknown agent presence is not advertised as available', () {
     final entry = AgentDirectoryEntry.fromJson(
       entryWithPresence('initializing'),
     );
-    expect(entry.presence, AgentPresence.offline);
+    expect(entry.presence, AgentPresence.unknown);
   });
 
   test('malformed presence does not crash the whole agent directory', () {
@@ -49,6 +49,33 @@ void main() {
       entryWithPresence('unknown'),
     );
     final restored = AgentDirectoryEntry.fromJson(entry.toJson());
-    expect(restored.presence, AgentPresence.offline);
+    expect(restored.presence, AgentPresence.unknown);
   });
+  test('unverified snapshot retains persona identity but drops stale activity', () {
+    final entry = AgentDirectoryEntry.fromJson({
+      ...entryWithPresence('working'),
+      'activeWorkCount': 8,
+      'supportAgent': true,
+      'defaultPlatformAgent': true,
+      'voiceProvider': 'gemini',
+      'voiceName': 'Bodi',
+    });
+    final restored = entry.withUnverifiedPresence();
+    expect(restored.characterId, entry.characterId);
+    expect(restored.characterVersionId, entry.characterVersionId);
+    expect(restored.displayName, entry.displayName);
+    expect(restored.defaultPlatformAgent, isTrue);
+    expect(restored.voiceName, 'Bodi');
+    expect(restored.presence, AgentPresence.unknown);
+    expect(restored.activeWorkCount, 0);
+    expect(restored.presenceLabel, 'Status unverified');
+    expect(restored.toJson()['presence'], 'unknown');
+  });
+
+  test('offline is preserved as an explicit status, not an unknown state', () {
+    final entry = AgentDirectoryEntry.fromJson(entryWithPresence('offline'));
+    expect(entry.presence, AgentPresence.offline);
+    expect(entry.presenceLabel, 'Offline');
+  });
+
 }
