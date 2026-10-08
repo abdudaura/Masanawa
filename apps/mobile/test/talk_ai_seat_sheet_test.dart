@@ -1,11 +1,45 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:masanawa/src/core/api/models.dart';
+import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/screens/talks/add_ai_seat_sheet.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+
+AuthUser _testUser(String id) => AuthUser(
+  id: id,
+  name: 'Test host',
+  locale: 'en',
+  status: 'ACTIVE',
+  role: 'USER',
+  isNewUser: false,
+  createdAt: '2026-10-08T00:00:00Z',
+);
+
+SessionSignedIn _testSession(String id) {
+  final user = _testUser(id);
+  return SessionSignedIn(user, AuthTokens(
+    accessToken: 'test-only-$id',
+    refreshToken: 'test-only-refresh-$id',
+    accessExpiresIn: 3600,
+    user: user,
+  ));
+}
+
+class _SeatTestSessionController extends SessionController {
+  @override
+  SessionState build() => _testSession('host-account');
+
+  void switchAccount(String id) => state = _testSession(id);
+
+  void signOut() => state = const SessionSignedOut();
+}
 
 class _FakeSeatTransport implements TalkAiSeatTransport {
   TalkAiSeatMode? quotedMode;
@@ -17,6 +51,8 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
   bool failConfirmation = false;
   bool mismatchedQuote = false;
   bool emptyCatalog = false;
+  Completer<void>? quoteGate;
+  Completer<void>? confirmGate;
 
   static const expert = TalkAiSeatCandidate(
     personaId: 'expert-economist',
@@ -62,6 +98,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     quotedMode = mode;
     quotedPersona = personaId;
     quoteCount += 1;
+    if (quoteGate != null) await quoteGate!.future;
     final candidate = personaId == twin.personaId ? twin : expert;
     return TalkAiSeatQuote(
       quoteId: 'quote-1',
@@ -83,6 +120,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     required String quoteId,
   }) async {
     confirmationCalls += 1;
+    if (confirmGate != null) await confirmGate!.future;
     if (failConfirmation) throw StateError('Network timeout');
     return TalkAiSeatRequest(
       requestId: 'request-1',
@@ -103,6 +141,7 @@ Widget _app({
   return ProviderScope(
     overrides: [
       talkAiSeatTransportProvider.overrideWithValue(transport),
+      sessionProvider.overrideWith(_SeatTestSessionController.new),
     ],
     child: MaterialApp(
       theme: buildMasanawaTheme(brightness: Brightness.light),
@@ -358,4 +397,97 @@ void main() {
     expect(transport.confirmationCalls, 1);
   });
 
+
+  testWidgets('account change removes an issued quote without allowing confirm',
+      (tester) async {
+    final transport = _FakeSeatTransport();
+    await tester.pumpWidget(_app(transport: transport, isHost: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ai-seat-confirm')), findsOneWidget);
+    final container = ProviderScope.containerOf(
+        tester.element(find.byType(AddAiSeatSheet)));
+    (container.read(sessionProvider.notifier) as _SeatTestSessionController)
+        .switchAccount('other-account');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ai-seat-confirm')), findsNothing);
+    expect(transport.confirmationCalls, 0);
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    expect(transport.quoteCount, 1);
+  });
+
+  testWidgets('late quote cannot reopen confirmation under switched account',
+      (tester) async {
+    final gate = Completer<void>();
+    final transport = _FakeSeatTransport()..quoteGate = gate;
+    await tester.pumpWidget(_app(transport: transport, isHost: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pump();
+    final container = ProviderScope.containerOf(
+        tester.element(find.byType(AddAiSeatSheet)));
+    (container.read(sessionProvider.notifier) as _SeatTestSessionController)
+        .switchAccount('other-account');
+    await tester.pump();
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ai-seat-confirm')), findsNothing);
+    expect(transport.confirmationCalls, 0);
+  });
+
+  testWidgets('late paid-request response cannot be displayed after logout',
+      (tester) async {
+    final gate = Completer<void>();
+    final transport = _FakeSeatTransport()..confirmGate = gate;
+    await tester.pumpWidget(_app(transport: transport, isHost: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ai-seat-confirm')));
+    await tester.pump();
+    expect(transport.confirmationCalls, 1);
+    final container = ProviderScope.containerOf(
+        tester.element(find.byType(AddAiSeatSheet)));
+    (container.read(sessionProvider.notifier) as _SeatTestSessionController)
+        .signOut();
+    await tester.pump();
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ai-seat-confirm')), findsNothing);
+    // One pre-logout request may reach the server. No second payment attempt.
+    expect(transport.confirmationCalls, 1);
+  });
+
+  testWidgets('modal picker closes when the authenticated user changes',
+      (tester) async {
+    final transport = _FakeSeatTransport();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        talkAiSeatTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SeatTestSessionController.new),
+      ],
+      child: MaterialApp(
+        home: Scaffold(
+          body: Builder(builder: (context) => TextButton(
+            onPressed: () => showAddAiSeatSheet(
+              context, talkId: 'talk-1', isHost: true,
+            ),
+            child: const Text('Open AI picker'),
+          )),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Open AI picker'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add AI'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+        tester.element(find.byType(AddAiSeatSheet)));
+    (container.read(sessionProvider.notifier) as _SeatTestSessionController)
+        .switchAccount('other-account');
+    await tester.pumpAndSettle();
+    expect(find.text('Add AI'), findsNothing);
+    expect(transport.confirmationCalls, 0);
+  });
 }
