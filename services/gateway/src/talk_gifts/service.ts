@@ -1,6 +1,8 @@
 import type { PlatformSessionIdentity } from "@masanawa/security";
 import type {
   TalkGiftActivitySink,
+  TalkGiftCatalog,
+  TalkGiftCatalogItem,
   TalkGiftExecutor,
   TalkGiftReceipt,
   TalkGiftRepository,
@@ -20,12 +22,42 @@ export class TalkGiftError extends Error {
 }
 
 export interface TalkGiftService {
+  catalog(input: Readonly<{ authorizationHeader: string | undefined; talkId: string }>): Promise<TalkGiftCatalog>;
   gift(input: Readonly<{
     authorizationHeader: string | undefined;
     talkId: string;
     requestId: string;
     amountCredits: number;
+    catalogItemId?: string;
   }>): Promise<TalkGiftReceipt>;
+}
+
+// Launch defaults live on the server, never in the client. Policy may inject
+// a validated catalog without changing the HTTP contract.
+export const defaultTalkGiftCatalog: readonly TalkGiftCatalogItem[] = Object.freeze([
+  { id: "applause", name: "Applause", visual: "applause", amountCredits: 50, available: true },
+  { id: "heart", name: "Heart", visual: "heart", amountCredits: 100, available: true },
+  { id: "flower", name: "Flower", visual: "flower", amountCredits: 150, available: true },
+  { id: "spark", name: "Spark", visual: "spark", amountCredits: 250, available: true },
+  { id: "crown", name: "Crown", visual: "crown", amountCredits: 500, available: true },
+  { id: "celebration", name: "Celebration", visual: "celebration", amountCredits: 1000, available: true },
+].map(item => Object.freeze(item)));
+
+function checkedCatalog(items: readonly TalkGiftCatalogItem[]): readonly TalkGiftCatalogItem[] {
+  const ids = new Set<string>();
+  const visuals = new Set(["applause", "heart", "flower", "spark", "crown", "celebration"]);
+  if (items.length === 0 || items.length > 24) throw new Error("Invalid Talk gift catalog");
+  return Object.freeze(items.map(item => {
+    if (!/^[a-z][a-z0-9_-]{0,47}$/.test(item.id) || ids.has(item.id) ||
+        !item.name.trim() || item.name.length > 80 ||
+        !visuals.has(item.visual) || typeof item.available !== "boolean" ||
+        !Number.isSafeInteger(item.amountCredits) ||
+        item.amountCredits < 1 || item.amountCredits > 1_000_000_000_000) {
+      throw new Error("Invalid Talk gift catalog item");
+    }
+    ids.add(item.id);
+    return Object.freeze({ ...item, name: item.name.trim() });
+  }));
 }
 
 function text(value: string, name: "talk_id" | "request_id", max = 256): string {
@@ -48,23 +80,43 @@ export function createTalkGiftService(input: Readonly<{
   authorizer: TalkGiftAuthorizer;
   executor: TalkGiftExecutor;
   activity?: TalkGiftActivitySink;
+  catalog?: readonly TalkGiftCatalogItem[];
 }>): TalkGiftService {
+  const catalogItems = checkedCatalog(input.catalog ?? defaultTalkGiftCatalog);
+  async function authorizedTarget(authorizationHeader: string | undefined, rawTalkId: string) {
+    const viewer = await input.authorizer.authorize({ authorizationHeader });
+    const talkId = text(rawTalkId, "talk_id", 160);
+    const target = await input.repository.resolveTarget({ tenantId: viewer.tenantId, talkId });
+    if (!target) throw new TalkGiftError("talks.not_found", 404);
+    if (target.hostUserId === viewer.userId) {
+      throw new TalkGiftError("talks.gift.self_forbidden", 409);
+    }
+    return { viewer, talkId, target };
+  }
   return Object.freeze<TalkGiftService>({
+    async catalog(request) {
+      const { talkId } = await authorizedTarget(request.authorizationHeader, request.talkId);
+      return Object.freeze({ talkId, currency: "Credits" as const, items: catalogItems });
+    },
     async gift(request) {
-      const viewer = await input.authorizer.authorize({
-        authorizationHeader: request.authorizationHeader,
-      });
-      const talkId = text(request.talkId, "talk_id", 160);
+      const { viewer, talkId, target } = await authorizedTarget(
+        request.authorizationHeader, request.talkId,
+      );
       const requestId = text(request.requestId, "request_id");
       const amountCredits = amount(request.amountCredits);
-
-      const target = await input.repository.resolveTarget({
-        tenantId: viewer.tenantId,
-        talkId,
-      });
-      if (!target) throw new TalkGiftError("talks.not_found", 404);
-      if (target.hostUserId === viewer.userId) {
-        throw new TalkGiftError("talks.gift.self_forbidden", 409);
+      const catalogItemId = request.catalogItemId === undefined
+        ? undefined
+        : text(request.catalogItemId, "request_id", 48);
+      if (catalogItemId !== undefined) {
+        const item = catalogItems.find(option => option.id === catalogItemId);
+        if (!item || !item.available) {
+          throw new TalkGiftError("talks.gift.option_unavailable", 409);
+        }
+        if (item.amountCredits !== amountCredits) {
+          // Never execute under changed/incorrect terms. Client must refresh
+          // the server's authoritative prices and obtain fresh consent.
+          throw new TalkGiftError("talks.gift.price_changed", 409);
+        }
       }
 
       let moved;
@@ -114,6 +166,7 @@ export function createTalkGiftService(input: Readonly<{
         recipientName: target.hostName,
         amountCredits,
         status: "completed" as const,
+        ...(catalogItemId ? { catalogItemId } : {}),
         completedAt: moved.completedAt,
       });
     },
