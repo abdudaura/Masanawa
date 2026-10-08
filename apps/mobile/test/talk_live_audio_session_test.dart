@@ -80,12 +80,19 @@ class _Room implements TalkLiveRoom {
   bool? publishMicrophone;
   final List<bool> microphone = [];
   int closes = 0;
+  bool failNextConnect = false;
+  int connects = 0;
 
   @override
   Future<void> connect({
     required TalkLiveMediaCredentials credentials,
     required bool publishMicrophone,
   }) async {
+    connects += 1;
+    if (failNextConnect) {
+      failNextConnect = false;
+      throw StateError('Simulated LiveKit connection failure');
+    }
     this.publishMicrophone = publishMicrophone;
   }
 
@@ -249,4 +256,28 @@ void main() {
       await session.close();
     },
   );
+  test('failed media connection releases session and permits explicit retry', () async {
+    final transport = _Transport(role: TalkLiveRole.listener);
+    final room = _Room()..failNextConnect = true;
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(transport.disconnects, 1);
+    expect(room.closes, 1);
+    expect(session.errorMessage, contains('try again'));
+
+    await session.start();
+    expect(room.connects, 2);
+    expect(session.status, TalkLiveAudioStatus.listening);
+
+    await session.close();
+    expect(transport.disconnects, 2);
+  });
+
 }
