@@ -24,3 +24,25 @@ No tests have passed in this Work window yet. Existing source is not DONE. No pr
 
 ## Next concrete action
 Recover main backend/packages/config by immutable blob SHAs through the authenticated connector; install frozen dependencies; overlay C01 head in a separate source view and run targeted checks. Publish actual logs and narrowly scoped repairs, then proceed through the queue. Do not retry exhausted hosted CI.
+
+
+## Executed verification and scoped baseline repair reuse — 2026-10-08T12:28:00Z
+Recovered 835 immutable backend/workspace source files from main 1d6a67ea3c182455b55a7d1d07eacdb4311682e3, plus actual workflow/config/contract fixture files required by architecture tests. Node24.19.0 / pnpm12.8.2 frozen install succeeded. C01 9b63401 head plus scoped repair commits ending ee4e737: 21 Vitest tests passed, 3 PostgreSQL tests skipped; repaired routes/test assertions on #468. Main and repaired C01 Gateway typecheck both report the same 74 pre-existing errors, zero additional C01 errors. Initial baseline full Vitest 1177 passed,22 failed,143 skipped; 2 suite failures and 2 test failures came from missing recovered fixture files and are NOT repository regressions. Those fixture files have now been recovered.
+
+Native embedded PostgreSQL18 binaries installed successfully, but this sandbox rejects chown (Invalid argument) and runuser (Operation not permitted); no DB server initialized or DB test pass. Flutter3.47.6 official checkout completed; SDK bootstrap in progress.
+
+PR #460 has existing recoverable baseline repairs. Latest activity 07:31 UTC is stale; reuse its exact source patches rather than duplicate. Narrow additional claimed paths on THIS integration branch:
+- `adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts`
+- `packages/agents/src/talk-replay.test.ts`
+- `packages/identity/src/account-deletion.test.ts`
+- `services/gateway/src/customer_channel_twin_routing.test.ts`
+- `services/gateway/src/main.test.ts`
+- `services/gateway/src/strict_request_body.ts`
+- `services/gateway/src/talk_gift_routes.ts`
+- `services/gateway/src/talk_profile_routes.test.ts`
+- `services/gateway/src/talk_profile_routes.ts`
+- `services/gateway/src/talk_profiles/postgres_repository.test.ts`
+- `services/gateway/src/talk_ranking/ranking.test.ts`
+- `services/gateway/src/talk_safety/enforcement_integration.test.ts`
+- `services/gateway/src/talk_safety/replay_bridge.test.ts`
+All patches pass git apply --check against recovered current main. Existing feature owners' app.ts/main.ts, mobile, migrations, finance and domain repos remain untouched. This is recovery of #460's strict request validation and obsolete test fixtures, not a competing feature authority. Next execute affected suites, publish preserved patches/evidence, and leave draft while remaining baseline/Flutter/DB/provider gates are unresolved.
