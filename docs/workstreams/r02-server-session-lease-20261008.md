@@ -17,3 +17,9 @@
 - Code: COMMITTED on draft PR #439. Focused Vitest/typecheck/Postgres integration: **NOT RUN**. GitHub Foundation CI run `37734978282` reports **failure before any recorded job steps**, with no downloadable job log (404 BlobNotFound). Do not call this a verified test failure or a pass.
 - Deployment and paired real-device audio: **NOT RUN**. Existing LiveKit room participants with a superseded identity may require explicit server-side eviction/revocation; JWT/session revocation does not itself kick already-connected participants. Coordinate with integration's LiveKit admin and participant-state lanes before production merge. Session replacement uses an atomic partial-index UPSERT, but real PostgreSQL index inference and concurrent Host takeover still require actual DB integration tests.
 - Handoff: keep PR draft and do not merge until executable CI + PostgreSQL concurrency tests, LiveKit participant eviction policy and authenticated Host reconnect/remote audio tests pass. R02 remains OPEN/UNVERIFIED. No unrelated paths changed.
+
+## Authorized bounded expansion — terminal API error classification
+
+- Fresh collision check: PRs #442/#440/#438/#436/#435/#433/#430/#426 do not own `services/gateway/src/talk_live/service.ts` or `services/gateway/src/talk_live_routes.test.ts`.
+- Add these two exact paths to this R02 claim to classify the existing `talks.live.ended` repository domain rejection as HTTP 409 rather than a generic HTTP 500, with an API-level regression. Do not touch app.ts, routes registration or unowned worker/mobile files.
+- This is a source/API error contract improvement only; not paired-device readiness.
