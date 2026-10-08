@@ -56,6 +56,14 @@ green. Root Agents is a supported discovery surface, not a replacement for Home 
 Financial flows follow VOICE-FIRST-INTERACTIONS.md, with spoken terms and silent parity.
 Profile carries account, language, privacy, support and deletion; no fifth root tab.
 
+## Conditional future Chats entry — staged, no current shell redesign
+
+Human-to-human private DMs, voice notes and user-to-user crypto sending are approved additive functionality (`COMMUNICATIONS-EXTENSION-PLAN.md` C01–C08), **not permission to replace the current four tabs while the implementation is incomplete**. First make private messaging accessible via person profile Message action and a compact existing-shell entry. `Home · Chats · Wallet · Talk` can supersede `Home · Agents · Wallet · Talk` only after C02–C05 two-device, offline sync, cached history, privacy and end-to-end navigation checks plus C08 measured user testing.
+
+If the tab changes, Chats prominently lists human chats with retained **Masanawa Agents / Twins** discovery, ownership and paid-seat entry; Talk remains the **private** Gwani/Gwana workspace, while public Talks/Start Talk remain in Home. Keep Activity bell, profile hub, balance/service shortcuts, route/link continuity, white/green theme, notification deep links and no fifth tab. If feature readiness or discoverability fails, retain Agents tab and improve contextual chat access instead.
+
+The C07 operator is globally accessible from existing contexts by **voice, typed command and taps** to the same authorized backend operation, including chat draft/send and eligible internal transfers. Never silently turn on mic, send a financial instruction, change navigation or reveal private DM content on a public Talk. Global assistants and human DMs are distinct privacy domains.
+
 ## Route continuity
 Keep existing deep links for Activity/You/Profile/Create/Talk/Wallet/services/Settings.
 Add or reuse an Agents root and private assistant route as implementation requires.

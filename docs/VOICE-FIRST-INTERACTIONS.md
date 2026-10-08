@@ -169,6 +169,14 @@ A chat-shaped form or a voice button that merely fills a conventional mandatory 
 does not satisfy this contract. The completed experience is conversational, accessible,
 recoverable and anchored to actual server authority.
 
+## Global message, contact and transfer command parity (C01–C08)
+
+The owner extends **voice-first, not voice-only** interaction beyond Wallet: private **human-to-human DM**, voice notes, contact discovery, public Talk preparation/authorized Host actions and qualified internal wallet/crypto transfers are accessible through **speaking, typing or contextual taps** with one shared server-owned task/action identity and same recovery, privacy and explicit-confirmation rules. Gwani/Gwana are platform operators only within granted capability; they cannot assume access to unrelated human messages, spend on their own or override a Host.
+
+Example: inside a private chat with Ibrahim, “send him five USDT” must resolve the **actual saved person**, exact custody-backed asset/network/account, fees/limits/expiry and display/read-back recipient and quote; ask for fresh transaction-specific approval and appropriate authentication before **one** ledger transfer. “Send Ibrahim a message about tonight’s Talk” can be drafted and reviewed then sent by the user's authorized action, with a server delivery receipt. Pronouns/ordinals bind to the **active versioned context**, never an old conversation. A silent typed instruction and buttons complete the same task, without microphone permission.
+
+Protected human DMs are not public Talk transcripts, AI participant context or general model memory. Public audio recording and private voice-note/assistant audio use separate consent and track routing. No long address accepted solely from uncertain speech; no “yes” heard from background authorizes payment. See C06/C07 and `COMMUNICATIONS-EXTENSION-PLAN.md`. Do not change the current shell just to add this contract.
+
 ## Approved shell entry points
 
 Bottom navigation is Home · Agents · Wallet · Talk. The Talk tab is private assistance;

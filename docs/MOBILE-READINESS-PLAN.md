@@ -331,6 +331,16 @@ Agents can be immersive without claiming to be human, hiding their nature, inven
 memories or manipulating attachment. Persistent private memory is consented/editable/
 deletable and never copied into public Talk context by default.
 
+## Additive communications requirements — C01–C08
+
+The owner additionally approved ordinary **private human messaging**, lightweight fast chat access with protected locally cached history and server delta sync, secure **in-platform crypto transfers**, and Gwani/Gwana as **voice-first but never voice-only operators** throughout Masanawa. These are defined with individual dependencies and release tests in `COMMUNICATIONS-EXTENSION-PLAN.md`; issues #462/#463 retain the discussion and initial messaging/performance handoff.
+
+**Do not merge C items into an existing R row or mark an R item complete by planning alone.** R01–R19 retain their current priorities, owners, evidence, approvals and production gates. C01 identity/privacy complements R12/R15/R18; C02–C04 DM/realtime/media complement R14; C05 cache/performance complements R16/R17; C06 internal crypto transfer depends on R06/R08 and the **same ledger/custody**; C07 cross-app voice/text/tap operations reuses R04/R06–R08/R11/R17/R19; C08 conditional Chats navigation follows functional C02–C05. Existing R01/R02/R03/R05 priority work continues under the multi-window protocol.
+
+Navigation is **still Home · Agents · Wallet · Talk**. **Home · Chats · Wallet · Talk** is a later validated option, not a replacement instruction or a reason to halt current R17. Preserve the public human-hosted Talks, agents/Twins/monetization, light green UI, WhatsApp/Telegram channels, wallet service ordering and app shell. No duplicate billing, crypto or AI authority.
+
+C acceptance is **not verified** until real authenticated backend, app, Android performance, privacy, recovery, international/accessibility and provider-specific checks are recorded. No manual backup/restore UI is required merely to meet conversation speed, but persistent server history, per-user protected cache, startup budgets and real weak-network sync are required. Share GitHub Actions verification with the #457 owner, without weakening checks.
+
 ## Deferred web implementation
 
 `WEB-APP-PLAN.md` defines the later consumer web experience and W01–W06 phases.
