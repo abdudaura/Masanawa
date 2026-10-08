@@ -165,7 +165,7 @@ describe("R07 voice/text financial catalog and consent safety", () => {
       characterId: "character-owner",
       text: "yes",
     });
-    expect(yes?.reply).toContain("More than one");
+    expect(yes?.reply).toContain("several recent bills");
     expect(f.confirmAndPurchase).not.toHaveBeenCalled();
     const directive = await f.confirm("please confirm this bill");
     expect(directive?.reply).toContain("several recent bills");
