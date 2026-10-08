@@ -104,10 +104,10 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
           const active = await client.query<FundingRow>(
             `SELECT * FROM commerce.ngn_funding_intents
               WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3
-                AND state IN ('creating','awaiting') AND expires_at > $4
+                AND state IN ('creating','awaiting') AND expires_at > statement_timestamp()
               ORDER BY created_at DESC, funding_reference DESC
               LIMIT 1 FOR UPDATE`,
-            [input.tenantId,input.userId,input.quoteId,input.createdAt],
+            [input.tenantId,input.userId,input.quoteId],
           );
           const existing = active.rows[0];
           if (existing) {
