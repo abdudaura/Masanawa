@@ -129,9 +129,8 @@ extension MasanawaContext on BuildContext {
 
 /// The Masanawa ThemeData — every screen renders from this (design DoD).
 ThemeData buildMasanawaTheme({required Brightness brightness}) {
-  // R01: the app is light-first regardless of device brightness. A future
-  // explicit in-app preference can opt into a separate dark theme.
-  const isDark = false;
+  // R01: use the approved light palette even when callers request dark.
+  // MaterialApp also explicitly chooses ThemeMode.light.
   const effectiveBrightness = Brightness.light;
   final masanawa = MasanawaColors.light().copyWith(surfaceBg: Colors.white);
   final scheme = ColorScheme(
@@ -295,9 +294,9 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     dividerTheme: DividerThemeData(color: masanawa.structuralBorder),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: isDark ? Colors.white : masanawa.textPrimary,
+      backgroundColor: masanawa.textPrimary,
       contentTextStyle: TextStyle(
-        color: isDark ? Colors.black87 : Colors.white,
+        color: Colors.white,
       ),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
