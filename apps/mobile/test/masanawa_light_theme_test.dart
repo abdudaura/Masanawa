@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/theme/masanawa_theme.dart';
+import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 void main() {
   test('R01 stays light when dark brightness is requested', () {
