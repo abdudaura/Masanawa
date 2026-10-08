@@ -49,5 +49,7 @@
   "fullNameExample": "مثال: أمينة بيلو",
   "fullNameRequired": "يُرجى إدخال اسمك الكامل",
   "finishingSignIn": "جارٍ إكمال تسجيل الدخول…",
-  "verifiedSignInNotice": "سيظل رقم هاتفك أو بريدك الإلكتروني الذي تم التحقق منه وسيلة تسجيل دخولك."
+  "verifiedSignInNotice": "سيظل رقم هاتفك أو بريدك الإلكتروني الذي تم التحقق منه وسيلة تسجيل دخولك.",
+  "countryDialCode": "رمز اتصال الهاتف: {code}",
+  "unknownCountryDialCode": "لم يتم التعرف على رمز اتصال الهاتف"
 }
