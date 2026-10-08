@@ -173,15 +173,23 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   }
 
   void _positionChanged(Duration position) {
+    if (_snapshot.status == TalkReplayPlaybackStatus.failed ||
+        _snapshot.status == TalkReplayPlaybackStatus.loading) return;
     _emit(_snapshot.copyWith(position: position));
   }
 
   void _durationChanged(Duration? duration) {
-    if (duration == null) return;
+    if (duration == null ||
+        _snapshot.status == TalkReplayPlaybackStatus.failed ||
+        _snapshot.status == TalkReplayPlaybackStatus.loading) return;
     _emit(_snapshot.copyWith(duration: duration));
   }
 
   void _playerStateChanged(TalkReplayPlayerState state) {
+    if (_closed ||
+        !_authorized() ||
+        _snapshot.status == TalkReplayPlaybackStatus.failed ||
+        _snapshot.status == TalkReplayPlaybackStatus.loading) return;
     switch (state) {
       case TalkReplayPlayerState.playing:
         _emit(
