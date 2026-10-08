@@ -72,7 +72,7 @@ describe("U30 authenticated public discovery", () => {
     const res = await app.inject({ url: "/discovery/public?q=live&liveOnly=true",
       headers: { authorization: "Bearer viewer" } });
     expect(res.json().items).toEqual([{
-      kind: "talk", id: "live", title: "Live", subtitle: "A", isLive: true, listenerCount: 1,
+      kind: "talk", id: "live", title: "Live", subtitle: "A", isLive: true, listenerCount: 1, avatarUrl: null,
     }]);
     await app.close();
   });
@@ -96,6 +96,20 @@ describe("U30 authenticated public discovery", () => {
         headers: { authorization: "Bearer viewer" } });
       expect(response.statusCode).toBe(400);
     }
+    await app.close();
+  });
+
+  it("flags a single saturated group even when other groups are empty", async () => {
+    const { app } = setup({
+      talks: Array.from({ length: 17 }, (_, i) => ({
+        id: "talk_" + i, title: "Talk", hostName: "Host", isLive: true,
+        listenerCount: 0, hostAvatarUrl: null,
+      })) as unknown as TalkSearchResults["talks"],
+      people: [], personas: [],
+    });
+    const res = await app.inject({ url: "/discovery/public?q=talk",
+      headers: { authorization: "Bearer viewer" } });
+    expect(res.json().searchWindowSaturated).toBe(true);
     await app.close();
   });
 });
