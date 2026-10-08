@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const allowedDependencies: Readonly<Record<string, ReadonlySet<string>>> = {
   contracts: new Set(),
+  "operator-scheduling": new Set(),
   events: new Set(["contracts"]),
   security: new Set(["contracts", "events"]),
   identity: new Set(["contracts", "events", "security"]),
@@ -120,3 +121,4 @@ describe("package architecture", () => {
     });
   }
 });
+

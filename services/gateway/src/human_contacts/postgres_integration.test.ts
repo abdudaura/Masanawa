@@ -34,6 +34,7 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
   const nonce = randomUUID().replaceAll("-", "").slice(0, 10);
   const tenant = `c01_test_${nonce}`;
   const otherTenant = `c01_other_${nonce}`;
+  const pageTenant = `c01_page_${nonce}`;
   const alice = `c01_alice_${nonce}`;
   const bob = `c01_bob_${nonce}`;
   const outsider = `c01_else_${nonce}`;
@@ -86,7 +87,7 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     if (!pool) return;
     try {
       // Only delete ephemeral, randomly named test tenants created above.
-      for (const id of [tenant, otherTenant]) {
+      for (const id of [tenant, otherTenant, pageTenant]) {
         await pool.query(`DELETE FROM talks.safety_preferences WHERE tenant_id=$1`, [id]);
         await pool.query(`DELETE FROM talks.safety_enforcement WHERE tenant_id=$1`, [id]);
         await pool.query(`DELETE FROM talks.human_dm_contact_requests WHERE tenant_id=$1`, [id]);
@@ -191,6 +192,66 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     })).toBe(false);
   });
 
+  it("iterates equal-microsecond edges without repeats, leaks or offset scans", async () => {
+    const viewer = `c01_page_viewer_${nonce}`;
+    const peers = [0, 1, 2, 3].map(n => `c01_page_peer_${n}_${nonce}`);
+    await pool.query(
+      `INSERT INTO identity.tenants(tenant_id,created_at,updated_at)
+       VALUES ($1,clock_timestamp(),clock_timestamp())`, [pageTenant],
+    );
+    for (const user of [viewer, ...peers]) {
+      await pool.query(
+        `INSERT INTO identity.users(tenant_id,user_id,created_at,updated_at)
+         VALUES ($1,$2,clock_timestamp(),clock_timestamp())`,
+        [pageTenant, user],
+      );
+      await pool.query(
+        `INSERT INTO talks.public_profiles(tenant_id,user_id,handle,display_name)
+         VALUES ($1,$2,$3,$3)`,
+        [pageTenant, user, `p_${user}`],
+      );
+    }
+    for (const [index, peer] of peers.entries()) {
+      const sameTimestamp = index < 2
+        ? "2026-10-08T11:00:00.123456Z" : "2026-10-08T10:00:00.123456Z";
+      await pool.query(
+        `INSERT INTO talks.human_dm_contact_requests
+           (tenant_id,first_user_id,second_user_id,requested_by,status,updated_at)
+         VALUES ($1,LEAST($2::text,$3::text),GREATEST($2::text,$3::text),
+                 $2,'accepted',$4::timestamptz)`,
+        [pageTenant, viewer, peer, sameTimestamp],
+      );
+    }
+    const repo = createPostgresHumanContactRepository(pool);
+    const first = await repo.listPage!({
+      tenantId: pageTenant, userId: viewer, limit: 2, after: null,
+    });
+    expect(first.contacts).toHaveLength(2);
+    expect(first.next).toMatchObject({
+      updatedAt: "2026-10-08T11:00:00.123456Z",
+    });
+    const second = await repo.listPage!({
+      tenantId: pageTenant, userId: viewer, limit: 2, after: first.next,
+    });
+    expect(second.contacts).toHaveLength(2);
+    expect(second.next).toBeNull();
+    expect([...first.contacts, ...second.contacts].map(x => x.userId))
+      .toEqual(peers);
+    expect((await repo.listPage!({
+      tenantId: otherTenant, userId: outsider, limit: 2, after: null,
+    })).contacts).toHaveLength(0);
+    await pool.query(
+      `INSERT INTO talks.safety_preferences
+        (tenant_id,viewer_user_id,subject_user_id,blocked,updated_at)
+       VALUES ($1,$2,$3,true,clock_timestamp())`,
+      [pageTenant, peers[0], viewer],
+    );
+    const afterBlock = await repo.listPage!({
+      tenantId: pageTenant, userId: viewer, limit: 4, after: null,
+    });
+    expect(afterBlock.contacts.map(x => x.userId)).not.toContain(peers[0]);
+  });
+
   it("checks reciprocal block and disabled accounts at authoritative query time", async () => {
     const repo = createPostgresHumanContactRepository(pool);
     await pool.query(
@@ -218,4 +279,5 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
       .toBeNull();
   });
 });
+
 

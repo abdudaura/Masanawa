@@ -2,6 +2,8 @@ import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentAdminService } from "./agent_admin.js";
+import type { OperatorAgentControl } from "./operator_admin/agent_control.js";
+import { registerOperatorAgentRoutes } from "./operator_admin/routes.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -19,6 +21,7 @@ export interface OpsAppOptions {
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
   readonly agentAdmin?: AgentAdminService;
+  readonly operatorAgentControl?: OperatorAgentControl;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -287,6 +290,10 @@ export function createOpsApp(options: OpsAppOptions = {}) {
     );
   }
 
+  if (options.operatorAgentControl) {
+    registerOperatorAgentRoutes(app, options.operatorAgentControl);
+  }
+
   app.get(
     "/healthz",
     {
@@ -362,3 +369,4 @@ export function createOpsApp(options: OpsAppOptions = {}) {
 
   return app;
 }
+

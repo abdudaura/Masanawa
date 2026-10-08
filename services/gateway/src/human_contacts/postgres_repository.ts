@@ -1,4 +1,4 @@
-import type { HumanContact, HumanContactPolicy, HumanContactPreferences, HumanContactRepository, HumanContactRequest } from "./model.js";
+import type { HumanContact, HumanContactPolicy, HumanContactPreferences, HumanContactRepository, HumanContactRequest, HumanContactPageAfter } from "./model.js";
 
 interface SqlResult<Row> { readonly rows: Row[]; readonly rowCount: number | null }
 export interface HumanContactSqlPool {
@@ -28,6 +28,7 @@ interface RequestRow extends Record<string, unknown> {
   updated_at: string | Date;
   request_revision: string | number;
   revoked_by: string | null;
+  cursor_updated_at: string;
 }
 
 const visibleTarget = `
@@ -62,6 +63,61 @@ const visibleTarget = `
          AND se.target_id = p.handle AND se.visibility IN ('restricted','blocked')
     )
 `;
+
+async function queryContactRows(pool: HumanContactSqlPool, tenantId: string, userId: string, limit: number, after: HumanContactPageAfter | null): Promise<readonly RequestRow[]> {
+  const result = await pool.query<RequestRow>(`
+        SELECT other.user_id, other.handle, other.display_name, other.avatar_url,
+               edge.status, edge.requested_by, edge.updated_at, edge.request_revision, edge.revoked_by,
+               to_char(edge.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_updated_at
+          FROM talks.human_dm_contact_requests edge
+          JOIN talks.public_profiles other
+            ON other.tenant_id=edge.tenant_id
+           AND other.user_id=CASE WHEN edge.first_user_id=$2
+                                  THEN edge.second_user_id ELSE edge.first_user_id END
+          JOIN identity.users recipient
+            ON recipient.tenant_id=other.tenant_id AND recipient.user_id=other.user_id
+           AND recipient.state='active'
+          JOIN identity.users viewer
+            ON viewer.tenant_id=edge.tenant_id AND viewer.user_id=$2
+           AND viewer.state='active'
+         WHERE edge.tenant_id=$1
+           AND (edge.first_user_id=$2 OR edge.second_user_id=$2)
+           AND (edge.status IN ('pending','accepted')
+             OR (edge.status='declined' AND edge.revoked_by IS NULL AND edge.requested_by<>$2)
+             OR (edge.status='declined' AND edge.revoked_by=$2))
+           AND NOT EXISTS (
+             SELECT 1 FROM talks.safety_preferences sp
+              WHERE sp.tenant_id=$1 AND sp.blocked=true
+                AND ((sp.viewer_user_id=$2 AND sp.subject_user_id=other.user_id)
+                   OR (sp.viewer_user_id=other.user_id AND sp.subject_user_id=$2))
+           )
+           AND NOT EXISTS (
+             SELECT 1 FROM talks.safety_enforcement se
+              WHERE se.tenant_id=$1 AND se.target_kind='profile'
+                AND se.target_id=other.handle
+                AND se.visibility IN ('restricted','blocked')
+           )
+           AND ($4::timestamptz IS NULL OR edge.updated_at < $4::timestamptz
+                OR (edge.updated_at = $4::timestamptz AND other.user_id > $5::text))
+         ORDER BY edge.updated_at DESC, other.user_id ASC
+         LIMIT $3
+      `, [tenantId, userId, limit, after?.updatedAt ?? null, after?.userId ?? null]);
+  return result.rows;
+}
+function presentContact(row: RequestRow, userId: string): HumanContactRequest {
+  return Object.freeze<HumanContactRequest>({
+        userId: row.user_id,
+        handle: row.handle,
+        displayName: row.display_name,
+        avatarUrl: row.avatar_url,
+        status: row.revoked_by === userId ? "revoked"
+          : row.status === "accepted" ? "accepted"
+          : row.status === "declined" ? "declined"
+          : row.requested_by === userId ? "outgoing" : "incoming",
+        updatedAt: typeof row.updated_at === "string" ? row.updated_at : row.updated_at.toISOString(),
+        requestRevision: String(row.request_revision),
+      });
+}
 
 /**
  * C01 repo: tenant/user permission checks are evaluated on every lookup, request and
@@ -253,53 +309,21 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
     },
 
     async list({ tenantId, userId, limit }) {
-      const result = await pool.query<RequestRow>(`
-        SELECT other.user_id, other.handle, other.display_name, other.avatar_url,
-               edge.status, edge.requested_by, edge.updated_at, edge.request_revision, edge.revoked_by
-          FROM talks.human_dm_contact_requests edge
-          JOIN talks.public_profiles other
-            ON other.tenant_id=edge.tenant_id
-           AND other.user_id=CASE WHEN edge.first_user_id=$2
-                                  THEN edge.second_user_id ELSE edge.first_user_id END
-          JOIN identity.users recipient
-            ON recipient.tenant_id=other.tenant_id AND recipient.user_id=other.user_id
-           AND recipient.state='active'
-          JOIN identity.users viewer
-            ON viewer.tenant_id=edge.tenant_id AND viewer.user_id=$2
-           AND viewer.state='active'
-         WHERE edge.tenant_id=$1
-           AND (edge.first_user_id=$2 OR edge.second_user_id=$2)
-           AND (edge.status IN ('pending','accepted')
-             OR (edge.status='declined' AND edge.revoked_by IS NULL AND edge.requested_by<>$2)
-             OR (edge.status='declined' AND edge.revoked_by=$2))
-           AND NOT EXISTS (
-             SELECT 1 FROM talks.safety_preferences sp
-              WHERE sp.tenant_id=$1 AND sp.blocked=true
-                AND ((sp.viewer_user_id=$2 AND sp.subject_user_id=other.user_id)
-                   OR (sp.viewer_user_id=other.user_id AND sp.subject_user_id=$2))
-           )
-           AND NOT EXISTS (
-             SELECT 1 FROM talks.safety_enforcement se
-              WHERE se.tenant_id=$1 AND se.target_kind='profile'
-                AND se.target_id=other.handle
-                AND se.visibility IN ('restricted','blocked')
-           )
-         ORDER BY edge.updated_at DESC, other.user_id ASC
-         LIMIT $3
-      `, [tenantId, userId, limit]);
-      return Object.freeze(result.rows.map(row => Object.freeze<HumanContactRequest>({
-        userId: row.user_id,
-        handle: row.handle,
-        displayName: row.display_name,
-        avatarUrl: row.avatar_url,
-        status: row.revoked_by === userId ? "revoked"
-          : row.status === "accepted" ? "accepted"
-          : row.status === "declined" ? "declined"
-          : row.requested_by === userId ? "outgoing" : "incoming",
-        updatedAt: typeof row.updated_at === "string" ? row.updated_at : row.updated_at.toISOString(),
-        requestRevision: String(row.request_revision),
-      })));
+      const rows = await queryContactRows(pool, tenantId, userId, limit, null);
+      return Object.freeze(rows.map(row => presentContact(row, userId)));
+    },
+    async listPage({ tenantId, userId, limit, after }) {
+      const rows = await queryContactRows(pool, tenantId, userId, limit + 1, after);
+      const visible = rows.slice(0, limit);
+      const last = visible[visible.length - 1];
+      return {
+        contacts: Object.freeze(visible.map(row => presentContact(row, userId))),
+        next: rows.length > limit && last
+          ? { updatedAt: last.cursor_updated_at, userId: last.user_id }
+          : null,
+      };
     },
   });
 }
+
 

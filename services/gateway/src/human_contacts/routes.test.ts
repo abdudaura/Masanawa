@@ -15,6 +15,7 @@ function harness() {
     async request({ handle }) { return handle === "bob" ? "pending" : "unavailable"; },
     async respond({ requesterId }) { return requesterId === "user_al"; },
     async list() { return []; },
+    async listPage() { return { contacts: [], next: null }; },
     async revoke({ otherUserId }) { return otherUserId === "user_bo"; },
   };
   const svc = createHumanContactService({
@@ -98,5 +99,23 @@ describe("C01 contact HTTP surface", () => {
     expect(revoked.json()).toEqual({ status: "revoked" });
     await app.close();
   });
+  it("keeps legacy contacts intact and exposes separately authenticated bounded pages", async () => {
+    const app = harness();
+    const headers = { authorization: "Bearer valid" };
+    const unauthorized = await app.inject({ method: "GET", url: "/v1/messages/contacts/page?limit=10" });
+    expect(unauthorized.statusCode).toBe(401);
+    const first = await app.inject({ method: "GET", url: "/v1/messages/contacts/page?limit=10", headers });
+    expect(first.statusCode).toBe(200);
+    expect(first.json()).toEqual({ contacts: [], nextCursor: null });
+    const old = await app.inject({ method: "GET", url: "/messages/contacts?limit=10", headers });
+    expect(old.json()).toEqual({ contacts: [] });
+    for (const suffix of ["?limit=101", "?cursor=!", "?actor=user_bo"]) {
+      const response = await app.inject({ method: "GET", url: "/v1/messages/contacts/page" + suffix, headers });
+      expect(response.statusCode).toBe(400);
+    }
+    await app.close();
+  });
+
 });
+
 

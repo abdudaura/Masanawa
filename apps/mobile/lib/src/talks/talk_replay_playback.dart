@@ -314,6 +314,16 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
       if (boundedResume > Duration.zero) {
         await player.seek(boundedResume);
         if (_closed) return;
+        // A slow seek is another asynchronous authorization boundary.
+        // Never publish or play a refreshed private link after the account
+        // changes, a replay is revoked locally, or its signature expires.
+        if (!_authorized()) {
+          _deny();
+          return;
+        }
+        if (!credentials.isFresh(_now())) {
+          throw const FormatException('Replay playback authorization expired');
+        }
       }
       _loaded = true;
       _credentials = credentials;

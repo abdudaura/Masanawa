@@ -72,6 +72,26 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
     otherUserId: (request.params as { otherUserId: string }).otherUserId,
   }));
 
+  // Additive cursor API. The old /messages/contacts response remains unchanged.
+  app.get("/v1/messages/contacts/page", {
+    preValidation: async (request, reply) => {
+      if (Object.keys(request.query as object).some(key => key !== "limit" && key !== "cursor")) {
+        return reply.code(400).send({ code: "messages.invalid_page_query" });
+      }
+    },
+    schema: { querystring: Type.Object({
+      limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+      cursor: Type.Optional(Type.String({ minLength: 8, maxLength: 1024, pattern: "^[A-Za-z0-9_-]+$" })),
+    }, { additionalProperties: false }) },
+  }, async request => {
+    const { limit, cursor } = request.query as { limit?: number; cursor?: string };
+    return service.page({
+      authorizationHeader: request.headers.authorization,
+      ...(limit === undefined ? {} : { limit }),
+      ...(cursor === undefined ? {} : { cursor }),
+    });
+  });
+
   app.get("/messages/contacts", {
     schema: { querystring: Type.Object({ limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) }, { additionalProperties: false }) },
   }, async (request) => {
@@ -82,4 +102,5 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
     });
   });
 }
+
 

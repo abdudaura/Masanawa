@@ -1,5 +1,5 @@
 import type { PlatformSessionIdentity } from "@masanawa/security";
-import type { HumanContact, HumanContactPolicy, HumanContactPreferences, HumanContactRepository, HumanContactRequest } from "./model.js";
+import type { HumanContact, HumanContactPolicy, HumanContactPreferences, HumanContactRepository, HumanContactRequest, HumanContactPageAfter } from "./model.js";
 
 export class HumanContactError extends Error {
   constructor(readonly code: string, readonly statusCode: number) {
@@ -19,6 +19,7 @@ export interface HumanContactService {
   request(input: { authorizationHeader: string | undefined; handle: string }): Promise<{ status: "accepted" | "pending" | "existing" }>;
   respond(input: { authorizationHeader: string | undefined; requesterId: string; requestRevision: string; accept: boolean }): Promise<{ status: "accepted" | "declined" }>;
   list(input: { authorizationHeader: string | undefined; limit?: number }): Promise<{ contacts: readonly HumanContactRequest[] }>;
+  page(input: { authorizationHeader: string | undefined; limit?: number; cursor?: string }): Promise<{ contacts: readonly HumanContactRequest[]; nextCursor: string | null }>;
   revoke(input: { authorizationHeader: string | undefined; otherUserId: string }): Promise<{ status: "revoked" }>;
 }
 
@@ -36,6 +37,27 @@ function userId(raw: string): string {
     throw new HumanContactError("messages.user_id_invalid", 400);
   }
   return value;
+}
+
+/** Cursor content is a position only, never a permission grant. Actor and tenant are
+ * checked against the freshly-authorized session on every page. */
+function contactCursor(tenantId: string, actorId: string, next: HumanContactPageAfter): string {
+  return Buffer.from(JSON.stringify([tenantId, actorId, next.updatedAt, next.userId])).toString("base64url");
+}
+function parseContactCursor(token: string, tenantId: string, actorId: string): HumanContactPageAfter {
+  const invalid = () => new HumanContactError("messages.invalid_page_cursor", 400);
+  if (token.length < 8 || token.length > 1024 || !/^[A-Za-z0-9_-]+$/.test(token)) throw invalid();
+  const raw = Buffer.from(token, "base64url");
+  if (raw.length > 768 || raw.toString("base64url") !== token) throw invalid();
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw.toString("utf8")); } catch { throw invalid(); }
+  if (!Array.isArray(parsed) || parsed.length !== 4 ||
+      parsed[0] !== tenantId || parsed[1] !== actorId ||
+      typeof parsed[2] !== "string" || typeof parsed[3] !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(parsed[2]) ||
+      !Number.isFinite(Date.parse(parsed[2])) ||
+      !/^[A-Za-z0-9][A-Za-z0-9_.:-]{2,255}$/.test(parsed[3])) throw invalid();
+  return { updatedAt: parsed[2], userId: parsed[3] };
 }
 
 export function createHumanContactService(input: Readonly<{
@@ -93,6 +115,22 @@ export function createHumanContactService(input: Readonly<{
       if (!done) throw new HumanContactError("messages.contact_request_unavailable", 404);
       return { status: "revoked" };
     },
+    async page({ authorizationHeader, limit, cursor }) {
+      const who = await principal(authorizationHeader);
+      if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1 || limit > 100)) {
+        throw new HumanContactError("messages.invalid_page_limit", 400);
+      }
+      if (cursor !== undefined && typeof cursor !== "string") {
+        throw new HumanContactError("messages.invalid_page_cursor", 400);
+      }
+      const after = cursor === undefined ? null : parseContactCursor(cursor, who.tenantId, who.userId);
+      if (!input.repository.listPage) throw new HumanContactError("messages.pagination_unavailable", 503);
+      const result = await input.repository.listPage({ ...who, limit: limit ?? 50, after });
+      return {
+        contacts: result.contacts,
+        nextCursor: result.next ? contactCursor(who.tenantId, who.userId, result.next) : null,
+      };
+    },
     async list({ authorizationHeader, limit }) {
       const who = await principal(authorizationHeader);
       if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1 || limit > 100)) {
@@ -102,4 +140,5 @@ export function createHumanContactService(input: Readonly<{
     },
   });
 }
+
 

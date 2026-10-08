@@ -26,6 +26,15 @@ export interface HumanContactRequest {
   readonly updatedAt: string;
   readonly requestRevision: string;
 }
+/** PostgreSQL microsecond ordering avoids skips between contact pages. */
+export interface HumanContactPageAfter {
+  readonly updatedAt: string;
+  readonly userId: string;
+}
+export interface HumanContactPage {
+  readonly contacts: readonly HumanContactRequest[];
+  readonly next: HumanContactPageAfter | null;
+}
 export interface HumanContactRepository {
   /** Query is an exact normalized public handle. Missing, blocked and hidden users are indistinguishable. */
   lookup(input: { readonly tenantId: string; readonly viewerId: string; readonly handle: string }): Promise<HumanContact | null>;
@@ -34,8 +43,11 @@ export interface HumanContactRepository {
   /** All admission checks and mutation must be atomic on the database side. */
   request(input: { readonly tenantId: string; readonly requesterId: string; readonly handle: string }): Promise<"accepted" | "pending" | "existing" | "unavailable">;
   respond(input: { readonly tenantId: string; readonly recipientId: string; readonly requesterId: string; readonly requestRevision: string; readonly accept: boolean }): Promise<boolean>;
+  /** Optional additive cursor paging; previous list remains stable for older APKs. */
+  listPage?(input: { readonly tenantId: string; readonly userId: string; readonly limit: number; readonly after: HumanContactPageAfter | null }): Promise<HumanContactPage>;
   list(input: { readonly tenantId: string; readonly userId: string; readonly limit: number }): Promise<readonly HumanContactRequest[]>;
   /** Either participant may revoke a contact; preserve an audit tombstone. */
   revoke(input: { readonly tenantId: string; readonly actorId: string; readonly otherUserId: string }): Promise<boolean>;
 }
+
 
