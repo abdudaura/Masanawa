@@ -6,6 +6,7 @@ import '../agents/agent_directory.dart';
 import '../agents/agent_session.dart';
 import '../agents/agent_shell.dart';
 import 'assistant_workspace_controller.dart';
+import 'assistant_draft_store.dart';
 import 'secure_assistant_pending_journal.dart';
 
 /// Isolated C07 workspace ready for the single R17/C08 /assistant route.
@@ -18,6 +19,7 @@ class AssistantWorkspaceScreen extends StatefulWidget {
     required this.agents,
     required this.shell,
     this.journal = const SecureAssistantPendingJournal(),
+    this.drafts = const SecureAssistantDraftStore(),
     this.onStartNativeVoice,
   });
 
@@ -26,6 +28,7 @@ class AssistantWorkspaceScreen extends StatefulWidget {
   final AgentTransport agents;
   final AgentShellTransport shell;
   final AssistantPendingJournal journal;
+  final AssistantDraftStore drafts;
 
   /// R02/R17 must supply only an already-authorized native Gemini Live entry.
   /// No voice control is rendered until a real implementation is attached.
@@ -40,12 +43,18 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
   late AssistantWorkspaceController workspace;
   final input = TextEditingController();
   final scroll = ScrollController();
+  Timer? _draftTimer;
+  Future<void> _draftWrites = Future<void>.value();
+  int _draftGeneration = 0;
+  String? _draftError;
 
   @override
   void initState() {
     super.initState();
     workspace = _createController();
     workspace.addListener(_updated);
+    input.addListener(_saveDraftDebounced);
+    _restoreDraft(++_draftGeneration);
     scheduleMicrotask(workspace.load);
   }
 
@@ -65,18 +74,57 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
         oldWidget.directory != widget.directory ||
         oldWidget.agents != widget.agents ||
         oldWidget.shell != widget.shell ||
-        oldWidget.journal != widget.journal) {
+        oldWidget.journal != widget.journal ||
+        oldWidget.drafts != widget.drafts) {
+      _draftTimer?.cancel();
+      ++_draftGeneration;
       workspace.removeListener(_updated);
       workspace.dispose();
       input.clear();
+      _draftError = null;
       workspace = _createController();
       workspace.addListener(_updated);
+      _restoreDraft(_draftGeneration);
       scheduleMicrotask(workspace.load);
     }
   }
 
   void _updated() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _restoreDraft(int generation) async {
+    final owner = widget.ownerId;
+    try {
+      final restored = await widget.drafts.read(owner);
+      if (!mounted || generation != _draftGeneration ||
+          widget.ownerId != owner || input.text.isNotEmpty) return;
+      if (restored != null && restored.isNotEmpty) input.text = restored;
+    } catch (_) {
+      if (mounted && generation == _draftGeneration) {
+        setState(() => _draftError =
+            'Cannot restore your protected draft; other messages are unaffected.');
+      }
+    }
+  }
+
+  void _saveDraftDebounced() {
+    _draftTimer?.cancel();
+    final owner = widget.ownerId;
+    final captured = input.text;
+    final generation = _draftGeneration;
+    _draftTimer = Timer(const Duration(milliseconds: 350), () {
+      // Serialize keystore writes: an older async write must never win over a
+      // newer draft or the empty draft written after a confirmed send.
+      _draftWrites = _draftWrites.then((_) =>
+          widget.drafts.write(owner, captured)).catchError((Object _) {
+        if (mounted && generation == _draftGeneration &&
+            widget.ownerId == owner) {
+          setState(() => _draftError =
+              'Draft could not be stored securely. Copy it before leaving.');
+        }
+      });
+    });
   }
 
   Future<void> _send() async {
@@ -116,6 +164,9 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
 
   @override
   void dispose() {
+    _draftTimer?.cancel();
+    ++_draftGeneration;
+    input.removeListener(_saveDraftDebounced);
     workspace.removeListener(_updated);
     workspace.dispose();
     input.dispose();
@@ -175,6 +226,11 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
                   child: const Text('Retry'),
                 ),
               ],
+            ),
+          if (_draftError != null)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(_draftError!, key: const ValueKey('draft-warning')),
             ),
           if (workspace.notice != null)
             Padding(
