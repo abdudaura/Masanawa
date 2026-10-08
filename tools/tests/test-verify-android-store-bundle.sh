@@ -20,7 +20,7 @@ keytool -genkeypair -alias release -keyalg RSA -keysize 2048 -validity 2 \
   -keystore release.p12 -storetype PKCS12 -storepass changeit -keypass changeit \
   -dname "CN=Masanawa Release Test, OU=Engineering, O=Masanawa, C=NG" -noprompt >/dev/null 2>&1
 cp unsigned.aab signed.aab
-jarsigner -keystore release.p12 -storetype PKCS12 -storepass changeit \
+jarsigner -keystore release.p12 -storetype PKCS12 -storepass changeit\
   -keypass changeit signed.aab release >/dev/null
 fingerprint="$(keytool -list -v -keystore release.p12 -storepass changeit -alias release |
   grep -m1 'SHA256:' | sed -E 's/.*SHA256:[[:space:]]*//')"
