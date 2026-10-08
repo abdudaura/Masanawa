@@ -58,5 +58,11 @@
   "authRateLimited": "Muitas solicitações. Tente novamente mais tarde.",
   "authSendFailed": "Não foi possível enviar o código. Verifique a conexão e tente novamente.",
   "authVerifyFailed": "Não foi possível verificar o código. Tente novamente.",
-  "authProfileFailed": "Não foi possível concluir seu perfil. Verifique seus dados e tente novamente."
+  "authProfileFailed": "Não foi possível concluir seu perfil. Verifique seus dados e tente novamente.",
+  "languageAction": "Idioma do aplicativo",
+  "languageDialogTitle": "Escolher idioma do aplicativo",
+  "languageSystem": "Usar idioma do dispositivo",
+  "languageSaveFailed": "Não foi possível salvar a preferência de idioma. Tente novamente.",
+  "languagePreviewNotice": "Algumas telas ainda não estão totalmente traduzidas.",
+  "languageHausaUnavailable": "O suporte à interface em hauçá está sendo concluído."
 }
