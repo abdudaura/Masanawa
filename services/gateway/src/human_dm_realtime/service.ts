@@ -58,7 +58,21 @@ export function createHumanDmRealtimeService(input: {
         return { events:[],nextCursor:after,hasMore:false,resetRequired:initialSnapshot };
       }
       const deadline = Date.now() + duration;
+      let attempts = 0;
       while (true) {
+        // A 15-second wait cannot keep using a token revoked during the
+        // wait; recheck the canonical session before each subsequent read.
+        if (attempts++ > 0) {
+          const renewed = await input.authorizer.authorize({
+            authorizationHeader,
+          });
+          if (renewed.tenantId !== tenantId || renewed.userId !== userId) {
+            throw new HumanDmRealtimeError("messages.sync_session_changed",401);
+          }
+          if (shouldStop?.()) return {
+            events:[],nextCursor:after,hasMore:false,resetRequired:false,
+          };
+        }
         const result = await input.repository.sync({
           tenantId,userId,after,limit:size,
         });
