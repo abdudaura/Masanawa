@@ -1,5 +1,21 @@
 # Continue Here
 
+## Shared GitHub Actions verification incident — owner using ChatGPT Work (2026-10-08)
+
+The repository owner has decided to use **ChatGPT Work** to investigate shared
+Foundation CI and Mobile Build runs failing **before any job steps execute** and to
+complete the missing cross-window PR verification. This is planned owner action,
+**not evidence that Work has started or fixed CI**.
+
+Read [docs/WORK-CI-RECOVERY-HANDOFF.md](docs/WORK-CI-RECOVERY-HANDOFF.md) and
+[issue #457](https://github.com/Baatiku/masanawa/issues/457) before diagnosing
+GitHub Actions or reporting verification status. Other windows may continue their
+non-conflicting R01–R19 code lanes; leave central CI/runner/Actions settings and
+merge verification coordination to the owner's Work session. A failed workflow
+with **zero steps** does not establish a code/test failure or success. Keep
+unverified implementation PRs draft/unmerged and preserve the 5-minute claim rule.
+
+
 ## Current improvement sequence — 2026-10-08
 
 Latest approved shell: **Home · Agents · Wallet · Talk**. Profile avatar and Activity
