@@ -136,13 +136,13 @@ const humanSelectByUserId = `
          ) AS is_following
     FROM talks.public_profiles p
    WHERE p.tenant_id = $1 AND p.user_id = $3
-     AND NOT EXISTS (
+     AND ($2 = $3 OR NOT EXISTS (
        SELECT 1 FROM talks.safety_enforcement se
         WHERE se.tenant_id = p.tenant_id
           AND se.target_kind = 'profile'
           AND se.target_id = p.handle
           AND se.visibility IN ('restricted','blocked')
-     )
+     ))
    LIMIT 1
 `;
 
