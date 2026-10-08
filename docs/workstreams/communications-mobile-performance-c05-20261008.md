@@ -45,3 +45,11 @@
 6. Coordinate C03 event/catch-up/push and C04 media before declaring all C05 journeys complete, then run J03/J10/J11 with two real signed-in Android clients and deployed matching Gateway SHA. Only then consider merge and mark verified.
 
 **No production deployments, source merges or DONE status occurred in this window.**
+
+### Parallel-window conflict discovered after this claim (2026-10-08)
+
+**Do not combine or merge both C05 implementations automatically.** This lane claimed and committed its exact paths first, then another independent C05 draft **#476** was opened at 11:10:32Z while #474 was active. The separate source trees do not overlap (ours `src/human_sync/**`, theirs `src/messages/cache/**`), **but both change `apps/mobile/pubspec.yaml` and provide competing caches/outboxes**. #476 uses SQLCipher; #474 uses encrypted AES-GCM rows over SQLite. Neither has executed Android/SQLCipher or Flutter tests. Compare Android keystore, actual ciphertext metadata exposure, token switch, pagination, app data backup, SQLCipher ABI/NDK and plugin compatibility, performance and page/ack semantics. The final implementation must select/reconcile **one** authoritative C05 cache with no duplicate outbox or divergent delivery truth. No forced merge or redundant package dependencies.
+
+**C02 contract collision is real:** #472 (earlier claim) uses `GET /messages`, `clientRequestId`, migration `0017_human_dm_core.sql`; #475 instead implements `/v1/messages` with incompatible `0017_human_dm_text.sql`; #477 has marked itself superseded and must not be merged. Current #474 `PinnedHumanDmGatewayTransport` follows #472 and is **not safe to enable** until integration chooses the canonical C02 protocol. Notify R17/C08 and C03 owners; all migrations stay unapplied until sole C02 choice is reviewed.
+
+**Latest substantive source SHA:** `de4aa6997b08f8aa9de0dd69f8dcf513e256d7de` (after tenant-principal fence, cache key serialization, in-memory revocation purge, standalone inbox/thread state, transport, real SQLite tests and opt-in 100k fixture). This is only a GitHub commit, not a successful test run. Branch remains DRAFT, unmerged; no money, production DB or deployment touched. ChatGPT Work should perform the semantic reconciliation after fixing #457, not simply favor the latest PR timestamp.
