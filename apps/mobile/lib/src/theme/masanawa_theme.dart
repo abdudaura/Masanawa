@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../tokens/masanawa_tokens.dart';
 
@@ -163,10 +164,18 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       foregroundColor: masanawa.textPrimary,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      // Light Android system bar with dark status icons, matching this header.
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
       iconTheme: IconThemeData(color: masanawa.textPrimary),
       actionsIconTheme: IconThemeData(color: masanawa.textPrimary),
-      titleTextStyle: const TextStyle(
-        color: Color(0xFF111B21),
+      titleTextStyle: TextStyle(
+        color: masanawa.textPrimary,
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
@@ -232,7 +241,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: masanawa.brand,
+        foregroundColor: masanawa.brandStrong,
         minimumSize: const Size(48, 48),
         side: BorderSide(color: masanawa.structuralBorder),
         shape: RoundedRectangleBorder(
@@ -241,7 +250,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: masanawa.brand),
+      style: TextButton.styleFrom(foregroundColor: masanawa.brandStrong),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: masanawa.surfaceMuted,
