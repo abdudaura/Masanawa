@@ -179,8 +179,8 @@ function quoteBoundConsentPhrase(view: PayableQuote): string {
 
 function matchesQuoteBoundConsent(userText: string, view: PayableQuote): boolean {
   if (userText.length > 512) return false;
-  const spoken = userText.trim().replace(/\\s+/gu, " ");
-  const match = /^(?:confirm bill to (.+?) for ([0-9]+(?:\\.[0-9]{1,2})?) (?:naira|ngn)|tabbatar da biya ga (.+?) na ([0-9]+(?:\\.[0-9]{1,2})?) naira)$/iu.exec(spoken);
+  const spoken = userText.trim().replace(/\s+/gu, " ");
+  const match = /^(?:confirm bill to (.+?) for ([0-9]+(?:\.[0-9]{1,2})?) (?:naira|ngn)|tabbatar da biya ga (.+?) na ([0-9]+(?:\.[0-9]{1,2})?) naira)$/iu.exec(spoken);
   if (!match) return false;
   const recipient = (match[1] ?? match[3] ?? "").trim();
   const amount = match[2] ?? match[4] ?? "";
