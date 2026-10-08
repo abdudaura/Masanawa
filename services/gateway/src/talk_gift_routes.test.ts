@@ -308,7 +308,7 @@ describe("Talk Host gift route", () => {
         async load({ tenantId, talkId }) {
           expect(tenantId).toBe("tenant_1");
           expect(talkId).toBe("talk_12345678");
-          return [{ id: "heart", name: "Heart", visual: "heart",
+          return [{ id: "heart", name: "Heart", visual: "heart" as const,
             amountCredits: currentPrice, available: true }];
         },
       },
