@@ -9,3 +9,14 @@ No PR overlapping owned paths at claim.
 Verification status: not yet tested. This is safety hardening, not evidence that R07's provider end-to-end voice/no-display bill market journeys qualify. No R07 DONE.
 
 Claim extension after PR file diff check at 2026-10-08T06:07:37.868Z: `agent_conversation.ts` had zero open PR collisions. Scope only passing original user utterance to refuse model-invented spend confirmation; no conversation runtime architectural edits.
+
+## Implementation handoff — 2026-10-08T06:09:38.292Z
+
+- Replaced first-match biller and item selection with unique matches against live catalog. Unmatched/ambiguous providers and data/TV plans return actual bounded live choices instead of inventing market names or paying the first candidate.
+- A fixed-price package is never quoted using an incorrect model-supplied amount. Verify money terms through canonical `parseNgnKobo`; ask to correct contradictory amounts. Quote creation stays inside the authenticated CheckoutService.
+- Generic voice/text "yes" and generated `billing.confirm` no longer pick the first of several pending quotes. Scan bounded owner history and filter only same-character, unexpired, quoted transactions, rejecting truncation/multiple candidates. Do not touch other Character's pending bills.
+- Bill confirmation arising from model inference also checks the original customer utterance forwarded by `AgentConversationService`; model-generated consent alone cannot initiate a wallet purchase. The wallet, quote identity, revision and Flutterwave ledger remain server-authoritative.
+- Agent never asserts refund completed just because `phase=failed`; directs customer to reconciliation status.
+- Added `services/gateway/src/agent_billing_guardrails.test.ts` with exact provider, ambiguous provider and plans, fixed-price mismatch, actual customer consent, cross-character pending quote separation and wrong-recipient prevention.
+- **NOT QUALIFIED**: No clone/pnpm workspace in current environment, test/typecheck inaccessible; source and tests committed but not executed. User-voice yes after unrelated conversational question may still reach a single pending bill; a follow-on session-specific quote challenge is required before production voice billing is qualified. No live Flutterwave, device, error/refund/voice-only test matrix completed. R07 stays UNVERIFIED.
+- No migration, deployment, credentials or other workstream files touched.
