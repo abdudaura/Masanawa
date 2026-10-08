@@ -27,6 +27,23 @@ import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
 import '../talks/talk_models.dart';
 
+/// The approved four root destinations. These are navigation indices only,
+/// not a pricing, identity or task-authority contract.
+int shellRootTabIndex(String? tab) => switch (tab) {
+      'agents' => 1,
+      'wallet' => 2,
+      'talk' => 3,
+      _ => 0,
+    };
+
+/// Old shell links must not be reinterpreted as different current tabs.
+String? legacyShellDestination(String? tab) => switch (tab) {
+      'create' => '/talk/create',
+      'activity' => '/activity',
+      'you' => '/you',
+      _ => null,
+    };
+
 /// Production router for the human-hosted Talk product.
 ///
 /// Root shell: Home · Agents · Wallet · Talk; legacy entry points stay valid.
@@ -90,11 +107,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Legacy shell deep links must retain their previous action.
       if (path == '/home') {
-        switch (state.uri.queryParameters['tab']) {
-          case 'create': return '/talk/create';
-          case 'activity': return '/activity';
-          case 'you': return '/you';
-        }
+        final oldDestination = legacyShellDestination(
+          state.uri.queryParameters['tab']);
+        if (oldDestination != null) return oldDestination;
       }
       return null;
     },
@@ -109,12 +124,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (_, state) {
-          final index = switch (state.uri.queryParameters['tab']) {
-            'agents' => 1,
-            'wallet' => 2,
-            'talk' => 3,
-            _ => 0,
-          };
+          final index = shellRootTabIndex(
+            state.uri.queryParameters['tab']);
           return TwinHomeShell(initialIndex: index);
         },
       ),
