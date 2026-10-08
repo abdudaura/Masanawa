@@ -116,9 +116,23 @@ function approved(value:string|undefined) {
   expect(await repo.remove({tenantId,userId:peerId,messageId:id})).toBe(false);
   expect(await repo.remove({tenantId,userId,messageId:id})).toBe(true);
   expect(await repo.find({tenantId,userId:peerId,messageId:id})).toBeNull();
+  // Deleting an account/conversation must never cascade away the ONLY S3
+  // object reference before the provider has confirmed remote erasure.
+  await expect(pool.query(
+    `DELETE FROM talks.human_dm_voice_objects WHERE tenant_id=$1 AND object_key=$2`,
+    [tenantId,key],
+  )).rejects.toThrow("private voice storage erasure required");
+  const prior=await pool.query<{storage_erased_at:Date|null}>(
+    `SELECT storage_erased_at FROM talks.human_dm_voice_objects
+      WHERE tenant_id=$1 AND object_key=$2`,[tenantId,key]);
+  expect(prior.rows[0]?.storage_erased_at).toBeNull();
   const garbage=await repo.stale(10);
   expect(garbage).toContainEqual({objectKey:key});
   await repo.deleted(key,true);
   expect(await repo.list({tenantId,userId,conversationId,limit:30})).toEqual([]);
+  const erased=await pool.query<{count:string}>(
+    `SELECT count(*)::text AS count FROM talks.human_dm_voice_objects
+     WHERE tenant_id=$1 AND object_key=$2`,[tenantId,key]);
+  expect(erased.rows[0]?.count).toBe("0");
  });
 });
