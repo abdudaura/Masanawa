@@ -108,8 +108,8 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       locale: _localePreference.override,
       supportedLocales: MasanawaLocalization.supportedLocales,
       localizationsDelegates: MasanawaLocalization.delegates,
-      localeResolutionCallback: (deviceLocale, supportedLocales) =>
-          MasanawaLocalization.resolve(deviceLocale, supportedLocales),
+      localeListResolutionCallback: (deviceLocales, supportedLocales) =>
+          MasanawaLocalization.resolvePreferred(deviceLocales, supportedLocales),
       routerConfig: router,
       ),
     );
