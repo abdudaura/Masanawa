@@ -165,14 +165,21 @@ export function createCustomerAuthService(input: Readonly<{
     const issuedAt = now();
     const accessToken = mintPlatformSessionToken("access");
     const refreshToken = mintPlatformSessionToken("refresh");
-    await input.repository.issueSession({
-      identity,
-      accessHash: hashPlatformSessionToken(accessToken),
-      refreshHash: hashPlatformSessionToken(refreshToken),
-      accessExpiresAt: plusSeconds(issuedAt, accessTtlSeconds),
-      refreshExpiresAt: plusSeconds(issuedAt, refreshTtlSeconds),
-      issuedAt,
-    });
+    try {
+      await input.repository.issueSession({
+        identity,
+        accessHash: hashPlatformSessionToken(accessToken),
+        refreshHash: hashPlatformSessionToken(refreshToken),
+        accessExpiresAt: plusSeconds(issuedAt, accessTtlSeconds),
+        refreshExpiresAt: plusSeconds(issuedAt, refreshTtlSeconds),
+        issuedAt,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "auth.account_inactive") {
+        throw new CustomerAuthError("ACCOUNT_INACTIVE", 403);
+      }
+      throw error;
+    }
     return Object.freeze({
       accessToken,
       refreshToken,

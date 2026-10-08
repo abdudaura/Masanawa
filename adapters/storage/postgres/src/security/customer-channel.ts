@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { withTransaction } from "../transaction.js";
 import {
   normalizeCustomerChannelLink,
   type CustomerChannelLink,
@@ -57,21 +58,33 @@ export function createPostgresCustomerChannelRepository(
 
     async putLink(value: CustomerChannelLink) {
       const link = normalizeCustomerChannelLink(value);
-      await pool.query(
-        `INSERT INTO security.customer_channel_links(
-           channel,external_user_id,chat_id,tenant_id,user_id,character_id,
-           character_session_id,updated_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         ON CONFLICT (channel,external_user_id)
-         DO UPDATE SET chat_id=EXCLUDED.chat_id,tenant_id=EXCLUDED.tenant_id,
-           user_id=EXCLUDED.user_id,character_id=EXCLUDED.character_id,
-           character_session_id=EXCLUDED.character_session_id,
-           updated_at=EXCLUDED.updated_at`,
-        [
-          link.channel,link.externalUserId,link.chatId,link.tenantId,link.userId,
-          link.characterId,link.characterSessionId,link.updatedAt,
-        ],
-      );
+      await withTransaction(pool, async (client) => {
+        // Lock canonical user against the account-deletion revoker. Either
+        // this link commits before disable and gets removed, or it is denied.
+        const owner = await client.query<{ state: string }>(
+          `SELECT state FROM identity.users
+            WHERE tenant_id=$1 AND user_id=$2 FOR SHARE`,
+          [link.tenantId,link.userId],
+        );
+        if (owner.rows[0]?.state !== "active") {
+          throw new Error("customer_channel.account_inactive");
+        }
+        await client.query(
+          `INSERT INTO security.customer_channel_links(
+             channel,external_user_id,chat_id,tenant_id,user_id,character_id,
+             character_session_id,updated_at
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+           ON CONFLICT (channel,external_user_id)
+           DO UPDATE SET chat_id=EXCLUDED.chat_id,tenant_id=EXCLUDED.tenant_id,
+             user_id=EXCLUDED.user_id,character_id=EXCLUDED.character_id,
+             character_session_id=EXCLUDED.character_session_id,
+             updated_at=EXCLUDED.updated_at`,
+          [
+            link.channel,link.externalUserId,link.chatId,link.tenantId,link.userId,
+            link.characterId,link.characterSessionId,link.updatedAt,
+          ],
+        );
+      });
     },
 
     async setCharacterSession(input: SetCharacterSessionInput) {
