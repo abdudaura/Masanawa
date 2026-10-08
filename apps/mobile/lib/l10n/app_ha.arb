@@ -58,5 +58,11 @@
   "authRateLimited": "An yi buƙatu da yawa. Sake gwadawa daga baya.",
   "authSendFailed": "Ba a iya aika lambar ba. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
   "authVerifyFailed": "Ba a iya tabbatar da lambar ba. Sake gwadawa.",
-  "authProfileFailed": "Ba a iya kammala bayanan martabarka ba. Duba bayananka sannan ka sake gwadawa."
+  "authProfileFailed": "Ba a iya kammala bayanan martabarka ba. Duba bayananka sannan ka sake gwadawa.",
+  "languageAction": "Harshen manhaja",
+  "languageDialogTitle": "Zaɓi harshen manhaja",
+  "languageSystem": "Yi amfani da harshen na'ura",
+  "languageSaveFailed": "Ba a iya adana zaɓin harshe ba. Sake gwadawa.",
+  "languagePreviewNotice": "Har yanzu ba a fassara wasu shafuka gaba ɗaya ba.",
+  "languageHausaUnavailable": "Ana kammala tallafin harshen Hausa na manhaja."
 }
