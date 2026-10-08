@@ -37,16 +37,24 @@ function fixture() {
       return { schemaVersion: 1, tenantId: tenant, characterId: character,
         skillVersionIds: [...assigned], revision };
     },
-    async putSkillAssignment(input: { expectedRevision: number | null; assignment: { skillVersionIds: readonly string[] } }) {
-      if (input.expectedRevision !== revision) throw new Error("Conflicting transaction");
-      writeCount++;
-      assigned = [...input.assignment.skillVersionIds];
-      revision++;
-      return { schemaVersion: 1, tenantId: tenant, characterId: character,
-        skillVersionIds: [...assigned], revision };
+    async putSkillAssignment() {
+      throw new Error("Unsafe unaudited repository write must never be called");
     },
   } as unknown as AgentAdminService;
   const control = createOperatorAgentControl({ admin: service, authorizer: authority,
+    auditedRemoval: {
+      async removeAndAudit(input) {
+        // Models the mandatory single atomic audit + CAS writer contract.
+        if (input.expectedRevision !== revision ||
+            input.characterId !== character || input.skillVersionId !== skill) {
+          throw new Error("Conflicting transaction");
+        }
+        writeCount++;
+        assigned = [...input.remainingSkillVersionIds];
+        revision++;
+        return { revision };
+      },
+    },
     now: () => "2026-10-08T00:00:00Z" });
   return { control, authority, get writeCount() { return writeCount; },
     get authCount() { return authCount; }, get revision() { return revision; },
@@ -165,6 +173,42 @@ describe("U27 composition gate", () => {
       expect(response.statusCode).toBe(200);
       expect(response.json().agents[0].assignmentRevision).toBe(2);
       expect(response.headers["cache-control"]).toBe("no-store");
+    } finally {
+      await app.close();
+    }
+  });
+});
+
+
+describe("U27 mandatory atomic-audit dependency", () => {
+  it("rejects all mutations when the runtime has no audited CAS writer", async () => {
+    const f = fixture();
+    const readonly = createOperatorAgentControl({
+      admin: {
+        listPresentations: async () => [],
+        listSkills: async () => [],
+        readSkillAssignment: async () => ({
+          schemaVersion: 1, tenantId: tenant, characterId: character,
+          skillVersionIds: [skill], revision: 2,
+        }),
+        putPresentation: async () => { throw new Error("No write"); },
+        putSkillAssignment: async () => { throw new Error("Unsafe write"); },
+      } as unknown as AgentAdminService,
+      authorizer: f.authority,
+    });
+    await expect(readonly.detachSkill({
+      authorizationHeader: "Bearer administrator",
+      characterId: character, skillVersionId: skill, expectedRevision: 2,
+    })).rejects.toThrow("Audited operator mutation is unavailable");
+    const app = createOpsApp({ operatorAgentControl: readonly });
+    try {
+      const response = await app.inject({
+        method: "DELETE",
+        url: "/v1/admin/operator/agents/" + character + "/skills/" + skill,
+        headers: { authorization: "Bearer administrator", "if-match": '"2"' },
+      });
+      expect(response.statusCode).toBe(503);
+      expect(response.json()).toEqual({ code: "AGENT_CONTROL_UNAVAILABLE" });
     } finally {
       await app.close();
     }
