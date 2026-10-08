@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
+import '../../localization/auth_error_localizer.dart';
+import '../../localization/language_picker_button.dart';
 import '../../core/api/models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/phone/country_codes.dart';
@@ -63,13 +66,10 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       });
     } on ApiException catch (error) {
       if (!mounted) return;
-      setState(() => _capabilityError = error.message);
+      setState(() => _capabilityError = error.code ?? 'UNKNOWN_AUTH_ERROR');
     } catch (_) {
       if (!mounted) return;
-      setState(
-        () => _capabilityError =
-            'Could not load sign-in methods. Check your connection and try again.',
-      );
+      setState(() => _capabilityError = 'UNKNOWN_AUTH_ERROR');
     }
   }
 
@@ -78,7 +78,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     final digits = e164.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 7 || digits.length > 15) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid phone number')),
+        SnackBar(content: Text(AppLocalizations.of(context).invalidPhoneNumber)),
       );
       return;
     }
@@ -89,7 +89,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     final email = _email.text.trim();
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid email address')),
+        SnackBar(content: Text(AppLocalizations.of(context).invalidEmailAddress)),
       );
       return;
     }
@@ -106,19 +106,25 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       }
     });
 
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(sessionProvider);
     final sending = state is SessionSendingOtp;
     final error = state is SessionError ? state : null;
     final channels = _availableChannels;
 
     return OnboardingScaffold(
-      title: 'Welcome to Masanawa',
+      title: l10n.welcomeTitle,
       subtitle: channels == null
-          ? 'Checking the available sign-in methods…'
-          : 'Use your email or phone. We will send a one-time code.',
+          ? l10n.checkingSignInMethods
+          : l10n.signInInstruction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: LanguagePickerButton(),
+          ),
+          const SizedBox(height: 8),
           if (_capabilityError != null) ...[
             Icon(
               Icons.cloud_off_outlined,
@@ -127,7 +133,11 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              _capabilityError!,
+              AuthErrorLocalizer.message(
+                l10n,
+                code: _capabilityError,
+                stage: AuthFailureStage.capabilities,
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
@@ -136,7 +146,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             ),
             const SizedBox(height: 18),
             PrimaryButton(
-              label: 'Try again',
+              label: l10n.retry,
               onPressed: _loadCapabilities,
             ),
           ] else if (channels == null) ...[
@@ -146,16 +156,16 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               SegmentedButton<OtpChannel>(
                 segments: [
                   if (channels.contains(OtpChannel.sms))
-                    const ButtonSegment(
+                    ButtonSegment(
                       value: OtpChannel.sms,
-                      label: Text('Phone'),
-                      icon: Icon(Icons.phone_outlined),
+                      label: Text(l10n.phoneMethod),
+                      icon: const Icon(Icons.phone_outlined),
                     ),
                   if (channels.contains(OtpChannel.email))
-                    const ButtonSegment(
+                    ButtonSegment(
                       value: OtpChannel.email,
-                      label: Text('Email'),
-                      icon: Icon(Icons.mail_outline),
+                      label: Text(l10n.emailMethod),
+                      icon: const Icon(Icons.mail_outline),
                     ),
                 ],
                 selected: {_channel},
@@ -179,8 +189,8 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'you@example.com',
+                  labelText: l10n.emailMethod,
+                  hintText: l10n.emailExample,
                   prefixIcon: Icon(
                     Icons.mail_outline,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -201,7 +211,11 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             if (error != null) ...[
               const SizedBox(height: 12),
               Text(
-                error.message,
+                AuthErrorLocalizer.message(
+                  l10n,
+                  code: error.code,
+                  stage: AuthFailureStage.sendCode,
+                ),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontSize: MasanawaTokens.fontSize['sm'],
@@ -211,10 +225,10 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             const SizedBox(height: 20),
             PrimaryButton(
               label: sending
-                  ? 'Sending code…'
+                  ? l10n.sendingCode
                   : _isEmail
-                      ? 'Send code'
-                      : 'Continue',
+                      ? l10n.sendCode
+                      : l10n.continueAction,
               loading: sending,
               onPressed: sending
                   ? null
@@ -224,7 +238,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'By continuing you agree to our Terms and Privacy Policy.',
+              l10n.termsNotice,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: MasanawaTokens.fontSize['xs'],

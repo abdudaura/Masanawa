@@ -5,6 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
+import '../../localization/auth_error_localizer.dart';
+import '../../localization/international_digits.dart';
+import '../../localization/bidi_display.dart';
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -79,10 +83,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   void _verify() {
-    final digits = _code.text.replaceAll(RegExp(r'\D'), '');
+    final digits = normalizeInternationalDigits(_code.text).replaceAll(RegExp(r'\D'), '');
     if (digits.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter the 6-digit verification code')),
+        SnackBar(content: Text(AppLocalizations.of(context).invalidOtpCode)),
       );
       return;
     }
@@ -90,7 +94,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final ctx = _retryContext(state);
     if (ctx == null || ctx.channel == null || ctx.identifier == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session expired. Please request a new code.')),
+        SnackBar(content: Text(AppLocalizations.of(context).otpSessionExpired)),
       );
       context.go('/phone-login');
       return;
@@ -122,13 +126,18 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       } else if (next is SessionError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.message),
+            content: Text(AuthErrorLocalizer.message(
+              AppLocalizations.of(context),
+              code: next.code,
+              stage: AuthFailureStage.verifyCode,
+            )),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
     });
 
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(sessionProvider);
     final ctx = _retryContext(state);
     final identifier = ctx?.identifier ?? '';
@@ -136,8 +145,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final error = state is SessionError ? state : null;
 
     return OnboardingScaffold(
-      title: 'Enter the code',
-      subtitle: 'Sent to $identifier',
+      title: l10n.otpTitle,
+      subtitle: l10n.otpSentTo(
+        BidiDisplay.identifier(
+          identifier,
+          surroundingDirection: Directionality.of(context),
+        ),
+      ),
       canGoBack: true,
       backDestination: '/phone-login',
       child: Column(
@@ -149,11 +163,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             inputFormatters: [
+              const InternationalDigitsFormatter(),
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(6),
             ],
             onChanged: (val) {
-              final digits = val.replaceAll(RegExp(r'\D'), '');
+              final digits = normalizeInternationalDigits(val).replaceAll(RegExp(r'\D'), '');
               // Editing after a failed attempt clears the error back to
               // awaiting so the corrected code can be resubmitted (and the
               // resend cooldown stays intact).
@@ -196,7 +211,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           if (error != null) ...[
             const SizedBox(height: 12),
             Text(
-              error.message,
+              AuthErrorLocalizer.message(
+                l10n,
+                code: error.code,
+                stage: AuthFailureStage.verifyCode,
+              ),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
                 fontSize: MasanawaTokens.fontSize['sm'],
@@ -205,7 +224,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           ],
           const SizedBox(height: 24),
           PrimaryButton(
-            label: verifying ? 'Verifying…' : 'Verify',
+            label: verifying ? l10n.verifyingCode : l10n.verifyCode,
             loading: verifying,
             onPressed: _verify,
           ),
@@ -218,7 +237,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 ? null
                 : () => _resend(ctx.channel!, ctx.identifier!),
             child: Text(
-              _remaining > 0 ? 'Resend code in ${_remaining}s' : 'Resend code',
+              _remaining > 0 ? l10n.resendCodeIn(_remaining) : l10n.resendCode,
               style: TextStyle(
                 color: _remaining > 0
                     ? Theme.of(context).colorScheme.onSurfaceVariant

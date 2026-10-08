@@ -1,0 +1,295 @@
+{
+  "@@locale": "en",
+  "appTitle": "Masanawa",
+  "@appTitle": {
+    "description": "Brand name, not translated"
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Bottom navigation: public Talk discovery"
+  },
+  "agents": "Agents",
+  "@agents": {
+    "description": "Bottom navigation: Masanawa Experts and personal Twins"
+  },
+  "wallet": "Wallet",
+  "@wallet": {
+    "description": "Bottom navigation: balances and financial services"
+  },
+  "talk": "Talk",
+  "@talk": {
+    "description": "Bottom navigation: private AI conversation, not a public Talk"
+  },
+  "explore": "Explore",
+  "@explore": {
+    "description": "Home discovery feed tab"
+  },
+  "liveTalks": "Live Talks",
+  "@liveTalks": {
+    "description": "Home currently live public Talk feed tab"
+  },
+  "startTalk": "Start Talk",
+  "@startTalk": {
+    "description": "Start composing a human-hosted public Talk, does not broadcast immediately"
+  },
+  "activity": "Activity",
+  "@activity": {
+    "description": "Notification/activity screen"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Current user's account profile"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Application settings"
+  },
+  "retry": "Try again",
+  "@retry": {
+    "description": "Retry a failed load or recoverable request"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Discard a pending action without committing"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Affirm a pending action; money still needs a server-authorized quote"
+  },
+  "loading": "Loading…",
+  "@loading": {
+    "description": "Data loading status"
+  },
+  "listen": "Listen",
+  "@listen": {
+    "description": "Join audience of a public Talk"
+  },
+  "raiseHand": "Raise hand",
+  "@raiseHand": {
+    "description": "Ask human Host for a free speaker Seat"
+  },
+  "speakerSeats": "{count, plural, =0{No speaker seats} =1{1 speaker seat} other{{count} speaker seats}}",
+  "@speakerSeats": {
+    "description": "Count of occupied speaking positions in a Talk",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletAmount": "{amount} {currency}",
+  "@walletAmount": {
+    "description": "Display separately formatted native amount and ISO asset/currency code; formatted by locale-aware formatter, no currency conversion",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "splashTagline": "Live conversations with people and AI",
+  "@splashTagline": {
+    "description": "Short splash-screen subtitle describing public live human-hosted Talks with AI participants; not a transaction or private assistant claim"
+  },
+  "welcomeTitle": "Welcome to Masanawa",
+  "checkingSignInMethods": "Checking available sign-in methods…",
+  "signInInstruction": "Sign in with email or phone. We'll send you a one-time code.",
+  "signInMethodsUnavailable": "Sign-in is temporarily unavailable. Please try again shortly.",
+  "signInMethodsLoadFailed": "Could not load sign-in methods. Check your connection and try again.",
+  "invalidPhoneNumber": "Enter a valid phone number",
+  "invalidEmailAddress": "Enter a valid email address",
+  "phoneMethod": "Phone",
+  "emailMethod": "Email",
+  "emailExample": "you@example.com",
+  "sendingCode": "Sending code…",
+  "sendCode": "Send code",
+  "continueAction": "Continue",
+  "termsNotice": "By continuing, you agree to our Terms and Privacy Policy.",
+  "otpTitle": "Enter the code",
+  "otpSentTo": "Sent to {identifier}",
+  "invalidOtpCode": "Enter the 6-digit verification code",
+  "otpSessionExpired": "Session expired. Please request a new code.",
+  "verifyingCode": "Verifying…",
+  "verifyCode": "Verify",
+  "resendCodeIn": "Resend code in {seconds}s",
+  "resendCode": "Resend code",
+  "nameQuestion": "What should we call you?",
+  "completeProfile": "Complete your Masanawa profile.",
+  "codeVerifiedName": "Your code is verified. Add your name to finish signing in.",
+  "fullNameLabel": "Full name",
+  "fullNameExample": "e.g. Amina Bello",
+  "fullNameRequired": "Please enter your full name",
+  "finishingSignIn": "Finishing sign in…",
+  "verifiedSignInNotice": "Your verified phone number or email remains your sign-in method.",
+  "@welcomeTitle": {
+    "description": "Authentication and onboarding visible string: welcomeTitle"
+  },
+  "@checkingSignInMethods": {
+    "description": "Authentication and onboarding visible string: checkingSignInMethods"
+  },
+  "@signInInstruction": {
+    "description": "Authentication and onboarding visible string: signInInstruction"
+  },
+  "@signInMethodsUnavailable": {
+    "description": "Authentication and onboarding visible string: signInMethodsUnavailable"
+  },
+  "@signInMethodsLoadFailed": {
+    "description": "Authentication and onboarding visible string: signInMethodsLoadFailed"
+  },
+  "@invalidPhoneNumber": {
+    "description": "Authentication and onboarding visible string: invalidPhoneNumber"
+  },
+  "@invalidEmailAddress": {
+    "description": "Authentication and onboarding visible string: invalidEmailAddress"
+  },
+  "@phoneMethod": {
+    "description": "Authentication and onboarding visible string: phoneMethod"
+  },
+  "@emailMethod": {
+    "description": "Authentication and onboarding visible string: emailMethod"
+  },
+  "@emailExample": {
+    "description": "Email address sample only; should not be translated as user data"
+  },
+  "@sendingCode": {
+    "description": "Authentication and onboarding visible string: sendingCode"
+  },
+  "@sendCode": {
+    "description": "Authentication and onboarding visible string: sendCode"
+  },
+  "@continueAction": {
+    "description": "Authentication and onboarding visible string: continueAction"
+  },
+  "@termsNotice": {
+    "description": "Consent copy on sign-in screen; legal terms must exist as linked documents, translation alone is not legal compliance"
+  },
+  "@otpTitle": {
+    "description": "Authentication and onboarding visible string: otpTitle"
+  },
+  "@otpSentTo": {
+    "description": "One-time code target, where identifier is the destination email or telephone; preserve identifier verbatim",
+    "placeholders": {
+      "identifier": {
+        "type": "String"
+      }
+    }
+  },
+  "@invalidOtpCode": {
+    "description": "Authentication and onboarding visible string: invalidOtpCode"
+  },
+  "@otpSessionExpired": {
+    "description": "Authentication and onboarding visible string: otpSessionExpired"
+  },
+  "@verifyingCode": {
+    "description": "Authentication and onboarding visible string: verifyingCode"
+  },
+  "@verifyCode": {
+    "description": "Authentication and onboarding visible string: verifyCode"
+  },
+  "@resendCodeIn": {
+    "description": "Cooldown in integer seconds; don't transform identifier or change state",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@resendCode": {
+    "description": "Authentication and onboarding visible string: resendCode"
+  },
+  "@nameQuestion": {
+    "description": "Authentication and onboarding visible string: nameQuestion"
+  },
+  "@completeProfile": {
+    "description": "Authentication and onboarding visible string: completeProfile"
+  },
+  "@codeVerifiedName": {
+    "description": "Authentication and onboarding visible string: codeVerifiedName"
+  },
+  "@fullNameLabel": {
+    "description": "Authentication and onboarding visible string: fullNameLabel"
+  },
+  "@fullNameExample": {
+    "description": "Example person's full name, not an account field"
+  },
+  "@fullNameRequired": {
+    "description": "Authentication and onboarding visible string: fullNameRequired"
+  },
+  "@finishingSignIn": {
+    "description": "Authentication and onboarding visible string: finishingSignIn"
+  },
+  "@verifiedSignInNotice": {
+    "description": "Authentication and onboarding visible string: verifiedSignInNotice"
+  },
+  "countryDialCode": "Phone code: {code}",
+  "unknownCountryDialCode": "Phone code not recognized",
+  "@countryDialCode": {
+    "description": "Shows the actual detected telephone dial prefix, not a user's current country or wallet jurisdiction",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@unknownCountryDialCode": {
+    "description": "Input has no recognized international telephone prefix; do not silently assume a country"
+  },
+  "authCodeInvalid": "That code is incorrect. Check it and try again.",
+  "authCodeLocked": "Too many attempts. Please request a new code later.",
+  "authCodeExpired": "This code has expired. Request a new one.",
+  "authRateLimited": "Too many requests. Please try again later.",
+  "authSendFailed": "Could not send the code. Check your connection and try again.",
+  "authVerifyFailed": "Could not verify the code. Try again.",
+  "authProfileFailed": "Could not finish your profile. Check your details and try again.",
+  "@authCodeInvalid": {
+    "description": "Auth error text for authCodeInvalid; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authCodeLocked": {
+    "description": "Auth error text for authCodeLocked; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authCodeExpired": {
+    "description": "Auth error text for authCodeExpired; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authRateLimited": {
+    "description": "Auth error text for authRateLimited; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authSendFailed": {
+    "description": "Auth error text for authSendFailed; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authVerifyFailed": {
+    "description": "Auth error text for authVerifyFailed; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authProfileFailed": {
+    "description": "Auth error text for authProfileFailed; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "languageAction": "App language",
+  "languageDialogTitle": "Choose app language",
+  "languageSystem": "Use device language",
+  "languageSaveFailed": "Could not save language preference. Try again.",
+  "languagePreviewNotice": "Some screens are not fully translated yet.",
+  "languageHausaUnavailable": "Hausa interface support is being completed.",
+  "@languageAction": {
+    "description": "Button shown on signed-out authentication screen to select the application's UI language; not voice/conversation or account region"
+  },
+  "@languageDialogTitle": {
+    "description": "Modal bottom-sheet heading for user-selected UI language"
+  },
+  "@languageSystem": {
+    "description": "Reset manual language override and follow ordered OS language preferences"
+  },
+  "@languageSaveFailed": {
+    "description": "Secure device preference could not be saved; current selection remains unchanged"
+  },
+  "@languagePreviewNotice": {
+    "description": "Honest notice while translating the remaining product screens"
+  },
+  "@languageHausaUnavailable": {
+    "description": "Hausa cannot be selected until framework Material/Cupertino localizations and screen coverage are complete"
+  },
+  "languageSelected": "Selected",
+  "@languageSelected": {
+    "description": "Accessible status for the selected app UI language option"
+  }
+}

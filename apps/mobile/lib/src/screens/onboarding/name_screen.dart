@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
+import '../../localization/auth_error_localizer.dart';
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -44,7 +46,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
 
     final name = _name.text.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (name.length < 2) {
-      _snack('Please enter your full name');
+      _snack(AppLocalizations.of(context).fullNameRequired);
       return;
     }
     if (_saving) return;
@@ -64,15 +66,24 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       if (next is SessionSignedIn) {
         context.go('/chats');
       } else if (next is SessionNameRequired && next.message != null) {
-        _snack(next.message!);
+        _snack(AuthErrorLocalizer.message(
+          AppLocalizations.of(context),
+          code: null,
+          stage: AuthFailureStage.completeProfile,
+        ));
       } else if (next is SessionError) {
-        _snack(next.message);
+        _snack(AuthErrorLocalizer.message(
+          AppLocalizations.of(context),
+          code: next.code,
+          stage: AuthFailureStage.completeProfile,
+        ));
         context.go('/phone-login');
       } else if (next is SessionSignedOut) {
         context.go('/phone-login');
       }
     });
 
+    final l10n = AppLocalizations.of(context);
     final session = ref.watch(sessionProvider);
     final identifier = session is SessionNameRequired
         ? session.identifier
@@ -81,10 +92,10 @@ class _NameScreenState extends ConsumerState<NameScreen> {
             : '';
 
     return OnboardingScaffold(
-      title: 'What should we call you?',
+      title: l10n.nameQuestion,
       subtitle: identifier.isEmpty
-          ? 'Complete your Masanawa profile.'
-          : 'Your code is verified. Add your name to finish signing in.',
+          ? l10n.completeProfile
+          : l10n.codeVerifiedName,
       canGoBack: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -101,8 +112,8 @@ class _NameScreenState extends ConsumerState<NameScreen> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
-              labelText: 'Full name',
-              hintText: 'e.g. Amina Bello',
+              labelText: l10n.fullNameLabel,
+              hintText: l10n.fullNameExample,
               prefixIcon: const Icon(Icons.person_outline),
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
@@ -114,13 +125,13 @@ class _NameScreenState extends ConsumerState<NameScreen> {
           ),
           const SizedBox(height: 24),
           PrimaryButton(
-            label: _saving ? 'Finishing sign in…' : 'Continue',
+            label: _saving ? l10n.finishingSignIn : l10n.continueAction,
             loading: _saving,
             onPressed: _saving ? null : _submit,
           ),
           const SizedBox(height: 12),
           Text(
-            'Your verified phone number or email remains your sign-in method.',
+            l10n.verifiedSignInNotice,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: MasanawaTokens.fontSize['xs'],
