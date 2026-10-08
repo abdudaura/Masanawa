@@ -27,6 +27,8 @@ const messages: Record<string, string> = {
   ACCOUNT_DELETION_CODE_EXPIRED: "The deletion verification code has expired.",
   ACCOUNT_DELETION_CODE_LOCKED: "Too many incorrect deletion codes. Request another when permitted.",
   ACCOUNT_DELETION_CODE_RATE_LIMITED: "A deletion code was sent recently. Please wait before requesting another.",
+  ACCOUNT_DELETION_STATE_CONFLICT: "This request changed. Refresh its status before continuing.",
+  ACCOUNT_DELETION_ALREADY_VERIFIED: "This request is already verified. Refresh its status.",
   ACCOUNT_DELETION_DELIVERY_UNAVAILABLE: "Your request may have been saved, but we could not deliver a code. Check again later.",
   ACCOUNT_SERVICE_NOT_CONFIGURED: "This request service is not enabled on this website.",
   ACCOUNT_SERVICE_UNAVAILABLE: "The account service is temporarily unavailable. Your request status has not been changed here.",
@@ -140,6 +142,11 @@ export default function DeleteAccountPage() {
       const data = await call("request");
       if (!isRequest(data.request)) throw new Error("Request status could not be verified.");
       showStatus(data.request);
+      if (data.request.phase === "failed" && data.verificationSent === true) {
+        // Preserve the same durable request ID; the new challenge only
+        // re-verifies its owner and never clears outstanding obligations.
+        setStage("deletion-code");
+      }
       setNotice(data.verificationSent === true
         ? "A separate deletion-verification code has been sent."
         : "Your request is recorded, but verification delivery is currently unavailable.");
@@ -228,6 +235,11 @@ export default function DeleteAccountPage() {
               ? "The server has confirmed the deletion process is complete."
               : "Your request remains pending. Your account is not confirmed deleted. Some records may be retained for legally required reasons."}</p>
             <p className="deletion-reference">Reference: {request.requestId}</p>
+            {request.phase === "failed" && (
+              <button onClick={() => void requestDeletion()} disabled={busy}>
+                Request new verification code
+              </button>
+            )}
             <button className="deletion-secondary" onClick={() => void run(loadStatus)} disabled={busy}>Refresh status</button>
           </div>
         )}
