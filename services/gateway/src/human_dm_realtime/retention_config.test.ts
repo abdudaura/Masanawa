@@ -44,7 +44,7 @@ describe("C03 operator confirmation must pass before opening a PostgreSQL pool",
     })).toThrow("malformed");
   });
   it("rejects unsafe retention parameters even if the explicit confirmation is set",()=>{
-    const variants=[
+    const variants: Array<readonly [string,string]>=[
       ["MASANAWA_C03_RETENTION_DAYS","6"],
       ["MASANAWA_C03_RETENTION_DAYS","366"],
       ["MASANAWA_C03_RETENTION_DAYS","NaN"],
