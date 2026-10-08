@@ -58,7 +58,18 @@ export interface HumanProfileView extends Omit<HumanProfileRecord, "tenantId" | 
 
 export interface PersonaProfileView extends Omit<PersonaProfileRecord, "tenantId"> {}
 
+export interface SelfProfileUpdate {
+  readonly tenantId: string;
+  readonly userId: string;
+  readonly handle: string;
+  readonly displayName: string;
+  readonly bio: string;
+}
+
 export interface TalkProfileRepository {
+  // Saved with the authorized session's tenant/user identity, never a
+  // caller-supplied user ID. Existing avatar and Talk metadata are preserved.
+  saveSelf(input: Readonly<SelfProfileUpdate>): Promise<HumanProfileView>;
   readHuman(input: Readonly<{
     tenantId: string;
     viewerUserId: string;
