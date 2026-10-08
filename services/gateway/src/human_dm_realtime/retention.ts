@@ -3,9 +3,9 @@
  * a tenant-scoped credential and a verified backup/recovery plan.
  */
 export interface PruneSqlPool {
-  query<T extends Record<string, unknown> = Record<string, unknown>>(
+  query(
     sql: string, values?: unknown[],
-  ): Promise<{ rows: T[]; rowCount: number | null }>;
+  ): Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>;
 }
 export interface PruneResult {
   readonly deleted: number;
@@ -25,12 +25,7 @@ export async function verifyHumanDmRetentionTarget(input: {
       !input.expectedDatabase || input.expectedDatabase.length > 128) {
     throw new Error("Incomplete C03 retention target");
   }
-  const result = await input.pool.query<{
-    database_name:string;
-    database_role:string;
-    tenant_exists:boolean;
-    can_trim:boolean;
-  }>(`
+  const result = await input.pool.query(`
     SELECT current_database()::text AS database_name,
       current_user::text AS database_role,
       EXISTS(SELECT 1 FROM identity.tenants WHERE tenant_id=$1) AS tenant_exists,
@@ -41,10 +36,11 @@ export async function verifyHumanDmRetentionTarget(input: {
   `,[input.tenantId]);
   const row=result.rows[0];
   if(!row || row.database_name!==input.expectedDatabase ||
+      typeof row.database_role!=="string" || !row.database_role ||
       row.tenant_exists!==true || row.can_trim!==true) {
     throw new Error("C03 retention database/tenant/role preflight failed");
   }
-  return {database:row.database_name,role:row.database_role};
+  return {database:row.database_name as string,role:row.database_role as string};
 }
 
 export async function pruneHumanDmJournal(input: {
@@ -70,12 +66,18 @@ export async function pruneHumanDmJournal(input: {
   for (;batches<maxBatches;batches++) {
     // Database clock is authoritative. The PostgreSQL function enforces
     // an independent minimum age and serializes with message event commits.
-    const result=await pool.query<{deleted:string|number}>(`
+    const result=await pool.query(`
       SELECT talks.trim_human_dm_events(
         $1::text, clock_timestamp()-($2::integer*interval '1 day'),
         $3::integer) AS deleted
     `,[tenantId,retentionDays,batchSize]);
-    const count=Number(result.rows[0]?.deleted);
+    const raw=result.rows[0]?.deleted;
+    // Missing/NULL/boolean/non-decimal rows are not equivalent to zero.
+    // A malformed SQL reply must not be logged as a successful prune.
+    if (!(typeof raw==="number" || (typeof raw==="string" && /^(0|[1-9][0-9]*)$/u.test(raw)))) {
+      throw new Error("Invalid C03 prune result");
+    }
+    const count=Number(raw);
     if (!Number.isSafeInteger(count) || count<0 || count>batchSize) {
       throw new Error("Invalid C03 prune result");
     }
