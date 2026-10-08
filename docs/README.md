@@ -1,5 +1,12 @@
 # Masanawa Documentation
 
+## Backend/database portability and full-stack acceptance audit (2026-10-08)
+
+**All feature owners must read these along with the owner requirement trace and J journeys:** `BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md` (source + Railway evidence and exact unresolved portability/deployment risks), `DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md` (safe fresh-account encrypted backup, migration/restore and financial job-fencing rehearsal), and `BACKEND-FEATURE-TRACEABILITY-20261008.md` (every tab's Flutter→API→auth→repository→migration/media/outbox→readback test contract). They add evidence gates to existing R01–R19/C01–C08 owners, **not a new competing product plan**.
+
+**Complete owned feature code despite an external blocker.** If GitHub Actions #457, provider secrets, hardware or live deployment prevent tests, write them, record the exact deferred commands/risks once and keep the implementation PR draft/unmerged as `IMPLEMENTED_UNVERIFIED`, not DONE. A partial code slice must be marked `PARTIAL_IMPLEMENTATION` and finished by its owner. The database audit did not query production customer rows or restore a backup; it is a read-only architecture/control-plane analysis.
+
+
 ## Implementation kickoff / documentation coverage sign-off (2026-10-08)
 
 **Start independent implementation windows now; the navigation and owner-requirement design is documented.** Read `IMPLEMENTATION-KICKOFF-20261008.md` (definitive lane/dependency/integration handbook) and `REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md` (all 77 P/N/T/M/A/W/Q trace IDs and the 11 J release journeys) **in addition to** the shell and product contracts below. These do not replace `MOBILE-READINESS-PLAN.md` (R01–R19) or `COMMUNICATIONS-EXTENSION-PLAN.md` (C01–C08), and do not mark any code as production ready.
