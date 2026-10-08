@@ -67,11 +67,32 @@ async function download(
   if (Number.isFinite(length) && length > maxBytes) {
     throw new RangeError("channels.media_too_large");
   }
-  const data = Buffer.from(await response.arrayBuffer());
-  if (data.length < 1 || data.length > maxBytes) {
-    throw new RangeError("channels.media_too_large");
+  // Content-Length is advisory: providers/CDNs may omit it or stream more
+  // bytes than advertised. Enforce the cap *while reading*, rather than
+  // allocating an arbitrarily large arrayBuffer and checking afterwards.
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("channels.media_empty_response");
+  const chunks: Buffer[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value || value.byteLength === 0) continue;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        throw new RangeError("channels.media_too_large");
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } catch (error) {
+    await reader.cancel().catch(() => undefined);
+    throw error;
+  } finally {
+    reader.releaseLock();
   }
-  return data;
+  if (size === 0) throw new RangeError("channels.media_too_large");
+  return Buffer.concat(chunks, size);
 }
 
 function splitText(value: string, max = 3500): readonly string[] {
