@@ -1,5 +1,10 @@
 # Masanawa
 
+## Mobile update and release decision — 2026-10-08
+
+**Flutter is the sole consumer mobile implementation.** The owner cancelled the parallel React Native plan (unmerged PR #504 closed). Future remote updates use *server-driven, versioned Gateway data* for compatible content/feature presentation and **Shorebird-signed Dart-only code patches** for eligible fixes; native/asset/Flutter-engine changes still require a signed app-store release. **Shorebird is planned, not installed or tested**. Read [canonical Flutter/Shorebird policy](docs/FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md) and [operational runbook](apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md) before touching distribution, signing or OTA. `CONTINUE-HERE.md` consolidation freeze and Work #497 remain controlling; no production release until real device/provider/CI verification.
+
+
 ## Owner-approved implementation kickoff (2026-10-08)
 
 **Planning handoff complete, implementation can begin in parallel.** Read [Definitive implementation kickoff](docs/IMPLEMENTATION-KICKOFF-20261008.md), [full requirements-release crosscheck](docs/REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md), the [77 traced requirements](docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md) and [11 integrated journeys](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md). These take precedence over older phase/reference reading lists for current consumer UX. A new window must claim one **available** R/C lane and preserve existing PRs/leases. Five bottom tabs: **Talks · Chats · Assistant · Wallet · Agents** (one switchable Gwani/Gwana Assistant chat in center).

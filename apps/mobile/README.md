@@ -1,5 +1,10 @@
 # apps/mobile — Masanawa Voice-First Agent Shell (Flutter)
 
+## Canonical Flutter + remote update strategy (2026-10-08)
+
+**Stay with Flutter:** the React Native parallel plan was cancelled (PR #504 closed/unmerged). Once independently integrated and qualified, versioned Gateway shell documents/config handle safe server-owned UI data, Shorebird handles **eligible signed Dart-code patches** of **previously Shorebird-built** releases, and Android/iOS stores remain required for new native/asset/engine changes. A standard existing Flutter APK is not OTA-capable retroactively. **No Shorebird setup or patch evidence exists yet.** First read [`../../docs/FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md`](../../docs/FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md), [`docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md`](docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md), and [`docs/BUILDS.md`](docs/BUILDS.md). Work #497 consolidation and the local Firebase-values build handoff precede first signed production release.
+
+
 > **2026-10-08 owner-approved consumer target:** **Talks · Chats · Assistant · Wallet · Agents**, exactly five bottom destinations with **Assistant centered**. Talks inherits prior Home Explore/Live public audio, Chats is private **human** DM only, Assistant is **one Gwani/Gwana chat** with an in-chat switch, Wallet financial services, Agents full Experts/Twins discovery. This README includes technical history of the earlier Agent shell; that history is **not current product navigation guidance**. Follow `../../CONTINUE-HERE.md`, `../../docs/APP-SHELL-CONTRACT.md`, `../../docs/END-TO-END-UX-ARCHITECTURE.md`, and R17/C08 for final implementation. Actual Flutter routing/migration and Android readiness remain **OPEN/UNVERIFIED**.
 
 Thin phone shell for the Masanawa platform. It renders login, a dynamic
