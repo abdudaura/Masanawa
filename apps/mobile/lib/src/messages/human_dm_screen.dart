@@ -36,6 +36,7 @@ class _HumanDmInboxScreenState extends ConsumerState<HumanDmInboxScreen> {
         IconButton(tooltip:'Refresh messages',onPressed:_reload,icon:const Icon(Icons.refresh))
       ]),
       body:FutureBuilder<List<HumanDmThread>>(
+        key:ValueKey(current.user.id),
         future:_future,
         builder:(context,snapshot) {
           if(!snapshot.hasData && snapshot.connectionState!=ConnectionState.done) {
@@ -115,7 +116,15 @@ class HumanDmThreadScreen extends ConsumerStatefulWidget {
   ConsumerState<HumanDmThreadScreen> createState()=>_HumanDmThreadScreenState();
 }
 class _HumanDmThreadScreenState extends ConsumerState<HumanDmThreadScreen> {
-  final _draft=TextEditingController();
+  TextEditingController _draft=TextEditingController();
+  String? _draftOwner;
+  void _isolateDraft(String? userId) {
+    if(_draftOwner==userId)return;
+    _draftOwner=userId;
+    final old=_draft;
+    _draft=TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_)=>old.dispose());
+  }
   @override
   void dispose(){_draft.dispose();super.dispose();}
   void _send(HumanDmController actions) {
@@ -157,6 +166,7 @@ class _HumanDmThreadScreenState extends ConsumerState<HumanDmThreadScreen> {
   @override
   Widget build(BuildContext context) {
     final session=ref.watch(sessionProvider);
+    _isolateDraft(session is SessionSignedIn ? session.user.id : null);
     if(session is! SessionSignedIn) {
       return const Scaffold(body:Center(child:Text('Sign in to read this private conversation.')));
     }
