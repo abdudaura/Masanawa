@@ -5,6 +5,7 @@ import '../../social/talk_social_profiles.dart';
 import '../../state/talk_social_profile_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
+import 'human_profile_safety_sheet.dart';
 
 class PersonProfileScreen extends ConsumerStatefulWidget {
   const PersonProfileScreen({
@@ -108,7 +109,25 @@ class _PersonProfileBody extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(title: Text('@' + profile.handle)),
+      appBar: AppBar(
+        title: Text('@' + profile.handle),
+        actions: [
+          IconButton(
+            key: const ValueKey('human-profile-safety-open'),
+            tooltip: 'Block or mute person',
+            icon: const Icon(Icons.shield_outlined),
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              useSafeArea: true,
+              isScrollControlled: true,
+              builder: (_) => HumanProfileSafetySheet(
+                handle: profile.handle,
+                displayName: profile.displayName,
+              ),
+            ),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: ListView(
