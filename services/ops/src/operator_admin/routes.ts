@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { OperatorReadbackFailure, OperatorRevisionConflict, type OperatorAgentControl } from "./agent_control.js";
+import { OperatorPermissionDenied, OperatorReadbackFailure, OperatorRevisionConflict, type OperatorAgentControl } from "./agent_control.js";
 
 function errorReply(reply: { code(status: number): { send(value: unknown): unknown } }, error: unknown) {
   if (error instanceof TypeError || error instanceof RangeError) {
@@ -11,9 +11,12 @@ function errorReply(reply: { code(status: number): { send(value: unknown): unkno
   if (error instanceof OperatorReadbackFailure) {
     return reply.code(503).send({ code: "AGENT_READBACK_UNCERTAIN" });
   }
-  // The injected authority or repository may throw unknown errors. Do not
-  // expose session, tenant, persistence or policy information to callers.
-  return reply.code(403).send({ code: "AGENT_CONTROL_UNAVAILABLE" });
+  if (error instanceof OperatorPermissionDenied) {
+    return reply.code(403).send({ code: "AGENT_CONTROL_DENIED" });
+  }
+  // Unknown repository/runtime errors are not authority failures. Do not
+  // disclose tenant, DB or credential details or pretend a write succeeded.
+  return reply.code(503).send({ code: "AGENT_CONTROL_UNAVAILABLE" });
 }
 
 function revision(value: string | undefined): number {
