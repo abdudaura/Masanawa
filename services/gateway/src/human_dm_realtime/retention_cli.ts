@@ -34,7 +34,7 @@ try {
   });
   process.stdout.write(JSON.stringify({
     event:"c03.retention.complete",...result,
-  })+"\\n");
+  })+"\n");
 } finally {
   await pool.end();
 }
