@@ -10,7 +10,6 @@ import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
 import '../activity/activity_screen.dart';
 import '../chat/ai_chat_screen.dart';
-import '../talks/create_talk_screen.dart';
 import '../talks/talk_home_screen.dart';
 import '../wallet/wallet_screen.dart';
 import '../you/you_screen.dart';
