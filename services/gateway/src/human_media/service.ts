@@ -95,17 +95,15 @@ export function createPrivateVoiceNoteService(input:Readonly<{
    try{bytes=await input.objects.get(record.objectKey,MAX_VOICE_BYTES)}
    catch{throw new VoiceNoteError("messages.voice.storage_unavailable",503)}
    if(bytes.length!==record.sizeBytes)throw new VoiceNoteError("messages.voice.storage_corrupt",503);
-   const hash=sha(bytes),expected=/sha256-([a-f0-9]{64})/u.exec(record.objectKey)?.[1];
-   // The digest in our durable staging journal, rather than client MIME claims,
-   // is verified by an independent repository lookup below through object equality.
+   const hash=sha(bytes);
+   if(!timingSafeEqual(Buffer.from(hash,"hex"),Buffer.from(record.sha256,"hex")))
+     throw new VoiceNoteError("messages.voice.storage_corrupt",503);
    try{inspectOggOpus(bytes)}catch{throw new VoiceNoteError("messages.voice.storage_corrupt",503)}
    const reread=await input.repository.find({...identity,messageId});
    if(!reread||reread.objectKey!==record.objectKey||
-      reread.sizeBytes!==record.sizeBytes||reread.durationMs!==record.durationMs)
+      reread.sizeBytes!==record.sizeBytes||reread.durationMs!==record.durationMs||
+      reread.sha256!==record.sha256)
      throw new VoiceNoteError("messages.voice.unavailable",404);
-   // Media byte checksum is included in the internal object key journal, not a public URL.
-   if(expected&&!timingSafeEqual(Buffer.from(expected,"hex"),Buffer.from(hash,"hex")))
-     throw new VoiceNoteError("messages.voice.storage_corrupt",503);
    return bytes;
   },
   async remove(args:{authorizationHeader:string|undefined;messageId:string}) {
