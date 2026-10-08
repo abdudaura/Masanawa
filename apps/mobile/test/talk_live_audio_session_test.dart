@@ -10,6 +10,8 @@ class _Transport implements TalkLiveTransport {
 
   final TalkLiveRole role;
   bool canPublishAudio;
+  bool failNextToken = false;
+  bool sessionEndedOnConnect = false;
   int heartbeats = 0;
   int disconnects = 0;
   TalkLiveLifecycle heartbeatState = TalkLiveLifecycle.live;
@@ -27,7 +29,7 @@ class _Transport implements TalkLiveTransport {
 
   @override
   Future<TalkLiveSessionView> connect(String talkId) async =>
-      _session(TalkLiveLifecycle.live);
+      _session(sessionEndedOnConnect ? TalkLiveLifecycle.ended : TalkLiveLifecycle.live);
 
   @override
   Future<TalkLiveSessionView> heartbeat({
@@ -57,13 +59,19 @@ class _Transport implements TalkLiveTransport {
   Future<TalkLiveMediaCredentials> mediaToken({
     required String talkId,
     required String sessionId,
-  }) async => TalkLiveMediaCredentials(
+  }) async {
+    if (failNextToken) {
+      failNextToken = false;
+      throw StateError('Simulated media-token rejection');
+    }
+    return TalkLiveMediaCredentials(
     serverUrl: 'wss://live.example.test',
     participantToken: 'token',
     roomName: talkId,
     participantIdentity: 'user:' + sessionId,
     expiresAt: DateTime(2030),
-  );
+    );
+  }
 
   @override
   Future<TalkLiveStateView> state(String talkId) async => TalkLiveStateView(
@@ -275,9 +283,55 @@ void main() {
     await session.start();
     expect(room.connects, 2);
     expect(session.status, TalkLiveAudioStatus.listening);
+    expect(session.errorMessage, isNull);
 
     await session.close();
     expect(transport.disconnects, 2);
+  });
+
+  test('media token rejection cleans up before a successful retry', () async {
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..failNextToken = true;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.listening);
+    expect(room.connects, 1);
+    expect(session.errorMessage, isNull);
+
+    await session.close();
+    expect(transport.disconnects, 2);
+  });
+
+  test('ended session releases server lease without opening media', () async {
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..sessionEndedOnConnect = true;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.ended);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+
+    await session.close();
+    expect(transport.disconnects, 1);
   });
 
 }
