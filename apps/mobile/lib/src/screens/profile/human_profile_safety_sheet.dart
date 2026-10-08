@@ -191,6 +191,13 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
 
   @override
   Widget build(BuildContext context){
+    ref.listen<SessionState>(sessionProvider,(before,after){
+      final wasOwner=before is SessionSignedIn &&
+        before.user.id==widget.reporterUserId && before.user.isActive;
+      final isOwner=after is SessionSignedIn &&
+        after.user.id==widget.reporterUserId && after.user.isActive;
+      if(!wasOwner && isOwner) _load();
+    });
     final current=ref.watch(sessionProvider);
     final valid=current is SessionSignedIn &&
       current.user.id==widget.reporterUserId && current.user.isActive;
