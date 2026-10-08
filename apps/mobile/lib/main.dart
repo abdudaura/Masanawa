@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'src/localization/masanawa_localization.dart';
+import 'src/localization/locale_preference.dart';
+import 'src/localization/locale_preference_scope.dart';
 import 'src/core/mobile_push.dart';
 import 'src/core/pending_deep_link.dart';
 import 'src/core/shell_deep_link.dart';
@@ -28,10 +31,13 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
   final _pendingLink = PendingDeepLink();
   bool _linkDrainScheduled = false;
   late final GoRouter _router;
+  late final LocalePreferenceController _localePreference;
 
   @override
   void initState() {
     super.initState();
+    _localePreference = LocalePreferenceController(SecureLocalePreferenceStore());
+    unawaited(_localePreference.load());
     _links = MobilePushService.instance.deepLinks.listen(_openDeepLink);
     final initial = MobilePushService.instance.takeInitialDeepLink();
     if (initial != null) _pendingLink.offer(initial);
@@ -77,6 +83,7 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
   @override
   void dispose() {
     _links?.cancel();
+    _localePreference.dispose();
     _router.routeInformationProvider
         .removeListener(_scheduleLinkDrain);
     super.dispose();
@@ -91,13 +98,27 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       _scheduleLinkDrain();
     });
     final router = ref.watch(appRouterProvider);
-    return MaterialApp.router(
-      title: 'Masanawa',
-      debugShowCheckedModeBanner: false,
-      theme: buildMasanawaTheme(brightness: Brightness.light),
-      // R01: a dark device setting must not silently re-theme the app.
-      themeMode: ThemeMode.light,
-      routerConfig: router,
+    return ListenableBuilder(
+      listenable: _localePreference,
+      builder: (context, _) => LocalePreferenceScope(
+        controller: _localePreference,
+        child: MaterialApp.router(
+          title: 'Masanawa',
+          debugShowCheckedModeBanner: false,
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          // R01: never follow the device into an unrequested dark theme.
+          themeMode: ThemeMode.light,
+          locale: _localePreference.override,
+          supportedLocales: MasanawaLocalization.supportedLocales,
+          localizationsDelegates: MasanawaLocalization.delegates,
+          localeListResolutionCallback: (deviceLocales, supportedLocales) =>
+              MasanawaLocalization.resolvePreferred(
+                deviceLocales,
+                supportedLocales,
+              ),
+          routerConfig: router,
+        ),
+      ),
     );
   }
 }
