@@ -179,6 +179,30 @@ export function createPostgresTalkProfileRepository(
     readHuman,
     readHumanByUserId,
 
+    async saveSelf(input) {
+      // The primary key scopes editing to the signed-in user's tenant and ID.
+      // Updating selected fields only preserves their avatar, live presence,
+      // followers, Twin reference, replay inventory and other server metadata.
+      await pool.query(
+        `INSERT INTO talks.public_profiles (
+          tenant_id, user_id, handle, display_name, bio, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, clock_timestamp())
+        ON CONFLICT (tenant_id, user_id) DO UPDATE
+          SET handle = EXCLUDED.handle,
+              display_name = EXCLUDED.display_name,
+              bio = EXCLUDED.bio,
+              updated_at = clock_timestamp()`,
+        [input.tenantId, input.userId, input.handle, input.displayName, input.bio],
+      );
+      const profile = await readHumanByUserId({
+        tenantId: input.tenantId,
+        viewerUserId: input.userId,
+        userId: input.userId,
+      });
+      if (!profile) throw new Error("profiles.saved_profile_not_visible");
+      return profile;
+    },
+
     async setFollowing(input) {
       const target = await pool.query<{ user_id: string }>(
         `SELECT p.user_id FROM talks.public_profiles p
