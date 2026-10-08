@@ -163,6 +163,15 @@ export function createAgentDirectoryService(input: {
       ) {
         throw new Error("Character is not available to this user");
       }
+      // A support profile is not itself permission to expose or select the
+      // Character. A hidden/unpublished presentation (or revoked audience
+      // scope) must never be writable as the user's private default.
+      const visible = await input.presentations.listVisible({
+        tenantId: authority.tenantId,
+      });
+      if (!visible.some((item) => item.characterId === characterId)) {
+        throw new Error("Character is not available to this user");
+      }
       const profile = await input.platformProfiles.readForCharacter({
         tenantId: authority.tenantId,
         characterId,
@@ -175,6 +184,11 @@ export function createAgentDirectoryService(input: {
         tenantId: authority.tenantId,
         userId: authority.userId,
       });
+      // Selecting the current value is idempotent, avoids an unnecessary CAS
+      // and remains safe when two devices repeat a successful request.
+      if (existing?.defaultPlatformCharacterId === characterId) {
+        return Object.freeze({ characterId });
+      }
       await input.userPreferences.put({
         expectedRevision: existing?.revision ?? null,
         preference: {
@@ -185,6 +199,15 @@ export function createAgentDirectoryService(input: {
           revision: existing?.revision ?? 1,
         },
       });
+      // Never tell Flutter that the choice persisted merely because a write
+      // call returned; verify the authoritative per-user tenant-scoped state.
+      const committed = await input.userPreferences.readForUser({
+        tenantId: authority.tenantId,
+        userId: authority.userId,
+      });
+      if (committed?.defaultPlatformCharacterId !== characterId) {
+        throw new Error("Default agent change could not be verified; refresh and retry");
+      }
       return Object.freeze({ characterId });
     },
   });
