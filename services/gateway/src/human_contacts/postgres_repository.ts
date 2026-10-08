@@ -250,7 +250,9 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
       // Require both canonical identities still active and no block in either direction.
       const result = await pool.query<Record<string, unknown>>(`
         UPDATE talks.human_dm_contact_requests e
-           SET status=$4, updated_at=clock_timestamp()
+           SET status=$4,
+               -- A retry of the same terminal response must not reshuffle contact pages.
+               updated_at=CASE WHEN e.status=$4 THEN e.updated_at ELSE clock_timestamp() END
          WHERE e.tenant_id=$1
            AND e.first_user_id=LEAST($2,$3)
            AND e.second_user_id=GREATEST($2,$3)
@@ -259,9 +261,9 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
            AND e.revoked_by IS NULL
            AND e.request_revision=$5::bigint
            AND $2<>$3
-           AND (e.status='pending' OR e.status=$4
-             OR (e.status='declined' AND $4='accepted')
-             OR (e.status='accepted' AND $4='declined'))
+           -- A fresh response acts only on a pending invitation. A repeated exact
+           -- response is idempotent; an old response cannot flip final consent.
+           AND (e.status='pending' OR e.status=$4)
            AND EXISTS (
              SELECT 1 FROM identity.users u
               WHERE u.tenant_id=$1 AND u.user_id=$2 AND u.state='active'
