@@ -6,7 +6,7 @@
 - Owner: U21 GPT-6 isolated contacts-presentation window, five-minute exclusive path claim.
 - Base `main`: `5e758673ae91082520b21b3153da53791ae2cbf3` (2026-10-08 16:35 UTC).
 - Branch: `work/u21-human-contacts-hub-20261008-gpt6`.
-- Feature source checkpoint: `e616f8c1ebe873c38791514c3592199df9387229`; final branch HEAD is recorded in the draft PR (the handoff commit changes it).
+- Feature source checkpoint: `a83d3ac3d2907af2263ed6a12acbccd9a712f3a9`; final branch HEAD is recorded in the draft PR (the handoff commit changes it).
 - Protected files: `apps/mobile/lib/src/contact_hub/human_contact_hub_screen.dart`, `apps/mobile/lib/src/contact_hub/contact_hub_favorites.dart`, `apps/mobile/test/contact_hub_screen_test.dart`, this handoff.
 - Open PR inventory checked: 60 open including contacts C01 #468, DM C02 #472 and competing #475, shell #493, Work #497, Firebase #461. No pre-existing U21 branch was found in targeted branch search at claim time. Do not override newer claims.
 
@@ -16,8 +16,8 @@
 - Accepted contacts shown independently of DM history; sorted sections for Favorites, Masanawa contacts, incoming/sent/previous requests; local filter, accessible labels, loading/error/readback notices, avatar fallback and HTTPS avatar display, pull-to-refresh and truthful limited-result notice.
 - **C02's real HumanDmTransport.open(userId)** is used to resolve an authorized conversation; opens at most one in-flight request and hands a canonical conversation ID to the F12 route callback. C02 must independently enforce tenant, membership, blocked contact, privacy on each operation. No phone number or persona ID is ever supplied.
 - Favorites: actual `flutter_secure_storage` backed account-specific opaque human ID set, max 500 and bounded decoded format, cleared from view upon logout/account changes; `clear(ownerId)` exists for R12 deletion composition. Never saves phonebook numbers, private messages, AI context or raw contact response.
-- Lifecycle fences discard late C02 response after account switch, avoid showing old account favorites, and prevent duplicate navigation for double tap. Lazy sliver row construction; no imagined paginated server responses.
-- Added **7 widget tests** for accepted contacts without prior DM, revoked request state, C02 deny/double tap, exact-handle vs local search, favorite persistence, logout and late account-switch responses, plus capped-limit assertion with 10k source fixture. These tests are **authored, not run**.
+- Lifecycle fences discard late C02 response after account switch, present an identity-transition placeholder until stale search/handle text is wiped, serialize favorites writes, avoid showing old account favorites, and prevent duplicate navigation for double tap. Lazy sliver row construction; no imagined paginated server responses.
+- Added **10 widget tests** for accepted contacts without prior DM, revoked request state, C02 deny/double tap, exact-handle vs local search, favorite persistence/restart, logout, cross-account filter/handle clearing, and late account-switch responses, plus capped-limit assertion with 10k source fixture. These tests are **authored, not run**.
 
 ## Required upstream dependencies; why this cannot build as a standalone main checkout yet
 - `main` does **not** contain C01's `apps/mobile/lib/src/messages/human_contacts_*.dart` or C02's `apps/mobile/lib/src/human_messages/human_dm_transport.dart`. The new U21 screen imports these **actual draft modules** rather than copying their implementations. They must be composed into an integration checkout before Dart compilation. This U21 draft deliberately does not cherry-pick either entire PR or pretend standalone compilation passes.
