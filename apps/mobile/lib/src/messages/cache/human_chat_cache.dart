@@ -210,6 +210,21 @@ class HumanChatCache {
         await _secrets.delete(_secretKey(scope));
       });
 
+  /// Only a verified server revocation/deletion invokes this. Network
+  /// failures never erase legitimate offline content. Cascades remove local
+  /// messages, sync cursor and unacknowledged drafts for the same thread.
+  Future<void> revokeConversation({
+    required String tenantId,
+    required String userId,
+    required String conversationId,
+  }) async {
+    await _forAccount(tenantId, userId).delete(
+      'threads',
+      where: 'conversation_id = ?',
+      whereArgs: [conversationId],
+    );
+  }
+
   Future<void> saveThread({
     required String tenantId,
     required String userId,
