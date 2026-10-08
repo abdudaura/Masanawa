@@ -32,6 +32,18 @@ Additional bounded R11 ownership: `apps/mobile/lib/src/ui/components/onboarding_
 - Automated Flutter `pub get`, `gen-l10n`, analyzer, tests, APK, visual RTL and handset checks were **not executed** (Flutter SDK and GitHub network access unavailable in the current runtime). No deploy/merge. CI workflow creation was blocked; no dedicated new Actions check is claimed.
 - Most recent implementation commit before this checkpoint: `2266d19d5468c528825d249531b936da2665f227`.
 
+## 2026-10-08 continuation — actual user-accessible language selection
+
+**Fresh R11 implementation scope:** `apps/mobile/lib/src/localization/locale_preference_scope.dart`, `apps/mobile/lib/src/localization/language_picker_button.dart`, all `apps/mobile/lib/l10n/app_*.arb`, `apps/mobile/lib/main.dart`, `apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart`, and `apps/mobile/test/localization/language_picker_button_test.dart`. These are R11-owned existing paths or new R11 paths. R12 Settings and R17 shell were not edited.
+
+- One persisted `LocalePreferenceController` is available through an `InheritedNotifier` scope above `MaterialApp.router`; selecting a locale rebuilds MaterialApp with the **same GoRouter instance**, preserving navigation.
+- Signed-out phone-login offers a locale sheet with native-language names for en/ar/fr/es/pt plus Use device language; explicit selection persists before UI changes. Hausa option is disabled and its unsupported status is explained; no false claim of Hausa Material/Cupertino support.
+- Screen-reader selected state and sheet descriptions use generated ARB translations; a translation-in-progress disclosure prevents users believing all screens are fully translated.
+- New `language_picker_button_test.dart` covers explicit locale selection, persisted reset to device settings, storage write failure, Arabic text direction and live application-label update without route replacement.
+- Source readback at end of continuation verified 6 ARB catalogs x **66** keys with **0 missing keys/descriptions/declared placeholders** and verified root scope plus sign-in control wiring. This is not code-generation or Flutter compilation evidence.
+- Flutter SDK/Dart are not available in the execution container; direct GitHub clone also fails due to network name resolution. GitHub Actions Mobile Build run `37731016920` and Foundation CI run `37731017213` on the PR head both reported failure with no job steps/logs returned. Do **not** classify these as Flutter/application test failures or as successful validation.
+- Real compilation, generated delegate validation, accessibility/RTL device QA, native-speaker review and full-screen translation remain **unverified/open**; do not merge until checked. Theme R01 PR #406 and shell R17 PR #411 still require semantic integration of shared app-root behavior.
+
 ## Required validation before merging
 ```sh
 cd apps/mobile
