@@ -20,7 +20,7 @@ export interface HumanDmRealtimeRepository {
 interface Result<R> { readonly rows: R[]; readonly rowCount: number | null }
 export interface RealtimeSqlPool {
   query<R extends Record<string, unknown> = Record<string, unknown>>(
-    text: string, values?: readonly unknown[]
+    text: string, values?: unknown[]
   ): Promise<Result<R>>;
 }
 interface Row extends Record<string, unknown> {
