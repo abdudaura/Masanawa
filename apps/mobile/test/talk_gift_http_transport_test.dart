@@ -124,4 +124,89 @@ void main() {
     expect(ids, hasLength(2));
     expect(ids[1], isNot(ids[0]));
   });
+
+  test('catalog loads server prices, filters unavailable and sends selected identity', () async {
+    String? sentItem;
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      if (options.method == 'GET') {
+        expect(options.path, '/talks/talk-1/gifts/catalog');
+        return ResponseBody.fromString(
+          '{"talkId":"talk-1","currency":"Credits","items":['
+          '{"id":"heart","name":"Heart","visual":"heart","amountCredits":100,"available":true},'
+          '{"id":"crown","name":"Crown","visual":"crown","amountCredits":500,"available":false}]}',
+          200,
+          headers: {Headers.contentTypeHeader: ['application/json']},
+        );
+      }
+      sentItem = (options.data as Map)['catalogItemId'] as String?;
+      return ResponseBody.fromString(
+        '{"giftId":"gift-1","talkId":"talk-1","recipientUserId":"host-1",'
+        '"recipientName":"Amina","amountCredits":100,'
+        '"catalogItemId":"heart","status":"completed",'
+        '"completedAt":"2026-10-07T10:00:00Z"}',
+        200,
+        headers: {Headers.contentTypeHeader: ['application/json']},
+      );
+    });
+    final t = GatewayTalkGiftTransport(api: ApiClient(dio: dio));
+    final catalog = await t.loadCatalog(talkId: 'talk-1');
+    expect(catalog.items, hasLength(1));
+    expect(catalog.items.single.id, 'heart');
+    expect(catalog.items.single.amountCredits, 100);
+    final receipt = await t.sendGift(
+      talkId: 'talk-1', amountCredits: 100, catalogItemId: 'heart',
+    );
+    expect(sentItem, 'heart');
+    expect(receipt.catalogItemId, 'heart');
+  });
+
+  test('catalog rejects duplicate/foreign-talk/inconsistent prices before presentation', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async =>
+      ResponseBody.fromString(
+        '{"talkId":"other-talk","currency":"Credits","items":['
+        '{"id":"heart","name":"Heart","visual":"heart","amountCredits":100,"available":true}]}',
+        200,
+        headers: {Headers.contentTypeHeader: ['application/json']},
+      ));
+    final t = GatewayTalkGiftTransport(api: ApiClient(dio: dio));
+    await expectLater(t.loadCatalog(talkId: 'talk-1'), throwsFormatException);
+  });
+
+  test('a mismatched settled receipt is never treated as successful gift', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async =>
+      ResponseBody.fromString(
+        '{"giftId":"gift-1","talkId":"talk-1","recipientUserId":"host-1",'
+        '"recipientName":"Amina","amountCredits":500,'
+        '"catalogItemId":"heart","status":"completed",'
+        '"completedAt":"2026-10-07T10:00:00Z"}',
+        200,
+        headers: {Headers.contentTypeHeader: ['application/json']},
+      ));
+    final t = GatewayTalkGiftTransport(api: ApiClient(dio: dio));
+    await expectLater(
+      t.sendGift(talkId: 'talk-1', amountCredits: 100, catalogItemId: 'heart'),
+      throwsFormatException,
+    );
+  });
+
+  test('incomplete receipt is rejected without celebrating unconfirmed payment', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async =>
+      ResponseBody.fromString(
+        '{"giftId":"gift-1","talkId":"talk-1","recipientUserId":"host-1",'
+        '"recipientName":"Amina","amountCredits":100,'
+        '"catalogItemId":"heart","status":"pending",'
+        '"completedAt":"2026-10-07T10:00:00Z"}',
+        200,
+        headers: {Headers.contentTypeHeader: ['application/json']},
+      ));
+    final t = GatewayTalkGiftTransport(api: ApiClient(dio: dio));
+    await expectLater(
+      t.sendGift(talkId: 'talk-1', amountCredits: 100, catalogItemId: 'heart'),
+      throwsFormatException,
+    );
+  });
 }
