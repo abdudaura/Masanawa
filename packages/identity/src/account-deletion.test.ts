@@ -39,6 +39,17 @@ describe("account deletion lifecycle", () => {
       target: "completed", expectedRevision: 4, now: timestamp, cleanupComplete: true,
     }).phase).toBe("completed");
   });
+  it("requires renewed identity verification after failure", () => {
+    const failed = transitionAccountDeletion(open(), {
+      target: "failed", expectedRevision: 1, now: timestamp, errorCode: "temporary_error",
+    });
+    expect(() => transitionAccountDeletion(failed, {
+      target: "processing", expectedRevision: 2, now: timestamp,
+    })).toThrow("account_deletion.invalid_transition");
+    expect(() => transitionAccountDeletion(failed, {
+      target: "identity-verified", expectedRevision: 2, now: timestamp,
+    })).toThrow("account_deletion.reauthentication_required");
+  });
   it("rejects stale writes and completed request mutation", () => {
     expect(() => transitionAccountDeletion(open(), {
       target: "failed", expectedRevision: 8, now: timestamp, errorCode: "processor",
