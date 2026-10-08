@@ -70,7 +70,14 @@ class HumanConversationController extends ChangeNotifier {
   bool _disposed=false;
   int _generation=0;
   void _checkOwner() {
-    if(ownerUserId.isEmpty||conversationId.isEmpty||activeUserId()!=ownerUserId||_disposed) {
+    if(_disposed||ownerUserId.isEmpty||conversationId.isEmpty) {
+      throw StateError('Authenticated human message scope required');
+    }
+    if(activeUserId()!=ownerUserId) {
+      // Never leave another account's private thread visible in this state.
+      messages=[];pending=null;nextCursor=null;error=null;
+      _update();
+      // The encrypted original-account pending ID is deliberately retained.
       throw StateError('Sign in to the original account to continue messaging');
     }
   }
