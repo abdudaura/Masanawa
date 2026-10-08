@@ -39,7 +39,7 @@ function fixture(options: { policy?: boolean; custody?: boolean; admitted?: bool
   } as unknown as FinancialService;
   const policy: TransferRiskPolicy = {
     assess: vi.fn(async () => ({
-      allowed: options.admitted !== false, revision: "verified-revision-1",
+      allowed: options.admitted !== false, revision: "verified-revision-1", fee: "0",
     })),
   };
   const store: InternalCryptoTransferStore = {
