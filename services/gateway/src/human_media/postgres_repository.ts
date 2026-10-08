@@ -132,13 +132,17 @@ export function createPostgresVoiceNoteRepository(pool:VoiceSqlPool):VoiceNoteRe
    return trx(pool,async q=>{
     if(!(await lockAndAuthorize(q,input.owner,input.conversationId,true)))
       return "forbidden" as const;
-    const rows=await q.query<{state:string;message_id:string|null;sha256:string}&Record<string,unknown>>(
-      `SELECT state,message_id,sha256 FROM talks.human_dm_voice_objects
+    const rows=await q.query<{
+     state:string;message_id:string|null;sha256:string;size_bytes:number;duration_ms:number;
+    }&Record<string,unknown>>(
+      `SELECT state,message_id,sha256,size_bytes,duration_ms FROM talks.human_dm_voice_objects
        WHERE tenant_id=$1 AND conversation_id=$2 AND uploader_user_id=$3
          AND client_request_id=$4 AND object_key=$5 FOR UPDATE`,
       [input.owner.tenantId,input.conversationId,input.owner.userId,input.clientRequestId,input.objectKey]);
     const saved=rows.rows[0];
-    if(!saved||saved.sha256!==input.sha256)return "conflict" as const;
+    if(!saved||saved.sha256!==input.sha256||
+       saved.size_bytes!==input.sizeBytes||saved.duration_ms!==input.durationMs)
+      return "conflict" as const;
     if(saved.state==="attached"&&saved.message_id){
       const present=await q.query<AudioRow>(
        `SELECT ${projection} FROM talks.human_dm_messages m
@@ -149,6 +153,15 @@ export function createPostgresVoiceNoteRepository(pool:VoiceSqlPool):VoiceNoteRe
       return present.rows[0]?toVoice(present.rows[0]):"forbidden" as const;
     }
     if(saved.state!=="staged")return "conflict" as const;
+    // The shared C02 text path might have used this owner/request ID
+    // after C04 staged bytes but before attachment. Refuse cross-kind
+    // replay deterministically, before hitting the unique SQL constraint.
+    const used=await q.query<Record<string,unknown>>(
+      `SELECT 1 FROM talks.human_dm_messages
+        WHERE tenant_id=$1 AND conversation_id=$2
+          AND sender_user_id=$3 AND client_request_id=$4`,
+      [input.owner.tenantId,input.conversationId,input.owner.userId,input.clientRequestId]);
+    if(used.rows.length)return "conflict" as const;
     const rate=await q.query<{count:string}&Record<string,unknown>>(
      `SELECT count(*)::text AS count FROM talks.human_dm_messages
       WHERE tenant_id=$1 AND sender_user_id=$2
