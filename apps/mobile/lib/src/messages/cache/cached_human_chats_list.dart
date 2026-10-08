@@ -42,6 +42,7 @@ class _CachedHumanChatsListState extends State<CachedHumanChatsList> {
       _threads = const [];
       _warning = null;
       _loading = true;
+      _syncing = false;
       unawaited(_loadLocal());
     }
   }
