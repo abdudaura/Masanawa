@@ -6,6 +6,7 @@ import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/agents/agent_shell.dart';
 import 'package:masanawa/src/assistant_workspace/assistant_workspace_controller.dart';
 import 'package:masanawa/src/assistant_workspace/assistant_workspace_screen.dart';
+import 'package:masanawa/src/assistant_workspace/assistant_draft_store.dart';
 
 class DirectoryForWidget implements AgentDirectoryTransport {
   String current = 'character-w';
@@ -72,6 +73,16 @@ class JournalForWidget implements AssistantPendingJournal {
   Future<void> clear(String user) async { pending = null; }
 }
 
+class DraftsForWidget implements AssistantDraftStore {
+  final saved = <String, String>{};
+  @override
+  Future<String?> read(String user) async => saved[user];
+  @override
+  Future<void> write(String user, String text) async { saved[user] = text; }
+  @override
+  Future<void> clear(String user) async { saved.remove(user); }
+}
+
 void main() {
   testWidgets('single in-chat switch, text send and no fake native mic',
       (tester) async {
@@ -82,6 +93,7 @@ void main() {
         ownerId: 'user-a', directory: directory,
         agents: agents, shell: ShellForWidget(),
         journal: JournalForWidget(),
+        drafts: DraftsForWidget(),
       ),
     ));
     await tester.pumpAndSettle();
