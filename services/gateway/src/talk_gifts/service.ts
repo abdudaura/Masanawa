@@ -34,14 +34,14 @@ export interface TalkGiftService {
 
 // Launch defaults live on the server, never in the client. Policy may inject
 // a validated catalog without changing the HTTP contract.
-export const defaultTalkGiftCatalog: readonly TalkGiftCatalogItem[] = Object.freeze([
+export const defaultTalkGiftCatalog: readonly TalkGiftCatalogItem[] = Object.freeze(([
   { id: "applause", name: "Applause", visual: "applause", amountCredits: 50, available: true },
   { id: "heart", name: "Heart", visual: "heart", amountCredits: 100, available: true },
   { id: "flower", name: "Flower", visual: "flower", amountCredits: 150, available: true },
   { id: "spark", name: "Spark", visual: "spark", amountCredits: 250, available: true },
   { id: "crown", name: "Crown", visual: "crown", amountCredits: 500, available: true },
   { id: "celebration", name: "Celebration", visual: "celebration", amountCredits: 1000, available: true },
-].map(item => Object.freeze(item)));
+] satisfies TalkGiftCatalogItem[]).map(item => Object.freeze(item)));
 
 function checkedCatalog(items: readonly TalkGiftCatalogItem[]): readonly TalkGiftCatalogItem[] {
   const ids = new Set<string>();
@@ -60,7 +60,7 @@ function checkedCatalog(items: readonly TalkGiftCatalogItem[]): readonly TalkGif
   }));
 }
 
-function text(value: string, name: "talk_id" | "request_id", max = 256): string {
+function text(value: string, name: "talk_id" | "request_id" | "catalog_item_id", max = 256): string {
   const normalized = value.trim();
   if (!normalized || normalized.length > max) {
     throw new TalkGiftError(`talks.gift.${name}_invalid`, 400);
@@ -106,7 +106,7 @@ export function createTalkGiftService(input: Readonly<{
       const amountCredits = amount(request.amountCredits);
       const catalogItemId = request.catalogItemId === undefined
         ? undefined
-        : text(request.catalogItemId, "request_id", 48);
+        : text(request.catalogItemId, "catalog_item_id", 48);
       if (catalogItemId !== undefined) {
         const item = catalogItems.find(option => option.id === catalogItemId);
         if (!item || !item.available) {
