@@ -211,7 +211,7 @@ export async function schemaBootstrapTest(
     }
     // PostgreSQL procedures/functions and independent enum/domain/range types
     // can contain user-owned state or behavior even when pg_class has no tables.
-    // Check them before the first DDL; no schema, object or data is ever dropped.
+    // Skip automatically derived array types (e.g., extension type arrays).\n    // Check before the first DDL; no schema, object or data is ever dropped.
     const publicRoutines=await client.query<{routine_name:string}&Record<string,unknown>>(
       "SELECT p.proname AS routine_name FROM pg_proc p "+
       "JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' "+
@@ -224,7 +224,8 @@ export async function schemaBootstrapTest(
     const publicTypes=await client.query<{type_name:string}&Record<string,unknown>>(
       "SELECT t.typname AS type_name FROM pg_type t "+
       "JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' "+
-      "AND t.typrelid=0 AND t.typtype IN ('b','c','d','e','r','m') "+
+      "AND t.typrelid=0 AND t.typcategory <> 'A' "+
+      "AND t.typtype IN ('b','c','d','e','r','m') "+
       "AND NOT EXISTS (SELECT 1 FROM pg_depend dep WHERE dep.objid=t.oid "+
       "AND dep.deptype='e')"
     );
