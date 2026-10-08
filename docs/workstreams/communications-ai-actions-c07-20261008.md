@@ -7,3 +7,15 @@
 - Reuse canonical session-authorized agents, shell history and turn idempotency; no second auth store/ledger. Never automatically transfer funds, start mic, expose AI persona threads as human DMs, or imply E2EE.
 - State: CLAIMED / SOURCE_WRITTEN=no, TESTS_EXECUTED=no, CI_EXECUTED=no, DB_INTEGRATED=no, APP_INTEGRATED=no, DEVICE_VERIFIED=no, DEPLOYED=no, MERGED=no. Shared Actions #457 exhausted; current runtime lacks GitHub clone network and Dart/PostgreSQL execution.
 - Five-minute repository-visible lease requires new work commits; this is not a permanent reservation. Fresh verification and integration in Work before any merge.
+
+
+## Checkpoint — source branch and draft PR #480
+
+- Published <https://github.com/Baatiku/masanawa/pull/480> (draft, unmerged), branch \`work/c07-assistant-workspace-20261008\`, base main \`5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762\`.
+- Current work: isolated Flutter role-switch + server history controller, secure journal/retry, screen and authored controller/widget tests. See \`docs/contracts/ASSISTANT-WORKSPACE-C07.md\` for the exact production safety constraints.
+- Existing authorized Postgres \`agents.user_agent_preferences\` and \`agents.mobile_turn_commands\` plus canonical Gateway routes are reused; no new migration for this isolated adapter. No hardcoded IDs, mock production transport or fabricated completion; test fakes are test-only.
+- Shared \`app.ts\`, \`main.ts\`, \`apps/mobile/lib/src/router/**\` and root tab files intentionally untouched because R18 #435/C01 #468 and the single R17/C08 integration owner must reconcile them. Existing C02 #472 and C03 #473 also remain drafts.
+- **Status:** \`PARTIAL_IMPLEMENTATION\` for entire C07; SOURCE_WRITTEN=yes for adapter, LOCAL_TESTED=no, CI_EXECUTED=no, DB_INTEGRATED=no, APP_INTEGRATED=no, DEPLOYED=no, DEVICE_VERIFIED=no, MERGED=no. Native voice and single cross-persona task/consent registry remain UNIMPLEMENTED; no C07 DONE.
+- **Verification blockers:** GitHub Actions #457 budget exhausted; this connector runtime lacks executable Dart/Flutter, Postgres, Android handsets and production credentials. Do not retry blocked Actions; Work follows handoff contract after resolving runner quota with explicit owner permission. No tests have been run, not even focused widget tests.
+- **Work handoff commands:** \`cd apps/mobile && flutter pub get && flutter analyze lib/src/assistant_workspace test/assistant_workspace_controller_test.dart test/assistant_workspace_screen_test.dart && flutter test test/assistant_workspace_controller_test.dart && flutter test test/assistant_workspace_screen_test.dart\`. Run full app analyzer/widget tests, \`pnpm typecheck\`, \`pnpm test\`, real A/B authentication and Postgres test, device native voice/private public mic checks before integration and merge.
+- **Do not merge:** server-side single assistant workspace, cross-persona task continuation/consent invalidation, R17/C08 final five-tab route, R02 native Live audio and typed authorized cross-app actions are prerequisites, not optional cleanup.
