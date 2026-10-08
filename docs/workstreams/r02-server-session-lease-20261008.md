@@ -36,3 +36,8 @@
 - Added exact ownership of those two files. The issuer is already wired to production `main.ts` using the configured LiveKit URL/key/secret, so cleanly extend the existing authoritatively authenticated token path without editing the R18-owned Gateway composition.
 - Before issuing a replacement human Host media credential, enumerate currently connected room participants using LiveKit `RoomService.ListParticipants` and remove previously issued session-scoped identities belonging to the same Host. Never evict another person or the current lease. Require successful RoomService validation or fail closed; an absent room is a distinct handled case. Validate service authorization and ensure controlled token cleanup on LiveKit Cloud where supported.
 - Tests must cover old-Host removal, first room absence, other-user isolation, malformed replies and server errors; external real LiveKit/handset qualification is still outstanding.
+
+## Integration test path claim
+
+- Add `services/gateway/src/talk_live/postgres_repository.integration.test.ts` for real PostgreSQL index, owner/tenant isolation, concurrent Host replacement and old-session heartbeat/disconnect safety using existing talks migrations. Test is gated by `MASANAWA_TEST_DATABASE_URL`; never hit production DB.
+- No other active PR owns this new file. Do not edit migrations or shared database registry.
