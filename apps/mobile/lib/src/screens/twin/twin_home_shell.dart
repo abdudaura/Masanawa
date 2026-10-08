@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../agents/agent_directory.dart';
 import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
@@ -34,6 +35,25 @@ List<AgentDirectoryEntry> matchingAgentEntries(
           .contains(normalized))
         agent,
   ];
+}
+
+/// Server-presence types, never English labels, determine translated status.
+/// Unknown or cached presence must remain unverified, not available/offline.
+String localizedAgentPresence(
+  AppLocalizations strings,
+  AgentDirectoryEntry agent,
+) {
+  if (agent.presence == AgentPresence.working && agent.activeWorkCount > 0) {
+    return strings.statusWorkingTasks(agent.activeWorkCount);
+  }
+  return switch (agent.presence) {
+    AgentPresence.available => strings.statusAvailable,
+    AgentPresence.listening => strings.statusListening,
+    AgentPresence.working => strings.statusWorking,
+    AgentPresence.onCall => strings.statusOnCall,
+    AgentPresence.offline => strings.statusOffline,
+    AgentPresence.unknown => strings.statusUnverified,
+  };
 }
 
 /// Compatibility class name retained while the consumer shell is migrated.
@@ -105,7 +125,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     if (!mounted) return;
     if (agent == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gwani is unavailable. Try again shortly.')),
+        SnackBar(content: Text(AppLocalizations.of(context).gwaniUnavailableRetry)),
       );
       return;
     }
@@ -129,6 +149,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _agents() {
     final directory = ref.watch(agentDirectoryProvider);
+    final strings = AppLocalizations.of(context);
     final agents = matchingAgentEntries(directory.agents, _agentQuery);
     return DefaultTabController(
       length: 2,
@@ -136,8 +157,11 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         appBar: AppBar(
           toolbarHeight: 0,
           primary: false,
-          bottom: const TabBar(
-            tabs: [Tab(text: 'Masanawa Agents'), Tab(text: 'Twins')],
+          bottom: TabBar(
+            tabs: [
+              Tab(text: strings.platformAgentsTab),
+              Tab(text: strings.twinsTab),
+            ],
           ),
         ),
         body: TabBarView(
@@ -156,12 +180,12 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
                         _agentQuery = value.trim().toLowerCase();
                       }),
                       decoration: InputDecoration(
-                        hintText: 'Search Masanawa Agents',
+                        hintText: strings.searchPlatformAgents,
                         prefixIcon: const Icon(Icons.search_rounded),
                         suffixIcon: _agentQuery.isEmpty
                             ? null
                             : IconButton(
-                                tooltip: 'Clear agent search',
+                                tooltip: strings.clearAgentSearch,
                                 icon: const Icon(Icons.close),
                                 onPressed: () {
                                   _agentSearchController.clear();
@@ -178,10 +202,10 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
                     ),
                   if (directory.error != null)
                     ListTile(
-                      title: Text(directory.error!),
+                      title: Text(strings.agentsLoadFailed),
                       trailing: TextButton(
                         onPressed: () => ref.read(agentDirectoryProvider.notifier).refresh(),
-                        child: const Text('Retry'),
+                        child: Text(strings.retry),
                       ),
                     ),
                   // Do not infer a persona's authority from its name or role:
@@ -191,15 +215,18 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
                       key: ValueKey('platform-agent-' + agent.characterId),
                       leading: CircleAvatar(child: Text(agent.initial)),
                       title: Text(agent.displayName),
-                      subtitle: Text(agent.roleLabel + ' · ' + agent.presenceLabel),
+                      subtitle: Text(
+                        agent.roleLabel + ' · ' +
+                        localizedAgentPresence(strings, agent),
+                      ),
                       trailing: const Icon(Icons.chat_bubble_outline_rounded),
                       onTap: () => context.push(
                         '/chat/' + Uri.encodeComponent(agent.characterId)),
                     ),
                   if (!directory.loading && agents.isEmpty && directory.error == null)
                     ListTile(title: Text(directory.agents.isEmpty
-                        ? 'No Masanawa Agents available yet.'
-                        : 'No agents match your search.')),
+                        ? strings.noPlatformAgents
+                        : strings.noMatchingAgents)),
                 ],
               ),
             ),
@@ -229,9 +256,12 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     if (agent == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Private Talk with ${twin.displayName} is not available yet.'),
+          content: Text(
+              AppLocalizations.of(context)
+                  .privateTwinTalkUnavailable(twin.displayName),
+            ),
           action: SnackBarAction(
-            label: 'View profile',
+            label: AppLocalizations.of(context).viewTwinProfile,
             onPressed: () => context.push(
               '/persona/' + Uri.encodeComponent(twin.publicId)),
           ),
@@ -252,6 +282,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   Widget _privateTalk() {
     final directory = ref.watch(agentDirectoryProvider);
     final agent = _supportAgent();
+    final strings = AppLocalizations.of(context);
     if (agent != null) {
       // Private chat owns its own voice controls; tab selection never
       // grants microphone permission or broadcasts public Talk audio.
@@ -265,18 +296,18 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Talk')),
+      appBar: AppBar(title: Text(strings.talk)),
       body: Center(
         child: directory.loading
             ? const CircularProgressIndicator()
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Gwani is unavailable right now.'),
+                  Text(strings.gwaniUnavailableNow),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: () => ref.read(agentDirectoryProvider.notifier).refresh(),
-                    child: const Text('Retry'),
+                    child: Text(strings.retry),
                   ),
                 ],
               ),
@@ -307,6 +338,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final session = ref.watch(sessionProvider);
     final publicProfile = session is SessionSignedIn
         ? ref.watch(humanProfileByUserIdProvider(session.user.id)).asData?.value
@@ -319,21 +351,27 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return Scaffold(
       appBar: _index == 3 ? null : AppBar(
         toolbarHeight: 48,
-        title: Text(_index == 0 ? 'Masanawa' : _index == 1 ? 'Agents' : 'Wallet'),
+        title: Text(
+          _index == 0
+              ? strings.appTitle
+              : _index == 1
+                  ? strings.agents
+                  : strings.wallet,
+        ),
         actions: [
           if (_index == 0)
             IconButton(
-              tooltip: 'Search Talks',
+              tooltip: strings.searchTalks,
               icon: const Icon(Icons.search_rounded),
               onPressed: () => context.push('/search'),
             ),
           IconButton(
-            tooltip: 'Activity',
+            tooltip: strings.activity,
             icon: const Icon(Icons.notifications_none_rounded),
             onPressed: _openActivity,
           ),
           IconButton(
-            tooltip: 'Profile',
+            tooltip: strings.profile,
             onPressed: _openYou,
             icon: CircleAvatar(
               radius: 15,
@@ -367,7 +405,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       floatingActionButton: (_index == 0 || _index == 1) &&
               MediaQuery.viewInsetsOf(context).bottom == 0
           ? FloatingActionButton(
-              tooltip: 'Start Talk',
+              tooltip: strings.startTalk,
               onPressed: () => context.push('/talk/create'),
               child: const Icon(Icons.add_rounded),
             )
@@ -375,26 +413,26 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _selectTab,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: strings.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy_rounded),
-            label: 'Agents',
+            icon: const Icon(Icons.smart_toy_outlined),
+            selectedIcon: const Icon(Icons.smart_toy_rounded),
+            label: strings.agents,
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-            label: 'Wallet',
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: const Icon(Icons.account_balance_wallet_rounded),
+            label: strings.wallet,
           ),
           NavigationDestination(
-            icon: Icon(Icons.graphic_eq_outlined),
-            selectedIcon: Icon(Icons.graphic_eq_rounded),
-            label: 'Talk',
+            icon: const Icon(Icons.graphic_eq_outlined),
+            selectedIcon: const Icon(Icons.graphic_eq_rounded),
+            label: strings.talk,
           ),
         ],
       ),
@@ -445,6 +483,7 @@ class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
   Widget build(BuildContext context) {
     final state = ref.watch(twinDirectoryProvider);
     final transport = ref.read(twinDirectoryProvider.notifier);
+    final strings = AppLocalizations.of(context);
     return Column(
       children: [
         Padding(
@@ -456,12 +495,12 @@ class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
               setState(() {});
             },
             decoration: InputDecoration(
-              hintText: 'Search public Twins',
+              hintText: strings.searchPublicTwins,
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _search.text.isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Clear search',
+                      tooltip: strings.clearTwinSearch,
                       icon: const Icon(Icons.close),
                       onPressed: () {
                         _search.clear();
@@ -482,7 +521,7 @@ class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.person_outline_rounded),
-                  title: const Text('My Twin'),
+                  title: Text(strings.myTwin),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: widget.onOpenMyTwin,
                 ),
@@ -493,33 +532,35 @@ class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
                   ),
                 if (state.error != null)
                   ListTile(
-                    title: Text(state.error!),
+                    title: Text(strings.publicTwinsLoadFailed),
                     trailing: TextButton(
                       onPressed: transport.loadInitial,
-                      child: const Text('Retry'),
+                      child: Text(strings.retry),
                     ),
                   ),
                 if (!state.loading && state.items.isEmpty && state.error == null)
-                  const ListTile(title: Text('No public Twins found.')),
+                  ListTile(title: Text(strings.noPublicTwins)),
                 for (final twin in state.items)
                   ListTile(
                     key: ValueKey('public-twin-' + twin.publicId),
                     leading: CircleAvatar(child: Text(twin.initials)),
                     title: Text(twin.displayName),
                     subtitle: twin.bio.isEmpty
-                        ? const Text('Public Twin')
+                        ? Text(strings.publicTwin)
                         : Text(twin.bio, maxLines: 1,
                             overflow: TextOverflow.ellipsis),
                     onTap: () => widget.onOpenTwin(twin.publicId),
                     trailing: TextButton(
                       onPressed: () => widget.onChatTwin(twin),
-                      child: const Text('Talk'),
+                      child: Text(strings.talk),
                     ),
                   ),
                 if (state.nextCursor != null)
                   TextButton(
                     onPressed: state.loadingMore ? null : transport.loadMore,
-                    child: Text(state.loadingMore ? 'Loading…' : 'Load more'),
+                    child: Text(
+                      state.loadingMore ? strings.loading : strings.loadMore,
+                    ),
                   ),
               ],
             ),
@@ -545,7 +586,8 @@ class MyTwinRouteScreen extends ConsumerWidget {
       if (url == null || url.isEmpty) return;
       await SharePlus.instance.share(
         ShareParams(
-          text: 'Talk to ' + profile.displayName + ' on Masanawa: ' + url,
+          text: AppLocalizations.of(context)
+              .twinShareText(profile.displayName, url),
         ),
       );
     }
