@@ -727,6 +727,20 @@ export async function startGatewayService(
 
   const platformTenantRaw = env.MASANAWA_PLATFORM_TENANT_ID?.trim();
   const otpPepper = env.MASANAWA_AUTH_OTP_PEPPER?.trim();
+  const bootstrapPlatformAgents = env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true";
+  const canInitializePlatform =
+    !!platformTenantRaw &&
+    !!otpPepper &&
+    !!database.platformSessions &&
+    !!database.agentPresentations &&
+    !!database.characterSkillAssignments &&
+    !!database.relationships &&
+    !!database.relationshipProvisioner &&
+    !!database.platformAgentProfiles;
+  if (bootstrapPlatformAgents && !canInitializePlatform) {
+    await database.close().catch(() => undefined);
+    throw new Error("Platform Agent bootstrap requires platform tenant and canonical customer database/auth dependencies");
+  }
   let platformTenantId: TenantId | undefined;
   if (
     platformTenantRaw &&
@@ -751,7 +765,7 @@ export async function startGatewayService(
       throw error;
     }
 
-    if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
+    if (bootstrapPlatformAgents) {
       // Every identity, skill, presentation and profile write must share a
       // single tenant-locked PostgreSQL transaction across gateway replicas.
       // Never fall back to the unprotected per-repository bootstrap.
