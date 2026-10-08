@@ -11,6 +11,14 @@ export interface OperatorScheduleApi {
 /** Standalone plugin. F11/F18 must compose only after identity and
  * reference-access adapters, DB migration, R14 push, and worker are live.
  */
+/* Strict pre-validation runs before Fastify AJV can remove unexpected actor
+ * or financial fields. Tenant authority only comes from the user session. */
+function requireExactFields(value: unknown, allowed: readonly string[]): void {
+  if (!value || typeof value !== "object" || Array.isArray(value) ||
+      Object.keys(value).some(key => !allowed.includes(key))) {
+    throw Object.assign(new Error("schedule.unexpected_field"), {statusCode:400});
+  }
+}
 export function registerOperatorSchedulingRoutes(
   app: FastifyInstance, schedules: OperatorScheduleApi,
 ): void {
@@ -18,6 +26,12 @@ export function registerOperatorSchedulingRoutes(
     schedules: await schedules.list(request.headers.authorization),
   }));
   app.post("/v1/operator/schedules", {
+    preValidation: async request => {
+      requireExactFields(request.body,["requestId","spec"]);
+      const body = request.body as {spec?: unknown};
+      requireExactFields(body.spec,["kind","referenceId","frequency",
+        "timezone","runAt","localTime","dayOfWeek","quietStart","quietEnd","optedIn"]);
+    },
     schema: {body: Type.Object({
       requestId: Type.String({minLength:36,maxLength:36}),
       spec: Type.Object({
@@ -42,6 +56,9 @@ export function registerOperatorSchedulingRoutes(
     })};
   });
   app.post("/v1/operator/schedules/:id/actions",{
+    preValidation: async request => {
+      requireExactFields(request.body,["revision","action"]);
+    },
     schema: {
       params:Type.Object({id:Type.String({minLength:36,maxLength:36})},
         {additionalProperties:false}),
