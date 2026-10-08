@@ -74,15 +74,22 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
     }));
     const signing = `${header}.${payload}`;
     const token = `${signing}.${signHs256(apiSecret, signing)}`;
-    return fetchImpl(`${adminOrigin}/twirp/livekit.RoomService/${method}`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(5000),
-    });
+    try {
+      return await fetchImpl(`${adminOrigin}/twirp/livekit.RoomService/${method}`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch {
+      // Network and abort errors are retriable dependencies, not application
+      // bugs or JWT signing failures; never surface provider response details.
+      const operation = method === "ListParticipants" ? "list" : "remove";
+      throw new Error(`talks.live.media_admin_${operation}_failed`);
+    }
   }
 
   async function evictPreviousHostSessions(request: Readonly<{
@@ -106,7 +113,9 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
       }
       throw new Error("talks.live.media_admin_list_failed");
     }
-    const decoded: unknown = await list.json();
+    const decoded: unknown = await list.json().catch(() => {
+      throw new Error("talks.live.media_admin_invalid_participants");
+    });
     if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
       throw new Error("talks.live.media_admin_invalid_participants");
     }
