@@ -16,7 +16,7 @@ function harness(tenant = "tenant_1", actor = "user_al") {
       return {
         userId: receiverId, handle: "bob", displayName: "Bob", avatarUrl: null,
         status: accepted ? "accepted" : declined ? "declined" : pending ? "outgoing" : "none",
-        canMessage: accepted || receiverPolicy === "anyone",
+        canMessage: accepted || (receiverPolicy === "anyone" && !declined),
       };
     },
     async getOwnPreferences({ userId }) { return { policy: userId === receiverId ? receiverPolicy : actorPolicy, discoverableByHandle: true }; },
