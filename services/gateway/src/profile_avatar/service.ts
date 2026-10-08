@@ -48,6 +48,7 @@ export function createProfileAvatarService(input: Readonly<{
     async upload(request: Readonly<{
       authorizationHeader: string | undefined;
       png: Buffer;
+      expectedUrl: string | null;
     }>): Promise<{ avatarUrl: string }> {
       const who = await owner(request.authorizationHeader);
       let validated;
@@ -58,6 +59,9 @@ export function createProfileAvatarService(input: Readonly<{
       }
       const profile = await input.repository.current(who);
       if (!profile.exists) throw new ProfileAvatarError("profiles.not_found", 404);
+      if (profile.url !== request.expectedUrl) {
+        throw new ProfileAvatarError("profiles.avatar.changed_elsewhere", 409);
+      }
       const h = (part: string) => createHash("sha256").update(part).digest("hex");
       const key = "profile-avatars/" + h(who.tenantId) + "/" +
         h(who.userId) + "/" + makeId() + ".png";
@@ -76,10 +80,14 @@ export function createProfileAvatarService(input: Readonly<{
     },
     async remove(request: Readonly<{
       authorizationHeader: string | undefined;
+      expectedUrl: string | null;
     }>): Promise<{ avatarUrl: null }> {
       const who = await owner(request.authorizationHeader);
       const profile = await input.repository.current(who);
       if (!profile.exists) throw new ProfileAvatarError("profiles.not_found", 404);
+      if (profile.url !== request.expectedUrl) {
+        throw new ProfileAvatarError("profiles.avatar.changed_elsewhere", 409);
+      }
       if (profile.url !== null) {
         const removed = await input.repository.remove({
           ...who, expectedUrl: profile.url,
