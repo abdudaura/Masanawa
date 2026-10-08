@@ -103,4 +103,24 @@ describe("public profile edits SQL ownership", () => {
     ]);
   });
 
+  it("lets a restricted owner inspect their own profile without public bypass", async () => {
+    const calls: string[] = [];
+    const pool = {
+      async query(text: string) {
+        calls.push(text);
+        return { rows: [row], rowCount: 1 };
+      },
+    } as unknown as TalkProfileSqlPool;
+    const repository = createPostgresTalkProfileRepository(pool);
+    await repository.readHumanByUserId({
+      tenantId: "tenant_1",
+      viewerUserId: "user_owner",
+      userId: "user_owner",
+    });
+    expect(calls[0]).toContain("($2 = $3 OR NOT EXISTS");
+    expect(calls[0]).toContain(
+      "se.visibility IN ('restricted','blocked')",
+    );
+  });
+
 });
