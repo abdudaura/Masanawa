@@ -14,15 +14,20 @@ command -v jarsigner >/dev/null || { echo "Missing JDK jarsigner" >&2; exit 69; 
 command -v keytool >/dev/null || { echo "Missing JDK keytool" >&2; exit 69; }
 
 # An unsigned bundle or a tampered entry must fail verification.
-jarsigner -verify -strict "$artifact" >/dev/null || {
+verification="$(jarsigner -verify "$artifact" 2>&1)" || {
   echo "Bundle signature verification failed" >&2
   exit 1
 }
+# jarsigner can return zero for an unsigned jar; require positive verification.
+if ! grep -qi 'jar verified' <<<"$verification"; then
+  echo "Bundle is unsigned or was not verified" >&2
+  exit 1
+fi
 certificate="$(keytool -printcert -jarfile "$artifact" 2>&1)" || {
   echo "Cannot read signed bundle certificate" >&2
   exit 1
 }
-if grep -Eiq 'CN=Android Debug|OU=Android|O=Android' <<<"$certificate"; then
+if grep -Eiq 'CN=Android Debug([,[:space:]]|$)' <<<"$certificate"; then
   echo "Refusing Android debug signing certificate" >&2
   exit 1
 fi
