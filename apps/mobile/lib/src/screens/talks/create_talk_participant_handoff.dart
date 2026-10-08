@@ -232,6 +232,7 @@ class _TalkCreateParticipantHandoffState
     talkId: talkId,
     isHost: true,
     initialKind: kind,
+    onlyOwnedTwin: kind == TalkAiPersonaKind.twin,
   );
 
   @override
