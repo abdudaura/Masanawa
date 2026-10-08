@@ -27,6 +27,13 @@ ApiException streamedAgentTurnError(
   required bool outputReceived,
 }) {
   final code = event['code'];
+  if (!outputReceived && code == 'auth_required') {
+    return const ApiException(
+      'Please sign in to continue this AI conversation.',
+      statusCode: 401,
+      code: 'AUTH_REQUIRED',
+    );
+  }
   if (!outputReceived &&
       (code == 'agents.session_not_found' ||
           code == 'agents.session_closed' ||
