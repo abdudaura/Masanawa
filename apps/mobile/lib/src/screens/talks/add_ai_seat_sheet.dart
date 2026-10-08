@@ -48,6 +48,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   TalkAiSeatCandidate? _selectedCandidate;
   Timer? _quoteExpiryTimer;
   bool _quoteExpired = false;
+  bool _terminalQuote = false;
   bool _loadingQuote = false;
   bool _confirming = false;
   String? _error;
@@ -96,6 +97,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         _selectedCandidate = candidate;
         _quote = quote;
         _quoteExpired = false;
+        _terminalQuote = false;
       });
       if (untilExpiry > Duration.zero) {
         _quoteExpiryTimer = Timer(untilExpiry, () {
@@ -123,6 +125,10 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   Future<void> _confirm() async {
     final quote = _quote;
     if (quote == null || _confirming || _loadingQuote) return;
+    if (_terminalQuote) {
+      setState(() => _error = 'This request has ended. Get a new quote to continue.');
+      return;
+    }
     if (_quoteExpired || quote.isExpiredAt(DateTime.now())) {
       setState(() => _error = 'Quote expired. Get a new quote before confirming.');
       return;
@@ -140,9 +146,13 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
       if (request.status == TalkAiSeatRequestStatus.expired ||
           request.status == TalkAiSeatRequestStatus.declined ||
           request.status == TalkAiSeatRequestStatus.unknown) {
-        setState(() => _error = request.message.isEmpty
-            ? 'This Seat request could not be completed. Check its status.'
-            : request.message);
+        setState(() {
+          _terminalQuote = request.status == TalkAiSeatRequestStatus.expired ||
+              request.status == TalkAiSeatRequestStatus.declined;
+          _error = request.message.isEmpty
+              ? 'This Seat request could not be completed. Check its status.'
+              : request.message;
+        });
         return;
       }
       Navigator.of(context).pop(request);
@@ -167,12 +177,14 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         confirming: _confirming,
         refreshing: _loadingQuote,
         expired: _quoteExpired || quote.isExpiredAt(DateTime.now()),
+        terminal: _terminalQuote,
         error: _error,
         onBack: () {
           _quoteExpiryTimer?.cancel();
           setState(() {
             _quote = null;
             _quoteExpired = false;
+            _terminalQuote = false;
             _error = null;
           });
         },
@@ -456,6 +468,7 @@ class _QuoteConfirmation extends StatelessWidget {
     required this.confirming,
     required this.refreshing,
     required this.expired,
+    required this.terminal,
     required this.error,
     required this.onBack,
     required this.onRefresh,
@@ -467,6 +480,7 @@ class _QuoteConfirmation extends StatelessWidget {
   final bool confirming;
   final bool refreshing;
   final bool expired;
+  final bool terminal;
   final String? error;
   final VoidCallback onBack;
   final VoidCallback onRefresh;
@@ -546,6 +560,13 @@ class _QuoteConfirmation extends StatelessWidget {
                   style: TextStyle(color: u.emergency),
                 ),
               ],
+              if (terminal && !expired) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'This Seat request ended. Request a new quote to continue.',
+                  style: TextStyle(color: u.textMuted),
+                ),
+              ],
               if (error != null) ...[
                 const SizedBox(height: 14),
                 Text(
@@ -554,7 +575,7 @@ class _QuoteConfirmation extends StatelessWidget {
                 ),
               ],
               const Spacer(),
-              if (expired) ...[
+              if (expired || terminal) ...[
                 FilledButton.tonal(
                   key: const ValueKey('ai-seat-refresh-quote'),
                   onPressed: confirming || refreshing ? null : onRefresh,
@@ -564,7 +585,8 @@ class _QuoteConfirmation extends StatelessWidget {
               ],
               FilledButton(
                 key: const ValueKey('ai-seat-confirm'),
-                onPressed: confirming || refreshing || expired ? null : onConfirm,
+                onPressed: confirming || refreshing || expired || terminal
+                    ? null : onConfirm,
                 child: confirming
                     ? const SizedBox(
                         width: 19,
