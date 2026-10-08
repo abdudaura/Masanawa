@@ -4,8 +4,8 @@
 - **Branch:** `work/r04-create-participant-intents-20261008`
 - **Base main SHA:** `88e67cc6c79de1ca09e02f11e929065dcfb2ea82`
 - **Lane:** R04 / talks-live mobile Create/Host participant intent flow
-- **Status:** ACTIVE; 5-minute repository-visible lease; draft PR #433
-- **Last repository-visible update:** 2026-10-08T05:43:01.500Z
+- **Status:** HANDOFF / lease released; PR #433 DRAFT and unmerged pending executable tests and device integration
+- **Last repository-visible update:** 2026-10-08T05:43:37.566Z
 
 ## Exact owned paths
 - `apps/mobile/lib/src/screens/talks/create_talk_screen.dart`
@@ -74,3 +74,11 @@ The existing public `GET /talks/:talkId/ai-seats` catalog contains public Twins 
 - Secure-store keys include the signed-in user ID **and** Talk ID, so changing accounts on the same device cannot cross-contaminate pending actions. The provider watches authenticated session identity; unsigned sessions fail closed.
 - Tests cover forged Host route hints and server-side identity comparison. The broader existing `TalkScreen` uses separate UI hints; full Host role reconciliation belongs to R02/integration, not the R04 queued-intent overlay.
 - Recheck actual Gateway/API projection, device restart and auth switch in the acceptance suite; these tests remain authored but not executed.
+
+## Final handoff and CI evidence
+
+- [PR #433](https://github.com/Baatiku/masanawa/pull/433) is mergeable per GitHub's diff check, but remains DRAFT and unmerged.
+- The latest Mobile Build [run 37733778844](https://github.com/Baatiku/masanawa/actions/runs/37733778844) and Foundation CI [run 37733778849](https://github.com/Baatiku/masanawa/actions/runs/37733778849) both ended **before runner assignment** (runner_id=0; no steps). No application build/test result exists from those runs.
+- Source tests are authored, not executed. Required smoke checks: `pnpm exec vitest run services/gateway/src/talk_ai_seat_routes.test.ts`, `pnpm --filter @masanawa/gateway-service typecheck`, `cd apps/mobile && flutter test test/create_talk_participant_flow_test.dart test/talk_ai_seat_models_test.dart test/talk_ai_seat_sheet_test.dart`, then `flutter analyze` and an Android device.
+- Exact remaining R04 acceptance: precreate selectable persona IDs backed by an authorized preview service; targeted human recipient invitations if required beyond link sharing; reconciled live Host audio, AI admission, paid confirmation, voice playback, restart and two-device proof; locale coverage. The current implemented path is safe, functional at code level, but **not release-qualified**.
+- Ownership is released for another window to run/refine/integrate after respecting current main/open PRs; no other PR files were overwritten. Do not merge solely because GitHub reports mergeable.
