@@ -1,5 +1,10 @@
 # Owner Decisions and Feature-Coverage Traceability — 2026-10-08
 
+## Owner-approved U01–U20 expansion — 2026-10-08
+
+Owner adds permissioned Gwani/Gwana full product operation, verified task readback, opt-in inspectable memory, real teaching/files, premium human Chat basics and strictly selected-message AI, Host copilot, Twins and accessibility. Original 77 requirement IDs, J01–J11 and R/C obligations remain; K01–K12 are additive acceptance journeys. Groups/calls/E2EE remain unapproved. See [AI-first product](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [operator contract](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human chats](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md), [U01–U20](20-WINDOW-AI-CHAT-EXECUTION-20261008.md).
+
+
 **Authority:** A traceability overlay for the **owner-approved** Masanawa product, not a replacement for the canonical product, security or R/C implementation ledgers. Derived from the owner's 7–8 October discussion, the then-current canonical docs on `main`, and the #462/#463 product discussions. **Documentation coverage is not implementation or release acceptance.**
 
 ## 0. Why this exists and how to use it

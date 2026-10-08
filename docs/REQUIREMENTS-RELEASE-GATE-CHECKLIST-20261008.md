@@ -1,5 +1,10 @@
 # Requirements-to-Release Gate Sign-off — 2026-10-08
 
+## Owner-approved U01–U20 expansion — 2026-10-08
+
+Add K01–K12 verification for universal operator, real product use, consented human DM contextual AI, Task/Study/File persistence, Talk/Twin value and low-end performance. Preserve original 77 P/N/T/M/A/W/Q requirements and J01–J11. Source written is NOT device/provider/DB proof; proactive K12 remains gated until a genuine consented scheduler exists. See [user journeys](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [U01–U20 owners](20-WINDOW-AI-CHAT-EXECUTION-20261008.md) and [execution evidence](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md).
+
+
 **DOCUMENTATION COVERAGE SIGN-OFF ONLY — NOT A PRODUCTION RELEASE CERTIFICATION.** The owner-discussion traceability audit on main has **77 distinct requirements**, of which 70 are LOCKED, 6 QUALIFIED and 1 PROPOSED/UNAPPROVED. Each item is mapped to an existing R01–R19 or C01–C08 implementation gate and, where applicable, one of J01–J11 end-to-end journeys.
 
 **How to read:** an entry below means the requirement has been captured, NOT coded, executed, deployed or verified. The full requirement wording and authority are in [OWNER-REQUIREMENTS-TRACEABILITY-20261008.md](OWNER-REQUIREMENTS-TRACEABILITY-20261008.md); the code handoff is [IMPLEMENTATION-KICKOFF-20261008.md](IMPLEMENTATION-KICKOFF-20261008.md).
