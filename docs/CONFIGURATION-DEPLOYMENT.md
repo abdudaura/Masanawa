@@ -1,5 +1,12 @@
 # Production Configuration and Deployment Contracts
 
+## Provider-neutral account redeployment verification — 2026-10-08
+
+**Supplemental audit:** read `BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md`, `DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md`, and `BACKEND-FEATURE-TRACEABILITY-20261008.md` before claiming a new cloud/account deployment is portable. Current Railway production uses a PG18/pgvector Docker image and a legacy-labelled database service with persistent volume; the most recent Gateway deployments observed `NEEDS_APPROVAL`, while the deployed successful SHA lags `main`. Do not infer production source parity from GitHub commits.
+
+Deployment portability must prove canonical `MASANAWA_DATABASE_URL` wiring, stable custom API DNS (rather than Flutter Railway fallback defaults), PostgreSQL version/extension/roles, **production-safe migration-only command** (not Alpha seed), `/readyz` schema admission separate from `/healthz` liveness, encrypted off-account backup + restored copy, S3/object-store continuity, secret/vault references and external providers/LiveKit/FCM/Relay/webhooks, idempotent financial job fencing, release image SHA, monitoring and rollback. Maintain provider-specific deployment manifests as adapters, not canonical domain state. Do not perform live migrations/cutovers without owner approval and verified backup.
+
+
 Status: canonical production-structure contract.
 
 This document defines the configuration, secret-reference and deployment-layout conventions
