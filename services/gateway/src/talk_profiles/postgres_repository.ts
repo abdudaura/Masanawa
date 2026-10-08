@@ -202,11 +202,11 @@ export function createPostgresTalkProfileRepository(
       const values: unknown[] = [input.tenantId, input.userId];
       if (input.displayName !== undefined) {
         values.push(input.displayName);
-        fields.push(`display_name = ${values.length}`);
+        fields.push("display_name = $" + values.length);
       }
       if (input.bio !== undefined) {
         values.push(input.bio);
-        fields.push(`bio = ${values.length}`);
+        fields.push("bio = $" + values.length);
       }
       if (input.removeAvatar === true) {
         fields.push("avatar_url = NULL");
