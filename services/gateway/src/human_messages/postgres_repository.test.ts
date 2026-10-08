@@ -28,6 +28,7 @@ describe("C02 SQL authorization and transactional safety",()=>{
     expect(sql).toContain("a.state='active'");
     expect(sql).toContain("b.state='active'");
     expect(values).toEqual(["tenant_a","user_a",null,40]);
+    expect(sql).toContain("other_profile.display_name");
   });
   it("open checks current accepted-or-anyone consent and unordered unique pair",async()=>{
     const h=harness((sql)=>sql.includes("SELECT 1 FROM identity.users me")?[]:[]);
