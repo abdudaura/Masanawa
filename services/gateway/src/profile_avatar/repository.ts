@@ -34,6 +34,9 @@ export function createPostgresAvatarRepository(pool: AvatarSqlPool): ProfileAvat
              SET avatar_url=$4,updated_at=clock_timestamp()
            WHERE tenant_id=$1 AND user_id=$2
              AND avatar_url IS NOT DISTINCT FROM $3
+             AND EXISTS (SELECT 1 FROM talks.profile_avatar_objects
+               WHERE tenant_id=$1 AND user_id=$2 AND object_key=$5
+                 AND state='staged')
            RETURNING user_id
         ), activated AS (
           UPDATE talks.profile_avatar_objects
