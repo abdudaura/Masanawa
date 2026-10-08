@@ -107,6 +107,12 @@ export function createTalkGiftService(input: Readonly<{
       const catalogItemId = request.catalogItemId === undefined
         ? undefined
         : text(request.catalogItemId, "catalog_item_id", 48);
+      // Legacy APKs send amounts without an option ID. Preserve their
+      // protocol but never grant authority to arbitrary client-priced gifts.
+      if (catalogItemId === undefined &&
+          !catalogItems.some(item => item.available && item.amountCredits === amountCredits)) {
+        throw new TalkGiftError("talks.gift.option_unavailable", 409);
+      }
       if (catalogItemId !== undefined) {
         const item = catalogItems.find(option => option.id === catalogItemId);
         if (!item || !item.available) {
