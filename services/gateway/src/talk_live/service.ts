@@ -177,13 +177,23 @@ export function createTalkLiveService(input: Readonly<{
       if (connected.state === "ended") {
         throw new TalkLiveError("talks.live.ended", 409);
       }
-      return input.mediaTokens.mint({
-        talkId: connected.talkId,
-        sessionId: connected.sessionId,
-        userId: viewer.userId,
-        role: connected.role,
-        canPublishAudio: connected.canPublishAudio,
-      });
+      try {
+        return await input.mediaTokens.mint({
+          talkId: connected.talkId,
+          sessionId: connected.sessionId,
+          userId: viewer.userId,
+          role: connected.role,
+          canPublishAudio: connected.canPublishAudio,
+        });
+      } catch (error) {
+        // If RoomService could not validate/evict a former Host track, media
+        // credentials must not escape. Surface a retryable dependency failure.
+        if (error instanceof Error &&
+            error.message.startsWith("talks.live.media_admin_")) {
+          throw new TalkLiveError("talks.live.media_unavailable", 503);
+        }
+        throw error;
+      }
     },
 
     async state(request) {
