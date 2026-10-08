@@ -37,14 +37,30 @@ void main() {
     }
   });
 
-  test('R17 request identity is scoped to signed-in user and revision', () {
-    const first = PendingPrivateServiceIntent(
-      intent: PrivateServiceIntent.data, ownerUserId: 'user-a', revision: 1);
-    const second = PendingPrivateServiceIntent(
-      intent: PrivateServiceIntent.data, ownerUserId: 'user-a', revision: 2);
+  test('R17 coordinator prevents stale completion, account bleed and replay', () {
+    final controller = PrivateServiceIntentController();
+    addTearDown(controller.dispose);
+    expect(controller.current, isNull);
+    controller.select(intent: PrivateServiceIntent.data, ownerUserId: 'user-a');
+    final first = controller.current!;
     expect(first.belongsTo('user-a'), isTrue);
     expect(first.belongsTo('user-b'), isFalse);
-    expect(second.revision, isNot(first.revision));
+    controller.select(intent: PrivateServiceIntent.data, ownerUserId: 'user-a');
+    final second = controller.current!;
+    expect(second.revision, greaterThan(first.revision));
+    controller.consume(first); // A late network response cannot dismiss selection 2.
+    expect(controller.current, same(second));
+    controller.clearUnlessOwner('user-a');
+    expect(controller.current, same(second));
+    controller.clearUnlessOwner('user-b');
+    expect(controller.current, isNull);
+    controller.select(intent: PrivateServiceIntent.crypto, ownerUserId: 'user-b');
+    controller.clearUnlessOwner(null); // Logout/re-auth clears pending intent.
+    expect(controller.current, isNull);
+    expect(
+      () => controller.select(intent: PrivateServiceIntent.tv, ownerUserId: ' '),
+      throwsArgumentError,
+    );
   });
 
   testWidgets('R17 service selection never auto-sends or starts microphone',
@@ -100,6 +116,30 @@ void main() {
       find.byType(FilledButton)).onPressed, isNull);
     pending.complete();
     await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('R17 disabled assistant action still offers the canonical editor',
+      (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: PrivateServiceIntentPrompt(
+          intent: PrivateServiceIntent.electricity,
+          canContinue: false,
+          onContinue: () async { calls++; },
+          onOpenEditor: () { calls += 10; },
+          onDismiss: () {},
+        ),
+      ),
+    ));
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+    expect(calls, 0);
+    await tester.tap(find.text('Use service form'));
+    expect(calls, 10);
     expect(tester.takeException(), isNull);
   });
 
