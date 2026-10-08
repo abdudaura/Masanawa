@@ -24,7 +24,8 @@ function harness(tenant = "tenant_1", actor = "user_al") {
     async request({ tenantId, requesterId, handle }) {
       if (tenantId !== tenant || requesterId === receiverId || handle !== "bob" || blocked || receiverPolicy === "nobody") return "unavailable";
       if (accepted) return "accepted";
-      if (pending || declined) return "existing";
+      if (pending) return "pending";
+      if (declined) return "existing";
       if (receiverPolicy === "anyone") { accepted = true; return "accepted"; }
       pending = true; return "pending";
     },
@@ -79,7 +80,7 @@ describe("C01 authenticated human-contact consent", () => {
     const { svc } = harness();
     expect(await svc().ownPolicy({ authorizationHeader: "Bearer okay" })).toEqual({ policy: "requests" });
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "pending" });
-    expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "existing" });
+    expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "pending" });
     expect((await svc("user_bo").list({ authorizationHeader: "Bearer okay" })).contacts[0]?.status).toBe("incoming");
     await expect(svc().respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: true })).rejects.toMatchObject({ statusCode: 404 });
     expect(await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: true })).toEqual({ status: "accepted" });
