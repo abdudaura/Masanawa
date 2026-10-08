@@ -28,6 +28,12 @@ const eligibleReader = `
     AND EXISTS (SELECT 1 FROM identity.users b WHERE b.tenant_id=$1
       AND b.user_id=c.second_user_id AND b.state='active')
     AND NOT EXISTS (
+      SELECT 1 FROM talks.human_dm_contact_requests revoked
+       WHERE revoked.tenant_id=c.tenant_id
+         AND revoked.first_user_id=c.first_user_id
+         AND revoked.second_user_id=c.second_user_id
+         AND revoked.status='declined')
+    AND NOT EXISTS (
       SELECT 1 FROM talks.safety_preferences sp WHERE sp.tenant_id=$1 AND sp.blocked=true
        AND ((sp.viewer_user_id=c.first_user_id AND sp.subject_user_id=c.second_user_id)
          OR (sp.viewer_user_id=c.second_user_id AND sp.subject_user_id=c.first_user_id)))
@@ -150,6 +156,9 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
                 AND a.user_id=c.first_user_id AND a.state='active')
           AND EXISTS (SELECT 1 FROM identity.users b WHERE b.tenant_id=c.tenant_id
                 AND b.user_id=c.second_user_id AND b.state='active')
+          AND NOT EXISTS (SELECT 1 FROM talks.human_dm_contact_requests revoked
+              WHERE revoked.tenant_id=c.tenant_id AND revoked.first_user_id=c.first_user_id
+                AND revoked.second_user_id=c.second_user_id AND revoked.status='declined')
           AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp
               WHERE sp.tenant_id=c.tenant_id AND sp.blocked=true
                 AND ((sp.viewer_user_id=c.first_user_id AND sp.subject_user_id=c.second_user_id)
