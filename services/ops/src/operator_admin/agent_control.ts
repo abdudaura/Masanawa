@@ -75,7 +75,7 @@ export function createOperatorAgentControl(input: {
   const now = input.now ?? (() => new Date().toISOString());
 
   return Object.freeze({
-    async snapshot(request): Promise<OperatorAgentSnapshot> {
+    async snapshot(request: { authorizationHeader: string | undefined }): Promise<OperatorAgentSnapshot> {
       await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         capability: "agents.presentation.read",
@@ -115,7 +115,7 @@ export function createOperatorAgentControl(input: {
       });
     },
 
-    async detachSkill(request) {
+    async detachSkill(request: { authorizationHeader: string | undefined; characterId: string; skillVersionId: string; expectedRevision: number }) {
       requiredId(request.characterId);
       requiredId(request.skillVersionId);
       if (!Number.isSafeInteger(request.expectedRevision) || request.expectedRevision < 1) {
