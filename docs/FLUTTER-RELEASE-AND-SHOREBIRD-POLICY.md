@@ -1,5 +1,10 @@
 # Flutter-first mobile release and Shorebird update policy
 
+## Device Contacts privacy and native release gate — 2026-10-08
+
+The owner now explicitly wants a familiar Contacts directory in Chats and optional consented **local device-phonebook** viewing/invitations, as specified by [Contacts contract](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md). Android Contacts permissions, native plugin additions and iOS Info.plist/entitlements are **native signed binary updates**, never Shorebird Dart OTA patches. Require security/privacy/store disclosures, permission-denial usability, account-change purge, real physical Android/iPhone evidence before exposing phonebook claims. Matching uploaded address books to Masanawa users is **not automatically approved** by UI choice. The corrected [U21–U30/F01–F18](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md) and [full unfinished audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md) do not change existing release/signing/update safety.
+
+
 ## Owner-approved U01–U20 expansion — 2026-10-08
 
 New U01–U20 work is source-only until independently integrated/qualified. Flutter-first Shorebird signing, exact version compatibility, QA patch/restart/rollback and native/asset/engine app-store release rules remain unchanged. CI/device/provider/finance/voice qualification still mandatory. U20 owns release evidence, not production patch keys or deployment authority. See [development plan](20-WINDOW-AI-CHAT-EXECUTION-20261008.md) and [acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md).

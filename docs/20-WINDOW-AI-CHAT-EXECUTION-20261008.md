@@ -1,5 +1,10 @@
 # Twenty parallel implementation windows — AI operator, human Chats, Talks and Twins
 
+## CORRECTIVE RE-AUDIT — preserve U01–U20, add core recovery and Contacts (2026-10-08)
+
+The original 20-window plan was NOT a complete accounting: it did not assign a full Chats→Contacts/optional phonebook/invitations journey or all unfinished R01–R19/C01–C08 and historical 150-ledger items. Those omissions are corrected by [re-audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [Contacts](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [U21–U30/F01–F18](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), [new launch prompts](ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md) and [79 unchecked historical tasks](LEGACY-150-TASK-RECONCILIATION-20261008.md). **All current U01–U20 scopes remain valid.** F scopes recover/reconcile existing R/C branches without duplicate migration or API; 48 scopes must NOT all edit shared paths simultaneously. K13–K20 Contacts acceptance is required in addition to K01–K12.
+
+
 **Owner authorization: 2026-10-08. Development pause lifted with coordination safeguards.** This document is the operative U01–U20 **addition** to existing R01–R19/C01–C08. The owner will run 20 ChatGPT development windows and later ask ChatGPT Work to combine/verify outstanding source. **Start code now in isolated workstreams; do not wait for Work usage to reset.** It does NOT waive verified CI/device/provider/DB gates, entitle any lane to merge unsafe work or grant general permission to edit shared root code.
 
 **For 20 separate copy/paste prompts:** [`20-WINDOW-LAUNCH-PROMPTS-20261008.md`](20-WINDOW-LAUNCH-PROMPTS-20261008.md) labels each window U01–U20; use one prompt per window, not twenty copies of U01.

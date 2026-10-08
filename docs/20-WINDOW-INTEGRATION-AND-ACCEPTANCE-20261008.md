@@ -1,5 +1,10 @@
 # U01–U20 integration, execution evidence, threat tests and Work handoff
 
+## ADDITIONAL TESTS K13–K20 — real human Contacts and pending foundations (2026-10-08)
+
+K01–K12 do not cover the complete Contacts lifecycle. [Full Contacts contract](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md) adds K13 (Chats→Contacts and two-user real chat), K14 (voluntary local-only phonebook/permission/revoke), K15 (cross-device accepted people), K16 (request/block/anti-enumeration), K17 (invitation and safe signup), K18 (large/Unicode/budget-handset directory), K19 (contact identity vs Agent/DM/Wallet), K20 (deletion/revocation/no wrong-account cache). [Re-audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md) and [F01–F18](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md) make every R01–R19/C01–C08 prerequisite explicit, including all remaining provider/DB/device/CI checks. Do not mark K13–K20 passed from UI-only fixtures, and do not infer E2EE or server-uploaded phone matching.
+
+
 **2026-10-08 · Mandatory release evidence overlay; tests NOT executed by this document.** This supplement exists so twenty simultaneous windows produce **reconcilable code**, not twenty independent demos. Source truth remains R01–R19, C01–C08 and the canonical platform data/security/product contracts. Independent development is reopened by owner instruction; production deploy and unsafe PR merge gates are **not** waived.
 
 ## 1. Immutable baseline and existing debts (do not hide)

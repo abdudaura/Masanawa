@@ -1,5 +1,10 @@
 # Masanawa Documentation
 
+## Corrected completeness audit — Contacts plus all unfinished R/C requirements (2026-10-08)
+
+The initial U01–U20 plan is preserved, but new docs now specify human Contacts and the optional consented phonebook as well as remaining R/C and old production debt: [audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [Contacts contract K13–K20](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [U21–U30 and F01–F18](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), [28 extra prompts](ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md), [79 historic unchecked entries](LEGACY-150-TASK-RECONCILIATION-20261008.md). C01 #468 already contains a **draft** `HumanContactsScreen`, so do not create a competing contact backend. F lanes recover existing R/C PRs, not overwrite them. Keep shared Gateway/Flutter/ledger/Firebase ownership serialized and unverified feature PRs draft/unmerged.
+
+
 ## AI-first expansion and development reopened (2026-10-08)
 
 The owner lifted the global pause for twenty separately assigned isolated windows. New canonical reading: [product outcomes](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [one authorized action/task protocol](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human Chats and opt-in AI assistance](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md), [twenty U01–U20 implementation assignments](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [K01–K12 integration acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). R/C/J ledgers, Flutter, five-tab navigation and safety still govern. Work #497 remains draft; source can progress in scoped branches but verification/merges remain evidence-gated.

@@ -1,5 +1,10 @@
 # Masanawa: Owner-Approved Five-Tab Experience and End-to-End UX Architecture
 
+## Human Contacts end-to-end screen refinement — 2026-10-08
+
+**Chats is human-only, with nested Contacts screen on New Message** (not a new bottom tab). Display accepted Masanawa contacts separately from recents, new/pending requests, verified current names/avatar/handle and search/favorites, actual C02 open conversation, Back to same draft and thread, offline/error/auth states. Exact-handle lookup uses existing C01 #468 `HumanContactsScreen`/Gateway (currently draft, not on main) and privacy rules; U21 wraps or extends rather than duplicating. Optional local phonebook and invitation are explicit opt-in with separate U22/U23 native/privacy gates, and **never bulk upload without approved privacy matching**. New route only integrated by F12/R17/C08 sole Flutter shell owner. See [Contacts spec K13–K20](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [master pending R/C audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md) and [additional assignments](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md). Existing talks, private Assistant, Wallet and Agents route/type boundaries remain unchanged.
+
+
 ## Whole-product acceptance traceability (2026-10-08)
 
 This product architecture is frozen as **Talks · Chats · Assistant · Wallet · Agents**, Assistant centered. Validate every promised entry point, condition and privacy/return flow against `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` before shared shell implementation. Crosswalk IDs **P/N/T/M/A/W/Q** and integrated **J01–J11** extend the existing R01–R19/C01–C08 acceptance without another root-tab redesign or a second money/message/assistant authority. A user's camera-shy/low-literacy/quiet-phone journey, A→B human DM/cache, Gwani↔Gwana switch, public Talk earnings, and internal crypto transfer must each complete end-to-end with truthful status and returning navigation. Ideas only implied by WhatsApp comparisons (groups/direct calls/E2EE) remain explicitly unapproved—not secretly built or promised.

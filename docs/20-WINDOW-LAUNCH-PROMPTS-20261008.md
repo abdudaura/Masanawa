@@ -1,5 +1,10 @@
 # Masanawa — Twenty individually assignable ChatGPT window prompts
 
+## LATEST CORRECTION — optional additional launch assignments (2026-10-08)
+
+The U01–U20 prompts in this file REMAIN STABLE for any ongoing windows. The owner re-audit adds [U21–U30 and F01–F18 unique additional prompts](ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md), [complete Contacts/phonebook UX](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), and [all R/C + historical outstanding work](UNFINISHED-SCOPE-RECONCILIATION-20261008.md). Never duplicate unmerged C01 #468 contact backend or C02/C05/C06 migrations. F recovery lanes may continue existing PRs only with explicit fresh file ownership and may need to wait for shared Work integration. User consent is required before any device contacts disclosure.
+
+
 **Owner resumption 2026-10-08.** Copy exactly ONE labeled prompt into EACH separate ChatGPT development window. **U01 should start first**, because its v1 contract anchors other windows. All may work in parallel on isolated modules. These prompts do not authorize unverified merge or live changes. For full exact paths, acceptance and contract dependencies read [U01–U20 workbook](20-WINDOW-AI-CHAT-EXECUTION-20261008.md) and [integration/evidence](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md).
 
 ## U01 — Universal operator contract

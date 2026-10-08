@@ -1,5 +1,10 @@
 # Whole-Product Golden Journeys and Acceptance Gates
 
+## Mandatory extended Contacts and unfinished-foundation verification — 2026-10-08
+
+J01–J11 remain mandatory, with **K13–K20 Contacts journeys** defined and testable in [Contacts/phonebook/invitation contract](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md): accepted real user opens human DM from Contacts; device permission denial and voluntary local phonebook; multi-device relationship/readback; request/cancel/block abuse; safe non-Masanawa invitation; 10k-person/Unicode/low-end UI; correct contact IDs in Talk/Agent/Wallet intent; account deletion and cache/privacy revocation. K01–K12 remain in [first expanded product guide](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md). All **R01–R19/C01–C08** unfinished requirements are explicitly allocated to [F01–F18 recovery owners](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), with [master PR/legacy audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md). No K/J pass without real authorized Gateway/DB/Flutter/device/security/readback/recovery evidence. Owner lifting the development freeze does not lift release acceptance gates.
+
+
 Status: **normative cross-feature acceptance overlay / documentation only — 2026-10-08**. This adds **J01–J11 integrated journeys** to `GOLDEN-JOURNEYS.md` (which retains GJ-01–GJ-17); it **does not replace** R01–R19, C01–C08, financial policy or the original tests. Track requirements in `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md`. Target bottom navigation: **Talks · Chats · Assistant · Wallet · Agents**, **Assistant central**. App code/device/provider qualification is **OPEN/UNVERIFIED**.
 
 ## General test contract

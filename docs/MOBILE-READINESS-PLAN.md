@@ -1,5 +1,10 @@
 # Mobile Readiness and Global Integration Plan
 
+## COMPLETENESS CORRECTION — all R01–R19 still need explicit recovery owners (2026-10-08)
+
+The U01–U20 product upgrades did **not** replace the mandatory R01–R19 and C01–C08 source/release backlog. [Every unfinished R and C item with existing draft PRs](UNFINISHED-SCOPE-RECONCILIATION-20261008.md) is assigned recovery ownership **F01–F18** and tested alongside **U01–U30** in the [expanded allocation](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md). Human Chats now include [real Contacts screen and optional consented phonebook/invite](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), K13–K20. The old [150-task ledger's 79 unchecked items](LEGACY-150-TASK-RECONCILIATION-20261008.md) are classified current/gated/future/release. Original R rows/statuses below **remain unchanged**, none automatically DONE. Shared root/DB/ledger/Firebase integration must not be developed simultaneously in competing PRs, and CI #457/device/financial/provider evidence stays open until actual tests.
+
+
 ## Latest AI-first product scope — 2026-10-08
 
 **Owner 2026-10-08 U01–U20 extension:** existing R01–R19 and C01–C08 remain required and unchanged. Additional full-stack scopes target AI execution, memory/tasks, teaching/files, human Chat quality with opt-in selected-message help, Talk/Twin value, and low-end/linguistic experience. Read [product](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [20 workstreams](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [K01–K12 acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). Owner lifts coding pause but does NOT qualify CI/DB/device/provider tests or change R/C statuses.

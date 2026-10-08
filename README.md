@@ -1,5 +1,10 @@
 # Masanawa
 
+## Re-audit and expanded launch plan — 2026-10-08
+
+The first 20-window design omitted a fully assigned human Contacts experience and explicit recovery owners for existing undone R/C and historical requirements. See [master re-audit](docs/UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [Contacts/phonebook](docs/CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [U21–U30 + F01–F18 assignments](docs/ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), [28 additional prompts](docs/ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md), [all 79 unchecked historic tasks](docs/LEGACY-150-TASK-RECONCILIATION-20261008.md). **30 U improvement scopes + 18 F existing-R/C recovery scopes** are now documented. This is NOT permission to run 48 overlapping edits; initial U01–U20 prompts remain valid and existing R/C draft source must be reused. No feature PR merges without real tests.
+
+
 ## Owner directive — 20 parallel AI-first product windows (2026-10-08)
 
 **Copy/paste the numbered launch instructions:** [20 exact prompts for 20 windows](docs/20-WINDOW-LAUNCH-PROMPTS-20261008.md).
