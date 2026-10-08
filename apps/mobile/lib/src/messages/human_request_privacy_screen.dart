@@ -12,9 +12,15 @@ class HumanRequestPrivacyScreen extends ConsumerStatefulWidget {
 }
 
 class _HumanRequestPrivacyScreenState extends ConsumerState<HumanRequestPrivacyScreen> {
-  bool _stillCurrent(HumanContact target, HumanContactStatus expected) {
+  String? _currentOwnerId() {
     final session = ref.read(sessionProvider);
-    if (session is! SessionSignedIn) return false;
+    return session is SessionSignedIn ? session.user.id : null;
+  }
+
+  bool _stillCurrent(
+    HumanContact target, HumanContactStatus expected, String ownerId,
+  ) {
+    if (_currentOwnerId() != ownerId) return false;
     final state = ref.read(humanContactsProvider);
     return !state.busy && !state.loading && state.contacts.any((person) =>
       person.userId == target.userId &&
@@ -44,8 +50,9 @@ class _HumanRequestPrivacyScreenState extends ConsumerState<HumanRequestPrivacyS
   }
 
   Future<void> _respond(HumanContact person, bool accept) async {
-    if (person.requestRevision == null ||
-        !_stillCurrent(person, HumanContactStatus.incoming)) {
+    final ownerId = _currentOwnerId();
+    if (ownerId == null || person.requestRevision == null ||
+        !_stillCurrent(person, HumanContactStatus.incoming, ownerId)) {
       await ref.read(humanContactsProvider.notifier).refresh();
       return;
     }
@@ -54,14 +61,16 @@ class _HumanRequestPrivacyScreenState extends ConsumerState<HumanRequestPrivacyS
       'Decline the contact request from @' + person.handle + '?',
       'Decline',
     )) return;
-    if (!mounted || !_stillCurrent(person, HumanContactStatus.incoming)) return;
+    if (!mounted || !_stillCurrent(person, HumanContactStatus.incoming, ownerId)) return;
     await ref.read(humanContactsProvider.notifier).respond(
       person.userId, accept: accept, requestRevision: person.requestRevision!,
     );
   }
 
   Future<void> _withdraw(HumanContact person) async {
-    if (!_stillCurrent(person, HumanContactStatus.outgoing)) {
+    final ownerId = _currentOwnerId();
+    if (ownerId == null ||
+        !_stillCurrent(person, HumanContactStatus.outgoing, ownerId)) {
       await ref.read(humanContactsProvider.notifier).refresh();
       return;
     }
@@ -71,7 +80,7 @@ class _HumanRequestPrivacyScreenState extends ConsumerState<HumanRequestPrivacyS
         '? Previously delivered messages will not be erased.',
       'Withdraw',
     )) return;
-    if (!mounted || !_stillCurrent(person, HumanContactStatus.outgoing)) return;
+    if (!mounted || !_stillCurrent(person, HumanContactStatus.outgoing, ownerId)) return;
     await ref.read(humanContactsProvider.notifier).revoke(person.userId);
   }
 
