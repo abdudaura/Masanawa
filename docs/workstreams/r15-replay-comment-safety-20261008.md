@@ -23,3 +23,10 @@
 ## Additional isolated feed/detail block audit
 
 An authorized viewer's personal block of a Host was already honored in feeds and detail. The inverse Host-blocks-viewer relationship was enforced for new comments but **not** for Talk discovery/detail. The same owned `listTalks/getTalk` SQL hunks and `replay_visibility.test.ts` will now enforce bidirectional block before public visibility; Host-own access and existing muted-subject behavior remain intact. This expands the current claim before editing, does not modify shared financial/live files, and is still subject to real DB/CI verification.
+
+## Reciprocal block checkpoint — 2026-10-08T06:20Z
+
+- Public Explore/Live listing now filters a Host's viewers who were explicitly blocked by that Host (in addition to existing viewer-block/mute rules).
+- Public `getTalk` detail applies the same reciprocal block. The existing self-Host private detail exception remains for moderation/appeal. Public comment insertion already checks both block directions and was not changed here.
+- Focused regression added to `replay_visibility.test.ts` for both read paths.
+- **Executable verification remains blocked:** no runnable repo workspace and hosted Actions do not schedule steps. Source readback only. Run focused tests, Gateway typecheck/build, actual DB test and API acceptance before merge. Draft PR #450.
