@@ -374,14 +374,23 @@ export function createBillingWalletService(input: Readonly<{
       const validExpiry = latest !== null &&
         Number.isFinite(Date.parse(latest.expiresAt)) &&
         Date.parse(latest.expiresAt) > Date.now();
-      const active = latest?.state === "awaiting" && validExpiry &&
+      // A still-open virtual account is NOT an invitation to send funds when
+      // the underlying economic quote is no longer confirmed and unexpired.
+      const quoteValid = quote.state === "confirmed" && Boolean(quote.confirmedAt) &&
+        Number.isFinite(Date.parse(quote.expiresAt)) &&
+        Date.parse(quote.expiresAt) > Date.now();
+      const active = quoteValid && latest?.state === "awaiting" && validExpiry &&
         Boolean(latest.accountNumber?.trim()) && Boolean(latest.bankName?.trim());
-      const pending = latest?.state === "creating" || latest?.state === "credited" ||
-        (latest?.state === "awaiting" && validExpiry);
+      const pending = quoteValid && (latest?.state === "creating" ||
+        latest?.state === "credited" ||
+        (latest?.state === "awaiting" && validExpiry));
       const phase: BillingWalletView["phase"] =
         quote.state === "succeeded" ? "fulfilled" :
-        ["failed", "reversed", "refunded", "expired"].includes(quote.state) ? "failed" :
-        quote.state === "reserved" || quote.state === "funded" ? "processing" :
+        ["refunded", "expired"].includes(quote.state) ||
+        (quote.state === "confirmed" && !quoteValid) ? "failed" :
+        quote.state === "reserved" || quote.state === "funded" ||
+        quote.state.startsWith("refund-") || quote.state.startsWith("checkout-")
+          ? "processing" :
         active ? "awaiting-funds" : pending ? "processing" : "ready";
       const balanceKobo = await currentBalance(identity);
       // Return bank coordinates only while the signed-in owner has an active
