@@ -79,8 +79,13 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     return current.user.id;
   }
 
+  bool _sameOwner(String expected) {
+    final current = ref.read(sessionProvider);
+    return current is SessionSignedIn && current.user.id == expected;
+  }
+
   void _ensureOwner(String expected) {
-    if (_ownerId() != expected) {
+    if (!_sameOwner(expected)) {
       throw StateError('Your account changed. Refresh the wallet before continuing.');
     }
   }
@@ -140,9 +145,12 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   }
 
   Future<void> refresh() async {
-    _ownerId();
+    final owner = _ownerId();
     state = const AsyncLoading();
-    state = await AsyncValue.guard(_load);
+    final refreshed = await AsyncValue.guard(_load);
+    // Avoid publishing an older user's success or error after a direct
+    // account switch while an explicit refresh was still in flight.
+    if (_sameOwner(owner)) state = refreshed;
   }
 
   Future<void> selectAsset(String providerCode) async {
