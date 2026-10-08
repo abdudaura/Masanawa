@@ -36,6 +36,7 @@ export interface InternalCryptoTransferStore {
     quoteRequestId: string; asset: string; network: string | null;
     amount: string; policyRevision: string;
   }): Promise<InternalTransferQuote>;
+  readQuote(input: { tenantId: string; senderUserId: string; quoteId: string }): Promise<InternalTransferQuote | null>;
   execute(input: {
     tenantId: string; senderUserId: string; requestId: string;
     quoteId: string; policyRevision: string;
@@ -131,6 +132,16 @@ export function createPostgresInternalCryptoTransferStore(pool: Pool): InternalC
         );
         return quoteRow(posted.rows[0]);
       });
+    },
+
+    async readQuote(input) {
+      const rows = await pool.query(
+        "SELECT * FROM commerce.crypto_internal_transfer_quotes WHERE tenant_id=$1 " +
+        "AND sender_user_id=$2 AND quote_id=$3",
+        [nonempty(input.tenantId, "tenant"), nonempty(input.senderUserId, "sender"),
+          nonempty(input.quoteId, "quote")],
+      );
+      return rows.rows[0] ? quoteRow(rows.rows[0]) : null;
     },
 
     async execute(raw) {
