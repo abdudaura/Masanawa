@@ -95,9 +95,12 @@ describe("C01 SQL contact admission", () => {
     expect(params).toEqual(["t", "user_bo", "user_al", "accepted", "1"]);
     expect(sql).toContain("e.request_revision=$5::bigint");
     expect(sql).toContain("e.requested_by=$3");
-    expect(sql).toContain("(e.status='pending' OR e.status=$4");
-    expect(sql).toContain("(e.status='declined' AND $4='accepted')");
-    expect(sql).toContain("(e.status='accepted' AND $4='declined')");
+    // Final consent is immutable for a request revision; same-result retries
+    // succeed but cannot modify ordering or flip acceptance.
+    expect(sql).toContain("AND (e.status='pending' OR e.status=$4)");
+    expect(sql).not.toContain("(e.status='declined' AND $4='accepted')");
+    expect(sql).not.toContain("(e.status='accepted' AND $4='declined')");
+    expect(sql).toContain("WHEN e.status=$4 THEN e.updated_at ELSE clock_timestamp()");
     expect(sql).toContain("e.revoked_by IS NULL");
     expect(sql).toContain("sp.blocked=true");
     expect(sql).toContain("se.visibility IN ('restricted','blocked')");
