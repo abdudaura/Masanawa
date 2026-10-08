@@ -193,10 +193,18 @@ export async function schemaBootstrapTest(
     const publicObjects=await client.query<{object_name:string}&Record<string,unknown>>(
       "SELECT c.relname AS object_name FROM pg_class c JOIN pg_namespace n "+
       "ON n.oid=c.relnamespace WHERE n.nspname='public' "+
-      "AND c.relkind IN ('r','p','v','m','S','f') AND NOT EXISTS "+
+      "AND c.relkind IN ('r','p','v','m','S','f','c') AND NOT EXISTS "+
       "(SELECT 1 FROM pg_depend dep WHERE dep.objid=c.oid "+
       "AND dep.deptype='e')");
     if(publicObjects.rows.length!==0) throw new SchemaOperationError("schema.bootstrap_public_not_empty");
+    // PostgreSQL large objects live in a system catalog, not user schemas.
+    // They can carry private binary user data even when public is apparently empty.
+    const largeObjects=await client.query<{object_id:string}&Record<string,unknown>>(
+      "SELECT oid::text AS object_id FROM pg_largeobject_metadata LIMIT 1"
+    );
+    if(largeObjects.rows.length!==0) {
+      throw new SchemaOperationError("schema.bootstrap_large_objects_present");
+    }
     // A disposable name alone is not proof of an empty database. Reject any
     // non-system namespace, including user data outside known Masanawa schemas.
     // The pre-existing extension objects in public are excluded from the
