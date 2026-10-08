@@ -1,5 +1,12 @@
 # Continue Here
 
+## Owner-requested unified UX architecture review — final target proposal (2026-10-08)
+
+Read [docs/END-TO-END-UX-ARCHITECTURE.md](docs/END-TO-END-UX-ARCHITECTURE.md) **before any new C01–C08 or R17/C08 navigation implementation**. It gives one complete proposed end-state for Home/public Talks, People DMs and Agents/Twins, Wallet/internal transfers, Gwani/Gwana actions, and route/back/notification/privacy/performance boundaries. The owner's request is to settle necessary improvements upfront, not build a temporary interface and redesign later.
+
+Its **recommended target** is **Home · Chats · Wallet · Assistant** (Assistant removes ambiguity with public Talks), with Masanawa Agents/Twins visibly discoverable within Chats. This **changes the previously approved bottom label and tab** and is a **proposal pending explicit owner decision**, not a unilateral change to shipping UI. Until approved, APP-SHELL-CONTRACT.md's **Home · Agents · Wallet · Talk** remains the source of truth. Once approved, update R17 and C08 plus their shared route contract together **before** affected windows implement conflicting screens. No user functions, tests, provider qualifications or merged features are implied by this planning record.
+
+
 ## Approved additive communication and voice-first operator extension — 2026-10-08
 
 **Mandatory reading for every implementation window:** [docs/COMMUNICATIONS-EXTENSION-PLAN.md](docs/COMMUNICATIONS-EXTENSION-PLAN.md) is the canonical **C01–C08** cross-window ledger for person-to-person private text/voice messaging, durable fast chat history and low-data caching, contact privacy/realtime/notifications, qualified in-app crypto transfers, and Gwani/Gwana's authorized cross-app actions with **voice, typing and taps** equally complete. It carries concrete acceptance, dependencies, task ownership and a copyable window prompt. Owner-approved extension discussion is tracked in issues [#462](https://github.com/Baatiku/masanawa/issues/462) and [#463](https://github.com/Baatiku/masanawa/issues/463). **Plans are not implementation evidence.**
