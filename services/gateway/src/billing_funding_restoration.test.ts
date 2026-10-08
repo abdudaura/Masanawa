@@ -99,8 +99,18 @@ describe("R05 authenticated funding recovery", () => {
         authorizationHeader: "Bearer owner", quoteId: t.quote.quoteId,
       });
       expect(value.funding).toBeNull();
-      expect(value.document).not.toContain("0001112223");
+      expect(JSON.stringify(value.document)).not.toContain("0001112223");
     }
+  });
+
+  it("never exposes an unexpired account against expired quote terms", async () => {
+    const t = fixture();
+    t.setQuote({ ...t.quote, expiresAt: new Date(Date.now() - 1000).toISOString() });
+    const value = await t.service.readQuoteFunding({
+      authorizationHeader: "Bearer owner", quoteId: t.quote.quoteId,
+    });
+    expect(value.phase).toBe("failed");
+    expect(value.funding).toBeNull();
   });
 
   it("does not expose instructions after the quote succeeds, expires or refunds", async () => {
