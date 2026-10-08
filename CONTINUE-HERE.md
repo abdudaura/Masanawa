@@ -1,5 +1,14 @@
 # Continue Here
 
+## Documentation finalized for implementation windows — 2026-10-08
+
+**The owner-approved product requirements are ready for implementation. Do not spend new windows re-planning the five-tab design.** Begin with [docs/IMPLEMENTATION-KICKOFF-20261008.md](docs/IMPLEMENTATION-KICKOFF-20261008.md) for the **definitive R01–R19 and C01–C08 parallel lane map**, one R17/C08 navigation integrator, shared Gateway/ledger/migration ownership, exact evidence gates and the copyable implementation prompt. Use [docs/REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md](docs/REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md) to crosscheck **all 77 traced requirements and 11 integrated journeys**, with full wording in `docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md`.
+
+**Important live work, recheck before claiming:** C01 backend source exists in draft PR [#468](https://github.com/Baatiku/masanawa/pull/468) but remains untested/unmerged; shared Gateway composition overlaps R18 profile draft [#435](https://github.com/Baatiku/masanawa/pull/435) and needs semantic reconciliation. Messaging reference audit [#467](https://github.com/Baatiku/masanawa/pull/467) is a separate **unmerged** documentation draft and does not supersede canonical docs. Shared Actions budget/runner verification remains under [#457](https://github.com/Baatiku/masanawa/issues/457) and [#460](https://github.com/Baatiku/masanawa/pull/460). Do **not** duplicate these PRs, merge them without executable tests, or resurrect a temporary four-tab shell.
+
+**Final product shell remains exactly Talks · Chats · Assistant · Wallet · Agents, with Assistant centered and an in-chat Gwani/Gwana switch.** This new documentation closes the planning handoff only, not code implementation or release acceptance.
+
+
 ## Mandatory owner requirements coverage audit — 2026-10-08
 
 Before selecting any R01–R19 or C01–C08 implementation lane, read [docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md](docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md) and [docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md). These map the owner's complete **documented** conversation decisions, current canonical requirements, cross-tab journeys, conflicts and tests to the existing R/C gates. They do **not** add a competing milestone system or imply functionality is implemented; do not promote explicitly undecided group/call/E2EE/future revenue concepts into shipped promises. All affected windows must cite requirement IDs and actual executable/e2e evidence in their handoffs. The five-tab decision remains **Talks · Chats · Assistant · Wallet · Agents** with one centered, switchable Gwani/Gwana chat. Final document traceability is a quality guard, not a substitute for two-device, real financial/provider, Live audio and CI #457 evidence.
