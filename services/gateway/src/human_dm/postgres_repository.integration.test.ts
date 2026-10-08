@@ -75,6 +75,14 @@ database("C02 human DMs against real temporary PostgreSQL",()=>{
     expect(await repo.remove({...b,conversationId,messageId:id})).toBeNull();
     expect((await repo.remove({...a,conversationId,messageId:id}))?.text).toBeNull();
   });
+  it("enforces the persisted per-sender minute cap even across threads",async()=>{
+    for(let i=0;i<29;i++){
+      expect(await repo.send({...a,conversationId,clientMessageId:randomUUID(),text:`Message ${i}`}))
+        .toMatchObject({senderUserId:alice});
+    }
+    expect(await repo.send({...a,conversationId,clientMessageId:randomUUID(),text:"Message over cap"}))
+      .toBe("rate_limited");
+  });
   it("revocation after a thread exists blocks fresh deliveries but retains authorized history",async()=>{
     await pool.query(`
       UPDATE talks.human_dm_contact_requests SET status='declined'
