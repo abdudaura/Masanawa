@@ -1229,6 +1229,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     widget.pendingServiceIntent!.revision.toString() +
                     '-' + widget.pendingServiceIntent!.ownerUserId),
                 intent: widget.pendingServiceIntent!.intent,
+                canContinue: !sending && !updateRequired,
                 onContinue: _continuePrivateService,
                 onOpenEditor: () {
                   final selection = widget.pendingServiceIntent;
