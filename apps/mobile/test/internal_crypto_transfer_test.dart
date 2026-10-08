@@ -34,10 +34,10 @@ void main(){
       'requestId':'request_x','recipientLabel':'user@example.com',
       'asset':'USDT','network':'tron','amount':'3.000000000000000001',
       'fee':'0','status':'quoted','expiresAt':'2099-01-01T00:00:00Z',
-      'completedAt':null,'confirmationToken':'a'*64,
+      'completedAt':null,'confirmationToken':''.padRight(64,'a'),
     });
     expect(quote.amount,'3.000000000000000001');
-    expect(quote.confirmationToken,'a'*64);
+    expect(quote.confirmationToken,''.padRight(64,'a'));
     expect(() => InternalCryptoTransferQuote.fromJson({
       'requestId':'request_x','recipientLabel':'user@example.com',
       'asset':'USDT','network':'tron','amount':3.0,'fee':'0',
@@ -65,7 +65,7 @@ void main(){
     expect(reread!.requestId,quote.requestId);
     final confirmed=await t.confirm(quote.requestId,quote.confirmationToken!);
     expect(confirmed.completed,true);
-    expect(requests[2].data,{'confirmationToken':'a'*64});
+    expect(requests[2].data,{'confirmationToken':''.padRight(64,'a')});
     expect(requests[2].path,endsWith('/confirm'));
   });
   test('404 readback is not a fabricated successful transfer',()async{
@@ -81,7 +81,7 @@ void main(){
     dio.httpClientAdapter=_Adapter((_) async=>_json('{"error":"not_qualified"}',status:503));
     final transport=GatewayInternalCryptoTransferTransport(dio:dio,
       baseUrl:'https://example.test');
-    await expectLater(transport.confirm('request_1','a'*64),
+    await expectLater(transport.confirm('request_1',''.padRight(64,'a')),
       throwsA(isA<DioException>()));
   });
 }
