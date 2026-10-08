@@ -4,7 +4,7 @@ import type { SchemaManifest, SchemaMigration } from "./manifest.js";
 
 interface Queryable {
   query<T extends Record<string,unknown>=Record<string,unknown>>(
-    text:string, values?:readonly unknown[],
+    text:string, values?:unknown[],
   ):Promise<{readonly rows:T[];readonly rowCount:number|null}>;
 }
 interface LedgerRow extends Record<string,unknown>{
@@ -111,7 +111,8 @@ function approve(approval:OperatorApproval,manifest:SchemaManifest,dbName:string
     throw new SchemaOperationError("schema.backup_evidence_missing");
   }
   const verification=Date.parse(approval.backupVerifiedAt);
-  if(!Number.isFinite(verification)||verification>now.getTime()+60_000||
+  if(!/(Z|[+-][0-9]{2}:[0-9]{2})$/u.test(approval.backupVerifiedAt)||
+     !Number.isFinite(verification)||verification>now.getTime()+60_000||
      now.getTime()-verification>24*60*60_000){
     throw new SchemaOperationError("schema.backup_attestation_stale");
   }
@@ -128,6 +129,8 @@ async function applyWithin(
   // Cooperates with existing runMigrations lock. Status, apply and reinspection
   // are all inside the SAME serializable transaction, preventing any concurrent
   // migration writer from invalidating the preflight.
+  await client.query("SET LOCAL lock_timeout = '5s'");
+  await client.query("SET LOCAL statement_timeout = '10min'");
   await client.query("SELECT pg_advisory_xact_lock(hashtext('masanawa:schema-migrations'))");
   const before=await inspect(client,manifest);
   approve(approval,manifest,before.databaseName,now);
@@ -174,6 +177,8 @@ export async function schemaBootstrapTest(
     throw new SchemaOperationError("schema.disposable_database_confirmation_required");
   }
   return withTransaction(pool,async client=>{
+    await client.query("SET LOCAL lock_timeout = '5s'");
+    await client.query("SET LOCAL statement_timeout = '10min'");
     await client.query("SELECT pg_advisory_xact_lock(hashtext('masanawa:schema-migrations'))");
     const before=await inspect(client,manifest);
     if(before.databaseName!==confirmation.expectedDatabase ||
@@ -185,6 +190,13 @@ export async function schemaBootstrapTest(
       "WHERE schema_name IN ('agents','commerce','events','identity','memory','security','skills','talks','world')"
     );
     if(schemas.rows.length!==0) throw new SchemaOperationError("schema.bootstrap_target_not_empty");
+    const publicObjects=await client.query<{object_name:string}&Record<string,unknown>>(
+      "SELECT c.relname AS object_name FROM pg_class c JOIN pg_namespace n "+
+      "ON n.oid=c.relnamespace WHERE n.nspname='public' "+
+      "AND c.relkind IN ('r','p','v','m','S','f') AND NOT EXISTS "+
+      "(SELECT 1 FROM pg_depend dep WHERE dep.objid=c.oid "+
+      "AND dep.deptype='e')");
+    if(publicObjects.rows.length!==0) throw new SchemaOperationError("schema.bootstrap_public_not_empty");
     // A savepoint must roll back a nontrivial write without destroying the
     // rest of the outer transaction (proving rollback behavior on this server).
     await client.query("SAVEPOINT schema_rollback_probe");
