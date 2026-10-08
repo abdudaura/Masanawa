@@ -240,6 +240,45 @@ export async function schemaBootstrapTest(
     if(publicTypes.rows.length!==0) {
       throw new SchemaOperationError("schema.bootstrap_public_types_present");
     }
+    // Standalone definitions can outlive tables and routines. A database with
+    // pre-existing collations, operators, text-search definitions, replication
+    // publications or foreign connections is not an empty rehearsal target.
+    // Extension-owned objects (e.g. pgvector) are installation prerequisites,
+    // not orphaned user definitions. Only static catalog identifiers appear in
+    // this SQL; no names or other caller-controlled values are interpolated.
+    const publicDefinitions=await client.query<{object_kind:string}&Record<string,unknown>>(
+      "SELECT object_kind FROM ("+
+      [
+        ["pg_collation","c","collnamespace","collation"],
+        ["pg_conversion","c","connamespace","conversion"],
+        ["pg_operator","o","oprnamespace","operator"],
+        ["pg_ts_config","c","cfgnamespace","text_search_configuration"],
+        ["pg_ts_dict","d","dictnamespace","text_search_dictionary"],
+        ["pg_ts_parser","p","prsnamespace","text_search_parser"],
+        ["pg_ts_template","t","tmplnamespace","text_search_template"],
+      ].map(([catalog,alias,namespace,kind])=>
+        "SELECT '"+kind+"'::text AS object_kind FROM "+catalog+" "+alias+
+        " JOIN pg_namespace n ON n.oid="+alias+"."+namespace+
+        " WHERE n.nspname='public' AND NOT EXISTS ("+
+        "SELECT 1 FROM pg_depend dep WHERE dep.classid='"+catalog+"'::regclass"+
+        " AND dep.objid="+alias+".oid AND dep.deptype='e')"
+      ).concat(
+        [
+          ["pg_event_trigger","event_trigger"],
+          ["pg_publication","publication"],
+          ["pg_foreign_server","foreign_server"],
+          ["pg_foreign_data_wrapper","foreign_data_wrapper"],
+        ].map(([catalog,kind])=>
+          "SELECT '"+kind+"'::text AS object_kind FROM "+catalog+" o"+
+          " WHERE NOT EXISTS (SELECT 1 FROM pg_depend dep WHERE "+
+          "dep.classid='"+catalog+"'::regclass AND dep.objid=o.oid AND dep.deptype='e')"
+        )
+      ).join(" UNION ALL ")+
+      ") existing LIMIT 1"
+    );
+    if(publicDefinitions.rows.length!==0) {
+      throw new SchemaOperationError("schema.bootstrap_public_definitions_present");
+    }
     // A savepoint must roll back a nontrivial write without destroying the
     // rest of the outer transaction (proving rollback behavior on this server).
     await client.query("SAVEPOINT schema_rollback_probe");
