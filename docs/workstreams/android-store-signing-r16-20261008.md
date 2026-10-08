@@ -76,3 +76,11 @@
 - Bounded signing hardening code and self-contained JDK regression suite are committed on draft PR #410; local tests passed.
 - No further source changes planned in this window. **Release this implementation lease**; next integration owner should rerun CI when runners available, compile a production AAB with real signing material, run bundletool and certificate checks, and confirm store/handset requirements before marking R16 DONE or merging.
 - Do not infer global R16 release acceptance from this PR: release signing was only one subgate.
+
+## Verified regression on 2026-10-08 before merge
+
+- Fixed three incorrectly doubled Bash continuations in second-signer fixture (commit `57424d26`).
+- Reconstructed the verifier/test harness in isolated Linux workspace from the branch source and executed `bash -n` on both, then `bash tools/tests/test-verify-android-store-bundle.sh` using OpenJDK 21.
+- Observed output: `Verified: signed bundle matches pinned release certificate SHA-256.` and `PASS: valid release, unsigned, wrong fingerprint, tampered artifact, mixed entries, non-AAB, multiple signers, debug signer`.
+- Limits: this tests disposable signed fixture archives, not real Flutter/Gradle AAB compilation, production certificate, device install or Google Play acceptance. GitHub-hosted runner failures have no job steps and should be triaged separately.
+- Integration action: merge bounded source/tests to main on explicit user request. The global R16 acceptance remains open pending release gates.
