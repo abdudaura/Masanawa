@@ -7,7 +7,8 @@ import 'human_dm_transport.dart';
 
 /// C08 mounts this human-only inbox under the canonical Chats tab.
 class HumanDmInboxScreen extends ConsumerStatefulWidget {
-  const HumanDmInboxScreen({super.key});
+  const HumanDmInboxScreen({super.key, this.onNewMessage});
+  final VoidCallback? onNewMessage;
   @override
   ConsumerState<HumanDmInboxScreen> createState()=>_HumanDmInboxScreenState();
 }
@@ -35,6 +36,13 @@ class _HumanDmInboxScreenState extends ConsumerState<HumanDmInboxScreen> {
       appBar:AppBar(title:const Text('Chats'),actions:[
         IconButton(tooltip:'Refresh messages',onPressed:_reload,icon:const Icon(Icons.refresh))
       ]),
+      floatingActionButton: widget.onNewMessage == null ? null :
+        FloatingActionButton.extended(
+          tooltip: 'New message',
+          onPressed: widget.onNewMessage,
+          icon: const Icon(Icons.edit_outlined),
+          label: const Text('New message'),
+        ),
       body:FutureBuilder<List<HumanDmThread>>(
         key:ValueKey(current.user.id),
         future:_future,
