@@ -111,7 +111,9 @@ class AgentDirectoryEntry {
       displayName: requiredString('displayName'),
       roleLabel: requiredString('roleLabel'),
       about: (json['about'] as String? ?? '').trim(),
-      presence: AgentPresence.parse(json['presence'] as String?),
+      presence: AgentPresence.parse(
+        json['presence'] is String ? json['presence'] as String : null,
+      ),
       avatarUrl: (json['avatarUrl'] as String?)?.trim(),
       greeting: (json['greeting'] as String?)?.trim(),
       activeWorkCount: work is int && work >= 0 ? work : 0,
