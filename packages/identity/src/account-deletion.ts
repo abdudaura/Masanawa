@@ -98,12 +98,13 @@ export function transitionAccountDeletion(
   if (input.target === "failed" && !input.errorCode?.trim()) {
     throw new Error("account_deletion.failure_reason_required");
   }
+  const { lastErrorCode: _previousErrorCode, ...state } = current;
   return {
-    ...current,
+    ...state,
     phase: input.target,
     updatedAt: input.now,
     revision: current.revision + 1,
     outstandingObligations: [...obligations],
-    lastErrorCode: input.target === "failed" ? input.errorCode : undefined,
+    ...(input.target === "failed" ? { lastErrorCode: input.errorCode! } : {}),
   };
 }
