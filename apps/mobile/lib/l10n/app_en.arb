@@ -235,5 +235,33 @@
   },
   "@unknownCountryDialCode": {
     "description": "Input has no recognized international telephone prefix; do not silently assume a country"
+  },
+  "authCodeInvalid": "That code is incorrect. Check it and try again.",
+  "authCodeLocked": "Too many attempts. Please request a new code later.",
+  "authCodeExpired": "This code has expired. Request a new one.",
+  "authRateLimited": "Too many requests. Please try again later.",
+  "authSendFailed": "Could not send the code. Check your connection and try again.",
+  "authVerifyFailed": "Could not verify the code. Try again.",
+  "authProfileFailed": "Could not finish your profile. Check your details and try again.",
+  "@authCodeInvalid": {
+    "description": "Auth error text for authCodeInvalid; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authCodeLocked": {
+    "description": "Auth error text for authCodeLocked; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authCodeExpired": {
+    "description": "Auth error text for authCodeExpired; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authRateLimited": {
+    "description": "Auth error text for authRateLimited; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authSendFailed": {
+    "description": "Auth error text for authSendFailed; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authVerifyFailed": {
+    "description": "Auth error text for authVerifyFailed; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "@authProfileFailed": {
+    "description": "Auth error text for authProfileFailed; never infer user balances or expose raw server payload. Only surface matching known server error codes."
   }
 }
