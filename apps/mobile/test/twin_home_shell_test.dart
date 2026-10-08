@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:masanawa/src/localization/masanawa_localization.dart';
 import 'package:masanawa/src/activity/talk_activity.dart';
 import 'package:masanawa/src/agents/twin_directory.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
@@ -130,7 +131,11 @@ class _FakeTwinDirectoryTransport implements TwinDirectoryTransport {
   Future<TwinDirectoryEntry?> resolve({required String publicId}) async => null;
 }
 
-Widget _app({TalkActivityTransport? activity, int initialIndex = 0}) {
+Widget _app({
+  TalkActivityTransport? activity,
+  int initialIndex = 0,
+  Locale uiLocale = const Locale('en'),
+}) {
   return ProviderScope(
     overrides: [
       talkTransportProvider.overrideWithValue(const _FakeTalkTransport()),
@@ -142,6 +147,9 @@ Widget _app({TalkActivityTransport? activity, int initialIndex = 0}) {
       ),
     ],
     child: MaterialApp.router(
+      locale: uiLocale,
+      supportedLocales: MasanawaLocalization.supportedLocales,
+      localizationsDelegates: MasanawaLocalization.delegates,
       theme: buildMasanawaTheme(brightness: Brightness.light),
       routerConfig: GoRouter(
         initialLocation: '/home',
@@ -330,6 +338,29 @@ void main() {
     expect(find.text('Gwani is unavailable right now.'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
     expect(find.byTooltip('Start Talk'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+
+  testWidgets('Arabic locale translates shell navigation without changing route semantics', (tester) async {
+    await tester.pumpWidget(_app(uiLocale: const Locale('ar')));
+    await tester.pumpAndSettle();
+    expect(find.text('الرئيسية'), findsOneWidget);
+    expect(find.text('الوكلاء'), findsOneWidget);
+    expect(find.text('المحفظة'), findsOneWidget);
+    expect(find.text('تحدث'), findsOneWidget);
+    expect(find.byTooltip('النشاط'), findsOneWidget);
+    expect(find.byTooltip('الملف الشخصي'), findsOneWidget);
+    expect(
+      Directionality.of(tester.element(find.byType(NavigationBar))),
+      TextDirection.rtl,
+    );
+    await tester.tap(find.byIcon(Icons.smart_toy_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('وكلاء Masanawa'), findsOneWidget);
+    expect(find.text('التوائم'), findsOneWidget);
+    final router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
+    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'agents');
     expect(tester.takeException(), isNull);
   });
 
