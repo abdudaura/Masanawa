@@ -87,7 +87,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
       if (!mounted || _generation != generation || _owner != owner) return;
       _pendingCreate = null;
       await _load();
-      if (mounted) Navigator.of(context).maybePop();
+      if (mounted && _owner == owner &&\n          ref.read(sessionProvider) is SessionSignedIn) {\n        Navigator.of(context).maybePop();\n      }
     } catch (_) {
       if (!mounted || _generation != generation || _owner != owner) return;
       setState(() {
