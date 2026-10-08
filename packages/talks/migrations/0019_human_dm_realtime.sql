@@ -4,6 +4,7 @@
 CREATE TABLE talks.human_dm_events (
   event_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   tenant_id text NOT NULL,
+  recipient_user_id text NOT NULL,
   conversation_id uuid NOT NULL,
   kind text NOT NULL CHECK (kind IN
     ('message_added','message_changed','message_deleted','read_changed','access_changed')),
@@ -13,6 +14,8 @@ CREATE TABLE talks.human_dm_events (
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   FOREIGN KEY (tenant_id,conversation_id) REFERENCES
     talks.human_dm_conversations (tenant_id,conversation_id) ON DELETE CASCADE,
+  FOREIGN KEY (tenant_id,recipient_user_id) REFERENCES
+    identity.users (tenant_id,user_id) ON DELETE CASCADE,
   CHECK (
     ((kind IN ('message_added','message_changed','message_deleted'))
        AND message_id IS NOT NULL AND message_sequence IS NOT NULL)
@@ -22,8 +25,8 @@ CREATE TABLE talks.human_dm_events (
        AND message_id IS NULL AND message_sequence IS NULL)
   )
 );
-CREATE INDEX human_dm_events_tenant_cursor_idx
-  ON talks.human_dm_events (tenant_id,event_id);
+CREATE INDEX human_dm_events_member_cursor_idx
+  ON talks.human_dm_events (tenant_id,recipient_user_id,event_id);
 CREATE INDEX human_dm_events_tenant_age_idx
   ON talks.human_dm_events (tenant_id,created_at);
 
@@ -38,9 +41,19 @@ BEGIN
   PERFORM pg_advisory_xact_lock(
     hashtext('masanawa:human-dm-event'), hashtext(p_tenant)
   );
+  -- Project one scoped row to each real human member. This bounds a user's
+  -- cursor scan to their own conversations, not every DM in the tenant.
   INSERT INTO talks.human_dm_events(
-    tenant_id,conversation_id,kind,actor_user_id,message_id,message_sequence
-  ) VALUES (p_tenant,p_conversation,p_kind,p_actor,p_message,p_sequence);
+    tenant_id,recipient_user_id,conversation_id,kind,
+    actor_user_id,message_id,message_sequence
+  )
+  SELECT p_tenant,m.member_id,p_conversation,p_kind,
+    p_actor,p_message,p_sequence
+  FROM talks.human_dm_conversations c
+  CROSS JOIN LATERAL (
+    VALUES (c.first_user_id),(c.second_user_id)
+  ) AS m(member_id)
+  WHERE c.tenant_id=p_tenant AND c.conversation_id=p_conversation;
 END;
 $$;
 
@@ -181,5 +194,6 @@ CREATE TRIGGER human_dm_event_on_profile_restriction
 AFTER INSERT OR UPDATE ON talks.safety_enforcement
 FOR EACH ROW EXECUTE FUNCTION talks.human_dm_profile_enforcement_event_trigger();
 
--- Retention is applied by the C03 query and a separately supervised cleanup
--- operator. Do NOT schedule a hidden production mutating job in a migration.
+-- No journal purge or automatic retention runs yet: the shared operations
+-- owner must add a watermark-aware trim/recovery worker before production.
+-- Never silently delete events without a cursor-expiry/reset contract.
