@@ -117,7 +117,7 @@ export function createGeminiLiveTokenService(input: {
         userId: admission.scope.userId,
         characterId,
         admissionId: request.admissionId ?? null,
-      });
+      }));
       return Object.freeze({
         token: payload.name,
         websocketUrl:
