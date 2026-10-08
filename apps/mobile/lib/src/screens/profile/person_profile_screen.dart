@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../social/talk_social_profiles.dart';
 import '../../state/talk_social_profile_state.dart';
 import '../../state/session_state.dart';
-import 'human_profile_safety_sheet.dart';
+import 'human_profile_report_sheet.dart';
 import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
 
@@ -68,7 +68,7 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
       context:context,
       isScrollControlled:true,
       showDragHandle:true,
-      builder:(_)=>HumanProfileSafetySheet(
+      builder:(_)=>HumanProfileReportSheet(
         handle:profile.handle,
         reporterUserId:session.user.id,
       ),
