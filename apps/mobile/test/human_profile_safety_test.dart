@@ -28,25 +28,8 @@ class _SignedIn extends SessionController {
 }
 
 class _Transport implements HumanProfileSafetyTransport {
-  bool blocked=false;
-  bool muted=false;
-  int readCount=0;
   bool ambiguousOnce=false;
   final ids=<String>[];
-  @override
-  Future<HumanProfileSafetyPreference> read(String handle) async {
-    readCount++;
-    expect(handle,'amina');
-    return HumanProfileSafetyPreference(blocked:blocked,muted:muted);
-  }
-  @override
-  Future<HumanProfileSafetyPreference> set(String handle, {
-    required bool blocked,required bool muted,
-  }) async {
-    this.blocked=blocked;
-    this.muted=muted;
-    return HumanProfileSafetyPreference(blocked:blocked,muted:muted);
-  }
   @override
   Future<String> report(String handle,{
     required TalkSafetyReportReason reason,
@@ -115,18 +98,27 @@ void main(){
     expect(PendingHumanProfileReport.parse('{"reason":"fake"}'),isNull);
   });
 
-  testWidgets('block/mute writes are followed by an authoritative read', (tester) async {
+  testWidgets('restores a possibly committed report after app restart', (tester) async {
     final transport=_Transport();
-    final container=_container(transport,_Journal());
+    final journal=_Journal();
+    final saved=PendingHumanProfileReport(
+      requestId:PendingHumanProfileReport.freshId(),
+      reason:TalkSafetyReportReason.spam,
+      detail:'Saved before a previous network failure',
+      createdAt:DateTime.now().toUtc().subtract(const Duration(minutes:1)),
+    );
+    journal.data['user-a:amina']=saved;
+    final container=_container(transport,journal);
     addTearDown(container.dispose);
     await _pump(tester,container);
-    await tester.tap(find.byKey(const ValueKey('human-safety-block')));
+    expect(find.text('Retry same report'),findsOneWidget);
+    await tester.ensureVisible(find.byKey(const ValueKey('human-safety-report')));
+    await tester.tap(find.byKey(const ValueKey('human-safety-report')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('human-safety-save')));
-    await tester.pumpAndSettle();
-    expect(transport.blocked,isTrue);
-    expect(transport.readCount,greaterThanOrEqualTo(2));
-    expect(find.byKey(const ValueKey('human-safety-error')),findsNothing);
+    expect(transport.ids,saved.requestId == transport.ids.single
+      ? [saved.requestId] : <String>[]);
+    expect(journal.data,isEmpty);
+    expect(find.byKey(const ValueKey('human-safety-accepted')),findsOneWidget);
   });
 
   testWidgets('ambiguous report retry retains request ID until server acceptance', (tester) async {
@@ -161,7 +153,6 @@ void main(){
     (container.read(sessionProvider.notifier) as _SignedIn).switchTo('user-b');
     await tester.pumpAndSettle();
     expect(find.textContaining('Your account changed'),findsOneWidget);
-    expect(find.byKey(const ValueKey('human-safety-save')),findsNothing);
     expect(find.byKey(const ValueKey('human-safety-report')),findsNothing);
   });
 }
