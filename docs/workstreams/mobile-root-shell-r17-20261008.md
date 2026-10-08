@@ -1,5 +1,8 @@
 # R17 — Approved mobile root shell (checkpoint 2026-10-08)
 
+> **HISTORICAL SNAPSHOT — NOT CURRENT NAVIGATION INSTRUCTION (2026-10-08):** The owner-approved end state is exactly **Talks · Chats · Assistant · Wallet · Agents**, with **Assistant centered** and **one switchable Gwani/Gwana chat**. This record describes its original branch/commit and older assumptions; preserve its implementation evidence, but DO NOT copy prior four-tab shell, conditional Chats or old persona-routing instructions into new implementation. See `../APP-SHELL-CONTRACT.md`, `../END-TO-END-UX-ARCHITECTURE.md`, `../MOBILE-READINESS-PLAN.md`, and `../COMMUNICATIONS-EXTENSION-PLAN.md`. Code/release qualification is separate.
+
+
 ## Ownership
 - Owner: ChatGPT — R17 isolated implementation lane.
 - Branch: `work/r17-root-shell-20261008`, PR #411 (draft).
