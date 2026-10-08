@@ -62,3 +62,9 @@ Source/test repair commit 4c3698007e9238c9aa6fee0bd66a423a1affb4af: four affecte
 
 ## Flaky test discovered after registry repair
 Latest broader run: 1207 passed,2 failed,143 skipped; environment gate passed, API lifecycle still fails. Second failure is random fixture nondeterminism: talk_ai_seat_routes.test.ts repository mock chooses admitted vs pending_host from a random quote ID suffix. Claim this test file only; production AI Seat service, ledger and #433 source remain untouched. Replace probabilistic fixture with explicit confirmation-status input and exercise both branches. Flutter dependency downloads continue; no executable mobile proof yet.
+
+
+## Mobile recovery claim and latest backend results
+Backend integration source fd53a7e179b5c75ff21d3c1a979f8d2c0ff2b698: 233 test files passed, 1 failed, 20 skipped; 1209 tests passed, 1 failed, 143 skipped. Sole executed failure is public API lifecycle compatibility registration (73 routes). C01 focused Flutter now 21 passed at f4551467d46e4fc708e4f3bbafbebc17aaf68a36; its handoff/PR updated. Global analyzer reports 484 baseline+C01 issues, including broken main gift source.
+
+Claim narrow mobile integration on this branch: apps/mobile/lib/src/talks/talk_gift.dart, talk_gift_http_transport.dart, talk_gift_pending_store.dart and their three corresponding apps/mobile/test files. Recover exact R10 #471 head b6186eae666389797f810af2534eef5b751c2a5e (stale last activity 10:57 UTC); preserve richer existing account-switch/forged-state tests. Also reuse only the independent locale-controller annotation repair from #460 after inspecting exact path. No R10 feature authority, root navigation, production money enablement or DONE claim. Execute focused tests and global analyzer before publishing source.
