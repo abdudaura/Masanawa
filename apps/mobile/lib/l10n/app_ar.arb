@@ -18,5 +18,6 @@
   "raiseHand": "ارفع يدك",
   "speakerSeats": "{count, plural, =0{لا توجد مقاعد للمتحدثين} =1{مقعد واحد للمتحدث} =2{مقعدان للمتحدثين} few{{count} مقاعد للمتحدثين} many{{count} مقعدًا للمتحدثين} other{{count} مقعد للمتحدثين}}",
   "walletAmount": "{amount} {currency}",
-  "appTitle": "Masanawa"
+  "appTitle": "Masanawa",
+  "splashTagline": "محادثات مباشرة تجمع الناس والذكاء الاصطناعي"
 }
