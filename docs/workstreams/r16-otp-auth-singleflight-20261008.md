@@ -1,0 +1,6 @@
+# R16 — OTP authentication single-flight and stale result recovery claim
+Owner: GPT-6 R16 mobile auth-state race recovery. Claimed 2026-10-08 Africa/Lagos; lease heartbeat = most recent branch commit.
+Base main 1d6a67ea3c182455b55a7d1d07eacdb4311682e3; branch work/r16-otp-auth-singleflight-20261008-gpt6.
+Exclusive owned paths: apps/mobile/lib/src/state/session_state.dart, apps/mobile/lib/src/screens/onboarding/otp_screen.dart, apps/mobile/test/session_state_test.dart, docs/workstreams/r16-otp-auth-singleflight-20261008.md. No server, DB migration, shared root router, finance, Firebase or token provider changes.
+Available source gap: duplicate OTP verify from six-digit auto-submit and tap, and stale verification responses after another auth operation/logout. Existing /auth/verify API and native secure session persistence remain authoritative. Implement API single flight, epoch-based stale guard, serialized session-write/logout ordering, authentic error/name-required/retry flow and deterministic regression tests. Requirements R16/P08/J10/J11; keep #457 verification blocker and all gates unverified.
+Checked PRs #497/#461/#493/#495/#498/#480/#474/#476/#482/#455/#492/#438/#444: none changed these paths in listed diffs. Recheck before merge.
