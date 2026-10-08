@@ -41,6 +41,7 @@ class MemorySessions implements PlatformSessionRepository {
     consumed: boolean;
   } | null = null;
   profile: PlatformAuthProfile | null = null;
+  rejectNewSessions = false;
   sessions = new Map<string, {
     identity: PlatformSessionIdentity;
     refreshHash: string;
@@ -81,6 +82,7 @@ class MemorySessions implements PlatformSessionRepository {
     return this.profile;
   }
   async issueSession(input: Parameters<PlatformSessionRepository["issueSession"]>[0]) {
+    if (this.rejectNewSessions) throw new Error("auth.account_inactive");
     this.sessions.set(input.accessHash, {
       identity: input.identity,
       refreshHash: input.refreshHash,
@@ -416,6 +418,28 @@ describe("customer authentication", () => {
       .rejects.toMatchObject({ code: "AUTH_UNAVAILABLE", statusCode: 503, message: "AUTH_UNAVAILABLE" });
     await expect(sessions.authorize({ authorizationHeader: undefined }))
       .rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
+  });
+
+  it("returns a forbidden inactive-account state instead of issuing unusable session tokens", async () => {
+    const repository = new MemorySessions();
+    repository.rejectNewSessions = true;
+    let code = "";
+    const service = createCustomerAuthService({
+      repository,
+      tenantId: createCanonicalId("tenant"),
+      otpPepper: "p".repeat(48),
+      emailDelivery: { async send(input) { code = input.code; } },
+    });
+    await service.sendOtp({ email: "inactive@example.com" });
+    await expect(service.verifyOtp({
+      email: "inactive@example.com",
+      code,
+      name: "Inactive Customer",
+    })).rejects.toMatchObject({
+      code: "ACCOUNT_INACTIVE",
+      statusCode: 403,
+    });
+    expect(repository.sessions.size).toBe(0);
   });
 
   it("advertises only OTP channels that are actually configured", () => {
