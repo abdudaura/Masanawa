@@ -33,6 +33,10 @@ export interface CustomerChannelOptions {
   readonly telegram?: TelegramChannelConfig;
 }
 
+// Webhook envelopes contain metadata only. Media bytes are downloaded through
+// their authenticated provider endpoints, not embedded in the webhook POST.
+const WEBHOOK_BODY_LIMIT = 1_048_576;
+
 function exactHeader(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
@@ -278,14 +282,27 @@ export function registerCustomerChannelRoutes(
     app.post(
       "/channels/whatsapp/webhook",
       {
+        bodyLimit: WEBHOOK_BODY_LIMIT,
         preParsing: async (request, _reply, payload) => {
           const pass = new PassThrough();
           const chunks: Buffer[] = [];
+          let length = 0;
+          let oversized = false;
           payload.on("data", (chunk: Buffer | string) => {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            if (oversized) return;
+            const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            length += bytes.length;
+            if (length > WEBHOOK_BODY_LIMIT) {
+              // Do not keep buffering an attacker-controlled HTTP stream;
+              // Fastify's route bodyLimit rejects the request with HTTP 413.
+              oversized = true;
+              chunks.length = 0;
+              return;
+            }
+            chunks.push(bytes);
           });
           payload.on("end", () => {
-            rawBodies.set(request, Buffer.concat(chunks));
+            if (!oversized) rawBodies.set(request, Buffer.concat(chunks, length));
           });
           payload.pipe(pass);
           return pass;
@@ -375,20 +392,29 @@ export function registerCustomerChannelRoutes(
       ) {
         return { received: true };
       }
-      const chatType = (chat as Record<string, unknown>).type;
-      if (typeof chatType === "string" && chatType !== "private") {
+      const fromRawId = (from as Record<string, unknown>).id;
+      const chatRawId = (chat as Record<string, unknown>).id;
+      const messageRawId = message.message_id;
+      // Telegram private chats have the same numeric chat and sender IDs.
+      // Reject missing/forged chat kinds and structurally invalid IDs before
+      // identity linking, media fetch or private assistant execution.
+      if (
+        (chat as Record<string, unknown>).type !== "private" ||
+        !Number.isSafeInteger(fromRawId) || (fromRawId as number) <= 0 ||
+        !Number.isSafeInteger(chatRawId) || chatRawId !== fromRawId ||
+        !Number.isSafeInteger(messageRawId) || (messageRawId as number) <= 0
+      ) {
         return { received: true };
       }
-      const fromId = String((from as Record<string, unknown>).id ?? "");
-      const chatId = String((chat as Record<string, unknown>).id ?? "");
-      const messageId = String(message.message_id ?? "");
-      if (!fromId || !chatId || !messageId) return { received: true };
+      const fromId = String(fromRawId);
+      const chatId = String(chatRawId);
+      const messageId = String(messageRawId);
 
       let phone: string | undefined;
       const contact = message.contact;
       if (contact && typeof contact === "object" && !Array.isArray(contact)) {
         const row = contact as Record<string, unknown>;
-        if (String(row.user_id ?? "") === fromId && typeof row.phone_number === "string") {
+        if (row.user_id === fromRawId && typeof row.phone_number === "string") {
           phone = row.phone_number;
         }
       }
