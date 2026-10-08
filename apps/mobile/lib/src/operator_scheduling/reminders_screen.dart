@@ -94,6 +94,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
         _error = 'Could not confirm this reminder. Retry without changing '
             'details, or refresh the list before trying again.';
       });
+      rethrow; // The editor must show the error while remaining open.
     } finally {
       if (mounted && _generation == generation) setState(() => _working = false);
     }
@@ -215,6 +216,7 @@ class _ReminderEditorState extends State<ReminderEditor> {
   int _weekday = 1;
   bool _consent = false;
   bool _sending = false;
+  String? _formError;
   final _zones = const ['Africa/Lagos','Etc/UTC','Europe/London',
     'Europe/Berlin','America/New_York'];
 
@@ -268,10 +270,15 @@ class _ReminderEditorState extends State<ReminderEditor> {
           value:_consent,
           onChanged:_sending?null:(v)=>setState(()=>_consent=v??false),
         ),
+        if (_formError != null) Padding(
+          padding: const EdgeInsets.symmetric(vertical:8),
+          child: Text(_formError!,
+            style:TextStyle(color:Theme.of(context).colorScheme.error)),
+        ),
         const SizedBox(height:12),
         FilledButton(
           onPressed:!_consent||_sending||widget.busy()?null:() async {
-            setState(()=>_sending=true);
+            setState(() { _sending=true; _formError=null; });
             try {
               await widget.onSubmit({
                 'kind':widget.target.kind.wireName,
@@ -282,6 +289,12 @@ class _ReminderEditorState extends State<ReminderEditor> {
                 if(_frequency=='weekly') 'dayOfWeek':_weekday,
                 'quietStart':'22:00','quietEnd':'07:00','optedIn':true,
               });
+            } catch (_) {
+              if (mounted) {
+                setState(() => _formError =
+                    'Could not confirm this reminder. Retry the same details '
+                    'or close and refresh your list.');
+              }
             } finally {
               if (mounted) setState(()=>_sending=false);
             }
