@@ -1,5 +1,6 @@
 param(
   [string]$ApiBaseUrl = "https://masanawa-gateway-production.up.railway.app",
+  [string]$FirebaseDefinesFile,
   [switch]$Install,
   [switch]$AllowDifferentBranch
 )
@@ -23,7 +24,25 @@ function Invoke-Checked {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $mobileDir = Join-Path $repoRoot "apps\mobile"
 $expectedBranch = "main"
-$packageName = "ng.unigeria.unigeria"
+$packageName = "com.masanawa.app"
+
+$firebaseBuildArguments = @()
+if (-not [string]::IsNullOrWhiteSpace($FirebaseDefinesFile)) {
+  $firebasePath = (Resolve-Path -LiteralPath $FirebaseDefinesFile).Path
+  $firebaseValues = Get-Content -LiteralPath $firebasePath -Raw | ConvertFrom-Json
+  foreach ($requiredKey in @("FIREBASE_API_KEY", "FIREBASE_APP_ID", "FIREBASE_MESSAGING_SENDER_ID", "FIREBASE_PROJECT_ID")) {
+    $property = $firebaseValues.PSObject.Properties[$requiredKey]
+    if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+      throw "Firebase defines file is missing $requiredKey. See docs/FIREBASE-LOCAL-COMPILATION-HANDOFF.md."
+    }
+  }
+  if ($firebaseValues.FIREBASE_PROJECT_ID -ne "masanawa-mobile") {
+    throw "Firebase project must match the checked-in masanawa-mobile configuration."
+  }
+  $firebaseBuildArguments = @("--dart-define-from-file=$firebasePath")
+} else {
+  Write-Warning "Firebase push will remain disabled in this build. Supply -FirebaseDefinesFile for push qualification."
+}
 
 Push-Location $repoRoot
 try {
@@ -56,7 +75,7 @@ try {
     Invoke-Checked flutter pub get
     Invoke-Checked flutter analyze
     Invoke-Checked flutter test
-    Invoke-Checked flutter build apk --release "--dart-define=API_BASE_URL=$ApiBaseUrl" "--dart-define=AGENT_BASE_URL=$ApiBaseUrl"
+    Invoke-Checked flutter build apk --release @firebaseBuildArguments "--dart-define=API_BASE_URL=$ApiBaseUrl" "--dart-define=AGENT_BASE_URL=$ApiBaseUrl"
 
     $apk = Join-Path $mobileDir "build\app\outputs\flutter-apk\app-release.apk"
     if (-not (Test-Path $apk)) {
@@ -117,3 +136,4 @@ try {
 finally {
   Pop-Location
 }
+

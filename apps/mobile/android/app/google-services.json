@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "621210420002",
+    "project_id": "masanawa-mobile",
+    "storage_bucket": "masanawa-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:621210420002:android:7c70df8df7d16b4add1b7b",
+        "android_client_info": {
+          "package_name": "com.masanawa.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlCfN0qozV9Ojshld-OA_9aFwSVtxSXvQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+
