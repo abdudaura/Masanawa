@@ -1,4 +1,6 @@
 import { normalizeProfileAvatar } from "./normalizer.js";
+
+const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 import type { AvatarObjectStore } from "./s3_store.js";
 import type { PlatformSessionIdentity } from "@masanawa/security";
 
@@ -50,6 +52,10 @@ export function createProfileAvatarService(input: Readonly<{
       expectedUrl: string | null;
     }>): Promise<{ avatarUrl: string }> {
       const who = await owner(request.authorizationHeader);
+      if (!Buffer.isBuffer(request.png) || request.png.length < 8 ||
+          !request.png.subarray(0, 8).equals(pngSignature)) {
+        throw new AvatarMutationError('profiles.avatar.png_required', 415);
+      }
       const normalized = await normalizeProfileAvatar(request.png);
       const profile = await input.repository.current(who);
       if (!profile.exists) throw new AvatarMutationError("profiles.not_found", 404);
