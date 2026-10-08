@@ -24,6 +24,13 @@ export interface OperatorAgentSnapshot {
   readonly readAt: string;
 }
 
+export class OperatorPermissionDenied extends Error {
+  constructor() {
+    super("Operator capability denied");
+    this.name = "OperatorPermissionDenied";
+  }
+}
+
 export class OperatorRevisionConflict extends Error {
   constructor() {
     super("Agent assignment changed. Reload before trying again.");
@@ -73,13 +80,17 @@ export function createOperatorAgentControl(input: {
   readonly now?: () => string;
 }): OperatorAgentControl {
   const now = input.now ?? (() => new Date().toISOString());
+  async function requirePermission(header: string | undefined, capability: "agents.presentation.read" | "agents.skills.write") {
+    try {
+      return await input.authorizer.authorize({ authorizationHeader: header, capability });
+    } catch {
+      throw new OperatorPermissionDenied();
+    }
+  }
 
   return Object.freeze({
     async snapshot(request: { authorizationHeader: string | undefined }): Promise<OperatorAgentSnapshot> {
-      await input.authorizer.authorize({
-        authorizationHeader: request.authorizationHeader,
-        capability: "agents.presentation.read",
-      });
+      await requirePermission(request.authorizationHeader, "agents.presentation.read");
       // Authorization precedes all reads, preventing partial tenant metadata
       // leakage when an operator's grant has been revoked.
       const [presentations, skills] = await Promise.all([
@@ -123,10 +134,7 @@ export function createOperatorAgentControl(input: {
       }
       // Explicit privileged capability check even when the injected admin
       // implementation is substituted; the normal service authorizes again.
-      await input.authorizer.authorize({
-        authorizationHeader: request.authorizationHeader,
-        capability: "agents.skills.write",
-      });
+      await requirePermission(request.authorizationHeader, "agents.skills.write");
       const current = await input.admin.readSkillAssignment({
         authorizationHeader: request.authorizationHeader,
         characterId: request.characterId as Parameters<AgentAdminService["readSkillAssignment"]>[0]["characterId"],
