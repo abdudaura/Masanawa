@@ -58,5 +58,11 @@
   "authRateLimited": "Trop de demandes. Réessayez plus tard.",
   "authSendFailed": "Impossible d’envoyer le code. Vérifiez votre connexion et réessayez.",
   "authVerifyFailed": "Impossible de vérifier le code. Réessayez.",
-  "authProfileFailed": "Impossible de terminer votre profil. Vérifiez vos informations et réessayez."
+  "authProfileFailed": "Impossible de terminer votre profil. Vérifiez vos informations et réessayez.",
+  "languageAction": "Langue de l’application",
+  "languageDialogTitle": "Choisir la langue de l’application",
+  "languageSystem": "Utiliser la langue de l’appareil",
+  "languageSaveFailed": "Impossible d’enregistrer la langue. Réessayez.",
+  "languagePreviewNotice": "Certaines pages ne sont pas encore entièrement traduites.",
+  "languageHausaUnavailable": "La traduction de l’interface en haoussa est en cours."
 }
