@@ -509,5 +509,135 @@
   "billingStatusUnknown": "Status unavailable",
   "@billingStatusUnknown": {
     "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingTitle": "Bills & payments",
+  "@billingTitle": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingNew": "New bill",
+  "@billingNew": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingPayTitle": "Pay a bill",
+  "@billingPayTitle": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingInstructions": "Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.",
+  "@billingInstructions": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingCategory": "Category",
+  "@billingCategory": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingProvider": "Provider",
+  "@billingProvider": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingService": "Service",
+  "@billingService": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingPhone": "Phone number",
+  "@billingPhone": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingRecipient": "Customer / meter / smartcard number",
+  "@billingRecipient": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingAmount": "Amount (NGN)",
+  "@billingAmount": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingVariableHelp": "Enter the provider-supported amount.",
+  "@billingVariableHelp": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingFixedHelp": "Fixed by the provider.",
+  "@billingFixedHelp": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingReview": "Review quote",
+  "@billingReview": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingConfirmWallet": "Confirm {amount} from wallet",
+  "@billingConfirmWallet": {
+    "description": "Display authorized exact NGN amount verbatim; do not calculate or convert.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billingAddFunds": "Add {amount}",
+  "@billingAddFunds": {
+    "description": "Display authorized exact NGN amount verbatim; do not calculate or convert.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billingTransferInstructions": "Transfer the exact amount below. Masanawa will continue this bill automatically after the transfer is verified.",
+  "@billingTransferInstructions": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingExpires": "Expires:",
+  "@billingExpires": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingRefresh": "Refresh status",
+  "@billingRefresh": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingAnother": "Pay another bill",
+  "@billingAnother": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingUnavailable": "Billing is unavailable right now.",
+  "@billingUnavailable": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingProvidersUnavailable": "Could not load providers.",
+  "@billingProvidersUnavailable": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingServicesUnavailable": "Could not load services.",
+  "@billingServicesUnavailable": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingSelectionRequired": "Choose a category, provider and service.",
+  "@billingSelectionRequired": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingInvalidDetails": "Enter valid recipient details and amount.",
+  "@billingInvalidDetails": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingQuoteFailed": "Could not create this quote.",
+  "@billingQuoteFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingPurchaseFailed": "Could not complete this purchase from your wallet.",
+  "@billingPurchaseFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingRefreshFailed": "Could not refresh status.",
+  "@billingRefreshFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingDetailsFailed": "Could not load bill details.",
+  "@billingDetailsFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingSignInAgain": "Your session has expired. Sign in again.",
+  "@billingSignInAgain": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingExpiredTryAgain": "This quote has expired. Request a new quote.",
+  "@billingExpiredTryAgain": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
   }
 }

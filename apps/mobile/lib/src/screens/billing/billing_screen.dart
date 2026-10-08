@@ -69,6 +69,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   String? error;
 
   ApiClient get api => ref.read(apiClientProvider);
+  AppLocalizations get l => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -83,10 +84,16 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     super.dispose();
   }
 
-  String safeError(Object value, String fallback) =>
-      value is ApiException && value.message.trim().isNotEmpty
-          ? value.message
-          : fallback;
+  // Do not surface untrusted provider text or internal exception details.
+  // Only recognized stable financial errors have localized recovery copy.
+  String safeError(Object value, String fallback) {
+    if (value is ApiException) {
+      if (value.message == 'financial.auth.unauthorized' ||
+          value.message == 'UNAUTHORIZED') return l.billingSignInAgain;
+      if (value.message.contains('quote_expired')) return l.billingExpiredTryAgain;
+    }
+    return fallback;
+  }
 
   Future<void> load() async {
     if (mounted) setState(() { loading = true; error = null; });
@@ -108,7 +115,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (!mounted) return;
       setState(() {
         loading = false;
-        error = safeError(value, 'Billing is unavailable right now.');
+        error = safeError(value, l.billingUnavailable);
       });
     }
   }
@@ -130,7 +137,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final next = await api.billingBillers(value.code);
       if (mounted) setState(() => billers = next);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not load providers.'));
+      if (mounted) setState(() => error = safeError(value, l.billingProvidersUnavailable));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -151,7 +158,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final next = await api.billingItems(value.billerCode);
       if (mounted) setState(() => items = next);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not load services.'));
+      if (mounted) setState(() => error = safeError(value, l.billingServicesUnavailable));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -174,11 +181,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final recipient = customer.text.trim();
     final rawAmount = amount.text.trim();
     if (selectedCategory == null || selectedBiller == null || selectedItem == null) {
-      setState(() => error = 'Choose a category, provider and service.');
+      setState(() => error = l.billingSelectionRequired);
       return;
     }
     if (recipient.isEmpty || (num.tryParse(rawAmount) ?? 0) <= 0) {
-      setState(() => error = 'Enter valid recipient details and amount.');
+      setState(() => error = l.billingInvalidDetails);
       return;
     }
     setState(() { busy = true; error = null; });
@@ -192,7 +199,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       );
       if (mounted) setState(() => current = view);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not create this quote.'));
+      if (mounted) setState(() => error = safeError(value, l.billingQuoteFailed));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -215,7 +222,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (mounted) {
         setState(() => error = safeError(
           value,
-          'Could not complete this purchase from your wallet.',
+          l.billingPurchaseFailed,
         ));
       }
     } finally {
@@ -231,7 +238,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (mounted) setState(() => current = next);
       await reloadHistory();
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not refresh status.'));
+      if (mounted) setState(() => error = safeError(value, l.billingRefreshFailed));
     } finally {
       if (!silent && mounted) setState(() => busy = false);
     }
@@ -250,7 +257,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       final detail = await api.billingQuote(entry.quote.quoteId);
       if (mounted) setState(() => current = detail);
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not load bill details.'));
+      if (mounted) setState(() => error = safeError(value, l.billingDetailsFailed));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -276,11 +283,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final strings = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bills & payments'),
+        title: Text(strings.billingTitle),
         actions: [
           if (current != null)
             IconButton(
-              tooltip: 'New bill',
+              tooltip: strings.billingNew,
               onPressed: busy ? null : newBill,
               icon: const Icon(Icons.add),
             ),
@@ -350,13 +357,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Pay a bill', style: Theme.of(context).textTheme.headlineSmall),
+        Text(l.billingPayTitle, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 6),
-        const Text('Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.'),
+        Text(l.billingInstructions),
         const SizedBox(height: 18),
         DropdownButtonFormField<BillCategory>(
           value: category,
-          decoration: const InputDecoration(labelText: 'Category'),
+          decoration: InputDecoration(labelText: l.billingCategory),
           items: categories.map((value) => DropdownMenuItem(
             value: value,
             child: Text(value.name),
@@ -366,7 +373,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         const SizedBox(height: 12),
         DropdownButtonFormField<BillBiller>(
           value: biller,
-          decoration: const InputDecoration(labelText: 'Provider'),
+          decoration: InputDecoration(labelText: l.billingProvider),
           items: billers.map((value) => DropdownMenuItem(
             value: value,
             child: Text(value.name),
@@ -377,7 +384,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         DropdownButtonFormField<BillItem>(
           value: item,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Service'),
+          decoration: InputDecoration(labelText: l.billingService),
           items: items.map((value) => DropdownMenuItem(
             value: value,
             child: Text(
@@ -397,8 +404,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               labelText: selectedItem.labelName?.trim().isNotEmpty == true
                   ? selectedItem.labelName
                   : (category?.code == 'AIRTIME' || category?.code == 'MOBILEDATA')
-                      ? 'Phone number'
-                      : 'Customer / meter / smartcard number',
+                      ? l.billingPhone
+                      : l.billingRecipient,
             ),
           ),
           const SizedBox(height: 12),
@@ -407,17 +414,17 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             readOnly: !selectedItem.variableAmount,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText: 'Amount (NGN)',
+              labelText: l.billingAmount,
               helperText: selectedItem.variableAmount
-                  ? 'Enter the provider-supported amount.'
-                  : 'Fixed by the provider.',
+                  ? l.billingVariableHelp
+                  : l.billingFixedHelp,
             ),
           ),
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: busy ? null : createQuote,
             icon: const Icon(Icons.receipt_long_outlined),
-            label: const Text('Review quote'),
+            label: Text(l.billingReview),
           ),
         ],
       ],
@@ -437,7 +444,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           FilledButton.icon(
             onPressed: busy ? null : confirmFromWallet,
             icon: const Icon(Icons.account_balance_wallet_outlined),
-            label: Text('Confirm ₦' + quote.totalAmount + ' from wallet'),
+            label: Text(l.billingConfirmWallet('₦' + quote.totalAmount)),
           ),
         ],
         if (funding != null) ...[
@@ -448,15 +455,15 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Add ₦' + funding.amount, style: Theme.of(context).textTheme.titleMedium),
+                  Text(l.billingAddFunds('₦' + funding.amount), style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 6),
-                  const Text('Transfer the exact amount below. Masanawa will continue this bill automatically after the transfer is verified.'),
+                  Text(l.billingTransferInstructions),
                   const SizedBox(height: 12),
                   SelectableText(funding.bankName, style: const TextStyle(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   SelectableText(funding.accountNumber, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 6),
-                  Text('Expires: ' + funding.expiresAt),
+                  Text(l.billingExpires + ' ' + funding.expiresAt),
                 ],
               ),
             ),
@@ -471,7 +478,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           OutlinedButton.icon(
             onPressed: busy ? null : refreshCurrent,
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh status'),
+            label: Text(l.billingRefresh),
           ),
         ],
         if (view.isTerminal || walletPhase == 'fulfilled' || walletPhase == 'failed') ...[
@@ -479,7 +486,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           OutlinedButton.icon(
             onPressed: busy ? null : newBill,
             icon: const Icon(Icons.add),
-            label: const Text('Pay another bill'),
+            label: Text(l.billingAnother),
           ),
         ],
       ],
