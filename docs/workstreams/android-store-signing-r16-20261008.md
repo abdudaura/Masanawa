@@ -35,3 +35,10 @@
 - The verifier was corrected to avoid `jarsigner -strict` treating standard self-signed release certificate warnings as failures; it still checks positive `jar verified` output plus SHA-256 pin.
 - Current head includes commits `14fd643f`, `4bd20386`, `567c30ce` and `c5919901`.
 - **CI result unverified:** no runner completion claimed. Flutter/Gradle APK/AAB build and certificate inspection on a real release output remain open; no merge or deployment performed.
+
+## GitHub Actions evidence — run 37710672662
+
+- At head `e4a1ce304b2c948191b7afecf061d33d73b1a5a3`, `Android release signing verifier` run `37710672662` reported `completed/failure`.
+- Job `113095607911` reported `completed/failure` but the GitHub steps endpoint returned an **empty steps array**, and job-log retrieval returned `BlobNotFound` (404). No shell-test assertion failure is evidenced.
+- `Foundation CI` run `37710672680` and `Mobile Build` run `37710672684` also reported failure on that head; investigate runner allocation before interpreting as code failures.
+- Status: **CI failed / root cause unconfirmed**. Do not merge as verified. Rerun or inspect actual job logs and compile a signed artifact before release.
