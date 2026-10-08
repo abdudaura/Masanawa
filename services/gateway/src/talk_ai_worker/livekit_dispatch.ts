@@ -12,6 +12,19 @@ export interface TalkAiRuntimeDispatcher {
   dispatch(input: TalkAiRuntimeDispatch): Promise<void>;
 }
 
+interface DispatchMetadata extends TalkAiRuntimeDispatch {
+  readonly schemaVersion: 1;
+}
+
+interface RemoteDispatch {
+  readonly id?: unknown;
+  readonly agent_name?: unknown;
+  readonly agentName?: unknown;
+  readonly room?: unknown;
+  readonly metadata?: unknown;
+  readonly state?: unknown;
+}
+
 function base64url(value: string): string {
   return Buffer.from(value, "utf8").toString("base64url");
 }
@@ -38,21 +51,101 @@ function roomAdminToken(input: {
   return `${signing}.${signature}`;
 }
 
-function sameSeat(metadata: unknown, seatId: string): boolean {
-  if (typeof metadata !== "string" || !metadata) return false;
+function normalizedId(value: string, name: string): string {
+  if (typeof value !== "string") throw new TypeError(`talks.ai_dispatch_${name}_invalid`);
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 160 || /\s/u.test(trimmed)) {
+    throw new TypeError(`talks.ai_dispatch_${name}_invalid`);
+  }
+  return trimmed;
+}
+
+function identity(input: TalkAiRuntimeDispatch): DispatchMetadata {
+  if (input.kind !== "expert" && input.kind !== "twin") {
+    throw new TypeError("talks.ai_dispatch_kind_invalid");
+  }
+  return Object.freeze({
+    schemaVersion: 1 as const,
+    tenantId: normalizedId(input.tenantId, "tenant"),
+    talkId: normalizedId(input.talkId, "talk"),
+    seatId: normalizedId(input.seatId, "seat"),
+    personaId: normalizedId(input.personaId, "persona"),
+    kind: input.kind,
+  });
+}
+
+function storedMetadata(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "string" || !value || value.length > 8192) return null;
   try {
-    const parsed = JSON.parse(metadata) as unknown;
-    return Boolean(
-      parsed &&
-      typeof parsed === "object" &&
-      "seatId" in parsed &&
-      (parsed as { readonly seatId?: unknown }).seatId === seatId,
-    );
+    const parsed: unknown = JSON.parse(value);
+    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
+function matches(meta: Record<string, unknown>, expected: DispatchMetadata): boolean {
+  return meta.schemaVersion === expected.schemaVersion &&
+    meta.tenantId === expected.tenantId &&
+    meta.talkId === expected.talkId &&
+    meta.seatId === expected.seatId &&
+    meta.personaId === expected.personaId &&
+    meta.kind === expected.kind;
+}
+
+function deleted(remote: RemoteDispatch): boolean {
+  if (!remote.state || typeof remote.state !== "object") return false;
+  const state = remote.state as Record<string, unknown>;
+  const time = state.deleted_at ?? state.deletedAt;
+  return typeof time === "number" ? time > 0 : typeof time === "string" && Number(time) > 0;
+}
+
+function remoteAgent(remote: RemoteDispatch): unknown {
+  return remote.agent_name ?? remote.agentName;
+}
+
+function validateDispatchList(value: unknown): readonly RemoteDispatch[] {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("talks.ai_dispatch_list_invalid");
+  }
+  const payload = value as Record<string, unknown>;
+  const list = payload.agent_dispatches ?? payload.agentDispatches;
+  if (!Array.isArray(list) || list.length > 128 ||
+      list.some((row) => row === null || typeof row !== "object" || Array.isArray(row))) {
+    throw new Error("talks.ai_dispatch_list_invalid");
+  }
+  return list as readonly RemoteDispatch[];
+}
+
+function currentSeatDispatch(
+  list: readonly RemoteDispatch[],
+  expected: DispatchMetadata,
+  agentName: string,
+): boolean {
+  let found = false;
+  for (const remote of list) {
+    if (deleted(remote)) continue;
+    const meta = storedMetadata(remote.metadata);
+    if (meta?.seatId !== expected.seatId) continue;
+    // Matching the Seat ID alone is unsafe. An old persona, another tenant,
+    // different Talk or worker would speak under the wrong AI identity.
+    if (!matches(meta, expected) || remoteAgent(remote) !== agentName ||
+        (remote.room !== undefined && remote.room !== expected.talkId) || found) {
+      throw new Error("talks.ai_dispatch_identity_conflict");
+    }
+    found = true;
+  }
+  return found;
+}
+
+/**
+ * Uses LiveKit AgentDispatchService's exact room+agent+metadata contract.
+ * A process-level Seat lock coalesces concurrent identical requests and
+ * refuses simultaneous reassignment. Cross-process serialization remains the
+ * canonical admitted Seat transaction's responsibility.
+ */
 export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
   serverUrl: string;
   apiKey: string;
@@ -72,11 +165,12 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
   if (!apiKey || apiSecret.length < 16) {
     throw new TypeError("LiveKit dispatch credentials are invalid");
   }
-  if (!agentName || agentName.length > 128) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(agentName)) {
     throw new TypeError("LiveKit agent name is invalid");
   }
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? (() => new Date());
+  const pendingSeats = new Map<string, { metadata: DispatchMetadata; promise: Promise<void> }>();
 
   async function call(
     method: "ListDispatch" | "CreateDispatch",
@@ -105,47 +199,47 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
     return response.json();
   }
 
+  async function dispatchOnce(request: DispatchMetadata): Promise<void> {
+    const list = validateDispatchList(
+      await call("ListDispatch", request.talkId, { room: request.talkId }),
+    );
+    if (currentSeatDispatch(list, request, agentName)) return;
+    const created = await call("CreateDispatch", request.talkId, {
+      room: request.talkId,
+      agent_name: agentName,
+      metadata: JSON.stringify(request),
+    });
+    if (created === null || typeof created !== "object" || Array.isArray(created)) {
+      throw new Error("talks.ai_dispatch_create_invalid");
+    }
+    const remote = created as RemoteDispatch;
+    if (typeof remote.id !== "string" || !remote.id ||
+        (remote.metadata !== undefined &&
+          !matches(storedMetadata(remote.metadata) ?? {}, request)) ||
+        (remoteAgent(remote) !== undefined && remoteAgent(remote) !== agentName) ||
+        (remote.room !== undefined && remote.room !== request.talkId)) {
+      throw new Error("talks.ai_dispatch_create_invalid");
+    }
+  }
+
   return Object.freeze<TalkAiRuntimeDispatcher>({
-    async dispatch(request) {
-      const metadata = JSON.stringify({
-        schemaVersion: 1,
-        tenantId: request.tenantId,
-        talkId: request.talkId,
-        seatId: request.seatId,
-        personaId: request.personaId,
-        kind: request.kind,
-      });
-      const listed = await call("ListDispatch", request.talkId, {
-        room: request.talkId,
-      }) as {
-        readonly agent_dispatches?: readonly {
-          readonly agent_name?: unknown;
-          readonly metadata?: unknown;
-        }[];
-        readonly agentDispatches?: readonly {
-          readonly agentName?: unknown;
-          readonly metadata?: unknown;
-        }[];
-      };
-      const dispatches = listed.agent_dispatches ?? listed.agentDispatches ?? [];
-      if (
-        dispatches.some((item) => {
-          const name =
-            "agent_name" in item
-              ? item.agent_name
-              : "agentName" in item
-                ? item.agentName
-                : undefined;
-          return name === agentName && sameSeat(item.metadata, request.seatId);
-        })
-      ) {
-        return;
+    async dispatch(raw) {
+      const request = identity(raw);
+      const key = JSON.stringify([request.tenantId, request.talkId, request.seatId]);
+      const existing = pendingSeats.get(key);
+      if (existing) {
+        if (!matches(existing.metadata, request)) {
+          throw new Error("talks.ai_dispatch_identity_conflict");
+        }
+        return existing.promise;
       }
-      await call("CreateDispatch", request.talkId, {
-        room: request.talkId,
-        agent_name: agentName,
-        metadata,
-      });
+      const promise = dispatchOnce(request);
+      pendingSeats.set(key, { metadata: request, promise });
+      try {
+        await promise;
+      } finally {
+        if (pendingSeats.get(key)?.promise === promise) pendingSeats.delete(key);
+      }
     },
   });
 }
