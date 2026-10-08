@@ -6,6 +6,7 @@ import '../finance/crypto_wallet_screen.dart';
 import '../screens/activity/activity_screen.dart';
 import '../screens/billing/billing_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
+import '../messages/human_dm_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
@@ -24,13 +25,11 @@ import '../screens/twin/shell_tab.dart';
 import '../screens/you/my_talks_screen.dart';
 import '../screens/you/you_screen.dart';
 import '../screens/you/saved_talks_screen.dart';
-import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
 import '../talks/talk_models.dart';
 
-/// The approved four root destinations. These are navigation indices only,
-/// not a pricing, identity or task-authority contract.
+/// Canonical five-tab root identity. Legacy routes preserve old meanings.
 int shellRootTabIndex(String? tab) =>
     MasanawaRootTab.fromQuery(tab).index;
 
@@ -44,8 +43,7 @@ String? legacyShellDestination(String? tab) => switch (tab) {
 
 /// Production router for the human-hosted Talk product.
 ///
-/// Root shell: Home · Agents · Wallet · Talk; legacy entry points stay valid.
-/// Home contains Explore / Live Talks.
+/// Public Talks, human Chats, private Assistant, Wallet and Agents.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -53,8 +51,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
 
       if (path == '/splash') return null;
-      if (path == '/chat' || path == '/chats') return '/home?tab=talk';
-      if (path == '/agents' || path == '/masana') return '/home?tab=agents';
+      if (path == '/chat' || path == '/chats') return '/assistant';
+      if (path == '/masana') return '/agents';
 
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
@@ -80,6 +78,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final protected = path == '/home' ||
+          path == '/talks' ||
+          path == '/messages' ||
+          path.startsWith('/messages/') ||
+          path == '/assistant' ||
           path == '/activity' ||
           path == '/you' ||
           path == '/search' ||
@@ -108,6 +110,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final oldDestination = legacyShellDestination(
           state.uri.queryParameters['tab']);
         if (oldDestination != null) return oldDestination;
+        return MasanawaRootTab.fromQuery(
+          state.uri.queryParameters['tab']).location;
       }
       return null;
     },
@@ -127,6 +131,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return TwinHomeShell(initialIndex: index);
         },
       ),
+      GoRoute(path: '/talks', builder: (_, __) =>
+          const TwinHomeShell(initialIndex: 0)),
+      GoRoute(path: '/messages', builder: (_, __) =>
+          const TwinHomeShell(initialIndex: 1)),
+      GoRoute(
+        path: '/messages/:conversationId',
+        builder: (_, state) => HumanDmThreadScreen(
+          conversationId: state.pathParameters['conversationId']!,
+          otherDisplayName: 'Private conversation',
+        ),
+      ),
+      GoRoute(path: '/assistant', builder: (_, __) =>
+          const TwinHomeShell(initialIndex: 2)),
       GoRoute(
         path: '/activity',
         builder: (context, _) => ActivityScreen(
@@ -224,14 +241,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/my-twin',
         builder: (_, _) => const MyTwinRouteScreen(),
       ),
-      GoRoute(
-        path: '/wallet',
-        builder: (context, _) => WalletScreen(
-          onBuyBills: () => context.push('/billing'),
-          onOpenCrypto: () => context.push('/crypto'),
-        ),
-      ),
-      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=talk'),
+      GoRoute(path: '/wallet', builder: (_, __) =>
+          const TwinHomeShell(initialIndex: 3)),
       GoRoute(
         path: '/chat/:id',
         builder: (context, state) {
@@ -269,8 +280,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
         ),
       ),
-      GoRoute(path: '/agents', redirect: (_, __) => '/home?tab=agents'),
-      GoRoute(path: '/masana', redirect: (_, __) => '/home?tab=agents'),
+      GoRoute(path: '/agents', builder: (_, __) =>
+          const TwinHomeShell(initialIndex: 4)),
+      GoRoute(path: '/masana', redirect: (_, __) => '/agents'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/billing',
