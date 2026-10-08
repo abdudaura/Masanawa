@@ -10,8 +10,8 @@ function harness() {
       if (handle !== "bob") return null;
       return { userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null, canMessage: false, status: "none" };
     },
-    async getOwnPolicy() { return "requests"; },
-    async setOwnPolicy({ policy }) { return policy; },
+    async getOwnPreferences() { return { policy: "requests", discoverableByHandle: true }; },
+    async setOwnPreferences({ policy, discoverableByHandle }) { return { policy: policy ?? "requests", discoverableByHandle: discoverableByHandle ?? true }; },
     async request({ handle }) { return handle === "bob" ? "pending" : "unavailable"; },
     async respond({ requesterId }) { return requesterId === "user_al"; },
     async list() { return []; },
@@ -57,14 +57,17 @@ describe("C01 contact HTTP surface", () => {
 
   it("accepts policy updates only with exact allowlisted body", async () => {
     const app = harness();
-    const opts = { method: "PUT" as const, url: "/messages/contacts/preferences", headers: { authorization: "Bearer valid" } };
+    const opts = { method: "PATCH" as const, url: "/messages/contacts/preferences", headers: { authorization: "Bearer valid" } };
     const ok = await app.inject({ ...opts, payload: { policy: "nobody" } });
     expect(ok.statusCode).toBe(200);
-    expect(ok.json()).toEqual({ policy: "nobody" });
+    expect(ok.json()).toEqual({ policy: "nobody", discoverableByHandle: true });
     for (const invalid of [{ policy: "all_users" }, { policy: "anyone", userId: "user_bo" }, {}]) {
       const denied = await app.inject({ ...opts, payload: invalid });
       expect(denied.statusCode).toBe(400);
     }
+    const hidden = await app.inject({ ...opts, payload: { discoverableByHandle: false } });
+    expect(hidden.statusCode).toBe(200);
+    expect(hidden.json()).toEqual({ policy: "requests", discoverableByHandle: false });
     await app.close();
   });
 
