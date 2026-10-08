@@ -13,7 +13,7 @@ describe("PostgreSQL avatar lifecycle and owner scoping", () => {
     const repo = createPostgresAvatarRepository(pool);
     const changed = await repo.attach({
       tenantId: "tenant-1", userId: "user-1",
-      key: "profile-avatars/old.png",
+      key: "profiles/tenant-1/user-1/sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp",
       url: "https://cdn.example/new.png",
       expectedUrl: "https://cdn.example/old.png",
     });
@@ -23,7 +23,7 @@ describe("PostgreSQL avatar lifecycle and owner scoping", () => {
     expect(calls[0]?.sql).toContain("state='orphaned'");
     expect(calls[0]?.values).toEqual([
       "tenant-1", "user-1", "https://cdn.example/old.png",
-      "https://cdn.example/new.png", "profile-avatars/old.png",
+      "https://cdn.example/new.png", "profiles/tenant-1/user-1/sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp",
     ]);
   });
 
@@ -36,7 +36,7 @@ describe("PostgreSQL avatar lifecycle and owner scoping", () => {
     const repo = createPostgresAvatarRepository(pool);
     expect(await repo.attach({
       tenantId: "t", userId: "u",
-      key: "profile-avatars/a.png", url: "https://cdn/a.png",
+      key: "profiles/t/u/sha256-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.webp", url: "https://cdn/a.png",
       expectedUrl: null,
     })).toBe(false);
   });
@@ -47,13 +47,13 @@ describe("PostgreSQL avatar lifecycle and owner scoping", () => {
       async query(sql: string) {
         calls.push(sql);
         return {
-          rows: [{ object_key: "profile-avatars/a.png" }],
+          rows: [{ object_key: "profiles/t/u/sha256-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.webp", tenant_id: "t", user_id: "u" }],
           rowCount: 1,
         };
       },
     } as unknown as AvatarSqlPool;
     const repo = createPostgresAvatarRepository(pool);
-    expect(await repo.claimGarbage(20)).toEqual(["profile-avatars/a.png"]);
+    expect(await repo.claimGarbage(20)).toEqual([{ key: "profiles/t/u/sha256-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.webp", tenantId: "t", userId: "u" }]);
     expect(calls[0]).toContain("FOR UPDATE SKIP LOCKED");
     expect(calls[0]).toContain("interval '1 hour'");
     expect(calls[0]).toContain("interval '15 minutes'");
