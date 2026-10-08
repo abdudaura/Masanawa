@@ -8,3 +8,18 @@ Owned: `apps/mobile/lib/src/screens/twin/twin_home_shell.dart`, `apps/mobile/lib
 Do not touch: Settings/account deletion R12 (#409/#416), R18 profiles (#419/#421), Gateway, billing/crypto, Talk runtime, themes or app router. R17 shell PR #411 and R11 integration #420 are already merged to main; extend without undoing their behavior.
 Preflight: current main verified. Existing R11 #407 is closed as superseded by merged #420. No overlap with currently open PR ownership found.
 Status: claim published; implementation pending; no Flutter tests or device claims until executed.
+
+
+## Implementation checkpoint — 2026-10-08
+
+- Localized the approved Home · Agents · Wallet · Talk bottom navigation, public Talk creation/action tooltips, Masanawa Agents/Twins tabs, agent and Twin search, clear controls, retry/load-more/empty states, Gwani recovery, private-Twin ineligibility and share messages.
+- Availability is now derived from typed `AgentPresence` (available, listening, working, onCall, offline, unknown), not matched against English status text. Server-origin `unknown` still renders as *unverified*, never as available/offline. Active work task count uses ICU pluralization; authoritative server count is not inferred.
+- Translated exact Twin name/URL via generated ICU-style placeholders, preserving underlying route IDs and share URL.
+- Updated the existing R17 shell test harness to install generated Flutter localization delegates; authored an Arabic RTL widget test verifying translated navigation, search and unchanged `?tab=agents` route behavior.
+- Added focused `root_shell_localization_test.dart` for translated presence states across all six resource bundles, one/multiple-task pluralization, unknown-state truthfulness, Twin name/URL preservation, and actionable translated recovery.
+- Six ARB resources each have **93** translatable keys and complete metadata/declared placeholders. GitHub source readback found zero missing metadata, keys or placeholders and no remaining hardcoded `hintText/tooltip/label` attributes in the owned shell file.
+- Current main advanced by concurrent profile/deletion/Gwani work after lane base. Compared changes; **no owned path overlaps**. Integrate latest main without replacing those files.
+- No Flutter SDK in this execution container, repository checkout cannot DNS-resolve GitHub and GitHub Actions runners have been observed failing before steps. `flutter pub get`, `flutter gen-l10n`, analyzer/tests and APK/device acceptance are **not executed**. No claimed mobile release quality, no production deployment.
+- Native-speaker copy review, Hausa framework Material/Cupertino support and the remaining app screens are open R11 quality gates. Do not claim the whole app localized.
+
+Status: source implementation committed and checked, **Flutter execution unverified**. Reviewable PR pending.
