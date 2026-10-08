@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/talks/talk_gift_stage_overlay.dart';
 import 'package:masanawa/src/talks/talk_gift.dart';
+import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 void main() {
   const item = TalkGiftCatalogItem(
@@ -24,6 +25,7 @@ void main() {
   testWidgets('settled gift acknowledgement ignores taps and announces recipient',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
+      theme: buildMasanawaTheme(brightness: Brightness.light),
       home: Scaffold(body: Stack(children: [
         const Center(child: Text('Talk audio')),
         TalkGiftStageOverlay(receipt: receipt, item: item),
@@ -38,6 +40,7 @@ void main() {
 
   testWidgets('reduced motion skips the scaling tween', (tester) async {
     await tester.pumpWidget(MaterialApp(
+      theme: buildMasanawaTheme(brightness: Brightness.light),
       home: MediaQuery(
         data: const MediaQueryData(disableAnimations: true),
         child: Scaffold(body: TalkGiftStageOverlay(receipt: receipt, item: item)),
