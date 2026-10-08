@@ -13,6 +13,7 @@ class WalletScreen extends ConsumerWidget {
     this.onWithdraw,
     this.onBuyBills,
     this.onOpenCrypto,
+    this.embeddedInShell = false,
   });
 
   final VoidCallback? onAddMoney;
@@ -20,6 +21,8 @@ class WalletScreen extends ConsumerWidget {
   final VoidCallback? onWithdraw;
   final VoidCallback? onBuyBills;
   final VoidCallback? onOpenCrypto;
+  /// Root owns the header when this surface is selected as a bottom tab.
+  final bool embeddedInShell;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +31,7 @@ class WalletScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(title: const Text('Wallet')),
+      appBar: embeddedInShell ? null : AppBar(title: const Text('Wallet')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
         child: wallet.when(
