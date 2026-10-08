@@ -4,12 +4,14 @@ Status: **canonical implementation ledger — 2026-10-08 (Africa/Lagos)**
 Owner: each task must be claimed through `MULTI-WINDOW-WORK.md`.
 This is the current improvement plan, not a declaration that the work is complete.
 
-## 1. Locked requirements
+## 1. Current approved requirements
 
-Masanawa remains a human-hosted live AI conversation network with **Home · Create ·
-Activity · You**, vertical Explore/Live Talks feeds, free human Seats, and limited paid
+Masanawa remains a human-hosted live AI conversation network with **Home · Agents · Wallet · Talk**, vertical Explore/Live Talks feeds, free human Seats, and limited paid
 Expert/Twin Seats. Billing and Crypto are the only standalone service families.
-Keep one adaptive Talk screen and compact sheets; do not add utility dashboards.
+Keep one adaptive public Talk screen and compact sheets; do not add utility dashboards.
+Activity bell and profile avatar are in the header, Start Talk creation is a FAB,
+Agents has Masanawa Agents/Twins tabs, and Talk is private voice-first assistance.
+This approved shell supersedes the prior Create/Activity/You bottom arrangement.
 
 The new requirements are:
 - WhatsApp-style **white light surfaces and vibrant green** throughout; light is the
@@ -83,6 +85,10 @@ Dependencies are integration order, not permission to reserve overlapping files.
 | R14 / P1 | Remote notifications/activity — BLOCKED/PARTIAL | Matching Firebase client/server setup, token refresh, permission, background/foreground delivery, deep links and dedupe; private amounts excluded from public/lock-screen content by default. |
 | R15 / P1 | Safety/support/channel journeys — UNVERIFIED completeness | Report/block/mute and platform enforcement across live/discovery/replay; in-app AI feedback/report path; private WhatsApp/Telegram linking, unlinking and private receipts qualified. |
 | R16 / P1 | Global release qualification — OPEN | Secure production signing/AAB and versioning, launch matrix, store declarations/payment classification, logs/alerts/recovery jobs and exact deploy evidence; remaining device dependencies explicit. |
+| R17 / P0 | Approved root/header/FAB and service intent routing — OPEN | Home/Agents/Wallet/Talk, Masanawa Agents/Twins tabs, header Activity/profile and Start Talk FAB; selected service hands off once to private assistant without charge/mic activation; existing deep links preserved. |
+| R18 / P0 | Complete editable profile — reported failure, root cause UNVERIFIED | Upload/replace/crop/remove avatar, edit name/handle/bio, authenticated persistence, clear validation/progress/retry, fallback avatar and cross-surface refresh after restart; account/settings controls work. |
+| R19 / P1 | Persona role performance — planned, UNVERIFIED | Seventeen distinct natural roles with accurate capability/context, humor/tone adaptation, interruption handling, multilingual pronunciation and consented continuity; clear AI disclosure and no fabricated identity or pressure to remain. |
+
 
 Start R01 first per the user, while a separately claimed non-overlapping backend lane
 diagnoses R02/R03 and a financial lane fixes R05. No financial execution is required to
@@ -300,3 +306,27 @@ multiple active tasks and cancellation after execution. No offline financial exe
 Context budgets, latency, multilingual pronunciation and correction metrics need real
 device evidence without logging private conversations. Support, trusted recipients and
 accessible deletion must be complete task paths, not inert voice commands.
+
+## Approved navigation, profile and persona completion overlay
+
+R17 is mobile-shell ownership coordinated with existing router/Agents/Wallet/Activity;
+R18 spans profile UI, authenticated API and storage; R19 spans identity/prompt/runtime
+and QA, coordinated with R03/R09/R11. Publish bounded claims, not blanket ownership.
+Retain theme R01 first, then integrate R17/R18 with live and financial blockers.
+
+Profile acceptance includes gallery/camera permission, cancellation, crop/orientation,
+file size/type limits, safe image decode, upload progress/retry, authorized storage URLs,
+replace/remove cleanup and no cross-user modification. Display name/handle/bio validation
+must support international scripts, uniqueness and respectful errors. Save success means
+server persistence, not an optimistic preview; restore unsaved edits after transient
+failure. Changes propagate to header, public profile, Talk stage, comments and Twin owner
+views without breaking historical receipt identity. Existing historical records follow
+explicit projection policy rather than rewriting immutable financial evidence.
+
+Persona quality is measured through coherent role performance and usefulness rather
+than time spent or emotional dependency. Test task resolution, turn-taking, natural
+humor and neutral/plain/sensitive tones, inaccurate-context correction, refusal without
+role collapse, Host departure/removal, private/public separation and a user's goodbye.
+Agents can be immersive without claiming to be human, hiding their nature, inventing
+memories or manipulating attachment. Persistent private memory is consented/editable/
+deletable and never copied into public Talk context by default.

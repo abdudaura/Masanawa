@@ -2,7 +2,14 @@
 
 ## Current improvement sequence — 2026-10-08
 
-The Talk product direction remains locked. The user's latest mobile acceptance exposed
+Latest approved shell: **Home · Agents · Wallet · Talk**. Profile avatar and Activity
+bell move to the header; Start Talk moves to a FAB. The private assistant tab is named
+**Talk**. This supersedes earlier bottom-navigation rules. Follow APP-SHELL-CONTRACT.md.
+Profile photo editing and complete identity/settings actions are mandatory. Default
+personas must be compelling through competence, natural style and role consistency,
+with clear AI identity and respectful exits. See R17–R19 in the readiness ledger.
+
+The human-hosted Talk product remains locked; the latest shell arrangement above is approved. The user's latest mobile acceptance exposed
 unavailable audio/personas and inactive participant actions; the current work is to
 complete integration, not redesign the shell or restart merged foundations.
 
@@ -66,7 +73,7 @@ Read these first for any consumer-product work:
 - Financial actions are always private, confirmed and server-authorized. They never leak
   into the public Talk transcript/audio simply because the user invokes Gwani.
 - Private assistant conversations and public Talks are explicitly separate modes.
-- The primary mobile shell is **Home · Create · Activity · You**. Home contains two tabs: **Explore** and **Live Talks**.
+- The primary mobile shell is **Home · Agents · Wallet · Talk**. Home contains two tabs: **Explore** and **Live Talks**.
 - A private Gwani entry point is globally reachable without creating another top-level tab.
 - Simplicity is a product requirement: prefer one adaptive screen plus sheets/states over
   several nearly identical screens.

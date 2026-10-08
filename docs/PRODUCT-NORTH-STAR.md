@@ -185,14 +185,16 @@ Replays use the same Talk identity rather than becoming a separate media product
 
 The primary navigation is intentionally small:
 
-**Home · Create · Activity · You**
+**Home · Agents · Wallet · Talk**
 
-- **Home** — two tabs: **Explore** and **Live Talks**, both vertical Talk feeds.
-- **Create** — start a human-hosted Talk.
-- **Activity** — invitations, Seat requests, follows, gifts, Talk events and monetization events.
-- **You** — profile, Talks, Twin, wallet/earnings, saved content, services and settings.
+- **Home** — Explore and Live Talks, both vertical feeds.
+- **Agents** — Masanawa Agents and Twins tabs, discovery and private chat.
+- **Wallet** — balances/history and voice-first Billing/Crypto shortcuts.
+- **Talk** — private voice-first assistance, with a complete Type instead path.
 
-A private Gwani entry point is globally available without occupying another tab.
+Activity bell and profile avatar live in the header. A Start Talk FAB opens the public
+composer. Public Talk hosting remains human-led; private Talk tab is not a broadcast.
+Profile editing and persona quality follow R18/R19 in MOBILE-READINESS-PLAN.md.
 
 ## No Rooms
 
