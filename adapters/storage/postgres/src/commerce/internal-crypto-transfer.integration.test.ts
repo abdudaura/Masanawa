@@ -27,12 +27,24 @@ describeDb("C06 real PostgreSQL atomic internal crypto transfer acceptance", () 
     await runMigrations(pool, [
       { owner: "commerce",
         directory: fileURLToPath(new URL("../../../../../packages/commerce/migrations", import.meta.url)) },
+      { owner: "identity",
+        directory: fileURLToPath(new URL("../../../../../packages/identity/migrations", import.meta.url)) },
       { owner: "security",
         directory: fileURLToPath(new URL("../../../../../packages/security/migrations", import.meta.url)) },
     ]);
+    await pool.query(
+      "INSERT INTO identity.tenants (tenant_id,state,created_at,updated_at) " +
+      "VALUES ($1,'active',clock_timestamp(),clock_timestamp()) ON CONFLICT DO NOTHING",
+      [tenantId],
+    );
     for (const [userId, suffix] of [
       [senderUserId, "sender"], [recipientUserId, "recipient"], [strangerUserId, "stranger"],
     ] as const) {
+      await pool.query(
+        "INSERT INTO identity.users (tenant_id,user_id,state,created_at,updated_at) " +
+        "VALUES ($1,$2,'active',clock_timestamp(),clock_timestamp()) ON CONFLICT DO NOTHING",
+        [tenantId,userId],
+      );
       await pool.query(
         "INSERT INTO security.platform_user_profiles " +
         "(tenant_id,user_id,display_name,email,created_at,updated_at) " +
@@ -148,6 +160,28 @@ describeDb("C06 real PostgreSQL atomic internal crypto transfer acceptance", () 
       [tenantId, quote.quoteId],
     );
     expect(checked.rows[0]?.count).toBe("1");
+  });
+
+  it("denies an inactive recipient before accepting any quote", async () => {
+    const store = createPostgresInternalCryptoTransferStore(pool);
+    await pool.query(
+      "UPDATE identity.users SET state='disabled',updated_at=clock_timestamp() " +
+      "WHERE tenant_id=$1 AND user_id=$2",
+      [tenantId, recipientUserId],
+    );
+    try {
+      await expect(store.quote({
+        tenantId, senderUserId, recipientUserId,
+        quoteRequestId: createCanonicalId("request"),
+        asset, network, amount: "1", policyRevision: "verified-test-policy",
+      })).rejects.toThrow("crypto.internal.account_inactive");
+    } finally {
+      await pool.query(
+        "UPDATE identity.users SET state='active',updated_at=clock_timestamp() " +
+        "WHERE tenant_id=$1 AND user_id=$2",
+        [tenantId, recipientUserId],
+      );
+    }
   });
 
   it("rejects self-transfers and unfunded quotes before approval", async () => {
