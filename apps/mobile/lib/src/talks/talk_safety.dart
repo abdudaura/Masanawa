@@ -86,5 +86,6 @@ abstract interface class TalkSafetyTransport {
     required String targetId,
     required TalkSafetyReportReason reason,
     String? detail,
+    String? clientRequestId,
   });
 }
