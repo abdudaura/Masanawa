@@ -87,7 +87,7 @@ export function createPostgresTalkAiStageEventRepository(
   pool: TalkAiStageSqlPool,
 ): TalkAiStageEventRepository {
   return Object.freeze({
-    async readAuthorizedStage({ tenantId, talkId, before }) {
+    async readAuthorizedStage({ tenantId, talkId, before }: Parameters<TalkAiStageEventRepository["readAuthorizedStage"]>[0]) {
       const until = Date.parse(before);
       if (!Number.isFinite(until) || !tenantId.trim() || !talkId.trim()) {
         throw new TypeError("Invalid stage context request");
