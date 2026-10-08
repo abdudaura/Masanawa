@@ -135,10 +135,13 @@ export function createPostgresReplayMediaRepository(pool:ReplayMediaSqlPool):Rep
     async markAborted(input){
       const result=await pool.query(
         `UPDATE talks.replay_media_jobs
-            SET status='aborted',completed_at=$4
+            SET status='aborted',
+                completed_at=CASE WHEN status='aborted' THEN completed_at ELSE $4::timestamptz END
           WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3`,
         [input.tenantId,input.talkId,input.recordingId,input.completedAt],
       );
+      // Repeated abort is idempotent; it must preserve the original abort
+      // timestamp while allowing object-store cleanup to be retried.
       if((result.rowCount??0)!==1) throw new Error("talks.replay.media_not_found");
     },
     async playbackObject(input){
