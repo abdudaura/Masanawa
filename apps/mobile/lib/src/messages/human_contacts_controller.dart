@@ -140,6 +140,7 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
     if (raw.isEmpty) {
       state = state.copyWith(
         searching: false, clearLookup: true, clearError: true,
+        clearNotice: true,
       );
       return;
     }
