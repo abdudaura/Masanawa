@@ -32,6 +32,11 @@ SessionSignedIn _testSession(String id) {
   ));
 }
 
+class _SignedOutSeatSessionController extends SessionController {
+  @override
+  SessionState build() => const SessionSignedOut();
+}
+
 class _SeatTestSessionController extends SessionController {
   @override
   SessionState build() => _testSession('host-account');
@@ -489,5 +494,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Add AI'), findsNothing);
     expect(transport.confirmationCalls, 0);
+  });
+
+  testWidgets('unauthenticated picker cannot create a payable quote',
+      (tester) async {
+    final transport = _FakeSeatTransport();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        talkAiSeatTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSeatSessionController.new),
+      ],
+      child: const MaterialApp(
+        home: AddAiSeatSheet(talkId: 'talk-1', isHost: true),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Add'), findsOneWidget);
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    expect(transport.quoteCount, 0);
+    expect(transport.confirmationCalls, 0);
+    expect(find.byKey(const ValueKey('ai-seat-confirm')), findsNothing);
   });
 }
