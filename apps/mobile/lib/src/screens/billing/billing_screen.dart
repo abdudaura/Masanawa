@@ -193,7 +193,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (!mounted) return;
       setState(() => walletAction = next);
       await ref.read(walletProvider.notifier).refresh();
-      await refreshCurrent(silent: true);
+      // The immediate wallet response owns fresh bank details; refreshing the
+      // quote must not discard it while the status endpoint is unavailable.
+      await refreshCurrent(silent: true, restoreFunding: false);
     } catch (value) {
       if (mounted) {
         setState(() => error = safeError(
@@ -205,19 +207,44 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       if (mounted) setState(() => busy = false);
     }
   }
-  Future<void> refreshCurrent({bool silent = false}) async {
+  Future<void> refreshCurrent({
+    bool silent = false,
+    bool restoreFunding = true,
+  }) async {
     final view = current;
     if (view == null) return;
     if (!silent) setState(() { busy = true; error = null; });
     try {
-      final next = await api.billingQuote(view.quote.quoteId);
-      if (mounted) setState(() => current = next);
+      await readOwnedBill(view.quote.quoteId, restoreFunding: restoreFunding);
       await reloadHistory();
     } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not refresh status.'));
+      if (mounted) {
+        setState(() => error = safeError(
+          value, 'Could not verify the latest bill and funding status. Try again.',
+        ));
+      }
     } finally {
       if (!silent && mounted) setState(() => busy = false);
     }
+  }
+
+  /// Restores bank instructions only from an authenticated, authoritative
+  /// owner-scoped read. No confirmation, virtual account creation or payment.
+  Future<void> readOwnedBill(String quoteId, {
+    bool restoreFunding = true,
+  }) async {
+    final detail = await api.billingQuote(quoteId);
+    // Clear previously shown bank details before network recovery. Never keep
+    // showing an old account when ownership/status verification fails.
+    if (restoreFunding && mounted) setState(() => walletAction = null);
+    final status = restoreFunding && !detail.isTerminal
+        ? await api.billingWalletStatus(quoteId)
+        : null;
+    if (!mounted) return;
+    setState(() {
+      current = detail;
+      if (restoreFunding || detail.isTerminal) walletAction = status;
+    });
   }
 
   Future<void> reloadHistory() async {
@@ -230,8 +257,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Future<void> restore(BillingCheckoutView entry) async {
     setState(() { busy = true; error = null; });
     try {
-      final detail = await api.billingQuote(entry.quote.quoteId);
-      if (mounted) setState(() => current = detail);
+      await readOwnedBill(entry.quote.quoteId);
     } catch (value) {
       if (mounted) setState(() => error = safeError(value, 'Could not load bill details.'));
     } finally {
@@ -408,13 +434,23 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   Widget buildTransaction(BillingCheckoutView view) {
     final quote = view.quote;
-    final funding = walletAction?.funding;
     final walletPhase = walletAction?.phase;
+    final candidate = walletAction?.funding;
+    final expiry = DateTime.tryParse(candidate?.expiresAt ?? '');
+    // A displayed virtual account must remain provider-bound and unexpired,
+    // including while a user leaves this screen open beyond its validity.
+    final funding = walletPhase == 'awaiting-funds' &&
+            expiry != null && expiry.isAfter(DateTime.now()) &&
+            candidate != null && candidate.accountNumber.trim().isNotEmpty &&
+            candidate.bankName.trim().isNotEmpty
+        ? candidate
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         BillDetails(view: view),
-        if (view.phase == 'quoted') ...[
+        if (view.phase == 'quoted' &&
+            (walletPhase == null || walletPhase == 'ready')) ...[
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: busy ? null : confirmFromWallet,
@@ -444,11 +480,25 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
           ),
         ],
+        if (walletPhase == 'processing') ...[
+          const SizedBox(height: 12),
+          const Card(child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Text('Your transfer or bill is being verified. Refresh to check progress; do not send another payment.'),
+          )),
+        ],
+        if (walletPhase == 'awaiting-funds' && funding == null) ...[
+          const SizedBox(height: 12),
+          const Card(child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Text('The funding instructions are unavailable or expired. Refresh your status before transferring.'),
+          )),
+        ],
         if (walletPhase == 'fulfilled') ...[
           const SizedBox(height: 12),
           const Card(child: Padding(padding: EdgeInsets.all(14), child: Text('Bill completed successfully.'))),
         ],
-        if (view.phase == 'processing' || walletPhase == 'processing' || walletPhase == 'awaiting-funds') ...[
+        if (view.phase == 'processing' || walletPhase == 'processing' || walletPhase == 'awaiting-funds' || walletPhase == 'ready') ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(
             onPressed: busy ? null : refreshCurrent,
