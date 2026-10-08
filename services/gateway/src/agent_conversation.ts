@@ -274,6 +274,7 @@ export function createAgentConversationService(input: {
                 authorizationHeader: request.authorizationHeader,
                 characterId: admission.scope.characterId,
                 modelReply: generated.reply,
+                userText: text,
               })) ??
               generated;
         const reply = result.reply.trim();
