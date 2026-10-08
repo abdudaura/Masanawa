@@ -20,3 +20,13 @@ Last update: repository commits `f1972e4`, `b266ea0`, `4cb460f`, `334a60d` (2026
 ## Expanded R03 ownership claim
 
 Found the Gateway projects `available` for every visible persona without an activity record. This is unverified availability. The new bounded scope will represent unknown presence honestly in Gateway/mobile, prevent persisted cached activity from implying current availability, and show pending Twins as unverified; none of these claims constitute runtime/audio qualification. This claim expansion precedes edits to added paths.
+
+## Gateway-to-mobile presence correction (2026-10-08)
+
+Implementation: `services/gateway/src/agent_directory.ts` no longer projects `available` when the authorized activity query has no record. It returns `unknown` (a distinct status, not an invented offline assertion); an explicit activity record retains its actual value. Presence remains informational and **does not certify inference, Gemini voice or paid Talk AI-Seat admission**. Gateway unit cases cover both situations.
+
+Mobile: `AgentPresence.unknown` presents `Status unverified`; invalid/missing values also map there, while explicit offline remains Offline. Restored on-device directory snapshots have their live presence and work counts cleared; writes persist only non-live projection; sign-in transient outage and in-flight refresh clear stale active state. Newly previewed Twins remain unverified until a canonical directory refresh. Tests cover unknown parsing, immutable unverified snapshot, cached restore/outage/refresh and explicit recovery.
+
+Owned commits: `cf92729`, `4afa22f`, `f156dc0`, `01ed00d`, `8c105b7`, `ab3ae8f`, `b80903a`, `bd0dd2d`, `bbbf7f4`. Source readbacks verified these changes on this branch; TypeScript/Vitest/Flutter tests are **authored but not executed**. Earlier CI failed before reported application steps; no production or Android proof. This is a bounded safety/projection hardening PR, not R03 full acceptance.
+
+Remaining R03: 17-persona stable seed catalog/full profiles, provider and per-agent voice-readiness qualification, end-to-end first paid AI Seat, and service/device acceptance. Do not infer these from status or a draft PR. This lane's bounded changes are checkpointed and can be reviewed independently; no longer reserves server composition or other workstream paths.
