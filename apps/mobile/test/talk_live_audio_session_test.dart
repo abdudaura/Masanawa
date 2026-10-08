@@ -16,6 +16,7 @@ class _Transport implements TalkLiveTransport {
   String credentialUrl = 'wss://live.example.test';
   Completer<void>? connectGate;
   int heartbeats = 0;
+  bool failHeartbeat = false;
   int disconnects = 0;
   TalkLiveLifecycle heartbeatState = TalkLiveLifecycle.live;
 
@@ -44,6 +45,7 @@ class _Transport implements TalkLiveTransport {
     required String sessionId,
   }) async {
     heartbeats += 1;
+    if (failHeartbeat) throw StateError('Simulated network heartbeat failure');
     return _session(heartbeatState);
   }
 
@@ -428,6 +430,32 @@ void main() {
     expect(session.status, TalkLiveAudioStatus.failed);
     expect(room.connects, 0);
     expect(transport.disconnects, 1);
+    await session.close();
+  });
+
+  test('heartbeat failure revokes host microphone publish authority', () async {
+    final transport = _Transport(
+      role: TalkLiveRole.host,
+      canPublishAudio: true,
+    );
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(milliseconds: 10),
+    );
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.publishing);
+    transport.failHeartbeat = true;
+    await Future<void>.delayed(const Duration(milliseconds: 35));
+    expect(transport.heartbeats, greaterThan(0));
+    expect(session.status, TalkLiveAudioStatus.reconnecting);
+    expect(room.microphone, contains(false));
+
+    final changesBefore = room.microphone.length;
+    await session.setMuted(false);
+    expect(room.microphone.length, changesBefore);
     await session.close();
   });
 
