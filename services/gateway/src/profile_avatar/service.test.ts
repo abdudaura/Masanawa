@@ -98,7 +98,7 @@ describe("authenticated avatar storage lifecycle", () => {
     const h = setup();
     await expect(h.service.upload({
       ...auth, png: Buffer.alloc(200), expectedUrl: null,
-    })).rejects.toMatchObject({ statusCode: 400 });
+    })).rejects.toMatchObject({ statusCode: 415 });
     expect(h.repo.staged).toHaveLength(0);
     expect(h.writes).toHaveLength(0);
   });
