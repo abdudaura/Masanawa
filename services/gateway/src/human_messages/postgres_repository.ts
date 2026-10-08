@@ -215,7 +215,7 @@ export function createPostgresHumanMessageRepository(pool: HumanMessageSqlPool):
       const client = await pool.connect();
       let committed = false;
       try {
-        await client.query("BEGIN ISOLATION LEVEL SERIALIZABLE");
+        await client.query("BEGIN");
         await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1::text,0))",
           [`human-dm-rate:${input.tenantId}:${input.userId}`]);
         if (!await allowed(input.tenantId,input.userId,input.conversationId,true,client)) return null;
@@ -240,14 +240,17 @@ export function createPostgresHumanMessageRepository(pool: HumanMessageSqlPool):
         const result = await client.query<MessageRow>(`
           INSERT INTO talks.human_dm_messages
             (tenant_id,conversation_id,message_id,sender_user_id,client_request_id,original_digest,body)
-          VALUES ($1,$2,$3,$4,$5,$6,$7)
+          SELECT $1,$3,$4,$2,$5,$6,$7
+           WHERE EXISTS (${sendable})
           RETURNING conversation_id,message_id,sender_user_id,body,created_at,edited_at,deleted_at,revision`,
-          [input.tenantId,input.conversationId,input.messageId,input.userId,input.clientRequestId,input.digest,input.text]);
+          [input.tenantId,input.userId,input.conversationId,input.messageId,input.clientRequestId,input.digest,input.text]);
+        // An admission or block transition between the earlier validation and
+        // the INSERT must never generate a message or advance the thread.
+        if (!result.rows[0]) return null;
         await client.query(`
           UPDATE talks.human_dm_conversations SET updated_at=clock_timestamp()
            WHERE tenant_id=$1 AND conversation_id=$2`,[input.tenantId,input.conversationId]);
         await client.query("COMMIT");committed=true;
-        if (!result.rows[0]) throw new Error("messages.write_failed");
         return message(result.rows[0]);
       } finally {
         if (!committed) await client.query("ROLLBACK").catch(() => undefined);
