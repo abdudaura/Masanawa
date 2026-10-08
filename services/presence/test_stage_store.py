@@ -116,6 +116,7 @@ class StageReadTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response["questions"], [{"author_name": "Musa", "body": "What next?"}])
         sql = "\n".join(entry[0] for entry in connection.queries)
         self.assertIn("q.status='answered'", sql)
+        self.assertIn("recent.latest_vote", sql)
         self.assertIn("sp.blocked=true", sql)
         for forbidden in ("commerce.", "wallet", "financial", "agent_messages", "private_message"):
             self.assertNotIn(forbidden, sql.lower())
