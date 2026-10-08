@@ -8,6 +8,11 @@ import 'talk_social_profiles.dart';
 /// Owner-only editing; never infer edit permission from a public profile page.
 abstract interface class OwnProfileTransport {
   Future<HumanProfile> loadSelf();
+  Future<HumanProfile> createSelf({
+    required String handle,
+    required String displayName,
+    required String bio,
+  });
   Future<HumanProfile> updateSelf({
     String? displayName,
     String? bio,
@@ -29,6 +34,23 @@ class GatewayOwnProfileTransport implements OwnProfileTransport {
   @override
   Future<HumanProfile> loadSelf() async {
     final response = await api.dio.get<dynamic>('/profiles/me');
+    return _parse(response.data);
+  }
+
+  @override
+  Future<HumanProfile> createSelf({
+    required String handle,
+    required String displayName,
+    required String bio,
+  }) async {
+    final response = await api.dio.put<dynamic>(
+      '/profiles/me',
+      data: {
+        'handle': handle,
+        'displayName': displayName,
+        'bio': bio,
+      },
+    );
     return _parse(response.data);
   }
 
