@@ -113,11 +113,11 @@ export function createTalkProfileService(input: Readonly<{
       const displayName = request.displayName.trim();
       const bio = request.bio.trim();
       if (!displayName || displayName.length > 160 ||
-          /[\\u0000-\\u001F\\u007F]/u.test(displayName)) {
+          /[\u0000-\u001F\u007F]/u.test(displayName)) {
         throw new TalkProfileError("profiles.display_name_invalid", 400);
       }
       if (bio.length > 1000 ||
-          /[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/u.test(bio)) {
+          /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(bio)) {
         throw new TalkProfileError("profiles.bio_invalid", 400);
       }
       try {
