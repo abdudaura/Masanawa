@@ -51,5 +51,12 @@
   "finishingSignIn": "Concluindo o acesso…",
   "verifiedSignInNotice": "Seu telefone ou e-mail verificado continuará sendo seu método de acesso.",
   "countryDialCode": "Código telefônico: {code}",
-  "unknownCountryDialCode": "Código telefônico não reconhecido"
+  "unknownCountryDialCode": "Código telefônico não reconhecido",
+  "authCodeInvalid": "O código está incorreto. Confira e tente novamente.",
+  "authCodeLocked": "Muitas tentativas. Solicite um novo código mais tarde.",
+  "authCodeExpired": "Este código expirou. Solicite um novo.",
+  "authRateLimited": "Muitas solicitações. Tente novamente mais tarde.",
+  "authSendFailed": "Não foi possível enviar o código. Verifique a conexão e tente novamente.",
+  "authVerifyFailed": "Não foi possível verificar o código. Tente novamente.",
+  "authProfileFailed": "Não foi possível concluir seu perfil. Verifique seus dados e tente novamente."
 }
