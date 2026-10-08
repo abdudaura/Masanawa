@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/api/billing_models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
@@ -24,6 +25,22 @@ BillCategory? billingCategoryForHomeService(
   }
   return null;
 }
+
+/// Map only known authoritative quote phases to localized status labels.
+/// Never infer financial success from a client action or unknown state.
+String billingStatusLabel(String state, AppLocalizations l) => switch (state) {
+  'quoted' => l.billingStatusQuoted,
+  'checkout-created' || 'awaiting' => l.billingStatusAwaiting,
+  'awaiting-funds' => l.billingStatusAwaitingFunds,
+  'funded' => l.billingStatusFunded,
+  'reserved' || 'processing' || 'pending' => l.billingStatusProcessing,
+  'succeeded' || 'fulfilled' => l.billingStatusCompleted,
+  'refund-pending' || 'refund-dispatching' || 'refund-submitted' => l.billingStatusRefundProcessing,
+  'refunded' => l.billingStatusRefunded,
+  'expired' => l.billingStatusExpired,
+  'failed' => l.billingStatusFailed,
+  _ => l.billingStatusUnknown,
+};
 
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key, this.initialService});
@@ -256,6 +273,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bills & payments'),
@@ -292,19 +310,19 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             const SizedBox(height: 28),
             Row(
               children: [
-                Text('Recent bills', style: Theme.of(context).textTheme.titleMedium),
+                Text(strings.billingRecent, style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'Refresh history',
+                  tooltip: strings.billingRefreshHistory,
                   onPressed: busy ? null : reloadHistory,
                   icon: const Icon(Icons.refresh),
                 ),
               ],
             ),
             if (history.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 28),
-                child: Center(child: Text('No bill payments yet')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: Center(child: Text(strings.billingNoPayments)),
               )
             else
               for (final entry in history)
@@ -313,7 +331,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                     leading: const Icon(Icons.receipt_long_outlined),
                     title: Text(entry.quote.itemName),
                     subtitle: Text(
-                      entry.quote.customerId + ' · ' + stateLabel(entry.quote.state),
+                      entry.quote.customerId + ' · ' + billingStatusLabel(entry.quote.state, strings),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -446,7 +464,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         ],
         if (walletPhase == 'fulfilled') ...[
           const SizedBox(height: 12),
-          const Card(child: Padding(padding: EdgeInsets.all(14), child: Text('Bill completed successfully.'))),
+          Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(AppLocalizations.of(context).billingSuccess))),
         ],
         if (view.phase == 'processing' || walletPhase == 'processing' || walletPhase == 'awaiting-funds') ...[
           const SizedBox(height: 10),
@@ -467,18 +485,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       ],
     );
   }
-  String stateLabel(String state) => switch (state) {
-        'quoted' => 'Quote ready',
-        'checkout-created' => 'Awaiting payment',
-        'funded' => 'Payment verified',
-        'reserved' => 'Processing',
-        'succeeded' => 'Completed',
-        'refund-pending' || 'refund-dispatching' || 'refund-submitted' =>
-          'Refund processing',
-        'refunded' => 'Refunded',
-        'expired' => 'Expired',
-        _ => state,
-      };
 }
 
 class BillDetails extends StatelessWidget {
@@ -487,6 +493,7 @@ class BillDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final quote = view.quote;
     final token = view.purchase?.deliveryCode?.trim();
     return Card(
@@ -497,27 +504,28 @@ class BillDetails extends StatelessWidget {
           children: [
             Text(quote.itemName, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            line('Recipient', quote.customerId),
-            line('Service', '₦' + quote.serviceAmount),
-            line('Fee', '₦' + quote.feeAmount),
+            line(strings.billingRecipientLabel, quote.customerId, identifier: true),
+            line(strings.billingServiceAmountLabel, '₦' + quote.serviceAmount),
+            line(strings.billingFeeLabel, '₦' + quote.feeAmount),
             const Divider(),
-            line('Total', '₦' + quote.totalAmount, strong: true),
-            line('Status', view.phase),
+            line(strings.billingTotalLabel, '₦' + quote.totalAmount, strong: true),
+            line(strings.billingStatusLabel, billingStatusLabel(view.phase, strings)),
             if (quote.billProviderReference != null)
-              line('Provider ref', quote.billProviderReference!),
+              line(strings.billingProviderRef, quote.billProviderReference!, identifier: true),
             if (token != null && token.isNotEmpty) ...[
               const Divider(),
-              const Text('Token / code'),
+              Text(strings.billingTokenLabel),
               const SizedBox(height: 6),
               SelectableText(
                 token,
+                textDirection: TextDirection.ltr,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
             if (view.phase == 'refunded')
-              const Padding(
-                padding: EdgeInsets.only(top: 10),
-                child: Text('The verified payment was refunded.'),
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(strings.billingRefundedInfo),
               ),
           ],
         ),
@@ -525,7 +533,7 @@ class BillDetails extends StatelessWidget {
     );
   }
 
-  Widget line(String label, String value, {bool strong = false}) => Padding(
+  Widget line(String label, String value, {bool strong = false, bool identifier = false}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,6 +543,7 @@ class BillDetails extends StatelessWidget {
               child: Text(
                 value,
                 textAlign: TextAlign.right,
+                textDirection: identifier ? TextDirection.ltr : null,
                 style: strong ? const TextStyle(fontWeight: FontWeight.w700) : null,
               ),
             ),

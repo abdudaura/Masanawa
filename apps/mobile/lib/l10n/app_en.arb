@@ -417,5 +417,97 @@
         "type": "String"
       }
     }
+  },
+  "billingRecent": "Recent bills",
+  "@billingRecent": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingRefreshHistory": "Refresh history",
+  "@billingRefreshHistory": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingNoPayments": "No bill payments yet",
+  "@billingNoPayments": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingRecipientLabel": "Recipient",
+  "@billingRecipientLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingServiceAmountLabel": "Service",
+  "@billingServiceAmountLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingFeeLabel": "Fee",
+  "@billingFeeLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingTotalLabel": "Total",
+  "@billingTotalLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusLabel": "Status",
+  "@billingStatusLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingProviderRef": "Provider ref",
+  "@billingProviderRef": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingTokenLabel": "Token / code",
+  "@billingTokenLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingRefundedInfo": "The verified payment was refunded.",
+  "@billingRefundedInfo": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingSuccess": "Bill completed successfully.",
+  "@billingSuccess": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusQuoted": "Quote ready",
+  "@billingStatusQuoted": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusAwaiting": "Awaiting payment",
+  "@billingStatusAwaiting": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusFunded": "Payment verified",
+  "@billingStatusFunded": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusProcessing": "Processing",
+  "@billingStatusProcessing": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusCompleted": "Completed",
+  "@billingStatusCompleted": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusRefundProcessing": "Refund processing",
+  "@billingStatusRefundProcessing": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusRefunded": "Refunded",
+  "@billingStatusRefunded": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusExpired": "Expired",
+  "@billingStatusExpired": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusFailed": "Failed",
+  "@billingStatusFailed": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusAwaitingFunds": "Awaiting funds",
+  "@billingStatusAwaitingFunds": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusUnknown": "Status unavailable",
+  "@billingStatusUnknown": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
   }
 }
