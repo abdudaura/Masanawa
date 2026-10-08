@@ -49,5 +49,7 @@
   "fullNameExample": "Ex. : Amina Bello",
   "fullNameRequired": "Veuillez saisir votre nom complet",
   "finishingSignIn": "Finalisation de la connexion…",
-  "verifiedSignInNotice": "Votre numéro de téléphone ou adresse e-mail vérifié reste votre moyen de connexion."
+  "verifiedSignInNotice": "Votre numéro de téléphone ou adresse e-mail vérifié reste votre moyen de connexion.",
+  "countryDialCode": "Indicatif téléphonique : {code}",
+  "unknownCountryDialCode": "Indicatif téléphonique non reconnu"
 }
