@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../agents/agent_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
+import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
 import '../activity/activity_screen.dart';
 import '../chat/ai_chat_screen.dart';
@@ -36,6 +37,15 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     super.initState();
     _index = widget.initialIndex.clamp(0, 3).toInt();
     _visitedTabs = <int>{_index};
+  }
+
+  @override
+  void didUpdateWidget(covariant TwinHomeShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) {
+      _index = widget.initialIndex.clamp(0, 3).toInt();
+      _visitedTabs.add(_index);
+    }
   }
 
   AgentDirectoryEntry? _supportAgent() {
@@ -82,69 +92,77 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     );
   }
 
-  void _openCreatedTalk(TalkDiscoveryItem talk) {
-    context.push(
-      '/talk/' + Uri.encodeComponent(talk.id) + '?host=1',
-      extra: talk,
-    );
-  }
-
   Widget _home() => TalkHomeScreen(
         onOpenTalk: _openTalk,
         onOpenSearch: () => context.push('/search'),
         onOpenGwani: _openPrivateGwani,
+        embeddedInShell: true,
       );
 
   Widget _agents() {
     final directory = ref.watch(agentDirectoryProvider);
+    final agents = directory.agents;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Agents'),
-          bottom: const TabBar(tabs: [
-            Tab(text: 'Masanawa Agents'),
-            Tab(text: 'Twins'),
-          ]),
-        ),
-        body: TabBarView(children: [
-          RefreshIndicator(
-            onRefresh: () => ref.read(agentDirectoryProvider.notifier).refresh(),
-            child: ListView(children: [
-              if (directory.loading && directory.agents.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              if (directory.error != null)
-                ListTile(
-                  title: Text(directory.error!),
-                  trailing: TextButton(
-                    onPressed: () => ref.read(agentDirectoryProvider.notifier).refresh(),
-                    child: const Text('Retry'),
-                  ),
-                ),
-              for (final agent in directory.agents.where(
-                  (agent) => !agent.roleLabel.toLowerCase().contains('twin')))
-                ListTile(
-                  leading: CircleAvatar(child: Text(agent.initial)),
-                  title: Text(agent.displayName),
-                  subtitle: Text(agent.roleLabel + ' · ' + agent.presenceLabel),
-                  trailing: const Icon(Icons.chat_bubble_outline_rounded),
-                  onTap: () => context.push(
-                    '/chat/' + Uri.encodeComponent(agent.characterId)),
-                ),
-              if (!directory.loading && directory.agents.isEmpty)
-                const ListTile(title: Text('No Masanawa Agents available yet.')),
-            ]),
+          toolbarHeight: 0,
+          bottom: const TabBar(
+            tabs: [Tab(text: 'Masanawa Agents'), Tab(text: 'Twins')],
           ),
-          const MyTwinRouteScreen(),
-        ]),
+        ),
+        body: TabBarView(
+          children: [
+            RefreshIndicator(
+              onRefresh: () => ref.read(agentDirectoryProvider.notifier).refresh(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  if (directory.loading && agents.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  if (directory.error != null)
+                    ListTile(
+                      title: Text(directory.error!),
+                      trailing: TextButton(
+                        onPressed: () => ref.read(agentDirectoryProvider.notifier).refresh(),
+                        child: const Text('Retry'),
+                      ),
+                    ),
+                  // Do not infer a persona's authority from its name or role:
+                  // the server owns which identities are published here.
+                  for (final agent in agents)
+                    ListTile(
+                      key: ValueKey('platform-agent-' + agent.characterId),
+                      leading: CircleAvatar(child: Text(agent.initial)),
+                      title: Text(agent.displayName),
+                      subtitle: Text(agent.roleLabel + ' · ' + agent.presenceLabel),
+                      trailing: const Icon(Icons.chat_bubble_outline_rounded),
+                      onTap: () => context.push(
+                        '/chat/' + Uri.encodeComponent(agent.characterId)),
+                    ),
+                  if (!directory.loading && agents.isEmpty && directory.error == null)
+                    const ListTile(title: Text('No Masanawa Agents available yet.')),
+                ],
+              ),
+            ),
+            _PublicTwinsPanel(
+              onOpenTwin: (publicId) => context.push(
+                '/persona/' + Uri.encodeComponent(publicId)),
+              onChatTwin: (characterId) => context.push(
+                '/chat/' + Uri.encodeComponent(characterId)),
+              onOpenMyTwin: () => context.push('/my-twin'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _wallet() => WalletScreen(
+        embeddedInShell: true,
         onBuyBills: () => context.push('/billing'),
         onOpenCrypto: () => context.push('/crypto'),
       );
@@ -155,7 +173,17 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     if (agent != null) {
       // Private chat owns its own voice controls; tab selection never
       // grants microphone permission or broadcasts public Talk audio.
-      return AiChatScreen(characterId: agent.characterId);
+      return AiChatScreen(
+        key: ValueKey('private-talk-' + agent.characterId),
+        characterId: agent.characterId,
+        embeddedInShell: true,
+        onOpenAgents: () => setState(() {
+          _index = 1;
+          _visitedTabs.add(1);
+        }),
+        onOpenActivity: _openActivity,
+        onOpenProfile: _openYou,
+      );
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Talk')),
@@ -210,10 +238,16 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: _index == 3 ? null : AppBar(
         toolbarHeight: 48,
-        title: const Text('Masanawa'),
+        title: Text(_index == 0 ? 'Masanawa' : _index == 1 ? 'Agents' : 'Wallet'),
         actions: [
+          if (_index == 0)
+            IconButton(
+              tooltip: 'Search Talks',
+              icon: const Icon(Icons.search_rounded),
+              onPressed: () => context.push('/search'),
+            ),
           IconButton(
             tooltip: 'Activity',
             icon: const Icon(Icons.notifications_none_rounded),
@@ -228,8 +262,12 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       ),
       body: IndexedStack(
         index: _index,
+        // Unmount private voice/chat when the user leaves Talk, rather than
+        // retaining a potentially active microphone behind another tab.
         children: List.generate(4, (index) =>
-          _visitedTabs.contains(index) ? _page(index) : const SizedBox.shrink()),
+          _visitedTabs.contains(index) && (index != 3 || _index == 3)
+              ? _page(index)
+              : const SizedBox.shrink()),
       ),
       floatingActionButton: _index == 0 || _index == 1
           ? FloatingActionButton(
@@ -272,6 +310,132 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     );
   }
 
+}
+
+/// Public Twin discovery reuses the authenticated Gateway's canonical
+/// twin directory; it is separate from managing one's own Twin.
+class _PublicTwinsPanel extends ConsumerStatefulWidget {
+  const _PublicTwinsPanel({
+    required this.onOpenTwin,
+    required this.onChatTwin,
+    required this.onOpenMyTwin,
+  });
+
+  final ValueChanged<String> onOpenTwin;
+  final ValueChanged<String> onChatTwin;
+  final VoidCallback onOpenMyTwin;
+
+  @override
+  ConsumerState<_PublicTwinsPanel> createState() => _PublicTwinsPanelState();
+}
+
+class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
+  final _search = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = ref.read(twinDirectoryProvider);
+      if (!state.loading && state.items.isEmpty) {
+        ref.read(twinDirectoryProvider.notifier).loadInitial();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(twinDirectoryProvider);
+    final transport = ref.read(twinDirectoryProvider.notifier);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: TextField(
+            controller: _search,
+            onChanged: (value) {
+              transport.setQuery(value);
+              setState(() {});
+            },
+            decoration: InputDecoration(
+              hintText: 'Search public Twins',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _search.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Clear search',
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _search.clear();
+                        transport.setQuery('');
+                        setState(() {});
+                      },
+                    ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: transport.loadInitial,
+            child: ListView(
+              key: const ValueKey('public-twins-list'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.person_outline_rounded),
+                  title: const Text('My Twin'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: widget.onOpenMyTwin,
+                ),
+                if (state.loading && state.items.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                if (state.error != null)
+                  ListTile(
+                    title: Text(state.error!),
+                    trailing: TextButton(
+                      onPressed: transport.loadInitial,
+                      child: const Text('Retry'),
+                    ),
+                  ),
+                if (!state.loading && state.items.isEmpty && state.error == null)
+                  const ListTile(title: Text('No public Twins found.')),
+                for (final twin in state.items)
+                  ListTile(
+                    key: ValueKey('public-twin-' + twin.publicId),
+                    leading: CircleAvatar(child: Text(twin.initials)),
+                    title: Text(twin.displayName),
+                    subtitle: twin.bio.isEmpty
+                        ? const Text('Public Twin')
+                        : Text(twin.bio, maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                    onTap: () => widget.onOpenTwin(twin.publicId),
+                    trailing: TextButton(
+                      onPressed: () => widget.onChatTwin(twin.characterId),
+                      child: const Text('Talk'),
+                    ),
+                  ),
+                if (state.nextCursor != null)
+                  TextButton(
+                    onPressed: state.loadingMore ? null : transport.loadMore,
+                    child: Text(state.loadingMore ? 'Loading…' : 'Load more'),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class MyTwinRouteScreen extends ConsumerWidget {
