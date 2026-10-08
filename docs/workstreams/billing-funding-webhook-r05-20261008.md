@@ -26,3 +26,13 @@
 - Expand owned path to `adapters/storage/postgres/src/commerce/ngn-wallet.ts` and new integration test `adapters/storage/postgres/src/commerce/ngn-wallet.integration.test.ts`.
 - Verify no R01/R02/R03/R11/R12/R17 active PR edits these paths. Reuse current wallet lock and existing provider txRef; reject changed pending quote shortfall rather than silently minting a second virtual account.
 - Migration/unique-index hardening remains separately governed by integration and must not be applied without historic duplicate-row audit.
+
+## Quote-scoped persistence implementation — 2026-10-08
+
+- `bac4205d`: `createPostgresNgnWalletRepository.createFundingIntent` checks owner+quote active creating/awaiting funding under existing per-user advisory transaction lock. Concurrent calls return one persisted `fundingReference/txRef` and do not insert a second intent. A changed shortfall conflicts rather than silently creating a second bank account; independent top-ups without quote remain separate.
+- `592ac772`: Gateway account dispatch and binding use the repository-returned `created.txRef`, `created.amountKobo` and `created.fundingReference`, not newly generated request-local references after reuse.
+- `1c0a84e0`, `3c26f9a7`: PostgreSQL integration scenarios cover concurrent duplicate quote requests, conflicting shortfalls, separate quotes and free-standing top-ups. Fixtures use unique user-scoped refs across test reruns.
+- `3a79033e`: Gateway test verifies that a repeated creating intent is dispatched and bound using the persisted provider references.
+- `25f73616`: a late new transfer remains credited without executing an expired quote, while an already-reserved operation remains eligible for idempotent reconciliation.
+- **Not yet executed:** workspace Vitest/typecheck or PostgreSQL integration; Postgres test suite is skipped without `MASANAWA_TEST_DATABASE_URL` by existing repository convention. Runner allocation failures mean CI is not evidence of functional failure or success.
+- **Remaining R05**: crash while provider account creation is in flight still needs provider-specific duplicate-txRef qualification/recovery; timed sweeper and mobile restoration (including no empty account-number copy) require separate end-to-end evidence; any schema-level unique index needs an audit of historical duplicate pending intents before migration.
