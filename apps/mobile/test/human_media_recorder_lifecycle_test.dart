@@ -146,6 +146,23 @@ void main() {
     expect(await File(path).exists(),isFalse);
   });
 
+  test('shutdown does not dispose a native capture while discard is stopping it',() async {
+    final stopGate=Completer<void>();
+    final capture=_Capture(stopGate:stopGate);
+    final subject=controller(capture);
+    await subject.begin();
+    final cancelling=subject.discard();
+    await _yieldUntil(()=>capture.stops==1);
+    final closing=subject.shutdown();
+    await Future<void>.delayed(Duration.zero);
+    expect(capture.disposals,0);
+    stopGate.complete();
+    await Future.wait([cancelling,closing]);
+    expect(capture.stops,1);
+    expect(capture.disposals,1);
+    expect(await File(path).exists(),isFalse);
+  });
+
   test('shutdown during permission prompt never starts or saves a recording',() async {
     final permissionGate=Completer<bool>();
     final capture=_Capture(permissionGate:permissionGate);
