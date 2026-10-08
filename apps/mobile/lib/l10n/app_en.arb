@@ -287,5 +287,9 @@
   },
   "@languageHausaUnavailable": {
     "description": "Hausa cannot be selected until framework Material/Cupertino localizations and screen coverage are complete"
+  },
+  "languageSelected": "Selected",
+  "@languageSelected": {
+    "description": "Accessible status for the selected app UI language option"
   }
 }
