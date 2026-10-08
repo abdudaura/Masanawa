@@ -87,7 +87,7 @@ export function createPostgresHumanDmRealtimeRepository(
         events: Object.freeze(page),
         nextCursor: page.length ? page[page.length - 1]!.eventId : after,
         hasMore: result.rows.length > limit,
-        resetRequired: after === "0",
+        resetRequired: false,
       });
     },
   });
