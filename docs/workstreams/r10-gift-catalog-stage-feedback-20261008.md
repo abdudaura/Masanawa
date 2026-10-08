@@ -17,6 +17,9 @@ Deployment/device/actual settlement: NOT DONE.
 - `services/gateway/src/talk_gift_routes.test.ts` (focused catalog and settlement tests)
 - `apps/mobile/lib/src/talks/talk_gift.dart`
 - `apps/mobile/lib/src/talks/talk_gift_http_transport.dart`
+- `apps/mobile/lib/src/talks/talk_gift_pending_store.dart` (new: durable, per-account encrypted pending request IDs)
+- `apps/mobile/lib/src/state/talk_gift_state.dart` (gift-only persistence wiring)
+- `apps/mobile/test/talk_gift_pending_store_test.dart` (new: durable recovery/race coverage)
 - `apps/mobile/lib/src/screens/talks/talk_gift_sheet.dart`
 - `apps/mobile/lib/src/screens/talks/talk_screen.dart` (gift-only code)
 - `apps/mobile/lib/src/screens/talks/talk_gift_stage_overlay.dart` (new)
@@ -55,7 +58,7 @@ No Gateway main composition, shared ledger, migration, root shell, billing/crypt
 
 ## Current step
 
-Implementation branch is recoverable in draft PR #418. Preserve R10 boundary; another non-overlapping window can take next lane without modifying these unfinished files.
+Continuing R10: harden account-scoped persistence to survive app restarts after an ambiguous payment. Implementation branch is recoverable in draft PR #418. Preserve R10 boundary; another non-overlapping window can take next lane without modifying these unfinished files.
 
 ## Handoff policy
 Record exact branch HEAD, tests executed vs unexecuted and unresolved provider/device/AI-event dependencies before leaving. Do not mark R10 release accepted without real-device and server settlement evidence.
