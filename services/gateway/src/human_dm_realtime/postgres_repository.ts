@@ -49,6 +49,7 @@ export function createPostgresHumanDmRealtimeRepository(
         JOIN identity.users me
           ON me.tenant_id=c.tenant_id AND me.user_id=$2 AND me.state='active'
         WHERE e.tenant_id=$1
+          AND e.recipient_user_id=$2
           AND e.event_id>$3::bigint
           AND $2 IN(c.first_user_id,c.second_user_id)
           AND (
