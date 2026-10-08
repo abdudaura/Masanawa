@@ -11,12 +11,14 @@ class PrivateServiceIntentPrompt extends StatefulWidget {
     required this.onContinue,
     required this.onOpenEditor,
     required this.onDismiss,
+    this.canContinue = true,
   });
 
   final PrivateServiceIntent intent;
   final Future<void> Function() onContinue;
   final VoidCallback onOpenEditor;
   final VoidCallback onDismiss;
+  final bool canContinue;
 
   @override
   State<PrivateServiceIntentPrompt> createState() =>
@@ -88,7 +90,7 @@ class _PrivateServiceIntentPromptState extends State<PrivateServiceIntentPrompt>
               runSpacing: 4,
               children: [
                 FilledButton(
-                  onPressed: _sending ? null : _continue,
+                  onPressed: _sending || !widget.canContinue ? null : _continue,
                   child: _sending
                       ? const SizedBox(
                           width: 18,
