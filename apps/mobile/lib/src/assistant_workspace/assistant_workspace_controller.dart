@@ -141,10 +141,17 @@ class AssistantWorkspaceController extends ChangeNotifier {
     for (final item in entries) {
       if (!item.supportAgent) continue;
       final name = item.displayName.trim().toLowerCase();
+      final voice = item.voiceName?.trim().toLowerCase();
+      // Match the Gateway's canonical /home projection: administrator
+      // display labels may differ, but configured support voices are stable.
       final role = switch (name) {
         'gwani' => AssistantRole.gwani,
         'gwana' => AssistantRole.gwana,
-        _ => null,
+        _ => switch (voice) {
+          'bodi' => AssistantRole.gwani,
+          'sulafat' => AssistantRole.gwana,
+          _ => null,
+        },
       };
       if (role == null) continue;
       if (selected.containsKey(role)) {
