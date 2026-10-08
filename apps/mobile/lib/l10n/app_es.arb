@@ -49,5 +49,7 @@
   "fullNameExample": "Ej.: Amina Bello",
   "fullNameRequired": "Introduce tu nombre completo",
   "finishingSignIn": "Finalizando inicio de sesión…",
-  "verifiedSignInNotice": "El teléfono o correo verificado seguirá siendo tu método de inicio de sesión."
+  "verifiedSignInNotice": "El teléfono o correo verificado seguirá siendo tu método de inicio de sesión.",
+  "countryDialCode": "Prefijo telefónico: {code}",
+  "unknownCountryDialCode": "No se reconoce el prefijo telefónico"
 }
