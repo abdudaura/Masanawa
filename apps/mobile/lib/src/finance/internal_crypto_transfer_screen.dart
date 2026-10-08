@@ -95,7 +95,115 @@ class _InternalCryptoTransferScreenState extends ConsumerState<InternalCryptoTra
     if(!_ownerMatches || _busy || _pendingId!=null)return;
     if(_recipient.text.trim().length<3 ||
        !RegExp(r'^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,18})?$').hasMatch(_amount.text.trim()) ||
-       _amount.text.trim()=='0') {
+       RegExp(r'^0(?:\\.0{1,18})?
+      setState(() => _message='Enter a Masanawa account email/phone and positive exact amount.');
+      return;
+    }
+    setState(() { _busy=true; _message=null; });
+    try {
+      final id=await ref.read(internalCryptoTransferJournalProvider).begin(widget.ownerId);
+      if(!mounted || !_ownerMatches)return;
+      setState(() => _pendingId=id);
+      final quote=await ref.read(internalCryptoTransferTransportProvider).quote(
+        requestId:id, recipient:_recipient.text.trim(),
+        providerCode:widget.providerCode, amount:_amount.text.trim());
+      if(!mounted || !_ownerMatches)return;
+      setState(() { _quote=quote; _message=null; });
+    } catch(e) { _report(e); }
+    finally { if(mounted) setState(() => _busy=false); }
+  }
+  Future<void> _confirm() async {
+    final quote=_quote;
+    if(!_ownerMatches || _busy || quote == null || quote.confirmationToken == null ||
+       quote.expired || quote.status!='quoted')return;
+    setState(() { _busy=true; _message=null; });
+    try {
+      final confirmed=await ref.read(internalCryptoTransferTransportProvider)
+        .confirm(quote.requestId,quote.confirmationToken!);
+      if(!mounted || !_ownerMatches)return;
+      setState(() => _quote=confirmed);
+      if(confirmed.completed) {
+        await ref.read(internalCryptoTransferJournalProvider).clear(widget.ownerId);
+        if(mounted) setState(() => _message='Transfer completed and recorded on both accounts.');
+      } else {
+        if(mounted)setState(() => _message='Confirmation not accepted; no transfer was posted.');
+      }
+    } catch(e) {
+      // Network loss after commit is an unknown outcome. Only GET with the same
+      // request ID may establish the final status; never post a fresh debit.
+      try { await _readStatus(quote.requestId); } catch (_) { _report(e); }
+    } finally { if(mounted)setState(() => _busy=false); }
+  }
+  Future<void> _clear() async {
+    if(!_ownerMatches || _busy)return;
+    final quote=_quote;
+    if(quote!=null && quote.status=='quoted' && !quote.expired) {
+      setState(() => _message='This quote is still active. Wait for expiry or recover it before starting a new quote.');
+      return;
+    }
+    await ref.read(internalCryptoTransferJournalProvider).clear(widget.ownerId);
+    if(mounted && _ownerMatches) setState(() {
+      _pendingId=null; _quote=null; _message=null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active=ref.watch(sessionProvider);
+    final signedIn=active is SessionSignedIn && active.user.id==widget.ownerId;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Send crypto to Masanawa user')),
+      body: !signedIn
+        ? const Center(child: Text('Sign in with the same account to view this private transfer.'))
+        : _recovering
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(padding:const EdgeInsets.all(20),children:[
+              Text('Asset route: ${widget.providerCode}',style:Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height:8),
+              const Text('Internal custody book transfer only. No blockchain send. No Credits or fiat transfer.'),
+              const SizedBox(height:20),
+              if(_pendingId==null)...[
+                TextField(controller:_recipient,enabled:!_busy,
+                  decoration:const InputDecoration(labelText:'Recipient email or phone',
+                    helperText:'Recipient must have an active Masanawa account')),
+                const SizedBox(height:12),
+                TextField(controller:_amount,enabled:!_busy,
+                  keyboardType:const TextInputType.numberWithOptions(decimal:true),
+                  decoration:const InputDecoration(labelText:'Amount',
+                    helperText:'Enter an exact amount in the selected asset/network')),
+                const SizedBox(height:12),
+                FilledButton(onPressed:_busy?null:_quoteTransfer,child:const Text('Get secure transfer quote')),
+              ],
+              if(_pendingId!=null)...[
+                Text('Request ID: $_pendingId',maxLines:2),
+                const SizedBox(height:12),
+                if(_quote!=null)...[
+                  Text('Recipient: ${_quote!.recipientLabel}'),
+                  Text('Send: ${_quote!.amount} ${_quote!.asset}'),
+                  Text('Network: ${_quote!.network ?? "provider-default"}'),
+                  Text('Fee: ${_quote!.fee}'),
+                  Text('State: ${_quote!.status}'),
+                  Text('Expires: ${_quote!.expiresAt.toLocal()}'),
+                  if(_quote!.completedAt!=null)Text('Completed: ${_quote!.completedAt!.toLocal()}'),
+                  const SizedBox(height:16),
+                  if(_quote!.status=='quoted' && !_quote!.expired &&
+                     _quote!.confirmationToken!=null)
+                    FilledButton(onPressed:_busy?null:_confirm,
+                      child:const Text('Confirm this exact crypto transfer')),
+                ],
+                OutlinedButton(onPressed:_busy?null:() async {
+                  try { await _readStatus(_pendingId!); }catch(e){_report(e);}
+                },child:const Text('Check server status')),
+                TextButton(onPressed:_busy?null:_clear,child:const Text('Start a different quote')),
+              ],
+              if(_busy)const Center(child:CircularProgressIndicator()),
+              if(_message!=null)Padding(padding:const EdgeInsets.only(top:12),
+                child:Text(_message!,semanticsLabel:_message)),
+            ]),
+    );
+  }
+}
+).hasMatch(_amount.text.trim())) {
       setState(() => _message='Enter a Masanawa account email/phone and positive exact amount.');
       return;
     }
