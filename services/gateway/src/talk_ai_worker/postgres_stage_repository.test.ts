@@ -27,6 +27,7 @@ function fixture(available = true) {
     if (sql.includes("FROM talks.polls ")) return { rows: [{
       poll_id: "poll-1", question: "Which alternative?", status: "open",
       event_at: "2026-10-08T04:59:40Z",
+      tallies_json: [{ label: "Option A", votes: 7 }, { label: "Option B", votes: 3 }],
     }] };
     throw new Error("Unexpected query: " + sql + " " + JSON.stringify(args));
   });
@@ -55,6 +56,8 @@ describe("canonical PostgreSQL Talk stage context source", () => {
       .toBe("👏 reactions: 13");
     expect(context?.events.find((e) => e.kind === "question")?.summary)
       .toContain("How can we verify this?");
+    expect(context?.events.find((e) => e.kind === "poll")?.summary)
+      .toContain("Option A: 7; Option B: 3");
     expect(context?.contentTrust).toBe("public-untrusted-data");
 
     expect(query).toHaveBeenCalledTimes(6);
@@ -73,6 +76,9 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     expect(allSql).toContain("sp.subject_user_id=p.user_id");
     expect(allSql).toContain("GROUP BY p.reaction");
     expect(allSql).toContain("GROUP BY p.hand_status");
+    expect(allSql).toContain("COUNT(*)::integer FROM talks.poll_votes v");
+    expect(allSql).toContain("v.option_id=opt->>'optionId'");
+    expect(allSql).not.toContain("SELECT v.user_id");
     expect(allSql).toContain("LIMIT 16");
     expect(allSql).toContain("LIMIT 6");
   });
