@@ -90,4 +90,17 @@ void main() {
     expect(controller.state.error,contains('not confirmed'));
     controller.dispose();
   });
+
+  test('simultaneous sends never overwrite encrypted pending intents',() async {
+    final api=_Transport()..blocked=true;
+    final box=_Outbox();
+    final controller=HumanDmController('user_alice','thread-id',api,box);
+    await drain();
+    await Future.wait([controller.send('First'),controller.send('Second')]);
+    final saved=await box.load('user_alice','thread-id');
+    expect(saved.length,2);
+    expect(saved.map((p)=>p.text).toSet(),{'First','Second'});
+    expect(saved.map((p)=>p.id).toSet().length,2);
+    controller.dispose();
+  });
 }
