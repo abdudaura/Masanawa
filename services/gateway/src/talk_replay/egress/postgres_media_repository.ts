@@ -122,19 +122,26 @@ export function createPostgresReplayMediaRepository(pool:ReplayMediaSqlPool):Rep
     async markReady(input){
       const result=await pool.query(
         `UPDATE talks.replay_media_jobs
-            SET status='ready',checksum_sha256=$4,completed_at=$5
-          WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3`,
+            SET status='ready',checksum_sha256=$4
+          WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3
+            AND status='stopped' AND completed_at=$5::timestamptz`,
         [input.tenantId,input.talkId,input.recordingId,input.checksumSha256,input.completedAt],
       );
-      if((result.rowCount??0)!==1) throw new Error("talks.replay.media_not_found");
+      // Do not overwrite the original stop time or revive an aborted job.
+      // A concurrent Host discard, re-finalization or mismatched timestamp
+      // is a conflict, not successful playback/publish readiness.
+      if((result.rowCount??0)!==1) throw new Error("talks.replay.media_ready_conflict");
     },
     async markAborted(input){
       const result=await pool.query(
         `UPDATE talks.replay_media_jobs
-            SET status='aborted',completed_at=$4
+            SET status='aborted',
+                completed_at=CASE WHEN status='aborted' THEN completed_at ELSE $4::timestamptz END
           WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3`,
         [input.tenantId,input.talkId,input.recordingId,input.completedAt],
       );
+      // Repeated abort is idempotent; it must preserve the original abort
+      // timestamp while allowing object-store cleanup to be retried.
       if((result.rowCount??0)!==1) throw new Error("talks.replay.media_not_found");
     },
     async playbackObject(input){
@@ -165,3 +172,4 @@ export function createPostgresReplayMediaRepository(pool:ReplayMediaSqlPool):Rep
     },
   });
 }
+

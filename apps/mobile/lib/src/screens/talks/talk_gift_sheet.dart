@@ -26,6 +26,10 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
   late Future<TalkGiftCatalog> _catalogFuture;
   String? _selectedId;
   bool _sending = false;
+  // A failed/uncertain settlement may have debited Credits. Never allow an
+  // accidental second tap against the old catalog after an unknown result.
+  // The authenticated transport retains the canonical pending request ID.
+  bool _requiresCatalogRefresh = false;
   String? _error;
 
   @override
@@ -39,6 +43,7 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
     setState(() {
       _selectedId = null;
       _error = null;
+      _requiresCatalogRefresh = false;
       _catalogFuture = widget.loadCatalog();
     });
   }
@@ -65,6 +70,8 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
 
     setState(() {
       _sending = false;
+      _requiresCatalogRefresh = true;
+      _selectedId = null;
       _error = 'Couldn’t confirm this gift. Check Wallet history before retrying.';
       // A price/availability conflict should be resolved by explicitly reloading
       // the catalog, never by silently charging a different amount.
@@ -154,7 +161,7 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
                               '${option.name} · ${option.amountCredits} Cr',
                             ),
                             selected: _selectedId == option.id,
-                            onSelected: _sending
+                            onSelected: _sending || _requiresCatalogRefresh
                                 ? null
                                 : (_) => setState(() {
                                       _selectedId = option.id;
@@ -188,7 +195,7 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
                       width: double.infinity,
                       child: FilledButton(
                         key: const ValueKey('talk-gift-send'),
-                        onPressed: selection == null || _sending
+                        onPressed: selection == null || _sending || _requiresCatalogRefresh
                             ? null
                             : () => _send(selection!),
                         child: _sending
@@ -212,3 +219,4 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
     );
   }
 }
+
