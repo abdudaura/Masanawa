@@ -17,7 +17,8 @@ class PublicDiscoveryItem {
   final int listenerCount;
   final bool available;
   final bool verified;
-  final String seatFeeLabel;\n  final String? avatarUrl;
+  final String seatFeeLabel;
+  final String? avatarUrl;
 
   /// Refuse an unknown type or malformed target rather than navigating an
   /// untrusted server-provided ID to a sensitive app route.
@@ -48,7 +49,11 @@ class PublicDiscoveryItem {
     final available = value['available'];
     final verified = value['verified'];
     final listenerCount = value['listenerCount'];
-    final seatFeeLabel = value['seatFeeLabel'];\n    final rawAvatar = value['avatarUrl'];\n    final avatar = rawAvatar is String ? Uri.tryParse(rawAvatar) : null;\n    final avatarUrl = avatar?.scheme == 'https' && avatar?.host.isNotEmpty == true &&\n        avatar?.userInfo.isEmpty == true ? rawAvatar as String? : null;
+    final seatFeeLabel = value['seatFeeLabel'];
+    final rawAvatar = value['avatarUrl'];
+    final avatar = rawAvatar is String ? Uri.tryParse(rawAvatar) : null;
+    final avatarUrl = avatar?.scheme == 'https' && avatar?.host.isNotEmpty == true &&
+        avatar?.userInfo.isEmpty == true ? rawAvatar as String? : null;
     if (kind == PublicDiscoveryKind.talk || kind == PublicDiscoveryKind.person) {
       if (live is! bool) throw const FormatException('Invalid live state');
     } else if (available is! bool || verified is! bool ||
@@ -64,7 +69,8 @@ class PublicDiscoveryItem {
       isLive: live == true,
       listenerCount: listenerCount is int ? listenerCount : 0,
       available: available == true, verified: verified == true,
-      seatFeeLabel: seatFeeLabel is String ? seatFeeLabel : '',\n      avatarUrl: avatarUrl,
+      seatFeeLabel: seatFeeLabel is String ? seatFeeLabel : '',
+      avatarUrl: avatarUrl,
     );
   }
 
