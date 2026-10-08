@@ -59,6 +59,19 @@ void main() {
     expect(await GatewayHumanContactsTransport(api: api).lookup('bob'), isNull);
   });
 
+
+  test('undeployed contacts route is an error, not a hidden person', () async {
+    final api = _client((options) async =>
+        _json('{"message":"Route not found"}', status: 404));
+    final transport = GatewayHumanContactsTransport(api: api);
+    await expectLater(
+      transport.lookup('bob'),
+      throwsA(isA<DioException>().having(
+        (error) => error.response?.statusCode, 'statusCode', 404,
+      )),
+    );
+  });
+
   test('do not send any request without canonical signed-in bearer', () async {
     var calls = 0;
     final api = _client((options) async {
