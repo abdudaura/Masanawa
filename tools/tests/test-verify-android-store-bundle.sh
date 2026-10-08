@@ -9,8 +9,11 @@ done
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 cd "$tmp"
-printf 'test artifact\n' > payload.txt
-jar --create --file unsigned.aab payload.txt
+printf 'test artifact\\n' > payload.txt
+mkdir -p base/manifest
+printf 'test manifest\\n' > base/manifest/AndroidManifest.xml
+printf 'test bundle metadata\\n' > BundleConfig.pb
+jar --create --file unsigned.aab payload.txt BundleConfig.pb base/manifest/AndroidManifest.xml
 
 # Production-style upload key: locally generated test key, never committed.
 keytool -genkeypair -alias release -keyalg RSA -keysize 2048 -validity 2 \
@@ -22,6 +25,14 @@ jarsigner -keystore release.p12 -storetype PKCS12 -storepass changeit \
 fingerprint="$(keytool -list -v -keystore release.p12 -storepass changeit -alias release |
   grep -m1 'SHA256:' | sed -E 's/.*SHA256:[[:space:]]*//')"
 bash "$verify" signed.aab "$fingerprint"
+
+# A signed arbitrary JAR is not an Android App Bundle.
+jar --create --file arbitrary.aab payload.txt
+jarsigner -keystore release.p12 -storetype PKCS12 -storepass changeit \\
+  -keypass changeit arbitrary.aab release >/dev/null
+if bash "$verify" arbitrary.aab "$fingerprint" >/dev/null 2>&1; then
+  echo "FAIL: arbitrary signed JAR accepted as AAB" >&2; exit 1
+fi
 
 if bash "$verify" unsigned.aab "$fingerprint" >/dev/null 2>&1; then
   echo "FAIL: unsigned bundle accepted" >&2; exit 1
@@ -63,4 +74,4 @@ debugfingerprint="$(keytool -list -v -keystore debug.p12 -storepass changeit -al
 if bash "$verify" debug.aab "$debugfingerprint" >/dev/null 2>&1; then
   echo "FAIL: Android debug signer accepted" >&2; exit 1
 fi
-echo "PASS: valid release, unsigned, wrong fingerprint, tampered artifact, mixed entries, debug signer"
+echo "PASS: valid release, unsigned, wrong fingerprint, tampered artifact, mixed entries, non-AAB, debug signer"
