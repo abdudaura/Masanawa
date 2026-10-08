@@ -218,15 +218,35 @@ class _DirectTwinTransport implements DirectTwinTransport {
 }
 
 class _GiftTransport implements TalkGiftTransport {
-  _GiftTransport({this.fail = false});
+  _GiftTransport({this.fail = false, this.catalogFailure = false});
 
   final bool fail;
+  final bool catalogFailure;
   final List<({String talkId, int amountCredits})> calls = [];
+
+  @override
+  Future<TalkGiftCatalog> loadCatalog({required String talkId}) async {
+    if (catalogFailure) throw StateError('unavailable');
+    return TalkGiftCatalog(
+      talkId: talkId,
+      items: const [
+        TalkGiftCatalogItem(
+          id: 'applause', name: 'Applause', visual: 'applause',
+          amountCredits: 50, available: true,
+        ),
+        TalkGiftCatalogItem(
+          id: 'heart', name: 'Heart', visual: 'heart',
+          amountCredits: 100, available: true,
+        ),
+      ],
+    );
+  }
 
   @override
   Future<TalkGiftReceipt> sendGift({
     required String talkId,
     required int amountCredits,
+    String? catalogItemId,
   }) async {
     calls.add((talkId: talkId, amountCredits: amountCredits));
     if (fail) throw Exception('DioException private transport detail');
@@ -236,6 +256,7 @@ class _GiftTransport implements TalkGiftTransport {
       recipientUserId: 'host-user',
       recipientName: 'Abdullahi',
       amountCredits: amountCredits,
+      catalogItemId: catalogItemId,
       completedAt: DateTime(2026, 10, 7, 10),
     );
   }
@@ -1498,11 +1519,45 @@ void main() {
 
     expect(find.byKey(const ValueKey('talk-gift-error')), findsOneWidget);
     expect(
-      find.text('Gift couldn’t be sent. Check your balance and try again.'),
+      find.text('Gift couldn’t be sent. Check your balance or gift price and try again.'),
       findsOneWidget,
     );
     expect(find.textContaining('DioException'), findsNothing);
     expect(find.text('Gift Abdullahi'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+
+  testWidgets('verified Credit gift briefly displays a bounded local overlay',
+      (tester) async {
+    final gift = _GiftTransport();
+    await tester.pumpWidget(_app(talkTransport: _TalkTransport(), gift: gift));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gift'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-gift-100')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
+    await tester.pump();
+    expect(find.text('Sent to Abdullahi'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('Sent to Abdullahi'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('missing authoritative gift catalog never offers fixed client prices',
+      (tester) async {
+    await tester.pumpWidget(_app(
+      talkTransport: _TalkTransport(),
+      gift: _GiftTransport(catalogFailure: true),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gift'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('talk-gift-50')), findsNothing);
+    expect(find.byKey(const ValueKey('talk-gift-send')), findsNothing);
+    expect(find.text('Gift options are unavailable right now.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('talk-gift-retry-catalog')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
