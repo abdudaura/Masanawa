@@ -275,7 +275,6 @@ import {
 } from "./whatsapp_linked_device.js";
 import {
   type PlatformAgentBootstrapResult,
-  type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
 import { bootstrapDefaultPlatformAgentsFromPostgres } from "./platform_agent_bootstrap_postgres.js";
 import {
@@ -292,7 +291,6 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
-  readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
   readonly bootstrapPlatformAgents?: (tenantId: TenantId) => Promise<PlatformAgentBootstrapResult>;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
   readonly agentPresentations?: AgentPresentationRepository;
@@ -419,45 +417,6 @@ function createDefaultDatabaseDependency(
       bootstrapDefaultPlatformAgentsFromPostgres({ pool: database.pool, tenantId }),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
-    platformAgentIdentity: Object.freeze({
-      async provision(input: Parameters<PlatformAgentIdentityProvisioner["provision"]>[0]) {
-        await withTransaction(database.pool, async (client) => {
-          const identity = createPostgresIdentityRepository(client);
-          await identity.createCharacter({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            createdAt: input.createdAt,
-          });
-          await identity.assignCharacterOwnership({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            kind: "platform",
-            ownerUserId: null,
-            createdAt: input.createdAt,
-          });
-          await identity.createCharacterVersion({
-            tenantId: input.tenantId,
-            characterVersionId: input.characterVersionId,
-            characterId: input.characterId,
-            versionNumber: 1,
-            constitution: input.constitution,
-            createdAt: input.createdAt,
-          });
-          await identity.publishCharacterVersion({
-            tenantId: input.tenantId,
-            characterVersionId: input.characterVersionId,
-            publishedAt: input.createdAt,
-          });
-          await identity.activateCharacterVersion({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            characterVersionId: input.characterVersionId,
-            expectedCharacterRevision: 1,
-            activatedAt: input.createdAt,
-          });
-        });
-      },
-    }),
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
