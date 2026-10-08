@@ -48,3 +48,10 @@
 - Commit `baa93149`: verify verbose JAR signing output and reject added unsigned entries in an otherwise signed bundle (signature validity alone does not establish coverage of every payload).
 - Commit `3ca3f763`: add regression case for appended unsigned payload content.
 - This remains unverified until the actual test job executes; regression test expected to enforce fail-closed behavior. No release artifact or store-ready signing evidence exists.
+
+## Local signature-behavior verification and latest CI
+
+- Reproduced with JDK tools in a temporary directory: signed test jar => `jar verified`; adding an unsigned file => `jar verified` **plus an unsigned-entries warning**. This motivates the new explicit rejection.
+- Locally exercised the new verifier's equivalent signature/identity/fingerprint core against temporary signed/mixed artifacts: valid signed => accepted, mixed => rejected. This is **not** a full run of the repository's test harness and not a signed AAB build.
+- New head workflow run `37710863394` reported failure; job `113096204794` returned no step details or log URL. Existing Foundation/Mobile workflows similarly report failure, so runner/CI environment remains unqualified. Do not classify as passing tests or a release regression without job logs.
+- Release gate remains: run the checked-in script tests on GitHub Actions or an isolated checkout, run real Gradle/Flutter build, independently verify a real AAB with pinned public SHA-256 cert fingerprint, inspect output and install test-signed APK on Android. Release candidate must not be distributed before these steps pass.
