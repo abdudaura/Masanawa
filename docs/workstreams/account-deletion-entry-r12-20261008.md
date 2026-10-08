@@ -37,3 +37,7 @@ This is intentionally **not an account deletion endpoint**. The booleans `identi
 
 - External web security tests reside in `apps/web/src/app/api/delete-account/deletion-proxy.test.ts` so Next.js imports resolve from the `@masanawa/web-app` workspace rather than unavailable root-level `next` dependencies; previous root `tests/security` copy removed. Root Vitest includes `apps/**/*.test.ts`.
 - This corrects import layout but does not prove the tests have executed. Run `pnpm test:ci`, `pnpm typecheck`, `pnpm -r build`, Flutter analyzer/tests, and PostgreSQL integration against an isolated test database before merge.
+
+## External session teardown
+
+The privacy browser session now attempts backend `/auth/logout` revocation on end-session, then clears its narrow HttpOnly cookie even if the gateway is offline. Two additional tests cover successful revocation and offline cookie destruction. Revocation during outages remains best effort; access TTL is 15 minutes and no refresh token is issued to browser JS. Verify actual production cookie and logout behavior before release.
