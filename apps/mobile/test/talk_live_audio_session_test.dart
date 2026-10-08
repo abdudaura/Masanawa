@@ -12,6 +12,7 @@ class _Transport implements TalkLiveTransport {
   bool canPublishAudio;
   bool failNextToken = false;
   bool sessionEndedOnConnect = false;
+  Completer<void>? connectGate;
   int heartbeats = 0;
   int disconnects = 0;
   TalkLiveLifecycle heartbeatState = TalkLiveLifecycle.live;
@@ -28,10 +29,12 @@ class _Transport implements TalkLiveTransport {
   );
 
   @override
-  Future<TalkLiveSessionView> connect(String talkId) async =>
-      _session(
-        sessionEndedOnConnect ? TalkLiveLifecycle.ended : TalkLiveLifecycle.live,
-      );
+  Future<TalkLiveSessionView> connect(String talkId) async {
+    await connectGate?.future;
+    return _session(
+      sessionEndedOnConnect ? TalkLiveLifecycle.ended : TalkLiveLifecycle.live,
+    );
+  }
 
   @override
   Future<TalkLiveSessionView> heartbeat({
@@ -334,6 +337,27 @@ void main() {
 
     await session.close();
     expect(transport.disconnects, 1);
+  });
+
+  test('close during pending server connect releases late session', () async {
+    final gate = Completer<void>();
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..connectGate = gate;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    final starting = session.start();
+    await session.close();
+    gate.complete();
+    await starting;
+
+    expect(transport.disconnects, 1);
+    expect(room.connects, 0);
+    expect(session.status, TalkLiveAudioStatus.ended);
   });
 
 }
