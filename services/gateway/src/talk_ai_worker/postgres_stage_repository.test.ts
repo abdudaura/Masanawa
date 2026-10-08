@@ -78,7 +78,7 @@ describe("canonical PostgreSQL Talk stage context source", () => {
 
     expect(query).toHaveBeenCalledTimes(8);
     for (const [sql, params] of query.mock.calls) {
-      expect(sql).toMatch(/(?:(?:q|p|s)\.)?tenant_id=\$1 AND (?:(?:q|p|s)\.)?talk_id=\$2/);
+      expect(sql).toMatch(/(?:(?:q|p|s|c)\.)?tenant_id=\$1 AND (?:(?:q|p|s|c)\.)?talk_id=\$2/);
       expect(params?.slice(0, 2)).toEqual(["tenant-1", "talk-1"]);
       if (sql.includes("FROM talks.comments")) {
         // Reading raw comments requires an explicit current safety approval,
