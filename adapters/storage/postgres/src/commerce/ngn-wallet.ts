@@ -193,6 +193,18 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
       });
     },
 
+    async readLatestQuoteFunding(input) {
+      return withTransaction(pool, async (client) => {
+        const result = await client.query<FundingRow>(
+          `SELECT * FROM commerce.ngn_funding_intents
+            WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3
+            ORDER BY created_at DESC, funding_reference DESC LIMIT 1`,
+          [input.tenantId, input.userId, input.quoteId],
+        );
+        return result.rows[0] ? intent(result.rows[0]) : null;
+      }, { isolation: "repeatable read", readOnly: true });
+    },
+
     async readFundingIntent(input) {
       return withTransaction(pool, async (client) => {
         const result = await client.query<FundingRow>(
