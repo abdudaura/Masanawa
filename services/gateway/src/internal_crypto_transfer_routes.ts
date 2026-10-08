@@ -21,6 +21,14 @@ function respondError(reply: FastifyReply, error: unknown) {
   const code = error instanceof Error ? error.message : "";
   if (code === "financial.auth.unauthorized")
     return reply.code(401).send({ code: "crypto.internal.unauthorized" });
+  if (code === "crypto.amount.invalid" || code === "crypto.asset.invalid" ||
+      code === "crypto.network.invalid" || code === "crypto.internal.self_transfer" ||
+      code.startsWith("crypto.internal.request_") ||
+      code.startsWith("crypto.internal.recipient_")) {
+    return reply.code(400).send({ code });
+  }
+  if (code === "crypto.internal.recipient_unavailable")
+    return reply.code(404).send({ code: "crypto.internal.recipient_unavailable" });
   if (code === "crypto.insufficient_balance")
     return reply.code(409).send({ code });
   if (code === "crypto.internal.quote_expired" ||
