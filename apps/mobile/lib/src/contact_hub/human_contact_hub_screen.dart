@@ -39,6 +39,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
       widget.favoritesStore ?? const SecureContactHubFavoritesStore();
 
   String? _favoritesOwner;
+  String? _observedOwner;
   Set<String> _favoriteIds = {};
   bool _findVisible = false;
   String? _openingId;
@@ -194,6 +195,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
       // Unmount all PII: a later authentication must fetch its own C01 state.
       _loadEpoch++;
       _favoritesOwner = null;
+      _observedOwner = null;
       _favoriteIds = {};
       _openingId = null;
       _openingOwner = null;
@@ -203,11 +205,14 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
       );
     }
     final userId = session.user.id;
-    if (_favoritesOwner != userId && _loadEpoch == 0) {
-      // Schedule side effects after build; never reuse another account's IDs.
+    if (_observedOwner != userId) {
+      _observedOwner = userId;
+      _favoritesOwner = null;
+      _favoriteIds = {};
+      final pendingOwner = userId;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _signedInId() == userId && _loadEpoch == 0) {
-          _loadFavorites(userId);
+        if (mounted && _signedInId() == pendingOwner) {
+          _loadFavorites(pendingOwner);
         }
       });
     }
@@ -236,9 +241,9 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
         c.status == HumanContactStatus.declined).toList(growable: false);
     final enabled = !contactsState.busy && _openingId == null;
 
-    // A lazy sliver list bounds rendered row memory even for large future
-    // paginated datasets. C01 currently returns at most 100, without cursor.
-    final entries = <Widget>[];
+    // Lazy rows avoid creating thousands of widgets when pagination arrives.
+    // C01 currently returns at most 100, without a cursor.
+    final entries = <_HubEntry>[];
     void section(String heading, List<HumanContact> people,
         {bool showStars = false}) {
       if (people.isEmpty) return;
@@ -390,7 +395,35 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
             ),
             SliverList.builder(
               itemCount: entries.length,
-              itemBuilder: (context, index) => entries[index],
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                final person = entry.person;
+                if (person == null) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+                    child: Text(entry.heading,
+                        style: Theme.of(context).textTheme.titleMedium),
+                  );
+                }
+                return _PersonRow(
+                  key: ValueKey('\${entry.heading}_\${person.userId}'),
+                  person: person,
+                  enabled: enabled,
+                  isOpening: _openingId == person.userId,
+                  favorite: _favoritesOwner == userId &&
+                      _favoriteIds.contains(person.userId),
+                  showStar: entry.showStar,
+                  onToggleFavorite: () => _toggleFavorite(person, userId),
+                  onMessage: () => _open(person, userId),
+                  onRequest: () => actions.request(person.handle),
+                  onRespond: (accept) => actions.respond(person.userId,
+                      accept: accept, requestRevision: person.requestRevision!),
+                  onRevoke: () => _confirmRemove(person, actions),
+                  onProfile: widget.onOpenPersonProfile == null
+                      ? null
+                      : () => widget.onOpenPersonProfile!(person.userId),
+                );
+              },
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
@@ -398,6 +431,13 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
       ),
     );
   }
+}
+
+class _HubEntry {
+  const _HubEntry({required this.heading, this.person, this.showStar = false});
+  final String heading;
+  final HumanContact? person;
+  final bool showStar;
 }
 
 class _HubNotice extends StatelessWidget {
