@@ -123,4 +123,43 @@ run("C03 durable PostgreSQL metadata event stream",()=>{
     expect(result.events.some(e=>e.kind==="access_changed")).toBe(true);
     expect((await repo.sync({tenantId:tenant,userId:bob,after:"0",limit:50})).events).toEqual([]);
   });
+  it("prunes with member-specific watermark, resnapshots offline device and resumes later events",async()=>{
+    // Re-enable the existing member after the previous revocation regression.
+    await pool.query(`UPDATE identity.users SET state='active'
+      WHERE tenant_id=$1 AND user_id=$2`,[tenant,bob]);
+    await pool.query(`DELETE FROM talks.safety_preferences
+      WHERE tenant_id=$1 AND viewer_user_id=$2 AND subject_user_id=$3`,
+      [tenant,bob,alice]);
+
+    await pool.query(`UPDATE talks.human_dm_events
+      SET created_at=clock_timestamp()-interval '3 days'
+      WHERE tenant_id=$1`,[tenant]);
+    const trimmed=await pool.query<{n:number}>(`
+      SELECT talks.trim_human_dm_events(
+        $1,clock_timestamp()-interval '2 days',10000) AS n
+    `,[tenant]);
+    expect(trimmed.rows[0]!.n).toBeGreaterThan(0);
+
+    const repo=createPostgresHumanDmRealtimeRepository(pool);
+    const expired=await repo.sync({
+      tenantId:tenant,userId:bob,after:"0",limit:50,
+    });
+    expect(expired.resetRequired).toBe(true);
+    expect(expired.events).toEqual([]);
+    expect(BigInt(expired.nextCursor)).toBeGreaterThan(0n);
+
+    const content="This body must remain outside metadata";
+    await pool.query(`INSERT INTO talks.human_dm_messages
+      (tenant_id,conversation_id,sender_user_id,client_request_id,original_sha256,body)
+      VALUES($1,$2,$3,$4,$5,$6)`,
+      [tenant,thread,alice,`recover_${suffix}000`,
+        createHash("sha256").update(content).digest("hex"),content]);
+    const resumed=await repo.sync({
+      tenantId:tenant,userId:bob,after:expired.nextCursor,limit:50,
+    });
+    expect(resumed.resetRequired).toBe(false);
+    expect(resumed.events.some(e=>e.kind==="message_added")).toBe(true);
+    expect(JSON.stringify(resumed)).not.toContain(content);
+  });
+
 });
