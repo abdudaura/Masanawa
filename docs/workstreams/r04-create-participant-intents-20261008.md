@@ -5,7 +5,7 @@
 - **Base main SHA:** `88e67cc6c79de1ca09e02f11e929065dcfb2ea82`
 - **Lane:** R04 / talks-live mobile Create/Host participant intent flow
 - **Status:** ACTIVE; 5-minute repository-visible lease
-- **Last repository-visible update:** 2026-10-08T05:37:18.994Z
+- **Last repository-visible update:** 2026-10-08T05:39:17.264Z
 
 ## Exact owned paths
 - `apps/mobile/lib/src/screens/talks/create_talk_screen.dart`
@@ -15,6 +15,11 @@
 - `apps/mobile/lib/src/screens/talks/add_ai_seat_sheet.dart` (only focused optional initial-tab if needed)
 - `apps/mobile/test/create_talk_participant_flow_test.dart` (new)
 - `apps/mobile/test/talk_ai_seat_sheet_test.dart`
+- `apps/mobile/lib/src/talks/talk_ai_seat.dart` (owner flag read-only DTO)
+- `apps/mobile/test/talk_ai_seat_models_test.dart` (owner flag tests)
+- `services/gateway/src/talk_ai_seats/model.ts` (owner flag DTO)
+- `services/gateway/src/talk_ai_seats/service.ts` (viewer-scoped ownership computation)
+- `services/gateway/src/talk_ai_seat_routes.test.ts` (ownership authorization assertions)
 - `docs/workstreams/r04-create-participant-intents-20261008.md` (this checkpoint)
 
 ## Requirements / dependencies
@@ -49,3 +54,6 @@
 - Must verify handset creation -> Host LiveKit audio -> invited human request/Host admit and Expert/Twin quote/confirm/actual audible AI. Provider/network/second-device integration is NOT verified.
 - No authoritative pre-Talk persona catalog endpoint exists in the inspected `/talks/:talkId/ai-seats` contract. This lane preserves **action intents** across creation/restart, not a specific Expert/Twin identity selected before a Talk exists. True pre-Talk persona ID selection plus a targeted human invitation registry are R04 integration follow-ups; do not mark the whole readiness item DONE.
 - Release evidence: no production deployment, money movement, device acceptance, or passing test run from this window.
+
+## Ownership-correctness expansion
+Canonical catalog contains **all public Twins**; do not call them the Host's property. Extend the authenticated candidate DTO with a server-computed `isOwnedByViewer` (matching canonical twin owner to authenticated user), default false on malformed/legacy responses. Only the Create `Add My Twin` handoff filters to owned Twins; standard Add/Sponsor AI catalog remains unchanged. Do not infer ownership from name, presence or client-supplied IDs. Current open PRs R09/R10/R11/R12 own none of these added exact paths; recheck before modifying.
