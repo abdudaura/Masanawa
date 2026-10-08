@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/localization/locale_preference.dart';
@@ -17,6 +19,22 @@ final class MemoryLocaleStore implements LocalePreferenceStore {
   Future<void> write(String? languageCode) async {
     if (fail) throw StateError('write failed');
     value = languageCode;
+  }
+}
+
+
+final class DeferredLocaleStore implements LocalePreferenceStore {
+  final readGate = Completer<String?>();
+  final writeGate = Completer<void>();
+  String? saved;
+
+  @override
+  Future<String?> read() => readGate.future;
+
+  @override
+  Future<void> write(String? languageCode) async {
+    await writeGate.future;
+    saved = languageCode;
   }
 }
 
@@ -77,4 +95,49 @@ void main() {
     expect(store.value, isNull);
     controller.dispose();
   });
+  test('selection never races a slow storage restoration', () async {
+    final store = DeferredLocaleStore();
+    final controller = LocalePreferenceController(store);
+    final reading = controller.load();
+    final selecting = controller.select(const Locale('fr'));
+    store.readGate.complete('ar');
+    await reading;
+    expect(controller.override, const Locale('ar'));
+    store.writeGate.complete();
+    await selecting;
+    expect(controller.override, const Locale('fr'));
+    expect(store.saved, 'fr');
+    controller.dispose();
+  });
+
+  test('no notifications after widget disposes while locale read is pending', () async {
+    final store = DeferredLocaleStore();
+    final controller = LocalePreferenceController(store);
+    var notices = 0;
+    controller.addListener(() => notices++);
+    final pending = controller.load();
+    controller.dispose();
+    store.readGate.complete('ar');
+    await pending;
+    expect(notices, 0);
+  });
+
+  test('second parallel language save rejects rather than racing writes', () async {
+    final store = DeferredLocaleStore();
+    store.readGate.complete(null);
+    final controller = LocalePreferenceController(store);
+    await controller.load();
+    final first = controller.select(const Locale('fr'));
+    await Future<void>.delayed(Duration.zero);
+    await expectLater(
+      controller.select(const Locale('ar')),
+      throwsStateError,
+    );
+    store.writeGate.complete();
+    await first;
+    expect(controller.override, const Locale('fr'));
+    expect(store.saved, 'fr');
+    controller.dispose();
+  });
+
 }
