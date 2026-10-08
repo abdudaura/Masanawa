@@ -53,6 +53,8 @@ class _CachedHumanChatThreadState extends State<CachedHumanChatThread> {
       _outbox = const [];
       _hasMoreCached = true;
       _loading = true;
+      _syncing = false;
+      _olderLoading = false;
       _warning = null;
       _composer.clear();
       unawaited(_loadInitial());
