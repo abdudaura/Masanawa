@@ -103,35 +103,84 @@ describeDatabase("R12 durable PostgreSQL deletion request", () => {
       now: new Date(Date.parse(createdAt)+1000).toISOString(),
       expiresAt, resendAfter,
     })).rejects.toThrow("account_deletion.challenge_cooldown");
-    expect(await challenges.consume({
+    const invalid = await challenges.verify({
       tenantId, userId: secondary.userId, requestId: request.requestId,
-      codeHash: wrong, now: createdAt,
-    })).toBe("invalid");
-    expect(await challenges.consume({
+      expectedRevision: 1, codeHash: wrong, now: createdAt,
+    });
+    expect(invalid).toEqual({ result: "invalid" });
+    const verified = await challenges.verify({
       tenantId, userId: secondary.userId, requestId: request.requestId,
-      codeHash: correct, now: createdAt,
-    })).toBe("accepted");
-    expect(await challenges.consume({
+      expectedRevision: 1, codeHash: correct, now: createdAt,
+    });
+    expect(verified.result).toBe("accepted");
+    if (verified.result !== "accepted") throw new Error("Expected verified request");
+    expect(verified.request.phase).toBe("identity-verified");
+    expect(verified.request.revision).toBe(2);
+    const replay = await challenges.verify({
       tenantId, userId: secondary.userId, requestId: request.requestId,
-      codeHash: correct, now: createdAt,
-    })).toBe("locked");
+      expectedRevision: 1, codeHash: correct, now: createdAt,
+    });
+    expect(replay).toEqual({ result: "already-verified" });
+    const history = await pool.query<{ revision: string }>(
+      `SELECT revision::text
+         FROM identity.account_deletion_events
+        WHERE request_id=$1::uuid ORDER BY revision`,
+      [request.requestId],
+    );
+    expect(history.rows.map((row) => row.revision)).toEqual(["1", "2"]);
     const recorded = await pool.query<{ code_hash: string }>(
       `SELECT code_hash FROM identity.account_deletion_challenges
         WHERE tenant_id=$1 AND user_id=$2`,
       [tenantId, secondary.userId],
     );
     expect(recorded.rows[0]?.code_hash).toBe(correct);
-    await reqs.transition({
-      tenantId, userId: secondary.userId, expectedRevision: 1,
-      target: "identity-verified", now: createdAt,
-      identityReauthenticated: true,
-    });
     await expect(challenges.put({
       tenantId, userId: secondary.userId, requestId: request.requestId,
       codeHash: correct, channel: "email", now: expiresAt,
       expiresAt: new Date(Date.parse(expiresAt)+600000).toISOString(),
       resendAfter: new Date(Date.parse(expiresAt)+60000).toISOString(),
     })).rejects.toThrow("account_deletion.verification_not_available");
+  });
+
+  it("rolls back code consumption when audit append fails, preserving retryability", async () => {
+    const profiles = createPostgresPlatformSessionRepository(pool);
+    const profile = await profiles.createProfile({
+      tenantId, channel: "email",
+      identifier: `delete-rollback-${randomUUID()}@example.com`,
+      name: "Rollback Customer", locale: "en", createdAt,
+    });
+    const requests = createPostgresAccountDeletionRepository(pool);
+    const request = await requests.open({
+      tenantId, userId: profile.userId, requestId: randomUUID(), now: createdAt,
+    });
+    const challenge = createPostgresAccountDeletionChallengeRepository(pool);
+    const digest = "c".repeat(64);
+    await challenge.put({
+      tenantId, userId: profile.userId, requestId: request.requestId,
+      codeHash: digest, channel: "email", now: createdAt,
+      expiresAt: new Date(Date.parse(createdAt) + 600000).toISOString(),
+      resendAfter: new Date(Date.parse(createdAt) + 60000).toISOString(),
+    });
+    // An injected audit uniqueness collision simulates a failure after
+    // the request update and before the challenge consume.
+    await pool.query(
+      `INSERT INTO identity.account_deletion_events(request_id,revision,phase,occurred_at)
+         VALUES ($1::uuid,2,'identity-verified',$2)`,
+      [request.requestId, createdAt],
+    );
+    await expect(challenge.verify({
+      tenantId, userId: profile.userId, requestId: request.requestId,
+      expectedRevision: 1, codeHash: digest, now: createdAt,
+    })).rejects.toThrow();
+    const unchanged = await requests.read({ tenantId, userId: profile.userId });
+    expect(unchanged?.phase).toBe("requested");
+    expect(unchanged?.revision).toBe(1);
+    const result = await pool.query<{ consumed_at: Date | null }>(
+      `SELECT consumed_at FROM identity.account_deletion_challenges
+         WHERE tenant_id=$1 AND user_id=$2`,
+      [tenantId, profile.userId],
+    );
+    expect(result.rows[0]?.consumed_at).toBeNull();
   });
 
   it("refuses audit-event tampering", async () => {
