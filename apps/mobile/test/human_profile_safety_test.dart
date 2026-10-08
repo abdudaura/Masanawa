@@ -159,6 +159,25 @@ void main() {
     expect(server.reads, 1);
   });
 
+  testWidgets('sign-out fences old-account safety switches', (tester) async {
+    final server = _Safety();
+    await tester.pumpWidget(_app(server));
+    await tester.pumpAndSettle();
+    final scope = ProviderScope.containerOf(
+      tester.element(find.byType(HumanProfileSafetySheet)),
+    );
+    (scope.read(sessionProvider.notifier) as _SignedIn).signOutForTest();
+    await tester.pumpAndSettle();
+    final blocked = tester.widget<SwitchListTile>(
+      find.byKey(const ValueKey('human-safety-block')),
+    );
+    expect(blocked.onChanged, isNull);
+    expect(tester.widget<OutlinedButton>(
+      find.byKey(const ValueKey('human-safety-refresh')),
+    ).onPressed, isNull);
+    expect(server.writes, 0);
+  });
+
   test('authenticated HTTP preserves tenant-authorized handle and exact states',
       () async {
     final dio = Dio(BaseOptions(baseUrl: 'https://example.invalid'));
