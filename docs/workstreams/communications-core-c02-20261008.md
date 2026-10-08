@@ -17,6 +17,7 @@
 - `apps/mobile/lib/src/messages/human_conversation_screen.dart`
 - `apps/mobile/test/human_messages_transport_test.dart`
 - `apps/mobile/test/human_messages_controller_test.dart`
+- `apps/mobile/test/human_conversation_screen_test.dart`
 - `docs/workstreams/communications-core-c02-20261008.md`
 
 ## Owner & API boundaries
