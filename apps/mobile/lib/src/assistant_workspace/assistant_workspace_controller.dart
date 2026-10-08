@@ -361,6 +361,10 @@ class AssistantWorkspaceController extends ChangeNotifier {
       await _acknowledged(turn, generation);
     } catch (_) {
       if (_generation == generation && !_dead) {
+        // A server session can expire during an outage. The next retry
+        // rechecks authoritative status, then opens a fresh admitted session
+        // while preserving the original idempotency key.
+        _bindings.remove(turn.characterId);
         error = 'Delivery is uncertain. Retry checks the same request ID.';
       }
     } finally {
