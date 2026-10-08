@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/phone/country_codes.dart';
+import '../../localization/international_digits.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -53,6 +54,7 @@ class _PhoneFieldState extends State<PhoneField> {
           autofocus: widget.autofocus,
           keyboardType: TextInputType.phone,
           inputFormatters: [
+            const InternationalDigitsFormatter(),
             FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s]')),
           ],
           onChanged: _onChanged,
