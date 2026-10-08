@@ -48,6 +48,72 @@ export function createPostgresAccountDeletionQueue(pool: Pool) {
           userId:row.user_id,token,attempt:row.attempts+1};
       });
     },
+    async park(lease:DeletionJobLease,input: Readonly<{
+      findingCodes:readonly string[];
+      admissionFenced:boolean;
+      retrySeconds:number;
+      now:string;
+    }>):Promise<void> {
+      if(!Number.isSafeInteger(input.retrySeconds)||input.retrySeconds<60||
+         input.retrySeconds>86400||!Number.isFinite(Date.parse(input.now))||
+         input.findingCodes.some(code=>!/^[a-z0-9-]{3,80}$/u.test(code))) {
+        throw new Error("account_deletion.worker_invalid_outcome");
+      }
+      await withTransaction(pool,async client=>{
+        const req=await client.query<{phase:string;revision:string;updated_at:Date|string}>(
+          `SELECT phase,revision::text,updated_at FROM identity.account_deletion_requests
+            WHERE request_id=$1::uuid AND tenant_id=$2 AND user_id=$3 FOR UPDATE`,
+          [lease.requestId,lease.tenantId,lease.userId],
+        );
+        const existing=req.rows[0];
+        if(!existing)throw new Error("account_deletion.not_found");
+        const job=await client.query<{lease_token:string;leased_until:Date|string}>(
+          `SELECT lease_token::text,leased_until
+             FROM identity.account_deletion_worker_jobs
+            WHERE request_id=$1::uuid AND state='leased' FOR UPDATE`,
+          [lease.requestId],
+        );
+        if(!job.rows[0]||job.rows[0].lease_token!==lease.token||
+            new Date(job.rows[0].leased_until).getTime()<=Date.parse(input.now)) {
+          throw new Error("account_deletion.worker_stale_lease");
+        }
+        if(existing.phase!=="identity-verified"&&existing.phase!=="awaiting-settlement") {
+          throw new Error("account_deletion.worker_state_conflict");
+        }
+        if(existing.phase==="identity-verified") {
+          // No request is marked completed by the reconciliation worker.
+          const obligations=Array.from(new Set([
+            ...input.findingCodes.map(x=>"financial:"+x),
+            ...(!input.admissionFenced?["financial:admission-fence-unqualified"]:[]),
+            "privacy:processor-cleanup-unqualified",
+          ]));
+          const at=new Date(Math.max(Date.parse(input.now),
+            new Date(existing.updated_at).getTime())).toISOString();
+          await client.query(
+            `UPDATE identity.account_deletion_requests
+                SET phase='awaiting-settlement',revision=revision+1,
+                    outstanding_obligations=$2::jsonb,updated_at=$3
+              WHERE request_id=$1::uuid`,
+            [lease.requestId,JSON.stringify(obligations),at],
+          );
+          await client.query(
+            `INSERT INTO identity.account_deletion_events(request_id,revision,phase,occurred_at)
+             VALUES ($1::uuid,$2,'awaiting-settlement',$3)`,
+            [lease.requestId,Number(existing.revision)+1,at],
+          );
+        }
+        const outcome=input.findingCodes.length?"financial_holds":"review_required";
+        const result=await client.query(
+          `UPDATE identity.account_deletion_worker_jobs
+              SET state='waiting',lease_token=NULL,leased_until=NULL,
+                  last_outcome=$3,next_attempt_at=$4::timestamptz+
+                    ($5*interval '1 second'),updated_at=$4
+            WHERE request_id=$1::uuid AND lease_token=$2::uuid`,
+          [lease.requestId,lease.token,outcome,input.now,input.retrySeconds],
+        );
+        if(result.rowCount!==1)throw new Error("account_deletion.worker_stale_lease");
+      });
+    },
     async fail(lease:DeletionJobLease,delaySeconds:number):Promise<void> {
       if(!Number.isSafeInteger(delaySeconds)||delaySeconds<60||delaySeconds>86400) {
         throw new Error("account_deletion.worker_invalid_retry");
