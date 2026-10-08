@@ -94,6 +94,7 @@ class _Room implements TalkLiveRoom {
   final List<bool> microphone = [];
   int closes = 0;
   bool failNextConnect = false;
+  Completer<void>? mediaConnectGate;
   int connects = 0;
 
   @override
@@ -102,6 +103,7 @@ class _Room implements TalkLiveRoom {
     required bool publishMicrophone,
   }) async {
     connects += 1;
+    await mediaConnectGate?.future;
     if (failNextConnect) {
       failNextConnect = false;
       throw StateError('Simulated LiveKit connection failure');
@@ -357,6 +359,30 @@ void main() {
 
     expect(transport.disconnects, 1);
     expect(room.connects, 0);
+    expect(session.status, TalkLiveAudioStatus.ended);
+  });
+
+  test('close while media connects tears down late room without double charge', () async {
+    final gate = Completer<void>();
+    final transport = _Transport(role: TalkLiveRole.host, canPublishAudio: true);
+    final room = _Room()..mediaConnectGate = gate;
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    final starting = session.start();
+    // Let connect() and mediaToken() complete until the room becomes pending.
+    while (room.connects == 0) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await session.close();
+    gate.complete();
+    await starting;
+
+    expect(transport.disconnects, 1);
+    expect(room.closes, 2);
     expect(session.status, TalkLiveAudioStatus.ended);
   });
 
