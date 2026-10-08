@@ -265,12 +265,25 @@ export function createPostgresVoiceNoteRepository(pool:VoiceSqlPool):VoiceNoteRe
     return r.rows.map(x=>({objectKey:x.object_key}));
   },
   async deleted(objectKey,success) {
-    if(success)await pool.query(
-      `DELETE FROM talks.human_dm_voice_objects WHERE object_key=$1 AND state='deleting'`,[objectKey]);
-    else await pool.query(
-      `UPDATE talks.human_dm_voice_objects SET state='orphaned',
-         updated_at=clock_timestamp(),attempts=attempts+1
-       WHERE object_key=$1 AND state='deleting'`,[objectKey]);
+    if(success) {
+      // Only the caller that actually received successful S3 DELETE may mark
+      // erasure. The marker and removal commit together: a DB crash or rollback
+      // leaves the original reference and a safely retryable object DELETE.
+      await trx(pool,async q=>{
+        await q.query(
+          `UPDATE talks.human_dm_voice_objects SET storage_erased_at=clock_timestamp()
+            WHERE object_key=$1 AND state='deleting'`,[objectKey]);
+        await q.query(
+          `DELETE FROM talks.human_dm_voice_objects
+            WHERE object_key=$1 AND state='deleting' AND storage_erased_at IS NOT NULL`,
+          [objectKey]);
+      });
+    } else {
+      await pool.query(
+        `UPDATE talks.human_dm_voice_objects SET state='orphaned',
+           updated_at=clock_timestamp(),attempts=attempts+1
+         WHERE object_key=$1 AND state='deleting'`,[objectKey]);
+    }
   }
  });
 }
