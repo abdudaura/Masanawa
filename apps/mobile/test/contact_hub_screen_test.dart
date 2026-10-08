@@ -268,4 +268,36 @@ void main() {
     expect(find.text('Contact 9999'), findsNothing);
     expect(messages.opened, isEmpty);
   });
+
+  testWidgets('account transition clears another user’s handle/search text',
+      (tester) async {
+    final store = _Favorites();
+    store.values['person_a'] = {'person_b'};
+    await _mount(tester, _Contacts(), _Messages(), store, (_, __) {});
+    await tester.enterText(find.byKey(const Key('hubFilter')), 'private term');
+    await tester.tap(find.text('Add by exact @handle'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('hubHandle')), 'secret_handle');
+    final container = ProviderScope.containerOf(
+        tester.element(find.byType(HumanContactHubScreen)));
+    (container.read(sessionProvider.notifier) as _TestSession).change();
+    await tester.pumpAndSettle();
+    expect(find.text('private term'), findsNothing);
+    expect(find.text('secret_handle'), findsNothing);
+    expect(find.text('Favorites'), findsNothing);
+    expect(find.byKey(const Key('hubFilter')), findsOneWidget);
+  });
+
+  testWidgets('favorites survive widget restart only for that account',
+      (tester) async {
+    final store = _Favorites();
+    await _mount(tester, _Contacts(), _Messages(), store, (_, __) {});
+    await tester.tap(find.byTooltip('Add to favorites'));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await _mount(tester, _Contacts(), _Messages(), store, (_, __) {});
+    expect(find.text('Favorites'), findsOneWidget);
+    expect(store.values['person_a'], {'person_b'});
+    expect(store.values['person_c'], isNull);
+  });
 }
