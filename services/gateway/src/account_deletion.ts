@@ -112,7 +112,7 @@ export function createAccountDeletionService(input: Readonly<{
           ? { channel: "sms" as const, destination: identity.profile.phone, sender: input.sms }
           : null;
       if (!delivery) {
-        return { request, verificationChannel: null, verificationSent: false };
+        return { request: publicStatus(request), verificationChannel: null, verificationSent: false };
       }
       const otp = createOtpCode();
       const digest = codeHash({
@@ -162,32 +162,32 @@ export function createAccountDeletionService(input: Readonly<{
         throw new AccountDeletionError("ACCOUNT_DELETION_ALREADY_VERIFIED", 409);
       }
       const at = now();
-      const result = await input.challenges.consume({
+      const outcome = await input.challenges.verify({
         tenantId: identity.tenantId,
         userId: identity.userId,
         requestId: request.requestId,
+        expectedRevision: request.revision,
         codeHash: codeHash({
-          pepper: input.otpPepper, tenantId: identity.tenantId,
-          userId: identity.userId, requestId: request.requestId, code,
+          pepper: input.otpPepper,
+          tenantId: identity.tenantId,
+          userId: identity.userId,
+          requestId: request.requestId,
+          code,
         }),
         now: at,
       });
-      if (result !== "accepted") {
-        throw new AccountDeletionError(
-          result === "locked" ? "ACCOUNT_DELETION_CODE_LOCKED" :
-          result === "expired" ? "ACCOUNT_DELETION_CODE_EXPIRED" :
-          "ACCOUNT_DELETION_CODE_INVALID",
-          result === "locked" ? 429 : 400,
-        );
+      if (outcome.result === "accepted") {
+        return publicStatus(outcome.request);
       }
-      const verified = await input.requests.transition({
-        tenantId: identity.tenantId, userId: identity.userId,
-        target: "identity-verified",
-        expectedRevision: request.revision,
-        identityReauthenticated: true,
-        now: at,
-      });
-      return publicStatus(verified);
+      throw new AccountDeletionError(
+        outcome.result === "already-verified" ? "ACCOUNT_DELETION_ALREADY_VERIFIED" :
+        outcome.result === "conflict" ? "ACCOUNT_DELETION_STATE_CONFLICT" :
+        outcome.result === "locked" ? "ACCOUNT_DELETION_CODE_LOCKED" :
+        outcome.result === "expired" ? "ACCOUNT_DELETION_CODE_EXPIRED" :
+        "ACCOUNT_DELETION_CODE_INVALID",
+        outcome.result === "already-verified" || outcome.result === "conflict"
+          ? 409 : outcome.result === "locked" ? 429 : 400,
+      );
     },
   });
 }
