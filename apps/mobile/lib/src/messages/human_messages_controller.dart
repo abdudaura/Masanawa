@@ -97,6 +97,9 @@ class HumanConversationController extends ChangeNotifier {
       final page=await transport.history(conversationId:conversationId);
       _checkOwner();
       if(generation!=_generation)return;
+      if(page.messages.any((m)=>m.conversationId!=conversationId)) {
+        throw const FormatException('Wrong conversation in private history');
+      }
       pending=stored;
       messages=List.unmodifiable(page.messages);
       nextCursor=page.nextCursor;
@@ -175,7 +178,8 @@ class HumanConversationController extends ChangeNotifier {
     final result=await transport.edit(conversationId:conversationId,messageId:original.messageId,
       expectedRevision:original.revision,text:text);
     _checkOwner();
-    if(result.messageId!=original.messageId||result.conversationId!=conversationId||result.revision<=original.revision) {
+    if(result.messageId!=original.messageId||result.conversationId!=conversationId||
+        result.revision<=original.revision||result.deleted||result.text!=text) {
       throw const FormatException('Edit receipt did not match the message');
     }
     _merge([result]);_update();
