@@ -144,7 +144,7 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
                       children: [
                         for (final option in options)
                           ChoiceChip(
-                            key: ValueKey('talk-gift-${option.amountCredits}'),
+                            key: ValueKey('talk-gift-${option.id}'),
                             avatar: Icon(
                               talkGiftIcon(option.visual),
                               size: 18,
