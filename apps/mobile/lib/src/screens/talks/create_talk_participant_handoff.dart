@@ -20,14 +20,16 @@ typedef PresentCreatedAiSeat = Future<TalkAiSeatRequest?> Function(
 class TalkCreateParticipantHandoff extends ConsumerStatefulWidget {
   const TalkCreateParticipantHandoff({
     super.key,
-    required this.talk,
+    required this.talkId,
+    this.initialTalk,
     required this.isHost,
     required this.child,
     this.presentAiSeat,
     this.shareTalk,
   });
 
-  final TalkDiscoveryItem talk;
+  final String talkId;
+  final TalkDiscoveryItem? initialTalk;
   final bool isHost;
   final Widget child;
   final PresentCreatedAiSeat? presentAiSeat;
@@ -54,7 +56,7 @@ class _TalkCreateParticipantHandoffState
   @override
   void didUpdateWidget(covariant TalkCreateParticipantHandoff oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.talk.id != widget.talk.id || oldWidget.isHost != widget.isHost) {
+    if (oldWidget.talkId != widget.talkId || oldWidget.isHost != widget.isHost) {
       _loadVersion++;
       _banner?.close();
       _banner = null;
@@ -82,7 +84,7 @@ class _TalkCreateParticipantHandoffState
     if (!mounted || !widget.isHost) return;
     final version = ++_loadVersion;
     try {
-      final actions = await ref.read(talkCreateActionStoreProvider).load(widget.talk.id);
+      final actions = await ref.read(talkCreateActionStoreProvider).load(widget.talkId);
       if (!mounted || version != _loadVersion) return;
       setState(() => _pending = actions);
       WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
@@ -147,7 +149,7 @@ class _TalkCreateParticipantHandoffState
     _working = true;
     try {
       final remaining = _pending.skip(1).toList(growable: false);
-      await ref.read(talkCreateActionStoreProvider).save(widget.talk.id, remaining);
+      await ref.read(talkCreateActionStoreProvider).save(widget.talkId, remaining);
       if (!mounted) return;
       _banner?.close();
       _banner = null;
@@ -169,9 +171,9 @@ class _TalkCreateParticipantHandoffState
       switch (action) {
         case TalkCreateParticipantAction.invitePerson:
           final payload = TalkSharePayload(
-            talkId: widget.talk.id,
-            title: widget.talk.title,
-            hostName: widget.talk.hostName,
+            talkId: widget.talkId,
+            title: widget.initialTalk?.title ?? 'Masanawa Talk',
+            hostName: widget.initialTalk?.hostName ?? '',
           );
           await (widget.shareTalk ?? const SystemTalkShareService().share)(payload);
           if (!mounted) return;
@@ -182,11 +184,11 @@ class _TalkCreateParticipantHandoffState
               ? TalkAiPersonaKind.expert
               : TalkAiPersonaKind.twin;
           final request = await (widget.presentAiSeat ?? _showSeat)(
-            context, talkId: widget.talk.id, kind: kind,
+            context, talkId: widget.talkId, kind: kind,
           );
           if (!mounted) return;
           if (request != null) {
-            ref.invalidate(talkDetailProvider(widget.talk.id));
+            ref.invalidate(talkDetailProvider(widget.talkId));
             _message(request.message.isNotEmpty
                 ? request.message
                 : request.status == TalkAiSeatRequestStatus.admitted
@@ -197,7 +199,7 @@ class _TalkCreateParticipantHandoffState
       // Closing the actual quote picker without paying is a valid Skip, not
       // evidence of a paid or admitted Seat.
       await ref.read(talkCreateActionStoreProvider).save(
-        widget.talk.id,
+        widget.talkId,
         _pending.skip(1).toList(growable: false),
       );
       if (!mounted) return;
