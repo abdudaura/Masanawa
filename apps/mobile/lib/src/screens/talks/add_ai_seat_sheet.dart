@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../state/talk_ai_seat_state.dart';
+import '../../state/session_state.dart';
 import '../../talks/talk_ai_seat.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -61,10 +62,26 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   bool _loadingQuote = false;
   bool _confirming = false;
   String? _error;
+  String? _openingAccountId;
+  int _authRevision = 0;
+
+  String? _activeAccountId() {
+    final session = ref.read(sessionProvider);
+    return session is SessionSignedIn && session.user.isActive
+        ? session.user.id
+        : null;
+  }
+
+  bool _sameAccount(int revision) =>
+      mounted &&
+      revision == _authRevision &&
+      (_openingAccountId == null ||
+          _activeAccountId() == _openingAccountId);
 
   @override
   void initState() {
     super.initState();
+    _openingAccountId = _activeAccountId();
     _tabs = TabController(
       length: widget.onlyOwnedTwin ? 1 : 2,
       vsync: this,
@@ -85,7 +102,8 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   }
 
   Future<void> _select(TalkAiSeatCandidate candidate) async {
-    if (_loadingQuote) return;
+    final revision = _authRevision;
+    if (_loadingQuote || !_sameAccount(revision)) return;
     setState(() {
       _loadingQuote = true;
       _error = null;
@@ -97,7 +115,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
             mode:
                 widget.isHost ? TalkAiSeatMode.hostAdd : TalkAiSeatMode.sponsor,
           );
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       if (quote.personaId != candidate.personaId ||
           quote.kind != candidate.kind ||
           quote.quoteId.trim().isEmpty ||
@@ -125,12 +143,12 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         });
       }
     } catch (_) {
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       setState(() {
         _error = 'Couldn’t prepare this Seat right now.';
       });
     } finally {
-      if (mounted) setState(() => _loadingQuote = false);
+      if (_sameAccount(revision)) setState(() => _loadingQuote = false);
     }
   }
 
@@ -141,8 +159,10 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   }
 
   Future<void> _confirm() async {
+    final revision = _authRevision;
     final quote = _quote;
-    if (quote == null || _confirming || _loadingQuote) return;
+    if (quote == null || _confirming || _loadingQuote ||
+        !_sameAccount(revision)) return;
     if (_terminalQuote) {
       setState(() => _error = 'This request has ended. Get a new quote to continue.');
       return;
@@ -160,7 +180,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
             talkId: widget.talkId,
             quoteId: quote.quoteId,
           );
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       if (request.status == TalkAiSeatRequestStatus.expired ||
           request.status == TalkAiSeatRequestStatus.declined ||
           request.status == TalkAiSeatRequestStatus.unknown) {
@@ -178,17 +198,44 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
       }
       Navigator.of(context).pop(request);
     } catch (_) {
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       setState(() {
         _error = 'Couldn’t verify this Seat request. Check the Talk or retry this same quote; don’t start a new purchase.';
       });
     } finally {
-      if (mounted) setState(() => _confirming = false);
+      if (_sameAccount(revision)) setState(() => _confirming = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // A quoted or even in-flight charge belongs to the account which opened
+    // this picker. Never present its details or outcome under another login.
+    ref.listen<String?>(
+      sessionProvider.select((session) =>
+          session is SessionSignedIn && session.user.isActive
+              ? session.user.id
+              : null),
+      (previous, next) {
+        if (_openingAccountId == null || next == _openingAccountId) return;
+        _authRevision++;
+        _quoteExpiryTimer?.cancel();
+        _quote = null;
+        _selectedCandidate = null;
+        _loadingQuote = false;
+        _confirming = false;
+        _error = 'Account changed. Reopen Add AI to get a new quote.';
+        // A standalone sheet embedded in test/demo navigation has no modal to
+        // dismiss; the actual payment-capable modal is closed after the frame.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final route = ModalRoute.of(context);
+          if (route is ModalBottomSheetRoute && route.isCurrent) {
+            Navigator.of(context).pop();
+          }
+        });
+      },
+    );
     final u = context.masanawa;
     final quote = _quote;
     if (quote != null) {
