@@ -60,7 +60,7 @@ Widget _app({
         statusCode: 200,
         data: <String, dynamic>{
           'userId': 'user_am', 'handle': 'amina',
-          'displayName': 'Amina', 'status': 'accepted',
+          'displayName': 'Amina', 'status': canMessage ? 'accepted' : 'none',
           'canMessage': canMessage,
         },
       ));
