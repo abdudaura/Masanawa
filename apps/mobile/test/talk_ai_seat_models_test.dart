@@ -46,4 +46,70 @@ void main() {
 
     expect(request.status, TalkAiSeatRequestStatus.pendingHost);
   });
+  test('candidate missing availability does not advertise payable Seat', () {
+    final raw = <String, dynamic>{
+      'personaId': 'expert-1',
+      'displayName': 'Verified Expert',
+      'kind': 'expert',
+      'seatFeeLabel': '10 Credits',
+    };
+    expect(TalkAiSeatCandidate.fromJson(raw).isAvailable, isFalse);
+    expect(
+      TalkAiSeatCandidate.fromJson({...raw, 'isAvailable': 'true'})
+          .isAvailable,
+      isFalse,
+    );
+    expect(
+      TalkAiSeatCandidate.fromJson({...raw, 'isAvailable': true})
+          .isAvailable,
+      isTrue,
+    );
+  });
+
+  test('unknown persona kind or blank identity cannot imply an Expert', () {
+    final raw = <String, dynamic>{
+      'personaId': 'expert-1',
+      'displayName': 'Expert',
+      'kind': 'expert',
+      'seatFeeLabel': '10 Credits',
+      'isAvailable': true,
+    };
+    expect(
+      () => TalkAiSeatCandidate.fromJson({...raw, 'kind': 'other'}),
+      throwsFormatException,
+    );
+    expect(
+      () => TalkAiSeatCandidate.fromJson({...raw, 'personaId': '  '}),
+      throwsFormatException,
+    );
+  });
+
+  test('quote enforces exact approval mode and valid time', () {
+    final raw = <String, dynamic>{
+      'quoteId': 'q-1',
+      'personaId': 'expert-1',
+      'displayName': 'Expert',
+      'kind': 'expert',
+      'mode': 'host_add',
+      'totalLabel': '10 Credits',
+      'expiresAt': '2030-01-01T12:30:00Z',
+      'requiresHostApproval': false,
+    };
+    final quote = TalkAiSeatQuote.fromJson(raw);
+    expect(quote.isExpiredAt(DateTime.utc(2029)), isFalse);
+    expect(quote.isExpiredAt(DateTime.utc(2030, 1, 1, 12, 30)), isTrue);
+    expect(
+      () => TalkAiSeatQuote.fromJson({...raw, 'expiresAt': 'invalid'}),
+      throwsFormatException,
+    );
+    expect(
+      () => TalkAiSeatQuote.fromJson({...raw, 'requiresHostApproval': true}),
+      throwsFormatException,
+    );
+    expect(
+      () => TalkAiSeatQuote.fromJson({...raw, 'mode': 'other'}),
+      throwsFormatException,
+    );
+  });
+
 }
