@@ -269,6 +269,7 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
       _deny();
       return;
     }
+    final previouslyLoaded = _loaded;
     _loaded = false;
     _credentials = null;
     ++_playGeneration;
@@ -279,6 +280,12 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
       ),
     );
     try {
+      // Stop the old stream before awaiting an authorization check. In
+      // particular, an expired seek must not keep playing cached private audio.
+      if (previouslyLoaded) {
+        await player.pause();
+        if (_closed) return;
+      }
       // Every refresh goes through the authenticated, tenant-scoped Gateway.
       // A revoked/unpublished replay must fail even when an old URL exists.
       final credentials = await transport.load(talkId);
