@@ -1,5 +1,10 @@
 # Masanawa Documentation
 
+## Owner-approved requirements crosswalk and integrated journeys (2026-10-08)
+
+**Read `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` for a requirement-by-requirement map of the 7–8 October owner's discussions, the existing R01–R19 / C01–C08 implementation gates, explicitly unapproved comparisons/future ideas, and integrated real-user acceptance scenarios.** These are binding coverage overlays, not new products, a replacement backlog or implementation evidence. Implementation windows must link the exact requirement and journey IDs in their PR/test handoff; old documents never override the owner-approved final five-tab navigation.
+
+
 ## Source of truth — owner-approved five-tab mobile UX (2026-10-08)
 
 **Exactly five bottom tabs, in order: Talks · Chats · Assistant · Wallet · Agents**, with **Assistant in the center**, two tabs on each side. Talks owns former Home Explore/Live public audio and the **Start Talk** FAB; Chats is **human-only** DMs; Assistant is **one** private Gwani/Gwana chat with an **in-chat persona switch**; Wallet owns eligible Billing/Crypto, transfers and distinct balances; Agents owns the Masanawa Expert/Twin roster and My Twin.
