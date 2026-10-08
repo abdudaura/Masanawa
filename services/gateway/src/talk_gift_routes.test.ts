@@ -286,4 +286,16 @@ describe("Talk Host gift route", () => {
     expect(executions).toHaveLength(0);
   });
 
+  it("rejects arbitrary legacy amounts without a matching server catalog price", async () => {
+    const { server, executions } = app();
+    const response = await server.inject({
+      method: "POST", url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: { requestId: "legacy-arbitrary", amountCredits: 123 },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ message: "talks.gift.option_unavailable" });
+    expect(executions).toHaveLength(0);
+  });
+
 });
