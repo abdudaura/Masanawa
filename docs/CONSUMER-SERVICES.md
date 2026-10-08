@@ -17,7 +17,7 @@ capabilities—is consumed through Gwani, Experts or Talks rather than presented
 A user can reach Billing/Crypto in three simple ways:
 
 - ask private Gwani from anywhere;
-- open **You -> Services**;
+- open **Profile -> Services**;
 - open **Wallet -> Services**.
 
 No service action should require leaving a public Talk permanently; the private Gwani
@@ -176,3 +176,11 @@ refund and real provider receipts before enabling advertised operations.
 Digital AI Seat/Credit/gift purchases require their own Google Play payment classification;
 do not route all product categories through utility billing by assumption. Release
 channel/regional policy and provider eligibility are acceptance gates, not extra Services.
+
+## Root Wallet shortcuts
+
+Wallet is a root destination. Order Crypto first, then Data bundles, Airtime, Electricity
+and TV/Cable, with balance/history and qualified funding/send/withdraw controls. These
+remain Billing/Crypto intents. Selection starts a private assistant task with the chosen
+intent already known; it neither executes nor turns on the microphone. Profile/Services
+and Agent chat may reach the same task authority. See APP-SHELL-CONTRACT.md.
