@@ -92,8 +92,8 @@ void main() {
       state: const HumanContactsViewState(
         loading: false, preferences: _prefs, contacts: [_incoming, _outgoing],
       ),
-      respond: (_, action) async => accepted = action,
-      withdraw: (person) async => withdrawn = person.userId,
+      respond: (_, action) async { accepted = action; },
+      withdraw: (person) async { withdrawn = person.userId; },
     ));
     await tester.ensureVisible(find.byKey(const ValueKey('u24-decline-user_b')));
     await tester.tap(find.byKey(const ValueKey('u24-decline-user_b')));
@@ -162,8 +162,8 @@ void main() {
       state: const HumanContactsViewState(
         loading: false, preferences: _prefs,
       ),
-      policy: (next) async => chosen = next,
-      visibility: (next) async => discoverable = next,
+      policy: (next) async { chosen = next; },
+      visibility: (next) async { discoverable = next; },
     ));
     await tester.tap(find.text('Ask before messaging'));
     await tester.pumpAndSettle();
