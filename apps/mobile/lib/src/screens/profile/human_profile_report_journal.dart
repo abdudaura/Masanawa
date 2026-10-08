@@ -60,7 +60,12 @@ class SecureHumanProfileReportJournal implements HumanProfileReportJournal {
   @override
   Future<PendingHumanProfileReport?> read(String userId,String handle) async {
     final raw=await storage.read(key:_key(userId,handle));
-    return raw==null?null:PendingHumanProfileReport.parse(raw);
+    if(raw==null)return null;
+    final pending=PendingHumanProfileReport.parse(raw);
+    if(pending==null){
+      throw const FormatException('Corrupt pending report: do not create new ID');
+    }
+    return pending;
   }
   @override
   Future<void> write(String userId,String handle,PendingHumanProfileReport report)=>
