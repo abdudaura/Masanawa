@@ -49,7 +49,7 @@ void main() {
   test('no fake success on lost ack; retry preserves UUID and server has one message',() async {
     final api=_Transport()..loseAcknowledgment=true;
     final box=_Outbox();
-    final controller=HumanDmController('user_alice','thread-id',api,box);
+    final controller=HumanDmController('user_alice','thread-id',api,box,isAccountCurrent:()=>true);
     await drain();
     await controller.send('Hello');
     expect(controller.state.pending,satisfies((List<HumanDmPending> p)=>p.length==1));
@@ -67,12 +67,12 @@ void main() {
   test('restart keeps pending per user and recovers confirmation on sync',() async {
     final api=_Transport()..loseAcknowledgment=true;
     final box=_Outbox();
-    final first=HumanDmController('user_alice','thread-id',api,box);
+    final first=HumanDmController('user_alice','thread-id',api,box,isAccountCurrent:()=>true);
     await drain();
     await first.send('My pending text');
     first.dispose();
     expect((await box.load('user_alice','thread-id')).length,1);
-    final second=HumanDmController('user_alice','thread-id',api,box);
+    final second=HumanDmController('user_alice','thread-id',api,box,isAccountCurrent:()=>true);
     await drain();
     expect(second.state.pending,isEmpty);
     expect(second.state.messages.single.text,'My pending text');
@@ -82,7 +82,7 @@ void main() {
   test('server block is shown as error, never reported sent',() async {
     final api=_Transport()..blocked=true;
     final box=_Outbox();
-    final controller=HumanDmController('user_alice','thread-id',api,box);
+    final controller=HumanDmController('user_alice','thread-id',api,box,isAccountCurrent:()=>true);
     await drain();
     await controller.send('Do not deliver');
     expect(controller.state.messages,isEmpty);
@@ -94,7 +94,7 @@ void main() {
   test('simultaneous sends never overwrite encrypted pending intents',() async {
     final api=_Transport()..blocked=true;
     final box=_Outbox();
-    final controller=HumanDmController('user_alice','thread-id',api,box);
+    final controller=HumanDmController('user_alice','thread-id',api,box,isAccountCurrent:()=>true);
     await drain();
     await Future.wait([controller.send('First'),controller.send('Second')]);
     final saved=await box.load('user_alice','thread-id');
