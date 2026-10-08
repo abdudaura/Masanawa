@@ -310,8 +310,8 @@ class _ContactTile extends StatelessWidget {
                   ),
                 ],
               )
-            else if ((status == HumanContactStatus.none ||
-                status == HumanContactStatus.revoked) && foundBySearch)
+            else if ((status == HumanContactStatus.none && foundBySearch) ||
+                status == HumanContactStatus.revoked)
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton(

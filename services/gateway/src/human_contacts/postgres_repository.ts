@@ -27,6 +27,7 @@ interface RequestRow extends Record<string, unknown> {
   requested_by: string;
   updated_at: string | Date;
   request_revision: string | number;
+  revoked_by: string | null;
 }
 
 const visibleTarget = `
@@ -254,7 +255,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
     async list({ tenantId, userId, limit }) {
       const result = await pool.query<RequestRow>(`
         SELECT other.user_id, other.handle, other.display_name, other.avatar_url,
-               edge.status, edge.requested_by, edge.updated_at, edge.request_revision
+               edge.status, edge.requested_by, edge.updated_at, edge.request_revision, edge.revoked_by
           FROM talks.human_dm_contact_requests edge
           JOIN talks.public_profiles other
             ON other.tenant_id=edge.tenant_id
@@ -269,7 +270,8 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
          WHERE edge.tenant_id=$1
            AND (edge.first_user_id=$2 OR edge.second_user_id=$2)
            AND (edge.status IN ('pending','accepted')
-             OR (edge.status='declined' AND edge.revoked_by IS NULL AND edge.requested_by<>$2))
+             OR (edge.status='declined' AND edge.revoked_by IS NULL AND edge.requested_by<>$2)
+             OR (edge.status='declined' AND edge.revoked_by=$2))
            AND NOT EXISTS (
              SELECT 1 FROM talks.safety_preferences sp
               WHERE sp.tenant_id=$1 AND sp.blocked=true
@@ -290,7 +292,10 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
         handle: row.handle,
         displayName: row.display_name,
         avatarUrl: row.avatar_url,
-        status: row.status === "accepted" ? "accepted" : row.requested_by === userId ? "outgoing" : "incoming",
+        status: row.revoked_by === userId ? "revoked"
+          : row.status === "accepted" ? "accepted"
+          : row.status === "declined" ? "declined"
+          : row.requested_by === userId ? "outgoing" : "incoming",
         updatedAt: typeof row.updated_at === "string" ? row.updated_at : row.updated_at.toISOString(),
         requestRevision: String(row.request_revision),
       })));

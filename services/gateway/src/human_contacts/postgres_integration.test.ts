@@ -158,6 +158,10 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     })).toBe(true);
     expect(await repo.lookup({ tenantId: tenant, viewerId: alice, handle: bobHandle }))
       .toMatchObject({ status: "revoked", canMessage: false });
+    expect(await repo.list({ tenantId: tenant, userId: alice, limit: 30 }))
+      .toContainEqual(expect.objectContaining({ userId: bob, status: "revoked", requestRevision: "1" }));
+    expect(await repo.list({ tenantId: tenant, userId: bob, limit: 30 }))
+      .toHaveLength(0);
     expect(await repo.lookup({ tenantId: tenant, viewerId: bob, handle: aliceHandle }))
       .toMatchObject({ status: "declined", canMessage: false });
     // A past invitation response cannot override the revoker's choice.

@@ -116,3 +116,8 @@ C01 PostgreSQL recipient approval now checks current `talks.safety_enforcement` 
 ### Disposable PostgreSQL moderation regression — 2026-10-08T12:02:55.295Z
 
 The guarded opt-in real `postgres_integration.test.ts` now sets an actual `talks.safety_enforcement` `restricted` profile on the requester *after* the recipient has received the request, asserts acceptance is refused, removes that isolated fixture, then checks a legitimately permitted acceptance. Fixture teardown includes `safety_enforcement` rows for the ephemeral tenant. SQL source assertions alone are not used as a substitute for DB verification. **The DB suite remains UNEXECUTED** pending disposable loopback `*_test` PostgreSQL and #457 Work verification.
+
+
+### Restart-safe revoked contact projection — 2026-10-08T12:04:53.643Z
+
+Previously a revoker's contact disappeared from the server list immediately after revoke; deliberate reconnection required remembering their handle. C01 `list` now returns a `revoked` projection **only to the actor who revoked**, while the other party's revoked row remains absent from their list. It carries no permission to DM and retains an exact server revision for subsequent request handling. The existing authenticated Flutter screen now exposes the same real `Request reconnect` action on that server-backed saved contact row after reload/restart; no client persistence or optimistic regrant. Added opt-in Postgres checks for revoker-visible vs peer-hidden and widget list-recovery test. C02 still owns actual DM admission and R17/C08 owns mounting this screen; no production UI claim. No tests executed, draft.

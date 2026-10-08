@@ -34,6 +34,7 @@ class _ContactApi implements HumanContactsTransport {
   int requests = 0;
   bool fail = false;
   bool wasRevoked = false;
+  bool listRevoked = false;
   HumanContactPreferences prefs = const HumanContactPreferences(
     policy: HumanContactPolicy.requests,
     discoverableByHandle: true,
@@ -43,7 +44,17 @@ class _ContactApi implements HumanContactsTransport {
   Future<HumanContactPreferences> preferences() async => prefs;
 
   @override
-  Future<List<HumanContact>> list({int limit = 30}) async => const [];
+  Future<List<HumanContact>> list({int limit = 30}) async =>
+      listRevoked
+          ? const [
+              HumanContact(
+                userId: 'user_b', handle: 'bob', displayName: 'Bob',
+                avatarUrl: null, status: HumanContactStatus.revoked,
+                canMessage: false, requestRevision: '1',
+                updatedAt: null,
+              ),
+            ]
+          : const [];
 
   @override
   Future<HumanContact?> lookup(String handle) async {
@@ -124,6 +135,24 @@ void main() {
     await tester.tap(find.text('Find'));
     await tester.pumpAndSettle();
     expect(find.text('You removed this connection'), findsOneWidget);
+    expect(find.text('Request reconnect'), findsOneWidget);
+    await tester.tap(find.text('Request reconnect'));
+    await tester.pumpAndSettle();
+    expect(api.requests, 1);
+    expect(find.text('Contact request sent.'), findsOneWidget);
+  });
+
+  testWidgets('revoked contact remains recoverable in server list after restart',
+      (tester) async {
+    final api = _ContactApi()..listRevoked = true;
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        sessionProvider.overrideWith(_TestSessionController.new),
+        humanContactsTransportProvider.overrideWithValue(api),
+      ],
+      child: const MaterialApp(home: HumanContactsScreen()),
+    ));
+    await tester.pumpAndSettle();
     expect(find.text('Request reconnect'), findsOneWidget);
     await tester.tap(find.text('Request reconnect'));
     await tester.pumpAndSettle();
