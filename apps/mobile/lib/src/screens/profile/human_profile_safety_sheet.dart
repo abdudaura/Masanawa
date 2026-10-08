@@ -112,6 +112,7 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
         reason:pending.reason,
         requestId:pending.requestId,
         detail:pending.detail,
+        reporterUserId:widget.reporterUserId,
       );
       if(!mounted || !_authorized)return;
       setState(()=>_receipt=receipt);
