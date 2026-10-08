@@ -116,16 +116,16 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
           keys,
         );
         await client.query(
-          `UPDATE identity.characters AS character
-              SET state='disabled',revision=character.revision+1,
-                  updated_at=GREATEST(character.updated_at,$4::timestamptz)
+          `UPDATE identity.characters AS ch
+              SET state='disabled',revision=ch.revision+1,
+                  updated_at=GREATEST(ch.updated_at,$4::timestamptz)
              FROM identity.character_ownership AS ownership
-            WHERE character.tenant_id=$1
-              AND ownership.tenant_id=character.tenant_id
-              AND ownership.character_id=character.character_id
+            WHERE ch.tenant_id=$1
+              AND ownership.tenant_id=ch.tenant_id
+              AND ownership.character_id=ch.character_id
               AND ownership.owner_user_id=$2
               AND ownership.kind='personal-clone'
-              AND character.state='active'`,
+              AND ch.state='active'`,
           keys,
         );
         await client.query(
