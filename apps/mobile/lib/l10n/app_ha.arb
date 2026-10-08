@@ -91,5 +91,6 @@
   "statusOnCall": "Yana kan kira",
   "statusOffline": "Ba ya kan layi",
   "statusUnverified": "Ba a tabbatar da halinsa ba",
-  "statusWorkingTasks": "{count, plural, =1{Yana aiki · aiki 1} other{Yana aiki · ayyuka {count}}}"
+  "statusWorkingTasks": "{count, plural, =1{Yana aiki · aiki 1} other{Yana aiki · ayyuka {count}}}",
+  "twinShareText": "Yi hira da {name} a Masanawa: {url}"
 }
