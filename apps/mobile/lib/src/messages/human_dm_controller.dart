@@ -158,15 +158,15 @@ class HumanDmController extends StateNotifier<HumanDmState> {
       final edited=await transport.edit(conversationId,m.messageId,text);
       if(_closed||!isAccountCurrent())return;
       state=state.copyWith(messages:[for(final row in state.messages)if(row.messageId==edited.messageId)edited else row],clearError:true);
-    }catch(e){if(!_closed)state=state.copyWith(error:_error(e));}
+    }catch(e){if(!_closed&&isAccountCurrent())state=state.copyWith(error:_error(e));}
   }
   Future<void> remove(HumanDmMessage m) async {
     if(_closed||!isAccountCurrent())return;
     try{
       final deleted=await transport.remove(conversationId,m.messageId);
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       state=state.copyWith(messages:[for(final row in state.messages)if(row.messageId==deleted.messageId)deleted else row],clearError:true);
-    }catch(e){if(!_closed)state=state.copyWith(error:_error(e));}
+    }catch(e){if(!_closed&&isAccountCurrent())state=state.copyWith(error:_error(e));}
   }
   @override
   void dispose() { _closed=true;super.dispose(); }
