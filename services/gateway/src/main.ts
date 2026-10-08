@@ -274,9 +274,10 @@ import {
   type LinkedWhatsAppController,
 } from "./whatsapp_linked_device.js";
 import {
-  ensureDefaultPlatformAgents,
+  type PlatformAgentBootstrapResult,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
+import { bootstrapDefaultPlatformAgentsFromPostgres } from "./platform_agent_bootstrap_postgres.js";
 import {
   createTwinProductionRuntime,
   type TwinProductionRuntime,
@@ -292,6 +293,7 @@ export interface ServiceProcess extends NodeSignalSource {
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
   readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
+  readonly bootstrapPlatformAgents?: (tenantId: TenantId) => Promise<PlatformAgentBootstrapResult>;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
   readonly agentPresentations?: AgentPresentationRepository;
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
@@ -413,6 +415,8 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    bootstrapPlatformAgents: (tenantId: TenantId) =>
+      bootstrapDefaultPlatformAgentsFromPostgres({ pool: database.pool, tenantId }),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
     platformAgentIdentity: Object.freeze({
@@ -789,20 +793,19 @@ export async function startGatewayService(
     }
 
     if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
-      if (!database.platformAgentIdentity || !database.skillDistribution) {
+      // Every identity, skill, presentation and profile write must share a
+      // single tenant-locked PostgreSQL transaction across gateway replicas.
+      // Never fall back to the unprotected per-repository bootstrap.
+      if (!database.bootstrapPlatformAgents) {
         await database.close().catch(() => undefined);
-        throw new Error(
-          "Platform Agent bootstrap requires Identity and Skill distribution repositories",
-        );
+        throw new Error("Platform Agent bootstrap requires an atomic PostgreSQL provisioner");
       }
-      await ensureDefaultPlatformAgents({
-        tenantId: activePlatformTenantId,
-        identity: database.platformAgentIdentity,
-        presentations: database.agentPresentations,
-        profiles: database.platformAgentProfiles,
-        skillAssignments: database.characterSkillAssignments,
-        skillDistribution: database.skillDistribution,
-      });
+      try {
+        await database.bootstrapPlatformAgents(activePlatformTenantId);
+      } catch (error) {
+        await database.close().catch(() => undefined);
+        throw error;
+      }
     }
 
     const customerSessions = createPlatformCustomerSessionAuthorizer({
