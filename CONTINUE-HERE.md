@@ -157,3 +157,11 @@ provider foundations. A merged feature or registered worker is not end-to-end ac
 Claim one non-overlapping task and record implemented/tested/deployed/device states separately.
 The next concrete implementation is R01 shared light theme; R02 must diagnose the user's
 actual Audio unavailable failure, and R03 must qualify an available default persona.
+
+## Deferred web implementation
+
+`docs/WEB-APP-PLAN.md` defines the later consumer web experience and W01–W06 phases.
+It follows Home · Agents · Wallet · Talk, seventeen personas, voice-first services and
+shared account/financial authority. Existing apps/web is a foundation scaffold, not a
+completed consumer app. Web implementation is explicitly DEFERRED; preserve current
+mobile R01–R19 and shared integration priorities. Planning reserves no web code paths.
