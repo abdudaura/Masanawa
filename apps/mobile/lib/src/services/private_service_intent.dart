@@ -89,6 +89,8 @@ class PrivateServiceIntentController
 
   int _sequence = 0;
 
+  PendingPrivateServiceIntent? get current => state;
+
   void select({
     required PrivateServiceIntent intent,
     required String ownerUserId,
