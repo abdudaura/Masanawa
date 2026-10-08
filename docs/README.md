@@ -16,6 +16,8 @@
 - `VOICE-FIRST-INTERACTIONS.md`, `MOBILE-AGENT-EXPERIENCE.md`, `DEFAULT-AI-PERSONAS.md`, `CONSUMER-SERVICES.md`, `GOLDEN-JOURNEYS.md` — specific interaction contracts and capabilities.
 - `MULTI-WINDOW-WORK.md` — nonoverlapping ownership, five-minute lease and shared integration.
 
+Read the scope and findings in `NAVIGATION-DOCUMENTATION-AUDIT-20261008.md` before claiming that old guidance was fully rewritten or application/device behavior verified.
+
 ## Historical/technical documents: preserve evidence, never override product direction
 
 `docs/workstreams/`, previous closure audits, phase plans, `docs/migration/`, prior ADRs, old recovery/rollout handoffs and development snapshots record **what was planned or attempted when written**, not today's mobile navigation. They can describe former Home/Agents/Wallet/Talk, Home/Chats/Wallet/Talk, or For You/Live/Create/Activity/You; **none may authorize a new implementation of those retired root layouts**. Use their original commits/tests/status only as historical evidence. A saved screenshot or old instruction isn't current product sign-off.
