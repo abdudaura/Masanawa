@@ -135,7 +135,19 @@ abstract interface class HumanContactsTransport {
   Future<void> revoke(String otherUserId);
 }
 
-class GatewayHumanContactsTransport implements HumanContactsTransport {
+/// An authoritative bounded page. A cursor conveys position, never admission.
+class HumanContactPage {
+  const HumanContactPage({required this.contacts, required this.nextCursor});
+  final List<HumanContact> contacts;
+  final String? nextCursor;
+}
+
+/// Optional extension so existing C01/U21 adapters remain source compatible.
+abstract interface class HumanContactsPaginationTransport implements HumanContactsTransport {
+  Future<HumanContactPage> page({int limit = 50, String? cursor});
+}
+
+class GatewayHumanContactsTransport implements HumanContactsPaginationTransport {
   GatewayHumanContactsTransport({required this.api});
   final ApiClient api;
 
@@ -160,6 +172,268 @@ class GatewayHumanContactsTransport implements HumanContactsTransport {
       throw const FormatException('Invalid human account ID');
     }
     return Uri.encodeComponent(raw);
+  }
+
+  @override
+  Future<HumanContactPage> page({int limit = 50, String? cursor}) async {
+    _requireAuth();
+    if (limit < 1 || limit > 100) throw RangeError.range(limit, 1, 100);
+    if (cursor != null &&
+        (cursor.length < 8 || cursor.length > 1024 ||
+            !RegExp(r'^[A-Za-z0-9_-]+
+    _requireAuth();
+    try {
+      final response = await api.dio.get<dynamic>(
+        '/messages/contacts/lookup/${Uri.encodeComponent(_handle(handle))}',
+      );
+      return HumanContact.fromJson(response.data, fromLookup: true);
+    } on DioException catch (error) {
+      final body = error.response?.data;
+      final envelope = body is Map ? body['error'] : null;
+      final code = envelope is Map ? envelope['code'] : null;
+      // A missing deployment route or schema mismatch is NOT an absent person.
+      if (error.response?.statusCode == 404 &&
+          code == 'messages.contact_unavailable') {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<HumanContactPreferences> preferences() async {
+    _requireAuth();
+    final response = await api.dio.get<dynamic>(
+      '/messages/contacts/preferences',
+    );
+    return HumanContactPreferences.fromJson(response.data);
+  }
+
+  @override
+  Future<HumanContactPreferences> updatePreferences({
+    HumanContactPolicy? policy,
+    bool? discoverableByHandle,
+  }) async {
+    _requireAuth();
+    if (policy == null && discoverableByHandle == null) {
+      throw ArgumentError('At least one contact privacy setting must change');
+    }
+    final response = await api.dio.patch<dynamic>(
+      '/messages/contacts/preferences',
+      data: {
+        if (policy != null) 'policy': policy.name,
+        if (discoverableByHandle != null)
+          'discoverableByHandle': discoverableByHandle,
+      },
+    );
+    return HumanContactPreferences.fromJson(response.data);
+  }
+
+  @override
+  Future<List<HumanContact>> list({int limit = 30}) async {
+    _requireAuth();
+    if (limit < 1 || limit > 100) throw RangeError.range(limit, 1, 100);
+    final response = await api.dio.get<dynamic>(
+      '/messages/contacts',
+      queryParameters: {'limit': limit},
+    );
+    final contacts = _object(response.data)['contacts'];
+    if (contacts is! List) {
+      throw const FormatException('Invalid contact list');
+    }
+    return List.unmodifiable(
+      contacts.map((json) => HumanContact.fromJson(json)),
+    );
+  }
+
+  @override
+  Future<String> request(String handle) async {
+    _requireAuth();
+    final response = await api.dio.post<dynamic>(
+      '/messages/contacts/requests',
+      data: {'handle': _handle(handle)},
+    );
+    final status = _object(response.data)['status'];
+    if (status != 'accepted' && status != 'pending' && status != 'existing') {
+      throw const FormatException('Invalid contact request acknowledgment');
+    }
+    return status as String;
+  }
+
+  @override
+  Future<String> respond(
+    String requesterUserId, {
+    required bool accept,
+    required String requestRevision,
+  }) async {
+    _requireAuth();
+    if (!RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(requestRevision) ||
+        BigInt.parse(requestRevision) > BigInt.parse('9223372036854775807')) {
+      throw const FormatException('Invalid contact request revision');
+    }
+    final response = await api.dio.post<dynamic>(
+      '/messages/contacts/requests/${_id(requesterUserId)}/response',
+      data: {'accept': accept, 'requestRevision': requestRevision},
+    );
+    final status = _object(response.data)['status'];
+    if (status != (accept ? 'accepted' : 'declined')) {
+      throw const FormatException('Invalid contact response');
+    }
+    return status as String;
+  }
+
+  @override
+  Future<void> revoke(String otherUserId) async {
+    _requireAuth();
+    final response = await api.dio.delete<dynamic>(
+      '/messages/contacts/${_id(otherUserId)}',
+    );
+    if (_object(response.data)['status'] != 'revoked') {
+      throw const FormatException('Invalid contact revocation acknowledgment');
+    }
+  }
+}
+).hasMatch(cursor))) {
+      throw const FormatException('Invalid contact page cursor');
+    }
+    final response = await api.dio.get<dynamic>(
+      '/messages/contacts/page',
+      queryParameters: {
+        'limit': limit,
+        if (cursor != null) 'cursor': cursor,
+      },
+    );
+    final json = _object(response.data);
+    final rawContacts = json['contacts'];
+    if (rawContacts is! List || rawContacts.length > limit ||
+        !json.containsKey('nextCursor')) {
+      throw const FormatException('Invalid contact page');
+    }
+    final next = json['nextCursor'];
+    if (next != null &&
+        (next is! String || next.length < 8 || next.length > 1024 ||
+            !RegExp(r'^[A-Za-z0-9_-]+
+    _requireAuth();
+    try {
+      final response = await api.dio.get<dynamic>(
+        '/messages/contacts/lookup/${Uri.encodeComponent(_handle(handle))}',
+      );
+      return HumanContact.fromJson(response.data, fromLookup: true);
+    } on DioException catch (error) {
+      final body = error.response?.data;
+      final envelope = body is Map ? body['error'] : null;
+      final code = envelope is Map ? envelope['code'] : null;
+      // A missing deployment route or schema mismatch is NOT an absent person.
+      if (error.response?.statusCode == 404 &&
+          code == 'messages.contact_unavailable') {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<HumanContactPreferences> preferences() async {
+    _requireAuth();
+    final response = await api.dio.get<dynamic>(
+      '/messages/contacts/preferences',
+    );
+    return HumanContactPreferences.fromJson(response.data);
+  }
+
+  @override
+  Future<HumanContactPreferences> updatePreferences({
+    HumanContactPolicy? policy,
+    bool? discoverableByHandle,
+  }) async {
+    _requireAuth();
+    if (policy == null && discoverableByHandle == null) {
+      throw ArgumentError('At least one contact privacy setting must change');
+    }
+    final response = await api.dio.patch<dynamic>(
+      '/messages/contacts/preferences',
+      data: {
+        if (policy != null) 'policy': policy.name,
+        if (discoverableByHandle != null)
+          'discoverableByHandle': discoverableByHandle,
+      },
+    );
+    return HumanContactPreferences.fromJson(response.data);
+  }
+
+  @override
+  Future<List<HumanContact>> list({int limit = 30}) async {
+    _requireAuth();
+    if (limit < 1 || limit > 100) throw RangeError.range(limit, 1, 100);
+    final response = await api.dio.get<dynamic>(
+      '/messages/contacts',
+      queryParameters: {'limit': limit},
+    );
+    final contacts = _object(response.data)['contacts'];
+    if (contacts is! List) {
+      throw const FormatException('Invalid contact list');
+    }
+    return List.unmodifiable(
+      contacts.map((json) => HumanContact.fromJson(json)),
+    );
+  }
+
+  @override
+  Future<String> request(String handle) async {
+    _requireAuth();
+    final response = await api.dio.post<dynamic>(
+      '/messages/contacts/requests',
+      data: {'handle': _handle(handle)},
+    );
+    final status = _object(response.data)['status'];
+    if (status != 'accepted' && status != 'pending' && status != 'existing') {
+      throw const FormatException('Invalid contact request acknowledgment');
+    }
+    return status as String;
+  }
+
+  @override
+  Future<String> respond(
+    String requesterUserId, {
+    required bool accept,
+    required String requestRevision,
+  }) async {
+    _requireAuth();
+    if (!RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(requestRevision) ||
+        BigInt.parse(requestRevision) > BigInt.parse('9223372036854775807')) {
+      throw const FormatException('Invalid contact request revision');
+    }
+    final response = await api.dio.post<dynamic>(
+      '/messages/contacts/requests/${_id(requesterUserId)}/response',
+      data: {'accept': accept, 'requestRevision': requestRevision},
+    );
+    final status = _object(response.data)['status'];
+    if (status != (accept ? 'accepted' : 'declined')) {
+      throw const FormatException('Invalid contact response');
+    }
+    return status as String;
+  }
+
+  @override
+  Future<void> revoke(String otherUserId) async {
+    _requireAuth();
+    final response = await api.dio.delete<dynamic>(
+      '/messages/contacts/${_id(otherUserId)}',
+    );
+    if (_object(response.data)['status'] != 'revoked') {
+      throw const FormatException('Invalid contact revocation acknowledgment');
+    }
+  }
+}
+).hasMatch(next) || next == cursor)) {
+      throw const FormatException('Invalid next contact cursor');
+    }
+    return HumanContactPage(
+      contacts: List.unmodifiable(
+        rawContacts.map((entry) => HumanContact.fromJson(entry)),
+      ),
+      nextCursor: next as String?,
+    );
   }
 
   @override
