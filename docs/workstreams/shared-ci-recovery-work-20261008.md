@@ -22,3 +22,7 @@ Direct terminal git clone fails for missing HTTPS credentials. Authenticated bro
 No PR merged in this session. No new executable Foundation/Mobile Actions run, Flutter build, provider operation or device acceptance yet. R01–R19 remain qualified only by their existing evidence; no DONE status changes.
 
 Next: recover exact immutable source and dependency toolchain; run main baseline, then each PR delta with isolated snapshots, preserve active lanes and publish exact results. Issue #457 remains OPEN until Foundation and Mobile jobs actually execute and affected PRs are verified.
+
+## Executable recovery update — 2026-10-08T07:11:00Z
+
+Installed repository-pinned pnpm 12.8.2 (actual version verified) with Node 24.19.0. Official Flutter stable source checkout succeeded at 5fc346839b5d0eef006ed8404392afb4dfae428d; Dart engine SDK downloaded, Flutter tool dependency bootstrap is running. Connector snapshot recovery has passed 800 files at immutable main tree 7971269d71c13227f3667bc1a8233395d4b81ada. Browser archive did not materialize; no success inferred. Reviewed exact PR #455 changed files and diff; no duplicate R16 implementation. Current queue has 25 feature PRs plus this coordination PR, all draft/unmerged. Ubuntu packaged PostgreSQL is 16.15, not required PostgreSQL 18; no canonical DB test pass inferred from that version.
