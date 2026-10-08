@@ -1,5 +1,10 @@
 # Communications, In-App Transfers, and Cross-App AI Extension
 
+## Owner requirements traceability: cross-feature obligations (2026-10-08)
+
+C01–C08 implement specific segments of the broader owner's discussion; **read `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md`** for the complete agreed interactions and their exact R-task dependencies. In particular, **J03/J04/J10** require human DM permissions, fast cached server-backed history, voice notes and robust delivery; **J07** one Gwani/Gwana Assistant chat with in-chat switch and genuine authorized cross-app tools; **J09** custody-backed internal crypto transfers initiated from DM/Wallet/Assistant but settled only by the existing financial ledger; **J01/J05/J06** ensure public audio creator economy and dedicated Agents/Twins do not regress; **J11** prevents private/public audio, message and money leakage. Do not interpret "like WhatsApp" as approval for groups, direct calling or E2EE claims, or "global crypto" as unqualified fiat remittance. All earlier R01–R19 and final five-tab contracts remain binding; these trace IDs are not a second backlog.
+
+
 Status: **canonical additive implementation plan — 2026-10-08; requirements approved in owner discussion, implementation OPEN/UNVERIFIED**.
 Related issues: [#462](https://github.com/Baatiku/masanawa/issues/462), [#463](https://github.com/Baatiku/masanawa/issues/463).
 Implementation governance: `CONTINUE-HERE.md`, `MULTI-WINDOW-WORK.md`, `MOBILE-READINESS-PLAN.md`; shared CI incident [#457](https://github.com/Baatiku/masanawa/issues/457).
