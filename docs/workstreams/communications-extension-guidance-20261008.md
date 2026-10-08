@@ -1,5 +1,8 @@
 # Communications extension guidance — documentation coordination claim
 
+> **HISTORICAL SNAPSHOT — NOT CURRENT NAVIGATION INSTRUCTION (2026-10-08):** The owner-approved end state is exactly **Talks · Chats · Assistant · Wallet · Agents**, with **Assistant centered** and **one switchable Gwani/Gwana chat**. This record describes its original branch/commit and older assumptions; preserve its implementation evidence, but DO NOT copy prior four-tab shell, conditional Chats or old persona-routing instructions into new implementation. See `../APP-SHELL-CONTRACT.md`, `../END-TO-END-UX-ARCHITECTURE.md`, `../MOBILE-READINESS-PLAN.md`, and `../COMMUNICATIONS-EXTENSION-PLAN.md`. Code/release qualification is separate.
+
+
 - Owner/window: ChatGPT voice-session documentation coordinator, 2026-10-08.
 - Branch: `docs/communications-extension-multiwindow-20261008`
 - Base `main` SHA: `f4cd25420ae24be78cddd7c3d17bdc34e0f8a060`.
