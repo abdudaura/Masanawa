@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PlatformError } from "@masanawa/contracts";
+import { CustomerAuthError } from "./customer_auth.js";
 import { safeAgentTurnStreamErrorCode } from "./agent_turn_stream_error.js";
 
 function conflict(code: string): PlatformError {
@@ -19,6 +20,21 @@ describe("R19 streamed-turn error classification", () => {
   ])("passes %s only before streamed output", (code) => {
     expect(safeAgentTurnStreamErrorCode(conflict(code), false)).toBe(code);
     expect(safeAgentTurnStreamErrorCode(conflict(code), true)).toBe("turn_failed");
+  });
+
+  it("returns a safe auth-required marker only for pre-output expired sessions", () => {
+    expect(safeAgentTurnStreamErrorCode(
+      new CustomerAuthError("UNAUTHORIZED", 401), false,
+    )).toBe("auth_required");
+    expect(safeAgentTurnStreamErrorCode(
+      new CustomerAuthError("UNAUTHORIZED", 401), true,
+    )).toBe("turn_failed");
+    expect(safeAgentTurnStreamErrorCode(
+      new CustomerAuthError("FORBIDDEN", 403), false,
+    )).toBe("turn_failed");
+    expect(safeAgentTurnStreamErrorCode(
+      new CustomerAuthError("AUTH_UNAVAILABLE", 503), false,
+    )).toBe("turn_failed");
   });
 
   it("never reveals financial, auth, provider or arbitrary errors", () => {
