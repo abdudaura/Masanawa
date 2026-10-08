@@ -8,6 +8,7 @@ import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/session_state.dart';
+import '../../state/talk_social_profile_state.dart';
 import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
 import '../chat/ai_chat_screen.dart';
@@ -306,9 +307,14 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
-    final profileName = session is SessionSignedIn
-        ? session.user.name.trim()
-        : '';
+    final publicProfile = session is SessionSignedIn
+        ? ref.watch(humanProfileByUserIdProvider(session.user.id)).asData?.value
+        : null;
+    final savedName = publicProfile?.displayName.trim();
+    final profileName = savedName != null && savedName.isNotEmpty
+        ? savedName
+        : session is SessionSignedIn ? session.user.name.trim() : '';
+    final avatar = publicProfile?.avatarUrl?.trim();
     final initial = profileName.isNotEmpty
         ? String.fromCharCode(profileName.runes.first).toUpperCase()
         : 'U';
@@ -335,13 +341,18 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
               radius: 15,
               backgroundColor: Theme.of(context).colorScheme.primary
                   .withValues(alpha: .16),
-              child: Text(
-                initial,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              backgroundImage: avatar != null && avatar.isNotEmpty
+                  ? NetworkImage(avatar)
+                  : null,
+              child: avatar == null || avatar.isEmpty
+                  ? Text(
+                      initial,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    )
+                  : null,
             ),
           ),
         ],
