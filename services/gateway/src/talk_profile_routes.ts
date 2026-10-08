@@ -6,6 +6,39 @@ export function registerTalkProfileRoutes(
   app: FastifyInstance,
   service: TalkProfileService,
 ): void {
+  app.get("/profiles/me", async (request) => {
+    return service.self({
+      authorizationHeader: request.headers.authorization,
+    });
+  });
+
+  app.patch(
+    "/profiles/me",
+    {
+      schema: {
+        body: Type.Object(
+          {
+            displayName: Type.Optional(Type.String({ minLength: 2, maxLength: 80 })),
+            bio: Type.Optional(Type.String({ maxLength: 300 })),
+            removeAvatar: Type.Optional(Type.Boolean()),
+          },
+          { additionalProperties: false, minProperties: 1 },
+        ),
+      },
+    },
+    async (request) => {
+      const body = request.body as {
+        displayName?: string;
+        bio?: string;
+        removeAvatar?: boolean;
+      };
+      return service.updateSelf({
+        authorizationHeader: request.headers.authorization,
+        ...body,
+      });
+    },
+  );
+
   app.get(
     "/profiles/:handle",
     {
