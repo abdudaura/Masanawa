@@ -314,6 +314,29 @@ export function createBillingWalletService(input: Readonly<{
     return quote;
   }
 
+  async function resumeCreditedBill(funding: NgnFundingIntent): Promise<boolean> {
+    if (funding.state !== "credited" || !funding.quoteId) return false;
+    const identity = {
+      tenantId: parseCanonicalId("tenant", funding.tenantId),
+      userId: parseCanonicalId("user", funding.userId),
+    };
+    const quote = await input.quotes.readQuote({
+      ...identity,
+      quoteId: funding.quoteId as BillingQuote["quoteId"],
+    });
+    // A duplicate provider callback is also a recovery opportunity: the
+    // process may have crashed after durable credit but before bill dispatch.
+    // Only resume owner-bound, explicitly confirmed quotes. The canonical
+    // purchase authority retains the immutable fulfillment reference and
+    // handles provider uncertainty/idempotency; do not dispatch separately.
+    if (!quote || !quote.confirmedAt ||
+        !["confirmed", "reserved"].includes(quote.state)) {
+      return false;
+    }
+    await purchaseQuote(identity, quote);
+    return true;
+  }
+
   return Object.freeze<BillingWalletService>({
     async balance(request) {
       const identity = await owner(request.authorizationHeader);
@@ -402,7 +425,8 @@ export function createBillingWalletService(input: Readonly<{
       }
       if (funding.state === "credited") {
         await syncTwinFundingMonetization(funding).catch(() => undefined);
-        return Object.freeze({ handled: true, duplicate: true, resumed: false });
+        const resumed = await resumeCreditedBill(funding);
+        return Object.freeze({ handled: true, duplicate: true, resumed });
       }
       const payment = await input.funding.verifyByReference(referenceTx);
       if (!["successful","success","completed"].includes(payment.status) ||
@@ -421,21 +445,7 @@ export function createBillingWalletService(input: Readonly<{
 
       await syncTwinFundingMonetization(credited).catch(() => undefined);
 
-      let resumed = false;
-      if (credited.quoteId) {
-        const creditedIdentity = {
-          tenantId: parseCanonicalId("tenant", credited.tenantId),
-          userId: parseCanonicalId("user", credited.userId),
-        };
-        const quote = await input.quotes.readQuote({
-          ...creditedIdentity,
-          quoteId: credited.quoteId as BillingQuote["quoteId"],
-        });
-        if (quote && ["confirmed","reserved"].includes(quote.state)) {
-          await purchaseQuote(creditedIdentity, quote);
-          resumed = true;
-        }
-      }
+      const resumed = await resumeCreditedBill(credited);
       return Object.freeze({ handled: true, duplicate: false, resumed });
     },
   });
