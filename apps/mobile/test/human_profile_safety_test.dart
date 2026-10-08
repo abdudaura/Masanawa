@@ -35,7 +35,9 @@ class _Transport implements HumanProfileSafetyTransport {
     required TalkSafetyReportReason reason,
     required String requestId,
     required String detail,
+    required String reporterUserId,
   }) async {
+    expect(reporterUserId,'user-a');
     ids.add(requestId);
     expect(handle,'amina');
     expect(reason,TalkSafetyReportReason.spam);
