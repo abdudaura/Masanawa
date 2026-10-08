@@ -222,5 +222,18 @@
   },
   "@verifiedSignInNotice": {
     "description": "Authentication and onboarding visible string: verifiedSignInNotice"
+  },
+  "countryDialCode": "Phone code: {code}",
+  "unknownCountryDialCode": "Phone code not recognized",
+  "@countryDialCode": {
+    "description": "Shows the actual detected telephone dial prefix, not a user's current country or wallet jurisdiction",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@unknownCountryDialCode": {
+    "description": "Input has no recognized international telephone prefix; do not silently assume a country"
   }
 }
