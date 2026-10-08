@@ -147,9 +147,9 @@ class HumanChatSync {
         '${hex.substring(20)}';
   }
 
-  /// Persist BEFORE sending, then attempt delivery; caller displays pending
-  /// state until a verified server message acknowledges the same ID.
-  Future<String> queueAndTrySend(
+  /// Persist BEFORE any network operation and return immediately for
+  /// local-first rendering. A separate [flushPending] may run or be retried.
+  Future<String> queueText(
     String conversationId,
     String body,
   ) async {
@@ -162,6 +162,11 @@ class HumanChatSync {
       body: body,
       createdAtMs: _nowMs(),
     );
+    return requestId;
+  }
+
+  Future<String> queueAndTrySend(String conversationId, String body) async {
+    final requestId = await queueText(conversationId, body);
     if (_active) await flushPending();
     return requestId;
   }
