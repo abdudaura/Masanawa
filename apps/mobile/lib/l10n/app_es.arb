@@ -17,5 +17,6 @@
   "listen": "Escuchar",
   "raiseHand": "Levantar la mano",
   "speakerSeats": "{count, plural, =0{No hay asientos para hablar} =1{1 asiento para hablar} other{{count} asientos para hablar}}",
-  "walletAmount": "{amount} {currency}"
+  "walletAmount": "{amount} {currency}",
+  "appTitle": "Masanawa"
 }
