@@ -490,6 +490,28 @@ void main() {
     expect(container.read(sessionProvider), isA<SessionAwaitingOtp>());
   });
 
+  test('logout authorization failure does not start a token refresh', () async {
+    storageMap['auth_session_v2'] = jsonEncode({
+      'accessToken': 'test-access',
+      'refreshToken': 'test-refresh',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final container = makeContainer();
+    container.read(sessionProvider);
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(sessionProvider), isA<SessionSignedIn>());
+    adapter.respond('/auth/logout', {
+      'error': {'code': 'UNAUTHORIZED', 'message': 'expired'}
+    }, statusCode: 401);
+    await container.read(sessionProvider.notifier).logout();
+    expect(adapter.requests.where((r) => r == 'POST /auth/refresh'),
+        isEmpty);
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+    expect(storageMap.containsKey('auth_session_v2'), isFalse);
+    expect(api.onUnauthorized, isNull);
+  });
+
   test('logout queues behind already-started encrypted verify write',
       () async {
     final container = makeContainer();
