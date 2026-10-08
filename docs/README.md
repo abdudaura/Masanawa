@@ -1,5 +1,12 @@
 # Masanawa Documentation
 
+## Implementation kickoff / documentation coverage sign-off (2026-10-08)
+
+**Start independent implementation windows now; the navigation and owner-requirement design is documented.** Read `IMPLEMENTATION-KICKOFF-20261008.md` (definitive lane/dependency/integration handbook) and `REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md` (all 77 P/N/T/M/A/W/Q trace IDs and the 11 J release journeys) **in addition to** the shell and product contracts below. These do not replace `MOBILE-READINESS-PLAN.md` (R01–R19) or `COMMUNICATIONS-EXTENSION-PLAN.md` (C01–C08), and do not mark any code as production ready.
+
+Separate unmerged reference PR #467 is advisory only until reviewed. C01 contact code is in draft #468; R18 #435 touches the same Gateway composition, and the owner-controlled CI recovery remains #457. Read live main/PRs/claims before any overlapping edit. Unapproved features inferred from WhatsApp resemblance are not implementation instructions.
+
+
 ## Owner-approved requirements crosswalk and integrated journeys (2026-10-08)
 
 **Read `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` for a requirement-by-requirement map of the 7–8 October owner's discussions, the existing R01–R19 / C01–C08 implementation gates, explicitly unapproved comparisons/future ideas, and integrated real-user acceptance scenarios.** These are binding coverage overlays, not new products, a replacement backlog or implementation evidence. Implementation windows must link the exact requirement and journey IDs in their PR/test handoff; old documents never override the owner-approved final five-tab navigation.
