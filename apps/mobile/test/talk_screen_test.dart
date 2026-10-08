@@ -151,6 +151,7 @@ class _SafetyTransport implements TalkSafetyTransport {
     required String targetId,
     required TalkSafetyReportReason reason,
     String? detail,
+    String? clientRequestId,
   }) async {
     targetReports.add((
       targetKind: targetKind,
