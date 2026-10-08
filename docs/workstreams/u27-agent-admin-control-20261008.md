@@ -6,3 +6,7 @@
 - No ownership of shared `services/ops/src/app.ts`, `services/gateway/src/app.ts`, `main.ts`, migrations, ledger, Firebase/native, consumer router or other windows' paths.
 - Intent: reuse existing Ops session/capability and agent/skill contracts, add audited capability change guard and typed admin readback, write Flutter admin module; composition deferred to designated shared owner if necessary.
 - Status: CLAIMED — implementation in progress, no tests or validation claimed.
+
+## 2026-10-08T19:23Z lease expansion — Ops-only composition
+- Same window claims **exact wiring** in `services/ops/src/app.ts` and `services/ops/src/main.ts` for optional guarded U27 endpoints. Current #497/#506/#468/#493/#480 file inventories show no Ops overlap; no Gateway/shared money/native file ownership requested.
+- Fail-closed: only expose U27 endpoint when canonical `AgentAdminAuthorizer` plus existing `AgentAdminService` are provided; default service remains closed. No global Ops grant configuration or production privileges changed.
