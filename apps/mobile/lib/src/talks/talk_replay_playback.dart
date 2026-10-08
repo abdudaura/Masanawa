@@ -283,6 +283,10 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
       if (previouslyLoaded) {
         await player.pause();
         if (_closed) return;
+        if (!_authorized()) {
+          _deny();
+          return;
+        }
       }
       // Every refresh goes through the authenticated, tenant-scoped Gateway.
       // A revoked/unpublished replay must fail even when an old URL exists.
