@@ -218,16 +218,29 @@ export function createPostgresPlatformSessionRepository(pool: Pool): PlatformSes
     },
 
     async issueSession(input) {
-      await pool.query(
-        `INSERT INTO security.platform_sessions(
-           access_hash,refresh_hash,tenant_id,user_id,access_expires_at,
-           refresh_expires_at,revoked_at,created_at,updated_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,NULL,$7,$7)`,
-        [
-          input.accessHash,input.refreshHash,input.identity.tenantId,input.identity.userId,
-          input.accessExpiresAt,input.refreshExpiresAt,input.issuedAt,
-        ],
-      );
+      await withTransaction(pool, async (client) => {
+        // Serialize issuance against the deletion revoker's canonical User
+        // UPDATE. A session inserted first is revoked by that transaction;
+        // a revoker that wins first makes this request fail closed.
+        const current = await client.query<{ state: string }>(
+          `SELECT state FROM identity.users
+            WHERE tenant_id=$1 AND user_id=$2 FOR SHARE`,
+          [input.identity.tenantId,input.identity.userId],
+        );
+        if (current.rows[0]?.state !== "active") {
+          throw new Error("auth.account_inactive");
+        }
+        await client.query(
+          `INSERT INTO security.platform_sessions(
+             access_hash,refresh_hash,tenant_id,user_id,access_expires_at,
+             refresh_expires_at,revoked_at,created_at,updated_at
+           ) VALUES ($1,$2,$3,$4,$5,$6,NULL,$7,$7)`,
+          [
+            input.accessHash,input.refreshHash,input.identity.tenantId,input.identity.userId,
+            input.accessExpiresAt,input.refreshExpiresAt,input.issuedAt,
+          ],
+        );
+      });
     },
 
     async resolveAccess(input) {
