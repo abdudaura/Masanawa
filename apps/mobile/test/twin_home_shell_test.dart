@@ -212,6 +212,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('bottom tab selection updates deep-linkable route', (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.smart_toy_outlined));
+    await tester.pumpAndSettle();
+    var router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
+    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'agents');
+
+    await tester.tap(find.byIcon(Icons.account_balance_wallet_outlined));
+    await tester.pumpAndSettle();
+    router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
+    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'wallet');
+
+    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.pumpAndSettle();
+    router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
+    expect(router.routeInformationProvider.value.uri.path, '/home');
+    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Home keeps a single visible title and vertical Talk tabs', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
