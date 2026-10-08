@@ -135,3 +135,48 @@ Next claim: source/test subsets of stale PRs #448/#449/#452/#453/#455/#456/#484,
 - `apps/mobile/lib/src/screens/talks/talk_gift_sheet.dart`
 - `apps/mobile/test/talk_gift_sheet_recovery_test.dart`
 Preserve existing integration fixtures, apply-check each patch, execute affected suites, and publish only reviewed reconciled content. No SQL schema/composer or transfer authority changes. Open PRs are not closed until unique changes are preserved and integration status is explicit.
+
+
+## Safety batch results and C01/R18 integration claim
+Safety integration source 30059cfd1bd3c113742fc202977189caa3bc48a0: 34 focused dispatch/stage/replay tests, 16 worker-fencing tests, 4 Android security checks, 21 mobile audio/gift recovery tests passed. Broad recovered backend now 1241 passed, 1 API lifecycle failed, 143 skipped. Source patches/handoffs preserved, no full lane DONE claim.
+
+Claim reconcile C01 #468 f8c5973437090e3aec38fd7bd4ac4376ae050f42 and R18 #435 145da2fedeee7c9492dbf7040830d9ded7fd1faa into one composer, 0015 then0016 migrations. Paths:
+- `apps/mobile/lib/src/messages/human_contacts_controller.dart`
+- `apps/mobile/lib/src/messages/human_contacts_screen.dart`
+- `apps/mobile/lib/src/messages/human_contacts_transport.dart`
+- `apps/mobile/test/human_contacts_controller_test.dart`
+- `apps/mobile/test/human_contacts_screen_test.dart`
+- `apps/mobile/test/human_contacts_transport_test.dart`
+- `docs/workstreams/communications-identity-c01-20261008.md`
+- `packages/talks/migrations/0016_human_messaging_contacts.sql`
+- `services/gateway/src/app.ts`
+- `services/gateway/src/human_contacts/composition.test.ts`
+- `services/gateway/src/human_contacts/model.ts`
+- `services/gateway/src/human_contacts/postgres_integration.test.ts`
+- `services/gateway/src/human_contacts/postgres_repository.test.ts`
+- `services/gateway/src/human_contacts/postgres_repository.ts`
+- `services/gateway/src/human_contacts/routes.test.ts`
+- `services/gateway/src/human_contacts/routes.ts`
+- `services/gateway/src/human_contacts/service.test.ts`
+- `services/gateway/src/human_contacts/service.ts`
+- `services/gateway/src/main.ts`
+- `apps/mobile/lib/src/profile_avatar/avatar_crop_sheet.dart`
+- `apps/mobile/lib/src/profile_avatar/avatar_image.dart`
+- `apps/mobile/lib/src/profile_avatar/avatar_transport.dart`
+- `apps/mobile/lib/src/screens/profile/edit_profile_screen.dart`
+- `apps/mobile/lib/src/screens/settings/settings_screen.dart`
+- `apps/mobile/test/edit_profile_screen_test.dart`
+- `apps/mobile/test/profile_avatar_crop_test.dart`
+- `apps/mobile/test/profile_avatar_transport_test.dart`
+- `docs/workstreams/r18-avatar-end-to-end-20261008.md`
+- `packages/talks/migrations/0015_profile_avatar_objects.sql`
+- `services/gateway/src/profile_avatar/repository.test.ts`
+- `services/gateway/src/profile_avatar/repository.ts`
+- `services/gateway/src/profile_avatar/routes.test.ts`
+- `services/gateway/src/profile_avatar/routes.ts`
+- `services/gateway/src/profile_avatar/service.test.ts`
+- `services/gateway/src/profile_avatar/service.ts`
+- `services/gateway/src/profile_avatar/test_png_fixture.ts`
+- `services/gateway/src/talk_profiles/postgres_repository.ts`
+- `services/gateway/src/talk_profiles/profile_edit_postgres.test.ts`
+Keep existing canonical S3 store and strict profile request validation; verify targeted SQL-repository/unit/Flutter behavior and production build. DB/provider acceptance unexecuted.
