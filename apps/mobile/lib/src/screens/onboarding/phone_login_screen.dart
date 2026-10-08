@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../localization/auth_error_localizer.dart';
 import '../../core/api/models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/phone/country_codes.dart';
@@ -64,15 +65,10 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       });
     } on ApiException catch (error) {
       if (!mounted) return;
-      setState(() => _capabilityError = error.code == 'AUTH_UNAVAILABLE'
-          ? 'AUTH_UNAVAILABLE'
-          : error.message);
+      setState(() => _capabilityError = error.code ?? 'UNKNOWN_AUTH_ERROR');
     } catch (_) {
       if (!mounted) return;
-      setState(
-        () => _capabilityError =
-            'SIGN_IN_METHODS_LOAD_FAILED',
-      );
+      setState(() => _capabilityError = 'UNKNOWN_AUTH_ERROR');
     }
   }
 
@@ -131,11 +127,11 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              _capabilityError == 'AUTH_UNAVAILABLE'
-                  ? l10n.signInMethodsUnavailable
-                  : _capabilityError == 'SIGN_IN_METHODS_LOAD_FAILED'
-                      ? l10n.signInMethodsLoadFailed
-                      : _capabilityError!,
+              AuthErrorLocalizer.message(
+                l10n,
+                code: _capabilityError,
+                stage: AuthFailureStage.capabilities,
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
@@ -209,7 +205,11 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             if (error != null) ...[
               const SizedBox(height: 12),
               Text(
-                error.message,
+                AuthErrorLocalizer.message(
+                  l10n,
+                  code: error.code,
+                  stage: AuthFailureStage.sendCode,
+                ),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontSize: MasanawaTokens.fontSize['sm'],
