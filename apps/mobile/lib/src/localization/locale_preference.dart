@@ -31,14 +31,17 @@ final class SecureLocalePreferenceStore implements LocalePreferenceStore {
   }
 }
 
-/// A null locale delegates selection to Flutter's device-locale resolution.
-/// Changes are applied to the running MaterialApp without a router rebuild.
+/// A null locale delegates selection to Flutter's device language list.
+/// Persisted choice never changes country, spoken language or currency.
 final class LocalePreferenceController extends ChangeNotifier {
   LocalePreferenceController(this._store);
 
   final LocalePreferenceStore _store;
   Locale? _override;
   bool _loaded = false;
+  bool _disposed = false;
+  bool _saving = false;
+  Future<void>? _pendingLoad;
 
   Locale? get override => _override;
   bool get loaded => _loaded;
@@ -51,28 +54,52 @@ final class LocalePreferenceController extends ChangeNotifier {
     return null;
   }
 
-  Future<void> load() async {
-    if (_loaded) return;
+  /// All callers share the same initialization task. A slow read cannot
+  /// replace a newer selection; select() waits for initialization before
+  /// changing storage. A late completion never notifies disposed listeners.
+  Future<void> load() {
+    if (_loaded || _disposed) return Future<void>.value();
+    return _pendingLoad ??= _readSavedPreference();
+  }
+
+  Future<void> _readSavedPreference() async {
+    String? saved;
     try {
-      _override = validate(await _store.read());
+      saved = await _store.read();
     } catch (_) {
-      // Broken or temporarily unavailable secure storage must not prevent
-      // app startup. A subsequent explicit selection can retry the write.
-      _override = null;
+      // A failed secure-storage read must not prevent sign-in or app startup.
+      saved = null;
     }
+    if (_disposed) return;
+    _override = validate(saved);
     _loaded = true;
     notifyListeners();
   }
 
-  /// Persist before updating the UI; a failed save must not display a
-  /// language selection that will disappear silently on restart.
+  /// Commit storage first. Concurrent selections are rejected rather than
+  /// racing and silently persisting a different language from the visible UI.
   Future<void> select(Locale? locale) async {
     if (locale != null && validate(locale.languageCode) != locale) {
       throw ArgumentError.value(locale, 'locale', 'Unsupported UI locale');
     }
-    await _store.write(locale?.languageCode);
-    _override = locale;
-    _loaded = true;
-    notifyListeners();
+    await load();
+    if (_disposed) throw StateError('Locale preferences are disposed');
+    if (_saving) throw StateError('A language change is already in progress');
+    _saving = true;
+    try {
+      await _store.write(locale?.languageCode);
+      if (_disposed) return;
+      _override = locale;
+      _loaded = true;
+      notifyListeners();
+    } finally {
+      _saving = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
