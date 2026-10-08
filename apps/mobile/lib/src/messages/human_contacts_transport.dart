@@ -157,7 +157,14 @@ class GatewayHumanContactsTransport implements HumanContactsTransport {
       );
       return HumanContact.fromJson(response.data, fromLookup: true);
     } on DioException catch (error) {
-      if (error.response?.statusCode == 404) return null;
+      final body = error.response?.data;
+      final envelope = body is Map ? body['error'] : null;
+      final code = envelope is Map ? envelope['code'] : null;
+      // A missing deployment route or schema mismatch is NOT an absent person.
+      if (error.response?.statusCode == 404 &&
+          code == 'messages.contact_unavailable') {
+        return null;
+      }
       rethrow;
     }
   }
