@@ -78,7 +78,9 @@ function harness(options: { deliveryFails?: boolean; email?: boolean; failVerifi
       if (!record || input.userId !== userId || record.requestId !== input.requestId) {
         return { result: "missing" as const };
       }
-      if (record.phase !== "requested") return { result: "already-verified" as const };
+      if (record.phase !== "requested" && record.phase !== "failed") {
+        return { result: "already-verified" as const };
+      }
       if (record.revision !== input.expectedRevision) return { result: "conflict" as const };
       if (!challenge || challenge.userId !== input.userId) {
         return { result: "missing" as const };
