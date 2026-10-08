@@ -19,7 +19,7 @@ class TalkAiSeatCandidate {
     this.subtitle = '',
     this.avatarUrl,
     this.topics = const [],
-    this.isAvailable = true,
+    this.isAvailable = false,
   });
 
   final String personaId;
@@ -32,10 +32,19 @@ class TalkAiSeatCandidate {
   final bool isAvailable;
 
   factory TalkAiSeatCandidate.fromJson(Map<String, dynamic> json) {
+    final personaId = json['personaId'];
+    final displayName = json['displayName'];
+    if (personaId is! String || personaId.trim().isEmpty ||
+        displayName is! String || displayName.trim().isEmpty) {
+      throw const FormatException('AI Seat candidate identity is missing');
+    }
+    if (json['kind'] != 'expert' && json['kind'] != 'twin') {
+      throw const FormatException('AI Seat candidate kind is invalid');
+    }
     final rawTopics = json['topics'];
     return TalkAiSeatCandidate(
-      personaId: json['personaId'] as String? ?? '',
-      displayName: json['displayName'] as String? ?? '',
+      personaId: personaId.trim(),
+      displayName: displayName.trim(),
       kind: json['kind'] == 'twin'
           ? TalkAiPersonaKind.twin
           : TalkAiPersonaKind.expert,
@@ -48,7 +57,8 @@ class TalkAiSeatCandidate {
                 if (topic is String && topic.trim().isNotEmpty) topic.trim(),
             ]
           : const [],
-      isAvailable: json['isAvailable'] != false,
+      // An omitted/non-boolean flag is not proof a paid AI Seat is ready.
+      isAvailable: json['isAvailable'] == true,
     );
   }
 }
@@ -74,7 +84,30 @@ class TalkAiSeatQuote {
   final DateTime expiresAt;
   final bool requiresHostApproval;
 
+  bool isExpiredAt(DateTime instant) => !instant.isBefore(expiresAt);
+
   factory TalkAiSeatQuote.fromJson(Map<String, dynamic> json) {
+    for (final key in ['quoteId', 'personaId', 'displayName', 'totalLabel']) {
+      final value = json[key];
+      if (value is! String || value.trim().isEmpty) {
+        throw FormatException('AI Seat quote is missing $key');
+      }
+    }
+    final expiryValue = json['expiresAt'];
+    final expiry = expiryValue is String ? DateTime.tryParse(expiryValue) : null;
+    if (expiry == null) {
+      throw const FormatException('AI Seat quote expiry is missing');
+    }
+    if (json['mode'] != 'host_add' && json['mode'] != 'sponsor') {
+      throw const FormatException('AI Seat quote mode is invalid');
+    }
+    if (json['kind'] != 'expert' && json['kind'] != 'twin') {
+      throw const FormatException('AI Seat quote persona kind is invalid');
+    }
+    if (json['requiresHostApproval'] is! bool ||
+        (json['requiresHostApproval'] == true) != (json['mode'] == 'sponsor')) {
+      throw const FormatException('AI Seat host approval requirements conflict');
+    }
     final mode = json['mode'] == 'host_add'
         ? TalkAiSeatMode.hostAdd
         : TalkAiSeatMode.sponsor;
@@ -87,8 +120,7 @@ class TalkAiSeatQuote {
           : TalkAiPersonaKind.expert,
       mode: mode,
       totalLabel: json['totalLabel'] as String? ?? '',
-      expiresAt: DateTime.tryParse(json['expiresAt'] as String? ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
+      expiresAt: expiry,
       requiresHostApproval: json['requiresHostApproval'] == true,
     );
   }
@@ -106,6 +138,10 @@ class TalkAiSeatRequest {
   final String message;
 
   factory TalkAiSeatRequest.fromJson(Map<String, dynamic> json) {
+    final requestId = json['requestId'];
+    if (requestId is! String || requestId.trim().isEmpty) {
+      throw const FormatException('AI Seat confirmation ID is missing');
+    }
     final status = switch (json['status']) {
       'pending_host' => TalkAiSeatRequestStatus.pendingHost,
       'admitted' => TalkAiSeatRequestStatus.admitted,
@@ -114,7 +150,7 @@ class TalkAiSeatRequest {
       _ => TalkAiSeatRequestStatus.unknown,
     };
     return TalkAiSeatRequest(
-      requestId: json['requestId'] as String? ?? '',
+      requestId: requestId.trim(),
       status: status,
       message: json['message'] as String? ?? '',
     );

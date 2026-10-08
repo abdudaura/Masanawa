@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../core/network/api_client.dart';
 import 'talk_ai_seat.dart';
 
@@ -12,24 +10,17 @@ class GatewayTalkAiSeatTransport implements TalkAiSeatTransport {
   Future<List<TalkAiSeatCandidate>> loadCandidates({
     required String talkId,
   }) async {
-    try {
-      final response = await api.dio.get<dynamic>(
-        '/talks/' + Uri.encodeComponent(talkId) + '/ai-seats',
-      );
-      final data = response.data;
-      if (data is! List) {
-        throw const FormatException('Invalid AI Seat catalog response');
-      }
-      return [
-        for (final item in data)
-          if (item is Map)
-            TalkAiSeatCandidate.fromJson(item.cast<String, dynamic>()),
-      ];
-    } on DioException catch (error) {
-      // Safe mobile rollout while the backend catalog lands in parallel.
-      if (error.response?.statusCode == 404) return const [];
-      rethrow;
+    final response = await api.dio.get<dynamic>(
+      '/talks/' + Uri.encodeComponent(talkId) + '/ai-seats',
+    );
+    final data = response.data;
+    if (data is! List || data.any((entry) => entry is! Map)) {
+      throw const FormatException('Invalid AI Seat catalog response');
     }
+    return [
+      for (final item in data)
+        TalkAiSeatCandidate.fromJson((item as Map).cast<String, dynamic>()),
+    ];
   }
 
   @override
