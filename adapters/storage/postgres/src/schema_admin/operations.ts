@@ -193,10 +193,92 @@ export async function schemaBootstrapTest(
     const publicObjects=await client.query<{object_name:string}&Record<string,unknown>>(
       "SELECT c.relname AS object_name FROM pg_class c JOIN pg_namespace n "+
       "ON n.oid=c.relnamespace WHERE n.nspname='public' "+
-      "AND c.relkind IN ('r','p','v','m','S','f') AND NOT EXISTS "+
+      "AND c.relkind IN ('r','p','v','m','S','f','c') AND NOT EXISTS "+
       "(SELECT 1 FROM pg_depend dep WHERE dep.objid=c.oid "+
       "AND dep.deptype='e')");
     if(publicObjects.rows.length!==0) throw new SchemaOperationError("schema.bootstrap_public_not_empty");
+    // PostgreSQL large objects live in a system catalog, not user schemas.
+    // They can carry private binary user data even when public is apparently empty.
+    const largeObjects=await client.query<{object_id:string}&Record<string,unknown>>(
+      "SELECT oid::text AS object_id FROM pg_largeobject_metadata LIMIT 1"
+    );
+    if(largeObjects.rows.length!==0) {
+      throw new SchemaOperationError("schema.bootstrap_large_objects_present");
+    }
+    // A disposable name alone is not proof of an empty database. Reject any
+    // non-system namespace, including user data outside known Masanawa schemas.
+    // The pre-existing extension objects in public are excluded from the
+    // separate relation/routine/type checks, but custom schemas never pass.
+    const otherSchemas=await client.query<{schema_name:string}&Record<string,unknown>>(
+      "SELECT n.nspname AS schema_name FROM pg_namespace n "+
+      "WHERE n.nspname NOT IN ('public','pg_catalog','information_schema') "+
+      "AND n.nspname !~ '^pg_(toast|temp)(_|$)'"
+    );
+    if(otherSchemas.rows.length!==0) {
+      throw new SchemaOperationError("schema.bootstrap_other_schemas_present");
+    }
+    // PostgreSQL procedures/functions and independent enum/domain/range types
+    // can contain user-owned state or behavior even when pg_class has no tables.
+    // Skip automatically derived array types (e.g., extension type arrays).\n    // Check before the first DDL; no schema, object or data is ever dropped.
+    const publicRoutines=await client.query<{routine_name:string}&Record<string,unknown>>(
+      "SELECT p.proname AS routine_name FROM pg_proc p "+
+      "JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' "+
+      "AND NOT EXISTS (SELECT 1 FROM pg_depend dep WHERE dep.objid=p.oid "+
+      "AND dep.deptype='e')"
+    );
+    if(publicRoutines.rows.length!==0) {
+      throw new SchemaOperationError("schema.bootstrap_public_routines_present");
+    }
+    const publicTypes=await client.query<{type_name:string}&Record<string,unknown>>(
+      "SELECT t.typname AS type_name FROM pg_type t "+
+      "JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' "+
+      "AND t.typrelid=0 AND t.typcategory <> 'A' "+
+      "AND t.typtype IN ('b','c','d','e','r','m') "+
+      "AND NOT EXISTS (SELECT 1 FROM pg_depend dep WHERE dep.objid=t.oid "+
+      "AND dep.deptype='e')"
+    );
+    if(publicTypes.rows.length!==0) {
+      throw new SchemaOperationError("schema.bootstrap_public_types_present");
+    }
+    // Standalone definitions can outlive tables and routines. A database with
+    // pre-existing collations, operators, text-search definitions, replication
+    // publications or foreign connections is not an empty rehearsal target.
+    // Extension-owned objects (e.g. pgvector) are installation prerequisites,
+    // not orphaned user definitions. Only static catalog identifiers appear in
+    // this SQL; no names or other caller-controlled values are interpolated.
+    const publicDefinitions=await client.query<{object_kind:string}&Record<string,unknown>>(
+      "SELECT object_kind FROM ("+
+      [
+        ["pg_collation","c","collnamespace","collation"],
+        ["pg_conversion","c","connamespace","conversion"],
+        ["pg_operator","o","oprnamespace","operator"],
+        ["pg_ts_config","c","cfgnamespace","text_search_configuration"],
+        ["pg_ts_dict","d","dictnamespace","text_search_dictionary"],
+        ["pg_ts_parser","p","prsnamespace","text_search_parser"],
+        ["pg_ts_template","t","tmplnamespace","text_search_template"],
+      ].map(([catalog,alias,namespace,kind])=>
+        "SELECT '"+kind+"'::text AS object_kind FROM "+catalog+" "+alias+
+        " JOIN pg_namespace n ON n.oid="+alias+"."+namespace+
+        " WHERE n.nspname='public' AND NOT EXISTS ("+
+        "SELECT 1 FROM pg_depend dep WHERE dep.classid='"+catalog+"'::regclass"+
+        " AND dep.objid="+alias+".oid AND dep.deptype='e')"
+      ).concat(
+        [
+          ["pg_event_trigger","event_trigger"],
+          ["pg_publication","publication"],
+          ["pg_foreign_server","foreign_server"],
+          ["pg_foreign_data_wrapper","foreign_data_wrapper"],
+        ].map(([catalog,kind])=>
+          "SELECT '"+kind+"'::text AS object_kind FROM "+catalog+" o"+
+          " WHERE NOT EXISTS (SELECT 1 FROM pg_depend dep WHERE "+
+          "dep.classid='"+catalog+"'::regclass AND dep.objid=o.oid AND dep.deptype='e')"
+        )
+      ).join(" UNION ALL ")+
+      ") existing LIMIT 1"
+    );
+    if(publicDefinitions.rows.length!==0) {
+      throw new SchemaOperationError("schema.bootstrap_public_definitions_present");
+    }
     // A savepoint must roll back a nontrivial write without destroying the
     // rest of the outer transaction (proving rollback behavior on this server).
     await client.query("SAVEPOINT schema_rollback_probe");

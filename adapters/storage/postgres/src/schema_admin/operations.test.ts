@@ -7,7 +7,12 @@ const manifest:SchemaManifest={digest:"a".repeat(64),migrations:[
   {owner:"identity",name:"0001_users.sql",sql,sha256:"1".repeat(64)},
   {owner:"talks",name:"0001_talks.sql",sql,sha256:"2".repeat(64)},
 ]};
-function fake(input:{ledger?:boolean;applied?:Array<{owner:string;name:string;sha256:string}>;version?:string;dbName?:string}={}){
+function fake(input:{
+  ledger?:boolean;applied?:Array<{owner:string;name:string;sha256:string}>;
+  version?:string;dbName?:string;
+  otherSchemas?:boolean;publicRoutines?:boolean;publicTypes?:boolean;
+  publicComposite?:boolean;largeObjects?:boolean;publicDefinitions?:boolean;
+}={}){
   const seen:string[]=[];
   const rows=input.applied??[];
   let ledger=input.ledger??true;
@@ -21,6 +26,12 @@ function fake(input:{ledger?:boolean;applied?:Array<{owner:string;name:string;sh
     }],rowCount:1};
     if(s.includes("ORDER BY applied_at"))return{rows,rowCount:rows.length};
     if(s.includes("CREATE TABLE public.masanawa_schema_migrations"))ledger=true;
+    if(s.includes("FROM pg_class c"))return{rows:input.publicComposite?[{object_name:"private_composite"}]:[],rowCount:input.publicComposite?1:0};
+    if(s.includes("FROM pg_largeobject_metadata"))return{rows:input.largeObjects?[{object_id:"123"}]:[],rowCount:input.largeObjects?1:0};
+    if(s.includes("FROM pg_namespace n"))return{rows:input.otherSchemas?[{schema_name:"private_data"}]:[],rowCount:input.otherSchemas?1:0};
+    if(s.includes("FROM pg_proc p"))return{rows:input.publicRoutines?[{routine_name:"danger"}]:[],rowCount:input.publicRoutines?1:0};
+    if(s.includes("FROM pg_type t"))return{rows:input.publicTypes?[{type_name:"state"}]:[],rowCount:input.publicTypes?1:0};
+    if(s.includes("SELECT object_kind FROM ("))return{rows:input.publicDefinitions?[{object_kind:"collation"}]:[],rowCount:input.publicDefinitions?1:0};
     if(s.includes("INFORMATION_SCHEMA.SCHEMATA")||s.includes("information_schema.schemata"))
       return{rows:[],rowCount:0};
     if(s.includes("masanawa_schema_rollback_probe")&&s.includes("SELECT"))
@@ -76,6 +87,21 @@ describe("R16 schema inspection and guarded application",()=>{
     await expect(schemaApply(h.pool,manifest,approval,now))
       .rejects.toMatchObject({code:"schema.manifest_drift_or_unknown"});
     expect(h.seen.some(s=>s.includes("CREATE TABLE"))).toBe(false);
+  });
+  it.each([
+    ["custom schema", {otherSchemas:true}, "schema.bootstrap_other_schemas_present"],
+    ["standalone public routine", {publicRoutines:true}, "schema.bootstrap_public_routines_present"],
+    ["standalone public type", {publicTypes:true}, "schema.bootstrap_public_types_present"],
+    ["standalone composite type", {publicComposite:true}, "schema.bootstrap_public_not_empty"],
+    ["binary large object", {largeObjects:true}, "schema.bootstrap_large_objects_present"],
+    ["public collation or advanced definition", {publicDefinitions:true}, "schema.bootstrap_public_definitions_present"],
+  ])("disposable bootstrap refuses pre-existing %s without touching user data",async(_label,input,code)=>{
+    const h=fake({ledger:false,...input});
+    await expect(schemaBootstrapTest(h.pool,manifest,{
+      expectedDatabase:"masanawa_test_schemaunit",disposableConfirmed:true,
+    })).rejects.toMatchObject({code});
+    expect(h.seen.some(s=>s.includes("CREATE TABLE")||s.includes("SAVEPOINT"))).toBe(false);
+    expect(h.seen).toContain("ROLLBACK");
   });
   it("bootstrap refuses a non-disposable name without any writes",async()=>{
     const h=fake({ledger:false,dbName:"production"});

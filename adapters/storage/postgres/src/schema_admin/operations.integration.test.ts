@@ -42,6 +42,108 @@ integration("R16 schema lifecycle on disposable real PG18",()=>{
     })).rejects.toMatchObject({code:"schema.disposable_database_confirmation_required"});
     expect((await schemaStatus(pool,manifest)).ledgerExists).toBe(false);
   });
+  it("refuses a named disposable DB carrying unrelated user schemas, routines, or types",async()=>{
+    const extra="masanawa_r16_extra_"+randomUUID().replaceAll("-","");
+    const attempt=()=>schemaBootstrapTest(pool,manifest,{
+      expectedDatabase:databaseName,disposableConfirmed:true,
+    });
+    await pool.query(`CREATE SCHEMA "${extra}"`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_other_schemas_present",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regnamespace($1)::text AS name",[extra]);
+      expect(stillThere.rows[0]?.name).toBe(extra);
+    } finally {
+      await pool.query(`DROP SCHEMA "${extra}"`);
+    }
+
+    const routine="masanawa_r16_freshness_probe";
+    await pool.query(`CREATE FUNCTION public.${routine}() RETURNS integer
+      LANGUAGE sql AS 'SELECT 1'`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_routines_present",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regprocedure($1)::text AS name",[`public.${routine}()`]);
+      expect(stillThere.rows[0]?.name).toContain(routine);
+    } finally {
+      await pool.query(`DROP FUNCTION public.${routine}()`);
+    }
+
+    const type="masanawa_r16_freshness_type";
+    await pool.query(`CREATE TYPE public.${type} AS ENUM ('ready')`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_types_present",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regtype($1)::text AS name",[`public.${type}`]);
+      expect(stillThere.rows[0]?.name).toContain(type);
+    } finally {
+      await pool.query(`DROP TYPE public.${type}`);
+    }
+    const composite="masanawa_r16_freshness_composite";
+    await pool.query(`CREATE TYPE public.${composite} AS (value integer)`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_not_empty",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regtype($1)::text AS name",[`public.${composite}`]);
+      expect(stillThere.rows[0]?.name).toContain(composite);
+    } finally {
+      await pool.query(`DROP TYPE public.${composite}`);
+    }
+
+    const oid=(await pool.query<{oid:number}>("SELECT lo_create(0) AS oid")).rows[0]?.oid;
+    expect(oid).toBeDefined();
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_large_objects_present",
+      });
+      const stillThere=await pool.query<{oid:number}>(
+        "SELECT oid FROM pg_largeobject_metadata WHERE oid=$1",[oid]);
+      expect(stillThere.rows[0]?.oid).toBe(oid);
+    } finally {
+      await pool.query("SELECT lo_unlink($1)",[oid]);
+    }
+    // A non-extension collation has no table, user type or routine; it must
+    // still block rehearsal, preserving the definition without executing DDL.
+    const collation="masanawa_r16_freshness_collation";
+    await pool.query(`CREATE COLLATION public.${collation} (provider = libc, locale = 'C')`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_definitions_present",
+      });
+      const persisted=await pool.query<{name:string}>(
+        "SELECT c.collname AS name FROM pg_collation c JOIN pg_namespace n "+
+        "ON n.oid=c.collnamespace WHERE n.nspname='public' AND c.collname=$1",
+        [collation]);
+      expect(persisted.rows[0]?.name).toBe(collation);
+    } finally {
+      await pool.query(`DROP COLLATION public.${collation}`);
+    }
+
+    const textSearch="masanawa_r16_freshness_textsearch";
+    await pool.query(`CREATE TEXT SEARCH CONFIGURATION public.${textSearch}
+      (COPY = pg_catalog.english)`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_definitions_present",
+      });
+      const persisted=await pool.query<{name:string}>(
+        "SELECT c.cfgname AS name FROM pg_ts_config c JOIN pg_namespace n "+
+        "ON n.oid=c.cfgnamespace WHERE n.nspname='public' AND c.cfgname=$1",
+        [textSearch]);
+      expect(persisted.rows[0]?.name).toBe(textSearch);
+    } finally {
+      await pool.query(`DROP TEXT SEARCH CONFIGURATION public.${textSearch}`);
+    }
+    expect((await schemaStatus(pool,manifest)).ledgerExists).toBe(false);
+  },30000);
   it("applies a clean production manifest on disposable PG then verifies idempotent second check",async()=>{
     const result=await schemaBootstrapTest(pool,manifest,{
       expectedDatabase:databaseName,disposableConfirmed:true,
