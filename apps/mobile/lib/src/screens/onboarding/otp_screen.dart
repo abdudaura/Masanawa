@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../localization/auth_error_localizer.dart';
 import '../../localization/international_digits.dart';
+import '../../localization/bidi_display.dart';
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -145,7 +146,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
     return OnboardingScaffold(
       title: l10n.otpTitle,
-      subtitle: l10n.otpSentTo(identifier),
+      subtitle: l10n.otpSentTo(
+        BidiDisplay.identifier(
+          identifier,
+          surroundingDirection: Directionality.of(context),
+        ),
+      ),
       canGoBack: true,
       backDestination: '/phone-login',
       child: Column(
