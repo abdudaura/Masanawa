@@ -144,6 +144,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
               onRefresh: () => ref.read(agentDirectoryProvider.notifier).refresh(),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 96),
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -468,6 +469,7 @@ class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
             child: ListView(
               key: const ValueKey('public-twins-list'),
               physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 96),
               children: [
                 ListTile(
                   leading: const Icon(Icons.person_outline_rounded),
