@@ -31,5 +31,3 @@ export * from "./commerce/billing-funding.js";
 export * from "./commerce/billing-runtime.js";
 export * from "./commerce/twin-economy.js";
 export * from "./commerce/ngn-wallet.js";
-
-export * from "./identity/account-deletion.js";
