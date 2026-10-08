@@ -5,7 +5,7 @@ Updated UTC: 2026-10-08T12:00:50Z. Owner: GPT-6 / R17-C08 exclusive shared Flutt
 Claim: this file; initial visible claim SHA 53d7ee0a6747660ff867ed738d383d0c21ba5c34; five-minute activity lease is renewed by substantive pushes, not the open PR alone.
 Base main SHA: 1d6a67ea3c182455b55a7d1d07eacdb4311682e3.
 Branch: work/r17-c08-five-tab-shell-20261008-gpt6.
-Pushed SOURCE SHA before this handoff: 5f2dbf1de17003b4a328cdd64e0c2006e8b3ba99. Final checkpoint SHA is the newer HEAD of PR #493.
+Pushed SOURCE SHA before this revised checkpoint: 53b24f0fa634eae1789fdb4bbf3cd6a2f89c2b4d (original nav snapshot 5f2dbf1de17003b4a328cdd64e0c2006e8b3ba99). Final checkpoint SHA is the newer HEAD of PR #493.
 PR: https://github.com/Baatiku/masanawa/pull/493 — **DRAFT / UNMERGED**.
 Trace: R17/C08; N01–N08, M01–M03/M08, A01/A02, W03, Q01/Q05/Q08/Q09/Q10 and J01/J03/J04/J07/J08/J10/J11.
 
@@ -23,7 +23,7 @@ Trace: R17/C08; N01–N08, M01–M03/M08, A01/A02, W03, Q01/Q05/Q08/Q09/Q10 and 
 
 ## Missing implementable production code — feature is NOT DONE
 
-1. R17/C08 **New message** human-only action from Chats and Person Profile: consent-aware C01 person lookup/connection, C02 server-verified otherUserId conversation open, authoritative thread navigation and return/backstack. No inert/fake FAB was added. C01 #468 contact client source requires repair: its branch's human_contacts_transport.dart retrieved at this checkpoint showed duplicated/malformed regex/declarations and inconsistent response signature; do not import unchanged or claim it compiled.
+1. **New message integration source now authored:** C01 exact-handle lookup, request and revision-guarded accept/decline, C02 authoritative open(otherUserId) + UUID confirmation, typed thread route, human profile Message and real Chats New message action. All UNEXECUTED / unmerged provider prerequisites. C01 #468 transport source still malformed (duplicated regex/declarations/signatures) and is deliberately not copied. Its fuller contact privacy-management UI, consent/revocation API qualification and real authenticated A-to-B journey remain unverified. No production completion claim.
 2. C01 consent, C02 DM data/write API, C03 realtime/unread/push, C04 private voice notes, C05 indexed cache/recovery must be reconciled, integrated and deployed. C02 #472 vs #475 have DUPLICATE alternative talks/0017 migrations/services; never apply both. C05 #474 vs #476 conflict.
 3. C07 #480 currently combines two Character histories client-side but lacks a **single durable server task authority**, typed cross-feature operations, unified approval context and registered Gateway workspace routes. Native Gemini Live R02 not integrated. Persona switching alone does NOT satisfy J07.
 4. R17 shell requires full contextual Ask Assistant, typed Wallet/DM transfer intents, human profile entry, deep-link backstack restoration, persisted scroll/draft/account-switch handling, localization/accessibility at 320dp and in RTL/large fonts, unread Activity and notification routing, and integration with R18 profile/header revisions.
@@ -55,12 +55,30 @@ Trace: R17/C08; N01–N08, M01–M03/M08, A01/A02, W03, Q01/Q05/Q08/Q09/Q10 and 
 
 | Gate | State | Evidence |
 | --- | --- | --- |
-| SOURCE_WRITTEN | PARTIAL | Navigation wired; human New message and full cross-feature dependencies missing |
+| SOURCE_WRITTEN | PARTIAL | Navigation and consent-aware New message source wired; server C01/C02 and cross-feature dependencies missing |
 | LOCAL_TESTED | NO | No runnable Flutter/Dart |
 | CI_EXECUTED | NO | #457 zero-step Actions |
 | DB_INTEGRATED | NO | C01/C02/C07 and 0017 collision |
-| APP_INTEGRATED | PARTIAL | Unmerged upstream client source mounted, backend missing |
+| APP_INTEGRATED | PARTIAL | Human New message & Assistant UI wired; auth providers and cross-feature backend missing |
 | DEVICE_VERIFIED | NO | Android/real users unavailable |
 | PROVIDER_QUALIFIED | NO | No live Gemini/payment test |
 | DEPLOYED | NO | Branch only |
 | MERGED | NO | #493 DRAFT |
+
+
+## Updated R17/C08 source checkpoint (supersedes any earlier New message gap above)
+
+Source HEAD immediately before this revised handoff: 53b24f0fa634eae1789fdb4bbf3cd6a2f89c2b4d.
+Additional R17/C08-owned paths:
+- apps/mobile/lib/src/messages/human_new_message_screen.dart: signed-in C01 exact-handle people lookup (no identity inference), approved contact list, request and incoming request revision-bound accept/decline, C02 authenticated open(otherUserId), validated UUID, safe error/retry, account-generation fencing, returning only server-acknowledged thread.
+- apps/mobile/lib/src/messages/human_dm_screen.dart: one integration delta on upstream C02 #475, actual New message FAB callback; its other three source files remain exact C02 blobs.
+- apps/mobile/lib/src/screens/profile/person_profile_screen.dart: optional Message button passes exact handle to lookup rather than inventing private user ID.
+- apps/mobile/lib/src/router/app_router.dart: new authenticated /messages/new route with preselected handle; declared before /messages/:conversationId; no extra authorization bypass.
+- apps/mobile/test/human_new_message_contract_test.dart, apps/mobile/test/human_new_message_screen_test.dart: authored handle/UUID safety and signed-in contact admission/open, pending consent, explicit incoming request acceptance and sign-out isolation fixture tests. **NOT EXECUTED.**
+
+New message is now SOURCE_WRITTEN, not E2E complete: C01/C02 Gateway/migrations are unmerged, C01 client code still malformed in its own draft and not reused, C03/C04/C05 real messaging and C07 real task/voice are blocked. The new widget tests use controlled API responses ONLY AS TEST FIXTURES, not production mocks. Work must execute:
+- cd apps/mobile && flutter pub get && flutter gen-l10n && flutter analyze
+- cd apps/mobile && flutter test test/human_new_message_contract_test.dart test/human_new_message_screen_test.dart test/app_shell_route_compatibility_test.dart test/shell_deep_link_test.dart test/twin_home_shell_test.dart
+- cd apps/mobile && flutter test; then repo pnpm typecheck/test and true two-user PostgreSQL/Android sign-in, contact consent, DM send/read/revoke/cross-tenant, restart and Voice/Wallet checks.
+- C01 service contract status, request revision and contact list schema must be checked against the actual chosen upstream merged backend. A UI eligibility flag never overrides C02 authoritative admission.
+- New author-owned paths listed here expand the original five-minute claim without taking over other C01/C02/C07 implementation branches. Re-evaluate fresh claims before any further changes.
