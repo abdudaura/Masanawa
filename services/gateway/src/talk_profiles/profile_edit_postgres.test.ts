@@ -48,6 +48,9 @@ describe("public profile edits SQL ownership", () => {
     expect(calls[0]!.text).toContain("display_name = $3");
     expect(calls[0]!.text).toContain("bio = $4");
     expect(calls[0]!.text).toContain("avatar_url = NULL");
+    expect(calls[0]!.text).toContain("talks.profile_avatar_objects");
+    expect(calls[0]!.text).toContain("state='orphaned'");
+    expect(calls[0]!.text).toContain("SELECT avatar_url FROM talks.public_profiles");
     expect(calls[0]!.values).toEqual([
       "tenant_1", "user_owner", "New name", "About",
     ]);
