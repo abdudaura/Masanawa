@@ -40,4 +40,32 @@ describe("R13 media readiness CAS", () => {
       .rejects.toThrow("talks.replay.media_ready_conflict");
     expect(f.query).toHaveBeenCalledTimes(1);
   });
+  it("sets aborted state atomically and preserves the first abort timestamp on retries",async()=>{
+    const f=fixture(1);
+    const abortInput={
+      tenantId:identity.tenantId,talkId:identity.talkId,
+      recordingId:identity.recordingId,completedAt:"2026-10-07T10:01:00Z",
+    };
+    await f.repository.markAborted(abortInput);
+    const [sql,params]=f.query.mock.calls[0]!;
+    expect(sql).toContain("SET status='aborted'");
+    expect(sql).toContain("CASE WHEN status='aborted' THEN completed_at ELSE $4::timestamptz END");
+    expect(sql).toContain("WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3");
+    expect(params).toEqual([
+      abortInput.tenantId,abortInput.talkId,abortInput.recordingId,abortInput.completedAt,
+    ]);
+    await f.repository.markAborted({...abortInput,completedAt:"2026-10-07T11:00:00Z"});
+    // Database applies CASE using the row's prior status; once aborted, a
+    // later request cannot rewrite the earlier durable completed_at.
+    expect(f.query).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not report successful revocation when media row is absent",async()=>{
+    const f=fixture(0);
+    await expect(f.repository.markAborted({
+      tenantId:identity.tenantId,talkId:identity.talkId,
+      recordingId:identity.recordingId,completedAt:identity.completedAt,
+    })).rejects.toThrow("talks.replay.media_not_found");
+  });
+
 });
