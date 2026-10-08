@@ -1538,7 +1538,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('talk-gift-heart')));
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
-    await tester.pump();
+    // Finish the asynchronous sheet close and entrance animation without
+    // advancing the bounded feedback timer.
+    await tester.pumpAndSettle();
     expect(find.text('Sent to Abdullahi'), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
     expect(find.text('Sent to Abdullahi'), findsNothing);
