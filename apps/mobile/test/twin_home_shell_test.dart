@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/activity/talk_activity.dart';
+import 'package:masanawa/src/agents/twin_directory.dart';
 import 'package:masanawa/src/screens/twin/twin_home_shell.dart';
 import 'package:masanawa/src/state/talk_activity_state.dart';
+import 'package:masanawa/src/state/twin_directory_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
@@ -95,12 +97,44 @@ class _CountingActivityTransport implements TalkActivityTransport {
   }
 }
 
+class _FakeTwinDirectoryTransport implements TwinDirectoryTransport {
+  const _FakeTwinDirectoryTransport();
+
+  @override
+  Future<TwinDirectoryPage> search({
+    required String query,
+    String? cursor,
+    int limit = 30,
+  }) async => TwinDirectoryPage(
+    items: [
+      if (query.isEmpty || 'Amina Twin'.toLowerCase().contains(query.toLowerCase()))
+        const TwinDirectoryEntry(
+          publicId: 'amina-twin',
+          characterId: 'twin-character-1',
+          displayName: 'Amina Twin',
+          bio: 'Public storyteller',
+          languages: ['en'],
+          voiceEnabled: true,
+          ownerAccessEnabled: false,
+          publicUrl: null,
+        ),
+    ],
+    nextCursor: null,
+  );
+
+  @override
+  Future<TwinDirectoryEntry?> resolve({required String publicId}) async => null;
+}
+
 Widget _app({TalkActivityTransport? activity, int initialIndex = 0}) {
   return ProviderScope(
     overrides: [
       talkTransportProvider.overrideWithValue(const _FakeTalkTransport()),
       talkActivityTransportProvider.overrideWithValue(
         activity ?? _CountingActivityTransport(),
+      ),
+      twinDirectoryTransportProvider.overrideWithValue(
+        const _FakeTwinDirectoryTransport(),
       ),
     ],
     child: MaterialApp(
@@ -111,86 +145,88 @@ Widget _app({TalkActivityTransport? activity, int initialIndex = 0}) {
 }
 
 void main() {
-  testWidgets('root shell is Home Create Activity You', (tester) async {
+  testWidgets('R17 root shell has the approved four destinations and header', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Create'), findsOneWidget);
-    expect(find.text('Activity'), findsOneWidget);
-    expect(find.text('You'), findsOneWidget);
-
-    expect(find.text('Wallet'), findsNothing);
-    expect(find.text('Agents'), findsNothing);
-    expect(find.text('Rooms'), findsNothing);
+    expect(find.text('Agents'), findsOneWidget);
+    expect(find.text('Wallet'), findsOneWidget);
+    expect(find.text('Talk'), findsOneWidget);
+    expect(find.text('Create'), findsNothing);
+    expect(find.byTooltip('Start Talk'), findsOneWidget);
+    expect(find.byTooltip('Activity'), findsOneWidget);
+    expect(find.byTooltip('Profile'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Home contains Explore and Live Talks tabs', (tester) async {
+  testWidgets('Home keeps a single visible title and vertical Talk tabs', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
+    expect(find.text('Masanawa'), findsOneWidget);
     expect(find.text('Explore'), findsOneWidget);
     expect(find.text('Live Talks'), findsOneWidget);
     expect(find.text('Is university still worth it?'), findsOneWidget);
-
     await tester.tap(find.text('Live Talks'));
     await tester.pumpAndSettle();
-
-    expect(
-      find.text('Can AI create more jobs than it removes?'),
-      findsOneWidget,
-    );
+    expect(find.text('Can AI create more jobs than it removes?'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('initial Activity tab opens new Activity directly', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_app(initialIndex: 2));
+  testWidgets('Agents tab presents public Twins from the Gateway directory', (tester) async {
+    await tester.pumpWidget(_app(initialIndex: 1));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nothing here yet.'), findsOneWidget);
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('Talks'), findsOneWidget);
-    expect(find.text('Money'), findsOneWidget);
-    expect(find.text('Social'), findsOneWidget);
-    expect(find.text('Your conversations will appear here.'), findsNothing);
+    expect(find.text('Masanawa Agents'), findsOneWidget);
+    expect(find.text('Twins'), findsOneWidget);
+    await tester.tap(find.text('Twins'));
+    await tester.pumpAndSettle();
+    expect(find.text('Amina Twin'), findsOneWidget);
+    expect(find.text('Public storyteller'), findsOneWidget);
+    expect(find.text('My Twin'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('four-tab shell stays usable on narrow Android viewport', (
-    tester,
-  ) async {
+  testWidgets('Activity is opened from the header and not fetched on Home', (tester) async {
+    final activity = _CountingActivityTransport();
+    await tester.pumpWidget(_app(activity: activity));
+    await tester.pumpAndSettle();
+    expect(activity.loads, 0);
+
+    await tester.tap(find.byTooltip('Activity'));
+    await tester.pumpAndSettle();
+    expect(activity.loads, 1);
+    expect(find.text('Nothing here yet.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('private Talk does not start a microphone on tab entry', (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Talk'));
+    await tester.pumpAndSettle();
+    // Without a qualified server agent, the shell fails closed with Retry.
+    expect(find.text('Gwani is unavailable right now.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.byTooltip('Start Talk'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('four destinations fit on compact Android width', (tester) async {
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
-
     expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Create'), findsOneWidget);
-    expect(find.text('Activity'), findsOneWidget);
-    expect(find.text('You'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('inactive Activity does not fetch until visited', (tester) async {
-    final activity = _CountingActivityTransport();
-
-    await tester.pumpWidget(_app(activity: activity));
-    await tester.pumpAndSettle();
-    expect(activity.loads, 0);
-
-    await tester.tap(find.text('Activity'));
-    await tester.pumpAndSettle();
-
-    expect(activity.loads, 1);
+    expect(find.text('Agents'), findsOneWidget);
+    expect(find.text('Wallet'), findsOneWidget);
+    expect(find.text('Talk'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
