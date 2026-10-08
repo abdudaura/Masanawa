@@ -1,5 +1,10 @@
 # Masanawa Product North Star
 
+## LATEST OWNER CORRECTION — real Contacts, no unfinished work dropped (2026-10-08)
+
+The product must offer **easy human Contacts, not only a chat-list/new-message shortcut**: Chats→Contacts includes real accepted people, permission/request lifecycle, exact @handle, optional explicitly consented local phonebook viewing and safe invitations, direct C02 authenticated human chat, and safe profile/account deletion. This is specified end-to-end in [Contacts contract](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md). The previous 20 U lanes did not include all current unfinished R/C functionality; [re-audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [U21–U30 and F01–F18](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md) and [79 historical unchecked tasks](LEGACY-150-TASK-RECONCILIATION-20261008.md) now explicitly track them. Preserve five tabs, human/AI separation and consent; device phone number is not a verified user ID and no AI gets default access to all DMs/phonebook. No E2EE/group/peer calling inferred.
+
+
 ## Latest AI-first product scope — 2026-10-08
 
 **Owner 2026-10-08 AI-first depth:** agents must operate actual authorized Masanawa products with task/readback/receipts, not just explain features. Human Chats must work without AI, with opt-in selected-message translation/drafting and robust offline media. Memory/teaching/files, Host copilot, Twins and Hausa/English usability form the differentiators. Read [full product vision](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [operator task contract](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [Chats quality contract](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md), [U01–U20 work](20-WINDOW-AI-CHAT-EXECUTION-20261008.md). This is approved planning, not verification; five tabs/R/C remain binding.
