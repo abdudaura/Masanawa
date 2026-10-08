@@ -12,11 +12,13 @@ class PersonProfileScreen extends ConsumerStatefulWidget {
     required this.handle,
     this.onOpenTalk,
     this.onOpenTwin,
+    this.onOpenMessage,
   });
 
   final String handle;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String publicId)? onOpenTwin;
+  final void Function(String handle)? onOpenMessage;
 
   @override
   ConsumerState<PersonProfileScreen> createState() => _PersonProfileScreenState();
@@ -77,6 +79,7 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
           onRefresh: _refresh,
           onOpenTalk: widget.onOpenTalk,
           onOpenTwin: widget.onOpenTwin,
+          onOpenMessage: widget.onOpenMessage,
         );
       },
     );
@@ -91,6 +94,7 @@ class _PersonProfileBody extends StatelessWidget {
     required this.onRefresh,
     this.onOpenTalk,
     this.onOpenTwin,
+    this.onOpenMessage,
   });
 
   final HumanProfile profile;
@@ -99,6 +103,7 @@ class _PersonProfileBody extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String publicId)? onOpenTwin;
+  final void Function(String handle)? onOpenMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +238,15 @@ class _PersonProfileBody extends StatelessWidget {
                 ],
               ],
             ),
+            if (onOpenMessage != null) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const ValueKey('person-profile-message'),
+                onPressed: () => onOpenMessage!(profile.handle),
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Message privately'),
+              ),
+            ],
             if (twinId != null && twinId.isNotEmpty) ...[
               const SizedBox(height: 14),
               Material(
