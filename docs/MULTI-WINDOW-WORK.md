@@ -1,5 +1,12 @@
 # Multi-window Work Coordination
 
+## Full-stack feature ownership and verification-blocked checkpoint — 2026-10-08
+
+The backend audit is documented at `docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md`; the **safe** portable restore protocol is `docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md`, and the per-feature required Flutter→Gateway→auth→Postgres/media/events evidence record is `docs/BACKEND-FEATURE-TRACEABILITY-20261008.md`. **These add cross-cutting verification, not extra R/C lanes.** Do not overlap active finance, migration, app shell or Gateway PR owners; coordinate integration only.
+
+**Full-slice rule:** taking a feature means implementing every component within that R/C lane (database/migrations, repository, API, auth/security, Flutter voice + text/tap UI, real state, error/retry/offline/restart, integration tests), not a microchange reported as DONE. Missing owned code stays `PARTIAL_IMPLEMENTATION`. When CI runner/credential/device blocks executed verification, **do not abandon coding and do not spin on retries**: write tests, record exact blocker and deferred Work command once, commit/push complete code, checkpoint `IMPLEMENTED_UNVERIFIED`, and keep the PR **draft/unmerged** until executable end-to-end review. The next window resumes the actual branch/PR, never duplicates it. Record both code-finished and verification-state fields separately.
+
+
 ## Ready-to-implement handoff — mandatory latest gate (2026-10-08)
 
 For **every** new or continuing R01–R19/C01–C08 development window, read `docs/IMPLEMENTATION-KICKOFF-20261008.md` and `docs/REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md` **before claiming a lane**. The former locks the exact five-tab end state, nonoverlapping dependency packages, current draft PR recovery, shared-file composition and ready-to-copy prompt; the latter crosschecks all 77 product requirement IDs and J01–J11 integrated journeys.
