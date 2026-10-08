@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../localization/auth_error_localizer.dart';
+import '../../localization/language_picker_button.dart';
 import '../../core/api/models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/phone/country_codes.dart';
@@ -119,6 +120,11 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: LanguagePickerButton(),
+          ),
+          const SizedBox(height: 8),
           if (_capabilityError != null) ...[
             Icon(
               Icons.cloud_off_outlined,
