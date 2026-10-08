@@ -49,5 +49,7 @@
   "fullNameExample": "Misali: Amina Bello",
   "fullNameRequired": "Da fatan a shigar da cikakken sunanka",
   "finishingSignIn": "Ana kammala shiga…",
-  "verifiedSignInNotice": "Lambar waya ko imel ɗin da aka tabbatar da shi zai ci gaba da zama hanyar shigarka."
+  "verifiedSignInNotice": "Lambar waya ko imel ɗin da aka tabbatar da shi zai ci gaba da zama hanyar shigarka.",
+  "countryDialCode": "Lambar ƙasar waya: {code}",
+  "unknownCountryDialCode": "Ba a gane lambar ƙasar wayar ba"
 }
