@@ -48,6 +48,20 @@ function approved(value:string|undefined) {
  afterAll(async()=>{
   if(!pool)return;
   try{
+   // These disposable repository-only fixtures never PUT to external S3. If a
+   // prior assertion failed before the success-path cleanup, acknowledge the
+   // absent *fixture* objects through the SAME guarded repository path instead
+   // of disabling the production BEFORE DELETE trigger for teardown.
+   try {
+     await pool.query(`UPDATE talks.human_dm_voice_objects SET state='orphaned'
+       WHERE tenant_id=$1`,[tenantId]);
+     const repo=createPostgresVoiceNoteRepository(pool);
+     for(let iteration=0;iteration<10;iteration++){
+       const pending=await repo.stale(100);
+       if(pending.length===0)break;
+       for(const row of pending)await repo.deleted(row.objectKey,true);
+     }
+   }catch{/* A prior schema/setup failure may leave this table absent. */}
    // Identity tenancy has RESTRICT FKs. Explicitly delete ONLY the nonce tenant rows.
    // Cleanup is best effort if a failed migration prevented table creation.
    for(const sql of [
