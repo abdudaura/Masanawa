@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
+import { createBillingQuote } from "@masanawa/commerce";
 import type {
   BillingQuote,
   BillingQuoteRepository,
@@ -32,15 +33,15 @@ describe("R05 credit-before-bill crash recovery", () => {
       updatedAt: "2026-10-08T00:00:00.000Z",
     };
     let current = funding;
-    let quote: BillingQuote | null = {
-      tenantId, userId, quoteId,
-      revision: 1, state: "confirmed",
-      confirmedAt: "2026-10-08T00:00:00.000Z",
-      categoryCode: "AIRTIME", billerCode: "BIL119",
+    const createdAt = "2026-10-08T00:00:00.000Z";
+    const seed = createBillingQuote({
+      tenantId, userId, quoteId, categoryCode: "AIRTIME", billerCode: "BIL119",
       itemCode: "AIRTIME", itemName: "Airtime", customerId: "07010102053",
-      serviceAmountKobo: 10000,
-    } as BillingQuote;
-    const findFunding = vi.fn(async () => current);
+      serviceAmountKobo: 10000, feeAmountKobo: 0,
+      createdAt, expiresAt: "2026-10-09T00:00:00.000Z",
+    });
+    let quote: BillingQuote | null = { ...seed, state: "confirmed", confirmedAt: createdAt };
+    const findFunding = vi.fn(async (): Promise<NgnFundingIntent | null> => current);
     const creditFunding = vi.fn(async () => {
       current = { ...current, state: "credited", providerTransactionId: "tx-123" };
       return current;
@@ -93,7 +94,7 @@ describe("R05 credit-before-bill crash recovery", () => {
       tenantId: t.tenantId, userId: t.userId,
       quoteId: t.quoteId, quoteRevision: 1,
       requestId: `bill-${t.quoteId}-r1`.slice(0, 128),
-      customerId: "07010102053", amount: "100.00",
+      customerId: "07010102053", amount: "100",
     }));
   });
 
@@ -137,7 +138,7 @@ describe("R05 credit-before-bill crash recovery", () => {
 
   it("ignores unknown wallet references and rejects invalid signatures", async () => {
     const t = setup();
-    t.findFunding.mockResolvedValueOnce(null as never);
+    t.findFunding.mockResolvedValueOnce(null);
     await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toMatchObject({
       handled: false, resumed: false,
     });
