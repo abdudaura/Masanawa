@@ -51,10 +51,10 @@ const consent = `
 interface AudioRow extends Record<string,unknown> {
  message_id:string;conversation_id:string;sequence:string|number;sender_user_id:string;
  client_request_id:string;duration_ms:number;size_bytes:number;
- created_at:string|Date;deleted_at:string|Date|null;object_key:string;
+ created_at:string|Date;deleted_at:string|Date|null;object_key:string;sha256:string;
 }
 const projection=`m.message_id,m.conversation_id,m.sequence,m.sender_user_id,
- m.client_request_id,a.duration_ms,a.size_bytes,m.created_at,m.deleted_at,a.object_key`;
+ m.client_request_id,a.duration_ms,a.size_bytes,m.created_at,m.deleted_at,a.object_key,a.sha256`;
 function toVoice(row:AudioRow):VoiceNote {
  return Object.freeze({
   messageId:row.message_id,conversationId:row.conversation_id,
@@ -110,6 +110,11 @@ export function createPostgresVoiceNoteRepository(pool:VoiceSqlPool):VoiceNoteRe
        return "conflict" as const;
       return {...input,objectKey:r.object_key};
     }
+    const used=await q.query<Record<string,unknown>>(
+      `SELECT 1 FROM talks.human_dm_messages WHERE tenant_id=$1
+       AND conversation_id=$2 AND sender_user_id=$3 AND client_request_id=$4`,
+      [input.owner.tenantId,input.conversationId,input.owner.userId,input.clientRequestId]);
+    if(used.rows.length)return "conflict" as const;
     await q.query(
      `INSERT INTO talks.human_dm_voice_objects
       (tenant_id,conversation_id,uploader_user_id,client_request_id,
@@ -188,7 +193,7 @@ export function createPostgresVoiceNoteRepository(pool:VoiceSqlPool):VoiceNoteRe
       WHERE ${eligibleByMessage} AND m.message_id=$3 AND m.deleted_at IS NULL`,
       [tenantId,userId,messageId]);
     // Membership is bound to the message conversation, never a caller-supplied ID.
-    return r.rows[0]?{...toVoice(r.rows[0]),objectKey:r.rows[0].object_key}:null;
+    return r.rows[0]?{...toVoice(r.rows[0]),objectKey:r.rows[0].object_key,sha256:r.rows[0].sha256}:null;
   },
   async list({tenantId,userId,conversationId,limit,before}) {
     const access=await pool.query<Record<string,unknown>>(
