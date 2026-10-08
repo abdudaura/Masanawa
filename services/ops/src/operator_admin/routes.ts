@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { OperatorPermissionDenied, OperatorReadbackFailure, OperatorRevisionConflict, type OperatorAgentControl } from "./agent_control.js";
+import { OperatorMutationNotConfigured, OperatorPermissionDenied, OperatorReadbackFailure, OperatorRevisionConflict, type OperatorAgentControl } from "./agent_control.js";
 
 function errorReply(reply: { code(status: number): { send(value: unknown): unknown } }, error: unknown) {
   if (error instanceof TypeError || error instanceof RangeError) {
@@ -7,6 +7,9 @@ function errorReply(reply: { code(status: number): { send(value: unknown): unkno
   }
   if (error instanceof OperatorRevisionConflict) {
     return reply.code(409).send({ code: "AGENT_REVISION_CONFLICT" });
+  }
+  if (error instanceof OperatorMutationNotConfigured) {
+    return reply.code(503).send({ code: "AGENT_CONTROL_UNAVAILABLE" });
   }
   if (error instanceof OperatorReadbackFailure) {
     return reply.code(503).send({ code: "AGENT_READBACK_UNCERTAIN" });
