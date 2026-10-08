@@ -5,6 +5,7 @@ CREATE TABLE talks.human_dm_preferences (
   user_id text NOT NULL,
   admission_policy text NOT NULL DEFAULT 'requests'
     CHECK (admission_policy IN ('anyone','requests','nobody')),
+  discoverable_by_handle boolean NOT NULL DEFAULT true,
   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY (tenant_id,user_id),
   FOREIGN KEY (tenant_id,user_id) REFERENCES identity.users(tenant_id,user_id) ON DELETE CASCADE
