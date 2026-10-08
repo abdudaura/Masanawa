@@ -4,6 +4,8 @@
 
 **How to read:** an entry below means the requirement has been captured, NOT coded, executed, deployed or verified. The full requirement wording and authority are in [OWNER-REQUIREMENTS-TRACEABILITY-20261008.md](OWNER-REQUIREMENTS-TRACEABILITY-20261008.md); the code handoff is [IMPLEMENTATION-KICKOFF-20261008.md](IMPLEMENTATION-KICKOFF-20261008.md).
 
+**Approved mobile bottom navigation: Talks · Chats · Assistant · Wallet · Agents, with Assistant in the center and a single in-chat Gwani/Gwana switch.** All old four-tab roots and any duplicate public/private Talk screen are superseded for planned implementation. This line is product documentation, not evidence that the installed APK uses it.
+
 ## Audit questions and outcomes
 
 | Check | Documentation result | Implementation/release state |
