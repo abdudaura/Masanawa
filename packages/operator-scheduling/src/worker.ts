@@ -32,7 +32,8 @@ export function createScheduleWorker(input: Readonly<{
       await input.repository.expireUnknown(now);
       // Reclaim only unstarted work; an attempted push is never auto-retried.
       const expired = await input.repository.reclaimExpired(now,limit);
-      const available = await input.repository.claimDue(now,Math.max(1,limit-expired.length));
+      const room = limit - expired.length;
+      const available = room > 0 ? await input.repository.claimDue(now,room) : [];
       const occurrences = [...expired,...available].slice(0,limit);
       let delivered=0, noDevice=0, skipped=0, uncertain=0;
       for (const item of occurrences) {

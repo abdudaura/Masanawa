@@ -78,6 +78,25 @@ describe("U25 claim/send fence",()=>{
     expect((await w.tick({now})).skipped).toBe(1);
     expect(sent).toBe(0);
   });
+  it("never advances a new due schedule when all slots were reclaimed",async()=>{
+    let dueClaims=0;
+    const fixture={
+      expireUnknown:async()=>0,
+      reclaimExpired:async()=>[occurrence],
+      claimDue:async()=>{dueClaims++;return [occurrence];},
+      readForDispatch:async()=>record,
+      markStarted:async()=>true,
+      finish:async()=>undefined,
+      markSkipped:async()=>undefined,
+    } as unknown as ScheduleRepository;
+    const worker=createScheduleWorker({repository:fixture,sender:{
+      async send(){return {attempted:0,delivered:0};}
+    }});
+    // The repository fixture throws if a new due record is claimed.
+    const result=await worker.tick({now,limit:1});
+    expect(result.claimed).toBe(1);
+    expect(dueClaims).toBe(0);
+  });
   it("rejects invalid limits before claiming a batch",async()=>{
     const f=fixture();
     await expect(createScheduleWorker({repository:f.repository,sender:{
