@@ -38,3 +38,12 @@
 - `b141c905`: widget regression adds Wallet and Explore/Live Home surface checks; total focused new R01 tests now ten. All tests are authored and **not executed** because Flutter SDK/toolchain is absent from this available environment. CI run 37736724905 failed with zero recorded job steps, so this is not evidence of Dart analyzer/test failure.
 - GitHub static readback and path-scope reconciliation only. Deployment/APK/Play signing/physical screenshot and accessibility verification: NOT ATTEMPTED. R01 remains PARTIAL, not DONE. Normal screens not yet reviewed may still override color tokens; continue systematic root/sheet/status/navigation surface audit.
 - Next checks: `cd apps/mobile && flutter test test/masanawa_light_theme_test.dart test/primary_button_contrast_test.dart test/r01_white_secondary_surfaces_test.dart`, `flutter analyze`, `flutter build apk --debug`, screenshots for Home/Agents/Wallet/Talk/Activity/Settings/Profile on text scaling and OS dark preference. Reconcile any current-main PR touching exact route files before merge.
+
+## R01 control-accessibility lease/reclaim — 2026-10-08
+
+- Window: GPT-6 R01 primary control accessibility continuation; prior #442 activity is stale under the five-minute rule; preserve all previous PR source and tests.
+- Latest canonical main at claim: `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`; existing feature branch #442 head before claim: `8a08c223c57890d0ed149104988706a41031f1cb`.
+- Exact edit lease: `apps/mobile/lib/src/ui/components/primary_button.dart`, `apps/mobile/test/primary_button_contrast_test.dart`, this R01 handoff only. No router, Gateway, database, migration, ledger, CI, native permission or token changes.
+- R01/Q01/P03/N10/J10: correct undersized fixed-height control on text scaling/narrow screens; programmatically expose accurate busy/disabled/clickable state, preserve keyboard/tap dispatch and contrast; add focused widget/a11y tests. Global R01 and Android screenshot matrix remain unfinished.
+- Collision check: #493 owns root Flutter shell; #501 owns billing localization; #500 owns session+OTP; #442 is the existing PR to resume, not duplicate. Recheck claims before edits.
+- Status: CLAIMED / PARTIAL_IMPLEMENTATION; no tests run or E2E evidence. CI #457 blocked; execute actual Dart/widget/Android checks later in Work.
