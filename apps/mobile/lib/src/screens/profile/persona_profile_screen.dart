@@ -5,6 +5,7 @@ import '../../social/talk_social_profiles.dart';
 import '../../state/talk_social_profile_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
+import 'persona_report_sheet.dart';
 
 class PersonaProfileScreen extends ConsumerWidget {
   const PersonaProfileScreen({
@@ -42,6 +43,14 @@ class PersonaProfileScreen extends ConsumerWidget {
           onOpenTalk: onOpenTalk,
           onOpenOwner: onOpenOwner,
           onUsePersona: onUsePersona,
+          onReport: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => PersonaReportSheet(
+              publicId: profile.publicId,
+              displayName: profile.displayName,
+            ),
+          ),
         );
       },
     );
@@ -54,12 +63,14 @@ class _PersonaBody extends StatelessWidget {
     this.onOpenTalk,
     this.onOpenOwner,
     this.onUsePersona,
+    this.onReport,
   });
 
   final PersonaProfile profile;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String handle)? onOpenOwner;
   final void Function(PersonaProfile persona)? onUsePersona;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +223,16 @@ class _PersonaBody extends StatelessWidget {
               label: const Text('Use in a Talk'),
             ),
           ],
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.center,
+            child: TextButton.icon(
+              key: const ValueKey('persona-report-action'),
+              onPressed: onReport,
+              icon: const Icon(Icons.flag_outlined),
+              label: const Text('Report this AI persona'),
+            ),
+          ),
           const SizedBox(height: 22),
           Text(
             'Talk appearances',

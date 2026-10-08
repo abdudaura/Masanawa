@@ -1,4 +1,5 @@
 import '../core/network/api_client.dart';
+import '../core/request_id.dart';
 import 'talk_safety.dart';
 
 class GatewayTalkSafetyTransport implements TalkSafetyTransport {
@@ -36,6 +37,7 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
     required TalkSafetyReportReason reason,
     String? detail,
     required String requestPrefix,
+    String? clientRequestId,
   }) async {
     final normalizedDetail = detail?.trim();
     await api.dio.post<dynamic>(
@@ -47,7 +49,7 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
         if (normalizedDetail != null && normalizedDetail.isNotEmpty)
           'detail': normalizedDetail,
         'clientRequestId':
-            requestPrefix + '-' + DateTime.now().microsecondsSinceEpoch.toString(),
+            clientRequestId ?? '$requestPrefix-${createRequestId()}',
       },
     );
   }
@@ -74,6 +76,7 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
     required String targetId,
     required TalkSafetyReportReason reason,
     String? detail,
+    String? clientRequestId,
   }) async {
     await _report(
       targetKind: targetKind.wire,
@@ -81,6 +84,7 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
       reason: reason,
       detail: detail,
       requestPrefix: 'participant-report',
+      clientRequestId: clientRequestId,
     );
   }
 
