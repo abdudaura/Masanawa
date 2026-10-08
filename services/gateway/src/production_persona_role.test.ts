@@ -95,7 +95,7 @@ describe("R19 authenticated private AI persona role instructions", () => {
       const prompt = request.systemInstructions.join("\n");
       expect(prompt).toContain("verified tool or runtime evidence");
       expect(prompt).toContain("Respect interruptions");
-      expect(prompt).toContain("do not guilt the user");
+      expect(prompt).toContain("Do not guilt the user");
       expect(prompt).toContain("Hausa");
       expect(prompt).toContain("real-time knowledge");
       expect(prompt).toContain("payment confirmation");
