@@ -66,6 +66,24 @@ class AgentDirectoryEntry {
   final String? voiceProvider;
   final String? voiceName;
 
+  /// Saved roster metadata is useful before refresh, but saved presence is
+  /// historical. Never present it as a current runtime/voice availability check.
+  AgentDirectoryEntry withUnverifiedPresence() => AgentDirectoryEntry(
+        characterId: characterId,
+        characterVersionId: characterVersionId,
+        displayName: displayName,
+        roleLabel: roleLabel,
+        about: about,
+        presence: AgentPresence.unknown,
+        avatarUrl: avatarUrl,
+        greeting: greeting,
+        activeWorkCount: 0,
+        supportAgent: supportAgent,
+        defaultPlatformAgent: defaultPlatformAgent,
+        voiceProvider: voiceProvider,
+        voiceName: voiceName,
+      );
+
   String get initial =>
       displayName.trim().isEmpty ? 'M' : displayName.trim()[0].toUpperCase();
 
