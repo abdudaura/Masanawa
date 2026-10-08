@@ -65,7 +65,7 @@ class _TalkGiftSheetState extends State<TalkGiftSheet> {
 
     setState(() {
       _sending = false;
-      _error = 'Couldn’t confirm this gift. Check Activity before retrying or refresh options.';
+      _error = 'Couldn’t confirm this gift. Check Wallet history before retrying.';
       // A price/availability conflict should be resolved by explicitly reloading
       // the catalog, never by silently charging a different amount.
     });
