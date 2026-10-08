@@ -110,6 +110,38 @@ integration("R16 schema lifecycle on disposable real PG18",()=>{
     } finally {
       await pool.query("SELECT lo_unlink($1)",[oid]);
     }
+    // A non-extension collation has no table, user type or routine; it must
+    // still block rehearsal, preserving the definition without executing DDL.
+    const collation="masanawa_r16_freshness_collation";
+    await pool.query(`CREATE COLLATION public.${collation} (provider = libc, locale = 'C')`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_definitions_present",
+      });
+      const persisted=await pool.query<{name:string}>(
+        "SELECT c.collname AS name FROM pg_collation c JOIN pg_namespace n "+
+        "ON n.oid=c.collnamespace WHERE n.nspname='public' AND c.collname=$1",
+        [collation]);
+      expect(persisted.rows[0]?.name).toBe(collation);
+    } finally {
+      await pool.query(`DROP COLLATION public.${collation}`);
+    }
+
+    const textSearch="masanawa_r16_freshness_textsearch";
+    await pool.query(`CREATE TEXT SEARCH CONFIGURATION public.${textSearch}
+      (COPY = pg_catalog.english)`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_definitions_present",
+      });
+      const persisted=await pool.query<{name:string}>(
+        "SELECT c.cfgname AS name FROM pg_ts_config c JOIN pg_namespace n "+
+        "ON n.oid=c.cfgnamespace WHERE n.nspname='public' AND c.cfgname=$1",
+        [textSearch]);
+      expect(persisted.rows[0]?.name).toBe(textSearch);
+    } finally {
+      await pool.query(`DROP TEXT SEARCH CONFIGURATION public.${textSearch}`);
+    }
     expect((await schemaStatus(pool,manifest)).ledgerExists).toBe(false);
   },30000);
   it("applies a clean production manifest on disposable PG then verifies idempotent second check",async()=>{
