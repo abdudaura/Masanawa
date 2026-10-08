@@ -466,7 +466,9 @@ class CryptoWalletScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              if (data.selectedRoute != null && data.capabilities.deposits)
+              if (data.capabilities.internalTransfers &&
+                  data.selectedRoute != null &&
+                  data.selectedRoute!.network?.toLowerCase() != "erc20")
                 OutlinedButton.icon(
                   icon: const Icon(Icons.send_rounded),
                   label: const Text('Send to Masanawa user'),
