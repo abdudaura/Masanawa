@@ -11,6 +11,7 @@ import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
+import 'account_deletion_dialog.dart';
 
 /// Account and app preferences for the current Masanawa consumer product.
 /// Account deletion must be handled by an authenticated durable server workflow;
@@ -303,23 +304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: const Text('Account and data deletion options'),
                 onTap: () => showDialog<void>(
                   context: context,
-                  builder: (dialogContext) => AlertDialog(
-                    title: const Text('Delete your account'),
-                    content: const Text(
-                      'Account deletion is not yet available in this version. '
-                      'Clearing chats or logging out does not delete your account. '
-                      'Your public Talks, Twins, private data and any pending '
-                      'payments require a secure server-side deletion process. '
-                      'Please do not share passwords or verification codes '
-                      'with anyone claiming to handle deletion.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
+                  builder: (_) => const AccountDeletionDialog(),
                 ),
               ),
             ],
