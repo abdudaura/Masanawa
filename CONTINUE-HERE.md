@@ -1,5 +1,14 @@
 # Continue Here
 
+## Backend/database portability and implementation evidence audit — 2026-10-08
+
+**New backend reality check (documents, not code changes):** [docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md](docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md) inspects the actual Postgres/Gateway/migration source and connected Railway production service metadata; [docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md](docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md) defines a safe, permission-gated fresh-account restore test; [docs/BACKEND-FEATURE-TRACEABILITY-20261008.md](docs/BACKEND-FEATURE-TRACEABILITY-20261008.md) maps each five-tab function to required Flutter→API→auth→DB/media/events→readback **executed** evidence.
+
+**Highest risk (not a verified outage):** Running Railway PG18/pgvector with `masanawa-postgres` 500 MB volume has no **verified** off-account recoverable backup or actual restored copy from this audit. Gateway is configured to use `/healthz` for Railway health while DB/schema readiness is `/readyz`; recent Gateway deployments are `NEEDS_APPROVAL` and source `main` is not verified deployed. The existing Alpha bootstrap mutates demo identities and **must never substitute a production schema-only migration CLI**. Memory/world schema roots exist but are outside the Gateway's `platformProductMigrationRoots()` manifest; their required lifecycle needs classification. Flutter still has the old four-tab router and Railway-specific API defaults; don't call source presence end-to-end completion. All production DB content, backup/restore, provider and device checks remain **UNVERIFIED**.
+
+**Parallel implementations begin/continue now:** windows must own **complete end-to-end code slices** in their existing R/C lane, not tiny partial fragments. If #457 Actions quota/credentials/physical device verification block executable tests, **do not keep retrying**; document exact deferred Work commands, status and risks, commit complete owned source, leave PR **draft/unmerged**, and proceed to next safe available work after checkpoint. *No block converts PARTIAL_IMPLEMENTATION/IMPLEMENTED_UNVERIFIED to DONE.*
+
+
 ## Documentation finalized for implementation windows — 2026-10-08
 
 **The owner-approved product requirements are ready for implementation. Do not spend new windows re-planning the five-tab design.** Begin with [docs/IMPLEMENTATION-KICKOFF-20261008.md](docs/IMPLEMENTATION-KICKOFF-20261008.md) for the **definitive R01–R19 and C01–C08 parallel lane map**, one R17/C08 navigation integrator, shared Gateway/ledger/migration ownership, exact evidence gates and the copyable implementation prompt. Use [docs/REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md](docs/REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md) to crosscheck **all 77 traced requirements and 11 integrated journeys**, with full wording in `docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md`.
