@@ -22,9 +22,9 @@ describe('Android private-data release protection (R16)', () => {
     for (const mode of ['cloud-backup', 'device-transfer']) {
       const section = extractionRules.match(new RegExp(`<${mode}>([\\s\\S]*?)<\\/${mode}>`))?.[1];
       expect(section, `missing ${mode} exclusions`).toBeDefined();
-      const uncommented = section!.replace(/<!--[\\s\\S]*?-->/g, '');
-      expect(uncommented).not.toMatch(/<include\\b/);
-      const excluded = [...uncommented.matchAll(/<exclude\\s+domain="([^"]+)"\\s+path="([^"]+)"\\s*\\/>/g)]
+      const uncommented = section!.replace(/<!--[\s\S]*?-->/g, '');
+      expect(uncommented).not.toMatch(/<include\b/);
+      const excluded = [...uncommented.matchAll(/<exclude\s+domain="([^"]+)"\s+path="([^"]+)"\s*\/>/g)]
         .map((match) => [match[1], match[2]]);
       expect(excluded).toEqual(privateDomains.map((domain) => [domain, '.']));
     }
