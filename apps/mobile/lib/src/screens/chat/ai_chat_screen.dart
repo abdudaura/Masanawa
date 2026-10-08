@@ -56,6 +56,10 @@ class AiChatScreen extends ConsumerStatefulWidget {
     this.twinGender,
     this.twinAge,
     this.twinPhotoPath,
+    this.embeddedInShell = false,
+    this.onOpenAgents,
+    this.onOpenActivity,
+    this.onOpenProfile,
   });
 
   final String characterId;
@@ -65,6 +69,12 @@ class AiChatScreen extends ConsumerStatefulWidget {
   final String? twinGender;
   final int? twinAge;
   final String? twinPhotoPath;
+  /// Root Talk tab: own app bar remains, but leading and overflow navigate
+  /// within the shell rather than assuming a separate pushed chat route.
+  final bool embeddedInShell;
+  final VoidCallback? onOpenAgents;
+  final VoidCallback? onOpenActivity;
+  final VoidCallback? onOpenProfile;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -958,11 +968,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
           leadingWidth: 40,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () =>
-                context.canPop() ? context.pop() : context.go('/chats'),
-          ),
+          leading: widget.embeddedInShell
+              ? IconButton(
+                  tooltip: 'Agents',
+                  icon: const Icon(Icons.smart_toy_outlined),
+                  onPressed: widget.onOpenAgents,
+                )
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.canPop()
+                      ? context.pop()
+                      : context.go('/home?tab=talk'),
+                ),
           title: _selectedMessageIds.isNotEmpty
               ? Text('${_selectedMessageIds.length} selected')
               : _showSearch
@@ -1099,6 +1116,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               tooltip: 'More',
               onSelected: (value) async {
                 final ctl = ref.read(aiChatProvider.notifier);
+                if (value == 'activity') widget.onOpenActivity?.call();
+                if (value == 'profile') widget.onOpenProfile?.call();
                 if (value == 'clear') _confirmClear(agent);
                 if (value == 'new') await ctl.newContext(widget.characterId);
                 if (value == 'pin') ctl.togglePin(widget.characterId);
@@ -1110,6 +1129,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 if (value == 'report') await _reportTwin(agent);
               },
               itemBuilder: (_) => [
+                if (widget.embeddedInShell) ...const [
+                  PopupMenuItem(value: 'activity', child: Text('Activity')),
+                  PopupMenuItem(value: 'profile', child: Text('Profile')),
+                  PopupMenuDivider(),
+                ],
                 const PopupMenuItem(value: 'new', child: Text('New context')),
                 const PopupMenuItem(value: 'rename', child: Text('Rename chat')),
                 const PopupMenuItem(value: 'pin', child: Text('Pin / unpin')),
