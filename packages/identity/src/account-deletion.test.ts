@@ -50,6 +50,36 @@ describe("account deletion lifecycle", () => {
       target: "identity-verified", expectedRevision: 2, now: timestamp,
     })).toThrow("account_deletion.reauthentication_required");
   });
+  it("rejects status replay and unverified settlement clearance", () => {
+    expect(() => transitionAccountDeletion(open(), {
+      target: "requested", expectedRevision: 1, now: timestamp,
+    })).toThrow("account_deletion.invalid_transition");
+    const verified = transitionAccountDeletion(open(), {
+      target: "identity-verified", identityReauthenticated: true, expectedRevision: 1, now: timestamp,
+    });
+    expect(() => transitionAccountDeletion(verified, {
+      target: "awaiting-settlement", expectedRevision: 2, now: timestamp,
+    })).toThrow("account_deletion.settlement_evidence_required");
+    const waiting = transitionAccountDeletion(verified, {
+      target: "awaiting-settlement", expectedRevision: 2, now: timestamp,
+      outstandingObligations: ["pending payout"],
+    });
+    expect(() => transitionAccountDeletion(waiting, {
+      target: "processing", expectedRevision: 3, now: timestamp,
+    })).toThrow("account_deletion.settlement_evidence_required");
+  });
+  it("rejects supplied obligation edits during completion", () => {
+    const verified = transitionAccountDeletion(open(), {
+      target: "identity-verified", identityReauthenticated: true, expectedRevision: 1, now: timestamp,
+    });
+    const processing = transitionAccountDeletion(verified, {
+      target: "processing", expectedRevision: 2, now: timestamp,
+    });
+    expect(() => transitionAccountDeletion(processing, {
+      target: "completed", expectedRevision: 3, now: timestamp,
+      cleanupComplete: true, outstandingObligations: [],
+    })).toThrow("account_deletion.cleanup_incomplete");
+  });
   it("rejects stale writes and completed request mutation", () => {
     expect(() => transitionAccountDeletion(open(), {
       target: "failed", expectedRevision: 8, now: timestamp, errorCode: "processor",
