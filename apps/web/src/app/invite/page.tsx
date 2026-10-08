@@ -4,7 +4,6 @@ export const metadata: Metadata = {
   title: "Join Masanawa",
   description: "Join Masanawa to explore public Talks and connect by choice.",
   robots: { index: true, follow: true },
-  referrer: "no-referrer",
 };
 
 /** Public web fallback. Never treats a link as identity verification. */
