@@ -8,3 +8,6 @@
 - Current defect: recovered R01 code introduces undefined `effectiveBrightness` into ThemeData constructor; fix before integration.
 - State: claim published, code fix and review in progress. Device/Flutter analyzer and integration tests not yet executed.
 - No production deployment or Android build from this branch.
+
+- Implemented in `bd676b41`: corrected the undefined `effectiveBrightness` reference to the declared `brightness` parameter. The earlier version could not compile; this is not merely a visual adjustment.
+- Reviewed ThemeData and R01 tests in the branch diff. Flutter/Dart binaries are not installed in this workspace; app build, test and screenshot evidence still needed. This branch supersedes obsolete PR #406 for integration; keep R11 locale changes separate and reconcile `main.dart` when integrating #407.
