@@ -5,6 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/activity/talk_activity.dart';
 import 'package:masanawa/src/library/talk_library.dart';
+import 'package:masanawa/src/commerce/wallet_models.dart';
+import 'package:masanawa/src/screens/wallet/wallet_screen.dart';
+import 'package:masanawa/src/screens/talks/talk_home_screen.dart';
+import 'package:masanawa/src/state/talk_state.dart';
+import 'package:masanawa/src/state/wallet_state.dart';
 import 'package:masanawa/src/screens/activity/activity_screen.dart';
 import 'package:masanawa/src/screens/you/my_talks_screen.dart';
 import 'package:masanawa/src/screens/you/saved_talks_screen.dart';
@@ -21,6 +26,11 @@ Widget _host(List<Override> overrides, Widget child) => ProviderScope(
         home: child,
       ),
     );
+
+class _WhiteSurfaceWallet extends WalletController {
+  @override
+  Future<WalletView?> build() async => null;
+}
 
 void main() {
   testWidgets('Activity uses the canonical white scaffold with real empty state',
@@ -65,5 +75,31 @@ void main() {
     );
     expect(scaffold.backgroundColor, Colors.white);
     expect(find.text('My Talks'), findsOneWidget);
+  });
+
+  testWidgets('Wallet uses white normal surface in loading and signed-out state',
+      (tester) async {
+    await tester.pumpWidget(_host([
+      walletProvider.overrideWith(_WhiteSurfaceWallet.new),
+    ], const WalletScreen()));
+    await tester.pump();
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+        Colors.white);
+    expect(find.text('Wallet'), findsOneWidget);
+  });
+
+  testWidgets('Explore and Live Talks use a white vertically scrolling Home surface',
+      (tester) async {
+    await tester.pumpWidget(_host([
+      talkFeedProvider(TalkFeedKind.explore)
+          .overrideWith((ref) async => <TalkDiscoveryItem>[]),
+      talkFeedProvider(TalkFeedKind.live)
+          .overrideWith((ref) async => <TalkDiscoveryItem>[]),
+    ], const TalkHomeScreen()));
+    await tester.pump();
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+        Colors.white);
+    expect(find.text('Explore'), findsWidgets);
+    expect(find.text('Live Talks'), findsWidgets);
   });
 }
