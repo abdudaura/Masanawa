@@ -1,5 +1,10 @@
 # Masanawa Production Master Task Ledger
 
+## Later consumer-product completeness reconciliation — 2026-10-08
+
+**Do not treat the checkboxes below as current mobile release evidence.** A fresh re-audit found **79 unchecked and 71 checked numbered legacy tasks** in this file; the 79 unchecked rows are individually enumerated and mapped in [LEGACY-150-TASK-RECONCILIATION-20261008.md](LEGACY-150-TASK-RECONCILIATION-20261008.md). Current [R01–R19/C01–C08 outstanding audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md) and [U01–U30 / F01–F18 implementation ownership](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md) take precedence over historical task ordering for the approved five-tab Flutter consumer product. External telephony/OmniSIP/device automation, full Studio and generic plugin marketplace remain explicitly future-gated, not silently discarded or first-release committed. No checkbox is changed by this audit. Distinct integrated auth/DB/Flutter/device/provider/security results remain necessary to close any item.
+
+
 ## Twin transformation supplemental ledger — 2026-10-05
 
 The historical 150-task numbering remains stable. The approved digital-twin product
