@@ -85,6 +85,31 @@ integration("R16 schema lifecycle on disposable real PG18",()=>{
     } finally {
       await pool.query(`DROP TYPE public.${type}`);
     }
+    const composite="masanawa_r16_freshness_composite";
+    await pool.query(`CREATE TYPE public.${composite} AS (value integer)`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_not_empty",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regtype($1)::text AS name",[`public.${composite}`]);
+      expect(stillThere.rows[0]?.name).toContain(composite);
+    } finally {
+      await pool.query(`DROP TYPE public.${composite}`);
+    }
+
+    const oid=(await pool.query<{oid:number}>("SELECT lo_create(0) AS oid")).rows[0]?.oid;
+    expect(oid).toBeDefined();
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_large_objects_present",
+      });
+      const stillThere=await pool.query<{oid:number}>(
+        "SELECT oid FROM pg_largeobject_metadata WHERE oid=$1",[oid]);
+      expect(stillThere.rows[0]?.oid).toBe(oid);
+    } finally {
+      await pool.query("SELECT lo_unlink($1)",[oid]);
+    }
     expect((await schemaStatus(pool,manifest)).ledgerExists).toBe(false);
   },30000);
   it("applies a clean production manifest on disposable PG then verifies idempotent second check",async()=>{
