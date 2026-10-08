@@ -174,35 +174,85 @@ export function createPostgresAccountDeletionChallengeRepository(
         );
       });
     },
-    async consume(input) {
+    async verify(input) {
       return withTransaction(pool, async (client) => {
+        // Keep lock order identical to put(): request first, then challenge.
+        // Serializing here prevents an OTP resend racing a successful verify.
+        const requestRows = await client.query<StoredRequest>(
+          `SELECT ${columns}
+             FROM identity.account_deletion_requests
+            WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3::uuid
+            FOR UPDATE`,
+          [input.tenantId, input.userId, input.requestId],
+        );
+        const stored = requestRows.rows[0];
+        if (!stored) return { result: "missing" as const };
+        const request = convert(stored);
+        if (request.phase !== "requested") {
+          return { result: "already-verified" as const };
+        }
+        if (request.revision !== input.expectedRevision) {
+          return { result: "conflict" as const };
+        }
         const found = await client.query<{
-          request_id: string; code_hash: string; attempts: number; max_attempts: number;
-          consumed_at: Date | string | null; expires_at: Date | string;
+          request_id: string; code_hash: string; attempts: number;
+          max_attempts: number; consumed_at: Date | string | null;
+          expires_at: Date | string;
         }>(
           `SELECT request_id::text,code_hash,attempts,max_attempts,consumed_at,expires_at
              FROM identity.account_deletion_challenges
             WHERE tenant_id=$1 AND user_id=$2 FOR UPDATE`,
-          [input.tenantId,input.userId],
+          [input.tenantId, input.userId],
         );
         const row = found.rows[0];
-        if (!row || row.request_id !== input.requestId) return "missing";
-        if (row.consumed_at || row.attempts >= row.max_attempts) return "locked";
-        if (new Date(row.expires_at).getTime() <= Date.parse(input.now)) return "expired";
+        if (!row || row.request_id !== input.requestId) return { result: "missing" as const };
+        if (row.consumed_at || row.attempts >= row.max_attempts) {
+          return { result: "locked" as const };
+        }
+        if (new Date(row.expires_at).getTime() <= Date.parse(input.now)) {
+          return { result: "expired" as const };
+        }
         if (!equalHash(row.code_hash,input.codeHash)) {
           await client.query(
             `UPDATE identity.account_deletion_challenges SET attempts=attempts+1
               WHERE tenant_id=$1 AND user_id=$2`,
             [input.tenantId,input.userId],
           );
-          return row.attempts + 1 >= row.max_attempts ? "locked" : "invalid";
+          return { result: row.attempts + 1 >= row.max_attempts
+            ? "locked" as const : "invalid" as const };
+        }
+        const next = transitionAccountDeletion(request, {
+          expectedRevision: input.expectedRevision,
+          target: "identity-verified",
+          identityReauthenticated: true,
+          now: input.now,
+        });
+        // A successfully consumed challenge must always share the same commit
+        // with the verified state and its append-only audit event.
+        const updated = await client.query<StoredRequest>(
+          `UPDATE identity.account_deletion_requests
+              SET phase=$4,revision=$5,outstanding_obligations=$6::jsonb,
+                  last_error_code=$7,updated_at=$8
+            WHERE tenant_id=$1 AND user_id=$2 AND revision=$3
+            RETURNING ${columns}`,
+          [input.tenantId,input.userId,request.revision,next.phase,next.revision,
+           JSON.stringify(next.outstandingObligations),next.lastErrorCode ?? null,next.updatedAt],
+        );
+        if (updated.rowCount !== 1 || !updated.rows[0]) {
+          throw new Error("account_deletion.conflict");
         }
         await client.query(
-          `UPDATE identity.account_deletion_challenges SET consumed_at=$3
-            WHERE tenant_id=$1 AND user_id=$2`,
-          [input.tenantId,input.userId,input.now],
+          `INSERT INTO identity.account_deletion_events(request_id,revision,phase,occurred_at)
+           VALUES ($1::uuid,$2,$3,$4)`,
+          [next.requestId,next.revision,next.phase,next.updatedAt],
         );
-        return "accepted";
+        await client.query(
+          `UPDATE identity.account_deletion_challenges
+              SET consumed_at=$4
+            WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3::uuid AND consumed_at IS NULL`,
+          [input.tenantId,input.userId,input.requestId,input.now],
+        );
+        return { result: "accepted" as const, request: convert(updated.rows[0]) };
       });
     },
     async cancel(input) {
