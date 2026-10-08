@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
 import 'package:masanawa/src/agents/agent_session.dart';
@@ -63,7 +64,7 @@ class AgentsFake implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String)? onTextDelta,
-    Future<void> Function(dynamic pcmChunk)? onAudioPcmChunk,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
     String? requestId,
   }) async {
     requestIds.add(requestId!);
