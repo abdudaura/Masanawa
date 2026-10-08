@@ -180,3 +180,6 @@ Claim reconcile C01 #468 f8c5973437090e3aec38fd7bd4ac4376ae050f42 and R18 #435 1
 - `services/gateway/src/talk_profiles/postgres_repository.ts`
 - `services/gateway/src/talk_profiles/profile_edit_postgres.test.ts`
 Keep existing canonical S3 store and strict profile request validation; verify targeted SQL-repository/unit/Flutter behavior and production build. DB/provider acceptance unexecuted.
+
+
+C01/R18 backend 52 passed/3 DB skipped and combined production build passed. Flutter execution found an actual Dart named-parameter syntax error in avatar_crop_sheet.dart, fixed in claimed source; image-encoding widget test required tester.runAsync for real engine work. Four pre-existing editor fixtures tapped the prior disabled frame immediately after enterText; now pump onChanged and ensure save button visible, preserving actual server assertions. Also claim config/production-env.json to register the six conditional avatar storage names with access/secret credentials classified secret; no values/defaults or contract bypass.
