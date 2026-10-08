@@ -54,7 +54,7 @@ function parseContactCursor(token: string, tenantId: string, actorId: string): H
   if (!Array.isArray(parsed) || parsed.length !== 4 ||
       parsed[0] !== tenantId || parsed[1] !== actorId ||
       typeof parsed[2] !== "string" || typeof parsed[3] !== "string" ||
-      !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$/.test(parsed[2]) ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(parsed[2]) ||
       !Number.isFinite(Date.parse(parsed[2])) ||
       !/^[A-Za-z0-9][A-Za-z0-9_.:-]{2,255}$/.test(parsed[3])) throw invalid();
   return { updatedAt: parsed[2], userId: parsed[3] };
