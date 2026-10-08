@@ -11,7 +11,7 @@ function fake(input:{
   ledger?:boolean;applied?:Array<{owner:string;name:string;sha256:string}>;
   version?:string;dbName?:string;
   otherSchemas?:boolean;publicRoutines?:boolean;publicTypes?:boolean;
-  publicComposite?:boolean;largeObjects?:boolean;
+  publicComposite?:boolean;largeObjects?:boolean;publicDefinitions?:boolean;
 }={}){
   const seen:string[]=[];
   const rows=input.applied??[];
@@ -31,6 +31,7 @@ function fake(input:{
     if(s.includes("FROM pg_namespace n"))return{rows:input.otherSchemas?[{schema_name:"private_data"}]:[],rowCount:input.otherSchemas?1:0};
     if(s.includes("FROM pg_proc p"))return{rows:input.publicRoutines?[{routine_name:"danger"}]:[],rowCount:input.publicRoutines?1:0};
     if(s.includes("FROM pg_type t"))return{rows:input.publicTypes?[{type_name:"state"}]:[],rowCount:input.publicTypes?1:0};
+    if(s.includes("SELECT object_kind FROM ("))return{rows:input.publicDefinitions?[{object_kind:"collation"}]:[],rowCount:input.publicDefinitions?1:0};
     if(s.includes("INFORMATION_SCHEMA.SCHEMATA")||s.includes("information_schema.schemata"))
       return{rows:[],rowCount:0};
     if(s.includes("masanawa_schema_rollback_probe")&&s.includes("SELECT"))
@@ -93,6 +94,7 @@ describe("R16 schema inspection and guarded application",()=>{
     ["standalone public type", {publicTypes:true}, "schema.bootstrap_public_types_present"],
     ["standalone composite type", {publicComposite:true}, "schema.bootstrap_public_not_empty"],
     ["binary large object", {largeObjects:true}, "schema.bootstrap_large_objects_present"],
+    ["public collation or advanced definition", {publicDefinitions:true}, "schema.bootstrap_public_definitions_present"],
   ])("disposable bootstrap refuses pre-existing %s without touching user data",async(_label,input,code)=>{
     const h=fake({ledger:false,...input});
     await expect(schemaBootstrapTest(h.pool,manifest,{
