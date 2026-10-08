@@ -9,6 +9,8 @@ import '../theme/masanawa_theme.dart';
 import '../tokens/masanawa_tokens.dart';
 import 'crypto_models.dart';
 import 'crypto_state.dart';
+import 'internal_crypto_transfer_screen.dart';
+import '../state/session_state.dart';
 
 class CryptoWalletScreen extends ConsumerWidget {
   const CryptoWalletScreen({super.key});
@@ -23,6 +25,8 @@ class CryptoWalletScreen extends ConsumerWidget {
         return 'Conversion';
       case 'buy':
         return 'Buy';
+      case 'transfer':
+        return 'Internal transfer';
       default:
         return 'Crypto operation';
     }
@@ -461,6 +465,28 @@ class CryptoWalletScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              if (data.selectedRoute != null && data.capabilities.deposits)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.send_rounded),
+                  label: const Text('Send to Masanawa user'),
+                  onPressed: () async {
+                    final session = ref.read(sessionProvider);
+                    if (session is! SessionSignedIn) {
+                      _message(context, 'Please sign in first.');
+                      return;
+                    }
+                    await Navigator.of(context).push<void>(MaterialPageRoute(
+                      builder: (_) => InternalCryptoTransferScreen(
+                        ownerId: session.user.id,
+                        providerCode: data.selectedRoute!.providerCode,
+                      ),
+                    ));
+                    if (context.mounted) {
+                      await ref.read(cryptoWalletProvider.notifier).refresh();
+                    }
+                  },
+                ),
               if (!data.capabilities.fiatOnRamp ||
                   !data.capabilities.conversions ||
                   !data.capabilities.withdrawals) ...[
