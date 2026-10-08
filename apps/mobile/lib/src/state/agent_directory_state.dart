@@ -108,7 +108,9 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
 
     if (cached != null && cached.isNotEmpty) {
       state = AgentDirectoryState(
-        agents: cached,
+        agents: List.unmodifiable([
+          for (final agent in cached) agent.withUnverifiedPresence(),
+        ]),
         loading: true,
       );
     }
@@ -124,7 +126,7 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
       displayName: twin.displayName,
       roleLabel: 'AI twin',
       about: twin.bio,
-      presence: AgentPresence.available,
+      presence: AgentPresence.unknown,
       supportAgent: false,
       defaultPlatformAgent: false,
     );
@@ -154,7 +156,13 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
   Future<void> _refreshForOwner(String ownerId, int request) async {
     if (_disposed || request != _request || _ownerId != ownerId) return;
 
-    state = state.copyWith(loading: true, clearError: true);
+    state = state.copyWith(
+      agents: List.unmodifiable([
+        for (final agent in state.agents) agent.withUnverifiedPresence(),
+      ]),
+      loading: true,
+      clearError: true,
+    );
 
     try {
       final agents = await ref
@@ -201,7 +209,11 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
       state = state.copyWith(
         // Transient failure preserves the account-scoped cached roster.
         // Authorization failure clears it so no stale account presentation remains.
-        agents: denied ? const [] : null,
+        agents: denied
+            ? const []
+            : List.unmodifiable([
+                for (final agent in state.agents) agent.withUnverifiedPresence(),
+              ]),
         loading: false,
         error: feedback.message,
         recovery: feedback.recovery,
