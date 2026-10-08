@@ -286,6 +286,10 @@ class AssistantWorkspaceController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    final generation = _generation;
+    busy = true; // Reserve send before the first asynchronous journal write.
+    error = null;
+    _emit(generation);
     final role = activeRole!;
     final turn = AssistantPendingTurn(
         characterId: roster[role]!.characterId,
@@ -296,11 +300,17 @@ class AssistantWorkspaceController extends ChangeNotifier {
     try {
       await journal.write(_ownerId, turn);
     } catch (_) {
-      error = 'Protected storage is unavailable; message was not sent.';
-      notifyListeners();
+      if (_generation == generation && !_dead) {
+        busy = false;
+        error = 'Protected storage is unavailable; message was not sent.';
+        _emit(generation);
+      }
       return;
     }
+    if (_generation != generation || _dead) return;
     pending = turn;
+    busy = false;
+    _emit(generation);
     await retryPending();
   }
 
