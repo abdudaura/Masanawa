@@ -16,3 +16,9 @@
 - Static GitHub readback checked: semantic onPrimary path and 5 authored widget/unit tests present. **Flutter test/analyze/build NOT EXECUTED** in this environment (Flutter SDK unavailable). Foundation CI check may fail without runner steps; inspect before merge.
 - Scope remains R01 PARTIAL. No screenshot matrix, handset verification or deployment; do not claim that all app surfaces are light/readable. Theme factory and native Android resources were merged before this lane and were not overwritten.
 - Handoff: `cd apps/mobile && flutter test test/primary_button_contrast_test.dart test/masanawa_light_theme_test.dart`; `flutter analyze`; build/screenshot sign-in + OTP + critical shared confirmations on compact devices and high text scale. Release only after evidence.
+
+## Expanded R01 unclaimed library/Activity surfaces
+
+- Fresh open PR collision review (#445, #444, #443, #441, #440, #439, #438, #436, #435, #433, #430, #426) shows no ownership of `apps/mobile/lib/src/screens/activity/activity_screen.dart`, `apps/mobile/lib/src/screens/you/saved_talks_screen.dart`, `apps/mobile/lib/src/screens/you/my_talks_screen.dart` or new `apps/mobile/test/r01_white_secondary_surfaces_test.dart`.
+- Expand this R01 claim to those four exact paths. These normal screens currently explicitly replace the canonical white Material theme scaffold with the grey `surfaceBg` token. Switch the whole screen scaffold to `surfaceCard` (white) without changing individually muted interactive cards, empty states, network logic or navigation.
+- Add Riverpod-overridden widget regression verifying real screens render white surfaces and remain accessible in loading/error state. Keep offline/device verification distinct from source changes.
