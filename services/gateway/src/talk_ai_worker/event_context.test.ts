@@ -125,6 +125,32 @@ describe("authorized Talk stage context", () => {
     expect(projected?.events.at(-1)?.occurredAt).toBe("2026-10-08T04:59:59.000Z");
   });
 
+  it("retains stable ordering for simultaneous public events", () => {
+    const events: TalkStageEvent[] = [
+      { ...base, eventId: "first", kind: "hand", action: "raised" },
+      { ...base, eventId: "second", kind: "question", action: "answered", body: "Why?" },
+      { ...base, eventId: "third", kind: "poll", action: "closed", question: "Next?" },
+    ];
+    expect(project({ ...stage, events })?.events.map((event) => event.kind)).toEqual([
+      "hand", "question", "poll",
+    ]);
+  });
+
+  it("exposes only numeric poll aggregates and not ballots or malformed tally data", () => {
+    const event: TalkStageEvent = {
+      ...base, kind: "poll", action: "closed", question: "Preferred option?",
+      tallies: [
+        { label: "One", votes: 7 },
+        { label: "Two", votes: 2 },
+        { label: "Tampered", votes: -5 },
+      ],
+    };
+    const output = project({ ...stage, events: [event] });
+    expect(output?.events[0]?.summary)
+      .toBe("Public poll closed: Preferred option? | Votes: One: 7; Two: 2");
+    expect(JSON.stringify(output)).not.toContain("Tampered");
+  });
+
   it("returns null on missing stage or invalid reference time", () => {
     expect(project(null)).toBeNull();
     expect(project(stage, "invalid")).toBeNull();
