@@ -440,12 +440,22 @@ export function createAgentCryptoAssistant(input: Readonly<{
 
     async beforeInference(request: CryptoBeforeInferenceInput) {
       const consent = parseUserCryptoConsent(request.text);
-      if (!consent) return null;
+      // A short affirmative next to a quote must not fall through to a model
+      // that can generate unrelated provider actions or misleading success.
+      const normalized = request.text.trim().toLowerCase().replace(/\s+/gu, " ");
+      const vague = [
+        "yes", "confirm", "yes confirm", "proceed", "go ahead",
+        "do it", "continue", "okay", "ok",
+      ].includes(normalized);
+      if (!consent && !vague) return null;
       const currentScope = scope(request.scope);
       const pending = await input.pending.readCurrent(currentScope, now() as never);
       if (!pending) {
-        return result("There is no pending crypto quote to confirm or cancel. Request a fresh quote.");
+        return consent
+          ? result("There is no pending crypto quote to confirm or cancel. Request a fresh quote.")
+          : null;
       }
+      if (!consent) return pendingQuoteResult(pending);
       if (consent.type === "cancel") {
         await input.pending.complete(currentScope, pending.requestId, now() as never);
         return result("Cancelled. No crypto action was sent.");
