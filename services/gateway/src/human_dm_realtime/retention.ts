@@ -12,6 +12,41 @@ export interface PruneResult {
   readonly batches: number;
   readonly possiblyMore: boolean;
 }
+/** Preflight MUST run before operator mutation. Database and tenant are checked
+ * through the connected database, not inferred from the connection URL.
+ * This is a safety gate, not proof the backup reference is recoverable.
+ */
+export async function verifyHumanDmRetentionTarget(input: {
+  pool: PruneSqlPool;
+  tenantId: string;
+  expectedDatabase: string;
+}): Promise<{ database: string; role: string }> {
+  if (!input.tenantId || input.tenantId.length > 256 ||
+      !input.expectedDatabase || input.expectedDatabase.length > 128) {
+    throw new Error("Incomplete C03 retention target");
+  }
+  const result = await input.pool.query<{
+    database_name:string;
+    database_role:string;
+    tenant_exists:boolean;
+    can_trim:boolean;
+  }>(`
+    SELECT current_database()::text AS database_name,
+      current_user::text AS database_role,
+      EXISTS(SELECT 1 FROM identity.tenants WHERE tenant_id=$1) AS tenant_exists,
+      COALESCE(has_function_privilege(
+        current_user,
+        to_regprocedure('talks.trim_human_dm_events(text,timestamptz,integer)'),
+        'EXECUTE'),false) AS can_trim
+  `,[input.tenantId]);
+  const row=result.rows[0];
+  if(!row || row.database_name!==input.expectedDatabase ||
+      row.tenant_exists!==true || row.can_trim!==true) {
+    throw new Error("C03 retention database/tenant/role preflight failed");
+  }
+  return {database:row.database_name,role:row.database_role};
+}
+
 export async function pruneHumanDmJournal(input: {
   pool: PruneSqlPool;
   tenantId: string;
