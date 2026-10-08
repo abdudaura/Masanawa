@@ -12,6 +12,19 @@ expected="${2:-${MASANAWA_RELEASE_CERT_SHA256:-}}"
 [[ -f "$artifact" ]] || { echo "Bundle not found: $artifact" >&2; exit 66; }
 command -v jarsigner >/dev/null || { echo "Missing JDK jarsigner" >&2; exit 69; }
 command -v keytool >/dev/null || { echo "Missing JDK keytool" >&2; exit 69; }
+command -v jar >/dev/null || { echo "Missing JDK jar" >&2; exit 69; }
+# A successfully signed arbitrary JAR is not necessarily an Android App Bundle.
+# Bundletool remains the final structural validator, but require core AAB entries.
+entries="$(jar tf "$artifact" 2>/dev/null)" || {
+  echo "Not a readable Android App Bundle ZIP" >&2
+  exit 1
+}
+for required in "BundleConfig.pb" "base/manifest/AndroidManifest.xml"; do
+  if ! grep -Fxq "$required" <<<"$entries"; then
+    echo "Bundle is missing required AAB entry: $required" >&2
+    exit 1
+  fi
+done
 
 # An unsigned bundle or a tampered entry must fail verification.
 verification="$(jarsigner -verify -verbose "$artifact" 2>&1)" || {
