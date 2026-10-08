@@ -1,0 +1,21 @@
+{
+  "@@locale": "ha",
+  "home": "Gida",
+  "agents": "Wakilai",
+  "wallet": "Walati",
+  "talk": "Hira",
+  "explore": "Bincika",
+  "liveTalks": "Hirarraki kai tsaye",
+  "startTalk": "Fara hira",
+  "activity": "Ayyuka",
+  "profile": "Bayanan martaba",
+  "settings": "Saituna",
+  "retry": "Sake gwadawa",
+  "cancel": "Soke",
+  "confirm": "Tabbatar",
+  "loading": "Ana lodawa…",
+  "listen": "Saurara",
+  "raiseHand": "Ɗaga hannu",
+  "speakerSeats": "{count, plural, =0{Babu kujerar mai magana} =1{Kujerar mai magana 1} other{Kujerun masu magana {count}}}",
+  "walletAmount": "{amount} {currency}"
+}
