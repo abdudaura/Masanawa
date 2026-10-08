@@ -237,4 +237,55 @@ describe("LiveKit Talk AI runtime dispatch", () => {
       .rejects.toThrow("talks.ai_dispatch_listdispatch_invalid_response");
   });
 
+  it("holds an ambiguous CreateDispatch and reconciles without a second create", async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response({ agent_dispatches: [] }))
+      .mockRejectedValueOnce(new Error("private transport details"))
+      .mockResolvedValueOnce(response({ agent_dispatches: [] }))
+      .mockResolvedValueOnce(response({
+        agent_dispatches: [{
+          id: "dispatched", agent_name: "masanawa-talk-ai",
+          room: "talk-1", metadata,
+        }],
+      }));
+    const dispatcher = build(fetchImpl);
+    await expect(dispatcher.dispatch(seat))
+      .rejects.toThrow("talks.ai_dispatch_createdispatch_unconfirmed");
+    await expect(dispatcher.dispatch(seat))
+      .rejects.toThrow("talks.ai_dispatch_createdispatch_unconfirmed");
+    await expect(dispatcher.dispatch(seat)).resolves.toBeUndefined();
+    expect(fetchImpl.mock.calls.map((args) => String(args[0]).split("/").pop())).toEqual([
+      "ListDispatch", "CreateDispatch", "ListDispatch", "ListDispatch",
+    ]);
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+  });
+
+  it("refuses a different persona while a previous dispatch is still uncertain", async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response({ agent_dispatches: [] }))
+      .mockRejectedValueOnce(new Error("connection aborted"));
+    const dispatcher = build(fetchImpl);
+    await expect(dispatcher.dispatch(seat))
+      .rejects.toThrow("talks.ai_dispatch_createdispatch_unconfirmed");
+    await expect(dispatcher.dispatch({ ...seat, personaId: "swapped" }))
+      .rejects.toThrow("talks.ai_dispatch_identity_conflict");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails closed when a previously ambiguous dispatch materializes as another persona", async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(response({ agent_dispatches: [] }))
+      .mockRejectedValueOnce(new Error("timeout"))
+      .mockResolvedValueOnce(response({
+        agent_dispatches: [{
+          agent_name: "masanawa-talk-ai",
+          metadata: JSON.stringify({ ...JSON.parse(metadata), personaId: "wrong" }),
+        }],
+      }));
+    const dispatcher = build(fetchImpl);
+    await expect(dispatcher.dispatch(seat)).rejects.toThrow("unconfirmed");
+    await expect(dispatcher.dispatch(seat)).rejects.toThrow("identity_conflict");
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
 });
