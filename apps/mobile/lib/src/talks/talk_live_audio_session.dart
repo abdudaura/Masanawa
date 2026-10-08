@@ -126,8 +126,28 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         (_) => _scheduleHeartbeat(),
       );
     } catch (_) {
-      _fail('Live audio is unavailable right now.');
+      // A failed media token or LiveKit connection must not permanently pin
+      // _sessionId: start() uses it to avoid opening duplicate live sessions.
+      // Release the server session before allowing an explicit retry.
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = null;
       await _closeMediaOnly();
+      final failedSessionId = _sessionId;
+      _sessionId = null;
+      _role = null;
+      _canPublishAudio = false;
+      _muted = false;
+      if (failedSessionId != null) {
+        try {
+          await transport.disconnect(
+            talkId: talkId,
+            sessionId: failedSessionId,
+          );
+        } catch (_) {
+          // The backend heartbeat lease expires if disconnect is unavailable.
+        }
+      }
+      if (!_closed) _fail('Live audio is unavailable right now. Please try again.');
     }
   }
 
