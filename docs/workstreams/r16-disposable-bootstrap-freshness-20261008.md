@@ -52,3 +52,13 @@ Status: **IMPLEMENTED_UNVERIFIED for this bounded R16 disposable-database freshn
 - Draft stacked PR: https://github.com/Baatiku/masanawa/pull/485 (base `work/r16-schema-portability-20261008`; parent draft https://github.com/Baatiku/masanawa/pull/479).
 - Commit containing initial Work handoff: `24927599f0d5900f3ed92770353e6babfa3daf50`; last application/test-source code commit `13143480e67a2807595c53b08a4139716d3aa86b`.
 - GitHub verified four changed paths in PR #485 (three implementation/test files and this handoff), all within the ownership claim. PR remains draft. No merge, test, device, provider or deployment evidence.
+
+## Additional security checkpoint — 2026-10-08
+
+After the initial review, expanded the fail-closed bootstrap preflight to detect:
+- **Public composite types**, which PostgreSQL represents as `pg_class.relkind='c'` and otherwise escape a simple standalone `pg_type.typrelid=0` check.
+- **PostgreSQL binary large objects**, whose content resides in `pg_largeobject` system catalogs and is not revealed by scans for user tables or custom schemas.
+
+The same transaction now rejects those before executing any rehearsal DDL with `schema.bootstrap_public_not_empty` or `schema.bootstrap_large_objects_present`. Regression assertions in both fake-Pool Vitest and real-PG18 integration tests create, verify retention and safely remove only test-owned composite objects/large objects.
+
+Final application-and-test-source checkpoint SHA: `fef0791256ccf8ec25c3c2235ab94f1397f38a9d`. Draft PR #485 remains based on parent #479. This extra checkpoint **does not add any executed tests**; all unit, TypeScript, sandbox Postgres, CI, actual backup→restore, device and deployment evidence are still pending as recorded above. No real database was accessed or altered.
