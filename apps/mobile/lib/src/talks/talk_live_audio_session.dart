@@ -82,6 +82,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
   }
 
   Future<void> _start() async {
+    _errorMessage = null;
     _setStatus(TalkLiveAudioStatus.connecting);
     try {
       final session = await transport.connect(talkId);
@@ -91,7 +92,16 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       _role = session.role;
 
       if (session.state == TalkLiveLifecycle.ended || !session.canHearAudio) {
-        _setStatus(TalkLiveAudioStatus.ended);
+        // A server-side ended/ineligible session never obtains media; release
+        // its lease rather than keeping an unreachable session ID locally.
+        _sessionId = null;
+        _role = null;
+        try {
+          await transport.disconnect(talkId: talkId, sessionId: session.sessionId);
+        } catch (_) {
+          // Heartbeat expiry is the server-side fallback.
+        }
+        if (!_closed) _setStatus(TalkLiveAudioStatus.ended);
         return;
       }
 
