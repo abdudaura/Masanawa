@@ -12,14 +12,16 @@ export interface DeletionJobLease {
 
 export function createPostgresAccountDeletionQueue(pool: Pool) {
   return Object.freeze({
-    async claim(): Promise<DeletionJobLease | null> {
+    async claim(tenantFilter?:string): Promise<DeletionJobLease | null> {
       return withTransaction(pool, async client => {
         await client.query(
           `INSERT INTO identity.account_deletion_worker_jobs(request_id,tenant_id,user_id)
            SELECT request_id,tenant_id,user_id
              FROM identity.account_deletion_requests
             WHERE phase IN ('identity-verified','awaiting-settlement')
+              AND ($1::text IS NULL OR tenant_id=$1)
            ON CONFLICT (request_id) DO NOTHING`,
+          [tenantFilter??null],
         );
         const found = await client.query<{
           request_id:string;tenant_id:string;user_id:string;attempts:number;
@@ -28,10 +30,12 @@ export function createPostgresAccountDeletionQueue(pool: Pool) {
              FROM identity.account_deletion_worker_jobs j
              JOIN identity.account_deletion_requests r USING(request_id)
             WHERE r.phase IN ('identity-verified','awaiting-settlement')
+              AND ($1::text IS NULL OR j.tenant_id=$1)
               AND j.next_attempt_at<=clock_timestamp()
               AND (j.state<>'leased' OR j.leased_until<=clock_timestamp())
             ORDER BY j.next_attempt_at,j.request_id
             LIMIT 1 FOR UPDATE OF j SKIP LOCKED`,
+          [tenantFilter??null],
         );
         const row = found.rows[0];
         if (!row) return null;
@@ -73,8 +77,9 @@ export function createPostgresAccountDeletionQueue(pool: Pool) {
             WHERE request_id=$1::uuid AND state='leased' FOR UPDATE`,
           [lease.requestId],
         );
+        const serverNow=await client.query<{at:Date|string}>("SELECT clock_timestamp() AS at");
         if(!job.rows[0]||job.rows[0].lease_token!==lease.token||
-            new Date(job.rows[0].leased_until).getTime()<=Date.parse(input.now)) {
+            new Date(job.rows[0].leased_until).getTime()<=new Date(serverNow.rows[0]!.at).getTime()) {
           throw new Error("account_deletion.worker_stale_lease");
         }
         if(existing.phase!=="identity-verified"&&existing.phase!=="awaiting-settlement") {
@@ -124,7 +129,8 @@ export function createPostgresAccountDeletionQueue(pool: Pool) {
                 last_outcome='retryable_error',
                 next_attempt_at=clock_timestamp()+($3*interval '1 second'),
                 updated_at=clock_timestamp()
-          WHERE request_id=$1::uuid AND state='leased' AND lease_token=$2::uuid`,
+          WHERE request_id=$1::uuid AND state='leased' AND lease_token=$2::uuid
+            AND leased_until>clock_timestamp()`,
         [lease.requestId,lease.token,delaySeconds],
       );
       if(result.rowCount!==1)throw new Error("account_deletion.worker_stale_lease");
