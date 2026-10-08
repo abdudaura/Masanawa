@@ -58,6 +58,11 @@ class _Projection implements HumanDmRealtimeProjection {
   }
 }
 
+class _FailingFullProjection extends _Projection {
+  @override
+  Future<void> refreshAll() async { throw StateError('C02 history unavailable'); }
+}
+
 class _Transport implements HumanDmRealtimeTransport {
   final responses = <HumanDmRealtimePage>[];
   Completer<HumanDmRealtimePage>? waiting;
@@ -270,6 +275,57 @@ void main() {
     await sync.syncOnce();
     expect(projection.full, 0);
     expect(transport.receivedCursor, '123');
+    sync.stop();
+  });
+
+  test('pruned cursor requires authoritative C02 snapshot then replays surviving events', () async {
+    final store = _Store()..cursor = '10';
+    final projection = _Projection();
+    final transport = _Transport()
+      ..responses.add(_page(cursor:'60',reset:true))
+      ..responses.add(_page(
+        cursor:'61',
+        events:[const HumanDmRealtimeEvent(
+          eventId:'61',conversationId:'thread_a',
+          kind:HumanDmChange.accessChanged,actorUserId:'user_b',
+        )],
+      ));
+    final sync = _sync(store,projection,transport);
+    await sync.syncOnce();
+    expect(projection.full,1);
+    expect(store.cursor,'60');
+    await sync.syncOnce();
+    expect(transport.receivedCursor,'60');
+    expect(projection.invalidated,['thread_a']);
+    expect(store.cursor,'61');
+    sync.stop();
+  });
+
+  test('invalid future cursor recovers only after a successful full resnapshot', () async {
+    final store = _Store()..cursor = '99999';
+    final projection = _Projection();
+    final transport = _Transport()..responses.add(_page(cursor:'42',reset:true));
+    final sync = _sync(store,projection,transport);
+    await sync.syncOnce();
+    expect(projection.full,1);
+    expect(store.cursor,'42');
+    expect(store.saves,1);
+    sync.stop();
+  });
+
+  test('server reset cannot save a cursor when C02 resnapshot fails', () async {
+    final store = _Store()..cursor = '10';
+    final projection = _Projection();
+    final transport = _Transport()..responses.add(_page(cursor:'60',reset:true));
+    final sync = HumanDmRealtimeSync(
+      tenantId:'tenant_a',userId:'user_a',
+      transport:transport,store:store,
+      projection:_FailingFullProjection(),
+      isCurrentSession:()=>true,
+    );
+    await expectLater(sync.syncOnce(),throwsStateError);
+    expect(store.cursor,'10');
+    expect(store.saves,0);
     sync.stop();
   });
 
