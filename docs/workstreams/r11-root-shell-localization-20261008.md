@@ -22,4 +22,12 @@ Status: claim published; implementation pending; no Flutter tests or device clai
 - No Flutter SDK in this execution container, repository checkout cannot DNS-resolve GitHub and GitHub Actions runners have been observed failing before steps. `flutter pub get`, `flutter gen-l10n`, analyzer/tests and APK/device acceptance are **not executed**. No claimed mobile release quality, no production deployment.
 - Native-speaker copy review, Hausa framework Material/Cupertino support and the remaining app screens are open R11 quality gates. Do not claim the whole app localized.
 
-Status: source implementation committed and checked, **Flutter execution unverified**. Reviewable PR pending.
+Status: source implementation committed and checked, **Flutter execution unverified**. Draft PR #426 open.
+
+## PR and CI gate evidence
+
+- PR: https://github.com/Baatiku/masanawa/pull/426 (draft; GitHub initially reported mergeable).
+- Commit before checkpoint: `c8251957d58b2abccea9d3a38fb704cd1110977b`.
+- `Mobile Build` run 37732437460 and `Foundation CI` run 37732437640 on that commit both concluded `failure` about three seconds after creation. The GitHub API returned **null step lists and null log URLs** for their jobs. This is evidence of a blocked check, not evidence of a Flutter analyzer/test failure or success.
+- Execute `cd apps/mobile && flutter pub get && flutter gen-l10n && flutter analyze && flutter test test/localization/ && flutter test test/twin_home_shell_test.dart && flutter test` in a Flutter-capable environment and inspect Android RTL captures before marking R11 complete.
+- Merge with newest `main` only after tests/review, preserving R12/R18/Gwani changes; the post-base main diff was inspected and no owned R11 shell/ARB/test overlap was found.
