@@ -111,3 +111,10 @@ Statuses below start **OPEN / unverified**. After a lane lands, explicitly recor
 - No fake local-only crypto send, no unqualified global payout/fiat rail, no implied unlimited free on-chain transactions.
 - No premature end-to-end encryption or WhatsApp-level latency claim, no unmeasured performance assurances.
 - No autonomous AI-only public Talks, no broader web-app launch from this mobile-first extension.
+
+## Unified end-state navigation review (product decision gate)
+
+The owner asked to decide all necessary feature placements **before** C lanes generate a UI requiring redesign. `END-TO-END-UX-ARCHITECTURE.md` is the complete proposed cross-R/C design: Home public Talks, Chats with People plus immediately visible Masanawa Agents/Twins, Wallet service/qualified in-app crypto transfers, private Assistant Gwani/Gwana; one domain-safe route namespace, exact per-screen primary actions, and full back/notification/offline/permission/error matrix. It recommends **Home · Chats · Wallet · Assistant** to remove ambiguity between *public Talk* and *private Talk tab*. **Owner approval is pending** for this change; until then do not override `APP-SHELL-CONTRACT.md` or replace `Home · Agents · Wallet · Talk` unilaterally.
+
+C08 and R17 must freeze that final target and migrations jointly before implementing changes to the root shell; C01–C07 may design underlying nonoverlapping typed contracts, but must not create client routes or authority that require a second rewrite. All C acceptance, existing R gates and shared CI #457 continue to apply. No feature is considered implemented merely because this design exists.
+
