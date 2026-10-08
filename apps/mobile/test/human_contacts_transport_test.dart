@@ -215,4 +215,56 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+
+  test('cursor paging carries signed-in bearer and bounded stable continuation', () async {
+    var calls = 0;
+    final api = _client((options) async {
+      calls++;
+      expect(options.path, '/messages/contacts/page');
+      expect(options.headers['Authorization'], 'Bearer real-session');
+      expect(options.queryParameters['limit'], 1);
+      if (calls == 1) {
+        expect(options.queryParameters.containsKey('cursor'), isFalse);
+        return _json('{"contacts":[{"userId":"user_b","handle":"bob",'
+            '"displayName":"Bob","avatarUrl":null,"status":"accepted",'
+            '"requestRevision":"1","updatedAt":"2026-10-08T11:00:00Z"}],'
+            '"nextCursor":"cursor_Bob1"}');
+      }
+      expect(options.queryParameters['cursor'], 'cursor_Bob1');
+      return _json('{"contacts":[{"userId":"user_c","handle":"cora",'
+          '"displayName":"Cora","avatarUrl":null,"status":"accepted",'
+          '"requestRevision":"2","updatedAt":"2026-10-08T10:00:00Z"}],'
+          '"nextCursor":null}');
+    });
+    final transport = GatewayHumanContactsTransport(api: api);
+    final first = await transport.page(limit: 1);
+    expect(first.contacts.single.userId, 'user_b');
+    expect(first.nextCursor, 'cursor_Bob1');
+    final next = await transport.page(limit: 1, cursor: first.nextCursor);
+    expect(next.contacts.single.userId, 'user_c');
+    expect(next.nextCursor, isNull);
+    expect(calls, 2);
+  });
+
+  test('invalid pagination data and logged-out page calls fail closed', () async {
+    final missing = GatewayHumanContactsTransport(api: _client(
+      (_) async => _json('{"contacts":[]}'),
+    ));
+    await expectLater(missing.page(), throwsA(isA<FormatException>()));
+    final overflow = GatewayHumanContactsTransport(api: _client(
+      (_) async => _json('{"contacts":[{},{}],"nextCursor":null}'),
+    ));
+    await expectLater(overflow.page(limit: 1), throwsA(isA<FormatException>()));
+    final invalid = GatewayHumanContactsTransport(api: _client(
+      (_) async => _json('{"contacts":[],"nextCursor":"wrong!"}'),
+    ));
+    await expectLater(invalid.page(), throwsA(isA<FormatException>()));
+    await expectLater(
+      invalid.page(cursor: 'bad!'), throwsA(isA<FormatException>()),
+    );
+    final signedOut = GatewayHumanContactsTransport(
+      api: _client((_) async => fail('network must not be called'), token: null),
+    );
+    await expectLater(signedOut.page(), throwsA(isA<ApiException>()));
+  });
 }
