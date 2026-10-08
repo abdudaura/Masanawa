@@ -56,9 +56,13 @@ export function createPostgresHumanDmRealtimeRepository(
       `, [tenantId,userId]);
       const tip = String(checkpoint.rows[0]?.latest_event_id ?? "0");
       const floor = String(checkpoint.rows[0]?.pruned_through_event_id ?? "0");
-      if (BigInt(after) < BigInt(floor) || BigInt(after) > BigInt(tip)) {
+      const expired = BigInt(after) < BigInt(floor);
+      if (expired || BigInt(after) > BigInt(tip)) {
+        // Expired: replay every surviving event above the trim floor after
+        // resnapshot. Future/foreign cursor: resnapshot at the current tip.
+        // Never fast-forward an expired member to tip (snapshot races sends).
         return Object.freeze({
-          events:Object.freeze([]),nextCursor:tip,
+          events:Object.freeze([]),nextCursor:expired ? floor : tip,
           hasMore:false,resetRequired:true,
         });
       }
