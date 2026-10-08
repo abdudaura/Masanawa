@@ -183,3 +183,50 @@ Keep existing canonical S3 store and strict profile request validation; verify t
 
 
 C01/R18 backend 52 passed/3 DB skipped and combined production build passed. Flutter execution found an actual Dart named-parameter syntax error in avatar_crop_sheet.dart, fixed in claimed source; image-encoding widget test required tester.runAsync for real engine work. Four pre-existing editor fixtures tapped the prior disabled frame immediately after enterText; now pump onChanged and ensure save button visible, preserving actual server assertions. Also claim config/production-env.json to register the six conditional avatar storage names with access/secret credentials classified secret; no values/defaults or contract bypass.
+
+
+## C01/R18 results and canonical C02/C03 decision
+Combined source 88af74c3051bee10068f4b7f7f2f7985fb43bf28: 52 backend tests passed/3 DB skipped; 36 Flutter tests passed; Gateway production build passed. Broader recovered backend 1276 passed,1 API contract failed,146 skipped.
+
+C02 election: #472 is the canonical SQL/API core because C03 #483, C04 #478 and C05 #474 already depend on human_dm_conversations/human_dm_reads/client_request_id and /messages. #475 uses incompatible human_dm_threads/human_dm_read_cursors/client_message_id and /v1/messages/conversations. Do NOT apply competing0017. Preserve #475's unique UI/outbox behavior through an explicit adapter into the canonical core when integrating #493; its old backend is superseded, not a second money/message authority. This revises the previous possible #475 queue based on concrete dependent schema inspection.
+
+Claim C02 #472 plus C03 #483 and stacked #486 source paths, Gateway app.ts/main.ts composition/error mapping and strict body regression tests:
+- `apps/mobile/lib/src/human_messages/human_dm_compose.dart`
+- `apps/mobile/lib/src/human_messages/human_dm_controller.dart`
+- `apps/mobile/lib/src/human_messages/human_dm_models.dart`
+- `apps/mobile/lib/src/human_messages/human_dm_screens.dart`
+- `apps/mobile/lib/src/human_messages/human_dm_transport.dart`
+- `apps/mobile/test/human_messages_thread_test.dart`
+- `docs/contracts/HUMAN-DM-C02.md`
+- `docs/workstreams/communications-core-c02-20261008.md`
+- `packages/talks/migrations/0017_human_dm_core.sql`
+- `services/gateway/src/human_messages/composition.ts`
+- `services/gateway/src/human_messages/model.ts`
+- `services/gateway/src/human_messages/postgres_integration.test.ts`
+- `services/gateway/src/human_messages/postgres_repository.test.ts`
+- `services/gateway/src/human_messages/postgres_repository.ts`
+- `services/gateway/src/human_messages/routes.test.ts`
+- `services/gateway/src/human_messages/routes.ts`
+- `services/gateway/src/human_messages/service.test.ts`
+- `services/gateway/src/human_messages/service.ts`
+- `apps/mobile/lib/src/messages/realtime/human_dm_realtime_sync.dart`
+- `apps/mobile/lib/src/messages/realtime/human_dm_realtime_transport.dart`
+- `apps/mobile/test/messages/realtime/human_dm_realtime_test.dart`
+- `apps/mobile/test/messages/realtime/human_dm_realtime_transport_test.dart`
+- `docs/contracts/HUMAN-DM-C03.md`
+- `docs/workstreams/communications-realtime-c03-reclaim-20261008.md`
+- `packages/talks/migrations/0019_human_dm_realtime.sql`
+- `packages/talks/migrations/0020_human_dm_cursor_retention.sql`
+- `services/gateway/src/human_dm_realtime/composition.ts`
+- `services/gateway/src/human_dm_realtime/postgres_integration.test.ts`
+- `services/gateway/src/human_dm_realtime/postgres_repository.ts`
+- `services/gateway/src/human_dm_realtime/realtime.test.ts`
+- `services/gateway/src/human_dm_realtime/routes.ts`
+- `services/gateway/src/human_dm_realtime/service.ts`
+- `docs/workstreams/c03-retention-operator-20261008.md`
+- `services/gateway/src/human_dm_realtime/retention.test.ts`
+- `services/gateway/src/human_dm_realtime/retention.ts`
+- `services/gateway/src/human_dm_realtime/retention_cli.ts`
+- `services/gateway/src/human_dm_realtime/retention_config.test.ts`
+- `services/gateway/src/human_dm_realtime/retention_config.ts`
+Register both canonical services using existing pool/session authorizer; no separate server/auth. Preserve the #473 continuation in #483, cursor retention operator in #486. DB migration and real-device delivery remain unexecuted.
