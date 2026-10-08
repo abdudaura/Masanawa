@@ -557,7 +557,7 @@ class MyTwinRouteScreen extends ConsumerWidget {
       if (url == null || url.isEmpty) return;
       await SharePlus.instance.share(
         ShareParams(
-          text: 'Talk to ' + profile.displayName + ' on Masanawa: ' + url,
+          text: AppLocalizations.of(context).twinShareText(profile.displayName, url),
         ),
       );
     }
