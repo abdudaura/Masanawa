@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { normalizeCryptoAmount, normalizeCryptoAsset, normalizeCryptoNetwork } from "@masanawa/commerce";
+import { normalizeCryptoAmount, normalizeCryptoAsset, normalizeCryptoNetwork } from "./crypto.js";
 import { parseCanonicalId } from "@masanawa/contracts";
 
 export type InternalTransferStatus = "quoted" | "completed" | "expired" | "rejected";
