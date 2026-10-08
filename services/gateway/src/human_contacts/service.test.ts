@@ -3,7 +3,8 @@ import { createHumanContactService, HumanContactError } from "./service.js";
 import type { HumanContactRepository, HumanContactPolicy } from "./model.js";
 
 function harness(tenant = "tenant_1", actor = "user_al") {
-  let policy: HumanContactPolicy = "requests";
+  let receiverPolicy: HumanContactPolicy = "requests";
+  let actorPolicy: HumanContactPolicy = "requests";
   let accepted = false;
   let pending = false;
   let declined = false;
@@ -15,16 +16,16 @@ function harness(tenant = "tenant_1", actor = "user_al") {
       return {
         userId: receiverId, handle: "bob", displayName: "Bob", avatarUrl: null,
         status: accepted ? "accepted" : declined ? "declined" : pending ? "outgoing" : "none",
-        canMessage: accepted || policy === "anyone",
+        canMessage: accepted || receiverPolicy === "anyone",
       };
     },
-    async getOwnPolicy() { return policy; },
-    async setOwnPolicy({ policy: next }) { policy = next; return policy; },
+    async getOwnPolicy({ userId }) { return userId === receiverId ? receiverPolicy : actorPolicy; },
+    async setOwnPolicy({ userId, policy: next }) { if (userId === receiverId) receiverPolicy = next; else actorPolicy = next; return next; },
     async request({ tenantId, requesterId, handle }) {
-      if (tenantId !== tenant || requesterId === receiverId || handle !== "bob" || blocked || policy === "nobody") return "unavailable";
+      if (tenantId !== tenant || requesterId === receiverId || handle !== "bob" || blocked || receiverPolicy === "nobody") return "unavailable";
       if (accepted) return "accepted";
       if (pending || declined) return "existing";
-      if (policy === "anyone") { accepted = true; return "accepted"; }
+      if (receiverPolicy === "anyone") { accepted = true; return "accepted"; }
       pending = true; return "pending";
     },
     async respond({ tenantId, recipientId, requesterId, accept }) {
@@ -88,9 +89,9 @@ describe("C01 authenticated human-contact consent", () => {
   });
   it("enforces subject privacy policy and reciprocal blocks", async () => {
     const { svc, block } = harness();
-    await svc().updatePolicy({ authorizationHeader: "Bearer okay", policy: "nobody" });
+    await svc("user_bo").updatePolicy({ authorizationHeader: "Bearer okay", policy: "nobody" });
     await expect(svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).rejects.toMatchObject({ statusCode: 404 });
-    await svc().updatePolicy({ authorizationHeader: "Bearer okay", policy: "anyone" });
+    await svc("user_bo").updatePolicy({ authorizationHeader: "Bearer okay", policy: "anyone" });
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "accepted" });
     block();
     await expect(svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).rejects.toMatchObject({ statusCode: 404 });
