@@ -3,7 +3,7 @@
 Updated (UTC): 2026-10-08T19:26Z
 Window/owner label: U27 isolated Ops + admin-mobile control
 **Status: PARTIAL_IMPLEMENTATION — NO VERIFIED END-TO-END RESULT**
-Claim/lease: this file and the exact new U27 paths. Repository-visible claim commit `ecacb526baff6f06b60cffda0282ea4abf0ea410` at 19:17Z; narrowed Ops composition expansion `bbbcfe0345abc2b6b508fa2abc38540d13a5a2c1` at 19:23Z; latest source/test commit before handoff `c7092a43057d154d87e0bed1092901defa70d63a`.
+Claim/lease: this file and the exact new U27 paths. Repository-visible claim commit `ecacb526baff6f06b60cffda0282ea4abf0ea410` at 19:17Z; narrowed Ops composition expansion `bbbcfe0345abc2b6b508fa2abc38540d13a5a2c1` at 19:23Z; first source/test checkpoint `c7092a43057d154d87e0bed1092901defa70d63a`; guarded audit-fence source/test checkpoint `faa77aeba957ef5c32f3cdbcc1ffbe9174f2b827`.
 Base main SHA: `5e758673ae91082520b21b3153da53791ae2cbf3`; branch: `work/u27-agent-admin-control-20261008-gpt6`.
 PR: [#516](https://github.com/Baatiku/masanawa/pull/516) **DRAFT, OPEN, UNMERGED**.
 Acceptance source: U27 of `docs/ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md`, existing Admin Control Plane, five-tab consumer contract (unchanged). No consumer J/K journey has been executed.
@@ -21,7 +21,7 @@ Acceptance source: U27 of `docs/ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-202610
 **Postgres/DB:** no new migration; uses existing `@masanawa/agents` tenant-scoped, revision-fenced CharacterSkillAssignment/AgentPresentation repositories via injected `AgentAdminService`. No direct mobile-to-DB queries.
 
 **Server/API/auth:**
-- `services/ops/src/operator_admin/agent_control.ts`: privileged projection of actual configured agent/version/skill assignment/readiness, tenant authority before reads, bounded agent cardinality, explicit skill detach **only**, server-enforced revision compare-and-swap, post-write authoritative readback, refusal of no-op/stale request and unknown skill.
+- `services/ops/src/operator_admin/agent_control.ts`: privileged projection of actual configured agent/version/skill assignment/readiness, tenant authority before reads, bounded agent cardinality, explicit skill detach **only** behind a REQUIRED injected atomic audit+approval CAS writer; without it all writes refuse, while read APIs remain possible. Validates revision/stale request and checks post-write authoritative readback. No runtime writer is supplied by this PR.
 - `services/ops/src/operator_admin/routes.ts`: GET `/v1/admin/operator/agents` and DELETE `/v1/admin/operator/agents/:characterId/skills/:skillVersionId` with strong numeric `If-Match`, no-store, sanitized 400/403/409/503 errors, no unaudited grant/re-enable/publish endpoint.
 - `services/ops/src/app.ts` and `services/ops/src/main.ts`: routes *only* when a real explicit injected `AgentAdminAuthorizer` and existing AgentAdminService are provided; no change to production environment or permissive fallback. Default Ops service has no new route when unavailable.
 
@@ -38,7 +38,7 @@ Acceptance source: U27 of `docs/ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-202610
 
 1. Full U27 privileged **signed capability enable/disable** and tool/version assignment must be based on canonical runtime action registry and signed manifest validation, not inferred from assigned skills. Current safe UI intentionally permits only removal; there is no activation grant.
 2. Admin version **publish/rollback** with immutable version lineage, server authorization, impact preview, no widened tool grants and durable undo is missing.
-3. **Atomic durable audit and approval** for the detach operation is not integrated with the canonical Postgres transaction. **Do not enable the removal endpoint in production until the operation+audit outbox transaction and administrator approval policy are verified.** The current Ops injection design is fail-closed by default, but an explicitly injected authorizer can expose this source before audit qualification; treat as a release-blocking security risk.
+3. **Atomic durable audit and approval** for detach is not integrated with the canonical Postgres transaction. Security hardening commits `faba65f99a40298235ffdad775919f84dbe608f8` and `faa77aeba957ef5c32f3cdbcc1ffbe9174f2b827` make the mutation **always return 503 when the mandatory auditedRemoval adapter is absent**, even if a real Ops authorizer is injected. The test fixture supplies only an in-memory model of that adapter. **Do not enable actual skill-removal operations in production until transactionally atomic audit, operator approval, tenant authorization and CAS are implemented, tested and injected.**
 4. Ops tenant session/`MASANAWA_OPS_ADMIN_GRANTS_JSON` runtime authorizer is injected through existing extension seam, **not configured in this PR**; no existing production admin access proven. Real scope-based grants/privilege revocation and tests still needed.
 5. Real quotas, creator funding visibility, cost diagnostics and per-AgentRun health (read-only masked) remain outside U27 page. Scope them to existing finance/ops authority and avoid direct ledger writes.
 6. Real disposable Postgres concurrent CAS and tenant A/B tests, admin APK install/login/role switching, sign-out while mutation in-flight, app/device recovery, production receipt/audit review are not executed.
@@ -84,3 +84,10 @@ Then complete actual Postgres migration/readiness, signed-in admin vs consumer A
 | DEPLOYED / MERGED | NO / NO |
 
 Rollback: feature is not deployed, can remove optional Ops registration/page without altering DB schema; existing CharacterSkillAssignment authority and wallet unaffected. For a future real write, a stale cached page may have shown a removal while the server is uncertain; client invalidates and insists on fresh read. **Never restore or enable a skill automatically after ambiguous failure.**
+
+### Security checkpoint after first handoff (2026-10-08T19:28Z)
+
+- Backend mutation path now **fails closed unless `AuditedSkillRemoval.removeAndAudit` is explicitly supplied**. Existing normal Ops `AgentAdminService.putSkillAssignment` is never called by U27 protected route. Injected writer contract requires a single transaction for tenant/operator authorization, approval, revision compare-and-swap and durable audit.
+- `services/ops/src/operator_admin/agent_control.test.ts` adds default 503 / `AGENT_CONTROL_UNAVAILABLE` checks and asserts unsafe repository write cannot be used. Actual persistent audited adapter remains unwritten and explicitly scoped to final Work security integration.
+- Source-inspection predicates verified six boundaries (default off, mandatory writer, no direct write, no-store, confirm modal, client readback). These are static source checks, **not compiler, database or device tests**.
+- Latest code/test commit before this handoff amendment: `faa77aeba957ef5c32f3cdbcc1ffbe9174f2b827`. Current PR HEAD after the handoff amendment must be recorded in PR #516 description; do not treat earlier handoff checkpoint as tip.
