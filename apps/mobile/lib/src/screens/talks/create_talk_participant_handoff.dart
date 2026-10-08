@@ -164,19 +164,29 @@ class _TalkCreateParticipantHandoffState
 
   Future<void> _continue(TalkCreateParticipantAction action) async {
     if (_working || _pending.isEmpty || _pending.first != action) return;
+    final talkId = widget.talkId;
+    final remaining = _pending.skip(1).toList(growable: false);
     _working = true;
     _banner?.close();
     _banner = null;
+    var actionStarted = false;
     try {
+      // Consume the handoff BEFORE a possible financial confirmation. A
+      // cancelled picker, app kill or failed post-confirmation storage write
+      // must never replay an AI Seat purchase as a new pending action.
+      await ref.read(talkCreateActionStoreProvider).save(talkId, remaining);
+      if (!mounted || widget.talkId != talkId) return;
+      setState(() => _pending = remaining);
+      actionStarted = true;
       switch (action) {
         case TalkCreateParticipantAction.invitePerson:
           final payload = TalkSharePayload(
-            talkId: widget.talkId,
+            talkId: talkId,
             title: widget.initialTalk?.title ?? 'Masanawa Talk',
             hostName: widget.initialTalk?.hostName ?? '',
           );
           await (widget.shareTalk ?? const SystemTalkShareService().share)(payload);
-          if (!mounted) return;
+          if (!mounted || widget.talkId != talkId) return;
           _message('Use Share in the Talk to invite more people.');
         case TalkCreateParticipantAction.addExpert:
         case TalkCreateParticipantAction.addTwin:
@@ -184,11 +194,11 @@ class _TalkCreateParticipantHandoffState
               ? TalkAiPersonaKind.expert
               : TalkAiPersonaKind.twin;
           final request = await (widget.presentAiSeat ?? _showSeat)(
-            context, talkId: widget.talkId, kind: kind,
+            context, talkId: talkId, kind: kind,
           );
-          if (!mounted) return;
+          if (!mounted || widget.talkId != talkId) return;
           if (request != null) {
-            ref.invalidate(talkDetailProvider(widget.talkId));
+            ref.invalidate(talkDetailProvider(talkId));
             _message(request.message.isNotEmpty
                 ? request.message
                 : request.status == TalkAiSeatRequestStatus.admitted
@@ -196,19 +206,15 @@ class _TalkCreateParticipantHandoffState
                     : 'Seat request saved. Check the Talk for its status.');
           }
       }
-      // Closing the actual quote picker without paying is a valid Skip, not
-      // evidence of a paid or admitted Seat.
-      await ref.read(talkCreateActionStoreProvider).save(
-        widget.talkId,
-        _pending.skip(1).toList(growable: false),
-      );
-      if (!mounted) return;
-      setState(() => _pending = _pending.skip(1).toList(growable: false));
+      // Dismissing the real quote picker without paying is a valid choice.
+      // The Host can always open Add AI or Share again in the live Talk.
     } catch (_) {
-      _message('Couldn’t complete that action. Try again from the Talk.');
+      _message(actionStarted
+          ? 'That action could not finish. Use Add AI or Share in this Talk to retry.'
+          : 'Could not save your selection. No invitation or payment was started.');
     } finally {
       _working = false;
-      if (mounted) {
+      if (mounted && widget.talkId == talkId) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
       }
     }
