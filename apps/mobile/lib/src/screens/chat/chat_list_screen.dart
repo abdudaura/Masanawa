@@ -297,7 +297,7 @@ class ChatListScreen extends ConsumerWidget {
         item.$2.status == 'waiting_for_input').length;
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(
         backgroundColor: u.brand,
         foregroundColor: Colors.white,
