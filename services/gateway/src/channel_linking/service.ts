@@ -31,6 +31,7 @@ export class LinkError extends Error {
 }
 
 export interface LinkRepository {
+  resolveChallengeOwner(channel: LinkChannel, hash: string, at: Date): Promise<LinkIdentity | null>;
   list(owner: LinkIdentity, now: Date): Promise<readonly LinkState[]>;
   begin(input: Readonly<{
     owner: LinkIdentity; channel: LinkChannel; codeHash: string;
@@ -110,24 +111,18 @@ export function createLinkingService(input: Readonly<{
       if (!codePattern.test(code)) return false;
       // Only provider-authenticated sender identity is passed here. Code alone
       // is never accepted from an app request, unauthenticated webhook or LLM.
+      const at = now();
+      const hash = codeHash(code);
+      const owner = await input.repository.resolveChallengeOwner(sender.channel, hash, at);
+      if (!owner) return false; // Not a current link code; normal assistant ingress may continue.
+      const characterId = await input.resolveDefaultCharacter(owner);
       return input.repository.confirm({
         channel: sender.channel,
-        codeHash: codeHash(code),
+        codeHash: hash,
         externalUserId: sender.externalUserId,
         chatId: sender.chatId,
-        characterId: await (async () => {
-          // The store must locate challenge owner before selecting the canonical
-          // default. This callback is intentionally fulfilled by a repository
-          // projection; see createPostgresLinkRepository.resolveChallengeOwner.
-          const lookup = input.repository as LinkRepository & {
-            resolveChallengeOwner?: (channel: LinkChannel, hash: string, at: Date) => Promise<LinkIdentity | null>;
-          };
-          if (!lookup.resolveChallengeOwner) throw new LinkError("CHANNEL_STORAGE_UNAVAILABLE", 503);
-          const owner = await lookup.resolveChallengeOwner(sender.channel, codeHash(code), now());
-          if (!owner) throw new LinkError("LINK_NOT_FOUND", 404);
-          return input.resolveDefaultCharacter(owner);
-        })(),
-        at: now(),
+        characterId,
+        at,
       });
     },
   });
