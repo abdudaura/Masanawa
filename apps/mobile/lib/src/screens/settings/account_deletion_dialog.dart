@@ -129,6 +129,9 @@ class _AccountDeletionDialogState extends ConsumerState<AccountDeletionDialog> {
           return 'The code did not match. Check the message and try again.';
         case 'ACCOUNT_DELETION_DELIVERY_UNAVAILABLE':
           return 'Your request may have been recorded, but we could not send a code. Please try again.';
+        case 'ACCOUNT_DELETION_ALREADY_VERIFIED':
+        case 'ACCOUNT_DELETION_STATE_CONFLICT':
+          return 'This request changed. Refresh its status before continuing.';
         case 'UNAUTHORIZED':
           return 'Your session has expired. Sign in again to continue.';
       }
@@ -139,7 +142,8 @@ class _AccountDeletionDialogState extends ConsumerState<AccountDeletionDialog> {
   @override
   Widget build(BuildContext context) {
     final request = _request;
-    final needsCode = request?.needsVerification ?? false;
+    final needsCode = (request?.needsVerification ?? false) ||
+        (request?.phase == 'failed' && _codeSent);
     final theme = Theme.of(context);
 
     return AlertDialog(
@@ -166,9 +170,13 @@ class _AccountDeletionDialogState extends ConsumerState<AccountDeletionDialog> {
                 ),
               ],
               if (!_loading && needsCode) ...[
-                const Text(
-                  'Your deletion request is saved. Verify ownership using '
-                  'the code sent to your registered contact.',
+                Text(
+                  request?.phase == 'failed'
+                      ? 'Your earlier request needs attention. A new code '
+                        'can verify ownership again, but does not resolve '
+                        'pending financial or data-cleanup work.'
+                      : 'Your deletion request is saved. Verify ownership '
+                        'using the code sent to your registered contact.',
                 ),
                 const SizedBox(height: 14),
                 TextField(
@@ -242,6 +250,11 @@ class _AccountDeletionDialogState extends ConsumerState<AccountDeletionDialog> {
           FilledButton(
             onPressed: _working ? null : _verify,
             child: const Text('Verify request'),
+          ),
+        if (!_loading && request?.phase == 'failed' && !needsCode)
+          FilledButton(
+            onPressed: _working ? null : _sendRequest,
+            child: const Text('Send new verification code'),
           ),
         if (!_working && !_loading && request != null && !needsCode)
           TextButton(
