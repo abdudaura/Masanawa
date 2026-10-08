@@ -79,7 +79,10 @@ export function createPostgresTalkAiStageEventRepository(
 
       const talk = await pool.query<TalkRow>(
         "SELECT topic, host_name FROM talks.talks " +
-        "WHERE tenant_id=$1 AND talk_id=$2 AND state IN ('live','reconnecting') LIMIT 1",
+        "WHERE tenant_id=$1 AND talk_id=$2 AND state IN ('live','reconnecting') " +
+        "AND NOT EXISTS (SELECT 1 FROM talks.safety_enforcement se " +
+        "WHERE se.tenant_id=$1 AND se.target_kind='talk' " +
+        "AND se.target_id=$2 AND se.visibility <> 'public') LIMIT 1",
         [tenantId, talkId],
       );
       if (!talk.rows[0]) return null;
