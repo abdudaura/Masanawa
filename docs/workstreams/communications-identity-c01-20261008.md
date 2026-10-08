@@ -54,3 +54,14 @@
 5. Real mobile/network matrix: account A sign-out and B sign-in during pending lookup/request, blocked and hidden handle lookups, request acceptance on B device, throttled/timeout/offline retry, revocation mid-conversation, large text and accessibility, process restart, Gateway deployed SHA, latency and logs without leaking addresses or DM content. Report `SOURCE/LOCAL/CI/DB/APP/DEVICE/MERGE` independently. No automatic payment or Talk/AI context sharing.
 
 **Do not solve #457 by modifying CI/Actions billing here.** Keep #468 draft, no deploy, no release-gate sign-off. C01 owner scope is contact authority and UI; real DMs, media, crypto transfers and final router remain separate C02–C08/R owners.
+
+
+### Further C01 database verification source (same ownership lease)
+
+Added `services/gateway/src/human_contacts/postgres_integration.test.ts` at commit `8f0b4b5aa40910e75679389e496aff073d8890b3`: **actual** `@masanawa/postgres` migration and Postgres queries, isolated randomized tenant/user/profile fixtures, concurrent idempotent request, consent/revocation, cross-tenant/self/hidden lookup, reciprocal blocks and inactive-recipient checks, with test-only fixture cleanup. This suite intentionally skips without two explicit safeguards; a skipped test is **not a PASS**. It requires both `MASANAWA_C01_ENABLE_DB_TESTS=yes` and `MASANAWA_C01_TEST_DATABASE_URL` pointing to a **loopback PostgreSQL host and database whose name ends in `_test`**. Example command in a terminal with a disposable Postgres + migration-capable extensions installed:
+
+```bash
+MASANAWA_C01_ENABLE_DB_TESTS=yes MASANAWA_C01_TEST_DATABASE_URL='postgresql://tester:local-password@127.0.0.1:5432/masanawa_c01_test' pnpm exec vitest run services/gateway/src/human_contacts/postgres_integration.test.ts
+```
+
+Use real local test-only credentials in the runner, never copy a production database URL into this command and never commit a secret. The integration test **has not run**; the other six C01 backend/Flutter test files also remain unexecuted. Work must record any migration extension/schema/transaction failures and fix them on the draft branch before release.
