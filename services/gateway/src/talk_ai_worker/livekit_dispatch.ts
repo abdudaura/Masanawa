@@ -171,6 +171,13 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? (() => new Date());
   const pendingSeats = new Map<string, { metadata: DispatchMetadata; promise: Promise<void> }>();
+  // A timed-out CreateDispatch might already be running remotely. Without a
+  // provider idempotency key, blind retries can create two audible AI jobs.
+  // An unresolved Seat must be read-only until LiveKit confirms its identity.
+  // Bounded state is intentionally fail-closed; durable cross-process recovery
+  // requires a persistent admission/dispatch reconciliation job.
+  const uncertainSeats = new Map<string, DispatchMetadata>();
+  const MAX_UNCERTAIN_SEATS = 4096;
 
   async function call(
     method: "ListDispatch" | "CreateDispatch",
@@ -211,17 +218,35 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
     }
   }
 
-  async function dispatchOnce(request: DispatchMetadata): Promise<void> {
+  async function dispatchOnce(request: DispatchMetadata, key: string): Promise<void> {
     const list = validateDispatchList(
       await call("ListDispatch", request.talkId, { room: request.talkId }),
     );
-    if (currentSeatDispatch(list, request, agentName)) return;
-    const created = await call("CreateDispatch", request.talkId, {
-      room: request.talkId,
-      agent_name: agentName,
-      metadata: JSON.stringify(request),
-    });
+    if (currentSeatDispatch(list, request, agentName)) {
+      uncertainSeats.delete(key);
+      return;
+    }
+    if (uncertainSeats.has(key)) {
+      // A missing dispatch may still materialize after Create timed out.
+      // Another attempt must not create a second speaker for a paid Seat.
+      throw new Error("talks.ai_dispatch_createdispatch_unconfirmed");
+    }
+    if (uncertainSeats.size >= MAX_UNCERTAIN_SEATS) {
+      throw new Error("talks.ai_dispatch_reconciliation_capacity");
+    }
+    let created: unknown;
+    try {
+      created = await call("CreateDispatch", request.talkId, {
+        room: request.talkId,
+        agent_name: agentName,
+        metadata: JSON.stringify(request),
+      });
+    } catch {
+      uncertainSeats.set(key, request);
+      throw new Error("talks.ai_dispatch_createdispatch_unconfirmed");
+    }
     if (created === null || typeof created !== "object" || Array.isArray(created)) {
+      uncertainSeats.set(key, request);
       throw new Error("talks.ai_dispatch_create_invalid");
     }
     const remote = created as RemoteDispatch;
@@ -230,6 +255,7 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
           !matches(storedMetadata(remote.metadata) ?? {}, request)) ||
         (remoteAgent(remote) !== undefined && remoteAgent(remote) !== agentName) ||
         (remote.room !== undefined && remote.room !== request.talkId)) {
+      uncertainSeats.set(key, request);
       throw new Error("talks.ai_dispatch_create_invalid");
     }
   }
@@ -238,6 +264,10 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
     async dispatch(raw) {
       const request = identity(raw);
       const key = JSON.stringify([request.tenantId, request.talkId, request.seatId]);
+      const uncertain = uncertainSeats.get(key);
+      if (uncertain && !matches(uncertain, request)) {
+        throw new Error("talks.ai_dispatch_identity_conflict");
+      }
       const existing = pendingSeats.get(key);
       if (existing) {
         if (!matches(existing.metadata, request)) {
@@ -245,7 +275,7 @@ export function createLiveKitTalkAiRuntimeDispatcher(input: Readonly<{
         }
         return existing.promise;
       }
-      const promise = dispatchOnce(request);
+      const promise = dispatchOnce(request, key);
       pendingSeats.set(key, { metadata: request, promise });
       try {
         await promise;
