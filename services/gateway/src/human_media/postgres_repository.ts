@@ -28,6 +28,7 @@ const eligible = `
      AND s.visibility IN ('restricted','blocked')
      AND p.user_id IN (c.first_user_id,c.second_user_id))
 `;
+const eligibleByMessage=eligible.replace("c.conversation_id=$3","c.conversation_id=m.conversation_id");
 const consent = `
  AND COALESCE((SELECT e.status FROM talks.human_dm_contact_requests e
    WHERE e.tenant_id=$1 AND e.first_user_id=c.first_user_id
@@ -184,9 +185,9 @@ export function createPostgresVoiceNoteRepository(pool:VoiceSqlPool):VoiceNoteRe
        AND a.message_id=m.message_id AND a.state='attached'
       JOIN talks.human_dm_conversations c ON c.tenant_id=m.tenant_id
        AND c.conversation_id=m.conversation_id
-      WHERE ${eligible} AND m.message_id=$4 AND m.deleted_at IS NULL`,
-      [tenantId,userId,"00000000-0000-0000-0000-000000000000",messageId]);
-    // Rebound conversation below via explicit conversation lookup rather than a client-supplied ID.
+      WHERE ${eligibleByMessage} AND m.message_id=$3 AND m.deleted_at IS NULL`,
+      [tenantId,userId,messageId]);
+    // Membership is bound to the message conversation, never a caller-supplied ID.
     return r.rows[0]?{...toVoice(r.rows[0]),objectKey:r.rows[0].object_key}:null;
   },
   async list({tenantId,userId,conversationId,limit,before}) {
