@@ -3,7 +3,7 @@
 Owner: ChatGPT R11 localization window
 Branch: `work/mobile-locale-foundation-r11-20261008`
 Base main SHA: `265f2c5f6db81d076f57ca32dd47db3ff7fb0ad6`
-Last code commit: `53b3600fec3a9812452e67c204eb9ec258bbb91c`
+Latest implementation commit: `2266d19d5468c528825d249531b936da2665f227`
 Owned: `apps/mobile/lib/src/screens/splash/splash_screen.dart` (splash tagline only, first bounded user-facing localization integration), `apps/mobile/l10n.yaml`, `apps/mobile/lib/l10n/app_*.arb`, `apps/mobile/lib/src/localization/*`, `apps/mobile/lib/main.dart`, `apps/mobile/pubspec.yaml`, `apps/mobile/test/localization/*`, this claim.
 Additional bounded R11 ownership: `apps/mobile/lib/src/ui/components/onboarding_scaffold.dart` (RTL back-control positioning/tooltip only), `apps/mobile/lib/src/ui/components/phone_field.dart` (decimal digit input normalization and localized dial-code status; no country/provider policy edits). Additional bounded ownership for next R11 implementation: `apps/mobile/lib/src/screens/onboarding/{phone_login_screen,otp_screen,name_screen}.dart` and localization-focused onboarding widget tests. These screen files are not owned by the currently open R01/R02/R03/R12/R16/R17 PRs. Out of scope: theme R01 (#406), router/shell R17 (#411), Settings R12 (#409), shared backend, finances and migrations.
 
@@ -19,7 +19,18 @@ Additional bounded R11 ownership: `apps/mobile/lib/src/ui/components/onboarding_
 - Added generated-resource, ICU plural, formatting and RTL tests.
 - Presentation-only formatters for numbers/dates/native financial amounts; never convert balances or decide currency based on language.
 - Deliberate Hausa restriction: stock Flutter Material/Cupertino localizations lack Hausa. Its ARB app-language messages exist but native dialog/calendar controls require a correctly audited Hausa framework delegate. Current MaterialApp supportedLocales remain en/ar/fr/es/pt; Hausa is **not** claimed working.
-- Legacy `MasanawaStrings` lookup removed. The actual splash screen now uses `AppLocalizations.of(context).splashTagline` rather than an English hardcoded slogan. New translation reflects human/AI live conversations across six ARBs; tests assert English, Hausa, Arabic generated strings. Other screens remain unconverted.
+- Legacy `MasanawaStrings` lookup removed. The actual splash screen now uses `AppLocalizations.of(context).splashTagline` rather than an English hardcoded slogan. New translation reflects human/AI live conversations across six ARBs; tests assert English, Hausa, Arabic generated strings. Auth onboarding screens are now also converted; the remainder of the app is unconverted.
+
+## Latest implementation continuation — 2026-10-08
+- R11 now owns and localizes `phone_login_screen.dart`, `otp_screen.dart`, `name_screen.dart`, and `splash_screen.dart` with generated `AppLocalizations`. Shared `phone_field.dart` now accepts non-Latin decimal digits and localizes the dial-code label; `onboarding_scaffold.dart` uses `PositionedDirectional` and Flutter's localized `BackButton`.
+- Every ARB contains 59 nonmetadata resource keys (en/ha/ar/fr/es/pt). Repository connector readback found 0 missing keys, empty strings or missing referenced placeholders. This is **source-level integrity only**, not Flutter compilation or native language review.
+- International digit normalization supports Arabic-Indic, Eastern Arabic-Indic and other major decimal ranges before ASCII-only filtering; provider OTP/E.164 contracts still receive ASCII digits.
+- Localized auth error mapping handles OTP_INVALID, OTP_LOCKED, OTP_EXPIRED, known rate-limit errors and secure stage-specific fallbacks; no raw English provider text is rendered in the three migrated screens. Unknown errors must be monitored as machine codes; do not invent status or success.
+- Persisted locale selection controller now serializes initial read/write, refuses parallel saves and guards against notifying after disposal. Test cases added for race conditions, translated auth errors, digits, ARB resource parity, ICU pluralization and RTL.
+- Shell R17 (#411), theme R01 (#406), and account-deletion Settings R12 (#409) remain separate. **Do not directly edit their owned files.** A user-visible language selector still requires safe coordination with Settings once that PR lands.
+- Auth legal Terms/Privacy words are still text rather than verified external-document links, server capability-country defaults are not fully global, Hausa Material/Cupertino localization remains unimplemented, and full-screen translated copy remains incomplete. These are blocking follow-ups, not DONE claims.
+- Automated Flutter `pub get`, `gen-l10n`, analyzer, tests, APK, visual RTL and handset checks were **not executed** (Flutter SDK and GitHub network access unavailable in the current runtime). No deploy/merge. CI workflow creation was blocked; no dedicated new Actions check is claimed.
+- Most recent implementation commit before this checkpoint: `2266d19d5468c528825d249531b936da2665f227`.
 
 ## Required validation before merging
 ```sh
