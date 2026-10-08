@@ -11,7 +11,7 @@ import {
 
 describe("R03 atomic support bootstrap lock contract", () => {
   it("takes a bounded xact-scoped PostgreSQL lock before tenant reads", async () => {
-    const query = vi.fn(async () => ({ rows: [] }));
+    const query = vi.fn(async (_sql: string, _params?: unknown[]) => ({ rows: [] }));
     const tenantId = createCanonicalId("tenant");
     await lockPlatformAgentSeedTransaction({ query }, tenantId);
     expect(query.mock.calls.map((call) => call[0])).toEqual([
