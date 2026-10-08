@@ -53,6 +53,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   bool loading = true;
   String? error;
   Timer? _fundingExpiryTimer;
+  int _selectionEpoch = 0;
 
   ApiClient get api => ref.read(apiClientProvider);
 
@@ -155,6 +156,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> createQuote() async {
+    ++_selectionEpoch;
+    _fundingExpiryTimer?.cancel();
     final selectedCategory = category;
     final selectedBiller = biller;
     final selectedItem = item;
@@ -238,6 +241,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Future<void> readOwnedBill(String quoteId, {
     bool restoreFunding = true,
   }) async {
+    final capturedEpoch = _selectionEpoch;
     // Clear before the first network await, including when the quote GET
     // fails. Displaying a stale account after authentication failure is unsafe.
     if (restoreFunding && mounted) setState(() => walletAction = null);
@@ -245,7 +249,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final status = restoreFunding && !detail.isTerminal
         ? await api.billingWalletStatus(quoteId)
         : null;
-    if (!mounted) return;
+    if (!mounted || capturedEpoch != _selectionEpoch) return;
     setState(() {
       current = detail;
       if (restoreFunding || detail.isTerminal) walletAction = status;
@@ -285,6 +289,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   Future<void> restore(BillingCheckoutView entry) async {
+    ++_selectionEpoch;
+    _fundingExpiryTimer?.cancel();
     setState(() { busy = true; error = null; });
     try {
       await readOwnedBill(entry.quote.quoteId);
@@ -296,6 +302,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   }
 
   void newBill() {
+    ++_selectionEpoch;
     setState(() {
       current = null;
       category = null;
@@ -326,7 +333,10 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: load,
+        onRefresh: () async {
+          await load();
+          if (current != null) await refreshCurrent(silent: true);
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
