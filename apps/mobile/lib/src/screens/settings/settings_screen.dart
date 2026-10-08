@@ -139,11 +139,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 if (directory.loading || directory.error != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      directory.loading
-                          ? 'Checking your saved agent…'
-                          : 'Selection unverified. Refresh the agent directory before changing it.',
-                      style: TextStyle(color: u.textMuted),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            directory.loading
+                                ? 'Checking your saved agent…'
+                                : 'Selection unverified. Refresh before changing it.',
+                            style: TextStyle(color: u.textMuted),
+                          ),
+                        ),
+                        if (!directory.loading && directory.error != null)
+                          TextButton(
+                            onPressed: () => ref
+                                .read(agentDirectoryProvider.notifier)
+                                .refresh(),
+                            child: const Text('Refresh'),
+                          ),
+                      ],
                     ),
                   ),
                 const Divider(height: 1),
@@ -185,7 +198,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     );
                                   }
                                 } catch (_) {
-                                  if (context.mounted) {
+                                  final current = ref.read(sessionProvider);
+                                  if (context.mounted &&
+                                      current is SessionSignedIn &&
+                                      current.user.id == user.id) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
