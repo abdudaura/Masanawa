@@ -60,3 +60,9 @@
 - `/agent/events/stream` had a 502 at 05:55 UTC and later 499 long-lived disconnects around 75 seconds. A 499 may be client cancellation; do not classify every occurrence as a backend crash. Agent runtime emitted one 214ms blocked event-loop warning at 06:15 UTC.
 - Authenticated client telemetry also includes occasional 401 after 200 refresh responses, but HTTP records alone do not establish whether they were from the same account/session. Investigate with privacy-safe request correlation if the issue recurs; do not log bearer tokens or customer speech.
 - No live service variables or deployment configuration changed. Current production Gateway deployment uses `main`, NOT this draft PR. Pending R02: real device request IDs, LiveKit room authorization/grants, current LiveKit RoomService API behavior and remote audio.
+
+## LiveKit moderation adapter scope expansion — time unit safety
+
+- Additional exclusive paths: `services/gateway/src/talk_moderation/livekit_admin.ts`, `services/gateway/src/talk_moderation/livekit_admin.test.ts`.
+- Current LiveKit `RemoveParticipant` accepts `revoke_token_ts` as Unix milliseconds. Existing code sends `Math.floor(now().getTime()/1000)` (seconds), which is a 1970-era timestamp under the documented contract, and may not revoke issued Cloud credentials. PR #443 R15 and other active PRs do not change these files.
+- Correct only this exact time unit and assert it in provider-contract tests; reuse the configured moderation adapter, no migrations/composition changes. Production revocation remains unverified.
