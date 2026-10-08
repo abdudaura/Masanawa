@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
 
-const TOKEN_PATTERN = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u;
+const TOKEN_PATTERN = /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u;
 const HANDLE_PATTERN = /^[a-z0-9_][a-z0-9_.-]{1,39}$/u;
 
 async function resolveSuggestedHandle(token: string): Promise<string | null> {
