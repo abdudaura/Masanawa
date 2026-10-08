@@ -14,7 +14,7 @@ Status: source implementation on draft branch; **NOT production operational or e
 | Method | Route | Body/query | Success |
 | --- | --- | --- | --- |
 | POST | `/messages` | `{otherUserId}` | 201 `{conversationId}`; safe repeated open |
-| GET | `/messages` | `?limit=40&before=<sequence>` | `{conversations:[{conversationId,otherUserId,lastSequence,preview,updatedAt,unreadCount}]}` |
+| GET | `/messages` | `?limit=40&before=<sequence>` | `{conversations:[{conversationId,otherUserId,otherDisplayName,otherAvatarUrl,lastSequence,preview,updatedAt,unreadCount}]}` |
 | GET | `/messages/:conversationId` | `?limit=40&before=<sequence>` | `{messages:[...],nextBefore}` newest-first |
 | POST | `/messages/:conversationId` | `{clientRequestId,body}` | 201 committed canonical `HumanDmMessage` |
 | PATCH | `/messages/items/:messageId` | `{body}` | sender-only edit within 15 min |
