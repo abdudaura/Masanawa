@@ -150,11 +150,11 @@ export function createFcmPushSender(input: {
         response = await fetchImpl(credentials.token_uri!, {
           method: "POST",
           signal: AbortSignal.timeout(15_000),
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-          assertion,
-        }),
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion,
+          }),
         });
       } catch {
         // A timed-out OAuth call cannot authorize a send. Never include
