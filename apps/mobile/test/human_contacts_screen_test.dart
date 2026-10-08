@@ -95,6 +95,39 @@ class _ContactApi implements HumanContactsTransport {
   }
 }
 
+class _PagedContactApi extends _ContactApi
+    implements HumanContactsPaginationTransport {
+  int pages = 0;
+
+  @override
+  Future<HumanContactPage> page({int limit = 50, String? cursor}) async {
+    pages++;
+    if (cursor == null) {
+      return const HumanContactPage(
+        contacts: [
+          HumanContact(
+            userId: 'user_b', handle: 'bob', displayName: 'Bob',
+            avatarUrl: null, status: HumanContactStatus.accepted,
+            canMessage: false, requestRevision: '1',
+          ),
+        ],
+        nextCursor: 'next_page_1',
+      );
+    }
+    if (cursor != 'next_page_1') throw const FormatException('Invalid page');
+    return const HumanContactPage(
+      contacts: [
+        HumanContact(
+          userId: 'user_c', handle: 'cora', displayName: 'Cora',
+          avatarUrl: null, status: HumanContactStatus.accepted,
+          canMessage: false, requestRevision: '2',
+        ),
+      ],
+      nextCursor: null,
+    );
+  }
+}
+
 void main() {
   testWidgets('exact handle search and request use C01 server response',
       (tester) async {
@@ -201,5 +234,25 @@ void main() {
     expect(find.text('Your privacy'), findsNothing);
     expect(find.text('Find'), findsNothing);
   });
-}
 
+  testWidgets('load-more action reaches the actual next contact page', (tester) async {
+    final api = _PagedContactApi();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        sessionProvider.overrideWith(_TestSessionController.new),
+        humanContactsTransportProvider.overrideWithValue(api),
+      ],
+      child: const MaterialApp(home: HumanContactsScreen()),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Bob'), findsOneWidget);
+    final more = find.text('Load more contacts');
+    await tester.ensureVisible(more);
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    expect(api.pages, 2);
+    await tester.ensureVisible(find.text('Cora'));
+    expect(find.text('Cora'), findsOneWidget);
+    expect(find.text('Load more contacts'), findsNothing);
+  });
+}
