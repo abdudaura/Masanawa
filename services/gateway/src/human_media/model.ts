@@ -18,7 +18,7 @@ export type VoiceStaged = Readonly<{
 }>;
 export type VoiceReceipt = VoiceNote | "forbidden" | "conflict" | "rate_limited";
 export interface VoiceNoteRepository {
-  stage(input:VoiceStaged):Promise<"staged"|"existing"|"conflict"|"forbidden">;
+  stage(input:VoiceStaged):Promise<VoiceStaged|"conflict"|"forbidden">;
   attach(input:VoiceStaged):Promise<VoiceReceipt>;
   find(input:VoiceOwner & {messageId:string}):Promise<(VoiceNote & {objectKey:string})|null>;
   list(input:VoiceOwner & {conversationId:string;before?:string;limit:number}):Promise<readonly VoiceNote[]|null>;
