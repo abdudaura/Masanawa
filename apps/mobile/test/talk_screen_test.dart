@@ -1490,7 +1490,7 @@ void main() {
     expect(find.text('Gift Abdullahi'), findsOneWidget);
     expect(find.text('Send Credits to the Host.'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('talk-gift-100')));
+    await tester.tap(find.byKey(const ValueKey('talk-gift-heart')));
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
     await tester.pumpAndSettle();
@@ -1512,7 +1512,7 @@ void main() {
 
     await tester.tap(find.text('Gift'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('talk-gift-50')));
+    await tester.tap(find.byKey(const ValueKey('talk-gift-applause')));
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
     await tester.pumpAndSettle();
@@ -1535,7 +1535,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gift'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('talk-gift-100')));
+    await tester.tap(find.byKey(const ValueKey('talk-gift-heart')));
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
     await tester.pump();
@@ -1554,7 +1554,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gift'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('talk-gift-50')), findsNothing);
+    expect(find.byKey(const ValueKey('talk-gift-applause')), findsNothing);
     expect(find.byKey(const ValueKey('talk-gift-send')), findsNothing);
     expect(find.text('Gift options are unavailable right now.'), findsOneWidget);
     expect(find.byKey(const ValueKey('talk-gift-retry-catalog')), findsOneWidget);
