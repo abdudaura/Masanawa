@@ -1,115 +1,67 @@
 # App Shell Contract
 
-Status: **canonical consumer shell — 2026-10-08**
+Status: **canonical consumer shell — 2026-10-08; latest user-approved navigation**
+Supersedes the previous Create/Activity/You bottom-navigation arrangement.
 
-## Primary navigation
+## Bottom navigation
+Exactly four destinations: **Home · Agents · Wallet · Talk**.
+Use **Talk**, never “Talk to AI”, as the private assistant tab label.
+A public Talk and private Talk tab have explicit mode labels within their respective
+screens; this tab never starts a public broadcast or silently enables the microphone.
 
-The consumer app has exactly four root destinations:
+- Home: Explore and Live Talks, each a single vertical column of full-width cards.
+- Agents: two tabs, **Masanawa Agents** and **Twins**, with compact searchable profiles,
+  role/type/availability and private Talk/Type actions. Public paid Add/Sponsor Seat is
+  a separate explicit confirmed action; browsing/chatting does not purchase a Seat.
+- Wallet: separate native fiat, Credits, pending/available earnings and asset/network
+  crypto balances; immediate history plus voice-first financial assistance.
+- Talk: private Gwani/Gwana voice-first workspace, with Type instead and deliberate
+  microphone start. Continue the same private task when entering from a service shortcut.
 
-- **Home**
-- **Create**
-- **Activity**
-- **You**
+## Header and creation
+Header right: Activity/notification bell beside profile avatar.
+Bell opens the existing Activity screen with useful unread state and accessible label.
+Avatar opens the upgraded You/profile hub and Settings. A three-dot menu, if needed,
+contains contextual actions only; do not duplicate Profile/Activity/Settings everywhere.
+Both are reachable on normal root screens; immersive Talk may use a compact overflow.
+Provide a default avatar, loading/error handling, back-navigation and restored tab state.
 
-No fifth root destination should be added without explicit product approval.
+A green **Start Talk** FAB opens the public Talk composer. It does not instantly broadcast.
+Avoid covering cards, bottom navigation, microphone controls or keyboard. Show on appropriate
+root surfaces; hide during immersive public audio or active private transaction/recording.
+Use one composer and existing human Host, free human Seat and paid AI Seat authority.
 
-## Home
+## Wallet service ordering and handoff
+Show **Crypto** first (Buy/Deposit/Convert/Withdraw), then **Data bundles**, **Airtime**,
+**Electricity**, and **TV / Cable**, followed by supported funding/send/withdraw and history.
+Eligibility depends on actual market/provider/account capability; no fabricated global rails.
+These are shortcuts for the two Billing/Crypto families, not extra root service products.
 
-Home contains exactly two primary tabs:
+Selecting a shortcut opens the private assistant with that validated intent selected.
+Do not ask which service the user already selected; ask only missing details. Selection
+never pays, authorizes a withdrawal, enables the microphone or publishes private speech.
+Preserve balance/task state and return navigation. Read-only balances/history work without AI.
 
-1. **Explore** — personalized discovery of Live Talks and strong replays.
-2. **Live Talks** — conversations happening now.
+## Profile completeness
+Header profile is a fully editable hub, not a read-only identity card.
+Upload/replace/crop/remove photo; edit display name, handle and bio; validate clearly,
+show upload/save/retry states and retain changes across restart and cross-device refresh.
+Public profile, Talk stage, comments and Twin owner presentation converge on canonical
+saved identity. Default avatar works after removal. See R18 in MOBILE-READINESS-PLAN.md.
 
-Both tabs use the same discovery rule:
+## Existing boundaries
+No Rooms/Skills/Workflows/provider internals as consumer destinations. Retain human-led
+public Talks, private assistant isolation, compact sheets, white surfaces and vibrant
+green. Root Agents is a supported discovery surface, not a replacement for Home Talks.
+Financial flows follow VOICE-FIRST-INTERACTIONS.md, with spoken terms and silent parity.
+Profile carries account, language, privacy, support and deletion; no fifth root tab.
 
-> **one full-width Talk card after another in a vertical scroll.**
+## Route continuity
+Keep existing deep links for Activity/You/Profile/Create/Talk/Wallet/services/Settings.
+Add or reuse an Agents root and private assistant route as implementation requires.
+Do not confuse a private assistant route with /talk/:talkId public participation.
+Changing navigation must not break notification, receipt or invitation links.
 
-Do not use horizontal content rails, horizontal card grids, sideways carousels or a directory-style home. Topic filters may be compact horizontal chips, but the actual Talk content remains a vertical list.
-
-The discovery rhythm should feel closer to TikTok than to a dashboard: the user keeps moving down into the next conversation.
-
-## Create
-
-Create starts a human-hosted public Talk with a spoken or typed topic and optional participants.
-
-## Activity
-
-Unified social/Talk/money events: invitations, Seat requests, follows, gifts, sponsored AI requests, Twin hires and creator-earning events.
-
-## You
-
-Profile, My Talks, My Twin, Saved Talks, Wallet/Earnings, Billing, Crypto and Settings.
-
-Wallet is not a root tab.
-
-## Global private Gwani
-
-A private Gwani affordance is available throughout the ordinary shell without occupying a root tab.
-
-Gwani can operate the app, prepare Talks, find Experts/Twins, perform general AI capabilities and initiate private Billing/Crypto flows.
-
-## Talk route
-
-The Talk screen is immersive and may hide root navigation. One Talk route adapts to listener, Host, human Speaker, Twin Director and replay roles.
-
-A public **Comments** section is part of the Talk experience. It is visible beneath/alongside the live stage without replacing the live audio experience. Comments are not automatically AI speech. Relevant moderated public comments may
-enter bounded AI context as untrusted data; private assistant chats never do.
-
-## No Rooms
-
-The shell must not expose Internet Cafe, Study Room, Story Radio, News Room, Research Room, Work Room or Teaching Room. Their useful capabilities survive through Gwani/Experts/Talks.
-
-## Services
-
-Only Bills and Crypto are standalone service families, reached from You/Wallet or private Gwani.
-
-## Visual simplicity
-
-- compact app bars;
-- minimal explanatory copy;
-- no oversized dashboard grids;
-- no horizontal Talk card rails;
-- familiar icons plus short labels;
-- sheets for secondary actions;
-- loading/error/empty are states, not destinations.
-
-## Current visual and integration acceptance
-
-Default surfaces are white/light with vibrant WhatsApp-style green, including sheets,
-auth, Talk, wallet/services and system bars; no automatic dark-background fallback.
-Preserve the approved Masanawa logo. Localized text/RTL must fit the same compact shell.
-
-Every visible action must work or present an actual eligibility/recovery state. Create's
-Add Expert, Invite person and Add My Twin, Talk audience/Host controls and global wallet
-actions are release contracts, not decorative rows. Persona catalog/readiness, audio,
-event-aware AI, animated gifts, global wallet/languages, deletion and financial recovery
-follow `MOBILE-READINESS-PLAN.md` and `DEFAULT-AI-PERSONAS.md`.
-
-Account deletion, language, privacy and support belong in existing Settings. Do not add
-root tabs, service families or duplicate screen trees to implement these requirements.
-
-## Voice-first operation
-
-Applicable screens expose Talk as the primary input and Type instead as an equally
-complete alternative. Wallet/Billing/Crypto are private conversational workspaces with
-interactive cards, not mandatory form funnels. Existing routes and one global private
-assistant remain; do not add a root chatbot tab. Read-only balances/history are immediately
-accessible. Public Talk speech and private service commands have separate audio authority.
-See `VOICE-FIRST-INTERACTIONS.md` for consent, accessibility and durable task behavior.
-
-## Suggested routes
-
-- `/home`
-- `/talk/create`
-- `/talk/:talkId`
-- `/activity`
-- `/you`
-- `/u/:handle`
-- `/persona/:publicId`
-- `/my-twin`
-- `/wallet`
-- `/billing`
-- `/crypto`
-- `/settings`
-
-See `MOBILE-SCREEN-ARCHITECTURE.md` for the full inventory.
+Acceptance: all four destinations, header actions, FAB, both agent tabs and every
+advertised profile/service action work after login, restart, permissions failure and
+back navigation. Record implementation/build/deployment/device evidence separately.
