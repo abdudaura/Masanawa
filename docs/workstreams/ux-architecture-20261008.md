@@ -1,20 +1,12 @@
-# Unified navigation / interaction architecture review (2026-10-08)
+# Unified navigation / interaction architecture audit — 2026-10-08
 
-- Owner/window: current product/UX architecture documentation window (not an implementation code lane).
-- Branch: `docs/final-navigation-ux-architecture-20261008`; base: `main` at `caa8d0e0a58f3863ccc87e162914849660c056d6`.
-- Scope: documentation-only review and target UX design across R01–R19 and C01–C08. Owned new files: `docs/workstreams/ux-architecture-20261008.md` and `docs/END-TO-END-UX-ARCHITECTURE.md`; narrow cross-references to canonical docs only after fresh SHA/overlap checks.
-- Product decision requested: remove downstream redesign/rework risk by deciding final consumer information architecture and interaction/action placements before coding C01–C08.
-- Existing shipping shell is Home · Agents · Wallet · Talk; candidate proposed replacement requires explicit integrated R17/C08 navigation decision, not a unilateral application change.
-- Overlap boundaries: do not edit Flutter root shell/router, common UI, Gateway, financial ledger, migrations, provider, agent runtime, CI, or any active R or C code lane. No source changes or approval of real-value transfers.
-- Source review: current main canonical product/shell/mobile/services/communication/voice documents, #462/#463, router, root shell, profiles, wallet, AI chat, legacy chat list and workstream protocol; review PR conflict status before any shared-doc edit.
-- Evidence: documentation inspection only. No tests, deployments, device checks or performance measurements claimed.
-- Current step: publish target-screen flow contract, explicit migration and route compatibility plan, user-journey matrix, risks, gates and file ownership handoffs in a reviewable docs PR. Shared CI recovery remains #457 / owner Work.
-- Lease: five-minute repository-visible activity rule; this claim reserves only bounded documentation while active, no downstream C/R implementation paths.
+**Current handoff: owner APPROVED five-tab target; documentation integration in PR #465, not mobile implementation or release verification.**
 
-## Completed documentation integration checkpoint
-
-- Prepared `docs/END-TO-END-UX-ARCHITECTURE.md` with the proposed permanent four-tab structure, screen-by-screen controls, recipient/DM/agent/persona/finance type separation, back-stack and deep-link migration, performance/privacy/audio boundaries, twelve concrete conflict resolutions and a release journey matrix.
-- Linked the proposal from `CONTINUE-HERE.md`, `docs/MULTI-WINDOW-WORK.md`, `docs/APP-SHELL-CONTRACT.md`, `docs/MOBILE-SCREEN-ARCHITECTURE.md`, and `docs/COMMUNICATIONS-EXTENSION-PLAN.md` without deleting previous approved requirements.
-- GitHub comparison at review: 7 Markdown-only paths, branch ahead of `main`, 0 behind; reviewed document presence/cross-links and key C01–C08/R01–R19/navigation contracts. No executable Flutter/TypeScript tests or user/device/production flows run.
-- **One explicit product decision remains:** whether to replace the previously approved bottom `Talk` destination label with recommended `Assistant`, as part of the complete four-tab target `Home · Chats · Wallet · Assistant`. The proposal does **not** override existing approval automatically.
-- Handoff: UX/documentation review PR only; core R/C owners must continue to respect their distinct code lanes, integrate frozen routes/typed IDs once the owner approves the final target, and not build knowingly disposable intermediate navigation.
+- Documentation-only owner/branch: `docs/final-navigation-ux-architecture-20261008`; PR #465; original base `caa8d0e0a58f3863ccc87e162914849660c056d6`. No Flutter, backend, ledger, CI or provider files edited.
+- **Final approved order: Talks · Chats · Assistant · Wallet · Agents**, Assistant center. Talks replaces duplicate Home and owns Explore/Live/public Start Talk; Chats human DMs; Assistant has **one switchable Gwani/Gwana private chat** and global operator actions; Wallet financial state; Agents full Masanawa Expert/Twin/owner discovery. Approved design supersedes former 4-tab proposal; **APK/service release evidence remains unverified**.
+- Updated authoritative guidance includes root `README.md`, `CONTINUE-HERE.md`, `docs/README.md`, `APP-SHELL-CONTRACT.md`, `END-TO-END-UX-ARCHITECTURE.md`, `PRODUCT-NORTH-STAR.md`, `MOBILE-SCREEN-ARCHITECTURE.md`, `MOBILE-READINESS-PLAN.md`, `COMMUNICATIONS-EXTENSION-PLAN.md`, `MULTI-WINDOW-WORK.md`, `VOICE-FIRST-INTERACTIONS.md`, `VISION.md`, `MOBILE-AGENT-EXPERIENCE.md`, `WEB-APP-PLAN.md` and targeted historical handoff headings.
+- **Source precedence:** old `docs/workstreams` reports, phase closures, donor/migration records, ADRs and old screenshots or shell/build notes are preserved as dated evidence and **never** authorize an older bottom navigation; see `docs/README.md` and `docs/workstreams/README.md`.
+- **Collision fixes**: historical `/chats` and `/chat/:characterId` remain AI/private aliases; human messages use typed `/messages`, `/messages/:conversationId`. Home/Start Talk moves to public Talks only; Chats New message is distinct from Wallet/DM Transfer. Assistant persona switching preserves authorized drafts, history, task IDs, quotes, explicit consent and private/public audio scope.
+- **Shared claim boundary:** one R17/C08 integration owner implements shared Flutter router/tab/header/navigation/localization/deep-link contracts; C01–C07 work on nonoverlapping domain code; no duplicate app root, API authority or second ledger. Five-minute lease and CI #457 constraints remain mandatory.
+- **Verification status:** documentation/source audit only; no executable Flutter/widget/native-audio/backend/payment tests, production deployment or Android device evidence performed by this docs review. Do not merge unverified implementation PRs.
+- Historical pre-approval steps on this branch were exploratory, **not a conflicting current recommendation**. Avoid knowingly temporary four-tab code and preserve all R01–R19/C01–C08 feature acceptance.
