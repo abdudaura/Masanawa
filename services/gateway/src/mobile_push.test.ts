@@ -146,6 +146,37 @@ describe("R14 FCM delivery resilience", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(4);
   });
 
+  it("bounds the OAuth exchange and sanitizes an aborted transport error", async () => {
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      expect(init?.signal?.aborted).toBe(false);
+      throw new Error("secret in low-level OAuth transport exception");
+    });
+    const { sender } = senderWith(["one"], fetchImpl as typeof fetch);
+    await expect(sender.send(request)).rejects.toThrow("Firebase OAuth failed");
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("attaches independent abort deadlines to each FCM device attempt", async () => {
+    const deviceTokens: string[] = [];
+    const signals: AbortSignal[] = [];
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if (String(url).includes("oauth2.googleapis.com")) return oauth();
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      signals.push(init!.signal!);
+      const token = (JSON.parse(String(init?.body)) as { message: { token: string } }).message.token;
+      deviceTokens.push(token);
+      if (token === "uncertain") throw new Error("network timeout after upstream acceptance");
+      return Response.json({ name: "ok" });
+    });
+    const { sender, wait } = senderWith(["uncertain", "healthy"], fetchImpl as typeof fetch);
+    expect(await sender.send(request)).toEqual({ attempted: 2, delivered: 1 });
+    expect(deviceTokens).toEqual(["uncertain", "healthy"]);
+    expect(signals).toHaveLength(2);
+    expect(signals[0]).not.toBe(signals[1]);
+    expect(wait).not.toHaveBeenCalled();
+  });
+
   it("never retries an ambiguous network failure that could duplicate a notification", async () => {
     const seen: string[] = [];
     const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
