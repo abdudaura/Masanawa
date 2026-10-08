@@ -60,7 +60,7 @@ describe("R14 FCM delivery resilience", () => {
   it("delivers to every scoped registration, truncates visible copy and reuses OAuth", async () => {
     const sent: Array<{ token: string; title: string; body: string; data: Record<string, string> }> = [];
     let authCalls = 0;
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
       if (String(url).includes("oauth2.googleapis.com")) {
         authCalls += 1;
         return oauth();
@@ -91,7 +91,7 @@ describe("R14 FCM delivery resilience", () => {
 
   it("retries only definitively rejected transient statuses with bounded backoff", async () => {
     const statuses = [failed(429), failed(503), Response.json({ name: "ok" })];
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL) =>
+    const fetchImpl = vi.fn(async (url: unknown) =>
       String(url).includes("oauth2.googleapis.com") ? oauth() : statuses.shift()!);
     const { sender, wait } = senderWith(["one"], fetchImpl as typeof fetch);
     expect(await sender.send(request)).toEqual({ attempted: 1, delivered: 1 });
@@ -101,7 +101,7 @@ describe("R14 FCM delivery resilience", () => {
 
   it("never treats exhausted transient failures as delivered; continues to another device", async () => {
     const statuses = [failed(500), failed(500), failed(500), Response.json({ name: "ok" })];
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL) =>
+    const fetchImpl = vi.fn(async (url: unknown) =>
       String(url).includes("oauth2.googleapis.com") ? oauth() : statuses.shift()!);
     const { sender, wait } = senderWith(["bad", "good"], fetchImpl as typeof fetch);
     expect(await sender.send(request)).toEqual({ attempted: 2, delivered: 1 });
@@ -111,7 +111,7 @@ describe("R14 FCM delivery resilience", () => {
 
   it("does not retry permanent 400/403 responses or delete tokens without verified error codes", async () => {
     const statuses = [failed(400), failed(403), Response.json({ name: "ok" })];
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL) =>
+    const fetchImpl = vi.fn(async (url: unknown) =>
       String(url).includes("oauth2.googleapis.com") ? oauth() : statuses.shift()!);
     const { sender, wait } = senderWith(["bad1", "bad2", "good"], fetchImpl as typeof fetch);
     expect(await sender.send(request)).toEqual({ attempted: 3, delivered: 1 });
@@ -122,7 +122,7 @@ describe("R14 FCM delivery resilience", () => {
   it("refreshes rejected OAuth once and uses the renewed token for subsequent devices", async () => {
     let oauthCalls = 0;
     const headers: string[] = [];
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
       if (String(url).includes("oauth2.googleapis.com")) {
         oauthCalls += 1;
         return Response.json({ access_token: `oauth-${oauthCalls}`, expires_in: 3600 });
@@ -139,7 +139,7 @@ describe("R14 FCM delivery resilience", () => {
   });
 
   it("fails closed on repeated OAuth rejection without including credential details", async () => {
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL) =>
+    const fetchImpl = vi.fn(async (url: unknown) =>
       String(url).includes("oauth2.googleapis.com") ? oauth() : failed(401));
     const { sender } = senderWith(["one"], fetchImpl as typeof fetch);
     await expect(sender.send(request)).rejects.toThrow("Firebase FCM rejected refreshed credentials");
@@ -148,7 +148,7 @@ describe("R14 FCM delivery resilience", () => {
 
   it("never retries an ambiguous network failure that could duplicate a notification", async () => {
     const seen: string[] = [];
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
       if (String(url).includes("oauth2.googleapis.com")) return oauth();
       const token = (JSON.parse(String(init?.body)) as { message: { token: string } }).message.token;
       seen.push(token);
@@ -164,7 +164,7 @@ describe("R14 FCM delivery resilience", () => {
   it("coalesces concurrent OAuth calls without sharing FCM device tokens", async () => {
     let oauthCalls = 0;
     let deviceCalls = 0;
-    const fetchImpl = vi.fn(async (url: RequestInfo | URL) => {
+    const fetchImpl = vi.fn(async (url: unknown) => {
       if (String(url).includes("oauth2.googleapis.com")) {
         oauthCalls += 1;
         await Promise.resolve();
