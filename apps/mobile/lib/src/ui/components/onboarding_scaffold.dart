@@ -127,10 +127,9 @@ class OnboardingScaffold extends StatelessWidget {
                         PositionedDirectional(
                           top: 0,
                           start: 0,
-                          child: IconButton(
-                            icon: BackButtonIcon(color: u.brand),
+                          child: BackButton(
+                            color: u.brand,
                             onPressed: goBack,
-                            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                           ),
                         ),
                     ],
