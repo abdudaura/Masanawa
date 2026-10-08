@@ -6,6 +6,7 @@ import 'package:masanawa/src/talks/talk_replay_playback.dart';
 class _Transport implements TalkReplayPlaybackTransport {
   int loads = 0;
   bool fail = false;
+  DateTime? expiry;
 
   @override
   Future<TalkReplayPlaybackCredentials> load(String talkId) async {
@@ -13,7 +14,7 @@ class _Transport implements TalkReplayPlaybackTransport {
     if (fail) throw StateError('unavailable');
     return TalkReplayPlaybackCredentials(
       url: 'https://signed.example/replay-$loads.ogg',
-      expiresAt: DateTime(2026, 10, 7, 12),
+      expiresAt: expiry ?? DateTime.now().toUtc().add(const Duration(minutes: 5)),
       contentType: 'audio/ogg',
     );
   }
@@ -33,6 +34,7 @@ class _Player implements TalkReplayAudioPlayer {
   int closes = 0;
   String? lastUrl;
   Duration? lastSeek;
+  Completer<void>? holdPlay;
 
   @override
   Stream<Duration> get positions => positionsController.stream;
@@ -58,6 +60,7 @@ class _Player implements TalkReplayAudioPlayer {
   Future<void> play() async {
     plays += 1;
     statesController.add(TalkReplayPlayerState.playing);
+    if (holdPlay != null) await holdPlay!.future;
   }
 
   @override
@@ -186,4 +189,123 @@ void main() {
       throwsFormatException,
     );
   });
+  test('paused expired playback reacquires server permission and seeks to saved position', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 5));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    await session.seekTo(.5);
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.paused);
+    clock = clock.add(const Duration(minutes: 6));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+
+    await session.toggle();
+
+    expect(transport.loads, 2);
+    expect(player.loads, 2);
+    expect(player.lastSeek, const Duration(minutes: 1));
+    expect(player.plays, 2);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.playing);
+    await session.close();
+  });
+
+  test('server revocation after signed link expiry fails closed without replaying cached URL', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 2));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 4));
+    transport.fail = true;
+
+    await session.toggle();
+
+    expect(transport.loads, 2);
+    expect(player.plays, 1);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    transport.fail = false;
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    await session.retry();
+    expect(player.plays, 2);
+    await session.close();
+  });
+
+  test('expired credentials are never handed to the audio player', () async {
+    final clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()..expiry = clock.add(const Duration(seconds: 10));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.loads, 0);
+    expect(player.plays, 0);
+    await session.close();
+  });
+
+  test('seek on expired authorization refreshes but never autoplays a paused recording', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 2));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 4));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    await session.seekTo(.25);
+    expect(transport.loads, 2);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(player.plays, 1);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.paused);
+    await session.close();
+  });
+
+  test('playback does not lock pause while the audio player future is pending', () async {
+    final transport = _Transport();
+    final player = _Player()..holdPlay = Completer<void>();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-1', transport: transport, player: player,
+    );
+    await session.toggle();
+    await session.toggle();
+    expect(player.pauses, 1);
+    player.holdPlay!.complete();
+    await session.close();
+  });
+
+  test('only HTTPS credential URLs without embedded user information or fragments are accepted', () {
+    for (final url in [
+      'http://signed.example/replay.ogg',
+      'https://user:pass@signed.example/replay.ogg',
+      'https://signed.example/replay.ogg#fragment',
+      'file:///recording.ogg',
+    ]) {
+      expect(
+        () => TalkReplayPlaybackCredentials.fromJson({
+          'url': url,
+          'expiresAt': '2026-10-07T12:00:00Z',
+          'contentType': 'audio/ogg',
+        }),
+        throwsFormatException,
+      );
+    }
+  });
+
 }
