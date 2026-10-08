@@ -66,3 +66,9 @@
 - Additional exclusive paths: `services/gateway/src/talk_moderation/livekit_admin.ts`, `services/gateway/src/talk_moderation/livekit_admin.test.ts`.
 - Current LiveKit `RemoveParticipant` accepts `revoke_token_ts` as Unix milliseconds. Existing code sends `Math.floor(now().getTime()/1000)` (seconds), which is a 1970-era timestamp under the documented contract, and may not revoke issued Cloud credentials. PR #443 R15 and other active PRs do not change these files.
 - Correct only this exact time unit and assert it in provider-contract tests; reuse the configured moderation adapter, no migrations/composition changes. Production revocation remains unverified.
+
+### LiveKit revocation unit checkpoint
+
+- `f70ddcd0`: existing moderation `RemoveParticipant` sends `revoke_token_ts: now().getTime()` (milliseconds), consistent with LiveKit's documented protobuf field. Previously emitted seconds.
+- `def9b6eb`: regression validates the exact millisecond value under an injected clock and ensures an absolute modern Unix timestamp; does not claim runtime Cloud revocation is tested.
+- Current production main at `ae8094129` does not contain this correction. No production config changed. Executable Vitest/LiveKit account test and Cloud versus self-hosted token-replay qualification are still required before merge.
