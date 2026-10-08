@@ -64,5 +64,6 @@
   "languageSystem": "Yi amfani da harshen na'ura",
   "languageSaveFailed": "Ba a iya adana zaɓin harshe ba. Sake gwadawa.",
   "languagePreviewNotice": "Har yanzu ba a fassara wasu shafuka gaba ɗaya ba.",
-  "languageHausaUnavailable": "Ana kammala tallafin harshen Hausa na manhaja."
+  "languageHausaUnavailable": "Ana kammala tallafin harshen Hausa na manhaja.",
+  "languageSelected": "An zaɓa"
 }
