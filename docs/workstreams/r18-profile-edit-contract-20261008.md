@@ -24,3 +24,13 @@ Scope refinement: `/profile` currently maps to SettingsScreen, not a profile edi
 - Authenticated public-profile setup persists in `talks.public_profiles`; device, provider, CI and real deployment qualification remain pending. No runtime test or APK build was executed here.
 
 Last repository-visible work: commits through `3cd6929` on this branch. Tests authored, not run. Claim may be reclaimed after five inactive minutes under MULTI-WINDOW-WORK.md.
+
+## Post-review corrections and updated integration checkpoint
+
+Branch regression review found malformed SQL placeholders and a broken Dart handle validator; both were corrected before integration (commits `5a09f83`, `06b73ab`). The SQL test now asserts exact `$3/$4` bound values and the complete Dart widget source was read back with a single Save button and valid regex. Do not use commits before these fixes as a release candidate.
+
+A server timeout cannot prove a write was rejected. The editor now reports unknown save status honestly and offers an explicit server reload. 409 handle collision/conflict and expired authorization get distinct feedback. A signed-in owner can read their own moderation-restricted public record for editing, without widening public discovery visibility (commits `027e711`, `ba18bde`, `b60e7c4`, `86643c9`).
+
+**Integration:** PR #419 remains a mergeable DRAFT against a moving main; main now includes R02/R03/R04/R17/theme/localization/billing/release-signing integrations. The changed-file diff has been inspected; no overlap with the R17 shell file changes. GitHub Actions Foundation CI and Mobile Build report failure with execution jobs showing no steps, so no application test success or failure can be inferred. Tests/build/handset/deployment remain NOT VERIFIED. `main` is still the only source for release APKs.
+
+**Next actionable R18 lane:** build a canonical persistent media service for safe avatar upload/crop/replace (strip metadata, validate size/mime, delete/reconcile orphaned media), then investigate linked handle migrations/account public-name synchronization and provide full device acceptance. Do not claim all R18 complete from this sublane.
