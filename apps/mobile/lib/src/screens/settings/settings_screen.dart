@@ -277,14 +277,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 leading: Icon(Icons.info_outline, color: u.brand),
                 title: const Text('About Masanawa'),
-                subtitle: const Text('Personal AI Twins and Masanawa services'),
+                subtitle: const Text('Live Talks, AI Experts, Twins and services'),
                 onTap: () => showAboutDialog(
                   context: context,
                   applicationName: 'Masanawa',
                   applicationVersion: '1.0.0',
                   children: const [
                     Text(
-                      'Create your Twin, explore other Twins and use Masanawa services from one simple app.',
+                      'Join human-hosted live Talks, bring Masanawa Experts and Twins into conversations, and use Billing and Crypto privately.',
                     ),
                   ],
                 ),
