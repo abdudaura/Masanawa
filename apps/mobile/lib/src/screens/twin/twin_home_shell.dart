@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../agents/agent_directory.dart';
+import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/twin_directory_state.dart';
@@ -202,14 +203,40 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
             _PublicTwinsPanel(
               onOpenTwin: (publicId) => context.push(
                 '/persona/' + Uri.encodeComponent(publicId)),
-              onChatTwin: (characterId) => context.push(
-                '/chat/' + Uri.encodeComponent(characterId)),
+              onChatTwin: _openPublicTwinChat,
               onOpenMyTwin: () => context.push('/my-twin'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Public discovery does not itself prove an authenticated private agent
+  /// workspace exists. Check the canonical roster, then provide recovery
+  /// instead of opening a chat that cannot resolve its character.
+  Future<void> _openPublicTwinChat(TwinDirectoryEntry twin) async {
+    var agent = ref.read(agentDirectoryProvider).find(twin.characterId);
+    if (agent == null) {
+      await ref.read(agentDirectoryProvider.notifier).refresh();
+      if (!mounted) return;
+      agent = ref.read(agentDirectoryProvider).find(twin.characterId);
+    }
+    if (!mounted) return;
+    if (agent == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Private Talk with ${twin.displayName} is not available yet.'),
+          action: SnackBarAction(
+            label: 'View profile',
+            onPressed: () => context.push(
+              '/persona/' + Uri.encodeComponent(twin.publicId)),
+          ),
+        ),
+      );
+      return;
+    }
+    context.push('/chat/' + Uri.encodeComponent(agent.characterId));
   }
 
   Widget _wallet() => WalletScreen(
@@ -375,7 +402,7 @@ class _PublicTwinsPanel extends ConsumerStatefulWidget {
   });
 
   final ValueChanged<String> onOpenTwin;
-  final ValueChanged<String> onChatTwin;
+  final ValueChanged<TwinDirectoryEntry> onChatTwin;
   final VoidCallback onOpenMyTwin;
 
   @override
@@ -473,7 +500,7 @@ class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
                             overflow: TextOverflow.ellipsis),
                     onTap: () => widget.onOpenTwin(twin.publicId),
                     trailing: TextButton(
-                      onPressed: () => widget.onChatTwin(twin.characterId),
+                      onPressed: () => widget.onChatTwin(twin),
                       child: const Text('Talk'),
                     ),
                   ),
