@@ -86,5 +86,7 @@ abstract interface class TalkSafetyTransport {
     required String targetId,
     required TalkSafetyReportReason reason,
     String? detail,
+    /// Stable across an uncertain response so retry reuses the Postgres key.
+    String? clientRequestId,
   });
 }
