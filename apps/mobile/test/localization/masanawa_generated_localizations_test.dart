@@ -9,6 +9,9 @@ void main() {
     final ha = await AppLocalizations.delegate.load(const Locale('ha'));
     final ar = await AppLocalizations.delegate.load(const Locale('ar'));
     expect(en.appTitle, 'Masanawa');
+    expect(en.splashTagline, 'Live conversations with people and AI');
+    expect(ha.splashTagline, contains('mutane'));
+    expect(ar.splashTagline, contains('محادثات'));
     expect(ha.startTalk, 'Fara hira');
     expect(ar.wallet, 'المحفظة');
     expect(en.talk, 'Talk');
