@@ -24,6 +24,7 @@ interface SeatRow extends Record<string, unknown> {
   display_name: string;
   is_host: boolean;
   admitted_at: Date | string;
+  removed_at?: Date | string | null;
 }
 interface ReactionRow extends Record<string, unknown> {
   reaction: string;
@@ -106,7 +107,7 @@ export function createPostgresTalkAiStageEventRepository(
 
       // All reads must remain scoped by tenant AND Talk. These queries return
       // only bounded public projections, never whole rows or JSON payloads.
-      const [seats, reactions, hands, questions, polls] = await Promise.all([
+      const [seats, departures, reactions, hands, questions, polls] = await Promise.all([
         pool.query<SeatRow>(
           "SELECT s.participant_id,s.kind,s.display_name,s.is_host,s.admitted_at " +
           "FROM talks.talk_seats s JOIN talks.talks t " +
@@ -117,6 +118,18 @@ export function createPostgresTalkAiStageEventRepository(
           "AND sp.subject_user_id=s.user_id AND sp.blocked=true) " +
           "ORDER BY s.is_host DESC,s.admitted_at ASC LIMIT 6",
           [tenantId, talkId],
+        ),
+        pool.query<SeatRow>(
+          "SELECT s.participant_id,s.kind,s.display_name,s.is_host,s.admitted_at,s.removed_at " +
+          "FROM talks.talk_seats s JOIN talks.talks t " +
+          "ON t.tenant_id=s.tenant_id AND t.talk_id=s.talk_id " +
+          "WHERE s.tenant_id=$1 AND s.talk_id=$2 AND s.active=false " +
+          "AND s.removed_at <= $3 AND s.removed_at >= $4 " +
+          "AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp " +
+          "WHERE sp.tenant_id=s.tenant_id AND sp.viewer_user_id=t.host_user_id " +
+          "AND sp.subject_user_id=s.user_id AND sp.blocked=true) " +
+          "ORDER BY s.removed_at DESC LIMIT 8",
+          scope,
         ),
         pool.query<ReactionRow>(
           "SELECT p.reaction,COUNT(*)::integer AS total,MAX(p.reaction_updated_at) AS latest " +
@@ -182,6 +195,19 @@ export function createPostgresTalkAiStageEventRepository(
           role: seat.kind,
           action: "joined",
         })),
+        ...departures.rows.flatMap((seat): TalkStageEvent[] => (
+          seat.removed_at
+            ? [{
+                ...common,
+                eventId: "seat-departed:" + seat.participant_id + ":" + timestamp(seat.removed_at),
+                occurredAt: timestamp(seat.removed_at),
+                actorName: seat.display_name,
+                kind: "seat" as const,
+                role: seat.kind,
+                action: "left" as const,
+              }]
+            : []
+        )),
         ...reactions.rows.map((reaction): TalkStageEvent => ({
           ...common,
           eventId: "reaction:" + reaction.reaction + ":" + timestamp(reaction.latest),
