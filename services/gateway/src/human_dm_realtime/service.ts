@@ -52,17 +52,20 @@ export function createHumanDmRealtimeService(input: {
       const principal = await input.authorizer.authorize({ authorizationHeader });
       const tenantId = principal.tenantId, userId = principal.userId;
       const after = validCursor(cursor ?? "0");
+      const initialSnapshot = cursor === undefined;
       const { size, duration } = bounds(limit,waitMs);
       if (shouldStop?.()) {
-        return { events:[],nextCursor:after,hasMore:false,resetRequired:false };
+        return { events:[],nextCursor:after,hasMore:false,resetRequired:initialSnapshot };
       }
       const deadline = Date.now() + duration;
       while (true) {
         const result = await input.repository.sync({
           tenantId,userId,after,limit:size,
         });
-        if (shouldStop?.() || result.events.length ||
-            result.resetRequired || Date.now() >= deadline) return result;
+        if (shouldStop?.() || result.events.length || initialSnapshot ||
+            Date.now() >= deadline) {
+          return { ...result, resetRequired: initialSnapshot };
+        }
         await sleep(Math.min(750,Math.max(1,deadline-Date.now())));
       }
     },
