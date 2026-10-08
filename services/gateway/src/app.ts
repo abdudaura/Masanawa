@@ -66,6 +66,8 @@ import type { BillingFinancialService } from "./financial_billing.js";
 import type { BillingWalletService } from "./billing_wallet.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
+import { registerInternalCryptoTransferRoutes } from "./internal_crypto_transfer_routes.js";
+import type { InternalCryptoTransferService } from "./internal_crypto_transfer.js";
 import {
   registerCustomerChannelRoutes,
   type CustomerChannelOptions,
@@ -122,6 +124,7 @@ export interface GatewayAppOptions {
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
   readonly financial?: FinancialService;
+  readonly internalCryptoTransfers?: InternalCryptoTransferService;
   readonly customerChannels?: CustomerChannelOptions;
   readonly linkedWhatsApp?: Readonly<{
     controller: LinkedWhatsAppController;
@@ -1146,6 +1149,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         return { closed: true as const };
       },
     );
+  }
+
+  if (options.internalCryptoTransfers) {
+    registerInternalCryptoTransferRoutes(app, options.internalCryptoTransfers);
   }
 
   if (options.financial) {
