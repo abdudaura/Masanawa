@@ -20,7 +20,7 @@ class AgentListScreen extends ConsumerWidget {
     final directory = ref.watch(agentDirectoryProvider);
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(
         backgroundColor: u.surfaceCard,
         elevation: 0,
