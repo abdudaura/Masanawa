@@ -28,9 +28,9 @@ class _HumanContactsScreenState extends ConsumerState<HumanContactsScreen> {
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     if (session is! SessionSignedIn) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Human contacts')),
-        body: Center(child: Text('Sign in to manage private contacts.')),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Human contacts')),
+        body: const Center(child: Text('Sign in to manage private contacts.')),
       );
     }
     final value = ref.watch(humanContactsProvider);
