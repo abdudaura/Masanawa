@@ -69,6 +69,13 @@ export interface TalkProfileRepository {
     viewerUserId: string;
     userId: string;
   }>): Promise<HumanProfileView | null>;
+  createOwnHuman(input: Readonly<{
+    tenantId: string;
+    userId: string;
+    handle: string;
+    displayName: string;
+    bio: string;
+  }>): Promise<HumanProfileView | null>;
   /** Only the authenticated owner may change public display fields. */
   updateOwnHuman(input: Readonly<{
     tenantId: string;
