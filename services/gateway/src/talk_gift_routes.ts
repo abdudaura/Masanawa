@@ -52,7 +52,7 @@ export function registerTalkGiftRoutes(
         talkId: params.talkId,
         requestId: body.requestId,
         amountCredits: body.amountCredits,
-        catalogItemId: body.catalogItemId,
+        ...(body.catalogItemId !== undefined ? { catalogItemId: body.catalogItemId } : {}),
       });
     },
   );
