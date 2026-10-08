@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import { registerTalkLiveRoutes } from "./talk_live_routes.js";
 import { createTalkLiveService } from "./talk_live/service.js";
 import type { TalkLiveRepository, TalkLiveStateView } from "./talk_live/model.js";
+import type { TalkMediaTokenIssuer } from "./talk_live/livekit_media.js";
 
 function repository(): TalkLiveRepository {
   let hostConnected = false;
@@ -76,10 +77,11 @@ function repository(): TalkLiveRepository {
   };
 }
 
-function app(userId: "user_host" | "user_listener", liveRepo: TalkLiveRepository = repository()) {
+function app(userId: "user_host" | "user_listener", liveRepo: TalkLiveRepository = repository(), mediaTokens?: TalkMediaTokenIssuer) {
   const server = Fastify();
   const service = createTalkLiveService({
     repository: liveRepo,
+    ...(mediaTokens ? { mediaTokens } : {}),
     authorizer: {
       async authorize({ authorizationHeader }) {
         if (authorizationHeader !== "Bearer ok") {
@@ -191,6 +193,47 @@ describe("Talk live runtime API", () => {
       method: "POST",
       url: "/talks/talk_1/live/connect",
       headers: { authorization: "Bearer ok" },
+    });
+    expect(response.statusCode).toBe(500);
+    await server.close();
+  });
+
+  it("fails closed with retryable 503 when LiveKit Host eviction cannot be verified", async () => {
+    const server = app("user_host", repository(), {
+      async mint() {
+        throw new Error("talks.live.media_admin_list_failed");
+      },
+    });
+    await server.inject({
+      method: "POST",
+      url: "/talks/talk_1/live/connect",
+      headers: { authorization: "Bearer ok" },
+    });
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_1/live/media-token",
+      headers: { authorization: "Bearer ok" },
+      payload: { sessionId: "talk-live_test-session" },
+    });
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toMatchObject({
+      statusCode: 503,
+      message: "talks.live.media_unavailable",
+    });
+    await server.close();
+  });
+
+  it("does not turn unrelated token-signing failures into false provider outages", async () => {
+    const server = app("user_host", repository(), {
+      async mint() {
+        throw new TypeError("unexpected_signing_failure");
+      },
+    });
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_1/live/media-token",
+      headers: { authorization: "Bearer ok" },
+      payload: { sessionId: "talk-live_test-session" },
     });
     expect(response.statusCode).toBe(500);
     await server.close();
