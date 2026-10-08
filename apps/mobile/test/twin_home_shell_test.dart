@@ -209,6 +209,13 @@ void main() {
     expect(find.byTooltip('Start Talk'), findsOneWidget);
     expect(find.byTooltip('Activity'), findsOneWidget);
     expect(find.byTooltip('Profile'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byTooltip('Profile'),
+        matching: find.text('U'),
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
