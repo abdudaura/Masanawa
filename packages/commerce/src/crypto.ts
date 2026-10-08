@@ -8,7 +8,7 @@ import {
   type UserId,
 } from "@masanawa/contracts";
 
-export type CryptoOperation = "deposit" | "withdraw" | "convert" | "buy";
+export type CryptoOperation = "deposit" | "withdraw" | "convert" | "buy" | "transfer";
 export type CryptoWithdrawalFeePayer = "user" | "platform";
 export type CryptoIntentStatus =
   | "quoted"
@@ -51,6 +51,7 @@ export interface CryptoIntent {
   readonly providerNetworkFee?: string | null;
   readonly withdrawalFeePayer?: CryptoWithdrawalFeePayer | null;
   readonly providerDispatchStartedAt: Instant | null;
+  readonly transferDirection?: "in" | "out" | null;
   readonly status: CryptoIntentStatus;
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
@@ -77,6 +78,8 @@ export interface CryptoLedgerEntry {
     | "conversion-release"
     | "fiat-purchase-credit"
     | "fiat-purchase-refund"
+    | "internal-transfer-in"
+    | "internal-transfer-out"
     | "adjustment";
   readonly requestId: RequestId;
   readonly providerReference: string | null;
@@ -132,7 +135,7 @@ function optional(value: string | null, code: string, max = 512): string | null 
 export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
   if (input.schemaVersion !== 1) throw new TypeError("crypto.intent.schema.invalid");
   const operation = input.operation;
-  if (!["deposit", "withdraw", "convert", "buy"].includes(operation)) {
+  if (!["deposit", "withdraw", "convert", "buy", "transfer"].includes(operation)) {
     throw new TypeError("crypto.intent.operation.invalid");
   }
   const status = input.status;
@@ -141,6 +144,17 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     "failed","refunded","expired","manual_review",
   ].includes(status)) throw new TypeError("crypto.intent.status.invalid");
   const amount = normalizeCryptoAmount(input.amount);
+  const transferDirection = input.transferDirection ?? null;
+  if (operation === "transfer" && (input.status !== "succeeded" ||
+      (transferDirection !== "in" && transferDirection !== "out") ||
+      input.providerPaymentId !== null || input.providerPayoutId !== null ||
+      input.payAddress !== null || input.providerPayAmount !== null ||
+      input.providerDispatchStartedAt !== null)) {
+    throw new TypeError("crypto.transfer.intent_shape.invalid");
+  }
+  if (operation !== "transfer" && transferDirection !== null) {
+    throw new TypeError("crypto.transfer.direction.unexpected");
+  }
   const destinationAddress = optional(input.destinationAddress, "crypto.destination.invalid", 512);
   if (operation === "withdraw" && destinationAddress === null) {
     throw new TypeError("crypto.withdraw.destination.required");
@@ -274,6 +288,7 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     withdrawalFeePayer,
     providerDispatchStartedAt:
       input.providerDispatchStartedAt === null ? null : toInstant(input.providerDispatchStartedAt),
+    transferDirection,
     status,
     createdAt,
     updatedAt,
