@@ -36,3 +36,11 @@
 - `25f73616`: a late new transfer remains credited without executing an expired quote, while an already-reserved operation remains eligible for idempotent reconciliation.
 - **Not yet executed:** workspace Vitest/typecheck or PostgreSQL integration; Postgres test suite is skipped without `MASANAWA_TEST_DATABASE_URL` by existing repository convention. Runner allocation failures mean CI is not evidence of functional failure or success.
 - **Remaining R05**: crash while provider account creation is in flight still needs provider-specific duplicate-txRef qualification/recovery; timed sweeper and mobile restoration (including no empty account-number copy) require separate end-to-end evidence; any schema-level unique index needs an audit of historical duplicate pending intents before migration.
+
+## Final review checkpoint for this increment
+
+- `e5e71d8b` extends Fastify route regression coverage to the actual wallet-funding callback: a failed continuation receives 503 and a successfully resumed duplicate gets HTTP 200 only after processing.
+- `f525dfc9` evaluates active-funding expiry using PostgreSQL `statement_timestamp()`, independent of caller-provided timestamps.
+- Foundation CI run `37712108680` completed with failure but job `113100136711` had no steps or log URL. This is not evidence of an app-level test assertion failure.
+- **Code state:** persisted quote-scoped reuse and billing webhook recovery implemented, unit and DB integration tests committed. **Verification state:** workspace typecheck, Vitest, DB concurrency integration, real provider behavior and deployment remain UNVERIFIED. No production activity undertaken.
+- Latest source ownership remains services/gateway billing-wallet and billing-routes, adapters/storage/postgres ngn-wallet, and three focused tests. Additional R05 wallet/mobile reconciliation work requires a separately coordinated follow-on claim; no shared migration edited.
