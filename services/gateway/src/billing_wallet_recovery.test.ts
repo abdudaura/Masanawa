@@ -111,13 +111,15 @@ describe("R05 credit-before-bill crash recovery", () => {
 
   it("does not re-dispatch a finalized or unconfirmed bill", async () => {
     const t = setup();
-    t.setQuote({ ...(await t.readQuote()), state: "succeeded" } as BillingQuote);
+    const existing = await t.readQuote();
+    if (!existing) throw new Error("missing fixture quote");
+    t.setQuote({ ...existing, state: "succeeded" });
     await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toMatchObject({
       duplicate: true, resumed: false,
     });
     expect(t.purchase).not.toHaveBeenCalled();
 
-    t.setQuote({ ...(await t.readQuote()), state: "confirmed", confirmedAt: null } as BillingQuote);
+    t.setQuote({ ...existing, state: "confirmed", confirmedAt: null });
     await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toMatchObject({
       duplicate: true, resumed: false,
     });
