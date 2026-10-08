@@ -338,4 +338,93 @@ describe("production platform Agent bootstrap", () => {
     expect(f.profiles).toHaveLength(1);
   });
 
+  it("reuses a canonical presentation left before profile creation", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const f = fixture();
+    const existingId = createCanonicalId("character");
+    f.presentations.push({
+      schemaVersion: 1,
+      tenantId,
+      characterId: existingId,
+      characterVersionId: createCanonicalId("character-version"),
+      displayName: "Gwani",
+      roleLabel: "Masanawa Support",
+      about: "Recovered after failure",
+      greeting: null,
+      visibleInUserApp: true,
+      sortOrder: 0,
+      revision: 1,
+    });
+    const result = await ensureDefaultPlatformAgents({
+      tenantId,
+      identity: f.identity,
+      presentations: f.presentationRepository,
+      profiles: f.profileRepository,
+      skillAssignments: f.assignmentRepository,
+      skillDistribution: f.distributionRepository,
+    });
+    expect(result.changed).toBe(true);
+    expect(result.supportAgentCount).toBe(2);
+    expect(f.identity.provision).toHaveBeenCalledTimes(1);
+    expect(f.presentations).toHaveLength(2);
+    expect(f.profiles.find((p) => p.characterId === existingId)).toMatchObject({
+      voiceName: "Bodi", defaultForNewUsers: true,
+    });
+    expect(f.assignments.has(existingId)).toBe(true);
+  });
+
+  it("never upgrades a similarly named admin specialist into a support profile", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const f = fixture();
+    const gwaniId = createCanonicalId("character");
+    f.presentations.push({
+      schemaVersion: 1,
+      tenantId,
+      characterId: gwaniId,
+      characterVersionId: createCanonicalId("character-version"),
+      displayName: "Gwani",
+      roleLabel: "Masanawa Support",
+      about: "Support",
+      greeting: null,
+      visibleInUserApp: true,
+      sortOrder: 0,
+      revision: 1,
+    });
+    f.profiles.push({
+      schemaVersion: 1,
+      tenantId,
+      characterId: gwaniId,
+      supportAgent: true,
+      defaultForNewUsers: true,
+      voiceProvider: "gemini",
+      voiceName: "Bodi",
+      revision: 1,
+    });
+    f.presentations.push({
+      schemaVersion: 1,
+      tenantId,
+      characterId: createCanonicalId("character"),
+      characterVersionId: createCanonicalId("character-version"),
+      displayName: "Gwana",
+      roleLabel: "Custom Admin Specialist",
+      about: "Independent specialist",
+      greeting: null,
+      visibleInUserApp: true,
+      sortOrder: 1,
+      revision: 2,
+    });
+    const result = await ensureDefaultPlatformAgents({
+      tenantId,
+      identity: f.identity,
+      presentations: f.presentationRepository,
+      profiles: f.profileRepository,
+      skillAssignments: f.assignmentRepository,
+      skillDistribution: f.distributionRepository,
+    });
+    expect(result.changed).toBe(false);
+    expect(result.supportAgentCount).toBe(1);
+    expect(f.profiles).toHaveLength(1);
+    expect(f.identity.provision).not.toHaveBeenCalled();
+  });
+
 });
