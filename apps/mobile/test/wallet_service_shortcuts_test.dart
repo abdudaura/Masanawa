@@ -1,8 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:masanawa/src/commerce/wallet_models.dart';
+import 'package:masanawa/src/state/wallet_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/wallet/wallet_screen.dart';
 
+class _UnavailableWalletController extends WalletController {
+  @override
+  Future<WalletView?> build() async => throw StateError('offline');
+}
+
 void main() {
+  testWidgets('service entry survives a wallet balance outage', (tester) async {
+    final intents = <String>[];
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        walletProvider.overrideWith(_UnavailableWalletController.new),
+      ],
+      child: MaterialApp(
+        home: WalletScreen(onOpenBillingService: intents.add),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Wallet balances are unavailable right now.'), findsOneWidget);
+    expect(find.text('Data bundles'), findsOneWidget);
+    expect(find.text('Airtime'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.text('Data bundles'));
+    expect(intents, ['data']);
+    expect(tester.takeException(), isNull);
+  });
+
+
   testWidgets('R17 orders qualified services and passes exact category intents',
       (tester) async {
     final selected = <String>[];
