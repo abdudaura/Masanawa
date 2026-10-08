@@ -103,7 +103,7 @@ export function createAccountDeletionService(input: Readonly<{
         requestId: randomUUID(),
         now: at,
       });
-      if (request.phase !== "requested") {
+      if (request.phase !== "requested" && request.phase !== "failed") {
         return { request: publicStatus(request), verificationChannel: null, verificationSent: false };
       }
       const delivery = identity.profile.email && input.email
