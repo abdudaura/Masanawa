@@ -88,7 +88,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(repository.writes, 1);
     expect(repository.calls, greaterThanOrEqualTo(2));
-    expect(find.textContaining('Skill removed and confirmed'), findsOneWidget);
+    expect(repository.removed, isTrue);
+    expect(find.text('No skills assigned'), findsOneWidget);
   });
 
   testWidgets('conflict discards stale catalog and requires manual refresh',
