@@ -101,3 +101,8 @@ These are routing assignments, not root-cause findings; inspect real behavior be
 5. Register and qualify C07 #480, then final C08/R17 #493 root integration with exactly Talks/Chats/Assistant/Wallet/Agents. Root remains one owner.
 6. C06 #487 is elected source over yielding #490; keep 0110, quote/risk/step-up/privacy/deletion and canonical money evidence explicit. Do not enable transfers on partial checks.
 7. Close remaining R lanes only with SHA-specific local/DB/device/provider evidence; distinguish unit/widget pass from DONE. No merge/deploy in this checkpoint.
+
+
+### Build qualification checkpoint
+Gateway production TypeScript build passed: `node node_modules/typescript/bin/tsc -p services/gateway/tsconfig.build.json` (executed from gateway directory with absolute compiler path) against backend integration fd53a7e. This excludes stale test typing; typecheck remains failing.
+Full `pnpm build` did not qualify: initial scratch dependency symlink and nested pnpm11 path issues corrected locally, then recursive Next builds reject recovered apps node_modules symlinks outside filesystem root; recursive run cancels other tasks. This is recovered-checkout build infrastructure, not evidence of a complete repository product regression or a passing release build. Do not merge/deploy based on targeted Gateway build.
