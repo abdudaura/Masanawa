@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/screens/chat/components/ai_persona_status_label.dart';
+import 'package:masanawa/src/screens/chat/components/ai_persona_status_label.dart';
 
 void main() {
   testWidgets('private persona header identifies AI when available', (tester) async {
