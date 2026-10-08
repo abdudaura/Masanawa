@@ -1,5 +1,8 @@
 # Communications, In-App Transfers, and Cross-App AI Extension
 
+> **External messaging UX research (2026-10-08):** [MESSAGING-UX-REFERENCE-AUDIT.md](MESSAGING-UX-REFERENCE-AUDIT.md) documents Signal/Flyer Chat/GBMods patterns, strict reuse/licensing limits, composer/offline/voice/performance criteria and executable proof for C02–C05/C07/C08. This is implementation guidance within existing R/C gates, never evidence of completion, a competing shell or authorization to overlap a live workstream.
+
+
 ## Owner requirements traceability: cross-feature obligations (2026-10-08)
 
 C01–C08 implement specific segments of the broader owner's discussion; **read `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md`** for the complete agreed interactions and their exact R-task dependencies. In particular, **J03/J04/J10** require human DM permissions, fast cached server-backed history, voice notes and robust delivery; **J07** one Gwani/Gwana Assistant chat with in-chat switch and genuine authorized cross-app tools; **J09** custody-backed internal crypto transfers initiated from DM/Wallet/Assistant but settled only by the existing financial ledger; **J01/J05/J06** ensure public audio creator economy and dedicated Agents/Twins do not regress; **J11** prevents private/public audio, message and money leakage. Do not interpret "like WhatsApp" as approval for groups, direct calling or E2EE claims, or "global crypto" as unqualified fiat remittance. All earlier R01–R19 and final five-tab contracts remain binding; these trace IDs are not a second backlog.
