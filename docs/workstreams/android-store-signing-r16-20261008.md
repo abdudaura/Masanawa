@@ -42,3 +42,9 @@
 - Job `113095607911` reported `completed/failure` but the GitHub steps endpoint returned an **empty steps array**, and job-log retrieval returned `BlobNotFound` (404). No shell-test assertion failure is evidenced.
 - `Foundation CI` run `37710672680` and `Mobile Build` run `37710672684` also reported failure on that head; investigate runner allocation before interpreting as code failures.
 - Status: **CI failed / root cause unconfirmed**. Do not merge as verified. Rerun or inspect actual job logs and compile a signed artifact before release.
+
+## Additional integrity hardening
+
+- Commit `baa93149`: verify verbose JAR signing output and reject added unsigned entries in an otherwise signed bundle (signature validity alone does not establish coverage of every payload).
+- Commit `3ca3f763`: add regression case for appended unsigned payload content.
+- This remains unverified until the actual test job executes; regression test expected to enforce fail-closed behavior. No release artifact or store-ready signing evidence exists.
