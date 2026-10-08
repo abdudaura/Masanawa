@@ -740,3 +740,8 @@ cross-surface propagation. Do not count a decorative edit icon as a working feat
 An accessible private/public label resolves the shared word Talk. Keep existing routes
 for Activity/Profile and deep-link targets. Avatar removal yields a fallback, not a broken
 image. Full persona behavior acceptance is R19/DEFAULT-AI-PERSONAS.md.
+
+## End-state UX placement review (pending owner design decision)
+
+The cross-feature screen placement, route/identity namespace, notification/FAB/conflict register, all user journey entry points and acceptance are documented in `END-TO-END-UX-ARCHITECTURE.md`. It recommends four eventual destinations **Home · Chats · Wallet · Assistant** with immediate People/Agents/Twins access inside Chats; this is a **recommendation, not yet approval to supersede** the existing S01–S107/current root shell contract. In particular, current legacy `/chats` means private AI and `/chat/:id` identifies a character; no C02 owner may repurpose those URLs for a human DM. A new message composer cannot inherit Start *public* Talk FAB. Keep the owner sign-off and R17/C08 integration/route mapping as one gate so no throwaway navigation is built.
+
