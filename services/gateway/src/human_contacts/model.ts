@@ -1,6 +1,10 @@
 /** C01 human-only contact discovery. No PersonaId or public Talk membership. */
 export type HumanContactPolicy = "anyone" | "requests" | "nobody";
 export type HumanContactStatus = "none" | "incoming" | "outgoing" | "accepted" | "declined";
+export interface HumanContactPreferences {
+  readonly policy: HumanContactPolicy;
+  readonly discoverableByHandle: boolean;
+}
 
 export interface HumanContact {
   readonly userId: string;
@@ -22,8 +26,8 @@ export interface HumanContactRequest {
 export interface HumanContactRepository {
   /** Query is an exact normalized public handle. Missing, blocked and hidden users are indistinguishable. */
   lookup(input: { readonly tenantId: string; readonly viewerId: string; readonly handle: string }): Promise<HumanContact | null>;
-  getOwnPolicy(input: { readonly tenantId: string; readonly userId: string }): Promise<HumanContactPolicy>;
-  setOwnPolicy(input: { readonly tenantId: string; readonly userId: string; readonly policy: HumanContactPolicy }): Promise<HumanContactPolicy>;
+  getOwnPreferences(input: { readonly tenantId: string; readonly userId: string }): Promise<HumanContactPreferences>;
+  setOwnPreferences(input: { readonly tenantId: string; readonly userId: string; readonly policy?: HumanContactPolicy; readonly discoverableByHandle?: boolean }): Promise<HumanContactPreferences>;
   /** All admission checks and mutation must be atomic on the database side. */
   request(input: { readonly tenantId: string; readonly requesterId: string; readonly handle: string }): Promise<"accepted" | "pending" | "existing" | "unavailable">;
   respond(input: { readonly tenantId: string; readonly recipientId: string; readonly requesterId: string; readonly accept: boolean }): Promise<boolean>;
