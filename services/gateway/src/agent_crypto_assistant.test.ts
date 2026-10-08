@@ -90,7 +90,8 @@ function fixture(kind: "convert" | "withdraw" = "convert") {
   const pending: CryptoChatActionRepository = {
     put: vi.fn(async (next: CryptoChatAction) => { current = next; claimed = false; }),
     readCurrent: vi.fn(async () => current),
-    claim: vi.fn(async (_, id) => {
+    claim: vi.fn(async (_scope: Parameters<CryptoChatActionRepository["claim"]>[0],
+      id: Parameters<CryptoChatActionRepository["claim"]>[1]) => {
       if (!current || current.requestId !== id || claimed) return null;
       claimed = true;
       return { ...current, state: "executing" as const };
