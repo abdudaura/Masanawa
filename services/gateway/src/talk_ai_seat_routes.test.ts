@@ -9,7 +9,7 @@ const tenantId = createCanonicalId("tenant");
 const viewerId = createCanonicalId("user");
 const hostId = createCanonicalId("user");
 
-function repository(): TalkAiSeatRepository {
+function repository(twinOwnerUserId = createCanonicalId("user")): TalkAiSeatRepository {
   return {
     async listCandidates() {
       return [
@@ -31,7 +31,7 @@ function repository(): TalkAiSeatRepository {
           avatarUrl: null,
           topics: ["Culture"],
           isAvailable: true,
-          twinOwnerUserId: createCanonicalId("user"),
+          twinOwnerUserId,
         },
       ];
     },
@@ -102,10 +102,10 @@ function repository(): TalkAiSeatRepository {
   };
 }
 
-function app(authenticated = true) {
+function app(authenticated = true, twinOwnerUserId?: string) {
   const server = Fastify();
   const service = createTalkAiSeatService({
-    repository: repository(),
+    repository: repository(twinOwnerUserId),
     pricing: {
       expertPriceCredits: 100,
       twinPriceCredits: 120,
@@ -153,13 +153,27 @@ describe("Talk AI Seat API", () => {
         kind: "expert",
         seatFeeLabel: "100 Credits",
         isAvailable: true,
+        isOwnedByViewer: false,
       }),
       expect.objectContaining({
         personaId: "twin_amira",
         kind: "twin",
         seatFeeLabel: "120 Credits",
+        isOwnedByViewer: false,
       }),
     ]);
+  });
+
+  it("marks only a Twin owned by the authenticated viewer as mine", async () => {
+    const response = await app(true, viewerId).inject({
+      method: "GET",
+      url: "/talks/talk_1/ai-seats",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(response.statusCode).toBe(200);
+    const rows = response.json() as Array<{ kind: string; isOwnedByViewer: boolean }>;
+    expect(rows.find((row) => row.kind === "expert")?.isOwnedByViewer).toBe(false);
+    expect(rows.find((row) => row.kind === "twin")?.isOwnedByViewer).toBe(true);
   });
 
   it("creates a sponsored quote that explicitly requires Host approval", async () => {
