@@ -20,11 +20,16 @@ export function registerResearchRoutes(app: FastifyInstance, research: ResearchS
     const query = normalizeResearchQuery(body.query);
     const mode = assertMode(body.mode);
     const limit = assertLimit(body.limit);
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    if (request.raw.aborted) abort();
+    request.raw.once("aborted", abort);
+    reply.raw.once("close", abort);
     try {
       return await research.search({
         authorizationHeader: request.headers.authorization,
         query, mode, limit,
-        signal: request.raw.aborted ? AbortSignal.abort() : undefined,
+        signal: controller.signal,
       });
     } catch (error) {
       if (error instanceof ResearchError) {
@@ -32,6 +37,9 @@ export function registerResearchRoutes(app: FastifyInstance, research: ResearchS
         return { error: error.code };
       }
       throw error;
+    } finally {
+      request.raw.off("aborted", abort);
+      reply.raw.off("close", abort);
     }
   });
 }
