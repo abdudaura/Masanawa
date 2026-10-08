@@ -1,12 +1,56 @@
-# U01 — Canonical operator capability protocol (claim and handoff)
+# U01 — Canonical operator protocol: development handoff
 
-**Claimed 2026-10-09 (Africa/Lagos), five-minute exact-path lease.**
+**Updated:** 2026-10-09 (Africa/Lagos). **Owner:** GPT-6 autonomous U01 window. **State: PARTIAL_IMPLEMENTATION / ISOLATED / NOT RELEASE-QUALIFIED.**
 
-- Owner: autonomous GPT-6 development window; **U01 only**.
-- Base: `main` at `5e758673ae91082520b21b3153da53791ae2cbf3`.
-- Working branch: `work/u01-operator-contract-20261009-gpt6`.
-- Exact owned source: `packages/operator-contract/**`, plus this unique handoff file.
-- Non-owned: `services/gateway/src/app.ts`, `main.ts`, SQL/migration registry, Wallet/Billing/Crypto/DM/Talk implementations, Firebase, Flutter root/router and `packages/operator-tasks/**`.
-- Goal: versioned, typed and strict U01 capability/proposal/approval/event/card protocol, fail-closed parsing/security, compatibility fixtures and runnable deterministic contract tests; propose (do not install) Gateway integration against canonical agent shell.
-- Dependencies: real session authorization and domain-specific receipt/approval/operation APIs from R/C lanes; U02 task durability, U03 UI, U04 adapter composition, C07 Assistant and Work #497 remain separately owned/unmerged.
-- State: **CLAIM ONLY, PARTIAL_IMPLEMENTATION**. This is an ownership record, not evidence of implementation or tests. Refresh current claims before continuing after five minutes.
+## Ownership and exact SHAs
+- Base `main`: `5e758673ae91082520b21b3153da53791ae2cbf3`.
+- Branch: `work/u01-operator-contract-20261009-gpt6`; claim commit `640428edf51683a02baa99b3234d8cf2247649b7`.
+- Implementation commit: `69029d6dbef9eeb60e0f07cb1588969e733faf4e`.
+- Security follow-up commit: `4bc62de417f4265429350f3b6c6a87f61f5a5036`.
+- Draft PR: https://github.com/Baatiku/masanawa/pull/519 (unmerged).
+- Owned files only: `packages/operator-contract/package.json`, `tsconfig.json`, `src/index.js`, `src/index.d.ts`, `test/index.test.mjs`, `README.md` and this handoff. Never overwrite U02, U03, U04, C07, Firebase, five-tab shell, Gateway composer, migration registry or wallets.
+- Requirement coverage: U01 contract sections 1–7; AI-first operator capability boundary; affected C07, J02/J09/J11. No J/K integrated journey is claimed passed.
+- Claims were checked against open PRs (70 at selection; U21–U30 and R/C already claimed), repository branches and existing `docs/workstreams`; no existing U01 branch/PR discovered when selected. The five-minute claim must be refreshed before future edits.
+
+## Actual owned source delivered
+- Strict parser for V1 model proposals: canonical UUIDv7 request IDs, exact field sets/capability version and key, bounded deep JSON, immutable sanitized copies, prototype/cyclic object rejection, privileged actor/approval/receipt field rejection (including snake_case).
+- A capabilities gate with **exact** ID and integer version, enabled flag, classification, allowed region/scope and argument key allowlist. Denies when current server-authenticated authorizer or resource/DM consent callback refuses. Re-parses proposals at admission; there is no guessed alias/fallback or model-issued authority.
+- Typed v1 declarations for identity-scoped protocol and four operation classifications; `VerifiedPrincipal` binds canonical tenant/user/device/character-session and server account ID.
+- Approval verifier checks a **trusted DB-issued ticket record** (not model-generated) against exact user, tenant, account, session, device, operation, capability version, revision, canonical terms and 15-minute maximum lifetime. Expired, revoked, mismatched amounts or switched accounts fail.
+- Separate task execution classification check, legal task phase transitions and receipt-proven success; timeout does not become success. Contiguous task event page and inert unsupported app-card fallback.
+- Standalone package documentation specifies exact U02/U03/U04/C07/Work integration seams. `pnpm-workspace.yaml` already includes `packages/*`; no shared file changed.
+
+## Tests and reproducibility
+- **EXECUTED:** 24 focused in-process JavaScript assertions on the functions serialized into `src/index.js` before implementation commit `69029d6`: parse/capability/admission, forged privileged data and prototype keys, scope/version/authorizer rejection, context denial, exact approval/time/user/terms, approval-required finance, verified receipt, monotonic cursor and unsupported card. Exit success. This is **not** execution of the repository's Node test file, typecheck, full suite or end-to-end; follow-up security changes have only source/readback assertions, not rerun Node regression evidence.
+- **AUTHORED, NOT EXECUTED:** six Node `node:test` suites at `packages/operator-contract/test/index.test.mjs`; post-commit additions cover snake_case privileged values, raw unvalidated admission and account-switch invalidation.
+- **NOT EXECUTED** (private repository accessible only through GitHub connector; no authenticated checkout/package install in local container; repo requires Node >=24 whereas available isolated local Node is 22.16): `node --test packages/operator-contract/test/index.test.mjs`; `pnpm install --frozen-lockfile && pnpm --filter @masanawa/operator-contract typecheck`; `pnpm test:ci`; `pnpm build`. Actions issue #457 remains account quota/zero-step blocked as documented.
+- **UNVERIFIED:** authenticated Gateway/C07 integration, U02 DB migrations/atomic ticket use and idempotency, U03 Flutter UI/voice/taps, consented human DM/Talk resource access, financial quote/ledger receipts, multi-account/device concurrency, provider and Android qualification.
+
+## Data, privacy, migration and release
+- **Migrations / DB:** none written in U01; approval ticket store, task state/events/operation idempotency belong to U02 and must be atomically persisted before execution. No client-supplied `issued` record may reach the verifier as trusted storage.
+- **Security:** parser/phase validation is only defense in depth. Real Gateway must authenticate and reauthorize at actual read/prepare/execute boundary, issue opaque random tickets, consume approval atomically, validate per-capability complete JSON schema, and use existing provider-domain authorization and immutable receipts. A voice-generated “yes” is not approval. Never retry unknown finance/send with a new key.
+- **Compatibility:** unsupported cards inert; no modification to existing old shell API, Flutter router or voice transport. Exact v1 capability keys are not a deployment guarantee.
+- **Production:** no deployment/merges/money/credentials changed. Rollback is omitting this unintegrated package; no schema migration risk.
+
+## Collisions/dependencies and final integration actions
+1. Elect canonical U01 runtime API with U02 task persistence and C07 #480 / Work #497 without altering `packages/contracts` stable IDs; add workspace dependency only in the elected Gateway adapter.
+2. Add domain catalog from real R/C owner capability definitions, signed-in principal binding and authorization callbacks; unit test raw model/DM/file prompt injection, forged actors, revoked contacts, tenant isolation, account switch and feature flag off at the **composed** API boundary.
+3. U02 must provide durable ticket lookup, replay/idempotency journal, short-lived approval issuance/atomic consumption, task state persistence and authoritative receipt reconciliation before enabling consequential actions.
+4. U03 must negotiate cards/old clients, preserve text/voice/tap parity and accessible exact-term confirmation; U04 must never bypass existing Billing/Crypto/C06 custody/quote/step-up.
+5. In an authenticated local checkout with Node 24/pnpm 12 run exact focused Node suite/typecheck, then root tests/build; capture output and fix errors. Run PostgreSQL disposable acceptance, two-device cross-account approval replay, native Flutter/Gemini focus and provider sandbox only once merged dependency owner approves.
+6. Final Work integrator reviews #519 at exact head with Firebase #461, R17/C08 #493 and Work #497, retains one canonical architecture; no automatic merge before checks.
+
+## Release gate matrix
+| Gate | Evidence |
+| --- | --- |
+| SOURCE_WRITTEN | **YES, isolated operator protocol package** |
+| LOCAL_TESTED | **PARTIAL**: 24 V8 assertions before security update; package Node tests NOT_RUN |
+| CI_EXECUTED | **NO** — #457 quota |
+| DB_INTEGRATED | **NO**, U02 dependency |
+| APP_INTEGRATED | **NO**, U03/C07/R17 integration |
+| DEVICE_VERIFIED | **NO** |
+| PROVIDER_QUALIFIED | **NO** |
+| DEPLOYED | **NO** |
+| MERGED | **NO**, draft #519 |
+
+**Final handoff status remains PARTIAL_IMPLEMENTATION** because the full connected runtime and applicable integration verification are not present. The committed package is a substantive reusable protocol and a narrowly scoped continuation, not a completed Masanawa operator.
