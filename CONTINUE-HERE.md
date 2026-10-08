@@ -1,5 +1,12 @@
 # Continue Here
 
+## Mandatory all-window handoffs → one final ChatGPT Work integration (2026-10-08)
+
+**Every R01–R19 / C01–C08 / shared owner window must commit and push a complete, repository-visible SHA-specific handoff in `docs/workstreams/` and link it from its PR before leaving a lane.** This is required even when code is partially implemented, CI is exhausted, credentials are missing, or a feature is blocked. The handoff must distinguish missing source from unexecuted tests, record exact branch/PR/SHAs, changed layers, test commands/results or exact blockers, ownership collisions, dependencies, and next actions. **Do not use chat-only reports as the handoff. Do not call a partial slice `IMPLEMENTED_UNVERIFIED`.**
+
+[**docs/FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md**](docs/FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md) is the mandatory template and instructions for the **single final ChatGPT Work integration window** that the owner will initiate after development checkpoints. That window must inventory all open/draft/relevant closed PRs and handoffs, reconcile duplicate C02 [#472](https://github.com/Baatiku/masanawa/pull/472)/[#475](https://github.com/Baatiku/masanawa/pull/475) and C05 [#474](https://github.com/Baatiku/masanawa/pull/474)/[#476](https://github.com/Baatiku/masanawa/pull/476) work, complete code gaps, restore #457 CI, execute real tests/Android/providership gates, and **merge only validated changes**. All existing five-minute claim and shared R17/C08/financial ownership rules remain in force. This is a future owner-led integration procedure, **not a claim that Work has run or anything is done**.
+
+
 ## Backend/database portability and implementation evidence audit — 2026-10-08
 
 **New backend reality check (documents, not code changes):** [docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md](docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md) inspects the actual Postgres/Gateway/migration source and connected Railway production service metadata; [docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md](docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md) defines a safe, permission-gated fresh-account restore test; [docs/BACKEND-FEATURE-TRACEABILITY-20261008.md](docs/BACKEND-FEATURE-TRACEABILITY-20261008.md) maps each five-tab function to required Flutter→API→auth→DB/media/events→readback **executed** evidence.
