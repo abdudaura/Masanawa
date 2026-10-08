@@ -102,3 +102,46 @@ During the bounded implementation review, `services/gateway/src/agent_conversati
 ## R19 recovery claim extension (2026-10-08 UTC)
 
 The new server `agents.session_persona_changed` response must have a **working Flutter recovery path**, not an indefinite Retry loop. Add exclusive R19 paths `apps/mobile/lib/src/state/ai_chat_state.dart`, `apps/mobile/lib/src/agents/agent_session_recovery.dart`, `apps/mobile/test/agent_session_recovery_test.dart` to support safe new-session acquisition for text, voice and multi-media across a stale profile update, while avoiding blind retries of arbitrary financial/turn-pending HTTP 409s. Do not edit shared root shell/voice provider/ledger. This claim remains active only with repository-visible changes and expires after five minutes of inactivity.
+
+
+## Final R19 private conversation security and recovery checkpoint — 2026-10-08 UTC
+
+**Supersedes earlier eight-file source scope and two interim claim extensions above.** Complete current SHA-specific work prior to this handoff commit: `873cc1efddd4d059af09d6f119b45a94707c83ad`, base `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`, draft PR #498. Live comparison with main: **20 branch commits ahead, 0 behind; 13 exact changed files**. This final handoff commit itself becomes the new PR HEAD; always use the live PR HEAD for checkout. The exact changed paths are:
+
+1. `services/gateway/src/production_persona_role.ts` (new authorized-data role, truth, AI identity and consent policy).
+2. `services/gateway/src/production_strategy.ts` (real production inference strategy uses role policy).
+3. `services/gateway/src/alpha_strategy.ts` (dev inference strategy uses same policy).
+4. `services/gateway/src/production_persona_role.test.ts` (six grouped production/development, channel/Twin/bounds/cancel policy tests; unexecuted).
+5. `services/gateway/src/agent_conversation.ts` (**new:** on `open`, `turn`, `mediaTurn`, `mediaSetTurn` assert repository-returned session tenant/user/relationship/character/sessionId and current authorized persona version match the requested logged-in identity **before any inference/run/billing side effects**. Returns typed `agents.session_scope_mismatch`/ `agents.session_persona_changed`. For `close`, guard account/session identity but permit stale version to exit safely).
+6. `services/gateway/src/agent_conversation.test.ts` (**new cases:** wrong tenant/user/character/relationship/session ID are denied before runs; stale persona version denies text/voice/media set; valid owner closes stale version; inconsistent newly created session never reported as usable).
+7. `apps/mobile/lib/src/screens/chat/ai_chat_screen.dart` (wired persistent AI label in existing Agent/Twin chat).
+8. `apps/mobile/lib/src/screens/chat/components/ai_persona_status_label.dart` (new accessible status label).
+9. `apps/mobile/test/ai_persona_status_label_test.dart` (new render tests).
+10. `apps/mobile/lib/src/state/ai_chat_state.dart` (**new:** preserve same requestId while reopening **only** proven stale/missing/persona-updated session for cached text, single-media or multi-attachment sends; no blind retry on a generic HTTP 409 or pending financial outcome; readback/session state updated by existing `_bindingFor` and stored persistently).
+11. `apps/mobile/lib/src/agents/agent_session_recovery.dart` (new typed classification of known *pre-dispatch* stale errors).
+12. `apps/mobile/test/agent_session_recovery_test.dart` (positive closed/not-found/persona-change and negative pending-turn/unknown financial/403/ambiguous 409 tests).
+13. `docs/workstreams/r19-role-guardrails-20261008.md` (claim and immutable evidence).
+
+**Source assessment for THIS bounded subfeature:** `IMPLEMENTED_UNVERIFIED`; backend and consumer UI wired into existing production/auth/session/profiles. Database: canonical persistence already exists in `CharacterSessionRepository`; **no new table or migration** because guard only compares existing authoritative, persisted fields. The existing `AgentConversationService` continues returning agent reply and already stores run and mobile turn status/readback; no alternate financial operation invented. The code assumes current auth resolves current published character version and repository read is scoped; Work must validate this against real Postgres/identity and reconnect behaviors. Denials have no side effects because checks precede `runs.create`, `mobileShell.claimTurn`, inference and billing. Automatic retries are restricted to known pre-dispatch session errors; network-unknown outcomes require existing journal/readback and must not be re-sent.
+
+**Remaining unverified/known risks:** code tests newly written but **NOT EXECUTED**; generic fallback HTTP 404 without error code remains auto-recoverable for backward compatibility—Work must validate actual production error envelopes before signoff. Prompt injection via approved-looking profile JSON may still influence an LLM; JSON encoding is structural hygiene only, not a guaranteed containment boundary. Frontend state may need additional integration regressions for cross-account/logout while performing delayed retries, media upload progress, resumed captions/attachments, and server `409` classification. Actual two-account Postgres tenant isolation, profile-version CAS drift, mobile cached transcript/restart, Gemini provider compliance, voice/pronunciation, and final centered C07 workspace are not tested or delivered.
+
+**Final required Work verification commands** (run against current PR #498 HEAD, NOT untracked snippets):
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @masanawa/gateway-service typecheck
+pnpm exec vitest run services/gateway/src/production_persona_role.test.ts services/gateway/src/agent_conversation.test.ts
+pnpm typecheck
+pnpm test:ci
+cd apps/mobile
+flutter pub get
+flutter analyze
+flutter test test/ai_persona_status_label_test.dart test/agent_session_recovery_test.dart
+flutter test
+flutter build apk --release
+```
+
+Work integration: use disposable Postgres with migrations, real authenticated A/B users and two distinct published persona revisions, verify server `409` envelope and no strategy/ledger/operations after denial, authoritative readback after benign retry, no duplicate call after `agents.turn_pending`, manual/multi-file cached session rebinding, genuine model E2E. Then run Android/release/provider QA. Record exit codes and exact SHAs. GitHub Actions issue #457 remains unverified; no CI job or test result is asserted. Tests and hardware remain **NOT EXECUTED**, not PASS. Keep PR **DRAFT / UNMERGED**.
+
+**Final Work release gate matrix:** SOURCE_WRITTEN bounded R19 slice YES; LOCAL_TESTED NO; CI_EXECUTED NO; DB_AUTH_INTEGRATION UNVERIFIED; APP_INTEGRATION SOURCE ONLY, not device; DEVICE_VERIFIED NO; MODEL_POLICY_QA NO; PROVIDER_QUALIFIED NO; DEPLOYED NO; MERGED NO. Full R19 still `PARTIAL_IMPLEMENTATION` until 17 roles, real live audio, language QA, consented context and recovery are executed. Required proof depends on #441/#495 (authoritative character setup), #448 (public Talk audio), #480 (private Assistant), #493 (five-tab integration), #497 (single Work verification). No merge or done claim permitted.
