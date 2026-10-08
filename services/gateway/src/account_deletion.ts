@@ -158,7 +158,7 @@ export function createAccountDeletionService(input: Readonly<{
         tenantId: identity.tenantId, userId: identity.userId,
       });
       if (!request) throw new AccountDeletionError("ACCOUNT_DELETION_NOT_FOUND", 404);
-      if (request.phase !== "requested") {
+      if (request.phase !== "requested" && request.phase !== "failed") {
         throw new AccountDeletionError("ACCOUNT_DELETION_ALREADY_VERIFIED", 409);
       }
       const at = now();
