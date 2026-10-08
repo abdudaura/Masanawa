@@ -114,17 +114,25 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
     },
     async inbox({tenantId,userId,limit,before}) {
       const r=await pool.query<{
-        conversation_id:string;other_user_id:string;last_sequence:string|number;
+        conversation_id:string;other_user_id:string;other_display_name:string;
+        other_avatar_url:string|null;last_sequence:string|number;
         preview:string|null;updated_at:Date|string;unread_count:string|number;
       }&Record<string,unknown>>(`
         SELECT c.conversation_id,
           CASE WHEN c.first_user_id=$2 THEN c.second_user_id ELSE c.first_user_id END AS other_user_id,
           c.last_sequence,c.updated_at,l.body AS preview,
+          COALESCE(other_profile.display_name,
+            CASE WHEN c.first_user_id=$2 THEN c.second_user_id ELSE c.first_user_id END) AS other_display_name,
+          other_profile.avatar_url AS other_avatar_url,
           (SELECT count(*)::int FROM talks.human_dm_messages unread
            WHERE unread.tenant_id=c.tenant_id AND unread.conversation_id=c.conversation_id
              AND unread.sender_user_id<>$2
              AND unread.sequence>COALESCE(rd.last_read_sequence,0)) AS unread_count
         FROM talks.human_dm_conversations c
+        LEFT JOIN talks.public_profiles other_profile
+          ON other_profile.tenant_id=c.tenant_id
+          AND other_profile.user_id=CASE WHEN c.first_user_id=$2
+            THEN c.second_user_id ELSE c.first_user_id END
         LEFT JOIN talks.human_dm_reads rd ON rd.tenant_id=c.tenant_id
           AND rd.conversation_id=c.conversation_id AND rd.user_id=$2
         LEFT JOIN LATERAL (
@@ -150,6 +158,7 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
       `,[tenantId,userId,before??null,limit]);
       return r.rows.map(x=>Object.freeze<HumanDmConversation>({
         conversationId:x.conversation_id,otherUserId:x.other_user_id,
+        otherDisplayName:x.other_display_name,otherAvatarUrl:x.other_avatar_url,
         lastSequence:String(x.last_sequence),preview:x.preview,updatedAt:iso(x.updated_at)!,
         unreadCount:Number(x.unread_count),
       }));
