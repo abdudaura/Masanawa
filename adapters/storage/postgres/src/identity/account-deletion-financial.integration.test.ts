@@ -73,6 +73,46 @@ describeDb("R12 financial preflight with real ledgers",()=>{
     )).rejects.toThrow(/append-only/);
   });
 
+  it("detects earnings attached to a personal Twin instead of the owner ID",async()=>{
+    const profile=await createPostgresPlatformSessionRepository(pool).createProfile({
+      tenantId,channel:"email",
+      identifier:`twin-ledger-${randomUUID()}@example.com`,
+      name:"Twin Earnings",locale:"en",createdAt:at,
+    });
+    const account=profile.userId;
+    const personalCharacter=createCanonicalId("character");
+    await pool.query(
+      `INSERT INTO identity.characters(tenant_id,character_id,created_at,updated_at)
+       VALUES($1,$2,$3,$3)`,[tenantId,personalCharacter,at],
+    );
+    await pool.query(
+      `INSERT INTO identity.character_ownership
+         (tenant_id,character_id,kind,owner_user_id,created_at)
+       VALUES($1,$2,'personal-clone',$3,$4)`,
+      [tenantId,personalCharacter,account,at],
+    );
+    const ledgerEntryId=`ledger-entry_${randomUUID()}`;
+    await pool.query(
+      `INSERT INTO commerce.ledger_entries(
+         tenant_id,ledger_entry_id,debit_kind,debit_user_id,debit_character_id,
+         credit_kind,credit_user_id,credit_character_id,amount_credits,
+         reason,quote_id,fulfillment_id,created_at,definition
+       ) VALUES ($1,$2,'platform-supply',NULL,NULL,'agent-float',NULL,$3,25,
+                 'test-credit',NULL,NULL,$4,$5::jsonb)`,
+      [tenantId,ledgerEntryId,personalCharacter,at,JSON.stringify({
+        tenantId,ledgerEntryId,
+      })],
+    );
+    const request=await createPostgresAccountDeletionRepository(pool).open({
+      tenantId,userId:account,requestId:randomUUID(),now:at,
+    });
+    const scan=await createPostgresDeletionFinancialPreflight(pool).scan({
+      tenantId,userId:account,requestId:request.requestId,now:at,
+    });
+    expect(scan.findingCodes).toContain("owned-twin-ledger");
+    expect(scan.clear).toBe(false);
+  });
+
   it("does not invent a successful read when required tables are unavailable",async()=>{
     // An invalid scope never qualifies, and the repository must reject it
     // transactionally rather than returning an empty financial footprint.
