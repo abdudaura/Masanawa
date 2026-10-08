@@ -10,6 +10,7 @@ abstract interface class HumanProfileSafetyTransport {
     required TalkSafetyReportReason reason,
     required String requestId,
     required String detail,
+    required String reporterUserId,
   });
 }
 
@@ -47,6 +48,7 @@ class GatewayHumanProfileSafetyTransport implements HumanProfileSafetyTransport 
         'reason':reason.wire,
         if(detail.trim().isNotEmpty) 'detail':detail.trim(),
         'clientRequestId':requestId,
+        'expectedReporterUserId':reporterUserId,
       },
       // An expired original account token must NOT silently replay a
       // sensitive write under another user's subsequently refreshed session.
