@@ -201,6 +201,18 @@ function requireLiveTalk(talk: TalkRow | null): TalkRow {
   return talk;
 }
 
+/** Transaction guard shared with talks.safety_enforcement writes. */
+async function guardPersonaSafety(
+  client: PoolClient,
+  tenantId: string,
+  personaId: string,
+): Promise<void> {
+  await client.query(
+    `SELECT pg_advisory_xact_lock(hashtext($1::text),hashtext($2::text))`,
+    [tenantId, personaId],
+  );
+}
+
 async function readPersona(
   client: PoolClient,
   tenantId: string,
@@ -726,6 +738,7 @@ export function createPostgresTalkAiSeatRepository(
         const talk = requireLiveTalk(
           await readTalk(client, input.tenantId, input.talkId, true),
         );
+        await guardPersonaSafety(client, input.tenantId, input.personaId);
         const personaRow = await readPersona(
           client,
           input.tenantId,
@@ -800,6 +813,7 @@ export function createPostgresTalkAiSeatRepository(
         ) {
           throw new Error("talks.ai_seat_quote_not_found");
         }
+        await guardPersonaSafety(client, input.tenantId, locked.quote.personaId);
         const personaRow = await readPersona(
           client,
           input.tenantId,
@@ -991,6 +1005,7 @@ export function createPostgresTalkAiSeatRepository(
         if (locked.quote.hostUserId !== input.hostUserId) {
           throw new Error("talks.host_forbidden");
         }
+        await guardPersonaSafety(client, input.tenantId, locked.quote.personaId);
         const personaRow = await readPersona(
           client,
           input.tenantId,
