@@ -565,7 +565,7 @@ void main() {
     heartbeatGate.complete();
     await Future<void>.delayed(const Duration(milliseconds: 15));
     expect(session.status, TalkLiveAudioStatus.failed);
-    expect(room.microphone.last, isTrue); // attempted mute failed
+    expect(room.microphone, contains(false)); // revoke attempted the hardware mute
     final updates = room.microphone.length;
     await session.setMuted(false);
     expect(room.microphone.length, updates);
