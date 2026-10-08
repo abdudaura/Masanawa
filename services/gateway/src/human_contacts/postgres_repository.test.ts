@@ -95,7 +95,9 @@ describe("C01 SQL contact admission", () => {
     expect(params).toEqual(["t", "user_bo", "user_al", "accepted", "1"]);
     expect(sql).toContain("e.request_revision=$5::bigint");
     expect(sql).toContain("e.requested_by=$3");
-    expect(sql).toContain("(e.status='pending' OR e.status=$4)");
+    expect(sql).toContain("(e.status='pending' OR e.status=$4");
+    expect(sql).toContain("(e.status='declined' AND $4='accepted')");
+    expect(sql).toContain("(e.status='accepted' AND $4='declined')");
     expect(sql).toContain("e.revoked_by IS NULL");
     expect(sql).toContain("sp.blocked=true");
     expect(sql).toContain("se.visibility IN ('restricted','blocked')");
@@ -116,3 +118,4 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("edge.revoked_by=$2");
   });
 });
+
