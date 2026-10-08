@@ -52,7 +52,7 @@ class _PublicDiscoveryScreenState extends State<PublicDiscoveryScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.ownerId != widget.ownerId ||
         !identical(oldWidget.transport, widget.transport) ||
-        oldWidget.isCurrentOwner != widget.isCurrentOwner) {
+        false) {
       _controller.removeListener(_changed);
       _controller.dispose();
       _query.clear();
