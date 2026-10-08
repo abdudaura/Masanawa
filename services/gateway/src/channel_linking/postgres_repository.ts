@@ -74,6 +74,7 @@ export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkR
     async isVerifiedSender(owner, channel, externalUserId, chatId) {
       const result = await pool.query(
         "SELECT 1 FROM security.channel_link_intents i " +
+        "JOIN identity.users u ON u.tenant_id=i.tenant_id AND u.user_id=i.user_id AND u.state='active' " +
         "JOIN security.customer_channel_links l ON " +
         "l.tenant_id=i.tenant_id AND l.user_id=i.user_id AND l.channel=i.channel " +
         "AND l.external_user_id=i.verified_external_id AND l.chat_id=i.verified_chat_id " +
