@@ -189,8 +189,7 @@ void main() {
     await _settle();
     final change = container.read(agentDirectoryProvider.notifier)
         .changeDefaultSupportAgent('gwana');
-    container.read(sessionProvider.notifier) as _Session
-      ..signOutForTest();
+    (container.read(sessionProvider.notifier) as _Session).signOutForTest();
     await _settle();
     transport.pendingWrite!.complete();
     await expectLater(change, throwsStateError);
