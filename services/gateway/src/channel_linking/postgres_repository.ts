@@ -33,7 +33,7 @@ async function transaction<T>(pool: LinkSqlPool, run: (db: SqlClient) => Promise
 }
 async function lockActiveOwner(db: SqlClient, owner: LinkIdentity): Promise<void> {
   const row = await db.query<{ state: string }>(
-    "SELECT state FROM identity.users WHERE tenant_id=$1 AND user_id=$2 FOR SHARE",
+    "SELECT state FROM identity.users WHERE tenant_id=$1 AND user_id=$2 FOR UPDATE",
     [owner.tenantId, owner.userId],
   );
   if (row.rows[0]?.state !== "active") throw new LinkError("UNAUTHORIZED", 403);
@@ -110,15 +110,27 @@ export function createPostgresLinkRepository(pool: LinkSqlPool): PersistentLinkR
 
     async confirm({ channel, codeHash, externalUserId, chatId, characterId, at }): Promise<boolean> {
       return transaction(pool, async (db) => {
+        // Read identity first, then lock owner BEFORE the challenge row.
+        // begin/unlink use the same lock order, preventing unlink/confirm deadlocks.
+        const candidate = await db.query<Intent>(
+          "SELECT tenant_id,user_id FROM security.channel_link_intents " +
+          "WHERE channel=$1 AND code_hash=$2 AND consumed_at IS NULL",
+          [channel, codeHash],
+        );
+        if (!candidate.rows[0]) return false;
+        const owner = {
+          tenantId: candidate.rows[0].tenant_id,
+          userId: candidate.rows[0].user_id,
+        };
+        await lockActiveOwner(db, owner);
         const result = await db.query<Intent>(
           "SELECT tenant_id,user_id,expires_at FROM security.channel_link_intents " +
           "WHERE channel=$1 AND code_hash=$2 AND consumed_at IS NULL FOR UPDATE",
           [channel, codeHash],
         );
         const pending = result.rows[0];
-        if (!pending || date(pending.expires_at).getTime() <= at.getTime()) return false;
-        const owner = { tenantId: pending.tenant_id, userId: pending.user_id };
-        await lockActiveOwner(db, owner);
+        if (!pending || date(pending.expires_at).getTime() <= at.getTime() ||
+            pending.tenant_id !== owner.tenantId || pending.user_id !== owner.userId) return false;
         const existing = await db.query<{ tenant_id: string; user_id: string }>(
           "SELECT tenant_id,user_id FROM security.customer_channel_links " +
           "WHERE channel=$1 AND external_user_id=$2 FOR UPDATE",
