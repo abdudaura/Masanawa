@@ -112,4 +112,15 @@ void main() {
     );
   });
 
+  test('confirmation without a server request ID is never treated as complete', () {
+    expect(
+      () => TalkAiSeatRequest.fromJson({
+        'requestId': '  ',
+        'status': 'admitted',
+        'message': 'Joined the Talk.',
+      }),
+      throwsFormatException,
+    );
+  });
+
 }
