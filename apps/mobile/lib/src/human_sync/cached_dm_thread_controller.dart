@@ -78,15 +78,20 @@ class CachedDmThreadController extends ChangeNotifier {
     final before = nextBefore!;
     try {
       // C02 keyset paging. C03 owns the later delta cursor and events.
-      await sync.refreshThread(conversationId, before: before);
+      final serverPage = await sync.refreshThread(conversationId, before: before);
       _active();
-      messages = await sync.cache.messages(conversationId, limit: 50);
-      // Rendering appends pages from the same indexed cache via page(offset).
       final olderPage = await sync.cache.messages(conversationId,
           limit: 50, before: before);
       final seen = messages.map((m) => m['messageId']).toSet();
-      messages = [...messages, ...olderPage.where((m) => seen.add(m['messageId']))];
-      nextBefore = messages.isEmpty ? null : messages.last['sequence'] as String?;
+      final combined = [
+        ...messages,
+        ...olderPage.where((m) => seen.add(m['messageId'])),
+      ];
+      // Never build an unbounded 100k-message in-memory Flutter list.
+      messages = combined.length > 300
+          ? combined.sublist(combined.length - 300) : combined;
+      nextBefore = serverPage.length < 40 || olderPage.isEmpty
+          ? null : olderPage.last['sequence'] as String?;
     } catch (_) {
       error = 'Older messages unavailable. Retry when connected.';
     } finally {
