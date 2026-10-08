@@ -202,8 +202,11 @@ export function createTalkAiSeatWorker(input: Readonly<{
       const controller = new AbortController();
       // Register before the first asynchronous read: otherwise an older
       // request can escape cancellation while its admission check is pending.
-      activeTurns.get(key)?.abort();
+      const superseded = activeTurns.get(key);
       activeTurns.set(key, controller);
+      // Abort listeners may be synchronous/reentrant. Install the new owner
+      // first so a listener-triggered newer turn cannot be overwritten.
+      superseded?.abort();
       try {
         const [seat, live] = await Promise.all([
           input.repository.readSeat({
