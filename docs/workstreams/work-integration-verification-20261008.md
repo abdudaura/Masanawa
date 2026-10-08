@@ -474,3 +474,57 @@ Continue onto exact isolated scheduler package/routes and privileged Ops source 
 - `packages/operator-scheduling/tsconfig.json`
 - `services/gateway/src/operator_scheduling/routes.test.ts`
 - `services/gateway/src/operator_scheduling/routes.ts`
+
+
+## Remaining handed-off U backends verification claim
+Verify isolated #511 invitation, #512 support, #513 public discovery, #514 governed research and #515 channel-linking modules and their authored tests. No shared Gateway mount, external credential/provider calls, native UI or production DB changes. All5 heads unchanged from previous inventory; preserve original source/handoffs and keep all draft PRs open. Also register the new scheduler package in the existing architecture dependency map (empty internal package dependencies), declaration-bearing build contract and pnpm importer; no weakening of package gates.
+Exact new backend paths:
+- `docs/workstreams/u23-invite-share-acquisition-20261008.md`
+- `services/gateway/src/contact_invites/001_invite_quota.sql`
+- `services/gateway/src/contact_invites/postgres_quota.test.ts`
+- `services/gateway/src/contact_invites/postgres_quota.ts`
+- `services/gateway/src/contact_invites/routes.test.ts`
+- `services/gateway/src/contact_invites/routes.ts`
+- `services/gateway/src/contact_invites/service.test.ts`
+- `services/gateway/src/contact_invites/service.ts`
+- `services/gateway/src/contact_invites/token.ts`
+- `docs/workstreams/u29-real-customer-support-20261008.md`
+- `services/gateway/src/customer_support/0001_customer_tickets.sql`
+- `services/gateway/src/customer_support/model.ts`
+- `services/gateway/src/customer_support/operator.test.ts`
+- `services/gateway/src/customer_support/operator.ts`
+- `services/gateway/src/customer_support/operator_routes.ts`
+- `services/gateway/src/customer_support/postgres_repository.test.ts`
+- `services/gateway/src/customer_support/postgres_repository.ts`
+- `services/gateway/src/customer_support/routes.test.ts`
+- `services/gateway/src/customer_support/routes.ts`
+- `services/gateway/src/customer_support/service.test.ts`
+- `services/gateway/src/customer_support/service.ts`
+- `docs/workstreams/u30-unified-public-discovery-20261008.md`
+- `services/gateway/src/unified_discovery/routes.test.ts`
+- `services/gateway/src/unified_discovery/routes.ts`
+- `services/gateway/src/unified_discovery/service.ts`
+- `docs/workstreams/u28-evidence-research-20261008.md`
+- `services/gateway/src/research_u28/001_budget.sql`
+- `services/gateway/src/research_u28/google_provider.test.ts`
+- `services/gateway/src/research_u28/google_provider.ts`
+- `services/gateway/src/research_u28/model.ts`
+- `services/gateway/src/research_u28/postgres_budget.test.ts`
+- `services/gateway/src/research_u28/postgres_budget.ts`
+- `services/gateway/src/research_u28/research.test.ts`
+- `services/gateway/src/research_u28/routes.test.ts`
+- `services/gateway/src/research_u28/routes.ts`
+- `services/gateway/src/research_u28/service.ts`
+- `docs/workstreams/u26-linked-channels-20261008.md`
+- `services/gateway/src/channel_linking/default_agent.ts`
+- `services/gateway/src/channel_linking/integration.ts`
+- `services/gateway/src/channel_linking/postgres_repository.test.ts`
+- `services/gateway/src/channel_linking/postgres_repository.ts`
+- `services/gateway/src/channel_linking/provider_bridge.test.ts`
+- `services/gateway/src/channel_linking/provider_bridge.ts`
+- `services/gateway/src/channel_linking/routes.test.ts`
+- `services/gateway/src/channel_linking/routes.ts`
+- `services/gateway/src/channel_linking/schema.sql`
+- `services/gateway/src/channel_linking/service.test.ts`
+- `services/gateway/src/channel_linking/service.ts`
+Additional scheduler integration paths: `test/architecture/package-boundaries.test.ts`, `packages/operator-scheduling/tsconfig.build.json`, `pnpm-lock.yaml`. These are package-registry/build metadata only, no worker activation.
