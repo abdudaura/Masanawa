@@ -50,3 +50,10 @@
 - Explicit user request to merge the bounded R05 PR. Additional source review found `reserveConfirmedBill` could newly reserve an expired confirmed wallet quote. This can authorize a purchase under stale economics outside the duplicate-webhook branch's new expiry check.
 - Expanded owned paths: `adapters/storage/postgres/src/commerce/billing-funding.ts` and `adapters/storage/postgres/src/commerce/billing-funding.integration.test.ts` exclusively for wallet quote expiry invariant and regression. Other open PRs do not edit them as checked at claim update.
 - Preserve payment-verified legacy checkout and already-reserved idempotent reconciliation by checking expiry only before a **new** NGN wallet reserve. No retroactive expiry on in-flight authorized transactions.
+
+## Integration checkpoint — explicit merge request
+
+- `55879515`: quote repository's wallet reserve boundary now rejects an expired **new** reserve using a PostgreSQL `statement_timestamp()` assertion; already persisted fulfillment references and legacy externally verified payments retain their established reconciliation authority.
+- `5785c297`: PostgreSQL integration regression models historically confirmed, now-expired terms and expects no bill reserve row or fulfillment reference after a rejected reserve.
+- Tests are committed but workspace Vitest/PostgreSQL integration has NOT been executed here; GitHub Actions does not provide runner steps. Merge is to canonical code only on explicit instruction, NOT approval to switch on payment fulfillment in production or to accept real-value transactions.
+- Remaining production gates: fully qualified provider/live payment webhook, Postgres concurrency suite, historical pending-intent audit, in-flight dynamic account recovery, automatic reconciliation sweep, status restoration/expired funding UX, and rollback/reconciliation documentation.
