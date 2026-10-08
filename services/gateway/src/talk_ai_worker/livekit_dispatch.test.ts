@@ -152,7 +152,7 @@ describe("LiveKit Talk AI runtime dispatch", () => {
 
   it("refuses malformed list responses and never creates on uncertain room state", async () => {
     for (const body of [
-      {}, { agent_dispatches: null }, { agent_dispatches: [{} , null] },
+      { agent_dispatches: null }, { agent_dispatches: [{} , null] },
       { agent_dispatches: "not-an-array" },
     ]) {
       const fetchImpl = vi.fn().mockResolvedValue(response(body));
@@ -160,6 +160,16 @@ describe("LiveKit Talk AI runtime dispatch", () => {
         .rejects.toThrow("talks.ai_dispatch_list_invalid");
       expect(fetchImpl).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it("treats omitted Proto3 repeated dispatch field as a valid empty room", async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(response({}))
+      .mockResolvedValueOnce(response({
+        id: "AD_1", agent_name: "masanawa-talk-ai", room: "talk-1", metadata,
+      }));
+    await expect(build(fetchImpl).dispatch(seat)).resolves.toBeUndefined();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(String(fetchImpl.mock.calls[1]![0])).toContain("CreateDispatch");
   });
 
   it("coalesces truly concurrent identical dispatches into one LiveKit create request", async () => {
