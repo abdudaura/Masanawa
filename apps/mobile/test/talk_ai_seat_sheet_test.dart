@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:masanawa/src/screens/talks/add_ai_seat_sheet.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
@@ -15,6 +16,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
   TalkAiSeatRequestStatus confirmationStatus = TalkAiSeatRequestStatus.pendingHost;
   bool failConfirmation = false;
   bool mismatchedQuote = false;
+  bool emptyCatalog = false;
 
   static const expert = TalkAiSeatCandidate(
     personaId: 'expert-economist',
@@ -39,8 +41,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
   @override
   Future<List<TalkAiSeatCandidate>> loadCandidates({
     required String talkId,
-  }) async =>
-      const [expert, twin];
+  }) async => emptyCatalog ? const [] : const [expert, twin];
 
   @override
   Future<TalkAiSeatQuote> createQuote({
@@ -162,6 +163,45 @@ void main() {
     expect(find.text('Economist'), findsNothing);
     expect(transport.quoteCount, 0);
     expect(transport.confirmationCalls, 0);
+  });
+
+  testWidgets('missing Twin opens the real My Twin creation route',
+      (tester) async {
+    final transport = _FakeSeatTransport()..emptyCatalog = true;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () => showAddAiSeatSheet(
+                context,
+                talkId: 'talk-1',
+                isHost: true,
+                initialKind: TalkAiPersonaKind.twin,
+              ),
+              child: const Text('Open picker'),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/my-twin',
+          builder: (_, __) => const Scaffold(body: Text('Twin creator')),
+        ),
+      ],
+    );
+    await tester.pumpWidget(ProviderScope(
+      overrides: [talkAiSeatTransportProvider.overrideWithValue(transport)],
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    await tester.tap(find.text('Open picker'));
+    await tester.pumpAndSettle();
+    expect(find.text('Create My Twin'), findsOneWidget);
+    await tester.tap(find.text('Create My Twin'));
+    await tester.pumpAndSettle();
+    expect(find.text('Twin creator'), findsOneWidget);
+    expect(transport.confirmationCalls, 0);
+    router.dispose();
   });
 
   testWidgets('Twins tab filters the catalog without a new screen',
