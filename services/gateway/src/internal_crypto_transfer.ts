@@ -5,6 +5,7 @@ import type { CreditRecipientResolver } from "./credit_transfer.js";
 import type { FinancialAuthorizer, FinancialService } from "./financial_service.js";
 
 export interface InternalCryptoTransferService {
+  available(input: { authorizationHeader?: string }): Promise<boolean>;
   quote(input: { authorizationHeader?: string; requestId: string;
     recipient: string; providerCode: string; amount: string }): Promise<InternalTransferReceipt>;
   confirm(input: { authorizationHeader?: string; requestId: string;
@@ -30,6 +31,16 @@ export function createInternalCryptoTransferService(input: {
     return { asset: normalizeCryptoAsset(route.asset), network: route.network };
   }
   return {
+    async available(request) {
+      await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
+      if (!input.enabled) return false;
+      try {
+        const capabilities = await input.financial.capabilities({authorizationHeader:request.authorizationHeader});
+        if (!capabilities.deposits) return false;
+        const routes = await input.financial.listDepositRoutes({authorizationHeader:request.authorizationHeader});
+        return routes.some(route => route.network?.toLowerCase() !== "erc20");
+      } catch { return false; }
+    },
     async quote(request) {
       const authorizationHeader = request.authorizationHeader;
       const actor = await input.authorizer.authorize({ authorizationHeader });
