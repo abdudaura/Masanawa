@@ -54,6 +54,14 @@ integration("R16 schema lifecycle on disposable real PG18",()=>{
     expect(status.changed).toEqual([]);
     expect(status.unexpected).toEqual([]);
     expect(status.pending).toEqual([]);
+    const now=new Date();
+    const reapplied=await schemaApply(pool,manifest,{
+      targetDatabase:databaseName,expectedManifestSha256:manifest.digest,
+      deploymentCommitSha:"a".repeat(40),backupEvidenceId:"backup/test-verified-20261008",
+      backupVerifiedAt:now.toISOString(),approvedByOperator:true,
+    },now);
+    expect(reapplied.applied).toEqual([]);
+    expect(reapplied.after.ready).toBe(true);
   },120000);
   it("rejects unexpected ledger entries without modifying them",async()=>{
     const fakeHash="f".repeat(64);
@@ -73,6 +81,17 @@ integration("R16 schema lifecycle on disposable real PG18",()=>{
       [owner,name]);
     expect((await schemaStatus(pool,manifest)).ready).toBe(true);
   },30000);
+  it("detects a modified applied checksum without overwriting history",async()=>{
+    const m=manifest.migrations[0]!;
+    await pool.query("UPDATE public.masanawa_schema_migrations SET sha256=$3 WHERE owner=$1 AND name=$2",
+      [m.owner,m.name,"e".repeat(64)]);
+    const status=await schemaStatus(pool,manifest);
+    expect(status.changed).toContain(m.owner+"/"+m.name);
+    expect(status.ready).toBe(false);
+    await pool.query("UPDATE public.masanawa_schema_migrations SET sha256=$3 WHERE owner=$1 AND name=$2",
+      [m.owner,m.name,m.sha256]);
+    expect((await schemaStatus(pool,manifest)).ready).toBe(true);
+  });
   it("aborts a new invalid migration atomically and leaves no extra ledger row/table",async()=>{
     const invalidName="9999_rollback_"+randomUUID().replaceAll("-")+".sql";
     // Pick a canonical owner at the END of lexical ordering to avoid earlier-missing ordering blockers.
