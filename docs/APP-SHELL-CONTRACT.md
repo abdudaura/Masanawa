@@ -73,3 +73,8 @@ Changing navigation must not break notification, receipt or invitation links.
 Acceptance: all four destinations, header actions, FAB, both agent tabs and every
 advertised profile/service action work after login, restart, permissions failure and
 back navigation. Record implementation/build/deployment/device evidence separately.
+
+## Final architecture review for coordinated sign-off (not yet a shell amendment)
+
+The owner requested a *complete*, up-front review to avoid implementing C01–C08 and later reworking navigation. `END-TO-END-UX-ARCHITECTURE.md` supplies the proposed permanent destination/route/action/return-stack and end-to-end journey matrix. It specifically recommends **Home · Chats · Wallet · Assistant**, retaining human-hosted public Talks, visible Masanawa Agents/Twins within Chats, and one globally private Gwani/Gwana operator. The label **Assistant** is proposed to distinguish private AI operation from the publicly hosted **Talk** object. This proposal **does not silently supersede the owner-approved four tabs above**; that decision must be recorded explicitly and propagated once to R17 and C08 before dependent screen code. Do not ship an interim screen arrangement intended to be redesigned later.
+
