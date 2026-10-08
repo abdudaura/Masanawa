@@ -55,10 +55,12 @@ describe("C02 Postgres canonical human message authority",()=>{
       clientRequestId:"request-1",messageId:"message-1",text:"Hello",digest:"a".repeat(64),
     });
     expect(receipt).toMatchObject({text:"Hello",messageId:"message-1",senderUserId:"person-a"});
-    expect(calls[0]?.sql).toBe("BEGIN ISOLATION LEVEL SERIALIZABLE");
+    expect(calls[0]?.sql).toBe("BEGIN");
     expect(calls.some(c=>c.sql.includes("pg_advisory_xact_lock"))).toBe(true);
     expect(calls.some(c=>c.sql.includes("talks.human_dm_contact_requests"))).toBe(true);
     expect(calls.some(c=>c.sql.includes("talks.safety_preferences"))).toBe(true);
+    expect(calls.find(c=>c.sql.includes("INSERT INTO talks.human_dm_messages"))?.sql)
+      .toContain("WHERE EXISTS (");
     expect(calls.map(c=>c.sql.trim()).at(-1)).toBe("COMMIT");
     expect(releases).toBe(1);
   });
