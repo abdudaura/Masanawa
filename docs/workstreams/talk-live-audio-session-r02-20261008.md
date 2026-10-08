@@ -18,3 +18,10 @@ Last repository-visible activity: 2026-10-08T00:53:00Z (last branch work during 
 - Tests added for room connect failure/retry, media-token failure/retry and ended-session cleanup. Tests are committed but have **not run**; no Dart/Flutter runtime or handset tested in this connector session.
 - PR #408 is draft and not merged; no production change. Authentication/provider audio unavailability requires independent evidence and configuration qualification.
 - Last update: 2026-10-08 00:55 UTC (repository commit recorded above).
+
+## Further lifecycle race coverage
+
+- `0ca9a0a`: if close completes before delayed authenticated `transport.connect`, the late session is explicitly disconnected rather than leaked.
+- A late `room.connect` after close triggers another best-effort room cleanup so a microphone cannot remain open due to teardown ordering.
+- `32c61a9`: added asynchronous shutdown-before-connect regression test. This test is **not run** in the connector environment; runtime/device qualification remains open.
+- R02 still requires authenticated LiveKit/Gateway failure diagnosis and production-device evidence. Keep this PR draft pending CI, review and integration.
