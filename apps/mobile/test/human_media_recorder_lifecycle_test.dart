@@ -163,6 +163,23 @@ void main() {
     expect(await File(path).exists(),isFalse);
   });
 
+  test('discard in progress rejects a new begin tap until the native stop finishes',() async {
+    final stopGate=Completer<void>();
+    final capture=_Capture(stopGate:stopGate);
+    final subject=controller(capture);
+    await subject.begin();
+    final discarding=subject.discard();
+    await _yieldUntil(()=>capture.stops==1);
+    await subject.begin();
+    expect(capture.starts,1);
+    expect(capture.permissions,1);
+    expect(subject.canSend,isFalse);
+    stopGate.complete();
+    await discarding;
+    await subject.shutdown();
+    expect(await File(path).exists(),isFalse);
+  });
+
   test('shutdown during permission prompt never starts or saves a recording',() async {
     final permissionGate=Completer<bool>();
     final capture=_Capture(permissionGate:permissionGate);
