@@ -197,6 +197,13 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                      AND r.talk_id=t.talk_id
                      AND r.recording_state='finalized'
                      AND r.publication_state='published'
+                     AND NOT EXISTS (
+                       SELECT 1 FROM talks.safety_enforcement replay_se
+                        WHERE replay_se.tenant_id=r.tenant_id
+                          AND replay_se.target_kind='replay'
+                          AND replay_se.target_id=r.recording_id
+                          AND replay_se.visibility IN ('restricted','blocked')
+                     )
                 )
               )
             )
@@ -252,6 +259,13 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                    AND r.talk_id=t.talk_id
                    AND r.recording_state='finalized'
                    AND r.publication_state='published'
+                   AND NOT EXISTS (
+                     SELECT 1 FROM talks.safety_enforcement replay_se
+                      WHERE replay_se.tenant_id=r.tenant_id
+                        AND replay_se.target_kind='replay'
+                        AND replay_se.target_id=r.recording_id
+                        AND replay_se.visibility IN ('restricted','blocked')
+                   )
               )
             )
           LIMIT 1`,
@@ -333,6 +347,20 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                      AND se.target_id = t.talk_id
                      AND se.visibility IN ('restricted','blocked')
                 )
+                -- Comments are always public. Prevent new comments on
+                -- restricted ended recordings, even from the Host.
+                AND (
+                  t.state <> 'ended' OR NOT EXISTS (
+                    SELECT 1 FROM talks.replay_sessions hidden_r
+                    JOIN talks.safety_enforcement hidden_se
+                      ON hidden_se.tenant_id=hidden_r.tenant_id
+                     AND hidden_se.target_kind='replay'
+                     AND hidden_se.target_id=hidden_r.recording_id
+                     AND hidden_se.visibility IN ('restricted','blocked')
+                   WHERE hidden_r.tenant_id=t.tenant_id
+                     AND hidden_r.talk_id=t.talk_id
+                  )
+                )
                 AND (
                   t.state IN ('live','reconnecting')
                   OR (
@@ -345,6 +373,13 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
                            AND r.talk_id=t.talk_id
                            AND r.recording_state='finalized'
                            AND r.publication_state='published'
+                           AND NOT EXISTS (
+                             SELECT 1 FROM talks.safety_enforcement replay_se
+                              WHERE replay_se.tenant_id=r.tenant_id
+                                AND replay_se.target_kind='replay'
+                                AND replay_se.target_id=r.recording_id
+                                AND replay_se.visibility IN ('restricted','blocked')
+                           )
                       )
                     )
                   )
