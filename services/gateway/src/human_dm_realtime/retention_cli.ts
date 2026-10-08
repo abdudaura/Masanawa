@@ -2,7 +2,7 @@
  * Requires explicit operator opt-in; never runs implicitly on migration.
  */
 import {createPostgresPool} from "@masanawa/postgres";
-import {pruneHumanDmJournal} from "./retention.js";
+import {pruneHumanDmJournal,verifyHumanDmRetentionTarget} from "./retention.js";
 
 function required(name:string):string {
   const value=process.env[name];
@@ -26,8 +26,18 @@ const pool=createPostgresPool({
   max:1,
 });
 try {
+  const tenantId=required("MASANAWA_C03_RETENTION_TENANT");
+  const expectedDatabase=required("MASANAWA_C03_RETENTION_EXPECT_DATABASE");
+  const backupReference=required("MASANAWA_C03_RETENTION_BACKUP_REF");
+  if(backupReference.length<8 ||
+      required("MASANAWA_C03_RETENTION_CONFIRM_TENANT")!==tenantId) {
+    throw new Error("C03 tenant confirmation or backup reference invalid");
+  }
+  // A reference is an operator attestation, NOT proof of a restorable backup.
+  // The release owner must independently verify the backup/restore evidence.
+  await verifyHumanDmRetentionTarget({pool,tenantId,expectedDatabase});
   const result=await pruneHumanDmJournal({
-    pool,tenantId:required("MASANAWA_C03_RETENTION_TENANT"),
+    pool,tenantId,
     retentionDays:integer("MASANAWA_C03_RETENTION_DAYS",30),
     batchSize:integer("MASANAWA_C03_RETENTION_BATCH_SIZE",500),
     maxBatches:integer("MASANAWA_C03_RETENTION_MAX_BATCHES",20),
