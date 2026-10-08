@@ -26,3 +26,9 @@
 - Published coordination notice to #435 with exactly the additive C01 imports, optional service injection, real database repository and session authorizer composition; no modifications to its avatar/S3/profile logic.
 - Narrow additional owned paths after fresh claim: `services/gateway/src/app.ts` and `services/gateway/src/main.ts`, **only** the non-overlapping humanContact imports/interfaces/repo factory/auth wiring/route registration segments; no other shared platform paths.
 - Re-read fresh main blob SHAs immediately before every edit; on conflict merge rather than force. No CI workaround or unverified release/merge.
+
+## Concrete Gateway integration increment — 2026-10-08
+- After notifying R18 PR #435, scoped C01 optional route registration into `services/gateway/src/app.ts` and real repository/auth composition into `services/gateway/src/main.ts` were implemented on this branch. These additions use the **canonical customer session authorizer** and existing Postgres pool; they do not add a parallel login.
+- Added `services/gateway/src/human_contacts/composition.test.ts` for real `createGatewayApp` inject tests (opt-in route installation, authenticated self, privacy-safe 404).
+- R18 #435 still modifies those two shared files; preserve and semantically reconcile both PRs during integration. API is **source-wired in this branch, not deployed on main**, so C01 is not available in the currently installed app.
+- **No source-level tests have executed yet** in this connector-only session (GitHub Actions quota #457). PR remains DRAFT, with real Postgres, TypeScript/Flutter, two-device, profile privacy and deletion tests still required.
