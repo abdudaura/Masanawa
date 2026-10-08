@@ -68,3 +68,36 @@ Latest broader run: 1207 passed,2 failed,143 skipped; environment gate passed, A
 Backend integration source fd53a7e179b5c75ff21d3c1a979f8d2c0ff2b698: 233 test files passed, 1 failed, 20 skipped; 1209 tests passed, 1 failed, 143 skipped. Sole executed failure is public API lifecycle compatibility registration (73 routes). C01 focused Flutter now 21 passed at f4551467d46e4fc708e4f3bbafbebc17aaf68a36; its handoff/PR updated. Global analyzer reports 484 baseline+C01 issues, including broken main gift source.
 
 Claim narrow mobile integration on this branch: apps/mobile/lib/src/talks/talk_gift.dart, talk_gift_http_transport.dart, talk_gift_pending_store.dart and their three corresponding apps/mobile/test files. Recover exact R10 #471 head b6186eae666389797f810af2534eef5b751c2a5e (stale last activity 10:57 UTC); preserve richer existing account-switch/forged-state tests. Also reuse only the independent locale-controller annotation repair from #460 after inspecting exact path. No R10 feature authority, root navigation, production money enablement or DONE claim. Execute focused tests and global analyzer before publishing source.
+
+
+## Executed closure checkpoint — Work 2026-10-08
+
+Published integration source: `691e9022c5227c6de05dfabd65077c831d2d0224`. Base remains `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`. This is source recovered through authenticated GitHub blobs, not a complete authenticated clone. Backend verified separately at `fd53a7e179b5c75ff21d3c1a979f8d2c0ff2b698`; mobile source view is recovered main plus C01 `f4551467d46e4fc708e4f3bbafbebc17aaf68a36`, R10 `b6186eae666389797f810af2534eef5b751c2a5e`, and #460 locale annotation repair.
+
+| Command / scope | Executed result | Remaining gate |
+| --- | --- | --- |
+| pnpm install --frozen-lockfile --ignore-scripts | Passed; Node 24.19.0/pnpm 12.8.2 | Complete-repository release qualification |
+| pnpm test:ci / recovered backend | 1209 passed, 1 failed, 143 skipped; 233 files passed, 1 failed, 20 skipped | public-api-lifecycle: 73 unversioned routes lacking compatibility declaration; database skipped |
+| Gateway typecheck main vs C01 | Same 74 baseline errors; zero new C01 errors | Not a passing typecheck |
+| C01 backend routes/repository | 21 passed, 3 database skipped | PostgreSQL, R18 migration/composition, two-device acceptance |
+| flutter test --no-pub: human_contacts transport/controller/screen | 21 passed | Devices, full root shell integration |
+| flutter test --no-pub: talk_gift HTTP/models/pending store | 20 passed | Real settlement/ledger, receipt lookup, outbox fan-out |
+| flutter analyze --no-pub / recovered mobile view | Zero errors, 8 warnings, 385 information issues (393 total); exit 1. Before recovery 484 issues | Warning/lint cleanup and complete source acceptance |
+| flutter test --no-pub / recovered mobile view | 443 passed, 11 failed | Failure groups below |
+
+Full mobile failing groups, preserved rather than blanket-relaxed:
+- R04/R17: talk_screen_test: listener Sponsor and host Add labels (2).
+- R02/R17: twin_home_shell_test: private Talk directory denial / microphone entry recovery (2).
+- R11: agent_directory_readiness_test malformed presence; agent_recovery_test roster retention/auth reset (2).
+- R18: edit_profile_screen_test first creation, validation, saved readback, failed-save recovery (4).
+- R01: wallet_service_shortcuts_test wallet-outage service entry (1).
+These are routing assignments, not root-cause findings; inspect real behavior before deciding source vs stale fixture repair.
+
+## Fast sequential closure route
+1. Stabilize shared verification: API lifecycle contract, baseline typing, mobile 11 failures; retain strict input authority and real failures. Hosted Actions #457 remains quota blocked; no spending or workflow bypass. Native PostgreSQL18 could not initialize due sandbox user restrictions, so no DB success claimed.
+2. Integrate C01 #468 with R18 #435 under one Gateway composer; resolve 0015/0016 migration order and execute DB/auth/restart acceptance.
+3. Elect one C02 schema/API from #472/#475 (closed #477 historical), preserving unique tests. Avoid concurrent 0017 migrations; align #493 shell's embedded #475 source.
+4. Reconcile stacked C03 #473/#483/#486, C04 #478, and one C05 cache/outbox from #474/#476. Execute delivery/reconnect/restart/auth/account-switch proof as a single communication path.
+5. Register and qualify C07 #480, then final C08/R17 #493 root integration with exactly Talks/Chats/Assistant/Wallet/Agents. Root remains one owner.
+6. C06 #487 is elected source over yielding #490; keep 0110, quote/risk/step-up/privacy/deletion and canonical money evidence explicit. Do not enable transfers on partial checks.
+7. Close remaining R lanes only with SHA-specific local/DB/device/provider evidence; distinguish unit/widget pass from DONE. No merge/deploy in this checkpoint.
