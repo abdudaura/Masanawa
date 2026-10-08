@@ -417,5 +417,17 @@
         "type": "String"
       }
     }
+  },
+  "talksTab": "Talks",
+  "@talksTab": {
+    "description": "Human-hosted public Talks root"
+  },
+  "chatsTab": "Chats",
+  "@chatsTab": {
+    "description": "Human-only private conversations root"
+  },
+  "assistantTab": "Assistant",
+  "@assistantTab": {
+    "description": "Private Gwani/Gwana Assistant root"
   }
 }
