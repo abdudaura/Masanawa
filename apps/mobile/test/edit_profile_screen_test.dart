@@ -34,6 +34,10 @@ class _Session extends SessionController {
 class _FakeProfile implements OwnProfileTransport {
   _FakeProfile({this.exists = true});
   bool exists;
+  String savedName = 'Amina';
+  String savedBio = 'Old bio';
+  String savedHandle = 'amina';
+  bool failNextUpdate = false;
   int updates = 0;
   int creates = 0;
   String? lastName;
@@ -63,7 +67,9 @@ class _FakeProfile implements OwnProfileTransport {
         ),
       );
     }
-    return _profile();
+    return _profile(
+      name: savedName, bio: savedBio, handle: savedHandle,
+    );
   }
 
   @override
@@ -76,6 +82,9 @@ class _FakeProfile implements OwnProfileTransport {
     exists = true;
     lastName = displayName;
     lastBio = bio;
+    savedHandle = handle;
+    savedName = displayName;
+    savedBio = bio;
     return _profile(handle: handle, name: displayName, bio: bio);
   }
 
@@ -86,9 +95,15 @@ class _FakeProfile implements OwnProfileTransport {
     bool removeAvatar = false,
   }) async {
     updates += 1;
+    if (failNextUpdate) {
+      failNextUpdate = false;
+      throw StateError('Simulated server outage');
+    }
     lastName = displayName;
     lastBio = bio;
-    return _profile(name: displayName ?? 'Amina', bio: bio ?? 'Old bio');
+    savedName = displayName ?? savedName;
+    savedBio = bio ?? savedBio;
+    return _profile(name: savedName, bio: savedBio, handle: savedHandle);
   }
 }
 
@@ -163,4 +178,45 @@ void main() {
     expect(transport.updates, 0);
     expect(find.text('Enter at least two characters'), findsOneWidget);
   });
+  testWidgets('saved public profile survives leaving and reopening editor',
+      (tester) async {
+    final transport = _FakeProfile();
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
+    await tester.pumpAndSettle();
+    expect(transport.savedName, 'Amina Bello');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextFormField>(
+        find.byKey(const ValueKey('profile-edit-name')),
+      ).controller?.text,
+      'Amina Bello',
+    );
+  });
+
+  testWidgets('failed save keeps previous server state for recovery',
+      (tester) async {
+    final transport = _FakeProfile()..failNextUpdate = true;
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
+    await tester.pumpAndSettle();
+    expect(transport.savedName, 'Amina');
+    expect(find.textContaining('Could not save your profile'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
+    await tester.pumpAndSettle();
+    expect(transport.savedName, 'Amina Bello');
+  });
+
 }
