@@ -4,7 +4,7 @@ import { withTransaction } from "../transaction.js";
 import {
   createTransferConsent, validateInternalTransfer, verifyTransferConsent,
   type InternalTransferReceipt, type InternalTransferTerms,
-} from "../../../../services/gateway/src/internal_crypto_transfer_contract.js";
+} from "@masanawa/commerce";
 
 interface QuoteRow {
   tenant_id: string; sender_user_id: string; recipient_user_id: string;
