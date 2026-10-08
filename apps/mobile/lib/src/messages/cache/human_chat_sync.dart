@@ -114,9 +114,23 @@ class HumanChatSync {
       final cursor = await cache.syncCursor(
         tenantId: tenantId, userId: userId, conversationId: conversationId,
       );
-      final delta = await remote.fetchDelta(
-        conversationId: conversationId, afterSequence: cursor,
-      );
+      HumanChatDelta delta;
+      try {
+        delta = await remote.fetchDelta(
+          conversationId: conversationId, afterSequence: cursor,
+        );
+      } on HumanChatRejected catch (error) {
+        if (!_active) return;
+        if (error.code == 'ACCESS_REVOKED' ||
+            error.code == 'CONVERSATION_DELETED') {
+          await cache.revokeConversation(
+            tenantId: tenantId,
+            userId: userId,
+            conversationId: conversationId,
+          );
+        }
+        rethrow;
+      }
       _assertActive();
       if (delta.nextSequence < cursor ||
           delta.messages.length > 100 ||
