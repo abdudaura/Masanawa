@@ -198,6 +198,20 @@ class _HumanContactsScreenState extends ConsumerState<HumanContactsScreen> {
                   ),
                 ),
             ],
+            if (value.nextCursor != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: value.loading || value.loadingMore || value.busy
+                    ? null : actions.loadMore,
+                icon: const Icon(Icons.more_horiz),
+                label: const Text('Load more contacts'),
+              ),
+            ],
+            if (value.loadingMore)
+              const Padding(
+                padding: EdgeInsets.all(8),
+                child: Center(child: CircularProgressIndicator()),
+              ),
             if (value.busy) const LinearProgressIndicator(),
             const SizedBox(height: 20),
           ],
