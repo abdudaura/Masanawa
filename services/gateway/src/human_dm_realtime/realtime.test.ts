@@ -147,4 +147,23 @@ describe("C03 human DM realtime",()=>{
     expect(calls).toBe(2);
     expect(sleeps).toBe(1);
   });
+  it("revalidates a long-poll token after an idle wait",async()=>{
+    let attempts=0;
+    const service=createHumanDmRealtimeService({
+      repository:{async sync(){return {...empty,nextCursor:"8"};}},
+      authorizer:{async authorize(){
+        attempts++;
+        if(attempts>1) {
+          throw Object.assign(new Error("UNAUTHORIZED"),{statusCode:401});
+        }
+        return {tenantId:"t",userId:"u"} as never;
+      }},
+      sleep:async()=>{},
+    });
+    await expect(service.sync({cursor:"8",waitMs:1000})).rejects.toMatchObject({
+      statusCode:401,
+    });
+    expect(attempts).toBe(2);
+  });
+
 });
