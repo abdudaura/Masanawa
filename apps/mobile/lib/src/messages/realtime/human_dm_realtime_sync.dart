@@ -28,6 +28,8 @@ abstract interface class HumanDmRealtimeProjection {
   Future<void> invalidateConversation(String conversationId);
 }
 
+enum HumanDmRealtimeStatus { connecting, synchronized, retrying, stopped }
+
 class HumanDmRealtimeSync {
   HumanDmRealtimeSync({
     required this.tenantId,
@@ -38,12 +40,14 @@ class HumanDmRealtimeSync {
     required bool Function() isCurrentSession,
     Future<void> Function(Duration duration)? sleep,
     int Function(int exclusiveMax)? random,
+    this.onStatus,
   }) : _isCurrentSession = isCurrentSession,
        _sleep = sleep ?? Future<void>.delayed,
        _random = random ?? Random.secure().nextInt;
 
   final String tenantId;
   final String userId;
+  final void Function(HumanDmRealtimeStatus status)? onStatus;
   final HumanDmRealtimeTransport transport;
   final HumanDmRealtimeCursorStore store;
   final HumanDmRealtimeProjection projection;
@@ -63,6 +67,7 @@ class HumanDmRealtimeSync {
   void stop() {
     _active = false;
     _cancel?.cancel('human DM session ended');
+    onStatus?.call(HumanDmRealtimeStatus.stopped);
   }
   void _checkActive() {
     if (!active) throw StateError('Human messaging session no longer active');
@@ -171,22 +176,27 @@ class HumanDmRealtimeSync {
   /// Do not run a foreground poll loop from an app-killed/background isolate.
   Future<void> runWhileForeground() async {
     _checkActive();
+    onStatus?.call(HumanDmRealtimeStatus.connecting);
     while (active) {
       try {
         await syncOnce(waitMs:12000);
         if (!active) return;
+        onStatus?.call(HumanDmRealtimeStatus.synchronized);
         await _sleep(const Duration(milliseconds: 250));
       } on DioException catch (error) {
         if (!active || CancelToken.isCancel(error)) return;
         _failureCount++;
+        onStatus?.call(HumanDmRealtimeStatus.retrying);
         await _sleep(_backoff());
       } on StateError {
         if (!active) return;
         _failureCount++;
+        onStatus?.call(HumanDmRealtimeStatus.retrying);
         await _sleep(_backoff());
       } catch (_) {
         if (!active) return;
         _failureCount++;
+        onStatus?.call(HumanDmRealtimeStatus.retrying);
         await _sleep(_backoff());
       }
     }
