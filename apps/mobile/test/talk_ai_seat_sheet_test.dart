@@ -9,6 +9,11 @@ import 'package:masanawa/src/theme/masanawa_theme.dart';
 class _FakeSeatTransport implements TalkAiSeatTransport {
   TalkAiSeatMode? quotedMode;
   String? quotedPersona;
+  bool expireFirstQuote = false;
+  int quoteCount = 0;
+  int confirmationCalls = 0;
+  TalkAiSeatRequestStatus confirmationStatus = TalkAiSeatRequestStatus.pendingHost;
+  bool failConfirmation = false;
 
   static const expert = TalkAiSeatCandidate(
     personaId: 'expert-economist',
@@ -17,6 +22,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     seatFeeLabel: '₦300',
     subtitle: 'Economy · Business',
     topics: ['Economics', 'Business'],
+    isAvailable: true,
   );
 
   static const twin = TalkAiSeatCandidate(
@@ -26,6 +32,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     seatFeeLabel: '₦450',
     subtitle: 'Owned by Amina',
     topics: ['Technology', 'Startups'],
+    isAvailable: true,
   );
 
   @override
@@ -42,6 +49,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
   }) async {
     quotedMode = mode;
     quotedPersona = personaId;
+    quoteCount += 1;
     final candidate = personaId == twin.personaId ? twin : expert;
     return TalkAiSeatQuote(
       quoteId: 'quote-1',
@@ -50,7 +58,9 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
       kind: candidate.kind,
       mode: mode,
       totalLabel: candidate.seatFeeLabel,
-      expiresAt: DateTime(2030, 1, 1, 12, 30),
+      expiresAt: expireFirstQuote && quoteCount == 1
+          ? DateTime.now().add(const Duration(seconds: 2))
+          : DateTime(2030, 1, 1, 12, 30),
       requiresHostApproval: mode == TalkAiSeatMode.sponsor,
     );
   }
@@ -60,10 +70,14 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     required String talkId,
     required String quoteId,
   }) async {
-    return const TalkAiSeatRequest(
+    confirmationCalls += 1;
+    if (failConfirmation) throw StateError('Network timeout');
+    return TalkAiSeatRequest(
       requestId: 'request-1',
-      status: TalkAiSeatRequestStatus.pendingHost,
-      message: 'Waiting for the Host.',
+      status: confirmationStatus,
+      message: confirmationStatus == TalkAiSeatRequestStatus.expired
+          ? 'The Seat request expired.'
+          : 'Waiting for the Host.',
     );
   }
 }
@@ -145,4 +159,73 @@ void main() {
     expect(find.text('Economist'), findsNothing);
     expect(find.text('₦450'), findsOneWidget);
   });
+  testWidgets('expired quote disables financial confirmation and allows re-quote',
+      (tester) async {
+    final transport = _FakeSeatTransport()..expireFirstQuote = true;
+    await tester.pumpWidget(_app(transport: transport, isHost: false));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sponsor'));
+    await tester.pumpAndSettle();
+    expect(transport.quoteCount, 1);
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('ai-seat-confirm')),
+      ).onPressed,
+      isNotNull,
+    );
+
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('Get new quote'), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('ai-seat-confirm')),
+      ).onPressed,
+      isNull,
+    );
+    expect(transport.confirmationCalls, 0);
+
+    await tester.tap(find.text('Get new quote'));
+    await tester.pumpAndSettle();
+    expect(transport.quoteCount, 2);
+    expect(find.text('Get new quote'), findsNothing);
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('ai-seat-confirm')),
+      ).onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('server expired status stays visible instead of claiming success',
+      (tester) async {
+    final transport = _FakeSeatTransport()
+      ..confirmationStatus = TalkAiSeatRequestStatus.expired;
+    await tester.pumpWidget(_app(transport: transport, isHost: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ai-seat-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(transport.confirmationCalls, 1);
+    expect(find.text('The Seat request expired.'), findsOneWidget);
+    expect(find.text('Confirm AI Seat'), findsOneWidget);
+  });
+
+  testWidgets('confirmation timeout does not claim no request was sent',
+      (tester) async {
+    final transport = _FakeSeatTransport()..failConfirmation = true;
+    await tester.pumpWidget(_app(transport: transport, isHost: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ai-seat-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(transport.confirmationCalls, 1);
+    expect(find.textContaining('Couldn’t verify this Seat request'), findsOneWidget);
+    expect(find.textContaining('No duplicate request was sent'), findsNothing);
+  });
+
 }
