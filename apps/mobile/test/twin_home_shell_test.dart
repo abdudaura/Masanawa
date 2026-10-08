@@ -252,6 +252,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('View profile'), findsOneWidget);
+    await tester.tap(find.text('View profile'));
+    await tester.pumpAndSettle();
+    expect(find.text('Profile amina-twin'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -265,6 +268,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(activity.loads, 1);
     expect(find.text('Nothing here yet.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Profile header action opens the existing You hub route', (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Profile'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your profile'), findsOneWidget);
+    expect(find.text('Settings & privacy'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
