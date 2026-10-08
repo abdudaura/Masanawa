@@ -16,11 +16,11 @@ export function createInternalCryptoTransferService(input: {
   authorizer: FinancialAuthorizer;
   recipients: CreditRecipientResolver;
   repository: InternalTransferRepository;
-  financial: FinancialService;
+  financial?: FinancialService;
   enabled: boolean;
 }): InternalCryptoTransferService {
   async function qualify(authorizationHeader: string | undefined, providerCode: string) {
-    if (!input.enabled) throw new Error("crypto.transfer.not_qualified");
+    if (!input.enabled || !input.financial) throw new Error("crypto.transfer.not_qualified");
     const capabilities = await input.financial.capabilities({ authorizationHeader });
     if (!capabilities.deposits) throw new Error("crypto.transfer.custody_unavailable");
     const routes = await input.financial.listDepositRoutes({ authorizationHeader });
@@ -33,7 +33,7 @@ export function createInternalCryptoTransferService(input: {
   return {
     async available(request) {
       await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
-      if (!input.enabled) return false;
+      if (!input.enabled || !input.financial) return false;
       try {
         const capabilities = await input.financial.capabilities({authorizationHeader:request.authorizationHeader});
         if (!capabilities.deposits) return false;
@@ -81,13 +81,14 @@ export function createInternalCryptoTransferService(input: {
       if (quote.status === "completed") return quote;
       if (quote.status !== "quoted") throw new Error("crypto.transfer.quote_unavailable");
       // Requalify against live provider/market evidence before committing funds.
+      if (!input.financial) throw new Error("crypto.transfer.custody_unavailable");
       const routes = await input.financial.listDepositRoutes({
         authorizationHeader: request.authorizationHeader,
       });
       const capabilities = await input.financial.capabilities({
         authorizationHeader: request.authorizationHeader,
       });
-      if (!input.enabled || !capabilities.deposits ||
+      if (!input.enabled || !input.financial || !capabilities.deposits ||
           !routes.some(route => route.asset === quote.asset && route.network === quote.network &&
             route.network?.toLowerCase() !== "erc20")) {
         throw new Error("crypto.transfer.route_unavailable");
