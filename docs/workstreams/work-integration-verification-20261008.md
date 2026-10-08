@@ -301,3 +301,5 @@ Preserved the fourteen claimed PRs' backend source, tests and handoffs. Full rec
 
 ## Mobile readiness consolidation claim — 2026-10-08T15:56Z
 Continue owner-requested consolidation. Claim exact changed paths of #442/#438/#444/#440(mobile)/#482/#495/#499/#500/#501/#491/#494/#496/#492/#445/#498/#433/#459 and their corresponding backend support/test paths where necessary. Preserve approved five-tab root and canonical C02; layer localized billing on owner-scoped restoration, profile safety on current contact navigation, support preference on avatar/settings/language, and role guardrails on private intent. Shared-source conflicts require hunk reconciliation and independent execution; never overwrite current files with old branch snapshots. New #502/#503 detected and will be audited before final cleanup. No provider enablement or release acceptance.
+
+Also claim #502 Talk push preview privacy and #503 expiring replay authorization source/tests/handoffs, preserving existing server/dispatcher authorities. Root private-service intent from #445 is reconciled onto the approved Assistant tab, including its workspace screen; legacy Private Talk tab is not restored.
