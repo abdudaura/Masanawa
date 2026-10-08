@@ -149,9 +149,13 @@ class _OperatorTaskCenterState extends State<OperatorTaskCenter> {
           Text(readableTaskPhase(task.phase)),
           if (task.isUncertain)
             const Text('Outcome not confirmed. Checking does not resend.'),
-          if (task.needsApproval)
+          if (task.needsApproval) ...[
             const Text('Review exact current terms in the secure workflow. '
                 'A voice or chat yes never authorizes an action.'),
+            if (task.approvalExpiresAt != null)
+              Text('Deadline (device local time): ' +
+                  task.approvalExpiresAt!.toLocal().toString()),
+          ],
           if (task.errorCode != null)
             Text('Support code: ' + task.errorCode!),
           const SizedBox(height: 8),
