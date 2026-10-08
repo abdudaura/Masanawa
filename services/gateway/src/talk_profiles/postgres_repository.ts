@@ -179,6 +179,24 @@ export function createPostgresTalkProfileRepository(
     readHuman,
     readHumanByUserId,
 
+    async createOwnHuman(input) {
+      const inserted = await pool.query<{ user_id: string }>(
+        `INSERT INTO talks.public_profiles (
+          tenant_id, user_id, handle, display_name, bio, avatar_url,
+          live_talk_id, twin_public_id, twin_display_name, talks_json, updated_at
+        ) VALUES ($1,$2,$3,$4,$5,NULL,NULL,NULL,NULL,'[]'::jsonb,clock_timestamp())
+        ON CONFLICT (tenant_id,user_id) DO NOTHING
+        RETURNING user_id`,
+        [input.tenantId, input.userId, input.handle, input.displayName, input.bio],
+      );
+      if (!inserted.rows[0]) return null;
+      return readHumanByUserId({
+        tenantId: input.tenantId,
+        viewerUserId: input.userId,
+        userId: input.userId,
+      });
+    },
+
     async updateOwnHuman(input) {
       const fields: string[] = [];
       const values: unknown[] = [input.tenantId, input.userId];
