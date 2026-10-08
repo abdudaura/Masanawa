@@ -48,7 +48,12 @@ Future<ui.Image> decodeAvatarSource(Uint8List bytes) async {
   if (bytes.isEmpty || bytes.lengthInBytes > 12 * 1024 * 1024) {
     throw const FormatException('Choose an image smaller than 12 MB');
   }
-  final codec = await ui.instantiateImageCodec(bytes);
+  final codec = await ui.instantiateImageCodec(
+    bytes,
+    targetWidth: 2048,
+    targetHeight: 2048,
+    allowUpscaling: false,
+  );
   try {
     final frame = await codec.getNextFrame();
     final image = frame.image;
