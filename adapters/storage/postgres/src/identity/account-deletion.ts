@@ -143,7 +143,7 @@ export function createPostgresAccountDeletionChallengeRepository(
             WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3::uuid FOR UPDATE`,
           [input.tenantId, input.userId, input.requestId],
         );
-        if (request.rows[0]?.phase !== "requested") {
+        if (request.rows[0]?.phase !== "requested" && request.rows[0]?.phase !== "failed") {
           throw new Error("account_deletion.verification_not_available");
         }
         const current = await client.query<{
@@ -186,7 +186,7 @@ export function createPostgresAccountDeletionChallengeRepository(
         const stored = requestRows.rows[0];
         if (!stored) return { result: "missing" as const };
         const request = convert(stored);
-        if (request.phase !== "requested") {
+        if (request.phase !== "requested" && request.phase !== "failed") {
           return { result: "already-verified" as const };
         }
         if (request.revision !== input.expectedRevision) {
