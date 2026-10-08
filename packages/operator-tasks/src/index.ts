@@ -93,6 +93,8 @@ export interface OperatorTaskDomain {
     arguments: Readonly<Record<string, unknown>>;
   }>): Promise<void>;
   /** Executes at most once from this process after durable admission. Use operationId as the domain idempotency key. */
+  /** Revalidate current account, persona, membership, quote, consent and risk. */
+  authorizeConfirmation(input: Readonly<{ actor: OperatorActor; task: OperatorTaskRecord }>): Promise<void>;
   execute(input: Readonly<{ actor: OperatorActor; task: OperatorTaskRecord }>): Promise<OperatorDomainOutcome>;
   /** Read-only authoritative status lookup. Must not submit a second side effect. */
   reconcile(input: Readonly<{ actor: OperatorActor; task: OperatorTaskRecord }>): Promise<OperatorDomainOutcome>;
@@ -174,6 +176,9 @@ function stable(value: unknown, depth = 0): string {
   if (typeof value === "object") {
     const object = value as Record<string, unknown>;
     const keys = Object.keys(object).sort();
+    if (keys.some(key => ["__proto__", "prototype", "constructor"].includes(key))) {
+      throw new OperatorTaskError("TASK_INVALID_ARGUMENTS", 400);
+    }
     if (keys.length > 64 || Object.getPrototypeOf(object) !== Object.prototype) {
       throw new OperatorTaskError("TASK_INVALID_ARGUMENTS", 400);
     }
@@ -291,7 +296,7 @@ export function createOperatorTaskService(input: Readonly<{
         throw new OperatorTaskError("TASK_APPROVAL_EXPIRY", 400);
       }
       const approvalToken = "ota_" + randomBytes(32).toString("base64url");
-      const updated = await transition(request.actor, current, ["proposed", "clarifying", "prepared"], {
+      const updated = await transition(request.actor, current, ["proposed", "clarifying", "prepared", "awaiting_approval"], {
         phase: "awaiting_approval", operationClass: request.operationClass,
         operationId: createCanonicalId("operation"), termsDigest: request.termsDigest,
         approvalDigest: digest(approvalToken), approvalSessionDigest: request.actor.sessionDigest,
@@ -309,14 +314,19 @@ export function createOperatorTaskService(input: Readonly<{
           digest(request.approvalToken) !== current.approvalDigest) {
         throw new OperatorTaskError("TASK_APPROVAL_INVALID", 403);
       }
+      // Recheck permissions and terms at confirmation; adapters also recheck at the effect.
+      await input.domain.authorizeConfirmation({ actor: request.actor, task: current });
       // Persist the irrevocable execution admission BEFORE contacting the domain.
       // No API retry may call execute() again once this CAS has succeeded.
       const running = await transition(request.actor, current, ["awaiting_approval"], {
         phase: "running", approvalDigest: null, approvalSessionDigest: null,
       });
-      let outcome: OperatorDomainOutcome;
+      // Execution acknowledgment alone is not proof of success. The domain's
+      // separate readback MUST confirm the exact idempotent operation outcome.
+      let outcome: OperatorDomainOutcome = { status: "unknown" };
       try {
-        outcome = await input.domain.execute({ actor: request.actor, task: running });
+        await input.domain.execute({ actor: request.actor, task: running });
+        outcome = await input.domain.reconcile({ actor: request.actor, task: running });
       } catch {
         outcome = { status: "unknown" };
       }
