@@ -8,3 +8,19 @@ Step: claim published. Test/deploy/device acceptance pending. Avatar upload requ
 Last activity: 2026-10-08.
 
 Scope refinement: `/profile` currently maps to SettingsScreen, not a profile editor. This branch owns that route only; R17 shell currently changes `twin_home_shell.dart`, no overlapping path. Implement a protected self profile editor; name/bio and avatar removal are server-owned. Handles remain read-only pending reference-preserving alias/change contract. Avatar upload requires separately qualified persistent media backing, not a data URI or ephemeral file.
+
+## Implemented scope and evidence
+
+1. **Owner route** `GET /profiles/me`: verifies the signed-in customer; no arbitrary user ID input and returns the existing public profile. `PATCH /profiles/me`: name/bio and avatar removal only, with server validation and SQL `WHERE tenant_id=$1 AND user_id=$2`. No client-provided identity or arbitrary URL write. `PUT /profiles/me`: explicit creation for signed-in users without a public-profile row, validates public handle and name; database unique handle and per-user conflict are preserved and translated to meaningful 409 statuses. Existing handles are not implicitly changed.
+2. **Durability**: updates run on `talks.public_profiles` instead of client-only state. On success the client invalidates public profile projections by handle/user ID and shows a server-confirmed result. Prior details remain visible on network failure.
+3. **Mobile UX**: `/profile` now opens `EditProfileScreen`, not Settings. Users can create first public profile (name/handle/bio), edit public name/bio, and remove an existing avatar with undo prior to save. Validation/disabled state/loading/retry are explicit. `/settings` is unchanged.
+4. **Auth/validation tests authored**: gateway HTTP route owner-only/401, new profile, duplicate, bad handle, field injection, text validation; SQL update scoped by tenant+user, initial insert unique semantics; mobile typed GET/PUT/PATCH transport and first-time/edit widget tests.
+
+## Incomplete R18 acceptance — do NOT claim full completion
+
+- **Profile photo upload/crop/replace**: still requires durable public media-object storage, image decoding/sanitization, content caps, consent and provider configuration. No data: URL or ephemeral filesystem shortcut was used. Removal of an existing avatar is implemented; upload is NOT.
+- **Handle changes**: existing public handles can be referenced from Talk invites, owner/persona links and safety enforcement. Do not mutate until canonical alias/reference migration is designed and qualified. Initial new handle is supported.
+- Public display name is intentionally distinct from account authentication/legal-name field; account identity synchronization needs a separate coordinated identity contract.
+- Authenticated public-profile setup persists in `talks.public_profiles`; device, provider, CI and real deployment qualification remain pending. No runtime test or APK build was executed here.
+
+Last repository-visible work: commits through `3cd6929` on this branch. Tests authored, not run. Claim may be reclaimed after five inactive minutes under MULTI-WINDOW-WORK.md.
