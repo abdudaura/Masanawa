@@ -38,8 +38,6 @@ CREATE TABLE IF NOT EXISTS commerce.crypto_internal_transfer_quotes (
  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  PRIMARY KEY (tenant_id,sender_user_id,request_id),
  UNIQUE (tenant_id,recipient_request_id),
- FOREIGN KEY (tenant_id,sender_user_id) REFERENCES identity.users(tenant_id,user_id),
- FOREIGN KEY (tenant_id,recipient_user_id) REFERENCES identity.users(tenant_id,user_id),
  CHECK(sender_user_id <> recipient_user_id),
  CHECK(expires_at > created_at),
  CHECK ((status='completed')=(completed_at IS NOT NULL)),
