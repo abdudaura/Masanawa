@@ -82,6 +82,10 @@ class HumanVoiceController extends ChangeNotifier {
   String? _localFile;
   String? _request;
   Timer? _limitTimer;
+  Completer<void>? _startFinished;
+  Completer<void>? _stopFinished;
+  int _recordGeneration=0;
+  bool _starting=false, _stopping=false;
   bool recording=false,review=false,sending=false,loading=false,playing=false,closed=false;
   bool canLoadOlder=false;
   bool get canSend=>review&&!sending&&!recording&&!playing&&_localFile!=null;
@@ -92,43 +96,104 @@ class HumanVoiceController extends ChangeNotifier {
     final dir=await getTemporaryDirectory();
     return '${dir.path}/masanawa-private-note-${_requestId()}.ogg';
   }
+  Future<void> _erase(String? path) async {
+    if(path==null||path.isEmpty)return;
+    try{await File(path).delete();}catch(_){}
+  }
+
+  /// A permission dialog or native recorder start may outlive the widget.
+  /// Fence each start attempt and wait for it before disposing the native mic.
   Future<void> begin() async {
-    if(closed||recording||review||sending)return;
+    if(closed||recording||review||sending||_starting||_stopping)return;
+    _starting=true;
+    final finished=_startFinished=Completer<void>();
+    final generation=++_recordGeneration;
+    String? path;
+    bool attemptedStart=false;
     error=null;
     try {
-      if(!await _capture.permission()){
+      final allowed=await _capture.permission();
+      if(closed||generation!=_recordGeneration)return;
+      if(!allowed){
         _fail('Microphone permission denied. You can still send a text message.');
         return;
       }
-      final path=await _privatePath();
-      if(closed)return;
+      path=await _privatePath();
+      if(closed||generation!=_recordGeneration){
+        await _erase(path);
+        return;
+      }
+      attemptedStart=true;
       await _capture.start(path);
+      if(closed||generation!=_recordGeneration){
+        String? completedPath;
+        try{completedPath=await _capture.stop();}catch(_){}
+        await _erase(completedPath);
+        await _erase(path);
+        return;
+      }
       _localFile=path;
       _request=_requestId();
       recording=true;review=false;
       _limitTimer?.cancel();
       _limitTimer=Timer(const Duration(seconds:90),(){unawaited(stop());});
       _notify();
-    } catch(_) {await discard();_fail('Voice recording is unavailable on this device. Use text instead.');}
+    } catch(_) {
+      // A partially started native recorder must never retain microphone access.
+      if(attemptedStart){
+        String? completedPath;
+        try{completedPath=await _capture.stop();}catch(_){}
+        await _erase(completedPath);
+      }
+      await _erase(path);
+      if(!closed&&generation==_recordGeneration)
+        _fail('Voice recording is unavailable on this device. Use text instead.');
+    } finally {
+      _starting=false;
+      _startFinished=null;
+      finished.complete();
+    }
   }
   Future<void> stop() async {
-    if(closed||!recording)return;
+    if(closed||!recording||_stopping)return;
+    _stopping=true;
+    final finished=_stopFinished=Completer<void>();
+    final generation=_recordGeneration;
     _limitTimer?.cancel();_limitTimer=null;
     recording=false;
+    String? completedPath;
     try{
-      final path=await _capture.stop();
-      if(closed)return;
-      final file=File(path??_localFile??'');
+      completedPath=await _capture.stop();
+      if(closed||generation!=_recordGeneration){
+        // A shutdown/discard is already erasing the original recording.
+        // Some encoders return a different output path; erase that too.
+        if(completedPath!=_localFile)await _erase(completedPath);
+        return;
+      }
+      final file=File(completedPath??_localFile??'');
       final len=await file.length();
       if(len<84||len>1536*1024){
-        await discard();
+        await _dropFile();
+        await _erase(completedPath);
+        review=false;
         _fail('Voice note must be shorter than 90 seconds and under 1.5 MB.');
         return;
       }
+      if(completedPath!=_localFile)await _erase(_localFile);
       _localFile=file.path;
       review=true;
       error=null;_notify();
-    }catch(_){await discard();_fail('Voice recording failed. Please retry or type a message.');}
+    }catch(_){
+      await _erase(completedPath);
+      await _dropFile();
+      review=false;
+      if(!closed&&generation==_recordGeneration)
+        _fail('Voice recording failed. Please retry or type a message.');
+    }finally{
+      _stopping=false;
+      _stopFinished=null;
+      finished.complete();
+    }
   }
   // Match completed/failed playback to its request: a delayed completion
   // after Stop, logout, or a different note must not restore stale state.
@@ -271,8 +336,10 @@ class HumanVoiceController extends ChangeNotifier {
     if(path!=null){try{await File(path).delete();}catch(_){}}
   }
   Future<void> discard() async {
-    await stopPlayback();
+    ++_recordGeneration; // cancel an in-progress permission/start attempt
     _limitTimer?.cancel();_limitTimer=null;
+    await _startFinished?.future;
+    await _stopFinished?.future;
     if(recording){try{await _capture.stop();}catch(_){}}
     recording=false;review=false;
     await _dropFile();
@@ -282,8 +349,12 @@ class HumanVoiceController extends ChangeNotifier {
   /// media and does not let late replies restore old account's private state.
   Future<void> shutdown() async {
     if(closed)return;
-    closed=true;++_playGeneration;
+    closed=true;++_playGeneration;++_recordGeneration;
     _limitTimer?.cancel();_limitTimer=null;
+    // Do not dispose the native recorder while permission/start/stop is in
+    // flight. The cancelled start itself stops and erases any late capture.
+    await _startFinished?.future;
+    await _stopFinished?.future;
     if(recording){try{await _capture.stop();}catch(_){}}
     _notes.clear();canLoadOlder=false;recording=false;review=false;
     await _dropFile();
