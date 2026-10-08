@@ -209,6 +209,50 @@ describe("LiveKit Talk media token issuer", () => {
     }
   });
 
+  it("classifies unavailable RoomService network and malformed JSON without granting audio", async () => {
+    const networkIssuer = createLiveKitTalkMediaTokenIssuer({
+      serverUrl: "wss://live.example.test", apiKey: "api-key",
+      apiSecret: "0123456789abcdef0123456789abcdef",
+      fetchImpl: async () => {
+        throw new TypeError("ENETUNREACH");
+      },
+    });
+    const input = {
+      talkId: "talk_1", userId: "user_host",
+      sessionId: "talk-live_new", role: "host" as const, canPublishAudio: true,
+    };
+    await expect(networkIssuer.mint(input)).rejects.toThrow(
+      "talks.live.media_admin_list_failed",
+    );
+    const malformedIssuer = createLiveKitTalkMediaTokenIssuer({
+      serverUrl: "wss://live.example.test", apiKey: "api-key",
+      apiSecret: "0123456789abcdef0123456789abcdef",
+      fetchImpl: async () => new Response("<not-json>", { status: 200 }),
+    });
+    await expect(malformedIssuer.mint(input)).rejects.toThrow(
+      "talks.live.media_admin_invalid_participants",
+    );
+  });
+
+  it("classifies a network outage during prior Host removal and never issues credentials", async () => {
+    const issuer = createLiveKitTalkMediaTokenIssuer({
+      serverUrl: "wss://live.example.test", apiKey: "api-key",
+      apiSecret: "0123456789abcdef0123456789abcdef",
+      fetchImpl: async (url) => {
+        if (String(url).endsWith("/ListParticipants")) {
+          return new Response(JSON.stringify({
+            participants: [{ identity: "user_host:talk-live_old" }],
+          }), { status: 200 });
+        }
+        throw new TypeError("ECONNRESET");
+      },
+    });
+    await expect(issuer.mint({
+      talkId: "talk_1", userId: "user_host",
+      sessionId: "talk-live_new", role: "host", canPublishAudio: true,
+    })).rejects.toThrow("talks.live.media_admin_remove_failed");
+  });
+
   it("does not mint a successor until all previous Host room tracks are evicted", async () => {
     const calls: string[] = [];
     const issuer = createLiveKitTalkMediaTokenIssuer({
