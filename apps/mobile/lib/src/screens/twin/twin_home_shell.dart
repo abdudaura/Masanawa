@@ -107,6 +107,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 0,
+          primary: false,
           bottom: const TabBar(
             tabs: [Tab(text: 'Masanawa Agents'), Tab(text: 'Twins')],
           ),
