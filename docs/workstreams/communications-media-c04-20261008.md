@@ -81,3 +81,30 @@ Confirm migration parsing (especially new deletion guard), new worker fake-timer
 Window: GPT-6 new continuation; previous PR #478 last repository activity at 2026-10-08T11:47:04Z (stale >5 minutes). Current main inspected `226d0c58632b243661ab24904cca75700ed474d4`; **reuse** unchanged C04 branch `work/c04-private-voice-notes-20261008` and draft [#478](https://github.com/Baatiku/masanawa/pull/478), preserving the original SQL/media/S3 contracts and tests. This claim update is the new five-minute lease activity.
 
 Exact bounded owned files for this checkpoint: `apps/mobile/lib/src/human_media/human_voice_controller.dart`, `apps/mobile/lib/src/human_media/human_voice_controls.dart`, `apps/mobile/test/human_media_controls_test.dart`, this workstream handoff. Exclude shared `app.ts/main.ts`, root tabs/router, C02 message model and migrations, C05 durable queue and all production provider setup. Feature target: user can deliberately Stop an in-progress private voice note/preview without waiting for `just_audio.play()` to finish, delayed callbacks cannot revive private media after disposal/account switch, UI recovers and test cases demonstrate behavior. No claim of completed C04 cross-feature integration. Current code-before-claim HEAD `386361ad6c63014651958ff9efbb51b33ae4b772`; status PARTIAL_IMPLEMENTATION / no executable tests.
+## 2026-10-08 — interruptible C04 voice playback / latest owner handoff
+
+**Status: PARTIAL_IMPLEMENTATION; feature not done. PR #478 remains DRAFT / UNMERGED.** Owner: GPT-6 bounded C04 playback source continuation, not full C04 completion.
+Base latest main observed: 226d0c58632b243661ab24904cca75700ed474d4. Reclaimed original branch work/c04-private-voice-notes-20261008 at old SHA 386361ad6c63014651958ff9efbb51b33ae4b772, after >5min inactivity; new claim commit 1de4cb54ebefe6491fb9e5f2db8d0ee0108f6676. Substantive code/test HEAD before this handoff: d3c7c5d06f10db99763ddf938d37046239086b41. Final pushed HEAD is the handoff commit linked in PR #478.
+
+Changed owned files:
+- apps/mobile/lib/src/human_media/human_voice_controller.dart: introduce injected platform audio adapter, Stop operation, play generation fence for post-cancel network/file/audio callbacks, downloaded local temporary media removal, preview Stop preserves draft, Send disabled while preview plays, and avoid awaiting long-running just_audio.play() on user UI event.
+- apps/mobile/lib/src/human_media/human_voice_controls.dart: clear Stop action for playing remote voice and recording preview; passes player/path test seams through to controller, reinitializes on session/conversation changes.
+- apps/mobile/test/human_media_playback_stop_test.dart: four source-authored unexecuted cases for Stop while audio Future pending, late private fetch cancellation, review preservation/discard, and Stop button state.
+- docs/workstreams/communications-media-c04-20261008.md: updated claim and this durable handoff.
+
+No financial, shared Flutter router, C02 message authority, Gateway app.ts/main.ts, SQL/migrations, provider secrets or production configuration touched in this window. Gateway C04 read remains existing authenticated tenant/member/consent policy; no new bearer/membership shortcut. Source is not yet in root Chats UI.
+
+**Missing implementable full-C04 integration:** C01 #468 + reconcile C02 #472/#475 and ordered migration 0016/0017/0018; mount human_media module through authorized shared Gateway composition; integrate C04 voice rendering/controls with single human DM thread and C08 root #493; C03 realtime/cursors and C05 secure durable post-crash media outbox; R12 erasure synchronization; native Ogg/Opus device and S3 private provider qualification. Concurrent Work draft #497 touches many shared files; preserve it. Original C04 PR #478 and its full prior SQL/S3/test/handoff remain intact. Stop/erase uses best-effort filesystem unlink; do not claim forensic secure deletion or external URL revocation.
+
+**Executed proof:** GitHub connector file source write/read acknowledgements only. **NOT RUN:** Flutter/Dart compilation, test suite, pnpm/Vitest/typecheck, isolated PostgreSQL, real S3 provider, Android physical device or app-to-app send. Known GitHub Actions #457 quota/runner zero-step failure. No CI retry was attempted.
+
+**Exact Work commands, after C01/C02/C04 integration:**
+- corepack pnpm install --frozen-lockfile
+- corepack pnpm --filter @masanawa/gateway-service typecheck
+- corepack pnpm exec vitest run services/gateway/src/human_media/ogg_opus.test.ts services/gateway/src/human_media/service.test.ts services/gateway/src/human_media/routes.test.ts services/gateway/src/human_media/private_s3.test.ts services/gateway/src/human_media/runtime.test.ts
+- disposable PostgreSQL only: MASANAWA_C04_ENABLE_DB_TESTS=yes MASANAWA_C04_TEST_DATABASE_URL=postgresql://localhost/masanawa_c04_test corepack pnpm exec vitest run services/gateway/src/human_media/postgres_integration.test.ts
+- cd apps/mobile && flutter pub get && flutter analyze && flutter test test/human_media_playback_stop_test.dart test/human_media_controls_test.dart test/human_media_models_test.dart && flutter build apk --debug
+- Real two-account Android: Talk vs private mic isolation, Stop while media playing and load pending, block/unpublish/revoke/auth switch, offline/restart/multiple devices, S3 object erasure and retry, budget-phone Ogg codec.
+Fix actual failures before merge. No schema written this continuation; prior 0018 remains unmerged and requires migration review. Rollback isolated player changes if physical tests show media-focus failures while preserving existing C04 work.
+
+**Gates:** bounded playback SOURCE_WRITTEN=yes; LOCAL_TESTED=no; CI_EXECUTED=no; DB_INTEGRATED=no; APP_INTEGRATED=no (root human Chats pending); DEVICE_VERIFIED=no; PROVIDER_QUALIFIED=no; DEPLOYED=no; MERGED=no; FULL_C04_DONE=no.
