@@ -15,7 +15,7 @@
 - `createPostgresAccountDeletionQueue`: idempotent bounded backfill of verified/pending review requests, `FOR UPDATE SKIP LOCKED` single-claimer leases, stale-token rejection, bounded retry delays, persistent outcomes and atomic request/audit advancement from verified to awaiting settlement. It cannot mark processing or completed.
 - `createAccountDeletionRunner`: worker iteration with retry exponential backoff and pending-review result, without authorizing erasure.
 - `services/worker/src/account-deletion-main.ts` + `start:privacy-reconciliation`: separate entrypoint opt-in through `MASANAWA_ACCOUNT_DELETION_RECONCILIATION_ENABLED=true`; refuses startup without explicit flag and database URL. Not wired into ordinary `worker` readiness/deployment and not launched by this PR.
-- Tests authored: 5 worker runner tests; 3 PostgreSQL financial-preflight tests; 1 PostgreSQL lease/rollback test. These are *not test-pass evidence* until an equipped runner executes them.
+- Tests authored: 5 worker runner tests; 4 PostgreSQL financial-preflight tests (including owned Twin float); 1 PostgreSQL lease/replay test. These are *not test-pass evidence* until an equipped runner executes them.
 
 ## Remaining professional release gates
 
@@ -44,3 +44,8 @@ The previous access revoker compared financial evidence to the requester's times
 ## PR and CI status
 
 Draft PR #430 targets main. Workflow 37733043801 failed with zero executed steps; no code or database test result is established. Local clone failed due to GitHub DNS resolution. This workstream remains unverified and not deployed.
+
+## Most recent safety coverage
+
+- Follow-up review added owner-scoped Twin ledger matching via `identity.character_ownership` and the character debit/credit columns of `commerce.ledger_entries`; financial exposure must not be missed merely because credits are held in an owned Twin's float.
+- Added integration test where the human has no direct ledger rows but their personal Twin holds agent-float. Expected finding: `owned-twin-ledger`. This is authored only; PostgreSQL has not executed the test here.
