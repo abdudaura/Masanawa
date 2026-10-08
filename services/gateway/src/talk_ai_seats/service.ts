@@ -233,6 +233,8 @@ export function createTalkAiSeatService(input: Readonly<{
             ...(row.avatarUrl === null ? {} : { avatarUrl: row.avatarUrl }),
             topics: row.topics,
             isAvailable: row.isAvailable,
+            isOwnedByViewer: row.kind === "twin" &&
+              row.twinOwnerUserId === viewer.userId,
           }),
         ),
       );
