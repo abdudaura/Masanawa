@@ -321,7 +321,8 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
               ? _page(index)
               : const SizedBox.shrink()),
       ),
-      floatingActionButton: _index == 0 || _index == 1
+      floatingActionButton: (_index == 0 || _index == 1) &&
+              MediaQuery.viewInsetsOf(context).bottom == 0
           ? FloatingActionButton(
               tooltip: 'Start Talk',
               onPressed: () => context.push('/talk/create'),
