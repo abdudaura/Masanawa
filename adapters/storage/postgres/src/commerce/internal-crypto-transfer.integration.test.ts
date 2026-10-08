@@ -150,21 +150,17 @@ describeDb("C06 real PostgreSQL atomic internal crypto transfer acceptance", () 
     expect(checked.rows[0]?.count).toBe("1");
   });
 
-  it("rejects self-transfers, unsupported terms, and insufficient sender funds", async () => {
+  it("rejects self-transfers and unfunded quotes before approval", async () => {
     const store = createPostgresInternalCryptoTransferStore(pool);
     await expect(store.quote({
       tenantId, senderUserId, recipientUserId: senderUserId,
       quoteRequestId: createCanonicalId("request"),
       asset, network, amount: "1", policyRevision: "verified-test-policy",
     })).rejects.toThrow("crypto.internal.self_transfer");
-    const quote = await store.quote({
+    await expect(store.quote({
       tenantId, senderUserId, recipientUserId,
       quoteRequestId: createCanonicalId("request"),
       asset, network, amount: "999999", policyRevision: "verified-test-policy",
-    });
-    await expect(store.execute({
-      tenantId, senderUserId, quoteId: quote.quoteId,
-      requestId: createCanonicalId("request"), policyRevision: "verified-test-policy",
     })).rejects.toThrow("crypto.insufficient_balance");
   });
 });
