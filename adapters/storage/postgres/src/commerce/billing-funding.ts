@@ -363,6 +363,14 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
           if (row.state !== "confirmed") {
             throw new Error("financial.billing.wallet_reserve_not_allowed");
           }
+          // Only new wallet reservations require an unexpired economic quote.
+          // Completed reserves may retry/reconcile after expiry using their
+          // existing fulfillmentReference; use PostgreSQL's clock, not a mobile
+          // or Gateway timestamp, when enforcing the financial deadline.
+          const databaseNow = await client.query<{ at: Date }>(
+            "SELECT statement_timestamp() AS at",
+          );
+          assertNotExpired(row, databaseNow.rows[0]!.at.toISOString());
           await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
             `ngn-wallet:${tenantId}:${userId}`,
           ]);
