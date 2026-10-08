@@ -112,10 +112,15 @@ export function createPostgresTalkAiStageEventRepository(
           scope,
         ),
         pool.query<QuestionRow>(
-          "SELECT question_id,body,author_name,resolved_at " +
-          "FROM talks.questions WHERE tenant_id=$1 AND talk_id=$2 AND status='answered' " +
-          "AND resolved_at <= $3 AND resolved_at >= $4 " +
-          "ORDER BY resolved_at DESC LIMIT 16",
+          "SELECT q.question_id,q.body,q.author_name,q.resolved_at " +
+          "FROM talks.questions q JOIN talks.talks t " +
+          "ON t.tenant_id=q.tenant_id AND t.talk_id=q.talk_id " +
+          "WHERE q.tenant_id=$1 AND q.talk_id=$2 AND q.status='answered' " +
+          "AND q.resolved_at <= $3 AND q.resolved_at >= $4 " +
+          "AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp " +
+          "WHERE sp.tenant_id=q.tenant_id AND sp.viewer_user_id=t.host_user_id " +
+          "AND sp.subject_user_id=q.author_user_id AND sp.blocked=true) " +
+          "ORDER BY q.resolved_at DESC LIMIT 16",
           scope,
         ),
         pool.query<PollRow>(
