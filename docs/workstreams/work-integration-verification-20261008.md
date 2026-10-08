@@ -430,3 +430,21 @@ Exact reviewed backend/declaration/fixture/historical-handoff publication paths 
 - `services/gateway/tsconfig.json`
 - `test/architecture/environment-contracts.test.ts`
 - `tests/contracts/public-api-lifecycle.test.ts`
+
+
+## Foundation continuation claim — 2026-10-08T23:23Z
+User authorized continued verification while other windows hand off. Latest main5e758673ae91082520b21b3153da53791ae2cbf3; integration4c961231dac737d8e0915cd5117581e4d2185b6e. Preserve new draft #516 U27 and #517 U25 without declaring completion. Reconcile #468 F14 backend delta f8c597...→fefd2443 and #503 F09 private replay seek delta2f13e7...→33cf9adb. Do not replace active #510 contacts Flutter UI/controller or #508 Contacts Hub. Contacts new pagination route must use canonical /v1 for new API, preserving existing legacy lists. Replay source/test delta is retained with honest Flutter qualification status. Exact owned integration paths:
+- `docs/workstreams/f14-contacts-pagination-20261008.md`
+- `services/gateway/src/human_contacts/model.ts`
+- `services/gateway/src/human_contacts/postgres_integration.test.ts`
+- `services/gateway/src/human_contacts/postgres_repository.test.ts`
+- `services/gateway/src/human_contacts/postgres_repository.ts`
+- `services/gateway/src/human_contacts/routes.test.ts`
+- `services/gateway/src/human_contacts/routes.ts`
+- `services/gateway/src/human_contacts/service.test.ts`
+- `services/gateway/src/human_contacts/service.ts`
+- `apps/mobile/lib/src/talks/talk_replay_playback.dart`
+- `apps/mobile/test/talk_replay_playback_session_test.dart`
+- `docs/workstreams/f09-r13-awaiting-seek-authority-20261008.md`
+- `services/gateway/src/api_compatibility.ts`
+- `docs/API-LIFECYCLE.json`
