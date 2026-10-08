@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers.dart';
+import '../state/session_state.dart';
 import 'human_dm_outbox.dart';
 import 'human_dm_transport.dart';
 
@@ -34,13 +35,15 @@ class HumanDmState {
         error:clearError?null:error??this.error);
 }
 class HumanDmController extends StateNotifier<HumanDmState> {
-  HumanDmController(this.userId,this.conversationId,this.transport,this.outbox)
+  HumanDmController(this.userId,this.conversationId,this.transport,this.outbox,
+      {required this.isAccountCurrent})
       :super(const HumanDmState()) {
     Future<void>.microtask(load);
   }
   final String userId,conversationId;
   final HumanDmTransport transport;
   final HumanDmOutbox outbox;
+  final bool Function() isAccountCurrent;
   bool _closed=false;
   bool _refreshing=false;
   final Set<String> _inFlight={};
@@ -54,14 +57,14 @@ class HumanDmController extends StateNotifier<HumanDmState> {
   }
   String _error(Object e) => e.toString().replaceFirst(RegExp(r'^ApiException:\s*'),'');
   Future<void> load() async {
-    if(_refreshing||_closed)return;
+    if(_refreshing||_closed||!isAccountCurrent())return;
     _refreshing=true;
     try {
       final pending=await _withStorageLock(() => outbox.load(userId,conversationId));
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       state=state.copyWith(pending:pending,loading:true,clearError:true);
       final page=await transport.history(conversationId);
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       final acknowledged={for(final m in page.messages) m.clientMessageId};
       final remaining=await _withStorageLock(() async {
         final latest=await outbox.load(userId,conversationId);
@@ -69,7 +72,7 @@ class HumanDmController extends StateNotifier<HumanDmState> {
         if(remaining.length!=latest.length) await outbox.save(userId,conversationId,remaining);
         return remaining;
       });
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       final merged={for(final m in state.messages)m.messageId:m};
       for(final m in page.messages){merged[m.messageId]=m;}
       state=state.copyWith(messages:merged.values.toList()..sort((a,b)=>b.sequence.compareTo(a.sequence)),pending:remaining,
@@ -82,19 +85,19 @@ class HumanDmController extends StateNotifier<HumanDmState> {
   }
   Future<void> _acknowledge(List<HumanDmMessage> page) async {
     final fromOthers=page.where((m)=>m.senderUserId!=userId);
-    if(fromOthers.isEmpty)return;
+    if(fromOthers.isEmpty||!isAccountCurrent())return;
     final latest=fromOthers.map((m)=>m.sequence).reduce(max);
     try { await transport.read(conversationId,latest); } catch (_) {
       // Read receipts are retried on next refresh; a failure never loses texts.
     }
   }
   Future<void> older() async {
-    if(_closed||state.loading||state.loadingOlder||state.nextBeforeSequence==null)return;
+    if(_closed||!isAccountCurrent()||state.loading||state.loadingOlder||state.nextBeforeSequence==null)return;
     final cursor=state.nextBeforeSequence!;
     state=state.copyWith(loadingOlder:true,clearError:true);
     try{
       final page=await transport.history(conversationId,beforeSequence:cursor);
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       final byId={for(final m in state.messages)m.messageId:m};
       for(final m in page.messages) {byId[m.messageId]=m;}
       final merged=byId.values.toList()..sort((a,b)=>b.sequence.compareTo(a.sequence));
@@ -105,7 +108,7 @@ class HumanDmController extends StateNotifier<HumanDmState> {
   }
   Future<void> send(String raw) async {
     final text=raw.trim();
-    if(text.isEmpty||text.length>4096||_closed)return;
+    if(text.isEmpty||text.length>4096||_closed||!isAccountCurrent())return;
     final pending=HumanDmPending(createHumanDmRequestId(),text,DateTime.now().toUtc());
     try {
       final next=await _withStorageLock(() async {
@@ -114,31 +117,32 @@ class HumanDmController extends StateNotifier<HumanDmState> {
         final rows=[...latest,pending];
         // Commit encrypted pending intent BEFORE any network action.
         await outbox.save(userId,conversationId,rows);
-        if(!_closed)state=state.copyWith(pending:rows,clearError:true);
+        if(!_closed&&isAccountCurrent())state=state.copyWith(pending:rows,clearError:true);
         return rows;
       });
-      if(_closed||!next.any((row)=>row.id==pending.id))return;
+      if(_closed||!isAccountCurrent()||!next.any((row)=>row.id==pending.id))return;
       await retry(pending.id);
     } catch(_) {
       if(!_closed)state=state.copyWith(error:'Cannot securely queue your message. Nothing new was sent.');
     }
   }
   Future<void> retry(String clientMessageId) async {
-    if(_closed||!_inFlight.add(clientMessageId))return;
+    if(_closed||!isAccountCurrent()||!_inFlight.add(clientMessageId))return;
     try {
       final matches=state.pending.where((p)=>p.id==clientMessageId);
       if(matches.isEmpty)return;
       final pending=matches.first;
+      if(!isAccountCurrent())return;
       final acknowledged=await transport.send(conversationId,
         clientMessageId:pending.id,text:pending.text);
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       final next=await _withStorageLock(() async {
         final latest=await outbox.load(userId,conversationId);
         final rows=latest.where((p)=>p.id!=clientMessageId).toList();
         await outbox.save(userId,conversationId,rows);
         return rows;
       });
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       final messages={for(final m in state.messages)m.messageId:m};
       messages[acknowledged.messageId]=acknowledged;
       state=state.copyWith(pending:next,
@@ -149,13 +153,15 @@ class HumanDmController extends StateNotifier<HumanDmState> {
     }finally{_inFlight.remove(clientMessageId);}
   }
   Future<void> edit(HumanDmMessage m,String text) async {
+    if(_closed||!isAccountCurrent())return;
     try{
       final edited=await transport.edit(conversationId,m.messageId,text);
-      if(_closed)return;
+      if(_closed||!isAccountCurrent())return;
       state=state.copyWith(messages:[for(final row in state.messages)if(row.messageId==edited.messageId)edited else row],clearError:true);
     }catch(e){if(!_closed)state=state.copyWith(error:_error(e));}
   }
   Future<void> remove(HumanDmMessage m) async {
+    if(_closed||!isAccountCurrent())return;
     try{
       final deleted=await transport.remove(conversationId,m.messageId);
       if(_closed)return;
@@ -173,4 +179,8 @@ final humanDmOutboxProvider=Provider<HumanDmOutbox>((ref)=>
 typedef HumanDmKey=({String userId,String conversationId});
 final humanDmThreadProvider=StateNotifierProvider.autoDispose.family<HumanDmController,HumanDmState,HumanDmKey>((ref,key)=>
   HumanDmController(key.userId,key.conversationId,
-    ref.watch(humanDmTransportProvider),ref.watch(humanDmOutboxProvider)));
+    ref.watch(humanDmTransportProvider),ref.watch(humanDmOutboxProvider),
+    isAccountCurrent:(){
+      final session=ref.read(sessionProvider);
+      return session is SessionSignedIn && session.user.id==key.userId;
+    }));
