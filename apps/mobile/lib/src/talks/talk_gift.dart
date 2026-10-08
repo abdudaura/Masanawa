@@ -102,7 +102,7 @@ class TalkGiftReceipt {
         recipientName is! String || recipientName.isEmpty ||
         amountCredits is! int || amountCredits < 1 ||
         completedAt is! String ||
-        (json.containsKey('status') && json['status'] != 'completed') ||
+        json['status'] != 'completed' ||
         (itemId != null && (itemId is! String || itemId.isEmpty))) {
       throw const FormatException('Invalid settled Talk gift receipt');
     }
