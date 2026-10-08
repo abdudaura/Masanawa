@@ -91,5 +91,6 @@
   "statusOnCall": "في مكالمة",
   "statusOffline": "غير متصل",
   "statusUnverified": "الحالة غير مؤكدة",
-  "statusWorkingTasks": "{count, plural, =1{يعمل · مهمة واحدة} =2{يعمل · مهمتان} few{يعمل · {count} مهام} many{يعمل · {count} مهمة} other{يعمل · {count} مهمة}}"
+  "statusWorkingTasks": "{count, plural, =1{يعمل · مهمة واحدة} =2{يعمل · مهمتان} few{يعمل · {count} مهام} many{يعمل · {count} مهمة} other{يعمل · {count} مهمة}}",
+  "twinShareText": "تحدث مع {name} على Masanawa: {url}"
 }
