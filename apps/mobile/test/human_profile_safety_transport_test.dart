@@ -21,6 +21,7 @@ void main() {
     final id=await GatewayHumanProfileSafetyTransport(client).report(
       '@Amina',reason:TalkSafetyReportReason.impersonation,
       requestId:'human-profile-1234567890',detail:'Suspicious account',
+      reporterUserId:'user-a',
     );
     expect(id,'report-server-001');
     expect(captured?.path,'/safety/reports');
@@ -32,6 +33,7 @@ void main() {
       'reason':'impersonation',
       'detail':'Suspicious account',
       'clientRequestId':'human-profile-1234567890',
+      'expectedReporterUserId':'user-a',
     });
   });
 
@@ -41,6 +43,7 @@ void main() {
       GatewayHumanProfileSafetyTransport(client).report(
         'amina',reason:TalkSafetyReportReason.spam,
         requestId:'human-profile-1234567890',detail:'',
+        reporterUserId:'user-a',
       ),
       throwsStateError,
     );
@@ -58,6 +61,7 @@ void main() {
       GatewayHumanProfileSafetyTransport(client).report(
         'amina',reason:TalkSafetyReportReason.spam,
         requestId:'human-profile-1234567890',detail:'',
+        reporterUserId:'user-a',
       ),
       throwsFormatException,
     );
