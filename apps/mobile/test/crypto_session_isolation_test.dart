@@ -51,6 +51,7 @@ class _Transport implements CryptoWalletTransport {
   int capabilityReads = 0;
   List<CryptoIntent> intents = [_intent('a-only')];
   Completer<CryptoBalance>? pendingBalance;
+  Completer<CryptoIntent>? pendingDeposit;
 
   @override
   Future<CryptoCapabilities> capabilities() async {
@@ -80,6 +81,13 @@ class _Transport implements CryptoWalletTransport {
         ? const CryptoBalance(providerCode: 'btc', amount: '0.1')
         : gate.future;
   }
+
+  @override
+  Future<CryptoIntent> createDeposit({
+    required String requestId,
+    required String providerCode,
+    required String amount,
+  }) => pendingDeposit?.future ?? Future.value(_intent(requestId));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -179,6 +187,32 @@ void main() {
       container.read(cryptoWalletProvider.future),
       throwsA(isA<StateError>()),
     );
+  });
+
+  test('late deposit response never enters the replacement user activity', () async {
+    final transport = _Transport();
+    final session = _Session(_signedIn('owner-a'));
+    final container = ProviderContainer(overrides: [
+      sessionProvider.overrideWith(() => session),
+      cryptoWalletTransportProvider.overrideWithValue(transport),
+    ]);
+    addTearDown(container.dispose);
+    await container.read(cryptoWalletProvider.future);
+    final gate = Completer<CryptoIntent>();
+    transport.pendingDeposit = gate;
+    final oldRequest = container.read(cryptoWalletProvider.notifier).createDeposit(
+      requestId: 'a-late',
+      providerCode: 'btc',
+      amount: '0.01',
+    );
+
+    transport.intents = [_intent('b-only')];
+    session.change(_signedIn('owner-b'));
+    gate.complete(_intent('a-late'));
+    await expectLater(oldRequest, throwsA(isA<StateError>()));
+    final replacement = await container.read(cryptoWalletProvider.future);
+    expect(replacement.history.map((row) => row.requestId), ['b-only']);
+    expect(replacement.history.any((row) => row.requestId == 'a-late'), isFalse);
   });
 
   testWidgets('signed-out and restoring app do not expose crypto amounts or actions',
