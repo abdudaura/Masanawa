@@ -11,6 +11,7 @@ Future<TalkAiSeatRequest?> showAddAiSeatSheet(
   BuildContext context, {
   required String talkId,
   required bool isHost,
+  TalkAiPersonaKind initialKind = TalkAiPersonaKind.expert,
 }) {
   return showModalBottomSheet<TalkAiSeatRequest>(
     context: context,
@@ -21,6 +22,7 @@ Future<TalkAiSeatRequest?> showAddAiSeatSheet(
       child: AddAiSeatSheet(
         talkId: talkId,
         isHost: isHost,
+        initialKind: initialKind,
       ),
     ),
   );
@@ -31,10 +33,12 @@ class AddAiSeatSheet extends ConsumerStatefulWidget {
     super.key,
     required this.talkId,
     required this.isHost,
+    this.initialKind = TalkAiPersonaKind.expert,
   });
 
   final String talkId;
   final bool isHost;
+  final TalkAiPersonaKind initialKind;
 
   @override
   ConsumerState<AddAiSeatSheet> createState() => _AddAiSeatSheetState();
@@ -56,7 +60,11 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialKind == TalkAiPersonaKind.expert ? 0 : 1,
+    );
     _tabs.addListener(() {
       if (!_tabs.indexIsChanging) setState(() {});
     });
