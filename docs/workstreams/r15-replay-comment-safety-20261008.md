@@ -8,3 +8,14 @@
 - **Expansion before edits:** Initial audit found that Explore and non-Host detail have the same missing replay recording safety gate. Expanded exact hunks here before editing to avoid inconsistent leak between feed/detail/comments. No other window claims this repository file.
 - **State:** claimed, implementation and executable tests pending. No mobile, financial ledger, migrations, worker or shared main edits.
 - **Release:** R15 global acceptance still requires real database concurrency and deployed client/channel tests. This sublane must stay draft until tests run.
+
+## Implemented checkpoint — 2026-10-08T06:15Z
+
+- The public Explore/Live projection only includes ended Talks when a finalized/published replay is **not** safety-restricted or blocked under the canonical recording ID.
+- Non-Host Talk detail uses the same server safety gate; the existing real Host private detail override is deliberately preserved for moderation and appeal.
+- Comment publication requires a non-restricted finalized published replay for non-Hosts; all ended-Talk comments, including Host comments, additionally reject when the linked recording is restricted/blocked. Existing Talk/Host block and user moderation checks are preserved.
+- SQL authorization is tenant+recording scoped and checked in the INSERT SELECT statement for comments, not an unchecked client flag.
+- Added regression tests for feed, viewer detail and Host-author comment restriction.
+- **Verification:** Source readback and SQL-shape check only. No Vitest, TypeScript typecheck, PostgreSQL integration test or Android/deployed acceptance was executable from this GitHub connector. Must run `pnpm exec vitest run services/gateway/src/talks/replay_visibility.test.ts services/gateway/src/talks/postgres_repository.test.ts services/gateway/src/talk_safety/enforcement_integration.test.ts`, Gateway typecheck/build and actual DB safety filter tests.
+- **Remaining:** authenticated end-to-end feed/detail/comment with real publishing/moderation races, safety-hidden existing comments and cache invalidation, replay audio access, channel/moderation rollout. Do not claim full R15 success.
+- **Ownership:** limited to the above SQL hunks and regression file; no activity in other owners' live backend, financial or mobile paths. Branch must remain draft pending executable proof.
