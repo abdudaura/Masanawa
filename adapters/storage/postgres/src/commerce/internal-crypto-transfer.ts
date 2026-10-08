@@ -23,6 +23,10 @@ export interface InternalTransferRepository {
     tenantId: string; senderUserId: string; requestId: string;
   }): Promise<InternalTransferReceipt | null>;
 }
+function equalAmount(left: string, right: string): boolean {
+  const canon = (value: string) => { const [whole, fraction = ""] = value.split("."); return `${BigInt(whole)}.${fraction.replace(/0+$/u, "")}`; };
+  return canon(left) === canon(right);
+}
 function receipt(row: QuoteRow, token?: string): InternalTransferReceipt {
   return {
     requestId: row.request_id, recipientLabel: row.recipient_label,
@@ -121,7 +125,7 @@ export function createPostgresInternalCryptoTransferRepository(pool: Pool):Inter
           if(existing.recipient_user_id!==terms.recipientUserId ||
              existing.recipient_label!==terms.recipientLabel ||
              existing.asset!==terms.asset || existing.network!==terms.network ||
-             Number(existing.amount)!==Number(terms.amount)) {
+             !equalAmount(existing.amount,terms.amount)) {
             throw new Error("crypto.transfer.request_conflict");
           }
           // The one-use approval token is never disclosed on a replay.
@@ -142,8 +146,8 @@ export function createPostgresInternalCryptoTransferRepository(pool: Pool):Inter
         if(inserted.rows[0])return receipt(inserted.rows[0],consent.token);
         const raced=await readQuote(client,terms.tenantId,terms.senderUserId,terms.requestId);
         if(!raced)throw new Error("crypto.transfer.quote_conflict");
-        if(raced.recipient_user_id!==terms.recipientUserId || raced.asset!==terms.asset ||
-           raced.network!==terms.network || Number(raced.amount)!==Number(terms.amount)){
+        if(raced.recipient_user_id!==terms.recipientUserId || raced.recipient_label!==terms.recipientLabel || raced.asset!==terms.asset ||
+           raced.network!==terms.network || !equalAmount(raced.amount,terms.amount)){
           throw new Error("crypto.transfer.request_conflict");
         }
         return receipt(raced);
@@ -181,7 +185,7 @@ export function createPostgresInternalCryptoTransferRepository(pool: Pool):Inter
              SET failed_attempts=$4,status=$5 WHERE tenant_id=$1
              AND sender_user_id=$2 AND request_id=$3`,
              [tenantId,senderUserId,requestId,attempts,attempts>=5?"rejected":"quoted"]);
-          throw new Error("crypto.transfer.approval_invalid");
+          return {...receipt(quote), status:attempts>=5?"rejected":"quoted"};
         }
         await assertActivePeople(client,tenantId,senderUserId,quote.recipient_user_id);
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1))",
