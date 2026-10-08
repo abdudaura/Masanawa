@@ -39,10 +39,10 @@ describe("C02 Postgres canonical human message authority",()=>{
     const calls:Array<{sql:string;values?:unknown[]}>=[];let releases=0;
     const query=async<Row extends Record<string,unknown>>(sql:string,values?:unknown[])=>{
       calls.push({sql,values});
+      if(sql.includes("INSERT INTO talks.human_dm_messages")) return result<Row>([message]);
       if(sql.includes("FROM talks.human_dm_conversations t")) return result<Row>([{exists:1}]);
       if(sql.includes("SELECT count(*)::int AS n")) return result<Row>([{n:0}]);
       if(sql.includes("SELECT conversation_id,message_id")&&sql.includes("client_request_id")) return result<Row>([]);
-      if(sql.includes("INSERT INTO talks.human_dm_messages")) return result<Row>([message]);
       return result<Row>([]);
     };
     const pool: HumanMessageSqlPool={
