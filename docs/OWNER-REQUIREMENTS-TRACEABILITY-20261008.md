@@ -1,5 +1,10 @@
 # Owner Decisions and Feature-Coverage Traceability — 2026-10-08
 
+## OWNER CLARIFICATION — Contact screen is essential; optional phonebook display (2026-10-08)
+
+The owner now explicitly requires a **WhatsApp-like Contacts experience**, not merely exact-handle lookup or a New Message button. Chats→New message must open nested Contacts including accepted people, requests, Favorites/search, per-person Message/profile and real server-authorized C02 conversation. Optional device-local address-book display and system invitation may be offered **only with explicit OS/user consent**, usable even when no registered match exists; no bulk cloud import or naive phone hash upload without separate approved privacy/security matching design. Existing M01/M05/N02 and C01–C05 remain mandatory, M11's earlier unapproved contact-book details are now *partially superseded* by this narrower owner choice, while **E2EE/groups/direct calls stay unapproved**. Read [full Contacts behavior](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [all R/C source gaps](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [new U21–U30/F01–F18 owners](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md). Eight additional K13–K20 golden journeys test this, not merely a contacts screenshot.
+
+
 ## Owner-approved U01–U20 expansion — 2026-10-08
 
 Owner adds permissioned Gwani/Gwana full product operation, verified task readback, opt-in inspectable memory, real teaching/files, premium human Chat basics and strictly selected-message AI, Host copilot, Twins and accessibility. Original 77 requirement IDs, J01–J11 and R/C obligations remain; K01–K12 are additive acceptance journeys. Groups/calls/E2EE remain unapproved. See [AI-first product](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [operator contract](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human chats](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md), [U01–U20](20-WINDOW-AI-CHAT-EXECUTION-20261008.md).
