@@ -81,11 +81,16 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
 
   Future<void> _send() async {
     final text = input.text;
+    final owner = workspace.ownerId;
     if (text.trim().isEmpty || !workspace.canSend) return;
     await workspace.sendText(text);
-    if (!mounted) return;
-    if (workspace.pending != null) {
-      input.clear(); // Persisted in the protected, per-account retry journal.
+    if (!mounted || workspace.ownerId != owner || input.text != text) return;
+    // Only clear after secure persistence or a confirmed server acknowledgement;
+    // failed protected writes leave the unsent composition editable.
+    if (workspace.pending != null ||
+        workspace.notice == 'Server acknowledged your message.' ||
+        workspace.notice == 'Sent; history will refresh when connectivity returns.') {
+      input.clear();
     }
   }
 
