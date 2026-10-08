@@ -68,6 +68,28 @@ class _FakeContacts implements HumanContactsTransport {
   }
 }
 
+class _PagedContacts extends _FakeContacts
+    implements HumanContactsPaginationTransport {
+  Completer<HumanContactPage>? delayedSecond;
+  int calls = 0;
+
+  @override
+  Future<HumanContactPage> page({int limit = 50, String? cursor}) async {
+    calls++;
+    if (cursor == null) {
+      return const HumanContactPage(contacts: [_bob], nextCursor: 'next_page_1');
+    }
+    if (delayedSecond != null) return delayedSecond!.future;
+    return const HumanContactPage(contacts: [
+      HumanContact(
+        userId: 'user_c', handle: 'cora', displayName: 'Cora',
+        avatarUrl: null, status: HumanContactStatus.accepted,
+        canMessage: false, requestRevision: '1',
+      ),
+    ], nextCursor: null);
+  }
+}
+
 Future<void> _tick() async {
   await Future<void>.delayed(Duration.zero);
   await Future<void>.delayed(Duration.zero);
@@ -163,6 +185,65 @@ void main() {
     expect(controller.state.notice, 'Contact request sent.');
     expect(fake.requests, 1);
     expect(controller.state.contacts.single.handle, 'bob');
+    controller.dispose();
+  });
+
+  test('paginated contacts append distinct people and end at final server page', () async {
+    final source = _PagedContacts();
+    final controller = HumanContactsController(
+      transport: source, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    expect(controller.state.contacts.single.userId, 'user_b');
+    expect(controller.state.nextCursor, 'next_page_1');
+    await controller.loadMore();
+    expect(controller.state.contacts.map((person) => person.userId),
+        ['user_b', 'user_c']);
+    expect(controller.state.nextCursor, isNull);
+    await controller.loadMore();
+    expect(source.calls, 2);
+    controller.dispose();
+  });
+
+  test('late page from previous account is never appended after a switch', () async {
+    final source = _PagedContacts()
+      ..delayedSecond = Completer<HumanContactPage>();
+    var owner = 'user_a';
+    final controller = HumanContactsController(
+      transport: source, ownerId: 'user_a',
+      isStillOwner: () => owner == 'user_a',
+    );
+    await _tick();
+    final running = controller.loadMore();
+    await _tick();
+    owner = 'user_b';
+    source.delayedSecond!.complete(const HumanContactPage(contacts: [
+      HumanContact(
+        userId: 'user_secret', handle: 'secret', displayName: 'Secret',
+        avatarUrl: null, status: HumanContactStatus.accepted,
+        canMessage: false, requestRevision: '1',
+      ),
+    ], nextCursor: null));
+    await running;
+    expect(controller.state.contacts.map((person) => person.userId),
+        isNot(contains('user_secret')));
+    controller.dispose();
+  });
+
+  test('a paginated network failure keeps retry cursor and never fabricates people', () async {
+    final source = _PagedContacts()
+      ..delayedSecond = Completer<HumanContactPage>();
+    final controller = HumanContactsController(
+      transport: source, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    final running = controller.loadMore();
+    source.delayedSecond!.completeError(const FormatException('Bad contact page'));
+    await running;
+    expect(controller.state.error, 'Bad contact page');
+    expect(controller.state.contacts.map((person) => person.userId), ['user_b']);
+    expect(controller.state.nextCursor, 'next_page_1');
+    expect(controller.state.loadingMore, isFalse);
     controller.dispose();
   });
 }
