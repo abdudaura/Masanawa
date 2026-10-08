@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { createOpsApp } from "../app.js";
 import { describe, expect, it } from "vitest";
 import type { AgentAdminAuthorizer, AgentAdminService } from "../agent_admin.js";
 import { createOperatorAgentControl } from "./agent_control.js";
@@ -110,7 +111,7 @@ describe("U27 privileged agent controls", () => {
         headers: { authorization: "Bearer consumer" },
       });
       expect(forbidden.statusCode).toBe(403);
-      expect(forbidden.json()).toEqual({ code: "AGENT_CONTROL_UNAVAILABLE" });
+      expect(forbidden.json()).toEqual({ code: "AGENT_CONTROL_DENIED" });
 
       const invalid = await app.inject({
         method: "DELETE", url: "/v1/admin/operator/agents/" + character + "/skills/" + skill,
@@ -132,6 +133,38 @@ describe("U27 privileged agent controls", () => {
       expect(good.statusCode).toBe(200);
       expect(good.json().revision).toBe(3);
       expect(good.headers["cache-control"]).toBe("no-store");
+    } finally {
+      await app.close();
+    }
+  });
+});
+
+
+describe("U27 composition gate", () => {
+  it("does not expose privileged routes without explicit controller", async () => {
+    const app = createOpsApp();
+    try {
+      const response = await app.inject({
+        method: "GET", url: "/v1/admin/operator/agents",
+        headers: { authorization: "Bearer administrator" },
+      });
+      expect(response.statusCode).toBe(404);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("uses the protected Ops path when registered, never direct public agent read", async () => {
+    const f = fixture();
+    const app = createOpsApp({ operatorAgentControl: f.control });
+    try {
+      const response = await app.inject({
+        method: "GET", url: "/v1/admin/operator/agents",
+        headers: { authorization: "Bearer administrator" },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().agents[0].assignmentRevision).toBe(2);
+      expect(response.headers["cache-control"]).toBe("no-store");
     } finally {
       await app.close();
     }
