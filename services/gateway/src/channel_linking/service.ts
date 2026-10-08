@@ -79,11 +79,12 @@ export function createLinkingService(input: Readonly<{
     const value = input.destinations[channel];
     if (!value) return null;
     const uri = new URL(value);
-    const valid = channel === "telegram"
+    const safeAuthority = !uri.username && !uri.password && !uri.port;
+    const valid = safeAuthority && (channel === "telegram"
       ? uri.protocol === "https:" && uri.hostname === "t.me"
         && /^\/[a-zA-Z0-9_]{5,32}$/u.test(uri.pathname) && !uri.search && !uri.hash
       : uri.protocol === "https:" && uri.hostname === "wa.me"
-        && /^\/[1-9][0-9]{6,14}$/u.test(uri.pathname) && !uri.search && !uri.hash;
+        && /^\/[1-9][0-9]{6,14}$/u.test(uri.pathname) && !uri.search && !uri.hash);
     if (!valid) throw new LinkError("CHANNEL_UNAVAILABLE", 503);
     return value;
   };
