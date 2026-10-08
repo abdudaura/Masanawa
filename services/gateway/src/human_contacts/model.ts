@@ -28,4 +28,6 @@ export interface HumanContactRepository {
   request(input: { readonly tenantId: string; readonly requesterId: string; readonly handle: string }): Promise<"accepted" | "pending" | "existing" | "unavailable">;
   respond(input: { readonly tenantId: string; readonly recipientId: string; readonly requesterId: string; readonly accept: boolean }): Promise<boolean>;
   list(input: { readonly tenantId: string; readonly userId: string; readonly limit: number }): Promise<readonly HumanContactRequest[]>;
+  /** Either participant may revoke a contact; preserve an audit tombstone. */
+  revoke(input: { readonly tenantId: string; readonly actorId: string; readonly otherUserId: string }): Promise<boolean>;
 }
