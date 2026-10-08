@@ -1,7 +1,6 @@
-import { createHash, randomUUID } from "node:crypto";
-import type { PlatformSessionIdentity } from "@masanawa/security";
-import { sanitizeAvatarPng } from "./png.js";
+import { normalizeProfileAvatar } from "./normalizer.js";
 import type { AvatarObjectStore } from "./s3_store.js";
+import type { PlatformSessionIdentity } from "@masanawa/security";
 
 export interface ProfileAvatarRepository {
   current(owner: Readonly<{ tenantId: string; userId: string }>): Promise<
@@ -17,15 +16,17 @@ export interface ProfileAvatarRepository {
   remove(input: Readonly<{
     tenantId: string; userId: string; expectedUrl: string | null;
   }>): Promise<boolean>;
-  claimGarbage(limit: number): Promise<readonly string[]>;
+  claimGarbage(limit: number): Promise<readonly Readonly<{
+    key: string; tenantId: string; userId: string;
+  }>[]>;
   finalizeDeleted(key: string): Promise<void>;
   releaseFailedDeletion(key: string): Promise<void>;
 }
 
-export class ProfileAvatarError extends Error {
+export class AvatarMutationError extends Error {
   constructor(readonly code: string, readonly statusCode: number) {
     super(code);
-    this.name = "ProfileAvatarError";
+    this.name = "AvatarMutationError";
   }
 }
 
@@ -37,9 +38,7 @@ export function createProfileAvatarService(input: Readonly<{
   };
   repository: ProfileAvatarRepository;
   objects: AvatarObjectStore;
-  makeId?: () => string;
 }>) {
-  const makeId = input.makeId ?? randomUUID;
   async function owner(authorizationHeader: string | undefined) {
     const identity = await input.authorizer.authorize({ authorizationHeader });
     return { tenantId: String(identity.tenantId), userId: String(identity.userId) };
@@ -51,30 +50,33 @@ export function createProfileAvatarService(input: Readonly<{
       expectedUrl: string | null;
     }>): Promise<{ avatarUrl: string }> {
       const who = await owner(request.authorizationHeader);
-      let validated;
-      try {
-        validated = sanitizeAvatarPng(request.png);
-      } catch {
-        throw new ProfileAvatarError("profiles.avatar.invalid_png", 422);
-      }
+      const normalized = await normalizeProfileAvatar(request.png);
       const profile = await input.repository.current(who);
-      if (!profile.exists) throw new ProfileAvatarError("profiles.not_found", 404);
+      if (!profile.exists) throw new AvatarMutationError("profiles.not_found", 404);
       if (profile.url !== request.expectedUrl) {
-        throw new ProfileAvatarError("profiles.avatar.changed_elsewhere", 409);
+        throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
       }
-      const h = (part: string) => createHash("sha256").update(part).digest("hex");
-      const key = "profile-avatars/" + h(who.tenantId) + "/" +
-        h(who.userId) + "/" + makeId() + ".png";
-      // Persist an orphan-recovery record BEFORE uploading to object storage.
-      const url = input.objects.publicUrl(key);
+      const url = input.objects.urlFor(who, normalized.sha256);
+      if (profile.url === url) return { avatarUrl: url };
+
+      // The merged S3 adapter uses stable owner-scoped SHA256 WebP paths.
+      // Record a recoverable staged object BEFORE external storage writes.
+      const key = new URL(url).pathname.slice(1);
+      if (!key.startsWith("profiles/") ||
+          !key.endsWith("/sha256-" + normalized.sha256 + ".webp")) {
+        throw new AvatarMutationError("profiles.avatar.invalid_storage_key", 500);
+      }
       await input.repository.stage({ ...who, key, url });
-      await input.objects.put(key, validated.png);
+      const stored = await input.objects.put(who, normalized);
+      if (stored.key !== key || stored.url !== url ||
+          stored.sha256 !== normalized.sha256) {
+        throw new AvatarMutationError("profiles.avatar.storage_mismatch", 503);
+      }
       const accepted = await input.repository.attach({
         ...who, key, url, expectedUrl: profile.url,
       });
       if (!accepted) {
-        // Uploaded bytes stay journaled for the garbage collector.
-        throw new ProfileAvatarError("profiles.avatar.changed_elsewhere", 409);
+        throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
       }
       return { avatarUrl: url };
     },
@@ -84,16 +86,16 @@ export function createProfileAvatarService(input: Readonly<{
     }>): Promise<{ avatarUrl: null }> {
       const who = await owner(request.authorizationHeader);
       const profile = await input.repository.current(who);
-      if (!profile.exists) throw new ProfileAvatarError("profiles.not_found", 404);
+      if (!profile.exists) throw new AvatarMutationError("profiles.not_found", 404);
       if (profile.url !== request.expectedUrl) {
-        throw new ProfileAvatarError("profiles.avatar.changed_elsewhere", 409);
+        throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
       }
       if (profile.url !== null) {
         const removed = await input.repository.remove({
           ...who, expectedUrl: profile.url,
         });
         if (!removed) {
-          throw new ProfileAvatarError("profiles.avatar.changed_elsewhere", 409);
+          throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
         }
       }
       return { avatarUrl: null };
@@ -101,18 +103,25 @@ export function createProfileAvatarService(input: Readonly<{
     async collectGarbage(limit = 20): Promise<{
       deleted: number; failed: number;
     }> {
-      const keys = await input.repository.claimGarbage(limit);
+      const queued = await input.repository.claimGarbage(limit);
       let deleted = 0;
       let failed = 0;
-      for (const key of keys) {
+      for (const row of queued) {
         try {
-          await input.objects.delete(key);
-          await input.repository.finalizeDeleted(key);
+          const match = /^profiles\/[^/]+\/[^/]+\/sha256-([a-f0-9]{64})\.webp$/u.exec(row.key);
+          if (!match || !row.key.startsWith(
+              "profiles/" + row.tenantId + "/" + row.userId + "/")) {
+            throw new Error("profiles.avatar.invalid_queued_key");
+          }
+          await input.objects.delete({
+            tenantId: row.tenantId, userId: row.userId,
+          }, match[1]!);
+          await input.repository.finalizeDeleted(row.key);
           deleted++;
         } catch {
           failed++;
-          // A crash while deleting is recovered from the durable deleting lease.
-          await input.repository.releaseFailedDeletion(key);
+          // Durable timed leases survive a crash, failed S3 DELETE or DB write.
+          await input.repository.releaseFailedDeletion(row.key);
         }
       }
       return { deleted, failed };
