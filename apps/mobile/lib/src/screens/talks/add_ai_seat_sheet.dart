@@ -85,6 +85,10 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
           );
       if (!mounted) return;
       if (quote.personaId != candidate.personaId ||
+          quote.kind != candidate.kind ||
+          quote.quoteId.trim().isEmpty ||
+          quote.totalLabel.trim().isEmpty ||
+          quote.requiresHostApproval != !widget.isHost ||
           quote.mode != (widget.isHost
               ? TalkAiSeatMode.hostAdd
               : TalkAiSeatMode.sponsor) ||
