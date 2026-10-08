@@ -27,7 +27,8 @@ export function registerOperatorTaskRoutes(
     });
   }
 
-  app.setErrorHandler((error, _request, reply) => {
+  app.register(async scoped => {
+  scoped.setErrorHandler((error, _request, reply) => {
     if (error instanceof OperatorTaskError) {
       return reply.code(error.statusCode).send({ code: error.code });
     }
@@ -35,7 +36,7 @@ export function registerOperatorTaskRoutes(
     return reply.code(statusCode).send({ code: statusCode === 503 ? "TASK_UNAVAILABLE" : "TASK_INVALID_REQUEST" });
   });
 
-  app.post("/v1/operator/tasks", async (request, reply) => {
+  scoped.post("/v1/operator/tasks", async (request, reply) => {
     const body = request.body as Record<string, unknown> | null;
     if (!body || Object.keys(body).sort().join(",") !==
         ["arguments","capabilityId","capabilityVersion","requestId","scope"].sort().join(",")) {
@@ -54,7 +55,7 @@ export function registerOperatorTaskRoutes(
     });
     return reply.code(201).header("Cache-Control","no-store").send(task);
   });
-  app.get("/v1/operator/tasks", async (request, reply) => {
+  scoped.get("/v1/operator/tasks", async (request, reply) => {
     const query = request.query as Record<string, unknown>;
     if (Object.keys(query).some(key=>!["before","limit"].includes(key))) throw new OperatorTaskError("TASK_INVALID_QUERY",400);
     const limit = query.limit === undefined ? 25 : Number(query.limit);
@@ -65,12 +66,12 @@ export function registerOperatorTaskRoutes(
     });
     return reply.header("Cache-Control","no-store").send({ tasks });
   });
-  app.get("/v1/operator/tasks/:taskId", async (request, reply) => {
+  scoped.get("/v1/operator/tasks/:taskId", async (request, reply) => {
     const { taskId } = request.params as { taskId: string };
     const task = await dependencies.tasks.read({ actor: await actor(request.headers.authorization), taskId });
     return reply.header("Cache-Control","no-store").send(task);
   });
-  app.get("/v1/operator/tasks/:taskId/events", async (request, reply) => {
+  scoped.get("/v1/operator/tasks/:taskId/events", async (request, reply) => {
     const { taskId } = request.params as { taskId: string };
     const query = request.query as Record<string, unknown>;
     if (Object.keys(query).some(key=>!["afterVersion","limit"].includes(key))) throw new OperatorTaskError("TASK_INVALID_QUERY",400);
@@ -81,7 +82,7 @@ export function registerOperatorTaskRoutes(
     });
     return reply.header("Cache-Control","no-store").send({ events });
   });
-  app.post("/v1/operator/tasks/:taskId/cancel", async (request, reply) => {
+  scoped.post("/v1/operator/tasks/:taskId/cancel", async (request, reply) => {
     const { taskId } = request.params as { taskId: string };
     const body = request.body as Record<string, unknown> | null;
     if (!body || Object.keys(body).join(",") !== "expectedVersion" ||
@@ -93,7 +94,7 @@ export function registerOperatorTaskRoutes(
     });
     return reply.header("Cache-Control","no-store").send(task);
   });
-  app.post("/v1/operator/tasks/:taskId/confirm", async (request, reply) => {
+  scoped.post("/v1/operator/tasks/:taskId/confirm", async (request, reply) => {
     const { taskId } = request.params as { taskId: string };
     const body = request.body as Record<string, unknown> | null;
     if (!body || Object.keys(body).sort().join(",") !== "approvalToken,expectedVersion" ||
@@ -106,5 +107,5 @@ export function registerOperatorTaskRoutes(
       approvalToken: body.approvalToken, expectedVersion: Number(body.expectedVersion),
     });
     return reply.header("Cache-Control","no-store").send(task);
-  });
+  });  });
 }
