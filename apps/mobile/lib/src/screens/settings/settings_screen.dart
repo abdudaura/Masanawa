@@ -12,11 +12,9 @@ import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
 
-/// Secondary account settings for the Twin-first product.
-///
-/// Twin identity, discovery and human-access configuration live in My Twin.
-/// Runtime concepts such as Agent Float, Skills and provider configuration are
-/// intentionally absent from the ordinary customer settings surface.
+/// Account and app preferences for the current Masanawa consumer product.
+/// Account deletion must be handled by an authenticated durable server workflow;
+/// clearing local chats or logging out is not account deletion.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -288,6 +286,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       'Create your Twin, explore other Twins and use Masanawa services from one simple app.',
                     ),
                   ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Card(
+            children: [
+              ListTile(
+                key: const Key('settings-delete-account'),
+                leading: Icon(Icons.person_remove_outlined, color: u.emergency),
+                title: Text(
+                  'Delete account',
+                  style: TextStyle(color: u.emergency),
+                ),
+                subtitle: const Text('Account and data deletion options'),
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('Delete your account'),
+                    content: const Text(
+                      'Account deletion is not yet available in this version. '
+                      'Clearing chats or logging out does not delete your account. '
+                      'Your public Talks, Twins, private data and any pending '
+                      'payments require a secure server-side deletion process. '
+                      'Please do not share passwords or verification codes '
+                      'with anyone claiming to handle deletion.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
