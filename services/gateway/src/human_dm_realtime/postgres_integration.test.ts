@@ -91,6 +91,50 @@ run("C03 durable PostgreSQL metadata event stream",()=>{
     expect(illegal.events).toHaveLength(0);
   });
 
+  it("atomically prunes old per-member events, forces C02 reset, then replays new sends",async()=>{
+    const repo=createPostgresHumanDmRealtimeRepository(pool);
+    const old=await repo.sync({tenantId:tenant,userId:bob,after:"0",limit:50});
+    expect(old.events.length).toBeGreaterThan(0);
+    // Test tenant only. Never age or delete data outside this disposable ID.
+    await pool.query(`UPDATE talks.human_dm_events
+      SET created_at=clock_timestamp()-interval '31 days'
+      WHERE tenant_id=$1`,[tenant]);
+    const wrongTenant=await pool.query<{deleted:string}>(`
+      SELECT talks.prune_human_dm_events(
+        $1,clock_timestamp()-interval '30 days',1000)::text AS deleted
+    `,[tenant+"_unrelated"]);
+    expect(Number(wrongTenant.rows[0]!.deleted)).toBe(0);
+    await expect(pool.query(`
+      SELECT talks.prune_human_dm_events($1,clock_timestamp(),1000)
+    `,[tenant])).rejects.toThrow();
+    const removed=await pool.query<{deleted:string}>(`
+      SELECT talks.prune_human_dm_events(
+        $1,clock_timestamp()-interval '30 days',1000)::text AS deleted
+    `,[tenant]);
+    expect(Number(removed.rows[0]!.deleted)).toBeGreaterThan(0);
+    const stale=await repo.sync({tenantId:tenant,userId:bob,after:"0",limit:50});
+    expect(stale.resetRequired).toBe(true);
+    expect(stale.events).toEqual([]);
+    expect(BigInt(stale.nextCursor)).toBeGreaterThan(0n);
+    const senderId="fresh_"+suffix+"000";
+    const content="new post-trim message";
+    await pool.query(`INSERT INTO talks.human_dm_messages
+      (tenant_id,conversation_id,sender_user_id,client_request_id,original_sha256,body)
+      VALUES($1,$2,$3,$4,$5,$6)`,
+      [tenant,thread,alice,senderId,createHash("sha256").update(content).digest("hex"),content]);
+    const after=await repo.sync({
+      tenantId:tenant,userId:bob,after:stale.nextCursor,limit:50,
+    });
+    expect(after.resetRequired).toBe(false);
+    expect(after.events.some(e=>e.kind==="message_added")).toBe(true);
+    expect(JSON.stringify(after)).not.toContain(content);
+    const future=await repo.sync({
+      tenantId:tenant,userId:bob,after:"9223372036854775807",limit:50,
+    });
+    expect(future.resetRequired).toBe(true);
+    expect(future.nextCursor).toBe(after.nextCursor);
+  });
+
   it("revokes message visibility on block, but sends access invalidation",async()=>{
     const before=await pool.query<{n:string}>(`
       SELECT max(event_id)::text AS n FROM talks.human_dm_events
