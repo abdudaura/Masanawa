@@ -42,6 +42,51 @@ integration("R16 schema lifecycle on disposable real PG18",()=>{
     })).rejects.toMatchObject({code:"schema.disposable_database_confirmation_required"});
     expect((await schemaStatus(pool,manifest)).ledgerExists).toBe(false);
   });
+  it("refuses a named disposable DB carrying unrelated user schemas, routines, or types",async()=>{
+    const extra="masanawa_r16_extra_"+randomUUID().replaceAll("-","");
+    const attempt=()=>schemaBootstrapTest(pool,manifest,{
+      expectedDatabase:databaseName,disposableConfirmed:true,
+    });
+    await pool.query(`CREATE SCHEMA "${extra}"`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_other_schemas_present",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regnamespace($1)::text AS name",[extra]);
+      expect(stillThere.rows[0]?.name).toBe(extra);
+    } finally {
+      await pool.query(`DROP SCHEMA "${extra}"`);
+    }
+
+    const routine="masanawa_r16_freshness_probe";
+    await pool.query(`CREATE FUNCTION public.${routine}() RETURNS integer
+      LANGUAGE sql AS 'SELECT 1'`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_routines_present",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regprocedure($1)::text AS name",[`public.${routine}()`]);
+      expect(stillThere.rows[0]?.name).toContain(routine);
+    } finally {
+      await pool.query(`DROP FUNCTION public.${routine}()`);
+    }
+
+    const type="masanawa_r16_freshness_type";
+    await pool.query(`CREATE TYPE public.${type} AS ENUM ('ready')`);
+    try {
+      await expect(attempt()).rejects.toMatchObject({
+        code:"schema.bootstrap_public_types_present",
+      });
+      const stillThere=await pool.query<{name:string|null}>(
+        "SELECT to_regtype($1)::text AS name",[`public.${type}`]);
+      expect(stillThere.rows[0]?.name).toContain(type);
+    } finally {
+      await pool.query(`DROP TYPE public.${type}`);
+    }
+    expect((await schemaStatus(pool,manifest)).ledgerExists).toBe(false);
+  },30000);
   it("applies a clean production manifest on disposable PG then verifies idempotent second check",async()=>{
     const result=await schemaBootstrapTest(pool,manifest,{
       expectedDatabase:databaseName,disposableConfirmed:true,
