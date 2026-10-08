@@ -22,3 +22,9 @@
 - Fresh open PR collision review (#445, #444, #443, #441, #440, #439, #438, #436, #435, #433, #430, #426) shows no ownership of `apps/mobile/lib/src/screens/activity/activity_screen.dart`, `apps/mobile/lib/src/screens/you/saved_talks_screen.dart`, `apps/mobile/lib/src/screens/you/my_talks_screen.dart` or new `apps/mobile/test/r01_white_secondary_surfaces_test.dart`.
 - Expand this R01 claim to those four exact paths. These normal screens currently explicitly replace the canonical white Material theme scaffold with the grey `surfaceBg` token. Switch the whole screen scaffold to `surfaceCard` (white) without changing individually muted interactive cards, empty states, network logic or navigation.
 - Add Riverpod-overridden widget regression verifying real screens render white surfaces and remain accessible in loading/error state. Keep offline/device verification distinct from source changes.
+
+## Expanded R01 white surface paths
+
+- Further audit of main confirmed exactly one explicit `backgroundColor: u.surfaceBg` scaffold in each of the six routes below, overriding the white global ThemeData. These locations were checked against current open PR changed-path lists; no active PR is editing these exact files.
+- Additional owned paths: `apps/mobile/lib/src/screens/wallet/wallet_screen.dart`, `apps/mobile/lib/src/screens/talks/talk_home_screen.dart`, `apps/mobile/lib/src/screens/profile/person_profile_screen.dart`, `apps/mobile/lib/src/screens/profile/persona_profile_screen.dart`, `apps/mobile/lib/src/screens/chat/chat_list_screen.dart`, `apps/mobile/lib/src/screens/chat/masana_list_screen.dart`.
+- Restrict to replacing the normal scaffold background with the white semantic surface token. Do not edit financial authority, route selection, chat permissions or persona profile business behavior.
