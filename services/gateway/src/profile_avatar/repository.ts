@@ -1,0 +1,114 @@
+import type { ProfileAvatarRepository } from "./service.js";
+
+export interface AvatarSqlPool {
+  query<Row extends Record<string, unknown> = Record<string, unknown>>(
+    sql: string, values?: readonly unknown[],
+  ): Promise<{ readonly rows: Row[]; readonly rowCount: number | null }>;
+}
+
+export function createPostgresAvatarRepository(pool: AvatarSqlPool): ProfileAvatarRepository {
+  return Object.freeze<ProfileAvatarRepository>({
+    async current({ tenantId, userId }) {
+      const result = await pool.query<{ avatar_url: string | null }>(
+        "SELECT avatar_url FROM talks.public_profiles WHERE tenant_id=$1 AND user_id=$2",
+        [tenantId, userId],
+      );
+      return result.rows[0] === undefined
+        ? { exists: false, url: null }
+        : { exists: true, url: result.rows[0].avatar_url };
+    },
+    async stage(input) {
+      await pool.query(
+        \`INSERT INTO talks.profile_avatar_objects
+          (tenant_id,user_id,object_key,public_url,state)
+         VALUES ($1,$2,$3,$4,'staged')\`,
+        [input.tenantId, input.userId, input.key, input.url],
+      );
+    },
+    async attach(input) {
+      // Single statement scopes profile mutation and durable lifecycle.
+      // CAS prevents a late upload from overwriting another device's avatar.
+      const result = await pool.query<{ changed: boolean }>(
+        \`WITH updated AS (
+          UPDATE talks.public_profiles
+             SET avatar_url=$4,updated_at=clock_timestamp()
+           WHERE tenant_id=$1 AND user_id=$2
+             AND avatar_url IS NOT DISTINCT FROM $3
+           RETURNING user_id
+        ), activated AS (
+          UPDATE talks.profile_avatar_objects
+             SET state='active',updated_at=clock_timestamp()
+           WHERE tenant_id=$1 AND user_id=$2 AND object_key=$5
+             AND state='staged' AND EXISTS (SELECT 1 FROM updated)
+           RETURNING object_key
+        ), old_objects AS (
+          UPDATE talks.profile_avatar_objects
+             SET state='orphaned',updated_at=clock_timestamp()
+           WHERE tenant_id=$1 AND user_id=$2 AND state='active'
+             AND object_key<>$5 AND EXISTS (SELECT 1 FROM activated)
+           RETURNING object_key
+        )
+        SELECT EXISTS(SELECT 1 FROM activated) AS changed\`,
+        [input.tenantId, input.userId, input.expectedUrl, input.url, input.key],
+      );
+      return result.rows[0]?.changed === true;
+    },
+    async remove(input) {
+      const result = await pool.query<{ changed: boolean }>(
+        \`WITH updated AS (
+          UPDATE talks.public_profiles
+             SET avatar_url=NULL,updated_at=clock_timestamp()
+           WHERE tenant_id=$1 AND user_id=$2
+             AND avatar_url IS NOT DISTINCT FROM $3
+           RETURNING user_id
+        ), orphaned AS (
+          UPDATE talks.profile_avatar_objects
+             SET state='orphaned',updated_at=clock_timestamp()
+           WHERE tenant_id=$1 AND user_id=$2 AND state='active'
+             AND public_url=$3 AND EXISTS (SELECT 1 FROM updated)
+           RETURNING object_key
+        )
+        SELECT EXISTS(SELECT 1 FROM updated) AS changed\`,
+        [input.tenantId, input.userId, input.expectedUrl],
+      );
+      return result.rows[0]?.changed === true;
+    },
+    async claimGarbage(limit) {
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+        throw new TypeError("profiles.avatar.invalid_cleanup_batch");
+      }
+      const result = await pool.query<{ object_key: string }>(
+        \`WITH candidates AS (
+          SELECT object_key FROM talks.profile_avatar_objects
+           WHERE (state='orphaned' OR
+                (state='staged' AND created_at < clock_timestamp()-interval '1 hour') OR
+                (state='deleting' AND updated_at < clock_timestamp()-interval '15 minutes'))
+           ORDER BY created_at
+           FOR UPDATE SKIP LOCKED
+           LIMIT $1
+        )
+        UPDATE talks.profile_avatar_objects avatar
+           SET state='deleting',updated_at=clock_timestamp()
+          FROM candidates
+         WHERE avatar.object_key=candidates.object_key
+         RETURNING avatar.object_key\`,
+        [limit],
+      );
+      return result.rows.map(row => row.object_key);
+    },
+    async finalizeDeleted(key) {
+      await pool.query(
+        "DELETE FROM talks.profile_avatar_objects WHERE object_key=$1 AND state='deleting'",
+        [key],
+      );
+    },
+    async releaseFailedDeletion(key) {
+      await pool.query(
+        \`UPDATE talks.profile_avatar_objects
+           SET state='orphaned',updated_at=clock_timestamp(),attempts=attempts+1
+         WHERE object_key=$1 AND state='deleting'\`,
+        [key],
+      );
+    },
+  });
+}
