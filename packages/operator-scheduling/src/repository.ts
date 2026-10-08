@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { nextOccurrence, type ScheduleRecord, type ScheduleSpec, type ScheduleState, ScheduleError } from "./domain.js";
+import { nextOccurrence, timezoneParts, type ScheduleRecord, type ScheduleSpec, type ScheduleState, ScheduleError } from "./domain.js";
 
 export interface SqlResult<Row> { readonly rows: Row[]; readonly rowCount: number | null }
 export interface SqlClient {
@@ -191,7 +191,8 @@ export function createPostgresScheduleRepository(pool: SqlPool): ScheduleReposit
         for (const row of due.rows) {
           const s = record(row);
           const when = s.nextDueAt!;
-          const next = nextOccurrence(s,Math.max(now.getTime(),Date.parse(when)));
+          const lastDate = timezoneParts(Date.parse(when),s.timezone).date;
+          const next = nextOccurrence(s,Math.max(now.getTime(),Date.parse(when)),lastDate);
           // Sequence is incremented atomically by the database.
           const changed = await c.query<{sequence: number}>(
             `UPDATE operator_scheduling.schedules

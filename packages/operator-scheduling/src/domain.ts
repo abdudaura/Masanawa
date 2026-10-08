@@ -73,7 +73,7 @@ function parseInstant(value: string): number {
 /** Choose earliest future minute in the requested IANA civil time.
  * Missing DST hour is skipped; repeated DST hour never runs twice per date.
  */
-export function nextOccurrence(spec: ScheduleSpec, afterMs: number): string | null {
+export function nextOccurrence(spec: ScheduleSpec, afterMs: number, excludedLocalDate?: string): string | null {
   if (spec.frequency === "once") {
     const when = parseInstant(spec.runAt!);
     return when > afterMs ? new Date(when).toISOString() : null;
@@ -83,13 +83,17 @@ export function nextOccurrence(spec: ScheduleSpec, afterMs: number): string | nu
     hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   });
   const seen = new Set<string>();
+  // A repeated fall-back civil minute is never a second daily occurrence.
+  const previous = timezoneParts(afterMs, spec.timezone);
+  const skipLocalDate = excludedLocalDate ??
+    (previous.localTime >= spec.localTime! ? previous.date : null);
   const start = Math.floor(afterMs / MINUTE) * MINUTE + MINUTE;
   for (let t = start; t < start + 8 * DAY; t += MINUTE) {
     const parts = formatter.formatToParts(new Date(t));
     const get = (kind: string) => parts.find((p) => p.type === kind)?.value ?? "";
     if (`${get("hour")}:${get("minute")}` !== spec.localTime) continue;
     const date = `${get("year")}-${get("month")}-${get("day")}`;
-    if (seen.has(date)) continue;
+    if (date === skipLocalDate || seen.has(date)) continue;
     seen.add(date);
     if (spec.frequency === "weekly") {
       const wd = new Date(Date.UTC(+get("year"), +get("month") - 1, +get("day"))).getUTCDay();
