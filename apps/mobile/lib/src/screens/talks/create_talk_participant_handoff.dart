@@ -86,6 +86,37 @@ class _TalkCreateParticipantHandoffState
   bool _authorizedHost = false;
   int _loadVersion = 0;
 
+  String? _signedInUserId() {
+    final session = ref.read(sessionProvider);
+    return session is SessionSignedIn && session.user.isActive
+        ? session.user.id
+        : null;
+  }
+
+  bool _stillCurrent(int version, String userId, String talkId) =>
+      mounted &&
+      version == _loadVersion &&
+      widget.talkId == talkId &&
+      widget.isHost &&
+      _signedInUserId() == userId;
+
+  // Clear visible actions synchronously on account/route change. Close the
+  // banner after the frame to avoid mutating ScaffoldMessenger during build.
+  // Old asynchronous work is fenced by _loadVersion and may never launch an
+  // AI quote or share action for the newly signed-in account.
+  void _invalidateAndRestore() {
+    _loadVersion++;
+    final staleBanner = _banner;
+    _banner = null;
+    _pending = const [];
+    _authorizedHost = false;
+    _working = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      staleBanner?.close();
+      if (mounted) _restore();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -96,12 +127,7 @@ class _TalkCreateParticipantHandoffState
   void didUpdateWidget(covariant TalkCreateParticipantHandoff oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.talkId != widget.talkId || oldWidget.isHost != widget.isHost) {
-      _loadVersion++;
-      _banner?.close();
-      _banner = null;
-      _pending = const [];
-      _authorizedHost = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _restore());
+      _invalidateAndRestore();
     }
   }
 
@@ -121,21 +147,23 @@ class _TalkCreateParticipantHandoffState
   }
 
   Future<void> _restore() async {
-    if (!mounted || !widget.isHost) return;
+    final userId = _signedInUserId();
+    if (!mounted || !widget.isHost || userId == null) return;
+    final talkId = widget.talkId;
     final version = ++_loadVersion;
     try {
       final authorized = await ref.read(talkCreateHostGuardProvider)
-          .isHost(widget.talkId);
-      if (!mounted || version != _loadVersion || !authorized) return;
-      final actions = await ref.read(talkCreateActionStoreProvider).load(widget.talkId);
-      if (!mounted || version != _loadVersion) return;
+          .isHost(talkId);
+      if (!_stillCurrent(version, userId, talkId) || !authorized) return;
+      final actions = await ref.read(talkCreateActionStoreProvider).load(talkId);
+      if (!_stillCurrent(version, userId, talkId)) return;
       setState(() {
         _authorizedHost = true;
         _pending = actions;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
     } catch (_) {
-      if (!mounted || version != _loadVersion) return;
+      if (!_stillCurrent(version, userId, talkId)) return;
       _message('Couldn’t restore pending invitations. Use Share or Add AI in this Talk.');
     }
   }
@@ -156,7 +184,8 @@ class _TalkCreateParticipantHandoffState
   };
 
   void _offerNext() {
-    if (!mounted || !widget.isHost || !_authorizedHost || _pending.isEmpty ||
+    if (!mounted || !widget.isHost || !_authorizedHost ||
+        _signedInUserId() == null || _pending.isEmpty ||
         _working || _banner != null) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) return;
@@ -191,29 +220,37 @@ class _TalkCreateParticipantHandoffState
   }
 
   Future<void> _complete(TalkCreateParticipantAction action) async {
-    if (_working || _pending.isEmpty || _pending.first != action) return;
+    final userId = _signedInUserId();
+    if (userId == null || !_authorizedHost ||
+        _working || _pending.isEmpty || _pending.first != action) return;
     final talkId = widget.talkId;
+    final version = _loadVersion;
     _working = true;
     try {
       final remaining = _pending.skip(1).toList(growable: false);
       await ref.read(talkCreateActionStoreProvider).save(talkId, remaining);
-      if (!mounted || widget.talkId != talkId) return;
+      if (!_stillCurrent(version, userId, talkId)) return;
       _banner?.close();
       _banner = null;
       setState(() => _pending = remaining);
     } catch (_) {
-      _message('Couldn’t save your choice. Please retry; no payment was started.');
+      if (_stillCurrent(version, userId, talkId)) {
+        _message('Couldn’t save your choice. Please retry; no payment was started.');
+      }
     } finally {
-      _working = false;
-      if (mounted && widget.talkId == talkId) {
+      if (_stillCurrent(version, userId, talkId)) {
+        _working = false;
         WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
       }
     }
   }
 
   Future<void> _continue(TalkCreateParticipantAction action) async {
-    if (_working || _pending.isEmpty || _pending.first != action) return;
+    final userId = _signedInUserId();
+    if (userId == null || !_authorizedHost ||
+        _working || _pending.isEmpty || _pending.first != action) return;
     final talkId = widget.talkId;
+    final version = _loadVersion;
     final remaining = _pending.skip(1).toList(growable: false);
     _working = true;
     _banner?.close();
@@ -224,7 +261,7 @@ class _TalkCreateParticipantHandoffState
       // cancelled picker, app kill or failed post-confirmation storage write
       // must never replay an AI Seat purchase as a new pending action.
       await ref.read(talkCreateActionStoreProvider).save(talkId, remaining);
-      if (!mounted || widget.talkId != talkId) return;
+      if (!_stillCurrent(version, userId, talkId)) return;
       setState(() => _pending = remaining);
       actionStarted = true;
       switch (action) {
@@ -235,7 +272,7 @@ class _TalkCreateParticipantHandoffState
             hostName: widget.initialTalk?.hostName ?? '',
           );
           await (widget.shareTalk ?? const SystemTalkShareService().share)(payload);
-          if (!mounted || widget.talkId != talkId) return;
+          if (!_stillCurrent(version, userId, talkId)) return;
           _message('Use Share in the Talk to invite more people.');
         case TalkCreateParticipantAction.addExpert:
         case TalkCreateParticipantAction.addTwin:
@@ -245,7 +282,7 @@ class _TalkCreateParticipantHandoffState
           final request = await (widget.presentAiSeat ?? _showSeat)(
             context, talkId: talkId, kind: kind,
           );
-          if (!mounted || widget.talkId != talkId) return;
+          if (!_stillCurrent(version, userId, talkId)) return;
           if (request != null) {
             ref.invalidate(talkDetailProvider(talkId));
             _message(request.message.isNotEmpty
@@ -258,12 +295,14 @@ class _TalkCreateParticipantHandoffState
       // Dismissing the real quote picker without paying is a valid choice.
       // The Host can always open Add AI or Share again in the live Talk.
     } catch (_) {
-      _message(actionStarted
-          ? 'That action could not finish. Use Add AI or Share in this Talk to retry.'
-          : 'Could not save your selection. No invitation or payment was started.');
+      if (_stillCurrent(version, userId, talkId)) {
+        _message(actionStarted
+            ? 'That action could not finish. Use Add AI or Share in this Talk to retry.'
+            : 'Could not save your selection. No invitation or payment was started.');
+      }
     } finally {
-      _working = false;
-      if (mounted && widget.talkId == talkId) {
+      if (_stillCurrent(version, userId, talkId)) {
+        _working = false;
         WidgetsBinding.instance.addPostFrameCallback((_) => _offerNext());
       }
     }
@@ -282,5 +321,16 @@ class _TalkCreateParticipantHandoffState
   );
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    ref.listen<String?>(
+      sessionProvider.select((session) =>
+          session is SessionSignedIn && session.user.isActive
+              ? session.user.id
+              : null),
+      (previous, next) {
+        if (previous != next) _invalidateAndRestore();
+      },
+    );
+    return widget.child;
+  }
 }
