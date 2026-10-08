@@ -33,6 +33,8 @@ import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../state/my_twin_state.dart';
 import '../../state/wallet_state.dart';
+import '../../services/private_service_intent.dart';
+import 'private_service_intent_prompt.dart';
 import '../../voice/paid_voice.dart';
 import '../../voice/paid_voice_state.dart';
 import '../../owner_access/owner_access.dart';
@@ -60,6 +62,9 @@ class AiChatScreen extends ConsumerStatefulWidget {
     this.onOpenAgents,
     this.onOpenActivity,
     this.onOpenProfile,
+    this.pendingServiceIntent,
+    this.onServiceIntentConsumed,
+    this.onOpenServiceEditor,
   });
 
   final String characterId;
@@ -75,6 +80,10 @@ class AiChatScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenAgents;
   final VoidCallback? onOpenActivity;
   final VoidCallback? onOpenProfile;
+  /// Pending user-selected service; never a financial authorization.
+  final PendingPrivateServiceIntent? pendingServiceIntent;
+  final ValueChanged<PendingPrivateServiceIntent>? onServiceIntentConsumed;
+  final ValueChanged<PendingPrivateServiceIntent>? onOpenServiceEditor;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -209,6 +218,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
     );
+  }
+
+  Future<void> _continuePrivateService() async {
+    final selection = widget.pendingServiceIntent;
+    if (selection == null) return;
+    final controller = ref.read(aiChatProvider.notifier);
+    if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) {
+      throw StateError('A message is already being sent.');
+    }
+    // Only a private help request enters the durable conversation journal.
+    // No quote, provider purchase or microphone action is triggered here.
+    await controller.sendText(widget.characterId, selection.intent.helpRequest);
+    if (mounted) widget.onServiceIntentConsumed?.call(selection);
   }
 
   void _sendText() {
@@ -1200,6 +1222,26 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     style: TextStyle(color: u.textPrimary, fontSize: 12),
                   ),
                 ),
+              ),
+            if (widget.pendingServiceIntent != null)
+              PrivateServiceIntentPrompt(
+                key: ValueKey('private-service-' +
+                    widget.pendingServiceIntent!.revision.toString() +
+                    '-' + widget.pendingServiceIntent!.ownerUserId),
+                intent: widget.pendingServiceIntent!.intent,
+                onContinue: _continuePrivateService,
+                onOpenEditor: () {
+                  final selection = widget.pendingServiceIntent;
+                  if (selection != null) {
+                    widget.onOpenServiceEditor?.call(selection);
+                  }
+                },
+                onDismiss: () {
+                  final selection = widget.pendingServiceIntent;
+                  if (selection != null) {
+                    widget.onServiceIntentConsumed?.call(selection);
+                  }
+                },
               ),
             if (widget.entryMode == AiChatEntryMode.cafe)
               _CafeSuggestionBar(
