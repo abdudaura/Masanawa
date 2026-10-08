@@ -29,3 +29,10 @@
 - `45c371e2`: maps the repository's persisted-ended domain rejection to `TalkLiveError(code=\"talks.live.ended\",statusCode=409)`. Unknown database/transport faults still propagate as HTTP 500; session authorization remains first.
 - `57d59f1c`: Fastify injection regressions for authenticated ended join 409, unauthenticated join 401 and unrelated storage error 500.
 - Status: committed, **not locally executed or merged**. Follow-up check: `pnpm exec vitest run services/gateway/src/talk_live/postgres_repository.test.ts services/gateway/src/talk_live_routes.test.ts`, Gateway typecheck and Postgres/LiveKit integration.
+
+## Authorized bounded expansion — LiveKit Host takeover eviction
+
+- Collision check on fresh open PR path lists: #445, #444, #443, #442, #441, #440, #438, #436, #435, #433, #430 and #426 do not touch `services/gateway/src/talk_live/livekit_media.ts` or `services/gateway/src/talk_live/livekit_media.test.ts`.
+- Added exact ownership of those two files. The issuer is already wired to production `main.ts` using the configured LiveKit URL/key/secret, so cleanly extend the existing authoritatively authenticated token path without editing the R18-owned Gateway composition.
+- Before issuing a replacement human Host media credential, enumerate currently connected room participants using LiveKit `RoomService.ListParticipants` and remove previously issued session-scoped identities belonging to the same Host. Never evict another person or the current lease. Require successful RoomService validation or fail closed; an absent room is a distinct handled case. Validate service authorization and ensure controlled token cleanup on LiveKit Cloud where supported.
+- Tests must cover old-Host removal, first room absence, other-user isolation, malformed replies and server errors; external real LiveKit/handset qualification is still outstanding.
