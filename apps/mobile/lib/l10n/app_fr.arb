@@ -51,5 +51,12 @@
   "finishingSignIn": "Finalisation de la connexion…",
   "verifiedSignInNotice": "Votre numéro de téléphone ou adresse e-mail vérifié reste votre moyen de connexion.",
   "countryDialCode": "Indicatif téléphonique : {code}",
-  "unknownCountryDialCode": "Indicatif téléphonique non reconnu"
+  "unknownCountryDialCode": "Indicatif téléphonique non reconnu",
+  "authCodeInvalid": "Ce code est incorrect. Vérifiez-le et réessayez.",
+  "authCodeLocked": "Trop de tentatives. Demandez un nouveau code plus tard.",
+  "authCodeExpired": "Ce code a expiré. Demandez-en un nouveau.",
+  "authRateLimited": "Trop de demandes. Réessayez plus tard.",
+  "authSendFailed": "Impossible d’envoyer le code. Vérifiez votre connexion et réessayez.",
+  "authVerifyFailed": "Impossible de vérifier le code. Réessayez.",
+  "authProfileFailed": "Impossible de terminer votre profil. Vérifiez vos informations et réessayez."
 }
