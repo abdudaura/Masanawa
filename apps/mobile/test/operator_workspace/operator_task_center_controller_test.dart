@@ -124,7 +124,8 @@ void main() {
     final c = OperatorTaskCenterController(
         tenantId: tenant, userId: alice, transport: api);
     final loading = c.refresh();
-    c.changeOwner(tenantId: tenant, userId: bob);
+    c.changeOwner(tenantId: tenant, userId: bob,
+        transport: FakeTasks());
     api.heldList!.complete([task(userId: alice)]);
     await loading;
     expect(c.tasks, isEmpty);
