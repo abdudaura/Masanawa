@@ -1,4 +1,5 @@
 import { PlatformError } from "@masanawa/contracts";
+import { CustomerAuthError } from "./customer_auth.js";
 
 /**
  * The streamed route has already emitted HTTP 200. Preserve only errors
@@ -12,7 +13,14 @@ export function safeAgentTurnStreamErrorCode(
   error: unknown,
   outputEmitted: boolean,
 ): string {
-  if (outputEmitted || !(error instanceof PlatformError)) return "turn_failed";
+  if (outputEmitted) return "turn_failed";
+  // NDJSON's 200 status bypasses normal 401 refresh handling. Tell the
+  // existing Flutter session UI when sign-in is required, without exposing
+  // tokens or raw auth messages. Do not replay automatically.
+  if (error instanceof CustomerAuthError && error.statusCode === 401) {
+    return "auth_required";
+  }
+  if (!(error instanceof PlatformError)) return "turn_failed";
   switch (error.code) {
     case "agents.session_closed":
     case "agents.session_persona_changed":
