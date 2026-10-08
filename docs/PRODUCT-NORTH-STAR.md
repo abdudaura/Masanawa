@@ -1,5 +1,10 @@
 # Masanawa Product North Star
 
+## Latest AI-first product scope — 2026-10-08
+
+**Owner 2026-10-08 AI-first depth:** agents must operate actual authorized Masanawa products with task/readback/receipts, not just explain features. Human Chats must work without AI, with opt-in selected-message translation/drafting and robust offline media. Memory/teaching/files, Host copilot, Twins and Hausa/English usability form the differentiators. Read [full product vision](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [operator task contract](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [Chats quality contract](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md), [U01–U20 work](20-WINDOW-AI-CHAT-EXECUTION-20261008.md). This is approved planning, not verification; five tabs/R/C remain binding.
+
+
 Status: **canonical consumer product direction — 2026-10-08**
 
 ## One sentence

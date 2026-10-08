@@ -1,5 +1,10 @@
 # Mobile Readiness and Global Integration Plan
 
+## Latest AI-first product scope — 2026-10-08
+
+**Owner 2026-10-08 U01–U20 extension:** existing R01–R19 and C01–C08 remain required and unchanged. Additional full-stack scopes target AI execution, memory/tasks, teaching/files, human Chat quality with opt-in selected-message help, Talk/Twin value, and low-end/linguistic experience. Read [product](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [20 workstreams](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [K01–K12 acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). Owner lifts coding pause but does NOT qualify CI/DB/device/provider tests or change R/C statuses.
+
+
 ## Mobile OTA delivery qualification overlay — 2026-10-08
 
 Owner cancelled the separate React Native initiative and approved a **Flutter-first/Shorebird** release plan. This is a delivery-safety overlay, **not** an additional R/C lane or a claim that code push currently works. For every release-bound R01–R19/C01–C08 task, record whether it requires (a) authorized versioned Gateway data only, (b) signed Shorebird-compatible Dart patch to a pre-existing Shorebird release or (c) newly signed Play/App Store binary. Before shipping first patchable release: complete consolidation, Firebase/native config, actual Android and iOS signing, backend/DB/provider/device golden journeys, QA two-launch patch/rollback proof, signed patch key custody and release metadata. **No native code/plugin/permission/asset/engine patch shortcuts;** older non-Shorebird APKs need a normal signed binary upgrade first. Detailed contract: [`FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md`](FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md); runbook [`../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md`](../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md). Nothing here promotes current R/C statuses or clears CI #457/Work #497 blockers.
