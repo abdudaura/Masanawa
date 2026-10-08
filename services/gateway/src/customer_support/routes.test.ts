@@ -23,7 +23,7 @@ describe("U29 support HTTP route authorization", () => {
     registerCustomerSupportRoutes(app,service);
     const anon=await app.inject({method:"GET",url:"/v1/support/tickets"});
     expect(anon.statusCode).toBe(401);
-    const guessed=await app.inject({method:"GET",url:"/v1/support/operations/billing_quote/guessed",headers:{authorization:"Bearer good"}});
+    const guessed=await app.inject({method:"POST",url:"/v1/support/operations/status",payload:{kind:"billing_quote",reference:"guessed"},headers:{authorization:"Bearer good"}});
     expect(guessed.statusCode).toBe(404);
     const noConsent=await app.inject({method:"POST",url:"/v1/support/tickets",headers:{authorization:"Bearer good"},payload:{
       requestKey:"123e4567-e89b-42d3-a456-426614174000",kind:"general",

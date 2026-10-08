@@ -21,14 +21,17 @@ export function registerCustomerSupportRoutes(app: FastifyInstance, service: Cus
     reply.code(503);
     return { error: "SUPPORT_UNAVAILABLE" };
   };
-  app.get("/v1/support/operations/:kind/:reference", {
-    schema: { params: Type.Object({
+  // POST is intentionally READ-ONLY. Keep sensitive references out of URLs,
+  // browser history, intermediary access logs and caches.
+  app.post("/v1/support/operations/status", {
+    schema: { body: Type.Object({
       kind: operationKind, reference: Type.String({ minLength: 1, maxLength: 128, pattern: "^[A-Za-z0-9_.-]+$" }),
     }, { additionalProperties: false }) },
   }, async (request, reply) => {
     try {
-      const params = request.params as { kind: SupportOperationKind; reference: string };
-      return await service.status({ authorizationHeader: request.headers.authorization, ...params });
+      const body = request.body as { kind: SupportOperationKind; reference: string };
+      reply.header("Cache-Control", "no-store");
+      return await service.status({ authorizationHeader: request.headers.authorization, ...body });
     } catch (error) { return failure(error, reply); }
   });
 

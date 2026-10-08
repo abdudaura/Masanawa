@@ -63,9 +63,11 @@ class GatewayCustomerSupportTransport implements CustomerSupportTransport {
     if (!RegExp(r'^[A-Za-z0-9_.-]{1,128}$').hasMatch(reference)) {
       throw const FormatException('Invalid operation reference');
     }
-    final encoded = Uri.encodeComponent(reference);
+    // Read-only POST avoids exposing financial references in URL/access logs.
     return SupportOperationStatus.fromJson(
-      await _get('/v1/support/operations/${kind.code}/$encoded'),
+      await _post('/v1/support/operations/status', {
+        'kind': kind.code, 'reference': reference,
+      }),
     );
   }
 
