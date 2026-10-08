@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import Fastify from "fastify";
 import type {
   TalkGiftActivitySink,
+  TalkGiftCatalogSource,
   TalkGiftExecutor,
   TalkGiftRepository,
 } from "./talk_gifts/model.js";
@@ -13,6 +14,7 @@ function app(input: Readonly<{
   replayed?: boolean;
   fail?: Error;
   activityFail?: boolean;
+  catalogSource?: TalkGiftCatalogSource;
 }> = {}) {
   const activity: Parameters<TalkGiftActivitySink["append"]>[0][] = [];
   const executions: Parameters<TalkGiftExecutor["execute"]>[0][] = [];
@@ -70,6 +72,7 @@ function app(input: Readonly<{
         },
       },
       executor,
+      catalogSource: input.catalogSource,
       activity: {
         async append(event) {
           if (input.activityFail) throw new Error('activity unavailable');
@@ -295,6 +298,81 @@ describe("Talk Host gift route", () => {
     });
     expect(response.statusCode).toBe(409);
     expect(response.json()).toMatchObject({ message: "talks.gift.option_unavailable" });
+    expect(executions).toHaveLength(0);
+  });
+
+  it("reprices a stale catalog choice before any ledger execution", async () => {
+    let currentPrice = 100;
+    const { server, executions } = app({
+      catalogSource: {
+        async load({ tenantId, talkId }) {
+          expect(tenantId).toBe("tenant_1");
+          expect(talkId).toBe("talk_12345678");
+          return [{ id: "heart", name: "Heart", visual: "heart",
+            amountCredits: currentPrice, available: true }];
+        },
+      },
+    });
+    const catalog = await server.inject({
+      method: "GET", url: "/talks/talk_12345678/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(catalog.statusCode).toBe(200);
+    expect(catalog.json().items[0].amountCredits).toBe(100);
+
+    currentPrice = 125;
+    const stale = await server.inject({
+      method: "POST", url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: { requestId: "repriced-1", catalogItemId: "heart", amountCredits: 100 },
+    });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json().message).toBe("talks.gift.price_changed");
+    expect(executions).toHaveLength(0);
+
+    const refreshed = await server.inject({
+      method: "GET", url: "/talks/talk_12345678/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(refreshed.json().items[0].amountCredits).toBe(125);
+  });
+
+  it("a catalog source outage never falls back to six artificial options", async () => {
+    const { server, executions } = app({
+      catalogSource: {
+        async load() { throw new Error("authoritative gift policy unavailable"); },
+      },
+    });
+    const catalog = await server.inject({
+      method: "GET", url: "/talks/talk_12345678/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(catalog.statusCode).toBe(500);
+    const post = await server.inject({
+      method: "POST", url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: { requestId: "outage-1", catalogItemId: "heart", amountCredits: 100 },
+    });
+    expect(post.statusCode).toBe(500);
+    expect(executions).toHaveLength(0);
+  });
+
+  it("an empty qualified catalog blocks gifts without inventing availability", async () => {
+    const { server, executions } = app({
+      catalogSource: { async load() { return []; } },
+    });
+    const response = await server.inject({
+      method: "GET", url: "/talks/talk_12345678/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().items).toEqual([]);
+    const gift = await server.inject({
+      method: "POST", url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: { requestId: "none-1", catalogItemId: "heart", amountCredits: 100 },
+    });
+    expect(gift.statusCode).toBe(409);
     expect(executions).toHaveLength(0);
   });
 
