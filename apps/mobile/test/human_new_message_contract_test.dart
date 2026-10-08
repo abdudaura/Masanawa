@@ -12,7 +12,7 @@ void main() {
     expect(normalizeHumanRecipientHandle('character_abc/123'), isNull);
     expect(normalizeHumanRecipientHandle('alice?role=admin'), isNull);
     expect(normalizeHumanRecipientHandle('älice'), isNull);
-    expect(normalizeHumanRecipientHandle('a' * 41), isNull);
+    expect(normalizeHumanRecipientHandle(List.filled(41, 'a').join()), isNull);
   });
 
   test('only canonical DM UUIDs become conversation route segments', () {
