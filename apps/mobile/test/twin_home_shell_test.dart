@@ -215,6 +215,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('public Twin private Talk checks directory before navigation', (tester) async {
+    await tester.pumpWidget(_app(initialIndex: 1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Twins'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Talk'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Private Talk with Amina Twin is not available yet.'),
+      findsOneWidget,
+    );
+    expect(find.text('View profile'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Activity is opened from the header and not fetched on Home', (tester) async {
     final activity = _CountingActivityTransport();
     await tester.pumpWidget(_app(activity: activity));
