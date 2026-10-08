@@ -3,7 +3,7 @@
 Owner: ChatGPT R11 localization window
 Branch: `work/mobile-locale-foundation-r11-20261008`
 Base main SHA: `265f2c5f6db81d076f57ca32dd47db3ff7fb0ad6`
-Last code commit: `1a4d88621edca4ad3aeb5623eb7cdd652dbef86f`
+Last code commit: `53b3600fec3a9812452e67c204eb9ec258bbb91c`
 Owned: `apps/mobile/l10n.yaml`, `apps/mobile/lib/l10n/app_*.arb`, `apps/mobile/lib/src/localization/*`, `apps/mobile/lib/main.dart`, `apps/mobile/pubspec.yaml`, `apps/mobile/test/localization/*`, this claim.
 Out of scope: theme R01 (#406), router/shell, shared backend, finances, migrations.
 
@@ -14,6 +14,7 @@ Out of scope: theme R01 (#406), router/shell, shared backend, finances, migratio
 - Device-locale negotiation with English fallback; Arabic RTL uses Flutter Widgets delegate.
 - Added secure persisted manual UI locale selection controller, null=follow OS locale, save-before-apply semantics, graceful storage-read failure, and lifecycle-safe MaterialApp rebuilding without resetting router. This is infrastructure only: settings selector has not yet been wired.
 - Added focused controller tests for restart persistence, clearing overrides, corrupt storage, write failure, unsupported locales.
+- Added ARB integrity test for exact key parity, required template metadata and interpolation identifiers; corrected missing unchanged-brand key in all five non-English ARB catalogs. The test exists but execution remains unverified.
 - Added generated-resource, ICU plural, formatting and RTL tests.
 - Presentation-only formatters for numbers/dates/native financial amounts; never convert balances or decide currency based on language.
 - Deliberate Hausa restriction: stock Flutter Material/Cupertino localizations lack Hausa. Its ARB app-language messages exist but native dialog/calendar controls require a correctly audited Hausa framework delegate. Current MaterialApp supportedLocales remain en/ar/fr/es/pt; Hausa is **not** claimed working.
