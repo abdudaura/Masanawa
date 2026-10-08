@@ -38,7 +38,7 @@ describe("U30 authenticated public discovery", () => {
   it("shows named, typed public results and preserves canonical ranking", async () => {
     const { app } = setup({
       talks: [{ id: "talk_ab", title: "Health talk", hostName: "Amina", isLive: true,
-        listenerCount: 8 }] as TalkSearchResults["talks"],
+        listenerCount: 8 }] as unknown as TalkSearchResults["talks"],
       people: [{ handle: "amina", displayName: "Amina", bio: "", avatarUrl: null,
         isLive: false, liveTalkId: null }],
       personas: [
@@ -63,7 +63,7 @@ describe("U30 authenticated public discovery", () => {
       talks: [
         { id: "live", title: "Live", hostName: "A", isLive: true, listenerCount: 1 },
         { id: "past", title: "Past", hostName: "B", isLive: false, listenerCount: 0 },
-      ] as TalkSearchResults["talks"],
+      ] as unknown as TalkSearchResults["talks"],
       people: [{ handle: "notlive", displayName: "Not live", bio: "", avatarUrl: null,
         isLive: false, liveTalkId: null }],
       personas: [{ publicId: "expert", displayName: "Expert", kind: "expert",
@@ -81,7 +81,7 @@ describe("U30 authenticated public discovery", () => {
     const { app } = setup({
       talks: Array.from({ length: 50 }, (_, i) => ({
         id: "talk_" + i, title: "Talk " + i, hostName: "Host", isLive: true, listenerCount: 0,
-      })) as TalkSearchResults["talks"],
+      })) as unknown as TalkSearchResults["talks"],
       people: [], personas: [],
     });
     const first = await app.inject({ url: "/discovery/public?q=talk&limit=20&offset=0",
