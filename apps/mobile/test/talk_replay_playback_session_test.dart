@@ -35,6 +35,8 @@ class _Player implements TalkReplayAudioPlayer {
   String? lastUrl;
   Duration? lastSeek;
   Completer<void>? holdPlay;
+  Completer<void>? holdSeek;
+  Completer<void>? startedSeek;
 
   @override
   Stream<Duration> get positions => positionsController.stream;
@@ -73,6 +75,8 @@ class _Player implements TalkReplayAudioPlayer {
   Future<void> seek(Duration position) async {
     lastSeek = position;
     positionsController.add(position);
+    startedSeek?.complete();
+    if (holdSeek != null) await holdSeek!.future;
   }
 
   @override
@@ -315,6 +319,74 @@ void main() {
         throwsFormatException,
       );
     }
+  });
+
+  test('revocation during refreshed paused seek never republishes a signed replay link', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    var authorized = true;
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 5));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private',
+      transport: transport,
+      player: player,
+      now: () => clock,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    await session.seekTo(.5);
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 6));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.25);
+    await player.startedSeek!.future;
+    authorized = false; // Account switch while native player is seeking.
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 2);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.plays, 1);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    await session.close();
+  });
+
+  test('signature expiry during refreshed paused seek fails without cached playback', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 5));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private',
+      transport: transport,
+      player: player,
+      now: () => clock,
+      canAccess: () => true,
+    );
+    await session.toggle();
+    await session.seekTo(.5);
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 6));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.25);
+    await player.startedSeek!.future;
+    clock = clock.add(const Duration(minutes: 5)); // Signed link expires mid-seek.
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 2);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.plays, 1);
+    await session.close();
   });
 
   test('account switch revokes even a still-valid cached replay link', () async {
