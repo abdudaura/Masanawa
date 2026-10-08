@@ -16,6 +16,8 @@ class HumanContactsViewState {
     this.loading = true,
     this.searching = false,
     this.busy = false,
+    this.loadingMore = false,
+    this.nextCursor,
     this.preferences,
     this.contacts = const [],
     this.lookup,
@@ -27,6 +29,8 @@ class HumanContactsViewState {
   final bool loading;
   final bool searching;
   final bool busy;
+  final bool loadingMore;
+  final String? nextCursor;
   final HumanContactPreferences? preferences;
   final List<HumanContact> contacts;
   final HumanContact? lookup;
@@ -38,6 +42,9 @@ class HumanContactsViewState {
     bool? loading,
     bool? searching,
     bool? busy,
+    bool? loadingMore,
+    String? nextCursor,
+    bool clearNextCursor = false,
     HumanContactPreferences? preferences,
     List<HumanContact>? contacts,
     HumanContact? lookup,
@@ -51,6 +58,8 @@ class HumanContactsViewState {
     loading: loading ?? this.loading,
     searching: searching ?? this.searching,
     busy: busy ?? this.busy,
+    loadingMore: loadingMore ?? this.loadingMore,
+    nextCursor: clearNextCursor ? null : nextCursor ?? this.nextCursor,
     preferences: preferences ?? this.preferences,
     contacts: contacts ?? this.contacts,
     lookup: clearLookup ? null : lookup ?? this.lookup,
@@ -115,21 +124,58 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
   Future<void> refresh() async {
     if (!_authorized) return;
     final epoch = ++_readEpoch;
-    state = state.copyWith(loading: true, clearError: true);
+    state = state.copyWith(loading: true, loadingMore: false, clearError: true, clearNextCursor: true);
     try {
       final results = await Future.wait<Object>([
         _transport.preferences(),
-        _transport.list(limit: 50),
+        _transport is HumanContactsPaginationTransport
+            ? (_transport as HumanContactsPaginationTransport).page(limit: 50)
+            : _transport.list(limit: 50),
       ]);
       if (!_authorized || epoch != _readEpoch) return;
+      final result = results[1];
       state = state.copyWith(
         loading: false,
         preferences: results[0] as HumanContactPreferences,
-        contacts: results[1] as List<HumanContact>,
+        contacts: result is HumanContactPage
+            ? result.contacts : result as List<HumanContact>,
+        nextCursor: result is HumanContactPage ? result.nextCursor : null,
+        clearNextCursor: result is! HumanContactPage ||
+            result.nextCursor == null,
       );
     } catch (error) {
       if (!_authorized || epoch != _readEpoch) return;
       state = state.copyWith(loading: false, error: _errorText(error));
+    }
+  }
+
+  /// Continue only the current signed-in account's authoritative cursor.
+  /// A concurrent refresh, logout or account change invalidates this result.
+  Future<void> loadMore() async {
+    if (!_authorized || state.loading || state.loadingMore || state.busy ||
+        state.nextCursor == null ||
+        _transport is! HumanContactsPaginationTransport) return;
+    final epoch = _readEpoch;
+    final cursor = state.nextCursor!;
+    state = state.copyWith(loadingMore: true, clearError: true);
+    try {
+      final page = await (_transport as HumanContactsPaginationTransport)
+          .page(limit: 50, cursor: cursor);
+      if (!_authorized || epoch != _readEpoch) return;
+      final seen = state.contacts.map((contact) => contact.userId).toSet();
+      final combined = [
+        ...state.contacts,
+        ...page.contacts.where((contact) => seen.add(contact.userId)),
+      ];
+      state = state.copyWith(
+        contacts: List.unmodifiable(combined),
+        loadingMore: false,
+        nextCursor: page.nextCursor,
+        clearNextCursor: page.nextCursor == null,
+      );
+    } catch (error) {
+      if (!_authorized || epoch != _readEpoch) return;
+      state = state.copyWith(loadingMore: false, error: _errorText(error));
     }
   }
 
