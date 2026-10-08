@@ -51,5 +51,12 @@
   "finishingSignIn": "Finalizando inicio de sesión…",
   "verifiedSignInNotice": "El teléfono o correo verificado seguirá siendo tu método de inicio de sesión.",
   "countryDialCode": "Prefijo telefónico: {code}",
-  "unknownCountryDialCode": "No se reconoce el prefijo telefónico"
+  "unknownCountryDialCode": "No se reconoce el prefijo telefónico",
+  "authCodeInvalid": "El código es incorrecto. Compruébalo e inténtalo de nuevo.",
+  "authCodeLocked": "Demasiados intentos. Solicita un código nuevo más tarde.",
+  "authCodeExpired": "Este código ha caducado. Solicita uno nuevo.",
+  "authRateLimited": "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
+  "authSendFailed": "No se pudo enviar el código. Comprueba tu conexión e inténtalo de nuevo.",
+  "authVerifyFailed": "No se pudo verificar el código. Inténtalo de nuevo.",
+  "authProfileFailed": "No se pudo completar tu perfil. Comprueba tus datos e inténtalo de nuevo."
 }
