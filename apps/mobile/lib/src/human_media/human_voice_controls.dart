@@ -8,11 +8,13 @@ import 'human_voice_transport.dart';
 class HumanVoiceNotesPanel extends StatefulWidget {
   const HumanVoiceNotesPanel({
     super.key,required this.conversationId,required this.currentUserId,
-    required this.transport,this.capture,
+    required this.transport,this.capture,this.player,this.privatePath,
   });
   final String conversationId,currentUserId;
   final HumanVoiceTransport transport;
   final HumanVoiceCapture? capture;
+  final HumanVoicePlayer? player;
+  final Future<String> Function()? privatePath;
   @override State<HumanVoiceNotesPanel> createState()=>_HumanVoiceNotesPanelState();
 }
 class _HumanVoiceNotesPanelState extends State<HumanVoiceNotesPanel> {
@@ -25,6 +27,7 @@ class _HumanVoiceNotesPanelState extends State<HumanVoiceNotesPanel> {
     controller=HumanVoiceController(
       conversationId:widget.conversationId,ownerUserId:widget.currentUserId,
       transport:widget.transport,capture:widget.capture,
+      player:widget.player,privatePath:widget.privatePath,
     )..addListener(_update);
     unawaited(controller.refresh());
   }
@@ -33,7 +36,9 @@ class _HumanVoiceNotesPanelState extends State<HumanVoiceNotesPanel> {
     super.didUpdateWidget(oldWidget);
     if(oldWidget.conversationId!=widget.conversationId||
        oldWidget.currentUserId!=widget.currentUserId||
-       !identical(oldWidget.transport,widget.transport)){
+       !identical(oldWidget.transport,widget.transport)||
+       !identical(oldWidget.player,widget.player)||
+       !identical(oldWidget.privatePath,widget.privatePath)){
       final previous=controller;
       previous.removeListener(_update);
       unawaited(previous.shutdown());
