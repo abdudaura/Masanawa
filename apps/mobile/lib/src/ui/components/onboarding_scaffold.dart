@@ -124,16 +124,13 @@ class OnboardingScaffold extends StatelessWidget {
                         ),
                       ),
                       if (canGoBack)
-                        Positioned(
+                        PositionedDirectional(
                           top: 0,
-                          left: 0,
+                          start: 0,
                           child: IconButton(
-                            icon: Icon(
-                              Icons.arrow_back_ios_new,
-                              color: u.brand,
-                            ),
+                            icon: BackButtonIcon(color: u.brand),
                             onPressed: goBack,
-                            tooltip: 'Back',
+                            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                           ),
                         ),
                     ],
