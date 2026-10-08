@@ -115,8 +115,7 @@ void main(){
     await tester.ensureVisible(find.byKey(const ValueKey('human-safety-report')));
     await tester.tap(find.byKey(const ValueKey('human-safety-report')));
     await tester.pumpAndSettle();
-    expect(transport.ids,saved.requestId == transport.ids.single
-      ? [saved.requestId] : <String>[]);
+    expect(transport.ids,[saved.requestId]);
     expect(journal.data,isEmpty);
     expect(find.byKey(const ValueKey('human-safety-accepted')),findsOneWidget);
   });
