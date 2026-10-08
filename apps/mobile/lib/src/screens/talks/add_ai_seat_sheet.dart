@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../state/talk_ai_seat_state.dart';
 import '../../talks/talk_ai_seat.dart';
@@ -310,8 +311,27 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
                             : 'No Twins available yet.'
                         : 'No matches found.',
                     subtitle: query.isEmpty
-                        ? 'Available AI personas will appear here.'
+                        ? kind == TalkAiPersonaKind.twin
+                            ? 'Create a Twin, then return to this Talk to request a Seat.'
+                            : 'Available AI personas will appear here.'
                         : 'Try a different name or topic.',
+                    action: query.isNotEmpty
+                        ? 'Clear search'
+                        : kind == TalkAiPersonaKind.twin
+                            ? 'Create My Twin'
+                            : 'Refresh list',
+                    onAction: () {
+                      if (query.isNotEmpty) {
+                        _search.clear();
+                        setState(() {});
+                      } else if (kind == TalkAiPersonaKind.twin) {
+                        final router = GoRouter.of(context);
+                        Navigator.of(context).pop();
+                        router.push('/my-twin');
+                      } else {
+                        ref.invalidate(talkAiSeatCatalogProvider(widget.talkId));
+                      }
+                    },
                   );
                 }
 
