@@ -4,7 +4,7 @@ Pure, side-effect-free protocol package for the proposed private Gwani/Gwana ope
 
 ## Server integration (not installed)
 
-1. Parse all model/client proposals with `parseOperatorProposal` before attempting domain discovery. Never permit model-provided user, tenant, approval or receipt.
+1. Parse all model/client proposals with `parseOperatorProposal` before attempting domain discovery. Never permit model-provided user, tenant, account, approval or receipt.
 2. Obtain `VerifiedPrincipal`, country and interaction scope **exclusively from current server authentication**; call `authorizeOperatorProposal` with an actual current capability catalog, owner policy and resource/DM-membership authorization callback. Callbacks must reauthorize again at execution (TOCTOU).
 3. U02 persists task ID, append-only events and idempotent operations; the caller binds `requestId` to the same authenticated account/operation and reads status on timeout. U01 only validates the event cursor and phase transitions; it cannot guarantee concurrency/idempotency alone.
 4. For send/money, U02/domain owner issues an unguessable approval ticket and persists it with exact canonical terms, identity, revision, expiry and state. On explicit review, lookup the issued ticket by exact identity from trusted storage, then invoke `verifyIssuedApproval`. **Never pass model/client-supplied `issued` as authoritative.** Mark ticket consumed atomically in DB and delegate to domain owner; `admitTaskExecution` is a secondary phase gate, not authorization. Do not treat a spoken “yes” as a ticket.

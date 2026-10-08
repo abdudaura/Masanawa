@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {parseOperatorProposal,authorizeOperatorProposal,verifyIssuedApproval,admitTaskExecution,advanceTaskPhase,validateTaskEventPage,selectOperatorCard} from "../src/index.js";
-const principal={tenantId:"tenant_1",userId:"user_1",sessionId:"character-session_1",deviceId:"device_1"};
+const principal={tenantId:"tenant_1",userId:"user_1",accountId:"account_1",sessionId:"character-session_1",deviceId:"device_1"};
 const proposal={requestId:"request_0199abcd-1234-7123-8123-123456789abc",capabilityId:"wallet.balance.read",capabilityVersion:1,untrustedArguments:{currency:"NGN"}};
 const descriptor={id:"wallet.balance.read",version:1,enabled:true,executionClass:"read",scopes:["private-assistant"],regions:["NG"],argumentKeys:["currency"]};
 const admit=(more={})=>authorizeOperatorProposal({proposal:parseOperatorProposal(proposal),catalog:[descriptor],principal,scope:"private-assistant",region:"NG",authorizeCapability:()=>true,authorizeContext:()=>true,...more});
 test("strict proposals reject forged model authority, unknown keys and versions",()=>{
   assert.equal(parseOperatorProposal(proposal).capabilityId,proposal.capabilityId);
-  for(const bad of [{...proposal,userId:"user_2"},{...proposal,untrustedArguments:{approval:true}},{...proposal,untrustedArguments:JSON.parse('{"__proto__":"x"}')},{...proposal,capabilityVersion:0}]){
+  for(const bad of [{...proposal,userId:"user_2"},{...proposal,untrustedArguments:{approval:true}},{...proposal,untrustedArguments:JSON.parse('{"__proto__":"x"}')},{...proposal,untrustedArguments:{account_id:"another"}},{...proposal,capabilityVersion:0}]){
     assert.throws(()=>parseOperatorProposal(bad));
   }
 });
@@ -17,6 +17,7 @@ test("capability admission is exact and server-authorized",()=>{
   assert.throws(()=>admit({catalog:[{...descriptor,version:2}]}),{code:"not_qualified"});
   assert.throws(()=>admit({authorizeCapability:()=>false}),{code:"not_authorized"});
   assert.throws(()=>admit({authorizeCapability:null}),{code:"missing_authorizer"});
+  assert.throws(()=>admit({proposal:{...proposal,untrustedArguments:{approved:true}}}),{code:"privileged_argument"});
   assert.throws(()=>admit({proposal:parseOperatorProposal({...proposal,untrustedArguments:{secretItem:"x"}})}),{code:"unknown_argument"});
 });
 test("selected human DM refs require separate current membership consent",()=>{
@@ -30,6 +31,7 @@ test("persisted issued approval is bound to identity, exact terms and expiration
   assert.equal(verifyIssuedApproval(data).operationId,"operation_1");
   assert.throws(()=>verifyIssuedApproval({...data,now:200}),{code:"approval_invalid"});
   assert.throws(()=>verifyIssuedApproval({...data,principal:{...principal,userId:"other"}}),{code:"approval_invalid"});
+  assert.throws(()=>verifyIssuedApproval({...data,principal:{...principal,accountId:"account_2"}}),{code:"approval_invalid"});
   assert.throws(()=>verifyIssuedApproval({...data,expected:{...expected,terms:{...expected.terms,amountMinor:"99999"}}}),{code:"approval_terms_changed"});
 });
 test("state machine refuses model-invented success and generic financial yes",()=>{

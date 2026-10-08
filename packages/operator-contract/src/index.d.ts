@@ -4,10 +4,10 @@ export type ExecutionClass = "read" | "draft" | "send" | "financial";
 export type TaskPhase = "proposed" | "clarifying" | "prepared" | "awaiting_approval" | "running" | "reconciling" | "succeeded" | "failed" | "cancelled";
 export type OperatorContext = Readonly<{kind:"talk"|"dm-selected-message"|"wallet"|"twin";id:string;revision?:string}>;
 export type OperatorProposal = Readonly<{requestId:RequestId;capabilityId:string;capabilityVersion:number;untrustedArguments:Readonly<Record<string,unknown>>;contextRef?:OperatorContext}>;
-export type VerifiedPrincipal = Readonly<{tenantId:TenantId;userId:UserId;sessionId:CharacterSessionId;deviceId:DeviceId}>;
+export type VerifiedPrincipal = Readonly<{tenantId:TenantId;userId:UserId;accountId:string;sessionId:CharacterSessionId;deviceId:DeviceId}>;
 export type CapabilityDescriptor = Readonly<{id:string;version:number;enabled:boolean;executionClass:ExecutionClass;scopes:readonly OperatorScope[];regions:readonly string[];argumentKeys:readonly string[]}>;
 export type ApprovedOperationTerms = Readonly<Record<string,unknown>>;
-export type IssuedApprovalRecord = Readonly<{state:"issued"|"used"|"revoked";ticketId:string;tenantId:TenantId;userId:UserId;sessionId:CharacterSessionId;deviceId:DeviceId;operationId:OperationId;capabilityId:string;capabilityVersion:number;revision:string;issuedAtMs:number;expiresAtMs:number;terms:ApprovedOperationTerms}>;
+export type IssuedApprovalRecord = Readonly<{state:"issued"|"used"|"revoked";ticketId:string;tenantId:TenantId;userId:UserId;accountId:string;sessionId:CharacterSessionId;deviceId:DeviceId;operationId:OperationId;capabilityId:string;capabilityVersion:number;revision:string;issuedAtMs:number;expiresAtMs:number;terms:ApprovedOperationTerms}>;
 export class OperatorContractError extends Error { readonly code:string;constructor(code:string); }
 export function isRecord(x:unknown):x is Record<string,unknown>;
 export function strict(x:unknown,required:readonly string[],optional?:readonly string[]):void;
