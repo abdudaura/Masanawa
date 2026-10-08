@@ -23,3 +23,9 @@
 - Fresh collision check: PRs #442/#440/#438/#436/#435/#433/#430/#426 do not own `services/gateway/src/talk_live/service.ts` or `services/gateway/src/talk_live_routes.test.ts`.
 - Add these two exact paths to this R02 claim to classify the existing `talks.live.ended` repository domain rejection as HTTP 409 rather than a generic HTTP 500, with an API-level regression. Do not touch app.ts, routes registration or unowned worker/mobile files.
 - This is a source/API error contract improvement only; not paired-device readiness.
+
+### Terminal join error checkpoint
+
+- `45c371e2`: maps the repository's persisted-ended domain rejection to `TalkLiveError(code=\"talks.live.ended\",statusCode=409)`. Unknown database/transport faults still propagate as HTTP 500; session authorization remains first.
+- `57d59f1c`: Fastify injection regressions for authenticated ended join 409, unauthenticated join 401 and unrelated storage error 500.
+- Status: committed, **not locally executed or merged**. Follow-up check: `pnpm exec vitest run services/gateway/src/talk_live/postgres_repository.test.ts services/gateway/src/talk_live_routes.test.ts`, Gateway typecheck and Postgres/LiveKit integration.
