@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../state/session_state.dart';
+
 /// The selected service is an untrusted navigation intent, NOT a quote,
 /// transaction, approval, provider entitlement, or server task ID.
 enum PrivateServiceIntent {
@@ -79,8 +81,51 @@ class PendingPrivateServiceIntent {
   bool belongsTo(String userId) => ownerUserId == userId;
 }
 
-/// Ephemeral, account-scoped handoff. A fresh app launch cannot replay an old
-/// financial request. Re-entry and provider recovery happen through server
-/// history/quotes, not through this navigation state.
+/// In-memory, account-scoped handoff: never a financial task or authorization.
+/// A new selection supersedes the previous intent, even for the same service.
+class PrivateServiceIntentController
+    extends StateNotifier<PendingPrivateServiceIntent?> {
+  PrivateServiceIntentController() : super(null);
+
+  int _sequence = 0;
+
+  void select({
+    required PrivateServiceIntent intent,
+    required String ownerUserId,
+  }) {
+    if (ownerUserId.trim().isEmpty) {
+      throw ArgumentError.value(ownerUserId, 'ownerUserId');
+    }
+    state = PendingPrivateServiceIntent(
+      intent: intent,
+      ownerUserId: ownerUserId,
+      revision: ++_sequence,
+    );
+  }
+
+  /// A delayed completion of an older request cannot clear a newer request.
+  void consume(PendingPrivateServiceIntent request) {
+    if (identical(state, request)) state = null;
+  }
+
+  void clearUnlessOwner(String? userId) {
+    final current = state;
+    if (current != null && (userId == null || !current.belongsTo(userId))) {
+      state = null;
+    }
+  }
+}
+
+/// Route rebuilds retain the selection; switching account, logging out, or
+/// starting a fresh app session clears it. No payment data is persisted here.
 final pendingPrivateServiceIntentProvider =
-    StateProvider.autoDispose<PendingPrivateServiceIntent?>((ref) => null);
+    StateNotifierProvider<PrivateServiceIntentController,
+        PendingPrivateServiceIntent?>((ref) {
+  final controller = PrivateServiceIntentController();
+  ref.listen(sessionProvider, (_, next) {
+    controller.clearUnlessOwner(
+      next is SessionSignedIn ? next.user.id : null,
+    );
+  });
+  return controller;
+});
