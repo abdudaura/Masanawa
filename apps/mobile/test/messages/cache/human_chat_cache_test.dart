@@ -208,7 +208,7 @@ void main() {
     expect(await cache.recentThreads(
       tenantId: tenant, userId: 'person-c',
     ), isEmpty);
-    expect(() => cache.recentThreads(
+    await expectLater(cache.recentThreads(
       tenantId: tenant, userId: owner,
     ), throwsStateError);
     await cache.openAccount(tenantId: tenant, userId: owner);
