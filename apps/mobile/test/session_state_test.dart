@@ -23,6 +23,7 @@ void main() {
   final storageReads = <String>[];
   var storageReadAlls = 0;
   Completer<void>? sessionWriteGate;
+  Completer<void>? sessionWriteStarted;
 
   ProviderContainer makeContainer() {
     final container = ProviderContainer(overrides: [
@@ -38,6 +39,7 @@ void main() {
     storageReads.clear();
     storageReadAlls = 0;
     sessionWriteGate = null;
+    sessionWriteStarted = null;
     final dio = Dio(BaseOptions(
       baseUrl: 'https://example.test',
       validateStatus: (s) => s != null && s >= 200 && s < 300,
@@ -65,6 +67,7 @@ void main() {
             if (key == 'auth_session_v2' && sessionWriteGate != null) {
               final gate = sessionWriteGate!;
               sessionWriteGate = null;
+              sessionWriteStarted?.complete();
               await gate.future;
             }
             storageMap[key] = call.arguments['value'] as String;
@@ -500,10 +503,10 @@ void main() {
     });
     final pausedWrite = Completer<void>();
     sessionWriteGate = pausedWrite;
+    sessionWriteStarted = Completer<void>();
     final verify = controller.verifyOtp(code, email: email);
-    // Allow the HTTP result to reach the intercepted secure-storage write.
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
+    // Await the intercepted native write deterministically (not clock ticks).
+    await sessionWriteStarted!.future;
     expect(sessionWriteGate, isNull);
     final signOut = controller.logout();
     pausedWrite.complete();
