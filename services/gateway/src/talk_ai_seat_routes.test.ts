@@ -9,7 +9,7 @@ const tenantId = createCanonicalId("tenant");
 const viewerId = createCanonicalId("user");
 const hostId = createCanonicalId("user");
 
-function repository(): TalkAiSeatRepository {
+function repository(confirmationStatus: "admitted" | "pending_host" = "pending_host"): TalkAiSeatRepository {
   return {
     async listCandidates() {
       return [
@@ -77,10 +77,10 @@ function repository(): TalkAiSeatRepository {
         },
       };
     },
-    async confirm({ quoteId }) {
+    async confirm() {
       return {
         requestId: createCanonicalId("request"),
-        status: quoteId.endsWith("0") ? "admitted" : "pending_host",
+        status: confirmationStatus,
         displayName: "Gwani",
       };
     },
@@ -102,10 +102,10 @@ function repository(): TalkAiSeatRepository {
   };
 }
 
-function app(authenticated = true) {
+function app(authenticated = true, confirmationStatus: "admitted" | "pending_host" = "pending_host") {
   const server = Fastify();
   const service = createTalkAiSeatService({
-    repository: repository(),
+    repository: repository(confirmationStatus),
     pricing: {
       expertPriceCredits: 100,
       twinPriceCredits: 120,
@@ -207,6 +207,17 @@ describe("Talk AI Seat API", () => {
     expect(response.json().message).toContain("Host");
   });
 
+  it("returns an admitted confirmation without inventing a second Host approval", async () => {
+    const response = await app(true, "admitted").inject({
+      method: "POST",
+      url: `/talks/talk_1/ai-seat-quotes/${createCanonicalId("quote")}/confirm`,
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ status: "admitted" });
+    expect(response.json().message).not.toContain("waiting for");
+  });
+
   it("requires the customer session on all AI Seat routes", async () => {
     const response = await app(false).inject({
       method: "GET",
@@ -215,3 +226,4 @@ describe("Talk AI Seat API", () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
