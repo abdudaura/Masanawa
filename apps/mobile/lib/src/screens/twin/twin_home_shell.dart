@@ -31,12 +31,20 @@ class TwinHomeShell extends ConsumerStatefulWidget {
 class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   late int _index;
   late final Set<int> _visitedTabs;
+  final _agentSearchController = TextEditingController();
+  String _agentQuery = '';
 
   @override
   void initState() {
     super.initState();
     _index = widget.initialIndex.clamp(0, 3).toInt();
     _visitedTabs = <int>{_index};
+  }
+
+  @override
+  void dispose() {
+    _agentSearchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -101,7 +109,15 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _agents() {
     final directory = ref.watch(agentDirectoryProvider);
-    final agents = directory.agents;
+    final agents = directory.agents.where((agent) {
+      if (_agentQuery.isEmpty) return true;
+      final searchable = [
+        agent.displayName,
+        agent.roleLabel,
+        agent.about,
+      ].join(' ').toLowerCase();
+      return searchable.contains(_agentQuery);
+    }).toList();
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -119,7 +135,30 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  if (directory.loading && agents.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                    child: TextField(
+                      controller: _agentSearchController,
+                      onChanged: (value) => setState(() {
+                        _agentQuery = value.trim().toLowerCase();
+                      }),
+                      decoration: InputDecoration(
+                        hintText: 'Search Masanawa Agents',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: _agentQuery.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'Clear agent search',
+                                icon: const Icon(Icons.close),
+                                onPressed: () {
+                                  _agentSearchController.clear();
+                                  setState(() => _agentQuery = '');
+                                },
+                              ),
+                      ),
+                    ),
+                  ),
+                  if (directory.loading && directory.agents.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(24),
                       child: Center(child: CircularProgressIndicator()),
@@ -145,7 +184,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
                         '/chat/' + Uri.encodeComponent(agent.characterId)),
                     ),
                   if (!directory.loading && agents.isEmpty && directory.error == null)
-                    const ListTile(title: Text('No Masanawa Agents available yet.')),
+                    ListTile(title: Text(directory.agents.isEmpty
+                        ? 'No Masanawa Agents available yet.'
+                        : 'No agents match your search.')),
                 ],
               ),
             ),
