@@ -39,7 +39,7 @@ void main() {
     final api = ApiClient(dio: dio)..accessToken = 'session';
     final avatar = GatewayProfileAvatarTransport(api: api);
     expect(
-      await avatar.upload(Uint8List.fromList(List.filled(64, 1))),
+      await avatar.upload(Uint8List.fromList(List.filled(64, 1)), expectedUrl: null),
       'https://images.masanawa.example/profile.png',
     );
   });
@@ -50,7 +50,7 @@ void main() {
       _json('{"avatarUrl":"javascript:alert(1)"}', status: 201));
     final avatar = GatewayProfileAvatarTransport(api: ApiClient(dio: dio));
     await expectLater(
-      avatar.upload(Uint8List.fromList(List.filled(64, 1))),
+      avatar.upload(Uint8List.fromList(List.filled(64, 1)), expectedUrl: null),
       throwsFormatException,
     );
   });
@@ -62,15 +62,15 @@ void main() {
       expect(options.path, '/profiles/me/avatar');
       return _json('{"avatarUrl":null}');
     });
-    await GatewayProfileAvatarTransport(api: ApiClient(dio: dio)).remove();
+    await GatewayProfileAvatarTransport(api: ApiClient(dio: dio)).remove(expectedUrl: 'https://images.masanawa.example/old.png');
   });
 
   test('refuses giant/empty images before making an HTTP request', () async {
     final dio = Dio(BaseOptions(baseUrl: 'https://gateway.example.test'));
     final avatar = GatewayProfileAvatarTransport(api: ApiClient(dio: dio));
-    await expectLater(avatar.upload(Uint8List(0)), throwsFormatException);
+    await expectLater(avatar.upload(Uint8List(0), expectedUrl: null), throwsFormatException);
     await expectLater(
-      avatar.upload(Uint8List(2 * 1024 * 1024 + 1)), throwsFormatException,
+      avatar.upload(Uint8List(2 * 1024 * 1024 + 1), expectedUrl: null), throwsFormatException,
     );
   });
 }
