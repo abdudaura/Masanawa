@@ -1,5 +1,8 @@
 # Consumer Services
 
+> **2026-10-08 owner coverage:** Validate this Billing/Crypto scope against `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` (W01–W13) and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` (J08–J09). Voice-only and quiet typed/tap access, crypto-in-chat transfer, qualified global eligibility and same-server authorization/receipt/recovery are non-optional. "Bank-like" simplicity must not be interpreted as a new fiat/banking ledger or universal no-fee crypto eligibility. All live provider/device outcomes remain unverified until R05–R08/C06 acceptance.
+
+
 Status: **canonical consumer service scope — 2026-10-08**
 
 Masanawa has exactly two standalone consumer service families:
