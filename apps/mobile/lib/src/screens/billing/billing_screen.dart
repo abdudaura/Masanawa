@@ -233,10 +233,10 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Future<void> readOwnedBill(String quoteId, {
     bool restoreFunding = true,
   }) async {
-    final detail = await api.billingQuote(quoteId);
-    // Clear previously shown bank details before network recovery. Never keep
-    // showing an old account when ownership/status verification fails.
+    // Clear before the first network await, including when the quote GET
+    // fails. Displaying a stale account after authentication failure is unsafe.
     if (restoreFunding && mounted) setState(() => walletAction = null);
+    final detail = await api.billingQuote(quoteId);
     final status = restoreFunding && !detail.isTerminal
         ? await api.billingWalletStatus(quoteId)
         : null;
