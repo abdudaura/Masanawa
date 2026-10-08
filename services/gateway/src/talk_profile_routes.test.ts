@@ -126,7 +126,7 @@ function repo(initiallyMissing = false): TalkProfileRepository {
       if (input.bio !== undefined) biography = input.bio;
       if (input.removeAvatar === true) avatarUrl = null;
       return {
-        handle: "amina",
+        handle,
         displayName,
         bio: biography,
         avatarUrl,
