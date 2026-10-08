@@ -46,3 +46,17 @@ These repair stale imports, canonical SQL mocks, timestamp fixtures and finaliza
 ## Verified bounded repairs — 2026-10-08T07:27:19.859Z
 
 Eight claimed test repairs implemented. Targeted checks: replay 2 files/14 tests; social safety/ranking/channels 4 files/23 tests; deletion/startup 2 files/10 tests, all passed. Agents package typecheck passed. Full workspace typecheck in progress. No production security rule was relaxed. Flutter baseline analyze executed: 481 issues; tests/build qualification remains open. No hosted CI execution or merge.
+
+## Next bounded repair claim — 2026-10-08T07:28:47.505Z
+
+Main build passed (Node24/pnpm12.8.2). Full typecheck continues to expose stale test typing; eighteen of twenty individual workspace checks passed, postgres and Gateway failed. Flutter source blob checks confirm two gift recovery Dart files contain actual broken regex/trailing duplicate bodies; locale controller getter shadows @override. Claim adds exact paths:
+- `apps/mobile/lib/src/talks/talk_gift_http_transport.dart`
+- `apps/mobile/lib/src/talks/talk_gift_pending_store.dart`
+- `apps/mobile/lib/src/localization/locale_preference.dart`
+- `adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts`
+- `services/gateway/src/strict_request_body.ts`
+- `services/gateway/src/talk_gift_routes.ts`
+- `services/gateway/src/talk_profile_routes.ts`
+- `services/gateway/src/talk_profile_routes.test.ts`
+
+Gift/profile schemas currently silently discard forged extra fields with Fastify default AJV. Bounded pre-validation will reject before service mutation; no global app settings changed, no overlapping PR446 test edits. Profile saved-read failure is a mock returning hardcoded stale values, not demonstrated database overwrite. PR435 composition/avatar changes preserved. No merge or provider/device acceptance.
