@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/screens/profile/human_profile_report_journal.dart';
-import 'package:masanawa/src/screens/profile/human_profile_safety_sheet.dart';
-import 'package:masanawa/src/screens/profile/human_profile_safety_transport.dart';
+import 'package:masanawa/src/screens/profile/human_profile_report_sheet.dart';
+import 'package:masanawa/src/screens/profile/human_profile_report_transport.dart';
 import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/talks/talk_safety.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
@@ -27,7 +27,7 @@ class _SignedIn extends SessionController {
   }
 }
 
-class _Transport implements HumanProfileSafetyTransport {
+class _Transport implements HumanProfileReportTransport {
   bool ambiguousOnce=false;
   final ids=<String>[];
   @override
@@ -68,7 +68,7 @@ class _Journal implements HumanProfileReportJournal {
 ProviderContainer _container(_Transport transport,_Journal journal)=>ProviderContainer(
   overrides:[
     sessionProvider.overrideWith(_SignedIn.new),
-    humanProfileSafetyTransportProvider.overrideWithValue(transport),
+    humanProfileReportTransportProvider.overrideWithValue(transport),
     humanProfileReportJournalProvider.overrideWithValue(journal),
   ],
 );
@@ -78,7 +78,7 @@ Future<void> _pump(WidgetTester tester,ProviderContainer container) async {
     container:container,
     child:MaterialApp(
       theme:buildMasanawaTheme(brightness:Brightness.light),
-      home:const Scaffold(body:HumanProfileSafetySheet(
+      home:const Scaffold(body:HumanProfileReportSheet(
         handle:'amina',reporterUserId:'user-a',
       )),
     ),
