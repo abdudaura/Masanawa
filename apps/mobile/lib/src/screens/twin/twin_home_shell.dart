@@ -283,7 +283,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       );
 
   // Human inbox is strictly the authenticated server-backed C02 transport.
-  Widget _chats() => const HumanDmInboxScreen();
+  Widget _chats() => HumanDmInboxScreen(
+        onNewMessage: () => context.push('/messages/new'),
+      );
 
   Widget _assistant() {
     final session = ref.watch(sessionProvider);
