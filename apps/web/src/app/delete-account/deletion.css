@@ -20,16 +20,6 @@
   font-weight: 750;
   letter-spacing: -.025em;
 }
-.deletion-mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: #25d366;
-  color: #0e3020;
-  font-size: 18px;
-}
 .deletion-panel {
   width: min(560px, 100%);
   margin: 0 auto;
