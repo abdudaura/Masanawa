@@ -235,3 +235,50 @@ Register both canonical services using existing pool/session authorizer; no sepa
 ## Executed C02/C03 composition results
 C02 canonical core #472 + C03 #483/#486 now registered in shared app/main with existing pool/authorizer and mapped domain errors. 56 focused backend tests passed,9 database skipped; 18 Flutter tests passed; Gateway production build passed. Includes real shared-Gateway route registration/forged actor-field rejection. Fixed Object.freeze generic contextual typing and explicit undefined authorization inputs without weakening authorization; reject extra C02 body fields before AJV strips them; C03 query extras/invalid cursor schema rejected. Fixed prior #449 typed metadata matching by copying a typed metadata record, preserving comparisons.
 No alternate0017 from#475 was applied; final shell adapter remains to be reconciled. Actual PostgreSQL migration/restart/realtime/voice/device acceptance still not claimed.
+
+
+## Final root/Assistant and C02 UI reconciliation claim
+Claim #493 latest050b101c, #480 and useful #475 Flutter/controller/outbox/tests only (not competingSQL/API). Exact paths:
+- `apps/mobile/lib/l10n/app_ar.arb`
+- `apps/mobile/lib/l10n/app_en.arb`
+- `apps/mobile/lib/l10n/app_es.arb`
+- `apps/mobile/lib/l10n/app_fr.arb`
+- `apps/mobile/lib/l10n/app_ha.arb`
+- `apps/mobile/lib/l10n/app_pt.arb`
+- `apps/mobile/lib/src/assistant_workspace/assistant_draft_store.dart`
+- `apps/mobile/lib/src/assistant_workspace/assistant_workspace_controller.dart`
+- `apps/mobile/lib/src/assistant_workspace/assistant_workspace_screen.dart`
+- `apps/mobile/lib/src/assistant_workspace/secure_assistant_pending_journal.dart`
+- `apps/mobile/lib/src/core/shell_deep_link.dart`
+- `apps/mobile/lib/src/messages/human_dm_controller.dart`
+- `apps/mobile/lib/src/messages/human_dm_outbox.dart`
+- `apps/mobile/lib/src/messages/human_dm_screen.dart`
+- `apps/mobile/lib/src/messages/human_dm_transport.dart`
+- `apps/mobile/lib/src/messages/human_new_message_screen.dart`
+- `apps/mobile/lib/src/router/app_router.dart`
+- `apps/mobile/lib/src/screens/profile/person_profile_screen.dart`
+- `apps/mobile/lib/src/screens/twin/shell_tab.dart`
+- `apps/mobile/lib/src/screens/twin/twin_home_shell.dart`
+- `apps/mobile/test/app_shell_route_compatibility_test.dart`
+- `apps/mobile/test/human_new_message_contract_test.dart`
+- `apps/mobile/test/human_new_message_screen_test.dart`
+- `apps/mobile/test/shell_deep_link_test.dart`
+- `apps/mobile/test/twin_home_shell_test.dart`
+- `docs/workstreams/r17-c08-five-tab-integration-20261008.md`
+- `apps/mobile/test/assistant_workspace_controller_test.dart`
+- `apps/mobile/test/assistant_workspace_screen_test.dart`
+- `docs/contracts/ASSISTANT-WORKSPACE-C07.md`
+- `docs/workstreams/communications-ai-actions-c07-20261008.md`
+- `services/gateway/src/assistant_workspace/routes.ts`
+- `services/gateway/src/assistant_workspace/service.test.ts`
+- `services/gateway/src/assistant_workspace/service.ts`
+- `apps/mobile/lib/src/messages/human_dm_controller.dart`
+- `apps/mobile/lib/src/messages/human_dm_outbox.dart`
+- `apps/mobile/lib/src/messages/human_dm_screen.dart`
+- `apps/mobile/lib/src/messages/human_dm_transport.dart`
+- `apps/mobile/test/human_dm_controller_test.dart`
+- `apps/mobile/test/human_dm_screen_test.dart`
+- `apps/mobile/test/human_dm_transport_test.dart`
+- `services/gateway/src/app.ts`
+- `services/gateway/src/main.ts`
+#493 human_new_message_screen.dart is corrupt (2086lines,5 duplicated class copies, truncated regex). Reconstruct the latest revision-aware first implementation and retain its genuine contact-response behavior/tests. Adapt #475 transport onto canonical #472 string-sequence/body/clientRequestId contract; no fabricated read receipts. Register #480 in shared composer using canonical directory/shell/conversation services. Partial cross-persona task registry remains a product gap, not source merge proof or permission grant. Preserve security-deeplink #492 separately in subsequent reconciliation. Root owner is this Work integration.
