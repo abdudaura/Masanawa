@@ -33,6 +33,14 @@ const exposureQueries = [
 const exceptionalQueries = [
   ["credit-debit", `SELECT 1 FROM commerce.ledger_entries WHERE tenant_id=$1 AND debit_user_id=$2 LIMIT 1`],
   ["credit-receipt", `SELECT 1 FROM commerce.ledger_entries WHERE tenant_id=$1 AND credit_user_id=$2 LIMIT 1`],
+  ["owned-twin-ledger", `SELECT 1
+     FROM commerce.ledger_entries l
+     JOIN identity.character_ownership o
+       ON o.tenant_id=l.tenant_id
+      AND (o.character_id=l.debit_character_id
+           OR o.character_id=l.credit_character_id)
+    WHERE l.tenant_id=$1 AND o.owner_user_id=$2
+    LIMIT 1`],
   ["talk-ai-seat", `SELECT 1 FROM commerce.talk_ai_seat_quotes
     WHERE tenant_id=$1 AND (definition->>'payerUserId'=$2 OR definition->>'userId'=$2) LIMIT 1`],
   ["historic-quote", `SELECT 1 FROM commerce.quotes
