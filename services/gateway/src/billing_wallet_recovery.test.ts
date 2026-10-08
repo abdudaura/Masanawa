@@ -126,15 +126,31 @@ describe("R05 credit-before-bill crash recovery", () => {
     expect(t.purchase).not.toHaveBeenCalled();
   });
 
-  it("credits a late transfer without executing expired economic terms", async () => {
-    const t = setup();
+  it("credits a late verified transfer without executing expired economic terms", async () => {
+    const t = setup("awaiting");
     const current = await t.readQuote();
     if (!current) throw new Error("missing fixture quote");
     t.setQuote({ ...current, expiresAt: new Date(Date.now() - 1_000).toISOString() });
     await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toEqual({
-      handled: true, duplicate: true, resumed: false,
+      handled: true, duplicate: false, resumed: false,
     });
     expect(t.purchase).not.toHaveBeenCalled();
+    expect(t.verify).toHaveBeenCalledOnce();
+    expect(t.creditFunding).toHaveBeenCalledOnce();
+  });
+
+  it("reconciles an already-reserved bill even after its original quote expires", async () => {
+    const t = setup();
+    const current = await t.readQuote();
+    if (!current) throw new Error("missing fixture quote");
+    t.setQuote({
+      ...current, state: "reserved",
+      expiresAt: new Date(Date.now() - 1_000).toISOString(),
+    });
+    await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toEqual({
+      handled: true, duplicate: true, resumed: true,
+    });
+    expect(t.purchase).toHaveBeenCalledOnce();
     expect(t.creditFunding).not.toHaveBeenCalled();
   });
 
