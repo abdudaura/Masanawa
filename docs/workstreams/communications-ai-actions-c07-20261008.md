@@ -28,3 +28,9 @@
 - Exact source inventory for current draft #480: \`services/gateway/src/assistant_workspace/{service.ts,routes.ts,service.test.ts}\`, \`apps/mobile/lib/src/assistant_workspace/{assistant_workspace_controller.dart,assistant_workspace_screen.dart,secure_assistant_pending_journal.dart,assistant_draft_store.dart}\`, \`apps/mobile/test/{assistant_workspace_controller_test.dart,assistant_workspace_screen_test.dart}\`, this checkpoint and \`docs/contracts/ASSISTANT-WORKSPACE-C07.md\`.
 - **No live composite API, cross-persona task/consent state or final /assistant integration**; entire feature remains **PARTIAL_IMPLEMENTATION**, despite substantive source code. Existing per-Character server histories persist separately; actual unified task state and operator workflows need further coordinated implementation.
 - Exact unexecuted Gateway test: \`pnpm exec vitest run services/gateway/src/assistant_workspace/service.test.ts\` followed by \`pnpm typecheck && pnpm test\`. Existing Flutter commands and A/B real DB/device/voice checks remain in the contract. Preserve draft/unmerged status until all genuine gates pass.
+
+
+## Final recorded comparison before this handoff
+- Draft PR: <https://github.com/Baatiku/masanawa/pull/480>, open / DRAFT / unmerged.
+- GitHub compare from main showed **28 C07 branch commits ahead, 1 new main commit behind** and 11 C07-owned changed paths; merge base \`5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762\`, current main seen \`1d6a67ea3c182455b55a7d1d07eacdb4311682e3\`. ChatGPT Work must fetch fresh main and semantically reconcile after other active owners' changes (never force-push).
+- Neither local Flutter nor Vitest nor CI nor migrations nor Android verification executed. No production Gateway route registration and no release qualification. Do not mark C07 DONE.
