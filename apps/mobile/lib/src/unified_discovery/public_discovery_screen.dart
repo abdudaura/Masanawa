@@ -145,7 +145,7 @@ class _PublicDiscoveryScreenState extends State<PublicDiscoveryScreen> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          if (controller.loadingMore && controller.nextOffset != null) {
+                          if (controller.items.isNotEmpty && controller.nextOffset != null) {
                             controller.loadMore();
                           } else {
                             controller.search(_query.text);
