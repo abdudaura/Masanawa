@@ -12,8 +12,8 @@ A private conversation with Gwani/Gwana is the main way to operate Wallet, Billi
 Crypto. Small interactive cards accompany the conversation. Forms are an optional
 expanded editing mode, not the mandatory checkout architecture.
 
-Keep Home · Create · Activity · You. Existing wallet/service routes become scoped
-private assistant workspaces, not new root tabs or separate chatbot products.
+Keep Home · Agents · Wallet · Talk. Existing wallet/service routes become scoped
+private assistant workspaces, within the approved root shell, not separate chatbot products.
 Use the same authenticated assistant, capabilities and durable task authority everywhere.
 A returning user can open balances/history immediately without speaking or waiting for AI.
 
@@ -168,3 +168,12 @@ Test both voice-only and silent text/tap paths:
 A chat-shaped form or a voice button that merely fills a conventional mandatory form
 does not satisfy this contract. The completed experience is conversational, accessible,
 recoverable and anchored to actual server authority.
+
+## Approved shell entry points
+
+Bottom navigation is Home · Agents · Wallet · Talk. The Talk tab is private assistance;
+Start Talk FAB opens public creation. Header has Activity bell and profile avatar.
+Wallet orders Crypto, Data bundles, Airtime, Electricity, TV/Cable shortcuts. Selection
+sets the private task's intent; no automatic payment or microphone activation. Agents
+uses Masanawa Agents/Twins tabs and opens a private persona conversation; a paid public
+Seat remains separate. Preserve chosen persona, language, task and back navigation.
