@@ -39,3 +39,9 @@ Commits:
 5. Rebase only after fresh main/ownership check; never mark R13 DONE until evidence across backend, deploy, media and handset.
 
 **Status:** CODE COMMITTED / TESTS AUTHORED / CI ZERO-STEP BLOCKED / NO LIVE STORAGE/DEVICE TESTS / UNMERGED. Lease released for next nonconflicting window.
+
+## 2026-10-08 renewed 5-minute lease: privacy-first replay abort recovery
+
+Reclaimed existing draft #453 after last update 2026-10-08T06:18:08Z (>5-minute activity lease), previous pushed HEAD `ad3b6fb0113e0b9bcc422aa19ba9c8fb87ed0c9f`, current main `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`. No competing owner of scoped R13 paths found. **Exact exclusive paths:** `services/gateway/src/talk_replay/egress/coordinator.ts`, `coordinator.test.ts`, `postgres_media_repository.ts`, `postgres_media_repository.test.ts`, this handoff. No migration, shared Gateway composition, LiveKit/S3 adapter, R15 safety state, Flutter app shell or finance edit.
+
+Target continuation: on abort, persist server-authoritative `aborted` state **before** possibly failing object deletion so playbackObject immediately refuses; retry deletion safely after failure, without rewriting prior aborted stop timestamp or re-stopping Egress. Add focused unit/SQL tests. Does not claim to resolve separately documented cross-Gateway Egress start race. Keep draft/unmerged with exact blocked checks.
