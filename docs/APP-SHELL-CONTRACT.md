@@ -1,5 +1,10 @@
 # App Shell Contract
 
+## Contacts route clarification — latest owner decision 2026-10-08
+
+The root shell is **still exactly Talks · Chats · Assistant · Wallet · Agents**. **Chats→New message must open a full nested human Contacts directory**, not a sixth tab or AI personas list: real accepted Masanawa contacts, pending requests, Add by exact @handle, search/favorites and authentic C02 human conversation opening. Optional OS phonebook viewing/invitations are **voluntary device-local actions**, not a prerequisite, and cannot implicitly resolve a phone number into a verified Masanawa user or crypto recipient. All contacts and person profiles share current C01/C02/R15/R18 privacy authorization; correct old routes/back/scroll/drafts/deep links. Full [Contacts requirements](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [R/C recovered owners](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md) and [K13–K20](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md#f-integration-and-security-testing-mandatory-contacts-journeys). C01 draft #468 supplies a real but unmerged initial contacts screen; R17/C08/F12 sole shell owner mounts the approved final version.
+
+
 > **Owner requirements completeness:** Before implementing this five-tab target, verify placement, conditional actions, Gwani/Gwana switch, legacy routes, contextual wallet handoffs and user experience with `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` (P/N/T/M/A/W/Q references) and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` (J01–J11). They extend acceptance but **never** create a sixth tab or another payment/message authority. Every R17/C08 change must prove the old routes/back stack and full camera-shy, low-literacy, human DM, creator earnings, billing and crypto journeys.
 
 
