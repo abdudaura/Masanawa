@@ -250,4 +250,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened, isEmpty);
   });
+
+  testWidgets('10k synthetic accepted people use lazy visible contact rows',
+      (tester) async {
+    final contacts = _Contacts();
+    contacts.people = List.generate(10000,
+        (index) => _person('person_$index',
+            'Contact $index', HumanContactStatus.accepted));
+    // Synthetic oversized page: stresses the UI in advance of F14's
+    // required paginated C01 endpoint. It is NOT a gateway capacity claim.
+    final messages = _Messages();
+    await _mount(tester, contacts, messages, _Favorites(), (_, __) {});
+    // C01 currently caps the returned list; verify the explicit truncation
+    // notice, not a fictional ten-thousand-contact server page.
+    expect(find.textContaining('Some contacts may not appear'), findsOneWidget);
+    expect(find.text('Contact 0'), findsOneWidget);
+    expect(find.text('Contact 9999'), findsNothing);
+    expect(messages.opened, isEmpty);
+  });
 }
