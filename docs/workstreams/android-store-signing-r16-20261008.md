@@ -70,3 +70,9 @@
 - **Executed result after new case: PASS** — output: `Verified: signed bundle matches pinned release certificate SHA-256.` and `PASS: valid release, unsigned, wrong fingerprint, tampered artifact, mixed entries, non-AAB, multiple signers, debug signer`.
 - Scope: local JDK 21 signing harness tests, **not** Gradle compilation, Play signature acceptance, Android handset testing, or full CI. GitHub Actions runner failure remains unresolved.
 - Next: verify Gradle release configuration under installed Flutter/Android SDK, validate actual production AAB using bundletool and pinned upload certificate, then confirm CI runner allocations and merge readiness.
+
+## Ownership handoff — ready for integration review
+
+- Bounded signing hardening code and self-contained JDK regression suite are committed on draft PR #410; local tests passed.
+- No further source changes planned in this window. **Release this implementation lease**; next integration owner should rerun CI when runners available, compile a production AAB with real signing material, run bundletool and certificate checks, and confirm store/handset requirements before marking R16 DONE or merging.
+- Do not infer global R16 release acceptance from this PR: release signing was only one subgate.
