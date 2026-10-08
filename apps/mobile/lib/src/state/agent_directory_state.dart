@@ -156,9 +156,11 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
     final request = ++_request;
     final transport = ref.read(agentDirectoryTransportProvider);
     bool stillOwner() {
+      if (_disposed || request != _request || _ownerId != ownerId) {
+        return false;
+      }
       final current = ref.read(sessionProvider);
-      return !_disposed && request == _request && _ownerId == ownerId &&
-          current is SessionSignedIn && current.user.id == ownerId;
+      return current is SessionSignedIn && current.user.id == ownerId;
     }
 
     try {
@@ -182,7 +184,11 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
       // Keep the last authorized snapshot for offline first paint; it is not
       // treated as fresh availability when restored on another launch.
       if (stillOwner()) {
-        await ref.read(agentDirectoryCacheProvider).write(ownerId, verified);
+        // Disk cache is best-effort. A cache IO failure cannot change the
+        // server-confirmed result into an apparent failed write.
+        await ref.read(agentDirectoryCacheProvider)
+            .write(ownerId, verified)
+            .catchError((_) {});
       }
     } catch (_) {
       if (stillOwner()) {
