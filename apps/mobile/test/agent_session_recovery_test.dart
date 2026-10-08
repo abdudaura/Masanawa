@@ -17,8 +17,10 @@ void main() {
       );
     }
     expect(
-      isRecoverableAgentSessionError(const ApiException('missing', statusCode: 404)),
-      isTrue,
+      isRecoverableAgentSessionError(
+        const ApiException('Unknown missing resource', statusCode: 404),
+      ),
+      isFalse,
     );
   });
 
