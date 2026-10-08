@@ -17,8 +17,11 @@ const consentBody = Type.Object({
 
 function failure(error: unknown, reply: { code(status: number): unknown }) {
   const code = error instanceof Error ? error.message : "crypto.transfer.unavailable";
-  const safe = code.startsWith("crypto.") ? code : "crypto.transfer.unavailable";
+  const sessionFailure = /(?:unauthor|invalid_session|session.*(?:invalid|expired)|auth.*(?:required|invalid))/iu.test(code);
+  const safe = sessionFailure ? "crypto.transfer.unauthorized" :
+    code.startsWith("crypto.") ? code : "crypto.transfer.unavailable";
   const status =
+    sessionFailure ? 401 :
     safe.includes("not_found") ? 404 :
     safe.includes("insufficient") ? 409 :
     safe.includes("approval_invalid") ? 403 :
@@ -64,7 +67,7 @@ export function registerInternalCryptoTransferRoutes(
       try {
         const result = await service.confirm({
           authorizationHeader: req.headers.authorization,
-          requestId: req.params.requestId,
+          requestId: (req.params as {requestId:string}).requestId,
           confirmationToken: (req.body as {confirmationToken:string}).confirmationToken,
         });
         // Fail closed for guessed or invalid tokens even though the durable
