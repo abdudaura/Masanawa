@@ -37,7 +37,8 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
       for (final value in values) {
         if (value is! Map) return null;
         agents.add(
-          AgentDirectoryEntry.fromJson(value.cast<String, dynamic>()),
+          AgentDirectoryEntry.fromJson(value.cast<String, dynamic>())
+              .withUnverifiedPresence(),
         );
       }
       return List.unmodifiable(agents);
