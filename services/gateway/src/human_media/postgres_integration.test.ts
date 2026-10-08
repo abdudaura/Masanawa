@@ -48,8 +48,20 @@ function approved(value:string|undefined) {
  afterAll(async()=>{
   if(!pool)return;
   try{
-   // Isolated randomly named test tenant; dependent FK cascades remove all rows.
-   await pool.query(`DELETE FROM identity.tenants WHERE tenant_id=$1`,[tenantId]);
+   // Identity tenancy has RESTRICT FKs. Explicitly delete ONLY the nonce tenant rows.
+   // Cleanup is best effort if a failed migration prevented table creation.
+   for(const sql of [
+     "DELETE FROM talks.human_dm_voice_objects WHERE tenant_id=$1",
+     "DELETE FROM talks.human_dm_reads WHERE tenant_id=$1",
+     "DELETE FROM talks.human_dm_messages WHERE tenant_id=$1",
+     "DELETE FROM talks.human_dm_conversations WHERE tenant_id=$1",
+     "DELETE FROM talks.human_dm_contact_requests WHERE tenant_id=$1",
+     "DELETE FROM talks.human_dm_preferences WHERE tenant_id=$1",
+     "DELETE FROM talks.safety_preferences WHERE tenant_id=$1",
+     "DELETE FROM talks.public_profiles WHERE tenant_id=$1",
+     "DELETE FROM identity.users WHERE tenant_id=$1",
+     "DELETE FROM identity.tenants WHERE tenant_id=$1",
+   ]){await pool.query(sql,[tenantId]);}
   }finally{await pool.end()}
  });
  it("enforces admission and exactly-once voice sequence through concurrent retries",async()=>{
