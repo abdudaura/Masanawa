@@ -1,5 +1,7 @@
 # apps/mobile — Masanawa Voice-First Agent Shell (Flutter)
 
+> **2026-10-08 owner-approved consumer target:** **Talks · Chats · Assistant · Wallet · Agents**, exactly five bottom destinations with **Assistant centered**. Talks inherits prior Home Explore/Live public audio, Chats is private **human** DM only, Assistant is **one Gwani/Gwana chat** with an in-chat switch, Wallet financial services, Agents full Experts/Twins discovery. This README includes technical history of the earlier Agent shell; that history is **not current product navigation guidance**. Follow `../../CONTINUE-HERE.md`, `../../docs/APP-SHELL-CONTRACT.md`, `../../docs/END-TO-END-UX-ARCHITECTURE.md`, and R17/C08 for final implementation. Actual Flutter routing/migration and Android readiness remain **OPEN/UNVERIFIED**.
+
 Thin phone shell for the Masanawa platform. It renders login, a dynamic
 server-configured Character roster, voice-first conversations, structured work results
 and settings. It owns no brain: no Character store, no memory authority, no Skill
