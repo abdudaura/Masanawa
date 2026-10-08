@@ -218,6 +218,8 @@ import { createTalkSafetyService, type TalkSafetyCustomerAuthorizer, type TalkSa
 import { createPrincipalTalkSafetyPlatformAuthority } from "./talk_safety/platform_authority.js";
 import { createPostgresTalkSafetyReplayBridge, withReplayBlockSynchronization } from "./talk_safety/replay_bridge.js";
 import { createDirectTwinService } from "./talk_direct_twin/service.js";
+import { createHumanDmService } from "./human_dm/service.js";
+import { createPostgresHumanDmRepository } from "./human_dm/postgres_repository.js";
 import { createPostgresDirectTwinRepository } from "./talk_direct_twin/postgres_repository.js";
 import {
   createGatewayApp,
@@ -342,6 +344,7 @@ export interface ServiceDatabaseDependency {
   readonly talkSafety?: ReturnType<typeof createPostgresTalkSafetyRepository>;
   readonly talkSafetyReplay?: ReturnType<typeof createPostgresTalkSafetyReplayBridge>;
   readonly directTwin?: ReturnType<typeof createPostgresDirectTwinRepository>;
+  readonly humanDm?: ReturnType<typeof createPostgresHumanDmRepository>;
   readonly talkPushDedupe?: ReturnType<typeof createPostgresTalkPushDedupeRepository>;
   close(): Promise<void>;
 }
@@ -507,6 +510,7 @@ function createDefaultDatabaseDependency(
     talkSafety: createPostgresTalkSafetyRepository(database.pool),
     talkSafetyReplay: createPostgresTalkSafetyReplayBridge(database.pool),
     directTwin: createPostgresDirectTwinRepository(database.pool),
+    humanDm: createPostgresHumanDmRepository(database.pool),
     close: database.close,
   });
 }
@@ -1917,6 +1921,15 @@ export async function startGatewayService(
         })()
       : undefined);
 
+  const composedHumanDm =
+    options.appOptions?.humanDm ??
+    (database.humanDm && talkSafetyCustomerAuthorizer
+      ? createHumanDmService({
+          repository: database.humanDm,
+          authorizer: talkSafetyCustomerAuthorizer,
+        })
+      : undefined);
+
   const composedDirectTwin =
     options.appOptions?.directTwin ??
     (database.directTwin && talkSafetyCustomerAuthorizer
@@ -2249,6 +2262,7 @@ export async function startGatewayService(
       ...(composedTalkPolls ? { talkPolls: composedTalkPolls } : {}),
       ...(composedTalkSafety ? { talkSafety: composedTalkSafety } : {}),
       ...(composedDirectTwin ? { directTwin: composedDirectTwin } : {}),
+      ...(composedHumanDm ? { humanDm: composedHumanDm } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
