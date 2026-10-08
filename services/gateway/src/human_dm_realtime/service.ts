@@ -76,9 +76,11 @@ export function createHumanDmRealtimeService(input: {
         const result = await input.repository.sync({
           tenantId,userId,after,limit:size,
         });
-        if (shouldStop?.() || result.events.length || initialSnapshot ||
-            Date.now() >= deadline) {
-          return { ...result, resetRequired: initialSnapshot };
+        if (shouldStop?.() || result.events.length || result.resetRequired ||
+            initialSnapshot || Date.now() >= deadline) {
+          // Never suppress a server-mandated full C02 resnapshot on
+          // expiration or a foreign/future cursor.
+          return { ...result, resetRequired: result.resetRequired || initialSnapshot };
         }
         await sleep(Math.min(750,Math.max(1,deadline-Date.now())));
       }
