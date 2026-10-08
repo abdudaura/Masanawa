@@ -98,8 +98,6 @@ export function createPostgresAccountDeletionRepository(pool: Pool): AccountDele
           expectedRevision: input.expectedRevision,
           target: input.target,
           now: input.now,
-          ...(input.identityReauthenticated !== undefined
-            ? { identityReauthenticated: input.identityReauthenticated } : {}),
           ...(input.cleanupComplete !== undefined
             ? { cleanupComplete: input.cleanupComplete } : {}),
           ...(input.outstandingObligations !== undefined
