@@ -359,12 +359,14 @@ describe("Talk social profile API", () => {
       }
     }
     await server.close();
-    const occupied = await app(true).inject({
+    const occupiedServer = app(true);
+    const occupied = await occupiedServer.inject({
       method: "PUT", url: "/profiles/me",
       headers: { authorization: "Bearer viewer" },
       payload: { handle: "taken", displayName: "Amina", bio: "" },
     });
     expect(occupied.statusCode).toBe(409);
+    await occupiedServer.close();
   });
 
 });
