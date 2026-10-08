@@ -192,6 +192,81 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     })).toBe(false);
   });
 
+  it("never flips a terminal invitation with a stale consent response", async () => {
+    // Separate pairs avoid mutating the existing Alice/Bob integration scenario.
+    const sender = `c01_fence_sender_${nonce}`;
+    const declinedPeer = `c01_fence_declined_${nonce}`;
+    const acceptedPeer = `c01_fence_accepted_${nonce}`;
+    const declinedHandle = `fence_declined_${nonce}`;
+    const acceptedHandle = `fence_accepted_${nonce}`;
+    for (const [id, userHandle] of [
+      [sender, `fence_sender_${nonce}`],
+      [declinedPeer, declinedHandle],
+      [acceptedPeer, acceptedHandle],
+    ] as const) {
+      await pool.query(
+        `INSERT INTO identity.users(tenant_id,user_id,created_at,updated_at)
+         VALUES ($1,$2,clock_timestamp(),clock_timestamp())`, [tenant, id],
+      );
+      await pool.query(
+        `INSERT INTO talks.public_profiles(tenant_id,user_id,handle,display_name)
+         VALUES ($1,$2,$3,$3)`, [tenant, id, userHandle],
+      );
+    }
+
+    const repo = createPostgresHumanContactRepository(pool);
+    for (const [recipient, recipientHandle, accept] of [
+      [declinedPeer, declinedHandle, false],
+      [acceptedPeer, acceptedHandle, true],
+    ] as const) {
+      expect(await repo.request({
+        tenantId: tenant, requesterId: sender, handle: recipientHandle,
+      })).toBe("pending");
+      const incoming = (await repo.list({
+        tenantId: tenant, userId: recipient, limit: 30,
+      })).find(entry => entry.userId === sender);
+      expect(incoming?.status).toBe("incoming");
+      const revision = incoming!.requestRevision;
+
+      expect(await repo.respond({
+        tenantId: tenant, recipientId: recipient, requesterId: sender,
+        requestRevision: revision, accept,
+      })).toBe(true);
+
+      // Pin the timestamp to make a duplicate-write ordering bug deterministic.
+      await pool.query(
+        `UPDATE talks.human_dm_contact_requests
+            SET updated_at='2026-10-01T00:00:00.123456Z'::timestamptz
+          WHERE tenant_id=$1 AND first_user_id=LEAST($2::text,$3::text)
+            AND second_user_id=GREATEST($2::text,$3::text)`,
+        [tenant, sender, recipient],
+      );
+      const readStatus = async () => (await pool.query<{
+        status: string; stamped_at: string;
+      }>(
+        `SELECT status, updated_at::text AS stamped_at
+           FROM talks.human_dm_contact_requests
+          WHERE tenant_id=$1 AND first_user_id=LEAST($2::text,$3::text)
+            AND second_user_id=GREATEST($2::text,$3::text)`,
+        [tenant, sender, recipient],
+      )).rows[0];
+
+      const beforeRetry = await readStatus();
+      expect(beforeRetry?.status).toBe(accept ? "accepted" : "declined");
+      // Opposite final decision is forbidden without a *new pending revision*.
+      expect(await repo.respond({
+        tenantId: tenant, recipientId: recipient, requesterId: sender,
+        requestRevision: revision, accept: !accept,
+      })).toBe(false);
+      // Exact-result retries remain safe for flaky networks and do not reorder.
+      expect(await repo.respond({
+        tenantId: tenant, recipientId: recipient, requesterId: sender,
+        requestRevision: revision, accept,
+      })).toBe(true);
+      expect(await readStatus()).toEqual(beforeRetry);
+    }
+  });
+
   it("iterates equal-microsecond edges without repeats, leaks or offset scans", async () => {
     const viewer = `c01_page_viewer_${nonce}`;
     const peers = [0, 1, 2, 3].map(n => `c01_page_peer_${n}_${nonce}`);
