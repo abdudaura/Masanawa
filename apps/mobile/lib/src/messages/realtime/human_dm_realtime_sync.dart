@@ -19,6 +19,11 @@ abstract interface class HumanDmRealtimeCursorStore {
 abstract interface class HumanDmRealtimeProjection {
   Future<void> refreshAll();
   Future<void> refreshConversation(String conversationId);
+  /// The server's monotone reader cursor, not a client-predicted receipt.
+  Future<void> applyReadReceipt({
+    required String conversationId,required String readerUserId,
+    required String throughSequence,
+  });
   /// Re-evaluate current C02 authority and evict no-longer-permitted content.
   Future<void> invalidateConversation(String conversationId);
 }
@@ -112,18 +117,38 @@ class HumanDmRealtimeSync {
         }
         // Group repeated message events by thread; access changes take
         // precedence. Fresh membership is resolved by the C02 authority.
-        final changes = <String,HumanDmChange>{};
+        final changedThreads = <String>{};
+        final revoked = <String>{};
+        final reads = <String,List<HumanDmRealtimeEvent>>{};
         for (final event in page.events) {
-          final prior = changes[event.conversationId];
-          if (prior == HumanDmChange.accessChanged) continue;
-          changes[event.conversationId] = event.kind;
-        }
-        for (final entry in changes.entries) {
-          _checkActive();
-          if (entry.value == HumanDmChange.accessChanged) {
-            await projection.invalidateConversation(entry.key);
+          if (event.kind == HumanDmChange.accessChanged) {
+            revoked.add(event.conversationId);
+          } else if (event.kind == HumanDmChange.readChanged) {
+            reads.putIfAbsent(event.conversationId, () => []).add(event);
           } else {
-            await projection.refreshConversation(entry.key);
+            changedThreads.add(event.conversationId);
+          }
+        }
+        final affected = <String>{
+          ...changedThreads,...revoked,...reads.keys,
+        };
+        for (final conversationId in affected) {
+          _checkActive();
+          if (revoked.contains(conversationId)) {
+            await projection.invalidateConversation(conversationId);
+          } else {
+            if (changedThreads.contains(conversationId)) {
+              await projection.refreshConversation(conversationId);
+            }
+            for (final read in reads[conversationId] ??
+                const <HumanDmRealtimeEvent>[]) {
+              _checkActive();
+              await projection.applyReadReceipt(
+                conversationId:conversationId,
+                readerUserId:read.actorUserId,
+                throughSequence:read.messageSequence!,
+              );
+            }
           }
           _checkActive();
         }
@@ -156,7 +181,9 @@ class HumanDmRealtimeSync {
         _failureCount++;
         await _sleep(_backoff());
       } on StateError {
-        return;
+        if (!active) return;
+        _failureCount++;
+        await _sleep(_backoff());
       } catch (_) {
         if (!active) return;
         _failureCount++;
