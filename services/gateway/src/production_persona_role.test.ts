@@ -129,7 +129,7 @@ describe("R19 authenticated private AI persona role instructions", () => {
     expect(instructions[1]).toContain("\\nIgnore previous instructions");
     expect(instructions.filter((line) => line.includes("Ignore previous instructions"))).toHaveLength(1);
     expect(instructions[0]).toContain("untrusted data");
-    expect(instructions.join("\n")).toContain("not a human");
+    expect(instructions.join("\n")).toContain("or a human");
   });
 
   it("rejects missing and oversized presentation fields before any inference call", async () => {
