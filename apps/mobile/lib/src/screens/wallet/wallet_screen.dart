@@ -335,21 +335,3 @@ class _WalletEntryTile extends StatelessWidget {
     );
   }
 }
-
-class _ScrollableCenter extends StatelessWidget {
-  const _ScrollableCenter({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        SizedBox(
-          height: MediaQuery.sizeOf(context).height * .55,
-          child: Center(child: child),
-        ),
-      ],
-    );
-  }
-}
