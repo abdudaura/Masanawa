@@ -208,9 +208,13 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
 
       _role = session.role;
       if (session.state == TalkLiveLifecycle.ended || !session.canHearAudio) {
-        _setStatus(TalkLiveAudioStatus.ended);
+        _canPublishAudio = false;
         _heartbeatTimer?.cancel();
+        _heartbeatTimer = null;
+        _setStatus(TalkLiveAudioStatus.ended);
         await _closeMediaOnly();
+        // The heartbeat has confirmed the session is no longer usable. Avoid
+        // keeping stale publish rights or attempting an unnecessary reconnect.
         return;
       }
 
@@ -240,6 +244,13 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       }
     } catch (_) {
       if (_closed) return;
+      // Failed heartbeats do not authorize continued microphone publication.
+      _canPublishAudio = false;
+      try {
+        await room.setMicrophoneEnabled(false);
+      } catch (_) {
+        // Best effort: network/media failure may already have closed the room.
+      }
       _setStatus(TalkLiveAudioStatus.reconnecting);
     }
   }
@@ -293,6 +304,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
     _closed = true;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _canPublishAudio = false;
     try {
       await _heartbeatInFlight;
     } catch (_) {
