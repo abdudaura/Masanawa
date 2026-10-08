@@ -239,6 +239,34 @@ export function registerBillingRoutes(
       }
     });
 
+    app.get(
+      "/v1/commerce/bills/quotes/:quoteId/wallet-status",
+      {
+        schema: {
+          params: Type.Object(
+            { quoteId: Type.String({ minLength: 1, maxLength: 180 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          const params = request.params as { quoteId: string };
+          return await wallet.readQuoteFunding({
+            authorizationHeader: request.headers.authorization,
+            quoteId: params.quoteId,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          const status = message === "financial.auth.unauthorized" || message === "UNAUTHORIZED"
+            ? 401 : message === "financial.billing.quote_not_found" ? 404 : 503;
+          reply.code(status);
+          return { error: status === 401 ? "billing_unauthorized" : status === 404
+            ? "billing_quote_not_found" : "billing_wallet_status_unavailable" };
+        }
+      },
+    );
+
     app.post(
       "/v1/wallet/ngn/funding",
       {
@@ -478,3 +506,4 @@ export function registerBillingRoutes(
     },
   );
 }
+

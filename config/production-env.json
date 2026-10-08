@@ -921,6 +921,34 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Production configuration for SUPABASE_URL."
+    },
+    {
+      "name": "MASANAWA_ACCOUNT_DELETION_RECONCILIATION_ENABLED",
+      "owner": "gateway and database operations",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Enables the account deletion reconciliation worker; disabled unless explicitly configured."
+    },
+    {
+      "name": "MASANAWA_C03_RETENTION_OPERATOR_CONFIRM",
+      "owner": "gateway and database operations",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Explicit operator confirmation required before messaging retention execution."
+    },
+    {
+      "name": "MASANAWA_DB_APPLY_APPROVAL",
+      "owner": "gateway and database operations",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Explicit operator approval required before applying database migrations."
+    },
+    {
+      "name": "MASANAWA_DB_TEST_DISPOSABLE_ACK",
+      "owner": "gateway and database operations",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Acknowledges that the configured integration test database is disposable."
     }
   ]
 }

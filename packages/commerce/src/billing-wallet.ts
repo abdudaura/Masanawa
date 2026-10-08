@@ -54,6 +54,13 @@ export interface NgnWalletRepository {
     readonly boundAt: string;
   }): Promise<NgnFundingIntent>;
 
+  /** Owner-scoped read-only recovery of the newest persisted bill funding intent. */
+  readLatestQuoteFunding(input: {
+    readonly tenantId: string;
+    readonly userId: string;
+    readonly quoteId: string;
+  }): Promise<NgnFundingIntent | null>;
+
   readFundingIntent(input: {
     readonly tenantId: string;
     readonly userId: string;
@@ -89,3 +96,4 @@ export interface NgnWalletRepository {
     readonly settledAt: string;
   }): Promise<{ readonly refunded: boolean; readonly balanceKobo: number }>;
 }
+

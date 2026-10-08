@@ -11,10 +11,13 @@ export interface TransactionOptions {
 }
 
 export async function withTransaction<T>(
-  pool: Pool,
+  pool: Pool | PoolClient,
   fn: (client: PoolClient) => Promise<T>,
   options: TransactionOptions = {},
 ): Promise<T> {
+  // An existing client belongs to the outer transaction. Never commit,
+  // roll back or release it from a repository operation.
+  if ("release" in pool) return fn(pool);
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -43,3 +46,4 @@ export async function withTransaction<T>(
     client.release();
   }
 }
+

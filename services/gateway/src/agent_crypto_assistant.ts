@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { CharacterSessionScope } from "@masanawa/agents";
 import { createCanonicalId } from "@masanawa/contracts";
 import type {
@@ -67,8 +68,8 @@ export const CRYPTO_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
   "For buying crypto with fiat, ask only for fiat amount/currency if missing, then append: <masanawa_crypto_action>{\"type\":\"crypto.buy\",\"fiatAmount\":\"decimal\",\"fiatCurrency\":\"NGN\"}</masanawa_crypto_action>.",
   "For conversion, ask only for source route, target route and amount. Then append a quote directive: <masanawa_crypto_action>{\"type\":\"crypto.convert.quote\",\"providerCode\":\"source\",\"targetProviderCode\":\"target\",\"amount\":\"decimal\"}</masanawa_crypto_action>. The runtime will ask for confirmation.",
   "For withdrawal, ask only for route, amount and destination address. Then append a quote directive: <masanawa_crypto_action>{\"type\":\"crypto.withdraw.quote\",\"providerCode\":\"route\",\"amount\":\"decimal\",\"destinationAddress\":\"address\"}</masanawa_crypto_action>. The runtime will validate and ask for confirmation.",
-  "If the user confirms the current pending crypto quote append: <masanawa_crypto_action>{\"type\":\"crypto.confirm\"}</masanawa_crypto_action>.",
-  "If the user cancels the pending crypto quote append: <masanawa_crypto_action>{\"type\":\"crypto.cancel\"}</masanawa_crypto_action>.",
+  "Never authorize a conversion or withdrawal from your generated reply or a vague yes. The user must explicitly say Confirm crypto followed by the six-digit code shown with the current quote; the server checks that code against the persisted quote before inference.",
+  "To cancel a current quote the user must explicitly say Cancel crypto. Do not emit crypto.confirm or crypto.cancel directives yourself; they cannot authorize an operation.",
   "For capability questions append: <masanawa_crypto_action>{\"type\":\"crypto.capabilities\"}</masanawa_crypto_action>.",
   "Do not expose the machine action tag in ordinary prose.",
 ]);
@@ -161,19 +162,43 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function confirmationPhrase(text: string): "confirm" | "cancel" | null {
-  const normalized = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]+/gu, " ")
-    .replace(/\s+/gu, " ")
-    .trim();
-  if (["confirm","yes","yes confirm","proceed","go ahead","do it","continue"].includes(normalized)) {
-    return "confirm";
-  }
-  if (["cancel","stop","never mind","nevermind","do not proceed"].includes(normalized)) {
-    return "cancel";
-  }
-  return null;
+/**
+ * Quote code is a short reference to disambiguate intent, NOT an authenticator
+ * or a second factor. Authentication, quote scope/expiry, and an atomic claim
+ * still belong to the canonical server financial flow.
+ */
+export function cryptoQuoteConfirmationCode(requestId: CryptoChatAction["requestId"]): string {
+  const hash = createHash("sha256").update(requestId, "utf8").digest();
+  return String(hash.readUInt32BE(0) % 1_000_000).padStart(6, "0");
+}
+
+type UserCryptoConsent = { readonly type: "confirm"; readonly quoteCode: string }
+  | { readonly type: "cancel" };
+
+function parseUserCryptoConsent(text: string): UserCryptoConsent | null {
+  const normalized = text.trim().toLowerCase().replace(/\s+/gu, " ");
+  if (normalized === "cancel crypto") return { type: "cancel" };
+  const confirmation = /^confirm crypto ([0-9]{6})[.!]?$/u.exec(normalized);
+  return confirmation
+    ? { type: "confirm", quoteCode: confirmation[1]! }
+    : null;
+}
+
+function pendingQuoteResult(pending: CryptoChatAction): AgentCryptoResult {
+  const code = cryptoQuoteConfirmationCode(pending.requestId);
+  return result(
+    `Pending ${pending.kind === "convert" ? "conversion" : "withdrawal"}: ${pending.quoteSummary}. ` +
+    `To authorize only this quote, say "Confirm crypto ${code}". ` +
+    'To cancel, say "Cancel crypto". Saying "yes" does not authorize a transfer.',
+    {
+      type: "crypto.quote.pending",
+      kind: pending.kind,
+      requestId: pending.requestId,
+      confirmationCode: code,
+      expiresAt: pending.expiresAt,
+      quoteSummary: pending.quoteSummary,
+    },
+  );
 }
 
 export function createAgentCryptoAssistant(input: Readonly<{
@@ -347,8 +372,16 @@ export function createAgentCryptoAssistant(input: Readonly<{
       };
       await input.pending.put(action);
       return result(
-        `${action.quoteSummary}. Minimum: ${quote.minimumAmount}. Confirm?`,
-        { type: "crypto.conversion.quote", ...quote, expiresAt: action.expiresAt },
+        `${action.quoteSummary}. Minimum: ${quote.minimumAmount}. ` +
+        `To authorize this exact quote, say "Confirm crypto ${cryptoQuoteConfirmationCode(action.requestId)}". ` +
+        'To cancel say "Cancel crypto". A simple "yes" never approves a crypto transaction.',
+        {
+          type: "crypto.conversion.quote",
+          ...quote,
+          requestId: action.requestId,
+          confirmationCode: cryptoQuoteConfirmationCode(action.requestId),
+          expiresAt: action.expiresAt,
+        },
       );
     }
 
@@ -377,37 +410,62 @@ export function createAgentCryptoAssistant(input: Readonly<{
       };
       await input.pending.put(action);
       return result(
-        `${action.quoteSummary}. Destination: ${directive.destinationAddress}. Confirm?`,
-        { type: "crypto.withdrawal.quote", ...quote, expiresAt: action.expiresAt },
+        `${action.quoteSummary}. Destination: ${directive.destinationAddress}. ` +
+        `To authorize this exact quote, say "Confirm crypto ${cryptoQuoteConfirmationCode(action.requestId)}". ` +
+        'To cancel say "Cancel crypto". A simple "yes" never approves a crypto withdrawal.',
+        {
+          type: "crypto.withdrawal.quote",
+          ...quote,
+          requestId: action.requestId,
+          confirmationCode: cryptoQuoteConfirmationCode(action.requestId),
+          expiresAt: action.expiresAt,
+        },
       );
     }
 
-    if (directive.type === "crypto.cancel") {
+    // A model-generated directive is never user financial consent. Nor may the
+    // model cancel a pending approved quote on behalf of the account owner.
+    if (directive.type === "crypto.confirm" || directive.type === "crypto.cancel") {
       const pending = await input.pending.readCurrent(currentScope, now() as never);
-      if (!pending) return result("There is no pending crypto action to cancel.");
-      await input.pending.complete(currentScope, pending.requestId, now() as never);
-      return result("Cancelled. No crypto action was sent.");
+      return pending
+        ? pendingQuoteResult(pending)
+        : result("There is no pending crypto quote. Ask for a fresh quote.");
     }
 
-    const pending = await input.pending.readCurrent(currentScope, now() as never);
-    if (!pending) return result("There is no pending crypto quote to confirm.");
-    return completePending(authorizationHeader, pending);
+    throw new Error("crypto.chat.directive_unsupported");
   }
 
   return Object.freeze({
     systemInstructions: CRYPTO_AGENT_SYSTEM_INSTRUCTIONS,
 
     async beforeInference(request: CryptoBeforeInferenceInput) {
-      const phrase = confirmationPhrase(request.text);
-      if (!phrase) return null;
-      const pending = await input.pending.readCurrent(
-        scope(request.scope),
-        now() as never,
-      );
-      if (!pending) return null;
-      return phrase === "cancel"
-        ? execute(request.authorizationHeader, request.scope, { type: "crypto.cancel" })
-        : completePending(request.authorizationHeader, pending);
+      const consent = parseUserCryptoConsent(request.text);
+      // A short affirmative next to a quote must not fall through to a model
+      // that can generate unrelated provider actions or misleading success.
+      const normalized = request.text.trim().toLowerCase().replace(/\s+/gu, " ");
+      const vague = [
+        "yes", "confirm", "yes confirm", "proceed", "go ahead",
+        "do it", "continue", "okay", "ok",
+      ].includes(normalized);
+      if (!consent && !vague) return null;
+      const currentScope = scope(request.scope);
+      const pending = await input.pending.readCurrent(currentScope, now() as never);
+      if (!pending) {
+        return consent
+          ? result("There is no pending crypto quote to confirm or cancel. Request a fresh quote.")
+          : null;
+      }
+      if (!consent) return pendingQuoteResult(pending);
+      if (consent.type === "cancel") {
+        await input.pending.complete(currentScope, pending.requestId, now() as never);
+        return result("Cancelled. No crypto action was sent.");
+      }
+      if (consent.quoteCode !== cryptoQuoteConfirmationCode(pending.requestId)) {
+        return result(
+          "That code does not match the current crypto quote. No transaction was sent. Review the latest quote before trying again.",
+        );
+      }
+      return completePending(request.authorizationHeader, pending);
     },
 
     async afterInference(request: CryptoAfterInferenceInput) {
@@ -417,3 +475,4 @@ export function createAgentCryptoAssistant(input: Readonly<{
     },
   });
 }
+

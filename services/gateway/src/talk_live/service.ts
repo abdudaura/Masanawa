@@ -101,14 +101,24 @@ export function createTalkLiveService(input: Readonly<{
   return Object.freeze<TalkLiveService>({
     async connect(request) {
       const viewer = await identity(request.authorizationHeader);
-      const connected = await input.repository.connect({
-        tenantId: viewer.tenantId,
-        userId: viewer.userId,
-        talkId: talkId(request.talkId),
-        sessionId: createSessionId(),
-        now: now(),
-        reconnectGraceMs,
-      });
+      let connected: TalkLiveSessionView | null;
+      try {
+        connected = await input.repository.connect({
+          tenantId: viewer.tenantId,
+          userId: viewer.userId,
+          talkId: talkId(request.talkId),
+          sessionId: createSessionId(),
+          now: now(),
+          reconnectGraceMs,
+        });
+      } catch (error) {
+        // A persisted ended Talk is a domain conflict, not an internal outage.
+        // Preserve all unknown storage/provider errors as real server failures.
+        if (error instanceof Error && error.message === "talks.live.ended") {
+          throw new TalkLiveError("talks.live.ended", 409);
+        }
+        throw error;
+      }
       if (!connected) throw new TalkLiveError("talks.not_found", 404);
       return connected;
     },
@@ -167,13 +177,41 @@ export function createTalkLiveService(input: Readonly<{
       if (connected.state === "ended") {
         throw new TalkLiveError("talks.live.ended", 409);
       }
-      return input.mediaTokens.mint({
-        talkId: connected.talkId,
-        sessionId: connected.sessionId,
-        userId: viewer.userId,
-        role: connected.role,
-        canPublishAudio: connected.canPublishAudio,
-      });
+      try {
+        const credentials = await input.mediaTokens.mint({
+          talkId: connected.talkId,
+          sessionId: connected.sessionId,
+          userId: viewer.userId,
+          role: connected.role,
+          canPublishAudio: connected.canPublishAudio,
+        });
+        // ListParticipants/RemoveParticipant involves remote network I/O. A
+        // concurrent Host connect may revoke this lease while minting. Never
+        // return the already-signed JWT unless authority is still identical.
+        const latest = await input.repository.heartbeat({
+          tenantId: viewer.tenantId,
+          userId: viewer.userId,
+          talkId: talkIdValue,
+          sessionId: sessionId(request.sessionId),
+          now: now(),
+          reconnectGraceMs,
+        });
+        if (!latest || latest.state === "ended" ||
+            latest.role !== connected.role ||
+            latest.canHearAudio !== connected.canHearAudio ||
+            latest.canPublishAudio !== connected.canPublishAudio) {
+          throw new TalkLiveError("talks.live.session_changed", 409);
+        }
+        return credentials;
+      } catch (error) {
+        // If RoomService could not validate/evict a former Host track, media
+        // credentials must not escape. Surface a retryable dependency failure.
+        if (error instanceof Error &&
+            error.message.startsWith("talks.live.media_admin_")) {
+          throw new TalkLiveError("talks.live.media_unavailable", 503);
+        }
+        throw error;
+      }
     },
 
     async state(request) {
@@ -193,3 +231,4 @@ export function createTalkLiveService(input: Readonly<{
     },
   });
 }
+

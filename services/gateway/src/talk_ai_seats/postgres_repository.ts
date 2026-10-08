@@ -58,6 +58,8 @@ interface PersonaRow {
   avatar_url: string | null;
   topics_json: unknown;
   is_available: boolean;
+  /** Effective platform moderation, independent of the raw availability flag. */
+  safety_allowed: boolean;
   twin_owner_user_id: string | null;
 }
 
@@ -84,6 +86,7 @@ function mapPersona(row: PersonaRow): TalkAiSeatCandidateRecord {
     topics: strings(row.topics_json),
     isAvailable:
       row.is_available &&
+      row.safety_allowed === true &&
       (row.kind === "expert" || row.twin_owner_user_id !== null),
     twinOwnerUserId: row.twin_owner_user_id,
   });
@@ -198,6 +201,18 @@ function requireLiveTalk(talk: TalkRow | null): TalkRow {
   return talk;
 }
 
+/** Transaction guard shared with talks.safety_enforcement writes. */
+async function guardPersonaSafety(
+  client: PoolClient,
+  tenantId: string,
+  personaId: string,
+): Promise<void> {
+  await client.query(
+    `SELECT pg_advisory_xact_lock(hashtext($1::text),hashtext($2::text))`,
+    [tenantId, personaId],
+  );
+}
+
 async function readPersona(
   client: PoolClient,
   tenantId: string,
@@ -205,7 +220,13 @@ async function readPersona(
 ): Promise<PersonaRow | null> {
   const result = await client.query<PersonaRow>(
     `SELECT p.public_id,p.display_name,p.kind,p.role,p.avatar_url,
-            p.topics_json,p.is_available,owner.user_id AS twin_owner_user_id
+            p.topics_json,p.is_available,owner.user_id AS twin_owner_user_id,
+            NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id=p.tenant_id AND se.target_kind='persona'
+                 AND se.target_id=p.public_id
+                 AND se.visibility IN ('restricted','blocked')
+            ) AS safety_allowed
        FROM talks.persona_profiles p
        LEFT JOIN talks.public_profiles owner
          ON owner.tenant_id=p.tenant_id AND owner.handle=p.owner_handle
@@ -690,11 +711,18 @@ export function createPostgresTalkAiSeatRepository(
           requireLiveTalk(await readTalk(client, input.tenantId, input.talkId));
           const result = await client.query<PersonaRow>(
             `SELECT p.public_id,p.display_name,p.kind,p.role,p.avatar_url,
-                    p.topics_json,p.is_available,owner.user_id AS twin_owner_user_id
+                    p.topics_json,p.is_available,owner.user_id AS twin_owner_user_id,
+                    TRUE AS safety_allowed
                FROM talks.persona_profiles p
                LEFT JOIN talks.public_profiles owner
                  ON owner.tenant_id=p.tenant_id AND owner.handle=p.owner_handle
               WHERE p.tenant_id=$1
+                AND NOT EXISTS (
+                  SELECT 1 FROM talks.safety_enforcement se
+                   WHERE se.tenant_id=p.tenant_id AND se.target_kind='persona'
+                     AND se.target_id=p.public_id
+                     AND se.visibility IN ('restricted','blocked')
+                )
               ORDER BY p.is_available DESC,p.is_verified DESC,p.display_name,p.public_id
               LIMIT 100`,
             [input.tenantId],
@@ -710,6 +738,7 @@ export function createPostgresTalkAiSeatRepository(
         const talk = requireLiveTalk(
           await readTalk(client, input.tenantId, input.talkId, true),
         );
+        await guardPersonaSafety(client, input.tenantId, input.personaId);
         const personaRow = await readPersona(
           client,
           input.tenantId,
@@ -784,6 +813,7 @@ export function createPostgresTalkAiSeatRepository(
         ) {
           throw new Error("talks.ai_seat_quote_not_found");
         }
+        await guardPersonaSafety(client, input.tenantId, locked.quote.personaId);
         const personaRow = await readPersona(
           client,
           input.tenantId,
@@ -816,6 +846,12 @@ export function createPostgresTalkAiSeatRepository(
             status: "expired" as const,
             displayName,
           });
+        }
+
+        // A quote that was valid before moderation is not permission to charge.
+        // Keep terminal/expired reads above intact for existing receipts.
+        if (!mapPersona(personaRow).isAvailable) {
+          throw new Error("talks.persona_unavailable");
         }
 
         let transition = transitionTalkAiSeatQuote(
@@ -969,6 +1005,7 @@ export function createPostgresTalkAiSeatRepository(
         if (locked.quote.hostUserId !== input.hostUserId) {
           throw new Error("talks.host_forbidden");
         }
+        await guardPersonaSafety(client, input.tenantId, locked.quote.personaId);
         const personaRow = await readPersona(
           client,
           input.tenantId,
@@ -1024,7 +1061,9 @@ export function createPostgresTalkAiSeatRepository(
           });
         }
 
-        if (input.action === "decline") {
+        // A sponsored request held before moderation must release funds
+        // through the canonical decline transition, never admit the persona.
+        if (input.action === "decline" || !mapPersona(personaRow).isAvailable) {
           const declined = transitionTalkAiSeatQuote(
             locked.quote,
             {
@@ -1134,6 +1173,13 @@ export function createPostgresTalkAiSeatRepository(
             AND kind IN ('expert','twin')
             AND active=TRUE
             AND removed_at IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id=talks.talk_seats.tenant_id
+                 AND se.target_kind='persona'
+                 AND se.target_id=talks.talk_seats.persona_id
+                 AND se.visibility IN ('restricted','blocked')
+            )
           LIMIT 1`,
         [input.tenantId, input.talkId, seatId],
       );
@@ -1205,3 +1251,4 @@ export function createPostgresTalkAiSeatRepository(
     },
   });
 }
+

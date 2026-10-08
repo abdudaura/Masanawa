@@ -55,13 +55,13 @@ export interface PlatformAgentBootstrapResult {
 }
 
 /**
- * Seeds the two canonical Masanawa support Characters only for a tenant that
- * has no support-agent profiles yet.
+ * Provisions missing canonical support identities and resumes an interrupted
+ * Gwani/Gwana seed without overwriting an administrator's existing profiles.
  *
- * This is deliberately server-side and one-way: once an admin-managed support
- * roster exists, startup never modifies or replaces it. Existing visible
- * Gwani/Gwana presentations can be completed after an interrupted seed without
- * inventing duplicate Characters.
+ * A tenant with noncanonical support entries is admin-managed and must never
+ * be silently converted to a default roster. Profiles with an existing
+ * administrator-chosen voice/default and hidden presentations are immutable.
+ * Other fifteen Experts need an independently qualified voice/runtime path.
  */
 export async function ensureDefaultPlatformAgents(input: Readonly<{
   tenantId: TenantId;
@@ -75,20 +75,38 @@ export async function ensureDefaultPlatformAgents(input: Readonly<{
   const existingSupport = await input.profiles.listSupportAgents({
     tenantId: input.tenantId,
   });
-  if (existingSupport.length > 0) {
-    return Object.freeze({
-      changed: false,
-      supportAgentCount: existingSupport.length,
-      characterIds: Object.freeze(
-        existingSupport.map((profile) => profile.characterId),
-      ),
-    });
-  }
-
-  const createdAt = input.now?.() ?? nowInstant();
   const allPresentations = [
     ...(await input.presentations.listAll({ tenantId: input.tenantId })),
   ];
+  const supportedNames = new Set(
+    DEFAULT_PLATFORM_AGENTS.map((seed) => seed.displayName.toLowerCase()),
+  );
+  const knownProfileNames = existingSupport.map((profile) =>
+    allPresentations.find(
+      (presentation) => presentation.characterId === profile.characterId,
+    )?.displayName.trim().toLowerCase(),
+  );
+  const existingDefault = existingSupport.some(
+    (profile) => profile.defaultForNewUsers,
+  );
+  const unchanged = (): PlatformAgentBootstrapResult => Object.freeze({
+    changed: false,
+    supportAgentCount: existingSupport.length,
+    characterIds: Object.freeze(
+      existingSupport.map((profile) => profile.characterId),
+    ),
+  });
+
+  // An admin-created support profile, orphaned identity, duplicate name or a
+  // full existing pair makes ownership ambiguous. Do not guess or overwrite.
+  if (existingSupport.length > 0 &&
+      (existingSupport.length >= DEFAULT_PLATFORM_AGENTS.length ||
+        knownProfileNames.some((name) => !name || !supportedNames.has(name)) ||
+        new Set(knownProfileNames).size !== existingSupport.length)) {
+    return unchanged();
+  }
+
+  const createdAt = input.now?.() ?? nowInstant();
   const supportSkills = await input.skillDistribution.listForAudience(
     "platform-support",
   );
@@ -105,14 +123,20 @@ export async function ensureDefaultPlatformAgents(input: Readonly<{
   let changed = false;
 
   for (const seed of DEFAULT_PLATFORM_AGENTS) {
-    const existing = allPresentations.find(
+    const canonicalName = seed.displayName.toLowerCase();
+    // Existing default profiles/voice selections must never be rewritten.
+    if (knownProfileNames.includes(canonicalName)) continue;
+    const candidates = allPresentations.filter(
       (presentation) =>
-        presentation.displayName.trim().toLocaleLowerCase("en") ===
-        seed.displayName.toLocaleLowerCase("en"),
+        presentation.displayName.trim().toLowerCase() === canonicalName,
     );
+    if (candidates.length > 1) continue;
+    const existing = candidates[0];
 
-    // Respect an intentionally hidden admin-owned presentation.
-    if (existing && !existing.visibleInUserApp) continue;
+    // Never convert a hidden or admin-owned specialist into platform support.
+    // A presentation left by this bootstrap has the canonical support role.
+    if (existing && (!existing.visibleInUserApp ||
+        existing.roleLabel !== "Masanawa Support")) continue;
 
     let presentation = existing;
     if (!presentation) {
@@ -209,7 +233,7 @@ export async function ensureDefaultPlatformAgents(input: Readonly<{
         tenantId: input.tenantId,
         characterId: presentation.characterId,
         supportAgent: true,
-        defaultForNewUsers: seed.defaultForNewUsers,
+        defaultForNewUsers: seed.defaultForNewUsers && !existingDefault,
         voiceProvider: "gemini",
         voiceName: seed.voiceName,
         revision: 1,
@@ -227,3 +251,4 @@ export async function ensureDefaultPlatformAgents(input: Readonly<{
     characterIds: Object.freeze(support.map((profile) => profile.characterId)),
   });
 }
+

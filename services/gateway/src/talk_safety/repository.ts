@@ -182,13 +182,21 @@ export function createPostgresTalkSafetyRepository(
     },
 
     async writeEnforcement(input){
+      // Acquires the same transaction-scoped tenant/target lock as paid AI Seat
+      // admission. Each CAS write and its guard are one PostgreSQL statement.
+      // Colliding hash keys only serialize extra writes; never grant access.
       const next=normalizeTalkSafetyEnforcement(input.next);
       let result:SqlResult<EnforcementRow>;
       if(input.current===null){
         result=await pool.query<EnforcementRow>(
-          `INSERT INTO talks.safety_enforcement(
+          `WITH admission_guard AS MATERIALIZED (
+             SELECT pg_advisory_xact_lock(
+               hashtext($1::text),hashtext($3::text)
+             ) AS acquired
+           )
+           INSERT INTO talks.safety_enforcement(
              tenant_id,target_kind,target_id,revision,visibility,reason_code,updated_at
-           ) VALUES($1,$2,$3,$4,$5,$6,$7)
+           ) SELECT $1,$2,$3,$4,$5,$6,$7 FROM admission_guard WHERE TRUE
            ON CONFLICT DO NOTHING
            RETURNING tenant_id,target_kind,target_id,revision,visibility,reason_code,updated_at`,
           [
@@ -198,8 +206,14 @@ export function createPostgresTalkSafetyRepository(
         );
       }else{
         result=await pool.query<EnforcementRow>(
-          `UPDATE talks.safety_enforcement
+          `WITH admission_guard AS MATERIALIZED (
+             SELECT pg_advisory_xact_lock(
+               hashtext($1::text),hashtext($3::text)
+             ) AS acquired
+           )
+           UPDATE talks.safety_enforcement
               SET revision=$5,visibility=$6,reason_code=$7,updated_at=$8
+             FROM admission_guard
             WHERE tenant_id=$1 AND target_kind=$2 AND target_id=$3 AND revision=$4
             RETURNING tenant_id,target_kind,target_id,revision,visibility,reason_code,updated_at`,
           [
@@ -213,3 +227,4 @@ export function createPostgresTalkSafetyRepository(
     },
   });
 }
+
