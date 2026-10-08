@@ -12,6 +12,7 @@ Out of scope: theme R01 (#406), router/shell, shared backend, finances, migratio
 - ARB sources for English, Hausa, Arabic, French, Spanish and Portuguese. English template contains translation context, ICU pluralization, typed money-label placeholders; each locale contains corresponding translations. Initial vocabulary only, not full app localization.
 - `generate: true`, `intl`, `l10n.yaml`, and generated delegate wired into `MaterialApp`.
 - Device-locale negotiation with English fallback; Arabic RTL uses Flutter Widgets delegate.
+- Improved locale matching to use the complete ordered OS language list (e.g., German then Arabic chooses Arabic instead of English), plus regression test.
 - Added secure persisted manual UI locale selection controller, null=follow OS locale, save-before-apply semantics, graceful storage-read failure, and lifecycle-safe MaterialApp rebuilding without resetting router. This is infrastructure only: settings selector has not yet been wired.
 - Added focused controller tests for restart persistence, clearing overrides, corrupt storage, write failure, unsupported locales.
 - Added ARB integrity test for exact key parity, required template metadata and interpolation identifiers; corrected missing unchanged-brand key in all five non-English ARB catalogs. The test exists but execution remains unverified.
@@ -41,5 +42,7 @@ Merge with theme PR #406 carefully: both PRs touch `main.dart` while owning diff
 5. Native translators review copy, including Hausa terminology and safety/financial consent phrases. Confirm correct plural/RTL in context.
 6. Keep UI language, conversation/code switching, account jurisdiction and provider currencies completely separate.
 7. Run actual package resolution/tests and APK verification before claiming production quality.
+
+CI workflow creation attempted but blocked; do not claim workflow installation or CI coverage. Focused test code committed but execution still unverified.
 
 Status: implementation partial, tests unexecuted, deployed NO, device acceptance NO. Five-minute lease applies.
