@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'src/localization/masanawa_localization.dart';
 import 'src/localization/locale_preference.dart';
+import 'src/localization/locale_preference_scope.dart';
 import 'src/core/mobile_push.dart';
 import 'src/core/pending_deep_link.dart';
 import 'src/core/shell_deep_link.dart';
@@ -99,18 +100,24 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
     final router = ref.watch(appRouterProvider);
     return ListenableBuilder(
       listenable: _localePreference,
-      builder: (context, _) => MaterialApp.router(
-      title: 'Masanawa',
-      debugShowCheckedModeBanner: false,
-      theme: buildMasanawaTheme(brightness: Brightness.light),
-      darkTheme: buildMasanawaTheme(brightness: Brightness.dark),
-      themeMode: ThemeMode.system,
-      locale: _localePreference.override,
-      supportedLocales: MasanawaLocalization.supportedLocales,
-      localizationsDelegates: MasanawaLocalization.delegates,
-      localeListResolutionCallback: (deviceLocales, supportedLocales) =>
-          MasanawaLocalization.resolvePreferred(deviceLocales, supportedLocales),
-      routerConfig: router,
+      builder: (context, _) => LocalePreferenceScope(
+        controller: _localePreference,
+        child: MaterialApp.router(
+          title: 'Masanawa',
+          debugShowCheckedModeBanner: false,
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          darkTheme: buildMasanawaTheme(brightness: Brightness.dark),
+          themeMode: ThemeMode.system,
+          locale: _localePreference.override,
+          supportedLocales: MasanawaLocalization.supportedLocales,
+          localizationsDelegates: MasanawaLocalization.delegates,
+          localeListResolutionCallback: (deviceLocales, supportedLocales) =>
+              MasanawaLocalization.resolvePreferred(
+                deviceLocales,
+                supportedLocales,
+              ),
+          routerConfig: router,
+        ),
       ),
     );
   }
