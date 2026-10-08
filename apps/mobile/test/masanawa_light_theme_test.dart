@@ -25,6 +25,19 @@ void main() {
         .resolve(<WidgetState>{}), const Color(0xFF075E54));
   });
 
+  test('R01 selection controls use green with a readable dark check', () {
+    final theme = buildMasanawaTheme(brightness: Brightness.light);
+    final selected = <WidgetState>{WidgetState.selected};
+    expect(theme.checkboxTheme.fillColor!.resolve(selected),
+        const Color(0xFF25D366));
+    expect(theme.checkboxTheme.checkColor!.resolve(selected),
+        const Color(0xFF111B21));
+    expect(theme.switchTheme.trackColor!.resolve(selected),
+        const Color(0xFF25D366));
+    expect(theme.switchTheme.thumbColor!.resolve(selected),
+        const Color(0xFF111B21));
+  });
+
   test('R01 accessible foreground is dark on vibrant green actions', () {
     final theme = buildMasanawaTheme(brightness: Brightness.light);
     final style = theme.filledButtonTheme.style!;
