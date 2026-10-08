@@ -29,14 +29,17 @@ class _Projection implements HumanDmRealtimeProjection {
   int full=0;
   final changed=<String>[];
   final invalidated=<String>[];
-  bool fail=false;
   final receipts=<String>[];
+  bool fail=false;
   @override
   Future<void> applyReadReceipt({
     required String conversationId,required String readerUserId,
     required String throughSequence,
   }) async {
-    receipts.add(' async { full++; }
+    receipts.add(conversationId + ':' + readerUserId + ':' + throughSequence);
+  }
+  @override
+  Future<void> refreshAll() async { full++; }
   @override
   Future<void> refreshConversation(String id) async {
     if(fail) throw StateError('C02 not ready');
