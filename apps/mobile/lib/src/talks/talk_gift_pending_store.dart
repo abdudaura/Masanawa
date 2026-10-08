@@ -57,17 +57,7 @@ class SecureTalkGiftPendingStore implements TalkGiftPendingStore {
     required String record,
   }) {
     if (record.length > 300 || !RegExp(
-      r'^(pending|completed):talk-gift-[0-9]+(?:-[0-9]+){3}
-    ).hasMatch(record)) {
-      throw const FormatException('Invalid durable gift request state');
-    }
-    return _storage.write(
-      key: _key(userId, fingerprint),
-      value: record,
-    );
-  }
-}
-,
+      r'^(pending|completed):talk-gift-[0-9]+(?:-[0-9]+){3}$',
     ).hasMatch(record)) {
       throw const FormatException('Invalid durable gift request state');
     }
