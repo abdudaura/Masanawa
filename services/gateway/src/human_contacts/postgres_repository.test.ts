@@ -117,5 +117,37 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("edge.revoked_by IS NULL");
     expect(sql).toContain("edge.revoked_by=$2");
   });
-});
 
+  it("pages tenant-owned contacts by microsecond timestamp and stable user ID", async () => {
+    const observed: { sql: string; args: readonly unknown[] }[] = [];
+    const timestamp = "2026-10-08T11:00:00.123456Z";
+    const record = (id: string) => ({
+      user_id: id, handle: id, display_name: id, avatar_url: null,
+      status: "accepted", requested_by: "user_al", revoked_by: null,
+      updated_at: new Date("2026-10-08T11:00:00Z"),
+      cursor_updated_at: timestamp, request_revision: "1",
+    });
+    const pool: HumanContactSqlPool = {
+      async query(sql, values) {
+        observed.push({ sql, args: values ?? [] });
+        return { rows: (observed.length === 1
+          ? [record("user_aa"), record("user_bb"), record("user_cc")]
+          : [record("user_cc")]) as never, rowCount: null };
+      },
+    };
+    const repository = createPostgresHumanContactRepository(pool);
+    const first = await repository.listPage!({ tenantId: "t", userId: "user_al", limit: 2, after: null });
+    expect(first.contacts.map(item => item.userId)).toEqual(["user_aa", "user_bb"]);
+    expect(first.next).toEqual({ updatedAt: timestamp, userId: "user_bb" });
+    expect(observed[0]?.args).toEqual(["t", "user_al", 3, null, null]);
+    for (const predicate of ["edge.updated_at < $4::timestamptz", "other.user_id > $5::text", "LIMIT $3", "HH24:MI:SS.US", "sp.blocked=true", "recipient.state='active'"]) {
+      expect(observed[0]?.sql).toContain(predicate);
+    }
+    const second = await repository.listPage!({
+      tenantId: "t", userId: "user_al", limit: 2, after: first.next,
+    });
+    expect(second.contacts.map(item => item.userId)).toEqual(["user_cc"]);
+    expect(second.next).toBeNull();
+    expect(observed[1]?.args).toEqual(["t", "user_al", 3, timestamp, "user_bb"]);
+  });
+});
