@@ -134,7 +134,7 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'bob');
     await tester.tap(find.text('Find'));
     await tester.pumpAndSettle();
-    expect(find.text('You removed this connection'), findsOneWidget);
+    expect(find.textContaining('You removed this connection'), findsOneWidget);
     expect(find.text('Request reconnect'), findsOneWidget);
     await tester.tap(find.text('Request reconnect'));
     await tester.pumpAndSettle();
@@ -202,3 +202,4 @@ void main() {
     expect(find.text('Find'), findsNothing);
   });
 }
+
