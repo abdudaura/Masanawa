@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../ui/components/logo.dart';
 import '../../ui/components/masanawa_wordmark.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -92,7 +93,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               const MasanawaWordmark(light: true, fontSize: 30),
               SizedBox(height: MasanawaTokens.spacing[2]),
               Text(
-                'Talk. Work. Get things done.',
+                AppLocalizations.of(context).splashTagline,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: MasanawaTokens.fontSize['md'],
