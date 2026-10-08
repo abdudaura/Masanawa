@@ -85,7 +85,7 @@ describe("external account deletion proxy", () => {
   });
 
   it("uses only the session cookie for trusted Gateway account identity", async () => {
-    const upstream = vi.fn(async () => new Response(JSON.stringify({
+    const upstream = vi.fn(async (..._args: unknown[]) => new Response(JSON.stringify({
       request: {
         requestId: "req", phase: "identity-verified", revision: 2,
         createdAt: "2026-10-08T01:00:00.000Z",
