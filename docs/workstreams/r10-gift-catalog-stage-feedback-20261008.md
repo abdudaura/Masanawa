@@ -73,6 +73,12 @@ PR #418: `https://github.com/Baatiku/masanawa/pull/418`.
 - Latest observed CI for PR #418 continues failing before runner steps; no typecheck, Vitest, Flutter tests, APK build, real Credits settlement or handset check has passed in this environment.
 - Main advanced during the lane. Before merge, reconcile current main, execute full relevant checks, review any checkout conflicts, and qualify sender/recipient behavior after lost responses. Do not use a mergeable GitHub metadata flag as a substitute for these release gates.
 
+### Unresolved authoritative reconciliation boundary
+
+The mobile ID is now durable, but **server receipt recovery is not complete**: current gift execution resolves a still-giftable Talk and checks the *current* catalog before calling the canonical Credit executor. After an uncertain but completed debit, a Talk ending/unpublishing or a catalog price change may block replay of the originally completed receipt even with the same request ID. Do not represent a stale-price rejection, 404 or transport exception as proof no debit occurred. The sheet points to Wallet history, but a durable owner-authorized `requestId -> settled/pending/not-found` recovery endpoint and credit-operation lookup are still required.
+
+That endpoint must use the existing canonical Credit operation authority and tenant/sender ownership, not a parallel gift ledger, and must work when the Talk is no longer public. Implement in an integration-owned lane after coordinating the shared Twin/Credit runtime and Gateway composition. It must never return another person's gift or infer settlement from mobile state. Test catalog repricing after charged-but-lost response, Talk ending mid-flight, account switching, webhook/read outages and another intentional gift. No changes to those shared-sensitive paths are claimed here.
+
 **Integration status:** Source on draft PR #418, no release deployment, no executed tests, no merge. Remains R10 PARTIAL.
 
 ## Handoff policy
