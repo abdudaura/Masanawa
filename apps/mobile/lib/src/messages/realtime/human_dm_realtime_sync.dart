@@ -124,9 +124,7 @@ class HumanDmRealtimeSync {
         final previous = int.parse(_cursor ?? '0');
         if ((int.parse(page.nextCursor) < previous && !recovering) ||
             (page.hasMore && page.events.isEmpty) ||
-            (recovering && page.events.isNotEmpty &&
-                int.parse(page.events.first.eventId) <= int.parse(page.nextCursor) &&
-                int.parse(page.nextCursor) < previous)) {
+            (recovering && page.events.isNotEmpty)) {
           throw const FormatException('Invalid private message sync advance');
         }
         // Group repeated message events by thread; access changes take
