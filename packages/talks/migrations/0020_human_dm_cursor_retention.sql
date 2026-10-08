@@ -36,6 +36,12 @@ BEGIN
     SELECT event_id, recipient_user_id
     FROM talks.human_dm_events
     WHERE tenant_id=p_tenant AND created_at < p_before
+      -- Never trim past any still-protected event, even if wall-clock time
+      -- regressed and timestamps are not ordered like event IDs.
+      AND event_id < COALESCE((
+        SELECT min(event_id) FROM talks.human_dm_events
+        WHERE tenant_id=p_tenant AND created_at >= p_before
+      ),9223372036854775807::bigint)
     ORDER BY event_id ASC LIMIT p_limit
     FOR UPDATE
   ), highs AS (
