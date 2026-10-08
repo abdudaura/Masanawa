@@ -18,5 +18,6 @@
   "raiseHand": "Levantar a mão",
   "speakerSeats": "{count, plural, =0{Nenhum lugar de fala} =1{1 lugar de fala} other{{count} lugares de fala}}",
   "walletAmount": "{amount} {currency}",
-  "appTitle": "Masanawa"
+  "appTitle": "Masanawa",
+  "splashTagline": "Conversas ao vivo entre pessoas e IA"
 }
