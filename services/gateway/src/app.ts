@@ -66,6 +66,8 @@ import type { BillingFinancialService } from "./financial_billing.js";
 import type { BillingWalletService } from "./billing_wallet.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
+import type { InternalCryptoTransferService } from "./internal_crypto_transfer.js";
+import { registerInternalCryptoTransferRoutes } from "./internal_crypto_transfer_routes.js";
 import {
   registerCustomerChannelRoutes,
   type CustomerChannelOptions,
@@ -122,6 +124,7 @@ export interface GatewayAppOptions {
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
   readonly financial?: FinancialService;
+  readonly internalCryptoTransfers?: InternalCryptoTransferService;
   readonly customerChannels?: CustomerChannelOptions;
   readonly linkedWhatsApp?: Readonly<{
     controller: LinkedWhatsAppController;
@@ -1148,13 +1151,23 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
+  if (options.internalCryptoTransfers) {
+    registerInternalCryptoTransferRoutes(app, options.internalCryptoTransfers);
+  }
+
   if (options.financial) {
     const financial = options.financial;
     const auth = (request: { headers: { authorization?: string | undefined } }) =>
       request.headers.authorization;
 
-    app.get("/v1/financial/capabilities", async (request) =>
-      financial.capabilities({ authorizationHeader: auth(request) }));
+    app.get("/v1/financial/capabilities", async (request) => {
+      const authorizationHeader = auth(request);
+      const capabilities = await financial.capabilities({authorizationHeader});
+      const internalTransfers = options.internalCryptoTransfers
+        ? await options.internalCryptoTransfers.available({authorizationHeader})
+        : false;
+      return {...capabilities, internalTransfers};
+    });
 
     app.get("/v1/financial/crypto/routes", async (request) => ({
       routes: (await financial.listDepositRoutes({

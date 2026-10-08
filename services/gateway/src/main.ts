@@ -68,6 +68,8 @@ import {
   createPostgresIdentityRepository,
   createPostgresCommerceRepository,
   createPostgresCryptoRepository,
+  createPostgresInternalCryptoTransferRepository,
+  type InternalTransferRepository,
   createPostgresCryptoChatActionRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
@@ -262,6 +264,8 @@ import {
   type AgentTeachingAssistant,
 } from "./agent_teaching_assistant.js";
 import { createCustomerChannelBridge } from "./customer_channel_bridge.js";
+import { createInternalCryptoTransferService } from "./internal_crypto_transfer.js";
+import { createPlatformCreditRecipientResolver } from "./credit_transfer_recipient.js";
 import {
   CRYPTO_AGENT_SYSTEM_INSTRUCTIONS,
   createAgentCryptoAssistant,
@@ -313,6 +317,7 @@ export interface ServiceDatabaseDependency {
   readonly customerChannels?: CustomerChannelRepository;
   readonly commerce?: CommerceRepository;
   readonly crypto?: CryptoRepository;
+  readonly internalCryptoTransfers?: InternalTransferRepository;
   readonly cryptoChatActions?: CryptoChatActionRepository;
   readonly ownerships?: CharacterOwnershipReader;
   readonly mobileShell?: MobileShellRepository;
@@ -478,6 +483,7 @@ function createDefaultDatabaseDependency(
     customerChannels: createPostgresCustomerChannelRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
+    internalCryptoTransfers: createPostgresInternalCryptoTransferRepository(database.pool),
     cryptoChatActions: createPostgresCryptoChatActionRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
     mobileShell: createPostgresMobileShellRepository(database.pool),
@@ -1493,6 +1499,19 @@ export async function startGatewayService(
     });
   }
 
+  const composedInternalCryptoTransfers =
+    options.appOptions?.internalCryptoTransfers ??
+    (database.internalCryptoTransfers && database.platformSessions &&
+     financialAuthorizer
+      ? createInternalCryptoTransferService({
+          authorizer: financialAuthorizer,
+          recipients: createPlatformCreditRecipientResolver({ sessions: database.platformSessions }),
+          repository: database.internalCryptoTransfers,
+          ...(composedFinancial ? {financial: composedFinancial} : {}),
+          enabled: env.MASANAWA_INTERNAL_CRYPTO_TRANSFERS_ENABLED === "true",
+        })
+      : undefined);
+
     const composedDirectory =
     options.appOptions?.agentDirectory ??
     (directoryAuthorizer && database.agentPresentations
@@ -2253,6 +2272,8 @@ export async function startGatewayService(
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedInternalCryptoTransfers
+        ? { internalCryptoTransfers: composedInternalCryptoTransfers } : {}),
       ...(composedCustomerChannels
         ? { customerChannels: composedCustomerChannels }
         : {}),

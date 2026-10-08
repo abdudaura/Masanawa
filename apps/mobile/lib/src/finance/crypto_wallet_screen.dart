@@ -9,6 +9,8 @@ import '../theme/masanawa_theme.dart';
 import '../tokens/masanawa_tokens.dart';
 import 'crypto_models.dart';
 import 'crypto_state.dart';
+import 'internal_crypto_transfer_screen.dart';
+import '../state/session_state.dart';
 
 class CryptoWalletScreen extends ConsumerWidget {
   const CryptoWalletScreen({super.key});
@@ -23,6 +25,8 @@ class CryptoWalletScreen extends ConsumerWidget {
         return 'Conversion';
       case 'buy':
         return 'Buy';
+      case 'transfer':
+        return 'Internal transfer';
       default:
         return 'Crypto operation';
     }
@@ -461,6 +465,30 @@ class CryptoWalletScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              if (data.capabilities.internalTransfers &&
+                  data.selectedRoute != null &&
+                  data.selectedRoute!.network?.toLowerCase() != "erc20")
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.send_rounded),
+                  label: const Text('Send to Masanawa user'),
+                  onPressed: () async {
+                    final session = ref.read(sessionProvider);
+                    if (session is! SessionSignedIn) {
+                      _message(context, 'Please sign in first.');
+                      return;
+                    }
+                    await Navigator.of(context).push<void>(MaterialPageRoute(
+                      builder: (_) => InternalCryptoTransferScreen(
+                        ownerId: session.user.id,
+                        providerCode: data.selectedRoute!.providerCode,
+                      ),
+                    ));
+                    if (context.mounted) {
+                      await ref.read(cryptoWalletProvider.notifier).refresh();
+                    }
+                  },
+                ),
               if (!data.capabilities.fiatOnRamp ||
                   !data.capabilities.conversions ||
                   !data.capabilities.withdrawals) ...[
@@ -723,6 +751,8 @@ class _HistoryTile extends StatelessWidget {
       'withdraw' => Icons.call_made_rounded,
       'convert' => Icons.swap_horiz_rounded,
       'buy' => Icons.add_card_rounded,
+      'transfer' => intent.transferDirection == 'in'
+        ? Icons.call_received_rounded : Icons.call_made_rounded,
       _ => Icons.currency_bitcoin,
     };
     final showsTarget =
@@ -740,7 +770,9 @@ class _HistoryTile extends StatelessWidget {
         child: Icon(icon, color: statusColor),
       ),
       title: Text(
-        CryptoWalletScreen.operationTitle(intent.operation),
+        intent.operation == 'transfer'
+          ? (intent.transferDirection == 'in' ? 'Received from Masanawa user' : 'Sent to Masanawa user')
+          : CryptoWalletScreen.operationTitle(intent.operation),
         style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
