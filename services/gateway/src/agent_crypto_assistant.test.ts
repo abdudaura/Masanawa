@@ -130,9 +130,12 @@ describe("Agent crypto assistant exact consent", () => {
   it("requires authenticated user text containing the current quote reference, not a vague yes", async () => {
     const f = fixture();
     for (const text of ["yes", "confirm", "yes confirm", "proceed",
-      "go ahead", "do it", "continue", "Confirm crypto", "confirm crypto 123"]) {
-      expect(await f.before(text)).toBeNull();
+      "go ahead", "do it", "continue", "okay", "ok"]) {
+      const response = await f.before(text);
+      expect(response?.reply).toContain("Saying \"yes\" does not authorize");
     }
+    expect(await f.before("Confirm crypto")).toBeNull();
+    expect(await f.before("confirm crypto 123")).toBeNull();
     expect(f.createConversion).not.toHaveBeenCalled();
     expect(f.createWithdrawal).not.toHaveBeenCalled();
     const code = cryptoQuoteConfirmationCode(f.action.requestId);
