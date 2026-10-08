@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
 import '../../social/self_profile_edit.dart';
@@ -88,7 +87,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error is StateError && error.message.toString().contains('handle')
+        _error = error is ProfileHandleTaken
             ? 'This handle is already taken. Choose another.'
             : 'Could not save your profile. Check your connection and try again.';
       });
