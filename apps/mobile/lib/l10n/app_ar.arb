@@ -58,5 +58,11 @@
   "authRateLimited": "طلبات كثيرة جدًا. يُرجى المحاولة لاحقًا.",
   "authSendFailed": "تعذّر إرسال الرمز. تحقق من اتصالك وحاول مجددًا.",
   "authVerifyFailed": "تعذّر التحقق من الرمز. حاول مجددًا.",
-  "authProfileFailed": "تعذّر إكمال ملفك الشخصي. تحقق من بياناتك وحاول مجددًا."
+  "authProfileFailed": "تعذّر إكمال ملفك الشخصي. تحقق من بياناتك وحاول مجددًا.",
+  "languageAction": "لغة التطبيق",
+  "languageDialogTitle": "اختر لغة التطبيق",
+  "languageSystem": "استخدام لغة الجهاز",
+  "languageSaveFailed": "تعذّر حفظ تفضيل اللغة. حاول مجددًا.",
+  "languagePreviewNotice": "بعض الشاشات لم تُترجم بالكامل بعد.",
+  "languageHausaUnavailable": "جارٍ استكمال دعم واجهة التطبيق باللغة الهوساوية."
 }
