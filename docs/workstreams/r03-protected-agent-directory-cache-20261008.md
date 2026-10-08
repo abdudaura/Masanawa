@@ -1,0 +1,6 @@
+# R03 — protected offline Agent directory cache (live ownership claim)
+Claimed 2026-10-08 Africa/Lagos (GitHub commit timestamp is the authoritative five-minute lease heartbeat).
+Owner: GPT-6 R03 protected offline roster cache. Branch: `work/r03-protected-agent-directory-cache-20261008-gpt6`; base `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`.
+Exact owned paths: `apps/mobile/lib/src/agents/agent_directory_cache.dart`, `apps/mobile/test/agent_directory_secure_cache_test.dart`, this workstream handoff. No shared Gateway, router, state notifier, financial code or migrations are claimed.
+
+Problem: existing fast-start Agent directory persists signed-in roster metadata in readable `masanawa_agent_directory_v1.json`; signout and account switching require bounded, protected recovery. Scope: native FlutterSecureStorage-backed owner-bound snapshot, purge legacy plaintext without migration, no speculative presence, fail-closed corrupt/denied/native storage errors, sequential write/clear to prevent resurrection, existing API refresh remains authoritative. Relevant: R03/R16, N05/P08/P03, J06/J10/J11. Works alongside draft #495 (agent preference/state) without editing its files. Tests and exact SHA-specific handoff to follow. CI #457 is externally blocked; do not claim verification.
