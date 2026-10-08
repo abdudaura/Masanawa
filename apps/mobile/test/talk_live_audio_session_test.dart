@@ -12,6 +12,8 @@ class _Transport implements TalkLiveTransport {
   bool canPublishAudio;
   bool failNextToken = false;
   bool sessionEndedOnConnect = false;
+  DateTime? credentialsExpireAt;
+  String credentialUrl = 'wss://live.example.test';
   Completer<void>? connectGate;
   int heartbeats = 0;
   int disconnects = 0;
@@ -70,11 +72,11 @@ class _Transport implements TalkLiveTransport {
       throw StateError('Simulated media-token rejection');
     }
     return TalkLiveMediaCredentials(
-      serverUrl: 'wss://live.example.test',
+      serverUrl: credentialUrl,
       participantToken: 'token',
       roomName: talkId,
       participantIdentity: 'user:' + sessionId,
-      expiresAt: DateTime(2030),
+      expiresAt: credentialsExpireAt ?? DateTime(2030),
     );
   }
 
@@ -386,6 +388,47 @@ void main() {
     expect(transport.disconnects, 1);
     expect(room.closes, 2);
     expect(session.status, TalkLiveAudioStatus.ended);
+  });
+
+  test('expired media token never opens LiveKit and can recover', () async {
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..credentialsExpireAt = DateTime(2020);
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+
+    transport.credentialsExpireAt = DateTime(2030);
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.listening);
+    expect(room.connects, 1);
+    await session.close();
+  });
+
+  test('invalid websocket endpoint cannot publish microphone', () async {
+    final transport = _Transport(
+      role: TalkLiveRole.host,
+      canPublishAudio: true,
+    )..credentialUrl = 'https://invalid.example.test';
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+    await session.close();
   });
 
 }
