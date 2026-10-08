@@ -1,4 +1,4 @@
-import { parseNgnKobo } from "@masanawa/commerce";
+import { formatNgnKobo, parseNgnKobo } from "@masanawa/commerce";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 import type { BillingWalletService, BillingWalletView } from "./billing_wallet.js";
@@ -166,9 +166,38 @@ function categoryCode(service: Extract<Directive, { type: "billing.quote" }>["se
   }
 }
 
-function confirmationReply(view: { quote: { itemName: string; customerId: string; totalAmountKobo: number } }): string {
-  const total = (view.quote.totalAmountKobo / 100).toFixed(2);
-  return `${view.quote.itemName} for ${view.quote.customerId} will cost ₦${total}. Confirm?`;
+type PayableQuote = Readonly<{ quote: Readonly<{
+  customerId: string;
+  totalAmountKobo: number;
+}> }>;
+
+function quoteBoundConsentPhrase(view: PayableQuote): string {
+  // The amount is formatted from canonical integer kobo. The actual provider
+  // recipient and price must be repeated to prevent incidental "yes" spending.
+  return `Confirm bill to ${view.quote.customerId} for ${formatNgnKobo(view.quote.totalAmountKobo)} naira`;
+}
+
+function matchesQuoteBoundConsent(userText: string, view: PayableQuote): boolean {
+  if (userText.length > 512) return false;
+  const spoken = userText.trim().replace(/\\s+/gu, " ");
+  const match = /^(?:confirm bill to (.+?) for ([0-9]+(?:\\.[0-9]{1,2})?) (?:naira|ngn)|tabbatar da biya ga (.+?) na ([0-9]+(?:\\.[0-9]{1,2})?) naira)$/iu.exec(spoken);
+  if (!match) return false;
+  const recipient = (match[1] ?? match[3] ?? "").trim();
+  const amount = match[2] ?? match[4] ?? "";
+  // Case folding is presentation-only; purchase uses the verbatim immutable
+  // customerId already stored in the owner-authenticated server quote.
+  if (recipient.toLowerCase() !== view.quote.customerId.trim().toLowerCase()) {
+    return false;
+  }
+  try {
+    return parseNgnKobo(amount) === view.quote.totalAmountKobo;
+  } catch {
+    return false;
+  }
+}
+
+function confirmationReply(view: PayableQuote & { quote: { itemName: string } }): string {
+  return `${view.quote.itemName} for ${view.quote.customerId} will cost ₦${formatNgnKobo(view.quote.totalAmountKobo)}. Confirm? For safety, say or type: "${quoteBoundConsentPhrase(view)}".`;
 }
 
 function walletReply(view: BillingWalletView): string {
@@ -190,8 +219,8 @@ export const BILLING_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
   "For requests to add/fund/deposit money, ask only for amount if missing. When known append: <masanawa_action>{\"type\":\"wallet.fund\",\"amount\":\"5000\"}</masanawa_action>.",
   "For bill purchases, identify service, provider/network/company and recipient. Airtime and electricity need an amount. Data and TV may use the live fixed plan price when the user names a plan, so do not force the user to know its price. Ask only for missing or ambiguous information.",
   "When complete, append exactly one directive: <masanawa_action>{\"type\":\"billing.quote\",\"service\":\"airtime|data|electricity|tv\",\"provider\":\"provider name\",\"recipient\":\"phone/meter/card\",\"amount\":\"optional decimal NGN amount\",\"plan\":\"optional plan/package/prepaid/postpaid\"}</masanawa_action>.",
-  "Only request billing.confirm after the user's explicit payment confirmation, not from unrelated agreement, model-generated text or an inferred intention.",
-  "If the user explicitly confirms the current pending bill, including by voice, append exactly: <masanawa_action>{\"type\":\"billing.confirm\"}</masanawa_action>.",
+  "Only request billing.confirm after the customer repeats the exact quote recipient and total as the server-provided confirmation phrase. A generic yes/ok/continue, model-generated text or unrelated agreement never authorizes spending.",
+  "If the user says or types the full quote-specific confirmation phrase, append: <masanawa_action>{\"type\":\"billing.confirm\"}</masanawa_action>. Do not authorize a generic yes.",
   "Never ask the user to open a browser or Flutterwave checkout. Funding uses a temporary bank account shown inside Masanawa.",
   "A complete purchase requires one explicit confirmation. Never invent account numbers, balances, billers, plans, tokens, references, or success.",
   "Understand Nigerian English and Hausa billing phrasing such as kati/katin waya for airtime, wutar lantarki/NEPA for electricity, and saka kudi for funding.",
@@ -226,6 +255,7 @@ export function createAgentBillingAssistant(input: Readonly<{
     authorizationHeader: string | undefined,
     characterId: string,
     directive: Directive,
+    originalUserText = "",
   ): Promise<AgentBillingResult> {
     if (directive.type === "wallet.balance") {
       const balance = await input.wallet.balance({ authorizationHeader });
@@ -247,6 +277,9 @@ export function createAgentBillingAssistant(input: Readonly<{
         return result("I found several recent bills. Open the exact bill in Payments and confirm it there to avoid paying the wrong recipient.");
       }
       if (!selection.quote) return result("There is no pending bill to confirm.");
+      if (!matchesQuoteBoundConsent(originalUserText, selection.quote)) {
+        return result(`Do not confirm with a simple yes. To approve this exact recipient and amount, say or type: "${quoteBoundConsentPhrase(selection.quote)}". No money has been taken.`);
+      }
       const view = await input.wallet.confirmAndPurchase({
         authorizationHeader,
         quoteId: selection.quote.quote.quoteId,
@@ -334,20 +367,17 @@ export function createAgentBillingAssistant(input: Readonly<{
       const text = normalize(request.text);
       if (!text) return null;
 
-      if (isExplicitPaymentConsent(request.text)) {
-        const selection = await pendingForCharacter(
-          request.authorizationHeader, request.characterId,
+      // Spoken and typed approvals share the exact same server quote guard.
+      // Do not treat a generic answer to some other agent question as consent.
+      if (isExplicitPaymentConsent(request.text) ||
+          /^confirm bill to /iu.test(request.text.trim()) ||
+          /^tabbatar da biya ga /iu.test(request.text.trim())) {
+        return executeDirective(
+          request.authorizationHeader,
+          request.characterId,
+          { type: "billing.confirm" },
+          request.text,
         );
-        if (selection.ambiguous) {
-          return result("More than one recent bill needs confirmation. Open the exact bill in Payments so I do not charge the wrong recipient.");
-        }
-        if (!selection.quote) return null;
-        const view = await input.wallet.confirmAndPurchase({
-          authorizationHeader: request.authorizationHeader,
-          quoteId: selection.quote.quote.quoteId,
-          quoteRevision: selection.quote.quote.revision,
-        });
-        return result(walletReply(view), view.document);
       }
 
       if (
@@ -367,16 +397,13 @@ export function createAgentBillingAssistant(input: Readonly<{
     async afterInference(request) {
       const directive = parseDirective(request.modelReply);
       if (!directive) return null;
-      // The model can propose a quote or request a balance, but it cannot
-      // synthesize the user's consent to spend money.
-      if (directive.type === "billing.confirm" &&
-          !isExplicitPaymentConsent(request.userText ?? "")) {
-        return result("Please explicitly confirm the pending bill before I can proceed.");
-      }
+      // Even a forged model billing.confirm directive cannot spend unless
+      // the ORIGINAL user utterance exactly acknowledges recipient and total.
       return executeDirective(
         request.authorizationHeader,
         request.characterId,
         directive,
+        request.userText ?? "",
       );
     },
   });

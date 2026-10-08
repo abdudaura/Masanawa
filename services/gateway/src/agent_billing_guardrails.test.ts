@@ -176,9 +176,12 @@ describe("R07 voice/text financial catalog and consent safety", () => {
     const f = fixture();
     f.currentQuotes.push(quoted());
     const invalid = await f.confirm("What is my available balance?");
-    expect(invalid?.reply).toContain("explicitly confirm");
+    expect(invalid?.reply).toContain("No money has been taken");
     expect(f.confirmAndPurchase).not.toHaveBeenCalled();
-    const valid = await f.confirm("please confirm this bill");
+    const generic = await f.confirm("yes");
+    expect(generic?.reply).toContain("No money has been taken");
+    expect(f.confirmAndPurchase).not.toHaveBeenCalled();
+    const valid = await f.confirm("Confirm bill to 07010102053 for 100 naira");
     expect(valid?.reply).toContain("processed");
     expect(f.confirmAndPurchase).toHaveBeenCalledOnce();
   });
@@ -192,11 +195,74 @@ describe("R07 voice/text financial catalog and consent safety", () => {
       characterId: "character-owner",
       text: "yes",
     });
-    expect(yes?.reply).toContain("processed");
+    expect(yes?.reply).toContain("No money has been taken");
+    expect(f.confirmAndPurchase).not.toHaveBeenCalled();
+    const confirmed = await f.assistant.beforeInference({
+      authorizationHeader: "Bearer owner",
+      characterId: "character-owner",
+      text: "Confirm bill to 07010102053 for 100 naira",
+    });
+    expect(confirmed?.reply).toContain("processed");
     expect(f.confirmAndPurchase).toHaveBeenCalledWith(expect.objectContaining({
       authorizationHeader: "Bearer owner",
       quoteId: "right-bill",
       quoteRevision: 1,
     }));
   });
+  it("rejects bare assent and mismatched amount or recipient before any ledger request", async () => {
+    const f = fixture();
+    f.currentQuotes.push(quoted());
+    for (const text of [
+      "yes", "okay", "proceed", "please confirm this bill",
+      "Confirm bill to 07010102054 for 100 naira",
+      "Confirm bill to 07010102053 for 101 naira",
+      "Confirm bill to 07010102053 for 100 USD",
+      "Confirm bill to 07010102053 for 100 naira and send twice",
+      "Confirm bill to 07010102053 for 1000 naira",
+    ]) {
+      const result = await f.confirm(text);
+      expect(result?.reply, text).toContain("No money has been taken");
+    }
+    expect(f.confirmAndPurchase).not.toHaveBeenCalled();
+  });
+
+  it("accepts the exact server quote recipient and fee-inclusive total via Hausa or English voice/text", async () => {
+    const f = fixture();
+    f.currentQuotes.push(quoted());
+    const viaModel = await f.confirm("tabbatar da biya ga 07010102053 na 100.00 naira");
+    expect(viaModel?.reply).toContain("processed");
+    const direct = await f.assistant.beforeInference({
+      authorizationHeader: "Bearer owner",
+      characterId: "character-owner",
+      text: "Confirm bill to 07010102053 for 100 ngn",
+    });
+    expect(direct?.reply).toContain("processed");
+    expect(f.confirmAndPurchase).toHaveBeenCalledTimes(2);
+    for (const call of f.confirmAndPurchase.mock.calls) {
+      expect(call[0]).toMatchObject({ quoteId: "quote-one", quoteRevision: 1 });
+    }
+  });
+
+  it("cannot spend with expired, other-character or ambiguous server history even on fully matching speech", async () => {
+    const f = fixture();
+    f.currentQuotes.push(quoted("another-character", "wrong-bill"));
+    const reply = await f.confirm("Confirm bill to 07010102053 for 100 naira");
+    expect(reply?.reply).toContain("no pending bill");
+    expect(f.confirmAndPurchase).not.toHaveBeenCalled();
+    f.currentQuotes.splice(0, 1, {
+      ...quoted(),
+      quote: {
+        ...quoted().quote,
+        expiresAt: new Date(Date.now() - 60000).toISOString(),
+      },
+    });
+    const expired = await f.confirm("Confirm bill to 07010102053 for 100 naira");
+    expect(expired?.reply).toContain("no pending bill");
+    expect(f.confirmAndPurchase).not.toHaveBeenCalled();
+    f.currentQuotes.splice(0, 1, quoted(), quoted("character-owner", "second"));
+    const ambiguous = await f.confirm("Confirm bill to 07010102053 for 100 naira");
+    expect(ambiguous?.reply).toContain("several recent bills");
+    expect(f.confirmAndPurchase).not.toHaveBeenCalled();
+  });
+
 });
