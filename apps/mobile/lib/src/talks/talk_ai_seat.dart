@@ -19,7 +19,7 @@ class TalkAiSeatCandidate {
     this.subtitle = '',
     this.avatarUrl,
     this.topics = const [],
-    this.isAvailable = true,
+    this.isAvailable = false,
   });
 
   final String personaId;
@@ -32,10 +32,16 @@ class TalkAiSeatCandidate {
   final bool isAvailable;
 
   factory TalkAiSeatCandidate.fromJson(Map<String, dynamic> json) {
+    final personaId = json['personaId'];
+    final displayName = json['displayName'];
+    if (personaId is! String || personaId.trim().isEmpty ||
+        displayName is! String || displayName.trim().isEmpty) {
+      throw const FormatException('AI Seat candidate identity is missing');
+    }
     final rawTopics = json['topics'];
     return TalkAiSeatCandidate(
-      personaId: json['personaId'] as String? ?? '',
-      displayName: json['displayName'] as String? ?? '',
+      personaId: personaId.trim(),
+      displayName: displayName.trim(),
       kind: json['kind'] == 'twin'
           ? TalkAiPersonaKind.twin
           : TalkAiPersonaKind.expert,
@@ -48,7 +54,8 @@ class TalkAiSeatCandidate {
                 if (topic is String && topic.trim().isNotEmpty) topic.trim(),
             ]
           : const [],
-      isAvailable: json['isAvailable'] != false,
+      // An omitted/non-boolean flag is not proof a paid AI Seat is ready.
+      isAvailable: json['isAvailable'] == true,
     );
   }
 }
@@ -74,7 +81,20 @@ class TalkAiSeatQuote {
   final DateTime expiresAt;
   final bool requiresHostApproval;
 
+  bool isExpiredAt(DateTime instant) => !instant.isBefore(expiresAt);
+
   factory TalkAiSeatQuote.fromJson(Map<String, dynamic> json) {
+    for (final key in ['quoteId', 'personaId', 'displayName', 'totalLabel']) {
+      final value = json[key];
+      if (value is! String || value.trim().isEmpty) {
+        throw FormatException('AI Seat quote is missing $key');
+      }
+    }
+    final expiryValue = json['expiresAt'];
+    final expiry = expiryValue is String ? DateTime.tryParse(expiryValue) : null;
+    if (expiry == null) {
+      throw const FormatException('AI Seat quote expiry is missing');
+    }
     final mode = json['mode'] == 'host_add'
         ? TalkAiSeatMode.hostAdd
         : TalkAiSeatMode.sponsor;
@@ -87,8 +107,7 @@ class TalkAiSeatQuote {
           : TalkAiPersonaKind.expert,
       mode: mode,
       totalLabel: json['totalLabel'] as String? ?? '',
-      expiresAt: DateTime.tryParse(json['expiresAt'] as String? ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
+      expiresAt: expiry,
       requiresHostApproval: json['requiresHostApproval'] == true,
     );
   }
