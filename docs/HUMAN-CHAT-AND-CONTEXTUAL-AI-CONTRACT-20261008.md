@@ -1,5 +1,10 @@
 # Human Chats: WhatsApp-grade fundamentals, distinctly Masanawa outcomes
 
+## Corrected Contacts prerequisites — owner clarification 2026-10-08
+
+WhatsApp-like human Chats must expose a **real Contacts directory** under Chats→New message, distinct from chat recents and AI Expert/Twin catalogs: accepted Masanawa people, favorites/search, pending/declined requests, exact handle lookup, contact visibility/safety, approved person profile and real one-tap C02 conversation. The C01 #468 existing but unmerged `HumanContactsScreen` is a recoverable base, **not a fully shipped Contacts screen**. Optional phone address-book can be displayed locally and used for invitations only with user/OS permission; no automatic bulk cloud upload, no naive hash matching and no conflation of phone numbers with verified account IDs. Full [contact UI/privacy/API/K13–K20](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [new U21–U24](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), and [all required F14–F17 C01–C05 source recovery](UNFINISHED-SCOPE-RECONCILIATION-20261008.md). Never put a fake Message button in a local-only contact row.
+
+
 **Owner-approved quality expansion, 2026-10-08 — implementation and device proof pending.** This supplements `COMMUNICATIONS-EXTENSION-PLAN.md` C01–C05/C08, `APP-SHELL-CONTRACT.md`, `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` M01–M11, and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` J03/J04/J10/J11. It does **not** approve groups, direct audio/video calls, E2EE marketing, silent AI analysis of private DMs or phonebook import. Keep Humans vs AI personas, Agent Assistant and Talk comments distinguishable.
 
 ## 1. Principles and invariants

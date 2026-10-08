@@ -1,5 +1,10 @@
 # Development Rules
 
+## Latest completeness audit and ownership rules (2026-10-08)
+
+The old U01–U20 plan remains active but did not specify all remaining work. Read [R01–R19/C01–C08 + 60 open PRs at audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [K13–K20 Contacts privacy/UX](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [U21–U30 new + F01–F18 recovery owners](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), and [79 historical unchecked tasks](LEGACY-150-TASK-RECONCILIATION-20261008.md). **F is a continuation/election of existing source**, not a fresh parallel implementation of core C02 migrations/Gateway/Flutter routes/finance. Only live unowned exact paths can be claimed. No false DONE, unauthorized phonebook upload, unsafe PR merge, native permission changed by Shorebird patch or lost original R/C/Work code.
+
+
 ## Owner-approved parallel U01–U20 work (2026-10-08)
 
 The earlier global pause is lifted **only for independent development**. Before claiming a U scope, read the new [20-window plan](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [operator security contract](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human Chats privacy contract](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md) and [acceptance gates](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). Check live PRs and path leases, preserve C/R/Work code; never simultaneously edit shared Gateway composition, Flutter router, Firebase, migration registries or money authority. A model may propose but not authorize/write a consequential action. Mandatory draft/unmerged feature PR and actual code/test/blocked-evidence handoff. Work #497 remains a draft to reconcile later, not an active stop to isolated implementation.
