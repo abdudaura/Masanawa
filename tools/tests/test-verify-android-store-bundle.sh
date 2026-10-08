@@ -37,6 +37,7 @@ fi
 # Replacing a signed entry invalidates its content digest.
 cp signed.aab tampered.aab
 printf 'tampered\n' > payload.txt
+touch -d '+2 minutes' payload.txt
 zip -q -u tampered.aab payload.txt
 if bash "$verify" tampered.aab "$fingerprint" >/dev/null 2>&1; then
   echo "FAIL: modified signed bundle accepted" >&2; exit 1
