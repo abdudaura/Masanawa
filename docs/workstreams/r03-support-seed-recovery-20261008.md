@@ -29,3 +29,8 @@ The original full Gwani+Gwana empty-tenant bootstrap behavior remains; new recov
 3. Add the remaining **15** canonical AI Experts with stable seed keys, profile/voice suitability and readiness; preserve admin customizations, verify supported provider audio/role on devices, and gate paid public AI Seat admission on real provider/worker availability.
 4. Qualify Gwani Bodi / Gwana Sulafat voices against actual Gemini Live backend and multilingual interruptions; no assumed availability or model credentials are supplied.
 5. Leave R03 PARTIAL until complete staged/live acceptance. Keep PR #441 draft and unmerged pending executable test/production qualification.
+
+## Reclaim — 2026-10-08T11:38:00Z (UTC)
+
+Previous window's last repository activity was 06:01Z and its handoff explicitly released the lease. Reclaim only its existing draft PR #441 and preserve its Gwani/Gwana recovery changes. New exact owned paths: `services/gateway/src/platform_agent_bootstrap_lock.ts`, `services/gateway/src/platform_agent_bootstrap_lock.test.ts`, additive bootstrap-lock seams in `services/gateway/src/main.ts`, and this handoff. The `main.ts` edit is a tiny additive producer/caller change and must be semantically reconciled with C01 #468, R18 #435 and any newer shared Gateway composer edits before merging. No other window's source will be overwritten. New base remains original PR base; current main at inspection `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`. Priority: prove cross-replica mutual exclusion around current persisted identity/assignment/profile sequence and failure recovery. Status: **PARTIAL_IMPLEMENTATION** pending source and executable integration proof.
+
