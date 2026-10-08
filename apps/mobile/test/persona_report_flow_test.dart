@@ -1,9 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:masanawa/src/core/network/api_client.dart';
+import 'package:masanawa/src/talks/talk_safety_http_transport.dart';
+import 'package:masanawa/src/screens/profile/persona_profile_screen.dart';
+import 'package:masanawa/src/state/talk_social_profile_state.dart';
+import 'package:masanawa/src/social/talk_social_profiles.dart';
+import 'package:masanawa/src/theme/masanawa_theme.dart';
 import 'package:masanawa/src/screens/profile/persona_report_sheet.dart';
 import 'package:masanawa/src/state/talk_safety_state.dart';
 import 'package:masanawa/src/talks/talk_safety.dart';
+
+class _PersonaProfiles implements TalkSocialProfileTransport {
+  @override
+  Future<PersonaProfile?> loadPersona(String publicId) async => PersonaProfile(
+    publicId: publicId,
+    displayName: 'Gwani Expert',
+    kind: PersonaProfileKind.expert,
+    isAvailable: true,
+    seatFeeLabel: 'Price on quote',
+  );
+  @override
+  Future<HumanProfile?> loadHuman(String handle) async => null;
+  @override
+  Future<HumanProfile?> loadHumanByUserId(String userId) async => null;
+  @override
+  Future<HumanProfile> setFollowing({required String handle, required bool following}) async => throw UnimplementedError();
+  @override
+  Future<HumanProfile> setFollowingUserId({required String userId, required bool following}) async => throw UnimplementedError();
+}
 
 class _FakeSafety implements TalkSafetyTransport {
   final ids = <String?>[];
@@ -55,6 +81,7 @@ void main() {
   Widget app(_FakeSafety transport) => ProviderScope(
     overrides: [talkSafetyTransportProvider.overrideWithValue(transport)],
     child: MaterialApp(
+      theme: buildMasanawaTheme(brightness: Brightness.light),
       home: Scaffold(
         body: PersonaReportSheet(
           publicId: 'persona-public-7',
@@ -113,5 +140,62 @@ void main() {
     expect(transport.ids[0], transport.ids[1]);
     expect(transport.details, ['Unsafe impersonation', 'Unsafe impersonation']);
     expect(find.byKey(const ValueKey('persona-report-confirmed')), findsOneWidget);
+  });
+
+  testWidgets('public Expert profile opens the wired report sheet', (tester) async {
+    final transport = _FakeSafety();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        talkSafetyTransportProvider.overrideWithValue(transport),
+        talkSocialProfileTransportProvider.overrideWithValue(_PersonaProfiles()),
+      ],
+      child: MaterialApp(
+        theme: buildMasanawaTheme(brightness: Brightness.light),
+        home: const PersonaProfileScreen(publicId: 'persona-public-7'),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('persona-report-action')));
+    await tester.tap(find.byKey(const ValueKey('persona-report-action')));
+    await tester.pumpAndSettle();
+    expect(find.text('Report Gwani Expert'), findsOneWidget);
+    await tester.ensureVisible(find.text('Spam'));
+    await tester.tap(find.text('Spam'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Send report'));
+    await tester.tap(find.text('Send report'));
+    await tester.pumpAndSettle();
+    expect(transport.targets, ['persona-public-7']);
+    expect(find.text('Report received for review.'), findsOneWidget);
+  });
+
+  test('HTTP transport preserves supplied request ID, payload and customer bearer', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.invalid'));
+    RequestOptions? sent;
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        sent = options;
+        handler.resolve(Response<dynamic>(
+          requestOptions: options, statusCode: 202, data: {'accepted': true},
+        ));
+      },
+    ));
+    final api = ApiClient(dio: dio)..accessToken = 'customer-access-token';
+    await GatewayTalkSafetyTransport(api: api).reportTarget(
+      targetKind: TalkSafetyTargetKind.persona,
+      targetId: 'persona-public-7',
+      reason: TalkSafetyReportReason.fraud,
+      detail: '  Verified concern  ',
+      clientRequestId: 'request-stable-1',
+    );
+    expect(sent?.path, '/safety/reports');
+    expect(sent?.headers['Authorization'], 'Bearer customer-access-token');
+    expect(sent?.data, {
+      'targetKind': 'persona',
+      'targetId': 'persona-public-7',
+      'reason': 'fraud',
+      'detail': 'Verified concern',
+      'clientRequestId': 'request-stable-1',
+    });
   });
 }
