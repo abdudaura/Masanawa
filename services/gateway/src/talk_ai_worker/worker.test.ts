@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { TalkAiStageEventRepository } from "./event_context.js";
 import {
   createTalkAiSeatWorker,
   type TalkAiSeatAudioPublisher,
@@ -31,6 +32,7 @@ function setup(input: {
   liveStates?: TalkAiSeatWorkerLiveState[];
   persona?: TalkAiSeatPersonaRuntime;
   audio?: TalkAiSeatAudioPublisher;
+  stage?: TalkAiStageEventRepository;
 } = {}) {
   const seats = [...(input.seats ?? [seat, seat])];
   const liveStates = [...(input.liveStates ?? [live, live])];
@@ -55,7 +57,7 @@ function setup(input: {
     repository,
     persona,
     audio,
-    worker: createTalkAiSeatWorker({ repository, persona, audio }),
+    worker: createTalkAiSeatWorker({ repository, persona, audio, ...(input.stage ? { stage: input.stage } : {}) }),
   };
 }
 
@@ -197,6 +199,77 @@ describe("live Talk AI Seat worker", () => {
         kind: "expert",
       }),
     );
+  });
+
+
+  it("reads trusted stage events only after the admitted-seat/Host gate and passes bounded context", async () => {
+    const stage: TalkAiStageEventRepository = {
+      readAuthorizedStage: vi.fn(async () => ({
+        tenantId: "tenant-1",
+        talkId: "talk-1",
+        hostName: "Musa",
+        topic: "Education and work",
+        participants: [{ displayName: "Musa", kind: "human" as const, isHost: true }],
+        events: [
+          {
+            tenantId: "tenant-1", talkId: "talk-1", eventId: "approved-1",
+            kind: "question" as const, visibility: "public" as const,
+            action: "approved" as const, body: "What is the evidence?",
+            actorName: "Aisha", occurredAt: "2026-10-07T09:59:00Z",
+          },
+          {
+            tenantId: "tenant-1", talkId: "talk-1", eventId: "private-1",
+            kind: "comment" as const, visibility: "private" as const,
+            body: "A private account number", actorName: "User",
+            occurredAt: "2026-10-07T09:59:00Z",
+          },
+        ],
+      })),
+    };
+    const good = setup({ stage });
+    await good.worker.handleTurn({
+      tenantId: "tenant-1", talkId: "talk-1", seatId: "seat-ai-1", turn,
+    });
+    expect(stage.readAuthorizedStage).toHaveBeenCalledWith({
+      tenantId: "tenant-1", talkId: "talk-1", before: turn.occurredAt,
+    });
+    expect(good.persona.respond).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stageContext: expect.objectContaining({
+          topic: "Education and work",
+          contentTrust: "public-untrusted-data",
+          events: [expect.objectContaining({
+            summary: "Public question (approved): What is the evidence?",
+          })],
+        }),
+      }),
+    );
+    expect(JSON.stringify(vi.mocked(good.persona.respond).mock.calls)).not.toContain("A private account number");
+
+    const notAdmitted = setup({ stage, seats: [{ ...seat, admitted: false }] });
+    await notAdmitted.worker.handleTurn({
+      tenantId: "tenant-1", talkId: "talk-1", seatId: "seat-ai-1", turn,
+    });
+    expect(stage.readAuthorizedStage).toHaveBeenCalledTimes(1);
+    const absentHost = setup({
+      stage, liveStates: [{ ...live, hostConnected: false }],
+    });
+    await absentHost.worker.handleTurn({
+      tenantId: "tenant-1", talkId: "talk-1", seatId: "seat-ai-1", turn,
+    });
+    expect(stage.readAuthorizedStage).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails closed without inference or publication when authorized stage fetch fails", async () => {
+    const stage: TalkAiStageEventRepository = {
+      readAuthorizedStage: vi.fn(async () => { throw new Error("stage read unavailable"); }),
+    };
+    const { worker, persona, audio } = setup({ stage });
+    await expect(worker.handleTurn({
+      tenantId: "tenant-1", talkId: "talk-1", seatId: "seat-ai-1", turn,
+    })).rejects.toThrow("stage read unavailable");
+    expect(persona.respond).not.toHaveBeenCalled();
+    expect(audio.publish).not.toHaveBeenCalled();
   });
 
   it("stop aborts in-flight inference and suppresses publication", async () => {
