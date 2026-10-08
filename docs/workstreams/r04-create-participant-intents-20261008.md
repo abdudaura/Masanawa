@@ -82,3 +82,12 @@ The existing public `GET /talks/:talkId/ai-seats` catalog contains public Twins 
 - Source tests are authored, not executed. Required smoke checks: `pnpm exec vitest run services/gateway/src/talk_ai_seat_routes.test.ts`, `pnpm --filter @masanawa/gateway-service typecheck`, `cd apps/mobile && flutter test test/create_talk_participant_flow_test.dart test/talk_ai_seat_models_test.dart test/talk_ai_seat_sheet_test.dart`, then `flutter analyze` and an Android device.
 - Exact remaining R04 acceptance: precreate selectable persona IDs backed by an authorized preview service; targeted human recipient invitations if required beyond link sharing; reconciled live Host audio, AI admission, paid confirmation, voice playback, restart and two-device proof; locale coverage. The current implemented path is safe, functional at code level, but **not release-qualified**.
 - Ownership is released for another window to run/refine/integrate after respecting current main/open PRs; no other PR files were overwritten. Do not merge solely because GitHub reports mergeable.
+
+## R04 authenticated account-transition recovery claim — 2026-10-08
+
+- Window: GPT-6 R04; older #433 claim released/stale, reuse existing draft branch and preserve all prior R04 code.
+- At claim: main `226d0c58632b243661ab24904cca75700ed474d4`, existing draft PR #433 head `ca89231483da996014ebc5261141c139dc731c40`; five-minute rule checked against last PR update `2026-10-08T05:43:41Z`.
+- **Exact fresh edit paths only:** `apps/mobile/lib/src/screens/talks/create_talk_participant_handoff.dart`, `apps/mobile/test/create_talk_participant_flow_test.dart`, this R04 handoff. Do not touch #493 root/router, R10 gifting, R06/R08 financial ledger, Gateway composer or migrations.
+- Auth/privacy problem: server-verified Host intent banner is not invalidated if a long-lived Talk widget remains mounted through account change/logout; async secure-store and share/sheet callbacks can complete after ownership changes. Revalidate signed-in active viewer, cancel stale UI state, fence async operations across account/route transitions and test account A→B/sign-out/restart races. Ensure no automatic repeat of paid Seat intent.
+- R04/T01/P03/N09/J01/J11; existing canonical Talk/Host API and per-account secure store are reused. No new SQL/financial API needed for this narrowly scoped auth boundary.
+- **Status:** CLAIMED, source and tests not yet verified; full R04 is PARTIAL. Shared Actions #457 currently unresolved.
