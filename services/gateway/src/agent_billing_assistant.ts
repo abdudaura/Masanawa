@@ -113,37 +113,39 @@ function normalize(value: string): string {
 function bestBiller(billers: readonly BillBiller[], provider: string): BillBiller | null {
   const wanted = normalize(provider);
   if (!wanted) return null;
-  const exact = billers.find((item) => normalize(item.name) === wanted);
-  if (exact) return exact;
-  return billers.find((item) =>
-    normalize(item.name).includes(wanted) || wanted.includes(normalize(item.name)),
-  ) ?? null;
+  const exact = billers.filter((item) => normalize(item.name) === wanted);
+  if (exact.length === 1) return exact[0] ?? null;
+  if (exact.length > 1 || wanted.length < 2) return null;
+  // Do not make payments based on whichever fuzzy provider appears first.
+  // Short abbreviations are matched only when unambiguous in the live catalog.
+  const partial = billers.filter((item) => normalize(item.name).includes(wanted));
+  return partial.length === 1 ? partial[0] ?? null : null;
 }
 
 function bestItem(
   items: readonly BillItem[],
   directive: Extract<Directive, { type: "billing.quote" }>,
 ): BillItem | null {
-  if (directive.service === "airtime") {
-    return items.find((item) => Number(item.amount) === 0) ??
-      items.find((item) => normalize(item.name).includes("airtime")) ??
-      items[0] ??
-      null;
-  }
-
   const plan = normalize(directive.plan ?? "");
   if (plan) {
     const tokens = plan.split(" ").filter(Boolean);
-    const match = items.find((item) => {
+    const matches = items.filter((item) => {
       const name = normalize(item.name);
       return tokens.every((token) => name.includes(token));
     });
-    if (match) return match;
+    // Two distinct durations/prepaid tariffs can both match "1GB" or
+    // "prepaid": a human must disambiguate instead of choosing catalog order.
+    return matches.length === 1 ? matches[0] ?? null : null;
   }
 
-  if (directive.service === "electricity") {
-    return items.find((item) => Number(item.amount) === 0) ?? items[0] ?? null;
+  if (directive.service === "airtime" || directive.service === "electricity") {
+    const variable = items.filter((item) => Number(item.amount) === 0);
+    if (variable.length === 1) return variable[0] ?? null;
+    // Only a genuinely single offering can be selected without a plan.
+    return items.length === 1 ? items[0] ?? null : null;
   }
+  // Data and cable TV require the exact bundle/package, even if only one
+  // option happens to be returned by a temporarily incomplete catalog.
   return null;
 }
 
@@ -169,7 +171,7 @@ function walletReply(view: BillingWalletView): string {
     return `Done. The bill was completed successfully. Your wallet balance is ₦${view.balance}.`;
   }
   if (view.phase === "failed") {
-    return `The bill did not complete, so the reserved money was returned to your wallet. Your balance is ₦${view.balance}.`;
+    return `The bill did not complete. Check your wallet activity for the final reversal or refund status. Your available balance is ₦${view.balance}.`;
   }
   return `Your bill is being processed. Your available wallet balance is ₦${view.balance}.`;
 }
