@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../localization/auth_error_localizer.dart';
 import '../../localization/international_digits.dart';
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
@@ -124,7 +125,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       } else if (next is SessionError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.message),
+            content: Text(AuthErrorLocalizer.message(
+              AppLocalizations.of(context),
+              code: next.code,
+              stage: AuthFailureStage.verifyCode,
+            )),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -200,7 +205,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           if (error != null) ...[
             const SizedBox(height: 12),
             Text(
-              error.message,
+              AuthErrorLocalizer.message(
+                l10n,
+                code: error.code,
+                stage: AuthFailureStage.verifyCode,
+              ),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
                 fontSize: MasanawaTokens.fontSize['sm'],
