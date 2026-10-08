@@ -1,3 +1,9 @@
+import {
+  projectTalkAiStageContext,
+  type TalkAiStageContext,
+  type TalkAiStageEventRepository,
+} from "./event_context.js";
+
 export type TalkAiSeatKind = "expert" | "twin";
 
 export interface TalkAiSeatWorkerSeat {
@@ -50,6 +56,7 @@ export interface TalkAiSeatPersonaRuntime {
     kind: TalkAiSeatKind;
     transcript: string;
     directInstruction: string | null;
+    stageContext: TalkAiStageContext | null;
     signal: AbortSignal;
   }>): Promise<TalkAiSeatPersonaReply>;
 }
@@ -151,6 +158,7 @@ export function createTalkAiSeatWorker(input: Readonly<{
   repository: TalkAiSeatWorkerRepository;
   persona: TalkAiSeatPersonaRuntime;
   audio: TalkAiSeatAudioPublisher;
+  stage?: TalkAiStageEventRepository;
 }>): TalkAiSeatWorker {
   let stopped = false;
   const controllers = new Set<AbortController>();
@@ -200,6 +208,21 @@ export function createTalkAiSeatWorker(input: Readonly<{
       const controller = new AbortController();
       controllers.add(controller);
       try {
+        // Read only authoritative, audience-visible context after admission
+        // and Host checks. An unavailable stage source fails closed; it cannot
+        // turn client events into model instructions or bypass the live gate.
+        const stageContext = input.stage
+          ? projectTalkAiStageContext({
+              tenantId: request.tenantId,
+              talkId: request.talkId,
+              before: request.turn.occurredAt,
+              stage: await input.stage.readAuthorizedStage({
+                tenantId: request.tenantId,
+                talkId: request.talkId,
+                before: request.turn.occurredAt,
+              }),
+            })
+          : null;
         const reply = await input.persona.respond({
           tenantId: request.tenantId,
           talkId: request.talkId,
@@ -207,6 +230,7 @@ export function createTalkAiSeatWorker(input: Readonly<{
           personaId: seat!.personaId,
           kind: seat!.kind,
           transcript,
+          stageContext,
           directInstruction:
             seat!.kind === "twin"
               ? (request.directInstruction?.trim() || null)
