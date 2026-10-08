@@ -69,40 +69,42 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
           throw new Error("account_deletion.access_not_authorized");
         }
 
-        const keys = [input.tenantId,input.userId,input.requestId,input.now];
+        const scope = [input.tenantId,input.userId];
+        const scopeAtTime = [input.tenantId,input.userId,input.now];
+        const receiptValues = [input.tenantId,input.userId,input.requestId,input.now];
 
         // Disabling canonical identity is the authorization barrier for normal
         // access-token resolution and refresh rotation. It must commit with
         // actual token and channel revocation, never independently.
         await client.query(
           `UPDATE identity.users
-              SET state='disabled',revision=revision+1,updated_at=GREATEST(updated_at,$4::timestamptz)
+              SET state='disabled',revision=revision+1,updated_at=GREATEST(updated_at,$3::timestamptz)
             WHERE tenant_id=$1 AND user_id=$2 AND state='active'`,
-          keys,
+          scopeAtTime,
         );
         await client.query(
           `UPDATE security.platform_sessions
-              SET revoked_at=COALESCE(revoked_at,$4::timestamptz),
-                  updated_at=GREATEST(updated_at,$4::timestamptz)
+              SET revoked_at=COALESCE(revoked_at,$3::timestamptz),
+                  updated_at=GREATEST(updated_at,$3::timestamptz)
             WHERE tenant_id=$1 AND user_id=$2 AND revoked_at IS NULL`,
-          keys,
+          scopeAtTime,
         );
         // Unlink WhatsApp/Telegram to stop private channel routing. Historical
         // message retention requires separate policy-reviewed erasure.
         await client.query(
           `DELETE FROM security.customer_channel_links
             WHERE tenant_id=$1 AND user_id=$2`,
-          keys,
+          scope,
         );
         await client.query(
           `DELETE FROM agents.mobile_push_registrations
             WHERE tenant_id=$1 AND user_id=$2`,
-          keys,
+          scope,
         );
         await client.query(
           `DELETE FROM agents.mobile_presence
             WHERE tenant_id=$1 AND user_id=$2`,
-          keys,
+          scope,
         );
 
         // Hide and disable owned Twins before any later data-erasure step.
@@ -111,14 +113,14 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
           `UPDATE identity.twin_profiles AS profile
               SET discoverable=false,revision=revision+1,
                   updated_at=GREATEST(profile.updated_at + interval '1 microsecond',
-                                      $4::timestamptz)
+                                      $3::timestamptz)
             WHERE tenant_id=$1 AND owner_user_id=$2 AND discoverable=true`,
-          keys,
+          scopeAtTime,
         );
         await client.query(
           `UPDATE identity.characters AS ch
               SET state='disabled',revision=ch.revision+1,
-                  updated_at=GREATEST(ch.updated_at,$4::timestamptz)
+                  updated_at=GREATEST(ch.updated_at,$3::timestamptz)
              FROM identity.character_ownership AS ownership
             WHERE ch.tenant_id=$1
               AND ownership.tenant_id=ch.tenant_id
@@ -126,12 +128,12 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
               AND ownership.owner_user_id=$2
               AND ownership.kind='personal-clone'
               AND ch.state='active'`,
-          keys,
+          scopeAtTime,
         );
         await client.query(
           `DELETE FROM identity.account_deletion_challenges
             WHERE tenant_id=$1 AND user_id=$2`,
-          keys,
+          scope,
         );
 
         // This receipt is a checkpoint for a *single revocation step*, not
@@ -140,7 +142,7 @@ export function createPostgresAccountDeletionAccessRevoker(pool: Pool) {
           `INSERT INTO identity.account_deletion_access_revocations
              (request_id,tenant_id,user_id,completed_at)
            VALUES ($3::uuid,$1,$2,$4)`,
-          keys,
+          receiptValues,
         );
         return Object.freeze({
           requestId: input.requestId,
