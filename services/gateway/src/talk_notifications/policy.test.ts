@@ -40,17 +40,18 @@ describe("Talk notification policy", () => {
     });
     expect(JSON.stringify(intent)).not.toMatch(/amount|transaction|balance/i);
     expect(intent.title).toBe("New earnings");
+    expect(intent.body).toBe("Your Talk earnings have an update.");
   });
 
   it("keeps gift lockscreen copy generic", () => {
     const intent = createTalkPushIntent(event("gift_received"));
-    expect(intent.body).toBe("Amina sent you a gift in a Talk.");
+    expect(intent.body).toBe("You received a gift in a Talk.");
     expect(intent.body).not.toMatch(/credit|₦|ngn|usd|transaction/i);
   });
 
-  it("tells declined sponsors their held Credits are being released without ledger details", () => {
+  it("never exposes a financial hold or release on lock screen", () => {
     const intent = createTalkPushIntent(event("ai_seat_declined"));
-    expect(intent.body).toContain("held Credits are being released");
+    expect(intent.body).toBe("Your AI Seat invitation has an update.");
     expect(intent.data).not.toHaveProperty("transactionId");
   });
 
@@ -87,13 +88,37 @@ describe("Talk notification policy", () => {
     })).toBe(true);
   });
 
+
+  it("strips human-controlled names and does not include private names or payment-like bait for every event kind", () => {
+    const lowerTrustName = "Amina 07010102053 · ₦95,000 Bank login: https://bad.example/\\nALERT";
+    const kinds: readonly TalkNotificationEvent["kind"][] = [
+      "talk_invitation", "raise_hand_accepted", "raise_hand_declined",
+      "ai_seat_sponsored", "ai_seat_accepted", "ai_seat_declined",
+      "followed_host_live", "replay_ready", "gift_received",
+      "earning_available", "platform_notice",
+    ];
+    for (const kind of kinds) {
+      const raw = event(kind, { actorDisplayName: lowerTrustName });
+      const normalized = normalizeTalkNotificationEvent(raw);
+      const intent = createTalkPushIntent(raw);
+      expect(normalized.actorDisplayName).toBeNull();
+      const serialized = JSON.stringify(intent);
+      expect(serialized).not.toContain(lowerTrustName);
+      expect(serialized).not.toMatch(/Amina|07010102053|95,000|bad\\.example|Bank login|\\nALERT/);
+      expect(Object.keys(intent.data).sort()).toEqual(["eventId", "kind", "talkId"]);
+      expect(intent.body.length).toBeGreaterThan(0);
+    }
+  });
+
   it("rejects malformed event fields instead of creating unsafe payloads", () => {
     expect(() => createTalkPushIntent(event("platform_notice", {
       eventId: "",
     }))).toThrow("eventId");
 
-    expect(() => createTalkPushIntent(event("talk_invitation", {
-      actorDisplayName: "x".repeat(161),
-    }))).toThrow("actorDisplayName");
+    // Profile display names are lower-trust data and must not be a
+    // notification-delivery precondition or appear in a remote preview.
+    expect(createTalkPushIntent(event("talk_invitation", {
+      actorDisplayName: "x".repeat(500),
+    })).body).toBe("You have a Talk invitation.");
   });
 });

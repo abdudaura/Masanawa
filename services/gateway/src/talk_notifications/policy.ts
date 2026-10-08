@@ -77,7 +77,9 @@ export function normalizeTalkNotificationEvent(
     recipientUserId: text(input.recipientUserId, "recipientUserId"),
     kind: kind(input.kind),
     talkId: optionalText(input.talkId, "talkId"),
-    actorDisplayName: optionalText(input.actorDisplayName, "actorDisplayName"),
+    // Human-controlled profile names are intentionally absent from push payloads.
+    // They belong only in authenticated Activity, never an OS lock-screen preview.
+    actorDisplayName: null,
     createdAt: timestamp(input.createdAt),
   });
 }
@@ -96,10 +98,6 @@ function talkData(event: TalkNotificationEvent): Readonly<Record<string, string>
   return Object.freeze(data);
 }
 
-function actor(event: TalkNotificationEvent, fallback: string): string {
-  return event.actorDisplayName ?? fallback;
-}
-
 export function createTalkPushIntent(
   input: TalkNotificationEvent,
 ): TalkPushIntent {
@@ -111,7 +109,7 @@ export function createTalkPushIntent(
   switch (event.kind) {
     case "talk_invitation":
       title = "Talk invitation";
-      body = `${actor(event, "Someone")} invited you to a Talk.`;
+      body = "You have a Talk invitation.";
       priority = "high";
       break;
     case "raise_hand_accepted":
@@ -135,10 +133,10 @@ export function createTalkPushIntent(
       break;
     case "ai_seat_declined":
       title = "AI Seat not admitted";
-      body = "The sponsored AI Seat wasn't admitted. Your held Credits are being released.";
+      body = "Your AI Seat invitation has an update.";
       break;
     case "followed_host_live":
-      title = `${actor(event, "A Host you follow")} is live`;
+      title = "A Host you follow is live";
       body = "A new Talk has started.";
       priority = "high";
       break;
@@ -148,11 +146,11 @@ export function createTalkPushIntent(
       break;
     case "gift_received":
       title = "You received a gift";
-      body = `${actor(event, "Someone")} sent you a gift in a Talk.`;
+      body = "You received a gift in a Talk.";
       break;
     case "earning_available":
       title = "New earnings";
-      body = "New Talk earnings are available in your wallet.";
+      body = "Your Talk earnings have an update.";
       break;
     case "platform_notice":
       title = "Masanawa";
