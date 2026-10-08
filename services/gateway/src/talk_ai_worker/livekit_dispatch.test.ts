@@ -210,7 +210,7 @@ describe("LiveKit Talk AI runtime dispatch", () => {
     const fetchImpl = vi.fn().mockResolvedValueOnce(response({ agent_dispatches: [] }))
       .mockRejectedValueOnce(new Error("connection lost; may have accepted dispatch"));
     await expect(build(fetchImpl).dispatch(seat))
-      .rejects.toThrow("connection lost; may have accepted dispatch");
+      .rejects.toThrow("talks.ai_dispatch_createdispatch_unconfirmed");
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
@@ -222,6 +222,19 @@ describe("LiveKit Talk AI runtime dispatch", () => {
     await expect(dispatcher.dispatch({ ...seat, kind: "synthetic" as "expert" }))
       .rejects.toThrow("talks.ai_dispatch_kind_invalid");
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("redacts transport error text and malformed JSON responses", async () => {
+    const withSecret = vi.fn().mockRejectedValue(new Error("Bearer PRIVATE_SECRET"));
+    await expect(build(withSecret).dispatch(seat))
+      .rejects.toThrow("talks.ai_dispatch_listdispatch_unconfirmed");
+    const badJson = new Response("{PRIVATE_SECRET}", {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+    const malformed = vi.fn().mockResolvedValue(badJson);
+    await expect(build(malformed).dispatch(seat))
+      .rejects.toThrow("talks.ai_dispatch_listdispatch_invalid_response");
   });
 
 });
