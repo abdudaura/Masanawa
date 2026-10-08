@@ -25,3 +25,11 @@ Last repository-visible activity: 2026-10-08T00:53:00Z (last branch work during 
 - A late `room.connect` after close triggers another best-effort room cleanup so a microphone cannot remain open due to teardown ordering.
 - `32c61a9`: added asynchronous shutdown-before-connect regression test. This test is **not run** in the connector environment; runtime/device qualification remains open.
 - R02 still requires authenticated LiveKit/Gateway failure diagnosis and production-device evidence. Keep this PR draft pending CI, review and integration.
+
+## Expanded readiness hardening
+
+- Race-free deterministic test synchronization on entering the pending LiveKit room connection; closing during connection must not leave a room or issue a second server disconnect.
+- Reject malformed non-WebSocket URLs, missing participant tokens and already expired media credentials before attempting LiveKit/media publication. On these failures the ordinary cleanup and retry path applies.
+- Added token expiry and endpoint rejection regression cases. These tests are source-level only; no Flutter/Dart executable is available in this connector window.
+- Inspected latest PR Actions: Mobile Build and Foundation CI are marked failed while job metadata exposes zero steps, and GitHub job log fetch returned 404 BlobNotFound. Do **not** misreport these runs as passing or as a demonstrated Dart/test failure.
+- Latest implementation commits: `41d4ce7`, `3f5b970`, `af6b431`, `d6192f8`. No deploy/device verification. Future R02 work requires an executable Flutter job, Gateway/LiveKit readiness probe and authenticated Android audio diagnostics.
