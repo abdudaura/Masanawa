@@ -5,7 +5,7 @@ import type {
   AccountDeletionRepository,
   AccountDeletionRequest,
 } from "@masanawa/identity";
-import type { PlatformCustomerSessionAuthorizer } from "./customer_auth.js";
+import { CustomerAuthError, type PlatformCustomerSessionAuthorizer } from "./customer_auth.js";
 
 export class AccountDeletionError extends Error {
   constructor(readonly code: string, readonly statusCode: number) {
@@ -80,7 +80,10 @@ export function createAccountDeletionService(input: Readonly<{
   async function authenticate(header: string | undefined) {
     try {
       return await input.sessions.authorize({ authorizationHeader: header });
-    } catch {
+    } catch (error) {
+      if (error instanceof CustomerAuthError && error.statusCode === 503) {
+        throw new AccountDeletionError("AUTH_UNAVAILABLE", 503);
+      }
       throw new AccountDeletionError("UNAUTHORIZED", 401);
     }
   }
