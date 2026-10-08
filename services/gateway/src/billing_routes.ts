@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import Type from "typebox";
+import { FlutterwaveWebhookError } from "@masanawa/providers";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 import type { BillingWalletService } from "./billing_wallet.js";
@@ -455,14 +456,24 @@ export function registerBillingRoutes(
           verifHash: typeof verifHash === "string" ? verifHash : null,
         });
         if (result.reference && checkout) {
-          await checkout
-            .reconcileFulfillment({ reference: result.reference })
-            .catch(() => undefined);
+          // Do not acknowledge a provider webhook before durable reconciliation.
+          // Repeated delivery can retry the same canonical fulfillment reference.
+          await checkout.reconcileFulfillment({ reference: result.reference });
         }
         return { accepted: true, duplicate: result.duplicate };
-      } catch {
-        reply.code(401);
-        return { error: "invalid_webhook" };
+      } catch (error) {
+        if (error instanceof FlutterwaveWebhookError) {
+          reply.code(
+            error.code === "invalid_signature" ? 401 :
+            error.code === "payload_too_large" ? 413 : 400,
+          );
+          return { error: error.code };
+        }
+        // A valid signed event with an unavailable ledger, provider or
+        // reconciliation path must remain retryable. A false 401 would cause
+        // provider delivery to be discarded after a credit-before-bill crash.
+        reply.code(503);
+        return { error: "billing_webhook_processing_unavailable" };
       }
     },
   );

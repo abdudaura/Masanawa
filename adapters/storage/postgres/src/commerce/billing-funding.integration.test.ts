@@ -509,6 +509,47 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
     })).rejects.toThrow("payment_evidence_already_used");
   });
 
+  it("rejects a new wallet reserve after confirmed quote expiry", async () => {
+    const repo = createPostgresBillingQuoteRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const createdAt = new Date(Date.now() - 120_000).toISOString();
+    const confirmedAt = new Date(Date.now() - 90_000).toISOString();
+    const expiredAt = new Date(Date.now() - 60_000).toISOString();
+    const expiredQuote = createBillingQuote({
+      tenantId, userId, categoryCode: "AIRTIME",
+      billerCode: "BIL102", itemCode: "AT102", itemName: "MTN Airtime",
+      customerId: "+2348012345678", serviceAmountKobo: 10_000,
+      feeAmountKobo: 100, createdAt, expiresAt: expiredAt,
+    });
+    await repo.createQuote(expiredQuote);
+    await repo.confirmQuote({
+      tenantId, userId, quoteId: expiredQuote.quoteId,
+      quoteRevision: expiredQuote.revision, confirmedAt,
+    });
+    const fulfillmentReference = `bill-${expiredQuote.quoteId}-r1`;
+    await expect(repo.reserveConfirmedBill({
+      tenantId, userId, quoteId: expiredQuote.quoteId,
+      quoteRevision: expiredQuote.revision, fulfillmentReference,
+      categoryCode: expiredQuote.categoryCode,
+      billerCode: expiredQuote.billerCode, itemCode: expiredQuote.itemCode,
+      customerId: expiredQuote.customerId,
+      amount: formatNgnKobo(expiredQuote.serviceAmountKobo),
+      currency: "NGN",
+    })).rejects.toThrow("financial.billing.quote_expired");
+    const current = await repo.readQuote({
+      tenantId, userId, quoteId: expiredQuote.quoteId,
+    });
+    expect(current?.state).toBe("confirmed");
+    expect(current?.fulfillmentReference).toBeNull();
+    const reservations = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM commerce.ngn_bill_reservations
+        WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3`,
+      [tenantId,userId,expiredQuote.quoteId],
+    );
+    expect(reservations.rows[0]?.count).toBe("0");
+  });
+
   it("enforces immutable billing economics in PostgreSQL", async () => {
     const f = fixture();
     await f.repository.createQuote(f.quote);

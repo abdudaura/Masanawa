@@ -97,6 +97,26 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
       }
       return withTransaction(pool, async (client) => {
         await lockWallet(client, input.tenantId, input.userId);
+        if (input.quoteId) {
+          // The owner-scoped advisory lock serializes concurrent confirmations
+          // across gateway processes. A second request must reuse the exact
+          // active intent instead of minting another bank account / txRef.
+          const active = await client.query<FundingRow>(
+            `SELECT * FROM commerce.ngn_funding_intents
+              WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3
+                AND state IN ('creating','awaiting') AND expires_at > statement_timestamp()
+              ORDER BY created_at DESC, funding_reference DESC
+              LIMIT 1 FOR UPDATE`,
+            [input.tenantId,input.userId,input.quoteId],
+          );
+          const existing = active.rows[0];
+          if (existing) {
+            if (integer(existing.amount_kobo, "amount") !== input.amountKobo) {
+              throw new Error("financial.wallet.funding_quote_shortfall_changed");
+            }
+            return intent(existing);
+          }
+        }
         const inserted = await client.query<FundingRow>(
           `INSERT INTO commerce.ngn_funding_intents(
              tenant_id,user_id,funding_reference,tx_ref,amount_kobo,quote_id,
