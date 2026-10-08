@@ -25,8 +25,8 @@ describe("C03 operator confirmation must pass before opening a PostgreSQL pool",
   });
   it("requires all attestation, DB, tenant and mode envs",()=>{
     for(const name of Object.keys(good)){
-      const env={...good};
-      delete env[name];
+      const env:Record<string,string|undefined>={...good};
+      env[name]=undefined;
       expect(()=>readHumanDmRetentionConfiguration(env)).toThrow();
     }
     expect(()=>readHumanDmRetentionConfiguration({
