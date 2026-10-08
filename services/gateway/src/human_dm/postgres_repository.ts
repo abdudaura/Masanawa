@@ -226,8 +226,8 @@ export function createPostgresHumanDmRepository(pool: HumanDmSqlPool): HumanDmRe
         `,[tenantId,userId,conversationId]);
         if (!peer.rows[0]) return null;
         const result=await client.query<MessageRow>(`
-          UPDATE talks.human_dm_messages SET body=$5,edited_at=clock_timestamp()
-          WHERE tenant_id=$1 AND conversation_id=$2 AND message_id=$3 AND sender_user_id=$4
+          UPDATE talks.human_dm_messages SET body=$6,edited_at=clock_timestamp()
+          WHERE tenant_id=$1 AND conversation_id=$4 AND message_id=$5 AND sender_user_id=$2
             AND deleted_at IS NULL
             AND created_at >= clock_timestamp()-INTERVAL '15 minutes'
             AND ${admitted}
