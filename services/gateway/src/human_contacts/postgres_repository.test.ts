@@ -113,7 +113,7 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("LIMIT $3");
     expect(sql).toContain("NOT EXISTS");
     expect(sql).toContain("sp.blocked=true");
-    expect(params).toEqual(["t","user_al",30]);
+    expect(params).toEqual(["t","user_al",30,null,null]);
     expect(sql).toContain("edge.revoked_by IS NULL");
     expect(sql).toContain("edge.revoked_by=$2");
   });
