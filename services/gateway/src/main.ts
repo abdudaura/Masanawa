@@ -1502,12 +1502,12 @@ export async function startGatewayService(
   const composedInternalCryptoTransfers =
     options.appOptions?.internalCryptoTransfers ??
     (database.internalCryptoTransfers && database.platformSessions &&
-     financialAuthorizer && composedFinancial
+     financialAuthorizer
       ? createInternalCryptoTransferService({
           authorizer: financialAuthorizer,
           recipients: createPlatformCreditRecipientResolver({ sessions: database.platformSessions }),
           repository: database.internalCryptoTransfers,
-          financial: composedFinancial,
+          ...(composedFinancial ? {financial: composedFinancial} : {}),
           enabled: env.MASANAWA_INTERNAL_CRYPTO_TRANSFERS_ENABLED === "true",
         })
       : undefined);
