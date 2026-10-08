@@ -9,6 +9,7 @@ import '../theme/masanawa_theme.dart';
 import '../tokens/masanawa_tokens.dart';
 import 'crypto_models.dart';
 import 'crypto_state.dart';
+import 'internal_crypto_transfer_screen.dart';
 
 class CryptoWalletScreen extends ConsumerWidget {
   const CryptoWalletScreen({super.key});
@@ -460,6 +461,18 @@ class CryptoWalletScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.account_balance_wallet_outlined),
+                title: const Text('Transfer crypto to a Masanawa user'),
+                subtitle: const Text('Internal custody transfer · exact quote and confirmation'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const InternalCryptoTransferScreen(),
+                  ),
+                ),
               ),
               if (!data.capabilities.fiatOnRamp ||
                   !data.capabilities.conversions ||
