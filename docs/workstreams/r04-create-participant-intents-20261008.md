@@ -5,14 +5,16 @@
 - **Base main SHA:** `88e67cc6c79de1ca09e02f11e929065dcfb2ea82`
 - **Lane:** R04 / talks-live mobile Create/Host participant intent flow
 - **Status:** ACTIVE; 5-minute repository-visible lease
-- **Last repository-visible update:** 2026-10-08T05:30:48.182Z
+- **Last repository-visible update:** 2026-10-08T05:37:18.994Z
 
 ## Exact owned paths
 - `apps/mobile/lib/src/screens/talks/create_talk_screen.dart`
 - `apps/mobile/lib/src/screens/talks/create_talk_participant_handoff.dart` (new)
+- `apps/mobile/lib/src/talks/talk_create_action_store.dart` (new)
 - `apps/mobile/lib/src/router/app_router.dart` (shared navigation; collision-check before changes)
 - `apps/mobile/lib/src/screens/talks/add_ai_seat_sheet.dart` (only focused optional initial-tab if needed)
 - `apps/mobile/test/create_talk_participant_flow_test.dart` (new)
+- `apps/mobile/test/talk_ai_seat_sheet_test.dart`
 - `docs/workstreams/r04-create-participant-intents-20261008.md` (this checkpoint)
 
 ## Requirements / dependencies
@@ -29,3 +31,21 @@
 2. Carry chosen action with created Talk safely into the real Talk entry and open authoritative existing sheet/share after route settles.
 3. Add guarded lifecycle, error and no-double-open tests; hand off additional persona preselection if no pre-Talk candidate endpoint exists.
 4. Publish PR, run available checks and leave evidence.
+
+## Implemented checkpoint
+
+- The Create screen's three formerly inert rows now toggle deliberate, labelled post-create intentions without starting a paid quote, admitting a speaker, or launching a non-existent Talk.
+- On successful canonical Talk creation, the chosen actions are stored in `flutter_secure_storage` under that Talk ID. A failed storage write never reports the Talk creation itself as failed; the Host is told to use live Talk actions.
+- The real `/talk/:id` route loads pending actions only for the Host; a persistent MaterialBanner lets the Host continue or skip, including after a return/restart. No new screen or alternate payment flow.
+- Human Invite opens the existing OS share flow for the canonical `https://masanawa.com/talk/:id` link; a recipient then uses the existing public Talk/raise-hand/Host-approved free Speaker flow. Sharing is not misrepresented as seat admission.
+- Expert/Twin selection opens the existing server-authorized AI candidate, fresh quote and explicit confirm sheet in the requested tab. A pending AI intent is **consumed before** the quote sheet can authorize a payment; closing the sheet or crashing cannot silently replay a new purchase. The Host can deliberately reopen Add AI within Talk.
+- An empty Twin list offers a live `/my-twin` creation route; an empty Expert list has refresh and search results can be cleared.
+- Dedicated Flutter widget tests cover Create persistence, Host-only restart, human share, initial Twin tab, missing Twin create navigation, invalid/repeated storage values, and fail-closed paid action on secure-store errors.
+- No R10 `talk_screen.dart`, R09 runtime, R11 root shell, R12 identity, shared Gateway composition, database or financial contracts touched.
+
+## Verification and remaining acceptance
+
+- All code and tests are **committed, not Flutter-tested**: this tool environment has Node.js but no `flutter` or `dart` binary; no checked-out private repo. GitHub Actions may also fail before runner allocation. Required on an equipped runner: `cd apps/mobile && flutter test test/create_talk_participant_flow_test.dart test/talk_ai_seat_sheet_test.dart` and `flutter analyze`.
+- Must verify handset creation -> Host LiveKit audio -> invited human request/Host admit and Expert/Twin quote/confirm/actual audible AI. Provider/network/second-device integration is NOT verified.
+- No authoritative pre-Talk persona catalog endpoint exists in the inspected `/talks/:talkId/ai-seats` contract. This lane preserves **action intents** across creation/restart, not a specific Expert/Twin identity selected before a Talk exists. True pre-Talk persona ID selection plus a targeted human invitation registry are R04 integration follow-ups; do not mark the whole readiness item DONE.
+- Release evidence: no production deployment, money movement, device acceptance, or passing test run from this window.
