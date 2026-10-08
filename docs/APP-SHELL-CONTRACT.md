@@ -31,7 +31,7 @@ Agents tab **does not duplicate** this root Assistant: an Expert or Twin's separ
 
 ## Wallet service ordering and handoff
 
-Show **Crypto** first; then **Data bundles**, **Airtime**, **Electricity**, **TV/Cable**, plus actual qualified Add funds, Send crypto/other explicitly named currency, external Withdraw and History. Billing and Crypto are the **only** standalone services. Server capability/account/market/asset/network/KYC policies determine availability. A shortcut can preselect a verified Assistant/Walet intent, asks only missing details, but never pays, authorizes, turns on mic or changes voice permissions when opened.
+Show **Crypto** first; then **Data bundles**, **Airtime**, **Electricity**, **TV/Cable**, plus actual qualified Add funds, Send crypto/other explicitly named currency, external Withdraw and History. Billing and Crypto are the **only** standalone services. Server capability/account/market/asset/network/KYC policies determine availability. A shortcut can preselect a verified Assistant/Wallet intent, asks only missing details, but never pays, authorizes, turns on mic or changes voice permissions when opened.
 
 DM **Transfer** opens the same qualified Wallet internal crypto task with exact authenticated recipient, asset/network, server terms, fresh explicit risk-appropriate confirmation, once-only ledger settlement and both receipts. A generic chat Send arrow is **text/voice-note only**. Internal book transfers are not automatically an on-chain send. No credits/fiat/earnings/crypto mixing or model-authoritative balance.
 
