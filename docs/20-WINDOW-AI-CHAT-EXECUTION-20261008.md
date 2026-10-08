@@ -2,6 +2,8 @@
 
 **Owner authorization: 2026-10-08. Development pause lifted with coordination safeguards.** This document is the operative U01–U20 **addition** to existing R01–R19/C01–C08. The owner will run 20 ChatGPT development windows and later ask ChatGPT Work to combine/verify outstanding source. **Start code now in isolated workstreams; do not wait for Work usage to reset.** It does NOT waive verified CI/device/provider/DB gates, entitle any lane to merge unsafe work or grant general permission to edit shared root code.
 
+**For 20 separate copy/paste prompts:** [`20-WINDOW-LAUNCH-PROMPTS-20261008.md`](20-WINDOW-LAUNCH-PROMPTS-20261008.md) labels each window U01–U20; use one prompt per window, not twenty copies of U01.
+
 **Read FIRST:** `CONTINUE-HERE.md` owner resumption notice, `docs/MULTI-WINDOW-WORK.md`, `docs/IMPLEMENTATION-KICKOFF-20261008.md`, `docs/AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md`, `docs/AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md`, `docs/HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md`, `docs/20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md`, then relevant domain and R/C contracts. **Do not use the 20-window document as a substitute for source inspection.**
 
 ## 0. Immediate operating rules: all 20 can work, zero duplicate owners
