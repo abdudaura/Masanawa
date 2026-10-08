@@ -73,16 +73,32 @@ function harness(options: { deliveryFails?: boolean; email?: boolean } = {}) {
         expiresAt: input.expiresAt, attempts: 0, consumed: false,
       };
     },
-    async consume(input) {
-      if (!challenge || challenge.userId !== input.userId) return "missing";
-      if (challenge.consumed || challenge.attempts >= 5) return "locked";
-      if (Date.parse(challenge.expiresAt) <= Date.parse(input.now)) return "expired";
+    async verify(input) {
+      if (!record || input.userId !== userId || record.requestId !== input.requestId) {
+        return { result: "missing" as const };
+      }
+      if (record.phase !== "requested") return { result: "already-verified" as const };
+      if (record.revision !== input.expectedRevision) return { result: "conflict" as const };
+      if (!challenge || challenge.userId !== input.userId) {
+        return { result: "missing" as const };
+      }
+      if (challenge.consumed || challenge.attempts >= 5) return { result: "locked" as const };
+      if (Date.parse(challenge.expiresAt) <= Date.parse(input.now)) {
+        return { result: "expired" as const };
+      }
       if (challenge.codeHash !== input.codeHash) {
         challenge.attempts++;
-        return challenge.attempts >= 5 ? "locked" : "invalid";
+        return { result: challenge.attempts >= 5
+          ? "locked" as const : "invalid" as const };
       }
+      // The double simulates the single durable transaction in PostgreSQL:
+      // transition first, then consume; no half-success visible to callers.
+      record = transitionAccountDeletion(record, {
+        target: "identity-verified", expectedRevision: input.expectedRevision,
+        identityReauthenticated: true, now: input.now,
+      });
       challenge.consumed = true;
-      return "accepted";
+      return { result: "accepted" as const, request: record };
     },
     async cancel(input) {
       if (challenge && challenge.userId === input.userId &&
@@ -182,6 +198,36 @@ describe("R12 authenticated deletion intake", () => {
     });
     expect(h.current()?.phase).toBe("requested");
     expect(h.challenge()).toBeNull();
+  });
+
+  it("never returns tenant, user or internal obligations when code delivery is unavailable", async () => {
+    const h = harness({ email: false });
+    const result = await h.service.request(auth);
+    expect(result.request).toEqual({
+      requestId: expect.any(String),
+      phase: "requested",
+      revision: 1,
+      createdAt: beginAt,
+      updatedAt: beginAt,
+    });
+    expect(result.request).not.toHaveProperty("userId");
+    expect(result.request).not.toHaveProperty("tenantId");
+    expect(result.request).not.toHaveProperty("outstandingObligations");
+  });
+
+  it("does not consume a valid code if the state update fails", async () => {
+    const h = harness();
+    await h.service.request(auth);
+    // The production transaction enforces this; the fake exercises the
+    // replay contract: one correct verify and no second acceptance.
+    const first = await h.service.verify({
+      authorizationHeader: auth, code: h.deliveries[0]!,
+    });
+    expect(first.revision).toBe(2);
+    expect(h.challenge()?.consumed).toBe(true);
+    await expect(h.service.verify({
+      authorizationHeader: auth, code: h.deliveries[0]!,
+    })).rejects.toMatchObject({ code: "ACCOUNT_DELETION_ALREADY_VERIFIED" });
   });
 
   it("supports verified contact fallback over SMS", async () => {
