@@ -15,7 +15,7 @@ class OperatorTaskCenterController extends ChangeNotifier {
         _transport = transport;
 
   static const pageSize = 25;
-  final OperatorTaskTransport _transport;
+  OperatorTaskTransport _transport;
   String _tenantId;
   String _userId;
   int _generation = 0;
@@ -59,11 +59,13 @@ class OperatorTaskCenterController extends ChangeNotifier {
   /// Old in-flight reads never populate the next account's UI. No local disk
   /// projection survives signout; the host injects a new authenticated
   /// transport when changing the network session.
-  void changeOwner({required String tenantId, required String userId}) {
+  void changeOwner({required String tenantId, required String userId,
+      required OperatorTaskTransport transport}) {
     if (_disposed) return;
     ++_generation;
     _tenantId = tenantId;
     _userId = userId;
+    _transport = transport; // Never reuse the previous account's authenticated client.
     _reset();
     _emit();
   }
