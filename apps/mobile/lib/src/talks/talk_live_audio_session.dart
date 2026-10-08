@@ -82,16 +82,35 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
   }
 
   Future<void> _start() async {
+    _errorMessage = null;
     _setStatus(TalkLiveAudioStatus.connecting);
     try {
       final session = await transport.connect(talkId);
-      if (_closed) return;
+      if (_closed) {
+        // close() may have completed while the initial connect was pending.
+        // Its teardown could not see this newly issued server session.
+        try {
+          await transport.disconnect(talkId: talkId, sessionId: session.sessionId);
+        } catch (_) {
+          // The server expires abandoned sessions via its heartbeat lease.
+        }
+        return;
+      }
 
       _sessionId = session.sessionId;
       _role = session.role;
 
       if (session.state == TalkLiveLifecycle.ended || !session.canHearAudio) {
-        _setStatus(TalkLiveAudioStatus.ended);
+        // A server-side ended/ineligible session never obtains media; release
+        // its lease rather than keeping an unreachable session ID locally.
+        _sessionId = null;
+        _role = null;
+        try {
+          await transport.disconnect(talkId: talkId, sessionId: session.sessionId);
+        } catch (_) {
+          // Heartbeat expiry is the server-side fallback.
+        }
+        if (!_closed) _setStatus(TalkLiveAudioStatus.ended);
         return;
       }
 
@@ -100,6 +119,14 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         sessionId: session.sessionId,
       );
       if (_closed) return;
+      final endpoint = Uri.tryParse(credentials.serverUrl);
+      if (credentials.participantToken.trim().isEmpty ||
+          endpoint == null ||
+          (endpoint.scheme != 'wss' && endpoint.scheme != 'ws') ||
+          endpoint.host.isEmpty ||
+          !credentials.expiresAt.isAfter(DateTime.now())) {
+        throw const FormatException('Talk live media credentials are invalid or expired');
+      }
 
       final mayPublish =
           session.role != TalkLiveRole.listener &&
@@ -110,7 +137,12 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         credentials: credentials,
         publishMicrophone: mayPublish,
       );
-      if (_closed) return;
+      if (_closed) {
+        // A late room.connect can finish after close() already disposed the
+        // previous media state. Close it again to avoid orphaned microphone audio.
+        await _closeMediaOnly();
+        return;
+      }
 
       _muted = false;
       _setStatus(
@@ -126,8 +158,28 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         (_) => _scheduleHeartbeat(),
       );
     } catch (_) {
-      _fail('Live audio is unavailable right now.');
+      // A failed media token or LiveKit connection must not permanently pin
+      // _sessionId: start() uses it to avoid opening duplicate live sessions.
+      // Release the server session before allowing an explicit retry.
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = null;
       await _closeMediaOnly();
+      final failedSessionId = _sessionId;
+      _sessionId = null;
+      _role = null;
+      _canPublishAudio = false;
+      _muted = false;
+      if (failedSessionId != null) {
+        try {
+          await transport.disconnect(
+            talkId: talkId,
+            sessionId: failedSessionId,
+          );
+        } catch (_) {
+          // The backend heartbeat lease expires if disconnect is unavailable.
+        }
+      }
+      if (!_closed) _fail('Live audio is unavailable right now. Please try again.');
     }
   }
 
@@ -156,9 +208,13 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
 
       _role = session.role;
       if (session.state == TalkLiveLifecycle.ended || !session.canHearAudio) {
-        _setStatus(TalkLiveAudioStatus.ended);
+        _canPublishAudio = false;
         _heartbeatTimer?.cancel();
+        _heartbeatTimer = null;
+        _setStatus(TalkLiveAudioStatus.ended);
         await _closeMediaOnly();
+        // The heartbeat has confirmed the session is no longer usable. Avoid
+        // keeping stale publish rights or attempting an unnecessary reconnect.
         return;
       }
 
@@ -188,6 +244,13 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       }
     } catch (_) {
       if (_closed) return;
+      // Failed heartbeats do not authorize continued microphone publication.
+      _canPublishAudio = false;
+      try {
+        await room.setMicrophoneEnabled(false);
+      } catch (_) {
+        // Best effort: network/media failure may already have closed the room.
+      }
       _setStatus(TalkLiveAudioStatus.reconnecting);
     }
   }
@@ -241,6 +304,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
     _closed = true;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _canPublishAudio = false;
     try {
       await _heartbeatInFlight;
     } catch (_) {

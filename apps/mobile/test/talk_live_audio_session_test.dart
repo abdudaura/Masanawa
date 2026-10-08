@@ -10,7 +10,13 @@ class _Transport implements TalkLiveTransport {
 
   final TalkLiveRole role;
   bool canPublishAudio;
+  bool failNextToken = false;
+  bool sessionEndedOnConnect = false;
+  DateTime? credentialsExpireAt;
+  String credentialUrl = 'wss://live.example.test';
+  Completer<void>? connectGate;
   int heartbeats = 0;
+  bool failHeartbeat = false;
   int disconnects = 0;
   TalkLiveLifecycle heartbeatState = TalkLiveLifecycle.live;
 
@@ -26,8 +32,12 @@ class _Transport implements TalkLiveTransport {
   );
 
   @override
-  Future<TalkLiveSessionView> connect(String talkId) async =>
-      _session(TalkLiveLifecycle.live);
+  Future<TalkLiveSessionView> connect(String talkId) async {
+    await connectGate?.future;
+    return _session(
+      sessionEndedOnConnect ? TalkLiveLifecycle.ended : TalkLiveLifecycle.live,
+    );
+  }
 
   @override
   Future<TalkLiveSessionView> heartbeat({
@@ -35,6 +45,7 @@ class _Transport implements TalkLiveTransport {
     required String sessionId,
   }) async {
     heartbeats += 1;
+    if (failHeartbeat) throw StateError('Simulated network heartbeat failure');
     return _session(heartbeatState);
   }
 
@@ -57,13 +68,19 @@ class _Transport implements TalkLiveTransport {
   Future<TalkLiveMediaCredentials> mediaToken({
     required String talkId,
     required String sessionId,
-  }) async => TalkLiveMediaCredentials(
-    serverUrl: 'wss://live.example.test',
-    participantToken: 'token',
-    roomName: talkId,
-    participantIdentity: 'user:' + sessionId,
-    expiresAt: DateTime(2030),
-  );
+  }) async {
+    if (failNextToken) {
+      failNextToken = false;
+      throw StateError('Simulated media-token rejection');
+    }
+    return TalkLiveMediaCredentials(
+      serverUrl: credentialUrl,
+      participantToken: 'token',
+      roomName: talkId,
+      participantIdentity: 'user:' + sessionId,
+      expiresAt: credentialsExpireAt ?? DateTime(2030),
+    );
+  }
 
   @override
   Future<TalkLiveStateView> state(String talkId) async => TalkLiveStateView(
@@ -80,12 +97,23 @@ class _Room implements TalkLiveRoom {
   bool? publishMicrophone;
   final List<bool> microphone = [];
   int closes = 0;
+  bool failNextConnect = false;
+  Completer<void>? mediaConnectGate;
+  Completer<void>? mediaConnectEntered;
+  int connects = 0;
 
   @override
   Future<void> connect({
     required TalkLiveMediaCredentials credentials,
     required bool publishMicrophone,
   }) async {
+    connects += 1;
+    mediaConnectEntered?.complete();
+    await mediaConnectGate?.future;
+    if (failNextConnect) {
+      failNextConnect = false;
+      throw StateError('Simulated LiveKit connection failure');
+    }
     this.publishMicrophone = publishMicrophone;
   }
 
@@ -249,4 +277,186 @@ void main() {
       await session.close();
     },
   );
+  test('failed media connection releases session and permits explicit retry', () async {
+    final transport = _Transport(role: TalkLiveRole.listener);
+    final room = _Room()..failNextConnect = true;
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(transport.disconnects, 1);
+    expect(room.closes, 1);
+    expect(session.errorMessage, contains('try again'));
+
+    await session.start();
+    expect(room.connects, 2);
+    expect(session.status, TalkLiveAudioStatus.listening);
+    expect(session.errorMessage, isNull);
+
+    await session.close();
+    expect(transport.disconnects, 2);
+  });
+
+  test('media token rejection cleans up before a successful retry', () async {
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..failNextToken = true;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.listening);
+    expect(room.connects, 1);
+    expect(session.errorMessage, isNull);
+
+    await session.close();
+    expect(transport.disconnects, 2);
+  });
+
+  test('ended session releases server lease without opening media', () async {
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..sessionEndedOnConnect = true;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.ended);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+
+    await session.close();
+    expect(transport.disconnects, 1);
+  });
+
+  test('close during pending server connect releases late session', () async {
+    final gate = Completer<void>();
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..connectGate = gate;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    final starting = session.start();
+    await session.close();
+    gate.complete();
+    await starting;
+
+    expect(transport.disconnects, 1);
+    expect(room.connects, 0);
+    expect(session.status, TalkLiveAudioStatus.ended);
+  });
+
+  test('close while media connects tears down late room without duplicate disconnect', () async {
+    final gate = Completer<void>();
+    final transport = _Transport(role: TalkLiveRole.host, canPublishAudio: true);
+    final entered = Completer<void>();
+    final room = _Room()
+      ..mediaConnectGate = gate
+      ..mediaConnectEntered = entered;
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    final starting = session.start();
+    await entered.future.timeout(const Duration(seconds: 2));
+    await session.close();
+    gate.complete();
+    await starting;
+
+    expect(transport.disconnects, 1);
+    expect(room.closes, 2);
+    expect(session.status, TalkLiveAudioStatus.ended);
+  });
+
+  test('expired media token never opens LiveKit and can recover', () async {
+    final transport = _Transport(role: TalkLiveRole.listener)
+      ..credentialsExpireAt = DateTime(2020);
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+
+    transport.credentialsExpireAt = DateTime(2030);
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.listening);
+    expect(room.connects, 1);
+    await session.close();
+  });
+
+  test('invalid websocket endpoint cannot publish microphone', () async {
+    final transport = _Transport(
+      role: TalkLiveRole.host,
+      canPublishAudio: true,
+    )..credentialUrl = 'https://invalid.example.test';
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+    );
+
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(room.connects, 0);
+    expect(transport.disconnects, 1);
+    await session.close();
+  });
+
+  test('heartbeat failure revokes host microphone publish authority', () async {
+    final transport = _Transport(
+      role: TalkLiveRole.host,
+      canPublishAudio: true,
+    );
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1',
+      transport: transport,
+      room: room,
+      heartbeatInterval: const Duration(milliseconds: 10),
+    );
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.publishing);
+    transport.failHeartbeat = true;
+    await Future<void>.delayed(const Duration(milliseconds: 35));
+    expect(transport.heartbeats, greaterThan(0));
+    expect(session.status, TalkLiveAudioStatus.reconnecting);
+    expect(room.microphone, contains(false));
+
+    final changesBefore = room.microphone.length;
+    await session.setMuted(false);
+    expect(room.microphone.length, changesBefore);
+    await session.close();
+  });
+
 }
