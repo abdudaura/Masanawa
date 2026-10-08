@@ -20,6 +20,8 @@ class HumanProfileSafetySheet extends ConsumerStatefulWidget {
 class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetySheet> {
   final _details=TextEditingController();
   bool _loading=true;
+  bool _journalReady=false;
+  bool _prefReady=false;
   bool _busy=false;
   bool _blocked=false;
   bool _muted=false;
@@ -58,35 +60,53 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
     }
     setState((){
       _loading=true;
+      _prefReady=false;
+      _journalReady=false;
       _error=null;
     });
+    // Recover a potentially committed report BEFORE reading remote settings:
+    // a network outage must never turn the old request into a new report.
     try {
-      final pref=await ref.read(humanProfileSafetyTransportProvider).read(widget.handle);
       final pending=await ref.read(humanProfileReportJournalProvider).read(
         widget.reporterUserId,widget.handle,
       );
+      if(!mounted || !_authorized)return;
+      setState((){
+        _pending=pending;
+        _reason=pending?.reason;
+        _details.text=pending?.detail ?? '';
+        _journalReady=true;
+      });
+    }catch(_){
+      if(!mounted || !_authorized)return;
+      setState((){
+        _loading=false;
+        _error='Secure report recovery is unavailable. No report can be sent; retry loading.';
+      });
+      return;
+    }
+    try {
+      final pref=await ref.read(humanProfileSafetyTransportProvider).read(widget.handle);
       if(!mounted || !_authorized)return;
       setState((){
         _blocked=pref.blocked;
         _muted=pref.muted;
         _savedBlocked=pref.blocked;
         _savedMuted=pref.muted;
-        _pending=pending;
-        _reason=pending?.reason;
-        _details.text=pending?.detail ?? '';
+        _prefReady=true;
         _loading=false;
       });
     }catch(_){
       if(!mounted || !_authorized)return;
       setState((){
         _loading=false;
-        _error='Couldn’t read your safety settings. Check connection and retry.';
+        _error='Couldn’t read block/mute settings. Report retry recovery is preserved.';
       });
     }
   }
 
   Future<void> _save() async {
-    if(_busy || !_authorized || _loading)return;
+    if(_busy || !_authorized || _loading || !_prefReady)return;
     setState((){_busy=true;_error=null;});
     try {
       final requestedBlocked=_blocked;
@@ -116,7 +136,7 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
   }
 
   Future<void> _report() async {
-    if(_busy || _loading || !_authorized || _receipt!=null)return;
+    if(_busy || _loading || !_journalReady || !_authorized || _receipt!=null)return;
     if(_pending==null && _reason==null){
       setState(()=>_error='Select a reason for your report.');
       return;
@@ -206,16 +226,16 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
                   title:const Text('Block this person'),
                   subtitle:const Text('Hide and restrict interactions.'),
                   value:_blocked,
-                  onChanged:canEdit?(value)=>setState(()=>_blocked=value):null,
+                  onChanged:canEdit && _prefReady?(value)=>setState(()=>_blocked=value):null,
                 ),
                 SwitchListTile.adaptive(
                   key:const ValueKey('human-safety-mute'),
                   title:const Text('Mute this person'),
                   subtitle:const Text('Reduce their public updates.'),
                   value:_muted,
-                  onChanged:canEdit?(value)=>setState(()=>_muted=value):null,
+                  onChanged:canEdit && _prefReady?(value)=>setState(()=>_muted=value):null,
                 ),
-                if(_blocked!=_savedBlocked || _muted!=_savedMuted)
+                if(_prefReady && (_blocked!=_savedBlocked || _muted!=_savedMuted))
                   FilledButton(
                     key:const ValueKey('human-safety-save'),
                     onPressed:canEdit?_save:null,
@@ -261,7 +281,7 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
                 else
                   FilledButton.tonal(
                     key:const ValueKey('human-safety-report'),
-                    onPressed:canEdit?_report:null,
+                    onPressed:canEdit && _journalReady?_report:null,
                     child:Text(frozen?'Retry same report':'Submit private report'),
                   ),
               ],
