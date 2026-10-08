@@ -213,21 +213,21 @@ export function createBillingWalletService(input: Readonly<{
 
     const names = splitName(identity.profile?.name);
     const account = await input.funding.createDynamicVirtualAccount({
-      txRef: referenceTx,
-      amount: formatNgnKobo(amountKobo),
+      txRef: created.txRef,
+      amount: formatNgnKobo(created.amountKobo),
       email: identity.profile?.email?.trim().toLowerCase() || syntheticEmail(identity.userId),
       ...(identity.profile?.phone ? { phone: identity.profile.phone } : {}),
       ...names,
       expiresSeconds: fundingExpirySeconds,
       ...(signal ? { signal } : {}),
     });
-    if (parseNgnKobo(account.amount) !== amountKobo) {
+    if (parseNgnKobo(account.amount) !== created.amountKobo) {
       throw new Error("financial.wallet.virtual_account_amount_mismatch");
     }
     return input.wallet.bindFundingAccount({
       tenantId: identity.tenantId,
       userId: identity.userId,
-      fundingReference: reference,
+      fundingReference: created.fundingReference,
       accountNumber: account.accountNumber,
       bankName: account.bankName,
       providerOrderRef: account.orderRef,
