@@ -92,5 +92,135 @@
   "splashTagline": "Live conversations with people and AI",
   "@splashTagline": {
     "description": "Short splash-screen subtitle describing public live human-hosted Talks with AI participants; not a transaction or private assistant claim"
+  },
+  "welcomeTitle": "Welcome to Masanawa",
+  "checkingSignInMethods": "Checking available sign-in methods…",
+  "signInInstruction": "Sign in with email or phone. We'll send you a one-time code.",
+  "signInMethodsUnavailable": "Sign-in is temporarily unavailable. Please try again shortly.",
+  "signInMethodsLoadFailed": "Could not load sign-in methods. Check your connection and try again.",
+  "invalidPhoneNumber": "Enter a valid phone number",
+  "invalidEmailAddress": "Enter a valid email address",
+  "phoneMethod": "Phone",
+  "emailMethod": "Email",
+  "emailExample": "you@example.com",
+  "sendingCode": "Sending code…",
+  "sendCode": "Send code",
+  "continueAction": "Continue",
+  "termsNotice": "By continuing, you agree to our Terms and Privacy Policy.",
+  "otpTitle": "Enter the code",
+  "otpSentTo": "Sent to {identifier}",
+  "invalidOtpCode": "Enter the 6-digit verification code",
+  "otpSessionExpired": "Session expired. Please request a new code.",
+  "verifyingCode": "Verifying…",
+  "verifyCode": "Verify",
+  "resendCodeIn": "Resend code in {seconds}s",
+  "resendCode": "Resend code",
+  "nameQuestion": "What should we call you?",
+  "completeProfile": "Complete your Masanawa profile.",
+  "codeVerifiedName": "Your code is verified. Add your name to finish signing in.",
+  "fullNameLabel": "Full name",
+  "fullNameExample": "e.g. Amina Bello",
+  "fullNameRequired": "Please enter your full name",
+  "finishingSignIn": "Finishing sign in…",
+  "verifiedSignInNotice": "Your verified phone number or email remains your sign-in method.",
+  "@welcomeTitle": {
+    "description": "Authentication and onboarding visible string: welcomeTitle"
+  },
+  "@checkingSignInMethods": {
+    "description": "Authentication and onboarding visible string: checkingSignInMethods"
+  },
+  "@signInInstruction": {
+    "description": "Authentication and onboarding visible string: signInInstruction"
+  },
+  "@signInMethodsUnavailable": {
+    "description": "Authentication and onboarding visible string: signInMethodsUnavailable"
+  },
+  "@signInMethodsLoadFailed": {
+    "description": "Authentication and onboarding visible string: signInMethodsLoadFailed"
+  },
+  "@invalidPhoneNumber": {
+    "description": "Authentication and onboarding visible string: invalidPhoneNumber"
+  },
+  "@invalidEmailAddress": {
+    "description": "Authentication and onboarding visible string: invalidEmailAddress"
+  },
+  "@phoneMethod": {
+    "description": "Authentication and onboarding visible string: phoneMethod"
+  },
+  "@emailMethod": {
+    "description": "Authentication and onboarding visible string: emailMethod"
+  },
+  "@emailExample": {
+    "description": "Email address sample only; should not be translated as user data"
+  },
+  "@sendingCode": {
+    "description": "Authentication and onboarding visible string: sendingCode"
+  },
+  "@sendCode": {
+    "description": "Authentication and onboarding visible string: sendCode"
+  },
+  "@continueAction": {
+    "description": "Authentication and onboarding visible string: continueAction"
+  },
+  "@termsNotice": {
+    "description": "Consent copy on sign-in screen; legal terms must exist as linked documents, translation alone is not legal compliance"
+  },
+  "@otpTitle": {
+    "description": "Authentication and onboarding visible string: otpTitle"
+  },
+  "@otpSentTo": {
+    "description": "One-time code target, where identifier is the destination email or telephone; preserve identifier verbatim",
+    "placeholders": {
+      "identifier": {
+        "type": "String"
+      }
+    }
+  },
+  "@invalidOtpCode": {
+    "description": "Authentication and onboarding visible string: invalidOtpCode"
+  },
+  "@otpSessionExpired": {
+    "description": "Authentication and onboarding visible string: otpSessionExpired"
+  },
+  "@verifyingCode": {
+    "description": "Authentication and onboarding visible string: verifyingCode"
+  },
+  "@verifyCode": {
+    "description": "Authentication and onboarding visible string: verifyCode"
+  },
+  "@resendCodeIn": {
+    "description": "Cooldown in integer seconds; don't transform identifier or change state",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@resendCode": {
+    "description": "Authentication and onboarding visible string: resendCode"
+  },
+  "@nameQuestion": {
+    "description": "Authentication and onboarding visible string: nameQuestion"
+  },
+  "@completeProfile": {
+    "description": "Authentication and onboarding visible string: completeProfile"
+  },
+  "@codeVerifiedName": {
+    "description": "Authentication and onboarding visible string: codeVerifiedName"
+  },
+  "@fullNameLabel": {
+    "description": "Authentication and onboarding visible string: fullNameLabel"
+  },
+  "@fullNameExample": {
+    "description": "Example person's full name, not an account field"
+  },
+  "@fullNameRequired": {
+    "description": "Authentication and onboarding visible string: fullNameRequired"
+  },
+  "@finishingSignIn": {
+    "description": "Authentication and onboarding visible string: finishingSignIn"
+  },
+  "@verifiedSignInNotice": {
+    "description": "Authentication and onboarding visible string: verifiedSignInNotice"
   }
 }
