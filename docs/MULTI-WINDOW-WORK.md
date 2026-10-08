@@ -1,5 +1,12 @@
 # Multi-window Work Coordination
 
+## Ready-to-implement handoff — mandatory latest gate (2026-10-08)
+
+For **every** new or continuing R01–R19/C01–C08 development window, read `docs/IMPLEMENTATION-KICKOFF-20261008.md` and `docs/REQUIREMENTS-RELEASE-GATE-CHECKLIST-20261008.md` **before claiming a lane**. The former locks the exact five-tab end state, nonoverlapping dependency packages, current draft PR recovery, shared-file composition and ready-to-copy prompt; the latter crosschecks all 77 product requirement IDs and J01–J11 integrated journeys.
+
+This is **not** a new backlog or blanket file reservation: check live `main`, PR changed files, workstream claims and **five-minute repository-visible lease** first. **Resume actual PR #468 for C01** rather than duplicating its contact foundation, and coordinate its shared `app.ts`/`main.ts` changes with R18 PR #435 before verification/merge. PR #467 remains a separate unmerged messaging-reference draft. **One R17/C08 integration owner** implements the final five tabs; other lanes may work in parallel on isolated contracts, not temporary UIs. Issue #457 owns exhausted Actions CI recovery; nonexecuted checks are UNVERIFIED and may not be labeled PASS.
+
+
 ## Required conversation-to-code traceability (2026-10-08)
 
 In every R01–R19 / C01–C08 claim, read `docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md`. Attach applicable **P/N/T/M/A/W/Q** IDs and **J01–J11** to the PR and checkpoint. Demonstrate the actual **entry → action → authoritative outcome → error/restart recovery → return state**; test silent typed/tap path wherever voice works; keep public Talk, private human DM, Expert/Twin persona thread, Gwani/Gwana Assistant and finance in their own authority domains. No requirement is "done" because a documentation row exists. C/R IDs remain the only implementation gates; new traceability IDs are **references**, not workstream claims. Only the designated R17/C08 owner changes the shared five-tab router and only financial R06/R08/C06 owners change ledger authority after coordinating claims. Retain the five-minute lease and #457 CI qualification.
