@@ -64,11 +64,11 @@ if bash "$verify" mixed.aab "$fingerprint" >/dev/null 2>&1; then
 fi
 
 # An additional signer must never extend authority beyond the pinned upload key.
-keytool -genkeypair -alias second -keyalg RSA -keysize 2048 -validity 2 \\
-  -keystore second.p12 -storetype PKCS12 -storepass changeit -keypass changeit \\
+keytool -genkeypair -alias second -keyalg RSA -keysize 2048 -validity 2 \
+  -keystore second.p12 -storetype PKCS12 -storepass changeit -keypass changeit \
   -dname "CN=Other Release Signer, OU=Engineering, O=Masanawa, C=NG" -noprompt >/dev/null 2>&1
 cp signed.aab dual-signed.aab
-jarsigner -keystore second.p12 -storetype PKCS12 -storepass changeit \\
+jarsigner -keystore second.p12 -storetype PKCS12 -storepass changeit \
   -keypass changeit dual-signed.aab second >/dev/null
 if bash "$verify" dual-signed.aab "$fingerprint" >/dev/null 2>&1; then
   echo "FAIL: multiple signing identities accepted" >&2; exit 1
