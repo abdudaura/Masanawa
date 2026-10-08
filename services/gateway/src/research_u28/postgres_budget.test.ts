@@ -10,10 +10,10 @@ describe("U28 atomic PostgreSQL budget adapter (SQL-contract checks)", () => {
           async query(sql) {
             seen.push(sql);
             if (sql.includes("RETURNING used_units")) {
-              return { rows: [{ used_units: 1 }], rowCount: 1 };
+              return { rows: [{ used_units: 1 }] as never[], rowCount: 1 };
             }
             if (sql.includes("RETURNING units,budget_day")) {
-              return { rows: [{ units: 1, budget_day: "2026-10-08" }], rowCount: 1 };
+              return { rows: [{ units: 1, budget_day: "2026-10-08" }] as never[], rowCount: 1 };
             }
             return { rows: [], rowCount: 0 };
           },
