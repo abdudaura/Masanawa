@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/screens/profile/persona_report_sheet.dart';
+import 'package:masanawa/src/screens/profile/persona_report_journal.dart';
 import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/state/talk_safety_state.dart';
 import 'package:masanawa/src/talks/talk_safety.dart';
@@ -25,6 +26,28 @@ class SignedIn extends SessionController {
 class SignedOut extends SessionController {
   @override
   SessionState build() => const SessionSignedOut();
+}
+
+class MemoryJournal implements PersonaReportJournal {
+  final saved = <String, PendingPersonaReport>{};
+  String key(String owner, String persona) => owner + ':' + persona;
+
+  @override
+  Future<PendingPersonaReport?> read({
+    required String userId,
+    required String publicId,
+  }) async => saved[key(userId, publicId)];
+  @override
+  Future<void> write(PendingPersonaReport report) async {
+    saved[key(report.userId, report.publicId)] = report;
+  }
+  @override
+  Future<void> clear({
+    required String userId,
+    required String publicId,
+  }) async {
+    saved.remove(key(userId, publicId));
+  }
 }
 
 class Reports implements TalkSafetyTransport {
@@ -64,9 +87,10 @@ class Reports implements TalkSafetyTransport {
   }) => throw UnimplementedError();
 }
 
-Widget app(Reports reports, {bool signedIn = true}) => ProviderScope(
+Widget app(Reports reports, {bool signedIn = true, MemoryJournal? journal}) => ProviderScope(
   overrides: [
     talkSafetyTransportProvider.overrideWithValue(reports),
+    personaReportJournalProvider.overrideWithValue(journal ?? MemoryJournal()),
     sessionProvider.overrideWith(signedIn ? SignedIn.new : SignedOut.new),
   ],
   child: MaterialApp(
@@ -84,7 +108,8 @@ Widget app(Reports reports, {bool signedIn = true}) => ProviderScope(
 void main() {
   testWidgets('failed receipt retries once with same request ID', (tester) async {
     final reports = Reports()..failOnce = true;
-    await tester.pumpWidget(app(reports));
+    final journal = MemoryJournal();
+    await tester.pumpWidget(app(reports, journal: journal));
     await tester.tap(find.text('Report'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('persona-reason-harassment')));
@@ -96,6 +121,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(reports.count, 2);
     expect(reports.ids.first, reports.ids.last);
+    expect(journal.saved, isEmpty);
     expect(reports.targets, ['persona-public-1', 'persona-public-1']);
     expect(find.byKey(const ValueKey('persona-report-confirmed')),
         findsOneWidget);
@@ -128,5 +154,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(reports.count, 0);
     expect(find.text('Sign in to report this AI persona.'), findsOneWidget);
+  });
+
+  testWidgets('pending report after widget remount restores the identical key',
+      (tester) async {
+    final reports = Reports()..failOnce = true;
+    final journal = MemoryJournal();
+    await tester.pumpWidget(app(reports, journal: journal));
+    await tester.tap(find.text('Report'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('persona-reason-harassment')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('persona-report-submit')));
+    await tester.pumpAndSettle();
+    expect(journal.saved, hasLength(1));
+    final originalId = reports.ids.single;
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(app(reports, journal: journal));
+    await tester.tap(find.text('Report'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('earlier attempt'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('persona-report-submit')));
+    await tester.pumpAndSettle();
+    expect(reports.ids.last, originalId);
+    expect(journal.saved, isEmpty);
+    expect(find.byKey(const ValueKey('persona-report-confirmed')),
+        findsOneWidget);
   });
 }
