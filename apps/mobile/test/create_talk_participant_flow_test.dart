@@ -16,7 +16,22 @@ const createdTalk = TalkDiscoveryItem(
   isLive: true,
   listenerCount: 0,
   viewerIsHost: true,
+  participants: [
+    TalkParticipantPreview(
+      id: 'host-account',
+      name: 'Amina',
+      kind: TalkParticipantKind.human,
+      isHost: true,
+    ),
+  ],
 );
+
+class FakeHostGuard implements TalkCreateHostGuard {
+  FakeHostGuard(this.allowed);
+  final bool allowed;
+  @override
+  Future<bool> isHost(String talkId) async => allowed && talkId == createdTalk.id;
+}
 
 class FakeActionStore implements TalkCreateActionStore {
   final Map<String, List<TalkCreateParticipantAction>> saved = {};
@@ -70,9 +85,11 @@ Widget _harness(
   FakeActionStore store,
   Widget child, {
   FakeTalkTransport? talkTransport,
+  bool verifiedHost = true,
 }) => ProviderScope(
   overrides: [
     talkCreateActionStoreProvider.overrideWithValue(store),
+    talkCreateHostGuardProvider.overrideWithValue(FakeHostGuard(verifiedHost)),
     if (talkTransport != null)
       talkTransportProvider.overrideWithValue(talkTransport),
   ],
@@ -80,6 +97,22 @@ Widget _harness(
 );
 
 void main() {
+  test('server Host guard verifies authenticated ID against actual participant', () async {
+    final transport = FakeTalkTransport();
+    expect(await ServerTalkCreateHostGuard(
+      transport: transport,
+      viewerUserId: 'host-account',
+    ).isHost(createdTalk.id), isTrue);
+    expect(await ServerTalkCreateHostGuard(
+      transport: transport,
+      viewerUserId: 'unrelated-viewer',
+    ).isHost(createdTalk.id), isFalse);
+    expect(await ServerTalkCreateHostGuard(
+      transport: transport,
+      viewerUserId: '',
+    ).isHost(createdTalk.id), isFalse);
+  });
+
   test('persisted post-create intents reject malformed and duplicate values', () {
     expect(parseTalkCreateActions('addExpert,addExpert,other,invitePerson,addTwin'), [
       TalkCreateParticipantAction.addExpert,
@@ -186,6 +219,25 @@ void main() {
     expect(store.saved[createdTalk.id], [
       TalkCreateParticipantAction.addExpert,
     ]);
+  });
+
+  testWidgets('forged Host route flag cannot restore another user’s actions',
+      (tester) async {
+    final store = FakeActionStore()..saved[createdTalk.id] = [
+      TalkCreateParticipantAction.addTwin,
+    ];
+    await tester.pumpWidget(_harness(
+      store,
+      TalkCreateParticipantHandoff(
+        talkId: createdTalk.id,
+        isHost: true, // A URL query alone cannot grant ownership.
+        child: const Scaffold(body: Text('Public Talk')),
+      ),
+      verifiedHost: false,
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('create-talk-action-banner')), findsNothing);
+    expect(store.saved[createdTalk.id], [TalkCreateParticipantAction.addTwin]);
   });
 
   testWidgets('storage failure never opens paid AI selection',
