@@ -8,6 +8,7 @@ import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
 import '../../talks/talk_models.dart';
 import '../activity/activity_screen.dart';
+import '../chat/ai_chat_screen.dart';
 import '../talks/create_talk_screen.dart';
 import '../talks/talk_home_screen.dart';
 import '../wallet/wallet_screen.dart';
@@ -124,7 +125,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
                   ),
                 ),
               for (final agent in directory.agents.where(
-                  (agent) => agent.supportAgent || agent.defaultPlatformAgent))
+                  (agent) => !agent.roleLabel.toLowerCase().contains('twin')))
                 ListTile(
                   leading: CircleAvatar(child: Text(agent.initial)),
                   title: Text(agent.displayName),
@@ -148,16 +149,33 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         onOpenCrypto: () => context.push('/crypto'),
       );
 
-  Widget _privateTalk() => Scaffold(
-        appBar: AppBar(title: const Text('Talk')),
-        body: Center(
-          child: FilledButton.icon(
-            onPressed: _openPrivateGwani,
-            icon: const Icon(Icons.mic_none_rounded),
-            label: const Text('Talk with Gwani'),
-          ),
-        ),
-      );
+  Widget _privateTalk() {
+    final directory = ref.watch(agentDirectoryProvider);
+    final agent = _supportAgent();
+    if (agent != null) {
+      // Private chat owns its own voice controls; tab selection never
+      // grants microphone permission or broadcasts public Talk audio.
+      return AiChatScreen(characterId: agent.characterId);
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Talk')),
+      body: Center(
+        child: directory.loading
+            ? const CircularProgressIndicator()
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Gwani is unavailable right now.'),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () => ref.read(agentDirectoryProvider.notifier).refresh(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
 
   void _openActivity() => Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => ActivityScreen(
