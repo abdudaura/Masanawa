@@ -22,6 +22,19 @@ The browser is a first-class client of the same account, Gateway, identities, pe
 Talks, ledgers, quotes and provider qualification as Android. No separate web wallet,
 credit system, AI persona registry or browser-held provider secret.
 
+### Provisional implementation stack
+
+The approved provisional consumer web choice is **Next.js with TypeScript and React**.
+Next.js is the framework; TypeScript is the programming language. Reuse apps/web when
+implementation is scheduled. This is a planning decision, not authorization to start web
+implementation, replace the scaffold or upgrade dependencies now.
+
+The existing Gateway remains the authority for authentication, AI orchestration,
+financial quotes, payments and ledgers. Browser voice uses the qualified shared
+Gemini Live and LiveKit integrations; Next.js does not replace those runtimes.
+Recheck framework/dependency support and browser audio requirements at W01 and record
+any evidence-based change in the architecture decisions before changing the stack.
+
 ## 2. Responsive shell
 
 | Surface | Phone | Tablet / desktop |
