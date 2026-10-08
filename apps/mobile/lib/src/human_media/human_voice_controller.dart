@@ -57,6 +57,7 @@ class HumanVoiceController extends ChangeNotifier {
   String? _request;
   Timer? _limitTimer;
   bool recording=false,review=false,sending=false,loading=false,playing=false,closed=false;
+  bool canLoadOlder=false;
   bool get canSend=>review&&!sending&&!recording&&_localFile!=null;
   void _notify(){if(!closed)notifyListeners();}
   void _fail(String reason){error=reason;_notify();}
@@ -144,12 +145,17 @@ class HumanVoiceController extends ChangeNotifier {
       if(values.any((note)=>note.conversationId!=conversationId))
         throw const FormatException('Mixed conversations');
       if(before==null)_notes.clear();
+      canLoadOlder=values.length==30;
       for(final note in values){
         if(!_notes.any((saved)=>saved.messageId==note.messageId))_notes.add(note);
       }
       _notes.sort((a,b)=>BigInt.parse(b.sequence).compareTo(BigInt.parse(a.sequence)));
     }catch(_){if(!closed)error='Private voice history unavailable. Retry after signing in.';}
     finally{loading=false;_notify();}
+  }
+  Future<void> older() async {
+    if(closed||loading||!canLoadOlder||_notes.isEmpty)return;
+    await refresh(before:_notes.last.sequence);
   }
   Future<void> play(HumanVoiceNote note) async {
     if(closed||playing||note.conversationId!=conversationId)return;
@@ -196,7 +202,7 @@ class HumanVoiceController extends ChangeNotifier {
     if(closed)return;
     closed=true;_limitTimer?.cancel();_limitTimer=null;
     if(recording){try{await _capture.stop();}catch(_){}}
-    _notes.clear();recording=false;review=false;
+    _notes.clear();canLoadOlder=false;recording=false;review=false;
     await _dropFile();
     await _player.dispose();
     await _capture.dispose();
