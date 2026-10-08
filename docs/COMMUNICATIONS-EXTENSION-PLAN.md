@@ -1,5 +1,15 @@
 # Communications, In-App Transfers, and Cross-App AI Extension
 
+## LATEST OWNER CONTACTS REQUIREMENT AND RECOVERY ALLOCATION (2026-10-08)
+
+**Chats must include a genuinely useful nested Contacts directory** reachable from New message: actual accepted Masanawa people, contact requests, profiles, exact @handle lookup, favorites and one-tap authorized C02 conversation; an optional OS device-phonebook list is local-only and consent-based and may offer invitations. **Do not require phonebook access to use Chats.** Full [Contacts product/privacy/security and K13–K20](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md); [C01–C08 pending source/PR audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md); [U21–U24 and F14–F17 precise owners](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md). C01 PR #468 already contains handle-only draft `HumanContactsScreen` + Gateway consent API; recover/extend, do not clone. C02 #472/#475, C03 #473/#483/#486, C04 #478, C05 #474/#476, C06 #487/#490, C07 #480 and R17/C08 #493/#497 remain unmerged; no full real human DM is verified until composed. Human chat AI is explicit selected-message disclosure only. Historical M11 "phonebook details not approved" is narrowed by this later owner decision to **optional device-local viewing/inviting**; cloud number matching, full address-book upload, groups/calling/E2EE are NOT approved.
+
+
+## Latest AI-first product scope — 2026-10-08
+
+**Owner 2026-10-08 expanded Chat quality:** C01–C08 still own identity, true human DMs, realtime, private media, cache, secure money and centered Assistant. Add composer/reply/search/pins/media polish and **consented selected-message AI** via separate U windows; no new DM database, full inbox AI surveillance, or false E2EE claim. Read [Chat specification](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md) and [20-window assignments](20-WINDOW-AI-CHAT-EXECUTION-20261008.md). Preserve existing competing/stacked C02/C05 drafts for one eventual integration.
+
+
 ## Owner requirements traceability: cross-feature obligations (2026-10-08)
 
 C01–C08 implement specific segments of the broader owner's discussion; **read `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md`** for the complete agreed interactions and their exact R-task dependencies. In particular, **J03/J04/J10** require human DM permissions, fast cached server-backed history, voice notes and robust delivery; **J07** one Gwani/Gwana Assistant chat with in-chat switch and genuine authorized cross-app tools; **J09** custody-backed internal crypto transfers initiated from DM/Wallet/Assistant but settled only by the existing financial ledger; **J01/J05/J06** ensure public audio creator economy and dedicated Agents/Twins do not regress; **J11** prevents private/public audio, message and money leakage. Do not interpret "like WhatsApp" as approval for groups, direct calling or E2EE claims, or "global crypto" as unqualified fiat remittance. All earlier R01–R19 and final five-tab contracts remain binding; these trace IDs are not a second backlog.

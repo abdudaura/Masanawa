@@ -6,9 +6,9 @@ import {
 
 describe("Postgres Talk live repository", () => {
   it("derives Host authority only from the persisted Talk owner", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkLiveSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("SELECT host_user_id, state")) {
           return {

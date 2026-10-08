@@ -316,3 +316,117 @@ Preserved nineteen readiness/continuation PRs including newly arrived#502/#503. 
 
 ## Resumed foundation verification alongside revised U/F windows — 2026-10-08
 Owner authorized verification now and final consolidation after active windows hand off. Fresh main5e758673ae91082520b21b3153da53791ae2cbf3 advances through documentation-only changes; preserve all revised U01-U30/F01-F18 plans. New draft #508-#515 remain independent and unmerged. Work continues the already claimed final canonical modules/API/type gates; no new freeze and no source-branch closure during active development. Protected shared pubspec now overlaps #509: retain both C05 dependencies and future device-contact dependency at final integration. #510 owns contacts UI/controller continuation; Work avoids those active source edits. Recovered local tool environment needs dependency-link repair before repeated tests are qualified. Final touched-path inventory and executable results follow in the next substantive commit. Firebase values remain local-agent handoff; no provider activation or feature-DONE claim.
+
+
+## Current executed foundation qualification — 2026-10-08
+Recovered dependency link repaired in scratch; no repository symlink or generated dependency tree is published. Full backend Vitest run: **1516 passed, 185 skipped; 275 files passed, 32 skipped, zero failures**, exit0. Full Gateway TypeScript strict check (`node node_modules/typescript/bin/tsc -p services/gateway/tsconfig.json`) exit0; Gateway production build exit0. API lifecycle now passes with exact audited legacy URL inventory and shared-handler /v1 aliases; future unknown unversioned routes remain rejected. Native fetch payloads are Uint8Array copies with exact-byte regression checks. Full fixture checking stays strict; gateway lib includes actual fetch/Headers/WebAssembly declarations, @types/ws explicit dev dependency, pinned Baileys/bridge declaration patches preserve runtime versions.
+
+This commit preserves canonical C04 backend private audio storage/SQL/module and C06 backend internal transfer/ledger/guarded routes, alongside the already verified baseline. C04 is an opt-in module and still needs shared production configuration and Flutter thread wiring. C06 has no default risk policy, so quote/execute remain denied; no money movement or provider qualification claimed. C05 and remaining C04/C06 mobile files are preserved locally and on their original draft PRs; not included in this backend-only publication. The prior 652-pass Flutter result applies to the published readiness batch at071447f5b886629df1e02d008a310ff6c8f80da2, not later mobile changes. The transient Flutter SDK was unavailable on this resumed turn; no new mobile run claimed.
+
+Reconciled main documentation5e758673ae91082520b21b3153da53791ae2cbf3 as a merge parent, preserving all32 newer planning/governance documents exactly. This is branch synchronization, not merging #497 to main or closing active feature drafts. New #508-#515 remain open and source ownership intact. Final DB/native/provider qualification and complete U/F integration still pending. Firebase remains preserved at #497 with values for local agent in docs/FIREBASE-LOCAL-COMPILATION-HANDOFF.md.
+
+Exact reviewed backend/declaration/fixture/historical-handoff publication paths (entries identical to prior source may produce no diff):
+- `adapters/storage/postgres/src/commerce/crypto-repository.ts`
+- `adapters/storage/postgres/src/commerce/internal-crypto-transfer.integration.test.ts`
+- `adapters/storage/postgres/src/commerce/internal-crypto-transfer.ts`
+- `adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts`
+- `adapters/storage/postgres/src/index.ts`
+- `docs/API-LIFECYCLE.json`
+- `docs/MESSAGING-UX-REFERENCE-AUDIT.md`
+- `docs/contracts/HUMAN-DM-MEDIA-C04.md`
+- `docs/contracts/INTERNAL-CRYPTO-TRANSFER-C06.md`
+- `docs/workstreams/c05-protected-human-chat-cache-20261008.md`
+- `docs/workstreams/c06-internal-crypto-book-transfer-20261008.md`
+- `docs/workstreams/c06-internal-crypto-transfers-20261008.md`
+- `docs/workstreams/communications-media-c04-20261008.md`
+- `docs/workstreams/communications-mobile-performance-c05-20261008.md`
+- `docs/workstreams/r11-root-shell-localization-20261008.md`
+- `docs/workstreams/r15-persona-profile-report-20261008.md`
+- `packages/agents/src/talk-replay.test.ts`
+- `packages/commerce/migrations/0110_crypto_internal_transfers.sql`
+- `packages/identity/src/account-deletion.test.ts`
+- `packages/talks/migrations/0018_human_dm_media.sql`
+- `patches/whatsapp-rust-bridge@0.5.4.patch`
+- `patches/whiskeysockets-baileys@7.0.0-rc14.patch`
+- `pnpm-lock.yaml`
+- `pnpm-workspace.yaml`
+- `services/gateway/package.json`
+- `services/gateway/src/agent_conversation.test.ts`
+- `services/gateway/src/agent_crypto_assistant.test.ts`
+- `services/gateway/src/alpha_executor.test.ts`
+- `services/gateway/src/api_compatibility.test.ts`
+- `services/gateway/src/api_compatibility.ts`
+- `services/gateway/src/app.ts`
+- `services/gateway/src/assistant_workspace/service.test.ts`
+- `services/gateway/src/billing_checkout.test.ts`
+- `services/gateway/src/customer_channel_routes.test.ts`
+- `services/gateway/src/customer_channel_twin_routing.test.ts`
+- `services/gateway/src/financial_billing.test.ts`
+- `services/gateway/src/human_media/composition.ts`
+- `services/gateway/src/human_media/model.ts`
+- `services/gateway/src/human_media/ogg_opus.test.ts`
+- `services/gateway/src/human_media/ogg_opus.ts`
+- `services/gateway/src/human_media/ogg_opus_test_fixture.ts`
+- `services/gateway/src/human_media/postgres_integration.test.ts`
+- `services/gateway/src/human_media/postgres_repository.ts`
+- `services/gateway/src/human_media/private_s3.test.ts`
+- `services/gateway/src/human_media/private_s3.ts`
+- `services/gateway/src/human_media/routes.test.ts`
+- `services/gateway/src/human_media/routes.ts`
+- `services/gateway/src/human_media/runtime.test.ts`
+- `services/gateway/src/human_media/runtime.ts`
+- `services/gateway/src/human_media/service.test.ts`
+- `services/gateway/src/human_media/service.ts`
+- `services/gateway/src/human_messages/routes.test.ts`
+- `services/gateway/src/human_profile_report_routes.test.ts`
+- `services/gateway/src/internal_crypto_transfer.test.ts`
+- `services/gateway/src/internal_crypto_transfer.ts`
+- `services/gateway/src/internal_crypto_transfer_routes.ts`
+- `services/gateway/src/main.test.ts`
+- `services/gateway/src/main.ts`
+- `services/gateway/src/mobile_push.test.ts`
+- `services/gateway/src/platform_agent_bootstrap.test.ts`
+- `services/gateway/src/profile_avatar/s3_store.test.ts`
+- `services/gateway/src/profile_avatar/s3_store.ts`
+- `services/gateway/src/talk_activity/postgres_repository.test.ts`
+- `services/gateway/src/talk_ai_seat_routes.test.ts`
+- `services/gateway/src/talk_ai_seats/moderation_bridge.test.ts`
+- `services/gateway/src/talk_ai_seats/persona_safety.test.ts`
+- `services/gateway/src/talk_ai_worker/livekit_dispatch.test.ts`
+- `services/gateway/src/talk_ai_worker/postgres_stage_repository.test.ts`
+- `services/gateway/src/talk_ai_worker/worker.test.ts`
+- `services/gateway/src/talk_direct_twin/postgres_repository.test.ts`
+- `services/gateway/src/talk_gift_routes.test.ts`
+- `services/gateway/src/talk_gifts/postgres_repository.test.ts`
+- `services/gateway/src/talk_library/postgres_repository.test.ts`
+- `services/gateway/src/talk_live/livekit_media.test.ts`
+- `services/gateway/src/talk_live/postgres_repository.test.ts`
+- `services/gateway/src/talk_live_routes.test.ts`
+- `services/gateway/src/talk_moderation/livekit_admin.test.ts`
+- `services/gateway/src/talk_moderation/postgres_repository.test.ts`
+- `services/gateway/src/talk_notifications/delivery.test.ts`
+- `services/gateway/src/talk_notifications/policy.test.ts`
+- `services/gateway/src/talk_notifications/postgres_dedupe.test.ts`
+- `services/gateway/src/talk_polls/postgres_repository.test.ts`
+- `services/gateway/src/talk_profile_routes.test.ts`
+- `services/gateway/src/talk_profiles/postgres_repository.test.ts`
+- `services/gateway/src/talk_profiles/profile_edit_postgres.test.ts`
+- `services/gateway/src/talk_ranking/ranking.test.ts`
+- `services/gateway/src/talk_replay/egress/coordinator.test.ts`
+- `services/gateway/src/talk_replay/host_end_integration.test.ts`
+- `services/gateway/src/talk_replay/playback/s3_object_store.test.ts`
+- `services/gateway/src/talk_replay/postgres_repository.test.ts`
+- `services/gateway/src/talk_replay_routes.test.ts`
+- `services/gateway/src/talk_safety/enforcement_integration.test.ts`
+- `services/gateway/src/talk_safety/replay_bridge.test.ts`
+- `services/gateway/src/talk_safety/repository.test.ts`
+- `services/gateway/src/talk_safety_routes.test.ts`
+- `services/gateway/src/talk_search/postgres_repository.test.ts`
+- `services/gateway/src/talks/model.ts`
+- `services/gateway/src/talks/postgres_repository.test.ts`
+- `services/gateway/src/talks/replay_visibility.test.ts`
+- `services/gateway/src/talks/service.test.ts`
+- `services/gateway/src/twin_production_runtime.test.ts`
+- `services/gateway/tsconfig.json`
+- `test/architecture/environment-contracts.test.ts`
+- `tests/contracts/public-api-lifecycle.test.ts`

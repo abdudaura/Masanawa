@@ -8,3 +8,8 @@ packages:
 allowBuilds:
   '@whiskeysockets/baileys': true
   protobufjs: true
+
+
+patchedDependencies:
+  '@whiskeysockets/baileys@7.0.0-rc14': patches/whiskeysockets-baileys@7.0.0-rc14.patch
+  'whatsapp-rust-bridge@0.5.4': patches/whatsapp-rust-bridge@0.5.4.patch

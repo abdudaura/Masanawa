@@ -6,9 +6,9 @@ import {
 
 describe("Postgres Talk search repository", () => {
   it("escapes LIKE metacharacters and keeps Talk search tenant-scoped", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkSearchSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return { rowCount: 0, rows: [] as Row[] };
       },
@@ -34,9 +34,9 @@ describe("Postgres Talk search repository", () => {
   });
 
   it("validates live People state against canonical Talk state", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkSearchSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return {
           rowCount: 1,
@@ -67,9 +67,9 @@ describe("Postgres Talk search repository", () => {
   });
 
   it("requires canonical discoverability for Twins and verification for Experts", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkSearchSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return { rowCount: 0, rows: [] as Row[] };
       },
@@ -93,3 +93,4 @@ describe("Postgres Talk search repository", () => {
     expect(calls[0]?.values?.[2]).toBe("expert");
   });
 });
+

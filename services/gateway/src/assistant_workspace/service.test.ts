@@ -59,7 +59,7 @@ function fixture() {
         throw new Error("Invalid Character");
       }
       approved.set(header, characterId === gwani ? "gwani" : "gwana");
-      return { characterId };
+      return { characterId: characterId === gwani ? gwani : gwana };
     },
   };
   const shell = {
@@ -87,7 +87,7 @@ function fixture() {
       captured.push("status:" + characterId);
       return { state: "completed" as const, reply: "Acknowledged" };
     },
-  } as AgentShellService;
+  } as unknown as AgentShellService;
 
   const conversations = {
     async open({ authorizationHeader, characterId }: {
@@ -111,7 +111,7 @@ function fixture() {
       captured.push("turn:" + input.characterId + ":" + input.text);
       return { reply: "Gwana confirmed", agentRunId: runId, parts: [] };
     },
-  } as AgentConversationService;
+  } as unknown as AgentConversationService;
   const service = createAssistantWorkspaceService({
     directory, shell, conversations,
   });

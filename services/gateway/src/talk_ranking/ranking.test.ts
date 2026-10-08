@@ -147,7 +147,7 @@ describe("Talk Explore ranking", () => {
       { item: { ...candidate({ talkId: "b1" }), hostId: "host-b" }, score: 80, reasons: [] },
     ] as const;
 
-    const diversified = diversifyRankedTalks(ranked, 2);
+    const diversified = diversifyRankedTalks<(typeof ranked)[number]["item"]>(ranked, 2);
     expect(diversified.map((entry) => entry.item.talkId)).toEqual(["a1", "a2", "b1", "a3"]);
     expect(diversified.find((entry) => entry.item.talkId === "a3")?.score).toBe(98);
   });

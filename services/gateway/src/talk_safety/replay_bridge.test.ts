@@ -43,7 +43,7 @@ describe("Talk safety replay bridge",()=>{
     let current=replay();
     const initialRevision=current.revision;
     const pool:TalkSafetyReplaySqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         if(text.includes("SELECT talk_id,session_json")){
           return {
             rowCount:1,
@@ -74,7 +74,7 @@ describe("Talk safety replay bridge",()=>{
     let current=replay();
     let updates=0;
     const pool:TalkSafetyReplaySqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         if(text.includes("SELECT talk_id,session_json")){
           return {
             rowCount:1,
@@ -112,7 +112,7 @@ describe("Talk safety replay bridge",()=>{
     let current=replay();
     let updateAttempts=0;
     const pool:TalkSafetyReplaySqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         if(text.includes("SELECT talk_id,session_json")){
           return {
             rowCount:1,

@@ -122,9 +122,9 @@ describe("canonical PostgreSQL Talk stage context source", () => {
 
   it("fails closed when explicit comment moderation enforcement is unavailable", async () => {
     const failingPool: TalkAiStageSqlPool = {
-      query: async (sql: string) => {
+      query: async <Row extends Record<string, unknown>>(sql: string) => {
         if (sql.includes("FROM talks.talks ")) {
-          return { rows: [{ topic: "Public topic", host_name: "Host" }] };
+          return { rows: [{ topic: "Public topic", host_name: "Host" }] as unknown as Row[] };
         }
         if (sql.includes("FROM talks.comments ")) throw new Error("safety enforcement unavailable");
         return { rows: [] };

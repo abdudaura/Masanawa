@@ -1,5 +1,15 @@
 # Mandatory cross-window handoff and one-window final integration
 
+## Revised final Work inventory after completeness audit (2026-10-08)
+
+Work must reconcile **30 U product scopes, 18 existing-core F recovery scopes, all R01–R19/C01–C08, J01–J11/K01–K20 and all 79 unchecked historic task lines**, distinguishing future-gated ambitions from launch-blocking core. Read [master audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [Contacts acceptance](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [expanded owners](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), [28 prompts](ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md), [79 legacy rows](LEGACY-150-TASK-RECONCILIATION-20261008.md). Preserve U01–U20 original ownership and C01 #468 existing contact code; elect C02/C05/C06 duplicate branches and #497 Firebase+router fixes; **do not reintroduce 13:44Z freeze from #497** over later owner override on main. Only actual runnable API/auth/DB/Flutter/phone/provider/CI, sign/backup/OTA evidence qualifies an R/C/K pass. If Work usage remains blocked, keep draft PRs and source handoffs; no false all-merged closure.
+
+
+## Owner-approved U01–U20 expansion — 2026-10-08
+
+The owner lifts blanket source-work freeze and authorizes twenty isolated U01–U20 development windows while Work usage resets. Later Work must inventory all new U draft PR heads/handoffs, compare them with existing R01–R19/C01–C08, preserve #497/Firebase #461, elect one U01 contract/task ledger/Gateway composition, resolve C02/C05 migration duplications, integrate Flutter root once, run K01–K12 + J01–J11 on real backend/device/provider, and merge only genuinely verified code. See [20-window plan](20-WINDOW-AI-CHAT-EXECUTION-20261008.md) and [merge/check matrix](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). Old global freeze historical; exact-path owner and security rules still apply.
+
+
 **Owner decision: 2026-10-08. Status: coordination instructions, NOT implementation or release proof.**
 
 This file is the durable, common handoff contract for **every** R01–R19, C01–C08, documentation, CI, database, Android, and shared integration window in `Baatiku/masanawa`. Read it alongside `CONTINUE-HERE.md`, `docs/MULTI-WINDOW-WORK.md`, `docs/IMPLEMENTATION-KICKOFF-20261008.md`, and the domain contracts. **All windows must leave a repository-visible, SHA-specific handoff.** A chat response by itself is not a handoff.

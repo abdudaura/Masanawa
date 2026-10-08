@@ -1,5 +1,15 @@
 # Requirements-to-Release Gate Sign-off — 2026-10-08
 
+## OWNER RE-AUDIT — outstanding R/C and Contacts K13–K20 (2026-10-08)
+
+The initial U01–U20/K01–K12 did not explicitly include a full **Contacts / optional on-device addressbook / invitations** acceptance path or assign every older unfinished feature. [Contacts and mandatory K13–K20 tests](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md) now cover real accepted Masanawa contacts and contact requests, permission-free usage, local-only phonebook with explicit consent, safe invitations, unauthorized person denial, lifecycle deletion and wrong-account privacy, low-end/RTL/phone normalization, and actual contact→DM/Wallet/Assistant ID validation. [All R01–R19/C01–C08 PR recovery ownership](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [F01–F18 and U21–U30](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md) and [79 unchecked old tasks](LEGACY-150-TASK-RECONCILIATION-20261008.md) are the full current backlog crosswalk. Preserve original 77 product trace and J01–J11, without changing statuses or fake release evidence.
+
+
+## Owner-approved U01–U20 expansion — 2026-10-08
+
+Add K01–K12 verification for universal operator, real product use, consented human DM contextual AI, Task/Study/File persistence, Talk/Twin value and low-end performance. Preserve original 77 P/N/T/M/A/W/Q requirements and J01–J11. Source written is NOT device/provider/DB proof; proactive K12 remains gated until a genuine consented scheduler exists. See [user journeys](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [U01–U20 owners](20-WINDOW-AI-CHAT-EXECUTION-20261008.md) and [execution evidence](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md).
+
+
 **DOCUMENTATION COVERAGE SIGN-OFF ONLY — NOT A PRODUCTION RELEASE CERTIFICATION.** The owner-discussion traceability audit on main has **77 distinct requirements**, of which 70 are LOCKED, 6 QUALIFIED and 1 PROPOSED/UNAPPROVED. Each item is mapped to an existing R01–R19 or C01–C08 implementation gate and, where applicable, one of J01–J11 end-to-end journeys.
 
 **How to read:** an entry below means the requirement has been captured, NOT coded, executed, deployed or verified. The full requirement wording and authority are in [OWNER-REQUIREMENTS-TRACEABILITY-20261008.md](OWNER-REQUIREMENTS-TRACEABILITY-20261008.md); the code handoff is [IMPLEMENTATION-KICKOFF-20261008.md](IMPLEMENTATION-KICKOFF-20261008.md).

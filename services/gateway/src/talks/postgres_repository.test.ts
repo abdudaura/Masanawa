@@ -21,9 +21,9 @@ function row(overrides: Record<string, unknown> = {}) {
 
 describe("Postgres Talk repository", () => {
   it("persists a newly created Talk as live with its human Host and start time", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
@@ -64,9 +64,9 @@ describe("Postgres Talk repository", () => {
   });
 
   it("updates metadata only for the canonical human Host", async () => {
-    let call: { text: string; values?: unknown[] } | undefined;
+    let call: { text: string; values?: unknown[] | undefined } | undefined;
     const pool: TalkSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         call = { text, values };
         return {
           rowCount: 1,
@@ -102,9 +102,9 @@ describe("Postgres Talk repository", () => {
   });
 
   it("keeps feed reads tenant scoped and distinguishes Explore from Live", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
@@ -153,9 +153,9 @@ describe("Postgres Talk repository", () => {
   });
 
   it("projects active human and AI Seats with canonical identities", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
@@ -341,3 +341,4 @@ describe("Postgres Talk repository", () => {
     expect(sql).toContain("host_block.blocked");
   });
 });
+

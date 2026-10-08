@@ -1,17 +1,19 @@
 import { createHmac } from "node:crypto";
 import Fastify from "fastify";
 import { describe, expect, it, vi } from "vitest";
+import type { CustomerChannelBridge } from "./customer_channel_bridge.js";
 import { registerCustomerChannelRoutes } from "./customer_channel_routes.js";
 
 function bridge() {
   return {
-    handle: vi.fn(async () => ({
+    handle: vi.fn<CustomerChannelBridge["handle"]>(async () => ({
+      handled: true,
       duplicate: false,
       reply: "",
       shouldDeliver: false,
       requestContact: false,
     })),
-    delivered: vi.fn(async () => undefined),
+    delivered: vi.fn<CustomerChannelBridge["delivered"]>(async () => undefined),
   };
 }
 
@@ -294,13 +296,14 @@ describe("customer channel webhook routes", () => {
     const app = Fastify();
     const channelBridge = bridge();
     channelBridge.handle.mockResolvedValueOnce({
+      handled: true,
       duplicate: false,
       reply: "I found several public Twins. Tell me the name or @ID you want:\n1. Aisha Bello (@aisha-one)\n2. Aisha Musa (@aisha-two)",
       shouldDeliver: true,
       requestContact: false,
     });
     const fetchMock = vi.fn(
-      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      async (_input: RequestInfo | URL, _init?: RequestInit | undefined) =>
         new Response(JSON.stringify({ ok: true, result: {} }), {
           status: 200,
           headers: { "content-type": "application/json" },
@@ -561,7 +564,7 @@ describe("customer channel webhook routes", () => {
       },
       cancel() { cancelled += 1; },
     });
-    const fetchMock = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) =>
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit | undefined) =>
       new Response(body, {
         status: 200,
         headers: { "content-type": "application/json", "content-length": "2" },
@@ -597,7 +600,7 @@ describe("customer channel webhook routes", () => {
   it("allows qualified small provider JSON and media with separate deadline signals", async () => {
     const app = Fastify();
     const channelBridge = bridge();
-    const fetchMock = vi.fn(async (target: RequestInfo | URL, _init?: RequestInit) =>
+    const fetchMock = vi.fn(async (target: RequestInfo | URL, _init?: RequestInit | undefined) =>
       String(target).includes("/getFile?")
         ? new Response(JSON.stringify({ ok: true, result: { file_path: "voice/sample.ogg" } }),
           { status: 200, headers: { "content-type": "application/json" } })
@@ -668,6 +671,7 @@ describe("customer channel webhook routes", () => {
     const app = Fastify();
     const channelBridge = bridge();
     channelBridge.handle.mockResolvedValueOnce({
+      handled: true,
       duplicate: false, reply: "Hello", shouldDeliver: true, requestContact: false,
     });
     const fetchMock = vi.fn(async () =>

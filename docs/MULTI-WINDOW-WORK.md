@@ -1,5 +1,15 @@
 # Multi-window Work Coordination
 
+## UPDATED WINDOW OWNERSHIP — 30 U product +18 F recovery scopes (2026-10-08)
+
+The first U01–U20 assignments stand. Owner requested comprehensive re-audit because WhatsApp-style Contacts and unfinished R/C integration were not explicitly covered. New [R/C completeness audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [U21–U30/F01–F18 owner matrix](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), [Contacts contract](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [79 historical tasks](LEGACY-150-TASK-RECONCILIATION-20261008.md), and [extra 28 prompts](ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md) take precedence over assumptions that all pending tasks were "inside 20." F lanes **continue real preexisting R/C PRs**, not restart them; only one shared Gateway, Flutter root, migration, money and Firebase integrator each at a time. Preserve C01 #468's actual but unmerged `HumanContactsScreen`; U21 supplies real Contacts Hub experience, U22 optional OS phonebook with informed permission and no covert upload. Blanket coding freeze remains lifted for safe nonoverlap; unverified PRs remain draft.
+
+
+## CURRENT OWNER OVERRIDE — twenty scoped windows reopened (2026-10-08)
+
+**The blanket 13:44Z Work consolidation pause is superseded, but all exact-path ownership, five-minute leases and safety gates remain.** Launch separately numbered U01–U20 feature windows using [U execution workbook](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [AI-first product](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [operator contract](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [Chat/AI privacy](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md) and [evidence gates](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). No duplicate C02 migrations, global router, main.ts/app.ts composer, financial ledger or Firebase owner; isolated source + realistic tests + repository-visible claim and SHA-specific draft PR handoff. Preserve Work #497, all R/C pending code and actual CI #457/device/provider blockers; later one Work window aligns/tests without making a fake 80% completion claim.
+
+
 ## Mandatory permanent handoff and final single-Work consolidation — 2026-10-08
 
 **Binding on every implementation window, every R/C lane and shared owner.** The detailed template, immutable evidence expectations, known competing PRs, and the final one-window reconciliation procedure are in [`docs/FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md`](FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md). **Read it before claiming a lane and again before ending or switching lanes.**

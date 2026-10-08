@@ -74,7 +74,7 @@ function app(input: Readonly<{
         },
       },
       executor,
-      catalogSource: input.catalogSource,
+      ...(input.catalogSource ? { catalogSource: input.catalogSource } : {}),
       activity: {
         async append(event) {
           if (input.activityFail) throw new Error('activity unavailable');

@@ -9,8 +9,6 @@ import type {
 function talk(input: Partial<TalkRecord> & Pick<TalkRecord, "talkId" | "hostUserId">): TalkRecord {
   return Object.freeze({
     tenantId: "tenant-1",
-    talkId: input.talkId,
-    hostUserId: input.hostUserId,
     hostName: input.hostUserId,
     title: input.talkId,
     topic: "Topic",
@@ -411,3 +409,4 @@ describe("Talk Explore feed ranking integration", () => {
     expect(result.map((item) => item.id)).toEqual(["live-a"]);
   });
 });
+

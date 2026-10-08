@@ -130,7 +130,7 @@ export function createS3AvatarObjectStore(input: Readonly<{
       const response = await fetchImpl(url, {
         method: "PUT",
         headers: signedHeaders("PUT", url, avatar.bytes),
-        body: avatar.bytes,
+        body: new Uint8Array(avatar.bytes),
         redirect: "error",
       });
       if (!response.ok) throw new Error("profile.avatar.object_write_failed");
@@ -149,3 +149,4 @@ export function createS3AvatarObjectStore(input: Readonly<{
     },
   } satisfies AvatarObjectStore);
 }
+

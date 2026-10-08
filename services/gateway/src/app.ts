@@ -1,3 +1,4 @@
+import { registerVersionedCompatibility } from "./api_compatibility.js";
 import { AgentDirectoryPreferenceError } from './agent_directory.js';
 import { strictRequestBody } from './strict_request_body.js';
 import Fastify from "fastify";
@@ -79,6 +80,8 @@ import type { BillingFinancialService } from "./financial_billing.js";
 import type { BillingWalletService } from "./billing_wallet.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
+import { registerInternalCryptoTransferRoutes } from "./internal_crypto_transfer_routes.js";
+import type { InternalCryptoTransferService } from "./internal_crypto_transfer.js";
 import {
   registerCustomerChannelRoutes,
   type CustomerChannelOptions,
@@ -140,6 +143,7 @@ export interface GatewayAppOptions {
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
   readonly financial?: FinancialService;
+  readonly internalCryptoTransfers?: InternalCryptoTransferService;
   readonly customerChannels?: CustomerChannelOptions;
   readonly linkedWhatsApp?: Readonly<{
     controller: LinkedWhatsAppController;
@@ -319,6 +323,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     bodyLimit: 1_048_576,
     requestTimeout: 30_000,
   }).withTypeProvider<TypeBoxTypeProvider>();
+  registerVersionedCompatibility(app);
 
   const now = options.now ?? nowInstant;
   const checks = options.readinessChecks ?? [];
@@ -1192,6 +1197,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         return { closed: true as const };
       },
     );
+  }
+
+  if (options.internalCryptoTransfers) {
+    registerInternalCryptoTransferRoutes(app, options.internalCryptoTransfers);
   }
 
   if (options.financial) {

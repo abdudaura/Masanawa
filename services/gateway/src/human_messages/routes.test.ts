@@ -29,7 +29,7 @@ function appHarness(useGateway = false){
   }});
   const app=useGateway ? createGatewayApp({humanDm:service}) : Fastify();
   if (!useGateway) {
-    app.setErrorHandler((error,_req,reply)=>{void reply.code(error.statusCode??500).send({error:error.message});});
+    app.setErrorHandler((error,_req,reply)=>{void reply.code((error as Error & {statusCode?: number}).statusCode??500).send({error:(error as Error).message});});
     registerHumanDmRoutes(app,service);
   }
   return{app,queries};

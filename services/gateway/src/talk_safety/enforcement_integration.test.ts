@@ -5,11 +5,11 @@ import { createPostgresTalkProfileRepository } from "../talk_profiles/postgres_r
 import { createPostgresReplayMediaRepository } from "../talk_replay/egress/postgres_media_repository.js";
 
 function recordingPool() {
-  const calls: Array<{ text: string; values?: unknown[] }> = [];
+  const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
   return {
     calls,
     pool: {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return { rowCount: 0, rows: [] as Row[] };
       },

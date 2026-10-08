@@ -6,9 +6,9 @@ import {
 
 describe("Postgres Talk library repository", () => {
   it("scopes My Talks to authenticated tenant and Host", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkLibrarySqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return { rowCount: 0, rows: [] as Row[] };
       },
@@ -28,9 +28,9 @@ describe("Postgres Talk library repository", () => {
   });
 
   it("keeps unpublished ended recordings out of Saved Talks", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkLibrarySqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return { rowCount: 0, rows: [] as Row[] };
       },
@@ -53,9 +53,9 @@ describe("Postgres Talk library repository", () => {
   });
 
   it("checks replay-aware public visibility before saving", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkLibrarySqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         if (text.includes("SELECT EXISTS") && text.includes("FROM talks.talks")) {
           return {
@@ -90,3 +90,4 @@ describe("Postgres Talk library repository", () => {
     ]);
   });
 });
+

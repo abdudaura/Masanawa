@@ -1,5 +1,15 @@
 # Masanawa — Definitive Implementation Kickoff (2026-10-08)
 
+## OWNER CORRECTION — full 48-scope backlog and Contacts (2026-10-08)
+
+The first U01–U20 parallel guide was useful but incomplete. The new [master unfinished-scope audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md) maps every current **R01–R19/C01–C08** plus open PR dependencies; [U21–U30 and foundation F01–F18](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md) give each missing product/foundation source an explicit owner, [Contacts contract](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md) defines the real Chats→New message contact journey, and [79-row historical task ledger mapping](LEGACY-150-TASK-RECONCILIATION-20261008.md) prevents silently losing future/historic tasks. [28 unique additional prompts](ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md) supplement, do not replace, first 20 prompts. **F windows reclaim existing drafts**, not create conflicting backend/schema/router. Owner coding pause remains lifted for isolated non-overlap; verify real DB/provider/device/CI separately before merge.
+
+
+## CURRENT OWNER RESUMPTION — ADDITIVE U01–U20 TRACK (2026-10-08)
+
+The owner has **lifted the global pause** for twenty nonoverlapping AI operator, human Chats, Talks and Twins development windows; Work #497 remains draft until later usage resets. Read [20-window executable assignments](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [product specification](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [operator V1](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human Chat contract](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md) and [actual verification gates](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). The original R01–R19/C01–C08 remain prerequisites and owners of their existing domain/finance/communications code. Keep new work in isolated U folders; shared composition/migrations/Firebase/five-tab router have single owners. Unverified feature branches stay draft/unmerged with detailed Work handoffs.
+
+
 ## Mandatory all-window checkpoint and one final Work handoff
 
 **Before claiming, switching or ending any R01–R19/C01–C08/shared lane, read [`docs/FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md`](FINAL-WINDOW-CONSOLIDATION-HANDOFF-20261008.md).** All windows must commit/push a `docs/workstreams/` handoff containing exact PR/branch/SHAs, implementation vs missing production code, executed/unexecuted tests, dependencies, conflicts, blockers and reproducible next steps, and link that record in the PR. The owner will later initiate **one** ChatGPT Work integration window to collect all branches/PRs, reconcile overlapping implementations and migrations, complete implementation gaps, run blocked verification and merge only genuinely verified changes. This does **not** exempt windows from implementing their whole owned source slice now or allow PARTIAL_IMPLEMENTATION to be called DONE.

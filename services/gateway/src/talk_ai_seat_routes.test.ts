@@ -9,7 +9,7 @@ const tenantId = createCanonicalId("tenant");
 const viewerId = createCanonicalId("user");
 const hostId = createCanonicalId("user");
 
-function repository(confirmationStatus: "admitted" | "pending_host" = "pending_host", twinOwnerUserId = createCanonicalId("user")): TalkAiSeatRepository {
+function repository(confirmationStatus: "admitted" | "pending_host" = "pending_host", twinOwnerUserId: string = createCanonicalId("user")): TalkAiSeatRepository {
   return {
     async listCandidates() {
       return [

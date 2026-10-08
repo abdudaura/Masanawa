@@ -4,7 +4,7 @@ import { createReplayObjectStore } from "./s3_object_store.js";
 
 describe("Replay private object store",()=>{
   it("hashes the private object using signed S3 GET",async()=>{
-    const calls:Array<{url:string;init?:RequestInit}>=[];
+    const calls:Array<{url:string;init?:RequestInit | undefined}>=[];
     const bytes=new TextEncoder().encode("recorded-audio");
     const store=createReplayObjectStore({
       endpoint:"https://ams3.digitaloceanspaces.com",
@@ -74,3 +74,4 @@ describe("Replay private object store",()=>{
     expect(method).toBe("DELETE");
   });
 });
+

@@ -1,5 +1,20 @@
 # Masanawa Documentation
 
+## Corrected completeness audit — Contacts plus all unfinished R/C requirements (2026-10-08)
+
+The initial U01–U20 plan is preserved, but new docs now specify human Contacts and the optional consented phonebook as well as remaining R/C and old production debt: [audit](UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [Contacts contract K13–K20](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [U21–U30 and F01–F18](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), [28 extra prompts](ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md), [79 historic unchecked entries](LEGACY-150-TASK-RECONCILIATION-20261008.md). C01 #468 already contains a **draft** `HumanContactsScreen`, so do not create a competing contact backend. F lanes recover existing R/C PRs, not overwrite them. Keep shared Gateway/Flutter/ledger/Firebase ownership serialized and unverified feature PRs draft/unmerged.
+
+
+## AI-first expansion and development reopened (2026-10-08)
+
+The owner lifted the global pause for twenty separately assigned isolated windows. New canonical reading: [product outcomes](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [one authorized action/task protocol](AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md), [human Chats and opt-in AI assistance](HUMAN-CHAT-AND-CONTEXTUAL-AI-CONTRACT-20261008.md), [twenty U01–U20 implementation assignments](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [K01–K12 integration acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). R/C/J ledgers, Flutter, five-tab navigation and safety still govern. Work #497 remains draft; source can progress in scoped branches but verification/merges remain evidence-gated.
+
+
+## Flutter-first mobile updates and Shorebird release governance — 2026-10-08
+
+**Owner decision:** no React Native second app. Preserve `apps/mobile` Flutter consumer and its separate Flutter admin companion. [`FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md`](FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md) governs the three change classes (versioned server content, Shorebird signed compatible Dart patch, signed Android/iOS binary), patch signing, version/engine/asset/native compatibility, app-store rules, release/patch provenance, compatibility, incident control, staging and rollback. [`../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md`](../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md) gives the required proof and CLI sequence. **Planning and policy only: no Shorebird binary/patch, account or devices have been verified.** This does not override the active Work #497 consolidation freeze or CI #457 and does not mark any R/C lane done.
+
+
 ## Backend/database portability and full-stack acceptance audit (2026-10-08)
 
 **All feature owners must read these along with the owner requirement trace and J journeys:** `BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md` (source + Railway evidence and exact unresolved portability/deployment risks), `DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md` (safe fresh-account encrypted backup, migration/restore and financial job-fencing rehearsal), and `BACKEND-FEATURE-TRACEABILITY-20261008.md` (every tab's Flutter→API→auth→repository→migration/media/outbox→readback test contract). They add evidence gates to existing R01–R19/C01–C08 owners, **not a new competing product plan**.

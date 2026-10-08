@@ -6,9 +6,9 @@ import {
 
 describe("Postgres Talk push dedupe", () => {
   it("claims a recipient event atomically and calculates bounded retention", async () => {
-    const calls: Array<{text:string;values?:unknown[]}> = [];
+    const calls: Array<{text:string;values?:unknown[] | undefined}> = [];
     const pool:TalkPushDedupeSqlPool = {
-      async query<Row>(text:string, values?:unknown[]) {
+      async query<Row>(text:string, values?:unknown[] | undefined) {
         calls.push({text,values});
         return {
           rowCount:1,
@@ -52,9 +52,9 @@ describe("Postgres Talk push dedupe", () => {
   });
 
   it("purges only expired claims in a bounded batch", async () => {
-    let call:{text:string;values?:unknown[]}|undefined;
+    let call:{text:string;values?:unknown[] | undefined}|undefined;
     const pool:TalkPushDedupeSqlPool = {
-      async query<Row>(text:string,values?:unknown[]) {
+      async query<Row>(text:string,values?:unknown[] | undefined) {
         call={text,values};
         return {
           rowCount:2,
@@ -107,3 +107,4 @@ describe("Postgres Talk push dedupe", () => {
     })).rejects.toThrow("limit");
   });
 });
+

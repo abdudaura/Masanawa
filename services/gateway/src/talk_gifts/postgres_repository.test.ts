@@ -6,9 +6,9 @@ import {
 
 describe("Postgres Talk gift repository", () => {
   it("resolves Host by tenant + Talk and never accepts a client recipient", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkGiftSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return {
           rowCount: 1,
@@ -62,9 +62,9 @@ describe("Postgres Talk gift repository", () => {
   });
 
   it("disallows gifting hidden Talks, blocked replays and safety-restricted Host profiles", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkGiftSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         return { rowCount: 0, rows: [] as Row[] };
       },

@@ -25,7 +25,7 @@ function repository(tokens: readonly string[]): MobilePushRepository {
         updatedAt: "2026-10-08T00:00:00Z" as never,
       }));
     },
-  } as MobilePushRepository;
+  } as unknown as MobilePushRepository;
 }
 
 function senderWith(
@@ -60,7 +60,7 @@ describe("R14 FCM delivery resilience", () => {
   it("delivers to every scoped registration, truncates visible copy and reuses OAuth", async () => {
     const sent: Array<{ token: string; title: string; body: string; data: Record<string, string> }> = [];
     let authCalls = 0;
-    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit | undefined) => {
       if (String(url).includes("oauth2.googleapis.com")) {
         authCalls += 1;
         return oauth();
@@ -122,12 +122,12 @@ describe("R14 FCM delivery resilience", () => {
   it("refreshes rejected OAuth once and uses the renewed token for subsequent devices", async () => {
     let oauthCalls = 0;
     const headers: string[] = [];
-    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit | undefined) => {
       if (String(url).includes("oauth2.googleapis.com")) {
         oauthCalls += 1;
         return Response.json({ access_token: `oauth-${oauthCalls}`, expires_in: 3600 });
       }
-      const bearer = (init?.headers as Record<string, string>).authorization;
+      const bearer = new Headers(init?.headers).get("authorization") ?? "";
       headers.push(bearer);
       return bearer === "Bearer oauth-1" ? failed(401) : Response.json({ name: "ok" });
     });
@@ -147,7 +147,7 @@ describe("R14 FCM delivery resilience", () => {
   });
 
   it("bounds the OAuth exchange and sanitizes an aborted transport error", async () => {
-    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit | undefined) => {
       expect(init?.signal).toBeInstanceOf(AbortSignal);
       expect(init?.signal?.aborted).toBe(false);
       throw new Error("secret in low-level OAuth transport exception");
@@ -160,7 +160,7 @@ describe("R14 FCM delivery resilience", () => {
   it("attaches independent abort deadlines to each FCM device attempt", async () => {
     const deviceTokens: string[] = [];
     const signals: AbortSignal[] = [];
-    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit | undefined) => {
       if (String(url).includes("oauth2.googleapis.com")) return oauth();
       expect(init?.signal).toBeInstanceOf(AbortSignal);
       signals.push(init!.signal!);
@@ -179,7 +179,7 @@ describe("R14 FCM delivery resilience", () => {
 
   it("never retries an ambiguous network failure that could duplicate a notification", async () => {
     const seen: string[] = [];
-    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit | undefined) => {
       if (String(url).includes("oauth2.googleapis.com")) return oauth();
       const token = (JSON.parse(String(init?.body)) as { message: { token: string } }).message.token;
       seen.push(token);

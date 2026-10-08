@@ -25,9 +25,9 @@ function humanRow(overrides: Record<string, unknown> = {}) {
 
 describe("Postgres Talk profile repository", () => {
   it("reads a human profile with viewer-scoped follow state and server counts", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkProfileSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 1, rows: [humanRow()] as unknown as Row[] };
       },
@@ -52,9 +52,9 @@ describe("Postgres Talk profile repository", () => {
   });
 
   it("reads a human profile by canonical user id with viewer follow state", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkProfileSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 1, rows: [humanRow()] as unknown as Row[] };
       },
@@ -77,10 +77,10 @@ describe("Postgres Talk profile repository", () => {
   });
 
   it("uses insert-on-conflict for idempotent follow and scoped delete for unfollow", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     let reads = 0;
     const pool: TalkProfileSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("SELECT p.user_id FROM talks.public_profiles p")) {
           return { rowCount: 1, rows: [{ user_id: "user_target" }] as unknown as Row[] };
@@ -120,9 +120,9 @@ describe("Postgres Talk profile repository", () => {
   });
 
   it("uses the same idempotent follow table for canonical user-id targets", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkProfileSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("SELECT p.user_id, p.handle")) {
           return {

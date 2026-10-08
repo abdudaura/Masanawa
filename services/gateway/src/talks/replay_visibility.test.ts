@@ -6,24 +6,24 @@ import {
 
 describe("Talk replay visibility",()=>{
   it("requires a published finalized replay before ended Talks enter Explore",async()=>{
-    const calls:Array<{text:string;values?:unknown[]}>= [];
+    const calls:Array<{text:string;values?:unknown[] | undefined}>= [];
     const pool:TalkSqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         calls.push({text,...(values===undefined?{}:{values})});
         return {rowCount:0,rows:[] as unknown as Row[]};
       },
     };
     await createPostgresTalkRepository(pool).listTalks({
-      tenantId:"tenant_1",feed:"explore",limit:40,
+      tenantId:"tenant_1",viewerUserId:"user_viewer",feed:"explore",limit:40,
     });
     expect(calls[0]?.text).toContain("recording_state='finalized'");
     expect(calls[0]?.text).toContain("publication_state='published'");
   });
 
   it("lets only the Host or a public replay resolve an ended Talk detail",async()=>{
-    const calls:Array<{text:string;values?:unknown[]}>= [];
+    const calls:Array<{text:string;values?:unknown[] | undefined}>= [];
     const pool:TalkSqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         calls.push({text,...(values===undefined?{}:{values})});
         return {rowCount:0,rows:[] as unknown as Row[]};
       },
@@ -37,9 +37,9 @@ describe("Talk replay visibility",()=>{
   });
 
   it("blocks comments on private ended Talks for non-Hosts",async()=>{
-    const calls:Array<{text:string;values?:unknown[]}>= [];
+    const calls:Array<{text:string;values?:unknown[] | undefined}>= [];
     const pool:TalkSqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         calls.push({text,...(values===undefined?{}:{values})});
         return {rowCount:0,rows:[] as unknown as Row[]};
       },

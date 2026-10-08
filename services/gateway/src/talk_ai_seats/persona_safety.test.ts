@@ -5,7 +5,7 @@ import { createPostgresTalkAiSeatRepository } from "./postgres_repository.js";
 
 interface RecordedQuery {
   text: string;
-  values?: unknown[];
+  values?: unknown[] | undefined;
 }
 
 function fixture(safetyAllowed: boolean, existingQuote?: TalkAiSeatQuote) {
@@ -22,7 +22,7 @@ function fixture(safetyAllowed: boolean, existingQuote?: TalkAiSeatQuote) {
     safety_allowed: safetyAllowed,
     twin_owner_user_id: null,
   };
-  const query = async <Row>(text: string, values?: unknown[]) => {
+  const query = async <Row>(text: string, values?: unknown[] | undefined) => {
     calls.push({ text, values });
     if (text.includes("FROM talks.talks t")) {
       return { rowCount: 1, rows: [{

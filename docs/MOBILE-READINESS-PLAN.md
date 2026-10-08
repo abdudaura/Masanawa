@@ -1,5 +1,20 @@
 # Mobile Readiness and Global Integration Plan
 
+## COMPLETENESS CORRECTION — all R01–R19 still need explicit recovery owners (2026-10-08)
+
+The U01–U20 product upgrades did **not** replace the mandatory R01–R19 and C01–C08 source/release backlog. [Every unfinished R and C item with existing draft PRs](UNFINISHED-SCOPE-RECONCILIATION-20261008.md) is assigned recovery ownership **F01–F18** and tested alongside **U01–U30** in the [expanded allocation](ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md). Human Chats now include [real Contacts screen and optional consented phonebook/invite](CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), K13–K20. The old [150-task ledger's 79 unchecked items](LEGACY-150-TASK-RECONCILIATION-20261008.md) are classified current/gated/future/release. Original R rows/statuses below **remain unchanged**, none automatically DONE. Shared root/DB/ledger/Firebase integration must not be developed simultaneously in competing PRs, and CI #457/device/financial/provider evidence stays open until actual tests.
+
+
+## Latest AI-first product scope — 2026-10-08
+
+**Owner 2026-10-08 U01–U20 extension:** existing R01–R19 and C01–C08 remain required and unchanged. Additional full-stack scopes target AI execution, memory/tasks, teaching/files, human Chat quality with opt-in selected-message help, Talk/Twin value, and low-end/linguistic experience. Read [product](AI-FIRST-PRODUCT-AND-HUMAN-COMMUNICATION-20261008.md), [20 workstreams](20-WINDOW-AI-CHAT-EXECUTION-20261008.md), [K01–K12 acceptance](20-WINDOW-INTEGRATION-AND-ACCEPTANCE-20261008.md). Owner lifts coding pause but does NOT qualify CI/DB/device/provider tests or change R/C statuses.
+
+
+## Mobile OTA delivery qualification overlay — 2026-10-08
+
+Owner cancelled the separate React Native initiative and approved a **Flutter-first/Shorebird** release plan. This is a delivery-safety overlay, **not** an additional R/C lane or a claim that code push currently works. For every release-bound R01–R19/C01–C08 task, record whether it requires (a) authorized versioned Gateway data only, (b) signed Shorebird-compatible Dart patch to a pre-existing Shorebird release or (c) newly signed Play/App Store binary. Before shipping first patchable release: complete consolidation, Firebase/native config, actual Android and iOS signing, backend/DB/provider/device golden journeys, QA two-launch patch/rollback proof, signed patch key custody and release metadata. **No native code/plugin/permission/asset/engine patch shortcuts;** older non-Shorebird APKs need a normal signed binary upgrade first. Detailed contract: [`FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md`](FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md); runbook [`../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md`](../apps/mobile/docs/SHOREBIRD-QUALIFICATION-RUNBOOK.md). Nothing here promotes current R/C statuses or clears CI #457/Work #497 blockers.
+
+
 ## Owner conversation acceptance coverage overlay (2026-10-08)
 
 For every R01–R19 row, use `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` to ensure **nothing from the owner-approved end-user vision is lost**: voice-only accessibility with complete text/tap parity, camera-free audio creation/earnings, authentic person-to-person messaging with fast durable history, the exact five-tab shell and switchable one-chat Gwani/Gwana operator, qualified crypto internal transfers and billing/crypto recovery, full Agent/Twin/public stage, cross-screen privacy and real Android performance. Trace IDs and J01–J11 are crosschecks, **not new R milestones, skipped dependencies or acceptance credit**. A live user journey is not done until actual backend/mobile/deployment/device/provider gates for the relevant R and C rows are proven.

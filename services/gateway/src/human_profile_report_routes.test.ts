@@ -8,11 +8,11 @@ describe("R15 human profile report HTTP contract", () => {
     let observed: Parameters<TalkSafetyService["report"]>[0] | null = null;
     const server = Fastify();
     registerTalkSafetyRoutes(server, {
-      async report(request) {
+      async report(request: Parameters<TalkSafetyService["report"]>[0]) {
         observed = request;
         return {reportId:"confirmed-report",accepted:true};
       },
-    } as TalkSafetyService);
+    } as unknown as TalkSafetyService);
     try {
       const response = await server.inject({
         method:"POST",url:"/safety/reports",
@@ -39,7 +39,7 @@ describe("R15 human profile report HTTP contract", () => {
     const server=Fastify();
     registerTalkSafetyRoutes(server, {
       async report(){count++;return {reportId:"no",accepted:true};},
-    } as TalkSafetyService);
+    } as unknown as TalkSafetyService);
     try {
       const response=await server.inject({
         method:"POST",url:"/safety/reports",
