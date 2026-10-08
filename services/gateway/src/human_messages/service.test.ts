@@ -49,8 +49,7 @@ function fixture(opts: {notFound?:boolean; rate?:boolean; conflict?:boolean} = {
   const service=createHumanMessageService({repository:repo,authorizer:{
     async authorize({authorizationHeader}) {
       if(authorizationHeader!=="Bearer alice")throw Object.assign(new Error("UNAUTHORIZED"),{statusCode:401});
-      return {tenantId:"tenant-1" as never,userId:"person-a" as never,
-        profile:{tenantId:"tenant-1" as never,userId:"person-a" as never} as never};
+      return {tenantId:"tenant-1",userId:"person-a"} as never;
     },
   }});
   const app=Fastify(); registerHumanMessageRoutes(app,service);
