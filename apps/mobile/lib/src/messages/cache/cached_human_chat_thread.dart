@@ -107,6 +107,20 @@ class _CachedHumanChatThreadState extends State<CachedHumanChatThread> {
       unawaited(widget.sync.flushPending().then((_) async {
         if (mounted && token == _epoch) await _refreshOutbox();
       }).catchError((Object _) {}));
+    } on HumanChatRejected catch (error) {
+      if (!mounted || token != _epoch) return;
+      if (error.code == 'ACCESS_REVOKED' ||
+          error.code == 'CONVERSATION_DELETED') {
+        setState(() {
+          _messages = const [];
+          _outbox = const [];
+          _hasMoreCached = false;
+          _warning = 'Access to this conversation was revoked.';
+        });
+      } else {
+        setState(() => _warning =
+            'Message access was refused. No new messages were loaded.');
+      }
     } catch (_) {
       if (!mounted || token != _epoch) return;
       setState(() => _warning =
