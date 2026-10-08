@@ -433,6 +433,25 @@ class HumanChatCache {
     return List.unmodifiable(rows.map(CachedHumanOutboxItem.fromRow));
   }
 
+  /// All visible queued/uncertain/blocked items for this thread, not only
+  /// those whose retry deadline has elapsed. Used for truthful offline UI.
+  Future<List<CachedHumanOutboxItem>> queuedForConversation({
+    required String tenantId,
+    required String userId,
+    required String conversationId,
+    int limit = 50,
+  }) async {
+    if (limit < 1 || limit > 50) throw RangeError.range(limit, 1, 50);
+    final rows = await _forAccount(tenantId, userId).query(
+      'outbox',
+      where: 'conversation_id = ?',
+      whereArgs: [conversationId],
+      orderBy: 'created_at_ms DESC,request_id DESC',
+      limit: limit,
+    );
+    return List.unmodifiable(rows.map(CachedHumanOutboxItem.fromRow));
+  }
+
   Future<void> markAttempt({
     required String tenantId,
     required String userId,
