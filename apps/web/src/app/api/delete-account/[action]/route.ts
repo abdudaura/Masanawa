@@ -107,6 +107,28 @@ export async function POST(
   if (!sameOrigin(request)) return response("ORIGIN_DENIED", 403);
   const { action: rawAction } = await context.params;
   if (rawAction === "end-session") {
+    // Revoke the short-lived access token at its original session authority.
+    // Even if the gateway is unavailable, destroy the browser-held cookie.
+    const existingToken = request.cookies.get(SESSION_COOKIE)?.value;
+    const base = targetBase();
+    if (existingToken && base) {
+      try {
+        await fetch(new URL("auth/logout", base), {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${existingToken}`,
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          body: "{}",
+          redirect: "manual",
+          cache: "no-store",
+          signal: AbortSignal.timeout(5_000),
+        });
+      } catch {
+        // Cookie deletion is mandatory even if revocation cannot be reached.
+      }
+    }
     const result = NextResponse.json({ ok: true }, {
       headers: { "cache-control": "no-store" },
     });
