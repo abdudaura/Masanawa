@@ -95,6 +95,7 @@ import {
   createPostgresTwinRuntimeRepository,
   createPostgresTwinEconomyEventStore,
   withTransaction,
+  initializePostgresPolicyRevision,
 } from "@masanawa/postgres";
 import {
   createAgentDirectoryService,
@@ -291,6 +292,7 @@ export interface ServiceProcess extends NodeSignalSource {
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
   readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
+  readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
   readonly agentPresentations?: AgentPresentationRepository;
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterSessions?: CharacterSessionRepository;
@@ -411,6 +413,8 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
+      withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
     platformAgentIdentity: Object.freeze({
       async provision(input: Parameters<PlatformAgentIdentityProvisioner["provision"]>[0]) {
         await withTransaction(database.pool, async (client) => {
@@ -773,6 +777,16 @@ export async function startGatewayService(
   ) {
     platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
     const activePlatformTenantId = platformTenantId;
+    const platformPolicyRevision = env.MASANAWA_PLATFORM_POLICY_REVISION?.trim() || "production-mobile-v1";
+    try {
+      if (!database.initializePlatformPolicy) {
+        throw new Error("Platform customer runtime requires policy initialization");
+      }
+      await database.initializePlatformPolicy(activePlatformTenantId, platformPolicyRevision);
+    } catch (error) {
+      await database.close().catch(() => undefined);
+      throw error;
+    }
 
     if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
       if (!database.platformAgentIdentity || !database.skillDistribution) {
@@ -888,9 +902,7 @@ export async function startGatewayService(
             },
           }
         : {}),
-      policyRevision:
-        env.MASANAWA_PLATFORM_POLICY_REVISION?.trim() ||
-        "production-mobile-v1",
+      policyRevision: platformPolicyRevision,
     });
     if (!options.agentDirectoryAuthorizer) {
       directoryAuthorizer = customerAuthorizers.directory;
