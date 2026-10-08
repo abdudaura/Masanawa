@@ -749,6 +749,8 @@ class _HistoryTile extends StatelessWidget {
       'withdraw' => Icons.call_made_rounded,
       'convert' => Icons.swap_horiz_rounded,
       'buy' => Icons.add_card_rounded,
+      'transfer' => intent.transferDirection == 'in'
+        ? Icons.call_received_rounded : Icons.call_made_rounded,
       _ => Icons.currency_bitcoin,
     };
     final showsTarget =
@@ -766,7 +768,9 @@ class _HistoryTile extends StatelessWidget {
         child: Icon(icon, color: statusColor),
       ),
       title: Text(
-        CryptoWalletScreen.operationTitle(intent.operation),
+        intent.operation == 'transfer'
+          ? (intent.transferDirection == 'in' ? 'Received from Masanawa user' : 'Sent to Masanawa user')
+          : CryptoWalletScreen.operationTitle(intent.operation),
         style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
