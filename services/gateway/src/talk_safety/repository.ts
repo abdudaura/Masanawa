@@ -196,7 +196,7 @@ export function createPostgresTalkSafetyRepository(
            )
            INSERT INTO talks.safety_enforcement(
              tenant_id,target_kind,target_id,revision,visibility,reason_code,updated_at
-           ) SELECT $1,$2,$3,$4,$5,$6,$7 FROM admission_guard
+           ) SELECT $1,$2,$3,$4,$5,$6,$7 FROM admission_guard WHERE TRUE
            ON CONFLICT DO NOTHING
            RETURNING tenant_id,target_kind,target_id,revision,visibility,reason_code,updated_at`,
           [
