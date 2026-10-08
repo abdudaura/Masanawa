@@ -53,8 +53,9 @@ class WalletEntry {
     if (id is! String ||
         kind is! String ||
         title is! String ||
-        amount is! num ||
+        amount is! int ||
         amount < 0 ||
+        amount > 9007199254740991 ||
         createdAt is! String) {
       throw const FormatException('Invalid wallet entry');
     }
@@ -62,7 +63,7 @@ class WalletEntry {
       id: id,
       kind: _kind(kind),
       title: title,
-      amountCredits: amount.toInt(),
+      amountCredits: amount,
       incoming: json['incoming'] == true,
       createdAt: DateTime.parse(createdAt).toLocal(),
     );
@@ -98,10 +99,10 @@ class WalletView {
   factory WalletView.fromJson(Map<String, dynamic> json) {
     int credits(String key) {
       final value = json[key];
-      if (value is! num || value < 0) {
+      if (value is! int || value < 0 || value > 9007199254740991) {
         throw FormatException('Invalid wallet balance: $key');
       }
-      return value.toInt();
+      return value;
     }
     final entries = json['entries'];
     if (entries is! List) throw const FormatException('Invalid wallet history');
@@ -188,8 +189,9 @@ class CreditTransferReceipt {
     final completedAt = json['completedAt'];
     if (transferId is! String ||
         recipientUserId is! String ||
-        amount is! num ||
+        amount is! int ||
         amount < 1 ||
+        amount > 9007199254740991 ||
         completedAt is! String) {
       throw const FormatException('Invalid Credit transfer receipt');
     }
@@ -226,8 +228,9 @@ class GiftReceipt {
     if (giftId is! String ||
         recipientUserId is! String ||
         characterId is! String ||
-        amount is! num ||
+        amount is! int ||
         amount < 1 ||
+        amount > 9007199254740991 ||
         completedAt is! String) {
       throw const FormatException('Invalid gift receipt');
     }
