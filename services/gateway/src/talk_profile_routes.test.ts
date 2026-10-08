@@ -6,14 +6,17 @@ import type { TalkProfileRepository } from "./talk_profiles/model.js";
 
 function repo(): TalkProfileRepository {
   let following = false;
+  let displayName = "Amina";
+  let biography = "Host";
+  let avatarUrl: string | null = "https://assets.example.test/avatar.jpg";
   return {
     async readHuman({ handle }) {
       if (handle !== "amina") return null;
       return {
         handle: "amina",
-        displayName: "Amina",
-        bio: "Host",
-        avatarUrl: null,
+        displayName,
+        bio: biography,
+        avatarUrl,
         followerCount: following ? 11 : 10,
         followingCount: 2,
         isFollowing: following,
@@ -25,7 +28,7 @@ function repo(): TalkProfileRepository {
       };
     },
     async readHumanByUserId({ userId }) {
-      if (userId !== "user_am") return null;
+      if (userId !== "user_am" && userId !== "user_viewer") return null;
       return {
         handle: "amina",
         displayName: "Amina",
@@ -93,6 +96,28 @@ function repo(): TalkProfileRepository {
         topics: ["Business"],
         appearances: [],
         isVerified: true,
+      };
+    },
+    async updateOwnHuman(input) {
+      if (input.tenantId !== "tenant_1" || input.userId !== "user_viewer") {
+        return null;
+      }
+      if (input.displayName !== undefined) displayName = input.displayName;
+      if (input.bio !== undefined) biography = input.bio;
+      if (input.removeAvatar === true) avatarUrl = null;
+      return {
+        handle: "amina",
+        displayName,
+        bio: biography,
+        avatarUrl,
+        followerCount: following ? 11 : 10,
+        followingCount: 2,
+        isFollowing: following,
+        isLive: true,
+        liveTalkId: "talk_live",
+        twinPublicId: "persona_twin",
+        twinDisplayName: "Amina Twin",
+        talks: [],
       };
     },
     async upsertHuman() {},
@@ -210,4 +235,67 @@ describe("Talk social profile API", () => {
       seatFeeLabel: "₦250",
     });
   });
+  it("requires authentication and edits only the authenticated self profile", async () => {
+    const server = app();
+    const denied = await server.inject({
+      method: "PATCH", url: "/profiles/me",
+      payload: { displayName: "Taken Over" },
+    });
+    expect(denied.statusCode).toBe(401);
+    const self = await server.inject({
+      method: "GET", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(self.statusCode).toBe(200);
+    expect(self.json()).toMatchObject({
+      handle: "amina", displayName: "Amina",
+    });
+
+    const edited = await server.inject({
+      method: "PATCH", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        displayName: "  Amina   Bello ",
+        bio: "  Learning and community  ",
+        removeAvatar: true,
+      },
+    });
+    expect(edited.statusCode).toBe(200);
+    expect(edited.json()).toMatchObject({
+      handle: "amina",
+      displayName: "Amina Bello",
+      bio: "Learning and community",
+      avatarUrl: null,
+    });
+    const refreshed = await server.inject({
+      method: "GET", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(refreshed.json()).toMatchObject({
+      displayName: "Amina Bello",
+      avatarUrl: null,
+    });
+    await server.close();
+  });
+
+  it("rejects invalid edits and arbitrary ownership/URL writes", async () => {
+    const server = app();
+    for (const payload of [
+      { displayName: "  " },
+      { bio: "x".repeat(301) },
+      { removeAvatar: false },
+      { handle: "takeover" },
+      { avatarUrl: "https://attacker.example/track" },
+      { userId: "user_am", displayName: "Imposter" },
+    ]) {
+      const reply = await server.inject({
+        method: "PATCH", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload,
+      });
+      expect(reply.statusCode).toBe(400);
+    }
+    await server.close();
+  });
+
 });
