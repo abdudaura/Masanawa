@@ -47,6 +47,13 @@ certificate="$(keytool -printcert -jarfile "$artifact" 2>&1)" || {
   echo "Cannot read signed bundle certificate" >&2
   exit 1
 }
+# Every payload must be signed by one explicitly pinned upload identity.
+# Multiple signers can leave a valid signature with additional unpinned authority.
+signerCount="$(grep -Ec '^Signer #[0-9]+:' <<<"$certificate" || true)"
+if [[ "$signerCount" != "1" ]]; then
+  echo "Bundle must have exactly one signing identity (found $signerCount)" >&2
+  exit 1
+fi
 if grep -Eiq 'CN=Android Debug([,[:space:]]|$)' <<<"$certificate"; then
   echo "Refusing Android debug signing certificate" >&2
   exit 1
