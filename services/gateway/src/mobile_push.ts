@@ -145,14 +145,22 @@ export function createFcmPushSender(input: {
       const assertion = `${unsigned}.${signer
         .sign(credentials.private_key)
         .toString("base64url")}`;
-      const response = await fetchImpl(credentials.token_uri!, {
-        method: "POST",
+      let response: Response;
+      try {
+        response = await fetchImpl(credentials.token_uri!, {
+          method: "POST",
+          signal: AbortSignal.timeout(15_000),
         headers: { "content-type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
           assertion,
         }),
-      });
+        });
+      } catch {
+        // A timed-out OAuth call cannot authorize a send. Never include
+        // transport or service-account details in caller-visible errors.
+        throw new Error("Firebase OAuth failed");
+      }
       if (!response.ok) throw new Error("Firebase OAuth failed");
       const payload = (await response.json()) as {
         access_token?: unknown;
@@ -228,6 +236,9 @@ export function createFcmPushSender(input: {
               )}/messages:send`,
               {
                 method: "POST",
+                // A timeout after dispatch is ambiguous and must not be retried
+                // as a new push. The catch below advances to the next device.
+                signal: AbortSignal.timeout(15_000),
                 headers: {
                   authorization: `Bearer ${bearer}`,
                   "content-type": "application/json",
