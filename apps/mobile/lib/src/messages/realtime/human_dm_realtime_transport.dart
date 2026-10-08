@@ -63,8 +63,13 @@ class HumanDmRealtimeEvent {
     if (messageEvent && (msg == null || seq == null)) {
       throw const FormatException('Missing message event information');
     }
-    if (!messageEvent && (msg != null || seq != null)) {
-      throw const FormatException('Unexpected private message contents');
+    if (kind == HumanDmChange.readChanged &&
+        (msg != null || seq == null)) {
+      throw const FormatException('Invalid read receipt high-water');
+    }
+    if (kind == HumanDmChange.accessChanged &&
+        (msg != null || seq != null)) {
+      throw const FormatException('Unexpected access-change payload');
     }
     return HumanDmRealtimeEvent(
       eventId: _cursor(json['eventId']),
