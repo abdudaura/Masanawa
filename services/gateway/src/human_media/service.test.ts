@@ -2,7 +2,7 @@ import { describe,expect,it,vi } from "vitest";
 import { createHash } from "node:crypto";
 import { createPrivateVoiceNoteService,VoiceNoteError } from "./service.js";
 import type { VoiceNoteRepository, PrivateVoiceObjectStore, VoiceStaged } from "./model.js";
-import { validOpus } from "./ogg_opus.test.js";
+import { validOpus } from "./ogg_opus_test_fixture.js";
 
 const tenantId="tenant_test",userId="user_alice";
 const conversationId="00000000-0000-4000-8000-000000000001";
