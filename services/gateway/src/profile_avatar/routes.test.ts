@@ -67,4 +67,30 @@ describe("avatar binary HTTP boundary", () => {
     expect(response.statusCode).toBe(415);
     await app.close();
   });
+  it("requires a canonical photo version before touching owner storage", async () => {
+    const app = Fastify();
+    let invoked = false;
+    registerProfileAvatarRoutes(app, {
+      async upload() {
+        invoked = true;
+        return { avatarUrl: "https://images.example/avatar.png" };
+      },
+      async remove() {
+        invoked = true;
+        return { avatarUrl: null };
+      },
+      async collectGarbage() {
+        return { deleted: 0, failed: 0 };
+      },
+    });
+    const result = await app.inject({
+      method: "POST", url: "/profiles/me/avatar",
+      headers: { "content-type": "image/png" },
+      payload: validAvatarPng(),
+    });
+    expect(result.statusCode).toBe(400);
+    expect(invoked).toBe(false);
+    await app.close();
+  });
+
 });
