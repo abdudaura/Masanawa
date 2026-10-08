@@ -32,6 +32,7 @@ export interface TalkSafetyService {
     reason: TalkSafetyReportReason;
     detail?: string | null;
     clientRequestId: string;
+    expectedReporterUserId?: string;
   }>): Promise<Readonly<{ reportId: string; accepted: true }>>;
   readPreference(input: Readonly<{
     authorizationHeader: string | undefined;
@@ -109,6 +110,10 @@ export function createTalkSafetyService(input:Readonly<{
   return Object.freeze<TalkSafetyService>({
     async report(request){
       const reporter=await customer(request.authorizationHeader);
+      if(request.expectedReporterUserId !== undefined &&
+         request.expectedReporterUserId !== reporter.userId){
+        throw Object.assign(new Error("reporter.session_changed"),{statusCode:409});
+      }
       // A public human profile is addressed by a mutable handle in mobile UI,
       // but the moderation queue must retain the immutable tenant-scoped user ID.
       // Existing callers may supply a user ID directly (e.g. Talk participant).
