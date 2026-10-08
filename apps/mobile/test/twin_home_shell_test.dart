@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/activity/talk_activity.dart';
 import 'package:masanawa/src/agents/twin_directory.dart';
+import 'package:masanawa/src/agents/agent_directory.dart';
 import 'package:masanawa/src/screens/twin/twin_home_shell.dart';
 import 'package:masanawa/src/state/talk_activity_state.dart';
 import 'package:masanawa/src/state/twin_directory_state.dart';
@@ -145,6 +146,31 @@ Widget _app({TalkActivityTransport? activity, int initialIndex = 0}) {
 }
 
 void main() {
+  test('R17 agent search matches server roles and names without inventing records', () {
+    const agents = [
+      AgentDirectoryEntry(
+        characterId: 'expert-1',
+        characterVersionId: 'v1',
+        displayName: 'Kwararriya',
+        roleLabel: 'Research expert',
+        about: 'Evidence and sources',
+        presence: AgentPresence.available,
+      ),
+      AgentDirectoryEntry(
+        characterId: 'support-1',
+        characterVersionId: 'v2',
+        displayName: 'Gwani',
+        roleLabel: 'Assistant',
+        about: 'General support',
+        presence: AgentPresence.offline,
+      ),
+    ];
+    expect(matchingAgentEntries(agents, 'research').single.characterId, 'expert-1');
+    expect(matchingAgentEntries(agents, 'GWANI').single.characterId, 'support-1');
+    expect(matchingAgentEntries(agents, 'not-found'), isEmpty);
+    expect(matchingAgentEntries(agents, '').length, 2);
+  });
+
   testWidgets('R17 root shell has the approved four destinations and header', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
