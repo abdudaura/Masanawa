@@ -105,4 +105,29 @@ describe("Talk replay visibility",()=>{
     expect(sql).toContain("hidden_se.visibility IN ('restricted','blocked')");
     expect(sql).toContain("replay_se.target_id=r.recording_id");
   });
+
+  it("hides a Host's Talks from someone that Host blocked, both in feed and public detail",async()=>{
+    const queries:string[]=[];
+    const pool:TalkSqlPool={
+      async query<Row>(text:string){
+        queries.push(text);
+        return {rowCount:0,rows:[] as unknown as Row[]};
+      },
+    };
+    const repository=createPostgresTalkRepository(pool);
+    await repository.listTalks({
+      tenantId:"tenant_1",viewerUserId:"viewer_1",feed:"explore",limit:20,
+    });
+    await repository.getTalk({
+      tenantId:"tenant_1",talkId:"talk_1",viewerUserId:"viewer_1",
+    });
+    for(const sql of queries){
+      expect(sql).toContain("host_block.tenant_id = t.tenant_id");
+      expect(sql).toContain("host_block.viewer_user_id = t.host_user_id");
+      expect(sql).toContain("host_block.subject_user_id = $3");
+      expect(sql).toContain("host_block.blocked = TRUE");
+    }
+    // The existing Host-only detail exception still precedes the public rules.
+    expect(queries[1]).toContain("t.host_user_id = $3");
+  });
 });
