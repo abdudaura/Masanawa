@@ -28,7 +28,7 @@ const validTransitions: Record<AccountDeletionPhase, readonly AccountDeletionPha
   "identity-verified": ["awaiting-settlement", "processing", "failed"],
   "awaiting-settlement": ["processing", "failed"],
   processing: ["awaiting-settlement", "completed", "failed"],
-  failed: ["identity-verified", "awaiting-settlement", "processing"],
+  failed: ["identity-verified"],
   completed: [],
 };
 
