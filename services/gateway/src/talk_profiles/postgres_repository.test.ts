@@ -24,6 +24,53 @@ function humanRow(overrides: Record<string, unknown> = {}) {
 }
 
 describe("Postgres Talk profile repository", () => {
+  it("atomically upserts only the authenticated user's editable fields", async () => {
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const pool: TalkProfileSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
+        if (text.includes("SELECT p.tenant_id") && text.includes("p.user_id = $3")) {
+          return {
+            rowCount: 1,
+            rows: [humanRow({
+              user_id: "signed_in_user",
+              handle: "new_handle",
+              display_name: "Amina Bello",
+              bio: "Researcher",
+              avatar_url: "https://media.example.test/owned-avatar.webp",
+            })] as unknown as Row[],
+          };
+        }
+        return { rowCount: 1, rows: [] as unknown as Row[] };
+      },
+    };
+    const updated = await createPostgresTalkProfileRepository(pool).saveSelf({
+      tenantId: "tenant_a",
+      userId: "signed_in_user",
+      handle: "new_handle",
+      displayName: "Amina Bello",
+      bio: "Researcher",
+    });
+    expect(updated).toMatchObject({
+      handle: "new_handle",
+      avatarUrl: "https://media.example.test/owned-avatar.webp",
+    });
+    expect(calls[0]?.values).toEqual([
+      "tenant_a", "signed_in_user", "new_handle", "Amina Bello", "Researcher",
+    ]);
+    const write = calls[0]?.text ?? "";
+    expect(write).toContain("ON CONFLICT (tenant_id, user_id) DO UPDATE");
+    expect(write).toContain("display_name = EXCLUDED.display_name");
+    expect(write).toContain("bio = EXCLUDED.bio");
+    expect(write).not.toContain("avatar_url");
+    expect(write).not.toContain("live_talk_id");
+    expect(write).not.toContain("talks_json");
+    expect(calls[1]?.values).toEqual([
+      "tenant_a", "signed_in_user", "signed_in_user",
+    ]);
+  });
+
+
   it("reads a human profile with viewer-scoped follow state and server counts", async () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkProfileSqlPool = {
