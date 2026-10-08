@@ -86,7 +86,7 @@ try {
     $hash = Get-FileHash -Algorithm SHA256 $apk
 
     Write-Host ""
-    Write-Host "APK qualification build complete." -ForegroundColor Green
+    Write-Host "Release-mode APK build complete (store-signing and distribution readiness are not proven)." -ForegroundColor Green
     Write-Host "Path: $apk"
     Write-Host "Size: $($item.Length) bytes"
     Write-Host "SHA256: $($hash.Hash)"
@@ -115,18 +115,21 @@ try {
 
       Write-Host ""
       Write-Host "Installed and launched $packageName." -ForegroundColor Green
+      Write-Host "The APK build/install does not prove production readiness or Firebase push delivery."
       Write-Host "Device acceptance still requires manually exercising:"
-      Write-Host "  1. sign-in/auth"
-      Write-Host "  2. Home / Explore / Activity / Wallet"
-      Write-Host "  3. text chat"
-      Write-Host "  4. realtime voice and call mode"
-      Write-Host "  5. camera/photo and document attachments"
-      Write-Host "  6. Twin creation: gender + age + photo + Gwani interview"
-      Write-Host "  7. public Twin share/deep link and free text"
-      Write-Host "  8. Internet Cafe billing intents and wallet refresh"
-      Write-Host "  9. Crypto conversational entry"
-      Write-Host " 10. restart/reconnect and low-memory/background recovery"
-      Write-Host " 11. paid/trial Twin voice admission and settlement"
+      Write-Host "  1. sign-in, token refresh, sign-out and account switching"
+      Write-Host "  2. all five tabs: Talks / Chats / Assistant / Wallet / Agents"
+      Write-Host "  3. human Contacts -> Chats request/accept/compose, unread and recovery"
+      Write-Host "  4. Assistant text, Gwani/Gwana voice and explicit task confirmation"
+      Write-Host "  5. public Talk voice permissions, join/reconnect and safe microphone teardown"
+      Write-Host "  6. photo, document and private voice-note permissions and recovery"
+      Write-Host "  7. one Twin creation, agent selection and authorized sharing/deep links"
+      Write-Host "  8. Wallet billing and crypto quotes, failed funding and no unintended charges"
+      Write-Host "  9. foreground/background/cold-start FCM, permission denial and re-enable"
+      Write-Host " 10. FCM token refresh, safe previews, deep links and sign-out revocation"
+      Write-Host " 11. restart/reconnect, low-memory behavior and account-isolated local caches"
+      Write-Host " 12. real backend/provider reconciliation and authorized financial receipts"
+      Write-Host " 13. store-signing, release permissions and distribution checks separately"
     }
   }
   finally {
