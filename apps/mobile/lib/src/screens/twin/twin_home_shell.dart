@@ -37,7 +37,10 @@ List<AgentDirectoryEntry> matchingAgentEntries(
 
 /// Server-presence types, never English labels, determine translated status.
 /// Unknown or cached presence must remain unverified, not available/offline.
-String localizedAgentPresence(AppLocalizations strings, AgentDirectoryEntry agent) {
+String localizedAgentPresence(
+  AppLocalizations strings,
+  AgentDirectoryEntry agent,
+) {
   if (agent.presence == AgentPresence.working && agent.activeWorkCount > 0) {
     return strings.statusWorkingTasks(agent.activeWorkCount);
   }
@@ -153,7 +156,10 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           toolbarHeight: 0,
           primary: false,
           bottom: TabBar(
-            tabs: [Tab(text: strings.platformAgentsTab), Tab(text: strings.twinsTab)],
+            tabs: [
+              Tab(text: strings.platformAgentsTab),
+              Tab(text: strings.twinsTab),
+            ],
           ),
         ),
         body: TabBarView(
@@ -207,7 +213,10 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
                       key: ValueKey('platform-agent-' + agent.characterId),
                       leading: CircleAvatar(child: Text(agent.initial)),
                       title: Text(agent.displayName),
-                      subtitle: Text(agent.roleLabel + ' · ' + localizedAgentPresence(strings, agent)),
+                      subtitle: Text(
+                        agent.roleLabel + ' · ' +
+                        localizedAgentPresence(strings, agent),
+                      ),
                       trailing: const Icon(Icons.chat_bubble_outline_rounded),
                       onTap: () => context.push(
                         '/chat/' + Uri.encodeComponent(agent.characterId)),
@@ -245,7 +254,10 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     if (agent == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context).privateTwinTalkUnavailable(twin.displayName)),
+          content: Text(
+              AppLocalizations.of(context)
+                  .privateTwinTalkUnavailable(twin.displayName),
+            ),
           action: SnackBarAction(
             label: AppLocalizations.of(context).viewTwinProfile,
             onPressed: () => context.push(
@@ -335,7 +347,13 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return Scaffold(
       appBar: _index == 3 ? null : AppBar(
         toolbarHeight: 48,
-        title: Text(_index == 0 ? strings.appTitle : _index == 1 ? strings.agents : strings.wallet),
+        title: Text(
+          _index == 0
+              ? strings.appTitle
+              : _index == 1
+                  ? strings.agents
+                  : strings.wallet,
+        ),
         actions: [
           if (_index == 0)
             IconButton(
@@ -531,7 +549,9 @@ class _PublicTwinsPanelState extends ConsumerState<_PublicTwinsPanel> {
                 if (state.nextCursor != null)
                   TextButton(
                     onPressed: state.loadingMore ? null : transport.loadMore,
-                    child: Text(state.loadingMore ? strings.loading : strings.loadMore),
+                    child: Text(
+                      state.loadingMore ? strings.loading : strings.loadMore,
+                    ),
                   ),
               ],
             ),
@@ -557,7 +577,8 @@ class MyTwinRouteScreen extends ConsumerWidget {
       if (url == null || url.isEmpty) return;
       await SharePlus.instance.share(
         ShareParams(
-          text: AppLocalizations.of(context).twinShareText(profile.displayName, url),
+          text: AppLocalizations.of(context)
+              .twinShareText(profile.displayName, url),
         ),
       );
     }
