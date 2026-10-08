@@ -1,5 +1,10 @@
 # Continue Here
 
+## Mandatory owner requirements coverage audit — 2026-10-08
+
+Before selecting any R01–R19 or C01–C08 implementation lane, read [docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md](docs/OWNER-REQUIREMENTS-TRACEABILITY-20261008.md) and [docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md). These map the owner's complete **documented** conversation decisions, current canonical requirements, cross-tab journeys, conflicts and tests to the existing R/C gates. They do **not** add a competing milestone system or imply functionality is implemented; do not promote explicitly undecided group/call/E2EE/future revenue concepts into shipped promises. All affected windows must cite requirement IDs and actual executable/e2e evidence in their handoffs. The five-tab decision remains **Talks · Chats · Assistant · Wallet · Agents** with one centered, switchable Gwani/Gwana chat. Final document traceability is a quality guard, not a substitute for two-device, real financial/provider, Live audio and CI #457 evidence.
+
+
 ## Owner-approved final five-tab navigation — 2026-10-08
 
 **The final mobile navigation target is exactly five tabs, left to right: Talks · Chats · Assistant · Wallet · Agents.** The **Assistant is the center tab** with two tabs on each side. [docs/APP-SHELL-CONTRACT.md](docs/APP-SHELL-CONTRACT.md) and [docs/END-TO-END-UX-ARCHITECTURE.md](docs/END-TO-END-UX-ARCHITECTURE.md) are canonical for every R17/C08 and C01–C08 implementation window. This **supersedes** earlier four-tab plans and conditional Chats redesign proposals **as the target product architecture**, not as a claim that the current APK implements it. Do not build a temporary alternative shell that will require a second redesign.
