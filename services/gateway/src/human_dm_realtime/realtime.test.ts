@@ -87,6 +87,9 @@ describe("C03 human DM realtime",()=>{
     let sql="";let params:readonly unknown[]=[];
     const repo=createPostgresHumanDmRealtimeRepository({
       async query(query,values) {
+        if(query.includes("human_dm_event_checkpoints")) {
+          return {rows:[{latest_event_id:"12",pruned_through_event_id:"0"}] as never,rowCount:1};
+        }
         sql=query;params=values??[];
         return { rows:[{
           event_id:"12",conversation_id:"c",kind:"message_added",
@@ -101,7 +104,7 @@ describe("C03 human DM realtime",()=>{
     expect(sql).toContain("me.state='active'");
     expect(sql).toContain("sp.blocked=true");
     expect(sql).toContain("e.recipient_user_id=$2");
-    expect(sql).toContain("revoked.status='declined'");
+    expect(sql).toContain("r.status='declined'");
     expect(sql).toContain("e.kind='access_changed'");
     expect(sql).not.toContain("m.body");
     expect(page).toEqual({
@@ -115,7 +118,10 @@ describe("C03 human DM realtime",()=>{
 
   it("pages ordered events without acknowledging unseen event IDs",async()=>{
     const repo=createPostgresHumanDmRealtimeRepository({
-      async query() {
+      async query(sql) {
+        if(sql.includes("human_dm_event_checkpoints")) {
+          return {rows:[{latest_event_id:"13",pruned_through_event_id:"0"}] as never,rowCount:1};
+        }
         return {rows:[10,12,13].map((id)=>({
           event_id:String(id),conversation_id:"c",kind:"access_changed",
           actor_user_id:"user_bo",message_id:null,message_sequence:null,
@@ -127,6 +133,39 @@ describe("C03 human DM realtime",()=>{
     expect(page.nextCursor).toBe("12");
     expect(page.events).toHaveLength(2);
     expect(JSON.stringify(page)).not.toContain("private message");
+  });
+
+  it("expired watermark forces immediate resnapshot without skipping retained events",async()=>{
+    const repo=createPostgresHumanDmRealtimeRepository({
+      async query(sql) {
+        if(sql.includes("human_dm_event_checkpoints")) {
+          return {rows:[{latest_event_id:"90",pruned_through_event_id:"60"}] as never,rowCount:1};
+        }
+        throw new Error("Expired cursor must never read projected events");
+      },
+    });
+    const page=await repo.sync({tenantId:"tenant_a",userId:"user_al",after:"18",limit:50});
+    expect(page).toEqual({events:[],nextCursor:"60",hasMore:false,resetRequired:true});
+    const service=createHumanDmRealtimeService({
+      repository:repo,
+      authorizer:{async authorize(){return {tenantId:"tenant_a",userId:"user_al"} as never;}},
+    });
+    const response=await service.sync({cursor:"18",waitMs:15000});
+    expect(response.resetRequired).toBe(true);
+    expect(response.nextCursor).toBe("60");
+  });
+
+  it("future or foreign-account cursor resets to committed high-water",async()=>{
+    const repo=createPostgresHumanDmRealtimeRepository({
+      async query(sql) {
+        if(sql.includes("human_dm_event_checkpoints")) {
+          return {rows:[{latest_event_id:"42",pruned_through_event_id:"0"}] as never,rowCount:1};
+        }
+        throw new Error("Future cursor must never project messages");
+      },
+    });
+    expect(await repo.sync({tenantId:"t",userId:"u",after:"99",limit:50}))
+      .toEqual({events:[],nextCursor:"42",hasMore:false,resetRequired:true});
   });
 
   it("uses bounded long poll and ends upon new authorized events",async()=>{
