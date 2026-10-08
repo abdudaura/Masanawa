@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Financial credentials and private conversations must not use plaintext HTTP.
+         Trust only the Android system CA store; debug/user-installed CAs are not
+         implicitly granted access to app traffic. -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
