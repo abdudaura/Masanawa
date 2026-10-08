@@ -263,6 +263,17 @@ animations and useful AI awareness. No fake earnings or client-authoritative suc
 Settings must support language/locale, privacy, account deletion and support without
 expanding the root shell. `MOBILE-READINESS-PLAN.md` governs completion and evidence.
 
+## Voice-first access, including low literacy
+
+People must be able to operate Masanawa in their spoken language without reading,
+writing or typing. Text and taps remain complete alternatives for privacy/accessibility.
+Wallet/Billing/Crypto use one private conversation with small interactive cards and
+optional manual editors. Voice, text and taps share one durable authorized task.
+Spoken exact terms, repeat/correction, confirmation and receipt/status are first-class.
+This extends to applicable Create, persona, participation and Settings/support surfaces.
+Follow `VOICE-FIRST-INTERACTIONS.md`; do not mistake a microphone attached to a mandatory
+form for complete voice-first integration.
+
 ## Product boundaries
 
 The ordinary user should not see:
