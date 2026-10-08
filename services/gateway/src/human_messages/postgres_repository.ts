@@ -149,38 +149,50 @@ function cursor(row: MessageRow): string {
   return Buffer.from(JSON.stringify({t: iso(row.created_at), id: row.message_id}), "utf8").toString("base64url");
 }
 export function createPostgresHumanMessageRepository(pool: HumanMessageSqlPool): HumanMessageRepository {
-  async function allowed(tenantId: string, userId: string, conversationId: string, send: boolean, client = pool): Promise<boolean> {
+  async function allowed(tenantId: string, userId: string, conversationId: string, send: boolean, client: Pick<HumanMessageSqlPool,"query"> = pool): Promise<boolean> {
     const result = await client.query(send ? sendable : readable, [tenantId,userId,conversationId]);
     return result.rows.length > 0;
   }
   async function fetchOne(tenantId: string,userId: string,conversationId: string): Promise<HumanConversation | null> {
     if (!await allowed(tenantId,userId,conversationId,false)) return null;
     const r = await pool.query<ConversationRow>(`${conversationSelect}
-      WHERE t.tenant_id=$1 AND t.conversation_id=$2 AND $3 IN (t.first_user_id,t.second_user_id)
-      LIMIT 1`,[tenantId,conversationId,userId]);
+      WHERE t.tenant_id=$1 AND t.conversation_id=$3 AND $2 IN (t.first_user_id,t.second_user_id)
+        AND EXISTS (${readable}) LIMIT 1`,[tenantId,userId,conversationId]);
     return r.rows[0] ? conversation(r.rows[0],userId) : null;
   }
   return Object.freeze<HumanMessageRepository>({
     async start(input) {
-      const p = await pool.query(startPermission, [input.tenantId,input.userId,input.recipientUserId]);
-      if (!p.rows.length) return null;
+      // Permission and insert are one SQL statement: no stale consent read.
       const r = await pool.query<{conversation_id: string}>(`
         INSERT INTO talks.human_dm_conversations
           (tenant_id,conversation_id,first_user_id,second_user_id)
-        VALUES ($1,$2,LEAST($3,$4),GREATEST($3,$4))
+        SELECT $1,$4,LEAST($2,$3),GREATEST($2,$3)
+         WHERE EXISTS (${startPermission})
         ON CONFLICT (tenant_id,first_user_id,second_user_id)
         DO UPDATE SET conversation_id=talks.human_dm_conversations.conversation_id
         RETURNING conversation_id`,
-        [input.tenantId,input.proposedId,input.userId,input.recipientUserId]);
-      if (!r.rows[0]) throw new Error("messages.conversation_not_persisted");
+        [input.tenantId,input.userId,input.recipientUserId,input.proposedId]);
+      if (!r.rows[0]) return null;
       return fetchOne(input.tenantId,input.userId,r.rows[0].conversation_id);
     },
     async list({tenantId,userId,limit}) {
       const r = await pool.query<ConversationRow>(`${conversationSelect}
         WHERE t.tenant_id=$1 AND $2 IN (t.first_user_id,t.second_user_id)
-          AND EXISTS (${readable})
-        ORDER BY t.updated_at DESC,t.conversation_id DESC LIMIT $4`,
-        [tenantId,userId,undefined,limit]);
+          AND EXISTS (SELECT 1 FROM identity.users a WHERE a.tenant_id=t.tenant_id AND a.user_id=t.first_user_id AND a.state='active')
+          AND EXISTS (SELECT 1 FROM identity.users b WHERE b.tenant_id=t.tenant_id AND b.user_id=t.second_user_id AND b.state='active')
+          AND NOT EXISTS (
+            SELECT 1 FROM talks.safety_preferences sp WHERE sp.tenant_id=t.tenant_id AND sp.blocked=true
+              AND ((sp.viewer_user_id=t.first_user_id AND sp.subject_user_id=t.second_user_id)
+                OR (sp.viewer_user_id=t.second_user_id AND sp.subject_user_id=t.first_user_id))
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM talks.safety_enforcement se JOIN talks.public_profiles p ON p.tenant_id=se.tenant_id AND p.handle=se.target_id
+             WHERE se.tenant_id=t.tenant_id AND se.target_kind='profile'
+               AND se.visibility IN ('restricted','blocked')
+               AND p.user_id IN (t.first_user_id,t.second_user_id)
+          )
+        ORDER BY t.updated_at DESC,t.conversation_id DESC LIMIT $3`,
+        [tenantId,userId,limit]);
       return Object.freeze(r.rows.map(x => conversation(x,userId)));
     },
     read(input) { return fetchOne(input.tenantId,input.userId,input.conversationId); },
@@ -189,10 +201,11 @@ export function createPostgresHumanMessageRepository(pool: HumanMessageSqlPool):
       const r = await pool.query<MessageRow>(`
         SELECT conversation_id,message_id,sender_user_id,body,created_at,edited_at,deleted_at,revision
           FROM talks.human_dm_messages
-         WHERE tenant_id=$1 AND conversation_id=$2
-           AND ($3::timestamptz IS NULL OR (created_at,message_id)<($3::timestamptz,$4::text))
-         ORDER BY created_at DESC,message_id DESC LIMIT $5`,
-        [input.tenantId,input.conversationId,input.before?.at ?? null,input.before?.id ?? null,input.limit+1]);
+         WHERE tenant_id=$1 AND conversation_id=$3
+           AND EXISTS (${readable})
+           AND ($4::timestamptz IS NULL OR (created_at,message_id)<($4::timestamptz,$5::text))
+         ORDER BY created_at DESC,message_id DESC LIMIT $6`,
+        [input.tenantId,input.userId,input.conversationId,input.before?.at ?? null,input.before?.id ?? null,input.limit+1]);
       const hasMore = r.rows.length>input.limit;
       const items = r.rows.slice(0,input.limit);
       return Object.freeze({messages:Object.freeze(items.map(message)),
@@ -202,7 +215,7 @@ export function createPostgresHumanMessageRepository(pool: HumanMessageSqlPool):
       const client = await pool.connect();
       let committed = false;
       try {
-        await client.query("BEGIN");
+        await client.query("BEGIN ISOLATION LEVEL SERIALIZABLE");
         await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1::text,0))",
           [`human-dm-rate:${input.tenantId}:${input.userId}`]);
         if (!await allowed(input.tenantId,input.userId,input.conversationId,true,client)) return null;
@@ -249,6 +262,7 @@ export function createPostgresHumanMessageRepository(pool: HumanMessageSqlPool):
          WHERE tenant_id=$1 AND sender_user_id=$2 AND conversation_id=$3
            AND message_id=$4 AND deleted_at IS NULL AND revision=$6
            AND created_at>=clock_timestamp()-interval '15 minutes'
+           AND EXISTS (${sendable})
         RETURNING conversation_id,message_id,sender_user_id,body,created_at,edited_at,deleted_at,revision`,
         [input.tenantId,input.userId,input.conversationId,input.messageId,input.text,input.expectedRevision]);
       return result.rows[0] ? message(result.rows[0]) : null;
@@ -260,6 +274,7 @@ export function createPostgresHumanMessageRepository(pool: HumanMessageSqlPool):
            SET body='',deleted_at=clock_timestamp(),revision=revision+1
          WHERE tenant_id=$1 AND sender_user_id=$2 AND conversation_id=$3
            AND message_id=$4 AND deleted_at IS NULL AND revision=$5
+           AND EXISTS (${readable})
         RETURNING conversation_id,message_id,sender_user_id,body,created_at,edited_at,deleted_at,revision`,
         [input.tenantId,input.userId,input.conversationId,input.messageId,input.expectedRevision]);
       return result.rows[0] ? message(result.rows[0]) : null;
