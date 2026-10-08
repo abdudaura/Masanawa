@@ -4,12 +4,14 @@
 - **Workstream:** talks-ai-seats (R09, isolated context subtask)
 - **Branch:** `work/r09-ai-bounded-stage-context-20261008`
 - **Base main SHA:** `265f2c5f6db81d076f57ca32dd47db3ff7fb0ad6`
-- **Last repository-visible update:** 2026-10-08T05:07:13.523Z
+- **Last repository-visible update:** 2026-10-08T05:10:43.922Z
 - **Claim status:** active; five-minute activity lease per `docs/MULTI-WINDOW-WORK.md`
 
 ## Exact owned paths
 - `services/gateway/src/talk_ai_worker/event_context.ts` (new)
 - `services/gateway/src/talk_ai_worker/event_context.test.ts` (new)
+- `services/gateway/src/talk_ai_worker/postgres_stage_repository.ts` (new)
+- `services/gateway/src/talk_ai_worker/postgres_stage_repository.test.ts` (new)
 - `services/gateway/src/talk_ai_worker/worker.ts`
 - `services/gateway/src/talk_ai_worker/worker.test.ts`
 - `docs/workstreams/talk-ai-event-context-r09-20261008.md` (this file)
@@ -20,6 +22,6 @@ Use a trusted server repository projection of authorized public Talk events; bou
 ## Shared dependencies / status
 - Existing admitted-seat and human Host worker checks must remain.
 - Event repositories and production LiveKit/Gemini composition require a separately coordinated integration lane; this work will not falsely claim end-to-end deployment.
-- **Implementation:** starting.
+- **Implementation:** bounded event projector and worker context binding committed; adding read-only PostgreSQL adapter from existing public canonical Talk tables without migrations.
 - **Verification:** not yet run.
 - **Deployment/device:** not attempted.
