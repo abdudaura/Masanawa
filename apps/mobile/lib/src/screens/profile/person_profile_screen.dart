@@ -68,12 +68,9 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
       context:context,
       isScrollControlled:true,
       showDragHandle:true,
-      builder:(_)=>ProviderScope(
-        parent:ProviderScope.containerOf(context),
-        child:HumanProfileSafetySheet(
-          handle:profile.handle,
-          reporterUserId:session.user.id,
-        ),
+      builder:(_)=>HumanProfileSafetySheet(
+        handle:profile.handle,
+        reporterUserId:session.user.id,
       ),
     );
   }
