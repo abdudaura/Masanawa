@@ -14,6 +14,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
   int confirmationCalls = 0;
   TalkAiSeatRequestStatus confirmationStatus = TalkAiSeatRequestStatus.pendingHost;
   bool failConfirmation = false;
+  bool mismatchedQuote = false;
 
   static const expert = TalkAiSeatCandidate(
     personaId: 'expert-economist',
@@ -53,7 +54,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
     final candidate = personaId == twin.personaId ? twin : expert;
     return TalkAiSeatQuote(
       quoteId: 'quote-1',
-      personaId: personaId,
+      personaId: mismatchedQuote ? 'different-persona' : personaId,
       displayName: candidate.displayName,
       kind: candidate.kind,
       mode: mode,
@@ -210,7 +211,14 @@ void main() {
 
     expect(transport.confirmationCalls, 1);
     expect(find.text('The Seat request expired.'), findsOneWidget);
+    expect(find.text('Get new quote'), findsOneWidget);
     expect(find.text('Confirm AI Seat'), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('ai-seat-confirm')),
+      ).onPressed,
+      isNull,
+    );
   });
 
   testWidgets('confirmation timeout does not claim no request was sent',
@@ -226,6 +234,42 @@ void main() {
     expect(transport.confirmationCalls, 1);
     expect(find.textContaining('Couldn’t verify this Seat request'), findsOneWidget);
     expect(find.textContaining('No duplicate request was sent'), findsNothing);
+  });
+
+  testWidgets('mismatched quote never reaches payable confirmation',
+      (tester) async {
+    final transport = _FakeSeatTransport()..mismatchedQuote = true;
+    await tester.pumpWidget(_app(transport: transport, isHost: true));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(transport.quoteCount, 1);
+    expect(find.text('Couldn’t prepare this Seat right now.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ai-seat-confirm')), findsNothing);
+    expect(transport.confirmationCalls, 0);
+  });
+
+  testWidgets('declined Seat request cannot be confirmed again with old quote',
+      (tester) async {
+    final transport = _FakeSeatTransport()
+      ..confirmationStatus = TalkAiSeatRequestStatus.declined;
+    await tester.pumpWidget(_app(transport: transport, isHost: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ai-seat-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Get new quote'), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('ai-seat-confirm')),
+      ).onPressed,
+      isNull,
+    );
+    expect(transport.confirmationCalls, 1);
   });
 
 }
