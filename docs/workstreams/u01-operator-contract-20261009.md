@@ -22,7 +22,8 @@
 
 ## Tests and reproducibility
 - **EXECUTED:** 24 focused in-process JavaScript assertions on the functions serialized into `src/index.js` before implementation commit `69029d6`: parse/capability/admission, forged privileged data and prototype keys, scope/version/authorizer rejection, context denial, exact approval/time/user/terms, approval-required finance, verified receipt, monotonic cursor and unsupported card. Exit success. This is **not** execution of the repository's Node test file, typecheck, full suite or end-to-end; follow-up security changes have only source/readback assertions, not rerun Node regression evidence.
-- **AUTHORED, NOT EXECUTED:** six Node `node:test` suites at `packages/operator-contract/test/index.test.mjs`; post-commit additions cover snake_case privileged values, raw unvalidated admission and account-switch invalidation.
+- **EXECUTED ON CURRENT SOURCE AND TEST BLOBS:** Re-fetched `src/index.js` (`22b98ecfda699d265e1523f6b9d0d270d878ad4a`) and `test/index.test.mjs` (`b280d49daf318d243a2b475a6951c12b586e65ed`) from branch head `dae94d1c98dfff4d63e84207cebff55de5d913a3`. Executed the *actual six authored test callback bodies* against the *actual committed runtime function bodies* inside a V8 isolate after replacing the Node `test`/`assert` harness; **6/6 groups passed, zero failed**. This is focused portable behavioral evidence, **not a Node module-loader run, pnpm typecheck, repository suite or end-to-end test**.
+- **AUTHORED AND V8-EXERCISED, NOT EXECUTED IN NODE:** six Node `node:test` suites at `packages/operator-contract/test/index.test.mjs`; post-commit additions cover snake_case privileged values, raw unvalidated admission and account-switch invalidation.
 - **NOT EXECUTED** (private repository accessible only through GitHub connector; no authenticated checkout/package install in local container; repo requires Node >=24 whereas available isolated local Node is 22.16): `node --test packages/operator-contract/test/index.test.mjs`; `pnpm install --frozen-lockfile && pnpm --filter @masanawa/operator-contract typecheck`; `pnpm test:ci`; `pnpm build`. Actions issue #457 remains account quota/zero-step blocked as documented.
 - **UNVERIFIED:** authenticated Gateway/C07 integration, U02 DB migrations/atomic ticket use and idempotency, U03 Flutter UI/voice/taps, consented human DM/Talk resource access, financial quote/ledger receipts, multi-account/device concurrency, provider and Android qualification.
 
@@ -44,7 +45,7 @@
 | Gate | Evidence |
 | --- | --- |
 | SOURCE_WRITTEN | **YES, isolated operator protocol package** |
-| LOCAL_TESTED | **PARTIAL**: 24 V8 assertions before security update; package Node tests NOT_RUN |
+| LOCAL_TESTED | **FOCUSED PASS / V8 ISOLATE:** 24 pre-hardening assertions + 6/6 current-blob Node test bodies (adapted harness); actual Node/pnpm tests NOT_RUN |
 | CI_EXECUTED | **NO** — #457 quota |
 | DB_INTEGRATED | **NO**, U02 dependency |
 | APP_INTEGRATED | **NO**, U03/C07/R17 integration |
