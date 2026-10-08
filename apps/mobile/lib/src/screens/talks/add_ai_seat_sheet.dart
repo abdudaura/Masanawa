@@ -150,6 +150,9 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
       if (request.status == TalkAiSeatRequestStatus.expired ||
           request.status == TalkAiSeatRequestStatus.declined ||
           request.status == TalkAiSeatRequestStatus.unknown) {
+        if (request.status != TalkAiSeatRequestStatus.unknown) {
+          _quoteExpiryTimer?.cancel();
+        }
         setState(() {
           _terminalQuote = request.status == TalkAiSeatRequestStatus.expired ||
               request.status == TalkAiSeatRequestStatus.declined;
