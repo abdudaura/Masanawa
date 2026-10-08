@@ -6,7 +6,7 @@ import 'package:masanawa/src/agents/agent_shell.dart';
 import 'package:masanawa/src/assistant_workspace/assistant_workspace_controller.dart';
 
 AgentDirectoryEntry entry(
-    String id, String name, {bool preferred = false}) =>
+    String id, String name, {bool preferred = false, String? voiceName}) =>
   AgentDirectoryEntry(
     characterId: id,
     characterVersionId: 'version-' + id,
@@ -16,6 +16,7 @@ AgentDirectoryEntry entry(
     presence: AgentPresence.unknown,
     supportAgent: true,
     defaultPlatformAgent: preferred,
+    voiceName: voiceName,
   );
 
 class DirectoryFake implements AgentDirectoryTransport {
@@ -231,6 +232,21 @@ void main() {
     expect(a.requestIds, isEmpty);
     expect(c.pending, isNull);
     expect(c.error, contains('Protected storage'));
+    c.dispose();
+  });
+
+  test('canonical server Bodi/Sulafat voices handle custom admin labels',
+      () async {
+    final directory = DirectoryFake();
+    directory.entries = [
+      entry('character-w', 'Support Primary', voiceName: 'Bodi', preferred: true),
+      entry('character-a', 'Support Secondary', voiceName: 'Sulafat'),
+    ];
+    final c = controller(directory, AgentsFake(), ShellFake(), JournalFake());
+    await c.load();
+    expect(c.ready, true);
+    expect(c.roster[AssistantRole.gwani]!.characterId, 'character-w');
+    expect(c.roster[AssistantRole.gwana]!.characterId, 'character-a');
     c.dispose();
   });
 
