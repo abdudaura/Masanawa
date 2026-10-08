@@ -264,7 +264,7 @@ class _PersonProfileBody extends StatelessWidget {
                 key:const ValueKey('human-profile-safety-open'),
                 onPressed:onSafety,
                 icon:const Icon(Icons.shield_outlined),
-                label:const Text('Block, mute or report'),
+                label:const Text('Report profile'),
               ),
             ),
             if (twinId != null && twinId.isNotEmpty) ...[
