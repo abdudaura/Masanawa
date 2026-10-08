@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:masanawa/src/messages/cache/cached_human_chat_thread.dart';
+import 'package:masanawa/src/messages/cache/cached_human_chats_list.dart';
 import 'package:masanawa/src/messages/cache/human_chat_cache.dart';
 import 'package:masanawa/src/messages/cache/human_chat_models.dart';
 import 'package:masanawa/src/messages/cache/human_chat_sync.dart';
@@ -106,6 +107,31 @@ void main() {
     expect(find.textContaining('Delivery unknown'), findsOneWidget);
     expect((await sync.cachedOutbox(thread)).single.body,
         'My offline message');
+  });
+
+  testWidgets('cached inbox opens only selected real thread and shows unread',
+      (tester) async {
+    await cache.saveThread(
+      tenantId: 't', userId: 'owner',
+      thread: const CachedHumanThread(
+        conversationId: thread, peerUserId: 'peer',
+        displayName: 'Person B', updatedAtMs: 50, unreadCount: 3,
+      ),
+    );
+    String? selectedId;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: CachedHumanChatsList(
+          sync: sync,
+          onOpenThread: (thread) => selectedId = thread.conversationId,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Person B'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+    await tester.tap(find.text('Person B'));
+    expect(selectedId, thread);
   });
 
   testWidgets('never displays a fake delivered status without server ack',
