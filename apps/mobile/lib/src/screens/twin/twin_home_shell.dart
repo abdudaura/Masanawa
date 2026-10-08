@@ -10,12 +10,13 @@ import '../../talks/talk_models.dart';
 import '../activity/activity_screen.dart';
 import '../talks/create_talk_screen.dart';
 import '../talks/talk_home_screen.dart';
+import '../wallet/wallet_screen.dart';
 import '../you/you_screen.dart';
 import 'my_twin_screen.dart';
 
 /// Compatibility class name retained while the consumer shell is migrated.
 ///
-/// Product shell is now: Home · Create · Activity · You.
+/// Approved root shell: Home · Agents · Wallet · Talk.
 /// Home owns the Explore / Live Talks tabs.
 class TwinHomeShell extends ConsumerStatefulWidget {
   const TwinHomeShell({super.key, this.initialIndex = 0});
@@ -93,8 +94,80 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         onOpenGwani: _openPrivateGwani,
       );
 
-  Widget _create() => CreateTalkScreen(
-        onCreated: _openCreatedTalk,
+  Widget _agents() {
+    final directory = ref.watch(agentDirectoryProvider);
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Agents'),
+          bottom: const TabBar(tabs: [
+            Tab(text: 'Masanawa Agents'),
+            Tab(text: 'Twins'),
+          ]),
+        ),
+        body: TabBarView(children: [
+          RefreshIndicator(
+            onRefresh: () => ref.read(agentDirectoryProvider.notifier).refresh(),
+            child: ListView(children: [
+              if (directory.loading && directory.agents.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              if (directory.error != null)
+                ListTile(
+                  title: Text(directory.error!),
+                  trailing: TextButton(
+                    onPressed: () => ref.read(agentDirectoryProvider.notifier).refresh(),
+                    child: const Text('Retry'),
+                  ),
+                ),
+              for (final agent in directory.agents.where(
+                  (agent) => agent.supportAgent || agent.defaultPlatformAgent))
+                ListTile(
+                  leading: CircleAvatar(child: Text(agent.initial)),
+                  title: Text(agent.displayName),
+                  subtitle: Text(agent.roleLabel + ' · ' + agent.presenceLabel),
+                  trailing: const Icon(Icons.chat_bubble_outline_rounded),
+                  onTap: () => context.push(
+                    '/chat/' + Uri.encodeComponent(agent.characterId)),
+                ),
+              if (!directory.loading && directory.agents.isEmpty)
+                const ListTile(title: Text('No Masanawa Agents available yet.')),
+            ]),
+          ),
+          const MyTwinRouteScreen(),
+        ]),
+      ),
+    );
+  }
+
+  Widget _wallet() => WalletScreen(
+        onBuyBills: () => context.push('/billing'),
+        onOpenCrypto: () => context.push('/crypto'),
+      );
+
+  Widget _privateTalk() => Scaffold(
+        appBar: AppBar(title: const Text('Talk')),
+        body: Center(
+          child: FilledButton.icon(
+            onPressed: _openPrivateGwani,
+            icon: const Icon(Icons.mic_none_rounded),
+            label: const Text('Talk with Gwani'),
+          ),
+        ),
+      );
+
+  void _openActivity() => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => ActivityScreen(
+          onOpenTalk: (id) => context.push('/talk/' + Uri.encodeComponent(id)),
+          onOpenProfile: (handle) => context.push('/u/' + Uri.encodeComponent(handle)),
+        )),
+      );
+
+  void _openYou() => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => _you()),
       );
 
   Widget _you() => YouScreen(
@@ -108,35 +181,45 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         onOpenSettings: () => context.push('/settings'),
       );
 
-  Widget _page(int index) {
-    return switch (index) {
-      0 => _home(),
-      1 => _create(),
-      2 => ActivityScreen(
-          onOpenTalk: (talkId) => context.push(
-            '/talk/' + Uri.encodeComponent(talkId),
-          ),
-          onOpenProfile: (handle) => context.push(
-            '/u/' + Uri.encodeComponent(handle),
-          ),
-        ),
-      3 => _you(),
-      _ => const SizedBox.shrink(),
-    };
-  }
+  Widget _page(int index) => switch (index) {
+        0 => _home(),
+        1 => _agents(),
+        2 => _wallet(),
+        3 => _privateTalk(),
+        _ => const SizedBox.shrink(),
+      };
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 48,
+        title: const Text('Masanawa'),
+        actions: [
+          IconButton(
+            tooltip: 'Activity',
+            icon: const Icon(Icons.notifications_none_rounded),
+            onPressed: _openActivity,
+          ),
+          IconButton(
+            tooltip: 'Profile',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: _openYou,
+          ),
+        ],
+      ),
       body: IndexedStack(
         index: _index,
-        children: List.generate(
-          4,
-          (index) => _visitedTabs.contains(index)
-              ? _page(index)
-              : const SizedBox.shrink(),
-        ),
+        children: List.generate(4, (index) =>
+          _visitedTabs.contains(index) ? _page(index) : const SizedBox.shrink()),
       ),
+      floatingActionButton: _index == 0 || _index == 1
+          ? FloatingActionButton(
+              tooltip: 'Start Talk',
+              onPressed: () => context.push('/talk/create'),
+              child: const Icon(Icons.add_rounded),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) {
@@ -152,24 +235,25 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.add_circle_outline_rounded),
-            selectedIcon: Icon(Icons.add_circle_rounded),
-            label: 'Create',
+            icon: Icon(Icons.smart_toy_outlined),
+            selectedIcon: Icon(Icons.smart_toy_rounded),
+            label: 'Agents',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_none_outlined),
-            selectedIcon: Icon(Icons.notifications_rounded),
-            label: 'Activity',
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+            label: 'Wallet',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'You',
+            icon: Icon(Icons.graphic_eq_outlined),
+            selectedIcon: Icon(Icons.graphic_eq_rounded),
+            label: 'Talk',
           ),
         ],
       ),
     );
   }
+
 }
 
 class MyTwinRouteScreen extends ConsumerWidget {
