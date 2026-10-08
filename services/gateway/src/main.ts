@@ -23,6 +23,8 @@ import type {
   PersonalCloneProvisioningRepository,
   UserRelationshipProvisioner,
   UserRelationshipReader,
+  AccountDeletionRepository,
+  AccountDeletionChallengeRepository,
 } from "@masanawa/identity";
 import type {
   BillingQuoteRepository,
@@ -78,6 +80,8 @@ import {
   createPostgresUserRelationshipReader,
   createPostgresUserRelationshipProvisioner,
   createPostgresPlatformSessionRepository,
+  createPostgresAccountDeletionRepository,
+  createPostgresAccountDeletionChallengeRepository,
   createPostgresCustomerChannelRepository,
   createPostgresServiceDependency,
   createPostgresMobileShellRepository,
@@ -229,6 +233,12 @@ import {
   type CustomerAuthService,
 } from "./customer_auth.js";
 import {
+  createAccountDeletionService,
+  createResendAccountDeletionSender,
+  createHttpAccountDeletionSmsSender,
+  type AccountDeletionService,
+} from "./account_deletion.js";
+import {
   createBillingFinancialService,
   type BillingFinancialService,
 } from "./financial_billing.js";
@@ -296,6 +306,8 @@ export interface ServiceDatabaseDependency {
   readonly relationships?: UserRelationshipReader;
   readonly relationshipProvisioner?: UserRelationshipProvisioner;
   readonly platformSessions?: PlatformSessionRepository;
+  readonly accountDeletionRequests?: AccountDeletionRepository;
+  readonly accountDeletionChallenges?: AccountDeletionChallengeRepository;
   readonly customerChannels?: CustomerChannelRepository;
   readonly commerce?: CommerceRepository;
   readonly crypto?: CryptoRepository;
@@ -457,6 +469,8 @@ function createDefaultDatabaseDependency(
     relationshipProvisioner:
       createPostgresUserRelationshipProvisioner(database.pool),
     platformSessions: createPostgresPlatformSessionRepository(database.pool),
+    accountDeletionRequests: createPostgresAccountDeletionRepository(database.pool),
+    accountDeletionChallenges: createPostgresAccountDeletionChallengeRepository(database.pool),
     customerChannels: createPostgresCustomerChannelRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
@@ -624,6 +638,8 @@ export async function startGatewayService(
   let talkPushDedupePurgeRunning = false;
   let customerAuth: CustomerAuthService | undefined =
     options.appOptions?.customerAuth;
+  let accountDeletion: AccountDeletionService | undefined =
+    options.appOptions?.accountDeletion;
   let billingCustomerAuthorizer:
     | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
     | undefined;
@@ -2173,11 +2189,41 @@ export async function startGatewayService(
         })
       : undefined);
 
+  // Account deletion is an independently authenticated, durable request intake.
+  // It cannot complete erasure: finance, session revocation and processor cleanup
+  // are separate server-side release gates.
+  if (!accountDeletion && database.platformSessions &&
+      database.accountDeletionRequests && database.accountDeletionChallenges && otpPepper) {
+    const resendApiKey = env.RESEND_API_KEY?.trim();
+    const resendFrom = env.MASANAWA_AUTH_EMAIL_FROM?.trim();
+    const smsEndpoint = env.MASANAWA_AUTH_SMS_ENDPOINT?.trim();
+    const smsToken = env.MASANAWA_AUTH_SMS_TOKEN?.trim();
+    accountDeletion = createAccountDeletionService({
+      sessions: createPlatformCustomerSessionAuthorizer({
+        repository: database.platformSessions,
+      }),
+      requests: database.accountDeletionRequests,
+      challenges: database.accountDeletionChallenges,
+      otpPepper,
+      ...(resendApiKey && resendFrom
+        ? { email: createResendAccountDeletionSender({
+            apiKey: resendApiKey, from: resendFrom,
+          }) }
+        : {}),
+      ...(smsEndpoint && smsToken
+        ? { sms: createHttpAccountDeletionSmsSender({
+            endpoint: smsEndpoint, bearerToken: smsToken,
+          }) }
+        : {}),
+    });
+  }
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
+      ...(accountDeletion ? { accountDeletion } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
       ...(composedTalkReplay ? { talkReplay: composedTalkReplay } : {}),
       ...(composedTalkModeration ? { talkModeration: composedTalkModeration } : {}),

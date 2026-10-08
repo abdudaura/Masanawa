@@ -11,12 +11,11 @@ import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
+import 'account_deletion_dialog.dart';
 
-/// Secondary account settings for the Twin-first product.
-///
-/// Twin identity, discovery and human-access configuration live in My Twin.
-/// Runtime concepts such as Agent Float, Skills and provider configuration are
-/// intentionally absent from the ordinary customer settings surface.
+/// Account and app preferences for the current Masanawa consumer product.
+/// Account deletion must be handled by an authenticated durable server workflow;
+/// clearing local chats or logging out is not account deletion.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -278,16 +277,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 leading: Icon(Icons.info_outline, color: u.brand),
                 title: const Text('About Masanawa'),
-                subtitle: const Text('Personal AI Twins and Masanawa services'),
+                subtitle: const Text('Live Talks, AI Experts, Twins and services'),
                 onTap: () => showAboutDialog(
                   context: context,
                   applicationName: 'Masanawa',
                   applicationVersion: '1.0.0',
                   children: const [
                     Text(
-                      'Create your Twin, explore other Twins and use Masanawa services from one simple app.',
+                      'Join human-hosted live Talks, bring Masanawa Experts and Twins into conversations, and use Billing and Crypto privately.',
                     ),
                   ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Card(
+            children: [
+              ListTile(
+                key: const Key('settings-delete-account'),
+                leading: Icon(Icons.person_remove_outlined, color: u.emergency),
+                title: Text(
+                  'Delete account',
+                  style: TextStyle(color: u.emergency),
+                ),
+                subtitle: const Text('Account and data deletion options'),
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => const AccountDeletionDialog(),
                 ),
               ),
             ],
