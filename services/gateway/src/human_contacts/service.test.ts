@@ -19,8 +19,8 @@ function harness(tenant = "tenant_1", actor = "user_al") {
         canMessage: accepted || receiverPolicy === "anyone",
       };
     },
-    async getOwnPolicy({ userId }) { return userId === receiverId ? receiverPolicy : actorPolicy; },
-    async setOwnPolicy({ userId, policy: next }) { if (userId === receiverId) receiverPolicy = next; else actorPolicy = next; return next; },
+    async getOwnPreferences({ userId }) { return { policy: userId === receiverId ? receiverPolicy : actorPolicy, discoverableByHandle: true }; },
+    async setOwnPreferences({ userId, policy: next }) { if (next !== undefined) { if (userId === receiverId) receiverPolicy = next; else actorPolicy = next; } return { policy: userId === receiverId ? receiverPolicy : actorPolicy, discoverableByHandle: true }; },
     async request({ tenantId, requesterId, handle }) {
       if (tenantId !== tenant || requesterId === receiverId || handle !== "bob" || blocked || receiverPolicy === "nobody") return "unavailable";
       if (accepted) return "accepted";
@@ -78,7 +78,7 @@ describe("C01 authenticated human-contact consent", () => {
   });
   it("defaults to request-only, is replay-safe, and requires recipient acceptance", async () => {
     const { svc } = harness();
-    expect(await svc().ownPolicy({ authorizationHeader: "Bearer okay" })).toEqual({ policy: "requests" });
+    expect(await svc().ownPreferences({ authorizationHeader: "Bearer okay" })).toEqual({ policy: "requests", discoverableByHandle: true });
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "pending" });
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "pending" });
     expect((await svc("user_bo").list({ authorizationHeader: "Bearer okay" })).contacts[0]?.status).toBe("incoming");
@@ -96,9 +96,9 @@ describe("C01 authenticated human-contact consent", () => {
   });
   it("enforces subject privacy policy and reciprocal blocks", async () => {
     const { svc, block } = harness();
-    await svc("user_bo").updatePolicy({ authorizationHeader: "Bearer okay", policy: "nobody" });
+    await svc("user_bo").updatePreferences({ authorizationHeader: "Bearer okay", policy: "nobody" });
     await expect(svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).rejects.toMatchObject({ statusCode: 404 });
-    await svc("user_bo").updatePolicy({ authorizationHeader: "Bearer okay", policy: "anyone" });
+    await svc("user_bo").updatePreferences({ authorizationHeader: "Bearer okay", policy: "anyone" });
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "accepted" });
     block();
     await expect(svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).rejects.toMatchObject({ statusCode: 404 });
@@ -113,7 +113,7 @@ describe("C01 authenticated human-contact consent", () => {
   });
   it("validates policy and page sizes rather than trusting requests", async () => {
     const { svc } = harness();
-    await expect(svc().updatePolicy({ authorizationHeader: "Bearer okay", policy: "unlimited" as never })).rejects.toBeInstanceOf(HumanContactError);
+    await expect(svc().updatePreferences({ authorizationHeader: "Bearer okay", policy: "unlimited" as never })).rejects.toBeInstanceOf(HumanContactError);
     await expect(svc().list({ authorizationHeader: "Bearer okay", limit: 50000 })).rejects.toMatchObject({ statusCode: 400 });
   });
 });
