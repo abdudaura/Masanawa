@@ -1,5 +1,8 @@
 # App Shell Contract
 
+> **Owner requirements completeness:** Before implementing this five-tab target, verify placement, conditional actions, Gwani/Gwana switch, legacy routes, contextual wallet handoffs and user experience with `OWNER-REQUIREMENTS-TRACEABILITY-20261008.md` (P/N/T/M/A/W/Q references) and `WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md` (J01–J11). They extend acceptance but **never** create a sixth tab or another payment/message authority. Every R17/C08 change must prove the old routes/back stack and full camera-shy, low-literacy, human DM, creator earnings, billing and crypto journeys.
+
+
 Status: **OWNER-APPROVED FIVE-TAB TARGET — 2026-10-08; Flutter app migration OPEN / UNVERIFIED**.
 Supersedes the previously approved Home · Agents · Wallet · Talk root arrangement and earlier conditional Home · Chats · Wallet · Talk proposal **for planned architecture**, not a claim that the current APK already follows the new navigation. Implement **one** final shell through R17 + C08, with active-PR/file ownership coordination; no throwaway intermediate navigation. See **END-TO-END-UX-ARCHITECTURE.md** for full destinations, action placement, route compatibility and acceptance.
 
