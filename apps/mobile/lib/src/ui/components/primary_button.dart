@@ -27,6 +27,11 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final canPress = enabled && !loading && onPressed != null;
+    // The primary action uses the same accessible foreground as FilledButton.
+    // Pure white on WhatsApp green (#25D366) fails normal-text contrast.
+    final foreground = canPress
+        ? Theme.of(context).colorScheme.onPrimary
+        : u.textMuted;
     final button = Material(
       color: canPress ? u.brand : u.surfaceMuted,
       borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
@@ -47,18 +52,16 @@ class PrimaryButton extends StatelessWidget {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        canPress ? Colors.white : u.textMuted,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(foreground),
                     ),
                   )
                 else if (icon != null)
-                  Icon(icon, size: 20, color: canPress ? Colors.white : u.textMuted),
+                  Icon(icon, size: 20, color: foreground),
                 if (loading || icon != null) const SizedBox(width: 8),
                 Text(
                   label,
                   style: TextStyle(
-                    color: canPress ? Colors.white : u.textMuted,
+                    color: foreground,
                     fontSize: MasanawaTokens.fontSize['md'],
                     fontWeight: FontWeight.w600,
                   ),
