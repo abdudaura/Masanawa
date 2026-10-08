@@ -7,6 +7,7 @@
 - Latest implementation SHA before this checkpoint: `7fe7bce3b4e3908676c1837151ee946759712e1f`.
 - Exact owned paths:
   - `apps/mobile/lib/src/screens/twin/twin_home_shell.dart`
+  - `apps/mobile/lib/src/screens/twin/shell_tab.dart`
   - `apps/mobile/lib/src/screens/talks/talk_home_screen.dart`
   - `apps/mobile/lib/src/screens/chat/ai_chat_screen.dart`
   - `apps/mobile/lib/src/screens/wallet/wallet_screen.dart`
@@ -43,3 +44,5 @@
 - Latest main remains `265f2c5f6db81d076f57ca32dd47db3ff7fb0ad6`; open PRs #406–#414 checked. R17 PR #411 last repository work predates this continuation by over five minutes; retaining its exact branch and code rather than restarting.
 - Existing bounded R17 owned paths remain unchanged; review targets navigation to Activity/You, public Twin chat's agent-detail readiness, and high-value tests. No R01/R11/R03 or financial authority code edits.
 - Fresh workstream activity: this checkpoint. Implementation from previous pass is PARTIAL; all actual Flutter tests/build and device qualification remain unverified.
+
+- 2026-10-08 continuation addition: route-backed selected-tab restoration. Root tab query identifiers now need one canonical type shared with router so URL and selected NavigationBar never diverge; new file and route test owned by R17.
