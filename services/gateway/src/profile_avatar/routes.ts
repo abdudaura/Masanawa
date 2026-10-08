@@ -5,7 +5,7 @@ type AvatarService = ReturnType<typeof createProfileAvatarService>;
 
 function expectedAvatarUrl(value: unknown): string | null {
   if (typeof value !== "string" || !/^v1:[A-Za-z0-9_-]{0,1400}$/u.test(value)) {
-    throw new ProfileAvatarError("profiles.avatar.version_required", 400);
+    throw new AvatarMutationError("profiles.avatar.version_required", 400);
   }
   const encoded = value.slice(3);
   const decoded = Buffer.from(encoded, "base64url").toString("utf8");
@@ -13,7 +13,7 @@ function expectedAvatarUrl(value: unknown): string | null {
       decoded.length > 1000 ||
       (decoded !== "" && (!decoded.startsWith("https://") ||
         decoded.includes("\n") || decoded.includes("\r")))) {
-    throw new ProfileAvatarError("profiles.avatar.invalid_version", 400);
+    throw new AvatarMutationError("profiles.avatar.invalid_version", 400);
   }
   return decoded || null;
 }
