@@ -30,6 +30,7 @@ import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
 import 'talk_direct_twin_sheet.dart';
 import 'talk_gift_sheet.dart';
+import 'talk_gift_stage_overlay.dart';
 import 'talk_host_controls_sheets.dart';
 import 'talk_more_sheet.dart';
 import 'talk_participation_sheets.dart';
@@ -69,6 +70,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   bool _handBusy = false;
   bool _endingTalk = false;
   bool _savingTalk = false;
+  TalkGiftReceipt? _giftAcknowledgement;
+  TalkGiftCatalogItem? _giftAcknowledgementItem;
+  Timer? _giftAcknowledgementTimer;
   bool _pollBusy = false;
   TalkLiveAudioController? _liveAudio;
   StreamSubscription<TalkLiveAudioStatus>? _liveAudioSub;
@@ -93,6 +97,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   @override
   void dispose() {
     _commentController.dispose();
+    _giftAcknowledgementTimer?.cancel();
     unawaited(_liveAudioSub?.cancel());
     final liveAudio = _liveAudio;
     _liveAudio = null;
@@ -484,6 +489,31 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  void _acknowledgeSettledGift(
+    TalkGiftReceipt receipt,
+    TalkGiftCatalogItem item,
+  ) {
+    // Never show celebratory payment feedback until the server's completed
+    // receipt matches the exact selected catalog item.
+    if (receipt.talkId != widget.talkId ||
+        receipt.catalogItemId != item.id ||
+        receipt.amountCredits != item.amountCredits) {
+      return;
+    }
+    _giftAcknowledgementTimer?.cancel();
+    setState(() {
+      _giftAcknowledgement = receipt;
+      _giftAcknowledgementItem = item;
+    });
+    _giftAcknowledgementTimer = Timer(const Duration(milliseconds: 2200), () {
+      if (!mounted) return;
+      setState(() {
+        _giftAcknowledgement = null;
+        _giftAcknowledgementItem = null;
+      });
+    });
+  }
+
   Future<void> _openGift(String hostName) async {
     final callback = widget.onGift;
     if (callback != null) {
@@ -492,17 +522,24 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
 
     TalkGiftReceipt? receipt;
+    TalkGiftCatalogItem? selected;
+    final giftTransport = ref.read(talkGiftTransportProvider);
     final sent = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) => TalkGiftSheet(
         hostName: hostName,
-        onGift: (amountCredits) async {
+        loadCatalog: () => giftTransport.loadCatalog(talkId: widget.talkId),
+        onGift: (option) async {
           try {
-            receipt = await ref
-                .read(talkGiftTransportProvider)
-                .sendGift(talkId: widget.talkId, amountCredits: amountCredits);
+            final completed = await giftTransport.sendGift(
+              talkId: widget.talkId,
+              amountCredits: option.amountCredits,
+              catalogItemId: option.id,
+            );
+            receipt = completed;
+            selected = option;
             ref.invalidate(walletProvider);
             return true;
           } catch (_) {
@@ -513,13 +550,13 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     );
 
     if (!mounted || sent != true || receipt == null) return;
+    final completed = receipt!;
+    final item = selected;
+    if (item != null) _acknowledgeSettledGift(completed, item);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          receipt!.amountCredits.toString() +
-              ' Cr sent to ' +
-              receipt!.recipientName +
-              '.',
+          '${completed.amountCredits} Cr sent to ${completed.recipientName}.',
         ),
       ),
     );
@@ -656,7 +693,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       _scheduleLiveAudioStart();
     }
 
-    return detail.when(
+    return Stack(children: [detail.when(
       data: (value) => _TalkBody(
         talk: value.talk,
         comments: value.comments,
@@ -817,7 +854,15 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
           ),
         );
       },
-    );
+    ),
+      if (_giftAcknowledgement != null && _giftAcknowledgementItem != null)
+        Positioned.fill(
+          child: TalkGiftStageOverlay(
+            receipt: _giftAcknowledgement!,
+            item: _giftAcknowledgementItem!,
+          ),
+        ),
+    ]);
   }
 }
 
