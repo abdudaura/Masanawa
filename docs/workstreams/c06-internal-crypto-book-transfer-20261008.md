@@ -39,3 +39,10 @@
 - Provider dynamic availability, production credentials, fixed IP, deposit-qualified asset list and Android device were not verifiable in this window; feature remains server-disabled by default.
 - The C06 quote trigger validates active account state at runtime; no cross-schema FK migration was added because independent Commerce/Identity migration roots must remain deployable separately. Work must audit orphan prevention and account-lifecycle invariants.
 - No true end-to-end production evidence; explicitly **NOT DONE**, draft/unmerged. This is the exact handoff for final single-window ChatGPT Work verification, conflict reconciliation and later merge.
+
+## Parallel owner collision (discovered after feature coding)
+- **Additional active C06 draft PR #487** `work/c06-internal-crypto-transfer-20261008-gpt6` was created 2026-10-08T11:42:41Z, while PR #490's original branch had an existing C06 claim and ongoing commits. As of 11:49Z #487 is still actively receiving commits (head `a6a8e18106f4bf06e92b8adc1b5a00067032efbb`).
+- **Do not merge both migrations:** #487 adds `0110_crypto_internal_transfers.sql`; #490 adds `0110_internal_crypto_transfers.sql`, both touch operation enums, ledger reasons and same transfer concepts with different SQL shape. Applying both would be unsafe.
+- Both branches modify `services/gateway/src/app.ts`, `main.ts`, `adapters/storage/postgres/src/index.ts`, and the existing Flutter Wallet; both introduce same-named transfer route/service/mobile files.
+- Neither branch is verified. **Work consolidator must compare SQL invariants, irreversibility guarantees, consent/replay and Flutter recovery tests, choose one canonical database contract and rework implementation into one clean verified PR.** Mark the other PR superseded after merging any useful nonoverlapping tests. Never claim either as DONE until full evidence.
+- Do not continue simultaneous C06 edits while the #487 owner is active under the five-minute rule; this window has yielded further C06 coding to consolidation.
