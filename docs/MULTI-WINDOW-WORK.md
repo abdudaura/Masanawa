@@ -15,6 +15,14 @@ never treat CI failure before execution as proof of failing or passing code.
 No unverified implementation should merge merely because CI is unavailable.
 
 
+## Additive communications implementation coordination — 2026-10-08
+
+After the current core reading, **read `docs/COMMUNICATIONS-EXTENSION-PLAN.md`**, issues #462/#463, and preserve existing R01–R19. The extension adds separately claimable **C01–C08** (human contact privacy, durable DMs, realtime/push, voice notes, light/offline cache, internal crypto transfers, Gwani/Gwana cross-app operators, late navigation/regression). The C ledger does not supersede or restart R readiness work, and this documentation does not reserve all eight lanes.
+
+Possible lane names are `communications-identity`, `communications-core`, `communications-realtime`, `communications-media`, `communications-mobile-performance`, `communications-internal-crypto`, `communications-ai-actions` and `communications-nav-release`. These are **ownership categories, not leases**. Each window must check live activity and exact PR file lists, publish a fresh claim with bounded paths on its own branch, and coordinate shared route, storage, notification, assistant and financial authority. Do not quietly seize R01–R19 paths, change public Talk semantics or substitute another wallet/agent runtime. New `docs/workstreams/<lane>.md` claims follow the same five-minute expiry as existing lanes.
+
+The current shipped design remains **Home · Agents · Wallet · Talk**. Moving to **Home · Chats · Wallet · Talk** is explicitly conditional on C02–C05 quality and C08 usability tests, preserving Experts/Twins visibility, existing routes, header/FAB and everything in APP-SHELL-CONTRACT. No premature shell migration. Shared CI #457 ownership/recovery is unchanged.
+
 ## Current product coordination overlay — 2026-10-08
 
 Consumer work must follow `CONTINUE-HERE.md`, `docs/PRODUCT-NORTH-STAR.md`,
@@ -147,7 +155,8 @@ Do not mark roadmap gates complete merely because development code or mock resul
 ## Session prompt
 
 Continue Baatiku/masanawa from current repository state. Read CONTINUE-HERE.md first,
-then docs/MULTI-WINDOW-WORK.md and its referenced launch/product guidance. Inspect
+then docs/MULTI-WINDOW-WORK.md, docs/COMMUNICATIONS-EXTENSION-PLAN.md
+and all referenced canonical launch/product guidance. Inspect
 active workstream claims, branches/PRs and recent commits. Select and publish one
 non-overlapping workstream claim, preserve existing features, and continue substantive
 implementation on an isolated branch. Coordinate shared contracts and deployment;
@@ -155,8 +164,9 @@ record exact checks, remaining gaps and a recoverable handoff.
 
 ## Current readiness task coordination
 
-Use R01–R19 from `MOBILE-READINESS-PLAN.md` in claims and checkpoints; it is the single
-current improvement ledger. Full profiles/context are in `DEFAULT-AI-PERSONAS.md`.
+Use R01–R19 from `MOBILE-READINESS-PLAN.md` and additive C01–C08 from
+`COMMUNICATIONS-EXTENSION-PLAN.md` in claims and checkpoints; R01–R19 remain
+the core mobile readiness ledger. Full profiles/context are in `DEFAULT-AI-PERSONAS.md`.
 Documentation publication is not implementation ownership for all tasks. Claim bounded
 paths, coordinate token/router/Gateway/ledger/event/migration changes, and record code,
 build, deployment, provider and device evidence separately. Do not turn empty catalogs,
