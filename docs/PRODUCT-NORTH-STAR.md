@@ -276,6 +276,16 @@ This extends to applicable Create, persona, participation and Settings/support s
 Follow `VOICE-FIRST-INTERACTIONS.md`; do not mistake a microphone attached to a mandatory
 form for complete voice-first integration.
 
+## Private human communication and universal operators — additive 2026-10-08 direction
+
+Masanawa also gives real people a **private, simple person-to-person chat experience**: text, voice notes, consent-based discovery and secure message/attachment history, with realtime delivery and protected offline-first recent viewing. This complements public human-hosted Talks; it is **not** another public text-post feed, nor does it turn platform Experts/Twins into humans. There is no mandatory backup/restore screen to access stored history; real server-backed persistence, per-account on-device caching and catch-up on reconnect provide useful continuity.
+
+**Gwani and Gwana operate the app, not just answer questions.** A user can ask them privately to find a person, draft/send a message, arrange a public Talk, check their wallet, handle qualified Bills/Crypto and request an eligible in-app transfer. Every supported command is equally reachable by voice, typing or manual actions; authorization, exact recipient, price/network/fee, confirmation and receipt come from server authority, not model assertion. The assistant cannot silently read all human DMs, bypass financial approval or publish private context into a public Talk. Users choose quiet text when speech is unsuitable.
+
+The only dedicated financial service families stay **Billing and Crypto**; account-to-account crypto sending extends the qualified wallet, not a new service or second ledger. A user-created audio Talk and its earning features remain a central product, never demoted by messaging.
+
+Preserve **Home · Agents · Wallet · Talk** during current readiness. **Home · Chats · Wallet · Talk** is a possible *later* compact arrangement only if Chats is functioning end to end and Masanawa Agents/Twins remain obvious, accessible and unchanged in capability. Follow `COMMUNICATIONS-EXTENSION-PLAN.md` C01–C08 plus the unchanged R01–R19 ledger.
+
 ## Product boundaries
 
 The ordinary user should not see:
