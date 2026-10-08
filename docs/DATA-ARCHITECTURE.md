@@ -1,5 +1,12 @@
 # Data Architecture and Persistence Boundaries
 
+## Portable restore and deployed-schema qualification — 2026-10-08
+
+`BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md` documents the actual PG18/pgvector + Railway control-plane inventory, database checksum migration runner, separate memory/world migration-root questions and backup evidence gap. `DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md` defines the **non-destructive** independent encrypted backup/fresh-account restore rehearsal required before claiming provider/account portability; `BACKEND-FEATURE-TRACEABILITY-20261008.md` extends domain acceptance to verified Flutter→API→auth→Postgres/media/outbox→restart/other-device readback.
+
+**No documented promise substitutes a real restore:** verify archive digest and independent decrypt key, schema migration ledger, object-store blobs/ACL, distinct NGN/Credits/crypto balances, receipts, operation/outbox idempotency, privacy tombstones, actual RPO/RTO and exact deployed code SHA. Production `alpha:prepare` is forbidden as schema-only migrator because it creates development identity seed data. Migrations remain forward-only, checksum-immutable. Portability does not permit unreviewed database major changes or unqualified provider accounts.
+
+
 ## Twin economy persistence overlay — 2026-10-05
 
 The simplified twin economy reuses existing canonical owners.
