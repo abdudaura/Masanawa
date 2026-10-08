@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../core/phone/country_codes.dart';
 import '../../localization/international_digits.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -46,6 +47,7 @@ class _PhoneFieldState extends State<PhoneField> {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -100,7 +102,9 @@ class _PhoneFieldState extends State<PhoneField> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Detected country: ${_country.flag} ${_country.name}',
+          _country.displayCode.isEmpty
+              ? l10n.unknownCountryDialCode
+              : '${_country.flag} ${l10n.countryDialCode(_country.displayCode)}',
           style: TextStyle(
             fontSize: MasanawaTokens.fontSize['xs'],
             color: u.textMuted,
