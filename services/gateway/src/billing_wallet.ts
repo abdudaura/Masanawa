@@ -333,6 +333,14 @@ export function createBillingWalletService(input: Readonly<{
         !["confirmed", "reserved"].includes(quote.state)) {
       return false;
     }
+    // A late bank transfer is still credited to the native wallet, but must
+    // never silently purchase using expired economic terms. An already
+    // reserved operation can reconcile against its original authorization.
+    if (quote.state === "confirmed" &&
+        (!Number.isFinite(Date.parse(quote.expiresAt)) ||
+          Date.parse(quote.expiresAt) <= Date.now())) {
+      return false;
+    }
     await purchaseQuote(identity, quote);
     return true;
   }
