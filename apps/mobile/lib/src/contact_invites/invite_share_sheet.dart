@@ -104,7 +104,7 @@ class _InviteShareSheetState extends State<InviteShareSheet> {
             ),
             if (_error != null) Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: Text(_error!, role: TextRole.note),
+              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           ],
         ),
