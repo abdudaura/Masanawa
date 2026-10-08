@@ -74,6 +74,12 @@ void main() {
       expect(strings.retry.trim(), isNotEmpty);
       expect(strings.privateTwinTalkUnavailable('Amina Twin'),
           contains('Amina Twin'));
+      final share = strings.twinShareText(
+        'Amina Twin', 'https://masanawa.com/t/abc',
+      );
+      expect(share, contains('Amina Twin'));
+      expect(share, contains('https://masanawa.com/t/abc'));
+
     }
   });
 }
