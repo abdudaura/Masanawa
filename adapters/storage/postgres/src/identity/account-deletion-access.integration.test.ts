@@ -19,6 +19,16 @@ describeDatabase("R12 identity-privacy access revocation", () => {
   let accessHash = "a".repeat(64);
   const createdAt = new Date().toISOString();
 
+  const clearFinancials = {
+    async check() {
+      return {
+        clear: true,
+        checkedAt: createdAt,
+        reference: "test-reconciliation-evidence",
+      };
+    },
+  };
+
   beforeAll(async () => {
     pool = new Pool({ connectionString });
     const root = (path: string) =>
@@ -93,7 +103,7 @@ describeDatabase("R12 identity-privacy access revocation", () => {
   });
 
   it("refuses to revoke before financial clearance and authorized processing", async () => {
-    const revoker = createPostgresAccountDeletionAccessRevoker(pool);
+    const revoker = createPostgresAccountDeletionAccessRevoker(pool,clearFinancials);
     await expect(revoker.revoke({
       tenantId,userId,requestId,expectedRevision:1,now:createdAt,
     })).rejects.toThrow("account_deletion.access_not_authorized");
@@ -121,14 +131,28 @@ describeDatabase("R12 identity-privacy access revocation", () => {
     });
     expect(processing.phase).toBe("processing");
 
-    const revoker = createPostgresAccountDeletionAccessRevoker(pool);
+    const revoker = createPostgresAccountDeletionAccessRevoker(pool,clearFinancials);
     await expect(revoker.revoke({
       tenantId,userId,requestId,expectedRevision:123,now:createdAt,
     })).rejects.toThrow("account_deletion.access_not_authorized");
+    // An unavailable/negative finance guard must not revoke access.
+    const rejected = createPostgresAccountDeletionAccessRevoker(pool, {
+      async check() {
+        return { clear: false, checkedAt: createdAt, reference: "blocked-financials" };
+      },
+    });
+    await expect(rejected.revoke({
+      tenantId,userId,requestId,expectedRevision:3,now:createdAt,
+    })).rejects.toThrow("account_deletion.financial_clearance_required");
+    expect((await createPostgresPlatformSessionRepository(pool).resolveAccess({
+      accessHash,at:createdAt,
+    }))?.userId).toBe(userId);
+
     const receipt = await revoker.revoke({
       tenantId,userId,requestId,expectedRevision:3,now:createdAt,
     });
     expect(receipt.alreadyRevoked).toBe(false);
+    expect(receipt.clearanceReference).toBe("test-reconciliation-evidence");
     expect((await revoker.revoke({
       tenantId,userId,requestId,expectedRevision:3,now:createdAt,
     })).alreadyRevoked).toBe(true);
