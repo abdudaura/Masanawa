@@ -333,7 +333,7 @@ deletable and never copied into public Talk context by default.
 
 ## Deferred web implementation
 
-`docs/WEB-APP-PLAN.md` (refer to WEB-APP-PLAN.md from this directory) defines the later consumer web experience and W01–W06 phases.
+`WEB-APP-PLAN.md` defines the later consumer web experience and W01–W06 phases.
 It follows Home · Agents · Wallet · Talk, seventeen personas, voice-first services and
 shared account/financial authority. Existing apps/web is a foundation scaffold, not a
 completed consumer app. Web implementation is explicitly DEFERRED; preserve current
