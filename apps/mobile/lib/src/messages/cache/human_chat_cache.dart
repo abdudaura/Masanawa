@@ -49,13 +49,13 @@ Future<Database> _productionOpen(String path, String password) =>
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
-      onCreate: _createHumanChatSchema,
+      onCreate: createHumanChatCacheSchema,
       onUpgrade: (_, oldVersion, newVersion) => throw StateError(
         'Chat cache schema migration $oldVersion->$newVersion not defined',
       ),
     );
 
-Future<void> _createHumanChatSchema(Database db, int version) async {
+Future<void> createHumanChatCacheSchema(Database db, int version) async {
   await db.execute('''
     CREATE TABLE threads (
       conversation_id TEXT PRIMARY KEY,
