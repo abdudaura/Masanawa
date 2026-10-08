@@ -248,6 +248,12 @@ void main() {
     expect(find.text('Explore'), findsOneWidget);
     expect(find.text('Live Talks'), findsOneWidget);
     expect(find.text('Is university still worth it?'), findsOneWidget);
+    expect(
+      tester.widget<ListView>(
+        find.byKey(const ValueKey('talk-feed-explore')),
+      ).padding,
+      const EdgeInsets.fromLTRB(10, 10, 10, 100),
+    );
     await tester.tap(find.text('Live Talks'));
     await tester.pumpAndSettle();
     expect(find.text('Can AI create more jobs than it removes?'), findsOneWidget);
@@ -265,6 +271,12 @@ void main() {
     expect(find.text('Amina Twin'), findsOneWidget);
     expect(find.text('Public storyteller'), findsOneWidget);
     expect(find.text('My Twin'), findsOneWidget);
+    expect(
+      tester.widget<ListView>(
+        find.byKey(const ValueKey('public-twins-list')),
+      ).padding,
+      const EdgeInsets.only(bottom: 96),
+    );
     expect(tester.takeException(), isNull);
   });
 
