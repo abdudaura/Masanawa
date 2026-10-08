@@ -1,5 +1,12 @@
 # Masanawa — Definitive Implementation Kickoff (2026-10-08)
 
+## Backend-to-database acceptance overlay and stop conditions
+
+**Mandatory before starting each owned slice:** inspect `docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md`, `docs/BACKEND-FEATURE-TRACEABILITY-20261008.md`, and `docs/DATABASE-REDEPLOYMENT-AND-RESTORE-RUNBOOK.md` when your feature has schema/media/provider/deployment impact. Existing R01–R19/C01–C08 and 77 P/N/T/M/A/W/Q IDs remain the sole task ownership/requirements ledger. An actionable feature is **Flutter screen + typed API + Gateway registration + tenant/auth + domain service + PostgreSQL/media/outbox + authoritative readback + offline/negative/restart recovery**, all implemented in **one owned lane** or explicitly coordinated owned dependencies. Build the whole owned code scope, not a tiny code edit.
+
+**Externally blocked verification policy:** after one confirmed CI/credential/device/service blocker (e.g. #457), **stop retry loops**, continue complete source, author all relevant automated tests and integration harnesses, record exact unexecuted commands/test environment/PR SHA/expected proof and Work owner in checkpoint, keep PR **draft/unmerged**. `PARTIAL_IMPLEMENTATION` = missing owned production code; `IMPLEMENTED_UNVERIFIED` = complete source slice but real checks unavailable; only `VERIFIED_E2E`/`DEPLOYED_VERIFIED` after executed proof. A Gateway code route or Flutter button alone does not pass a feature; a Railway `/healthz` 200 alone does not establish DB readiness; production changes require safe backups/recovery gates.
+
+
 > **Status: CANONICAL IMPLEMENTATION HANDOFF — DOCUMENTS ONLY.** Read this before opening a new development window. It is a work allocator and evidence gate, **not** proof that the source, running Gateway, Flutter application or release is finished. The owner has approved the end-to-end product design and does **not** authorize "for now" shortcuts or throwaway intermediate architectures.
 
 ## 0. First-priority source of truth (read in this order)
