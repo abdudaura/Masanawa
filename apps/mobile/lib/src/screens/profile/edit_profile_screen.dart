@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,10 +19,12 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _form = GlobalKey<FormState>();
   final _name = TextEditingController();
+  final _handle = TextEditingController();
   final _bio = TextEditingController();
   HumanProfile? _profile;
   bool _loading = true;
   bool _saving = false;
+  bool _creatingProfile = false;
   bool _removeAvatar = false;
   String? _error;
 
@@ -34,6 +37,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _handle.dispose();
     _bio.dispose();
     super.dispose();
   }
@@ -50,10 +54,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (!mounted) return;
       setState(() {
         _profile = profile;
+        _creatingProfile = false;
+        _handle.text = profile.handle;
         _name.text = profile.displayName;
         _bio.text = profile.bio;
         _removeAvatar = false;
       });
+    } on DioException catch (error) {
+      if (!mounted) return;
+      if (error.response?.statusCode == 404) {
+        final session = ref.read(sessionProvider);
+        setState(() {
+          _creatingProfile = true;
+          _profile = null;
+          _handle.clear();
+          _name.text = session is SessionSignedIn ? session.user.name : '';
+          _bio.clear();
+          _removeAvatar = false;
+        });
+      } else {
+        setState(() => _error =
+            'Could not load your profile. Check your connection and retry.');
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _error =
@@ -65,6 +87,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   bool get _changed {
     final profile = _profile;
+    if (_creatingProfile) {
+      return _name.text.trim().isNotEmpty && _handle.text.trim().isNotEmpty;
+    }
     if (profile == null) return false;
     return _name.text.trim() != profile.displayName ||
         _bio.text.trim() != profile.bio ||
@@ -73,8 +98,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _save() async {
     final current = _profile;
-    if (current == null || _saving || !_changed ||
-        !_form.currentState!.validate()) return;
+    if ((current == null && !_creatingProfile) ||
+        _saving || !_changed || !_form.currentState!.validate()) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -82,19 +107,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final name = _name.text.trim();
       final bio = _bio.text.trim();
-      final updated = await ref.read(ownProfileTransportProvider).updateSelf(
-        displayName: name == current.displayName ? null : name,
-        bio: bio == current.bio ? null : bio,
-        removeAvatar: _removeAvatar,
-      );
+      final transport = ref.read(ownProfileTransportProvider);
+      final updated = current == null
+          ? await transport.createSelf(
+              handle: _handle.text.trim().toLowerCase(),
+              displayName: name,
+              bio: bio,
+            )
+          : await transport.updateSelf(
+              displayName: name == current.displayName ? null : name,
+              bio: bio == current.bio ? null : bio,
+              removeAvatar: _removeAvatar,
+            );
       if (!mounted) return;
       setState(() {
         _profile = updated;
+        _creatingProfile = false;
+        _handle.text = updated.handle;
         _name.text = updated.displayName;
         _bio.text = updated.bio;
         _removeAvatar = false;
       });
-      ref.invalidate(humanProfileProvider(current.handle));
+      if (current != null) ref.invalidate(humanProfileProvider(current.handle));
       ref.invalidate(humanProfileProvider(updated.handle));
       final session = ref.read(sessionProvider);
       if (session is SessionSignedIn) {
@@ -122,7 +156,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       appBar: AppBar(title: const Text('Edit profile')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : profile == null
+          : profile == null && !_creatingProfile
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -154,7 +188,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 : null,
                           ),
                         ),
-                        if (avatar != null && avatar.isNotEmpty)
+                        if (_removeAvatar && profile?.avatarUrl?.isNotEmpty == true)
+                          Center(
+                            child: TextButton(
+                              key: const ValueKey('profile-undo-photo-removal'),
+                              onPressed: _saving ? null
+                                  : () => setState(() => _removeAvatar = false),
+                              child: const Text('Keep current photo'),
+                            ),
+                          )
+                        else if (avatar != null && avatar.isNotEmpty)
                           Center(
                             child: TextButton.icon(
                               key: const ValueKey('profile-remove-photo'),
@@ -198,15 +241,59 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.alternate_email_rounded),
-                          title: Text('@${profile.handle}'),
-                          subtitle: const Text(
-                            'Your public handle is fixed until linked Talk '
-                            'and invitation references can be migrated safely.',
+                        if (_creatingProfile)
+                          TextFormField(
+                            key: const ValueKey('profile-create-handle'),
+                            controller: _handle,
+                            enabled: !_saving,
+                            maxLength: 40,
+                            onChanged: (_) => setState(() {}),
+                            decoration: const InputDecoration(
+                              labelText: 'Public handle',
+                              prefixText: '@',
+                              helperText: 'Letters, numbers, dots, underscores or hyphens',
+                            ),
+                            validator: (value) =>
+                                RegExp(r'^[a-z0-9_][a-z0-9_.-]{1,39}
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(_error!,
+                                style: TextStyle(color: u.emergency)),
                           ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          key: const ValueKey('profile-edit-save'),
+                          onPressed: _saving || !_changed ? null : _save,
+                          child: _saving
+                              ? const SizedBox(
+                                  height: 20, width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text(_creatingProfile ? 'Create profile' : 'Save profile'),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+    );
+  }
+}
+)
+                                        .hasMatch(value?.trim().toLowerCase() ?? '')
+                                    ? null
+                                    : 'Enter a valid handle (2–40 characters)',
+                          )
+                        else
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.alternate_email_rounded),
+                            title: Text('@${profile!.handle}'),
+                            subtitle: const Text(
+                              'Your handle is fixed until linked Talk '
+                              'and invitation references can be migrated safely.',
+                            ),
+                          ),
                         if (_error != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
