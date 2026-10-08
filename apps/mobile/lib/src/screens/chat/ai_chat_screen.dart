@@ -1030,7 +1030,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         ),
                       ),
                       Text(
-                        workingLabel,
+                        'AI · $workingLabel',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: .82),
