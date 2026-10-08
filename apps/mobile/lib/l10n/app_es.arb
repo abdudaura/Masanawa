@@ -1,0 +1,21 @@
+{
+  "@@locale": "es",
+  "home": "Inicio",
+  "agents": "Agentes",
+  "wallet": "Billetera",
+  "talk": "Hablar",
+  "explore": "Explorar",
+  "liveTalks": "Charlas en vivo",
+  "startTalk": "Iniciar charla",
+  "activity": "Actividad",
+  "profile": "Perfil",
+  "settings": "Configuración",
+  "retry": "Reintentar",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar",
+  "loading": "Cargando…",
+  "listen": "Escuchar",
+  "raiseHand": "Levantar la mano",
+  "speakerSeats": "{count, plural, =0{No hay asientos para hablar} =1{1 asiento para hablar} other{{count} asientos para hablar}}",
+  "walletAmount": "{amount} {currency}"
+}
