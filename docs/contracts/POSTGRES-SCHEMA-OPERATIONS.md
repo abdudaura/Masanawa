@@ -9,11 +9,11 @@ A *privileged, operator-only* PostgreSQL 18 CLI. It reads existing package-owned
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm --filter @masanawa/postgres build
+pnpm --filter '@masanawa/postgres...' build
 # credentials supplied securely in the environment; never include DB URL in arguments or logs
-MASANAWA_DATABASE_URL="<secure-connection-string>" node adapters/storage/postgres/dist/schema-admin-cli.js manifest
-MASANAWA_DATABASE_URL="<secure-connection-string>" node adapters/storage/postgres/dist/schema-admin-cli.js status
-MASANAWA_DATABASE_URL="<secure-connection-string>" node adapters/storage/postgres/dist/schema-admin-cli.js readiness
+MASANAWA_DATABASE_URL="<secure-connection-string>" node --conditions=production adapters/storage/postgres/dist/schema-admin-cli.js manifest
+MASANAWA_DATABASE_URL="<secure-connection-string>" node --conditions=production adapters/storage/postgres/dist/schema-admin-cli.js status
+MASANAWA_DATABASE_URL="<secure-connection-string>" node --conditions=production adapters/storage/postgres/dist/schema-admin-cli.js readiness
 ```
 
 `manifest` does not connect to a database and emits the deterministic SHA-256 manifest digest and each migration file's checksum. `status` uses an **explicit read-only snapshot transaction** and reports only DB/role metadata, applied count, pending IDs, SHA drift, unknown migrations, global ordering violations, compatible PG version and readiness. It does **not** write a ledger to an empty DB. `readiness` returns exit 2 when schema is incomplete/incompatible; 0 only for exact match. Unknown migrations, modified applied SHA, missing predecessors, PostgreSQL not version 18 all block apply. Redacted errors have exit 3.
@@ -28,7 +28,7 @@ export MASANAWA_DB_DEPLOYMENT_SHA="<40-char-reviewed-git-commit>"
 export MASANAWA_DB_BACKUP_EVIDENCE_ID="<operator-verified-backup-reference>"
 export MASANAWA_DB_BACKUP_VERIFIED_AT="<recent-UTC-ISO8601>"
 export MASANAWA_DB_APPLY_APPROVAL="I_APPROVE_SCHEMA_ONLY_MIGRATION"
-node adapters/storage/postgres/dist/schema-admin-cli.js apply
+node --conditions=production adapters/storage/postgres/dist/schema-admin-cli.js apply
 ```
 
 `MASANAWA_DATABASE_URL` remains securely set. Backup ID and timestamp are **attestations supplied by an accountable operator**, not technical proof the referenced backup can restore. The tool rejects missing/stale (>24h)/future dated attestation, target mismatch, source SHA mismatch and missing explicit approval. The full apply runs under one SERIALIZABLE transaction plus the **existing** migration advisory lock, checks current DB/ledger before writes, applies only missing forward SQL and records corresponding immutable SHA-256; then re-reads exact schema readiness before committing. No destructive baseline, blind checksum overwrite, automatic repair or force mode. PostgreSQL transaction failure rolls back the entire attempt.
@@ -39,7 +39,7 @@ Provision **a truly new isolated database** on an ephemeral PG18 instance (no mo
 ```bash
 export MASANAWA_DB_EXPECTED_NAME="masanawa_test_<unique-id>"
 export MASANAWA_DB_TEST_DISPOSABLE_ACK="I_CONFIRM_EMPTY_DISPOSABLE_TEST_DATABASE"
-node adapters/storage/postgres/dist/schema-admin-cli.js bootstrap:test
+node --conditions=production adapters/storage/postgres/dist/schema-admin-cli.js bootstrap:test
 ```
 
 `bootstrap:test` requires the actual DB name to match its target and prefix; refuses existing migration ledger or domain schemas; runs a DDL savepoint rollback probe; applies all canonical migrations; rechecks exact manifest and a second no-op. It does **not** create/drop the database, truncate tables, import production data or claim off-account restore. Credentials must be restricted to this sandbox. Run separate **real backup→restore→checksums/producers fenced** rehearsal under the documented Work recovery runbook.
