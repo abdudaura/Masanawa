@@ -41,6 +41,7 @@ class _DmTransportForWidgetTest implements HumanDmTransport {
 
 Widget _app({
   required bool canMessage,
+  String? contactStatus,
   required _DmTransportForWidgetTest dm,
   required List<String> paths,
   String? initialHandle,
@@ -60,9 +61,18 @@ Widget _app({
         statusCode: 200,
         data: <String, dynamic>{
           'userId': 'user_am', 'handle': 'amina',
-          'displayName': 'Amina', 'status': canMessage ? 'accepted' : 'none',
+          'displayName': 'Amina',
+          'status': contactStatus ?? (canMessage ? 'accepted' : 'none'),
+          'requestRevision': contactStatus == 'incoming' ? '4' : null,
           'canMessage': canMessage,
         },
+      ));
+    } else if (options.path ==
+        '/messages/contacts/requests/user_am/response') {
+      handler.resolve(Response(
+        requestOptions: options,
+        statusCode: 200,
+        data: <String, dynamic>{'status': 'accepted'},
       ));
     } else if (options.path == '/messages/contacts/requests') {
       handler.resolve(Response(
@@ -133,6 +143,27 @@ void main() {
     expect(dm.opens, isEmpty);
     expect(find.textContaining('Contact request recorded.'), findsOneWidget);
     expect(requests, contains('POST /messages/contacts/requests'));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('incoming request requires explicit accept with revision', (tester) async {
+    final dm = _DmTransportForWidgetTest();
+    final requests = <String>[];
+    await tester.pumpWidget(_app(
+      canMessage: false, contactStatus: 'incoming',
+      dm: dm, paths: requests, initialHandle: '@amina',
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Accept'), findsOneWidget);
+    expect(find.text('Decline'), findsOneWidget);
+    expect(find.text('Message'), findsNothing);
+    await tester.tap(find.text('Accept'));
+    await tester.pumpAndSettle();
+    expect(dm.opens, isEmpty);
+    expect(requests, contains(
+      'POST /messages/contacts/requests/user_am/response',
+    ));
+    expect(find.textContaining('Request accepted.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
