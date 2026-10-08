@@ -182,7 +182,10 @@ class HumanVoiceController extends ChangeNotifier {
         _fail('Voice note must be shorter than 90 seconds and under 1.5 MB.');
         return;
       }
-      if(completedPath!=_localFile)await _erase(_localFile);
+      // Some native recorders return null when the original output path is
+      // authoritative; never erase the file we are about to review.
+      if(completedPath!=null&&completedPath!=_localFile)
+        await _erase(_localFile);
       _localFile=file.path;
       review=true;
       error=null;_notify();
