@@ -201,6 +201,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Twin creator'), findsOneWidget);
     expect(transport.confirmationCalls, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
     router.dispose();
   });
 
