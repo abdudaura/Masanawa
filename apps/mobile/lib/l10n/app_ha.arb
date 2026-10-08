@@ -18,5 +18,6 @@
   "raiseHand": "Ɗaga hannu",
   "speakerSeats": "{count, plural, =0{Babu kujerar mai magana} =1{Kujerar mai magana 1} other{Kujerun masu magana {count}}}",
   "walletAmount": "{amount} {currency}",
-  "appTitle": "Masanawa"
+  "appTitle": "Masanawa",
+  "splashTagline": "Hirarraki kai tsaye tsakanin mutane da AI"
 }
