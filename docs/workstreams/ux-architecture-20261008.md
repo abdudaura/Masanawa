@@ -10,3 +10,11 @@
 - Evidence: documentation inspection only. No tests, deployments, device checks or performance measurements claimed.
 - Current step: publish target-screen flow contract, explicit migration and route compatibility plan, user-journey matrix, risks, gates and file ownership handoffs in a reviewable docs PR. Shared CI recovery remains #457 / owner Work.
 - Lease: five-minute repository-visible activity rule; this claim reserves only bounded documentation while active, no downstream C/R implementation paths.
+
+## Completed documentation integration checkpoint
+
+- Prepared `docs/END-TO-END-UX-ARCHITECTURE.md` with the proposed permanent four-tab structure, screen-by-screen controls, recipient/DM/agent/persona/finance type separation, back-stack and deep-link migration, performance/privacy/audio boundaries, twelve concrete conflict resolutions and a release journey matrix.
+- Linked the proposal from `CONTINUE-HERE.md`, `docs/MULTI-WINDOW-WORK.md`, `docs/APP-SHELL-CONTRACT.md`, `docs/MOBILE-SCREEN-ARCHITECTURE.md`, and `docs/COMMUNICATIONS-EXTENSION-PLAN.md` without deleting previous approved requirements.
+- GitHub comparison at review: 7 Markdown-only paths, branch ahead of `main`, 0 behind; reviewed document presence/cross-links and key C01–C08/R01–R19/navigation contracts. No executable Flutter/TypeScript tests or user/device/production flows run.
+- **One explicit product decision remains:** whether to replace the previously approved bottom `Talk` destination label with recommended `Assistant`, as part of the complete four-tab target `Home · Chats · Wallet · Assistant`. The proposal does **not** override existing approval automatically.
+- Handoff: UX/documentation review PR only; core R/C owners must continue to respect their distinct code lanes, integrate frozen routes/typed IDs once the owner approves the final target, and not build knowingly disposable intermediate navigation.
