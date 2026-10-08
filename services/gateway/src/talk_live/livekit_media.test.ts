@@ -234,6 +234,46 @@ describe("LiveKit Talk media token issuer", () => {
     expect(calls).toEqual(["ListParticipants", "RemoveParticipant"]);
   });
 
+  it("allows an empty protobuf JSON object for a room with no participants", async () => {
+    const issuer = createLiveKitTalkMediaTokenIssuer({
+      serverUrl: "wss://live.example.test",
+      apiKey: "api-key",
+      apiSecret: "0123456789abcdef0123456789abcdef",
+      fetchImpl: async () => new Response("{}", { status: 200 }),
+    });
+    await expect(issuer.mint({
+      talkId: "talk_existing", sessionId: "talk-live_new",
+      userId: "user_host", role: "host", canPublishAudio: false,
+    })).resolves.toMatchObject({ room_name: "talk_existing" });
+  });
+
+  it("revokes superseded Hosts even when the replacement starts muted", async () => {
+    const calls: string[] = [];
+    const issuer = createLiveKitTalkMediaTokenIssuer({
+      serverUrl: "wss://live.example.test",
+      apiKey: "api-key",
+      apiSecret: "0123456789abcdef0123456789abcdef",
+      fetchImpl: async (url) => {
+        calls.push(String(url));
+        return new Response(
+          String(url).endsWith("/ListParticipants")
+            ? JSON.stringify({ participants: [{ identity: "user_host:talk-live_previous" }] })
+            : "{}",
+          { status: 200 },
+        );
+      },
+    });
+    const result = await issuer.mint({
+      talkId: "talk_1", sessionId: "talk-live_new",
+      userId: "user_host", role: "host", canPublishAudio: false,
+    });
+    expect(calls.map((url) => url.split("/").at(-1))).toEqual([
+      "ListParticipants", "RemoveParticipant",
+    ]);
+    expect(decodePart(result.participant_token.split(".")[1]!).video)
+      .toMatchObject({ canPublish: false });
+  });
+
   it("accepts well-formed empty participant projections and tolerates removal races", async () => {
     const issuer = createLiveKitTalkMediaTokenIssuer({
       serverUrl: "wss://live.example.test", apiKey: "api-key",
