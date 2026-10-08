@@ -141,4 +141,44 @@ void main() {
     expect(api.cancellations, 0);
     c.dispose();
   });
+  testWidgets('history offers pagination even when first page has only active tasks',
+      (tester) async {
+    final api = WidgetTasks([
+      for (var i = 0; i < 25; i++)
+        snapshot('task_' + i.toString().padLeft(8, '0'),
+            OperatorTaskPhase.running),
+    ]);
+    final c = OperatorTaskCenterController(
+      tenantId: 'tenant_AAAAAAAA', userId: 'user_AAAAAAAA', transport: api);
+    await showCenter(tester, c);
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+    expect(find.text('Load older tasks'), findsOneWidget);
+    c.dispose();
+  });
+
+  testWidgets('narrow large-text screen keeps semantic actions available',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = WidgetTasks([
+      snapshot('task_AAAAAAAA', OperatorTaskPhase.reconciling),
+    ]);
+    final c = OperatorTaskCenterController(
+      tenantId: 'tenant_AAAAAAAA', userId: 'user_AAAAAAAA', transport: api);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+        child: OperatorTaskCenter(controller: c),
+      )),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Check status'), findsOneWidget);
+    c.dispose();
+  });
+
 }
