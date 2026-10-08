@@ -24,6 +24,7 @@ describe("C02 SQL authorization and transactional safety",()=>{
     await h.repo.inbox({tenantId:"tenant_a",userId:"user_a",limit:40});
     const {sql,values}=h.calls[0]!;
     expect(sql).toContain("talks.safety_preferences");
+    expect(sql).toContain("revoked.status=\u0027declined\u0027");
     expect(sql).toContain("talks.safety_enforcement");
     expect(sql).toContain("a.state='active'");
     expect(sql).toContain("b.state='active'");
