@@ -9,11 +9,9 @@ import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
-import '../activity/activity_screen.dart';
 import '../chat/ai_chat_screen.dart';
 import '../talks/talk_home_screen.dart';
 import '../wallet/wallet_screen.dart';
-import '../you/you_screen.dart';
 import 'my_twin_screen.dart';
 
 /// Filters the server-provided roster by presentation data only. A search
@@ -284,27 +282,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     );
   }
 
-  void _openActivity() => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => ActivityScreen(
-          onOpenTalk: (id) => context.push('/talk/' + Uri.encodeComponent(id)),
-          onOpenProfile: (handle) => context.push('/u/' + Uri.encodeComponent(handle)),
-        )),
-      );
+  void _openActivity() => context.push('/activity');
 
-  void _openYou() => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => _you()),
-      );
-
-  Widget _you() => YouScreen(
-        onOpenProfile: () => context.push('/profile'),
-        onOpenMyTalks: () => context.push('/my-talks'),
-        onOpenMyTwin: () => context.push('/my-twin'),
-        onOpenSaved: () => context.push('/saved-talks'),
-        onOpenWallet: () => context.push('/wallet'),
-        onOpenBills: () => context.push('/billing'),
-        onOpenCrypto: () => context.push('/crypto'),
-        onOpenSettings: () => context.push('/settings'),
-      );
+  void _openYou() => context.push('/you');
 
   Widget _page(int index) => switch (index) {
         0 => _home(),
