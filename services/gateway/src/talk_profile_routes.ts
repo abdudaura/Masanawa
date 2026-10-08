@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import Type from "typebox";
 import type { TalkProfileService } from "./talk_profiles/service.js";
+import { strictRequestBody } from "./strict_request_body.js";
 
 export function registerTalkProfileRoutes(
   app: FastifyInstance,
@@ -15,6 +16,7 @@ export function registerTalkProfileRoutes(
   app.put(
     "/profiles/me",
     {
+      preValidation: strictRequestBody(["handle", "displayName", "bio"]),
       schema: {
         body: Type.Object(
           {
@@ -44,6 +46,7 @@ export function registerTalkProfileRoutes(
   app.patch(
     "/profiles/me",
     {
+      preValidation: strictRequestBody(["displayName", "bio", "removeAvatar"]),
       schema: {
         body: Type.Object(
           {

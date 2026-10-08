@@ -60,3 +60,9 @@ Main build passed (Node24/pnpm12.8.2). Full typecheck continues to expose stale 
 - `services/gateway/src/talk_profile_routes.test.ts`
 
 Gift/profile schemas currently silently discard forged extra fields with Fastify default AJV. Bounded pre-validation will reject before service mutation; no global app settings changed, no overlapping PR446 test edits. Profile saved-read failure is a mock returning hardcoded stale values, not demonstrated database overwrite. PR435 composition/avatar changes preserved. No merge or provider/device acceptance.
+
+## Executable repair results — 2026-10-08T07:31:14.395Z
+
+Gift transport/store syntax restored; 13 Flutter recovery tests passed, existing durable fingerprint preserved. Locale annotation scope repaired; 12 preference/language tests passed. Gift/profile strict pre-validation now rejects unknown authority fields before schema stripping; 21 route tests passed. Saved profile-read fixture now reflects actual saved fields. PostgreSQL adapter typecheck passed after widening UUID test fixture storage to canonical string. Main production build passed. First full repaired Vitest rerun:226 files passed,8 failed,20 skipped;1199 passed,10 failed,143 skipped. Provider-tool unit run:17 passed,1 failed (runner import invokes main with missing production inputs, investigation underway; no provider request made). Latest queue includes new Firebase PR461; preserved.
+
+Next additional bounded test fixture claim: `apps/mobile/test/agent_directory_readiness_test.dart` and `apps/mobile/test/agent_recovery_test.dart`. Malformed availability stays unknown; transient refresh preserves persona roster while invalidating presence rather than equating rebuilt object identities. No production fallback changes authorized by these repairs. PR455 independent verification begins; no merge.
