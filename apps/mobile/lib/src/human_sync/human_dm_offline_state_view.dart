@@ -13,6 +13,7 @@ class HumanDmOfflineStateView extends StatelessWidget {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: controller,
     builder: (context, _) {
+      if (!controller.sync.active) return const SizedBox.shrink();
       final theme = Theme.of(context);
       return Column(mainAxisSize: MainAxisSize.min, children: [
         if (controller.error != null)

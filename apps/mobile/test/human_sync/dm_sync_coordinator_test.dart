@@ -39,6 +39,16 @@ void main() {
     expect((await cache.messages('thread-a')).single['body'], 'Hello B');
   });
 
+  test('same user across a different tenant is never accepted as same session', () async {
+    final switched = DmSyncCoordinator(
+      cache: cache, transport: server, currentOwnerId: () => 'user-a',
+      currentTenantId: () => 'other-tenant');
+    await expectLater(switched.enqueue(conversationId: 'thread-a',
+        requestId: 'request_unique_123456', text: 'Wrong tenant'),
+        throwsStateError);
+    expect(server.ids, isEmpty);
+  });
+
   test('403 means rejected, does not claim delivered or retry automatically', () async {
     await coordinator.enqueue(conversationId: 'thread-a',
         requestId: 'request_unique_123456', text: 'Blocked');
