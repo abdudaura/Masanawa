@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/providers.dart';
+import '../core/network/api_client.dart';
 import '../state/session_state.dart';
 import 'assistant_link_transport.dart';
 
@@ -87,7 +88,7 @@ class _AssistantChannelSettingsScreenState
     } catch (error) {
       if (_isCurrent(owner, epoch)) {
         setState(() {
-          _error = error.toString().replaceFirst('ApiException: ', '');
+          _error = error is ApiException ? error.message : 'Unable to confirm the channel change. Check your connection and retry.';
         });
       }
     } finally {
