@@ -19,6 +19,7 @@ export interface HumanContactService {
   request(input: { authorizationHeader: string | undefined; handle: string }): Promise<{ status: "accepted" | "pending" | "existing" }>;
   respond(input: { authorizationHeader: string | undefined; requesterId: string; accept: boolean }): Promise<{ status: "accepted" | "declined" }>;
   list(input: { authorizationHeader: string | undefined; limit?: number }): Promise<{ contacts: readonly HumanContactRequest[] }>;
+  revoke(input: { authorizationHeader: string | undefined; otherUserId: string }): Promise<{ status: "revoked" }>;
 }
 
 const VALID_POLICY: ReadonlySet<string> = new Set(["anyone", "requests", "nobody"]);
@@ -72,6 +73,12 @@ export function createHumanContactService(input: Readonly<{
       const changed = await input.repository.respond({ tenantId: who.tenantId, recipientId: who.userId, requesterId: userId(requesterId), accept });
       if (!changed) throw new HumanContactError("messages.contact_request_unavailable", 404);
       return { status: accept ? "accepted" : "declined" };
+    },
+    async revoke({ authorizationHeader, otherUserId }) {
+      const who = await principal(authorizationHeader);
+      const done = await input.repository.revoke({ tenantId: who.tenantId, actorId: who.userId, otherUserId: userId(otherUserId) });
+      if (!done) throw new HumanContactError("messages.contact_request_unavailable", 404);
+      return { status: "revoked" };
     },
     async list({ authorizationHeader, limit }) {
       const who = await principal(authorizationHeader);
