@@ -11,11 +11,23 @@ class TalkReplayPlaybackCredentials {
   final DateTime expiresAt;
   final String contentType;
 
+  // A signed S3 GET can expire while the app is paused. Never reuse the
+  // embedded URL on a new request once it is near expiry.
+  bool isFresh(DateTime at) =>
+      expiresAt.isAfter(at.toUtc().add(const Duration(seconds: 15)));
+
   factory TalkReplayPlaybackCredentials.fromJson(Map<String, dynamic> json) {
     final url = json['url'] as String? ?? '';
     final expiresAt = DateTime.tryParse(json['expiresAt'] as String? ?? '');
     final contentType = json['contentType'] as String? ?? '';
-    if (url.isEmpty || expiresAt == null || contentType != 'audio/ogg') {
+    final uri = Uri.tryParse(url);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        expiresAt == null ||
+        contentType != 'audio/ogg') {
       throw const FormatException('Invalid replay playback response');
     }
     return TalkReplayPlaybackCredentials(
@@ -105,7 +117,8 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     required this.talkId,
     required this.transport,
     required this.player,
-  }) {
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now {
     _subscriptions.add(player.positions.listen(_positionChanged));
     _subscriptions.add(player.durations.listen(_durationChanged));
     _subscriptions.add(player.states.listen(_playerStateChanged));
@@ -115,6 +128,7 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   final String talkId;
   final TalkReplayPlaybackTransport transport;
   final TalkReplayAudioPlayer player;
+  final DateTime Function() _now;
 
   final _snapshots = StreamController<TalkReplayPlaybackSnapshot>.broadcast(
     sync: true,
@@ -124,6 +138,8 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   Future<void>? _operation;
   bool _closed = false;
   bool _loaded = false;
+  TalkReplayPlaybackCredentials? _credentials;
+  int _playGeneration = 0;
 
   @override
   TalkReplayPlaybackSnapshot get snapshot => _snapshot;
@@ -174,7 +190,10 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   }
 
   void _fail() {
+    if (_closed) return;
     _loaded = false;
+    _credentials = null;
+    _playGeneration += 1;
     _emit(
       _snapshot.copyWith(
         status: TalkReplayPlaybackStatus.failed,
@@ -195,27 +214,65 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     }
   }
 
-  Future<void> _loadFreshAndPlay() async {
+  // just_audio's play() future may remain pending for the entire recording.
+  // Do not hold the operation mutex while audio is playing, or Pause/Seek
+  // cannot execute until the audio completes.
+  void _beginPlaying() {
+    if (_closed) return;
+    final generation = ++_playGeneration;
+    try {
+      unawaited(player.play().catchError((Object _) {
+        if (!_closed && _playGeneration == generation) _fail();
+      }));
+    } catch (_) {
+      _fail();
+    }
+  }
+
+  Future<void> _loadFresh({
+    required bool autoPlay,
+    Duration resumePosition = Duration.zero,
+  }) async {
     if (_closed) return;
     _loaded = false;
+    _credentials = null;
+    ++_playGeneration;
     _emit(
-      const TalkReplayPlaybackSnapshot(
+      _snapshot.copyWith(
         status: TalkReplayPlaybackStatus.loading,
+        clearError: true,
       ),
     );
     try {
+      // Every refresh goes through the authenticated, tenant-scoped Gateway.
+      // A revoked/unpublished replay must fail even when an old URL exists.
       final credentials = await transport.load(talkId);
       if (_closed) return;
+      if (!credentials.isFresh(_now())) {
+        throw const FormatException('Replay playback authorization expired');
+      }
       final duration = await player.load(credentials.url);
       if (_closed) return;
+      if (!credentials.isFresh(_now())) {
+        throw const FormatException('Replay playback authorization expired');
+      }
+      final boundedResume = duration == null
+          ? resumePosition
+          : (resumePosition > duration ? duration : resumePosition);
+      if (boundedResume > Duration.zero) {
+        await player.seek(boundedResume);
+        if (_closed) return;
+      }
       _loaded = true;
+      _credentials = credentials;
       _emit(
         TalkReplayPlaybackSnapshot(
           status: TalkReplayPlaybackStatus.paused,
+          position: boundedResume,
           duration: duration ?? Duration.zero,
         ),
       );
-      await player.play();
+      if (autoPlay) _beginPlaying();
     } catch (_) {
       _fail();
     }
@@ -233,20 +290,19 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
         }
         return;
       case TalkReplayPlaybackStatus.paused:
-        if (!_loaded) {
-          await _loadFreshAndPlay();
+        if (!_loaded || !(_credentials?.isFresh(_now()) ?? false)) {
+          await _loadFresh(
+            autoPlay: true,
+            resumePosition: _snapshot.position,
+          );
           return;
         }
-        try {
-          await player.play();
-        } catch (_) {
-          _fail();
-        }
+        _beginPlaying();
         return;
       case TalkReplayPlaybackStatus.idle:
       case TalkReplayPlaybackStatus.completed:
       case TalkReplayPlaybackStatus.failed:
-        await _loadFreshAndPlay();
+        await _loadFresh(autoPlay: true);
         return;
       case TalkReplayPlaybackStatus.loading:
         return;
@@ -254,15 +310,25 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   });
 
   @override
-  Future<void> retry() => _serialize(_loadFreshAndPlay);
+  Future<void> retry() => _serialize(
+    () => _loadFresh(autoPlay: true, resumePosition: _snapshot.position),
+  );
 
   @override
   Future<void> seekTo(double fraction) => _serialize(() async {
     if (_closed || !_loaded || _snapshot.duration <= Duration.zero) return;
     final value = fraction.clamp(0.0, 1.0);
     final milliseconds = (_snapshot.duration.inMilliseconds * value).round();
+    final position = Duration(milliseconds: milliseconds);
+    if (!(_credentials?.isFresh(_now()) ?? false)) {
+      await _loadFresh(
+        autoPlay: _snapshot.status == TalkReplayPlaybackStatus.playing,
+        resumePosition: position,
+      );
+      return;
+    }
     try {
-      await player.seek(Duration(milliseconds: milliseconds));
+      await player.seek(position);
     } catch (_) {
       _fail();
     }
@@ -272,6 +338,9 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+    ++_playGeneration;
+    _credentials = null;
+    _loaded = false;
     try {
       await _operation;
     } catch (_) {
