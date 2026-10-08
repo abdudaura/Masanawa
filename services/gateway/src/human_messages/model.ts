@@ -15,6 +15,8 @@ export interface HumanDmConversation {
   readonly otherUserId: string;
   readonly otherDisplayName: string;
   readonly otherAvatarUrl: string | null;
+  readonly otherHandle: string | null;
+  readonly lastReadSequence: string;
   readonly lastSequence: string;
   readonly preview: string | null;
   readonly updatedAt: string;

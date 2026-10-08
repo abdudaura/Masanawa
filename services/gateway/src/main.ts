@@ -192,6 +192,7 @@ import { createProfileAvatarService } from "./profile_avatar/service.js";
 import { createPostgresHumanContactRepository } from "./human_contacts/postgres_repository.js";
 import { createPostgresHumanDmRepository } from "./human_messages/postgres_repository.js";
 import { createHumanDmService } from "./human_messages/service.js";
+import { createAssistantWorkspaceService } from "./assistant_workspace/service.js";
 import { createPostgresHumanDmRealtimeRepository } from "./human_dm_realtime/postgres_repository.js";
 import { createHumanDmRealtimeService } from "./human_dm_realtime/service.js";
 import { createHumanContactService, type HumanContactAuthorizer } from "./human_contacts/service.js";
@@ -1894,6 +1895,11 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedAssistantWorkspace = options.appOptions?.assistantWorkspace ??
+    (composedDirectory && composedShell && composedConversation
+      ? createAssistantWorkspaceService({directory:composedDirectory,
+          shell:composedShell,conversations:composedConversation}) : undefined);
+
   const composedTalkProfiles =
     options.appOptions?.talkProfiles ??
     (database.talkProfiles && talkProfileAuthorizer
@@ -2340,6 +2346,7 @@ export async function startGatewayService(
         ? { agentConversation: composedConversation }
         : {}),
       ...(composedShell ? { agentShell: composedShell } : {}),
+      ...(composedAssistantWorkspace ? { assistantWorkspace: composedAssistantWorkspace } : {}),
       ...(liveVoiceTokens ? { liveVoiceTokens } : {}),
       ...(composedPush ? { mobilePush: composedPush } : {}),
       ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),

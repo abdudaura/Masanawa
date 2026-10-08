@@ -30,6 +30,8 @@ import { registerProfileAvatarRoutes } from "./profile_avatar/routes.js";
 import type { createProfileAvatarService } from "./profile_avatar/service.js";
 import { registerHumanContactRoutes } from "./human_contacts/routes.js";
 import { registerHumanDmRoutes } from "./human_messages/routes.js";
+import { registerAssistantWorkspaceRoutes } from "./assistant_workspace/routes.js";
+import type { AssistantWorkspaceService } from "./assistant_workspace/service.js";
 import { HumanDmError, type HumanDmService } from "./human_messages/service.js";
 import { registerHumanDmRealtimeRoutes } from "./human_dm_realtime/routes.js";
 import { HumanDmRealtimeError, type HumanDmRealtimeService } from "./human_dm_realtime/service.js";
@@ -122,6 +124,7 @@ export interface GatewayAppOptions {
   readonly profileAvatar?: ReturnType<typeof createProfileAvatarService>;
   readonly humanContacts?: HumanContactService;
   readonly humanDm?: HumanDmService;
+  readonly assistantWorkspace?: AssistantWorkspaceService;
   readonly humanDmRealtime?: HumanDmRealtimeService;
   readonly talkActivity?: TalkActivityService;
   readonly talkSearch?: TalkSearchService;
@@ -1442,6 +1445,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   }
   if (options.humanDm) {
     registerHumanDmRoutes(app, options.humanDm);
+  }
+  if (options.assistantWorkspace) {
+    registerAssistantWorkspaceRoutes(app, options.assistantWorkspace);
   }
   if (options.humanDmRealtime) {
     registerHumanDmRealtimeRoutes(app, options.humanDmRealtime);

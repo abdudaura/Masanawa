@@ -127,11 +127,14 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
       const r=await pool.query<{
         conversation_id:string;other_user_id:string;other_display_name:string;
         other_avatar_url:string|null;last_sequence:string|number;
+        other_handle:string|null;last_read_sequence:string|number;
         preview:string|null;updated_at:Date|string;unread_count:string|number;
       }&Record<string,unknown>>(`
         SELECT c.conversation_id,
           CASE WHEN c.first_user_id=$2 THEN c.second_user_id ELSE c.first_user_id END AS other_user_id,
           c.last_sequence,c.updated_at,l.body AS preview,
+          COALESCE(rd.last_read_sequence,0) AS last_read_sequence,
+          other_profile.handle AS other_handle,
           COALESCE(other_profile.display_name,
             CASE WHEN c.first_user_id=$2 THEN c.second_user_id ELSE c.first_user_id END) AS other_display_name,
           other_profile.avatar_url AS other_avatar_url,
@@ -173,6 +176,7 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
       return r.rows.map(x=>Object.freeze<HumanDmConversation>({
         conversationId:x.conversation_id,otherUserId:x.other_user_id,
         otherDisplayName:x.other_display_name,otherAvatarUrl:x.other_avatar_url,
+        otherHandle:x.other_handle??null,lastReadSequence:String(x.last_read_sequence??0),
         lastSequence:String(x.last_sequence),preview:x.preview,updatedAt:iso(x.updated_at)!,
         unreadCount:Number(x.unread_count),
       }));

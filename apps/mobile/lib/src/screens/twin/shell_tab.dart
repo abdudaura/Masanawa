@@ -1,22 +1,34 @@
-/// Canonical consumer root tabs. Route identifiers are a navigation contract:
-/// they are not service categories or permissions.
+/// Canonical, permanent mobile root destinations. Indices are presentation only;
+/// neither persona nor person identities can be inferred from tab indices.
 enum MasanawaRootTab {
-  home('home'),
-  agents('agents'),
-  wallet('wallet'),
-  talk('talk');
+  talks('talks', '/talks'),
+  chats('messages', '/messages'),
+  assistant('assistant', '/assistant'),
+  wallet('wallet', '/wallet'),
+  agents('agents', '/agents');
 
-  const MasanawaRootTab(this.queryValue);
+  const MasanawaRootTab(this.queryValue, this.location);
 
   final String queryValue;
+  final String location;
 
+  /// Historical 'talk' was PRIVATE AI; 'home' was public discovery.
+  /// Use typed route paths for new links, this parser only for old URLs.
   static MasanawaRootTab fromQuery(String? value) => switch (value) {
-        'agents' => MasanawaRootTab.agents,
+        'messages' || 'chats' => MasanawaRootTab.chats,
+        'talk' || 'assistant' => MasanawaRootTab.assistant,
         'wallet' => MasanawaRootTab.wallet,
-        'talk' => MasanawaRootTab.talk,
-        _ => MasanawaRootTab.home,
+        'agents' || 'masana' => MasanawaRootTab.agents,
+        _ => MasanawaRootTab.talks,
       };
 
-  String get location =>
-      this == MasanawaRootTab.home ? '/home' : '/home?tab=$queryValue';
+  static MasanawaRootTab? fromLocation(String path) => switch (path) {
+        '/talks' || '/home' => MasanawaRootTab.talks,
+        '/messages' => MasanawaRootTab.chats,
+        '/assistant' || '/chats' || '/chat' => MasanawaRootTab.assistant,
+        '/wallet' => MasanawaRootTab.wallet,
+        '/agents' || '/masana' => MasanawaRootTab.agents,
+        _ => null,
+      };
 }
+
