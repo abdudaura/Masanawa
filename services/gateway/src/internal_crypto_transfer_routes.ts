@@ -61,6 +61,16 @@ export function registerInternalCryptoTransferRoutes(
       });
     } catch (error) { return respondError(reply, error); }
   });
+  app.get("/v1/financial/crypto/internal/requests/:requestId", async (request, reply) => {
+    try {
+      const params = object(request.params);
+      const receipt = await service.readByRequest({
+        authorizationHeader: request.headers.authorization,
+        requestId: stringField(params, "requestId"),
+      });
+      return receipt ?? reply.code(404).send({ code: "crypto.internal.not_found" });
+    } catch (error) { return respondError(reply, error); }
+  });
   app.get("/v1/financial/crypto/internal/transfers/:transferId", async (request, reply) => {
     try {
       const params = object(request.params);
