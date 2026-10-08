@@ -308,4 +308,58 @@ void main() {
     }
   });
 
+  test('account switch revokes even a still-valid cached replay link', () async {
+    var authorized = true;
+    final transport = _Transport();
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private', transport: transport, player: player,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    await session.toggle();
+    expect(player.plays, 1);
+    authorized = false;
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.plays, 1);
+    expect(transport.loads, 1);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    await session.close();
+  });
+
+  test('account revoked during pending credential fetch cannot load or play its result', () async {
+    var authorized = true;
+    final release = Completer<void>();
+    final transport = _DelayedTransport(release);
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private', transport: transport, player: player,
+      canAccess: () => authorized,
+    );
+    final pending = session.toggle();
+    authorized = false;
+    release.complete();
+    await pending;
+    expect(player.loads, 0);
+    expect(player.plays, 0);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+}
+
+class _DelayedTransport implements TalkReplayPlaybackTransport {
+  _DelayedTransport(this.release);
+  final Completer<void> release;
+
+  @override
+  Future<TalkReplayPlaybackCredentials> load(String talkId) async {
+    await release.future;
+    return TalkReplayPlaybackCredentials(
+      url: 'https://signed.example/protected.ogg',
+      expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      contentType: 'audio/ogg',
+    );
+  }
 }
