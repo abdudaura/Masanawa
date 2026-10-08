@@ -44,6 +44,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
   String? _openingId;
   String? _openingOwner;
   String? _localError;
+  bool _savingFavorite = false;
   int _loadEpoch = 0;
 
   @override
@@ -96,7 +97,8 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
   }
 
   Future<void> _toggleFavorite(HumanContact contact, String userId) async {
-    if (_signedInId() != userId || _favoritesOwner != userId) return;
+    if (_signedInId() != userId || _favoritesOwner != userId ||
+        _savingFavorite) return;
     final before = Set<String>.of(_favoriteIds);
     final next = Set<String>.of(before);
     if (!next.add(contact.userId)) next.remove(contact.userId);
@@ -106,6 +108,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
     }
     setState(() {
       _favoriteIds = next;
+      _savingFavorite = true;
       _localError = null;
     });
     try {
@@ -117,6 +120,10 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
         _favoriteIds = before;
         _localError = 'Could not save favorites. Please retry.';
       });
+    } finally {
+      if (mounted && _signedInId() == userId) {
+        setState(() => _savingFavorite = false);
+      }
     }
   }
 
@@ -199,6 +206,8 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
       _favoriteIds = {};
       _openingId = null;
       _openingOwner = null;
+      _localError = null;
+      _savingFavorite = false;
       return Scaffold(
         appBar: AppBar(title: const Text('Contacts')),
         body: const Center(child: Text('Sign in to see your Masanawa contacts.')),
@@ -211,12 +220,25 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
       _favoriteIds = {};
       _openingId = null;
       _openingOwner = null;
+      _savingFavorite = false;
+      _localError = null;
       final pendingOwner = userId;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _signedInId() == pendingOwner) {
+          // Clear private exact-handle and local-filter input without
+          // notifying listeners during build.
+          _filter.clear();
+          _handle.clear();
+          _findVisible = false;
           _loadFavorites(pendingOwner);
         }
       });
+      // Never render previous-account search text for even one transition
+      // frame. The ordinary contacts body renders after the account fence.
+      return Scaffold(
+        appBar: AppBar(title: const Text('Contacts')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
     final contactsState = ref.watch(humanContactsProvider);
     final actions = ref.read(humanContactsProvider.notifier);
@@ -242,6 +264,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
         c.status == HumanContactStatus.revoked ||
         c.status == HumanContactStatus.declined).toList(growable: false);
     final enabled = !contactsState.busy && _openingId == null;
+    final canFavorite = enabled && !_savingFavorite;
 
     // Lazy rows avoid creating thousands of widgets when pagination arrives.
     // C01 currently returns at most 100, without a cursor.
@@ -410,7 +433,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
                 return _PersonRow(
                   key: ValueKey('\${entry.heading}_\${person.userId}'),
                   person: person,
-                  enabled: enabled,
+                  enabled: canFavorite,
                   isOpening: _openingId == person.userId,
                   favorite: _favoritesOwner == userId &&
                       _favoriteIds.contains(person.userId),
