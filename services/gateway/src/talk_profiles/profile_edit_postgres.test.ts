@@ -77,4 +77,28 @@ describe("public profile edits SQL ownership", () => {
     expect(result).toBeNull();
     expect(query).not.toHaveBeenCalled();
   });
+  it("creates a new public identity without replacing an existing owner's handle", async () => {
+    const calls: Array<{ text: string; values: readonly unknown[] }> = [];
+    const pool = {
+      async query(text: string, values: readonly unknown[] = []) {
+        calls.push({ text, values });
+        return text.startsWith("INSERT")
+          ? { rows: [{ user_id: "user_owner" }], rowCount: 1 }
+          : { rows: [row], rowCount: 1 };
+      },
+    } as unknown as TalkProfileSqlPool;
+    const repo = createPostgresTalkProfileRepository(pool);
+    const created = await repo.createOwnHuman({
+      tenantId: "tenant_1", userId: "user_owner",
+      handle: "owner", displayName: "New name", bio: "About",
+    });
+    expect(created?.handle).toBe("owner");
+    expect(calls[0]!.text).toContain(
+      "ON CONFLICT (tenant_id,user_id) DO NOTHING",
+    );
+    expect(calls[0]!.values).toEqual([
+      "tenant_1", "user_owner", "owner", "New name", "About",
+    ]);
+  });
+
 });
