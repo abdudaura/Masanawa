@@ -31,6 +31,8 @@ describe("U23 signed invitations", () => {
     const result = await service.create({ authorizationHeader: "Bearer private-token" });
     expect(result.url).toMatch(/^https:\/\/masanawa\.com\/invite\/[A-Za-z0-9_.-]+$/);
     expect(result.url).not.toContain("private-token");
+    expect(result.url).not.toContain("tenant_test");
+    expect(result.url).not.toContain("user_A");
     expect(result.expiresAt).toBe("2026-10-09T12:00:00.000Z");
     expect(authorize).toHaveBeenCalledOnce();
     expect(self).toHaveBeenCalledWith({ authorizationHeader: "Bearer private-token" });
