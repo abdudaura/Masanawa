@@ -10,7 +10,7 @@ Claim: this repository file; exact paths below only. Five-minute lease since lat
 - Branch: `work/u03-assistant-task-center-20261009-gpt6`.
 - Source/test checkpoint SHA: `de860db6b7288c219aead98c8c4c2dc0803fadb4`.
 - Final pushed HEAD: handoff commit associated with this file (the PR head SHA is authoritative).
-- Draft PR: see the branch's U03 pull request (created after this handoff).
+- Draft, unmerged PR: https://github.com/Baatiku/masanawa/pull/521 (six changed files; no main merge).
 - Requirement mapping: U03, U01/U02/C07 dependencies, M08–M09, A01–A02, N08, Q05/Q08/Q09/Q10, J02/J07/J11. No two-device journey has been executed.
 - Reviewed current main, 71 initial open PRs and U01/U02 branch presence. No live U03 branch/PR existed at initial claim. Preserve U01 #519, U02 active isolated branch, C07 #480, R17/C08 #493, Work #497, Firebase #461, CI issue #457.
 - Exclusive owned paths: `apps/mobile/lib/src/operator_workspace/**`, `apps/mobile/test/operator_workspace/**`, this handoff only. No shared files modified.
