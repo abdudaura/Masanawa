@@ -89,7 +89,8 @@ class HumanVoiceController extends ChangeNotifier {
   bool _starting=false, _stopping=false;
   bool recording=false,review=false,sending=false,loading=false,playing=false,closed=false;
   bool canLoadOlder=false;
-  bool get canSend=>review&&!sending&&!recording&&!playing&&_localFile!=null;
+  bool get canSend=>review&&!sending&&!recording&&!playing&&
+      _discardFinished==null&&_localFile!=null;
   void _notify(){if(!closed)notifyListeners();}
   void _fail(String reason){error=reason;_notify();}
   Future<String> _privatePath() async {
@@ -105,7 +106,8 @@ class HumanVoiceController extends ChangeNotifier {
   /// A permission dialog or native recorder start may outlive the widget.
   /// Fence each start attempt and wait for it before disposing the native mic.
   Future<void> begin() async {
-    if(closed||recording||review||sending||_starting||_stopping)return;
+    if(closed||recording||review||sending||_starting||_stopping||
+        _discardFinished!=null)return;
     _starting=true;
     final finished=_startFinished=Completer<void>();
     final generation=++_recordGeneration;
@@ -236,7 +238,7 @@ class HumanVoiceController extends ChangeNotifier {
 
   Future<void> preview() async {
     final path=_localFile;
-    if(closed||!review||path==null||playing)return;
+    if(closed||!review||path==null||playing||_discardFinished!=null)return;
     final generation=++_playGeneration;
     playing=true;playingMessageId=null;error=null;_notify();
     try{
