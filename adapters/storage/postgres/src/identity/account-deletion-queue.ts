@@ -16,10 +16,15 @@ export function createPostgresAccountDeletionQueue(pool: Pool) {
       return withTransaction(pool, async client => {
         await client.query(
           `INSERT INTO identity.account_deletion_worker_jobs(request_id,tenant_id,user_id)
-           SELECT request_id,tenant_id,user_id
-             FROM identity.account_deletion_requests
-            WHERE phase IN ('identity-verified','awaiting-settlement')
-              AND ($1::text IS NULL OR tenant_id=$1)
+           SELECT r.request_id,r.tenant_id,r.user_id
+             FROM identity.account_deletion_requests r
+             LEFT JOIN identity.account_deletion_worker_jobs j
+               ON j.request_id=r.request_id
+            WHERE r.phase IN ('identity-verified','awaiting-settlement')
+              AND ($1::text IS NULL OR r.tenant_id=$1)
+              AND j.request_id IS NULL
+            ORDER BY r.updated_at,r.request_id
+            LIMIT 100
            ON CONFLICT (request_id) DO NOTHING`,
           [tenantFilter??null],
         );
