@@ -86,6 +86,7 @@ class _FakeSeatTransport implements TalkAiSeatTransport {
 Widget _app({
   required TalkAiSeatTransport transport,
   required bool isHost,
+  TalkAiPersonaKind initialKind = TalkAiPersonaKind.expert,
 }) {
   return ProviderScope(
     overrides: [
@@ -96,6 +97,7 @@ Widget _app({
       home: AddAiSeatSheet(
         talkId: 'talk-1',
         isHost: isHost,
+        initialKind: initialKind,
       ),
     ),
   );
@@ -145,6 +147,21 @@ void main() {
       find.textContaining('available AI Seat'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('preselected Twin opens the real Twin catalog without quoting',
+      (tester) async {
+    final transport = _FakeSeatTransport();
+    await tester.pumpWidget(_app(
+      transport: transport,
+      isHost: true,
+      initialKind: TalkAiPersonaKind.twin,
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Amina Twin'), findsOneWidget);
+    expect(find.text('Economist'), findsNothing);
+    expect(transport.quoteCount, 0);
+    expect(transport.confirmationCalls, 0);
   });
 
   testWidgets('Twins tab filters the catalog without a new screen',
