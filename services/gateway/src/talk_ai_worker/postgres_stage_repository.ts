@@ -91,9 +91,14 @@ export function createPostgresTalkAiStageEventRepository(
       // only bounded public projections, never whole rows or JSON payloads.
       const [seats, reactions, hands, questions, polls] = await Promise.all([
         pool.query<SeatRow>(
-          "SELECT participant_id,kind,display_name,is_host,admitted_at " +
-          "FROM talks.talk_seats WHERE tenant_id=$1 AND talk_id=$2 AND active=true " +
-          "ORDER BY is_host DESC, admitted_at ASC LIMIT 6",
+          "SELECT s.participant_id,s.kind,s.display_name,s.is_host,s.admitted_at " +
+          "FROM talks.talk_seats s JOIN talks.talks t " +
+          "ON t.tenant_id=s.tenant_id AND t.talk_id=s.talk_id " +
+          "WHERE s.tenant_id=$1 AND s.talk_id=$2 AND s.active=true " +
+          "AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp " +
+          "WHERE sp.tenant_id=s.tenant_id AND sp.viewer_user_id=t.host_user_id " +
+          "AND sp.subject_user_id=s.user_id AND sp.blocked=true) " +
+          "ORDER BY s.is_host DESC,s.admitted_at ASC LIMIT 6",
           [tenantId, talkId],
         ),
         pool.query<ReactionRow>(
