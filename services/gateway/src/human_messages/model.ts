@@ -13,6 +13,8 @@ export interface HumanDmMessage {
 export interface HumanDmConversation {
   readonly conversationId: string;
   readonly otherUserId: string;
+  readonly otherDisplayName: string;
+  readonly otherAvatarUrl: string | null;
   readonly lastSequence: string;
   readonly preview: string | null;
   readonly updatedAt: string;
