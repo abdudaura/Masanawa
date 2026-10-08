@@ -263,5 +263,29 @@
   },
   "@authProfileFailed": {
     "description": "Auth error text for authProfileFailed; never infer user balances or expose raw server payload. Only surface matching known server error codes."
+  },
+  "languageAction": "App language",
+  "languageDialogTitle": "Choose app language",
+  "languageSystem": "Use device language",
+  "languageSaveFailed": "Could not save language preference. Try again.",
+  "languagePreviewNotice": "Some screens are not fully translated yet.",
+  "languageHausaUnavailable": "Hausa interface support is being completed.",
+  "@languageAction": {
+    "description": "Button shown on signed-out authentication screen to select the application's UI language; not voice/conversation or account region"
+  },
+  "@languageDialogTitle": {
+    "description": "Modal bottom-sheet heading for user-selected UI language"
+  },
+  "@languageSystem": {
+    "description": "Reset manual language override and follow ordered OS language preferences"
+  },
+  "@languageSaveFailed": {
+    "description": "Secure device preference could not be saved; current selection remains unchanged"
+  },
+  "@languagePreviewNotice": {
+    "description": "Honest notice while translating the remaining product screens"
+  },
+  "@languageHausaUnavailable": {
+    "description": "Hausa cannot be selected until framework Material/Cupertino localizations and screen coverage are complete"
   }
 }
