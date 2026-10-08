@@ -91,5 +91,6 @@
   "statusOnCall": "En llamada",
   "statusOffline": "Sin conexión",
   "statusUnverified": "Estado sin verificar",
-  "statusWorkingTasks": "{count, plural, =1{Trabajando · 1 tarea} other{Trabajando · {count} tareas}}"
+  "statusWorkingTasks": "{count, plural, =1{Trabajando · 1 tarea} other{Trabajando · {count} tareas}}",
+  "twinShareText": "Habla con {name} en Masanawa: {url}"
 }
