@@ -95,6 +95,28 @@ function repo(): TalkProfileRepository {
         isVerified: true,
       };
     },
+    async saveSelf(input) {
+      if (input.userId !== "user_viewer" || input.tenantId !== "tenant_1") {
+        throw new Error("profiles.unauthorized_owner");
+      }
+      if (input.handle === "already_taken") {
+        throw Object.assign(new Error("duplicate key"), { code: "23505" });
+      }
+      return {
+        handle: input.handle,
+        displayName: input.displayName,
+        bio: input.bio,
+        avatarUrl: null,
+        followerCount: 0,
+        followingCount: 0,
+        isFollowing: false,
+        isLive: false,
+        liveTalkId: null,
+        twinPublicId: null,
+        twinDisplayName: null,
+        talks: [],
+      };
+    },
     async upsertHuman() {},
     async upsertPersona() {},
   };
@@ -130,6 +152,69 @@ function app() {
 }
 
 describe("Talk social profile API", () => {
+  it("edits only the authenticated user's normalized public identity", async () => {
+    const response = await app().inject({
+      method: "PUT",
+      url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "  @New_Handle ", displayName: "  Amina Bello  ", bio: "  Host and writer  " },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      handle: "new_handle",
+      displayName: "Amina Bello",
+      bio: "Host and writer",
+      avatarUrl: null,
+    });
+  });
+
+  it("does not allow editing the owner ID or setting arbitrary avatar URLs", async () => {
+    for (const extra of [{ userId: "user_victim" }, { avatarUrl: "https://evil.invalid/photo.jpg" }]) {
+      const response = await app().inject({
+        method: "PUT",
+        url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload: { handle: "new_handle", displayName: "Amina", bio: "", ...extra },
+      });
+      expect(response.statusCode).toBe(400);
+    }
+  });
+
+  it("requires a signed-in session and rejects untrusted profile data", async () => {
+    const server = app();
+    const unauthorized = await server.inject({
+      method: "PUT",
+      url: "/profiles/me",
+      payload: { handle: "new_handle", displayName: "Amina", bio: "" },
+    });
+    expect(unauthorized.statusCode).toBe(401);
+
+    for (const invalid of [
+      { handle: "x", displayName: "Amina", bio: "" },
+      { handle: "valid_handle", displayName: "   ", bio: "" },
+      { handle: "valid_handle", displayName: "Amina", bio: "x".repeat(1001) },
+    ]) {
+      const response = await server.inject({
+        method: "PUT",
+        url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload: invalid,
+      });
+      expect(response.statusCode).toBe(400);
+    }
+  });
+
+  it("returns conflict when a concurrent user already owns the handle", async () => {
+    const response = await app().inject({
+      method: "PUT",
+      url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "already_taken", displayName: "Amina", bio: "" },
+    });
+    expect(response.statusCode).toBe(409);
+  });
+
+
   it("serves the human mobile projection and live target", async () => {
     const response = await app().inject({
       method: "GET",
