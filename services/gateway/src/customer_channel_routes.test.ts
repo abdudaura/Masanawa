@@ -549,4 +549,155 @@ describe("customer channel webhook routes", () => {
   });
 
 
+  it("bounds untrusted provider JSON streams and cancels before private agent execution", async () => {
+    const app = Fastify();
+    const channelBridge = bridge();
+    let cancelled = 0;
+    let chunks = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        chunks += 1;
+        controller.enqueue(new Uint8Array(128 * 1024));
+      },
+      cancel() { cancelled += 1; },
+    });
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) =>
+      new Response(body, {
+        status: 200,
+        headers: { "content-type": "application/json", "content-length": "2" },
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      registerCustomerChannelRoutes(app, {
+        bridge: channelBridge,
+        telegram: { botToken: "bot-token", webhookSecret: "telegram-secret" },
+      });
+      const response = await app.inject({
+        method: "POST", url: "/channels/telegram/webhook",
+        headers: { "content-type": "application/json",
+          "x-telegram-bot-api-secret-token": "telegram-secret" },
+        payload: { update_id: 32, message: {
+          message_id: 52, from: { id: 123 }, chat: { id: 123, type: "private" },
+          voice: { file_id: "voice-123" },
+        } },
+      });
+      expect(response.statusCode).toBeGreaterThanOrEqual(400);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(chunks).toBeLessThanOrEqual(5);
+      expect(cancelled).toBe(1);
+      expect(channelBridge.handle).not.toHaveBeenCalled();
+      const init = fetchMock.mock.calls[0]![1];
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      vi.unstubAllGlobals();
+      await app.close();
+    }
+  });
+
+  it("allows qualified small provider JSON and media with separate deadline signals", async () => {
+    const app = Fastify();
+    const channelBridge = bridge();
+    const fetchMock = vi.fn(async (target: RequestInfo | URL, _init?: RequestInit) =>
+      String(target).includes("/getFile?")
+        ? new Response(JSON.stringify({ ok: true, result: { file_path: "voice/sample.ogg" } }),
+          { status: 200, headers: { "content-type": "application/json" } })
+        : new Response(new Uint8Array([1, 2]), {
+          status: 200, headers: { "content-type": "audio/ogg" },
+        }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      registerCustomerChannelRoutes(app, {
+        bridge: channelBridge,
+        telegram: { botToken: "bot-token", webhookSecret: "telegram-secret" },
+      });
+      const response = await app.inject({
+        method: "POST", url: "/channels/telegram/webhook",
+        headers: { "content-type": "application/json",
+          "x-telegram-bot-api-secret-token": "telegram-secret" },
+        payload: { update_id: 33, message: {
+          message_id: 53, from: { id: 123 }, chat: { id: 123, type: "private" },
+          voice: { file_id: "voice-123", mime_type: "audio/ogg" },
+        } },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      for (const call of fetchMock.mock.calls) {
+        expect(call[1]?.signal).toBeInstanceOf(AbortSignal);
+      }
+      expect(channelBridge.handle).toHaveBeenCalledWith({
+        channel: "telegram", messageId: "53", externalUserId: "123",
+        chatId: "123", text: "Please help me with this attachment.",
+        media: { mimeType: "audio/ogg", dataBase64: "AQI=" },
+      });
+    } finally {
+      vi.unstubAllGlobals();
+      await app.close();
+    }
+  });
+
+  it("fails closed on malformed provider metadata without processing attachments", async () => {
+    const app = Fastify();
+    const channelBridge = bridge();
+    vi.stubGlobal("fetch", vi.fn(async () =>
+      new Response('{"result":', { status: 200,
+        headers: { "content-type": "application/json" } })));
+    try {
+      registerCustomerChannelRoutes(app, {
+        bridge: channelBridge,
+        telegram: { botToken: "bot-token", webhookSecret: "telegram-secret" },
+      });
+      const response = await app.inject({
+        method: "POST", url: "/channels/telegram/webhook",
+        headers: { "content-type": "application/json",
+          "x-telegram-bot-api-secret-token": "telegram-secret" },
+        payload: { update_id: 34, message: {
+          message_id: 54, from: { id: 123 }, chat: { id: 123, type: "private" },
+          voice: { file_id: "voice-123" },
+        } },
+      });
+      expect(response.statusCode).toBeGreaterThanOrEqual(400);
+      expect(channelBridge.handle).not.toHaveBeenCalled();
+      expect(channelBridge.delivered).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+      await app.close();
+    }
+  });
+
+  it("never marks a channel reply delivered after an oversized outbound provider JSON reply", async () => {
+    const app = Fastify();
+    const channelBridge = bridge();
+    channelBridge.handle.mockResolvedValueOnce({
+      duplicate: false, reply: "Hello", shouldDeliver: true, requestContact: false,
+    });
+    const fetchMock = vi.fn(async () =>
+      new Response(new Uint8Array(300 * 1024), {
+        status: 200,
+        headers: { "content-type": "application/json", "content-length": "307200" },
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      registerCustomerChannelRoutes(app, {
+        bridge: channelBridge,
+        telegram: { botToken: "bot-token", webhookSecret: "telegram-secret" },
+      });
+      const response = await app.inject({
+        method: "POST", url: "/channels/telegram/webhook",
+        headers: { "content-type": "application/json",
+          "x-telegram-bot-api-secret-token": "telegram-secret" },
+        payload: { update_id: 35, message: {
+          message_id: 55, from: { id: 123 }, chat: { id: 123, type: "private" },
+          text: "Hello",
+        } },
+      });
+      expect(response.statusCode).toBeGreaterThanOrEqual(400);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(channelBridge.handle).toHaveBeenCalledTimes(1);
+      expect(channelBridge.delivered).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+      await app.close();
+    }
+  });
+
 });
