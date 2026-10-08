@@ -1,34 +1,25 @@
 # Masanawa Documentation
 
-## Canonical consumer-product documents
+## Source of truth — owner-approved five-tab mobile UX (2026-10-08)
 
-These define what the product is **now**:
+**Exactly five bottom tabs, in order: Talks · Chats · Assistant · Wallet · Agents**, with **Assistant in the center**, two tabs on each side. Talks owns former Home Explore/Live public audio and the **Start Talk** FAB; Chats is **human-only** DMs; Assistant is **one** private Gwani/Gwana chat with an **in-chat persona switch**; Wallet owns eligible Billing/Crypto, transfers and distinct balances; Agents owns the Masanawa Expert/Twin roster and My Twin.
 
-1. `PRODUCT-NORTH-STAR.md`
-2. `TALKS-PRODUCT.md`
-3. `MOBILE-SCREEN-ARCHITECTURE.md`
-4. `CONSUMER-SERVICES.md`
-5. `APP-SHELL-CONTRACT.md`
-6. `MOBILE-AGENT-EXPERIENCE.md`
-7. `GOLDEN-JOURNEYS.md`
+**Mandatory product/navigation precedence:** `../CONTINUE-HERE.md` → `APP-SHELL-CONTRACT.md` → `END-TO-END-UX-ARCHITECTURE.md` → `PRODUCT-NORTH-STAR.md` / `MOBILE-SCREEN-ARCHITECTURE.md` → `MOBILE-READINESS-PLAN.md` (R01–R19) and `COMMUNICATIONS-EXTENSION-PLAN.md` (C01–C08) → `MULTI-WINDOW-WORK.md` for current ownership. Every current implementation window must read the final shell contract, regardless of older README or dated links. The current Flutter APK has **not** yet implemented and qualified this complete target.
 
-`../CONTINUE-HERE.md` is the mandatory handoff entry point.
+## Canonical product and acceptance documents
 
-## Architecture documents
+- `APP-SHELL-CONTRACT.md` — authoritative labels, exact placement, aliases, header/FAB rules.
+- `END-TO-END-UX-ARCHITECTURE.md` — end-to-end routes, journeys and cross-feature privacy, money and voice UX.
+- `PRODUCT-NORTH-STAR.md`, `TALKS-PRODUCT.md`, `MOBILE-SCREEN-ARCHITECTURE.md` — product semantics, stages and screens **as amended by the final shell contract**.
+- `COMMUNICATIONS-EXTENSION-PLAN.md` — C01–C08 human messaging, sync/cache, internal crypto and Assistant actions.
+- `MOBILE-READINESS-PLAN.md` — R01–R19 implemented/tested/deployed/handset evidence gates.
+- `VOICE-FIRST-INTERACTIONS.md`, `MOBILE-AGENT-EXPERIENCE.md`, `DEFAULT-AI-PERSONAS.md`, `CONSUMER-SERVICES.md`, `GOLDEN-JOURNEYS.md` — specific interaction contracts and capabilities.
+- `MULTI-WINDOW-WORK.md` — nonoverlapping ownership, five-minute lease and shared integration.
 
-Architecture/security/runtime/domain documents remain authoritative for internal platform
-invariants where they do not conflict with the consumer-product direction above.
+## Historical/technical documents: preserve evidence, never override product direction
 
-The product reset does **not** discard identity, memory, Skills, Tools, Providers,
-Commerce, channels, audit, recovery or security foundations. It removes their exposure as
-consumer navigation/product concepts.
+`docs/workstreams/`, previous closure audits, phase plans, `docs/migration/`, prior ADRs, old recovery/rollout handoffs and development snapshots record **what was planned or attempted when written**, not today's mobile navigation. They can describe former Home/Agents/Wallet/Talk, Home/Chats/Wallet/Talk, or For You/Live/Create/Activity/You; **none may authorize a new implementation of those retired root layouts**. Use their original commits/tests/status only as historical evidence. A saved screenshot or old instruction isn't current product sign-off.
 
-## Historical workstreams
+Architecture/security/domain documents remain authoritative on existing internal invariants, but user-facing navigation, feature visibility and copy follow the explicit five-tab contract when older descriptions conflict. Never erase historical financial, security or testing evidence just to rename screens. Web implementation remains separately deferred, and its future responsive design must match the final five-way functional partition.
 
-Files under `docs/workstreams/`, old phase closure records, migration records and ADRs are
-historical/technical evidence. A dated workstream must never override the current
-consumer-product documents.
-
-Git history preserves deleted Twin-first/Room-first product planning. Do not restore those
-documents merely because an older branch references them; translate still-useful
-implementation into the current Talk/Seat/Expert/Twin model instead.
+**Rule for conflicts:** follow owner-approved five-tab documents; note the stale file in handoff, fix the active guide rather than silently resurrecting an old UI; coordinate source edits with the R17/C08 integration owner. No document is evidence of Flutter tests, API deployment, native audio or provider qualification.
