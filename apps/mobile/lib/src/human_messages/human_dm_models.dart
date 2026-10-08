@@ -23,14 +23,18 @@ class HumanDmMessage {
 class HumanDmConversation {
   const HumanDmConversation({required this.conversationId, required this.otherUserId,
     required this.lastSequence, required this.preview, required this.updatedAt,
+    required this.otherDisplayName,required this.otherAvatarUrl,
     required this.unreadCount});
-  final String conversationId, otherUserId, lastSequence;
+  final String conversationId, otherUserId, lastSequence, otherDisplayName;
+  final String? otherAvatarUrl;
   final String? preview;
   final DateTime updatedAt;
   final int unreadCount;
   factory HumanDmConversation.fromJson(Map<String, dynamic> json) => HumanDmConversation(
     conversationId: json['conversationId'] as String,
     otherUserId: json['otherUserId'] as String,
+    otherDisplayName: json['otherDisplayName'] as String,
+    otherAvatarUrl: json['otherAvatarUrl'] as String?,
     lastSequence: json['lastSequence'] as String,
     preview: json['preview'] as String?,
     updatedAt: DateTime.parse(json['updatedAt'] as String),
