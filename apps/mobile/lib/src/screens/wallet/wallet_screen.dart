@@ -64,7 +64,7 @@ class WalletScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: embeddedInShell ? null : AppBar(title: const Text('Wallet')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
