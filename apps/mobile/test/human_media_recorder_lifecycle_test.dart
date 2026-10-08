@@ -8,10 +8,12 @@ import 'package:masanawa/src/human_media/human_voice_models.dart';
 import 'package:masanawa/src/human_media/human_voice_transport.dart';
 
 class _Capture implements HumanVoiceCapture {
-  _Capture({this.permissionGate, this.startGate, this.stopGate});
+  _Capture({this.permissionGate, this.startGate, this.stopGate,
+    this.nullStopPath=false});
   final Completer<bool>? permissionGate;
   final Completer<void>? startGate;
   final Completer<void>? stopGate;
+  final bool nullStopPath;
   int permissions=0, starts=0, stops=0, disposals=0;
   String? path;
 
@@ -30,7 +32,7 @@ class _Capture implements HumanVoiceCapture {
   @override Future<String?> stop() async {
     stops++;
     if(stopGate!=null)await stopGate!.future;
-    return path;
+    return nullStopPath ? null : path;
   }
   @override Future<void> dispose() async {disposals++;}
 }
@@ -178,6 +180,18 @@ void main() {
     await discarding;
     await subject.shutdown();
     expect(await File(path).exists(),isFalse);
+  });
+
+  test('native stop with null output path preserves original preview until discarded',() async {
+    final capture=_Capture(nullStopPath:true);
+    final subject=controller(capture);
+    await subject.begin();
+    await subject.stop();
+    expect(subject.review,isTrue);
+    expect(await File(path).exists(),isTrue);
+    await subject.discard();
+    expect(await File(path).exists(),isFalse);
+    await subject.shutdown();
   });
 
   test('shutdown during permission prompt never starts or saves a recording',() async {
