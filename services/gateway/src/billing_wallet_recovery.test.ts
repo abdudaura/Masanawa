@@ -28,17 +28,18 @@ describe("R05 credit-before-bill crash recovery", () => {
       providerOrderRef: "order-123",
       providerReference: "fw-123",
       providerTransactionId: initialState === "credited" ? "tx-123" : null,
-      expiresAt: "2026-10-09T00:00:00.000Z",
-      createdAt: "2026-10-08T00:00:00.000Z",
-      updatedAt: "2026-10-08T00:00:00.000Z",
+      expiresAt: new Date(Date.now() + 120_000).toISOString(),
+      createdAt: new Date(Date.now() - 60_000).toISOString(),
+      updatedAt: new Date(Date.now() - 60_000).toISOString(),
     };
     let current = funding;
-    const createdAt = "2026-10-08T00:00:00.000Z";
+    const createdAt = new Date(Date.now() - 60_000).toISOString();
+    const expiresAt = new Date(Date.now() + 120_000).toISOString();
     const seed = createBillingQuote({
       tenantId, userId, quoteId, categoryCode: "AIRTIME", billerCode: "BIL119",
       itemCode: "AIRTIME", itemName: "Airtime", customerId: "07010102053",
       serviceAmountKobo: 10000, feeAmountKobo: 0,
-      createdAt, expiresAt: "2026-10-09T00:00:00.000Z",
+      createdAt, expiresAt,
     });
     let quote: BillingQuote | null = { ...seed, state: "confirmed", confirmedAt: createdAt };
     const findFunding = vi.fn(async (): Promise<NgnFundingIntent | null> => current);
@@ -121,6 +122,18 @@ describe("R05 credit-before-bill crash recovery", () => {
       duplicate: true, resumed: false,
     });
     expect(t.purchase).not.toHaveBeenCalled();
+  });
+
+  it("credits a late transfer without executing expired economic terms", async () => {
+    const t = setup();
+    const current = await t.readQuote();
+    if (!current) throw new Error("missing fixture quote");
+    t.setQuote({ ...current, expiresAt: new Date(Date.now() - 1_000).toISOString() });
+    await expect(t.service.receiveFundingWebhook(t.webhook)).resolves.toEqual({
+      handled: true, duplicate: true, resumed: false,
+    });
+    expect(t.purchase).not.toHaveBeenCalled();
+    expect(t.creditFunding).not.toHaveBeenCalled();
   });
 
   it("propagates transient fulfillment failure so a duplicate callback can retry", async () => {
