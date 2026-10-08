@@ -254,32 +254,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               helperText: 'Letters, numbers, dots, underscores or hyphens',
                             ),
                             validator: (value) =>
-                                RegExp(r'^[a-z0-9_][a-z0-9_.-]{1,39}
-                        if (_error != null)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_error!,
-                                style: TextStyle(color: u.emergency)),
-                          ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          key: const ValueKey('profile-edit-save'),
-                          onPressed: _saving || !_changed ? null : _save,
-                          child: _saving
-                              ? const SizedBox(
-                                  height: 20, width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : Text(_creatingProfile ? 'Create profile' : 'Save profile'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-    );
-  }
-}
-)
+                                RegExp(r'^[a-z0-9_][a-z0-9_.-]{1,39}$')
                                         .hasMatch(value?.trim().toLowerCase() ?? '')
                                     ? null
                                     : 'Enter a valid handle (2–40 characters)',
@@ -288,7 +263,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: const Icon(Icons.alternate_email_rounded),
-                            title: Text('@${profile!.handle}'),
+                            title: Text('@' + profile!.handle),
                             subtitle: const Text(
                               'Your handle is fixed until linked Talk '
                               'and invitation references can be migrated safely.',
@@ -297,8 +272,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         if (_error != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(_error!,
-                                style: TextStyle(color: u.emergency)),
+                            child: Text(
+                              _error!,
+                              style: TextStyle(color: u.emergency),
+                            ),
                           ),
                         const SizedBox(height: 16),
                         FilledButton(
@@ -306,10 +283,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           onPressed: _saving || !_changed ? null : _save,
                           child: _saving
                               ? const SizedBox(
-                                  height: 20, width: 20,
+                                  height: 20,
+                                  width: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const Text('Save profile'),
+                              : Text(
+                                  _creatingProfile ? 'Create profile' : 'Save profile',
+                                ),
                         ),
                       ],
                     ),
