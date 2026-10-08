@@ -10,6 +10,8 @@ Claim created: 2026-10-08 ~11:51 Africa/Lagos. Five-minute repository-visible ac
 - `apps/mobile/lib/src/talks/talk_gift_pending_store.dart`
 - `apps/mobile/test/talk_gift_pending_store_test.dart`
 - `apps/mobile/test/talk_gift_http_transport_test.dart`
+- `apps/mobile/lib/src/talks/talk_gift.dart`
+- `apps/mobile/test/talk_gift_models_test.dart`
 - `docs/workstreams/r10-gift-transport-recovery-20261008.md`
 
 No shared Gateway composer, ledger, migration, R09 stage fan-out, shell or CI ownership. Review any concurrent gift PR before shared edits.
@@ -20,3 +22,6 @@ Merged main contains invalid Dart syntax in both gift transport (duplicated trai
 Acceptance: no gift POST after missing signed-in owner or secure-storage failure; same ID on process restart; no new ID on ambiguous lost response; receipt mismatch cannot create success; successful write-back allows a new deliberate gift; actual Flutter/analyzer and two-handset Credits checks remain unverified until executed.
 
 Requirement trace: T05, T07, W12, P04; J05. CI incident: #457, runner minutes exhausted. Keep PR draft/unmerged.
+
+## Contract discovery
+Server-side qualified gift catalog already returns an empty `items` array when no options are available, but `TalkGiftCatalog.fromJson` on `main` rejects an empty list. This is an end-to-end empty-state defect: preserve the valid empty response so the gift sheet can truthfully show unavailability rather than a parser error. Include focused model and HTTP regression coverage.
