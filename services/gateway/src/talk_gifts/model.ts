@@ -8,6 +8,15 @@ export interface TalkGiftCatalogItem {
   readonly available: boolean;
 }
 
+/** Qualified, server-owned options for the exact tenant and giftable Talk.
+ * A failed source must fail closed; do not substitute made-up client prices. */
+export interface TalkGiftCatalogSource {
+  load(input: Readonly<{
+    tenantId: string;
+    talkId: string;
+  }>): Promise<readonly TalkGiftCatalogItem[]>;
+}
+
 export interface TalkGiftCatalog {
   readonly talkId: string;
   readonly currency: "Credits";
