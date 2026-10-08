@@ -4,6 +4,33 @@ import 'package:masanawa/l10n/app_localizations.dart';
 import 'package:masanawa/src/localization/masanawa_localization.dart';
 
 void main() {
+  test('all launch translation bundles render complete onboarding instructions', () async {
+    for (final code in ['en', 'ha', 'ar', 'fr', 'es', 'pt']) {
+      final l10n = await AppLocalizations.delegate.load(Locale(code));
+      final visible = [
+        l10n.welcomeTitle,
+        l10n.signInInstruction,
+        l10n.phoneMethod,
+        l10n.emailMethod,
+        l10n.sendCode,
+        l10n.termsNotice,
+        l10n.otpTitle,
+        l10n.otpSentTo('user@example.com'),
+        l10n.invalidOtpCode,
+        l10n.resendCodeIn(20),
+        l10n.nameQuestion,
+        l10n.fullNameLabel,
+        l10n.fullNameRequired,
+        l10n.verifiedSignInNotice,
+      ];
+      for (final message in visible) {
+        expect(message.trim(), isNotEmpty, reason: '$code/onboarding');
+      }
+      expect(l10n.otpSentTo('user@example.com'),
+          contains('user@example.com'), reason: '$code/identifier');
+    }
+  });
+
   test('generated translations preserve branded and distinct intents', () async {
     final en = await AppLocalizations.delegate.load(const Locale('en'));
     final ha = await AppLocalizations.delegate.load(const Locale('ha'));
