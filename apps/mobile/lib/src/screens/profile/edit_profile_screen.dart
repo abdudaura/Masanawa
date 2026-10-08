@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../social/own_profile_transport.dart';
+import '../../profile_avatar/avatar_crop_sheet.dart';
+import '../../profile_avatar/avatar_transport.dart';
 import '../../social/talk_social_profiles.dart';
 import '../../state/session_state.dart';
 import '../../state/talk_social_profile_state.dart';
@@ -24,6 +26,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   HumanProfile? _profile;
   bool _loading = true;
   bool _saving = false;
+  bool _savingPhoto = false;
   bool _creatingProfile = false;
   bool _removeAvatar = false;
   String? _error;
@@ -99,7 +102,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _save() async {
     final current = _profile;
     if ((current == null && !_creatingProfile) ||
-        _saving || !_changed || !_form.currentState!.validate()) return;
+        _saving || _savingPhoto || !_changed || !_form.currentState!.validate()) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -108,17 +111,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final name = _name.text.trim();
       final bio = _bio.text.trim();
       final transport = ref.read(ownProfileTransportProvider);
-      final updated = current == null
+      final hasTextChanges = current != null &&
+          (name != current.displayName || bio != current.bio);
+      final changedText = current == null
           ? await transport.createSelf(
               handle: _handle.text.trim().toLowerCase(),
               displayName: name,
               bio: bio,
             )
-          : await transport.updateSelf(
-              displayName: name == current.displayName ? null : name,
-              bio: bio == current.bio ? null : bio,
-              removeAvatar: _removeAvatar,
-            );
+          : hasTextChanges
+              ? await transport.updateSelf(
+                  displayName: name == current.displayName ? null : name,
+                  bio: bio == current.bio ? null : bio,
+                )
+              : current;
+      if (_removeAvatar && current?.avatarUrl?.isNotEmpty == true) {
+        await ref.read(profileAvatarTransportProvider).remove(
+          expectedUrl: current!.avatarUrl!,
+        );
+      }
+      final updated = _removeAvatar ? await transport.loadSelf() : changedText;
       if (!mounted) return;
       setState(() {
         _profile = updated;
@@ -160,6 +172,59 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           'Reload your profile before trying again.');
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _pickPhoto() async {
+    final profile = _profile;
+    if (profile == null || _saving || _savingPhoto) return;
+    if (_changed) {
+      setState(() => _error =
+          'Save your other profile changes before changing your photo.');
+      return;
+    }
+    try {
+      final png = await pickAndCropAvatar(context);
+      if (png == null || !mounted) return;
+      setState(() {
+        _savingPhoto = true;
+        _error = null;
+      });
+      final url = await ref.read(profileAvatarTransportProvider).upload(
+        png, expectedUrl: profile.avatarUrl,
+      );
+      final updated = await ref.read(ownProfileTransportProvider).loadSelf();
+      if (!mounted) return;
+      if (updated.avatarUrl != url) {
+        throw const FormatException('Profile photo update not confirmed');
+      }
+      setState(() {
+        _profile = updated;
+        _removeAvatar = false;
+      });
+      ref.invalidate(humanProfileProvider(profile.handle));
+      ref.invalidate(humanProfileProvider(updated.handle));
+      final session = ref.read(sessionProvider);
+      if (session is SessionSignedIn) {
+        ref.invalidate(humanProfileByUserIdProvider(session.user.id));
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile photo updated.')),
+      );
+    } on DioException catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.response?.statusCode == 404
+          ? 'Profile photo storage is unavailable right now.'
+          : error.response?.statusCode == 409
+              ? 'Your photo changed on another device. Reload and try again.'
+              : 'Could not confirm the photo update. Reload before retrying.');
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error =
+            'Could not prepare or confirm the photo. Reload before retrying.');
+      }
+    } finally {
+      if (mounted) setState(() => _savingPhoto = false);
     }
   }
 
@@ -205,11 +270,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 : null,
                           ),
                         ),
+                        if (profile != null) ...[
+                          const SizedBox(height: 8),
+                          Center(
+                            child: TextButton.icon(
+                              key: const ValueKey('profile-change-photo'),
+                              onPressed: _saving || _savingPhoto || _removeAvatar
+                                  ? null : _pickPhoto,
+                              icon: _savingPhoto
+                                  ? const SizedBox(
+                                      width: 18, height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.add_a_photo_outlined),
+                              label: Text(avatar == null || avatar.isEmpty
+                                  ? 'Add photo' : 'Change photo'),
+                            ),
+                          ),
+                        ],
                         if (_removeAvatar && profile?.avatarUrl?.isNotEmpty == true)
                           Center(
                             child: TextButton(
                               key: const ValueKey('profile-undo-photo-removal'),
-                              onPressed: _saving ? null
+                              onPressed: _saving || _savingPhoto ? null
                                   : () => setState(() => _removeAvatar = false),
                               child: const Text('Keep current photo'),
                             ),
@@ -218,7 +301,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           Center(
                             child: TextButton.icon(
                               key: const ValueKey('profile-remove-photo'),
-                              onPressed: _saving
+                              onPressed: _saving || _savingPhoto
                                   ? null : () => setState(() => _removeAvatar = true),
                               icon: const Icon(Icons.delete_outline_rounded),
                               label: const Text('Remove photo'),
@@ -228,7 +311,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         TextFormField(
                           key: const ValueKey('profile-edit-name'),
                           controller: _name,
-                          enabled: !_saving,
+                          enabled: !_saving && !_savingPhoto,
                           maxLength: 80,
                           textCapitalization: TextCapitalization.words,
                           onChanged: (_) => setState(() {}),
@@ -246,7 +329,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         TextFormField(
                           key: const ValueKey('profile-edit-bio'),
                           controller: _bio,
-                          enabled: !_saving,
+                          enabled: !_saving && !_savingPhoto,
                           maxLength: 300,
                           minLines: 3,
                           maxLines: 5,
@@ -262,7 +345,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           TextFormField(
                             key: const ValueKey('profile-create-handle'),
                             controller: _handle,
-                            enabled: !_saving,
+                            enabled: !_saving && !_savingPhoto,
                             maxLength: 40,
                             onChanged: (_) => setState(() {}),
                             decoration: const InputDecoration(
@@ -307,7 +390,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         const SizedBox(height: 16),
                         FilledButton(
                           key: const ValueKey('profile-edit-save'),
-                          onPressed: _saving || !_changed ? null : _save,
+                          onPressed: _saving || _savingPhoto || !_changed ? null : _save,
                           child: _saving
                               ? const SizedBox(
                                   height: 20,
@@ -325,3 +408,4 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 }
+

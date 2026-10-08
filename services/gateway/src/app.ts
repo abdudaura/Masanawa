@@ -26,6 +26,10 @@ import type { TalkAiSeatService } from "./talk_ai_seats/service.js";
 import { registerTalkLiveRoutes } from "./talk_live_routes.js";
 import type { TalkLiveService } from "./talk_live/service.js";
 import { registerTalkProfileRoutes } from "./talk_profile_routes.js";
+import { registerProfileAvatarRoutes } from "./profile_avatar/routes.js";
+import type { createProfileAvatarService } from "./profile_avatar/service.js";
+import { registerHumanContactRoutes } from "./human_contacts/routes.js";
+import { HumanContactError, type HumanContactService } from "./human_contacts/service.js";
 import type { TalkProfileService } from "./talk_profiles/service.js";
 import { registerTalkActivityRoutes } from "./talk_activity_routes.js";
 import type { TalkActivityService } from "./talk_activity/service.js";
@@ -111,6 +115,8 @@ export interface GatewayAppOptions {
   readonly talkAiSeats?: TalkAiSeatService;
   readonly talkLive?: TalkLiveService;
   readonly talkProfiles?: TalkProfileService;
+  readonly profileAvatar?: ReturnType<typeof createProfileAvatarService>;
+  readonly humanContacts?: HumanContactService;
   readonly talkActivity?: TalkActivityService;
   readonly talkSearch?: TalkSearchService;
   readonly talkLibrary?: TalkLibraryService;
@@ -306,6 +312,17 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   const checks = options.readinessChecks ?? [];
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof HumanContactError) {
+      // Exact private contact status (missing / hidden / blocked) shares one
+      // indistinguishable response. Codes contain no other user's private policy.
+      void reply.code(error.statusCode).send({
+        error: {
+          code: error.code,
+          message: error.statusCode === 404 ? "Contact unavailable" : "Contact request rejected",
+        },
+      });
+      return;
+    }
     if (error instanceof Error && error.message === "financial.auth.unauthorized") {
       void reply.code(401).send({
         error: {
@@ -1410,6 +1427,12 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   if (options.talkProfiles) {
     registerTalkProfileRoutes(app, options.talkProfiles);
   }
+  if (options.profileAvatar) {
+    registerProfileAvatarRoutes(app, options.profileAvatar);
+  }
+  if (options.humanContacts) {
+    registerHumanContactRoutes(app, options.humanContacts);
+  }
   if (options.talkActivity) {
     registerTalkActivityRoutes(app, options.talkActivity);
   }
@@ -1542,3 +1565,5 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   return app;
 }
+
+

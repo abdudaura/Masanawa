@@ -212,13 +212,34 @@ export function createPostgresTalkProfileRepository(
         fields.push("avatar_url = NULL");
       }
       if (fields.length === 0) return null;
-      const updated = await pool.query<{ user_id: string }>(
-        `UPDATE talks.public_profiles
-            SET ${fields.join(", ")}, updated_at = clock_timestamp()
-          WHERE tenant_id = $1 AND user_id = $2
-          RETURNING user_id`,
-        values,
-      );
+      const updateSql =
+        "UPDATE talks.public_profiles SET " + fields.join(", ") +
+        ", updated_at = clock_timestamp()" +
+        " WHERE tenant_id = $1 AND user_id = $2 RETURNING user_id";
+      // Older mobile APKs still send removeAvatar through PATCH /profiles/me.
+      // Atomically retire its managed object in the journal in that same SQL
+      // statement; otherwise the now-unreferenced S3 file would leak forever.
+      const statement = input.removeAvatar === true
+        ? [
+            "WITH previous AS (",
+            "SELECT user_id,avatar_url FROM talks.public_profiles",
+            "WHERE tenant_id=$1 AND user_id=$2 FOR UPDATE",
+            "), updated AS (",
+            "UPDATE talks.public_profiles p SET " + fields.join(", ") +
+              ",updated_at=clock_timestamp()",
+            "FROM previous WHERE p.tenant_id=$1 AND p.user_id=$2",
+            "AND previous.user_id=p.user_id",
+            "RETURNING p.user_id,previous.avatar_url AS prior_url",
+            "), orphaned AS (",
+            "UPDATE talks.profile_avatar_objects",
+            "SET state='orphaned', updated_at=clock_timestamp()",
+            "WHERE tenant_id=$1 AND user_id=$2 AND state='active'",
+            "AND public_url=(SELECT prior_url FROM updated)",
+            "RETURNING object_key",
+            ") SELECT user_id FROM updated",
+          ].join(" ")
+        : updateSql;
+      const updated = await pool.query<{ user_id: string }>(statement, values);
       if (!updated.rows[0]) return null;
       return readHumanByUserId({
         tenantId: input.tenantId,
@@ -410,3 +431,4 @@ export function createPostgresTalkProfileRepository(
     },
   });
 }
+

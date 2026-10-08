@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/screens/profile/edit_profile_screen.dart';
+import 'package:masanawa/src/profile_avatar/avatar_transport.dart';
 import 'package:masanawa/src/social/own_profile_transport.dart';
 import 'package:masanawa/src/social/talk_social_profiles.dart';
 import 'package:masanawa/src/state/session_state.dart';
@@ -107,9 +110,24 @@ class _FakeProfile implements OwnProfileTransport {
   }
 }
 
-Widget _app(_FakeProfile profile) => ProviderScope(
+class _FakeAvatar implements ProfileAvatarTransport {
+  int uploads = 0;
+  int removals = 0;
+  @override
+  Future<String> upload(Uint8List png, {required String? expectedUrl}) async {
+    uploads++;
+    return 'https://images.example.test/avatar.png';
+  }
+  @override
+  Future<void> remove({required String expectedUrl}) async {
+    removals++;
+  }
+}
+
+Widget _app(_FakeProfile profile, {_FakeAvatar? avatar}) => ProviderScope(
   overrides: [
     ownProfileTransportProvider.overrideWithValue(profile),
+    if (avatar != null) profileAvatarTransportProvider.overrideWithValue(avatar),
     sessionProvider.overrideWith(_Session.new),
   ],
   child: MaterialApp(
@@ -117,6 +135,17 @@ Widget _app(_FakeProfile profile) => ProviderScope(
     home: const EditProfileScreen(),
   ),
 );
+
+Future<void> _save(WidgetTester tester) async {
+  // Render the onChanged state before tapping; the prior frame is disabled.
+  await tester.pumpAndSettle();
+  final save = find.byKey(const ValueKey('profile-edit-save'));
+  await tester.scrollUntilVisible(
+    save, 150, scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(save);
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('editing existing profile persists through authenticated API',
@@ -133,8 +162,7 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-edit-bio')), 'Community host',
     );
-    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
-    await tester.pumpAndSettle();
+    await _save(tester);
 
     expect(transport.updates, 1);
     expect(transport.lastName, 'Amina Bello');
@@ -151,8 +179,7 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-create-handle')), 'amina_2026',
     );
-    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
-    await tester.pumpAndSettle();
+    await _save(tester);
 
     expect(transport.creates, 1);
     expect(transport.updates, 0);
@@ -173,8 +200,7 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-edit-name')), ' ',
     );
-    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
-    await tester.pumpAndSettle();
+    await _save(tester);
     expect(transport.updates, 0);
     expect(find.text('Enter at least two characters'), findsOneWidget);
   });
@@ -186,8 +212,7 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
     );
-    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
-    await tester.pumpAndSettle();
+    await _save(tester);
     expect(transport.savedName, 'Amina Bello');
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -209,15 +234,41 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
     );
-    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
-    await tester.pumpAndSettle();
+    await _save(tester);
     expect(transport.savedName, 'Amina');
     expect(find.textContaining('Could not confirm whether your changes saved'), findsOneWidget);
     expect(find.byKey(const ValueKey('profile-reload')), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
-    await tester.pumpAndSettle();
+    await _save(tester);
     expect(transport.savedName, 'Amina Bello');
   });
 
+  testWidgets('photo editor does not discard unsaved name or biography',
+      (tester) async {
+    final transport = _FakeProfile();
+    final avatar = _FakeAvatar();
+    await tester.pumpWidget(_app(transport, avatar: avatar));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('profile-change-photo')), findsOneWidget);
+    expect(find.text('Add photo'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
+    );
+    expect(
+      tester.widget<TextButton>(
+        find.byKey(const ValueKey('profile-change-photo')),
+      ).onPressed,
+      isNotNull,
+    );
+    // Tapping a photo chooser with text edits is denied before file access.
+    await tester.tap(find.byKey(const ValueKey('profile-change-photo')));
+    await tester.pump();
+    expect(find.textContaining('Save your other profile changes'), findsOneWidget);
+    expect(avatar.uploads, 0);
+    expect(transport.savedName, 'Amina');
+  });
+
 }
+

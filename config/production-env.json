@@ -466,6 +466,48 @@
       "description": "Canonical platform tenant identity."
     },
     {
+      "name": "MASANAWA_PROFILE_AVATAR_PUBLIC_BASE_URL",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_ACCESS_KEY",
+      "owner": "gateway/profile-avatar",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_BUCKET",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_ENDPOINT",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_REGION",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_SECRET_KEY",
+      "owner": "gateway/profile-avatar",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
       "name": "MASANAWA_PUBLIC_BASE_URL",
       "owner": "gateway",
       "classification": "public",

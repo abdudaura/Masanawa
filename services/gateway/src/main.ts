@@ -186,6 +186,11 @@ import {
   type TalkProfileAuthorizer,
 } from "./talk_profiles/service.js";
 import { createPostgresTalkProfileRepository } from "./talk_profiles/postgres_repository.js";
+import { createPostgresAvatarRepository } from "./profile_avatar/repository.js";
+import { createS3AvatarObjectStore } from "./profile_avatar/s3_store.js";
+import { createProfileAvatarService } from "./profile_avatar/service.js";
+import { createPostgresHumanContactRepository } from "./human_contacts/postgres_repository.js";
+import { createHumanContactService, type HumanContactAuthorizer } from "./human_contacts/service.js";
 import {
   createTalkActivityService,
   type TalkActivityAuthorizer,
@@ -334,6 +339,8 @@ export interface ServiceDatabaseDependency {
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
+  readonly profileAvatars?: ReturnType<typeof createPostgresAvatarRepository>;
+  readonly humanContacts?: ReturnType<typeof createPostgresHumanContactRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
@@ -498,6 +505,8 @@ function createDefaultDatabaseDependency(
     talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
+    profileAvatars: createPostgresAvatarRepository(database.pool),
+    humanContacts: createPostgresHumanContactRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
     talkLibrary: createPostgresTalkLibraryRepository(database.pool),
@@ -638,6 +647,8 @@ export async function startGatewayService(
   let ownerAccessSweepTenantId: TenantId | undefined;
   let ownerAccessSweepTimer: ReturnType<typeof setInterval> | undefined;
   let ownerAccessSweepRunning = false;
+  let avatarCleanupTimer: ReturnType<typeof setInterval> | undefined;
+  let avatarCleanupRunning = false;
   let talkPushDedupePurgeTimer: ReturnType<typeof setInterval> | undefined;
   let talkPushDedupePurgeRunning = false;
   let customerAuth: CustomerAuthService | undefined =
@@ -653,6 +664,7 @@ export async function startGatewayService(
   let talkModerationAuthorizer: TalkModerationAuthorizer | undefined;
   let talkAiSeatAuthorizer: TalkAiSeatAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
+  let humanContactAuthorizer: HumanContactAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
   let talkLibraryAuthorizer: TalkLibraryAuthorizer | undefined;
@@ -815,6 +827,7 @@ export async function startGatewayService(
     talkModerationAuthorizer = customerSessions;
     talkAiSeatAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
+    humanContactAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     talkSearchAuthorizer = customerSessions;
     talkLibraryAuthorizer = customerSessions;
@@ -1882,6 +1895,47 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedHumanContacts =
+    options.appOptions?.humanContacts ??
+    (database.humanContacts && humanContactAuthorizer
+      ? createHumanContactService({
+          repository: database.humanContacts,
+          authorizer: humanContactAuthorizer,
+        })
+      : undefined);
+
+  const avatarConfig = [
+    env.MASANAWA_PROFILE_AVATAR_S3_ENDPOINT?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_REGION?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_BUCKET?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_ACCESS_KEY?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_SECRET_KEY?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_PUBLIC_BASE_URL?.trim(),
+  ];
+  const avatarAny = avatarConfig.some(Boolean);
+  const avatarAll = avatarConfig.every(Boolean);
+  if (avatarAny && !avatarAll) {
+    throw new TypeError("Profile avatar S3/CDN configuration must be complete");
+  }
+  if (avatarAll && (!database.profileAvatars || !talkProfileAuthorizer)) {
+    throw new TypeError("Profile avatar storage requires authenticated profile SQL");
+  }
+  const composedProfileAvatar = options.appOptions?.profileAvatar ??
+    (avatarAll && database.profileAvatars && talkProfileAuthorizer
+      ? createProfileAvatarService({
+          authorizer: talkProfileAuthorizer,
+          repository: database.profileAvatars,
+          objects: createS3AvatarObjectStore({
+            endpoint: avatarConfig[0]!,
+            region: avatarConfig[1]!,
+            bucket: avatarConfig[2]!,
+            accessKey: avatarConfig[3]!,
+            secretKey: avatarConfig[4]!,
+            publicBaseUrl: avatarConfig[5]!,
+          }),
+        })
+      : undefined);
+
   const composedTalkSearch =
     options.appOptions?.talkSearch ??
     (database.talkSearch && talkSearchAuthorizer
@@ -2242,6 +2296,8 @@ export async function startGatewayService(
       ...(composedTalkAiSeats ? { talkAiSeats: composedTalkAiSeats } : {}),
       ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
+      ...(composedProfileAvatar ? { profileAvatar: composedProfileAvatar } : {}),
+      ...(composedHumanContacts ? { humanContacts: composedHumanContacts } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedTalkSearch ? { talkSearch: composedTalkSearch } : {}),
       ...(composedTalkLibrary ? { talkLibrary: composedTalkLibrary } : {}),
@@ -2318,6 +2374,10 @@ export async function startGatewayService(
         clearInterval(talkPushDedupePurgeTimer);
         talkPushDedupePurgeTimer = undefined;
       }
+      if (avatarCleanupTimer) {
+        clearInterval(avatarCleanupTimer);
+        avatarCleanupTimer = undefined;
+      }
     },
     onAfterClose: async () => {
       if (linkedWhatsAppController) {
@@ -2330,6 +2390,10 @@ export async function startGatewayService(
       if (talkPushDedupePurgeTimer) {
         clearInterval(talkPushDedupePurgeTimer);
         talkPushDedupePurgeTimer = undefined;
+      }
+      if (avatarCleanupTimer) {
+        clearInterval(avatarCleanupTimer);
+        avatarCleanupTimer = undefined;
       }
       await database.close();
     },
@@ -2345,6 +2409,36 @@ export async function startGatewayService(
       await lifecycle.stop("manual").catch(() => undefined);
       throw error;
     }
+  }
+
+  const runAvatarCleanup = async () => {
+    if (!composedProfileAvatar || avatarCleanupRunning || drain.isDraining()) {
+      return;
+    }
+    avatarCleanupRunning = true;
+    try {
+      const outcome = await composedProfileAvatar.collectGarbage(20);
+      if (outcome.failed > 0) {
+        process.stderr.write(JSON.stringify({
+          event: "profile.avatar.cleanup_retry_pending",
+          failedCount: outcome.failed,
+        }) + "\n");
+      }
+    } catch {
+      // Durable leases survive process restarts and are retried on next sweep.
+      process.stderr.write(JSON.stringify({
+        event: "profile.avatar.cleanup_retry_pending",
+      }) + "\n");
+    } finally {
+      avatarCleanupRunning = false;
+    }
+  };
+  if (composedProfileAvatar) {
+    avatarCleanupTimer = setInterval(() => {
+      void runAvatarCleanup();
+    }, 10 * 60 * 1000);
+    avatarCleanupTimer.unref();
+    void runAvatarCleanup();
   }
 
   const runTalkPushDedupePurge = async () => {
@@ -2433,3 +2527,5 @@ if (isDirectExecution()) {
     process.exitCode = 1;
   });
 }
+
+
