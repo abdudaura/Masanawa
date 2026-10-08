@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -82,7 +83,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final digits = _code.text.replaceAll(RegExp(r'\D'), '');
     if (digits.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter the 6-digit verification code')),
+        SnackBar(content: Text(AppLocalizations.of(context).invalidOtpCode)),
       );
       return;
     }
@@ -90,7 +91,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final ctx = _retryContext(state);
     if (ctx == null || ctx.channel == null || ctx.identifier == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session expired. Please request a new code.')),
+        SnackBar(content: Text(AppLocalizations.of(context).otpSessionExpired)),
       );
       context.go('/phone-login');
       return;
@@ -129,6 +130,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       }
     });
 
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(sessionProvider);
     final ctx = _retryContext(state);
     final identifier = ctx?.identifier ?? '';
@@ -136,8 +138,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final error = state is SessionError ? state : null;
 
     return OnboardingScaffold(
-      title: 'Enter the code',
-      subtitle: 'Sent to $identifier',
+      title: l10n.otpTitle,
+      subtitle: l10n.otpSentTo(identifier),
       canGoBack: true,
       backDestination: '/phone-login',
       child: Column(
@@ -205,7 +207,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           ],
           const SizedBox(height: 24),
           PrimaryButton(
-            label: verifying ? 'Verifying…' : 'Verify',
+            label: verifying ? l10n.verifyingCode : l10n.verifyCode,
             loading: verifying,
             onPressed: _verify,
           ),
@@ -218,7 +220,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 ? null
                 : () => _resend(ctx.channel!, ctx.identifier!),
             child: Text(
-              _remaining > 0 ? 'Resend code in ${_remaining}s' : 'Resend code',
+              _remaining > 0 ? l10n.resendCodeIn(_remaining) : l10n.resendCode,
               style: TextStyle(
                 color: _remaining > 0
                     ? Theme.of(context).colorScheme.onSurfaceVariant
