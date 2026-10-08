@@ -136,13 +136,13 @@ const humanSelectByUserId = `
          ) AS is_following
     FROM talks.public_profiles p
    WHERE p.tenant_id = $1 AND p.user_id = $3
-     AND NOT EXISTS (
+     AND ($2 = $3 OR NOT EXISTS (
        SELECT 1 FROM talks.safety_enforcement se
         WHERE se.tenant_id = p.tenant_id
           AND se.target_kind = 'profile'
           AND se.target_id = p.handle
           AND se.visibility IN ('restricted','blocked')
-     )
+     ))
    LIMIT 1
 `;
 
@@ -178,6 +178,54 @@ export function createPostgresTalkProfileRepository(
   return Object.freeze<TalkProfileRepository>({
     readHuman,
     readHumanByUserId,
+
+    async createOwnHuman(input) {
+      const inserted = await pool.query<{ user_id: string }>(
+        `INSERT INTO talks.public_profiles (
+          tenant_id, user_id, handle, display_name, bio, avatar_url,
+          live_talk_id, twin_public_id, twin_display_name, talks_json, updated_at
+        ) VALUES ($1,$2,$3,$4,$5,NULL,NULL,NULL,NULL,'[]'::jsonb,clock_timestamp())
+        ON CONFLICT (tenant_id,user_id) DO NOTHING
+        RETURNING user_id`,
+        [input.tenantId, input.userId, input.handle, input.displayName, input.bio],
+      );
+      if (!inserted.rows[0]) return null;
+      return readHumanByUserId({
+        tenantId: input.tenantId,
+        viewerUserId: input.userId,
+        userId: input.userId,
+      });
+    },
+
+    async updateOwnHuman(input) {
+      const fields: string[] = [];
+      const values: unknown[] = [input.tenantId, input.userId];
+      if (input.displayName !== undefined) {
+        values.push(input.displayName);
+        fields.push("display_name = $" + values.length);
+      }
+      if (input.bio !== undefined) {
+        values.push(input.bio);
+        fields.push("bio = $" + values.length);
+      }
+      if (input.removeAvatar === true) {
+        fields.push("avatar_url = NULL");
+      }
+      if (fields.length === 0) return null;
+      const updated = await pool.query<{ user_id: string }>(
+        `UPDATE talks.public_profiles
+            SET ${fields.join(", ")}, updated_at = clock_timestamp()
+          WHERE tenant_id = $1 AND user_id = $2
+          RETURNING user_id`,
+        values,
+      );
+      if (!updated.rows[0]) return null;
+      return readHumanByUserId({
+        tenantId: input.tenantId,
+        viewerUserId: input.userId,
+        userId: input.userId,
+      });
+    },
 
     async setFollowing(input) {
       const target = await pool.query<{ user_id: string }>(

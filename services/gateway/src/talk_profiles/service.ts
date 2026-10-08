@@ -21,6 +21,9 @@ export class TalkProfileError extends Error {
 }
 
 export interface TalkProfileService {
+  self(input: Readonly<{
+    authorizationHeader: string | undefined;
+  }>): Promise<HumanProfileView>;
   human(input: Readonly<{
     authorizationHeader: string | undefined;
     handle: string;
@@ -28,6 +31,18 @@ export interface TalkProfileService {
   humanByUserId(input: Readonly<{
     authorizationHeader: string | undefined;
     userId: string;
+  }>): Promise<HumanProfileView>;
+  createSelf(input: Readonly<{
+    authorizationHeader: string | undefined;
+    handle: string;
+    displayName: string;
+    bio: string;
+  }>): Promise<HumanProfileView>;
+  updateSelf(input: Readonly<{
+    authorizationHeader: string | undefined;
+    displayName?: string;
+    bio?: string;
+    removeAvatar?: boolean;
   }>): Promise<HumanProfileView>;
   follow(input: Readonly<{
     authorizationHeader: string | undefined;
@@ -79,6 +94,17 @@ export function createTalkProfileService(input: Readonly<{
   }
 
   return Object.freeze<TalkProfileService>({
+    async self(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const profile = await input.repository.readHumanByUserId({
+        tenantId: viewer.tenantId,
+        viewerUserId: viewer.userId,
+        userId: viewer.userId,
+      });
+      if (!profile) throw new TalkProfileError("profiles.not_found", 404);
+      return profile;
+    },
+
     async human(request) {
       const viewer = await identity(request.authorizationHeader);
       const profile = await input.repository.readHuman({
@@ -99,6 +125,64 @@ export function createTalkProfileService(input: Readonly<{
       });
       if (!profile) throw new TalkProfileError("profiles.not_found", 404);
       return profile;
+    },
+
+    async createSelf(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const handle = normalizeHandle(request.handle);
+      const displayName = request.displayName.trim().replace(/\s+/gu, " ");
+      const bio = request.bio.trim();
+      if (displayName.length < 2 || displayName.length > 80) {
+        throw new TalkProfileError("profiles.display_name_invalid", 400);
+      }
+      if (bio.length > 300) {
+        throw new TalkProfileError("profiles.bio_invalid", 400);
+      }
+      try {
+        const created = await input.repository.createOwnHuman({
+          tenantId: viewer.tenantId,
+          userId: viewer.userId,
+          handle,
+          displayName,
+          bio,
+        });
+        if (!created) throw new TalkProfileError("profiles.already_exists", 409);
+        return created;
+      } catch (error) {
+        if (error instanceof Error &&
+            "code" in error && error.code === "23505") {
+          throw new TalkProfileError("profiles.handle_taken", 409);
+        }
+        throw error;
+      }
+    },
+
+    async updateSelf(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const displayName = request.displayName === undefined
+        ? undefined
+        : request.displayName.trim().replace(/\s+/gu, " ");
+      if (displayName !== undefined &&
+          (displayName.length < 2 || displayName.length > 80)) {
+        throw new TalkProfileError("profiles.display_name_invalid", 400);
+      }
+      const bio = request.bio === undefined ? undefined : request.bio.trim();
+      if (bio !== undefined && bio.length > 300) {
+        throw new TalkProfileError("profiles.bio_invalid", 400);
+      }
+      if (displayName === undefined && bio === undefined &&
+          request.removeAvatar !== true) {
+        throw new TalkProfileError("profiles.update_empty", 400);
+      }
+      const updated = await input.repository.updateOwnHuman({
+        tenantId: viewer.tenantId,
+        userId: viewer.userId,
+        ...(displayName === undefined ? {} : { displayName }),
+        ...(bio === undefined ? {} : { bio }),
+        ...(request.removeAvatar === true ? { removeAvatar: true } : {}),
+      });
+      if (!updated) throw new TalkProfileError("profiles.not_found", 404);
+      return updated;
     },
 
     async follow(request) {

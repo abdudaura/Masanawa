@@ -10,6 +10,7 @@ import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
+import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/person_profile_screen.dart';
 import '../screens/profile/persona_profile_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
@@ -279,7 +280,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/crypto', builder: (_, _) => const CryptoWalletScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
-      GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
+      GoRoute(path: '/profile', builder: (_, _) => const EditProfileScreen()),
     ],
   );
 

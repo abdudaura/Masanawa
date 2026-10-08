@@ -4,16 +4,21 @@ import { registerTalkProfileRoutes } from "./talk_profile_routes.js";
 import { createTalkProfileService } from "./talk_profiles/service.js";
 import type { TalkProfileRepository } from "./talk_profiles/model.js";
 
-function repo(): TalkProfileRepository {
+function repo(initiallyMissing = false): TalkProfileRepository {
+  let hasOwnProfile = !initiallyMissing;
+  let handle = "amina";
   let following = false;
+  let displayName = "Amina";
+  let biography = "Host";
+  let avatarUrl: string | null = "https://assets.example.test/avatar.jpg";
   return {
     async readHuman({ handle }) {
       if (handle !== "amina") return null;
       return {
-        handle: "amina",
-        displayName: "Amina",
-        bio: "Host",
-        avatarUrl: null,
+        handle,
+        displayName,
+        bio: biography,
+        avatarUrl,
         followerCount: following ? 11 : 10,
         followingCount: 2,
         isFollowing: following,
@@ -25,7 +30,8 @@ function repo(): TalkProfileRepository {
       };
     },
     async readHumanByUserId({ userId }) {
-      if (userId !== "user_am") return null;
+      if (userId !== "user_am" && userId !== "user_viewer") return null;
+      if (userId === "user_viewer" && !hasOwnProfile) return null;
       return {
         handle: "amina",
         displayName: "Amina",
@@ -95,15 +101,54 @@ function repo(): TalkProfileRepository {
         isVerified: true,
       };
     },
+    async createOwnHuman(input) {
+      if (input.userId !== "user_viewer" || hasOwnProfile) return null;
+      if (input.handle === "taken") {
+        throw Object.assign(new Error("unique constraint"), { code: "23505" });
+      }
+      hasOwnProfile = true;
+      handle = input.handle;
+      displayName = input.displayName;
+      biography = input.bio;
+      avatarUrl = null;
+      return {
+        handle, displayName, bio: biography, avatarUrl,
+        followerCount: 0, followingCount: 0, isFollowing: false,
+        isLive: false, liveTalkId: null, twinPublicId: null,
+        twinDisplayName: null, talks: [],
+      };
+    },
+    async updateOwnHuman(input) {
+      if (input.tenantId !== "tenant_1" || input.userId !== "user_viewer") {
+        return null;
+      }
+      if (input.displayName !== undefined) displayName = input.displayName;
+      if (input.bio !== undefined) biography = input.bio;
+      if (input.removeAvatar === true) avatarUrl = null;
+      return {
+        handle,
+        displayName,
+        bio: biography,
+        avatarUrl,
+        followerCount: following ? 11 : 10,
+        followingCount: 2,
+        isFollowing: following,
+        isLive: true,
+        liveTalkId: "talk_live",
+        twinPublicId: "persona_twin",
+        twinDisplayName: "Amina Twin",
+        talks: [],
+      };
+    },
     async upsertHuman() {},
     async upsertPersona() {},
   };
 }
 
-function app() {
+function app(initiallyMissing = false) {
   const server = Fastify();
   const service = createTalkProfileService({
-    repository: repo(),
+    repository: repo(initiallyMissing),
     authorizer: {
       async authorize({ authorizationHeader }) {
         if (authorizationHeader !== "Bearer viewer") {
@@ -210,4 +255,118 @@ describe("Talk social profile API", () => {
       seatFeeLabel: "₦250",
     });
   });
+  it("requires authentication and edits only the authenticated self profile", async () => {
+    const server = app();
+    const denied = await server.inject({
+      method: "PATCH", url: "/profiles/me",
+      payload: { displayName: "Taken Over" },
+    });
+    expect(denied.statusCode).toBe(401);
+    const self = await server.inject({
+      method: "GET", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(self.statusCode).toBe(200);
+    expect(self.json()).toMatchObject({
+      handle: "amina", displayName: "Amina",
+    });
+
+    const edited = await server.inject({
+      method: "PATCH", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        displayName: "  Amina   Bello ",
+        bio: "  Learning and community  ",
+        removeAvatar: true,
+      },
+    });
+    expect(edited.statusCode).toBe(200);
+    expect(edited.json()).toMatchObject({
+      handle: "amina",
+      displayName: "Amina Bello",
+      bio: "Learning and community",
+      avatarUrl: null,
+    });
+    const refreshed = await server.inject({
+      method: "GET", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(refreshed.json()).toMatchObject({
+      displayName: "Amina Bello",
+      avatarUrl: null,
+    });
+    await server.close();
+  });
+
+  it("rejects invalid edits and arbitrary ownership/URL writes", async () => {
+    const server = app();
+    for (const payload of [
+      { displayName: "  " },
+      { bio: "x".repeat(301) },
+      { removeAvatar: false },
+      { handle: "takeover" },
+      { avatarUrl: "https://attacker.example/track" },
+      { userId: "user_am", displayName: "Imposter" },
+    ]) {
+      const reply = await server.inject({
+        method: "PATCH", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload,
+      });
+      expect(reply.statusCode).toBe(400);
+    }
+    await server.close();
+  });
+
+  it("creates an owner profile once with authenticated tenancy", async () => {
+    const server = app(true);
+    const before = await server.inject({
+      method: "GET", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(before.statusCode).toBe(404);
+    const created = await server.inject({
+      method: "PUT", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "aminab", displayName: "Amina Bello", bio: "Author" },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json()).toMatchObject({
+      handle: "aminab", displayName: "Amina Bello", bio: "Author",
+    });
+    const replay = await server.inject({
+      method: "PUT", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "someone_else", displayName: "Hijack", bio: "" },
+    });
+    expect(replay.statusCode).toBe(409);
+    await server.close();
+  });
+
+  it("rejects invalid new handles and another account's chosen handle", async () => {
+    const server = app(true);
+    for (const handle of ["a", "Name With Spaces", "UPPER", "@handle"]) {
+      const result = await server.inject({
+        method: "PUT", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload: { handle, displayName: "Amina", bio: "" },
+      });
+      // Uppercase and prefixed handle normalize; the malformed ones reject.
+      if (handle === "UPPER" || handle === "@handle") {
+        expect([201, 409]).toContain(result.statusCode);
+      } else {
+        expect(result.statusCode).toBe(400);
+      }
+    }
+    await server.close();
+    const occupiedServer = app(true);
+    const occupied = await occupiedServer.inject({
+      method: "PUT", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "taken", displayName: "Amina", bio: "" },
+    });
+    expect(occupied.statusCode).toBe(409);
+    await occupiedServer.close();
+  });
+
 });
