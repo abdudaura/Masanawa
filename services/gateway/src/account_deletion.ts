@@ -18,14 +18,29 @@ export interface DeletionCodeSender {
   send(input: Readonly<{ destination: string; code: string }>): Promise<void>;
 }
 
+export type PublicAccountDeletionStatus = Pick<
+  AccountDeletionRequest,
+  "requestId" | "phase" | "revision" | "createdAt" | "updatedAt"
+>;
+
+function publicStatus(request: AccountDeletionRequest): PublicAccountDeletionStatus {
+  return Object.freeze({
+    requestId: request.requestId,
+    phase: request.phase,
+    revision: request.revision,
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt,
+  });
+}
+
 export interface AccountDeletionService {
-  status(authorizationHeader: string | undefined): Promise<AccountDeletionRequest | null>;
+  status(authorizationHeader: string | undefined): Promise<PublicAccountDeletionStatus | null>;
   request(authorizationHeader: string | undefined): Promise<Readonly<{
-    request: AccountDeletionRequest;
+    request: PublicAccountDeletionStatus;
     verificationChannel: "email" | "sms" | null;
     verificationSent: boolean;
   }>>;
-  verify(input: Readonly<{ authorizationHeader: string | undefined; code: string }>): Promise<AccountDeletionRequest>;
+  verify(input: Readonly<{ authorizationHeader: string | undefined; code: string }>): Promise<PublicAccountDeletionStatus>;
 }
 
 function codeHash(input: Readonly<{
@@ -73,7 +88,8 @@ export function createAccountDeletionService(input: Readonly<{
   return Object.freeze<AccountDeletionService>({
     async status(header) {
       const identity = await authenticate(header);
-      return input.requests.read({ tenantId: identity.tenantId, userId: identity.userId });
+      const request = await input.requests.read({ tenantId: identity.tenantId, userId: identity.userId });
+      return request ? publicStatus(request) : null;
     },
     async request(header) {
       const identity = await authenticate(header);
@@ -85,7 +101,7 @@ export function createAccountDeletionService(input: Readonly<{
         now: at,
       });
       if (request.phase !== "requested") {
-        return { request, verificationChannel: null, verificationSent: false };
+        return { request: publicStatus(request), verificationChannel: null, verificationSent: false };
       }
       const delivery = identity.profile.email && input.email
         ? { channel: "email" as const, destination: identity.profile.email, sender: input.email }
@@ -128,7 +144,7 @@ export function createAccountDeletionService(input: Readonly<{
         }).catch(() => undefined);
         throw new AccountDeletionError("ACCOUNT_DELETION_DELIVERY_UNAVAILABLE", 503);
       }
-      return { request, verificationChannel: delivery.channel, verificationSent: true };
+      return { request: publicStatus(request), verificationChannel: delivery.channel, verificationSent: true };
     },
     async verify({ authorizationHeader, code }) {
       const identity = await authenticate(authorizationHeader);
@@ -161,13 +177,14 @@ export function createAccountDeletionService(input: Readonly<{
           result === "locked" ? 429 : 400,
         );
       }
-      return input.requests.transition({
+      const verified = await input.requests.transition({
         tenantId: identity.tenantId, userId: identity.userId,
         target: "identity-verified",
         expectedRevision: request.revision,
         identityReauthenticated: true,
         now: at,
       });
+      return publicStatus(verified);
     },
   });
 }
