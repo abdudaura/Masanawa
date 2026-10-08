@@ -11,9 +11,9 @@ export type DiscoveryKind = "talk" | "person" | "expert" | "twin";
 export type DiscoveryFilter = TalkSearchType;
 
 export type DiscoveryItem =
-  | Readonly<{ kind: "talk"; id: string; title: string; subtitle: string; isLive: boolean; listenerCount: number }>
-  | Readonly<{ kind: "person"; id: string; title: string; subtitle: string; isLive: boolean }>
-  | Readonly<{ kind: "expert" | "twin"; id: string; title: string; subtitle: string; available: boolean; verified: boolean; seatFeeLabel: string }>;
+  | Readonly<{ kind: "talk"; id: string; title: string; subtitle: string; isLive: boolean; listenerCount: number; avatarUrl: string | null }>
+  | Readonly<{ kind: "person"; id: string; title: string; subtitle: string; isLive: boolean; avatarUrl: string | null }>
+  | Readonly<{ kind: "expert" | "twin"; id: string; title: string; subtitle: string; available: boolean; verified: boolean; seatFeeLabel: string; avatarUrl: string | null }>;
 
 export interface DiscoveryResponse {
   readonly items: readonly DiscoveryItem[];
@@ -69,6 +69,7 @@ function project(results: TalkSearchResults, liveOnly: boolean): DiscoveryItem[]
       subtitle: item.hostName,
       isLive: item.isLive,
       listenerCount: item.listenerCount,
+      avatarUrl: item.hostAvatarUrl,
     }));
   const people: DiscoveryItem[] = results.people
     .filter((item) => !liveOnly || item.isLive)
@@ -87,6 +88,7 @@ function project(results: TalkSearchResults, liveOnly: boolean): DiscoveryItem[]
     available: item.isAvailable,
     verified: item.isVerified,
     seatFeeLabel: item.seatFeeLabel,
+    avatarUrl: item.avatarUrl,
   }));
   // Stable section ordering is intentional: Talks, People, Experts, Twins.
   return [...talks, ...people,
@@ -118,10 +120,19 @@ export function createUnifiedDiscoveryService(search: TalkSearchService): Unifie
       const page = items.slice(offset, offset + limit);
       const nextOffset = offset + limit < items.length ? offset + limit : null;
       const sourceCount = canonical.talks.length + canonical.people.length + canonical.personas.length;
+      // /search assigns separate 17/17/16 budgets in "all" mode.
+      // A single saturated section may hide further results even if other
+      // sections are empty. Do not present a false exhaustive result.
+      const isAll = filter === "all";
+      const saturated = isAll
+        ? canonical.talks.length >= 17 ||
+          canonical.people.length >= 17 ||
+          canonical.personas.length >= 16
+        : sourceCount >= maxSourceWindow;
       return Object.freeze({
         items: Object.freeze(page),
         nextOffset,
-        searchWindowSaturated: sourceCount >= maxSourceWindow,
+        searchWindowSaturated: saturated,
       });
     },
   });
