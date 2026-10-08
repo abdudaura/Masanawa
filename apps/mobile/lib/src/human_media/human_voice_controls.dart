@@ -71,8 +71,13 @@ class _HumanVoiceNotesPanelState extends State<HumanVoiceNotesPanel> {
               subtitle:Text(note.createdAt.toLocal().toString().substring(0,16)),
               trailing:Row(mainAxisSize:MainAxisSize.min,children:[
                 IconButton(
-                  tooltip:'Play private voice note',icon:const Icon(Icons.play_arrow),
-                  onPressed:controls.playing?null:()=>controls.play(note),
+                  tooltip:controls.playingMessageId==note.messageId
+                      ?'Stop private voice playback':'Play private voice note',
+                  icon:Icon(controls.playingMessageId==note.messageId
+                      ?Icons.stop_circle_outlined:Icons.play_arrow),
+                  onPressed:controls.playingMessageId==note.messageId
+                      ?controls.stopPlayback
+                      :controls.playing?null:()=>controls.play(note),
                 ),
                 if(mine)IconButton(
                   tooltip:'Delete your voice note',icon:const Icon(Icons.delete_outline),
@@ -104,8 +109,12 @@ class _HumanVoiceNotesPanelState extends State<HumanVoiceNotesPanel> {
             onPressed:controls.sending?null:controls.discard,
           ),
           IconButton(
-            tooltip:'Preview recording',icon:const Icon(Icons.play_circle_outline),
-            onPressed:controls.playing||controls.sending?null:controls.preview,
+            tooltip:controls.playing
+                ?'Stop recording preview':'Preview recording',
+            icon:Icon(controls.playing
+                ?Icons.stop_circle_outlined:Icons.play_circle_outline),
+            onPressed:controls.sending?null:
+                controls.playing?controls.stopPlayback:controls.preview,
           ),
           const Expanded(child:Text('Review before sending')),
           IconButton.filled(
