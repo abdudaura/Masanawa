@@ -118,7 +118,9 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     required this.transport,
     required this.player,
     DateTime Function()? now,
-  }) : _now = now ?? DateTime.now {
+    bool Function()? canAccess,
+  }) : _canAccess = canAccess ?? _allowForIsolatedTests,
+       _now = now ?? DateTime.now {
     _subscriptions.add(player.positions.listen(_positionChanged));
     _subscriptions.add(player.durations.listen(_durationChanged));
     _subscriptions.add(player.states.listen(_playerStateChanged));
@@ -129,6 +131,23 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   final TalkReplayPlaybackTransport transport;
   final TalkReplayAudioPlayer player;
   final DateTime Function() _now;
+  final bool Function() _canAccess;
+
+  static bool _allowForIsolatedTests() => true;
+
+  bool _authorized() {
+    try {
+      return _canAccess();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _deny() {
+    // Revoke locally as well as refusing future authenticated URL fetches.
+    unawaited(player.pause().catchError((Object _) {}));
+    _fail();
+  }
 
   final _snapshots = StreamController<TalkReplayPlaybackSnapshot>.broadcast(
     sync: true,
@@ -219,6 +238,10 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   // cannot execute until the audio completes.
   void _beginPlaying() {
     if (_closed) return;
+    if (!_authorized()) {
+      _deny();
+      return;
+    }
     final generation = ++_playGeneration;
     try {
       unawaited(player.play().catchError((Object _) {
@@ -234,6 +257,10 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     Duration resumePosition = Duration.zero,
   }) async {
     if (_closed) return;
+    if (!_authorized()) {
+      _deny();
+      return;
+    }
     _loaded = false;
     _credentials = null;
     ++_playGeneration;
@@ -248,11 +275,19 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
       // A revoked/unpublished replay must fail even when an old URL exists.
       final credentials = await transport.load(talkId);
       if (_closed) return;
+      if (!_authorized()) {
+        _deny();
+        return;
+      }
       if (!credentials.isFresh(_now())) {
         throw const FormatException('Replay playback authorization expired');
       }
       final duration = await player.load(credentials.url);
       if (_closed) return;
+      if (!_authorized()) {
+        _deny();
+        return;
+      }
       if (!credentials.isFresh(_now())) {
         throw const FormatException('Replay playback authorization expired');
       }
@@ -281,8 +316,13 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   @override
   Future<void> toggle() => _serialize(() async {
     if (_closed) return;
+    if (!_authorized()) {
+      _deny();
+      return;
+    }
     switch (_snapshot.status) {
       case TalkReplayPlaybackStatus.playing:
+        ++_playGeneration;
         try {
           await player.pause();
         } catch (_) {
@@ -316,7 +356,12 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
 
   @override
   Future<void> seekTo(double fraction) => _serialize(() async {
-    if (_closed || !_loaded || _snapshot.duration <= Duration.zero) return;
+    if (_closed) return;
+    if (!_authorized()) {
+      _deny();
+      return;
+    }
+    if (!_loaded || _snapshot.duration <= Duration.zero) return;
     final value = fraction.clamp(0.0, 1.0);
     final milliseconds = (_snapshot.duration.inMilliseconds * value).round();
     final position = Duration(milliseconds: milliseconds);
