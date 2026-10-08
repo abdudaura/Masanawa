@@ -1,11 +1,10 @@
 # Multi-window Work Coordination
 
-## Cross-feature final UX review / target-navigation gate — 2026-10-08
+## Owner-approved five-tab target / integration gate — 2026-10-08
 
-Read `docs/END-TO-END-UX-ARCHITECTURE.md` before assigning **R17 or C01–C08** work on root tabs, person profiles, AI chats, `/chats` redirects, notification/deep links, service entry, and global Gwani/Gwana invocation. The complete **proposed** four-tab end-state and route/action matrix must be decided in one coordinated product/R17/C08 gate. In particular, don't rename Agents to Chats, reuse AI character `/chat/:id` for human DMs, or inherit the public Talk FAB on a future Chats tab without resolving the documented conflicts.
+**Mandatory:** before R17 or any C01–C08 root UI, router, profile messaging, notification or voice/finance handoff changes, read `docs/APP-SHELL-CONTRACT.md` and `docs/END-TO-END-UX-ARCHITECTURE.md`. The owner approved **Talks · Chats · Assistant · Wallet · Agents**, exactly five bottom destinations, with **Assistant in the center**. Talks replaces former Home Explore/Live public discovery; Chats is **human-only DMs**; Assistant is a **single private Gwani/Gwana conversation with a visible in-chat persona switch** and no duplicate task state; Wallet owns qualified money/services; Agents retains complete Expert/Twin browsing and owner actions. These are the final end-state design requirements, **not existing APK or release evidence**.
 
-The review recommends **Home · Chats · Wallet · Assistant** but this is not an owner-approved replacement yet. Existing approved APP-SHELL-CONTRACT and owner CI #457 remain binding until the design decision is signed off; no code workstream gains ownership from publishing this docs proposal. Shared router, profile, assistant and wallet action integration belongs to one designated owner with nonoverlapping lane claims. **Build toward a frozen final flow, never a knowingly temporary UX followed by a second redesign.**
-
+The earlier `Home · Agents · Wallet · Talk` and conditional `Home · Chats · Wallet · Talk` are superseded as *navigation targets*. **Do not build or merge a knowingly temporary shell and redesign it again.** Only one designated R17/C08 shared integration owner touches Flutter root shell/tab enum, router, localization, notifications, common profile destinations or cross-tab task restoration after claiming exact paths. C01–C07 may implement independent domain contracts with nonoverlapping claims. Preserve legacy `/home`, `/home?tab=talk`, `/chats` (private AI), and `/chat/:characterId` (AI persona) semantics via tested aliases, rather than silently switching old links to human DMs; new human routes belong to `/messages`. The existing CI #457 owner and five-minute lease rule stay intact.
 
 ## Shared CI / ChatGPT Work owner handoff — 2026-10-08
 
@@ -28,7 +27,7 @@ After the current core reading, **read `docs/COMMUNICATIONS-EXTENSION-PLAN.md`**
 
 Possible lane names are `communications-identity`, `communications-core`, `communications-realtime`, `communications-media`, `communications-mobile-performance`, `communications-internal-crypto`, `communications-ai-actions` and `communications-nav-release`. These are **ownership categories, not leases**. Each window must check live activity and exact PR file lists, publish a fresh claim with bounded paths on its own branch, and coordinate shared route, storage, notification, assistant and financial authority. Do not quietly seize R01–R19 paths, change public Talk semantics or substitute another wallet/agent runtime. New `docs/workstreams/<lane>.md` claims follow the same five-minute expiry as existing lanes.
 
-The current shipped design remains **Home · Agents · Wallet · Talk**. Moving to **Home · Chats · Wallet · Talk** is explicitly conditional on C02–C05 quality and C08 usability tests, preserving Experts/Twins visibility, existing routes, header/FAB and everything in APP-SHELL-CONTRACT. No premature shell migration. Shared CI #457 ownership/recovery is unchanged.
+The **approved future target** is the single five-tab architecture **Talks · Chats · Assistant · Wallet · Agents**. Current code still needs implementation, verification and migration. Messaging C02–C05, one shared Gwani/Gwana session C07, authorized transfers C06 and all R readiness gates must be verified before production activation; route and screen contracts should be settled now, not rewritten later. Shared CI #457 ownership/recovery is unchanged.
 
 ## Current product coordination overlay — 2026-10-08
 
@@ -58,7 +57,7 @@ Status: mandatory implementation coordination guidance.
 
 | Key | Responsibility | Main boundaries |
 | --- | --- | --- |
-| talks-feed | Explore/Live vertical feeds, Talk cards, ranking, save/share/replay discovery | Talk feed/domain + mobile Home |
+| talks-feed | Explore/Live vertical feeds, Talk cards, ranking, save/share/replay discovery | Talk feed/domain + mobile Talks (formerly Home) |
 | talks-live | live Talk lifecycle, human Host/Speaker/Audience state, moderation and Presence | Talk live runtime + Gateway + mobile Talk |
 | talks-ai-seats | Expert/Twin Seat admission, sponsor flow, Direct Twin and AI runtime dispatch | AI Seat/Persona/Presence boundaries |
 | talks-social | comments, reactions, questions, polls, follow, gifts, activity and profiles | Talk social APIs + mobile social surfaces |
@@ -67,7 +66,7 @@ Status: mandatory implementation coordination guidance.
 | bills-flutterwave | private airtime/data/electricity/TV purchase flows | billing/provider adapters + private mobile flow |
 | crypto-nowpayments | private deposit/buy/convert/withdraw eligibility and settlement | crypto/provider adapters + private mobile flow |
 | channels | private WhatsApp/Telegram assistance, identity linking and receipts | channel adapters + Gateway routing |
-| mobile-shell | Home · Agents · Wallet · Talk, global Gwani, auth and shared UX | apps/mobile shell and shared presentation |
+| mobile-shell | Owner-approved Talks · Chats · Assistant · Wallet · Agents, one Gwani/Gwana chat, auth and shared UX | apps/mobile shell and shared presentation |
 | identity-privacy | account deletion, session/device/channel revocation, data lifecycle and external request path | canonical identity/security/storage + Settings, coordinated with integration |
 | localization | shared UI resources, locale/RTL/formatting and dynamic multilingual acceptance | mobile presentation + server capability contracts |
 | integration | composition, migrations, release evidence and production qualification | shared Gateway, migrations, deployment docs |
