@@ -212,7 +212,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
     await tester.pumpAndSettle();
     expect(transport.savedName, 'Amina');
-    expect(find.textContaining('Could not save your profile'), findsOneWidget);
+    expect(find.textContaining('Could not confirm whether your changes saved'), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile-reload')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
     await tester.pumpAndSettle();
