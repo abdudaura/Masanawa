@@ -15,10 +15,28 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("identity.users target");
     expect(sql).toContain("target.state = 'active'");
     expect(sql).toContain("sp.blocked = true");
+    expect(sql).toContain("COALESCE(pref.discoverable_by_handle, true) = true");
     expect(sql).toContain("sp.viewer_user_id = p.user_id");
     expect(sql).toContain("p.user_id <> $2");
     expect(result).toMatchObject({ status: "outgoing", canMessage: false });
   });
+  it("updates one privacy field without resetting the other", async () => {
+    let sql = ""; let params: unknown[] = [];
+    const pool: HumanContactSqlPool = {
+      async query(q, values) {
+        sql = q; params = values ?? [];
+        return { rows: [{ admission_policy: "requests", discoverable_by_handle: false }] as never, rowCount: 1 };
+      },
+    };
+    const result = await createPostgresHumanContactRepository(pool).setOwnPreferences({
+      tenantId: "t", userId: "user_al", discoverableByHandle: false,
+    });
+    expect(params).toEqual(["t","user_al",null,false]);
+    expect(sql).toContain("COALESCE($3::text,talks.human_dm_preferences.admission_policy)");
+    expect(sql).toContain("COALESCE($4::boolean,talks.human_dm_preferences.discoverable_by_handle)");
+    expect(result).toEqual({ policy: "requests", discoverableByHandle: false });
+  });
+
   it("requests exactly once with pair uniqueness and without reset after decline", async () => {
     let sql = "";
     const pool: HumanContactSqlPool = {
