@@ -178,13 +178,31 @@ export function createTalkLiveService(input: Readonly<{
         throw new TalkLiveError("talks.live.ended", 409);
       }
       try {
-        return await input.mediaTokens.mint({
+        const credentials = await input.mediaTokens.mint({
           talkId: connected.talkId,
           sessionId: connected.sessionId,
           userId: viewer.userId,
           role: connected.role,
           canPublishAudio: connected.canPublishAudio,
         });
+        // ListParticipants/RemoveParticipant involves remote network I/O. A
+        // concurrent Host connect may revoke this lease while minting. Never
+        // return the already-signed JWT unless authority is still identical.
+        const latest = await input.repository.heartbeat({
+          tenantId: viewer.tenantId,
+          userId: viewer.userId,
+          talkId: talkIdValue,
+          sessionId: sessionId(request.sessionId),
+          now: now(),
+          reconnectGraceMs,
+        });
+        if (!latest || latest.state === "ended" ||
+            latest.role !== connected.role ||
+            latest.canHearAudio !== connected.canHearAudio ||
+            latest.canPublishAudio !== connected.canPublishAudio) {
+          throw new TalkLiveError("talks.live.session_changed", 409);
+        }
+        return credentials;
       } catch (error) {
         // If RoomService could not validate/evict a former Host track, media
         // credentials must not escape. Surface a retryable dependency failure.
