@@ -29,7 +29,9 @@ class _Transport implements TalkLiveTransport {
 
   @override
   Future<TalkLiveSessionView> connect(String talkId) async =>
-      _session(sessionEndedOnConnect ? TalkLiveLifecycle.ended : TalkLiveLifecycle.live);
+      _session(
+        sessionEndedOnConnect ? TalkLiveLifecycle.ended : TalkLiveLifecycle.live,
+      );
 
   @override
   Future<TalkLiveSessionView> heartbeat({
@@ -65,11 +67,11 @@ class _Transport implements TalkLiveTransport {
       throw StateError('Simulated media-token rejection');
     }
     return TalkLiveMediaCredentials(
-    serverUrl: 'wss://live.example.test',
-    participantToken: 'token',
-    roomName: talkId,
-    participantIdentity: 'user:' + sessionId,
-    expiresAt: DateTime(2030),
+      serverUrl: 'wss://live.example.test',
+      participantToken: 'token',
+      roomName: talkId,
+      participantIdentity: 'user:' + sessionId,
+      expiresAt: DateTime(2030),
     );
   }
 
