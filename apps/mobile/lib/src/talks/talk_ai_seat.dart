@@ -38,6 +38,9 @@ class TalkAiSeatCandidate {
         displayName is! String || displayName.trim().isEmpty) {
       throw const FormatException('AI Seat candidate identity is missing');
     }
+    if (json['kind'] != 'expert' && json['kind'] != 'twin') {
+      throw const FormatException('AI Seat candidate kind is invalid');
+    }
     final rawTopics = json['topics'];
     return TalkAiSeatCandidate(
       personaId: personaId.trim(),
@@ -94,6 +97,16 @@ class TalkAiSeatQuote {
     final expiry = expiryValue is String ? DateTime.tryParse(expiryValue) : null;
     if (expiry == null) {
       throw const FormatException('AI Seat quote expiry is missing');
+    }
+    if (json['mode'] != 'host_add' && json['mode'] != 'sponsor') {
+      throw const FormatException('AI Seat quote mode is invalid');
+    }
+    if (json['kind'] != 'expert' && json['kind'] != 'twin') {
+      throw const FormatException('AI Seat quote persona kind is invalid');
+    }
+    if (json['requiresHostApproval'] is! bool ||
+        (json['requiresHostApproval'] == true) != (json['mode'] == 'sponsor')) {
+      throw const FormatException('AI Seat host approval requirements conflict');
     }
     final mode = json['mode'] == 'host_add'
         ? TalkAiSeatMode.hostAdd
