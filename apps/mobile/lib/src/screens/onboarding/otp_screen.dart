@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../localization/international_digits.dart';
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -80,7 +81,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   void _verify() {
-    final digits = _code.text.replaceAll(RegExp(r'\D'), '');
+    final digits = normalizeInternationalDigits(_code.text).replaceAll(RegExp(r'\D'), '');
     if (digits.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).invalidOtpCode)),
@@ -151,11 +152,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
             inputFormatters: [
+              const InternationalDigitsFormatter(),
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(6),
             ],
             onChanged: (val) {
-              final digits = val.replaceAll(RegExp(r'\D'), '');
+              final digits = normalizeInternationalDigits(val).replaceAll(RegExp(r'\D'), '');
               // Editing after a failed attempt clears the error back to
               // awaiting so the corrected code can be resubmitted (and the
               // resend cooldown stays intact).
