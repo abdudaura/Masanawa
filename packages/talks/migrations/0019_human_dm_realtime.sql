@@ -121,21 +121,26 @@ BEGIN
     END IF;
     actor := NEW.user_id;
   END IF;
-  FOR thread IN
-    SELECT conversation_id FROM talks.human_dm_conversations
-    WHERE tenant_id=NEW.tenant_id
-      AND (
-        (TG_TABLE_NAME='safety_preferences'
-          AND ((first_user_id=NEW.viewer_user_id AND second_user_id=NEW.subject_user_id)
-           OR (second_user_id=NEW.viewer_user_id AND first_user_id=NEW.subject_user_id)))
-        OR
-        (TG_TABLE_NAME<>'safety_preferences'
-          AND (first_user_id=actor OR second_user_id=actor))
-      )
-  LOOP
-    PERFORM talks.emit_human_dm_event(
-      NEW.tenant_id,thread.conversation_id,'access_changed',actor);
-  END LOOP;
+  IF TG_TABLE_NAME='safety_preferences' THEN
+    FOR thread IN
+      SELECT conversation_id FROM talks.human_dm_conversations
+       WHERE tenant_id=NEW.tenant_id
+         AND ((first_user_id=NEW.viewer_user_id AND second_user_id=NEW.subject_user_id)
+           OR (second_user_id=NEW.viewer_user_id AND first_user_id=NEW.subject_user_id))
+    LOOP
+      PERFORM talks.emit_human_dm_event(
+        NEW.tenant_id,thread.conversation_id,'access_changed',actor);
+    END LOOP;
+  ELSE
+    FOR thread IN
+      SELECT conversation_id FROM talks.human_dm_conversations
+       WHERE tenant_id=NEW.tenant_id
+         AND (first_user_id=actor OR second_user_id=actor)
+    LOOP
+      PERFORM talks.emit_human_dm_event(
+        NEW.tenant_id,thread.conversation_id,'access_changed',actor);
+    END LOOP;
+  END IF;
   RETURN NULL;
 END;
 $$;
