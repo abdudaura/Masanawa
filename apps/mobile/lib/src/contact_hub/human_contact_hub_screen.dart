@@ -35,8 +35,7 @@ class HumanContactHubScreen extends ConsumerStatefulWidget {
 class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
   final _filter = TextEditingController();
   final _handle = TextEditingController();
-  late final ContactHubFavoritesStore _favorites =
-      widget.favoritesStore ?? const SecureContactHubFavoritesStore();
+  late final ContactHubFavoritesStore _favorites;
 
   String? _favoritesOwner;
   String? _observedOwner;
@@ -50,6 +49,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
   @override
   void initState() {
     super.initState();
+    _favorites = widget.favoritesStore ?? const SecureContactHubFavoritesStore();
     _filter.addListener(_onFilterChanged);
   }
 
@@ -209,6 +209,8 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
       _observedOwner = userId;
       _favoritesOwner = null;
       _favoriteIds = {};
+      _openingId = null;
+      _openingOwner = null;
       final pendingOwner = userId;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _signedInId() == pendingOwner) {
