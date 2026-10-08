@@ -18,6 +18,9 @@ const eligible = `
  AND EXISTS (SELECT 1 FROM identity.users peer WHERE peer.tenant_id=$1
    AND peer.user_id=CASE WHEN c.first_user_id=$2 THEN c.second_user_id ELSE c.first_user_id END
    AND peer.state='active')
+ AND COALESCE((SELECT req.status FROM talks.human_dm_contact_requests req
+    WHERE req.tenant_id=$1 AND req.first_user_id=c.first_user_id
+      AND req.second_user_id=c.second_user_id),'none')<>'declined'
  AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp WHERE sp.tenant_id=$1
    AND sp.blocked=true AND
    ((sp.viewer_user_id=c.first_user_id AND sp.subject_user_id=c.second_user_id)
