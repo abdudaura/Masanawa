@@ -238,4 +238,48 @@ describe("Talk live runtime API", () => {
     expect(response.statusCode).toBe(500);
     await server.close();
   });
+
+  it("withholds a signed token when a concurrent Host resume supersedes the lease during LiveKit I/O", async () => {
+    const original = repository();
+    let heartbeats = 0;
+    const resumedRepository: TalkLiveRepository = {
+      ...original,
+      async heartbeat(input) {
+        heartbeats += 1;
+        if (heartbeats > 1) return null;
+        return original.heartbeat(input);
+      },
+    };
+    let minted = 0;
+    const server = app("user_host", resumedRepository, {
+      async mint() {
+        minted += 1;
+        return {
+          server_url: "wss://live.example.test",
+          participant_token: "signed-token-must-not-leak",
+          room_name: "talk_1",
+          participant_identity: "user_host:talk-live_test-session",
+          expires_at: "2026-10-08T09:00:00.000Z",
+        };
+      },
+    });
+    await server.inject({
+      method: "POST", url: "/talks/talk_1/live/connect",
+      headers: { authorization: "Bearer ok" },
+    });
+    const response = await server.inject({
+      method: "POST", url: "/talks/talk_1/live/media-token",
+      headers: { authorization: "Bearer ok" },
+      payload: { sessionId: "talk-live_test-session" },
+    });
+    expect(minted).toBe(1);
+    expect(heartbeats).toBe(2);
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({
+      statusCode: 409,
+      message: "talks.live.session_changed",
+    });
+    expect(response.body).not.toContain("signed-token-must-not-leak");
+    await server.close();
+  });
 });
