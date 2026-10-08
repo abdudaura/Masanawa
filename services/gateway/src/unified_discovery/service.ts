@@ -79,6 +79,7 @@ function project(results: TalkSearchResults, liveOnly: boolean): DiscoveryItem[]
       title: item.displayName,
       subtitle: "@" + item.handle,
       isLive: item.isLive,
+      avatarUrl: item.avatarUrl,
     }));
   const personas: DiscoveryItem[] = liveOnly ? [] : results.personas.map((item) => Object.freeze({
     kind: item.kind,
