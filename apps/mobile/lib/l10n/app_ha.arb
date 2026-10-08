@@ -51,5 +51,12 @@
   "finishingSignIn": "Ana kammala shiga…",
   "verifiedSignInNotice": "Lambar waya ko imel ɗin da aka tabbatar da shi zai ci gaba da zama hanyar shigarka.",
   "countryDialCode": "Lambar ƙasar waya: {code}",
-  "unknownCountryDialCode": "Ba a gane lambar ƙasar wayar ba"
+  "unknownCountryDialCode": "Ba a gane lambar ƙasar wayar ba",
+  "authCodeInvalid": "Lambar ba daidai ba ce. Duba ta, sannan ka sake gwadawa.",
+  "authCodeLocked": "An yi ƙoƙari sau da yawa. Nemi sabuwar lamba daga baya.",
+  "authCodeExpired": "Lokacin amfani da wannan lambar ya ƙare. Nemi wata sabuwa.",
+  "authRateLimited": "An yi buƙatu da yawa. Sake gwadawa daga baya.",
+  "authSendFailed": "Ba a iya aika lambar ba. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+  "authVerifyFailed": "Ba a iya tabbatar da lambar ba. Sake gwadawa.",
+  "authProfileFailed": "Ba a iya kammala bayanan martabarka ba. Duba bayananka sannan ka sake gwadawa."
 }
