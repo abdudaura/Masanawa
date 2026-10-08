@@ -15,6 +15,7 @@ function harness() {
     async request({ handle }) { return handle === "bob" ? "pending" : "unavailable"; },
     async respond({ requesterId }) { return requesterId === "user_al"; },
     async list() { return []; },
+    async revoke({ otherUserId }) { return otherUserId === "user_bo"; },
   };
   const svc = createHumanContactService({
     repository: pool,
@@ -80,6 +81,9 @@ describe("C01 contact HTTP surface", () => {
     expect(invalid.statusCode).toBe(400);
     const list = await app.inject({ method: "GET", url: "/messages/contacts?limit=30", headers });
     expect(list.json()).toEqual({ contacts: [] });
+    const revoked = await app.inject({ method: "DELETE", url: "/messages/contacts/user_bo", headers });
+    expect(revoked.statusCode).toBe(200);
+    expect(revoked.json()).toEqual({ status: "revoked" });
     await app.close();
   });
 });
