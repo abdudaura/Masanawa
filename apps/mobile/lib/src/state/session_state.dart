@@ -90,6 +90,7 @@ class SessionController extends Notifier<SessionState> {
   // arriving after logout or a new OTP request. No response may authenticate
   // a different current session simply because its network call finished last.
   int _authGeneration = 0;
+  bool _loggingOut = false;
 
   // Serializes native credential writes, migration, and logout deletion.
   // A pending verify write may finish after logout starts, but logout deletion
@@ -134,6 +135,7 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> sendOtp({String? phone, String? email}) async {
+    if (_loggingOut) return;
     final channel = phone != null ? OtpChannel.sms : OtpChannel.email;
     final identifier = phone ?? email!;
     final previous = state;
@@ -170,6 +172,7 @@ class SessionController extends Notifier<SessionState> {
     String? email,
     String? name,
   }) async {
+    if (_loggingOut) return;
     // Auto-submit of the sixth digit and the Verify button can fire together.
     // Rechecking the UI is not sufficient: the domain must enforce one flight.
     if (state is SessionVerifying) return;
@@ -227,6 +230,7 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> refresh() async {
+    if (_loggingOut) return;
     final generation = ++_authGeneration;
     final stored = await _readPersisted();
     if (generation != _authGeneration) return;
@@ -259,27 +263,28 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> logout() async {
-    // Invalidate old HTTP completions before any awaited network operation.
+    if (_loggingOut) return;
+    _loggingOut = true;
+    // Invalidate old verify/refresh/migration completions first.
     final generation = ++_authGeneration;
-    state = const SessionSignedOut();
-
-    // Start server revocation using the current bearer, then immediately
-    // reserve local deletion in the ordered credential queue. A subsequent
-    // sign-in's native write cannot be erased by an older delayed logout.
-    Future<Map<String, dynamic>>? remoteLogout;
+    final client = ref.read(apiClientProvider);
+    // Logout 401 must never trigger a refresh of the token being revoked.
+    client.onUnauthorized = null;
     try {
-      remoteLogout = ref.read(apiClientProvider).logout();
-    } catch (_) {
-      // Local logout must still complete if the transport fails synchronously.
+      // Preserve the existing bearer until the logout request is dispatched.
+      // New OTP/refresh operations are fenced while logout is in progress.
+      try {
+        await client.logout();
+      } catch (_) {
+        // Offline logout still clears local credentials.
+      }
+      await _clear();
+      if (generation == _authGeneration) {
+        state = const SessionSignedOut();
+      }
+    } finally {
+      _loggingOut = false;
     }
-    final localClear = _clear();
-    try {
-      await remoteLogout;
-    } catch (_) {
-      // Sign-out is completed locally when the network is unavailable.
-    }
-    await localClear;
-    if (generation == _authGeneration) state = const SessionSignedOut();
   }
 
   Future<bool> _persist(AuthTokens tokens, int generation) =>
