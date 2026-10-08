@@ -4,22 +4,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/session_state.dart';
 import '../../talks/talk_safety.dart';
 import 'human_profile_report_journal.dart';
-import 'human_profile_safety_transport.dart';
+import 'human_profile_report_transport.dart';
 
 /// Private human-profile reporting only. Block/mute are intentionally not
 /// exposed here until their cross-surface server enforcement is qualified.
-class HumanProfileSafetySheet extends ConsumerStatefulWidget {
-  const HumanProfileSafetySheet({
+class HumanProfileReportSheet extends ConsumerStatefulWidget {
+  const HumanProfileReportSheet({
     super.key,required this.handle,required this.reporterUserId,
   });
   final String handle;
   final String reporterUserId;
 
   @override
-  ConsumerState<HumanProfileSafetySheet> createState()=>_HumanProfileSafetySheetState();
+  ConsumerState<HumanProfileReportSheet> createState()=>_HumanProfileReportSheetState();
 }
 
-class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetySheet> {
+class _HumanProfileReportSheetState extends ConsumerState<HumanProfileReportSheet> {
   final _details=TextEditingController();
   bool _loading=true;
   bool _busy=false;
@@ -107,7 +107,7 @@ class _HumanProfileSafetySheetState extends ConsumerState<HumanProfileSafetyShee
         setState(()=>_pending=pending);
       }
       if(!_authorized)return;
-      final receipt=await ref.read(humanProfileSafetyTransportProvider).report(
+      final receipt=await ref.read(humanProfileReportTransportProvider).report(
         widget.handle,
         reason:pending.reason,
         requestId:pending.requestId,
