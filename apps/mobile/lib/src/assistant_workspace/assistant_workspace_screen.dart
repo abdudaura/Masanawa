@@ -47,6 +47,7 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
   Future<void> _draftWrites = Future<void>.value();
   int _draftGeneration = 0;
   String? _draftError;
+  bool _suppressDraftSaves = false;
 
   @override
   void initState() {
@@ -80,7 +81,10 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
       ++_draftGeneration;
       workspace.removeListener(_updated);
       workspace.dispose();
+      // Do not erase the new account's keystore draft while swapping widgets.
+      _suppressDraftSaves = true;
       input.clear();
+      _suppressDraftSaves = false;
       _draftError = null;
       workspace = _createController();
       workspace.addListener(_updated);
@@ -109,6 +113,7 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
   }
 
   void _saveDraftDebounced() {
+    if (_suppressDraftSaves) return;
     _draftTimer?.cancel();
     final owner = widget.ownerId;
     final store = widget.drafts;
