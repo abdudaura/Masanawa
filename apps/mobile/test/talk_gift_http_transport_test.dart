@@ -26,7 +26,7 @@ ResponseBody _receipt({
 }) {
   return ResponseBody.fromString(
     '{"giftId":"$giftId","talkId":"talk-1","recipientUserId":"host-1",'
-    '"recipientName":"Amina","amountCredits":$amount,'
+    '"recipientName":"Amina","amountCredits":$amount,"status":"completed",'
     '"completedAt":"2026-10-07T10:00:00Z"}',
     200,
     headers: {
