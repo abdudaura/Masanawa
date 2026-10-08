@@ -108,11 +108,9 @@ void main() {
     final controller = ResearchController(fake, accountKey: 'A');
     Uri? opened;
     await tester.pumpWidget(MaterialApp(home: Scaffold(
-      body: SingleChildScrollView(
-        child: ResearchPanel(
-          controller: controller,
-          openSource: (source) async { opened = source; },
-        ),
+      body: ResearchPanel(
+        controller: controller,
+        openSource: (source) async { opened = source; },
       ),
     )));
     await tester.enterText(find.byKey(const ValueKey('research-query')),
