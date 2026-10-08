@@ -84,6 +84,7 @@ class HumanVoiceController extends ChangeNotifier {
   Timer? _limitTimer;
   Completer<void>? _startFinished;
   Completer<void>? _stopFinished;
+  Completer<void>? _discardFinished;
   int _recordGeneration=0;
   bool _starting=false, _stopping=false;
   bool recording=false,review=false,sending=false,loading=false,playing=false,closed=false;
@@ -336,14 +337,30 @@ class HumanVoiceController extends ChangeNotifier {
     if(path!=null){try{await File(path).delete();}catch(_){}}
   }
   Future<void> discard() async {
+    if(closed)return;
+    // Cancellation is itself an async native recorder operation; shutdown
+    // must wait until it has stopped the microphone and erased temp audio.
+    if(_discardFinished!=null){
+      await _discardFinished!.future;
+      return;
+    }
+    final finished=_discardFinished=Completer<void>();
     ++_recordGeneration; // cancel an in-progress permission/start attempt
     _limitTimer?.cancel();_limitTimer=null;
-    await _startFinished?.future;
-    await _stopFinished?.future;
-    if(recording){try{await _capture.stop();}catch(_){}}
-    recording=false;review=false;
-    await _dropFile();
-    error=null;_notify();
+    try {
+      await _startFinished?.future;
+      await _stopFinished?.future;
+      if(recording){
+        recording=false;
+        try{await _capture.stop();}catch(_){}
+      }
+      review=false;
+      await _dropFile();
+      error=null;_notify();
+    } finally {
+      _discardFinished=null;
+      finished.complete();
+    }
   }
   /// Called on sign-out, account switch and screen disposal. Wipes temporary
   /// media and does not let late replies restore old account's private state.
@@ -353,6 +370,7 @@ class HumanVoiceController extends ChangeNotifier {
     _limitTimer?.cancel();_limitTimer=null;
     // Do not dispose the native recorder while permission/start/stop is in
     // flight. The cancelled start itself stops and erases any late capture.
+    await _discardFinished?.future;
     await _startFinished?.future;
     await _stopFinished?.future;
     if(recording){try{await _capture.stop();}catch(_){}}
