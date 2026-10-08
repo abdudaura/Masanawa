@@ -1,0 +1,92 @@
+{
+  "@@locale": "en",
+  "appTitle": "Masanawa",
+  "@appTitle": {
+    "description": "Brand name, not translated"
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Bottom navigation: public Talk discovery"
+  },
+  "agents": "Agents",
+  "@agents": {
+    "description": "Bottom navigation: Masanawa Experts and personal Twins"
+  },
+  "wallet": "Wallet",
+  "@wallet": {
+    "description": "Bottom navigation: balances and financial services"
+  },
+  "talk": "Talk",
+  "@talk": {
+    "description": "Bottom navigation: private AI conversation, not a public Talk"
+  },
+  "explore": "Explore",
+  "@explore": {
+    "description": "Home discovery feed tab"
+  },
+  "liveTalks": "Live Talks",
+  "@liveTalks": {
+    "description": "Home currently live public Talk feed tab"
+  },
+  "startTalk": "Start Talk",
+  "@startTalk": {
+    "description": "Start composing a human-hosted public Talk, does not broadcast immediately"
+  },
+  "activity": "Activity",
+  "@activity": {
+    "description": "Notification/activity screen"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Current user's account profile"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Application settings"
+  },
+  "retry": "Try again",
+  "@retry": {
+    "description": "Retry a failed load or recoverable request"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Discard a pending action without committing"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Affirm a pending action; money still needs a server-authorized quote"
+  },
+  "loading": "Loading…",
+  "@loading": {
+    "description": "Data loading status"
+  },
+  "listen": "Listen",
+  "@listen": {
+    "description": "Join audience of a public Talk"
+  },
+  "raiseHand": "Raise hand",
+  "@raiseHand": {
+    "description": "Ask human Host for a free speaker Seat"
+  },
+  "speakerSeats": "{count, plural, =0{No speaker seats} =1{1 speaker seat} other{{count} speaker seats}}",
+  "@speakerSeats": {
+    "description": "Count of occupied speaking positions in a Talk",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletAmount": "{amount} {currency}",
+  "@walletAmount": {
+    "description": "Display separately formatted native amount and ISO asset/currency code; formatted by locale-aware formatter, no currency conversion",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  }
+}
