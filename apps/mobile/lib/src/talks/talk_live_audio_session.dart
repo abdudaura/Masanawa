@@ -86,7 +86,16 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
     _setStatus(TalkLiveAudioStatus.connecting);
     try {
       final session = await transport.connect(talkId);
-      if (_closed) return;
+      if (_closed) {
+        // close() may have completed while the initial connect was pending.
+        // Its teardown could not see this newly issued server session.
+        try {
+          await transport.disconnect(talkId: talkId, sessionId: session.sessionId);
+        } catch (_) {
+          // The server expires abandoned sessions via its heartbeat lease.
+        }
+        return;
+      }
 
       _sessionId = session.sessionId;
       _role = session.role;
@@ -120,7 +129,12 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         credentials: credentials,
         publishMicrophone: mayPublish,
       );
-      if (_closed) return;
+      if (_closed) {
+        // A late room.connect can finish after close() already disposed the
+        // previous media state. Close it again to avoid orphaned microphone audio.
+        await _closeMediaOnly();
+        return;
+      }
 
       _muted = false;
       _setStatus(
