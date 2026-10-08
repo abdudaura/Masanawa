@@ -7,6 +7,7 @@ import '../../agents/agent_directory.dart';
 import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
+import '../../state/session_state.dart';
 import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
 import '../chat/ai_chat_screen.dart';
@@ -303,6 +304,13 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(sessionProvider);
+    final profileName = session is SessionSignedIn
+        ? session.user.name.trim()
+        : '';
+    final initial = profileName.isNotEmpty
+        ? String.fromCharCode(profileName.runes.first).toUpperCase()
+        : 'U';
     return Scaffold(
       appBar: _index == 3 ? null : AppBar(
         toolbarHeight: 48,
@@ -321,8 +329,19 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           ),
           IconButton(
             tooltip: 'Profile',
-            icon: const Icon(Icons.account_circle_outlined),
             onPressed: _openYou,
+            icon: CircleAvatar(
+              radius: 15,
+              backgroundColor: Theme.of(context).colorScheme.primary
+                  .withValues(alpha: .16),
+              child: Text(
+                initial,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
           ),
         ],
       ),
