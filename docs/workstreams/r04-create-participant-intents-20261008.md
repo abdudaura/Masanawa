@@ -4,8 +4,8 @@
 - **Branch:** `work/r04-create-participant-intents-20261008`
 - **Base main SHA:** `88e67cc6c79de1ca09e02f11e929065dcfb2ea82`
 - **Lane:** R04 / talks-live mobile Create/Host participant intent flow
-- **Status:** ACTIVE; 5-minute repository-visible lease
-- **Last repository-visible update:** 2026-10-08T05:39:17.264Z
+- **Status:** ACTIVE; 5-minute repository-visible lease; draft PR #433
+- **Last repository-visible update:** 2026-10-08T05:40:47.815Z
 
 ## Exact owned paths
 - `apps/mobile/lib/src/screens/talks/create_talk_screen.dart`
@@ -57,3 +57,13 @@
 
 ## Ownership-correctness expansion
 Canonical catalog contains **all public Twins**; do not call them the Host's property. Extend the authenticated candidate DTO with a server-computed `isOwnedByViewer` (matching canonical twin owner to authenticated user), default false on malformed/legacy responses. Only the Create `Add My Twin` handoff filters to owned Twins; standard Add/Sponsor AI catalog remains unchanged. Do not infer ownership from name, presence or client-supplied IDs. Current open PRs R09/R10/R11/R12 own none of these added exact paths; recheck before modifying.
+
+## Verified-owner Twin correction
+
+The existing public `GET /talks/:talkId/ai-seats` catalog contains public Twins (not necessarily owned by the viewer). Previously calling its Twin tab `Add My Twin` would mislead Hosts and could cause them to hire somebody else's Twin unintentionally.
+
+- The authenticated service projects `isOwnedByViewer` from canonical `twinOwnerUserId === authorized viewer.userId` for Twin rows. Experts are always false; the owner's user ID itself is not serialized.
+- Flutter parses only literal `true`; omitted/malformed ownership on an older Gateway is treated as **unverified**, not owned.
+- The normal public Add/Sponsor Twin catalog remains unchanged, but the Create action's `onlyOwnedTwin` sheet shows only the verified owner Twin and a real creator route if none qualifies.
+- Added Gateway route regression for owner and nonowner responses, model tests for strict flag parsing, and picker widget test that a foreign public Twin is not selectable from `Add My Twin`.
+- These backend + mobile changes require compatible Gateway and APK deployment; old Gateway does **not** prove an owned Twin. Still untested due absent enabled CI runners/Flutter runtime.
