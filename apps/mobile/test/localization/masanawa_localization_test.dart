@@ -21,6 +21,23 @@ void main() {
     );
   });
 
+  test('uses second preferred language when primary device language is unsupported', () {
+    expect(
+      MasanawaLocalization.resolvePreferred(
+        [const Locale('de', 'DE'), const Locale('ar', 'EG')],
+        MasanawaLocalization.supportedLocales,
+      ),
+      const Locale('ar'),
+    );
+    expect(
+      MasanawaLocalization.resolvePreferred(
+        [const Locale('fr', 'CA'), const Locale('pt', 'BR')],
+        MasanawaLocalization.supportedLocales,
+      ),
+      const Locale('fr'),
+    );
+  });
+
   test('unsupported languages fall back to English UI only', () {
     expect(
       MasanawaLocalization.resolve(
