@@ -86,6 +86,8 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     expect(allSql).toContain("s.active=false");
     expect(allSql).toContain("COUNT(*)::integer FROM talks.poll_votes v");
     expect(allSql).toContain("v.option_id=opt->>'optionId'");
+    expect(allSql).toContain("COALESCE(p.closed_at,recent.latest_vote,p.created_at)");
+    expect(allSql).toContain("p.status='open'");
     expect(allSql).not.toContain("SELECT v.user_id");
     expect(allSql).toContain("LIMIT 16");
     expect(allSql).toContain("LIMIT 6");
