@@ -92,3 +92,8 @@ flutter build apk --release
 | DEVICE_VERIFIED / LIVE_MODEL_QA / PROVIDER_QUALIFIED | NO / NO / NO |
 | DEPLOYED / MERGED | NO / NO |
 | R19 full feature DONE | **NO — PARTIAL_IMPLEMENTATION** |
+
+
+## R19 ownership extension (new five-minute claim, 2026-10-08 UTC)
+
+During the bounded implementation review, `services/gateway/src/agent_conversation.ts` was found to admit a session and check only active/expiration before invoking strategy, without a local explicit check that returned persisted session's tenant/user/character/relationship and persona version still match fresh authorization. Extend this exact R19 claim to `services/gateway/src/agent_conversation.ts` and `services/gateway/src/agent_conversation.test.ts` only, for fail-closed isolation and recovery. Existing C07 #480 is a separate workspace and does not edit these files; no edits to shared composers or financial authority. This extension is **PARTIAL_IMPLEMENTATION** until coded/test cases committed and recorded, and does NOT authorize claiming whole R19 DONE. The previous SHA-specific handoff remains historical evidence; this section and subsequent final checkpoint supersede its eight-file scope.
