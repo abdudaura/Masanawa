@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../localization/auth_error_localizer.dart';
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
@@ -65,9 +66,17 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       if (next is SessionSignedIn) {
         context.go('/chats');
       } else if (next is SessionNameRequired && next.message != null) {
-        _snack(next.message!);
+        _snack(AuthErrorLocalizer.message(
+          AppLocalizations.of(context),
+          code: null,
+          stage: AuthFailureStage.completeProfile,
+        ));
       } else if (next is SessionError) {
-        _snack(next.message);
+        _snack(AuthErrorLocalizer.message(
+          AppLocalizations.of(context),
+          code: next.code,
+          stage: AuthFailureStage.completeProfile,
+        ));
         context.go('/phone-login');
       } else if (next is SessionSignedOut) {
         context.go('/phone-login');
