@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/src/core/api/models.dart';
+import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/screens/talks/create_talk_participant_handoff.dart';
 import 'package:masanawa/src/screens/talks/create_talk_screen.dart';
 import 'package:masanawa/src/state/talk_state.dart';
@@ -26,6 +28,36 @@ const createdTalk = TalkDiscoveryItem(
   ],
 );
 
+
+AuthUser _user(String id) => AuthUser(
+  id: id,
+  name: 'Test host',
+  locale: 'en',
+  status: 'ACTIVE',
+  role: 'USER',
+  isNewUser: false,
+  createdAt: '2026-10-08T00:00:00Z',
+);
+
+SessionSignedIn _session(String id) {
+  final user = _user(id);
+  return SessionSignedIn(user, AuthTokens(
+    accessToken: 'test-only-access-$id',
+    refreshToken: 'test-only-refresh-$id',
+    accessExpiresIn: 3600,
+    user: user,
+  ));
+}
+
+class FakeSessionController extends SessionController {
+  @override
+  SessionState build() => _session('host-account');
+
+  void switchAccount(String userId) => state = _session(userId);
+
+  void signOut() => state = const SessionSignedOut();
+}
+
 class FakeHostGuard implements TalkCreateHostGuard {
   FakeHostGuard(this.allowed);
   final bool allowed;
@@ -36,6 +68,7 @@ class FakeHostGuard implements TalkCreateHostGuard {
 class FakeActionStore implements TalkCreateActionStore {
   final Map<String, List<TalkCreateParticipantAction>> saved = {};
   bool failSave = false;
+  Completer<void>? beforeSave;
 
   @override
   Future<List<TalkCreateParticipantAction>> load(String talkId) async =>
@@ -43,6 +76,7 @@ class FakeActionStore implements TalkCreateActionStore {
 
   @override
   Future<void> save(String talkId, List<TalkCreateParticipantAction> actions) async {
+    if (beforeSave != null) await beforeSave!.future;
     if (failSave) throw StateError('write failed');
     saved[talkId] = List.unmodifiable(actions);
   }
@@ -88,8 +122,14 @@ Widget _harness(
   bool verifiedHost = true,
 }) => ProviderScope(
   overrides: [
+    sessionProvider.overrideWith(FakeSessionController.new),
     talkCreateActionStoreProvider.overrideWithValue(store),
-    talkCreateHostGuardProvider.overrideWithValue(FakeHostGuard(verifiedHost)),
+    talkCreateHostGuardProvider.overrideWith((ref) {
+      final session = ref.watch(sessionProvider);
+      return FakeHostGuard(verifiedHost &&
+          session is SessionSignedIn &&
+          session.user.id == 'host-account');
+    }),
     if (talkTransport != null)
       talkTransportProvider.overrideWithValue(talkTransport),
   ],
@@ -264,5 +304,96 @@ void main() {
     expect(opened, false);
     expect(store.saved[createdTalk.id],
         [TalkCreateParticipantAction.addExpert]);
+  });
+
+  testWidgets('account switch removes old Host invitation and does not leak to B',
+      (tester) async {
+    final store = FakeActionStore()..saved[createdTalk.id] = [
+      TalkCreateParticipantAction.invitePerson,
+    ];
+    var shared = 0;
+    await tester.pumpWidget(_harness(
+      store,
+      TalkCreateParticipantHandoff(
+        talkId: createdTalk.id,
+        isHost: true,
+        shareTalk: (_) async { shared++; },
+        child: const Scaffold(body: Text('Talk')),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Invite a human speaker'), findsOneWidget);
+    final provider = ProviderScope.containerOf(
+        tester.element(find.byType(TalkCreateParticipantHandoff)));
+    (provider.read(sessionProvider.notifier) as FakeSessionController)
+        .switchAccount('other-account');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('create-talk-action-banner')), findsNothing);
+    expect(shared, 0);
+    // Returning to the real Host reloads only the Host's existing intent.
+    (provider.read(sessionProvider.notifier) as FakeSessionController)
+        .switchAccount('host-account');
+    await tester.pumpAndSettle();
+    expect(find.text('Invite a human speaker'), findsOneWidget);
+  });
+
+  testWidgets('logout clears visible paid action without presenting a quote',
+      (tester) async {
+    final store = FakeActionStore()..saved[createdTalk.id] = [
+      TalkCreateParticipantAction.addExpert,
+    ];
+    var opened = 0;
+    await tester.pumpWidget(_harness(
+      store,
+      TalkCreateParticipantHandoff(
+        talkId: createdTalk.id,
+        isHost: true,
+        presentAiSeat: (_, {required talkId, required kind}) async {
+          opened++;
+          return null;
+        },
+        child: const Scaffold(body: Text('Talk')),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final provider = ProviderScope.containerOf(
+        tester.element(find.byType(TalkCreateParticipantHandoff)));
+    (provider.read(sessionProvider.notifier) as FakeSessionController).signOut();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('create-talk-action-banner')), findsNothing);
+    expect(opened, 0);
+  });
+
+  testWidgets('in-flight secure write cannot launch AI quote after user switch',
+      (tester) async {
+    final saveGate = Completer<void>();
+    final store = FakeActionStore()
+      ..saved[createdTalk.id] = [TalkCreateParticipantAction.addTwin]
+      ..beforeSave = saveGate;
+    var opened = 0;
+    await tester.pumpWidget(_harness(
+      store,
+      TalkCreateParticipantHandoff(
+        talkId: createdTalk.id,
+        isHost: true,
+        presentAiSeat: (_, {required talkId, required kind}) async {
+          opened++;
+          return null;
+        },
+        child: const Scaffold(body: Text('Talk')),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('create-talk-action-continue')));
+    await tester.pump();
+    final provider = ProviderScope.containerOf(
+        tester.element(find.byType(TalkCreateParticipantHandoff)));
+    (provider.read(sessionProvider.notifier) as FakeSessionController)
+        .switchAccount('other-account');
+    await tester.pump();
+    saveGate.complete();
+    await tester.pumpAndSettle();
+    expect(opened, 0);
+    expect(find.byKey(const ValueKey('create-talk-action-banner')), findsNothing);
   });
 }
