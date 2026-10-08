@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/masanawa_transport.dart';
 import '../core/providers.dart';
+import '../state/session_state.dart';
 import 'crypto_models.dart';
 import 'crypto_transport.dart';
 
@@ -63,19 +64,41 @@ final cryptoWalletTransportProvider = Provider<CryptoWalletTransport>((ref) {
   return MasanawaCryptoWalletTransport(
     dio: api.dio,
     baseUrl: kAgentBaseUrl,
+    readAccessToken: () => ref.read(apiClientProvider).accessToken,
   );
 });
 
 class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   CryptoWalletTransport get _transport => ref.read(cryptoWalletTransportProvider);
 
+  String _ownerId() {
+    final current = ref.read(sessionProvider);
+    if (current is! SessionSignedIn) {
+      throw StateError('Sign in to access your crypto wallet.');
+    }
+    return current.user.id;
+  }
+
+  void _ensureOwner(String expected) {
+    if (_ownerId() != expected) {
+      throw StateError('Your account changed. Refresh the wallet before continuing.');
+    }
+  }
+
   @override
   Future<CryptoWalletSnapshot> build() async {
     ref.watch(cryptoWalletTransportProvider);
+    // The complete session invalidates private balances even on A -> B
+    // switches where the signed-in boolean would remain true.
+    final session = ref.watch(sessionProvider);
+    if (session is! SessionSignedIn) {
+      throw StateError('Sign in to access your crypto wallet.');
+    }
     return _load();
   }
 
   Future<CryptoWalletSnapshot> _load() async {
+    final owner = _ownerId();
     final capabilities = await _transport.capabilities();
     final depositRoutes = capabilities.deposits
         ? await _transport.depositRoutes()
@@ -92,6 +115,7 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
       balances[result.providerCode] = result.amount;
     }
 
+    _ensureOwner(owner);
     return CryptoWalletSnapshot(
       capabilities: capabilities,
       depositRoutes: List.unmodifiable(depositRoutes),
@@ -116,11 +140,13 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   }
 
   Future<void> refresh() async {
+    _ownerId();
     state = const AsyncLoading();
     state = await AsyncValue.guard(_load);
   }
 
   Future<void> selectAsset(String providerCode) async {
+    _ownerId();
     final current = state.valueOrNull;
     if (current == null) return;
     final code = providerCode.trim();
@@ -134,11 +160,16 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   }
 
   Future<void> refreshBalance([String? providerCode]) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final code = (providerCode ?? current.selectedProviderCode)?.trim();
+    final owner = _ownerId();
+    final initial = state.valueOrNull;
+    if (initial == null) return;
+    final code = (providerCode ?? initial.selectedProviderCode)?.trim();
     if (code == null || code.isEmpty) return;
     final balance = await _transport.balance(code);
+    _ensureOwner(owner);
+    // Re-read after IO to avoid overwriting more recent history/selection.
+    final current = state.valueOrNull;
+    if (current == null || !current.depositRoutes.any((route) => route.providerCode == code)) return;
     final balances = Map<String, String>.from(current.balances)
       ..[balance.providerCode] = balance.amount;
     state = AsyncData(current.copyWith(balances: Map.unmodifiable(balances)));
