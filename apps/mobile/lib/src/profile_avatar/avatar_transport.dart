@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/providers.dart';
 
 import '../core/network/api_client.dart';
 
@@ -46,3 +49,7 @@ class GatewayProfileAvatarTransport implements ProfileAvatarTransport {
     }
   }
 }
+
+final profileAvatarTransportProvider = Provider<ProfileAvatarTransport>(
+  (ref) => GatewayProfileAvatarTransport(api: ref.watch(apiClientProvider)),
+);
