@@ -57,7 +57,7 @@ function setup(input: {
     repository,
     persona,
     audio,
-    worker: createTalkAiSeatWorker({ repository, persona, audio, stage: input.stage }),
+    worker: createTalkAiSeatWorker({ repository, persona, audio, ...(input.stage ? { stage: input.stage } : {}) }),
   };
 }
 
