@@ -23,3 +23,21 @@ export interface AccountDeletionRepository {
     errorCode?: string;
   }>): Promise<AccountDeletionRequest>;
 }
+
+/** Purpose-bound, rate-limited OTP challenges. Hashes are HMACs, never plain codes. */
+export type AccountDeletionChallengeResult =
+  | "accepted" | "invalid" | "missing" | "expired" | "locked";
+export interface AccountDeletionChallengeRepository {
+  put(input: Readonly<{
+    tenantId: string; userId: string; requestId: string;
+    codeHash: string; channel: "email" | "sms";
+    now: string; expiresAt: string; resendAfter: string;
+  }>): Promise<void>;
+  consume(input: Readonly<{
+    tenantId: string; userId: string; requestId: string;
+    codeHash: string; now: string;
+  }>): Promise<AccountDeletionChallengeResult>;
+  cancel(input: Readonly<{
+    tenantId: string; userId: string; codeHash: string;
+  }>): Promise<void>;
+}
