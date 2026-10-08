@@ -27,3 +27,11 @@
 - Validates jar signature integrity, rejects known Android debug certificate subjects and requires a pinned SHA-256 certificate fingerprint.
 - Operator supplies expected release certificate SHA-256 via `MASANAWA_RELEASE_CERT_SHA256` or second script argument; there is intentionally no unchecked default. Example: `MASANAWA_RELEASE_CERT_SHA256=<64-hex-sha256> bash tools/verify-android-store-bundle.sh apps/mobile/build/app/outputs/bundle/release/app-release.aab` (confirm actual output path).
 - Script not executed on a built AAB in this environment. Needs Linux/macOS bash/JDK, real release key, artifact and independent certificate fingerprint comparison; no store submission has occurred.
+
+## Regression coverage and CI — 2026-10-08
+
+- `tools/tests/test-verify-android-store-bundle.sh` creates disposable RSA-signed fixture archives and covers valid release signing, unsigned artifact, incorrect/malformed fingerprint, tampered signed entry and debug certificate. No private signing credentials used.
+- `.github/workflows/android-signing-verification.yml` runs those tests with JDK 17 on relevant PR/push paths and manual dispatch; use CI evidence before marking verified.
+- The verifier was corrected to avoid `jarsigner -strict` treating standard self-signed release certificate warnings as failures; it still checks positive `jar verified` output plus SHA-256 pin.
+- Current head includes commits `14fd643f`, `4bd20386`, `567c30ce` and `c5919901`.
+- **CI result unverified:** no runner completion claimed. Flutter/Gradle APK/AAB build and certificate inspection on a real release output remain open; no merge or deployment performed.
