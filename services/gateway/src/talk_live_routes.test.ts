@@ -76,10 +76,10 @@ function repository(): TalkLiveRepository {
   };
 }
 
-function app(userId: "user_host" | "user_listener") {
+function app(userId: "user_host" | "user_listener", liveRepo: TalkLiveRepository = repository()) {
   const server = Fastify();
   const service = createTalkLiveService({
-    repository: repository(),
+    repository: liveRepo,
     authorizer: {
       async authorize({ authorizationHeader }) {
         if (authorizationHeader !== "Bearer ok") {
@@ -151,5 +151,48 @@ describe("Talk live runtime API", () => {
       hostConnected: false,
       aiGenerationAllowed: false,
     });
+  });
+
+  it("returns conflict rather than an internal error when a persisted Talk already ended", async () => {
+    const terminalRepository: TalkLiveRepository = {
+      ...repository(),
+      async connect() {
+        throw new Error("talks.live.ended");
+      },
+    };
+    const server = app("user_host", terminalRepository);
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_ended/live/connect",
+      headers: { authorization: "Bearer ok" },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({
+      statusCode: 409,
+      message: "talks.live.ended",
+    });
+    const unauthorized = await server.inject({
+      method: "POST",
+      url: "/talks/talk_ended/live/connect",
+    });
+    expect(unauthorized.statusCode).toBe(401);
+    await server.close();
+  });
+
+  it("does not misclassify unknown storage failures as an ended Talk", async () => {
+    const brokenRepository: TalkLiveRepository = {
+      ...repository(),
+      async connect() {
+        throw new Error("database_connection_lost");
+      },
+    };
+    const server = app("user_host", brokenRepository);
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_1/live/connect",
+      headers: { authorization: "Bearer ok" },
+    });
+    expect(response.statusCode).toBe(500);
+    await server.close();
   });
 });
