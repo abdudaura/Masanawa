@@ -6,6 +6,35 @@ export function registerTalkProfileRoutes(
   app: FastifyInstance,
   service: TalkProfileService,
 ): void {
+  // Edit only the authenticated user's public identity. No userId, avatar URL
+  // or other server-owned metadata is accepted from the client.
+  app.put(
+    "/profiles/me",
+    {
+      schema: {
+        body: Type.Object(
+          {
+            handle: Type.String({ minLength: 2, maxLength: 40 }),
+            displayName: Type.String({ minLength: 1, maxLength: 160 }),
+            bio: Type.String({ maxLength: 1000 }),
+          },
+          { additionalProperties: false },
+        ),
+      },
+    },
+    async (request) => {
+      const body = request.body as {
+        handle: string;
+        displayName: string;
+        bio: string;
+      };
+      return service.saveSelf({
+        authorizationHeader: request.headers.authorization,
+        ...body,
+      });
+    },
+  );
+
   app.get(
     "/profiles/:handle",
     {
