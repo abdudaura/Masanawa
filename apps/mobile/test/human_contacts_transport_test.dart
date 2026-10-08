@@ -162,7 +162,7 @@ void main() {
     final requests = await transport.list(limit: 50);
     expect(requests.single.userId, 'user_b');
     expect(requests.single.status, HumanContactStatus.incoming);
-    expect(await transport.respond('user_b', accept: true), 'accepted');
+    expect(await transport.respond('user_b', accept: true, requestRevision: '1'), 'accepted');
     await transport.revoke('user_b');
     expect(step, 4);
   });

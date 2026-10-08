@@ -78,7 +78,7 @@ export function createHumanContactService(input: Readonly<{
       return { status: result };
     },
     async respond({ authorizationHeader, requesterId, requestRevision, accept }) {
-      if (!/^[1-9][0-9]{0,18}$/.test(requestRevision) ||
+      if (typeof requestRevision !== "string" || !/^[1-9][0-9]{0,18}$/.test(requestRevision) ||
           BigInt(requestRevision) > 9223372036854775807n) {
         throw new HumanContactError("messages.invalid_request_revision", 400);
       }
