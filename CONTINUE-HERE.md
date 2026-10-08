@@ -1,5 +1,12 @@
 # Continue Here
 
+## Active consolidation freeze — 2026-10-08T13:44Z
+
+The owner has explicitly requested one clean, unified codebase with all branch work accounted for before local compilation and the next feature round. **ChatGPT Work integration is active in PR #497. Pause new feature/lane claims until this consolidation checkpoint ends.** Existing windows should preserve their current source, commit/push their precise handoff and current SHA, then leave further scope to the Work integrator. Do not erase unfinished source, silently replace shared composition, start competing migrations, or mark a lane DONE on source review alone. This freeze coordinates the user's requested consolidation; it does not claim tests are green or changes are merged.
+
+Work has preserved Firebase #461 and recorded local-agent build values in `docs/FIREBASE-LOCAL-COMPILATION-HANDOFF.md` on #497. C02 uses #472's schema/API because C03/C04/C05 depend on it; #475 UI/outbox is adapted instead of applying its competing0017. Five-tab root integration is preserved at #497. Read the current [Work evidence and remaining queue](https://github.com/Baatiku/masanawa/blob/work/work-lane-consolidation-20261008/docs/workstreams/work-integration-verification-20261008.md) before touching any shared path.
+
+
 ## Mandatory all-window handoffs → one final ChatGPT Work integration (2026-10-08)
 
 **Every R01–R19 / C01–C08 / shared owner window must commit and push a complete, repository-visible SHA-specific handoff in `docs/workstreams/` and link it from its PR before leaving a lane.** This is required even when code is partially implemented, CI is exhausted, credentials are missing, or a feature is blocked. The handoff must distinguish missing source from unexecuted tests, record exact branch/PR/SHAs, changed layers, test commands/results or exact blockers, ownership collisions, dependencies, and next actions. **Do not use chat-only reports as the handoff. Do not call a partial slice `IMPLEMENTED_UNVERIFIED`.**
