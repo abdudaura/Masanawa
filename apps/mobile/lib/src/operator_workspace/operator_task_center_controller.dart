@@ -111,7 +111,10 @@ class OperatorTaskCenterController extends ChangeNotifier {
     final old = tasks.where((task) => task.taskId == row.taskId).toList();
     if (old.isNotEmpty && row.version < old.single.version) return;
     if (old.isNotEmpty && row.version == old.single.version &&
-        row.phase != old.single.phase) {
+        (row.phase != old.single.phase ||
+         row.receiptRef != old.single.receiptRef ||
+         row.operationId != old.single.operationId ||
+         row.errorCode != old.single.errorCode)) {
       throw const FormatException('Same revision has conflicting state');
     }
     final merged = <String, OperatorTaskSnapshot>{
