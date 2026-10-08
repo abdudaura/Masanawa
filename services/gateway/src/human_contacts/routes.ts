@@ -35,12 +35,16 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   app.post("/messages/contacts/requests/:requesterId/response", {
     schema: {
       params: Type.Object({ requesterId: Type.String({ minLength: 3, maxLength: 256 }) }, { additionalProperties: false }),
-      body: Type.Object({ accept: Type.Boolean() }, { additionalProperties: false }),
+      body: Type.Object({
+        accept: Type.Boolean(),
+        requestRevision: Type.String({ pattern: "^[1-9][0-9]{0,18}$" }),
+      }, { additionalProperties: false }),
     },
   }, async (request) => service.respond({
     authorizationHeader: request.headers.authorization,
     requesterId: (request.params as { requesterId: string }).requesterId,
     accept: (request.body as { accept: boolean }).accept,
+    requestRevision: (request.body as { requestRevision: string }).requestRevision,
   }));
 
   app.delete("/messages/contacts/:otherUserId", {

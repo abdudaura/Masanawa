@@ -107,7 +107,8 @@ class _HumanContactsScreenState extends ConsumerState<HumanContactsScreen> {
                 foundBySearch: true,
                 onRequest: () => actions.request(value.lookup!.handle),
                 onRespond: (accept) =>
-                    actions.respond(value.lookup!.userId, accept: accept),
+                    actions.respond(value.lookup!.userId, accept: accept,
+                      requestRevision: value.lookup!.requestRevision!),
                 onRevoke: () => _confirmRevoke(
                   context, value.lookup!, actions,
                 ),
@@ -190,7 +191,8 @@ class _HumanContactsScreenState extends ConsumerState<HumanContactsScreen> {
                   busy: value.busy,
                   onRequest: () => actions.request(contact.handle),
                   onRespond: (accept) =>
-                      actions.respond(contact.userId, accept: accept),
+                      actions.respond(contact.userId, accept: accept,
+                          requestRevision: contact.requestRevision!),
                   onRevoke: () => _confirmRevoke(
                     context, contact, actions,
                   ),
@@ -299,11 +301,11 @@ class _ContactTile extends StatelessWidget {
                 spacing: 8,
                 children: [
                   OutlinedButton(
-                    onPressed: busy ? null : () => onRespond(false),
+                    onPressed: busy || contact.requestRevision == null ? null : () => onRespond(false),
                     child: const Text('Decline'),
                   ),
                   FilledButton(
-                    onPressed: busy ? null : () => onRespond(true),
+                    onPressed: busy || contact.requestRevision == null ? null : () => onRespond(true),
                     child: const Text('Accept'),
                   ),
                 ],

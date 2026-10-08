@@ -13,6 +13,8 @@ export interface HumanContact {
   readonly avatarUrl: string | null;
   /** Subject's policy is private: expose action eligibility instead, never preference metadata. */
   readonly canMessage: boolean;
+  /** Current invitation revision. Required to accept/decline; null without an edge. */
+  readonly requestRevision: string | null;
   readonly status: HumanContactStatus;
 }
 export interface HumanContactRequest {
@@ -22,6 +24,7 @@ export interface HumanContactRequest {
   readonly avatarUrl: string | null;
   readonly status: Exclude<HumanContactStatus, "none">;
   readonly updatedAt: string;
+  readonly requestRevision: string;
 }
 export interface HumanContactRepository {
   /** Query is an exact normalized public handle. Missing, blocked and hidden users are indistinguishable. */
@@ -30,7 +33,7 @@ export interface HumanContactRepository {
   setOwnPreferences(input: { readonly tenantId: string; readonly userId: string; readonly policy?: HumanContactPolicy; readonly discoverableByHandle?: boolean }): Promise<HumanContactPreferences>;
   /** All admission checks and mutation must be atomic on the database side. */
   request(input: { readonly tenantId: string; readonly requesterId: string; readonly handle: string }): Promise<"accepted" | "pending" | "existing" | "unavailable">;
-  respond(input: { readonly tenantId: string; readonly recipientId: string; readonly requesterId: string; readonly accept: boolean }): Promise<boolean>;
+  respond(input: { readonly tenantId: string; readonly recipientId: string; readonly requesterId: string; readonly requestRevision: string; readonly accept: boolean }): Promise<boolean>;
   list(input: { readonly tenantId: string; readonly userId: string; readonly limit: number }): Promise<readonly HumanContactRequest[]>;
   /** Either participant may revoke a contact; preserve an audit tombstone. */
   revoke(input: { readonly tenantId: string; readonly actorId: string; readonly otherUserId: string }): Promise<boolean>;

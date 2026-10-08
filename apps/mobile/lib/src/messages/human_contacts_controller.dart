@@ -197,8 +197,8 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
     },
   );
 
-  Future<void> respond(String userId, {required bool accept}) => _mutate(
-    () => _transport.respond(userId, accept: accept),
+  Future<void> respond(String userId, {required bool accept, required String requestRevision}) => _mutate(
+    () => _transport.respond(userId, accept: accept, requestRevision: requestRevision),
     notice: (status) => status == 'accepted'
         ? 'Contact request accepted.'
         : 'Contact request declined.',

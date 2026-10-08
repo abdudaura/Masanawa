@@ -17,7 +17,7 @@ export interface HumanContactService {
   ownPreferences(input: { authorizationHeader: string | undefined }): Promise<HumanContactPreferences>;
   updatePreferences(input: { authorizationHeader: string | undefined; policy?: HumanContactPolicy; discoverableByHandle?: boolean }): Promise<HumanContactPreferences>;
   request(input: { authorizationHeader: string | undefined; handle: string }): Promise<{ status: "accepted" | "pending" | "existing" }>;
-  respond(input: { authorizationHeader: string | undefined; requesterId: string; accept: boolean }): Promise<{ status: "accepted" | "declined" }>;
+  respond(input: { authorizationHeader: string | undefined; requesterId: string; requestRevision: string; accept: boolean }): Promise<{ status: "accepted" | "declined" }>;
   list(input: { authorizationHeader: string | undefined; limit?: number }): Promise<{ contacts: readonly HumanContactRequest[] }>;
   revoke(input: { authorizationHeader: string | undefined; otherUserId: string }): Promise<{ status: "revoked" }>;
 }
@@ -77,9 +77,13 @@ export function createHumanContactService(input: Readonly<{
       if (result === "unavailable") throw new HumanContactError("messages.contact_unavailable", 404);
       return { status: result };
     },
-    async respond({ authorizationHeader, requesterId, accept }) {
+    async respond({ authorizationHeader, requesterId, requestRevision, accept }) {
+      if (!/^[1-9][0-9]{0,18}$/.test(requestRevision) ||
+          BigInt(requestRevision) > 9223372036854775807n) {
+        throw new HumanContactError("messages.invalid_request_revision", 400);
+      }
       const who = await principal(authorizationHeader);
-      const changed = await input.repository.respond({ tenantId: who.tenantId, recipientId: who.userId, requesterId: userId(requesterId), accept });
+      const changed = await input.repository.respond({ tenantId: who.tenantId, recipientId: who.userId, requesterId: userId(requesterId), requestRevision, accept });
       if (!changed) throw new HumanContactError("messages.contact_request_unavailable", 404);
       return { status: accept ? "accepted" : "declined" };
     },

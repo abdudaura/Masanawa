@@ -19,6 +19,9 @@ CREATE TABLE talks.human_dm_contact_requests (
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','declined')),
   -- A revocation is a durable tombstone, unlike an ordinary decline.
   revoked_by text,
+  -- Monotonically advances on every fresh invitation after revocation.
+  -- An old approval must never accept a newer invitation.
+  request_revision bigint NOT NULL DEFAULT 1 CHECK (request_revision > 0),
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY (tenant_id,first_user_id,second_user_id),

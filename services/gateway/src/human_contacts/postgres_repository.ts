@@ -16,6 +16,7 @@ interface LookupRow extends Record<string, unknown> {
   status: "pending" | "accepted" | "declined" | null;
   requested_by: string | null;
   revoked_by: string | null;
+  request_revision: string | number | null;
 }
 interface RequestRow extends Record<string, unknown> {
   user_id: string;
@@ -25,6 +26,7 @@ interface RequestRow extends Record<string, unknown> {
   status: "pending" | "accepted" | "declined";
   requested_by: string;
   updated_at: string | Date;
+  request_revision: string | number;
 }
 
 const visibleTarget = `
@@ -70,7 +72,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
       const result = await pool.query<LookupRow>(`
         SELECT p.user_id, p.handle, p.display_name, p.avatar_url,
                COALESCE(pref.admission_policy,'requests') AS admission_policy,
-               edge.status, edge.requested_by, edge.revoked_by
+               edge.status, edge.requested_by, edge.revoked_by, edge.request_revision
         ${visibleTarget}
         LIMIT 1
       `, [tenantId, viewerId, handle]);
@@ -87,6 +89,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
         displayName: row.display_name,
         avatarUrl: row.avatar_url,
         status,
+        requestRevision: row.request_revision == null ? null : String(row.request_revision),
         canMessage: row.status === "accepted" || (row.admission_policy === "anyone" && row.status !== "declined"),
       });
     },
@@ -167,6 +170,10 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
             revoked_by=CASE
               WHEN talks.human_dm_contact_requests.revoked_by=EXCLUDED.requested_by THEN NULL
               ELSE talks.human_dm_contact_requests.revoked_by END,
+            request_revision=CASE
+              WHEN talks.human_dm_contact_requests.revoked_by=EXCLUDED.requested_by
+                THEN talks.human_dm_contact_requests.request_revision+1
+              ELSE talks.human_dm_contact_requests.request_revision END,
             updated_at=CASE
               WHEN talks.human_dm_contact_requests.revoked_by=EXCLUDED.requested_by THEN clock_timestamp()
               ELSE talks.human_dm_contact_requests.updated_at END
@@ -181,7 +188,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
       return "existing";
     },
 
-    async respond({ tenantId, recipientId, requesterId, accept }) {
+    async respond({ tenantId, recipientId, requesterId, requestRevision, accept }) {
       // Only the original RECIPIENT of an already pending request can respond.
       // Require both canonical identities still active and no block in either direction.
       const result = await pool.query<Record<string, unknown>>(`
@@ -193,6 +200,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
            AND e.requested_by=$3
            -- A revocation invalidates any earlier response authority.
            AND e.revoked_by IS NULL
+           AND e.request_revision=$5::bigint
            AND $2<>$3
            AND (e.status='pending' OR e.status=$4
              OR (e.status='declined' AND $4='accepted')
@@ -212,7 +220,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
                   OR (sp.viewer_user_id=$3 AND sp.subject_user_id=$2))
            )
         RETURNING e.first_user_id
-      `, [tenantId, recipientId, requesterId, accept ? "accepted" : "declined"]);
+      `, [tenantId, recipientId, requesterId, accept ? "accepted" : "declined", requestRevision]);
       return (result.rowCount ?? result.rows.length) > 0;
     },
 
@@ -236,7 +244,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
     async list({ tenantId, userId, limit }) {
       const result = await pool.query<RequestRow>(`
         SELECT other.user_id, other.handle, other.display_name, other.avatar_url,
-               edge.status, edge.requested_by, edge.updated_at
+               edge.status, edge.requested_by, edge.updated_at, edge.request_revision
           FROM talks.human_dm_contact_requests edge
           JOIN talks.public_profiles other
             ON other.tenant_id=edge.tenant_id
@@ -274,6 +282,7 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
         avatarUrl: row.avatar_url,
         status: row.status === "accepted" ? "accepted" : row.requested_by === userId ? "outgoing" : "incoming",
         updatedAt: typeof row.updated_at === "string" ? row.updated_at : row.updated_at.toISOString(),
+        requestRevision: String(row.request_revision),
       })));
     },
   });
