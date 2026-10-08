@@ -1,10 +1,31 @@
-# R03 — Recover interrupted default support-agent provisioning
+# R03 — Interrupted Gwani/Gwana default support bootstrap recovery (2026-10-08)
 
-- Owner: ChatGPT independent R03 Gateway bootstrap lane.
-- Branch: `work/r03-support-seed-recovery-20261008`; base main SHA `ae80941295d67c53d8e3eff1aa0447af8f49ec6e`.
-- Last repository-visible update: 2026-10-08T05:59:17.867Z.
-- Scope: `services/gateway/src/platform_agent_bootstrap.ts`, `services/gateway/src/platform_agent_bootstrap.test.ts`, this claim only.
-- Dependency: existing canonical Character, presentation, skill assignment and support-profile repositories; no shared Gateway composition, schemas, persona pricing or public AI Seat catalog edits.
-- Found gap: bootstrap returns as soon as it sees one support profile, leaving missing Gwana or Gwani after a partial migration; stale presentation/skills may need completing. Preserve admin-owned noncanonical profiles and all existing edits; never use new IDs for an existing character.
-- Work: CLAIMED; design conservative interrupted-default-only recovery, tests for partial and admin-existing profiles. Do not seed unavailable 15 experts or claim AI Talk audio readiness.
-- Verification/deployment/device: not run, not deployed, no voice qualification; R03 remains PARTIAL.
+- **Owner/window:** ChatGPT, isolated R03 support bootstrap lane.
+- **Branch:** `work/r03-support-seed-recovery-20261008`, draft PR #441.
+- **Base main:** `ae80941295d67c53d8e3eff1aa0447af8f49ec6e`.
+- **Last repository-visible activity:** 2026-10-08T06:01:25.393Z.
+- **Exact owned paths:** `services/gateway/src/platform_agent_bootstrap.ts`, `services/gateway/src/platform_agent_bootstrap.test.ts`, this note.
+- **No shared changes:** migrations, Gateway composition, Talk AI Seat eligibility, pricing, runtime voice, package contracts, canonical ledger and mobile code unchanged.
+- **Status:** CODE IMPLEMENTED / TEST CASES AUTHORED / RUN NOT VERIFIED / DEPLOYMENT AND AUDIO NOT QUALIFIED. Lease released; R03 remains PARTIAL.
+
+## Discovered and corrected
+
+Existing startup returned immediately when it found any support profile, even after partial provisioning: a recovered Gwani profile meant Gwana was permanently omitted. New bootstrap conservatively resolves existing profile IDs against visible canonical presentations and repairs only the absent canonical identity. It refuses to convert a noncanonical admin roster, duplicate/ambiguous support profile, hidden presentation or same-name admin specialist. Existing voice selections, presentation content, revisions and chosen default remain unchanged; if Gwana is already the admin default the newly completed Gwani is not made a second default. A matching canonical presentation left before profile creation is reused instead of creating a duplicate Character.
+
+The original full Gwani+Gwana empty-tenant bootstrap behavior remains; new recovery never alters the other 15 planned experts or creates unqualified paid Talk AI Seats.
+
+## Authored tests and verification state
+
+- `00503bcf3d5bd3b77e0024bc2fd81e02b4c4daa8` — conservative interrupted-seed algorithm.
+- `9a9f73f6af279a36ecd8d1d6d796aa1637b708e7` — partial support, admin default/voice, hidden presentation cases.
+- `d95e96b9c86c0844e520bae6699ee7d9303ab5fd` — missing-profile presentation reuse and same-name admin specialist regression tests.
+- Readback checked modified source and **7 authored Vitest cases** total in the existing suite. This is source inspection, not successful unit or integration execution.
+- Foundation CI workflow #37735324997 had a job with zero recorded steps when inspected; completion/runner status must be checked again. The remote workflows consistently fail before job steps, and this environment has no checked-out repository or installed Node 24/pnpm 12 dependencies. **Do not claim passing typecheck/test/build.**
+
+## Required follow-on work
+
+1. Recheck current main/PR conflicts; run `pnpm exec vitest run services/gateway/src/platform_agent_bootstrap.test.ts`, `pnpm --filter @masanawa/gateway-service typecheck`, repository tests/build and a PostgreSQL tenant bootstrap integration test in an executable environment.
+2. Prove concurrent duplicate-startup safety under a durable tenant-scoped lock; this small recovery patch does not add a distributed provisioning lock, so do **not** mark initialization fully production-qualified.
+3. Add the remaining **15** canonical AI Experts with stable seed keys, profile/voice suitability and readiness; preserve admin customizations, verify supported provider audio/role on devices, and gate paid public AI Seat admission on real provider/worker availability.
+4. Qualify Gwani Bodi / Gwana Sulafat voices against actual Gemini Live backend and multilingual interruptions; no assumed availability or model credentials are supplied.
+5. Leave R03 PARTIAL until complete staged/live acceptance. Keep PR #441 draft and unmerged pending executable test/production qualification.
