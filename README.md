@@ -45,9 +45,8 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 > Masanawa is not a merger of repositories. It is one clean implementation of the union of validated capabilities. Source repositories are specifications and donors, not architecture boundaries.
 
-## Status
+## Current product and delivery status — 2026-10-08
 
-Current phase: **Phase 7 — Agent runtime**.
+The **approved final customer Android navigation** is **Talks · Chats · Assistant · Wallet · Agents**, with Assistant at the center, and one Gwani/Gwana private chat with an in-chat switch. Existing Flutter code and Android releases **have not yet been verified against this target**. The active consumer readiness work is **R01–R19** plus **C01–C08**; `docs/MOBILE-READINESS-PLAN.md` and `docs/COMMUNICATIONS-EXTENSION-PLAN.md` own acceptance, while `CONTINUE-HERE.md` and `docs/MULTI-WINDOW-WORK.md` own handoff and active nonoverlapping workstream claims. Shared Actions incident #457 still requires independent executable CI qualification.
 
-Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory, Phase 5 Tools/Providers and Phase 6 Skills are closed. Tasks 001-071 are merged complete. Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references. The canonical current status and remaining acceptance criteria are in `docs/PRODUCTION-MASTER-TASKS.md`; recover from `CONTINUE-HERE.md` before changing code.
-
+The original **Phase 7 agent runtime / 150-task ledger** reflects internal foundation history and may remain relevant to specialized subsystems, but **must not restart or supersede the owner-approved mobile product and R/C readiness ledger**. Internal implementation evidence and financial/provider/device evidence must be confirmed separately before release.
