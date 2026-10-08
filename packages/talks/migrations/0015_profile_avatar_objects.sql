@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS talks.profile_avatar_objects (
   attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  CONSTRAINT profile_avatar_key_prefix CHECK (object_key LIKE 'profile-avatars/%')
+  CONSTRAINT profile_avatar_key_prefix CHECK (object_key LIKE 'profiles/%')
 );
 CREATE INDEX IF NOT EXISTS profile_avatar_objects_gc_idx
   ON talks.profile_avatar_objects (state, updated_at)
