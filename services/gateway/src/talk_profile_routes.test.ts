@@ -4,7 +4,9 @@ import { registerTalkProfileRoutes } from "./talk_profile_routes.js";
 import { createTalkProfileService } from "./talk_profiles/service.js";
 import type { TalkProfileRepository } from "./talk_profiles/model.js";
 
-function repo(): TalkProfileRepository {
+function repo(initiallyMissing = false): TalkProfileRepository {
+  let hasOwnProfile = !initiallyMissing;
+  let handle = "amina";
   let following = false;
   let displayName = "Amina";
   let biography = "Host";
@@ -13,7 +15,7 @@ function repo(): TalkProfileRepository {
     async readHuman({ handle }) {
       if (handle !== "amina") return null;
       return {
-        handle: "amina",
+        handle,
         displayName,
         bio: biography,
         avatarUrl,
@@ -29,6 +31,7 @@ function repo(): TalkProfileRepository {
     },
     async readHumanByUserId({ userId }) {
       if (userId !== "user_am" && userId !== "user_viewer") return null;
+      if (userId === "user_viewer" && !hasOwnProfile) return null;
       return {
         handle: "amina",
         displayName: "Amina",
@@ -98,6 +101,23 @@ function repo(): TalkProfileRepository {
         isVerified: true,
       };
     },
+    async createOwnHuman(input) {
+      if (input.userId !== "user_viewer" || hasOwnProfile) return null;
+      if (input.handle === "taken") {
+        throw Object.assign(new Error("unique constraint"), { code: "23505" });
+      }
+      hasOwnProfile = true;
+      handle = input.handle;
+      displayName = input.displayName;
+      biography = input.bio;
+      avatarUrl = null;
+      return {
+        handle, displayName, bio: biography, avatarUrl,
+        followerCount: 0, followingCount: 0, isFollowing: false,
+        isLive: false, liveTalkId: null, twinPublicId: null,
+        twinDisplayName: null, talks: [],
+      };
+    },
     async updateOwnHuman(input) {
       if (input.tenantId !== "tenant_1" || input.userId !== "user_viewer") {
         return null;
@@ -125,10 +145,10 @@ function repo(): TalkProfileRepository {
   };
 }
 
-function app() {
+function app(initiallyMissing = false) {
   const server = Fastify();
   const service = createTalkProfileService({
-    repository: repo(),
+    repository: repo(initiallyMissing),
     authorizer: {
       async authorize({ authorizationHeader }) {
         if (authorizationHeader !== "Bearer viewer") {
@@ -296,6 +316,55 @@ describe("Talk social profile API", () => {
       expect(reply.statusCode).toBe(400);
     }
     await server.close();
+  });
+
+  it("creates an owner profile once with authenticated tenancy", async () => {
+    const server = app(true);
+    const before = await server.inject({
+      method: "GET", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(before.statusCode).toBe(404);
+    const created = await server.inject({
+      method: "PUT", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "aminab", displayName: "Amina Bello", bio: "Author" },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json()).toMatchObject({
+      handle: "aminab", displayName: "Amina Bello", bio: "Author",
+    });
+    const replay = await server.inject({
+      method: "PUT", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "someone_else", displayName: "Hijack", bio: "" },
+    });
+    expect(replay.statusCode).toBe(409);
+    await server.close();
+  });
+
+  it("rejects invalid new handles and another account's chosen handle", async () => {
+    const server = app(true);
+    for (const handle of ["a", "Name With Spaces", "UPPER", "@handle"]) {
+      const result = await server.inject({
+        method: "PUT", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload: { handle, displayName: "Amina", bio: "" },
+      });
+      // Uppercase and prefixed handle normalize; the malformed ones reject.
+      if (handle === "UPPER" || handle === "@handle") {
+        expect([201, 409]).toContain(result.statusCode);
+      } else {
+        expect(result.statusCode).toBe(400);
+      }
+    }
+    await server.close();
+    const occupied = await app(true).inject({
+      method: "PUT", url: "/profiles/me",
+      headers: { authorization: "Bearer viewer" },
+      payload: { handle: "taken", displayName: "Amina", bio: "" },
+    });
+    expect(occupied.statusCode).toBe(409);
   });
 
 });
