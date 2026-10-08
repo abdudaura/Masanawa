@@ -267,10 +267,16 @@ class RuntimeStore:
                              FROM jsonb_array_elements(p.options_json) opt),
                              '[]'::jsonb) AS options
                       FROM talks.polls p
+                      LEFT JOIN LATERAL (
+                          SELECT MAX(v.updated_at) AS latest_vote
+                            FROM talks.poll_votes v
+                           WHERE v.tenant_id=p.tenant_id AND v.talk_id=p.talk_id
+                             AND v.poll_id=p.poll_id AND p.status='open'
+                      ) recent ON true
                      WHERE p.tenant_id=$1 AND p.talk_id=$2
                        AND p.status IN ('open','closed')
-                       AND COALESCE(p.closed_at,p.created_at) BETWEEN $3 AND $4
-                     ORDER BY COALESCE(p.closed_at,p.created_at) DESC LIMIT 4
+                       AND COALESCE(p.closed_at,recent.latest_vote,p.created_at) BETWEEN $3 AND $4
+                     ORDER BY COALESCE(p.closed_at,recent.latest_vote,p.created_at) DESC LIMIT 4
                     """, tenant_id, talk_id, since, before,
                 )
                 safe_polls = []
