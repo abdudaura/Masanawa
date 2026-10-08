@@ -28,6 +28,8 @@ CREATE TABLE talks.human_dm_voice_objects (
  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  attempts integer NOT NULL DEFAULT 0 CHECK (attempts>=0),
+ -- Set ONLY after a successful provider DELETE, before the SQL journal row is removed.
+ storage_erased_at timestamptz,
  PRIMARY KEY (tenant_id,conversation_id,uploader_user_id,client_request_id),
  FOREIGN KEY (tenant_id,conversation_id)
    REFERENCES talks.human_dm_conversations(tenant_id,conversation_id) ON DELETE CASCADE,
@@ -37,6 +39,25 @@ CREATE TABLE talks.human_dm_voice_objects (
    REFERENCES talks.human_dm_messages(tenant_id,message_id) ON DELETE SET NULL (message_id),
  CHECK (state IN ('staged','attached','orphaned','deleting'))
 );
+
+-- Account/conversation cascades must not discard the last durable reference to a
+-- still-present private S3 recording. Block physical deletion until the object
+-- store has confirmed erasure, including cascades from identity.users.
+-- The erasure worker marks storage_erased_at and removes the journal atomically;
+-- after S3 DELETE but before that transaction a retry remains safe/idempotent.
+CREATE OR REPLACE FUNCTION talks.guard_private_voice_object_erasure()
+RETURNS trigger LANGUAGE plpgsql AS $
+BEGIN
+ IF OLD.storage_erased_at IS NULL THEN
+   RAISE EXCEPTION 'private voice storage erasure required before row deletion'
+     USING ERRCODE='23503';
+ END IF;
+ RETURN OLD;
+END; $;
+CREATE TRIGGER human_dm_voice_object_erasure_guard
+ BEFORE DELETE ON talks.human_dm_voice_objects
+ FOR EACH ROW EXECUTE FUNCTION talks.guard_private_voice_object_erasure();
+
 CREATE UNIQUE INDEX human_dm_voice_attached_id_idx
  ON talks.human_dm_voice_objects(tenant_id,message_id) WHERE message_id IS NOT NULL;
 CREATE INDEX human_dm_voice_gc_idx
