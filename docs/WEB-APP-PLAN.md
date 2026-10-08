@@ -1,9 +1,10 @@
 # Consumer Web App Plan
 
-Status: **approved planning scope — DEFERRED implementation, 2026-10-08**
+Status: **approved planning scope — DEFERRED implementation, updated for owner-approved 2026-10-08 five-tab mobile target**
 Priority: complete current mobile R01–R19 and shared service/runtime readiness first.
 This plan reserves no implementation paths and does not authorize web launch/deployment.
-Read CONTINUE-HERE.md, APP-SHELL-CONTRACT.md, VOICE-FIRST-INTERACTIONS.md,
+Read CONTINUE-HERE.md, APP-SHELL-CONTRACT.md, END-TO-END-UX-ARCHITECTURE.md,
+VOICE-FIRST-INTERACTIONS.md, COMMUNICATIONS-EXTENSION-PLAN.md,
 DEFAULT-AI-PERSONAS.md and MULTI-WINDOW-WORK.md before later implementation.
 
 ## 1. Purpose and current state
@@ -35,38 +36,35 @@ Gemini Live and LiveKit integrations; Next.js does not replace those runtimes.
 Recheck framework/dependency support and browser audio requirements at W01 and record
 any evidence-based change in the architecture decisions before changing the stack.
 
-## 2. Responsive shell
+## 2. Responsive shell — no obsolete four-tab recreation
 
-| Surface | Phone | Tablet / desktop |
+The *mobile target* is the approved **Talks · Chats · Assistant · Wallet · Agents**, with **Assistant third/center**. The web implementation remains deferred. When implemented, responsive web navigation must preserve these **five distinct jobs** (desktop side navigation can represent all five), not copy an outdated four-tab or older For You/Live/Create/Activity/You bar.
+
+| Surface | Phone web | Tablet / desktop |
 | --- | --- | --- |
-| Root navigation | Home · Agents · Wallet · Talk bottom bar | The same four destinations in a compact side navigation |
-| Header | Activity bell + profile avatar | Activity bell + profile avatar; contextual search where useful |
-| Public creation | Green Start Talk FAB | Accessible Start Talk action in persistent chrome; same composer |
-| Home | Explore / Live Talks, one vertical card column | One readable vertical feed; no desktop card grid/carousel |
-| Agents | Masanawa Agents / Twins tabs | Same tabs, compact searchable list with optional detail pane |
-| Wallet | Balances, service intents and history | Balance/transaction pane beside the private conversation when useful |
-| Talk | Private voice-first assistant | Conversation/cards with roomy controls; text is equally complete |
+| Navigation | Talks · Chats · Assistant · Wallet · Agents (five) | The same five distinct destinations in compact side navigation |
+| Header | Activity bell + profile avatar, contextual search | Activity/profile and accessible search, same authority |
+| Talks | Explore/Live Talk vertical single-column cards; sole Start Talk FAB | Public Talk feed and real Host/Seat controls; accessible creation action |
+| Chats | Human-only DMs, New message, text/voice notes and cached history | Same private messages, optional list/detail split |
+| Assistant (CENTER on mobile) | One private Gwani/Gwana chat, visible in-chat switch, voice/type/tap | Same single task/conversation and persona switch, adaptive controls |
+| Wallet | Separate qualified balances, crypto and bill intents, real receipts | Balance/history/verified task panels, no duplicated ledger |
+| Agents | Masanawa Experts/Twins discovery/search, private persona chats, My Twin | Same categories and ownership, optional detail pane |
 
-White/light surfaces and vibrant green inherit shared tokens, not a new web brand.
-Use comfortable reading widths, short labels, keyboard accessibility and touch targets.
-Do not force a full-height desktop dashboard into a phone screen.
-Public Talk stage is one adaptive surface for Host/Speaker/Audience/replay, with comments,
-questions and secondary sheets/panels. Private root Talk always identifies itself as
-private; Start Talk opens public creation and never instantly broadcasts.
-Avoid ambiguous links named Talk without explaining private/public context.
+White/light and vibrant green inherit shared tokens. Public **Talks** is human-hosted; **Assistant** private; **Chats** human-DM only; **Agents** persona discovery. Do not put public Start Talk FAB on Chats or Agents or autoplay a microphone. Preserve old deep-link semantics, session/auth privacy and exact route type separation as defined in canonical mobile contracts. Do not turn public Talk stages into chat bubbles or claim web readiness before separate W01–W06 qualification.
 
 ## 3. Page and state inventory
 
 | Page / state | Required behavior |
 | --- | --- |
 | Public landing | Clear product explanation, listen/discover and sign-in entry; no invented usage statistics or synthetic live inventory |
-| Home | Explore/Live feeds, topic filters, loading/empty/error/retry and preserved scroll |
+| Talks | Former Home Explore/Live feeds, topic filters, loading/empty/error/retry and preserved scroll |
+| Human Chats | Authenticated person-to-person text/voice history, privacy, consent, unread, retry, realtime and notification deep links |
 | Public Talk link | Real title/Host/live or replay state; join/listen; clear public/recording notice |
 | Public Talk stage | Authorized audio, role-aware controls, free hands/invites, questions/reactions/polls/comments, AI Seat/gift confirmation, safety and lifecycle |
 | Create | Spoken/typed topic, working Expert/person/Twin selectors, draft recovery and explicit Go Live |
 | Agents | Masanawa Agents/Twins discovery with real roles, availability and private Talk/Type actions |
 | Agent/Twin profile | Approved identity, role/style, owner when applicable, private conversation and separately priced public Seat action |
-| Private Talk | Deliberate microphone start, native live audio, typed fallback, assistant responses and interactive cards |
+| Assistant | Single private Gwani/Gwana switchable chat, deliberate microphone start, native audio, typed fallback, task cards and history |
 | Wallet | Separate native fiat/Credits/earnings/asset-network balances, funding/qualified actions and history |
 | Billing/Crypto | Scoped private conversational state, not mandatory form funnels; exact quote, consent, recovery and receipt |
 | Activity | Canonical events, unread state, filters and correct deep links |
