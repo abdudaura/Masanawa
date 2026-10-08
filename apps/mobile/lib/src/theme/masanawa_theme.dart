@@ -129,14 +129,17 @@ extension MasanawaContext on BuildContext {
 
 /// The Masanawa ThemeData — every screen renders from this (design DoD).
 ThemeData buildMasanawaTheme({required Brightness brightness}) {
-  final isDark = brightness == Brightness.dark;
-  final masanawa = isDark ? MasanawaColors.dark() : MasanawaColors.light();
+  // R01: the app is light-first regardless of device brightness. A future
+  // explicit in-app preference can opt into a separate dark theme.
+  const isDark = false;
+  const effectiveBrightness = Brightness.light;
+  final masanawa = MasanawaColors.light().copyWith(surfaceBg: Colors.white);
   final scheme = ColorScheme(
-    brightness: brightness,
+    brightness: effectiveBrightness,
     primary: masanawa.brand,
-    onPrimary: isDark ? Colors.black87 : Colors.white,
+    onPrimary: masanawa.textPrimary,
     secondary: masanawa.brandStrong,
-    onSecondary: isDark ? Colors.black87 : Colors.white,
+    onSecondary: Colors.white,
     error: masanawa.emergency,
     onError: Colors.white,
     surface: masanawa.surfaceCard,
@@ -148,7 +151,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
 
   return ThemeData(
     useMaterial3: true,
-    brightness: brightness,
+    brightness: effectiveBrightness,
     colorScheme: scheme,
     scaffoldBackgroundColor: masanawa.surfaceBg,
     extensions: [masanawa],
@@ -157,14 +160,14 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
           displayColor: scheme.onSurface,
         ),
     appBarTheme: AppBarTheme(
-      backgroundColor: isDark ? masanawa.surfaceCard : masanawa.brandStrong,
-      foregroundColor: Colors.white,
+      backgroundColor: masanawa.surfaceCard,
+      foregroundColor: masanawa.textPrimary,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      iconTheme: const IconThemeData(color: Colors.white),
-      actionsIconTheme: const IconThemeData(color: Colors.white),
+      iconTheme: IconThemeData(color: masanawa.textPrimary),
+      actionsIconTheme: IconThemeData(color: masanawa.textPrimary),
       titleTextStyle: const TextStyle(
-        color: Colors.white,
+        color: Color(0xFF111B21),
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
@@ -193,7 +196,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: masanawa.brand,
-      foregroundColor: Colors.white,
+      foregroundColor: masanawa.textPrimary,
     ),
     cardTheme: CardThemeData(
       color: masanawa.surfaceCard,
@@ -221,7 +224,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: masanawa.brand,
-        foregroundColor: Colors.white,
+        foregroundColor: masanawa.textPrimary,
         minimumSize: const Size(48, 48),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
