@@ -57,12 +57,23 @@ describeDatabase("R12 durable PostgreSQL deletion request", () => {
     expect(await requests.read({ tenantId, userId: createCanonicalId("user") })).toBeNull();
     await expect(requests.transition({
       tenantId, userId, expectedRevision: 900,
-      target: "identity-verified", now: createdAt, identityReauthenticated: true,
+      target: "failed", now: createdAt, errorCode: "transient",
     })).rejects.toThrow("account_deletion.conflict");
-    const verified = await requests.transition({
-      tenantId, userId, expectedRevision: found!.revision,
-      target: "identity-verified", now: createdAt, identityReauthenticated: true,
+    const challenge = createPostgresAccountDeletionChallengeRepository(pool);
+    const digest = "d".repeat(64);
+    await challenge.put({
+      tenantId, userId, requestId: found!.requestId, codeHash: digest,
+      channel: "email", now: createdAt,
+      expiresAt: new Date(Date.parse(createdAt) + 600000).toISOString(),
+      resendAfter: new Date(Date.parse(createdAt) + 60000).toISOString(),
     });
+    const verifiedOutcome = await challenge.verify({
+      tenantId, userId, requestId: found!.requestId,
+      expectedRevision: found!.revision, codeHash: digest, now: createdAt,
+    });
+    expect(verifiedOutcome.result).toBe("accepted");
+    if (verifiedOutcome.result !== "accepted") throw new Error("Expected accepted request");
+    const verified = verifiedOutcome.request;
     expect(verified.phase).toBe("identity-verified");
     expect(verified.revision).toBe(found!.revision + 1);
     await expect(requests.transition({
