@@ -130,16 +130,16 @@ extension MasanawaContext on BuildContext {
 
 /// The Masanawa ThemeData — every screen renders from this (design DoD).
 ThemeData buildMasanawaTheme({required Brightness brightness}) {
-  // R01: use the approved light palette even when callers request dark.
-  // MaterialApp also explicitly chooses ThemeMode.light.
-  const effectiveBrightness = Brightness.light;
-  final masanawa = MasanawaColors.light().copyWith(surfaceBg: Colors.white);
+  // Theme construction follows the requested palette. Selecting the default
+  // experience belongs to MaterialApp, not the semantic color factory.
+  final isDark = brightness == Brightness.dark;
+  final masanawa = isDark ? MasanawaColors.dark() : MasanawaColors.light();
   final scheme = ColorScheme(
-    brightness: effectiveBrightness,
+    brightness: brightness,
     primary: masanawa.brand,
-    onPrimary: masanawa.textPrimary,
+    onPrimary: isDark ? Colors.black87 : masanawa.textPrimary,
     secondary: masanawa.brandStrong,
-    onSecondary: Colors.white,
+    onSecondary: isDark ? Colors.black87 : Colors.white,
     error: masanawa.emergency,
     onError: Colors.white,
     surface: masanawa.surfaceCard,
@@ -153,7 +153,9 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     useMaterial3: true,
     brightness: effectiveBrightness,
     colorScheme: scheme,
-    scaffoldBackgroundColor: masanawa.surfaceBg,
+    // Normal app surfaces are white in light mode; keep the canonical
+    // muted background token for components that need secondary surfaces.
+    scaffoldBackgroundColor: masanawa.surfaceCard,
     extensions: [masanawa],
     textTheme: Typography.material2021(platform: TargetPlatform.android).black.apply(
           bodyColor: scheme.onSurface,
@@ -165,12 +167,12 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       // Light Android system bar with dark status icons, matching this header.
-      systemOverlayStyle: const SystemUiOverlayStyle(
+      systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: masanawa.surfaceCard,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       iconTheme: IconThemeData(color: masanawa.textPrimary),
       actionsIconTheme: IconThemeData(color: masanawa.textPrimary),
