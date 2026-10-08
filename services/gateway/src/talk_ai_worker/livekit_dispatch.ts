@@ -111,6 +111,10 @@ function validateDispatchList(value: unknown): readonly RemoteDispatch[] {
     throw new Error("talks.ai_dispatch_list_invalid");
   }
   const payload = value as Record<string, unknown>;
+  // Proto3 JSON omits an empty repeated field: {} is the normal, valid
+  // response when a Talk has no existing AI dispatches yet.
+  const present = "agent_dispatches" in payload || "agentDispatches" in payload;
+  if (!present) return [];
   const list = payload.agent_dispatches ?? payload.agentDispatches;
   if (!Array.isArray(list) || list.length > 128 ||
       list.some((row) => row === null || typeof row !== "object" || Array.isArray(row))) {
