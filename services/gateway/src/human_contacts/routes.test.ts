@@ -61,7 +61,8 @@ describe("C01 contact HTTP surface", () => {
     const ok = await app.inject({ ...opts, payload: { policy: "nobody" } });
     expect(ok.statusCode).toBe(200);
     expect(ok.json()).toEqual({ policy: "nobody", discoverableByHandle: true });
-    for (const invalid of [{ policy: "all_users" }, { policy: "anyone", userId: "user_bo" }, {}]) {
+    for (const invalid of [{ policy: "all_users" }, { policy: "anyone", userId: "user_bo" },
+      { policy: "anyone", authorizationHeader: "Bearer other" }, {}]) {
       const denied = await app.inject({ ...opts, payload: invalid });
       expect(denied.statusCode).toBe(400);
     }
@@ -74,6 +75,12 @@ describe("C01 contact HTTP surface", () => {
   it("requires explicit request before contact, with bounded list and incoming response", async () => {
     const app = harness();
     const headers = { authorization: "Bearer valid" };
+    const forgedRequest = await app.inject({ method: "POST", url: "/messages/contacts/requests",
+      headers, payload: { handle: "bob", requesterId: "user_else" } });
+    expect(forgedRequest.statusCode).toBe(400);
+    const forgedResponse = await app.inject({ method: "POST", url: "/messages/contacts/requests/user_al/response",
+      headers, payload: { accept: true, requestRevision: "1", recipientId: "user_else" } });
+    expect(forgedResponse.statusCode).toBe(400);
     const sent = await app.inject({ method: "POST", url: "/messages/contacts/requests", headers, payload: { handle: "bob" } });
     expect(sent.statusCode).toBe(200);
     expect(sent.json()).toEqual({ status: "pending" });
@@ -92,3 +99,4 @@ describe("C01 contact HTTP surface", () => {
     await app.close();
   });
 });
+
