@@ -9,7 +9,6 @@ import {
 } from "@masanawa/identity";
 import type { PlatformCustomerSessionAuthorizer } from "./customer_auth.js";
 import {
-  AccountDeletionError,
   createAccountDeletionService,
   type DeletionCodeSender,
 } from "./account_deletion.js";
