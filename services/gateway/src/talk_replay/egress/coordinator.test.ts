@@ -277,4 +277,93 @@ describe("Talk replay Egress coordinator",()=>{
     expect(log).toHaveLength(0);
   });
 
+  it("revokes playback before a failed deletion and retries orphan cleanup without re-stopping Egress",async()=>{
+    const log:string[]=[];
+    let status:"recording"|"aborted"="recording";
+    let firstAbort:string|null=null;
+    let deleteAttempts=0;
+    const media:ReplayMediaRepository={
+      async current(){return {
+        tenantId:"tenant_1",talkId:"talk_1",recordingId:"recording_1",
+        egressId:"EG_1",objectKey:"private/revoke.ogg",
+        status,startedAt:"2026-10-07T10:00:00Z",
+        completedAt:firstAbort,checksumSha256:null,
+      };},
+      async currentForTalk(){return null;},
+      async createStarted(){throw new Error("unused");},
+      async markStopped(){throw new Error("unused");},
+      async markReady(){throw new Error("unused");},
+      async markAborted(request){
+        log.push("abort");
+        if(status!=="aborted") firstAbort=request.completedAt;
+        status="aborted";
+      },
+      async playbackObject(){
+        log.push("playback");
+        return status==="aborted"?null:{objectKey:"private/revoke.ogg"};
+      },
+    };
+    const coordinator=createTalkReplayCoordinator({
+      replay:replayRepository(log),media,
+      egress:{
+        async start(){throw new Error("unused");},
+        async stop(){log.push("stop");},
+      },
+      objects:{
+        async checksumSha256(){throw new Error("unused");},
+        async deleteObject(){
+          log.push("delete");
+          if(++deleteAttempts===1) throw new Error("object store outage");
+        },
+        async presignGet(){throw new Error("must not sign aborted replay");},
+      },
+      playbackTtlSeconds:300,
+    });
+    const id={tenantId:"tenant_1",talkId:"talk_1",recordingId:"recording_1"};
+    await expect(coordinator.abort({...id,now:"2026-10-07T10:00:10Z"}))
+      .rejects.toThrow("object store outage");
+    expect(log).toEqual(["stop","abort","delete"]);
+    expect(firstAbort).toBe("2026-10-07T10:00:10Z");
+    expect(await coordinator.playback({...id,viewerUserId:"user_1"})).toBeNull();
+    await coordinator.abort({...id,now:"2026-10-07T11:00:00Z"});
+    expect(log).toEqual(["stop","abort","delete","playback","abort","delete"]);
+    expect(firstAbort).toBe("2026-10-07T10:00:10Z");
+    expect(deleteAttempts).toBe(2);
+  });
+
+  it("does not delete the media object if authoritative abort persistence fails",async()=>{
+    const log:string[]=[];
+    const media:ReplayMediaRepository={
+      async current(){return {
+        tenantId:"tenant_1",talkId:"talk_1",recordingId:"recording_1",
+        egressId:"EG_1",objectKey:"private/not-revoked.ogg",
+        status:"ready" as const,startedAt:"2026-10-07T10:00:00Z",
+        completedAt:"2026-10-07T10:00:10Z",checksumSha256:"a".repeat(64),
+      };},
+      async currentForTalk(){return null;},
+      async createStarted(){throw new Error("unused");},
+      async markStopped(){throw new Error("unused");},
+      async markReady(){throw new Error("unused");},
+      async markAborted(){log.push("abort");throw new Error("db unavailable");},
+      async playbackObject(){return {objectKey:"private/not-revoked.ogg"};},
+    };
+    const coordinator=createTalkReplayCoordinator({
+      replay:replayRepository(log),media,
+      egress:{
+        async start(){throw new Error("unused");},
+        async stop(){throw new Error("unused");},
+      },
+      objects:{
+        async checksumSha256(){throw new Error("unused");},
+        async deleteObject(){log.push("delete");},
+        async presignGet(){throw new Error("unused");},
+      },
+      playbackTtlSeconds:300,
+    });
+    await expect(coordinator.abort({
+      tenantId:"tenant_1",talkId:"talk_1",recordingId:"recording_1",
+    })).rejects.toThrow("db unavailable");
+    expect(log).toEqual(["abort"]);
+  });
+
 });
