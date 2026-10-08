@@ -4,6 +4,7 @@ class CryptoCapabilities {
     required this.withdrawals,
     required this.conversions,
     required this.fiatOnRamp,
+    this.internalTransfers = false,
     required this.fiatCurrencies,
     required this.fiatSettlementProviderCode,
     this.payoutReason,
@@ -15,6 +16,7 @@ class CryptoCapabilities {
   final bool withdrawals;
   final bool conversions;
   final bool fiatOnRamp;
+  final bool internalTransfers;
   final List<String> fiatCurrencies;
   final String? fiatSettlementProviderCode;
   final String? payoutReason;
@@ -27,6 +29,7 @@ class CryptoCapabilities {
       withdrawals: json['withdrawals'] == true,
       conversions: json['conversions'] == true,
       fiatOnRamp: json['fiatOnRamp'] == true,
+      internalTransfers: json['internalTransfers'] == true,
       fiatCurrencies: List.unmodifiable(
         (json['fiatCurrencies'] is List ? json['fiatCurrencies'] as List : const [])
             .whereType<String>()
