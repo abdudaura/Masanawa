@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '../../l10n/app_localizations.dart';
 
 /// UI locale is independent of the language spoken to an AI or wallet region.
 /// Add translated application resources before claiming an entire locale is
@@ -16,6 +17,7 @@ abstract final class MasanawaLocalization {
   ];
 
   static const delegates = <LocalizationsDelegate<dynamic>>[
+    AppLocalizations.delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,
