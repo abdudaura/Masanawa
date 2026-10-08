@@ -4,7 +4,7 @@ Owner: ChatGPT R11 localization window
 Branch: `work/mobile-locale-foundation-r11-20261008`
 Base main SHA: `265f2c5f6db81d076f57ca32dd47db3ff7fb0ad6`
 Last code commit: `53b3600fec3a9812452e67c204eb9ec258bbb91c`
-Owned: `apps/mobile/l10n.yaml`, `apps/mobile/lib/l10n/app_*.arb`, `apps/mobile/lib/src/localization/*`, `apps/mobile/lib/main.dart`, `apps/mobile/pubspec.yaml`, `apps/mobile/test/localization/*`, this claim.
+Owned: `apps/mobile/lib/src/screens/splash/splash_screen.dart` (splash tagline only, first bounded user-facing localization integration), `apps/mobile/l10n.yaml`, `apps/mobile/lib/l10n/app_*.arb`, `apps/mobile/lib/src/localization/*`, `apps/mobile/lib/main.dart`, `apps/mobile/pubspec.yaml`, `apps/mobile/test/localization/*`, this claim.
 Out of scope: theme R01 (#406), router/shell, shared backend, finances, migrations.
 
 ## Implemented (not yet released)
@@ -19,7 +19,7 @@ Out of scope: theme R01 (#406), router/shell, shared backend, finances, migratio
 - Added generated-resource, ICU plural, formatting and RTL tests.
 - Presentation-only formatters for numbers/dates/native financial amounts; never convert balances or decide currency based on language.
 - Deliberate Hausa restriction: stock Flutter Material/Cupertino localizations lack Hausa. Its ARB app-language messages exist but native dialog/calendar controls require a correctly audited Hausa framework delegate. Current MaterialApp supportedLocales remain en/ar/fr/es/pt; Hausa is **not** claimed working.
-- Legacy `MasanawaStrings` lookup removed. No screens have yet been migrated to `AppLocalizations.of(context)`.
+- Legacy `MasanawaStrings` lookup removed. The actual splash screen now uses `AppLocalizations.of(context).splashTagline` rather than an English hardcoded slogan. New translation reflects human/AI live conversations across six ARBs; tests assert English, Hausa, Arabic generated strings. Other screens remain unconverted.
 
 ## Required validation before merging
 ```sh
@@ -45,4 +45,4 @@ Merge with theme PR #406 carefully: both PRs touch `main.dart` while owning diff
 
 CI workflow creation attempted but blocked; do not claim workflow installation or CI coverage. Focused test code committed but execution still unverified.
 
-Status: implementation partial, tests unexecuted, deployed NO, device acceptance NO. Five-minute lease applies.
+Most recent implementation SHA: `f033d5f84eb21878e8ca8cc5ea11ff31bab371f5`. Flutter gen-l10n, analyzer, widget tests and runtime localization still unexecuted in this environment. R11 is PARTIAL, unmerged, deployed NO, device acceptance NO. Update resource descriptions and translated terminology with professional translator review before marking fully localized. Five-minute lease applies.
