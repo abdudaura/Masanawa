@@ -95,6 +95,7 @@ class _Room implements TalkLiveRoom {
   int closes = 0;
   bool failNextConnect = false;
   Completer<void>? mediaConnectGate;
+  Completer<void>? mediaConnectEntered;
   int connects = 0;
 
   @override
@@ -103,6 +104,7 @@ class _Room implements TalkLiveRoom {
     required bool publishMicrophone,
   }) async {
     connects += 1;
+    mediaConnectEntered?.complete();
     await mediaConnectGate?.future;
     if (failNextConnect) {
       failNextConnect = false;
@@ -362,10 +364,13 @@ void main() {
     expect(session.status, TalkLiveAudioStatus.ended);
   });
 
-  test('close while media connects tears down late room without double charge', () async {
+  test('close while media connects tears down late room without duplicate disconnect', () async {
     final gate = Completer<void>();
     final transport = _Transport(role: TalkLiveRole.host, canPublishAudio: true);
-    final room = _Room()..mediaConnectGate = gate;
+    final entered = Completer<void>();
+    final room = _Room()
+      ..mediaConnectGate = gate
+      ..mediaConnectEntered = entered;
     final session = TalkLiveAudioSession(
       talkId: 'talk-1',
       transport: transport,
@@ -373,10 +378,7 @@ void main() {
     );
 
     final starting = session.start();
-    // Let connect() and mediaToken() complete until the room becomes pending.
-    while (room.connects == 0) {
-      await Future<void>.delayed(Duration.zero);
-    }
+    await entered.future.timeout(const Duration(seconds: 2));
     await session.close();
     gate.complete();
     await starting;
