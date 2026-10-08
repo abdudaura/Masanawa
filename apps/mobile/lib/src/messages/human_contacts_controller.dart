@@ -172,19 +172,38 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
     bool updateList = true,
   }) async {
     if (!_authorized || state.busy) return;
-    state = state.copyWith(busy: true, clearError: true, clearNotice: true);
+    // Any earlier list read is stale once a relationship mutation begins.
+    ++_readEpoch;
+    state = state.copyWith(
+      loading: false, busy: true, clearError: true, clearNotice: true,
+    );
     try {
       final outcome = await operation();
       if (!_authorized) return;
-      // Invalidate previously started lookup; its eligibility is now stale.
+      // Lookup eligibility may have changed; never reuse pre-write results.
       ++_searchEpoch;
+      if (updateList) {
+        // C01's authoritative readback, not just a successful HTTP write.
+        await refresh();
+        if (!_authorized) return;
+        if (state.error != null) {
+          state = state.copyWith(
+            busy: false,
+            clearLookup: true,
+            clearNotice: true,
+            error: 'The request may have changed. Refresh to verify its current state.',
+          );
+          return;
+        }
+      }
       state = state.copyWith(
         busy: false, clearLookup: true, notice: notice(outcome),
       );
-      if (updateList) await refresh();
     } catch (error) {
       if (!_authorized) return;
-      state = state.copyWith(busy: false, error: _errorText(error));
+      state = state.copyWith(
+        loading: false, busy: false, clearNotice: true, error: _errorText(error),
+      );
     }
   }
 
@@ -214,10 +233,15 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
 
   Future<void> updatePolicy(HumanContactPolicy policy) => _mutate(
     () async {
-      final result = await _transport.updatePreferences(policy: policy);
-      if (_authorized) {
-        state = state.copyWith(preferences: result);
+      await _transport.updatePreferences(policy: policy);
+      // Preference responses alone are insufficient after a lost write ack.
+      final actual = await _transport.preferences();
+      if (actual.policy != policy) {
+        throw const FormatException(
+          'The privacy policy changed. Refresh and review before retrying.',
+        );
       }
+      if (_authorized) state = state.copyWith(preferences: actual);
       return 'saved';
     },
     notice: (_) => 'Message request policy saved.',
@@ -226,12 +250,16 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
 
   Future<void> updateDiscoverable(bool discoverable) => _mutate(
     () async {
-      final result = await _transport.updatePreferences(
+      await _transport.updatePreferences(
         discoverableByHandle: discoverable,
       );
-      if (_authorized) {
-        state = state.copyWith(preferences: result);
+      final actual = await _transport.preferences();
+      if (actual.discoverableByHandle != discoverable) {
+        throw const FormatException(
+          'Handle visibility changed. Refresh and review before retrying.',
+        );
       }
+      if (_authorized) state = state.copyWith(preferences: actual);
       return 'saved';
     },
     notice: (_) => 'Handle visibility saved.',
