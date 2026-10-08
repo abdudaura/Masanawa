@@ -8,7 +8,7 @@ function harness() {
   const pool: HumanContactRepository = {
     async lookup({ handle }) {
       if (handle !== "bob") return null;
-      return { userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null, canMessage: false, status: "none" };
+      return { userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null, canMessage: false, status: "none", requestRevision: null };
     },
     async getOwnPreferences() { return { policy: "requests", discoverableByHandle: true }; },
     async setOwnPreferences({ policy, discoverableByHandle }) { return { policy: policy ?? "requests", discoverableByHandle: discoverableByHandle ?? true }; },
@@ -49,7 +49,7 @@ describe("C01 contact HTTP surface", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null,
-      canMessage: false, status: "none",
+      canMessage: false, status: "none", requestRevision: null,
     });
     expect(JSON.stringify(response.json())).not.toContain("admission_policy");
     await app.close();
@@ -77,9 +77,11 @@ describe("C01 contact HTTP surface", () => {
     const sent = await app.inject({ method: "POST", url: "/messages/contacts/requests", headers, payload: { handle: "bob" } });
     expect(sent.statusCode).toBe(200);
     expect(sent.json()).toEqual({ status: "pending" });
-    const returned = await app.inject({ method: "POST", url: "/messages/contacts/requests/user_al/response", headers, payload: { accept: true } });
+    const returned = await app.inject({ method: "POST", url: "/messages/contacts/requests/user_al/response", headers, payload: { accept: true, requestRevision: "1" } });
     expect(returned.statusCode).toBe(200);
     expect(returned.json()).toEqual({ status: "accepted" });
+    const stale = await app.inject({ method: "POST", url: "/messages/contacts/requests/user_al/response", headers, payload: { accept: true } });
+    expect(stale.statusCode).toBe(400);
     const invalid = await app.inject({ method: "GET", url: "/messages/contacts?limit=2000", headers });
     expect(invalid.statusCode).toBe(400);
     const list = await app.inject({ method: "GET", url: "/messages/contacts?limit=30", headers });

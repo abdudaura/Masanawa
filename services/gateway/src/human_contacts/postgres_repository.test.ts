@@ -78,6 +78,7 @@ describe("C01 SQL contact admission", () => {
     expect(sql).toContain("revoked_by=EXCLUDED.requested_by");
     expect(sql).toContain("THEN 'pending'");
     expect(sql).toContain("revoked_by=CASE");
+    expect(sql).toContain("request_revision=CASE");
     expect(sql).toContain("updated_at=CASE");
     expect(sql).toContain("LEAST($2,user_id)");
     expect(sql).toContain("admission_policy");
@@ -89,9 +90,10 @@ describe("C01 SQL contact admission", () => {
     const pool: HumanContactSqlPool = {
       async query(query, values) { sql = query; params = values ?? []; return { rows: [{ first_user_id: "user_al" }] as never, rowCount: 1 }; },
     };
-    const allowed = await createPostgresHumanContactRepository(pool).respond({ tenantId: "t", recipientId: "user_bo", requesterId: "user_al", accept: true });
+    const allowed = await createPostgresHumanContactRepository(pool).respond({ tenantId: "t", recipientId: "user_bo", requesterId: "user_al", requestRevision: "1", accept: true });
     expect(allowed).toBe(true);
-    expect(params).toEqual(["t", "user_bo", "user_al", "accepted"]);
+    expect(params).toEqual(["t", "user_bo", "user_al", "accepted", "1"]);
+    expect(sql).toContain("e.request_revision=$5::bigint");
     expect(sql).toContain("e.requested_by=$3");
     expect(sql).toContain("(e.status='pending' OR e.status=$4)");
     expect(sql).toContain("e.revoked_by IS NULL");

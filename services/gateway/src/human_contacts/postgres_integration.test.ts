@@ -130,10 +130,10 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     expect(incoming).toHaveLength(1);
     expect(incoming[0]).toMatchObject({ userId: alice, status: "incoming" });
     expect(await repo.respond({
-      tenantId: tenant, recipientId: alice, requesterId: bob, accept: true,
+      tenantId: tenant, recipientId: alice, requesterId: bob, requestRevision: "1", accept: true,
     })).toBe(false);
     expect(await repo.respond({
-      tenantId: tenant, recipientId: bob, requesterId: alice, accept: true,
+      tenantId: tenant, recipientId: bob, requesterId: alice, requestRevision: "1", accept: true,
     })).toBe(true);
     expect(await repo.lookup({ tenantId: tenant, viewerId: alice, handle: bobHandle }))
       .toMatchObject({ status: "accepted", canMessage: true });
@@ -146,7 +146,7 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
       .toMatchObject({ status: "declined", canMessage: false });
     // A past invitation response cannot override the revoker's choice.
     expect(await repo.respond({
-      tenantId: tenant, recipientId: bob, requesterId: alice, accept: true,
+      tenantId: tenant, recipientId: bob, requesterId: alice, requestRevision: "1", accept: true,
     })).toBe(false);
     expect(await repo.request({ tenantId: tenant, requesterId: bob, handle: aliceHandle }))
       .toBe("existing");
@@ -155,16 +155,19 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     expect(await repo.request({ tenantId: tenant, requesterId: alice, handle: bobHandle }))
       .toBe("pending");
     expect(await repo.lookup({ tenantId: tenant, viewerId: alice, handle: bobHandle }))
-      .toMatchObject({ status: "outgoing", canMessage: false });
+      .toMatchObject({ status: "outgoing", canMessage: false, requestRevision: "2" });
     expect(await repo.respond({
-      tenantId: tenant, recipientId: bob, requesterId: alice, accept: true,
+      tenantId: tenant, recipientId: bob, requesterId: alice, requestRevision: "1", accept: true,
+    })).toBe(false);
+    expect(await repo.respond({
+      tenantId: tenant, recipientId: bob, requesterId: alice, requestRevision: "2", accept: true,
     })).toBe(true);
     // Now Bob revokes; Alice cannot approve the previous relationship again.
     expect(await repo.revoke({
       tenantId: tenant, actorId: bob, otherUserId: alice,
     })).toBe(true);
     expect(await repo.respond({
-      tenantId: tenant, recipientId: bob, requesterId: alice, accept: true,
+      tenantId: tenant, recipientId: bob, requesterId: alice, requestRevision: "2", accept: true,
     })).toBe(false);
   });
 

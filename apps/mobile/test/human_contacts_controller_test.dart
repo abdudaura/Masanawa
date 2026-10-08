@@ -15,6 +15,7 @@ const _bob = HumanContact(
   avatarUrl: null,
   status: HumanContactStatus.incoming,
   canMessage: false,
+  requestRevision: '1',
 );
 class _FakeContacts implements HumanContactsTransport {
   Completer<List<HumanContact>>? pendingList;
@@ -42,7 +43,7 @@ class _FakeContacts implements HumanContactsTransport {
   }
 
   @override
-  Future<String> respond(String userId, {required bool accept}) async {
+  Future<String> respond(String userId, {required bool accept, required String requestRevision}) async {
     if (deny) throw const FormatException('Request unavailable');
     return accept ? 'accepted' : 'declined';
   }

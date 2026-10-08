@@ -17,6 +17,7 @@ function harness(tenant = "tenant_1", actor = "user_al") {
         userId: receiverId, handle: "bob", displayName: "Bob", avatarUrl: null,
         status: accepted ? "accepted" : declined ? "declined" : pending ? "outgoing" : "none",
         canMessage: accepted || (receiverPolicy === "anyone" && !declined),
+        requestRevision: pending || accepted || declined ? "1" : null,
       };
     },
     async getOwnPreferences({ userId }) { return { policy: userId === receiverId ? receiverPolicy : actorPolicy, discoverableByHandle: true }; },
@@ -48,6 +49,7 @@ function harness(tenant = "tenant_1", actor = "user_al") {
         displayName: "Contact", avatarUrl: null,
         status: accepted ? "accepted" : userId === receiverId ? "incoming" : "outgoing",
         updatedAt: "2026-10-08T09:00:00.000Z",
+        requestRevision: "1",
       }];
     },
   };
@@ -82,15 +84,15 @@ describe("C01 authenticated human-contact consent", () => {
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "pending" });
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "pending" });
     expect((await svc("user_bo").list({ authorizationHeader: "Bearer okay" })).contacts[0]?.status).toBe("incoming");
-    await expect(svc().respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: true })).rejects.toMatchObject({ statusCode: 404 });
-    expect(await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: true })).toEqual({ status: "accepted" });
+    await expect(svc().respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", requestRevision: "1", accept: true })).rejects.toMatchObject({ statusCode: 404 });
+    expect(await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", requestRevision: "1", accept: true })).toEqual({ status: "accepted" });
     expect(await svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).toMatchObject({ canMessage: true, status: "accepted" });
-    expect(await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: true })).toEqual({ status: "accepted" });
+    expect(await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", requestRevision: "1", accept: true })).toEqual({ status: "accepted" });
   });
   it("can decline and will not let requester resurrect declined request", async () => {
     const { svc } = harness();
     await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" });
-    expect(await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: false })).toEqual({ status: "declined" });
+    expect(await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", requestRevision: "1", accept: false })).toEqual({ status: "declined" });
     expect(await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" })).toEqual({ status: "existing" });
     expect(await svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).toMatchObject({ canMessage: false, status: "declined" });
   });
@@ -106,7 +108,7 @@ describe("C01 authenticated human-contact consent", () => {
   it("lets either member revoke an accepted relationship, then denies messaging", async () => {
     const { svc } = harness();
     await svc().request({ authorizationHeader: "Bearer okay", handle: "bob" });
-    await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", accept: true });
+    await svc("user_bo").respond({ authorizationHeader: "Bearer okay", requesterId: "user_al", requestRevision: "1", accept: true });
     expect(await svc().revoke({ authorizationHeader: "Bearer okay", otherUserId: "user_bo" })).toEqual({ status: "revoked" });
     expect(await svc().lookup({ authorizationHeader: "Bearer okay", handle: "bob" })).toMatchObject({ canMessage: false });
     await expect(svc().revoke({ authorizationHeader: "Bearer okay", otherUserId: "user_al" })).rejects.toMatchObject({ statusCode: 404 });

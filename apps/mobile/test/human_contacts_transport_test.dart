@@ -93,7 +93,7 @@ void main() {
     await expectLater(transport.preferences(), throwsA(isA<ApiException>()));
     await expectLater(transport.request('bob'), throwsA(isA<ApiException>()));
     await expectLater(
-      transport.respond('user_b', accept: true),
+      transport.respond('user_b', accept: true, requestRevision: '1'),
       throwsA(isA<ApiException>()),
     );
     await expectLater(transport.revoke('user_b'), throwsA(isA<ApiException>()));
@@ -143,11 +143,11 @@ void main() {
           expect(options.queryParameters['limit'], 50);
           return _json('{"contacts":[{"userId":"user_b","handle":"bob",'
               '"displayName":"Bob","avatarUrl":null,'
-              '"status":"incoming","updatedAt":"2026-10-08T11:00:00Z"}]}');
+              '"status":"incoming","requestRevision":"1","updatedAt":"2026-10-08T11:00:00Z"}]}');
         case 3:
           expect(options.path, '/messages/contacts/requests/user_b/response');
           expect(options.method, 'POST');
-          expect(options.data, {'accept': true});
+          expect(options.data, {'accept': true, 'requestRevision': '1'});
           return _json('{"status":"accepted"}');
         case 4:
           expect(options.path, '/messages/contacts/user_b');
@@ -174,7 +174,7 @@ void main() {
       )),
     );
     await expectLater(
-      denied.respond('user_b', accept: true),
+      denied.respond('user_b', accept: true, requestRevision: '1'),
       throwsA(isA<DioException>()),
     );
     final malformed = GatewayHumanContactsTransport(
@@ -182,6 +182,20 @@ void main() {
     );
     await expectLater(
       malformed.revoke('user_b'),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
+  test('incoming consent requires a server request revision', () async {
+    final transport = GatewayHumanContactsTransport(
+      api: _client((options) async => _json(
+        '{"contacts":[{"userId":"user_b","handle":"bob",'
+        '"displayName":"Bob","avatarUrl":null,"status":"incoming",'
+        '"updatedAt":"2026-10-08T11:00:00Z"}]}')),
+    );
+    await expectLater(transport.list(), throwsA(isA<FormatException>()));
+    await expectLater(
+      transport.respond('user_b', accept: true, requestRevision: '0'),
       throwsA(isA<FormatException>()),
     );
   });

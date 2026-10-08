@@ -64,7 +64,7 @@ class _ContactApi implements HumanContactsTransport {
   }
 
   @override
-  Future<String> respond(String userId, {required bool accept}) async =>
+  Future<String> respond(String userId, {required bool accept, required String requestRevision}) async =>
       accept ? 'accepted' : 'declined';
 
   @override

@@ -18,7 +18,7 @@ describe("C01 composed Gateway human-contact routes", () => {
     const repo: HumanContactRepository = {
       async lookup({ handle }) {
         if (handle !== "bob") return null;
-        return { userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null, canMessage: false, status: "none" };
+        return { userId: "user_bo", handle: "bob", displayName: "Bob", avatarUrl: null, canMessage: false, status: "none", requestRevision: null };
       },
       async getOwnPreferences() { return { policy: "requests", discoverableByHandle: true }; },
       async setOwnPreferences({ policy, discoverableByHandle }) {
