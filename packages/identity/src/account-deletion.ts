@@ -69,7 +69,6 @@ export function transitionAccountDeletion(
   if (current.revision !== input.expectedRevision) {
     throw new Error("account_deletion.conflict");
   }
-  if (input.target === current.phase) return current;
   if (!validTransitions[current.phase].includes(input.target)) {
     throw new Error("account_deletion.invalid_transition");
   }
@@ -79,8 +78,18 @@ export function transitionAccountDeletion(
   if (input.target === "identity-verified" && input.identityReauthenticated !== true) {
     throw new Error("account_deletion.reauthentication_required");
   }
+  if (input.target === "awaiting-settlement" && input.outstandingObligations === undefined) {
+    throw new Error("account_deletion.settlement_evidence_required");
+  }
+  if (input.target === "processing" && current.phase === "awaiting-settlement" &&
+      input.outstandingObligations === undefined) {
+    throw new Error("account_deletion.settlement_evidence_required");
+  }
   const obligations = input.outstandingObligations ?? current.outstandingObligations;
-  if (input.target === "completed" && (input.cleanupComplete !== true || obligations.length !== 0)) {
+  if (obligations.some((item) => !item.trim())) {
+    throw new Error("account_deletion.invalid_obligation");
+  }
+  if (input.target === "completed" && (input.cleanupComplete !== true || obligations.length !== 0 || input.outstandingObligations !== undefined)) {
     throw new Error("account_deletion.cleanup_incomplete");
   }
   if (input.target === "processing" && obligations.length > 0) {
