@@ -88,6 +88,15 @@ follow `MOBILE-READINESS-PLAN.md` and `DEFAULT-AI-PERSONAS.md`.
 Account deletion, language, privacy and support belong in existing Settings. Do not add
 root tabs, service families or duplicate screen trees to implement these requirements.
 
+## Voice-first operation
+
+Applicable screens expose Talk as the primary input and Type instead as an equally
+complete alternative. Wallet/Billing/Crypto are private conversational workspaces with
+interactive cards, not mandatory form funnels. Existing routes and one global private
+assistant remain; do not add a root chatbot tab. Read-only balances/history are immediately
+accessible. Public Talk speech and private service commands have separate audio authority.
+See `VOICE-FIRST-INTERACTIONS.md` for consent, accessibility and durable task behavior.
+
 ## Suggested routes
 
 - `/home`

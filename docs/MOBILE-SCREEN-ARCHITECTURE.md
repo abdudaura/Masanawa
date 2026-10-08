@@ -381,7 +381,9 @@ Money concepts must stay distinct:
 
 ### S70 — Wallet
 
-Overview:
+A private conversational workspace: prominent Talk to Gwani, Type instead and compact
+balance/history access. Spoken intents and server-driven cards replace mandatory form
+navigation. Overview:
 - each supported native fiat balance and optional labeled display-currency estimate;
 - spendable Credits balance;
 - creator earnings available/pending;
@@ -394,8 +396,8 @@ Crypto is linked as a service/asset area rather than merged into a fiat/credit n
 
 ### S71 — Add funds
 
-Native currency/amount + qualified region/funding method + confirmation + resumable
-pending details. No promise that an unqualified currency can be funded.
+A conversational funding state/card: native currency/amount + qualified region/funding
+method + confirmation + resumable pending details. No promise that an unqualified currency can be funded.
 
 ### S72 — Withdraw earnings
 
@@ -452,7 +454,7 @@ Billing is private even when launched while the user is listening to a Talk.
 
 ### S81 — Bills
 
-Compact actions:
+Scoped private voice-first conversation with typed/tap parity. Compact intent shortcuts:
 - Airtime
 - Data
 - Electricity
@@ -462,7 +464,8 @@ Recent/favorite recipients may appear below if safely implemented.
 
 ### S82 — Bill purchase
 
-One adaptive screen changes fields by qualified country/catalog/product:
+One conversation collects only missing details and offers versioned option/quote cards.
+The same adaptive workspace may expand an optional manual editor by country/catalog/product:
 - recipient/phone/account/meter;
 - network/provider;
 - plan/package where required;
@@ -471,7 +474,8 @@ One adaptive screen changes fields by qualified country/catalog/product:
 
 ### S83 — Bill confirmation
 
-Exact recipient/product/amount/fees, then explicit Confirm.
+A quote card reads/shows exact recipient/product/amount/fees/expiry, then accepts an
+explicit authorized Confirm. Repeat/Change/Cancel work by voice or tap.
 
 Prefer a confirmation sheet when possible rather than a full route.
 
@@ -485,7 +489,7 @@ Success / pending-checking / failed / refunded with provider-safe receipt detail
 
 ### S90 — Crypto
 
-Portfolio/service home:
+Private conversational asset workspace with immediately accessible portfolio/history:
 - crypto balances;
 - Deposit
 - Buy
@@ -509,15 +513,18 @@ Asset/network selection, deposit address/QR and status/history.
 
 ### S94 — Buy
 
-Eligible fiat/on-ramp flow with exact quote and provider constraints.
+Conversational eligible fiat/on-ramp intent, missing-details collection, exact quote and
+provider constraints. Funding and receipt stay in the same durable task.
 
 ### S95 — Convert
 
-From asset -> to asset -> amount -> quote -> confirm.
+Conversational selection of source/destination asset/network and amount, then fresh
+quote and explicit confirmation. Manual fields are optional editing mode.
 
 ### S96 — Withdraw
 
-Asset/network -> address -> amount -> fees/minimum -> confirm.
+Conversational asset/network, trusted destination/QR/paste, amount and fresh fees/minimum
+quote, then authenticated explicit confirmation. Do not rely on dictated long addresses.
 
 ### S97 — Crypto transaction detail
 
@@ -572,7 +579,8 @@ Terms, privacy, community standards, version.
 
 ### S107 — Delete account
 
-High-friction destructive confirmation with clear consequences.
+Accessible explanation, recent reauthentication and explicit destructive confirmation
+with durable server request/progress. No reading/typing-only barrier.
 
 ---
 
@@ -699,3 +707,12 @@ Gift sheets show a localized server catalog with animation previews, exact price
 confirmation. Stage animation, activity and agent event agree on authoritative success;
 reduced-motion users receive a static equivalent. Persona profiles use the full defaults
 in `DEFAULT-AI-PERSONAS.md` without adding another root directory.
+
+## Voice/text parity across screens
+
+`VOICE-FIRST-INTERACTIONS.md` is canonical for applicable surfaces. Spoken topic creation,
+persona discovery, invitations/questions, Direct Twin, Settings/support and financial
+actions use contextual voice commands with complete silent alternatives. Keep public
+speech and private commands distinct. Cards/states are not additional permanent routes.
+Test permission denial, audio privacy, barge-in, low literacy, RTL, interruptions and
+app restart; never require reading or typing to finish an advertised voice journey.

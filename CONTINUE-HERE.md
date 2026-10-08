@@ -17,6 +17,11 @@ wallet and qualified Billing/Crypto (R05–R08) are equal core priorities. Finis
 awareness, animated gifts, localization, deletion, replay/push and release gates (R09–R16).
 The ledger contains exact evidence, dependencies and acceptance; tasks remain open.
 
+Wallet, Billing and Crypto now follow `docs/VOICE-FIRST-INTERACTIONS.md`: a private
+voice-first conversation with interactive cards, complete text/tap alternatives and
+one durable server-authorized task. Conventional forms are optional editing mode.
+Low-literacy users must complete supported journeys without reading or typing.
+
 
 ## Canonical product reset — 2026-10-07
 
@@ -37,6 +42,7 @@ Read these first for any consumer-product work:
 - `docs/MULTI-WINDOW-WORK.md`
 - `docs/MOBILE-READINESS-PLAN.md`
 - `docs/DEFAULT-AI-PERSONAS.md`
+- `docs/VOICE-FIRST-INTERACTIONS.md`
 
 ### Non-negotiable consumer rules
 

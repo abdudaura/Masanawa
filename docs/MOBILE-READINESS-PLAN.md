@@ -24,6 +24,9 @@ The new requirements are:
 - Global wallet architecture and localization; Nigeria is a supported market, not the
   definition of the platform.
 - Fully integrated, privately confirmed Billing/Crypto with durable recovery.
+- Voice-first conversational Wallet/Billing/Crypto, with server-driven cards, complete
+  text/tap parity, optional manual editors and low-literacy completion. The canonical
+  interaction is VOICE-FIRST-INTERACTIONS.md, not a conventional mandatory form funnel.
 - Account deletion, privacy, safety, notifications, replay and release acceptance.
 
 ## 2. Recovered evidence, not assumptions
@@ -69,9 +72,9 @@ Dependencies are integration order, not permission to reserve overlapping files.
 | R03 / P0 | Default personas — PARTIAL | Server catalog uses all 17 approved canonical profiles with distinct identity/gender/voice/tone; picker/search reflects real availability. Qualify one complete admission/audio path first, then all 17 or document individual blockers; test name pronunciation and humor adaptation. See DEFAULT-AI-PERSONAS.md. |
 | R04 / P0 | Create/Host action wiring — PARTIAL | Add Expert, Invite person and Add My Twin work before and during Talk; selected participants survive creation/restart; free human invitation and explicit AI quote/confirmation enforced. Depends R02/R03. |
 | R05 / P0 | Billing funding/recovery — PARTIAL | Quote-scoped funding reuse, restored bank details, one credit/fulfillment after crash or duplicate callback, typed webhook failures, unattended retries and correct receipt. |
-| R06 / P0 | Global wallet and qualified actions — PARTIAL | Currency-aware API/projection/UI, visible native balances, Add Money/Send/Withdraw based on capabilities; no Credits/earnings/crypto mixing. Shared ledger contract lands before dependent UI. |
-| R07 / P0 | Billing live qualification — UNVERIFIED | Airtime/data/electricity/TV qualification including validation, amount/fee, delivery, receipt, failure/refund and lost webhook; exact market coverage. Depends R05/R06. |
-| R08 / P0 | Crypto operations — PARTIAL/BLOCKED | Qualified deposit/buy/convert/withdraw by asset/network/region; custody/payout/2FA/fees/relay/IPN and reconciliation proven; unsupported capabilities honestly explained. Depends R06. |
+| R06 / P0 | Global wallet and qualified actions — PARTIAL | Currency-aware API/projection/UI, visible native balances and conversational Add Money/Send/Withdraw with voice/text/tap parity based on capabilities; no Credits/earnings/crypto mixing. Shared ledger contract lands before dependent UI. |
+| R07 / P0 | Billing live qualification — UNVERIFIED | Voice-only and silent airtime/data/electricity/TV journeys, including validation, spoken exact amount/fee, delivery, receipt, failure/refund and lost webhook; exact market coverage. Depends R05/R06. |
+| R08 / P0 | Crypto operations — PARTIAL/BLOCKED | Conversational qualified deposit/buy/convert/withdraw with spoken terms, trusted destination/QR/paste and silent alternatives by asset/network/region; custody/payout/2FA/fees/relay/IPN and reconciliation proven; unsupported capabilities honestly explained. Depends R06. |
 | R09 / P1 | AI stage/event context — PARTIAL | All permitted reaction/hand/question/seat/gift/poll/comment events observable in bounded context; correct identity/role/topic; private data isolated; no automatic audio from spam. |
 | R10 / P1 | Animated gifts — PARTIAL | Catalog preview, explicit price, idempotent settlement, synchronized sender/recipient/stage animation and AI event only on authoritative result; reduced-motion/low-end-device support. Depends R06/R09. |
 | R11 / P1 | Language/localization — OPEN | Locale resources, translated UI/errors/receipts, RTL and local formatting; conversational code-switching independent of UI language; no fixed en/ha restriction. |
@@ -271,8 +274,8 @@ Preserve a working app while qualifying capabilities; no dead controls or fake s
 
 ## 11. Continuation and task ownership
 
-Read CONTINUE-HERE.md and MULTI-WINDOW-WORK.md, then canonical contracts, this plan and
-DEFAULT-AI-PERSONAS.md. Inspect main, current PRs/claims and fresh runtime evidence.
+Read CONTINUE-HERE.md and MULTI-WINDOW-WORK.md, then canonical contracts, this plan,
+DEFAULT-AI-PERSONAS.md and VOICE-FIRST-INTERACTIONS.md. Inspect main, current PRs/claims and fresh runtime evidence.
 Claim exact paths for one R-task/subtask, follow the five-minute lease, and coordinate
 shared router/Gateway/ledger/migrations/events/tokens before edits. Useful lane mapping:
 R01 mobile-shell; R02 talks-live; R03/R04 talks-ai-seats; R05/R07 bills-flutterwave;
@@ -284,3 +287,16 @@ Update the relevant row and workstream with honest evidence after each implement
 Do not restart previously merged foundations or mark unresolved external gates complete.
 First next task: claim R01 and implement shared light defaults/tokens before editing
 individual screens; independently diagnose the authenticated audio failure R02.
+
+## Voice-first implementation acceptance overlay
+
+R04–R12/R15 follow `VOICE-FIRST-INTERACTIONS.md`. Start with read-only balances/history,
+shared task projection and voice/text switching; then Billing and Crypto against their
+existing recovery/qualification gates. Do not create a parallel financial state machine.
+Add spoken exact quote/receipt, low-literacy prompts, secure consent, stable option
+ordinals, mode switching/restart recovery, permission denial and public/private audio
+isolation to acceptance. Test misheard currency/amount, expired quote, duplicate approval,
+multiple active tasks and cancellation after execution. No offline financial execution.
+Context budgets, latency, multilingual pronunciation and correction metrics need real
+device evidence without logging private conversations. Support, trusted recipients and
+accessible deletion must be complete task paths, not inert voice commands.

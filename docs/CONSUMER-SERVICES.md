@@ -26,6 +26,21 @@ sheet can launch a private transaction flow and return the user to the Talk.
 Financial values/actions must never be spoken into the public Talk unless the user
 explicitly chooses to disclose them as ordinary speech.
 
+## Canonical interaction: conversation first
+
+Follow `VOICE-FIRST-INTERACTIONS.md`. Wallet, Billing and Crypto open a scoped private
+Gwani/Gwana conversation with useful balance, recipient, option, quote, funding, pending
+and receipt cards. Talk is primary; Type instead and taps complete the same journey.
+Users need not read/type to hear terms, choose, explicitly confirm and obtain status.
+
+Forms are optional expanded editing, not required checkout. Collect only missing fields,
+bind “second one” to the current option version, and preserve task identity when changing
+modes, reopening or reconnecting. Model interpretation is not money authority.
+Spoken consent is bound to fresh terms and required authentication; uncertain or unrelated
+affirmation does not execute. Crypto addresses use QR/paste/trusted destinations.
+Private audio must not publish into the public Talk microphone track.
+Read-only balances/history remain directly accessible without invoking AI.
+
 ## Global scope and qualification
 
 Masanawa is a global platform. User locale, conversation language, recipient country,
