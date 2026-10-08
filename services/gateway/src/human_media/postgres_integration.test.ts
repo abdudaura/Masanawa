@@ -122,6 +122,11 @@ function approved(value:string|undefined) {
     `DELETE FROM talks.human_dm_voice_objects WHERE tenant_id=$1 AND object_key=$2`,
     [tenantId,key],
   )).rejects.toThrow("private voice storage erasure required");
+  await expect(pool.query(
+    `DELETE FROM talks.human_dm_conversations
+      WHERE tenant_id=$1 AND conversation_id=$2`,
+    [tenantId,conversationId],
+  )).rejects.toThrow("private voice storage erasure required");
   const prior=await pool.query<{storage_erased_at:Date|null}>(
     `SELECT storage_erased_at FROM talks.human_dm_voice_objects
       WHERE tenant_id=$1 AND object_key=$2`,[tenantId,key]);
