@@ -2,16 +2,20 @@ import { createCanonicalId, parseCanonicalId } from "@masanawa/contracts";
 import type { FastifyInstance } from "fastify";
 import type { AssistantRole, AssistantWorkspaceService } from "./service.js";
 
+class InvalidWorkspaceInput extends Error {
+  readonly statusCode = 400;
+}
+
 function role(value: unknown): AssistantRole {
   if (value !== "gwani" && value !== "gwana") {
-    throw new TypeError("Invalid assistant role");
+    throw new InvalidWorkspaceInput("Invalid assistant role");
   }
   return value;
 }
 
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new TypeError("Invalid assistant request");
+    throw new InvalidWorkspaceInput("Invalid assistant request");
   }
   return value as Record<string, unknown>;
 }
@@ -19,14 +23,14 @@ function object(value: unknown): Record<string, unknown> {
 function historyLimit(raw: unknown): number {
   if (raw === undefined) return 50;
   if (typeof raw !== "string" || !/^(?:[1-9]|[1-9][0-9]|100)$/.test(raw)) {
-    throw new TypeError("Invalid history limit");
+    throw new InvalidWorkspaceInput("Invalid history limit");
   }
   return Number(raw);
 }
 
 function text(raw: unknown): string {
   if (typeof raw !== "string" || !raw.trim() || raw.length > 6000) {
-    throw new TypeError("Invalid message text");
+    throw new InvalidWorkspaceInput("Invalid message text");
   }
   return raw;
 }
