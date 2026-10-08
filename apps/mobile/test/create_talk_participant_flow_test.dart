@@ -81,8 +81,11 @@ Widget _harness(
 
 void main() {
   test('persisted post-create intents reject malformed and duplicate values', () {
-    expect(parseTalkCreateActions('addExpert,addExpert,other,invitePerson,addTwin'),
-        TalkCreateParticipantAction.values);
+    expect(parseTalkCreateActions('addExpert,addExpert,other,invitePerson,addTwin'), [
+      TalkCreateParticipantAction.addExpert,
+      TalkCreateParticipantAction.invitePerson,
+      TalkCreateParticipantAction.addTwin,
+    ]);
     expect(parseTalkCreateActions(null), isEmpty);
     expect(parseTalkCreateActions('paid,quote,confirm'), isEmpty);
   });
@@ -139,7 +142,7 @@ void main() {
         talkId: createdTalk.id,
         initialTalk: createdTalk,
         isHost: true,
-        shareTalk: (payload) async => shared = payload,
+        shareTalk: (payload) async { shared = payload; },
         presentAiSeat: (_, {required talkId, required kind}) async {
           expect(talkId, createdTalk.id);
           shownKind = kind;
