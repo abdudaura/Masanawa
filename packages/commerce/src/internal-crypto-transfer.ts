@@ -36,7 +36,9 @@ export function validateInternalTransfer(input: InternalTransferTerms): Internal
     throw new Error("crypto.transfer.recipient_invalid");
   }
   const amount = normalizeCryptoAmount(input.amount);
-  if (amount.length > 80) throw new Error("crypto.transfer.amount_invalid");
+  if (amount.length > 80 || amount.split(".")[0]!.length > 20) {
+    throw new Error("crypto.transfer.amount_invalid");
+  }
   return { tenantId, senderUserId, recipientUserId, recipientLabel, requestId,
     asset: normalizeCryptoAsset(input.asset), network: normalizeCryptoNetwork(input.network), amount };
 }
