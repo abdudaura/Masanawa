@@ -29,6 +29,12 @@ export interface TalkProfileService {
     authorizationHeader: string | undefined;
     userId: string;
   }>): Promise<HumanProfileView>;
+  saveSelf(input: Readonly<{
+    authorizationHeader: string | undefined;
+    handle: string;
+    displayName: string;
+    bio: string;
+  }>): Promise<HumanProfileView>;
   follow(input: Readonly<{
     authorizationHeader: string | undefined;
     handle: string;
@@ -99,6 +105,38 @@ export function createTalkProfileService(input: Readonly<{
       });
       if (!profile) throw new TalkProfileError("profiles.not_found", 404);
       return profile;
+    },
+
+    async saveSelf(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const handle = normalizeHandle(request.handle);
+      const displayName = request.displayName.trim();
+      const bio = request.bio.trim();
+      if (!displayName || displayName.length > 160 ||
+          /[\\u0000-\\u001F\\u007F]/u.test(displayName)) {
+        throw new TalkProfileError("profiles.display_name_invalid", 400);
+      }
+      if (bio.length > 1000 ||
+          /[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]/u.test(bio)) {
+        throw new TalkProfileError("profiles.bio_invalid", 400);
+      }
+      try {
+        return await input.repository.saveSelf({
+          tenantId: viewer.tenantId,
+          userId: viewer.userId,
+          handle,
+          displayName,
+          bio,
+        });
+      } catch (error) {
+        // PostgreSQL unique_violation is the final arbiter of handle ownership,
+        // including simultaneous requests. Do not pre-check and race.
+        if (typeof error === "object" && error !== null &&
+            "code" in error && error.code === "23505") {
+          throw new TalkProfileError("profiles.handle_taken", 409);
+        }
+        throw error;
+      }
     },
 
     async follow(request) {
