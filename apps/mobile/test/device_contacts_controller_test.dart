@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/device_contacts/device_contacts_controller.dart';
+import 'package:masanawa/src/device_contacts/device_contacts_consent_store.dart';
 import 'package:masanawa/src/device_contacts/device_contacts_model.dart';
 
 class TestPlatform implements DeviceContactsPlatform {
@@ -31,6 +32,18 @@ class TestInvite implements DeviceContactsInvite {
   int shares = 0;
   @override
   Future<void> sharePublicInvite() async { shares++; }
+}
+
+class TestConsentStore implements DeviceContactsConsentStore {
+  final Map<String, bool> saved = {};
+  bool failWrites = false;
+  @override
+  Future<bool> optedIn(String accountId) async => saved[accountId] ?? false;
+  @override
+  Future<void> setOptedIn(String accountId, bool enabled) async {
+    if (failWrites) throw StateError('simulated secure store failure');
+    if (enabled) { saved[accountId] = true; } else { saved.remove(accountId); }
+  }
 }
 
 const one = DevicePhoneContact(
@@ -155,4 +168,37 @@ void main() {
     expect(clean.length, 10000);
     expect(clean.first.name, 'User 0');
   });
+  test('persisted opt-in is account-specific and never auto-reads phonebook', () async {
+    final os = TestPlatform()..permission = DeviceContactsPermission.granted
+      ..rows = [one];
+    final store = TestConsentStore()..saved['a'] = true;
+    final model = DeviceContactsController(
+      platform: os, invite: TestInvite(), accountId: 'a', consentStore: store);
+    await model.restoreConsent();
+    expect(model.rememberedConsent, isTrue);
+    expect(model.optedIn, isFalse);
+    expect(os.reads, 0);
+    await model.enable();
+    expect(os.reads, 1);
+    await model.disable();
+    expect(store.saved['a'], isNull);
+    expect(model.contacts, isEmpty);
+    model.accountChanged('b');
+    await model.restoreConsent();
+    expect(model.rememberedConsent, isFalse);
+    model.dispose();
+  });
+
+  test('secure consent write failure fails closed without OS permission', () async {
+    final os = TestPlatform()..permission = DeviceContactsPermission.granted;
+    final store = TestConsentStore()..failWrites = true;
+    final model = DeviceContactsController(
+      platform: os, invite: TestInvite(), accountId: 'a', consentStore: store);
+    await model.enable();
+    expect(model.optedIn, isFalse);
+    expect(os.reads, 0);
+    expect(model.error, contains('securely'));
+    model.dispose();
+  });
+
 }
