@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS security.channel_link_intents (
   window_started_at timestamptz NOT NULL,
   issued_count integer NOT NULL DEFAULT 1 CHECK (issued_count BETWEEN 1 AND 5),
   consumed_at timestamptz,
+  verified_external_id text CHECK (verified_external_id IS NULL OR length(verified_external_id) BETWEEN 1 AND 256),
+  verified_chat_id text CHECK (verified_chat_id IS NULL OR length(verified_chat_id) BETWEEN 1 AND 256),
+  CHECK ((verified_external_id IS NULL) = (verified_chat_id IS NULL)),
   PRIMARY KEY (tenant_id,user_id,channel),
   UNIQUE (code_hash),
   FOREIGN KEY (tenant_id,user_id)
