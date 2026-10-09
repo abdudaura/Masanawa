@@ -183,6 +183,50 @@ describe("C03 human DM realtime",()=>{
     expect(page).toMatchObject({events:[],nextCursor:"30",resetRequired:false});
   });
 
+  it("immediately returns an expired-cursor reset during long polling",async()=>{
+    let reads=0,authorizations=0,sleeps=0;
+    const service=createHumanDmRealtimeService({
+      repository:{async sync(){
+        reads++;
+        return {...empty,nextCursor:"30",resetRequired:true};
+      }},
+      authorizer:{async authorize(){
+        authorizations++;
+        return {tenantId:"t",userId:"u"} as never;
+      }},
+      sleep:async()=>{sleeps++;throw new Error("must not wait after reset");},
+    });
+    const page=await service.sync({cursor:"12",waitMs:15000});
+    expect(page).toEqual({
+      events:[],nextCursor:"30",hasMore:false,resetRequired:true,
+    });
+    expect(reads).toBe(1);
+    expect(authorizations).toBe(2);
+    expect(sleeps).toBe(0);
+  });
+
+  it("does not expose a reset checkpoint when auth expires during the database read",async()=>{
+    let authorizations=0,sleeps=0;
+    const service=createHumanDmRealtimeService({
+      repository:{async sync(){return {
+        ...empty,nextCursor:"30",resetRequired:true,
+      };}},
+      authorizer:{async authorize(){
+        authorizations++;
+        if(authorizations===2) {
+          throw Object.assign(new Error("revoked"),{statusCode:401});
+        }
+        return {tenantId:"t",userId:"u"} as never;
+      }},
+      sleep:async()=>{sleeps++;},
+    });
+    await expect(service.sync({cursor:"12",waitMs:15000})).rejects.toMatchObject({
+      statusCode:401,
+    });
+    expect(authorizations).toBe(2);
+    expect(sleeps).toBe(0);
+  });
+
   it("preserves DB-triggered resetRequired through the Gateway service",async()=>{
     const {app}=harness({async sync(){return {
       events:[],nextCursor:"99",hasMore:false,resetRequired:true,
