@@ -67,6 +67,22 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
+    },
+    {
+      "claim_id": "masanawa-01-af00-deeplink-20261009",
+      "owner": "MASANAWA-01",
+      "scope": "AF00: fail-closed exact-identity deep-link admission; maintain existing semantic destinations until source-reconciled shell migration; focused Dart regressions",
+      "paths": [
+        "apps/mobile/lib/src/core/shell_deep_link.dart",
+        "apps/mobile/test/shell_deep_link_test.dart",
+        "docs/workstreams/AF00-deeplink-authority-20261009.md"
+      ],
+      "branch": "work/af00-deeplink-authority-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:16:45.457Z",
+      "heartbeat_at": "2026-10-09T21:16:45.457Z",
+      "expires_at": "2026-10-09T21:21:45.457Z",
+      "notes": "Exact paths only; no shell/tab/router, auth, Gateway, finance, manifests or migration edits. Preserve #497/#493 and locally fixed app."
     }
   ],
   "history": [
