@@ -98,7 +98,45 @@ void main() {
     expect(accepted, isFalse);
     expect(sends, 1);
     expect(voice.review()?.text, 'Make a payment');
+    expect(voice.outcomeUnknown, isTrue);
     expect(voice.error, contains('Check Assistant task status'));
+    expect(await voice.submitReviewed(
+      reviewed: reviewed,
+      currentAccountId: 'a',
+      currentCharacterSessionId: 'session-a',
+      submitToAssistant: (_) async { sends++; },
+    ), isFalse);
+    expect(sends, 1); // an unknown external write must not replay
+    voice.discardUncertainDraft();
+    expect(voice.review(), isNull);
+    voice.dispose();
+  });
+
+  test('double approval taps are single-flight', () async {
+    final voice = PrivateVoiceOperator(
+        shell: _Shell(), focus: PrivateVoiceFocus());
+    await voice.bindAssistantContext(
+        accountId: 'a', characterId: 'gwani', characterSessionId: 'session-a');
+    voice.editDraft('Find nearby Talks');
+    final review = voice.review()!;
+    final completer = Completer<void>();
+    var submits = 0;
+    Future<void> dispatch(VoiceReviewDraft _) async {
+      submits++;
+      await completer.future;
+    }
+    final first = voice.submitReviewed(
+      reviewed: review, currentAccountId: 'a',
+      currentCharacterSessionId: 'session-a', submitToAssistant: dispatch,
+    );
+    final second = await voice.submitReviewed(
+      reviewed: review, currentAccountId: 'a',
+      currentCharacterSessionId: 'session-a', submitToAssistant: dispatch,
+    );
+    expect(second, isFalse);
+    expect(submits, 1);
+    completer.complete();
+    expect(await first, isTrue);
     voice.dispose();
   });
 
