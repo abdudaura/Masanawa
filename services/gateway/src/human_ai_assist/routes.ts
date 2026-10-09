@@ -28,12 +28,19 @@ function rejectUnknown(allowed: readonly string[]) {
 }
 /** Add to existing authenticated Gateway only after C01/C02 service and inference are composed. */
 export function registerHumanAiAssistRoutes(app:FastifyInstance, service:Service):void {
+  const onRequest = async (_request:FastifyRequest, reply:import("fastify").FastifyReply) => {
+    reply.header("Cache-Control","private, no-store");
+    reply.header("Pragma","no-cache");
+    reply.header("Expires","0");
+  };
   app.post("/messages/ai/prepare",{schema:{body:Prepare},
+    onRequest,
     preValidation:rejectUnknown(["conversationId","messageIds","purpose","language","redact","disclosureConfirmed"])},async request => service.prepare({
     ...(request.body as Omit<Parameters<Service["prepare"]>[0],"authorizationHeader">),
     ...(request.headers.authorization === undefined ? {} : {authorizationHeader:request.headers.authorization}),
   }));
   app.post("/messages/ai/send-reviewed",{schema:{body:Send},
+    onRequest,
     preValidation:rejectUnknown(["reviewToken","recipientUserId","reviewedBody","confirmed"])},async request => service.sendReviewed({
     ...(request.body as Omit<Parameters<Service["sendReviewed"]>[0],"authorizationHeader">),
     ...(request.headers.authorization === undefined ? {} : {authorizationHeader:request.headers.authorization}),

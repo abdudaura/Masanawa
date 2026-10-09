@@ -35,6 +35,7 @@ describe("U08 HTTP authority and canonical reviewed send",()=>{
         const response=await d.app.inject({method:"POST",url:"/messages/ai/prepare",
           headers:{authorization:"Bearer alice"},payload:{...prepare,...extra}});
         expect(response.statusCode).toBe(400);
+        expect(response.headers["cache-control"]).toBe("private, no-store");
       }
       expect(d.headers).toEqual([]);
       expect(d.sends).toEqual([]);
@@ -43,10 +44,13 @@ describe("U08 HTTP authority and canonical reviewed send",()=>{
   it("requires the genuine bearer and forwards its identity through prepare and send",async()=>{
     const d=setup(true);
     try{
-      expect((await d.app.inject({method:"POST",url:"/messages/ai/prepare",payload:prepare})).statusCode).toBe(401);
+      const denied=await d.app.inject({method:"POST",url:"/messages/ai/prepare",payload:prepare});
+      expect(denied.statusCode).toBe(401);
+      expect(denied.headers["cache-control"]).toBe("private, no-store");
       const response=await d.app.inject({method:"POST",url:"/messages/ai/prepare",
         headers:{authorization:"Bearer alice"},payload:prepare});
       expect(response.statusCode).toBe(200);
+      expect(response.headers["cache-control"]).toBe("private, no-store");
       const {reviewToken}=response.json<{reviewToken:string}>();
       const body={reviewToken,recipientUserId:"bob",reviewedBody:"My reviewed reply",confirmed:true};
       expect((await d.app.inject({method:"POST",url:"/messages/ai/send-reviewed",
@@ -54,6 +58,7 @@ describe("U08 HTTP authority and canonical reviewed send",()=>{
       const sent=await d.app.inject({method:"POST",url:"/messages/ai/send-reviewed",
         headers:{authorization:"Bearer alice"},payload:body});
       expect(sent.statusCode).toBe(200);
+      expect(sent.headers["cache-control"]).toBe("private, no-store");
       expect(sent.json()).toEqual({messageId,conversationId});
       expect(d.sends).toHaveLength(1);
       expect(d.sends[0]).toMatchObject({authorizationHeader:"Bearer alice",body:"My reviewed reply"});
