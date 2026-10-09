@@ -118,8 +118,12 @@ export function createPrivateVoiceNoteService(input:Readonly<{
    const record=await input.repository.find({...identity,messageId});
    if(!record)throw new VoiceNoteError("messages.voice.unavailable",404);
    let bytes:Buffer;
-   try{bytes=await input.objects.get(record.objectKey,MAX_VOICE_BYTES)}
-   catch{throw new VoiceNoteError("messages.voice.storage_unavailable",503)}
+   try {
+    // The provider may reuse or mutate its response buffer after resolving.
+    // Copy before the authorization/SQL awaits, then verify and serve only
+    // that immutable per-request snapshot.
+    bytes=Buffer.from(await input.objects.get(record.objectKey,MAX_VOICE_BYTES));
+   } catch {throw new VoiceNoteError("messages.voice.storage_unavailable",503)}
    verified(bytes,record);
    const reread=await input.repository.find({...identity,messageId});
    if(!reread||reread.objectKey!==record.objectKey||
@@ -141,8 +145,25 @@ export function createPrivateVoiceNoteService(input:Readonly<{
    const rows=await input.repository.stale(limit);
    let deleted=0,failed=0;
    for(const row of rows) {
-     try{await input.objects.delete(row.objectKey);await input.repository.deleted(row.objectKey,true);deleted++}
-     catch{failed++;await input.repository.deleted(row.objectKey,false)}
+     let storageErased=false;
+     try {
+       await input.objects.delete(row.objectKey);
+       storageErased=true;
+       await input.repository.deleted(row.objectKey,true);
+       deleted++;
+     } catch {
+       failed++;
+       if(!storageErased) {
+         // Failed storage DELETE is never proof of erasure. Best-effort
+         // release the SQL claim; if even that fails, the existing 15-minute
+         // deleting-state lease allows the next worker to reclaim it.
+         try{await input.repository.deleted(row.objectKey,false)}catch{}
+       }
+       // If storage DELETE succeeded but its SQL finalization failed, keep
+       // the 'deleting' journal row for a safe idempotent retry. Never write
+       // deleted(false) over an uncertain erasure commit.
+       // One failed key must not prevent other claimed keys from cleanup.
+     }
    }
    return {deleted,failed};
   },
