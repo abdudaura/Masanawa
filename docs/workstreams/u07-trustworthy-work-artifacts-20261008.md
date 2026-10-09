@@ -1,99 +1,81 @@
-# U07 — Trustworthy work artifacts handoff
+# U07 — Verified work artifacts: implementation and integration handoff
 
-Updated (UTC): 2026-10-09T01:09:15Z. Owner/window: autonomous Work 88b2711eedab.
-Status: **PARTIAL_IMPLEMENTATION / ISOLATED / DRAFT / UNMERGED**.
+Updated UTC: 2026-10-09T01:12:00Z.
+Owner/window: autonomous Work 88b2711eedab.
 PR: https://github.com/Baatiku/masanawa/pull/524
 Branch: `work/u07-verified-work-artifacts-20261009`
 Base main: `5e758673ae91082520b21b3153da53791ae2cbf3`.
-Current source/test checkpoint: `89bcb823c849991f90356c62ab181422640b1eac`.
-The final pushed handoff HEAD is recorded in the PR body after this file is committed.
+Latest tested source commit: `d97a01cf85921a970036d00f6d12dedd4aa4b48a`.
+Final handoff-only HEAD is recorded in the PR body after publication.
+Status: **PARTIAL_IMPLEMENTATION / ISOLATED / DRAFT / UNMERGED**.
 
-## Claim and recovery
+## Ownership and continuation
 
-Initial claim commit `f1590af294b7378204ee4bb4916185729fe9d0c2` was published in #524 at 2026-10-09T00:08:56Z, before source writes.
-The original claim text incorrectly said 00:15Z; the immutable commit/PR timestamp above is authoritative.
-Ownership renewed at this update after checking current PR/head and all matching U07 branches; only this U07 branch was returned.
-Exact owned paths: `services/gateway/src/work_artifacts/**`, `apps/mobile/lib/src/work_artifacts/**`, `apps/mobile/test/work_artifacts/**`, this handoff.
-U07 owned module lease renewed for account-erasure source hooks and additional verification. Shared F11/F18/F08/F12/U04 composition remains with its elected owners; no shared files are claimed.
+Initial claim commit f1590af294b7378204ee4bb4916185729fe9d0c2 was published at 2026-10-09T00:08:56Z, before source writes. The original text's 00:15 timestamp was incorrect; immutable GitHub timestamps are authoritative.
+Ownership was renewed before both continuations, after live main, PR and scope/branch inspection. Main remains unchanged. Existing U01–U30 and foundation branches were preserved.
+Exact owned paths: services/gateway/src/work_artifacts/**; apps/mobile/lib/src/work_artifacts/**; apps/mobile/test/work_artifacts/**; this handoff.
+No shared composition, migration registry, router, theme, pubspec, Firebase or financial source was changed.
+Owned implementation and available verification are checkpointed; exclusive lease is released to coordinated integration/review owners. Do not create a second U07 implementation.
 
-Read order: CONTINUE-HERE; unfinished reconciliation; expanded U/F allocation; U execution workbook; MULTI-WINDOW-WORK; final consolidation handoff; operator V1; human Chat privacy; implementation kickoff and actual object-store/auth/contracts source.
-No applicable AGENTS.md was found in the inspected main/C04 trees.
-Live discovery preserved existing U01–U06 branches, U21–U30 PRs, C04 #478 and Work #497.
-U07 was the next available source scope at selection. No existing U07 implementation was replaced.
-Acceptance references: U07, K09; inherited R12/R15/R16 and C07/C08 qualification remains open.
+Read: CONTINUE-HERE, unfinished reconciliation, expanded U/F allocation, execution workbook, MULTI-WINDOW-WORK, final consolidation, operator V1, human Chat privacy and actual canonical storage/auth/task contracts. No applicable AGENTS.md was found.
+U07 was the next genuinely available substantive scope at initial selection. Acceptance: U07/K09, with inherited R12/R15/R16/C07/C08 gates.
 
-## Implemented source
+## Implemented source — 22 module/test/guide files plus this handoff
 
-| Layer | Files/functionality |
-| --- | --- |
-| Model/service | `model.ts`, `service.ts`: real bounded UTF-8 text artifacts, canonical injected IDs, exact request/content/name/lifetime/provenance idempotency; generating/ready/failed/revoked/deleting/deleted states; SHA-256 and size readback before ready; no invented file URLs |
-| Persistence | `schema.sql`, `postgres.ts`: proposed durable file journal, owner/request uniqueness, owner+tenant CAS revisions, paginated owner list, bounded grants, physical-delete retry and tombstone sweep; atomic DB-clock 20 creation attempts/account/UTC day |
-| Private storage | `private_store.ts`: narrow artifact-content adapter using existing private S3 configuration/signing/SSE policy, 15-second deadlines, no redirects/public URL, bounded streamed reads |
-| Auth/API | `routes.ts`, `composition.ts`: current PlatformCustomerSessionAuthorizer; strict body schemas, typed safe errors; session recheck before bytes or filename/hash headers; no-store/nosniff; internal operator provenance cannot be supplied through HTTP |
-| Task bridge | `task_adapter.ts`: consumes structural U02 actor/task interfaces; requires owner/session/private Assistant/files.create v1/running-or-reconciling and exact operation; actual text persistence and separate byte-verified readback; never reruns generation on reconciliation |
-| Flutter | `work_artifact.dart`, `artifact_controller.dart`, `artifact_card.dart`: existing ApiClient transport, bounded download, plain-text preview, explicit save/share/revoke/delete, current-account cancellation and stale result fencing, RAM preview purge, no offline download fallback; existing file_picker only |
-| Tests | Node handler/security/lifecycle/storage tests; separate real Fastify and disposable PostgreSQL harnesses; five Flutter controller/DTO tests authored |
-| Integration guide | Backend `README.md` records actual exported functions, API contracts and exact F11/F18/F08/F12 composition steps |
+- model.ts, service.ts: real bounded UTF-8 .txt, exact owner/request/content/name/lifetime/provenance idempotency; immutable content; generating/ready/failed/revoked/deleting/deleted journal; SHA-256 and size readback before ready; recover existing stored bytes without repeating generation.
+- schema.sql, postgres.ts: proposed unregistered schema with profile FKs, owner/request uniqueness, revision CAS, owner paging, bounded recipient grants, durable deletion retry, fair bounded cleanup with tombstone late-PUT sweep, atomic DB-clock 20 creation attempts/account/day.
+- private_store.ts: existing private S3 policy adapter, SigV4/SSE/no-store, 15-second deadlines, bounded reads, no public URLs; signed HEAD current-key absence probe. A HEAD 404 does NOT prove deletion of retained versions/replicas.
+- routes.ts, composition.ts: actual composition factory and current PlatformCustomerSessionAuthorizer API. Strict body schemas, safe errors, authenticated 60-second actor/revision tickets; current access/session recheck before bytes or filename/hash headers. Public creation cannot assert operator provenance.
+- task_adapter.ts: structural actual U02 actor/task subset; private files.create v1, owner/session/exact operation and admitted phase. Persist actual generated text; confirm receipt only after separate byte readback; reconcile never regenerates.
+- account_erasure.ts: real trusted F08 worker hook. Mandatory durable write-quiescence and qualified provider-erasure policies; 50 files/batch plus lookahead, owner isolation, revoke/grant clearing, re-delete tombstones, erasure verification, post-I/O fence checks, CAS and retryable journal. Returns trusted worker cursor only on successful batch. Retains metadata for F08's coordinated final transaction. No HTTP exposure or whole-account completion assertion.
+- Flutter work_artifact.dart, artifact_controller.dart, artifact_card.dart: canonical ApiClient transport/current account getter, bounded streamed attachment verification, cancel/stale fencing, RAM plain-text preview purge, fresh authorization for export, existing file_picker save, explicit consented share/revoke/delete/recover and optional real C01 recipient picker. No extra tab.
+- tests: service.test.mjs, routes.test.mjs, account_erasure.test.mjs, register.mjs; actual Fastify, embedded PostgreSQL, composed HTTP/SQL/filesystem flow and disposable server-PG harnesses; five Flutter controller/DTO tests.
+- README.md: exact API, composition, worker cursor/fence/erasure policies and commands.
 
-No production, Firebase, financial ledger, shared Gateway app.ts/main.ts, migration registry, root router, pubspec, theme or other window's branch was modified.
-One supported format is implemented: inert UTF-8 .txt, 1–262144 bytes. Arbitrary binary uploads/PDF generation and antivirus qualification are not promised.
+One format: inert UTF-8 .txt, 1–262144 bytes. Binary/PDF/antivirus capability is not implemented. Exported copies cannot be remotely erased.
 
 ## Executed verification
 
-- Node 24.19.0: `node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/*.test.mjs` — **27 passed, 0 failed, 0 skipped**, exit 0.
-- This runs exact authored TypeScript runtime sources with native type erasure. It is NOT a TypeScript build/typecheck.
-- Real temporary file I/O proves text -> file -> checksum readback -> actor-bound download; metadata repositories and authorization providers in these tests are injected test doubles.
-- Covered cross-account/tenant access, explicit recipient grants, expiry/block/revocation, stale ticket/revision, task cancellation during upload, lost PUT response/recovery, checksum drift, denied task origin, bounded data/filename handling, interrupted deletion and late-object sweep.
-- Handler tests exercise current-session revocation, no metadata header leaks on 401, strict schema declarations and safe exception responses. They are NOT a running Fastify HTTP test.
-- Remote Git tree comparison: all **18 local source/test/guide files exactly match their Git blob SHAs** at source checkpoint above.
-- GitHub comparison at that checkpoint: 8 commits ahead of main, 0 behind, 19 added paths, all inside owned boundaries.
-- Additional reviewed fixes reject Unicode/malformed ticket signatures with 403 rather than a server error, and invalid request/recipient/cursor IDs with typed 400 rather than retryable 503. Regression cases pass.
-- Initial test command without preloading the import resolver failed on .js -> .ts resolution; corrected --import command above executed successfully. No application test failure was hidden.
+Node 24.19.0: 34 unit/handler tests and 3 integration cases, **37 passed / 0 failed / 0 skipped**:
 
-## Not executed / precise blockers
+```sh
+node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/*.test.mjs services/gateway/src/work_artifacts/tests/fastify.integration.mjs services/gateway/src/work_artifacts/tests/embedded_postgres.integration.mjs services/gateway/src/work_artifacts/tests/flow.integration.mjs
+```
 
-- Full workspace TypeScript build and Gateway typecheck: tsc/installed workspace dependencies unavailable; direct authenticated git clone failed. Node runtime tests do not replace this gate.
-- Fastify HTTP harness: Fastify package unavailable in this environment. Command: `node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/fastify.integration.mjs`.
-- PostgreSQL harness: no pg package, disposable PG server/connection provided. Command in README requires explicit MASANAWA_ARTIFACT_DISPOSABLE=yes and empty masanawa_test_* DB; refuses nonempty/non-test targets and rolls back its DDL. Minimal profile FK fixture does not qualify the whole platform migration chain.
-- Flutter analyze/controller tests/Android: Flutter and Dart SDK absent. Run `cd apps/mobile && flutter analyze lib/src/work_artifacts test/work_artifacts && flutter test test/work_artifacts`, then Android/session/file-picker/two-user/device checks.
-- Live private S3, bucket ACL/SSE/retention, actual C01 grant/block checks, full U02/U04 task and worker composition, account deletion: no qualified credentials/composed runtime available.
-- CI #457 remains the designated shared Actions incident; no CI success or repair is claimed here.
+The final flow regression passed again after the last harness edit. Fastify is main's pinned 5.12.5; pg 8.16.3; PGlite 0.3.14; exact main contracts with uuid 14.0.2. Temporary verification dependencies were not added to application manifests.
+HTTP flow uses the actual composeWorkArtifacts, canonical IDs, exact SQL journal, temporary physical files, create/readback/idempotency/share/block/revoke/auth-denial/cleanup/late-object erasure. Auth/contact policies remain injected test adapters.
+Embedded PostgreSQL executes exact DDL, constraints, uniqueness, CAS, quota reset/cap, cleanup and account erasure. It does NOT prove multi-process server locking or the full canonical migration chain.
+Seven owned backend modules, including composition with actual main contracts, pass TypeScript 5.9.3 under main's strict compiler options:
 
-## Remaining source integration and next exact actions
+```sh
+./node_modules/.bin/tsc --noEmit --strict --target ES2024 --lib ES2024 --module NodeNext --moduleResolution NodeNext --verbatimModuleSyntax --isolatedModules --exactOptionalPropertyTypes --noUncheckedIndexedAccess --noImplicitOverride --useUnknownInCatchVariables --forceConsistentCasingInFileNames --types node services/gateway/src/work_artifacts/model.ts services/gateway/src/work_artifacts/service.ts services/gateway/src/work_artifacts/postgres.ts services/gateway/src/work_artifacts/private_store.ts services/gateway/src/work_artifacts/task_adapter.ts services/gateway/src/work_artifacts/account_erasure.ts services/gateway/src/work_artifacts/composition.ts
+```
 
-1. F11 assign/register schema.sql once after platform profiles; execute exact schema/CAS/uniqueness/quota tests and full canonical migration order. Never add a competing numbered migration.
-2. F18 bind the canonical pool and existing private storage, server-only dedicated ticket secret, current account quota/admission, reciprocal C01 contact/block/deletion policy and owner-scoped current U02 task+operation predicate. No always-allow defaults are shipped.
-3. F18 register routes with the real session authorizer and sensitive-log redaction; preserve C/R and Work #497 composition. Validate schema rejection and session rotation/revocation on HTTP.
-4. U04/U01 register files.create v1 with the existing U02 execution engine using task_adapter.ts; pass actual generated text and actual task/operation state. No parallel approval/task engine.
-5. Worker integrator schedule bounded sweep(). Test simultaneous PUT/delete, retry after worker loss, actual S3 consistency and physical erasure.
-6. F08 disable new account access, remove owner objects, verify erasure, then remove metadata/quota rows before profile FK deletion. This deletion hook is not yet composed.
-7. F12/C07 mount the result card in the one private Assistant; bind current tenant/user session transitions and existing C01 accepted-person picker. Run five Flutter tests plus actual offline/account-switch/share/export/revoke flows.
+This is scoped typechecking, not full Gateway/auth/routes build.
+Remote Git blob verification matched all 22 local source/test/guide files at a0467ae7fd5e70f938b0f70f0b66ee6617974c81; the sole later source change is the exact API-published, passing final flow harness.
+Earlier runtime-only tests missed a Buffer generic inference issue; typechecking found it and the bounded Uint8Array request-body copy fixes it. Unicode ticket signatures and malformed canonical IDs have typed rejection regressions. The new flow initially expected 410 for a recipient after revocation; actual 404 correctly hides inaccessible files, and the test was corrected. No failure was concealed.
 
-The exact composition details and commands are in `services/gateway/src/work_artifacts/README.md`.
-Known dependencies: U01 #519; U02 #520 (contract inspected at 36e412b59f080048a034aa0cffd697276e19f9ba); C01 #468; C07 #480; F12 #493; shared Work #497.
-C04 #478 source was inspected at 9cd1f2f4dcd97a377cf40326d6faa9dc6129a333 for private-storage policy; no C04 implementation was copied into or replaced by U07.
+## External blockers and precise integration actions
 
-## Security, retention and rollback
+1. **F11 #518:** number/register schema.sql once after security.platform_user_profiles, preserve the elected manifest, run full canonical migrations and real multi-client uniqueness/CAS/quota/cleanup locking. No competing numbered migration.
+2. **Work/F18 #497:** compose canonical pool, qualified existing private storage, dedicated server-only key, actual global quota/active-account guard, reciprocal current C01 access and exact current U02 task/operation authorization. Register routes with real session authorizer/log redaction and schedule bounded cleanup.
+3. **U01 #519 / U02 #520 / U04 #523:** bind files.create v1 to the existing task executor using the shipped adapter. U02 inspected at 36e412b59f080048a034aa0cffd697276e19f9ba. No second approval/task engine.
+4. **F08:** mount domain.accountErasure({isQuiesced,verifyErasure}) only after durable admission denial and all uncertain PUTs are drained. Start without cursor; store next only after success; retry failed batch unchanged. Verify all provider versions/replicas. Keep fence permanent, then remove artifact metadata/quota in the existing coordinated deletion transaction before profile FK removal. A signed-out screen or S3 delete marker is insufficient.
+5. **F12 #493 / C07 #480:** mount ArtifactCard in the single private Assistant using actual media-artifact result references, canonical ApiClient/current account transition binding and accepted-person picker from C01 #468. Qualify offline/export/share/revoke/account-switch flows.
+6. **Environment gates:** full Gateway workspace build/auth/routes typecheck, server-PG harness/concurrency, Flutter analyzer/five authored tests, Android/two-user/device and live S3 private/SSE/retention/erasure qualification remain unexecuted. Direct authenticated clone failed; Flutter/Dart/device/provider credentials are unavailable. A downloaded disposable PostgreSQL 18.4 binary was tested for availability, but initdb could not run: runtime rejected chown/user switching (Invalid argument/Operation not permitted). No existing server or production system was touched. Embedded SQL evidence remains distinct.
+7. CI #457 is still the elected shared incident; no Actions success/repair claim.
 
-Tickets require both current authentication and current access; no public object URL. Recipient reads exclude private task/operation provenance and other grants.
-Ready requires actual stored bytes. Unknown/failed generation never becomes success from a model statement. Recovery reads existing bytes only.
-Previously delivered/exported copies cannot be revoked remotely; the UI explains this before export/revocation.
-Text is inert; HTML-like strings are served as text/plain attachments and rendered as plain text.
-Deleted metadata is retained for bounded late-PUT cleanup; physical-object and account erasure still require the integration worker and provider verification.
-No applied migration or deployment to roll back. Keep capability/routes hidden until integration qualifies them. If later enabled, disable the capability/route admission and preserve cleanup evidence rather than dropping tables with live objects.
+Coordination posted to Work #497: https://github.com/Baatiku/masanawa/pull/497#issuecomment-6072180656
+C04 #478 at 9cd1f2f4dcd97a377cf40326d6faa9dc6129a333 informed private-storage policy without replacing its source.
+Exact integration/API instructions: services/gateway/src/work_artifacts/README.md.
 
-## Release gates
+## Security, rollout and rollback
 
-SOURCE_WRITTEN: yes for owned text-artifact modules and tests.
-LOCAL_TESTED: yes for Node runtime/handler tests; no for Flutter/Fastify/PG.
-CI_EXECUTED: unverified.
-DB_INTEGRATED: no.
-APP_INTEGRATED: no.
-DEVICE_VERIFIED: no.
-PROVIDER_QUALIFIED: no.
-DEPLOYED: no.
-MERGED: no.
+No permissive production policy callbacks, public object URLs, model completion claims or client-assigned identity/provenance.
+Tickets require current auth and access; recipient DTOs hide private task/operation details and other grants. Revocation is enforced after I/O.
+Erasure verification requires provider policy beyond current-key readability, and the hook never removes recovery evidence itself.
+No migration applied, deploy, merge, branch deletion, production modification or spending. Keep capability hidden until qualified integration. Once enabled, disable admission/routes on rollback and preserve deletion evidence rather than dropping metadata with live objects.
 
-Overall remains PARTIAL_IMPLEMENTATION because shared source composition is missing. Do not mark U07/K09 DONE or merge from the local tests alone.
-
-Continuation checkpoint: account_erasure.ts, signed HEAD probe and 37 passing Node/HTTP/embedded-SQL cases pushed at 6c06eb23b4d1a64b46fa2fa6d1a62fa1c91c1c68. Six core modules pass strict TypeScript. Work dependency coordination posted to #497 comment 6072180656. Verifying the canonical composition next; shared files remain unclaimed.
+SOURCE_WRITTEN yes; LOCAL_RUNTIME_TESTED yes; SCOPED_BACKEND_TYPECHECK yes.
+DB_INTEGRATED no; APP_INTEGRATED no; FULL_WORKSPACE_BUILD no; DEVICE_VERIFIED no; PROVIDER_QUALIFIED no; CI_SUCCESS unverified; DEPLOYED no; MERGED no.
+Overall U07/K09 remains partial because elected shared integration and qualification are outstanding.
