@@ -17,20 +17,32 @@ function strictBody(allowed: readonly string[]) {
   };
 }
 
+/** Contact discovery and relationship status are private, session-bound data.
+ * Attach this to each C01 route at onRequest so even authorization failures,
+ * schema-validation errors and service exceptions carry no-store headers.
+ * Do not install a global hook or change unrelated Gateway/financial routes. */
+async function preventContactCaching(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  reply.header("Cache-Control", "no-store");
+  reply.header("Pragma", "no-cache");
+  reply.header("Expires", "0");
+}
+
 /** Register only when real contact repository and canonical session authorizer exist. */
 export function registerHumanContactRoutes(app: FastifyInstance, service: HumanContactService): void {
   app.get("/messages/contacts/lookup/:handle", {
+    onRequest: preventContactCaching,
     schema: { params: Type.Object({ handle: Type.String({ minLength: 2, maxLength: 41 }) }, { additionalProperties: false }) },
   }, async (request) => service.lookup({
     authorizationHeader: request.headers.authorization,
     handle: (request.params as { handle: string }).handle,
   }));
 
-  app.get("/messages/contacts/preferences", async (request) => service.ownPreferences({
+  app.get("/messages/contacts/preferences", { onRequest: preventContactCaching }, async (request) => service.ownPreferences({
     authorizationHeader: request.headers.authorization,
   }));
 
   app.patch("/messages/contacts/preferences", {
+    onRequest: preventContactCaching,
     preValidation: strictBody(["policy", "discoverableByHandle"]),
     schema: { body: Type.Object({
       policy: Type.Optional(Type.Union([Type.Literal("anyone"), Type.Literal("requests"), Type.Literal("nobody")])),
@@ -42,6 +54,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   }));
 
   app.post("/messages/contacts/requests", {
+    onRequest: preventContactCaching,
     preValidation: strictBody(["handle"]),
     schema: { body: Type.Object({ handle: Type.String({ minLength: 2, maxLength: 41 }) }, { additionalProperties: false }) },
   }, async (request) => service.request({
@@ -50,6 +63,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   }));
 
   app.post("/messages/contacts/requests/:requesterId/response", {
+    onRequest: preventContactCaching,
     preValidation: strictBody(["accept", "requestRevision"]),
     schema: {
       params: Type.Object({ requesterId: Type.String({ minLength: 3, maxLength: 256 }) }, { additionalProperties: false }),
@@ -66,6 +80,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   }));
 
   app.delete("/messages/contacts/:otherUserId", {
+    onRequest: preventContactCaching,
     schema: { params: Type.Object({ otherUserId: Type.String({ minLength: 3, maxLength: 256 }) }, { additionalProperties: false }) },
   }, async (request) => service.revoke({
     authorizationHeader: request.headers.authorization,
@@ -74,6 +89,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
 
   // Additive cursor API. The old /messages/contacts response remains unchanged.
   app.get("/messages/contacts/page", {
+    onRequest: preventContactCaching,
     schema: { querystring: Type.Object({
       limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
       cursor: Type.Optional(Type.String({ minLength: 8, maxLength: 1024, pattern: "^[A-Za-z0-9_-]+$" })),
@@ -88,6 +104,7 @@ export function registerHumanContactRoutes(app: FastifyInstance, service: HumanC
   });
 
   app.get("/messages/contacts", {
+    onRequest: preventContactCaching,
     schema: { querystring: Type.Object({ limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) }, { additionalProperties: false }) },
   }, async (request) => {
     const { limit } = request.query as { limit?: number };
