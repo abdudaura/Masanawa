@@ -63,7 +63,7 @@ class TwinTrainingFlow extends ChangeNotifier {
   }
 
   void setConsent(bool value) {
-    if (_disposed || busy || view?.confirmed == true) return;
+    if (_disposed || busy || view?.ready == true) return;
     consentToRepresentSelf = value;
     _changed();
   }
@@ -195,8 +195,9 @@ class TwinTrainingFlow extends ChangeNotifier {
   }
 
   Future<bool> confirmCreation() async {
-    if (_disposed || requiresRefresh || !consentToRepresentSelf ||
-        view?.state != 'preview' && view?.state != 'confirmed') return false;
+    if (_disposed || requiresRefresh ||
+        (view?.state != 'preview' && view?.state != 'confirmed') ||
+        (view?.state == 'preview' && !consentToRepresentSelf)) return false;
     final saved = await _run(() => onboarding.confirm());
     if (saved) step = view?.ready == true ? TwinInterviewStep.ready : TwinInterviewStep.recover;
     return saved;
@@ -235,7 +236,6 @@ class TwinTrainingFlow extends ChangeNotifier {
   void invalidateAccount() {
     if (_disposed) return;
     _generation++;
-    onboarding.dispose();
     requiresRefresh = true;
     consentToRepresentSelf = false;
     reviewedPrivateTest = false;
