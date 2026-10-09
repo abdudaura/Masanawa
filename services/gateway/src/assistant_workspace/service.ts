@@ -185,6 +185,22 @@ export function createAssistantWorkspaceService(input: Readonly<{
           }),
         })),
       );
+      // A directory preference or support-agent assignment can change while
+      // the independent history reads are awaiting storage. Reauthorize the
+      // role-to-Character mapping *after* both reads before attributing or
+      // returning historical content to the caller. This is only a snapshot
+      // consistency fence, not a substitute for atomic task authorization.
+      const current = await roles(authorizationHeader);
+      if (current.activeRole !== activeRole ||
+          current.roles.gwani.characterId !== authorized.gwani.characterId ||
+          current.roles.gwana.characterId !== authorized.gwana.characterId ||
+          current.roles.gwani.characterVersionId !== authorized.gwani.characterVersionId ||
+          current.roles.gwana.characterVersionId !== authorized.gwana.characterVersionId) {
+        throw rejected(
+          "assistant.workspace_changed",
+          "Assistant configuration changed. Refresh the workspace.",
+        );
+      }
       const messages = perRole.flatMap(({ role, characterId, messages }) =>
         messages.map(message => Object.freeze({
           role,
