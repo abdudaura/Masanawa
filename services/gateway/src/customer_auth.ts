@@ -205,6 +205,9 @@ export function createCustomerAuthService(input: Readonly<{
       } catch {
         throw new CustomerAuthError("VALIDATION_FAILED", 400);
       }
+      // Reject unsupported channels before creating a persistent OTP challenge.
+      // An unavailable SMS adapter must not leave a ghost cooldown or challenge.
+      const channelDelivery = delivery(normalized.channel);
       const code = createOtpCode();
       const createdAt = now();
       const codeHash = hashOtpCode({
@@ -232,7 +235,7 @@ export function createCustomerAuthService(input: Readonly<{
         throw error;
       }
       try {
-        await delivery(normalized.channel).send({ identifier: normalized.identifier, code });
+        await channelDelivery.send({ identifier: normalized.identifier, code });
       } catch {
         await input.repository.cancelOtpChallenge({
           tenantId: input.tenantId,
@@ -326,14 +329,21 @@ export function createCustomerAuthService(input: Readonly<{
       const rotatedAt = now();
       const accessToken = mintPlatformSessionToken("access");
       const refreshToken = mintPlatformSessionToken("refresh");
-      const identity = await input.repository.rotateRefresh({
-        refreshHash,
-        nextAccessHash: hashPlatformSessionToken(accessToken),
-        nextRefreshHash: hashPlatformSessionToken(refreshToken),
-        accessExpiresAt: plusSeconds(rotatedAt, accessTtlSeconds),
-        refreshExpiresAt: plusSeconds(rotatedAt, refreshTtlSeconds),
-        rotatedAt,
-      });
+      let identity: PlatformSessionIdentity | null;
+      try {
+        identity = await input.repository.rotateRefresh({
+          refreshHash,
+          nextAccessHash: hashPlatformSessionToken(accessToken),
+          nextRefreshHash: hashPlatformSessionToken(refreshToken),
+          accessExpiresAt: plusSeconds(rotatedAt, accessTtlSeconds),
+          refreshExpiresAt: plusSeconds(rotatedAt, refreshTtlSeconds),
+          rotatedAt,
+        });
+      } catch {
+        // A storage outage is not an invalid credential and may be retried.
+        // Do not disclose repository exceptions or token material.
+        throw new CustomerAuthError("AUTH_UNAVAILABLE", 503);
+      }
       if (!identity) throw new CustomerAuthError("SESSION_NOT_FOUND", 401);
       return Object.freeze({
         accessToken,
@@ -346,13 +356,20 @@ export function createCustomerAuthService(input: Readonly<{
     async logout(request) {
       const token = bearer(request.authorizationHeader);
       if (!token) return;
+      let accessHash: string;
+      try {
+        accessHash = hashPlatformSessionToken(token);
+      } catch {
+        throw new CustomerAuthError("UNAUTHORIZED", 401);
+      }
       try {
         await input.repository.revokeAccess({
-          accessHash: hashPlatformSessionToken(token),
+          accessHash,
           revokedAt: now(),
         });
       } catch {
-        return;
+        // Never claim a server logout succeeded while a session may remain valid.
+        throw new CustomerAuthError("AUTH_UNAVAILABLE", 503);
       }
     },
   });
