@@ -24,7 +24,7 @@ AF02 calls AF01 escrow primitives through an explicit transaction boundary. Orde
 
 Receipt = { operationId, kind, status, source/destination amounts, fees, timestamps, authorized recipient/context, ledgerRef, qualified providerRef?, failureCode?, supportRef }. Status lookup after uncertain execution precedes resubmission.
 
-## Assistant purchase draft — AF04 exports
+## Gwani purchase draft — AF04 exports
 
 PurchaseDraft = { taskId, accountId, revision, service, selectedOptions, missingFields, recipient, amount, quoteRef?, consentRef?, status }. Menus, text and voice submit intent updates to this same draft. Server validates product/market availability. Any material edit invalidates quote/consent. The service catalogue is versioned data; no menu may invent a purchasable item.
 
@@ -53,3 +53,7 @@ ScheduledPublication = { publicationId, personaId, scheduleTimezone, dueAt, occu
 AF00 alone registers routes, migration manifests, package exports, services and workers. Other lanes supply isolated route factories/repository constructors plus tests and exact composition instructions. New SQL proposals stay in lane modules until unique migration names and ordering are allocated; never edit applied files.
 
 AF00 integrates contract-first, tests latest combined SHA, and publishes compatibility/deep-link mappings. Contracts do not relax existing authorization, retention, deletion, provider eligibility or private/public separation.
+
+## Confirmed navigation contract
+
+Ordered semantic keys: chats, rooms, talks, gwani, wallet. Ordinary authenticated home launch defaults to talks (index 2). Explicit authenticated deep-link/incoming-call destinations override the launch default; background resume preserves in-flight state. Consumer Assistant label is Gwani, while existing internal assistant API/task keys remain compatible. AF00 alone composes routes and migrates versioned old index/name storage. Calls are nested in Chats; Masana & Contacts opens from New chat.

@@ -34,3 +34,7 @@ Every journey initially NOT_RUN. Record exact code SHA and APK checksum/package/
 Relevant build/unit/contract/negative evidence supports source integration; real complete-boundary evidence supports VERIFIED_E2E. Deployed qualification and rollback are additional. A document-link checker, screenshot, health 200 or compiled APK cannot promote a financial/audio/provider journey to PASS_REAL.
 
 The safe release gate includes funded liquidity/backing rules, provider/regulatory qualification, dispute staffing, balanced/reconciled ledger, identity/transaction authorization, full audio/media permissions, secure signed APK/Firebase continuity, backup/restore, monitoring/cost limits and rollback. Unknown/unexecuted dependencies stay explicit.
+
+## Confirmed navigation acceptance extension
+
+UX-A03 additionally requires exact ordered tabs Chats · Rooms · Talks · Gwani · Wallet, Talks centre/index 2 and ordinary authenticated home-launch default, renamed Gwani accessible label, no bottom Calls/Contacts/Agents tab, validated explicit-destination precedence, non-destructive resume, semantic old saved-tab migration and unchanged private AI/human route meanings. AF00 implements; AF13 verifies on device. See [completeness audit](AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md) for unresolved boundaries; none is automatically PASS.

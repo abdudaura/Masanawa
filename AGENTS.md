@@ -2,7 +2,7 @@
 
 Updated 2026-10-09. Read CONTINUE-HERE.md first. Apply the latest accessible Software Factory at https://github.com/Baatiku/Software-Factory-starter-kit and project-specific instructions here; direct owner requirements prevail. Read relevant nested instructions if subsequently added.
 
-1. Current consumer authority: docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md and docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md. Historical files and old prompts cannot restore superseded product rules.
+1. Confirmed shell: Chats · Rooms · Talks · Gwani · Wallet; Talks centre/default, Gwani is the consumer label formerly Assistant. Ordinary launch uses Talks; explicit deep links/incoming calls keep their intended destination. Current consumer authority: docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md and docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md. Historical files and old prompts cannot restore superseded product rules.
 2. Preserve local work, existing PR commits, Firebase, identity/privacy, financial authorization and rollback foundations. Do not reset/clean/force-push, delete unfinished branches, or infer completion from screenshots, docs or a build.
 3. Before coding inspect fresh main, relevant PR heads/touched files, live path claims and the local-source recovery record. Acquire one AF lane with exact paths; do not auto-select old U/R/C/F prompts.
 4. Follow docs/MULTI-WINDOW-WORK.md and the lane allocation. Shared router, Gateway/worker/ops composition, exports, migration registry and deployment configuration have one AF00 integrator. Auth has AF08; financial authority AF01; native audio has AF05. Any expansion requires a visible transfer.

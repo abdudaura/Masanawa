@@ -3,7 +3,7 @@
   "updated": "2026-10-09",
   "snapshotBaseSha": "5e758673ae91082520b21b3153da53791ae2cbf3",
   "status": "PLANNED",
-  "navigationPlacement": "PROPOSED_CALLS_UNDER_CHATS",
+  "navigationPlacement": "OWNER_CONFIRMED",
   "lanes": [
     {
       "id": "AF00",
@@ -31,8 +31,8 @@
         461,
         552
       ],
-      "scope": "Preserve and reconcile local fixes/APK with main and every relevant draft. Publish unique-change/old-lane disposition, canonical imports/migrations, route aliases, dependency integration and final APK/rollback evidence. Update stale shell guards for current decisions; do not drop their security assertions.",
-      "tests": "Combined Flutter analyze/test/build, TypeScript build/unit/contract/DB suites, deep links, account switching, migration rehearsal and qualified final two-device/provider paths.",
+      "scope": "Preserve and reconcile local fixes/APK with main and every relevant draft. Publish unique-change/old-lane disposition, canonical imports/migrations, route aliases, dependency integration and final APK/rollback evidence. Update stale shell guards for current decisions; do not drop their security assertions. Confirm Chats/Rooms/Talks/Gwani/Wallet order, Talks ordinary-launch default, semantic saved-tab migration and explicit-destination precedence.",
+      "tests": "Combined Flutter analyze/test/build, TypeScript build/unit/contract/DB suites, deep links, account switching, migration rehearsal and qualified final two-device/provider paths. Confirm exact order/labels, centre/default after auth, resume/deep-link/call behavior and old-route compatibility.",
       "status": "PLANNED_UNCLAIMED",
       "headSha": null
     },
@@ -113,7 +113,7 @@
     },
     {
       "id": "AF04",
-      "name": "Assistant service menus",
+      "name": "Gwani service menus",
       "wave": 2,
       "deps": [
         "AF01"
@@ -333,7 +333,7 @@
         575,
         578
       ],
-      "scope": "Reconcile existing C09 calling, recent/missed calls, typed directory selection, ringing/connect/mute/output/end/reconnect; proposed Chats Calls filter. AF00 integrates push/deep links/composition; do not duplicate those files from old call branches.",
+      "scope": "Reconcile existing C09 calling, recent/missed calls, typed directory selection, ringing/connect/mute/output/end/reconnect; Chats Calls filter. AF00 integrates push/deep links/composition; do not duplicate those files from old call branches.",
       "tests": "Two physical devices, caller/callee authorization, answer/end races, missed call readback, notification/deep link, microphone release and new voice note afterwards; video retained only if already qualified.",
       "status": "PLANNED_UNCLAIMED",
       "headSha": null
@@ -392,5 +392,14 @@
       "status": "PLANNED_UNCLAIMED",
       "headSha": null
     }
-  ]
+  ],
+  "bottomTabs": [
+    "chats",
+    "rooms",
+    "talks",
+    "gwani",
+    "wallet"
+  ],
+  "defaultTab": "talks",
+  "centerTab": "talks"
 }

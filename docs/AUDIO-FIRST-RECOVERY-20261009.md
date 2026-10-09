@@ -12,7 +12,7 @@ If local source remains unavailable, recover non-overlapping remote modules and 
 
 Exact original instruction files are archived under docs/archive/20261009/ with their original path suffix. Main stable entrypoints now link to a single product/screens/money/contracts/window plan. Old launch-prompt paths contain explicit historical notices; don't copy them into new windows.
 
-Superseded product instructions: public live-Talk-first/no-Rooms, mandatory human host for every published post, no autonomous AI posts, bottom Agents destination, mandatory Assistant-hidden arrangements, spendable fiat/Cr customer balances, direct platform fiat cashout and crypto P2P. This is owner-direction supersession, **not a claim those features were finished**.
+Superseded product instructions: public live-Talk-first/no-Rooms, mandatory human host for every published post, no autonomous AI posts, bottom Agents destination, mandatory Gwani-hidden arrangements, spendable fiat/Cr customer balances, direct platform fiat cashout and crypto P2P. This is owner-direction supersession, **not a claim those features were finished**.
 
 Historical pauses, repeated override sections and mandatory-all-drafts rules no longer schedule new work. Source-tested merges and separate production gates follow current AGENTS/MULTI-WINDOW rules. Existing old task IDs survive in the following map.
 
@@ -24,7 +24,7 @@ Historical pauses, repeated override sections and mandatory-all-drafts rules no 
 | [#576](https://github.com/Baatiku/masanawa/pull/576) | `c3d821e5dad6a8405d5efa0cd4a450ac4ce1a775` | MSN crypto-primary wallet: backed issuance foundation, atomic NGN conversion and truthful UI (DRAFT) |
 | [#575](https://github.com/Baatiku/masanawa/pull/575) | `5f36f9fc68630726cac82c23202dac811797f8a3` | C09: private human voice and video calls — guarded full-stack draft (integration pending) |
 | [#545](https://github.com/Baatiku/masanawa/pull/545) | `3ea4fcfece06c6db0bc8228ba717375c937d3515` | F03: 17-persona catalog and fail-closed private Expert seed recovery (DRAFT) |
-| [#534](https://github.com/Baatiku/masanawa/pull/534) | `f099a252de51e6c13bedf2fa8d8273efafcf284e` | U09: private Gemini Live voice focus and reviewed Assistant continuity (draft) |
+| [#534](https://github.com/Baatiku/masanawa/pull/534) | `f099a252de51e6c13bedf2fa8d8273efafcf284e` | U09: private Gemini Live voice focus and reviewed Gwani continuity (draft) |
 | [#530](https://github.com/Baatiku/masanawa/pull/530) | `c491bd3a12515235a0f8649c6ba2cd47d64e9dbe` | U10: account-safe human chat composer and idempotent send recovery (draft) |
 | [#529](https://github.com/Baatiku/masanawa/pull/529) | `5fd1a41f8e4028532bad1e2f3a665a0e1e907540` | U10: protected human DM composer and honest retry UX (draft, integration pending) |
 | [#508](https://github.com/Baatiku/masanawa/pull/508) | `fff8fb6af0bfa845df865d1b1491029ee5809d4a` | U21: human Contacts Hub with C01 admission, C02 compose and account-fenced favorites (draft) |
@@ -42,7 +42,7 @@ Open-PR snapshot: [JSON](AUDIO-FIRST-OPEN-PR-SNAPSHOT-20261009.json). It records
 | Previous ID | Scope | Current accountable lanes | Disposition |
 | --- | --- | --- | --- |
 | R01 | Theme/readability | AF00, AF08 | Retain approved app palette; only launch blue removal confirmed. No new green/blue reset. |
-| R02 | Native/live audio | AF05, AF11, AF10 | Repair private notes/Assistant/calls first; legacy public live feed becomes optional Room infrastructure. |
+| R02 | Native/live audio | AF05, AF11, AF10 | Repair private notes/Gwani/calls first; legacy public live feed becomes optional Room infrastructure. |
 | R03 | Persona catalog | AF07, AF12 | Retain seventeen identities and provision actual availability. |
 | R04 | Host participant controls | AF10 | Reclassify live-stage controls as optional Room capabilities; preserve source. |
 | R05 | Fiat funding/recovery | AF01, AF03 | Fiat buys MSN; preserve settlement obligations/refund recovery. |
@@ -57,7 +57,7 @@ Open-PR snapshot: [JSON](AUDIO-FIRST-OPEN-PR-SNAPSHOT-20261009.json). It records
 | R14 | Push/activity | AF00, AF06, AF11 | Preserve Firebase; integrate qualified notifications and deep links. |
 | R15 | Safety/support/channels | AF00, AF07, AF13 | Preserve block/report/consented channels/support; feature owners enforce new object permissions. |
 | R16 | Release/CI/restore | AF00, AF13 | Exact-SHA evidence and alternate runner, separate release gate. |
-| R17 | Root shell | AF00 | Old Agents bottom tab superseded; centred Assistant, nested directory, Calls placement proposed. |
+| R17 | Root shell | AF00 | Old Agents bottom tab superseded; Gwani, nested directory, Talks centre/default; Chats · Rooms · Talks · Gwani · Wallet confirmed. |
 | R18 | Profile/avatar | AF00, AF07, AF12 | Recover #435 unique source and tests without losing profile editing. |
 | R19 | Persona performance | AF12 | Distinct disclosed creator roles; listen-test emotional delivery. |
 
@@ -71,7 +71,7 @@ Open-PR snapshot: [JSON](AUDIO-FIRST-OPEN-PR-SNAPSHOT-20261009.json). It records
 | C04 | Private media | AF05, AF06 |
 | C05 | Cache/offline | AF06, AF13 |
 | C06 | Internal crypto transfers | AF01, AF06 |
-| C07 | Assistant/task authority | AF04, AF00 |
+| C07 | Gwani/task authority | AF04, AF00 |
 | C08 | Shell/acceptance | AF00, AF13 |
 | C09 | Private calls | AF11 |
 
@@ -81,7 +81,7 @@ Open-PR snapshot: [JSON](AUDIO-FIRST-OPEN-PR-SNAPSHOT-20261009.json). It records
 | --- | --- | --- | --- |
 | U01 | Operator permissions | AF00, AF04 | Retain security contract; no model-authorized spending |
 | U02 | Durable tasks | AF04, AF00 | Reuse task journal and uncertain-outcome reconciliation |
-| U03 | Task centre | AF04 | Same Assistant state, no second centre |
+| U03 | Task centre | AF04 | Same Gwani state, no second centre |
 | U04 | Capability adapters | AF00, AF04 | Use canonical authorized service adapters |
 | U05 | Opt-in memory | AF00 | Retain consent/privacy; recover after core stability, no new memory expansion |
 | U06 | Teaching continuity | AF00 | Preserve existing skills/source; not a new top-level tab in this round |
@@ -104,7 +104,7 @@ Open-PR snapshot: [JSON](AUDIO-FIRST-OPEN-PR-SNAPSHOT-20261009.json). It records
 | U23 | Invites/shares | AF07, AF09 | No surveillance/contact upload |
 | U24 | Requests/privacy | AF07, AF06 | Block/admission applied consistently |
 | U25 | Scheduled operations | AF12, AF00 | Reuse occurrence leases for publishing; retain reminders without scope expansion |
-| U26 | Linked channels | AF00 | Preserve WhatsApp/Telegram consented Assistant integrations and source |
+| U26 | Linked channels | AF00 | Preserve WhatsApp/Telegram consented Gwani integrations and source |
 | U27 | Privileged agent admin | AF12, AF00 | Use existing ops roles for publishing controls; preserve unrelated admin source |
 | U28 | Research/provenance | AF12 | Reuse evidence/budget providers for factual scripts |
 | U29 | Customer support | AF00, AF02 | Preserve payment-uncertainty support; add escrow dispute operations |

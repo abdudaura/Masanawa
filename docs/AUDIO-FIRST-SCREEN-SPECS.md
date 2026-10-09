@@ -6,9 +6,9 @@ This specification records the owner's latest direction. It does not certify tha
 
 ## Navigation and names
 
-The directory is **Masana & Contacts**. New chat opens it; Contacts is not a bottom-navigation destination. Assistant must occupy the middle position.
+The directory is **Masana & Contacts**. New chat opens it; Contacts is not a bottom-navigation destination. Talks occupies the middle position and is the ordinary launch default. The assistant destination is labelled **Gwani**.
 
-Proposed integration default: **Talks · Chats · Assistant · Wallet · Rooms**, with Calls under Chats. This is a recommendation resolving six destinations into five tabs, not explicit owner approval to remove the previously requested Calls tab. Record the owner's final decision before treating Calls placement as final. Directory, Assistant, Talks and wallet requirements below do not depend on that decision.
+Owner-confirmed bottom navigation: **Chats · Rooms · Talks · Gwani · Wallet**. Calls are nested under Chats, and New chat opens Masana & Contacts. This supersedes the earlier centred-Assistant recommendation; no navigation-placement decision remains open.
 
 Tab switching preserves each destination's scroll, filters, draft and navigation state. Detail pages use one consistent short transition. Back returns to the originating screen and preserves context; links resolve through canonical destinations and tested legacy aliases. Repeated taps cannot open duplicate pages. Audio behavior follows the shared focus policy below.
 
@@ -23,12 +23,12 @@ Tab switching preserves each destination's scroll, filters, draft and navigation
 | UI-05 | Talk comments | Bottom sheet with thread, comment composer, submit, pagination, report and own-comment deletion. Feed context remains intact. |
 | UI-06 | Create Talk | Record, pause/resume, recording duration, cancel; preview, trim, delete/re-record, optional title, publish; visible upload/processing state and recoverable draft. Initial proposed cap: three minutes, configurable and not owner-final. |
 | UI-07 | Creator profile | Persona/bio, AI disclosure, follow/unfollow, published Talks, report/block. Public profiles expose no wallet activity. |
-| UI-08 | Chats | Search, conversation list, unread state, new chat, favourites/pins where already supported; proposed Calls filter. |
+| UI-08 | Chats | Search, conversation list, unread state, new chat, favourites/pins where already supported; Calls filter. |
 | UI-09 | Masana & Contacts | Masana / Contacts filters, shared search, favourite/recent entries, alphabetical people list, invitation only where supported. Masana show role and AI identity; people show stable account identity. Existing twins are not silently relabelled as human contacts. |
 | UI-10 | Conversation | Compact identity header, call and menu; messages, voice bubbles with duration/seek/speed, transfer cards; composer with attachment/emoji outside input, send when text exists and microphone otherwise. Hold recording, slide cancel, lock, preview/delete/send. |
-| UI-11 | Assistant | Centred floating vertical billing choices above composer: Airtime, Data, Electricity, TV/Cable, reflecting actual available products. Selection replaces choices with relevant next choices. Compact current-draft summary, Back/Change/Cancel and typed/voice input. |
+| UI-11 | Gwani | Centred floating vertical billing choices above composer: Airtime, Data, Electricity, TV/Cable, reflecting actual available products. Selection replaces choices with relevant next choices. Compact current-draft summary, Back/Change/Cancel and typed/voice input. |
 | UI-12 | Purchase review / receipt | Recipient, product, MSN total, fees, quote expiry and explicit authorization; pending/success/failure/uncertain receipt and status refresh. No success before confirmed execution. |
-| UI-13 | Calls | Recent/missed/outgoing list, start call via directory, ringing/connecting/active/reconnecting/ended states, mute, audio output, hang up and clear availability errors. Placement pending navigation decision. |
+| UI-13 | Calls | Recent/missed/outgoing list, start call via directory, ringing/connecting/active/reconnecting/ended states, mute, audio output, hang up and clear availability errors. Nested in Chats. |
 | UI-14 | Rooms | Joined/discover list, create/join where enabled; room details, members, audio-note history, composer, leave/report and moderator controls. Optional live audio belongs here, subject to provider qualification. |
 | UI-16 | Settings / safety / support | Preserve working profile/avatar, language, security/device sessions, notification controls, account deletion/export and support. Private account data stays separate from public creator profiles; show pending deletion/support status and recovery. |
 | UI-15 | Room session | Speaker/listener roles, join/leave, mute, request-to-speak, participant list, moderator removal and connection status. Do not expose this control as functional before verified implementation. |
@@ -67,7 +67,7 @@ Do not require Gemini Live for ordinary recorded voice-note capture. A working l
 |---|---|
 | UX-A01 | Cold start in light/dark mode reaches auth/home without a blue native/Flutter flash. Language icon is centred and accessible. |
 | UX-A02 | Email signup/login/recovery remains usable. Phone signup/login uses numeric password with server-side protection; UI identifies phone as unverified and does not treat it as ownership proof. |
-| UX-A03 | Tab switching, nested detail, deep link and Back preserve expected state; repeated taps and account switching cannot duplicate or leak state. |
+| UX-A03 | Exact tabs Chats/Rooms/Talks/Gwani/Wallet, Talks centre/default after ordinary launch/auth, then tab switching, nested detail, deep link and Back preserve expected state; repeated taps and account switching cannot duplicate or leak state. |
 | UX-A04 | New chat opens Masana & Contacts; selecting a person or Masana opens the correct conversation with correct identity. |
 | UX-A05 | Record locally, preview, send, receive on a second device, seek and change speed. Permission denial, upload failure and provider failure display distinct errors and retain retryable drafts. |
 | UX-A06 | Start purchase through menu, continue with text or voice, change an earlier choice, review quote and explicitly authorize once. Both menu and conversational-only paths yield the same verified receipt. |
@@ -101,3 +101,11 @@ Sample editorial concepts below are proposed scripts to develop, not generated, 
 ## Handoff evidence
 
 Each implementation handoff names its exact commit SHA, owned paths, acceptance IDs passed, device/provider evidence, unresolved failures and integration dependencies. Screenshots alone do not prove audio, escrow, delivery or provider behavior. Reconcile local improvements before replacing a screen or declaring an old instruction completed. Superseded instructions can be archived with a pointer here; unfinished historical requirements remain traceable until explicitly resolved.
+
+## Navigation implementation and edge cases — confirmed update
+
+Use stable semantic tab keys: chats, rooms, talks, gwani, wallet, with Talks at index 2. Bottom Talks is a navigation destination, not a record/publish action; creation has its own feed action. Highlight the selected tab and provide localized accessible labels with adequate touch targets. Gwani uses its actual service/chat screen, not a second conversation or separate finance executor.
+
+Ordinary authenticated cold start/home opening lands on Talks; signup/login without a pending destination does the same. Explicit deep links/notifications restore their validated resource after auth. Background resume preserves ongoing conversation/recording/call/order state; never interrupt an active operation just to show the default feed. Tabs retain independent scroll/draft stacks during the session. Back closes sheets/details before returning to their origin. Re-tapping Talks does not discard a recording or silently start playback.
+
+Persist semantic tab names, not raw old indices. Migrate old saved navigation using the source version and tested aliases; the old assistant/gwani technical route continues to resolve to Gwani. Do not turn old private AI links into human Chats or old live Talk IDs into audio posts. Unknown/deleted/forbidden deep links show a recoverable error and a safe Talks return. Verify launch, resume, auth redirect, notification, back, logout/account switch, reduced motion and keyboard on the actual app.

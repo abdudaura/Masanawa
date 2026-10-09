@@ -6,9 +6,9 @@ Status: planning allocation; no feature path is claimed by this document. Curren
 
 AF00 is the one continuing integrator. First reconcile the owner's local changes and #497 without discarding any source. It can publish narrow contract baselines and ready paths while local-only comparisons remain blocked; other windows may inspect/recover isolated modules, but must not replace unseen local screens.
 
-Wave 1: AF01 money, AF05 audio, AF07 directory, AF08 auth and AF13 qualification. Wave 2 starts per dependency, not a calendar: AF02 P2P, AF03 wallet, AF04 Assistant, AF06 messaging, AF09 posts, AF10 Rooms, AF11 Calls. Wave 3: AF12 creators on the ready posting API. Keep roughly 4–6 implementation windows active plus integration; fourteen IDs are accountability slots, not fourteen simultaneous writers.
+Wave 1: AF01 money, AF05 audio, AF07 directory, AF08 auth and AF13 qualification. Wave 2 starts per dependency, not a calendar: AF02 P2P, AF03 wallet, AF04 Gwani, AF06 messaging, AF09 posts, AF10 Rooms, AF11 Calls. Wave 3: AF12 creators on the ready posting API. Keep roughly 4–6 implementation windows active plus integration; fourteen IDs are accountability slots, not fourteen simultaneous writers.
 
-Contracts and screen states land before dependent UI. Auth/finance unspecified activation rules remain blocked for money activation, not a reason to fabricate prices/backing. Navigation placement is a proposed five-tab default; AF00 records final resolution without multiple root-shell implementations.
+Contracts and screen states land before dependent UI. Auth/finance unspecified activation rules remain blocked for money activation, not a reason to fabricate prices/backing. Navigation is confirmed: Chats · Rooms · Talks · Gwani · Wallet, Talks centred/default. AF00 updates semantic route/saved-tab compatibility and the user-facing Gwani label in one root-shell implementation.
 
 ## Lane allocation
 
@@ -18,7 +18,7 @@ Contracts and screen states land before dependent UI. Auth/finance unspecified a
 | AF01 | MSN financial authority | AF00 | #576, #454, #444, #438 |
 | AF02 | MSN P2P escrow | AF01, AF08 | New slice; inspect for newer source |
 | AF03 | Wallet surfaces and receipts | AF01 | #576, #445, #444 |
-| AF04 | Assistant service menus | AF01 | #497, #447, #520, #521, #580 |
+| AF04 | Gwani service menus | AF01 | #497, #447, #520, #521, #580 |
 | AF05 | Audio reliability | AF00 | #534, #456, #497 |
 | AF06 | Messaging and chat transfers | AF01, AF05 | #529, #530, #533, #531, #537, #472, #475 |
 | AF07 | Masana and Contacts directory | AF00 | #468, #508, #509, #510, #511 |
@@ -101,7 +101,7 @@ Allowed roots/files (claim specific paths, verify current source first):
 
 Verification: Exact formatting, stale cache/offline, restrictions, recipient/quote reviews, failed/uncertain recovery and account isolation; no null-swallowed failure or inert actions.
 
-### AF04 — Assistant service menus
+### AF04 — Gwani service menus
 
 Outcome: Progressive vertical floating billing choices above composer; same durable draft for menu/text/voice, Back/Change, actual catalog/recipient validation, MSN quote/explicit authorization/receipt/status recovery. Integrate existing tasks rather than duplicate. ai_chat_screen shared hook belongs to AF00 until transfer.
 
@@ -229,7 +229,7 @@ Verification: Outsider read/media/join denial, kick/revoke, private invite/block
 
 ### AF11 — Calls recovery
 
-Outcome: Reconcile existing C09 calling, recent/missed calls, typed directory selection, ringing/connect/mute/output/end/reconnect; proposed Chats Calls filter. AF00 integrates push/deep links/composition; do not duplicate those files from old call branches.
+Outcome: Reconcile existing C09 calling, recent/missed calls, typed directory selection, ringing/connect/mute/output/end/reconnect; Chats Calls filter. AF00 integrates push/deep links/composition; do not duplicate those files from old call branches.
 
 Allowed roots/files (claim specific paths, verify current source first):
 
@@ -286,3 +286,7 @@ One branch/PR per coherent workstream, avoid long stacks. AF00 merges dependency
 A handoff gives exact base/head/PR, paths, current contract versions, requirements/journeys, source remaining, executable commands/results, simulated vs real evidence, migration plan, merge target and concrete next action. External blockers do not justify abandoned implementable code or repeated doomed verification.
 
 Recovery inputs above were observed open at this snapshot, not newly claimed and not necessarily latest when a window starts. Use [recovery mapping](AUDIO-FIRST-RECOVERY-20261009.md). No old lane is DONE by allocation.
+
+## Completeness accountability
+
+The [audit](AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md) names remaining design/implementation/qualification gaps. AF00 maintains dispositions; AF13 measures actual journey evidence. No lane may declare the plan exhaustive or a money/media feature production-ready because a structural check passed. Shared financial/auth/provider policy gaps must be resolved before enabling affected operations.
