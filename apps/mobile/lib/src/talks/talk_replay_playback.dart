@@ -145,7 +145,12 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     // Fail first: pause may synchronously emit another native player event.
     // Clear private credentials before the callback can observe any state.
     _fail();
-    unawaited(player.pause().catchError((Object _) {}));
+    try {
+      unawaited(player.pause().catchError((Object _) {}));
+    } catch (_) {
+      // A disposed native player can throw synchronously; credentials are
+      // already cleared and must not be resurrected by shutdown failures.
+    }
   }
 
   final _snapshots = StreamController<TalkReplayPlaybackSnapshot>.broadcast(
