@@ -23,11 +23,14 @@ class _Transport implements HumanCallTransport {
   int calls=0;
   final keys=<String>[];
   Completer<HumanCall>? pending;
+  Completer<HumanCall>? pendingStart;
+  int hangups=0;
   @override
   Future<HumanCall> start({required String conversationId,required String requestId,
     required HumanCallKind kind}) async {
     calls++;
     keys.add(requestId);
+    if(pendingStart!=null)return pendingStart!.future;
     if(failStart)throw StateError('network unknown');
     return current;
   }
@@ -38,6 +41,7 @@ class _Transport implements HumanCallTransport {
   }
   @override
   Future<HumanCall> act(String callId,String action) async {
+    if(action=='end')hangups++;
     current=_call(state:action=='accept'?HumanCallState.active:
       action=='decline'?HumanCallState.declined:HumanCallState.ended);
     return current;
@@ -157,4 +161,16 @@ void main(){
     expect(r.joins,0);
     c.dispose();
   });
+  test('late outgoing call after closing screen is cancelled on server',() async {
+    final t=_Transport()..pendingStart=Completer<HumanCall>(),r=_Room();
+    final c=_controller(t:t,r:r,user:'user_a',active:()=>true);
+    final starting=c.start(_conversation,HumanCallKind.audio);
+    await Future<void>.delayed(Duration.zero);
+    c.dispose();
+    t.pendingStart!.complete(_call());
+    await starting;
+    expect(t.hangups,1);
+    expect(r.joins,0);
+  });
+
 }
