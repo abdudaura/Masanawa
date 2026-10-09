@@ -428,6 +428,112 @@ void main() {
     await session.close();
   });
 
+
+  test('cached private seek fails closed when account switches mid-native seek', () async {
+    var authorized = true;
+    final player = _Player();
+    final transport = _Transport();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: transport,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    await session.toggle(); // Paused with a still-valid cached link.
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.75);
+    await player.startedSeek!.future;
+    authorized = false;
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 1); // No refreshed link can hide the race.
+    expect(player.lastSeek, const Duration(seconds: 90));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    player.positionsController.add(const Duration(seconds: 95));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+  test('cached private seek fails closed when URL expires mid-native seek', () async {
+    var clock = DateTime.utc(2026, 10, 9, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 3));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: transport,
+      now: () => clock,
+      canAccess: () => true,
+    );
+    await session.toggle();
+    await session.toggle();
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.25);
+    await player.startedSeek!.future;
+    clock = clock.add(const Duration(minutes: 4));
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 1);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    await session.close();
+  });
+
+  test('native player progress stops and pauses on account revocation', () async {
+    var authorized = true;
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: _Transport(),
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.playing);
+    authorized = false;
+    player.positionsController.add(const Duration(seconds: 20));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(1));
+
+    // Even a late playing callback cannot resurrect private playback.
+    player.statesController.add(TalkReplayPlayerState.playing);
+    player.durationsController.add(const Duration(minutes: 9));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+  test('native duration and state events stop replay after URL expiry', () async {
+    var clock = DateTime.utc(2026, 10, 9, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 2));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: transport,
+      now: () => clock,
+      canAccess: () => true,
+    );
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 3));
+    player.durationsController.add(const Duration(minutes: 5));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(1));
+    player.statesController.add(TalkReplayPlayerState.playing);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
 }
 
 class _DelayedTransport implements TalkReplayPlaybackTransport {
