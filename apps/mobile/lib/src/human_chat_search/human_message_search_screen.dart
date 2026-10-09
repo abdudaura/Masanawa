@@ -57,6 +57,7 @@ class _HumanMessageSearchScreenState extends State<HumanMessageSearchScreen> {
             maxLength: 128,
             textInputAction: TextInputAction.search,
             autocorrect: false,
+            enableSuggestions: false,
             decoration: const InputDecoration(
               hintText: 'Find a message', prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
