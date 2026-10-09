@@ -46,3 +46,39 @@ test("event cursor and unknown client revision fail closed",()=>{
   assert.throws(()=>validateTaskEventPage({taskId:"task_1",afterRevision:0,events:[{taskId:"task_1",revision:2,phase:"proposed",at:"now"}]}),{code:"invalid_event_page"});
   assert.deepEqual(selectOperatorCard({card:{version:99,kind:"approval",message:"Approve"},supportedVersions:[1]}),{version:1,kind:"unsupported",message:"This task requires a newer Masanawa app. No action has been executed here.",actionable:false});
 });
+
+test("asynchronous, truthy and throwing permission callbacks cannot grant access",()=>{
+  assert.throws(()=>admit({authorizeCapability:()=>Promise.resolve(true)}),{code:"not_authorized"});
+  assert.throws(()=>admit({authorizeCapability:()=>Promise.resolve(false)}),{code:"not_authorized"});
+  assert.throws(()=>admit({authorizeCapability:()=>1}),{code:"not_authorized"});
+  assert.throws(()=>admit({authorizeCapability:()=>{throw new Error("sensitive backend detail")}}),{code:"not_authorized"});
+  const selected=parseOperatorProposal({...proposal,contextRef:{kind:"dm-selected-message",id:"message_1"}});
+  assert.throws(()=>admit({proposal:selected,authorizeContext:()=>Promise.resolve(false)}),{code:"not_authorized"});
+  assert.throws(()=>admit({proposal:selected,authorizeContext:()=>{throw new Error("private contact state")}}),{code:"not_authorized"});
+  assert.equal(admit({proposal:selected,authorizeContext:()=>true}).classification,"read");
+});
+
+test("duplicate capability versions and blank identities are fail closed",()=>{
+  assert.throws(()=>admit({catalog:[descriptor,{...descriptor,enabled:false}]}),{code:"invalid_catalog"});
+  assert.throws(()=>admit({principal:{...principal,tenantId:"  "}}),{code:"invalid_string"});
+});
+
+test("persisted approval must bind real, present identity and exact nonempty transaction refs",()=>{
+  const issued={state:"issued",ticketId:"opaque-approval",...principal,operationId:"operation_1",capabilityId:"billing.purchase.confirm",capabilityVersion:1,revision:"revision_1",issuedAtMs:100,expiresAtMs:200,terms:{amountMinor:"10000",currency:"NGN"}};
+  const expected={operationId:issued.operationId,capabilityId:issued.capabilityId,capabilityVersion:1,revision:issued.revision,terms:{currency:"NGN",amountMinor:"10000"}};
+  const valid={issued,presentedTicketId:issued.ticketId,principal,expected,now:150};
+  assert.equal(verifyIssuedApproval(valid).ticketId,"opaque-approval");
+  for(const bad of [
+    {...valid,issued:{...issued,tenantId:undefined},principal:{...principal,tenantId:undefined}},
+    {...valid,issued:{...issued,deviceId:undefined},principal:{...principal,deviceId:undefined}},
+    {...valid,issued:{...issued,accountId:""},principal:{...principal,accountId:""}},
+    {...valid,issued:{...issued,operationId:undefined},expected:{...expected,operationId:undefined}},
+    {...valid,issued:{...issued,revision:""},expected:{...expected,revision:""}},
+    {...valid,issued:{...issued,issuedAtMs:-1}},
+    {...valid,issued:{...issued,expiresAtMs:100}},
+    {...valid,issued:{...issued,expiresAtMs:900200}},
+    {...valid,issued:{...issued,capabilityVersion:0},expected:{...expected,capabilityVersion:0}},
+    {...valid,issued:{...issued,state:"used"}},
+    {...valid,presentedTicketId:""}
+  ]) assert.throws(()=>verifyIssuedApproval(bad),{code:"approval_invalid"});
+});
