@@ -307,8 +307,19 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
           default:
             return unavailable();
         }
+        // Re-check a potentially revoked access session AFTER the domain read.
+        // A slow request started by account A must never return A's private
+        // wallet/profile data after logout or a switch to account B.
+        const latest = await timeoutRead(input.sessions.authorize({
+          authorizationHeader: header,
+        }), timeoutMs);
+        if (latest.tenantId !== principal.tenantId || latest.userId !== principal.userId ||
+            !(await timeoutRead(input.bindSession({
+              authorizationHeader: header, principal, identity: latest,
+            }), timeoutMs))) {
+          return failure("OPERATOR_UNAUTHORIZED", 401);
+        }
         const readAt = clock().toISOString();
-        if (readAt === "Invalid Date") return failure("OPERATOR_SOURCE_UNAVAILABLE", 503);
         status = "succeeded"; code = "OPERATOR_READ_OK";
         return Object.freeze({ capabilityId, contractVersion: 1 as const,
           requestId: action.requestId, data, readAt });
