@@ -21,7 +21,7 @@ class _Player implements HumanVoicePlayer {
 }
 class _Transport implements HumanVoiceTransport {
   Completer<Uint8List>? delayedRead;
-  int reads = 0;
+  int reads = 0, removals = 0;
   @override Future<Uint8List> read(String id) async {
     reads++;
     final wait = delayedRead;
@@ -31,7 +31,7 @@ class _Transport implements HumanVoiceTransport {
   @override Future<List<HumanVoiceNote>> list(String id, {String? before, int limit = 30}) async => [];
   @override Future<HumanVoiceNote> send(String id, String key, Uint8List bytes) async =>
     throw StateError('No sending in playback test');
-  @override Future<void> remove(String id) async {}
+  @override Future<void> remove(String id) async { removals++; }
 }
 class _Capture implements HumanVoiceCapture {
   String? filePath;
@@ -48,10 +48,10 @@ Future<String> Function() pathFactory(Directory dir) {
   var index = 0;
   return () async => '${dir.path}/private-${++index}.ogg';
 }
-HumanVoiceNote sampleNote() => HumanVoiceNote(
+HumanVoiceNote sampleNote({String senderUserId = 'user_two'}) => HumanVoiceNote(
   messageId: '00000000-0000-4000-8000-000000000010',
   conversationId: conversationId,
-  sequence: '10', senderUserId: 'user_two',
+  sequence: '10', senderUserId: senderUserId,
   clientRequestId: 'voice_request_123456',
   durationMs: 3500,sizeBytes: 120,
   createdAt: DateTime.utc(2026,10,8),
@@ -149,6 +149,28 @@ void main() {
     expect(player.plays,0);
     expect(player.disposals,1);
     expect(controller.closed,isTrue);
+    await dir.delete(recursive:true);
+  });
+
+  test('Delete own voice note stops playback and removes private download', () async {
+    final dir=await sandbox(),player=_Player(),transport=_Transport();
+    final controller=HumanVoiceController(
+      conversationId:conversationId,ownerUserId:ownUserId,transport:transport,
+      capture:_Capture(),player:player,privatePath:pathFactory(dir),
+    );
+    final note=sampleNote(senderUserId:ownUserId);
+    await controller.play(note);
+    expect(controller.playing,true);
+    expect(dir.listSync().whereType<File>().length,1);
+    await controller.delete(note);
+    expect(transport.removals,1);
+    expect(controller.playing,false);
+    expect(controller.playingMessageId,isNull);
+    expect(dir.listSync().whereType<File>(),isEmpty);
+    player.pending.complete();
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.playing,false);
+    await controller.shutdown();
     await dir.delete(recursive:true);
   });
 
