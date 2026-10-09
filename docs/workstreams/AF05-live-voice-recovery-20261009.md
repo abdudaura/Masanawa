@@ -1,6 +1,6 @@
 # AF05 — Live voice stage-specific recovery (2026-10-09)
 
-**Window:** MASANAWA-01 / AF05. **State:** PARTIAL_IMPLEMENTATION, source committed; runtime/device/provider NOT_RUN. **Base:** `main@f381f077c485c04261459b77a42c215d3ce3a14b`. **Source/test checkpoint:** `c5d31297d8293a484baec68972754e565ce09847`. Branch: `work/af05-live-voice-recovery-20261009-masanawa01`.
+**Window:** MASANAWA-01 / AF05. **State:** PARTIAL_IMPLEMENTATION, source committed; runtime/device/provider NOT_RUN. **Base:** `main@f381f077c485c04261459b77a42c215d3ce3a14b`. **Source checkpoint:** `c5d31297d8293a484baec68972754e565ce09847`. **Latest targeted test source:** `e3a6b8b6bf381eabc2d57b4b857ec0235c17301e`. Branch: `work/af05-live-voice-recovery-20261009-masanawa01`.
 
 ## Ownership and dependency
 
@@ -38,3 +38,7 @@ flutter test test/live_pcm_audio_test.dart
 - AF00/AF05 next: run formatter/analyzer/Flutter tests on an environment with SDK, exercise actual microphone/capture/playback failures on representative physical devices, use the new typed stream for an explicit retry/settings-facing UI, and integrate #497 C04 independent record/preview/upload/readback without losing unique changes.
 - **Merge gate:** hold while executable Dart tests are unavailable and AF00 contract baseline/composition is in flight; run tests on the exact head SHA, audit auto-deploy and merge to safe non-deploying target if approved. **Release gate:** independent handset/provider/restore evidence required; production not authorized.
 - No live service, money, user data, job or production environment was touched.
+
+## Branch verification addendum
+
+PR #589 created against exact main base `f381f077c485c04261459b77a42c215d3ce3a14b`; GitHub reports `mergeable=true` and three claimed changed paths after diff inspection. GitHub combined status currently includes a failing Vercel build-rate-limit status, which is infrastructure evidence, **not** a successful source check and is a main-merge/deployment hazard. Latest source/tests remain UNVERIFIED without Dart/Flutter execution. No main merge performed.
