@@ -72,39 +72,36 @@ class _HumanCallFlowScreenState extends ConsumerState<HumanCallFlowScreen> {
   }
 }
 
-/// A real server-status check disables launch controls on old deployments
-/// that have no C09 Gateway, instead of exposing icons that cannot call.
-/// Backend remains responsible for accepted-contact authorization.
-class HumanDmCallButtons extends ConsumerStatefulWidget {
+/// A call tap checks real Gateway capability first; do not issue a network
+/// request merely because a historical human thread was opened. This also
+/// keeps existing human chat widget tests offline and unaffected by C09.
+class HumanDmCallButtons extends ConsumerWidget {
   const HumanDmCallButtons({super.key,required this.conversationId});
   final String conversationId;
-  @override
-  ConsumerState<HumanDmCallButtons> createState()=>_HumanDmCallButtonsState();
-}
-class _HumanDmCallButtonsState extends ConsumerState<HumanDmCallButtons> {
-  late Future<bool> _available;
-  @override
-  void initState(){super.initState();_available=_probe();}
-  Future<bool> _probe() async {
+
+  Future<void> _dial(BuildContext context,WidgetRef ref,HumanCallKind kind) async {
     try{
       await ref.read(humanCallTransportProvider).recent();
-      return true;
-    }catch(_){return false;}
+    } catch (_) {
+      if(context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:Text('Private calling is currently unavailable. Try again later.')));
+      }
+      return;
+    }
+    if(!context.mounted || ref.read(sessionProvider) is! SessionSignedIn)return;
+    context.push('/messages/calls/new?conversationId=${Uri.encodeComponent(conversationId)}&kind=${kind.name}');
   }
+
   @override
-  Widget build(BuildContext context)=>FutureBuilder<bool>(
-    future:_available,builder:(context,snapshot) {
-      final enabled=snapshot.data==true &&
-        ref.watch(sessionProvider) is SessionSignedIn;
-      return HumanCallChatActions(
-        canCall:enabled,
-        onVoice:()=>context.push(
-          '/messages/calls/new?conversationId=${Uri.encodeComponent(widget.conversationId)}&kind=audio'),
-        onVideo:()=>context.push(
-          '/messages/calls/new?conversationId=${Uri.encodeComponent(widget.conversationId)}&kind=video'),
-      );
-    },
-  );
+  Widget build(BuildContext context,WidgetRef ref){
+    final enabled=ref.watch(sessionProvider) is SessionSignedIn;
+    return HumanCallChatActions(
+      canCall:enabled,
+      onVoice:()=>_dial(context,ref,HumanCallKind.audio),
+      onVideo:()=>_dial(context,ref,HumanCallKind.video),
+    );
+  }
 }
 
 /// Single authenticated foreground Chats poller. It is stopped on dispose,
