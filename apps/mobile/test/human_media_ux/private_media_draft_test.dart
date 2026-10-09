@@ -135,6 +135,32 @@ void main() {
     controller.dispose();
   });
 
+  test('a modified selected file never reaches the upload transport',
+      () async {
+    final transport = _Upload((id, progress) async => PrivateMediaReceipt(
+      messageId: 'should-not-exist',
+      accountId: 'A',
+      conversationId: 'C',
+      requestId: id,
+    ));
+    final controller = PrivateMediaReviewController(
+      accountId: 'A',
+      conversationId: 'C',
+      picker: _Picker(() async => png),
+      isAuthorized: () async => true,
+      uploadPort: transport,
+    );
+    await controller.choose();
+    await png.writeAsBytes(const [
+      137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3,
+    ]);
+    await controller.send();
+    expect(transport.requests, isEmpty);
+    expect(controller.phase, PrivateMediaPhase.review);
+    expect(controller.message, contains('changed'));
+    controller.dispose();
+  });
+
   test('uncertain send retries exactly the original request ID', () async {
     var attempts = 0;
     final transport = _Upload((id, progress) async {
