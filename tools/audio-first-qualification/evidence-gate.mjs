@@ -135,21 +135,21 @@ export function validateManifest(manifest, acceptanceDocument, { requireAllReal 
 }
 
 function usage() {
-  return 'Usage: node evidence-gate.mjs --manifest <json> --journeys <markdown> [--require-all-real]';
+  return 'Usage: node evidence-gate.mjs --manifest <json> --journeys <markdown> [--journeys <more-markdown>] [--require-all-real]';
 }
 
 export function main(argv = process.argv.slice(2)) {
   let manifestPath = null;
-  let journeysPath = null;
+  const journeysPaths = [];
   let requireAllReal = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--manifest' && !manifestPath) manifestPath = argv[++i];
-    else if (arg === '--journeys' && !journeysPath) journeysPath = argv[++i];
+    else if (arg === '--journeys' && argv[i + 1]) journeysPaths.push(argv[++i]);
     else if (arg === '--require-all-real') requireAllReal = true;
     else { console.error(usage()); return 1; }
   }
-  if (!manifestPath || !journeysPath) { console.error(usage()); return 1; }
+  if (!manifestPath || journeysPaths.length === 0) { console.error(usage()); return 1; }
   try {
     const readBounded = path => {
       const data = readFileSync(path);
@@ -157,7 +157,7 @@ export function main(argv = process.argv.slice(2)) {
       return data.toString('utf8');
     };
     const manifest = JSON.parse(readBounded(manifestPath));
-    const report = validateManifest(manifest, readBounded(journeysPath), { requireAllReal });
+    const report = validateManifest(manifest, journeysPaths.map(readBounded).join('\n'), { requireAllReal });
     console.log(JSON.stringify(report, null, 2));
     return report.valid ? (report.preflightPassed ? 0 : 2) : 1;
   } catch {
