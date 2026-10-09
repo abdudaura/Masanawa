@@ -12,7 +12,7 @@ void main() {
   testWidgets('AF14: scope says local AI only; cancel leaves history intact',
       (tester) async {
     var calls = 0;
-    await tester.pumpWidget(_screen(() async => calls++));
+    await tester.pumpWidget(_screen(() async { calls++; }));
     expect(find.text('Clear local AI chats'), findsOneWidget);
     expect(find.text('Clear all chats'), findsNothing);
     await tester.tap(find.byKey(const Key('settings-clear-local-ai-chats')));
