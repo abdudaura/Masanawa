@@ -56,8 +56,43 @@ describe("PostgreSQL avatar lifecycle and owner scoping", () => {
     expect(await repo.claimGarbage(20)).toEqual([{ key: "profiles/t/u/sha256-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.webp", tenantId: "t", userId: "u" }]);
     expect(calls[0]).toContain("FOR UPDATE SKIP LOCKED");
     expect(calls[0]).toContain("interval '1 hour'");
+    expect(calls[0]).toContain("state='staged' AND updated_at <");
+    expect(calls[0]).not.toContain("state='staged' AND created_at <");
     expect(calls[0]).toContain("interval '15 minutes'");
     await expect(repo.claimGarbage(101)).rejects.toThrow();
+  });
+
+  it("refreshes an orphaned or already staged digest without renewing active/deleting objects", async () => {
+    const key = "profiles/t/u/sha256-" + "a".repeat(64) + ".webp";
+    const calls: Array<{ sql: string; values: readonly unknown[] }> = [];
+    const pool = {
+      async query(sql: string, values: readonly unknown[] = []) {
+        calls.push({ sql, values });
+        return { rows: [{ object_key: key }], rowCount: 1 };
+      },
+    } as unknown as AvatarSqlPool;
+    const repo = createPostgresAvatarRepository(pool);
+    expect(await repo.stage({
+      tenantId: "t", userId: "u", key, url: "https://cdn.example/" + key,
+    })).toBe(true);
+    expect(calls[0]?.values).toEqual(["t", "u", key, "https://cdn.example/" + key]);
+    expect(calls[0]?.sql).toContain("state IN ('orphaned','staged')");
+    expect(calls[0]?.sql).toContain("updated_at=clock_timestamp()");
+    expect(calls[0]?.sql).toContain("tenant_id=EXCLUDED.tenant_id");
+    expect(calls[0]?.sql).toContain("user_id=EXCLUDED.user_id");
+    expect(calls[0]?.sql).toContain("public_url=EXCLUDED.public_url");
+    expect(calls[0]?.sql).toContain("RETURNING object_key");
+  });
+
+  it("refuses a stage when durable row is active, deleting or owner metadata conflicts", async () => {
+    const pool = {
+      async query() { return { rows: [], rowCount: 0 }; },
+    } as unknown as AvatarSqlPool;
+    const repo = createPostgresAvatarRepository(pool);
+    expect(await repo.stage({
+      tenantId: "t", userId: "u", key: "profiles/t/u/sha256-" + "b".repeat(64) + ".webp",
+      url: "https://cdn.example/photo.webp",
+    })).toBe(false);
   });
 
   it("does not treat missing owner row as a successful image removal", async () => {
