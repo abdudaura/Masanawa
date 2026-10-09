@@ -339,4 +339,80 @@ void main() {
     ]);
   });
 
+  test('two foreground entry points share one poll and one lifecycle', () async {
+    final store = _Store()..cursor = '7';
+    final transport = _Transport()
+      ..waiting = Completer<HumanDmRealtimePage>();
+    final statuses = <HumanDmRealtimeStatus>[];
+    final sync = HumanDmRealtimeSync(
+      tenantId: 'tenant_a', userId: 'user_a',
+      transport: transport, store: store, projection: _Projection(),
+      isCurrentSession: () => true,
+      onStatus: statuses.add,
+    );
+
+    final first = sync.runWhileForeground();
+    final second = sync.runWhileForeground();
+    expect(identical(first, second), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(statuses, [HumanDmRealtimeStatus.connecting]);
+    expect(transport.calls, 1);
+    sync.stop();
+    transport.waiting!.complete(_page(cursor:'7'));
+    await Future.wait([first, second]);
+    expect(store.saves, 0);
+    expect(statuses, [
+      HumanDmRealtimeStatus.connecting, HumanDmRealtimeStatus.stopped,
+    ]);
+  });
+
+  test('foreground entry canceled before microtask never opens a poll', () async {
+    final store = _Store()..cursor = '7';
+    final transport = _Transport();
+    final statuses = <HumanDmRealtimeStatus>[];
+    final sync = HumanDmRealtimeSync(
+      tenantId: 'tenant_a', userId: 'user_a',
+      transport: transport, store: store, projection: _Projection(),
+      isCurrentSession: () => true,
+      onStatus: statuses.add,
+    );
+
+    final pending = sync.runWhileForeground();
+    sync.stop();
+    await pending;
+    expect(transport.calls, 0);
+    expect(store.saves, 0);
+    expect(statuses, [HumanDmRealtimeStatus.stopped]);
+  });
+
+  test('reentrant connecting callback reuses active foreground loop', () async {
+    final store = _Store()..cursor = '9';
+    final transport = _Transport()
+      ..waiting = Completer<HumanDmRealtimePage>();
+    final statuses = <HumanDmRealtimeStatus>[];
+    late final HumanDmRealtimeSync sync;
+    Future<void>? reentered;
+    sync = HumanDmRealtimeSync(
+      tenantId: 'tenant_a', userId: 'user_a',
+      transport: transport, store: store, projection: _Projection(),
+      isCurrentSession: () => true,
+      onStatus: (status) {
+        statuses.add(status);
+        if (status == HumanDmRealtimeStatus.connecting) {
+          reentered = sync.runWhileForeground();
+        }
+      },
+    );
+    final first = sync.runWhileForeground();
+    await Future<void>.delayed(Duration.zero);
+    expect(identical(first, reentered), isTrue);
+    expect(transport.calls, 1);
+    sync.stop();
+    transport.waiting!.complete(_page(cursor:'9'));
+    await first;
+    expect(statuses, [
+      HumanDmRealtimeStatus.connecting, HumanDmRealtimeStatus.stopped,
+    ]);
+  });
+
 }
