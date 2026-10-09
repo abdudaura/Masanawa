@@ -361,7 +361,7 @@ On Windows it:
 4. builds the release APK against the production Railway Gateway;
 5. prints APK path, size and SHA-256;
 6. with `-Install`, verifies an authorized ADB device, installs with `adb install -r`
-   and launches package `ng.unigeria.unigeria`;
+   and launches package `com.masanawa.app`;
 7. prints the remaining physical device acceptance checklist.
 
 Recommended local command from the repository root:

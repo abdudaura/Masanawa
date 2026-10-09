@@ -1,4 +1,4 @@
-package ng.unigeria.unigeria
+package com.masanawa.app
 
 import android.content.Intent
 import android.media.AudioAttributes
