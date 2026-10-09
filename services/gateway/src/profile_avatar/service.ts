@@ -10,7 +10,7 @@ export interface ProfileAvatarRepository {
   >;
   stage(input: Readonly<{
     tenantId: string; userId: string; key: string; url: string;
-  }>): Promise<void>;
+  }>): Promise<boolean>;
   attach(input: Readonly<{
     tenantId: string; userId: string; key: string; url: string;
     expectedUrl: string | null;
@@ -72,7 +72,12 @@ export function createProfileAvatarService(input: Readonly<{
           !key.endsWith("/sha256-" + normalized.sha256 + ".webp")) {
         throw new AvatarMutationError("profiles.avatar.invalid_storage_key", 500);
       }
-      await input.repository.stage({ ...who, key, url });
+      const staged = await input.repository.stage({ ...who, key, url });
+      if (!staged) {
+        // An object already active, being deleted, or owned under conflicting
+        // metadata is not a writable stage. Do not race S3 garbage collection.
+        throw new AvatarMutationError("profiles.avatar.stage_conflict", 409);
+      }
       const stored = await input.objects.put(who, normalized);
       if (stored.key !== key || stored.url !== url ||
           stored.sha256 !== normalized.sha256) {
