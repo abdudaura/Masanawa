@@ -25,6 +25,10 @@ export function auditSnapshot(snapshot) {
   if (!snapshot || !Array.isArray(snapshot.pulls)) bad('snapshot.pulls must be an array');
   const paths = new Map(), migrations = new Map(), scopes = new Map();
   const missingHandoffPointers = [], incomplete = [], numbers = new Set();
+  // Live inventories may change between the first and final read. Never
+  // certify a clean snapshot if another PR appeared/disappeared or main moved.
+  const inventoryIssues = Array.isArray(snapshot.inventoryIssues) ? snapshot.inventoryIssues : [];
+  if (inventoryIssues.some(issue => !['main_changed_during_audit', 'open_pr_inventory_changed_during_audit'].includes(issue))) bad('unknown inventory issue');
   const pulls = [...snapshot.pulls].sort((a, b) => a.number - b.number);
   for (const pr of pulls) {
     if (!Number.isSafeInteger(pr?.number) || pr.number <= 0 || typeof pr.title !== 'string') bad('invalid PR identity');
@@ -72,8 +76,10 @@ export function auditSnapshot(snapshot) {
       migrationCollisions: migrationCollisions.length, scopeCollisions: scopeCollisions.length,
       missingHandoffPointers: missingHandoffPointers.length,
       incompletePullRequests: new Set(incomplete.map(x => x.number)).size,
+      incompleteInventory: inventoryIssues.length,
     },
     pathCollisions, migrationCollisions, scopeCollisions, missingHandoffPointers, incomplete,
+    inventoryIssues,
     disclaimer: 'Candidate overlaps only; review actual diffs, ownership, SHAs and executable checks. No GitHub mutations.',
   };
 }
@@ -139,7 +145,21 @@ export async function loadGithubSnapshot({ repo, token, fetcher = fetch }) {
       files: files.map(f => ({ filename: f.filename, sha: f.sha, status: f.status })),
     };
   });
-  return { repository: name, mainSha: ref.commit?.sha || null, pulls: expanded };
+  // A stable head for every initially listed PR is not enough: an entirely
+  // new PR or a closed PR can invalidate the collision inventory, as can a
+  // new main commit. Re-read the complete open set and default branch.
+  const [finalPulls, finalRef] = await Promise.all([
+    getPages(root + '/pulls?state=open', token, fetcher, 300),
+    get(root + '/branches/' + branch, token, fetcher),
+  ]);
+  const fingerprint = (list) => list.map(pr => String(pr.number) + ':' + String(pr.head?.sha || ''))
+    .sort().join('|');
+  const inventoryIssues = [];
+  if (fingerprint(pulls) !== fingerprint(finalPulls))
+    inventoryIssues.push('open_pr_inventory_changed_during_audit');
+  if (ref.commit?.sha !== finalRef.commit?.sha)
+    inventoryIssues.push('main_changed_during_audit');
+  return { repository: name, mainSha: ref.commit?.sha || null, pulls: expanded, inventoryIssues };
 }
 
 export function parseArgs(args) {
@@ -174,7 +194,8 @@ export async function main(argv, { out = process.stdout, err = process.stderr, e
     const content = JSON.stringify(report, null, 2) + '\n';
     if (o.output) await writeFile(o.output, content, { mode: 0o600 });
     else out.write(content);
-    if (!report.mainSha || report.summary.incompletePullRequests) {
+    if (!/^[a-f0-9]{40}$/i.test(report.mainSha || '') ||
+        report.summary.incompletePullRequests || report.summary.incompleteInventory) {
       err.write('INCOMPLETE: no clean-merge conclusion is valid.\n');
       return 3;
     }
