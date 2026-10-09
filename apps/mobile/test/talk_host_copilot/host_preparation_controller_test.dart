@@ -16,6 +16,8 @@ class FakePrepTransport implements HostPreparationTransport {
   int publishes = 0;
   bool failPublish = false;
   @override
+  Future<List<HostPreparation>> list() async => [sample];
+  @override
   Future<HostPreparation> create({required String title,
       required String topic, required List<String> questions}) {
     creates++;
