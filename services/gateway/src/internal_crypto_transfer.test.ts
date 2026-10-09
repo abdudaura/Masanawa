@@ -12,7 +12,10 @@ const quoteId = createCanonicalId("request");
 const quoteRequestId = createCanonicalId("request");
 const requestId = createCanonicalId("request");
 
-function fixture(options: { policy?: boolean; custody?: boolean; admitted?: boolean } = {}) {
+function fixture(options: {
+  policy?: boolean; custody?: boolean; admitted?: boolean;
+  switchTenantOnRecheck?: boolean; switchUserOnRecheck?: boolean;
+} = {}) {
   const quote: InternalTransferQuote = {
     quoteId, quoteRequestId, senderUserId, recipientUserId,
     asset: "USDTTRC20", network: "tron", amount: "5", fee: "0",
@@ -26,10 +29,17 @@ function fixture(options: { policy?: boolean; custody?: boolean; admitted?: bool
     status: "completed", kind: "internal-book-transfer",
   };
   let posted = false;
+  let authorizationCount = 0;
   const authorizer: FinancialAuthorizer = {
     async authorize({ authorizationHeader }) {
       if (authorizationHeader !== "Bearer good") throw new Error("financial.auth.unauthorized");
-      return { tenantId, userId: senderUserId };
+      authorizationCount += 1;
+      return {
+        tenantId: options.switchTenantOnRecheck && authorizationCount > 1
+          ? createCanonicalId("tenant") : tenantId,
+        userId: options.switchUserOnRecheck && authorizationCount > 1
+          ? createCanonicalId("user") : senderUserId,
+      };
     },
   };
   const financial = {
@@ -113,6 +123,29 @@ describe("C06 internal crypto transfer security", () => {
       authorizationHeader: "Bearer good", quoteId: createCanonicalId("request"),
       requestId, confirmed: true,
     })).rejects.toMatchObject({ code: "crypto.internal.replay_conflict" });
+  });
+
+  it("does not execute if session tenant changes with the same user during requalification", async () => {
+    const { service, store, policy } = fixture({ switchTenantOnRecheck: true });
+    await expect(service.transfer({
+      authorizationHeader: "Bearer good", quoteId, requestId, confirmed: true,
+    })).rejects.toMatchObject({
+      code: "crypto.internal.authorization_changed", statusCode: 401,
+    });
+    // The second policy check occurred for a different tenant, but its
+    // approval must never be used to authorize spending from the first tenant.
+    expect(policy.assess).toHaveBeenCalledTimes(1);
+    expect(store.execute).not.toHaveBeenCalled();
+  });
+
+  it("does not execute if the authenticated user changes during requalification", async () => {
+    const { service, store } = fixture({ switchUserOnRecheck: true });
+    await expect(service.transfer({
+      authorizationHeader: "Bearer good", quoteId, requestId, confirmed: true,
+    })).rejects.toMatchObject({
+      code: "crypto.internal.authorization_changed", statusCode: 401,
+    });
+    expect(store.execute).not.toHaveBeenCalled();
   });
 
   it("does not leak another user's receipts over the HTTP layer", async () => {
