@@ -165,4 +165,48 @@ void main() {
     expect(server.sends, 0);
     composer.dispose();
   });
+  test('explicit discard removes old request and text to prevent easy duplicate', () async {
+    final drafts = MemoryDrafts(), server = ServerPort()..failSend = true;
+    final composer = buildController(drafts, server);
+    await composer.restore(); composer.edit('uncertain body');
+    expect(await composer.submit(), isFalse);
+    expect(await composer.abandonUnconfirmed(), isTrue);
+    expect(composer.text, isEmpty);
+    expect(composer.pendingId, isNull);
+    expect(composer.canSend, isFalse);
+    expect(drafts.values.containsKey(composer.key), isFalse);
+    composer.dispose();
+  });
+
+  test('sign-out wipes only the active account and fences future sends', () async {
+    final drafts = MemoryDrafts(), server = ServerPort();
+    final a = buildController(drafts, server);
+    final b = buildController(drafts, server, user: 'personB');
+    await a.restore(); await b.restore();
+    a.edit('A secret'); b.edit('B secret');
+    await Future<void>.delayed(const Duration(milliseconds: 1));
+    await a.revokeSessionAndPurge();
+    expect(drafts.values.containsKey(a.key), isFalse);
+    expect(drafts.values[b.key]?.text, 'B secret');
+    expect(await a.submit(), isFalse);
+    expect(server.sends, 0);
+    a.dispose(); b.dispose();
+  });
+
+  test('lost reply capability cannot transform a pending reply into plain text', () async {
+    final drafts = MemoryDrafts(), server = ServerPort();
+    final composer = buildController(drafts, server);
+    drafts.values[composer.key] = const HumanChatDraft(
+      text: 'private response',
+      pendingId: 'old-request', pendingBody: 'private response',
+      pendingReplyId: 'specific-original',
+    );
+    await composer.restore();
+    expect(composer.canRetry, isFalse);
+    expect(await composer.retry(), isFalse);
+    expect(server.sends, 0);
+    expect(composer.notice, contains('Reply support changed'));
+    composer.dispose();
+  });
+
 }
