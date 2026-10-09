@@ -61,7 +61,8 @@ class _GuideState extends State<ExperienceQuickStartGuide> {
       appBar: AppBar(
         title: Text(_reviewing ? copy.reviewTitle : copy.title),
         actions: [
-          TextButton(onPressed: widget.onSkip, child: Text(copy.skip)),
+          TextButton(style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: widget.onSkip, child: Text(copy.skip)),
         ],
       ),
       body: SafeArea(
@@ -87,6 +88,7 @@ class _GuideState extends State<ExperienceQuickStartGuide> {
                       if (_reviewing) ...[
                         OutlinedButton(
                           key: const ValueKey('u19-back'),
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
                           onPressed: () => setState(() => _reviewing = false),
                           child: Text(copy.back),
                         ),
@@ -95,6 +97,7 @@ class _GuideState extends State<ExperienceQuickStartGuide> {
                       Expanded(
                         child: FilledButton(
                           key: const ValueKey('u19-continue'),
+                          style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
                           onPressed: _selected == null
                               ? null
                               : () {
