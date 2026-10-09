@@ -269,18 +269,23 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
       });
     },
     async read({tenantId,userId,conversationId,throughSequence}) {
-      return transact(pool,async q=>{
-        if(!(await conversationAllowed(q,tenantId,userId,conversationId,false))) return null;
-        const r=await q.query<{last_read_sequence:string|number}&Record<string,unknown>>(`
-          INSERT INTO talks.human_dm_reads(tenant_id,conversation_id,user_id,last_read_sequence)
-          SELECT c.tenant_id,c.conversation_id,$2,LEAST(c.last_sequence,$4::bigint)
-          FROM talks.human_dm_conversations c WHERE c.tenant_id=$1 AND c.conversation_id=$3
-          ON CONFLICT(tenant_id,conversation_id,user_id)
-          DO UPDATE SET last_read_sequence=GREATEST(talks.human_dm_reads.last_read_sequence,EXCLUDED.last_read_sequence),
-            updated_at=clock_timestamp()
-          RETURNING last_read_sequence`,[tenantId,userId,conversationId,throughSequence]);
-        return r.rows[0]?String(r.rows[0].last_read_sequence):null;
-      });
+      // A separate permission preflight followed by a blind UPSERT is unsafe:
+      // revocation can commit between the two READ COMMITTED statements.
+      // Admission and cursor advancement must happen in ONE SQL statement.
+      // Reuse the same C01 reciprocal-block, account-state and moderation
+      // predicates as history/send; no stale Flutter/agent grant is trusted.
+      const r=await pool.query<{last_read_sequence:string|number}&Record<string,unknown>>(`
+        INSERT INTO talks.human_dm_reads(tenant_id,conversation_id,user_id,last_read_sequence)
+        SELECT c.tenant_id,c.conversation_id,$2,LEAST(c.last_sequence,$4::bigint)
+        FROM talks.human_dm_conversations c
+        WHERE ${eligibleReader}
+        ON CONFLICT(tenant_id,conversation_id,user_id)
+        DO UPDATE SET last_read_sequence=GREATEST(
+          talks.human_dm_reads.last_read_sequence,EXCLUDED.last_read_sequence),
+          updated_at=clock_timestamp()
+        RETURNING last_read_sequence
+      `,[tenantId,userId,conversationId,throughSequence]);
+      return r.rows[0]?String(r.rows[0].last_read_sequence):null;
     },
   });
 }
