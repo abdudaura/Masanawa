@@ -8,6 +8,7 @@ import 'package:record/record.dart';
 import 'package:flutter/widgets.dart';
 
 import '../agents/agent_shell.dart';
+import '../audio_focus/live_pcm_frame.dart';
 import 'live_pcm_audio.dart';
 
 enum LiveVoiceState {
@@ -270,6 +271,11 @@ class LiveVoiceSession with WidgetsBindingObserver {
       } else {
         return;
       }
+      // Reject oversized provider messages before allocating their JSON tree.
+      // Audio is additionally bounded after Base64 decoding below.
+      if (text.length > 1024 * 1024) {
+        throw const LivePcmFrameException('Live audio event was too large.');
+      }
       final decoded = jsonDecode(text);
       if (decoded is! Map) return;
       final message = decoded.cast<String, dynamic>();
@@ -277,7 +283,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
         _setupTimer?.cancel();
         _setupComplete = true;
         if (!await LivePcmAudio.setSpeaker(_speaker)) {
-          throw StateError('Audio routing is unavailable.');
+          throw const LivePcmFrameException('Audio output routing is unavailable.');
         }
         if (_closed) return;
         // Only model output transcription is enabled. User microphone audio is
@@ -356,17 +362,30 @@ class LiveVoiceSession with WidgetsBindingObserver {
             if (inline is! Map) continue;
             final mime = inline['mimeType'];
             final data = inline['data'];
-            if (mime is String &&
-                mime.startsWith('audio/pcm') &&
-                data is String &&
-                data.isNotEmpty) {
+            // A mismatched output rate creates distorted or silent speech.
+            // Validate both transport metadata and PCM16 alignment before
+            // handing any bytes to Android's AudioTrack.
+            if (mime is String && mime.startsWith('audio/')) {
+              if (data is! String) {
+                throw const LivePcmFrameException(
+                  'Live audio payload is missing.',
+                );
+              }
+              final frame = LivePcmFrame.decode(
+                mimeType: mime,
+                encodedData: data,
+              );
               _state.add(LiveVoiceState.speaking);
-              if (!await LivePcmAudio.start(sampleRate: 24000)) {
-                throw StateError('Native live audio playback is unavailable.');
+              if (!await LivePcmAudio.start(sampleRate: frame.sampleRate)) {
+                throw const LivePcmFrameException(
+                  'Native live audio output could not start.',
+                );
               }
               if (_closed) return;
-              if (!await LivePcmAudio.write(base64Decode(data))) {
-                throw StateError('Native live audio playback stopped.');
+              if (!await LivePcmAudio.write(frame.bytes)) {
+                throw const LivePcmFrameException(
+                  'Native live audio output stopped.',
+                );
               }
             }
           }
@@ -376,8 +395,11 @@ class LiveVoiceSession with WidgetsBindingObserver {
         _turnCompletions.add(null);
         _state.add(LiveVoiceState.listening);
       }
+    } on LivePcmFrameException catch (error) {
+      _fail('Live audio output: ${error.message}');
+      unawaited(close());
     } catch (_) {
-      _fail('Live voice received an invalid audio event.');
+      _fail('Live voice received an invalid server event.');
       unawaited(close());
     }
   }
