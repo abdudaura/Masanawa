@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "description": "Canonical independent AF13 minimum whole-product gates. PASS_REAL requires actual checked evidence. A passing attestation is not provider/device truth certification.",
+  "gates": [
+    {
+      "id": "UX-A01",
+      "description": "Cold start auth/home no native theme flash and accessible language selection"
+    },
+    {
+      "id": "UX-A02",
+      "description": "Email and optional phone authentication with unverified phone status and secure recovery"
+    },
+    {
+      "id": "UX-A03",
+      "description": "Five-tab shell Chats Rooms Talks Gwani Wallet; Talks default; deep link/resume/account isolation"
+    },
+    {
+      "id": "UX-A04",
+      "description": "Masana & Contacts new chat: typed human/AI recipients, appropriate conversation route"
+    },
+    {
+      "id": "UX-A05",
+      "description": "Local voice-note record/preview/send/playback on second device; denied/network/provider recovery"
+    },
+    {
+      "id": "UX-A06",
+      "description": "Gwani menu and conversational text/voice purchase converge on authorized receipt"
+    },
+    {
+      "id": "UX-A07",
+      "description": "Uncertain purchase status lookup prevents duplicate charge or delivery"
+    },
+    {
+      "id": "UX-A08",
+      "description": "Talk record trim publish process follow engage and retry without duplicate posts"
+    },
+    {
+      "id": "UX-A09",
+      "description": "Talk audio feed single playback position low-data mode and moderation visibility"
+    },
+    {
+      "id": "UX-A10",
+      "description": "Room membership, audio posting and outsider/moderator boundaries"
+    },
+    {
+      "id": "UX-A11",
+      "description": "Human calls and mic audio focus recovery on real supported devices"
+    },
+    {
+      "id": "UX-A12",
+      "description": "Wallet/chat MSN and crypto transfers share authority and receipts"
+    },
+    {
+      "id": "WF-A01",
+      "description": "Fiat settled payment buys backed MSN once, duplicate forged callback failure"
+    },
+    {
+      "id": "WF-A02",
+      "description": "Qualified crypto deposit chain/provider confirmation and correct network instructions"
+    },
+    {
+      "id": "WF-A03",
+      "description": "MSN crypto quote authorization expiry liquidity and reconciled receipt"
+    },
+    {
+      "id": "WF-A04",
+      "description": "Wallet and chat internal transfer posting idempotence stable recipient identity"
+    },
+    {
+      "id": "WF-A05",
+      "description": "P2P reserve proof seller confirmation or qualified receipt, paid expiry races"
+    },
+    {
+      "id": "WF-A06",
+      "description": "P2P dispute frozen escrow, authorized one-time adjudication, no screenshot trust"
+    },
+    {
+      "id": "WF-A07",
+      "description": "Crypto withdrawal authorization, provider unknown outcome and reconciliation"
+    },
+    {
+      "id": "WF-A08",
+      "description": "MSN pending available reserved precision history and offline fencing"
+    },
+    {
+      "id": "WF-A09",
+      "description": "Authentication recovery and transaction step-up deny guessed/unverified phone"
+    },
+    {
+      "id": "WF-A10",
+      "description": "Backup/restore of outstanding finance and escrow with no double effects"
+    },
+    {
+      "id": "CR-A01",
+      "description": "AI character publication factual sourcing or disclosed fiction and Gemini audio listen-test"
+    },
+    {
+      "id": "PF-A01",
+      "description": "Persisted avatar profile and cross-surface blocking/reporting readback"
+    },
+    {
+      "id": "PF-A02",
+      "description": "Private cache session deletion and retention responsibilities through account switch"
+    },
+    {
+      "id": "PF-A03",
+      "description": "Firebase push deep link WhatsApp Telegram privacy and continuity"
+    },
+    {
+      "id": "PF-A04",
+      "description": "Low-end large-text RTL a11y slow-network offline permissions and measured performance"
+    },
+    {
+      "id": "DB-A01",
+      "description": "Unique immutable migration inventory and upgrade preservation"
+    },
+    {
+      "id": "DB-A02",
+      "description": "Fresh/upgrade PostgreSQL migration interruption/concurrency recovery"
+    },
+    {
+      "id": "DB-A03",
+      "description": "Running deployed schema version and pool/readiness verification"
+    },
+    {
+      "id": "DB-A04",
+      "description": "Representative database backup/restore financial/data continuity"
+    },
+    {
+      "id": "DB-A05",
+      "description": "Authorized object/media backup/restore, removal denial and audible playback"
+    },
+    {
+      "id": "DB-A06",
+      "description": "Measured storage/database growth capacity alarms/query performance"
+    },
+    {
+      "id": "DB-A07",
+      "description": "Job restart lease collisions idempotence and settlement reconciliation"
+    },
+    {
+      "id": "DB-A08",
+      "description": "Data export/deletion/retention signed media revoke and escrow-aware cleanup"
+    }
+  ]
+}
