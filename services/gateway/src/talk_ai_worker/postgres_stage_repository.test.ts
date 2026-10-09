@@ -5,10 +5,14 @@ import {
   type TalkAiStageSqlPool,
 } from "./postgres_stage_repository.js";
 
-function fixture(available = true) {
+function fixture(available = true, remainsAvailable = available, finalHostId = "host-1") {
+  let authorizationReads = 0;
   const query = vi.fn(async (sql: string, args?: unknown[]) => {
     if (sql.includes("FROM talks.talks ")) {
-      return { rows: available ? [{ topic: "Climate policy", host_name: "Host" }] : [] };
+      authorizationReads += 1;
+      return { rows: available && (authorizationReads === 1 || remainsAvailable)
+        ? [{ topic: "Climate policy", host_name: "Host",
+             host_user_id: authorizationReads === 1 ? "host-1" : finalHostId }] : [] };
     }
     if (sql.includes("FROM talks.talk_seats ") && sql.includes("s.active=false")) return { rows: [
       { participant_id: "seat-departed", kind: "human", display_name: "Former speaker",
@@ -76,7 +80,8 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     });
     expect(context?.contentTrust).toBe("public-untrusted-data");
 
-    expect(query).toHaveBeenCalledTimes(8);
+    expect(query).toHaveBeenCalledTimes(9);
+    expect(query.mock.calls.filter(([sql]) => sql.includes("FROM talks.talks "))).toHaveLength(2);
     for (const [sql, params] of query.mock.calls) {
       expect(sql).toMatch(/(?:(?:q|p|s|c)\.)?tenant_id=\$1 AND (?:(?:q|p|s|c)\.)?talk_id=\$2/);
       expect(params?.slice(0, 2)).toEqual(["tenant-1", "talk-1"]);
@@ -124,7 +129,7 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     const failingPool: TalkAiStageSqlPool = {
       query: async (sql: string) => {
         if (sql.includes("FROM talks.talks ")) {
-          return { rows: [{ topic: "Public topic", host_name: "Host" }] };
+          return { rows: [{ topic: "Public topic", host_name: "Host", host_user_id: "host-1" }] };
         }
         if (sql.includes("FROM talks.comments ")) throw new Error("safety enforcement unavailable");
         return { rows: [] };
@@ -134,6 +139,40 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     await expect(repository.readAuthorizedStage({
       tenantId: "tenant-1", talkId: "talk-1", before: "2026-10-08T05:00:00Z",
     })).rejects.toThrow("safety enforcement unavailable");
+  });
+
+  it("returns no AI stage context when a Talk ends or becomes restricted during parallel event reads", async () => {
+    const { repository, query } = fixture(true, false);
+    await expect(repository.readAuthorizedStage({
+      tenantId: "tenant-1", talkId: "talk-1", before: "2026-10-08T05:00:00Z",
+    })).resolves.toBeNull();
+    expect(query.mock.calls.filter(([sql]) => sql.includes("FROM talks.talks "))).toHaveLength(2);
+    expect(query.mock.calls[8]?.[0]).toContain("se.visibility <> 'public'");
+  });
+
+  it("returns no prior-Host audience snapshot when the Talk Host changes during reads", async () => {
+    const { repository } = fixture(true, true, "host-2");
+    await expect(repository.readAuthorizedStage({
+      tenantId: "tenant-1", talkId: "talk-1", before: "2026-10-08T05:00:00Z",
+    })).resolves.toBeNull();
+  });
+
+  it("fails closed if the final Talk authorization check encounters a database error", async () => {
+    let checks = 0;
+    const pool: TalkAiStageSqlPool = {
+      query: async (sql: string) => {
+        if (sql.includes("FROM talks.talks ")) {
+          checks += 1;
+          if (checks === 2) throw new Error("Talk authorization retry failed");
+          return { rows: [{ topic: "Climate policy", host_name: "Host", host_user_id: "host-1" }] };
+        }
+        return { rows: [] };
+      },
+    };
+    await expect(createPostgresTalkAiStageEventRepository(pool).readAuthorizedStage({
+      tenantId: "tenant-1", talkId: "talk-1", before: "2026-10-08T05:00:00Z",
+    })).rejects.toThrow("Talk authorization retry failed");
+    expect(checks).toBe(2);
   });
 
   it("does not query audience data for missing or non-live Talks", async () => {
