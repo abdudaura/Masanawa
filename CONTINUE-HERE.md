@@ -1,5 +1,12 @@
 # Continue Here
 
+## Current sole final integration window — 2026-10-09
+
+The owner assigned one final integration and APK compiler window; earlier parallel scheduling below is historical. [Current handoff and APK recovery](docs/workstreams/final-integration-apk-handoff-20261009.md) accounts for all U01–U30/F01–F18, 112 open PRs and 150 SHA-pinned window handoffs. Profile/private audio fixes are pushed at `c105108aaa461ee6006e8fefb0a835f581e56710`. Combined local Flutter: 874 tests pass, analyzer zero errors (643 warning/info findings); the larger local combined source is not yet fully published. Backend qualification remains incomplete.
+
+**APK not completed:** the execution service went offline during native Android compilation (`409 Conflict, environment_offline: Environment is not connected`); hosted mobile job also failed with zero steps. Preserve local source/toolchain/logs, resume exact-source compilation and artifact verification when execution returns. No production mutation, merge, branch deletion or payment authorization is implied. Do not mark the product DONE based on handoff/source presence.
+
+
 ## LATEST CORRECTION — Contacts and full pending-work reconciliation (2026-10-08)
 
 **Owner re-audit supersedes the initial plan's claim of completeness.** The blanket development pause stays **lifted for independent exact-path work**. The initial U01–U20 assignments are unchanged; **new U21–U30** cover missing product experience, and **F01–F18** explicitly recover every R01–R19/C01–C08 foundation from current draft source. Do not run 48 writers against shared files. Read [master re-audit](docs/UNFINISHED-SCOPE-RECONCILIATION-20261008.md), [Contacts/phonebook](docs/CONTACTS-AND-ADDRESS-BOOK-EXPERIENCE-20261008.md), [U21–U30 + F01–F18 assignments](docs/ADDITIONAL-U21-U30-AND-FOUNDATION-F01-F18-20261008.md), [28 additional prompts](docs/ADDITIONAL-WINDOW-LAUNCH-PROMPTS-20261008.md), [all 79 unchecked historic tasks](docs/LEGACY-150-TASK-RECONCILIATION-20261008.md) FIRST. Existing C01 #468 has an unmerged contacts management UI; preserve it, add a real nested Chats→Contacts screen and optional consented **device-local** phonebook rather than rebuilding C01 or silently uploading phone numbers. K13–K20 cover Contacts tests. Existing Work #497, Firebase #461, C02/C05/C06 duplicate migrations, R17/C08 route integration, #457 CI and real device/provider/DB checks remain pending. Additional F windows must resume/reconcile existing code, never overwrite it or claim false DONE.

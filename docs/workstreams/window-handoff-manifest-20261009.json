@@ -1,6 +1,7 @@
 {
   "repository": "Baatiku/masanawa",
   "baseline": "d23a8fac4dc073ea5171e9d133a2c46253d664fe",
+  "openPRSnapshot": 112,
   "handoffs": [
     {
       "pr": 435,
@@ -645,6 +646,412 @@
       "path": "docs/workstreams/c09-private-calls-20261009.md",
       "archivedPath": "docs/workstreams/window-handoffs/pr-575/c09-private-calls-20261009.md",
       "sourceBlob": "c5aea85f978b096d4212a1862dba9561b7082e51"
+    },
+    {
+      "pr": 518,
+      "head": "08e9fc6424a06bbde5784a9da2cb19a02906dac2",
+      "path": "docs/workstreams/f11-draft-pr-collision-audit-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-518/f11-draft-pr-collision-audit-20261009.md",
+      "sourceBlob": "a0632d468ca195b67d695578d3ee98bbcb8426ee"
+    },
+    {
+      "pr": 498,
+      "head": "9cff45ffa4cb84eaf51ffa728a55e046d8e5bf82",
+      "path": "docs/workstreams/r19-role-guardrails-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-498/r19-role-guardrails-20261008.md",
+      "sourceBlob": "c2a4e4978008535a235ca04b8f73de0e1aa66467"
+    },
+    {
+      "pr": 496,
+      "head": "fcfd820abf08c271fd12ed70aa1723b1ffbfb57e",
+      "path": "docs/workstreams/r15-human-profile-safety-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-496/r15-human-profile-safety-20261008.md",
+      "sourceBlob": "c35bccfa53e2fbb3dd0ec4ac440a7117bcb1884b"
+    },
+    {
+      "pr": 495,
+      "head": "8dc7bf3a0570b5e3ce90c5d4d6b7ddca976136d3",
+      "path": "docs/workstreams/r03-support-preference-authority-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-495/r03-support-preference-authority-20261008.md",
+      "sourceBlob": "0bb3469ec73484e9daa84d84fe0d04ef82bf78b2"
+    },
+    {
+      "pr": 495,
+      "head": "8dc7bf3a0570b5e3ce90c5d4d6b7ddca976136d3",
+      "path": "docs/workstreams/f03-support-default-recovery-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-495/f03-support-default-recovery-20261009.md",
+      "sourceBlob": "9d0b766b6e51b5b72c65d7ed72514dd0b97a5d57"
+    },
+    {
+      "pr": 494,
+      "head": "84f516e14b6138f0639ac813c362a300f16d4b4a",
+      "path": "docs/workstreams/r15-human-profile-safety-preferences-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-494/r15-human-profile-safety-preferences-20261008.md",
+      "sourceBlob": "d500b0d67aec3800e3726cb1b8fb937208bd43af"
+    },
+    {
+      "pr": 492,
+      "head": "7453199a6aff92df78b4e7e1c082c968b52463f8",
+      "path": "docs/workstreams/r16-untrusted-deeplink-validation.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-492/r16-untrusted-deeplink-validation.md",
+      "sourceBlob": "2f9adb6ca7946169f1b0b4baeac6b258861e238f"
+    },
+    {
+      "pr": 491,
+      "head": "59b0ccc47ab7de7799d88f6a362be34c0c0d4e83",
+      "path": "docs/workstreams/r15-persona-reporting-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-491/r15-persona-reporting-20261008.md",
+      "sourceBlob": "8db45ed602f7ca2b3f20244a66487dcc8d475cb9"
+    },
+    {
+      "pr": 489,
+      "head": "73a392342cfc7d9487edfbf9b0781076a8d3b9b6",
+      "path": "docs/workstreams/r15-persona-profile-report-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-489/r15-persona-profile-report-20261008.md",
+      "sourceBlob": "f528c0c33e52d5d23e806961d93fff4c2fdccb46"
+    },
+    {
+      "pr": 488,
+      "head": "0d56bd58d866f4ec5a4959881795f9205c173944",
+      "path": "docs/workstreams/r15-provider-response-bounds-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-488/r15-provider-response-bounds-20261008.md",
+      "sourceBlob": "8ddd6cce13d4d6de557e7342ccd59400df638bf5"
+    },
+    {
+      "pr": 486,
+      "head": "4981e6d7324bef060e18f1feec38ba0d006564e4",
+      "path": "docs/workstreams/f16-retention-operator-recovery-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-486/f16-retention-operator-recovery-20261009.md",
+      "sourceBlob": "c35acacf8015496da0c419ef2252fb6f070ba063"
+    },
+    {
+      "pr": 486,
+      "head": "4981e6d7324bef060e18f1feec38ba0d006564e4",
+      "path": "docs/workstreams/c03-retention-operator-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-486/c03-retention-operator-20261008.md",
+      "sourceBlob": "6b6b93f3d1b8a7c21fabbe3a10966c292707b83f"
+    },
+    {
+      "pr": 485,
+      "head": "0873733191db3be9786e719f70e37894b4c735c7",
+      "path": "docs/workstreams/r16-disposable-bootstrap-freshness-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-485/r16-disposable-bootstrap-freshness-20261008.md",
+      "sourceBlob": "e8c37c8fb6ed0ffba81a90c5a9468a9e493272ee"
+    },
+    {
+      "pr": 484,
+      "head": "fc60bbd2c4011de0bc3b6e99adc27c276a00a0cd",
+      "path": "docs/workstreams/r10-gift-sheet-uncertain-recovery-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-484/r10-gift-sheet-uncertain-recovery-20261008.md",
+      "sourceBlob": "449ae1ef36dd582a62d7f1a553ee69737c2f2990"
+    },
+    {
+      "pr": 482,
+      "head": "ee3faff4b3fbe682027e15a0fff762f18bf10c28",
+      "path": "docs/workstreams/r11-settings-language-preference-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-482/r11-settings-language-preference-20261008.md",
+      "sourceBlob": "61fe33ce4077d0e74ecba881c509325c5760f497"
+    },
+    {
+      "pr": 479,
+      "head": "65c53ecd9060af701d30ffbe8914a6e6567863e4",
+      "path": "docs/workstreams/r16-schema-ops-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-479/r16-schema-ops-20261008.md",
+      "sourceBlob": "4511c52021a91ee5023e4d328bab19dd02477a3d"
+    },
+    {
+      "pr": 473,
+      "head": "07f52032fc6c1dac0cf6ae6f6a43fca47b2e91db",
+      "path": "docs/workstreams/communications-realtime-c03-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-473/communications-realtime-c03-20261008.md",
+      "sourceBlob": "2400eeb36785f0e24e2d643bce2d5426080f7043"
+    },
+    {
+      "pr": 471,
+      "head": "b6186eae666389797f810af2534eef5b751c2a5e",
+      "path": "docs/workstreams/r10-gift-transport-recovery-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-471/r10-gift-transport-recovery-20261008.md",
+      "sourceBlob": "41ef62c3aa793619c4b231031113597103ef5d68"
+    },
+    {
+      "pr": 459,
+      "head": "e8523f64ecf15f67e998d7376a99f8ee3428819c",
+      "path": "docs/workstreams/r09-python-live-stage-context-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-459/r09-python-live-stage-context-20261008.md",
+      "sourceBlob": "660a893896a97f56987ebf735a74c177980ed7c3"
+    },
+    {
+      "pr": 456,
+      "head": "20aef41f031be9bf4c0621fbc1eca20a4bc4d77f",
+      "path": "docs/workstreams/r02-mobile-audio-late-token-cleanup-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-456/r02-mobile-audio-late-token-cleanup-20261008.md",
+      "sourceBlob": "2d2d168c10c57dc564dcf102efe4fb3ed9eddf1b"
+    },
+    {
+      "pr": 455,
+      "head": "26a19e603d3820d23fb9c9fab90b88631a322bce",
+      "path": "docs/workstreams/r16-android-private-data-security-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-455/r16-android-private-data-security-20261008.md",
+      "sourceBlob": "cc96e8a0ddb39506984042fd46d0a224c4fda7d0"
+    },
+    {
+      "pr": 454,
+      "head": "df4e4c72cbcc324deca485fe0ec9e77b99fca7d5",
+      "path": "docs/workstreams/r08-crypto-quote-consent-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-454/r08-crypto-quote-consent-20261008.md",
+      "sourceBlob": "a9f09988d0a75e62437a6cc61ee427f1f9e37fee"
+    },
+    {
+      "pr": 453,
+      "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+      "path": "docs/workstreams/r13-replay-finalize-recovery-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-453/r13-replay-finalize-recovery-20261008.md",
+      "sourceBlob": "632e8bcb961cdff2dbee9b431cded590d3576595"
+    },
+    {
+      "pr": 453,
+      "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+      "path": "docs/workstreams/f09-replay-postsign-recheck-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-453/f09-replay-postsign-recheck-20261009.md",
+      "sourceBlob": "6d773a404a2418808b1d2802f049aa90ae0dbc79"
+    },
+    {
+      "pr": 453,
+      "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+      "path": "docs/workstreams/f09-s3-boundary-hardening-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-453/f09-s3-boundary-hardening-20261009.md",
+      "sourceBlob": "fd9b1b601643df503dde38ac41305298ab41e851"
+    },
+    {
+      "pr": 453,
+      "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+      "path": "docs/workstreams/f09-livekit-egress-boundary-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-453/f09-livekit-egress-boundary-20261009.md",
+      "sourceBlob": "254e9eb5c49348a70640b783508f3c534a3bdf40"
+    },
+    {
+      "pr": 453,
+      "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+      "path": "docs/workstreams/f09-unique-egress-attempt-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-453/f09-unique-egress-attempt-20261009.md",
+      "sourceBlob": "1078595f06097ff1f47287f7478e9807e9113e0c"
+    },
+    {
+      "pr": 453,
+      "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+      "path": "docs/workstreams/f09-stop-compensation-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-453/f09-stop-compensation-20261009.md",
+      "sourceBlob": "9b67765d997a2183e0559b94d49f0cdf1bca6ebe"
+    },
+    {
+      "pr": 452,
+      "head": "772c89d33cc04a1a921dc7346e0e947a095e4c74",
+      "path": "docs/workstreams/r09-moderated-talk-comments-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-452/r09-moderated-talk-comments-20261008.md",
+      "sourceBlob": "f1461690544395853982629936d9e1a5151d7a42"
+    },
+    {
+      "pr": 452,
+      "head": "772c89d33cc04a1a921dc7346e0e947a095e4c74",
+      "path": "docs/workstreams/f04-stage-recheck-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-452/f04-stage-recheck-20261009.md",
+      "sourceBlob": "81a54654c09df2ffe0026a8dd13da2fce8e3f3f2"
+    },
+    {
+      "pr": 451,
+      "head": "eb14419a5290c52680fe0896418a199383dd8532",
+      "path": "docs/workstreams/r15-channel-webhook-boundaries-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-451/r15-channel-webhook-boundaries-20261008.md",
+      "sourceBlob": "16c02124d59d5525453818a9460af70475f62614"
+    },
+    {
+      "pr": 450,
+      "head": "a06b154893f51735c4b0008e9c8224a6cf03f92f",
+      "path": "docs/workstreams/r15-replay-comment-safety-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-450/r15-replay-comment-safety-20261008.md",
+      "sourceBlob": "eeba2ed5ca3154240d344d5ed6a2583156c114ca"
+    },
+    {
+      "pr": 449,
+      "head": "71186a009a6916958c9594084f3596e0522c15af",
+      "path": "docs/workstreams/r02-livekit-dispatch-identity-fence-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-449/r02-livekit-dispatch-identity-fence-20261008.md",
+      "sourceBlob": "671a801fb50541e09db51e5151a33139fef43075"
+    },
+    {
+      "pr": 448,
+      "head": "bc2dafe54bebb2eb665db84deb0bff515ae9b77f",
+      "path": "docs/workstreams/r02-r19-ai-turn-fencing-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-448/r02-r19-ai-turn-fencing-20261008.md",
+      "sourceBlob": "918f773e3d3743a3b53b5157ef665552f69a8e1f"
+    },
+    {
+      "pr": 447,
+      "head": "c5ece5920b0b4437a24613bbd8f20db25912995d",
+      "path": "docs/workstreams/r07-billing-chat-ambiguity-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-447/r07-billing-chat-ambiguity-20261008.md",
+      "sourceBlob": "19e37593b4af3e0edbcb7bd18df2593e67d234dd"
+    },
+    {
+      "pr": 446,
+      "head": "dd2d75db399887f1cb1df27a0722b4e5450c9206",
+      "path": "docs/workstreams/r15-gift-safety-eligibility-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-446/r15-gift-safety-eligibility-20261008.md",
+      "sourceBlob": "f0c789453e63e80a01d0b621dc77efd9ac138693"
+    },
+    {
+      "pr": 445,
+      "head": "37a1c190110fd0f7f5499d89b71c371aa2477fad",
+      "path": "docs/workstreams/r17-wallet-private-intent-handoff-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-445/r17-wallet-private-intent-handoff-20261008.md",
+      "sourceBlob": "10a00f33a2ef1068dddab2bda83edf1afb3642c0"
+    },
+    {
+      "pr": 444,
+      "head": "9836854f534306e1dea18925be5be21d31b768e3",
+      "path": "docs/workstreams/r08-crypto-session-isolation-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-444/r08-crypto-session-isolation-20261008.md",
+      "sourceBlob": "5481aec9f582fb1aef7b7342dd7aca85115be211"
+    },
+    {
+      "pr": 443,
+      "head": "287191c787ba05f460fba8759d8be9c4759f27d9",
+      "path": "docs/workstreams/r15-ai-seat-safety-authorization-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-443/r15-ai-seat-safety-authorization-20261008.md",
+      "sourceBlob": "78eb113184cea0878f2d1e9f7ee32eccb1c20cac"
+    },
+    {
+      "pr": 442,
+      "head": "86ed75fd769a0ec8020c8fa2c05e2c0255d647bf",
+      "path": "docs/workstreams/r01-primary-action-accessibility-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-442/r01-primary-action-accessibility-20261008.md",
+      "sourceBlob": "bff6c104c18fbfcd1e32258c02af1cd8104aa9ff"
+    },
+    {
+      "pr": 441,
+      "head": "3a7465e6e4c4e8e1a33ecfc551942e9d019c8ffe",
+      "path": "docs/workstreams/r03-support-seed-recovery-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-441/r03-support-seed-recovery-20261008.md",
+      "sourceBlob": "09cdbbd88cdc2cd99fa191f6d4d509ace50e9b45"
+    },
+    {
+      "pr": 440,
+      "head": "7a25f8fc59c20973f25fb4e0083eb99652863d8b",
+      "path": "docs/workstreams/r05-billing-funding-restoration-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-440/r05-billing-funding-restoration-20261008.md",
+      "sourceBlob": "1ff4c051bd7bc1912321c2efd13e2d3dd4ca03e9"
+    },
+    {
+      "pr": 439,
+      "head": "62ec4ccfe2d2990d02760481e8cc4a09599769a6",
+      "path": "docs/workstreams/r02-server-session-lease-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-439/r02-server-session-lease-20261008.md",
+      "sourceBlob": "90f8849282a9f82a18b1c55a5a99a6fe5b427f64"
+    },
+    {
+      "pr": 438,
+      "head": "4b823ffd40e764416c3840a91ba0815ce3274dfa",
+      "path": "docs/workstreams/r06-native-ngn-wallet-visibility-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-438/r06-native-ngn-wallet-visibility-20261008.md",
+      "sourceBlob": "529aea56d1b989a12977020d9c8e4105fbb352cf"
+    },
+    {
+      "pr": 436,
+      "head": "0098f4d05d72ea1dc2ad3a3b683111a0f68499cd",
+      "path": "docs/workstreams/r14-fcm-delivery-resilience-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-436/r14-fcm-delivery-resilience-20261008.md",
+      "sourceBlob": "00242f0748778dfa74bba3d815d705ff313835d0"
+    },
+    {
+      "pr": 436,
+      "head": "0098f4d05d72ea1dc2ad3a3b683111a0f68499cd",
+      "path": "docs/workstreams/f10-fcm-credential-race-recovery-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-436/f10-fcm-credential-race-recovery-20261009.md",
+      "sourceBlob": "ba11b6daa74e76983290b44ffcfd61e2a74dcb8f"
+    },
+    {
+      "pr": 433,
+      "head": "24e7e82b8b2fefc79fb3bcbd1f81bd39083bc6ad",
+      "path": "docs/workstreams/r04-create-participant-intents-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-433/r04-create-participant-intents-20261008.md",
+      "sourceBlob": "41eeda6468da53c9d974ca4e32eb795c13ff9b65"
+    },
+    {
+      "pr": 433,
+      "head": "24e7e82b8b2fefc79fb3bcbd1f81bd39083bc6ad",
+      "path": "docs/workstreams/f04-r04-error-redaction-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-433/f04-r04-error-redaction-20261009.md",
+      "sourceBlob": "0477e80270a8aed10fffbd81caceda72cb7783cd"
+    },
+    {
+      "pr": 430,
+      "head": "df47cd8bbff62d008f7f96b0af7a2091153e0eac",
+      "path": "docs/workstreams/r12-financial-preflight-worker-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-430/r12-financial-preflight-worker-20261008.md",
+      "sourceBlob": "3f664b5bcac76dbaeb5718180ac2405fc737ac08"
+    },
+    {
+      "pr": 426,
+      "head": "75cb6a3ae9c2ded67b7842235894ed2ecaa10fa0",
+      "path": "docs/workstreams/r11-root-shell-localization-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-426/r11-root-shell-localization-20261008.md",
+      "sourceBlob": "d2fd096527d8437d9112f6ef0721160a2bef42eb"
+    },
+    {
+      "pr": 503,
+      "head": "7809b0bd1041b3d3a94f5824a99475113a3e7bfd",
+      "path": "docs/workstreams/f09-cached-seek-authorization-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-503/f09-cached-seek-authorization-20261009.md",
+      "sourceBlob": "5e49f9d1987083446e1804b8b19cda2e9516e2be"
+    },
+    {
+      "pr": 503,
+      "head": "7809b0bd1041b3d3a94f5824a99475113a3e7bfd",
+      "path": "docs/workstreams/f09-r13-awaiting-seek-authority-20261008.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-503/f09-r13-awaiting-seek-authority-20261008.md",
+      "sourceBlob": "bac6d8705631b26b9d019df866b879b93c5e5e41"
+    },
+    {
+      "pr": 472,
+      "head": "6c9ae9b0ad79d42966b654640f46417b4ae486f6",
+      "path": "docs/workstreams/f15-message-mutation-authorization-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-472/f15-message-mutation-authorization-20261009.md",
+      "sourceBlob": "464ca5074a9428c69db86fc7584568c1aee6c0a9"
+    },
+    {
+      "pr": 468,
+      "head": "2a501e0e01c12e7996b33eaf89b0bc1e78332e8c",
+      "path": "docs/workstreams/f14-revocation-active-actor-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-468/f14-revocation-active-actor-20261009.md",
+      "sourceBlob": "55e5cc17f0298a951c5b33475b8249bf08681287"
+    },
+    {
+      "pr": 468,
+      "head": "2a501e0e01c12e7996b33eaf89b0bc1e78332e8c",
+      "path": "docs/workstreams/f14-uncertain-contact-write-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-468/f14-uncertain-contact-write-20261009.md",
+      "sourceBlob": "ca24d06e06c5a1d035d0a8dbcbeb0e0c2be6aa06"
+    },
+    {
+      "pr": 453,
+      "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+      "path": "docs/workstreams/f09-livekit-timeout-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-453/f09-livekit-timeout-20261009.md",
+      "sourceBlob": "04ca91423aa3c6df3632809d37a4c37850fe736e"
+    },
+    {
+      "pr": 440,
+      "head": "7a25f8fc59c20973f25fb4e0083eb99652863d8b",
+      "path": "docs/workstreams/f05-funding-recovery-no-store-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-440/f05-funding-recovery-no-store-20261009.md",
+      "sourceBlob": "92b3fadc1dc9205cd2f30c48ed5f7a6bae210cbc"
+    },
+    {
+      "pr": 435,
+      "head": "3cb5583c9e981ba97e5fdabcb0369118ab8c1c40",
+      "path": "docs/workstreams/f13-avatar-session-fencing-20261009.md",
+      "archivedPath": "docs/workstreams/window-handoffs/pr-435/f13-avatar-session-fencing-20261009.md",
+      "sourceBlob": "864cdbbca596a3219862f4f9d3e0a727792cada0"
     }
   ]
 }
