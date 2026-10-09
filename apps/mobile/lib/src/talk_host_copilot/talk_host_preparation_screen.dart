@@ -38,6 +38,11 @@ class _TalkHostPreparationScreenState extends State<TalkHostPreparationScreen> {
   void initState() {
     super.initState();
     widget.controller.addListener(_onUpdated);
+    if (widget.prepId == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.controller.refreshList();
+      });
+    }
     if (widget.prepId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) widget.controller.load(widget.prepId!);
@@ -190,6 +195,26 @@ class _TalkHostPreparationScreenState extends State<TalkHostPreparationScreen> {
           Text('Write the topic and talking points privately. '
               'Nothing becomes public until you confirm Go Live.',
               style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          if (!busy && controller.available.isNotEmpty)
+            ExpansionTile(
+              title: const Text('Resume a saved preparation'),
+              children: [
+                for (final item in controller.available.take(20))
+                  ListTile(
+                    title: Text(item.title),
+                    subtitle: Text(item.phase.name),
+                    onTap: () => controller.load(item.prepId),
+                  ),
+              ],
+            ),
+          if (draft != null && !busy)
+            Align(alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: controller.newDraft,
+                icon: const Icon(Icons.add),
+                label: const Text('New preparation'),
+              )),
           const SizedBox(height: 16),
           TextField(controller: _title, enabled: canEdit,
             onChanged: (_) => setState(() => _editing = true),
