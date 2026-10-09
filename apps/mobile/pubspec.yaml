@@ -60,6 +60,8 @@ dependencies:
   firebase_messaging: ^16.7.0
   flutter_local_notifications: ^22.3.1
   permission_handler: ^13.0.2
+  # U22 native read-only contacts; requires signed native permission review.
+  fast_contacts: ^5.0.1
   livekit_client: ^2.13.0
 
 dev_dependencies:
