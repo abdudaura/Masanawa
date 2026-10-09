@@ -138,6 +138,45 @@ describe("R14 FCM delivery resilience", () => {
     expect(wait).not.toHaveBeenCalled();
   });
 
+  it("reuses a freshly renewed bearer when a second device request reports its stale 401 late", async () => {
+    let oauthCalls = 0;
+    let oldBearerCalls = 0;
+    const sentHeaders: string[] = [];
+    let releaseLate401: (() => void) | undefined;
+    const late401 = new Promise<void>((resolve) => { releaseLate401 = resolve; });
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if (String(url).includes("oauth2.googleapis.com")) {
+        oauthCalls += 1;
+        // A third OAuth call represents a stale 401 incorrectly wiping an
+        // already-renewed token. It must not take down a healthy batch.
+        if (oauthCalls > 2) throw new Error("OAuth temporarily unavailable");
+        return Response.json({ access_token: `oauth-${oauthCalls}`, expires_in: 3600 });
+      }
+      const bearer = (init?.headers as Record<string, string>).authorization;
+      sentHeaders.push(bearer);
+      if (bearer === "Bearer oauth-1") {
+        oldBearerCalls += 1;
+        if (oldBearerCalls === 2) await late401;
+        return failed(401);
+      }
+      if (bearer === "Bearer oauth-2") {
+        releaseLate401?.();
+        return Response.json({ name: "ok" });
+      }
+      throw new Error(`Unexpected auth state: ${bearer}`);
+    });
+    const { sender, wait } = senderWith(["one"], fetchImpl as typeof fetch);
+    const outcomes = await Promise.all([sender.send(request), sender.send(request)]);
+    expect(outcomes).toEqual([
+      { attempted: 1, delivered: 1 },
+      { attempted: 1, delivered: 1 },
+    ]);
+    expect(oldBearerCalls).toBe(2);
+    expect(oauthCalls).toBe(2);
+    expect(sentHeaders.filter((v) => v === "Bearer oauth-2")).toHaveLength(2);
+    expect(wait).not.toHaveBeenCalled();
+  });
+
   it("fails closed on repeated OAuth rejection without including credential details", async () => {
     const fetchImpl = vi.fn(async (url: unknown) =>
       String(url).includes("oauth2.googleapis.com") ? oauth() : failed(401));
