@@ -1,10 +1,18 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/src/core/live_pcm_audio.dart';
 import 'package:masanawa/src/audio_focus/live_pcm_frame.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const channel = MethodChannel('masanawa/live_pcm');
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
   final pcm = Uint8List.fromList([0, 0, 1, 0, 255, 127]);
   final encoded = base64Encode(pcm);
 
@@ -87,6 +95,24 @@ void main() {
       ),
       throwsA(isA<LivePcmFrameException>()),
     );
+  });
+
+  test('validated provider rate and bytes reach native output unchanged',
+      () async {
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return true;
+    });
+    final frame = LivePcmFrame.decode(
+      mimeType: 'audio/pcm;rate=16000',
+      encodedData: encoded,
+    );
+    expect(await LivePcmAudio.start(sampleRate: frame.sampleRate), isTrue);
+    expect(await LivePcmAudio.write(frame.bytes), isTrue);
+    expect(calls.map((call) => call.method), ['start', 'write']);
+    expect(calls.first.arguments['sampleRate'], 16000);
+    expect(calls.last.arguments['bytes'], orderedEquals(pcm));
   });
 
   test('provider input never appears inside an output-stage exception', () {
