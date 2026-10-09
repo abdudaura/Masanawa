@@ -18,15 +18,24 @@ export function createPostgresAvatarRepository(pool: AvatarSqlPool): ProfileAvat
         : { exists: true, url: result.rows[0].avatar_url };
     },
     async stage(input) {
-      await pool.query(
+      // A staged SHA may be retried or reselected after becoming orphaned.
+      // Refresh its lease *on every accepted stage*, never reuse a historic
+      // created_at timestamp as the live upload's cleanup deadline.
+      // Refuse deleting/active rows and owner/URL mismatches before S3 PUT.
+      const result = await pool.query<{ object_key: string }>(
         `INSERT INTO talks.profile_avatar_objects
           (tenant_id,user_id,object_key,public_url,state)
          VALUES ($1,$2,$3,$4,'staged')
          ON CONFLICT (object_key) DO UPDATE
            SET state='staged',updated_at=clock_timestamp()
-         WHERE talks.profile_avatar_objects.state='orphaned'`,
+         WHERE talks.profile_avatar_objects.state IN ('orphaned','staged')
+           AND talks.profile_avatar_objects.tenant_id=EXCLUDED.tenant_id
+           AND talks.profile_avatar_objects.user_id=EXCLUDED.user_id
+           AND talks.profile_avatar_objects.public_url=EXCLUDED.public_url
+         RETURNING object_key`,
         [input.tenantId, input.userId, input.key, input.url],
       );
+      return result.rowCount === 1;
     },
     async attach(input) {
       // Single statement scopes profile mutation and durable lifecycle.
@@ -87,7 +96,7 @@ export function createPostgresAvatarRepository(pool: AvatarSqlPool): ProfileAvat
         `WITH candidates AS (
           SELECT object_key FROM talks.profile_avatar_objects
            WHERE (state='orphaned' OR
-                (state='staged' AND created_at < clock_timestamp()-interval '1 hour') OR
+                (state='staged' AND updated_at < clock_timestamp()-interval '1 hour') OR
                 (state='deleting' AND updated_at < clock_timestamp()-interval '15 minutes'))
            ORDER BY created_at
            FOR UPDATE SKIP LOCKED
