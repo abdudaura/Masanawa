@@ -117,6 +117,15 @@ class _HumanChatComposerState extends State<HumanChatComposer> {
                 icon: const Icon(Icons.close),
               ),
             ),
+          if (state.lastServerAcceptedMessageId != null &&
+              state.error == null)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Semantics(
+                liveRegion: true,
+                child: Text('Accepted by server. Delivery/read not confirmed.'),
+              ),
+            ),
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
