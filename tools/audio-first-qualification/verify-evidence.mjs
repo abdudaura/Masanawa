@@ -26,12 +26,13 @@ function proofDigest(root, relative) {
   return createHash('sha256').update(readFileSync(actual)).digest('hex');
 }
 /** Checks attestations, not truthfulness of a purported device/provider test. */
-export function verify({ root, matrix, manifest, mode = 'release', now = new Date() }) {
+export function verify({ root, matrix, manifest, expectedSha, mode = 'release', now = new Date() }) {
   if (!['release', 'integration'].includes(mode)) throw Error('Unknown mode');
+  if (!SHA40.test(expectedSha ?? '')) throw Error('Expected immutable source SHA required');
   const rootReal = realpathSync(root);
   const gates = boundedJson(matrix);
   const record = boundedJson(manifest);
-  if (gates.schemaVersion !== 1 || !Array.isArray(gates.gates) || gates.gates.length === 0 || record.schemaVersion !== 1 || !Array.isArray(record.evidence) || !SHA40.test(record.sourceSha ?? '')) throw Error('Malformed matrix or evidence manifest');
+  if (gates.schemaVersion !== 1 || !Array.isArray(gates.gates) || gates.gates.length === 0 || record.schemaVersion !== 1 || !Array.isArray(record.evidence) || !SHA40.test(record.sourceSha ?? '') || record.sourceSha.toLowerCase() !== expectedSha.toLowerCase()) throw Error('Malformed matrix, wrong source SHA or evidence manifest');
   const expected = new Set();
   for (const g of gates.gates) {
     if (!g || !IDENTIFIER.test(g.id ?? '') || expected.has(g.id) || typeof g.description !== 'string' || !g.description.trim()) throw Error('Malformed or duplicate gate definition');
@@ -67,14 +68,14 @@ export function verify({ root, matrix, manifest, mode = 'release', now = new Dat
 function main(argv) {
   const opts = {};
   for (let i=0; i<argv.length; i += 2) {
-    if (!['--root','--manifest','--matrix','--mode'].includes(argv[i]) || i+1 >= argv.length) throw Error('Usage: --root DIR --manifest FILE [--matrix FILE] [--mode release|integration]');
+    if (!['--root','--manifest','--matrix','--mode','--expected-sha'].includes(argv[i]) || i+1 >= argv.length) throw Error('Usage: --root DIR --manifest FILE [--matrix FILE] [--mode release|integration]');
     opts[argv[i].slice(2)] = argv[i+1];
   }
   const here = path.dirname(fileURLToPath(import.meta.url));
   const root = path.resolve(opts.root ?? '.');
   const manifest = path.resolve(opts.manifest ?? '');
-  if (!opts.manifest || !existsSync(manifest)) throw Error('Missing evidence manifest');
-  const result = verify({root, manifest, matrix: path.resolve(opts.matrix ?? path.join(here,'acceptance-matrix.json')), mode: opts.mode ?? 'release'});
+  if (!opts.manifest || !existsSync(manifest) || !SHA40.test(opts['expected-sha'] ?? '')) throw Error('Missing manifest or expected immutable source SHA');
+  const result = verify({root, manifest, matrix: path.resolve(opts.matrix ?? path.join(here,'acceptance-matrix.json')), expectedSha: opts['expected-sha'], mode: opts.mode ?? 'release'});
   process.stdout.write(JSON.stringify(result, null, 2) + '\n');
   process.exitCode = result.ready ? 0 : 2;
 }
