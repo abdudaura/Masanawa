@@ -201,8 +201,8 @@ describe("AF01 billing receipt recovery (UX-A07 / WF-A08)", () => {
 
   it.each([
     ["overlength", "x".repeat(129)],
-    ["control-byte", `bill-\\u0000other`],
-    ["bidi override", `bill-\\u202eother`],
+    ["control-byte", "bill-" + String.fromCharCode(0) + "other"],
+    ["bidi override", "bill-" + String.fromCharCode(0x202e) + "other"],
   ])("rejects %s signed identifiers before durable admission", async (_, invalidReference) => {
     const h = harness();
     await expect(h.service.receiveWebhook(webhook({
