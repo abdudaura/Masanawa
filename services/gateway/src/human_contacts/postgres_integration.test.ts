@@ -327,6 +327,67 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     expect(afterBlock.contacts.map(x => x.userId)).not.toContain(peers[0]);
   });
 
+  it("blocks revoked sessions after actor disablement while allowing revocation of a disabled peer", async () => {
+    // Use a dedicated pair so existing consent and pagination tests are untouched.
+    const activeRevoker = `c01_active_revoker_${nonce}`;
+    const disabledPeer = `c01_disabled_peer_${nonce}`;
+    for (const id of [activeRevoker, disabledPeer]) {
+      await pool.query(
+        `INSERT INTO identity.users(tenant_id,user_id,created_at,updated_at)
+         VALUES ($1,$2,clock_timestamp(),clock_timestamp())`, [tenant, id],
+      );
+    }
+    await pool.query(
+      `INSERT INTO talks.human_dm_contact_requests
+         (tenant_id,first_user_id,second_user_id,requested_by,status)
+       VALUES ($1,LEAST($2::text,$3::text),GREATEST($2::text,$3::text),
+               $2,'accepted')`,
+      [tenant, activeRevoker, disabledPeer],
+    );
+
+    const repo = createPostgresHumanContactRepository(pool);
+    const read = async () => (await pool.query<{
+      status: string; revoked_by: string | null; updated_at: string;
+    }>(
+      `SELECT status, revoked_by, updated_at::text AS updated_at
+       FROM talks.human_dm_contact_requests
+       WHERE tenant_id=$1 AND first_user_id=LEAST($2::text,$3::text)
+         AND second_user_id=GREATEST($2::text,$3::text)`,
+      [tenant, activeRevoker, disabledPeer],
+    )).rows[0];
+
+    const original = await read();
+    expect(original).toMatchObject({ status: "accepted", revoked_by: null });
+    await pool.query(
+      `UPDATE identity.users SET state='disabled' WHERE tenant_id=$1 AND user_id=$2`,
+      [tenant, activeRevoker],
+    );
+    expect(await repo.revoke({
+      tenantId: tenant, actorId: activeRevoker, otherUserId: disabledPeer,
+    })).toBe(false);
+    expect(await read()).toEqual(original);
+
+    // Recover the actor account but disable the peer: cleanup by the active
+    // participant must still work without the peer being able to log in.
+    await pool.query(
+      `UPDATE identity.users SET state='active' WHERE tenant_id=$1 AND user_id=$2`,
+      [tenant, activeRevoker],
+    );
+    await pool.query(
+      `UPDATE identity.users SET state='disabled' WHERE tenant_id=$1 AND user_id=$2`,
+      [tenant, disabledPeer],
+    );
+    expect(await repo.revoke({
+      tenantId: tenant, actorId: activeRevoker, otherUserId: disabledPeer,
+    })).toBe(true);
+    const revoked = await read();
+    expect(revoked).toMatchObject({ status: "declined", revoked_by: activeRevoker });
+    expect(await repo.revoke({
+      tenantId: tenant, actorId: activeRevoker, otherUserId: disabledPeer,
+    })).toBe(true);
+    expect(await read()).toEqual(revoked);
+  });
+
   it("checks reciprocal block and disabled accounts at authoritative query time", async () => {
     const repo = createPostgresHumanContactRepository(pool);
     await pool.query(
