@@ -8,7 +8,9 @@
 
 ## Exclusive files
 - `services/gateway/src/talk_profiles/service.ts`
+- `services/gateway/src/talk_profiles/profile_text_validation.ts`
 - `services/gateway/src/talk_profiles/f13_profile_input_guard.test.ts`
+- `services/gateway/src/talk_profiles/profile_text_validation.test.ts`
 - `docs/workstreams/f13-profile-input-integrity-20261009.md` (this claim + SHA-specific handoff)
 
 **Safety:** Existing R18/F13 draft #435 owns avatar UI, `postgres_repository.ts`, `app.ts`, `main.ts` and migration; C01 #468 owns contacts; Work #497 owns central integration. Do not touch these areas. This recovery is only input validation on the already merged authenticated profile service and negative tests. Preserve valid Hausa, Arabic and ordinary RTL characters. No new endpoint, schema or financial/native change; no production write.
