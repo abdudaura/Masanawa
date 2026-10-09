@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/masanawa_transport.dart';
 import '../core/providers.dart';
+import '../state/session_state.dart';
 import 'crypto_models.dart';
 import 'crypto_transport.dart';
 
@@ -63,19 +64,46 @@ final cryptoWalletTransportProvider = Provider<CryptoWalletTransport>((ref) {
   return MasanawaCryptoWalletTransport(
     dio: api.dio,
     baseUrl: kAgentBaseUrl,
+    readAccessToken: () => ref.read(apiClientProvider).accessToken,
   );
 });
 
 class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   CryptoWalletTransport get _transport => ref.read(cryptoWalletTransportProvider);
 
+  String _ownerId() {
+    final current = ref.read(sessionProvider);
+    if (current is! SessionSignedIn) {
+      throw StateError('Sign in to access your crypto wallet.');
+    }
+    return current.user.id;
+  }
+
+  bool _sameOwner(String expected) {
+    final current = ref.read(sessionProvider);
+    return current is SessionSignedIn && current.user.id == expected;
+  }
+
+  void _ensureOwner(String expected) {
+    if (!_sameOwner(expected)) {
+      throw StateError('Your account changed. Refresh the wallet before continuing.');
+    }
+  }
+
   @override
   Future<CryptoWalletSnapshot> build() async {
     ref.watch(cryptoWalletTransportProvider);
+    // The complete session invalidates private balances even on A -> B
+    // switches where the signed-in boolean would remain true.
+    final session = ref.watch(sessionProvider);
+    if (session is! SessionSignedIn) {
+      throw StateError('Sign in to access your crypto wallet.');
+    }
     return _load();
   }
 
   Future<CryptoWalletSnapshot> _load() async {
+    final owner = _ownerId();
     final capabilities = await _transport.capabilities();
     final depositRoutes = capabilities.deposits
         ? await _transport.depositRoutes()
@@ -92,6 +120,7 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
       balances[result.providerCode] = result.amount;
     }
 
+    _ensureOwner(owner);
     return CryptoWalletSnapshot(
       capabilities: capabilities,
       depositRoutes: List.unmodifiable(depositRoutes),
@@ -116,11 +145,16 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   }
 
   Future<void> refresh() async {
+    final owner = _ownerId();
     state = const AsyncLoading();
-    state = await AsyncValue.guard(_load);
+    final refreshed = await AsyncValue.guard(_load);
+    // Avoid publishing an older user's success or error after a direct
+    // account switch while an explicit refresh was still in flight.
+    if (_sameOwner(owner)) state = refreshed;
   }
 
   Future<void> selectAsset(String providerCode) async {
+    _ownerId();
     final current = state.valueOrNull;
     if (current == null) return;
     final code = providerCode.trim();
@@ -134,11 +168,16 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   }
 
   Future<void> refreshBalance([String? providerCode]) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    final code = (providerCode ?? current.selectedProviderCode)?.trim();
+    final owner = _ownerId();
+    final initial = state.valueOrNull;
+    if (initial == null) return;
+    final code = (providerCode ?? initial.selectedProviderCode)?.trim();
     if (code == null || code.isEmpty) return;
     final balance = await _transport.balance(code);
+    _ensureOwner(owner);
+    // Re-read after IO to avoid overwriting more recent history/selection.
+    final current = state.valueOrNull;
+    if (current == null || !current.depositRoutes.any((route) => route.providerCode == code)) return;
     final balances = Map<String, String>.from(current.balances)
       ..[balance.providerCode] = balance.amount;
     state = AsyncData(current.copyWith(balances: Map.unmodifiable(balances)));
@@ -149,12 +188,14 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String providerCode,
     required String amount,
   }) async {
+    final owner = _ownerId();
     final result = await _transport.createDeposit(
       requestId: requestId,
       providerCode: providerCode,
       amount: amount,
     );
-    await _mergeOperation(result, refreshBalance: false);
+    _ensureOwner(owner);
+    await _mergeOperation(result, refreshBalance: false, owner: owner);
     return result;
   }
 
@@ -163,27 +204,34 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String fiatAmount,
     required String fiatCurrency,
   }) async {
+    final owner = _ownerId();
     final result = await _transport.createFiatPurchase(
       requestId: requestId,
       fiatAmount: fiatAmount,
       fiatCurrency: fiatCurrency,
     );
+    _ensureOwner(owner);
     final intent = await _transport.intent(requestId);
+    _ensureOwner(owner);
     if (intent != null) {
-      await _mergeOperation(intent, refreshBalance: false);
+      await _mergeOperation(intent, refreshBalance: false, owner: owner);
     }
     return result;
   }
 
   Future<CryptoFiatPurchase> refreshFiatPurchase(String requestId) async {
+    final owner = _ownerId();
     final purchase = await _transport.refreshFiatPurchase(requestId);
+    _ensureOwner(owner);
     final refreshed = await _transport.intent(requestId);
+    _ensureOwner(owner);
     if (refreshed != null) {
       await _mergeOperation(
         refreshed,
         refreshBalance:
             purchase.terminal &&
             (purchase.status == 'succeeded' || purchase.status == 'refunded'),
+        owner: owner,
       );
     }
     return purchase;
@@ -193,12 +241,15 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String providerCode,
     required String amount,
     required String destinationAddress,
-  }) {
-    return _transport.quoteWithdrawal(
+  }) async {
+    final owner = _ownerId();
+    final result = await _transport.quoteWithdrawal(
       providerCode: providerCode,
       amount: amount,
       destinationAddress: destinationAddress,
     );
+    _ensureOwner(owner);
+    return result;
   }
 
   Future<CryptoIntent> createWithdrawal({
@@ -207,13 +258,15 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String amount,
     required String destinationAddress,
   }) async {
+    final owner = _ownerId();
     final result = await _transport.createWithdrawal(
       requestId: requestId,
       providerCode: providerCode,
       amount: amount,
       destinationAddress: destinationAddress,
     );
-    await _mergeOperation(result, refreshBalance: true);
+    _ensureOwner(owner);
+    await _mergeOperation(result, refreshBalance: true, owner: owner);
     return result;
   }
 
@@ -221,12 +274,15 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String providerCode,
     required String targetProviderCode,
     required String amount,
-  }) {
-    return _transport.quoteConversion(
+  }) async {
+    final owner = _ownerId();
+    final result = await _transport.quoteConversion(
       providerCode: providerCode,
       targetProviderCode: targetProviderCode,
       amount: amount,
     );
+    _ensureOwner(owner);
+    return result;
   }
 
   Future<CryptoIntent> createConversion({
@@ -235,25 +291,31 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     required String targetProviderCode,
     required String amount,
   }) async {
+    final owner = _ownerId();
     final result = await _transport.createConversion(
       requestId: requestId,
       providerCode: providerCode,
       targetProviderCode: targetProviderCode,
       amount: amount,
     );
-    await _mergeOperation(result, refreshBalance: true);
+    _ensureOwner(owner);
+    await _mergeOperation(result, refreshBalance: true, owner: owner);
     return result;
   }
 
   Future<CryptoIntent> refreshOperation(CryptoIntent intent) async {
+    final owner = _ownerId();
     if (intent.operation == 'buy') {
       final purchase = await _transport.refreshFiatPurchase(intent.requestId);
+      _ensureOwner(owner);
       final refreshed = await _transport.intent(intent.requestId) ?? intent;
+      _ensureOwner(owner);
       await _mergeOperation(
         refreshed,
         refreshBalance:
             purchase.terminal &&
             (purchase.status == 'succeeded' || purchase.status == 'refunded'),
+        owner: owner,
       );
       return refreshed;
     }
@@ -263,14 +325,17 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
       'convert' => await _transport.refreshConversion(intent.requestId),
       _ => await _transport.intent(intent.requestId) ?? intent,
     };
-    await _mergeOperation(refreshed, refreshBalance: refreshed.terminal);
+    _ensureOwner(owner);
+    await _mergeOperation(refreshed, refreshBalance: refreshed.terminal, owner: owner);
     return refreshed;
   }
 
   Future<void> _mergeOperation(
     CryptoIntent intent, {
     required bool refreshBalance,
+    required String owner,
   }) async {
+    _ensureOwner(owner);
     final current = state.valueOrNull;
     if (current == null) return;
 
@@ -292,14 +357,19 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
       for (final code in codes) {
         try {
           final balance = await _transport.balance(code);
+          _ensureOwner(owner);
           balances[balance.providerCode] = balance.amount;
-        } catch (_) {
+        } catch (error) {
+          _ensureOwner(owner);
           // The transaction result remains useful even if a balance refresh
           // races provider reconciliation or a route becomes temporarily unavailable.
         }
       }
-      next = next.copyWith(balances: Map.unmodifiable(balances));
-      state = AsyncData(next);
+      _ensureOwner(owner);
+      final latest = state.valueOrNull;
+      if (latest == null) return;
+      final merged = Map<String, String>.from(latest.balances)..addAll(balances);
+      state = AsyncData(latest.copyWith(balances: Map.unmodifiable(merged)));
     }
   }
 }
