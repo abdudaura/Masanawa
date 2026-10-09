@@ -87,6 +87,8 @@ class HumanCallCredentials {
     final roomName = _required(json,'room_name');
     if (serverUrl == null || serverUrl.scheme != 'wss' ||
         serverUrl.host.isEmpty || serverUrl.userInfo.isNotEmpty ||
+        serverUrl.hasQuery || serverUrl.hasFragment ||
+        (serverUrl.path.isNotEmpty && serverUrl.path != '/') ||
         expiry == null || !expiry.isAfter(DateTime.now().add(const Duration(seconds:2))) ||
         roomName != 'human-call_$callId') {
       throw const FormatException('Private call credentials unavailable or expired');
