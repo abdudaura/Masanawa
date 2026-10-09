@@ -85,6 +85,13 @@ export function assertAlphaBootstrapTarget(env = process.env) {
     deny("explicit expected database host does not match");
   }
 
+  // A different port on the same host may be a different database service.
+  const expectedPort = configured(env, "MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_PORT");
+  if (!expectedPort || !/^\\d{1,5}$/.test(expectedPort) ||
+      Number(expectedPort) !== Number(url.port || "5432")) {
+    deny("explicit expected database port does not match");
+  }
+
   const remote = !localHosts.has(actualHost);
   if (remote) {
     if (configured(env, "MASANAWA_ALPHA_BOOTSTRAP_REMOTE_CONFIRM") !== ALPHA_BOOTSTRAP_REMOTE_ACK) {
