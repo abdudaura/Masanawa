@@ -69,22 +69,6 @@
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
     },
     {
-      "claim_id": "masanawa-01-af15-durable-media-cleanup-20261009",
-      "owner": "MASANAWA-01 / AF15",
-      "scope": "AF15 canonical worker media cleanup candidate safety, fence validation, idempotent object deletion and result checkpoint (isolated module, no startup or migration edits)",
-      "paths": [
-        "services/worker/src/durable_operations/media_cleanup.ts",
-        "services/worker/src/durable_operations/media_cleanup.test.ts",
-        "docs/workstreams/AF15-media-cleanup-20261009.md"
-      ],
-      "branch": "work/af15-media-cleanup-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-09T21:57:33.448Z",
-      "heartbeat_at": "2026-10-09T21:57:33.448Z",
-      "expires_at": "2026-10-09T22:02:33.448Z",
-      "notes": "AF15 wave-one bounded path. Existing root worker composition remains AF00. Reuse existing data authorities; do not create a second ledger, migrations, object signer or production job."
-    },
-    {
       "claim_id": "masanawa-01-af13-evidence-ledger-20261009",
       "owner": "MASANAWA-01 / AF13",
       "scope": "AF13 read-only audio-first acceptance evidence and release safety gate",
@@ -638,6 +622,25 @@
       "notes": "Source and 12 isolated Node tests committed to PR #594; exact remote blobs checked against executed local test fixture, matrix 35 canonical IDs. Handoff and safe integration pending.",
       "released_at": "2026-10-09T21:50:04.038Z",
       "release_reason": "Isolated AF13 Node verifier/matrix/tests/handoff merged via PR #594 into non-deploying integration/af13-evidence-20261009 at e13efd04eb34dfa439f6231b0fa7b769a0973f39. Local exact-blob Node 12/12 tests passed; Vercel build-rate-limit external failure, no provider/device/DB/production verification. AF00 to reconcile."
+    },
+    {
+      "claim_id": "masanawa-01-af15-durable-media-cleanup-20261009",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "AF15 canonical worker media cleanup candidate safety, fence validation, idempotent object deletion and result checkpoint (isolated module, no startup or migration edits)",
+      "paths": [
+        "services/worker/src/durable_operations/media_cleanup.ts",
+        "services/worker/src/durable_operations/media_cleanup.test.ts",
+        "docs/workstreams/AF15-media-cleanup-20261009.md"
+      ],
+      "branch": "work/af15-media-cleanup-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:57:33.448Z",
+      "heartbeat_at": "2026-10-09T21:57:33.448Z",
+      "expires_at": "2026-10-09T22:02:33.448Z",
+      "notes": "AF15 wave-one bounded path. Existing root worker composition remains AF00. Reuse existing data authorities; do not create a second ledger, migrations, object signer or production job.",
+      "released_at": "2026-10-09T22:02:07.353Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/595",
+      "release_reason": "Scoped source/tests/handoff merged PR #595 into nonproduction integration/af15-media-cleanup-20261009 at a0fddc155c98e427f2952e2c044ca2225e42dc63; both blob hashes read back; local strict tsc and 8+3 Node simulation checks passed; real PG/object/worker/deploy NOT_RUN, module not composed."
     }
   ]
 }
