@@ -56,6 +56,7 @@ class HumanChatComposerController extends ChangeNotifier {
   bool get canSend => !loading && allowed && !hasPending &&
       text.trim().isNotEmpty && text.trim().length <= 4000;
   bool get canRetry => !loading && allowed && hasPending &&
+      (pendingReplyId == null || serverSupportsReplies) &&
       phase != HumanChatPhase.sending;
 
   void _emit() { if (!_disposed) notifyListeners(); }
@@ -100,9 +101,15 @@ class HumanChatComposerController extends ChangeNotifier {
         pendingBody = saved.pendingBody;
         replyId = serverSupportsReplies ? saved.replyId : null;
         replyPreview = serverSupportsReplies ? saved.replyPreview : null;
-        pendingReplyId = serverSupportsReplies ? saved.pendingReplyId : null;
+        pendingReplyId = saved.pendingReplyId;
+        // An old pending reply cannot silently turn into an ordinary send.
+        if (pendingReplyId != null && !serverSupportsReplies) {
+          notice = 'Reply support changed. Do not retry this pending message.';
+        }
         phase = hasPending ? HumanChatPhase.uncertain : HumanChatPhase.ready;
-        if (hasPending) notice = 'Unconfirmed send recovered. Check before retry.';
+        if (hasPending && pendingReplyId == null) {
+          notice = 'Unconfirmed send recovered. Check before retry.';
+        }
       }
     } catch (_) {
       if (!_disposed && epoch == _generation) {
@@ -166,7 +173,9 @@ class HumanChatComposerController extends ChangeNotifier {
   }
 
   Future<bool> _attempt() async {
-    if (_disposed || !allowed || !hasPending || phase == HumanChatPhase.sending) {
+    if (_disposed || !allowed || !hasPending ||
+        (pendingReplyId != null && !serverSupportsReplies) ||
+        phase == HumanChatPhase.sending) {
       return false;
     }
     final epoch = _generation, id = pendingId!, body = pendingBody!;
@@ -174,6 +183,11 @@ class HumanChatComposerController extends ChangeNotifier {
     try {
       final existing = await messages.findServerAcknowledgement(conversationId, id);
       if (_disposed || epoch != _generation) return false;
+      if (!allowed) {
+        phase = HumanChatPhase.uncertain;
+        notice = 'Messaging permission changed. Server send not attempted.';
+        _emit(); return false;
+      }
       if (existing != null) return _ack(existing, id);
       final accepted = await messages.send(conversationId, id, body,
           replyToMessageId: pendingReplyId);
@@ -198,6 +212,7 @@ class HumanChatComposerController extends ChangeNotifier {
     final old = _snapshot;
     text = ''; replyId = null; replyPreview = null;
     pendingId = null; pendingBody = null; pendingReplyId = null;
+    text = ''; replyId = null; replyPreview = null;
     try {
       await _save();
     } catch (_) {
@@ -224,6 +239,7 @@ class HumanChatComposerController extends ChangeNotifier {
     } catch (_) {
       pendingId = old.pendingId; pendingBody = old.pendingBody;
       pendingReplyId = old.pendingReplyId;
+      text = old.text; replyId = old.replyId; replyPreview = old.replyPreview;
       notice = 'Could not update protected pending message.'; _emit();
       return false;
     }
