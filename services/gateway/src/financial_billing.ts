@@ -4,6 +4,7 @@ import {
   FlutterwaveBillsClient,
   FlutterwaveHttpTransport,
   verifyFlutterwaveV3Webhook,
+  FlutterwaveWebhookError,
   type BillingFulfillmentRecord,
 } from "@masanawa/providers";
 import type { BillingFulfillmentStore } from "@masanawa/providers";
@@ -77,24 +78,29 @@ export interface BillingFinancialService {
 }
 
 function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): string | null {
-  const candidates = [
-    payload.reference,
-    payload.customer_reference,
-    payload.tx_ref,
-    typeof payload.data === "object" && payload.data !== null && !Array.isArray(payload.data)
-      ? (payload.data as Record<string, unknown>).reference
-      : undefined,
-    typeof payload.data === "object" && payload.data !== null && !Array.isArray(payload.data)
-      ? (payload.data as Record<string, unknown>).customer_reference
-      : undefined,
-  ];
-  for (const value of candidates) {
-    if (typeof value === "string") {
-      const normalized = value.trim();
-      if (normalized.length > 0 && normalized.length <= 128) return normalized;
+  const data = typeof payload.data === "object" && payload.data !== null &&
+    !Array.isArray(payload.data) ? payload.data as Record<string, unknown> : null;
+
+  // Flutterwave's customer reference is the internal fulfillment identifier.
+  // A generic provider reference can be different; never let it override an
+  // explicit customer reference or silently pick between contradictory aliases.
+  function resolve(candidates: readonly unknown[]): string | null {
+    const values = candidates.filter((value): value is string => typeof value === "string")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0 && value.length <= 128);
+    if (new Set(values).size > 1) {
+      throw new FlutterwaveWebhookError(
+        "invalid_webhook",
+        "Flutterwave webhook has conflicting fulfillment references",
+      );
     }
+    return values[0] ?? null;
   }
-  return null;
+
+  return resolve([
+    payload.customer_reference, payload.tx_ref,
+    data?.customer_reference, data?.tx_ref,
+  ]) ?? resolve([payload.reference, data?.reference]);
 }
 
 export function createBillingFinancialService(input: Readonly<{
@@ -169,8 +175,18 @@ export function createBillingFinancialService(input: Readonly<{
       await settle(identity,current);
       return current;
     }
-    const reconciled = await service.reconcile(reference,signal);
-    await settle(identity,reconciled);
+    let reconciled: BillingFulfillmentRecord;
+    try {
+      reconciled = await service.reconcile(reference, signal);
+    } catch (error) {
+      // A previously persisted success must not become a false failure when
+      // the provider is temporarily unreachable. A later available refresh
+      // can still observe a reversal. Never mask an unsettled/unknown result.
+      if (current.state !== "succeeded") throw error;
+      await settle(identity, current);
+      return current;
+    }
+    await settle(identity, reconciled);
     return reconciled;
   }
 
