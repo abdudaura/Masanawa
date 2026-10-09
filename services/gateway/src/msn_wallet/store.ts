@@ -51,6 +51,11 @@ export function createMsnLedgerStore(pool: MsnPgPool) {
           a.tenantId !== quote.tenantId || a.fundingReference !== quote.fundingReference ||
           a.backingAsset !== quote.backingAsset || a.backingNetwork !== quote.backingNetwork)
         throw new Error("msn.admission.quote_mismatch");
+      // Crypto balances remain the primary holdings. An on-chain crypto
+      // deposit cannot ALSO mint MSN until F06 atomically reserves/debits the
+      // same crypto liability. Never make two spendable claims on one deposit.
+      if (quote.fundingRail !== "NGN_FLUTTERWAVE")
+        throw new Error("msn.crypto.reservation_not_composed");
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
@@ -69,6 +74,44 @@ export function createMsnLedgerStore(pool: MsnPgPool) {
            quote.ngnFundingKobo?.toString() ?? null, input.verifiedEvidenceSha256],
         );
         if (inserted.rowCount === 1) {
+          // Same advisory lock as existing NGN billing reserves. A verified
+          // funding receipt alone is not enough: spend/consume its NGN
+          // liability in THIS transaction so a bill cannot use it as well.
+          await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+            "ngn-wallet:" + a.tenantId + ":" + a.userId,
+          ]);
+          const funding = await client.query(
+            `SELECT amount_kobo::text AS amount_kobo, provider_transaction_id, state
+               FROM commerce.ngn_funding_intents
+              WHERE tenant_id=$1 AND user_id=$2 AND funding_reference=$3
+              FOR UPDATE`,
+            [a.tenantId, a.userId, a.fundingReference],
+          );
+          const fund = funding.rows[0];
+          if (!fund || fund.state !== "credited" ||
+              typeof fund.provider_transaction_id !== "string" ||
+              fund.amount_kobo !== quote.ngnFundingKobo?.toString()) {
+            throw new Error("msn.ngn.funding_not_settled");
+          }
+          const available = await client.query(
+            `SELECT COALESCE(SUM(CASE WHEN direction='credit'
+                    THEN amount_kobo ELSE -amount_kobo END),0)::text AS balance
+               FROM commerce.ngn_wallet_entries
+              WHERE tenant_id=$1 AND user_id=$2`,
+            [a.tenantId, a.userId],
+          );
+          const current = available.rows[0]?.balance;
+          if (typeof current !== "string" ||
+              BigInt(current) < (quote.ngnFundingKobo ?? 0n)) {
+            throw new Error("msn.ngn.insufficient_available");
+          }
+          await client.query(
+            `INSERT INTO commerce.ngn_wallet_entries
+               (tenant_id,user_id,entry_id,direction,amount_kobo,reason,reference,created_at)
+             VALUES ($1,$2,$3,'debit',$4,'adjustment',$5,statement_timestamp())`,
+            [a.tenantId, a.userId, "msn-convert:" + a.quoteId,
+             quote.ngnFundingKobo!.toString(), "msn-convert:" + a.quoteId],
+          );
           await client.query(
             `INSERT INTO commerce.msn_ledger_entries
              (tenant_id,quote_id,user_id,entry_side,delta_micro)
