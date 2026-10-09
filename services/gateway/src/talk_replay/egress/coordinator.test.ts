@@ -388,7 +388,7 @@ describe("Talk replay Egress coordinator",()=>{
         },
       };
       let notifySigning=()=>{};
-      const signingStarted=new Promise<void>(resolve=>{notifySigning=resolve;});
+      const signingStarted=new Promise<void>(resolve=>{notifySigning=()=>resolve();});
       let completeSigning:(value:{url:string;expiresAt:string})=>void=()=>{};
       const coordinator=createTalkReplayCoordinator({
         replay:replayRepository([]),media,
