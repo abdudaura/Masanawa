@@ -30,7 +30,9 @@ test('refuses spoofed app, SDK drift, debuggable or invalid manifest', () => {
 });
 test('refuses unsigned, old, debug, multi-signed or wrong-pin artifacts', () => {
   rejects(() => verifyApkSigner(sig.replace('Verifies\n', ''), PIN), 'apk_signature_not_verified');
-  rejects(() => verifyApkSigner(sig.replace(/v[23] scheme[^\n]+: true/g, s => s.replace('true', 'false')), PIN), 'modern_apk_signature_missing');
+  rejects(() => verifyApkSigner(sig.replace(/v[23] scheme[^\n]+: true/g, s => s.replace('true', 'false')), PIN), 'android24_signature_v2_missing');
+  // v3 was introduced after API 24; v3 alone cannot satisfy our minSdk support.
+  rejects(() => verifyApkSigner(sig.replace('Verified using v2 scheme (APK Signature Scheme v2): true', 'Verified using v2 scheme (APK Signature Scheme v2): false'), PIN), 'android24_signature_v2_missing');
   rejects(() => verifyApkSigner(sig.replace('CN=Masanawa Release', 'CN=Android Debug'), PIN), 'android_debug_certificate_forbidden');
   rejects(() => verifyApkSigner(sig + 'Signer #2 certificate SHA-256 digest: ' + PIN + '\n', PIN), 'apk_signer_count_invalid');
   rejects(() => verifyApkSigner(sig.replace('Number of signers: 1', 'Number of signers: 2'), PIN), 'apk_signer_count_invalid');
