@@ -122,7 +122,9 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
   }
 
   Future<void> refresh() async {
-    if (!_authorized) return;
+    // A read while a consent/privacy write is pending can overwrite the
+    // authoritative post-write readback. The mutation owns that refresh.
+    if (!_authorized || state.busy) return;
     final epoch = ++_readEpoch;
     state = state.copyWith(loading: true, loadingMore: false, clearError: true, clearNextCursor: true);
     try {
@@ -180,7 +182,9 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
   }
 
   Future<void> findByHandle(String handle) async {
-    if (!_authorized) return;
+    // Do not expose a previously eligible contact while a revoke or policy
+    // mutation is in flight. A fresh lookup is allowed after it settles.
+    if (!_authorized || state.busy) return;
     final raw = handle.trim();
     final epoch = ++_searchEpoch;
     if (raw.isEmpty) {
@@ -218,12 +222,18 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
     bool updateList = true,
   }) async {
     if (!_authorized || state.busy) return;
-    state = state.copyWith(busy: true, clearError: true, clearNotice: true);
+    // Invalidate every in-flight server read *before* dispatching the write:
+    // a slower pre-revocation page, lookup or preferences read must never
+    // publish old permissions after the user begins changing consent.
+    ++_readEpoch;
+    ++_searchEpoch;
+    state = state.copyWith(
+      busy: true, loading: false, loadingMore: false, searching: false,
+      clearLookup: true, clearError: true, clearNotice: true,
+    );
     try {
       final outcome = await operation();
       if (!_authorized) return;
-      // Invalidate previously started lookup; its eligibility is now stale.
-      ++_searchEpoch;
       state = state.copyWith(
         busy: false, clearLookup: true, notice: notice(outcome),
       );
