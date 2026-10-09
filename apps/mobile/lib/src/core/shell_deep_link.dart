@@ -105,7 +105,11 @@ String? shellDeepLinkRoute(Uri uri) {
     characterId = uri.pathSegments.single;
   } else {
     characterId = uri.queryParameters['characterId'];
-    if (characterId == null) return '/chats';
+    if (characterId == null) {
+      // A legacy no-character hint can open the old conversation fallback,
+      // but unrelated query data is not permission to choose a destination.
+      return uri.queryParameters.isEmpty ? '/chats' : null;
+    }
     if (uri.queryParameters.length != 1) return null;
   }
 
@@ -115,25 +119,11 @@ String? shellDeepLinkRoute(Uri uri) {
 
 bool _validCharacterId(String value) =>
     value.length <= 256 &&
-    RegExp(r'^character_[A-Za-z0-9_-]+
-
-bool _validPublicTwinId(String value) =>
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
-
-bool _validTalkId(String value) =>
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,159}$').hasMatch(value);
-).hasMatch(value);
+    RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(value);
 
 bool _validResourceId(String value) =>
     value.length <= 256 &&
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]*
-
-bool _validPublicTwinId(String value) =>
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
-
-bool _validTalkId(String value) =>
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,159}$').hasMatch(value);
-).hasMatch(value);
+    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]*$').hasMatch(value);
 
 bool _validPublicTwinId(String value) =>
     RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
