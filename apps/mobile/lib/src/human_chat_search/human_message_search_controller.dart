@@ -8,6 +8,7 @@ class HumanMessageSearchController extends ChangeNotifier {
   HumanMessageSearchController(this.transport);
   final HumanMessageSearchTransport transport;
   String? _account;
+  String? get accountKey => _account;
   int _epoch = 0;
   bool _disposed = false;
   bool busy = false, loadingMore = false;
