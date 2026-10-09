@@ -94,8 +94,7 @@ class _HumanChatComposerState extends State<HumanChatComposer> {
   Widget build(BuildContext context) {
     final state = widget.controller;
     final scheme = Theme.of(context).colorScheme;
-    final enabled = state.hydrated && state.active && !state.sending &&
-        !state.hasPending;
+    final enabled = state.canEdit;
     final hasText = state.text.trim().isNotEmpty;
     return Material(
       color: scheme.surface,
