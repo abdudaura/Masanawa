@@ -3,7 +3,7 @@ import 'package:masanawa/src/experience_quality/digit_readback.dart';
 
 void main() {
   test('Hausa/English + Arabic numerals retain leading zero in readback', () {
-    expect(ExperienceDigitReadback.separate('٠٧۰١  '), isNull,
+    expect(ExperienceDigitReadback.separate('٠٧ ۰١'), isNull,
         reason: 'Whitespace inside a sensitive identifier is not silently removed');
     expect(ExperienceDigitReadback.separate('٠٧۰١'), '0 7 0 1');
     expect(ExperienceDigitReadback.separate('0701'), '0 7 0 1');
