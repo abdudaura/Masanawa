@@ -2,6 +2,7 @@ import type { BillingFundingAuthority } from "@masanawa/commerce";
 import {
   BillingCommerceOrchestrator,
   FlutterwaveBillsClient,
+  FlutterwaveBillProviderError,
   FlutterwaveHttpTransport,
   verifyFlutterwaveV3Webhook,
   FlutterwaveWebhookError,
@@ -182,7 +183,9 @@ export function createBillingFinancialService(input: Readonly<{
       // A previously persisted success must not become a false failure when
       // the provider is temporarily unreachable. A later available refresh
       // can still observe a reversal. Never mask an unsettled/unknown result.
-      if (current.state !== "succeeded") throw error;
+      // A database concurrency/settlement failure is never a provider outage.
+      if (current.state !== "succeeded" ||
+          !(error instanceof FlutterwaveBillProviderError) || !error.retryable) throw error;
       await settle(identity, current);
       return current;
     }
