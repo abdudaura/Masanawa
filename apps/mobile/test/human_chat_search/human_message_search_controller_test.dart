@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/human_chat_search/human_message_search_controller.dart';
-import 'package:masanawa_mobile/src/human_chat_search/human_message_search_models.dart';
-import 'package:masanawa_mobile/src/human_chat_search/human_message_search_transport.dart';
+import 'package:masanawa/src/human_chat_search/human_message_search_controller.dart';
+import 'package:masanawa/src/human_chat_search/human_message_search_models.dart';
+import 'package:masanawa/src/human_chat_search/human_message_search_transport.dart';
 
 const record = HumanMessageSearchHit(
   messageId:'m1', conversationId:'c1', senderUserId:'u2',
