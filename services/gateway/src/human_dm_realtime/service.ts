@@ -76,8 +76,11 @@ export function createHumanDmRealtimeService(input: {
         const result = await input.repository.sync({
           tenantId,userId,after,limit:size,
         });
-        if (shouldStop?.() || result.events.length || initialSnapshot ||
-            Date.now() >= deadline) {
+        // A pruned cursor is a mandatory C02 resnapshot signal. Deliver it
+        // immediately, even during a long poll with no new events; waiting
+        // risks leaving revoked/obsolete client projections visible.
+        if (shouldStop?.() || result.resetRequired || result.events.length ||
+            initialSnapshot || Date.now() >= deadline) {
           // Session revocation can race the database read. Reauthorize just
           // before releasing private event metadata to the caller.
           const finalPrincipal = await input.authorizer.authorize({
