@@ -1,6 +1,25 @@
 {
   "schema_version": 1,
-  "active": [],
+  "active": [
+    {
+      "claim_id": "gpt6-c09-revocation-remote-privacy-20261009",
+      "owner": "GPT-6 C09 privacy recovery continuation",
+      "scope": "C09 existing PR #575: terminate live human calls on reciprocal block/contact revoke/account inactive and never abandon media-revoke retry",
+      "paths": [
+        "services/gateway/src/human_calls/signal_worker.ts",
+        "services/gateway/src/human_calls/signal_worker.test.ts",
+        "services/gateway/src/human_calls/schema.sql",
+        "docs/workstreams/c09-private-calls-20261009.md"
+      ],
+      "branch": "work/c09-private-calls-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/575",
+      "claimed_at": "2026-10-09T08:55:59.820Z",
+      "heartbeat_at": "2026-10-09T08:55:59.820Z",
+      "expires_at": "2026-10-09T09:00:59.820Z",
+      "notes": "Existing C09 branch only; no root, auth, C01/C02 schema changes, native, finance, deployment or PR merge. Guard after active block and durable revoke retry."
+    }
+  ],
   "history": [
     {
       "claim_id": "gpt6-f17-alternate-recorder-erasure-20261009",
