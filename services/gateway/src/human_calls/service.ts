@@ -24,7 +24,7 @@ export interface HumanCallRepository {
   start(input: {
     tenantId: string; actorId: string; conversationId: string;
     requestId: string; kind: HumanCallKind;
-  }): Promise<HumanCall | "not_allowed" | "busy" | "request_conflict">;
+  }): Promise<HumanCall | "not_allowed" | "busy" | "request_conflict" | "rate_limited">;
   transition(input: {
     tenantId: string; actorId: string; callId: string; action: "accept" | "decline" | "end";
   }): Promise<HumanCall | null>;
@@ -37,7 +37,7 @@ export interface HumanCallAuthorizer {
 export interface HumanCallMediaIssuer {
   mint(input: { call: HumanCall; userId: string }): Promise<CallCredentials>;
   /** Must disconnect both users at call termination, not merely let JWT expire. */
-  terminate?(callId: string): Promise<void>;
+  terminate(callId: string): Promise<void>;
 }
 export interface HumanCallAdmission {
   /** Canonical C01/C02/R15 live authorization: accepted pair, current user,
@@ -100,6 +100,7 @@ export function createHumanCallService(input: {
       });
       if (created === "not_allowed") throw new HumanCallError("calls.unavailable",404);
       if (created === "busy") throw new HumanCallError("calls.busy",409);
+      if (created === "rate_limited") throw new HumanCallError("calls.rate_limited",429);
       if (created === "request_conflict") throw new HumanCallError("calls.request_conflict",409);
       // No token is returned while ringing; caller must await explicit acceptance.
       return created;
@@ -120,7 +121,7 @@ export function createHumanCallService(input: {
       if (changed.state === "ended" || changed.state === "cancelled" ||
           changed.state === "declined" || changed.state === "missed") {
         // Provider disconnect must be integrated before production admission.
-        await input.media.terminate?.(changed.callId);
+        await input.media.terminate(changed.callId);
       }
       return changed;
     },
