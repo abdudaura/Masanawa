@@ -20,6 +20,31 @@ enum LiveVoiceState {
   failed,
 }
 
+/// Machine-readable stage for recovery guidance; existing [errors] strings remain.
+enum LiveVoiceFailureStage {
+  permission,
+  focus,
+  signaling,
+  capture,
+  playback,
+  transport,
+  interruption,
+}
+
+class LiveVoiceFailure {
+  const LiveVoiceFailure(this.stage, this.message);
+
+  final LiveVoiceFailureStage stage;
+  final String message;
+}
+
+class _LiveVoiceFault implements Exception {
+  const _LiveVoiceFault(this.stage, this.message);
+
+  final LiveVoiceFailureStage stage;
+  final String message;
+}
+
 class LiveVoiceSession with WidgetsBindingObserver {
   LiveVoiceSession({
     required this.grant,
@@ -38,6 +63,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   final AudioRecorder _recorder;
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
+  final _failures = StreamController<LiveVoiceFailure>.broadcast(sync: true);
   final _transcripts = StreamController<String>.broadcast(sync: true);
   final _inputTranscripts = StreamController<String>.broadcast(sync: true);
   final _turnCompletions = StreamController<void>.broadcast(sync: true);
@@ -60,6 +86,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
 
   Stream<LiveVoiceState> get states => _state.stream;
   Stream<String> get errors => _errors.stream;
+  Stream<LiveVoiceFailure> get failures => _failures.stream;
   Stream<String> get transcripts => _transcripts.stream;
   Stream<String> get inputTranscripts => _inputTranscripts.stream;
   Stream<void> get turnCompletions => _turnCompletions.stream;
@@ -83,43 +110,74 @@ class LiveVoiceSession with WidgetsBindingObserver {
     if (_closed || _socket != null) return;
     _state.add(LiveVoiceState.connecting);
     try {
-      if (!await _recorder.hasPermission()) {
-        throw StateError('Microphone permission is required for live voice.');
+      bool microphoneGranted;
+      try {
+        microphoneGranted = await _recorder.hasPermission();
+      } catch (_) {
+        throw const _LiveVoiceFault(
+          LiveVoiceFailureStage.permission,
+          'Could not check microphone permission. Check app permissions and retry.',
+        );
+      }
+      if (!microphoneGranted) {
+        throw const _LiveVoiceFault(
+          LiveVoiceFailureStage.permission,
+          'Microphone permission is required for live voice.',
+        );
       }
       if (_closed) return;
-      final audioSession = await AudioSession.instance;
-      await audioSession.configure(
-        AudioSessionConfiguration(
-          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-          avAudioSessionCategoryOptions:
-              AVAudioSessionCategoryOptions.allowBluetooth |
-              AVAudioSessionCategoryOptions.defaultToSpeaker,
-          avAudioSessionMode: AVAudioSessionMode.voiceChat,
-          androidAudioAttributes: const AndroidAudioAttributes(
-            contentType: AndroidAudioContentType.speech,
-            usage: AndroidAudioUsage.voiceCommunication,
+      late final AudioSession audioSession;
+      try {
+        audioSession = await AudioSession.instance;
+        await audioSession.configure(
+          AudioSessionConfiguration(
+            avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+            avAudioSessionCategoryOptions:
+                AVAudioSessionCategoryOptions.allowBluetooth |
+                AVAudioSessionCategoryOptions.defaultToSpeaker,
+            avAudioSessionMode: AVAudioSessionMode.voiceChat,
+            androidAudioAttributes: const AndroidAudioAttributes(
+              contentType: AndroidAudioContentType.speech,
+              usage: AndroidAudioUsage.voiceCommunication,
+            ),
+            androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+            androidWillPauseWhenDucked: true,
           ),
-          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
-        ),
-      );
-      if (_closed) return;
-      if (!await audioSession.setActive(true)) {
-        throw StateError('Audio is in use. End the other call and try again.');
-      }
-      if (_closed) {
-        await audioSession.setActive(false);
-        return;
+        );
+        if (_closed) return;
+        if (!await audioSession.setActive(true)) {
+          throw const _LiveVoiceFault(
+            LiveVoiceFailureStage.focus,
+            'Audio is in use. End the other call and try again.',
+          );
+        }
+        if (_closed) {
+          await audioSession.setActive(false);
+          return;
+        }
+      } on _LiveVoiceFault {
+        rethrow;
+      } catch (_) {
+        throw const _LiveVoiceFault(
+          LiveVoiceFailureStage.focus,
+          'Could not activate microphone audio. End another call and retry.',
+        );
       }
       _interruptions = audioSession.interruptionEventStream.listen((event) {
         if (event.begin && !_closed) {
-          _fail('Live voice ended because another call needs the microphone.');
+          _fail(
+            'Live voice ended because another call needs the microphone.',
+            stage: LiveVoiceFailureStage.interruption,
+          );
           unawaited(close());
         }
       });
       _noisy = audioSession.becomingNoisyEventStream.listen((_) {
         if (!_closed) {
-          _fail('Live voice ended because the audio device disconnected.');
+          _fail(
+            'Live voice ended because the audio device disconnected.',
+            stage: LiveVoiceFailureStage.interruption,
+          );
           unawaited(close());
         }
       });
@@ -144,12 +202,18 @@ class LiveVoiceSession with WidgetsBindingObserver {
           _incoming = _incoming.then((_) => _handleServerMessage(raw));
         },
         onError: (Object error) {
-          _fail('Live voice connection failed.');
+          _fail(
+            'Live voice connection failed.',
+            stage: LiveVoiceFailureStage.transport,
+          );
           unawaited(close());
         },
         onDone: () {
           if (!_closed) {
-            _state.add(LiveVoiceState.ended);
+            _fail(
+              'Live voice connection ended. Start a new call to reconnect.',
+              stage: LiveVoiceFailureStage.transport,
+            );
             unawaited(close());
           }
         },
@@ -157,7 +221,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
       );
       _setupTimer = Timer(const Duration(seconds: 20), () {
         if (!_closed && !_setupComplete) {
-          _fail('Live voice setup timed out. Try starting a new call.');
+          _fail(
+            'Live voice setup timed out. Try starting a new call.',
+            stage: LiveVoiceFailureStage.signaling,
+          );
           unawaited(close());
         }
       });
@@ -194,11 +261,15 @@ class LiveVoiceSession with WidgetsBindingObserver {
         }),
       );
     } catch (error) {
-      _fail(
-        error is StateError ? error.message : 'Could not start live voice.',
-      );
+      final failure = error is _LiveVoiceFault
+          ? error
+          : const _LiveVoiceFault(
+              LiveVoiceFailureStage.transport,
+              'Could not start live voice. Check your connection and retry.',
+            );
+      _fail(failure.message, stage: failure.stage);
       await close();
-      rethrow;
+      throw StateError(failure.message);
     }
   }
 
@@ -216,16 +287,24 @@ class LiveVoiceSession with WidgetsBindingObserver {
   }
 
   Future<void> _startMicrophone() async {
-    final stream = await _recorder.startStream(
-      const RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: 16000,
-        numChannels: 1,
-        echoCancel: true,
-        noiseSuppress: true,
-        autoGain: true,
-      ),
-    );
+    late final Stream<Uint8List> stream;
+    try {
+      stream = await _recorder.startStream(
+        const RecordConfig(
+          encoder: AudioEncoder.pcm16bits,
+          sampleRate: 16000,
+          numChannels: 1,
+          echoCancel: true,
+          noiseSuppress: true,
+          autoGain: true,
+        ),
+      );
+    } catch (_) {
+      throw const _LiveVoiceFault(
+        LiveVoiceFailureStage.capture,
+        'Microphone recording could not start. Check the microphone and retry.',
+      );
+    }
     if (_closed || _muted) {
       try {
         await _recorder.stop();
@@ -252,7 +331,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
         );
       },
       onError: (_) {
-        _fail('Microphone streaming stopped.');
+        _fail(
+          'Microphone streaming stopped. Check the microphone and retry.',
+          stage: LiveVoiceFailureStage.capture,
+        );
         unawaited(close());
       },
     );
@@ -277,7 +359,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
         _setupTimer?.cancel();
         _setupComplete = true;
         if (!await LivePcmAudio.setSpeaker(_speaker)) {
-          throw StateError('Audio routing is unavailable.');
+          throw const _LiveVoiceFault(
+            LiveVoiceFailureStage.playback,
+            'Audio routing is unavailable. Check your speaker or headset.',
+          );
         }
         if (_closed) return;
         // Only model output transcription is enabled. User microphone audio is
@@ -313,7 +398,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
         return;
       }
       if (message.containsKey('error') || message.containsKey('goAway')) {
-        _fail('Live voice connection ended. Start a new call to reconnect.');
+        _fail(
+          'Live voice connection ended. Start a new call to reconnect.',
+          stage: LiveVoiceFailureStage.transport,
+        );
         unawaited(close());
         return;
       }
@@ -362,11 +450,17 @@ class LiveVoiceSession with WidgetsBindingObserver {
                 data.isNotEmpty) {
               _state.add(LiveVoiceState.speaking);
               if (!await LivePcmAudio.start(sampleRate: 24000)) {
-                throw StateError('Native live audio playback is unavailable.');
+                throw const _LiveVoiceFault(
+                  LiveVoiceFailureStage.playback,
+                  'Live voice playback is unavailable on this device.',
+                );
               }
               if (_closed) return;
               if (!await LivePcmAudio.write(base64Decode(data))) {
-                throw StateError('Native live audio playback stopped.');
+                throw const _LiveVoiceFault(
+                  LiveVoiceFailureStage.playback,
+                  'Live voice playback stopped. Check your audio output.',
+                );
               }
             }
           }
@@ -376,8 +470,14 @@ class LiveVoiceSession with WidgetsBindingObserver {
         _turnCompletions.add(null);
         _state.add(LiveVoiceState.listening);
       }
+    } on _LiveVoiceFault catch (fault) {
+      _fail(fault.message, stage: fault.stage);
+      unawaited(close());
     } catch (_) {
-      _fail('Live voice received an invalid audio event.');
+      _fail(
+        'Live voice received an invalid audio event.',
+        stage: LiveVoiceFailureStage.signaling,
+      );
       unawaited(close());
     }
   }
@@ -385,7 +485,13 @@ class LiveVoiceSession with WidgetsBindingObserver {
   Future<void> setSpeaker(bool enabled) async {
     if (_closed) return;
     _speaker = enabled;
-    await LivePcmAudio.setSpeaker(enabled);
+    if (!await LivePcmAudio.setSpeaker(enabled)) {
+      _fail(
+        'Could not change the audio output. Check your speaker or headset.',
+        stage: LiveVoiceFailureStage.playback,
+      );
+      unawaited(close());
+    }
   }
 
   Future<void> mute(bool muted) async {
@@ -412,11 +518,15 @@ class LiveVoiceSession with WidgetsBindingObserver {
     }
   }
 
-  void _fail(String message) {
+  void _fail(
+    String message, {
+    LiveVoiceFailureStage stage = LiveVoiceFailureStage.signaling,
+  }) {
     if (_closed) return;
     if (!_ready.isCompleted) {
       _ready.completeError(StateError(message));
     }
+    _failures.add(LiveVoiceFailure(stage, message));
     _errors.add(message);
     _state.add(LiveVoiceState.failed);
   }
@@ -468,6 +578,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
     _state.add(LiveVoiceState.ended);
     await _state.close();
     await _errors.close();
+    await _failures.close();
     await _transcripts.close();
     await _inputTranscripts.close();
     await _turnCompletions.close();
