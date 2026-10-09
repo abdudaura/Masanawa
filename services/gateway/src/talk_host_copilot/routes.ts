@@ -17,6 +17,8 @@ const Edit = Type.Object({
 /** Isolated composition seam. Must be mounted only by elected Gateway integrator after
  * U14 schema is sequenced, actor auth is wired and native/device tests run. */
 export function registerHostPrepRoutes(app: FastifyInstance, service: HostPrepService): void {
+  app.get("/v1/talk-host-preparations", async (request) =>
+    service.list({ authorizationHeader: request.headers.authorization }));
   app.post("/v1/talk-host-preparations", { schema: { body: Body } }, async (request, reply) => {
     const body = request.body as { title: string; topic: string; questions: string[] };
     const created = await service.create({ authorizationHeader: request.headers.authorization, ...body });
