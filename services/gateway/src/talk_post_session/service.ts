@@ -50,7 +50,7 @@ export function createReplayInsightService(input: {
   async function verified(header: string | undefined) {
     return input.authorizer.authorize({ authorizationHeader: header });
   }
-  return Object.freeze({
+  return Object.freeze<ReplayInsightService>({
     async read(request) {
       const actor = await verified(request.authorizationHeader);
       const id = talkId(request.talkId);
@@ -103,3 +103,4 @@ export function createReplayInsightService(input: {
     },
   });
 }
+

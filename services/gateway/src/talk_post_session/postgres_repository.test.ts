@@ -4,7 +4,7 @@ import { createPostgresReplayInsightRepository, type InsightSqlPool } from "./po
 describe("U16 Postgres privacy and compare-and-set", () => {
   it("requires host, R13 ready media, recording consent, finalization and safety visibility", async () => {
     const queries: string[] = [];
-    const pool: InsightSqlPool = { async query<Row>(sql, values) {
+    const pool: InsightSqlPool = { async query<Row>(sql: string, values?: unknown[]) {
       queries.push(sql);
       expect(values).toEqual(["tenant-a","host","talk_1"]);
       return { rows: [] as Row[], rowCount: 0 };
@@ -24,7 +24,7 @@ describe("U16 Postgres privacy and compare-and-set", () => {
     const query = vi.fn(async <Row extends Record<string, unknown>>(sql: string) => ({
       rows: [] as Row[], rowCount: 1,
     }));
-    const repo=createPostgresReplayInsightRepository({query});
+    const repo=createPostgresReplayInsightRepository({async query<Row>(sql: string) { const result = await query(sql); return {rows: [] as Row[], rowCount: result.rowCount}; }});
     const source = {tenantId:"tenant-a",talkId:"talk_1",recordingId:"recording_1",checksumSha256:"a".repeat(64),replayRevision:4,hostUserId:"host"};
     expect(await repo.claim(source,"host","lease-1")).toBe(true);
     expect(query.mock.calls[0]![0]).toContain("ON CONFLICT(tenant_id,talk_id)");
@@ -38,7 +38,7 @@ describe("U16 Postgres privacy and compare-and-set", () => {
     expect(query.mock.calls[1]![0]).toContain("post_session_processing_clearances");
   });
   it("never returns previous text after a replay is blocked or changed", async () => {
-    const pool: InsightSqlPool = { async query<Row>(sql) {
+    const pool: InsightSqlPool = { async query<Row>(sql: string) {
       expect(sql).toContain("allowed.recording_id=i.recording_id");
       expect(sql).toContain("allowed.checksum_sha256=i.media_checksum");
       return {rows:[] as Row[],rowCount:0};
@@ -47,3 +47,4 @@ describe("U16 Postgres privacy and compare-and-set", () => {
       .toBeNull();
   });
 });
+

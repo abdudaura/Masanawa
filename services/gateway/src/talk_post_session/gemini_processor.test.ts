@@ -25,7 +25,7 @@ function fixture(override: {audio?:Buffer; deny?:boolean} = {}) {
     expiresAt:"2026-10-09T01:00:00Z",
   })) } as unknown as ReplayObjectStore;
   const network = vi.fn(async (_url: string | URL | Request) => {
-    if (network.mock.calls.length === 1) return new Response(override.audio ?? audio);
+    if (network.mock.calls.length === 1) return new Response(new Uint8Array(override.audio ?? audio));
     return Response.json({candidates:[{content:{parts:[{text:JSON.stringify({
       summary:"Host draft",highlights:["Safe summary"],nextTalkTitle:null,
     })}]}}]});
@@ -73,3 +73,4 @@ describe("U16 real provider adapter safety boundary",()=>{
     expect(f.network).toHaveBeenCalledTimes(1);
   });
 });
+
