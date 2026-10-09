@@ -120,9 +120,13 @@ export function createFcmPushSender(input: {
 
   // Coalesce concurrent sends for the same project. Expired/invalid credentials
   // are never reused after an OAuth rejection from FCM.
-  async function accessToken(forceRefresh = false): Promise<string> {
-    if (forceRefresh) cached = undefined;
+  async function accessToken(rejectedToken?: string): Promise<string> {
     const current = now().getTime();
+    // Concurrent 401 responses can arrive after another sender has already
+    // installed a replacement token. Invalidate only the *rejected* bearer:
+    // clearing an unrelated fresh token causes a refresh storm and can make
+    // otherwise recoverable notifications fail during an OAuth outage.
+    if (rejectedToken && cached?.token === rejectedToken) cached = undefined;
     if (cached && cached.expiresAt - 60_000 > current) return cached.token;
     if (pendingToken) return pendingToken;
 
@@ -261,7 +265,7 @@ export function createFcmPushSender(input: {
               // than silently mark an entire batch as delivered.
               throw new Error("Firebase FCM rejected refreshed credentials");
             }
-            bearer = await accessToken(true);
+            bearer = await accessToken(bearer);
             refreshedAuth = true;
             continue;
           }
