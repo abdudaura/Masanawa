@@ -210,4 +210,33 @@ describe("R14 FCM delivery resilience", () => {
     expect(oauthCalls).toBe(1);
     expect(deviceCalls).toBe(2);
   });
+  it("C09 incoming call uses dedicated high-priority channel but status updates do not",async()=>{
+    const channels:string[]=[];
+    const fetchImpl=vi.fn(async (url:unknown,init?:RequestInit)=>{
+      if(String(url).includes("oauth2.googleapis.com"))return oauth();
+      const decoded=JSON.parse(String(init?.body)) as {
+        message:{android:{notification:{channel_id:string}},data:Record<string,string>,
+          notification:{title:string,body:string}};
+      };
+      channels.push(decoded.message.android.notification.channel_id);
+      expect(decoded.message.data).not.toHaveProperty("phone");
+      expect(decoded.message.data).not.toHaveProperty("token");
+      return Response.json({name:"sent"});
+    });
+    const {sender}=senderWith(["private-device"],fetchImpl as typeof fetch);
+    const callId="11111111-1111-4111-8111-111111111111";
+    await sender.send({
+      scope,title:"Private call",body:"Incoming call",
+      data:{type:"human_private_call",callId,eventType:"ringing"},
+    });
+    await sender.send({
+      scope,title:"Private call",body:"Call ended",
+      data:{type:"human_private_call",callId,eventType:"ended"},
+    });
+    await sender.send(request);
+    expect(channels).toEqual([
+      "masanawa_private_calls","masanawa_work","masanawa_work",
+    ]);
+  });
+
 });
