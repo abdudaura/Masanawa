@@ -143,7 +143,10 @@ export function createPostgresHumanCallRepository(pool:HumanCallSqlPool):HumanCa
           LIMIT 1`,[tenantId,callId,actorId]);
         const r=found.rows[0];
         if(!r || !await lockUsers(q,tenantId,r.caller_user_id,r.callee_user_id)) return null;
-        if(!await allowed(q,tenantId,actorId,r.conversation_id)) return null;
+        // Fail closed for new acceptance; always permit a current participant
+        // to terminate media even if a block/revoke occurred mid-call.
+        if(action!=="end" &&
+           !await allowed(q,tenantId,actorId,r.conversation_id)) return null;
         await expire(q,tenantId);
         const next=action==="accept"?"active":action==="decline"?"declined":"ended";
         const changed=await q.query<CallRow>(`
