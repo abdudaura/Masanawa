@@ -32,16 +32,18 @@
         "services/gateway/src/talk_agent_live_copilot/routes.test.ts",
         "services/gateway/src/talk_agent_live_copilot/copilot.ts",
         "services/gateway/src/talk_agent_live_copilot/copilot.test.ts",
-        "docs/workstreams/recovery-01-u15-copilot-20261009.md"
+        "docs/workstreams/recovery-01-u15-copilot-20261009.md",
+        "services/gateway/src/talk_agent_live_copilot/postgres.ts",
+        "services/gateway/src/talk_agent_live_copilot/postgres.test.ts"
       ],
       "branch": "work/recovery-01-u15-copilot-20261009",
       "base_sha": "061b637f3386f67596ca3997b8dac5ac5b619eac",
       "source_pr": 536,
       "source_head": "061b637f3386f67596ca3997b8dac5ac5b619eac",
       "claimed_at": "2026-10-09T10:24:17.294Z",
-      "heartbeat_at": "2026-10-09T10:25:51.493Z",
-      "expires_at": "2026-10-09T10:30:51.493Z",
-      "notes": "Original source preserved. No composer/router/financial/migration/native/dependency/CI edits. Reproduce extra-field stripping before auth/dispatch, then run real focused suites and strict TS. 23 focused real Fastify/Vitest tests PASS with mock authority/worker/store; strict TypeScript PASS; publishing exact source repair 940b0623f051c87506e973b8e31945b28012a580"
+      "heartbeat_at": "2026-10-09T10:26:54.338Z",
+      "expires_at": "2026-10-09T10:31:54.338Z",
+      "notes": "Original source preserved. No composer/router/financial/migration/native/dependency/CI edits. Reproduce extra-field stripping before auth/dispatch, then run real focused suites and strict TS. 23 focused real Fastify/Vitest tests PASS with mock authority/worker/store; strict TypeScript PASS; publishing exact source repair 940b0623f051c87506e973b8e31945b28012a580 Strict TS demonstrated lost frozen-interface context and incomplete session fixture; extending exact paths before repairs; finance baseline untouched."
     },
     {
       "claim_id": "recovery-03-u01-approval-20261009",
