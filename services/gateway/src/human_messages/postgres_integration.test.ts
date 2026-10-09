@@ -75,6 +75,30 @@ describeDb("C02 human DM real PostgreSQL concurrency/privacy",()=>{
       limit:30,before:history![0]!.sequence});
     expect(empty).toEqual([]);
   });
+  it("edits and deletes once under live C01 consent; repeat delete returns only a tombstone",async()=>{
+    const repo=createPostgresHumanDmRepository(pool);
+    const original="before correction";
+    const sent=await repo.send({tenantId:tenant,userId:a,conversationId,
+      clientRequestId:"request_"+randomUUID().replaceAll("-",""),body:original,
+      sha256:createHash("sha256").update(original).digest("hex")});
+    expect(typeof sent).toBe("object");
+    if(typeof sent!=="object") throw new Error("disposable DB send did not persist");
+    const changed=await repo.edit({tenantId:tenant,userId:a,
+      messageId:sent.messageId,body:"corrected"});
+    expect(changed?.body).toBe("corrected");
+    // Only the authenticated sender may edit or tombstone the message.
+    expect(await repo.edit({tenantId:tenant,userId:b,
+      messageId:sent.messageId,body:"peer spoof"})).toBeNull();
+    expect(await repo.remove({tenantId:tenant,userId:b,
+      messageId:sent.messageId})).toBeNull();
+    const deleted=await repo.remove({tenantId:tenant,userId:a,messageId:sent.messageId});
+    expect(deleted?.body).toBeNull();
+    expect(deleted?.deletedAt).not.toBeNull();
+    expect(await repo.remove({tenantId:tenant,userId:a,messageId:sent.messageId}))
+      .toEqual(deleted);
+    expect(await repo.edit({tenantId:tenant,userId:a,
+      messageId:sent.messageId,body:"restore"})).toBeNull();
+  });
   it("immediately blocks send AND historical reads upon reciprocal block",async()=>{
     const now=new Date().toISOString();
     await pool.query(`INSERT INTO talks.safety_preferences
@@ -84,6 +108,24 @@ describeDb("C02 human DM real PostgreSQL concurrency/privacy",()=>{
     const p={tenantId:tenant,userId:a,conversationId,clientRequestId:"request_"+randomUUID().replaceAll("-",""),
       body:"should fail",sha256:createHash("sha256").update("should fail").digest("hex")};
     expect(await repo.send(p)).toBe("forbidden");
+    const historical=await pool.query<{message_id:string;body:string|null}>(`
+      SELECT message_id,body FROM talks.human_dm_messages
+      WHERE tenant_id=$1 AND conversation_id=$2 AND sender_user_id=$3
+        AND client_request_id=$4
+    `,[tenant,conversationId,a,id]);
+    const saved=historical.rows[0]!;
+    expect(saved.body).toBe("hello Bob");
+    expect(await repo.edit({tenantId:tenant,userId:a,
+      messageId:saved.message_id,body:"must not edit when blocked"})).toBeNull();
+    expect(await repo.remove({tenantId:tenant,userId:a,
+      messageId:saved.message_id})).toBeNull();
+    const unchanged=await pool.query<{body:string|null;deleted_at:Date|null}>(`
+      SELECT body,deleted_at FROM talks.human_dm_messages
+      WHERE tenant_id=$1 AND message_id=$2
+    `,[tenant,saved.message_id]);
+    expect(unchanged.rows[0]?.body).toBe("hello Bob");
+    expect(unchanged.rows[0]?.deleted_at).toBeNull();
+
     expect(await repo.history({tenantId:tenant,userId:a,conversationId,limit:30})).toBeNull();
     expect(await repo.inbox({tenantId:tenant,userId:a,limit:30})).toEqual([]);
     // A revoked actor cannot create a read receipt even if the thread UUID
@@ -102,6 +144,15 @@ describeDb("C02 human DM real PostgreSQL concurrency/privacy",()=>{
       (tenant_id,first_user_id,second_user_id,requested_by,status)
       VALUES ($1,LEAST($2,$3),GREATEST($2,$3),$2,'declined')`,[tenant,a,b]);
     const repo=createPostgresHumanDmRepository(pool);
+    const older=await pool.query<{message_id:string}>(`
+      SELECT message_id FROM talks.human_dm_messages
+      WHERE tenant_id=$1 AND conversation_id=$2 AND sender_user_id=$3
+        AND client_request_id=$4
+    `,[tenant,conversationId,a,id]);
+    expect(await repo.edit({tenantId:tenant,userId:a,
+      messageId:older.rows[0]!.message_id,body:"declined edit"})).toBeNull();
+    expect(await repo.remove({tenantId:tenant,userId:a,
+      messageId:older.rows[0]!.message_id})).toBeNull();
     expect(await repo.history({tenantId:tenant,userId:a,conversationId,limit:40})).toBeNull();
     expect(await repo.inbox({tenantId:tenant,userId:a,limit:40})).toEqual([]);
     expect(await repo.read({tenantId:tenant,userId:a,conversationId,
