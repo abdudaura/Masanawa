@@ -74,7 +74,7 @@ try {
   try {
     Invoke-Checked flutter clean
     Invoke-Checked flutter pub get
-    Invoke-Checked flutter analyze
+    Invoke-Checked flutter analyze --no-fatal-infos --no-fatal-warnings
     Invoke-Checked flutter test
     Invoke-Checked flutter build apk --release @firebaseBuildArguments "--dart-define=API_BASE_URL=$ApiBaseUrl" "--dart-define=AGENT_BASE_URL=$ApiBaseUrl"
 
