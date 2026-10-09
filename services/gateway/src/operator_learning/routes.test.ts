@@ -36,7 +36,7 @@ function fixture() {
     masteryNotes: ["Understands addition"],
     updatedAt: stamp,
   };
-  const read = vi.fn(async () => progress);
+  const read = vi.fn(async (): Promise<TeachingProgress | null> => progress);
   const upsert = vi.fn(async (_row: TeachingProgress) => undefined);
   const repository = { read, upsert } satisfies TeachingProgressRepository;
   const authorize = vi.fn(async (input: { authorizationHeader?: string; characterId: string }) => {
@@ -62,6 +62,36 @@ function fixture() {
 }
 
 describe("U06 authenticated Study Gateway route composition seam", () => {
+  it("admits the first lesson through the authenticated API without inventing progress", async () => {
+    const x = fixture();
+    x.read.mockResolvedValue(null);
+    const response = await x.app.inject({
+      method: "POST", url: "/agent/learning/actions",
+      headers: { authorization: "Bearer valid-user" },
+      payload: {
+        characterId: scope.characterId, characterSessionId,
+        requestId: createCanonicalId("request"),
+        action: "continue", expectedUpdatedAt: null,
+      },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ state: "accepted", latest: { state: "empty", progress: null } });
+    expect(x.turn).toHaveBeenCalledTimes(1);
+    expect(x.upsert).not.toHaveBeenCalled();
+  });
+
+  it("never exposes a checkpoint belonging to another relationship", async () => {
+    const x = fixture();
+    const saved = await x.read();
+    x.read.mockResolvedValue({ ...saved!, relationshipId: createCanonicalId("relationship") });
+    const response = await x.app.inject({
+      method: "GET", url: "/agent/learning/progress?characterId=" + scope.characterId,
+      headers: { authorization: "Bearer valid-user" },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toEqual({ error: "learning.forbidden" });
+    expect(x.turn).not.toHaveBeenCalled();
+  });
   it("reads persisted progress only after verified Character admission", async () => {
     const x = fixture();
     const denied = await x.app.inject({

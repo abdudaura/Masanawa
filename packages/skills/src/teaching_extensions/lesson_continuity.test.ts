@@ -117,5 +117,35 @@ describe("U06 Study continuity and actual checkpoint truth", () => {
     });
     expect(r.state).toBe("accepted");
     expect(r.latest.state).toBe("empty");
+    expect(r).not.toHaveProperty("code");
+    expect(x.dispatch).toHaveBeenCalledTimes(1);
+    expect(x.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a dated checkpoint when the lesson no longer exists", async () => {
+    const x = fixture();
+    x.set(null);
+    await expect(x.service.act(actor, scope, {
+      action: "continue", requestId: "removed-lesson-001", expectedUpdatedAt: stamp,
+    })).rejects.toMatchObject({ code: "learning.stale_checkpoint" });
+    expect(x.dispatch).not.toHaveBeenCalled();
+  });
+
+  it("rejects repository readback from every foreign scope boundary", async () => {
+    for (const foreign of [
+      { tenantId: createCanonicalId("tenant") },
+      { userId: createCanonicalId("user") },
+      { characterId: createCanonicalId("character") },
+      { relationshipId: createCanonicalId("relationship") },
+    ]) {
+      const x = fixture();
+      const saved = (await x.service.read(actor, scope)).progress!;
+      x.set({ ...saved, ...foreign });
+      await expect(x.service.read(actor, scope)).rejects.toMatchObject({ code: "learning.forbidden" });
+      await expect(x.service.act(actor, scope, {
+        action: "continue", requestId: "foreign-lesson-001", expectedUpdatedAt: stamp,
+      })).rejects.toMatchObject({ code: "learning.forbidden" });
+      expect(x.dispatch).not.toHaveBeenCalled();
+    }
   });
 });

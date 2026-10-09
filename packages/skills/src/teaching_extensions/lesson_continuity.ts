@@ -134,9 +134,16 @@ export function createTeachingContinuity(input: Readonly<{
     const scope = scoped(actor, rawScope);
     const progress = await input.repository.read(scope);
     if (!progress) return Object.freeze({ state: "empty" as const, progress: null });
+    const normalized = normalizeTeachingProgress(progress);
+    if (normalized.tenantId !== scope.tenantId ||
+        normalized.userId !== scope.userId ||
+        normalized.characterId !== scope.characterId ||
+        normalized.relationshipId !== scope.relationshipId) {
+      throw new TeachingContinuityError("learning.forbidden");
+    }
     return Object.freeze({
       state: "available" as const,
-      progress: normalizeTeachingProgress(progress),
+      progress: normalized,
     });
   }
 
@@ -154,7 +161,7 @@ export function createTeachingContinuity(input: Readonly<{
       const scope = scoped(actor, rawScope);
       validRequest(request);
       const previous = await read(actor, scope);
-      if (previous.progress?.updatedAt !== request.expectedUpdatedAt) {
+      if ((previous.progress?.updatedAt ?? null) !== request.expectedUpdatedAt) {
         throw new TeachingContinuityError("learning.stale_checkpoint");
       }
       let outcome: StudyDispatchResult;
@@ -184,7 +191,8 @@ export function createTeachingContinuity(input: Readonly<{
       }
       return Object.freeze({
         state: outcome.state,
-        code: outcome.state === "accepted" ? undefined : outcome.code ?? "learning.dispatch_unavailable",
+        ...(outcome.state === "accepted" ? {} :
+          { code: outcome.code ?? "learning.dispatch_unavailable" }),
         latest,
       });
     },
