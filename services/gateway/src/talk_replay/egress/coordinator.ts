@@ -138,6 +138,13 @@ export function createTalkReplayCoordinator(input:Readonly<{
       const object=await input.media.playbackObject(request);
       if(!object) return null;
       const signed=await input.objects.presignGet(object.objectKey,input.playbackTtlSeconds);
+      // Signing is asynchronous: unpublish, discard, moderator restriction or
+      // account revocation may have happened since playbackObject was read.
+      // Never disclose a newly signed private URL without fresh DB authority.
+      // Require the same media object to avoid returning a stale recording if
+      // the Talk was superseded while the provider request was in flight.
+      const current=await input.media.playbackObject(request);
+      if(!current || current.objectKey!==object.objectKey) return null;
       return Object.freeze({
         url:signed.url,
         expiresAt:signed.expiresAt,
