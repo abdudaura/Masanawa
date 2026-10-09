@@ -67,22 +67,6 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
-    },
-    {
-      "claim_id": "masanawa-01-af08-auth-revocation-delivery-20261009",
-      "owner": "MASANAWA-01",
-      "scope": "AF08: ensure OTP unavailable channels do not create challenges; prevent silent logout/revocation failure and test server-auth behavior; avoid OTP bypass, new identity authority and shared composition",
-      "paths": [
-        "services/gateway/src/customer_auth.ts",
-        "services/gateway/src/customer_auth.test.ts",
-        "docs/workstreams/AF08-auth-revocation-delivery-20261009.md"
-      ],
-      "branch": "work/af08-auth-revocation-delivery-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-09T21:29:14.969Z",
-      "heartbeat_at": "2026-10-09T21:29:14.969Z",
-      "expires_at": "2026-10-09T21:34:14.969Z",
-      "notes": "Fresh main + #497/#539 + CAS and canonical AF08 ownership inspected. No migration, app router, finance, launch manifest or auth schema changes."
     }
   ],
   "history": [
@@ -526,6 +510,25 @@
       "notes": "Original MASANAWA-01 previous scoped claim was released; same owner repairing invalid Dart compilation in exact scoped PR source. No shared shell edits, no local APK overwrite.",
       "released_at": "2026-10-09T21:32:12.916Z",
       "release_reason": "Repair and regression tests committed to PR #586 head 77ae961862cae7600f435eda59ce05c771b29597, GitHub source/test readbacks and 12/12 static checks pass; Flutter/Dart unavailable, E2E not run, AF00 overall partial."
+    },
+    {
+      "claim_id": "masanawa-01-af08-auth-revocation-delivery-20261009",
+      "owner": "MASANAWA-01",
+      "scope": "AF08: ensure OTP unavailable channels do not create challenges; prevent silent logout/revocation failure and test server-auth behavior; avoid OTP bypass, new identity authority and shared composition",
+      "paths": [
+        "services/gateway/src/customer_auth.ts",
+        "services/gateway/src/customer_auth.test.ts",
+        "docs/workstreams/AF08-auth-revocation-delivery-20261009.md"
+      ],
+      "branch": "work/af08-auth-revocation-delivery-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:29:14.969Z",
+      "heartbeat_at": "2026-10-09T21:29:14.969Z",
+      "expires_at": "2026-10-09T21:34:14.969Z",
+      "notes": "Fresh main + #497/#539 + CAS and canonical AF08 ownership inspected. No migration, app router, finance, launch manifest or auth schema changes.",
+      "released_at": "2026-10-09T21:33:06.750Z",
+      "release_reason": "AF08 scoped source and regression authored, 4/4 isolated JS simulation, PR #588 handoff SHA ec372e0e89ea3dcf815b2511e66bb92f548327d6. Full Vitest/TS/Fastify/DB/Android not run; AF00 app.ts mapping pending; no production merge.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/588"
     }
   ]
 }
