@@ -1,4 +1,4 @@
-import {describe,expect,it} from "vitest";
+import {describe,expect,it,vi} from "vitest";
 import {pruneHumanDmJournal,verifyHumanDmRetentionTarget} from "./retention.js";
 
 // All mutation-success test doubles must exercise the same one-use preflight
@@ -149,6 +149,39 @@ describe("C03 bounded private-message retention operator",()=>{
     })).rejects.toThrow("preflight failed");
     await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
       .rejects.toThrow("fresh matching target preflight");
+  });
+  it("expires a matching preflight after five minutes before SQL mutation",async()=>{
+    const now=Date.now();
+    const dateNow=vi.spyOn(Date,"now");
+    try {
+      dateNow.mockReturnValue(now);
+      let mutations=0;
+      const pool=await preflightedPool("tenant_a",async()=>{
+        mutations++;return {rows:[{deleted:0}],rowCount:1};
+      });
+      dateNow.mockReturnValue(now+300001);
+      await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
+        .rejects.toThrow("fresh matching target preflight");
+      expect(mutations).toBe(0);
+    } finally {
+      dateNow.mockRestore();
+    }
+  });
+  it("rejects inconsistent preflight row counts without authorization",async()=>{
+    let mutations=0;
+    const pool={async query(sql:string){
+      if(sql.includes("current_database()"))return {rows:[{
+        database_name:"masanawa_test",database_role:"maintenance_role",
+        tenant_exists:true,can_trim:true,
+      }],rowCount:0};
+      mutations++;return {rows:[{deleted:0}],rowCount:1};
+    }};
+    await expect(verifyHumanDmRetentionTarget({
+      pool,tenantId:"t",expectedDatabase:"masanawa_test",
+    })).rejects.toThrow("preflight failed");
+    await expect(pruneHumanDmJournal({pool,tenantId:"t"}))
+      .rejects.toThrow("fresh matching target preflight");
+    expect(mutations).toBe(0);
   });
   it("rejects fabricated/over-limit database counts",async()=>{
     const pool=await preflightedPool("t",async()=>({
