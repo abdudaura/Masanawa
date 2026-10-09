@@ -117,10 +117,53 @@ describe("AF01 billing receipt recovery (UX-A07 / WF-A08)", () => {
       authorizationHeader: "Bearer valid-session",
       reference,
       refresh: true,
-    })).rejects.toThrow("provider unavailable");
+    })).rejects.toThrow("Flutterwave bill request failed");
 
     expect(h.providerRequests).toHaveBeenCalledOnce();
     expect(h.settleBill).not.toHaveBeenCalled();
+  });
+
+
+  it("never hides a failed database compare-and-set after a provider reversal", async () => {
+    const store = new MemoryStore();
+    store.records.set(reference, fulfillment("succeeded"));
+    const compareAndSet = vi.spyOn(store, "compareAndSet").mockRejectedValue(new Error("database conflict"));
+    const settleBill = vi.fn(async () => {});
+    const service = createBillingFinancialService({
+      billingStore: () => store,
+      webhookRepository: { async admitProviderWebhook() { return { duplicate: false }; } },
+      authorizer: { async authorize() { return identity; } },
+      flutterwaveSecretKey: "test-secret",
+      flutterwaveWebhookHash: "test-hash",
+      flutterwaveWebhookUrl: "https://example.com/webhooks/flutterwave",
+      providerClient: new FlutterwaveBillsClient({
+        secretKey: "test-secret",
+        country: "NG",
+        transport: {
+          async request() {
+            return { status: 200, body: { status: "success", data: {
+              customer_reference: reference,
+              flw_ref: "BP-REVERSAL",
+              status: "reversed",
+              amount: "100",
+              currency: "NGN",
+              customer_id: "07010102053",
+              product: "AIRTIME",
+              product_name: "Airtime",
+            } } };
+          },
+        },
+      }),
+      billingFunding: { async reserveConfirmedBill() {}, settleBill },
+    });
+
+    await expect(service.readPurchase({
+      authorizationHeader: "Bearer valid-session",
+      reference,
+      refresh: true,
+    })).rejects.toThrow("database conflict");
+    expect(compareAndSet).toHaveBeenCalledOnce();
+    expect(settleBill).not.toHaveBeenCalled();
   });
 
   it("prefers signed customer fulfillment reference over unrelated provider reference", async () => {
