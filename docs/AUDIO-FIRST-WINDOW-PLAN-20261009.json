@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "updated": "2026-10-09",
   "snapshotBaseSha": "5e758673ae91082520b21b3153da53791ae2cbf3",
   "status": "PLANNED",
@@ -279,14 +279,16 @@
         "services/gateway/src/audio_posts/**",
         "packages/talks/audio_posts/**",
         "adapters/storage/postgres/src/audio_posts/**",
-        "apps/mobile/test/audio_first/af09/**"
+        "apps/mobile/test/audio_first/af09/**",
+        "apps/mobile/lib/src/screens/you/my_talks_screen.dart",
+        "apps/mobile/lib/src/screens/you/saved_talks_screen.dart"
       ],
       "recover": [
         497,
         548,
         503
       ],
-      "scope": "Audio-post feed, recording/trim/preview/upload/processing/publish, following/discover, engaging waveform cards, likes/comments/play counts/save/share/report. Reuse media/social/replay assets safely; old live IDs remain typed legacy resources, never coerced into new posts.",
+      "scope": "Audio-post feed, recording/trim/preview/upload/processing/publish, following/discover, engaging waveform cards, likes/comments/play counts/save/share/report. Reuse media/social/replay assets safely; old live IDs remain typed legacy resources, never coerced into new posts. Own audio-post libraries and connect draft resume; shared search/explore files need exact-path transfer from AF00 with AF07 review.",
       "tests": "Two-account publication/playback/follow/comment; publish retry dedup; codec/size limits; one player; played-time counts/dedup; moderation/delete/privacy; low data/offline drafts.",
       "status": "PLANNED_UNCLAIMED",
       "headSha": null
@@ -391,6 +393,61 @@
       "tests": "AF acceptance matrix, negative authority, escrow/concurrency/restore, real configured providers/physical devices, low-end/offline, artifact identity/rollback. Run only available dependencies; record precise unavailable checks.",
       "status": "PLANNED_UNCLAIMED",
       "headSha": null
+    },
+    {
+      "id": "AF14",
+      "name": "Settings, account and activity surfaces",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/lib/src/screens/settings/account_deletion_dialog.dart",
+        "apps/mobile/lib/src/screens/profile/edit_profile_screen.dart",
+        "apps/mobile/lib/src/screens/you/you_screen.dart",
+        "apps/mobile/lib/src/screens/activity/**",
+        "apps/mobile/lib/src/account_preferences/**",
+        "services/gateway/src/account_preferences/**",
+        "adapters/storage/postgres/src/account_preferences/**",
+        "apps/mobile/test/audio_first/af14/**"
+      ],
+      "recover": [
+        497,
+        435,
+        430
+      ],
+      "scope": "Recover Settings/profile improvements. Implement concise Settings, account-fenced preferences, avatar/profile, notification and audio/data controls, correct app metadata/support, activity and lifecycle status. Consume AF08 credential/session APIs and AF01 financial obligations; preserve real deletion workflow. No auth/ledger replacement; AF00 integrates push, router and locale hooks.",
+      "tests": "SA-A01..08: restart/failed saves/account-switch, profile/avatar readback, blocked-user denial, OS/token notification states, safe scope-confirmed cache clearing, installed metadata/support, server deletion/export with unsettled funds. Never claim request==deletion.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF15",
+      "name": "Storage and durable operations",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "services/gateway/src/media_lifecycle/**",
+        "services/worker/src/durable_operations/**",
+        "adapters/storage/postgres/src/media_lifecycle/**",
+        "adapters/storage/object_lifecycle/**",
+        "tests/integration/audio_first_operations/**",
+        "apps/mobile/test/audio_first/af15/**"
+      ],
+      "recover": [
+        497,
+        430,
+        518,
+        561,
+        570
+      ],
+      "scope": "Inventory/reuse existing stores/jobs and publish DB/storage/job closure contracts. Implement reusable private media lifecycle, retention/orphan cleanup and durable operational adapters; qualify schema roots, backups/restore/capacity and restart. Domain jobs stay feature-owned, AF13 owns independent evidence, AF00 owns roots/migration registry/deploy config, AF01 money. Existing adapter changes require explicit exact-path transfer, not parallel replacement.",
+      "tests": "DB-A01..08: actual PG migration/upgrade/concurrency, signed-media access/revocation, coupled DB/object restore, measured capacity, restart/lease/idempotency, settlement-aware deletion. Record unavailable live credentials/devices/providers as NOT_RUN or BLOCKED.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
     }
   ],
   "bottomTabs": [
@@ -401,5 +458,6 @@
     "wallet"
   ],
   "defaultTab": "talks",
-  "centerTab": "talks"
+  "centerTab": "talks",
+  "auditBaseSha": "44d75253cd9196db395662187a10aaaf39cc31c1"
 }

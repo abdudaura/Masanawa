@@ -1,7 +1,8 @@
-# Whole-app audit documentation claim
+# Whole-app audit documentation handoff
 
 Base: 44d75253cd9196db395662187a10aaaf39cc31c1
+PR: https://github.com/Baatiku/masanawa/pull/585
 
-Docs-only claim: docs/WHOLE-APP-SOURCE-AUDIT-20261009.md, docs/WHOLE-APP-SCREEN-INVENTORY-20261009.json, docs/BACKEND-STORAGE-OPERATIONS-20261009.md, docs/AUDIO-FIRST-WINDOW-PLAN-20261009.{md,json}, docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md, docs/AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/BACKEND-DATABASE-PORTABILITY-AUDIT-20261008.md, docs/README.md, CONTINUE-HERE.md and AGENTS.md. No runtime/deployment/migration edits. Audit main and draft Settings/profile; local source/APK and runtime verification unavailable.
+Docs-only completed source audit/planning revision. All 49 baseline screen files fetched/surface-scanned; deeper Settings/router/profile/backend review; #497 Settings/profile compared. Added detailed source audit, screen inventory, Settings contract, DB/storage/jobs gates and AF14/AF15 allocation/prompts. Historical backend startup assertions corrected by overlay; original report retained.
 
-Status: IN_PROGRESS.
+Verification: document links, sixteen lane/prompt/dependency/path boundaries, inventory coverage and Git tree runtime preservation checked before merge. These are document checks only. Local source/APK, physical-device audio, real DB/restore/provider/job verification NOT_RUN. Existing GitHub Foundation runner quota failures do not certify runtime. Next: AF00 recover local source and current drafts; claim dependency-ready lanes with actual source tests.

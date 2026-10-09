@@ -6,7 +6,7 @@ Status: planning allocation; no feature path is claimed by this document. Curren
 
 AF00 is the one continuing integrator. First reconcile the owner's local changes and #497 without discarding any source. It can publish narrow contract baselines and ready paths while local-only comparisons remain blocked; other windows may inspect/recover isolated modules, but must not replace unseen local screens.
 
-Wave 1: AF01 money, AF05 audio, AF07 directory, AF08 auth and AF13 qualification. Wave 2 starts per dependency, not a calendar: AF02 P2P, AF03 wallet, AF04 Gwani, AF06 messaging, AF09 posts, AF10 Rooms, AF11 Calls. Wave 3: AF12 creators on the ready posting API. Keep roughly 4–6 implementation windows active plus integration; fourteen IDs are accountability slots, not fourteen simultaneous writers.
+Wave 1: AF01 money, AF05 audio, AF07 directory, AF08 auth AF13 qualification, AF14 Settings and AF15 storage/operations. Wave 2 starts per dependency, not a calendar: AF02 P2P, AF03 wallet, AF04 Gwani, AF06 messaging, AF09 posts, AF10 Rooms, AF11 Calls. Wave 3: AF12 creators on the ready posting API. Keep roughly 4–6 implementation windows active plus integration; sixteen IDs are accountability slots, not sixteen simultaneous writers.
 
 Contracts and screen states land before dependent UI. Auth/finance unspecified activation rules remain blocked for money activation, not a reason to fabricate prices/backing. Navigation is confirmed: Chats · Rooms · Talks · Gwani · Wallet, Talks centred/default. AF00 updates semantic route/saved-tab compatibility and the user-facing Gwani label in one root-shell implementation.
 
@@ -28,6 +28,8 @@ Contracts and screen states land before dependent UI. Auth/finance unspecified a
 | AF11 | Calls recovery | AF05, AF07 | #575, #578 |
 | AF12 | Masana creators and scheduled publishing | AF09 | #545, #514, #517 |
 | AF13 | Acceptance, privacy and operations evidence | AF00 | #527, #518, #559, #561, #554, #567, #570 |
+| AF14 | Settings, account and activity surfaces | AF00 | #497, #435, #430 |
+| AF15 | Storage and durable operations | AF00 | #497, #430, #518, #561, #570 |
 
 ## Exact ownership and acceptance
 
@@ -206,6 +208,8 @@ Allowed roots/files (claim specific paths, verify current source first):
 - `apps/mobile/lib/src/audio_posts/**`
 - `apps/mobile/lib/src/screens/talks/talk_home_screen.dart`
 - `apps/mobile/lib/src/screens/talks/create_audio_post_screen.dart`
+- `apps/mobile/lib/src/screens/you/my_talks_screen.dart`
+- `apps/mobile/lib/src/screens/you/saved_talks_screen.dart`
 - `services/gateway/src/audio_posts/**`
 - `packages/talks/audio_posts/**`
 - `adapters/storage/postgres/src/audio_posts/**`
@@ -269,6 +273,41 @@ Allowed roots/files (claim specific paths, verify current source first):
 
 Verification: AF acceptance matrix, negative authority, escrow/concurrency/restore, real configured providers/physical devices, low-end/offline, artifact identity/rollback. Run only available dependencies; record precise unavailable checks.
 
+
+### AF14 — Settings, account and activity surfaces
+
+Outcome: Recover Settings/profile improvements. Implement concise Settings, account-fenced preferences, avatar/profile, notification and audio/data controls, correct app metadata/support, activity and lifecycle status. Consume AF08 credential/session APIs and AF01 financial obligations; preserve real deletion workflow. No auth/ledger replacement; AF00 integrates push, router and locale hooks.
+
+Allowed roots/files (claim specific paths, verify current source first):
+
+- `apps/mobile/lib/src/screens/settings/settings_screen.dart`
+- `apps/mobile/lib/src/screens/settings/account_deletion_dialog.dart`
+- `apps/mobile/lib/src/screens/profile/edit_profile_screen.dart`
+- `apps/mobile/lib/src/screens/you/you_screen.dart`
+- `apps/mobile/lib/src/screens/activity/**`
+- `apps/mobile/lib/src/account_preferences/**`
+- `services/gateway/src/account_preferences/**`
+- `adapters/storage/postgres/src/account_preferences/**`
+- `apps/mobile/test/audio_first/af14/**`
+
+Verification: SA-A01..08: restart/failed saves/account-switch, profile/avatar readback, blocked-user denial, OS/token notification states, safe scope-confirmed cache clearing, installed metadata/support, server deletion/export with unsettled funds. Never claim request==deletion.
+
+
+### AF15 — Storage and durable operations
+
+Outcome: Inventory/reuse existing stores/jobs and publish DB/storage/job closure contracts. Implement reusable private media lifecycle, retention/orphan cleanup and durable operational adapters; qualify schema roots, backups/restore/capacity and restart. Domain jobs stay feature-owned, AF13 owns independent evidence, AF00 owns roots/migration registry/deploy config, AF01 money. Existing adapter changes require explicit exact-path transfer, not parallel replacement.
+
+Allowed roots/files (claim specific paths, verify current source first):
+
+- `services/gateway/src/media_lifecycle/**`
+- `services/worker/src/durable_operations/**`
+- `adapters/storage/postgres/src/media_lifecycle/**`
+- `adapters/storage/object_lifecycle/**`
+- `tests/integration/audio_first_operations/**`
+- `apps/mobile/test/audio_first/af15/**`
+
+Verification: DB-A01..08: actual PG migration/upgrade/concurrency, signed-media access/revocation, coupled DB/object restore, measured capacity, restart/lease/idempotency, settlement-aware deletion. Record unavailable live credentials/devices/providers as NOT_RUN or BLOCKED.
+
 ## Shared boundaries and exclusions
 
 The allowed lists are mutually exclusive starting boundaries, not permission to seize active claims. The JSON companion is machine-readable. Each window writes only its own docs/workstreams/AFxx-<scope>-20261009.md handoff in addition to these paths. Shared tests/old tests require a visible bounded transfer or AF00 integration.
@@ -290,3 +329,7 @@ Recovery inputs above were observed open at this snapshot, not newly claimed and
 ## Completeness accountability
 
 The [audit](AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md) names remaining design/implementation/qualification gaps. AF00 maintains dispositions; AF13 measures actual journey evidence. No lane may declare the plan exhaustive or a money/media feature production-ready because a structural check passed. Shared financial/auth/provider policy gaps must be resolved before enabling affected operations.
+
+## Whole-app audit supplement
+
+Read [source findings and Settings](WHOLE-APP-SOURCE-AUDIT-20261009.md) and [database/storage operations](BACKEND-STORAGE-OPERATIONS-20261009.md). AF14/AF15 extend the previous fourteen-slot allocation; no paths are claimed by this planning edit. AF14 owns activity presentation; feature lanes own event production. AF09 owns libraries; AF00 elects exact public search/explore/human-profile/shared-state ownership with AF07/AF09. Legacy Twin/owner-session/gift disposition requires AF00 and AF01 review, not deletion. AF15 publishes reusable contracts early; feature-domain jobs remain AF01/02/09/10/12-owned. Production activation requires their applicable DB-A gates; development need not wait for unavailable live infrastructure. No two lanes receive the same additional file implicitly.
