@@ -7,6 +7,8 @@ import '../screens/activity/activity_screen.dart';
 import '../screens/billing/billing_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
 import '../messages/human_dm_screen.dart';
+import '../human_calls/human_call_flow.dart';
+import '../human_calls/human_call_models.dart';
 import '../messages/human_new_message_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
@@ -143,6 +145,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           initialHandle: state.uri.queryParameters['handle'],
         ),
       ),
+      // All private calls remain nested beneath the existing Chats root,
+      // not a sixth tab or a public Live Talk media route.
+      GoRoute(path: '/messages/calls',builder:(_,__)=>const HumanCallsHistoryRoute()),
+      GoRoute(path: '/messages/calls/new',builder:(_,state) {
+        final kind=state.uri.queryParameters['kind'];
+        final conversationId=state.uri.queryParameters['conversationId'];
+        if(conversationId==null||!{'audio','video'}.contains(kind)){
+          return const Scaffold(body:Center(child:Text('Invalid private call link.')));
+        }
+        return HumanCallFlowScreen(
+          conversationId:conversationId,
+          kind:kind=='video'?HumanCallKind.video:HumanCallKind.audio,
+        );
+      }),
+      GoRoute(path: '/messages/calls/:callId',builder:(_,state)=>
+        HumanCallFlowScreen(callId:state.pathParameters['callId']!)),
       GoRoute(
         path: '/messages/:conversationId',
         builder: (_, state) => HumanDmThreadScreen(
