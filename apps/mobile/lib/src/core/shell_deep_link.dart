@@ -45,6 +45,7 @@ String? shellDeepLinkRoute(Uri uri) {
         'activity',
         'owner-session',
         'messages',
+        'calls',
       }.contains(uri.host)) {
     return null;
   }
@@ -56,6 +57,15 @@ String? shellDeepLinkRoute(Uri uri) {
     final publicId = uri.pathSegments.single;
     if (!_validPublicTwinId(publicId)) return null;
     return '/twin/${Uri.encodeComponent(publicId)}';
+  }
+
+  if (uri.host == 'calls') {
+    // An opaque locator only: Gateway validates tenant/member/consent on
+    // every read and blocks expired/revoked calls. No query, token, or phone.
+    if (uri.pathSegments.length != 1 || uri.hasQuery) return null;
+    final callId = uri.pathSegments.single;
+    if (!_validDmConversationId(callId)) return null;
+    return '/messages/calls/${Uri.encodeComponent(callId)}';
   }
 
   if (uri.host == 'messages') {
