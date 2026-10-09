@@ -51,7 +51,11 @@ export async function verifyHumanDmRetentionTarget(input: {
   if(result.rows.length!==1 || result.rowCount!==1) {
     throw new Error("C03 retention database/tenant/role preflight failed");
   }
-  authorizedRuns.set(input.pool,{tenantId:input.tenantId,checkedAt:Date.now()});
+  const checkedAt=Date.now();
+  if(!Number.isSafeInteger(checkedAt) || checkedAt<0) {
+    throw new Error("C03 retention database/tenant/role preflight failed");
+  }
+  authorizedRuns.set(input.pool,{tenantId:input.tenantId,checkedAt});
   return {database:row.database_name as string,role:row.database_role as string};
 }
 
@@ -78,7 +82,8 @@ export async function pruneHumanDmJournal(input: {
   authorizedRuns.delete(pool);
   const now=Date.now();
   if(!authorization || authorization.tenantId!==tenantId ||
-      !Number.isFinite(now) || now<authorization.checkedAt ||
+      !Number.isSafeInteger(now) || !Number.isSafeInteger(authorization.checkedAt) ||
+      now<authorization.checkedAt ||
       now-authorization.checkedAt>PREFLIGHT_TTL_MS) {
     throw new Error("C03 retention requires a fresh matching target preflight");
   }
