@@ -56,8 +56,25 @@ export function createTalkReplayCoordinator(input:Readonly<{
           egressId:started.egressId,objectKey,startedAt:request.startedAt,
         });
       }catch(error){
-        try{await input.egress.stop(started.egressId);}catch{}
-        try{await input.objects.deleteObject(objectKey);}catch{}
+        // Egress may still be actively writing this unique object. Deleting
+        // while StopEgress failed could race a live writer and leave an
+        // untracked upload after deletion. Treat this as an operator-visible
+        // compensation failure; never issue S3 DELETE without a confirmed
+        // stop. Keep the original SQL error as part of the cause chain.
+        try{
+          await input.egress.stop(started.egressId);
+        }catch(stopError){
+          throw new AggregateError(
+            [error,stopError],"talks.replay.egress_compensation_stop_uncertain",
+          );
+        }
+        try{
+          await input.objects.deleteObject(objectKey);
+        }catch(deleteError){
+          throw new AggregateError(
+            [error,deleteError],"talks.replay.egress_compensation_delete_failed",
+          );
+        }
         throw error;
       }
     },
