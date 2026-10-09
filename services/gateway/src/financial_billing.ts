@@ -91,7 +91,12 @@ function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): strin
       if (typeof candidate !== "string") continue;
       const value = candidate.trim();
       if (!value) continue;
-      if (value.length > 128 || /[\\u0000-\\u001f\\u007f]/u.test(value)) {
+      if (value.length > 128 || [...value].some((character) => {
+        const codePoint = character.codePointAt(0) ?? 0;
+        return codePoint < 0x20 || codePoint === 0x7f ||
+          (codePoint >= 0x202a && codePoint <= 0x202e) ||
+          (codePoint >= 0x2066 && codePoint <= 0x2069);
+      })) {
         throw new FlutterwaveWebhookError(
           "invalid_webhook",
           "Flutterwave webhook reference is invalid",
