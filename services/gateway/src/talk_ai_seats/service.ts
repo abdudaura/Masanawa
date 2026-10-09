@@ -175,7 +175,9 @@ function mapRepositoryError(error: unknown): never {
       continue;
     }
     const failure = PUBLIC_REPOSITORY_FAILURES[key];
-    throw new TalkAiSeatError(failure.code, failure.statusCode);
+    if (failure !== undefined) {
+      throw new TalkAiSeatError(failure.code, failure.statusCode);
+    }
   }
 
   // Unknown SQLSTATEs, provider errors and free-form messages are operational
