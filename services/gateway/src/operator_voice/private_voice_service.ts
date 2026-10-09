@@ -49,7 +49,7 @@ export function createPrivateOperatorVoiceService(input: {
     if (admission.scope.characterId !== characterId) {
       throw new PlatformError({
         code: "agents.voice_scope_mismatch",
-        category: "forbidden",
+        category: "authorization",
         message: "Private voice is not authorized for this agent.",
         retryable: false,
       });
