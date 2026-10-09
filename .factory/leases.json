@@ -12,10 +12,10 @@
       ],
       "branch": "work/f11-zero-step-ci-evidence-20261009-gpt6",
       "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "",
+      "pr": "https://github.com/Baatiku/masanawa/pull/567",
       "claimed_at": "2026-10-09T03:41:41Z",
-      "heartbeat_at": "2026-10-09T03:41:41Z",
-      "expires_at": "2026-10-09T03:46:41Z"
+      "heartbeat_at": "2026-10-09T03:44:04Z",
+      "expires_at": "2026-10-09T03:49:04Z"
     }
   ],
   "history": []
