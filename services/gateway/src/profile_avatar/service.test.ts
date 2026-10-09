@@ -14,9 +14,14 @@ class FakeRepository implements ProfileAvatarRepository {
   staged: string[] = [];
   garbage: Array<{ key: string; tenantId: string; userId: string }> = [];
   rejectAttach = false;
+  rejectStage = false;
   mutations = 0;
   async current() { return { exists: this.exists, url: this.url }; }
-  async stage(input: { key: string }) { this.staged.push(input.key); }
+  async stage(input: { key: string }) {
+    if (this.rejectStage) return false;
+    this.staged.push(input.key);
+    return true;
+  }
   async attach(input: { expectedUrl: string | null; url: string }) {
     if (this.rejectAttach || input.expectedUrl !== this.url) return false;
     this.url = input.url;
@@ -101,6 +106,19 @@ describe("authenticated avatar storage lifecycle", () => {
     })).rejects.toMatchObject({ statusCode: 415 });
     expect(h.repo.staged).toHaveLength(0);
     expect(h.writes).toHaveLength(0);
+  });
+
+  it("fails closed before object-store PUT when staging was revoked or garbage collection owns the key", async () => {
+    const h = setup();
+    h.repo.rejectStage = true;
+    await expect(h.service.upload({
+      ...auth, png: validAvatarPng(), expectedUrl: null,
+    })).rejects.toMatchObject({
+      code: "profiles.avatar.stage_conflict", statusCode: 409,
+    });
+    expect(h.writes).toHaveLength(0);
+    expect(h.repo.mutations).toBe(0);
+    expect(h.repo.staged).toHaveLength(0);
   });
 
   it("stages objects before write and retains reclaimable failed uploads", async () => {
