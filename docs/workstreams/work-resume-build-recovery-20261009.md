@@ -16,8 +16,10 @@ Next: recover immutable U16 source, repair duplicated/outside-template SQL while
 ## Claim extension after source recovery
 The proposed migration has the same duplicated/truncated checksum defect. Claim additionally:
 - services/gateway/src/talk_post_session/migration.proposed.sql
-- services/gateway/src/talk_post_session/postgres_execution.test.ts
+- services/gateway/src/talk_post_session/postgres_execution.test.mjs
 
 This remains an unregistered proposal; no applied migration or database is changed. Execute embedded PostgreSQL SQL against synthetic schema and consent/safety fixtures, separate from production PG18 acceptance.
 
 Additional compiler claim: services/gateway/src/talk_post_session/service.ts. Strict TypeScript reproduced lost contextual typing in frozen service/repository literals; preserve behavior and restore explicit canonical interface context, without compiler relaxation.
+
+Test dependency claim: services/gateway/package.json and pnpm-lock.yaml, only pinned @electric-sql/pglite 0.3.14 development importer/resolution. SQL execution test uses JavaScript to keep upstream WASM declaration types outside the production TypeScript build. The dependency is test-only; no production runtime mount/migration registration.
