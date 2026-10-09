@@ -1,4 +1,4 @@
-import type { MsnAdmission, MsnConversionQuote } from "./admission.js";
+import { MSN_SCALE, type MsnAdmission, type MsnConversionQuote } from "./admission.js";
 
 export interface MsnPgQuery {
   query(sql: string, params?: unknown[]): Promise<{
@@ -51,6 +51,13 @@ export function createMsnLedgerStore(pool: MsnPgPool) {
           a.tenantId !== quote.tenantId || a.fundingReference !== quote.fundingReference ||
           a.backingAsset !== quote.backingAsset || a.backingNetwork !== quote.backingNetwork)
         throw new Error("msn.admission.quote_mismatch");
+      // Recheck the economics at the persistence boundary. A reconstructed,
+      // stale or malicious admission must not be able to enlarge an issuance.
+      if (quote.pricePerMsnUsdMicro <= 0n ||
+          quote.minimumSettledBackingUsdMicro <= 0n ||
+          a.backingUsdMicro < quote.minimumSettledBackingUsdMicro ||
+          (a.backingUsdMicro * MSN_SCALE) / quote.pricePerMsnUsdMicro !== a.msnCreditMicro)
+        throw new Error("msn.admission.economics_mismatch");
       // Crypto balances remain the primary holdings. An on-chain crypto
       // deposit cannot ALSO mint MSN until F06 atomically reserves/debits the
       // same crypto liability. Never make two spendable claims on one deposit.
