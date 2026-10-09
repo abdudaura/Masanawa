@@ -54,8 +54,9 @@ export function verifyApkSigner(output, expectedPin) {
   const pin = normalizedPin(expectedPin);
   requireCondition(typeof output === 'string' && output.length < 1024 * 1024, 'apksigner_output_unavailable');
   requireCondition(/^Verifies\s*$/m.test(output), 'apk_signature_not_verified');
-  const schemes = [...output.matchAll(/^Verified using v([234]) scheme[^:]*:\s*(true|false)\s*$/gim)];
-  requireCondition(schemes.some(([, , enabled]) => enabled.toLowerCase() === 'true'), 'modern_apk_signature_missing');
+  // minSdk 24 includes Android 7/8: v3-only signatures are not supported there.
+  // Require APK Signature Scheme v2, even if newer v3/v4 signatures also exist.
+  requireCondition(/^Verified using v2 scheme[^:]*:\s*true\s*$/im.test(output), 'android24_signature_v2_missing');
   const fingerprints = [...output.matchAll(/^Signer #(\d+) certificate SHA-256 digest:\s*([a-f\d]{64})\s*$/gim)];
   requireCondition(fingerprints.length === 1 && fingerprints[0][1] === '1', 'apk_signer_count_invalid');
   const declared = output.match(/^Number of signers:\s*(\d+)\s*$/im);
