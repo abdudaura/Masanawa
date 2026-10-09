@@ -259,32 +259,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       },
               ),
               const Divider(height: 1),
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: u.brand),
-                title: const Text('Clear all chats'),
-                subtitle: const Text(
-                  'Remove every conversation stored on this device',
-                ),
-                onTap: () async {
+              ClearLocalAiChatsTile(
+                onClear: () async {
+                  // Never let a signed-out Settings view mutate another
+                  // account's in-memory chat state. The chat controller itself
+                  // fences its persisted cache by authenticated account ID.
+                  final session = ref.read(sessionProvider);
+                  if (session is! SessionSignedIn) {
+                    throw StateError('Authentication required');
+                  }
                   await ref.read(aiChatProvider.notifier).clearAll();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('All chats cleared')),
-                  );
+                  final current = ref.read(sessionProvider);
+                  if (current is! SessionSignedIn ||
+                      current.user.id != session.user.id) {
+                    throw StateError('Session changed while clearing');
+                  }
                 },
               ),
               const Divider(height: 1),
               ListTile(
                 leading: Icon(Icons.info_outline, color: u.brand),
                 title: const Text('About Masanawa'),
-                subtitle: const Text('Live Talks, AI Experts, Twins and services'),
+                subtitle: const Text('Audio posts, Rooms, Gwani and Wallet'),
                 onTap: () => showAboutDialog(
                   context: context,
                   applicationName: 'Masanawa',
-                  applicationVersion: '1.0.0',
+                  // No guessed release version: package metadata must be integrated
+                  // by AF00/AF14 before displaying an installed build ID.
                   children: const [
                     Text(
-                      'Join human-hosted live Talks, bring Masanawa Experts and Twins into conversations, and use Billing and Crypto privately.',
+                      'Listen to audio posts, join Rooms, chat privately with Gwani, and access supported Wallet services.',
                     ),
                   ],
                 ),
@@ -336,7 +340,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
           Center(
             child: Text(
-              'Masanawa · v1.0.0',
+              'Masanawa · Settings and privacy',
               style: TextStyle(color: u.textMuted, fontSize: 11),
             ),
           ),
@@ -364,4 +368,92 @@ class _Card extends StatelessWidget {
       child: Column(children: children),
     );
   }
+}
+
+
+/// Deletes only the locally cached AI conversation list for the current
+/// account. Human messages, server records, financial receipts and account
+/// deletion are separate operations and are never implied by this control.
+/// The explicit review avoids one-tap destructive action on small screens.
+class ClearLocalAiChatsTile extends StatefulWidget {
+  const ClearLocalAiChatsTile({super.key, required this.onClear});
+
+  final Future<void> Function() onClear;
+
+  @override
+  State<ClearLocalAiChatsTile> createState() => _ClearLocalAiChatsTileState();
+}
+
+class _ClearLocalAiChatsTileState extends State<ClearLocalAiChatsTile> {
+  bool _clearing = false;
+
+  Future<void> _confirmClear() async {
+    if (_clearing) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Clear AI chats on this device?'),
+        content: const Text(
+          'This clears your locally saved AI conversations and stops their '
+          'active sessions. It does not delete human chats, server history, '
+          'Wallet receipts or your account.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('settings-clear-ai-cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('settings-clear-ai-confirm'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Clear local AI chats'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true || _clearing) return;
+    setState(() => _clearing = true);
+    try {
+      await widget.onClear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Local AI chats cleared')),
+        );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Could not clear local AI chats. Please try again.'),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _clearing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        key: const Key('settings-clear-local-ai-chats'),
+        leading: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        title: const Text('Clear local AI chats'),
+        subtitle: const Text('Remove AI conversations saved on this device'),
+        enabled: !_clearing,
+        trailing: _clearing
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : null,
+        onTap: _clearing ? null : _confirmClear,
+      );
 }
