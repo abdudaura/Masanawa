@@ -16,8 +16,8 @@
       "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
       "pr": "pending draft PR",
       "claimed_at": "2026-10-09T04:48:17.426Z",
-      "heartbeat_at": "2026-10-09T04:58:22.113Z",
-      "expires_at": "2026-10-09T05:03:22.113Z",
+      "heartbeat_at": "2026-10-09T05:01:35.118Z",
+      "expires_at": "2026-10-09T05:06:35.119Z",
       "notes": "Explicit owner approved formerly deferred private 1:1 audio+video. No changes to root routing, shared composer, migrations registry, C01/C02/F16, LiveKit public Talks, Firebase native or financial source; new isolated C09 source."
     }
   ],
