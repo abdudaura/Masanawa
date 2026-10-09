@@ -93,6 +93,29 @@ class _Contacts implements HumanContactsTransport {
       preferences();
 }
 
+class _PaginatedContacts extends _Contacts
+    implements HumanContactsPaginationTransport {
+  final pageCursors = <String?>[];
+  bool failNextPageOnce = false;
+
+  @override
+  Future<HumanContactPage> page({int limit = 50, String? cursor}) async {
+    pageCursors.add(cursor);
+    if (cursor == null) {
+      return HumanContactPage(
+        contacts: [people.first],
+        nextCursor: 'next_page_1',
+      );
+    }
+    if (cursor != 'next_page_1') throw StateError('Unknown page');
+    if (failNextPageOnce) {
+      failNextPageOnce = false;
+      throw StateError('Offline while loading page');
+    }
+    return HumanContactPage(contacts: [people.last], nextCursor: null);
+  }
+}
+
 class _Messages implements HumanDmTransport {
   final opened = <String>[];
   Completer<String>? pending;
@@ -240,6 +263,49 @@ void main() {
         findsOneWidget);
     expect(find.text('Bello'), findsNWidgets(2));
     expect(find.text('Incoming requests'), findsOneWidget);
+  });
+
+  testWidgets('loads cursor pages using C01 and ends at final cursor',
+      (tester) async {
+    final contacts = _PaginatedContacts()
+      ..people = [
+        _person('person_b', 'Bello', HumanContactStatus.accepted),
+        _person('person_f', 'Fatima', HumanContactStatus.accepted),
+      ];
+    await _mount(tester, contacts, _Messages(), _Favorites(), (_, __) {});
+    expect(contacts.pageCursors, [null]);
+    expect(find.text('Bello'), findsOneWidget);
+    expect(find.text('Fatima'), findsNothing);
+    await tester.ensureVisible(find.byKey(const Key('hubLoadMore')));
+    await tester.tap(find.byKey(const Key('hubLoadMore')));
+    await tester.pumpAndSettle();
+    expect(contacts.pageCursors, [null, 'next_page_1']);
+    expect(find.text('Fatima'), findsOneWidget);
+    expect(find.byKey(const Key('hubLoadMore')), findsNothing);
+    expect(find.textContaining('Some contacts may not appear'), findsNothing);
+  });
+
+  testWidgets('failed page preserves earlier contacts and retries same cursor',
+      (tester) async {
+    final contacts = _PaginatedContacts()
+      ..people = [
+        _person('person_b', 'Bello', HumanContactStatus.accepted),
+        _person('person_f', 'Fatima', HumanContactStatus.accepted),
+      ]
+      ..failNextPageOnce = true;
+    await _mount(tester, contacts, _Messages(), _Favorites(), (_, __) {});
+    await tester.ensureVisible(find.byKey(const Key('hubLoadMore')));
+    await tester.tap(find.byKey(const Key('hubLoadMore')));
+    await tester.pumpAndSettle();
+    expect(find.text('Bello'), findsOneWidget);
+    expect(find.text('Fatima'), findsNothing);
+    expect(find.textContaining('Could not complete that action'),
+        findsOneWidget);
+    await tester.tap(find.byKey(const Key('hubLoadMore')));
+    await tester.pumpAndSettle();
+    expect(contacts.pageCursors, [null, 'next_page_1', 'next_page_1']);
+    expect(find.text('Fatima'), findsOneWidget);
+    expect(find.byKey(const Key('hubLoadMore')), findsNothing);
   });
 
   testWidgets('logout hides contact names without requiring phone permission',
