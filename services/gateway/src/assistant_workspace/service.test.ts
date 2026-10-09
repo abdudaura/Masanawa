@@ -7,9 +7,24 @@ import type { AgentShellService } from "../agent_shell_contract.js";
 import { createAssistantWorkspaceService } from "./service.js";
 import { registerAssistantWorkspaceRoutes } from "./routes.js";
 
-function fixture(variant?: "conflicting_voice" | "unsupported_default" | "voice_named_alias") {
+function fixture(variant?:
+  | "conflicting_voice"
+  | "unsupported_default"
+  | "voice_named_alias"
+  | "reassigned_after_history"
+  | "selected_after_history"
+  | "revoked_after_history"
+  | "version_changed_after_history") {
   const gwani = createCanonicalId("character");
   const gwana = createCanonicalId("character");
+  const replacementGwana = createCanonicalId("character");
+  const versions = new Map<string, string>([
+    [gwani, createCanonicalId("character-version")],
+    [gwana, createCanonicalId("character-version")],
+    [replacementGwana, createCanonicalId("character-version")],
+  ]);
+  const changedVersion = createCanonicalId("character-version");
+  let historyRead = false;
   const sessionId = createCanonicalId("character-session");
   const runId = createCanonicalId("agent-run");
   const requestId = createCanonicalId("request");
@@ -33,7 +48,7 @@ function fixture(variant?: "conflicting_voice" | "unsupported_default" | "voice_
     preferred: boolean,
   ): MobileAgentDirectoryEntry => ({
     characterId: id,
-    characterVersionId: createCanonicalId("character-version"),
+    characterVersionId: versions.get(id) ?? createCanonicalId("character-version"),
     displayName: name,
     roleLabel: "Support",
     about: "Official assistant",
@@ -58,6 +73,16 @@ function fixture(variant?: "conflicting_voice" | "unsupported_default" | "voice_
         agents.push(entry(createCanonicalId("character"), "Another support", "Other", true));
       } else if (variant === "voice_named_alias") {
         agents[0] = { ...agents[0]!, displayName: "Public support" };
+      } else if (historyRead && variant === "reassigned_after_history") {
+        agents[1] = { ...agents[1]!, characterId: replacementGwana,
+          characterVersionId: versions.get(replacementGwana)! };
+      } else if (historyRead && variant === "selected_after_history") {
+        agents[0] = { ...agents[0]!, defaultPlatformAgent: false };
+        agents[1] = { ...agents[1]!, defaultPlatformAgent: true };
+      } else if (historyRead && variant === "revoked_after_history") {
+        agents[1] = { ...agents[1]!, supportAgent: false };
+      } else if (historyRead && variant === "version_changed_after_history") {
+        agents[1] = { ...agents[1]!, characterVersionId: changedVersion };
       }
       return agents;
     },
@@ -77,6 +102,7 @@ function fixture(variant?: "conflicting_voice" | "unsupported_default" | "voice_
     }) {
       principal(authorizationHeader);
       captured.push("history:" + characterId);
+      historyRead = true;
       return [{
         key: characterId === gwani ? "g-1" : "a-1",
         direction: "assistant" as const,
@@ -147,6 +173,26 @@ describe("C07 isolated authorized Assistant workspace", () => {
       "history:" + f.gwani,
       "history:" + f.gwana,
     ]);
+  });
+
+  it.each([
+    "reassigned_after_history",
+    "selected_after_history",
+    "version_changed_after_history",
+  ] as const)("rejects stale %s snapshots after both authorized reads", async variant => {
+    const f = fixture(variant);
+    await expect(f.service.snapshot({ authorizationHeader: "Bearer A" }))
+      .rejects.toMatchObject({ code: "assistant.workspace_changed" });
+    expect(f.captured).toEqual([
+      "history:" + f.gwani,
+      "history:" + f.gwana,
+    ]);
+  });
+
+  it("fails closed on a revoked assistant after history was requested", async () => {
+    const f = fixture("revoked_after_history");
+    await expect(f.service.snapshot({ authorizationHeader: "Bearer A" }))
+      .rejects.toMatchObject({ code: "assistant.support_unavailable" });
   });
 
   it("switches only this authenticated account and rejects stale persona turn", async () => {
