@@ -48,6 +48,17 @@ class _TalkHostPreparationScreenState extends State<TalkHostPreparationScreen> {
   void _onUpdated() {
     if (!mounted) return;
     final draft = widget.controller.draft;
+    if (draft == null && _shownPrepId != null) {
+      _shownPrepId = null;
+      _shownRevision = null;
+      _title.clear();
+      _topic.clear();
+      _questions.clear();
+      _editing = false;
+      _experts = const [];
+      _quote = null;
+      _previewError = null;
+    }
     if (draft != null &&
         (draft.prepId != _shownPrepId || draft.revision != _shownRevision)) {
       _shownPrepId = draft.prepId;
@@ -181,9 +192,11 @@ class _TalkHostPreparationScreenState extends State<TalkHostPreparationScreen> {
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 16),
           TextField(controller: _title, enabled: canEdit,
+            onChanged: (_) => setState(() => _editing = true),
             maxLength: 160, textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(labelText: 'Talk title')),
           TextField(controller: _topic, enabled: canEdit,
+            onChanged: (_) => setState(() => _editing = true),
             maxLength: 240, maxLines: 3, minLines: 1,
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(labelText: 'Topic')),
@@ -229,7 +242,7 @@ class _TalkHostPreparationScreenState extends State<TalkHostPreparationScreen> {
                 icon: const Icon(Icons.refresh),
                 label: const Text('Check publication status'),
               ),
-            if (pending)
+            if (pending || controller.publicationNeedsReadback)
               const Text('The last publication is being reconciled. '
                   'Do not start a second Talk.'),
             if (published) ...[
