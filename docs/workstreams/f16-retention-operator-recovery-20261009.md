@@ -1,0 +1,11 @@
+# F16 recovery claim — C03 operator-only event retention
+- Owner/window: GPT-6 F16 isolated recovery, 2026-10-09
+- Lease acquired (UTC): 2026-10-09T01:48:44Z; heartbeat deadline: 01:53:44Z; refresh with every repository-visible commit.
+- Source of truth baseline: main 5e758673ae91082520b21b3153da53791ae2cbf3
+- Adopt existing DRAFT PR #486 on branch `work/c03-retention-operator-20261008-gpt6`, previous HEAD `f3d606e2ae042a69b7a87c673d6314cae714c3be`; stacked parent #483 (`65c91bb239f9f8e9bf177a1f707f98c7fa391e78`) and #473 remain unmerged.
+- Claimed exact paths: `services/gateway/src/human_dm_realtime/retention.ts`, `services/gateway/src/human_dm_realtime/retention.test.ts`, `services/gateway/src/human_dm_realtime/retention_config.ts`, `services/gateway/src/human_dm_realtime/retention_config.test.ts`, `services/gateway/src/human_dm_realtime/retention_cli.ts`, `docs/workstreams/f16-retention-operator-recovery-20261009.md`.
+- Protected paths NOT owned: `services/gateway/src/app.ts`, `main.ts`, C02/C03 migrations (including `0019`/`0020`), Flutter router, C05 cache, secrets, production DB, CI settings.
+- Intent: strengthen preflight and operator-side fail-closed error/recovery around existing bounded private human-DM journal retention, with executable isolated deterministic tests; do not create new chat/event data stores, production cron, or broaden retention policy.
+- Workstream status: CLAIMED; implementation and tests pending. Whole F16 remains PARTIAL_IMPLEMENTATION because C02/C03/C05 composition, device and Postgres proof are outstanding.
+- Dependencies: parent #483 watermark migration and C02/C01 permissions; other source PRs #472/#475 and #474/#476 must be reconciled by single integrator. No merge, release, production mutation.
+- Verification: local Node/tsc inspection possible; full repository/pnpm toolchain and PostgreSQL 18/Flutter unavailable at claim time. Not verified.
