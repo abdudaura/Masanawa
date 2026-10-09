@@ -1,6 +1,23 @@
 {
   "schema_version": 1,
-  "active": [],
+  "active": [
+    {
+      "claim_id": "gpt6-f08-channel-phone-isolation-20261009",
+      "owner": "GPT-6 F08 channel identity isolation",
+      "scope": "F08/R15 prevent process-wide phone retention and cross-link principal substitution",
+      "paths": [
+        "services/gateway/src/customer_channel_bridge.ts",
+        "services/gateway/src/customer_channel_bridge.test.ts",
+        "docs/workstreams/f08-channel-phone-isolation-20261009.md"
+      ],
+      "branch": "work/f08-channel-phone-cache-isolation-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "",
+      "claimed_at": "2026-10-09T03:57:09.618Z",
+      "heartbeat_at": "2026-10-09T03:57:09.618Z",
+      "expires_at": "2026-10-09T04:02:09.618Z"
+    }
+  ],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
