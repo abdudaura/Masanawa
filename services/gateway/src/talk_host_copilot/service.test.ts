@@ -27,6 +27,10 @@ function fixture() {
       drafts.set(input.prepId, row);
       return row;
     },
+    async list(input) {
+      return [...drafts.values()].filter((row) => row.hostUserId === input.hostUserId &&
+        row.tenantId === input.tenantId).slice(0, input.limit);
+    },
     async read(input) {
       const row = drafts.get(input.prepId);
       return row?.hostUserId === input.hostUserId && row.tenantId === input.tenantId ? row : null;
@@ -104,6 +108,13 @@ describe("U14 host-only preparation", () => {
     expect(draft.phase).toBe("draft");
     expect(draft.talkId).toBeNull();
     expect(f.writes).toBe(0);
+  });
+  it("lists only the authenticated host drafts for process restart", async () => {
+    const f = fixture(); const a = await f.begin();
+    const own = await f.service.list({ authorizationHeader: "Bearer a" });
+    const other = await f.service.list({ authorizationHeader: "Bearer b" });
+    expect(own.map((d) => d.prepId)).toContain(a.prepId);
+    expect(other).toHaveLength(0);
   });
   it("denies a second user even if they guess the prep UUID", async () => {
     const f = fixture(); const draft = await f.begin();
