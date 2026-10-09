@@ -54,7 +54,7 @@ const request = {
 };
 function setup(opts: Readonly<{
   canHost?: boolean;
-  live?: typeof live;
+  live?: { state: "live" | "reconnecting" | "ended"; hostConnected: boolean; aiGenerationAllowed: boolean };
   seat?: typeof admitted;
   stage?: TalkAuthorizedStage | null;
   workerResult?: TalkAiSeatWorkerResult;
