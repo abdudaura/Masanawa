@@ -33,6 +33,7 @@ export function auditSnapshot(snapshot) {
     const head = pr.head?.sha ?? pr.headSha;
     if (!/^[a-f0-9]{40}$/i.test(head || '')) incomplete.push({ number: pr.number, reason: 'missing_head_sha' });
     if (pr.completeFiles !== true || !Array.isArray(pr.files)) incomplete.push({ number: pr.number, reason: 'unverified_file_list' });
+    if (pr.headStable === false) incomplete.push({ number: pr.number, reason: 'head_changed_during_audit' });
     if (!handoff.test(pr.body || '')) missingHandoffPointers.push(pr.number);
     const match = pr.title.trim().match(scope);
     if (match) add(scopes, match[1].toUpperCase(), { number: pr.number, headSha: head });
@@ -50,7 +51,15 @@ export function auditSnapshot(snapshot) {
     key, risk: migration.test(key) || guarded.test(key) || finance.test(key) ? 'critical' : 'review',
     identicalBlob: prs.every(p => p.blobSha && p.blobSha === prs[0].blobSha), prs,
   }));
-  const migrationCollisions = collision(migrations, (key, prs) => ({ key, risk: 'critical', prs }));
+  // A single PR can itself create two SQL migrations with the same version.
+  // This must never disappear just because both filenames belong to one PR.
+  const migrationCollisions = [...migrations]
+    .filter(([, entries]) => new Set(entries.map(e => e.filename)).size > 1 || new Set(entries.map(e => e.number)).size > 1)
+    .map(([key, entries]) => ({
+      key, risk: 'critical', withinPullRequest: new Set(entries.map(e => e.number)).size === 1,
+      prs: entries.sort((a, b) => a.number - b.number || a.filename.localeCompare(b.filename)),
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key));
   const scopeCollisions = collision(scopes, (key, prs) => ({ key, prs }));
   return {
     schemaVersion: 1,
@@ -118,10 +127,15 @@ export async function loadGithubSnapshot({ repo, token, fetcher = fetch }) {
   const ref = await get(root + '/branches/' + branch, token, fetcher);
   const expanded = await mapLimited(pulls, async (pr) => {
     const files = await getPages(root + '/pulls/' + pr.number + '/files', token, fetcher, 3000);
+    // The file endpoint reflects the mutable PR head. A concurrent push can
+    // otherwise misattribute a newer file list to the older listed head SHA.
+    const checked = await get(root + '/pulls/' + pr.number, token, fetcher);
+    const headStable = /^[a-f0-9]{40}$/i.test(pr.head?.sha || '') && checked.head?.sha === pr.head.sha;
     return {
       number: pr.number, title: pr.title, body: pr.body, draft: pr.draft,
-      head: { sha: pr.head?.sha, ref: pr.head?.ref },
-      completeFiles: files.length < 3000 && (!Number.isSafeInteger(pr.changed_files) || pr.changed_files === files.length),
+      head: { sha: pr.head?.sha, ref: pr.head?.ref }, headStable,
+      completeFiles: headStable && files.length < 3000 &&
+        (!Number.isSafeInteger(checked.changed_files) || checked.changed_files === files.length),
       files: files.map(f => ({ filename: f.filename, sha: f.sha, status: f.status })),
     };
   });
