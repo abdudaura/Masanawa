@@ -17,8 +17,35 @@ class HumanMessageSearchScreen extends StatefulWidget {
 }
 class _HumanMessageSearchScreenState extends State<HumanMessageSearchScreen> {
   final TextEditingController input = TextEditingController();
+  String? observedAccount;
   @override
-  void dispose() { input.dispose(); super.dispose(); }
+  void initState() {
+    super.initState();
+    observedAccount = widget.controller.accountKey;
+    widget.controller.addListener(_clearOnAccountChange);
+  }
+  void _clearOnAccountChange() {
+    if (observedAccount == widget.controller.accountKey) return;
+    observedAccount = widget.controller.accountKey;
+    // Private search terms must never survive sign-out or identity switch.
+    input.clear();
+  }
+  @override
+  void didUpdateWidget(covariant HumanMessageSearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_clearOnAccountChange);
+      input.clear();
+      observedAccount = widget.controller.accountKey;
+      widget.controller.addListener(_clearOnAccountChange);
+    }
+  }
+  @override
+  void dispose() {
+    widget.controller.removeListener(_clearOnAccountChange);
+    input.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
