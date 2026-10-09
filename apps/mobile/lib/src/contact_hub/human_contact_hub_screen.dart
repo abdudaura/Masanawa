@@ -266,34 +266,19 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
     final enabled = !contactsState.busy && _openingId == null;
     final canFavorite = enabled && !_savingFavorite;
 
-    // Lazy rows avoid creating thousands of widgets when pagination arrives.
-    // C01 currently returns at most 100, without a cursor.
+    // Keep entry metadata lightweight. Flutter builds only visible rows in
+    // SliverList.builder; never allocate a widget for every server contact.
+    // C01 currently returns at most 100 contacts and does not expose a cursor.
     final entries = <_HubEntry>[];
     void section(String heading, List<HumanContact> people,
         {bool showStars = false}) {
       if (people.isEmpty) return;
-      entries.add(Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
-        child: Text(heading, style: Theme.of(context).textTheme.titleMedium),
-      ));
+      entries.add(_HubEntry(heading: heading));
       for (final person in people) {
-        entries.add(_PersonRow(
-          key: ValueKey('${heading}_${person.userId}'),
+        entries.add(_HubEntry(
+          heading: heading,
           person: person,
-          enabled: enabled,
-          isOpening: _openingId == person.userId,
-          favorite: _favoritesOwner == userId &&
-              _favoriteIds.contains(person.userId),
           showStar: showStars,
-          onToggleFavorite: () => _toggleFavorite(person, userId),
-          onMessage: () => _open(person, userId),
-          onRequest: () => actions.request(person.handle),
-          onRespond: (accept) => actions.respond(person.userId,
-              accept: accept, requestRevision: person.requestRevision!),
-          onRevoke: () => _confirmRemove(person, actions),
-          onProfile: widget.onOpenPersonProfile == null
-              ? null
-              : () => widget.onOpenPersonProfile!(person.userId),
         ));
       }
     }
@@ -431,7 +416,7 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
                   );
                 }
                 return _PersonRow(
-                  key: ValueKey('\${entry.heading}_\${person.userId}'),
+                  key: ValueKey('${entry.heading}_${person.userId}'),
                   person: person,
                   enabled: canFavorite,
                   isOpening: _openingId == person.userId,
