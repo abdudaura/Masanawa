@@ -1,5 +1,8 @@
 import { describe,expect,it,vi } from "vitest";
 import { createHash } from "node:crypto";
+import {mkdtemp,mkdir,writeFile,readFile,rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join,dirname} from "node:path";
 import { createPrivateVoiceNoteService,VoiceNoteError } from "./service.js";
 import type { VoiceNoteRepository, PrivateVoiceObjectStore, VoiceStaged } from "./model.js";
 import { validOpus } from "./ogg_opus_test_fixture.js";
@@ -151,5 +154,17 @@ describe("C04 private human voice-note mutation and access contracts",()=>{
    v.repository.find.mockImplementationOnce(async()=>({...await find(),...patch}) as never);
    await expect(v.service.read({authorizationHeader:"x",messageId})).rejects.toMatchObject({code:"messages.voice.storage_corrupt",statusCode:503});
   }
+ });
+ it("writes and verifies actual private files and rejects later filesystem corruption",async()=>{
+  const root=await mkdtemp(join(tmpdir(),'masanawa-f17-voice-'));
+  try {
+   const v=fixture();
+   v.objects.put.mockImplementation(async(key,data)=>{const file=join(root,key);await mkdir(dirname(file),{recursive:true});await writeFile(file,data)});
+   v.objects.get.mockImplementation(async(key,max)=>{const data=await readFile(join(root,key));if(data.length>max)throw new Error('oversize');return data});
+   await v.service.send({authorizationHeader:'x',conversationId,clientRequestId:'requestABC1234',ogg:bytes});
+   expect(await v.service.read({authorizationHeader:'x',messageId})).toEqual(bytes);
+   await writeFile(join(root,v.record!.objectKey),Buffer.alloc(bytes.length));
+   await expect(v.service.read({authorizationHeader:'x',messageId})).rejects.toMatchObject({code:'messages.voice.storage_corrupt',statusCode:503});
+  }finally{await rm(root,{recursive:true,force:true})}
  });
 });

@@ -9,9 +9,13 @@ const conversation=Type.Object({conversationId:uuid},{additionalProperties:false
 const item=Type.Object({messageId:uuid},{additionalProperties:false});
 /** Authenticated Gateway only. Never return private object-store URLs or object keys. */
 export function registerHumanVoiceRoutes(app:FastifyInstance,voice:Service):void {
+ const privateResponse={onRequest:async(_request:unknown,reply:import('fastify').FastifyReply)=>{
+  reply.header('Cache-Control','no-store, private').header('X-Content-Type-Options','nosniff');
+ }};
  app.addContentTypeParser("audio/ogg",{parseAs:"buffer",bodyLimit:MAX_VOICE_BYTES},
   (_request,body,done)=>done(null,body));
  app.post("/messages/:conversationId/voice-notes",{
+  ...privateResponse,
   bodyLimit:MAX_VOICE_BYTES,
   schema:{params:conversation,headers:Type.Object({
    "x-message-client-request-id":Type.String({minLength:12,maxLength:128}),
@@ -29,6 +33,7 @@ export function registerHumanVoiceRoutes(app:FastifyInstance,voice:Service):void
   reply.code(201);return saved;
  });
  app.get("/messages/:conversationId/voice-notes",{
+  ...privateResponse,
   schema:{params:conversation,querystring:Type.Object({
    limit:Type.Optional(Type.Integer({minimum:1,maximum:50})),
    before:Type.Optional(Type.String({minLength:1,maxLength:19})),
@@ -39,6 +44,7 @@ export function registerHumanVoiceRoutes(app:FastifyInstance,voice:Service):void
   ...(request.query as {limit?:number;before?:string}),
  }));
  app.get("/messages/voice/:messageId",{
+  ...privateResponse,
   schema:{params:item},
  },async(request,reply)=>{
   const audio=await voice.read({
@@ -50,7 +56,7 @@ export function registerHumanVoiceRoutes(app:FastifyInstance,voice:Service):void
    .type("audio/ogg");
   return reply.send(audio);
  });
- app.delete("/messages/voice/:messageId",{schema:{params:item}},
+ app.delete("/messages/voice/:messageId",{...privateResponse,schema:{params:item}},
   async request=>voice.remove({
    authorizationHeader:request.headers.authorization,
    messageId:(request.params as {messageId:string}).messageId,

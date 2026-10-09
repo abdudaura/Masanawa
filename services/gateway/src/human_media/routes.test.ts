@@ -37,8 +37,8 @@ function fixture(){
   },
  });
  const app=Fastify();
- app.setErrorHandler((error,_request,reply)=>reply.code(error.statusCode??500)
-  .send({code:error.message}));
+ app.setErrorHandler((error,_request,reply)=>reply.code((error as Error & {statusCode?: number}).statusCode??500)
+  .send({code:(error as Error).message}));
  registerHumanVoiceRoutes(app,svc);
  return {app,repository,deny:()=>{permitted=false},get objects(){return objects}};
 }
@@ -50,6 +50,8 @@ describe("C04 private audio HTTP admission",()=>{
   const r=await f.app.inject({method:"POST",url:`/messages/${conversationId}/voice-notes`,
    headers:{"content-type":"audio/ogg","x-message-client-request-id":requestId},payload:audio});
   expect(r.statusCode).toBe(401);
+  expect(r.headers['cache-control']).toBe('no-store, private');
+  expect(r.headers['x-content-type-options']).toBe('nosniff');
   expect(f.repository.stage).not.toHaveBeenCalled();
  });
  it("returns 201 only after durable upload; 413 for oversized audio",async()=>{
@@ -59,6 +61,7 @@ describe("C04 private audio HTTP admission",()=>{
   const ok=await f.app.inject({method:"POST",url:`/messages/${conversationId}/voice-notes`,
    headers,payload:audio});
   expect(ok.statusCode).toBe(201);
+  expect(ok.headers['cache-control']).toBe('no-store, private');
   expect(ok.json()).toMatchObject({messageId,clientRequestId:requestId});
   expect(f.objects).toBe(1);
   const big=await f.app.inject({method:"POST",url:`/messages/${conversationId}/voice-notes`,
@@ -71,6 +74,8 @@ describe("C04 private audio HTTP admission",()=>{
   const before=await f.app.inject({method:"GET",url:`/messages/${conversationId}/voice-notes`,
    headers:{authorization:"Bearer approved"}});
   expect(before.statusCode).toBe(200);
+  expect(before.headers['cache-control']).toBe('no-store, private');
+  expect(before.headers['x-content-type-options']).toBe('nosniff');
   expect(before.body).not.toContain("objectKey");
   f.deny();
   const revoked=await f.app.inject({method:"GET",url:`/messages/voice/${messageId}`,
