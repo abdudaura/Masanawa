@@ -20,3 +20,5 @@ export * from "./distribution.js";
 export * from "./selection.js";
 
 export * from "./teaching.js";
+
+export * from "./teaching_extensions/lesson_continuity.js";
