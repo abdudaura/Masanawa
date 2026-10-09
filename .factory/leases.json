@@ -67,22 +67,6 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
-    },
-    {
-      "claim_id": "masanawa-01-af14-clear-local-ai-chat-20261009",
-      "owner": "MASANAWA-01",
-      "scope": "AF14 P1: correct AI-only local chat clearing semantics; require explicit cancellation-safe confirmation, busy/error UI, account-fenced access, and widget regression tests. Isolated Settings change; AF00 owns composition. Preserve #497 settings and unknown owner's local APK.",
-      "paths": [
-        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
-        "apps/mobile/test/audio_first/af14/clear_local_ai_chats_test.dart",
-        "docs/workstreams/AF14-clear-local-ai-chats-20261009.md"
-      ],
-      "branch": "work/af14-confirm-local-ai-chat-clear-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-09T21:21:09.623Z",
-      "heartbeat_at": "2026-10-09T21:22:11.528Z",
-      "expires_at": "2026-10-09T21:27:11.528Z",
-      "notes": "Settings concrete source 49f0616d9309225b9a5cbb562d0e35c52d47d7a9 and AF14 regression 69b585e1b5b024d8099dc3b3d96173a8902d76fa committed on isolated branch. Remaining: readback source, static checks, executable Flutter unavailable, handoff/PR."
     }
   ],
   "history": [
@@ -487,6 +471,25 @@
       "head_sha": "af10e2d0dfc3a42be740bac7a3c9465195f32771",
       "released_at": "2026-10-09T21:19:38.550Z",
       "release_reason": "Scoped deep-link source/tests and immutable handoff committed on PR #586; 13/13 static GitHub readback checks, Dart/Flutter NOT_RUN; AF00 lane still incomplete and awaits locally source-reconciled integration."
+    },
+    {
+      "claim_id": "masanawa-01-af14-clear-local-ai-chat-20261009",
+      "owner": "MASANAWA-01",
+      "scope": "AF14 P1: correct AI-only local chat clearing semantics; require explicit cancellation-safe confirmation, busy/error UI, account-fenced access, and widget regression tests. Isolated Settings change; AF00 owns composition. Preserve #497 settings and unknown owner's local APK.",
+      "paths": [
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/test/audio_first/af14/clear_local_ai_chats_test.dart",
+        "docs/workstreams/AF14-clear-local-ai-chats-20261009.md"
+      ],
+      "branch": "work/af14-confirm-local-ai-chat-clear-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:21:09.623Z",
+      "heartbeat_at": "2026-10-09T21:22:11.528Z",
+      "expires_at": "2026-10-09T21:27:11.528Z",
+      "notes": "Settings concrete source 49f0616d9309225b9a5cbb562d0e35c52d47d7a9 and AF14 regression 69b585e1b5b024d8099dc3b3d96173a8902d76fa committed on isolated branch. Remaining: readback source, static checks, executable Flutter unavailable, handoff/PR.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/587",
+      "released_at": "2026-10-09T21:24:59.805Z",
+      "release_reason": "Scoped Flutter Settings code and three widget tests committed at #587 HEAD 4dd01f47c6e0c949c5deed6752e4e146ca4cb4a3; 19/19 GitHub structural checks passed; Mobile Build/Foundation CI zero-step failures; Flutter/Dart execution and owner local APK unavailable. Partial AF14, not integrated or deployed."
     }
   ]
 }
