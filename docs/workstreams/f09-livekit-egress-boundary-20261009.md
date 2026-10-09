@@ -1,0 +1,10 @@
+# F09/R13 — LiveKit Egress outbound credential boundary
+
+**Claim:** 2026-10-09 UTC; ChatGPT autonomous F09 recovery; **IN_PROGRESS, PARTIAL_IMPLEMENTATION, DRAFT / UNMERGED**.
+
+- Current main at discovery: `5e758673ae91082520b21b3153da53791ae2cbf3`.
+- Continuing existing draft [PR #453](https://github.com/Baatiku/masanawa/pull/453), branch `work/r13-replay-finalize-recovery-20261008`, prior head `a7d53301702b1a702d384a14ec0a42794596a060`; last repository-visible PR activity **2026-10-09T01:40:31Z**, more than five minutes before reclaim. Existing F09 coordinator/Postgres/S3 work is preserved; #503 covers playback token renewal, #543 U16 consent, #497 Work integration.
+- **Exact owned paths:** `services/gateway/src/talk_replay/egress/livekit_egress.ts`, `services/gateway/src/talk_replay/egress/livekit_egress.test.ts`, and this handoff `docs/workstreams/f09-livekit-egress-boundary-20261009.md`. No shared app/main, migration registry, Flutter router, financial, Firebase, production, CI/workflow file.
+- **Observed vulnerability / planned fix:** Existing recording StartEgress request contains S3 access and secret credentials but accepts `http://` / `ws://` LiveKit endpoints, follows HTTP redirects implicitly, and uses a syntactic regex rather than a strict URL authority check. Fail closed on insecure/malformed URLs, username/password, query/fragment and unapproved path; enforce `redirect: "manual"` and bounded JSON responses; preserve canonical StartEgress/StopEgress payload and existing auth grant. Add deterministic failure and happy-path Vitest regressions.
+- **Required after integration:** run `pnpm exec vitest run services/gateway/src/talk_replay/egress/livekit_egress.test.ts` and Gateway typecheck, verify actual TLS LiveKit/S3 recordings, test retry/revocation/provider/Android. CI #457 and real provider credentials remain unverified; no external egress calls made from this window.
+- **Ownership:** Existing #453 is not force-pushed or rebased; future Work integrator must reconcile with #503/#497 after executable gates. This commit records claim before source edits.
