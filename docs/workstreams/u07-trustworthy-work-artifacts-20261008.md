@@ -1,11 +1,11 @@
 # U07 — Trustworthy work artifacts handoff
 
-Updated (UTC): 2026-10-09T00:39:08Z. Owner/window: autonomous Work 88b2711eedab.
+Updated (UTC): 2026-10-09T00:41:02Z. Owner/window: autonomous Work 88b2711eedab.
 Status: **PARTIAL_IMPLEMENTATION / ISOLATED / DRAFT / UNMERGED**.
 PR: https://github.com/Baatiku/masanawa/pull/524
 Branch: `work/u07-verified-work-artifacts-20261009`
 Base main: `5e758673ae91082520b21b3153da53791ae2cbf3`.
-Current source/test checkpoint: `01cc868fa2b5d13bbb7c461f25e923e64f93457f`.
+Current source/test checkpoint: `89bcb823c849991f90356c62ab181422640b1eac`.
 The final pushed handoff HEAD is recorded in the PR body after this file is committed.
 
 ## Claim and recovery
@@ -14,7 +14,7 @@ Initial claim commit `f1590af294b7378204ee4bb4916185729fe9d0c2` was published in
 The original claim text incorrectly said 00:15Z; the immutable commit/PR timestamp above is authoritative.
 Ownership renewed at this update after checking current PR/head and all matching U07 branches; only this U07 branch was returned.
 Exact owned paths: `services/gateway/src/work_artifacts/**`, `apps/mobile/lib/src/work_artifacts/**`, `apps/mobile/test/work_artifacts/**`, this handoff.
-Next step: finish security review, rerun the affected exact-source tests, publish final SHA and release implementation ownership to the coordinated integration owners.
+Implementation review and local verification checkpoint is complete. No continuing exclusive lease is requested; coordinated F11/F18/F08/F12/U04 owners may resume the documented integration work while preserving this source and branch.
 
 Read order: CONTINUE-HERE; unfinished reconciliation; expanded U/F allocation; U execution workbook; MULTI-WINDOW-WORK; final consolidation handoff; operator V1; human Chat privacy; implementation kickoff and actual object-store/auth/contracts source.
 No applicable AGENTS.md was found in the inspected main/C04 trees.
@@ -40,13 +40,14 @@ One supported format is implemented: inert UTF-8 .txt, 1–262144 bytes. Arbitra
 
 ## Executed verification
 
-- Node 24.19.0: `node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/*.test.mjs` — **26 passed, 0 failed, 0 skipped**, exit 0.
+- Node 24.19.0: `node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/*.test.mjs` — **27 passed, 0 failed, 0 skipped**, exit 0.
 - This runs exact authored TypeScript runtime sources with native type erasure. It is NOT a TypeScript build/typecheck.
 - Real temporary file I/O proves text -> file -> checksum readback -> actor-bound download; metadata repositories and authorization providers in these tests are injected test doubles.
 - Covered cross-account/tenant access, explicit recipient grants, expiry/block/revocation, stale ticket/revision, task cancellation during upload, lost PUT response/recovery, checksum drift, denied task origin, bounded data/filename handling, interrupted deletion and late-object sweep.
 - Handler tests exercise current-session revocation, no metadata header leaks on 401, strict schema declarations and safe exception responses. They are NOT a running Fastify HTTP test.
 - Remote Git tree comparison: all **18 local source/test/guide files exactly match their Git blob SHAs** at source checkpoint above.
-- GitHub comparison at that checkpoint: 6 commits ahead of main, 0 behind, 19 added paths, all inside owned boundaries.
+- GitHub comparison at that checkpoint: 8 commits ahead of main, 0 behind, 19 added paths, all inside owned boundaries.
+- Additional reviewed fixes reject Unicode/malformed ticket signatures with 403 rather than a server error, and invalid request/recipient/cursor IDs with typed 400 rather than retryable 503. Regression cases pass.
 - Initial test command without preloading the import resolver failed on .js -> .ts resolution; corrected --import command above executed successfully. No application test failure was hidden.
 
 ## Not executed / precise blockers
