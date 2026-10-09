@@ -103,6 +103,15 @@ class HumanVoiceController extends ChangeNotifier {
     try{await File(path).delete();}catch(_){}
   }
 
+  // A recorder is permitted to finalize to a different native output path
+  // than the path passed to start(). Cancellation and account shutdown must
+  // erase BOTH paths, not just the original temporary recording.
+  Future<void> _stopCaptureAndEraseAlternateOutput() async {
+    String? completedPath;
+    try{completedPath=await _capture.stop();}catch(_){}
+    if(completedPath!=_localFile)await _erase(completedPath);
+  }
+
   /// A permission dialog or native recorder start may outlive the widget.
   /// Fence each start attempt and wait for it before disposing the native mic.
   Future<void> begin() async {
@@ -367,7 +376,7 @@ class HumanVoiceController extends ChangeNotifier {
       await _stopFinished?.future;
       if(recording){
         recording=false;
-        try{await _capture.stop();}catch(_){}
+        await _stopCaptureAndEraseAlternateOutput();
       }
       review=false;
       await _dropFile();
@@ -388,7 +397,7 @@ class HumanVoiceController extends ChangeNotifier {
     await _discardFinished?.future;
     await _startFinished?.future;
     await _stopFinished?.future;
-    if(recording){try{await _capture.stop();}catch(_){}}
+    if(recording)await _stopCaptureAndEraseAlternateOutput();
     _notes.clear();canLoadOlder=false;recording=false;review=false;
     await _dropFile();
     await _clearDownloadedPlayback();
