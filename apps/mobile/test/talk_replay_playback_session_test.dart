@@ -534,6 +534,28 @@ void main() {
     await session.close();
   });
 
+
+  test('revoked native state tolerates a synchronously destroyed audio player', () async {
+    var authorized = true;
+    final player = _ThrowingPausePlayer();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      transport: _Transport(),
+      player: player,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    authorized = false;
+    // The recorder/audio focus may already be disposed on account switch.
+    // A native synchronous pause failure must not escape a stream callback.
+    expect(
+      () => player.statesController.add(TalkReplayPlayerState.playing),
+      returnsNormally,
+    );
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
 }
 
 class _DelayedTransport implements TalkReplayPlaybackTransport {
@@ -548,5 +570,12 @@ class _DelayedTransport implements TalkReplayPlaybackTransport {
       expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
       contentType: 'audio/ogg',
     );
+  }
+}
+
+class _ThrowingPausePlayer extends _Player {
+  @override
+  Future<void> pause() {
+    throw StateError('native player disposed');
   }
 }
