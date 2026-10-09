@@ -80,9 +80,9 @@
       "branch": "work/af14-confirm-local-ai-chat-clear-20261009-masanawa01",
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
       "claimed_at": "2026-10-09T21:21:09.623Z",
-      "heartbeat_at": "2026-10-09T21:21:09.623Z",
-      "expires_at": "2026-10-09T21:26:09.623Z",
-      "notes": "AF00 route/integration partial; AF14 self-contained existing Settings module on main; no router/auth/ledger/production/migrations touched."
+      "heartbeat_at": "2026-10-09T21:22:11.528Z",
+      "expires_at": "2026-10-09T21:27:11.528Z",
+      "notes": "Settings concrete source 49f0616d9309225b9a5cbb562d0e35c52d47d7a9 and AF14 regression 69b585e1b5b024d8099dc3b3d96173a8902d76fa committed on isolated branch. Remaining: readback source, static checks, executable Flutter unavailable, handoff/PR."
     }
   ],
   "history": [
