@@ -24,6 +24,7 @@ class HumanChatComposerController extends ChangeNotifier {
   bool hydrated = false;
   bool sending = false;
   bool _disposed = false;
+  bool _revoked = false;
   String text = '';
   String? pendingRequestId;
   String? pendingText;
@@ -32,9 +33,11 @@ class HumanChatComposerController extends ChangeNotifier {
   HumanChatReplyQuote? quote;
   Future<void> _writes = Future<void>.value();
 
-  bool get active => !_disposed && isAuthorized(scope);
+  bool get active => !_disposed && !_revoked && isAuthorized(scope);
   bool get hasPending => pendingRequestId != null;
-  bool get canSubmit => hydrated && active && !sending &&
+  bool get canEdit => hydrated && active && !_storageUnavailable &&
+      !sending && !hasPending;
+  bool get canSubmit => hydrated && active && !_storageUnavailable && !sending &&
       (hasPending || text.trim().isNotEmpty);
 
   void _notify() {
@@ -151,7 +154,14 @@ class HumanChatComposerController extends ChangeNotifier {
       pendingText = null;
       pendingReplyToMessageId = null;
       quote = null;
-      await _persist(_snapshot());
+      try {
+        await _persist(_snapshot());
+      } catch (_) {
+        // The C02 response was accepted. Do not describe an accepted
+        // server message as unsent if local cleanup subsequently fails.
+        _storageUnavailable = true;
+        error = 'Server accepted the message, but draft cleanup failed.';
+      }
       return true;
     } catch (_) {
       if (active) {
@@ -181,6 +191,8 @@ class HumanChatComposerController extends ChangeNotifier {
   /// The session owner must purge account data before replacing the session.
   Future<void> purgeAccount() async {
     if (_disposed) return;
+    // Revoke FIRST so late sends cannot rewrite drafts after deletion.
+    _revoked = true;
     await _writes;
     await drafts.clearAccount(scope.tenantId, scope.userId);
     text = '';
