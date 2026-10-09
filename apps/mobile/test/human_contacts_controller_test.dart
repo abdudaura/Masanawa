@@ -24,14 +24,17 @@ class _FakeContacts implements HumanContactsTransport {
   int requests = 0;
   int lookups = 0;
   bool deny = false;
+  bool failList = false;
   HumanContactPreferences nextPrefs = _prefs;
 
   @override
   Future<HumanContactPreferences> preferences() async => nextPrefs;
 
   @override
-  Future<List<HumanContact>> list({int limit = 30}) async =>
-      pendingList == null ? [_bob] : pendingList!.future;
+  Future<List<HumanContact>> list({int limit = 30}) async {
+    if (failList) throw const FormatException('List unavailable');
+    return pendingList == null ? [_bob] : pendingList!.future;
+  }
 
   @override
   Future<HumanContact?> lookup(String handle) async {
@@ -349,6 +352,63 @@ void main() {
     expect(controller.state.contacts.map((c) => c.userId), ['user_b']);
     expect(controller.state.nextCursor, 'next_page_1');
     expect(source.calls, 3); // Initial, in-flight page, post-revoke readback.
+    controller.dispose();
+  });
+
+  test('failed contact mutation discards obsolete list until authoritative retry', () async {
+    final fake = _FakeContacts();
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    expect(controller.state.contacts.single.userId, 'user_b');
+    fake.deny = true;
+    await controller.revoke('user_b');
+    // A timeout or transport error cannot establish whether the server has
+    // already revoked. Never keep displaying a previously accepted row.
+    expect(controller.state.contacts, isEmpty);
+    expect(controller.state.nextCursor, isNull);
+    expect(controller.state.error, 'Request unavailable');
+    expect(controller.state.notice, isNull);
+    fake.deny = false;
+    await controller.refresh();
+    expect(controller.state.contacts.single.userId, 'user_b');
+    expect(controller.state.error, isNull);
+    controller.dispose();
+  });
+
+  test('confirmed write with failing readback does not expose old contact rows', () async {
+    final fake = _FakeContacts();
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    fake.failList = true;
+    await controller.request('bob');
+    expect(controller.state.notice, 'Contact request sent.');
+    expect(controller.state.contacts, isEmpty);
+    expect(controller.state.error, 'List unavailable');
+    fake.failList = false;
+    await controller.refresh();
+    expect(controller.state.contacts.single.userId, 'user_b');
+    controller.dispose();
+  });
+
+  test('uncertain preferences write does not claim old server policy is current', () async {
+    final fake = _FakeContacts();
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    expect(controller.state.preferences?.policy, HumanContactPolicy.requests);
+    fake.deny = true;
+    await controller.updatePolicy(HumanContactPolicy.nobody);
+    expect(controller.state.preferences, isNull);
+    expect(controller.state.error, 'Preference unavailable');
+    expect(controller.state.notice, isNull);
+    fake.deny = false;
+    await controller.refresh();
+    expect(controller.state.preferences?.policy, HumanContactPolicy.requests);
     controller.dispose();
   });
 }
