@@ -13,7 +13,7 @@ function database() {
     async query(sql, params = []) {
       trace.push({ sql, params });
       if (sql.includes("pg_advisory_unlock")) { unlocked++; return { rows: [{ unlocked: true }] }; }
-      if (sql.includes("pg_advisory_lock")) return { rows: [{}] };
+      if (sql.includes("pg_try_advisory_lock")) return { rows: [{ acquired: true }] };
       if (sql.includes("INSERT INTO agents.platform_persona_seed_bindings")) {
         const [tenant, key, character_id, character_version_id] = params as string[];
         const rowKey = tenant + ":" + key;
@@ -51,7 +51,7 @@ describe("F03 durable Postgres persona identity lease", () => {
     expect(first).toEqual(second);
     expect(f.rows).toHaveProperty("size", 1);
     expect(f.statistics()).toEqual({ unlocked: 2, released: 2, poisoned: 0 });
-    expect(f.trace.filter((x) => x.sql.includes("pg_advisory_lock"))).toHaveLength(2);
+    expect(f.trace.filter((x) => x.sql.includes("pg_try_advisory_lock"))).toHaveLength(2);
   });
 
   it("keeps tenant reservation scopes separate and uses SQL parameters", async () => {
