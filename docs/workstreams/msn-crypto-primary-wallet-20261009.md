@@ -78,7 +78,9 @@ cd apps/mobile && flutter pub get && flutter analyze
 flutter test test/finance/msn_wallet_panel_test.dart
 ```
 - Real database: apply all migrations in manifest order to a clean disposable Postgres 18 + upgrade rehearsal; verify constraints and duplicate concurrent webhook behavior, fail after NGN debit, exactly one issue, forensic receipts; back up/restore a second DB and re-evaluate reserve liabilities. Real provider: signed Flutterwave settlement and actual custody-acquired crypto asset, valid FX payout, stressed interruption/retry, account A/B IDOR/KYC/limits before any customer activation.
-- Static GitHub source/branch readback only verifies code is committed and file contents; it is not an executed unit or device pass. Link exact PR head and verification evidence when captured.
+- **PASS — 14/14 pure-JavaScript V8 assertions executed against the GitHub-fetched latest `admission.ts` after mechanically stripping only TypeScript syntax**, covering exact MSN issue amount, provider qualification failure, cross-user/tenant/quote/funding/network tampering, NGN-receipt mismatch, exact 6-digit decimals and rejection of excess precision. This is a **source-projection smoke**, NOT compiled TypeScript/Vitest, not authoritative ledger, real PostgreSQL, Flutter or provider verification.
+- **PASS — GitHub exact branch readback:** committed source contains NGN advisory-lock and debit before MSN mint, double-entry deferred SQL trigger and crypto-first/no-NGN-held-balance UI. This is static verification only; run actual tests before merge.
+- Link exact PR head and verification evidence when captured.
 
 ## Next exact integrator sequence
 
