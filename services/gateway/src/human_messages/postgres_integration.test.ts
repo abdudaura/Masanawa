@@ -86,6 +86,14 @@ describeDb("C02 human DM real PostgreSQL concurrency/privacy",()=>{
     expect(await repo.send(p)).toBe("forbidden");
     expect(await repo.history({tenantId:tenant,userId:a,conversationId,limit:30})).toBeNull();
     expect(await repo.inbox({tenantId:tenant,userId:a,limit:30})).toEqual([]);
+    // A revoked actor cannot create a read receipt even if the thread UUID
+    // and a formerly valid monotonically increasing cursor are known.
+    expect(await repo.read({tenantId:tenant,userId:a,conversationId,
+      throughSequence:"9223372036854775807"})).toBeNull();
+    const denied=await pool.query<{count:string}>(`
+      SELECT count(*)::text AS count FROM talks.human_dm_reads
+      WHERE tenant_id=$1 AND conversation_id=$2 AND user_id=$3`,[tenant,conversationId,a]);
+    expect(denied.rows[0]?.count).toBe("0");
   });
   it("contact revocation revokes old message history and unauthorized retries",async()=>{
     await pool.query(`DELETE FROM talks.safety_preferences
@@ -96,6 +104,8 @@ describeDb("C02 human DM real PostgreSQL concurrency/privacy",()=>{
     const repo=createPostgresHumanDmRepository(pool);
     expect(await repo.history({tenantId:tenant,userId:a,conversationId,limit:40})).toBeNull();
     expect(await repo.inbox({tenantId:tenant,userId:a,limit:40})).toEqual([]);
+    expect(await repo.read({tenantId:tenant,userId:a,conversationId,
+      throughSequence:"9223372036854775807"})).toBeNull();
     const body="revoked send";
     expect(await repo.send({tenantId:tenant,userId:a,conversationId,
       clientRequestId:"request_"+randomUUID().replaceAll("-",""),body,
