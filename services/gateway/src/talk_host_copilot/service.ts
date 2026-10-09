@@ -15,6 +15,7 @@ export type HostPrepView = Omit<HostPrepRecord, "tenantId" | "hostUserId">;
 export interface HostPrepRepository {
   create(input: Omit<HostPrepRecord, "revision" | "phase" | "talkId">): Promise<HostPrepRecord>;
   read(input: { tenantId: string; hostUserId: string; prepId: string }): Promise<HostPrepRecord | null>;
+  list(input: { tenantId: string; hostUserId: string; limit: number }): Promise<readonly HostPrepRecord[]>;
   edit(input: { tenantId: string; hostUserId: string; prepId: string; revision: number;
     title: string; topic: string; questions: readonly string[]; now: string }): Promise<HostPrepRecord | null>;
   beginPublish(input: { tenantId: string; hostUserId: string; prepId: string; revision: number;
@@ -67,6 +68,7 @@ function sameTalk(record: TalkRecord, prep: HostPrepRecord, talkId: string): boo
 export interface HostPrepService {
   create(input: { authorizationHeader?: string; title: string; topic: string; questions: readonly string[] }): Promise<HostPrepView>;
   get(input: { authorizationHeader?: string; prepId: string }): Promise<HostPrepView>;
+  list(input: { authorizationHeader?: string }): Promise<readonly HostPrepView[]>;
   edit(input: { authorizationHeader?: string; prepId: string; revision: number;
     title: string; topic: string; questions: readonly string[] }): Promise<HostPrepView>;
   goLive(input: { authorizationHeader?: string; prepId: string; revision: number;
@@ -130,6 +132,12 @@ export function createHostPrepService(deps: {
         createdAt: stamp, updatedAt: stamp,
       });
       return view(record);
+    },
+    async list(input) {
+      const actor = await owner(input.authorizationHeader);
+      const rows = await deps.repository.list({ tenantId: actor.tenantId,
+        hostUserId: actor.userId, limit: 20 });
+      return Object.freeze(rows.map(view));
     },
     async get(input) {
       const { record } = await owned(input.authorizationHeader, input.prepId);
