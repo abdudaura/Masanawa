@@ -12,15 +12,17 @@ const hit: SearchHit = {
 const secret = new Uint8Array(32).fill(7);
 function fixture() {
   let identity: SearchScope|null = accountA;
+  let now = 1_780_000_000_000;
   let admitted = true, calls = 0, previous: unknown;
   let records: SearchHit[] = [];
   const service = createHumanDmSearchService({
-    cursorSecret:secret,clock:()=>1_780_000_000_000,
+    cursorSecret:secret,clock:()=>now,
     authenticate:async()=>identity,
     admit:async()=>admitted,
     repository:{search:async request=>{calls++;previous=request;return records;}},
   });
-  return {service,setIdentity:(value:SearchScope|null)=>identity=value,
+  return {service,setNow:(value:number)=>now=value,
+    setIdentity:(value:SearchScope|null)=>identity=value,
     setAdmitted:(value:boolean)=>admitted=value,
     setRecords:(value:SearchHit[])=>records=value,
     get calls(){return calls;},get previous(){return previous;}};
@@ -61,7 +63,14 @@ describe("U11 authenticated private human search",()=>{
     await rejects(f.service.search({text:"Other",after:first.next!}),"invalid_cursor");
     f.setIdentity({tenantId:"tenant-b",userId:"user-a"});
     await rejects(f.service.search({text:"Sannu",after:first.next!}),"invalid_cursor");
-    await rejects(f.service.search({text:"Sannu",after:first.next!.slice(0,-2)+"AA"}),"invalid_cursor");
+    await rejects(f.service.search({text:"Sannu",after:"A"+first.next!.slice(1)}),"invalid_cursor");
+  });
+  it("expires a signed cursor after five minutes",async()=>{
+    const f=fixture();
+    f.setRecords([hit, {...hit,messageId:"33333333-3333-4333-8333-333333333333"}]);
+    const token=(await f.service.search({text:"Sannu",limit:1})).next!;
+    f.setNow(1_780_000_300_000);
+    await rejects(f.service.search({text:"Sannu",limit:1,after:token}),"invalid_cursor");
   });
   it("bounds the response even if its repository returns too many messages",async()=>{
     const f=fixture();
