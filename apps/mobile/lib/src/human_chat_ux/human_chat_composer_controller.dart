@@ -30,6 +30,7 @@ class HumanChatComposerController extends ChangeNotifier {
   String? pendingText;
   String? pendingReplyToMessageId;
   String? error;
+  String? lastServerAcceptedMessageId;
   HumanChatReplyQuote? quote;
   Future<void> _writes = Future<void>.value();
 
@@ -94,6 +95,7 @@ class HumanChatComposerController extends ChangeNotifier {
         next.length > 4000 || hasPending) return;
     text = next;
     error = null;
+    lastServerAcceptedMessageId = null;
     _notify();
     _persist(_snapshot()).catchError((Object _) {
       if (active) {
@@ -124,6 +126,8 @@ class HumanChatComposerController extends ChangeNotifier {
     if (body.isEmpty || body.length > 4000) return false;
     sending = true;
     error = null;
+    lastServerAcceptedMessageId = null;
+    var networkAttempted = false;
     _notify();
     try {
       if (!hasPending) {
@@ -138,6 +142,7 @@ class HumanChatComposerController extends ChangeNotifier {
       await _persist(_snapshot());
       if (!active) return false;
       final expectedId = pendingRequestId!;
+      networkAttempted = true;
       final ack = await sender.send(
         scope: scope,
         clientRequestId: expectedId,
@@ -149,6 +154,7 @@ class HumanChatComposerController extends ChangeNotifier {
           ack.clientRequestId != expectedId || ack.messageId.isEmpty) {
         throw const FormatException('Mismatched server acknowledgement');
       }
+      lastServerAcceptedMessageId = ack.messageId;
       if (text.trim() == pendingText) text = '';
       pendingRequestId = null;
       pendingText = null;
@@ -165,9 +171,10 @@ class HumanChatComposerController extends ChangeNotifier {
       return true;
     } catch (_) {
       if (active) {
-        error = hasPending
+        if (!networkAttempted) _storageUnavailable = true;
+        error = networkAttempted
             ? 'Not confirmed by server. Retry the SAME message; do not retype.'
-            : 'Draft not secured. No message was sent.';
+            : 'Not sent: secure draft could not be saved.';
       }
       return false;
     } finally {
@@ -193,15 +200,16 @@ class HumanChatComposerController extends ChangeNotifier {
     if (_disposed) return;
     // Revoke FIRST so late sends cannot rewrite drafts after deletion.
     _revoked = true;
-    await _writes;
-    await drafts.clearAccount(scope.tenantId, scope.userId);
     text = '';
     pendingRequestId = null;
     pendingText = null;
     pendingReplyToMessageId = null;
     quote = null;
     error = null;
-    _notify();
+    lastServerAcceptedMessageId = null;
+    _notify(); // hide previous account's private content synchronously
+    await _writes;
+    await drafts.clearAccount(scope.tenantId, scope.userId);
   }
 
   @override
