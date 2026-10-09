@@ -67,23 +67,6 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
-    },
-    {
-      "claim_id": "masanawa-01-af13-evidence-ledger-20261009",
-      "owner": "MASANAWA-01 / AF13",
-      "scope": "AF13 read-only audio-first acceptance evidence and release safety gate",
-      "paths": [
-        "tools/audio-first-qualification/qualify.mjs",
-        "tools/audio-first-qualification/qualify.test.mjs",
-        "tools/audio-first-qualification/journeys.json",
-        "docs/workstreams/AF13-evidence-ledger-20261009.md"
-      ],
-      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "pr": "",
-      "claimed_at": "2026-10-09T21:59:05Z",
-      "heartbeat_at": "2026-10-09T22:06:35Z",
-      "expires_at": "2026-10-09T22:11:35Z"
     }
   ],
   "history": [
@@ -643,6 +626,25 @@
       "expires_at": "2026-10-09T22:06:50.715Z",
       "released_at": "2026-10-09T22:05:26.027Z",
       "release_reason": "PR #597 source/handoff head bf9bfbfb96904ec3384ca1d9409b26d4846b4b20; 15/15 exact-head static/readback checks passed, authored Flutter widget tests NOT_RUN (missing Flutter SDK). No APK/device/providers/deploy; AF00 must finish five-tab route integration and guarded merge."
+    },
+    {
+      "claim_id": "masanawa-01-af13-evidence-ledger-20261009",
+      "owner": "MASANAWA-01 / AF13",
+      "scope": "AF13 read-only audio-first acceptance evidence and release safety gate",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "tools/audio-first-qualification/journeys.json",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "",
+      "claimed_at": "2026-10-09T21:59:05Z",
+      "heartbeat_at": "2026-10-09T22:06:35Z",
+      "expires_at": "2026-10-09T22:11:35Z",
+      "released_at": "2026-10-09T22:08:13Z",
+      "release_reason": "Exact-path AF13 source/test/handoff committed to PR #596 at HEAD 0729f1d8a504d6e84e508abf35e6fcdaf99292dd; ready for source review; 10/10 native Node tests and 15/15 core probes passed; CI zero-step and Vercel quota block main integration; no deployment/provider/device E2E. AF00 next integrates to safe non-deploying target."
     }
   ]
 }
