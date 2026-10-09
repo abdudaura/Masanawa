@@ -64,7 +64,7 @@ class _HumanPrivateMediaDockState extends State<HumanPrivateMediaDock> {
   }
 
   void _forgetImage(File? file) {
-    if (file != null) unawaited(FileImage(file).evict());
+    if (file != null) unawaited(FileImage(file).evict().then((_) {}));
   }
 
   @override
