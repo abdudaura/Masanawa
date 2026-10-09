@@ -188,3 +188,80 @@ test('live snapshot becomes incomplete when authenticated detail count disagrees
   assert.equal(result.pulls[0].completeFiles, false);
   assert.equal(auditSnapshot(result).summary.incompletePullRequests, 1);
 });
+
+
+test('explicitly incomplete open-PR inventory prevents clean-report status', async () => {
+  const snapshot = snap([create(1, 'F11 original', [['one.ts']])]);
+  snapshot.inventoryIssues = ['open_pr_inventory_changed_during_audit'];
+  const report = auditSnapshot(snapshot);
+  assert.deepEqual(report.inventoryIssues, ['open_pr_inventory_changed_during_audit']);
+  assert.equal(report.summary.incompleteInventory, 1);
+  assert.equal(report.summary.incompletePullRequests, 0);
+  const dir = await mkdtemp(join(tmpdir(), 'masanawa-audit-inventory-'));
+  try {
+    const source = join(dir, 'snapshot.json');
+    await writeFile(source, JSON.stringify(snapshot));
+    const cap = capture();
+    assert.equal(await main(['--snapshot', source], { out: cap.out, err: cap.err }), 3);
+    assert.match(cap.stderr, /INCOMPLETE/);
+  } finally { await rm(dir, { force: true, recursive: true }); }
+});
+
+test('live scan detects newly opened or closed PRs even when listed head was stable', async () => {
+  const first = { number: 1, title: 'F11 audit', body: '', head: { sha: sha('1') } };
+  let listCalls = 0;
+  const fetcher = async url => {
+    const u = new URL(url);
+    let json;
+    if (u.pathname === '/repos/test/repo') json = { default_branch: 'main' };
+    else if (u.pathname === '/repos/test/repo/branches/main') json = { commit: { sha: sha('a') } };
+    else if (u.pathname === '/repos/test/repo/pulls') {
+      listCalls++;
+      json = listCalls === 1 ? [first] : [first, {
+        number: 2, title: 'C02 newly opened', head: { sha: sha('2') },
+      }];
+    } else if (u.pathname === '/repos/test/repo/pulls/1/files') json = [{ filename: 'one.ts', sha: sha('b') }];
+    else if (u.pathname === '/repos/test/repo/pulls/1') json = { head: { sha: sha('1') }, changed_files: 1 };
+    else throw Error('wrong endpoint ' + u.pathname);
+    return { ok: true, json: async () => json };
+  };
+  const snapshot = await loadGithubSnapshot({ repo: 'test/repo', token: 'fake', fetcher });
+  assert.equal(snapshot.pulls.length, 1);
+  assert.equal(snapshot.pulls[0].headStable, true);
+  assert.deepEqual(snapshot.inventoryIssues, ['open_pr_inventory_changed_during_audit']);
+  assert.equal(auditSnapshot(snapshot).summary.incompleteInventory, 1);
+  assert.equal(listCalls, 2);
+});
+
+test('live scan rejects advancing main even if open PR set is unchanged', async () => {
+  const pr = { number: 1, title: 'F11 audit', body: '', head: { sha: sha('1') } };
+  let branchCalls = 0;
+  const fetcher = async url => {
+    const u = new URL(url);
+    let json;
+    if (u.pathname === '/repos/test/repo') json = { default_branch: 'main' };
+    else if (u.pathname === '/repos/test/repo/branches/main') {
+      branchCalls++;
+      json = { commit: { sha: branchCalls === 1 ? sha('a') : sha('b') } };
+    } else if (u.pathname === '/repos/test/repo/pulls') json = [pr];
+    else if (u.pathname === '/repos/test/repo/pulls/1/files') json = [{ filename: 'one.ts', sha: sha('c') }];
+    else if (u.pathname === '/repos/test/repo/pulls/1') json = { head: { sha: sha('1') }, changed_files: 1 };
+    else throw Error('wrong endpoint ' + u.pathname);
+    return { ok: true, json: async () => json };
+  };
+  const snapshot = await loadGithubSnapshot({ repo: 'test/repo', token: 'fake', fetcher });
+  assert.deepEqual(snapshot.inventoryIssues, ['main_changed_during_audit']);
+  assert.equal(auditSnapshot(snapshot).summary.incompleteInventory, 1);
+  assert.equal(branchCalls, 2);
+});
+
+test('CLI rejects malformed nonempty main SHA instead of reporting a verified baseline', async () => {
+  const sourceDir = await mkdtemp(join(tmpdir(), 'masanawa-audit-sha-'));
+  try {
+    const source = join(sourceDir, 'snapshot.json');
+    await writeFile(source, JSON.stringify({ ...snap([]), mainSha: 'not-a-real-sha' }));
+    const cap = capture();
+    assert.equal(await main(['--snapshot', source], { out: cap.out, err: cap.err }), 3);
+    assert.match(cap.stderr, /INCOMPLETE/);
+  } finally { await rm(sourceDir, { force: true, recursive: true }); }
+});
