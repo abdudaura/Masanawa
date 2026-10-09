@@ -111,13 +111,20 @@ export function createHumanCallService(input: {
       if (!["accept","decline","end"].includes(request.action)) {
         throw new HumanCallError("calls.action_invalid",400);
       }
-      const previous = await readable(p.tenantId,p.userId,callId);
+      // Ending a call is allowed after contact revocation: no participant
+      // can be trapped in a live room merely because they blocked the peer.
+      const previous = request.action === "end"
+        ? await input.repository.get({tenantId:p.tenantId,actorId:p.userId,callId})
+        : await readable(p.tenantId,p.userId,callId);
+      if (!previous) throw new HumanCallError("calls.unavailable",404);
       const changed = await input.repository.transition({
         tenantId:p.tenantId,actorId:p.userId,callId,action:request.action,
       });
       if (!changed) throw new HumanCallError("calls.stale_or_forbidden",409);
       // R15 blocks can race the transition; recheck before returning state.
-      await requirePermission(p.tenantId,p.userId,previous.conversationId);
+      if (request.action !== "end") {
+        await requirePermission(p.tenantId,p.userId,previous.conversationId);
+      }
       if (changed.state === "ended" || changed.state === "cancelled" ||
           changed.state === "declined" || changed.state === "missed") {
         // Provider disconnect must be integrated before production admission.
