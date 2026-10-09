@@ -122,12 +122,13 @@ export function createLiveKitReplayEgress(input:Readonly<{
     // The timeout signal covers connection establishment and response-body
     // streaming. A timed-out StartEgress may still have started remotely;
     // callers must reconcile provider truth rather than blindly retrying.
-    const signal=AbortSignal.timeout(timeoutMs);
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(new Error("LiveKit Egress RPC timed out")),timeoutMs);
     try{
       const response=await fetchImpl(`${serverUrl}/twirp/livekit.Egress/${method}`,{
         method:"POST",
         redirect:"manual",
-        signal,
+        signal:controller.signal,
         headers:{
           authorization:`Bearer ${accessToken({apiKey,apiSecret,now:now()})}`,
           "content-type":"application/json",
@@ -139,10 +140,12 @@ export function createLiveKitReplayEgress(input:Readonly<{
       }
       return await boundedEgressResponse(response);
     }catch(error){
-      if(signal.aborted){
+      if(controller.signal.aborted){
         throw new Error(`talks.replay.egress_${method.toLowerCase()}_timeout_uncertain`,{cause:error});
       }
       throw error;
+    }finally{
+      clearTimeout(timer);
     }
   }
 
