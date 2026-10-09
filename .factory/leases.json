@@ -2,24 +2,6 @@
   "schema_version": 1,
   "active": [
     {
-      "claim_id": "gpt6-msn-crypto-primary-20261009",
-      "owner": "GPT-6 MSN wallet crypto-first foundation",
-      "scope": "MSN crypto-backed custody conversion invariant and truthful mobile presentation; no producer enablement",
-      "paths": [
-        "services/gateway/src/msn_wallet/**",
-        "packages/commerce/migrations/0112_msn_wallet.sql",
-        "apps/mobile/lib/src/finance/msn_wallet_panel.dart",
-        "apps/mobile/test/finance/msn_wallet_panel_test.dart",
-        "docs/workstreams/msn-crypto-primary-wallet-20261009.md"
-      ],
-      "branch": "work/msn-crypto-primary-wallet-20261009-gpt6",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "",
-      "claimed_at": "2026-10-09T09:03:36.239Z",
-      "heartbeat_at": "2026-10-09T09:11:15.593Z",
-      "expires_at": "2026-10-09T09:16:15.593Z"
-    },
-    {
       "claim_id": "gpt6-c09-integrator-work-20261009",
       "owner": "GPT-6 C09 Gateway+Chats integrator",
       "scope": "Work #497 stacked integration of all C09 existing PR #575 full calling backend and UI",
@@ -308,6 +290,26 @@
       "expires_at": "2026-10-09T09:09:15.640Z",
       "released_at": "2026-10-09T09:05:35.184Z",
       "release_reason": "Pushed terminal-only C09 retry limit and handoff HEAD 5f36f9fc68630726cac82c23202dac811797f8a3; exact blob Node fake-SQL tests 5/5; C09 remains PARTIAL and unmerged."
+    },
+    {
+      "claim_id": "gpt6-msn-crypto-primary-20261009",
+      "owner": "GPT-6 MSN wallet crypto-first foundation",
+      "scope": "MSN crypto-backed custody conversion invariant and truthful mobile presentation; no producer enablement",
+      "paths": [
+        "services/gateway/src/msn_wallet/**",
+        "packages/commerce/migrations/0112_msn_wallet.sql",
+        "apps/mobile/lib/src/finance/msn_wallet_panel.dart",
+        "apps/mobile/test/finance/msn_wallet_panel_test.dart",
+        "docs/workstreams/msn-crypto-primary-wallet-20261009.md"
+      ],
+      "branch": "work/msn-crypto-primary-wallet-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/576",
+      "claimed_at": "2026-10-09T09:03:36.239Z",
+      "heartbeat_at": "2026-10-09T09:11:15.593Z",
+      "expires_at": "2026-10-09T09:16:15.593Z",
+      "released_at": "2026-10-09T09:15:57.835Z",
+      "release_reason": "Pushed MSN crypto-primary foundation PR #576, HEAD c3d821e5dad6a8405d5efa0cd4a450ac4ce1a775, 10 nonoverlapping additive paths, 14/14 V8 stripped TS admission smoke; Vitest/Postgres/Flutter/provider not run; integration/regulatory conditions remain, draft unmerged, no production changes."
     }
   ]
 }
