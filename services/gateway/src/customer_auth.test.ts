@@ -409,6 +409,89 @@ describe("platform-session Agent authorization", () => {
   });
 });
 
+describe("AF08 OTP delivery and session revocation safety", () => {
+  it("rejects an unavailable phone channel before persisting a cooldown or code", async () => {
+    const repository = new MemorySessions();
+    const service = createCustomerAuthService({
+      repository,
+      tenantId: createCanonicalId("tenant"),
+      otpPepper: "p".repeat(48),
+      emailDelivery: { async send() {} },
+    });
+
+    await expect(service.sendOtp({ phone: "+2348012345678" })).rejects.toMatchObject({
+      code: "OTP_CHANNEL_UNAVAILABLE",
+      statusCode: 503,
+    });
+    expect(repository.challenge).toBeNull();
+    await service.sendOtp({ email: "supported@example.com" });
+    expect(repository.challenge?.channel).toBe("email");
+  });
+
+  it("does not expose persistence exceptions or misclassify refresh storage outages as invalid sessions", async () => {
+    const repository = new MemorySessions();
+    let code = "";
+    const service = createCustomerAuthService({
+      repository,
+      tenantId: createCanonicalId("tenant"),
+      otpPepper: "p".repeat(48),
+      emailDelivery: { async send(input) { code = input.code; } },
+    });
+    await service.sendOtp({ email: "refresh@example.com" });
+    const signedIn = await service.verifyOtp({
+      email: "refresh@example.com",
+      code,
+      name: "Test Customer",
+    });
+    repository.rotateRefresh = async () => { throw new Error("private database credentials"); };
+    await expect(service.refresh({ refreshToken: signedIn.refreshToken })).rejects.toMatchObject({
+      code: "AUTH_UNAVAILABLE",
+      statusCode: 503,
+      message: "AUTH_UNAVAILABLE",
+    });
+    expect(repository.sessions.size).toBe(1);
+  });
+
+  it("reports failed server revocation and only confirms logout after persisted invalidation", async () => {
+    const repository = new MemorySessions();
+    let code = "";
+    const service = createCustomerAuthService({
+      repository,
+      tenantId: createCanonicalId("tenant"),
+      otpPepper: "p".repeat(48),
+      emailDelivery: { async send(input) { code = input.code; } },
+    });
+    await service.sendOtp({ email: "logout@example.com" });
+    const signedIn = await service.verifyOtp({
+      email: "logout@example.com",
+      code,
+      name: "Test Customer",
+    });
+    const authorizationHeader = `Bearer ${signedIn.accessToken}`;
+    const sessions = createPlatformCustomerSessionAuthorizer({ repository });
+    await expect(sessions.authorize({ authorizationHeader })).resolves.toBeTruthy();
+
+    repository.revokeAccess = async () => { throw new Error("private database credentials"); };
+    await expect(service.logout({ authorizationHeader })).rejects.toMatchObject({
+      code: "AUTH_UNAVAILABLE",
+      statusCode: 503,
+      message: "AUTH_UNAVAILABLE",
+    });
+    // Revocation was uncertain: do not claim the active session is disabled.
+    await expect(sessions.authorize({ authorizationHeader })).resolves.toBeTruthy();
+
+    repository.revokeAccess = async ({ accessHash }) => {
+      const row = repository.sessions.get(accessHash);
+      if (row) row.revoked = true;
+    };
+    await expect(service.logout({ authorizationHeader })).resolves.toBeUndefined();
+    await expect(sessions.authorize({ authorizationHeader })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      statusCode: 401,
+    });
+  });
+});
+
 describe("customer authentication", () => {
   it("reports session storage outages as retryable availability failures", async () => {
     const repository = new MemorySessions();
