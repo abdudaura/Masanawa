@@ -17,14 +17,16 @@
         "docs/workstreams/c09-work-integration-20261009.md",
         "apps/mobile/lib/src/core/mobile_push.dart",
         "apps/mobile/lib/src/core/shell_deep_link.dart",
-        "apps/mobile/test/shell_deep_link_test.dart"
+        "apps/mobile/test/shell_deep_link_test.dart",
+        "services/gateway/src/mobile_push.ts",
+        "services/gateway/src/mobile_push.test.ts"
       ],
       "branch": "work/c09-calling-work-integration-20261009",
       "base_sha": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
       "pr": "https://github.com/Baatiku/masanawa/pull/578",
       "claimed_at": "2026-10-09T09:13:07.942Z",
-      "heartbeat_at": "2026-10-09T09:33:10.701Z",
-      "expires_at": "2026-10-09T09:38:10.701Z",
+      "heartbeat_at": "2026-10-09T09:36:32.605Z",
+      "expires_at": "2026-10-09T09:41:32.605Z",
       "notes": "Base latest #497 Work, preserve existing C09 PR #575. C09 approved user; isolated claimed shared app/main/flutter only; no prod deploy/merge while unverified."
     },
     {
