@@ -15,11 +15,9 @@ const identity = {
     name: "Hauwa", email: null, phone: null, locale: "ha",
     createdAt: "2026-10-08T00:00:00.000Z" },
 } as PlatformSessionIdentity;
-let counter = 1;
 function action(id: string, args: Record<string, unknown> = {},
   override: Partial<U04AuthorizedRead> = {}): U04AuthorizedRead {
-  const requestId = "request_0199abcdefab-7abc-8abc-abcdefabcdef";
-  counter += 1;
+  const requestId = "request_0199abcd-efab-7abc-8abc-abcdefabcdef";
   return {
     capability: { id, version: 1, enabled: true,
       executionClass: "read", argumentKeys: Object.keys(args) },
