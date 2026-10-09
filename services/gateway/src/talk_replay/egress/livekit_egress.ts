@@ -12,6 +12,56 @@ function base64url(value:string):string{
   return Buffer.from(value,"utf8").toString("base64url");
 }
 
+const MAX_EGRESS_RESPONSE_BYTES=64*1024;
+
+function secureOrigin(raw:string,label:string,websocket=false):string{
+  const candidate=raw.trim();
+  const normalized=websocket&&/^wss:\/\//iu.test(candidate)
+    ? `https://${candidate.slice(6)}`
+    :candidate;
+  let url:URL;
+  try{url=new URL(normalized);}catch{throw new TypeError(`${label} is invalid`);}
+  // This endpoint receives a bearer JWT and an S3 secret in StartEgress.
+  // Accept only a clean TLS origin, never an HTTP downgrade or URL credentials.
+  if(url.protocol!=="https:"||!url.hostname||url.username||url.password||
+      url.pathname!=="/"||url.search||url.hash){
+    throw new TypeError(`${label} must be a clean HTTPS origin`);
+  }
+  return url.origin;
+}
+
+async function boundedEgressResponse(response:Response):Promise<Record<string,unknown>>{
+  if(Number(response.headers.get("content-length"))>MAX_EGRESS_RESPONSE_BYTES){
+    throw new Error("talks.replay.egress_response_too_large");
+  }
+  if(!response.body) throw new Error("talks.replay.egress_invalid_response");
+  const reader=response.body.getReader();
+  const chunks:Uint8Array[]=[];
+  let length=0;
+  try{
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done) break;
+      length+=value.byteLength;
+      if(length>MAX_EGRESS_RESPONSE_BYTES){
+        await reader.cancel().catch(()=>{});
+        throw new Error("talks.replay.egress_response_too_large");
+      }
+      chunks.push(value);
+    }
+  }finally{reader.releaseLock();}
+  const bytes=new Uint8Array(length);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  let payload:unknown;
+  try{payload=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));}
+  catch{throw new Error("talks.replay.egress_invalid_response");}
+  if(!payload||typeof payload!=="object"||Array.isArray(payload)){
+    throw new Error("talks.replay.egress_invalid_response");
+  }
+  return payload as Record<string,unknown>;
+}
+
 function accessToken(input:{
   apiKey:string;
   apiSecret:string;
@@ -47,27 +97,23 @@ export function createLiveKitReplayEgress(input:Readonly<{
   fetchImpl?:typeof fetch;
   now?:()=>Date;
 }>):LiveKitReplayEgress{
-  const serverUrl=input.serverUrl.trim()
-    .replace(/^wss:/u,"https:")
-    .replace(/^ws:/u,"http:")
-    .replace(/\/$/u,"");
+  const serverUrl=secureOrigin(input.serverUrl,"LiveKit Egress URL",true);
   const apiKey=input.apiKey.trim();
   const apiSecret=input.apiSecret.trim();
-  const endpoint=input.s3.endpoint.trim().replace(/\/$/u,"");
+  const endpoint=secureOrigin(input.s3.endpoint,"Replay S3 endpoint");
   const region=input.s3.region.trim();
   const bucket=input.s3.bucket.trim();
   const accessKey=input.s3.accessKey.trim();
   const secret=input.s3.secret.trim();
-  if(!/^https?:\/\//u.test(serverUrl)) throw new TypeError("LiveKit Egress URL is invalid");
-  if(!apiKey || apiSecret.length<16) throw new TypeError("LiveKit Egress credentials are invalid");
-  if(!/^https:\/\//u.test(endpoint)) throw new TypeError("Replay S3 endpoint must use https://");
-  if(!region || !bucket || !accessKey || secret.length<8) throw new TypeError("Replay S3 configuration is incomplete");
+    if(!apiKey || apiSecret.length<16) throw new TypeError("LiveKit Egress credentials are invalid");
+    if(!region || !bucket || !accessKey || secret.length<8) throw new TypeError("Replay S3 configuration is incomplete");
   const fetchImpl=input.fetchImpl??fetch;
   const now=input.now??(()=>new Date());
 
-  async function call(method:string,body:Record<string,unknown>):Promise<Record<string,unknown>>{
+  async function call(method:"StartEgress"|"StopEgress",body:Record<string,unknown>):Promise<Record<string,unknown>>{
     const response=await fetchImpl(`${serverUrl}/twirp/livekit.Egress/${method}`,{
       method:"POST",
+      redirect:"manual",
       headers:{
         authorization:`Bearer ${accessToken({apiKey,apiSecret,now:now()})}`,
         "content-type":"application/json",
@@ -77,7 +123,7 @@ export function createLiveKitReplayEgress(input:Readonly<{
     if(!response.ok){
       throw new Error(`talks.replay.egress_${method.toLowerCase()}_failed`);
     }
-    return await response.json() as Record<string,unknown>;
+    return await boundedEgressResponse(response);
   }
 
   return Object.freeze<LiveKitReplayEgress>({
