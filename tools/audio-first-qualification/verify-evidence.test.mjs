@@ -15,7 +15,7 @@ function withFixture(fn) {
     const digest = createHash('sha256').update('Passed native smoke check\n').digest('hex');
     const matrix={schemaVersion:1,gates:[{id:'UX-A03',description:'Five-tab shell'},{id:'WF-A06',description:'Escrow dispute'}]};
     const evidence={schemaVersion:1,sourceSha:sha,evidence:[{id:'UX-A03',status:'PASS_REAL',sourceSha:sha,command:'node --test',environment:'Android 12, handset',executedAt:now.toISOString(),proof:{path:'proof/log.txt',sha256:digest}},{id:'WF-A06',status:'PASS_REAL',sourceSha:sha,command:'pg smoke test',environment:'Disposable PostgreSQL',executedAt:now.toISOString(),proof:{path:'proof/log.txt',sha256:digest}}]};
-    const verifyFixture=(changes=()=>{},mode='release')=>{ changes(evidence,matrix,root);writeFileSync(path.join(root,'matrix.json'),JSON.stringify(matrix));writeFileSync(path.join(root,'evidence.json'),JSON.stringify(evidence));return verify({root,manifest:path.join(root,'evidence.json'),matrix:path.join(root,'matrix.json'),mode,now}); };
+    const verifyFixture=(changes=()=>{},mode='release')=>{ changes(evidence,matrix,root);writeFileSync(path.join(root,'matrix.json'),JSON.stringify(matrix));writeFileSync(path.join(root,'evidence.json'),JSON.stringify(evidence));return verify({root,manifest:path.join(root,'evidence.json'),matrix:path.join(root,'matrix.json'),expectedSha:sha,mode,now}); };
     fn({root,evidence,matrix,verifyFixture});
   } finally { rmSync(root,{recursive:true,force:true}); }
 }
@@ -30,3 +30,5 @@ test('symlink escaping checkout fails closed',()=>withFixture(({verifyFixture,ro
 test('future evidence fails closed',()=>withFixture(({verifyFixture})=>{let x=verifyFixture(e=>e.evidence[0].executedAt='2027-10-09T21:45:00Z');assert.deepEqual(x.invalid,['UX-A03'])}));
 test('no evidence passes release',()=>withFixture(({verifyFixture})=>{let x=verifyFixture(e=>e.evidence=[]);assert.equal(x.ready,false);assert.equal(x.missing.length,2)}));
 test('failed gate blocks even integration',()=>withFixture(({verifyFixture})=>{let x=verifyFixture(e=>e.evidence[0].status='FAIL','integration');assert.equal(x.ready,false);assert.deepEqual(x.failed,['UX-A03'])}));
+
+test('caller expected immutable SHA rejects stale manifest',()=>withFixture(({verifyFixture})=>{assert.throws(()=>verifyFixture(e=>e.sourceSha='b'.repeat(40)),/wrong source SHA/)}));
