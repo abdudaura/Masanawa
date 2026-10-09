@@ -100,6 +100,27 @@
       "claimed_at": "2026-10-09T21:59:05Z",
       "heartbeat_at": "2026-10-09T22:01:06Z",
       "expires_at": "2026-10-09T22:06:06Z"
+    },
+    {
+      "claim_id": "masanawa-01-af08-neutral-launch-20261009-b",
+      "owner": "MASANAWA-01 / AF08-launch",
+      "scope": "AF08 neutral Android native / Flutter splash continuity (no auth, navigation, locale or theme global edits)",
+      "paths": [
+        "apps/mobile/android/app/src/main/res/drawable-night-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-night/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/values/colors.xml",
+        "apps/mobile/lib/src/screens/splash/splash_screen.dart",
+        "apps/mobile/test/audio_first/af08/neutral_launch_test.dart",
+        "docs/workstreams/AF08-neutral-launch-20261009.md"
+      ],
+      "branch": "work/af08-neutral-launch-20261009-masanawa01-b",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "",
+      "claimed_at": "2026-10-09T22:01:50.710Z",
+      "heartbeat_at": "2026-10-09T22:01:50.710Z",
+      "expires_at": "2026-10-09T22:06:50.715Z"
     }
   ],
   "history": [
