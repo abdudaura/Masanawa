@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Pool } from "@masanawa/postgres";
+import { createCanonicalId } from "@masanawa/contracts";
+import type { PlatformSessionIdentity } from "@masanawa/security";
 import {
   createPostgresCopilotTurnStore,
   createPostgresStageHostAuthorizer,
@@ -105,16 +107,23 @@ describe("U15 PostgreSQL durable turn admissions", () => {
 
   it("reads the Host from the existing session and scopes live Talk access to tenant", async () => {
     const query = vi.fn(async () => ({ rows: [{ "?column?": 1 }] }));
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const identity: PlatformSessionIdentity = {
+      tenantId, userId,
+      profile: {
+        tenantId, userId, name: "Test Host", email: null, phone: null,
+        locale: "en", createdAt: claim.now,
+      },
+    };
     const sessions = {
-      authorize: vi.fn(async () => ({ tenantId: "tenant-A", userId: "host-A" })),
+      authorize: vi.fn(async () => identity),
     };
     const auth = createPostgresStageHostAuthorizer(
       { query } as unknown as Pick<Pool, "query">,
-      sessions as Parameters<typeof createPostgresStageHostAuthorizer>[1],
+      sessions,
     );
-    expect(await auth.authorize({ authorizationHeader: "Bearer real" })).toEqual({
-      tenantId: "tenant-A", userId: "host-A",
-    });
+    expect(await auth.authorize({ authorizationHeader: "Bearer real" })).toEqual(identity);
     expect(await auth.isCurrentHost({
       tenantId: "tenant-A", talkId: "talk-A", userId: "host-A",
     })).toBe(true);
