@@ -156,6 +156,15 @@ void main() {
     await tester.pump();
     expect(transport.actions.single.action, LearningAction.practice);
     expect(find.textContaining('Request accepted'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'A private answer');
+    state.changeSession(
+      accountKey: 'session-B',
+      characterId: 'character-B',
+      relationshipId: 'relationship-B',
+    );
+    await tester.pump();
+    expect(find.text('A private answer'), findsNothing);
+    expect(state.checkpoint, isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     state.dispose();
   });
