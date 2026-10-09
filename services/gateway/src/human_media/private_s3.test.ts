@@ -10,8 +10,8 @@ const config={
 };
 describe("C04 private encrypted S3 key boundaries",()=>{
  it("signs scoped PUT with SSE and never uses public CDN URLs",async()=>{
-  const observed:{url?:string;headers?:HeadersInit;method?:string}={};
-  const fetchImpl=vi.fn(async(url:URL|RequestInfo,init?:RequestInit)=>{
+  const observed:{url?:string;headers?:NonNullable<Parameters<typeof fetch>[1]>['headers'];method?:string | undefined}={};
+  const fetchImpl=vi.fn(async(url:Parameters<typeof fetch>[0],init?:Parameters<typeof fetch>[1])=>{
    observed.url=String(url);observed.method=init?.method;observed.headers=init?.headers;
    return new Response(null,{status:200});
   });
@@ -34,12 +34,28 @@ describe("C04 private encrypted S3 key boundaries",()=>{
  });
  it("uses private signed GET without redirecting and enforces bounded stream",async()=>{
   const bytes=Buffer.alloc(90,0xaa);
-  const fetchImpl=vi.fn(async(_url:URL|RequestInfo,init?:RequestInit)=>{
+  const fetchImpl=vi.fn(async(_url:Parameters<typeof fetch>[0],init?:Parameters<typeof fetch>[1])=>{
     expect(init?.redirect).toBe("error");
     return new Response(bytes,{status:200});
   });
   const store=createPrivateVoiceS3({...config,fetchImpl:fetchImpl as typeof fetch});
   expect(await store.get(key,100)).toEqual(bytes);
   await expect(store.get(key,84)).rejects.toThrow("messages.voice.storage_oversize");
+ });
+ it('rejects NaN, infinite and fractional stream bounds before provider access',async()=>{
+  const fetchImpl=vi.fn() as unknown as typeof fetch,store=createPrivateVoiceS3({...config,fetchImpl});
+  for(const limit of [NaN,Infinity,84.5,0,1536*1024+1])await expect(store.get(key,limit)).rejects.toThrow('Invalid private media read limit');
+  expect(fetchImpl).not.toHaveBeenCalled();
+ });
+ it('cancels unused PUT/DELETE and failed GET response bodies',async()=>{
+  for(const method of ['PUT','DELETE','GET'] as const) {
+   let cancelled=false;
+   const body=new ReadableStream<Uint8Array>({start(c){c.enqueue(new Uint8Array(128))},cancel(){cancelled=true}});
+   const store=createPrivateVoiceS3({...config,fetchImpl:async()=>new Response(body,{status:method==='GET'?503:200})});
+   if(method==='PUT')await store.put(key,Buffer.alloc(100));
+   else if(method==='DELETE')await store.delete(key);
+   else await expect(store.get(key,100)).rejects.toThrow('messages.voice.storage_read_failed');
+   expect(cancelled).toBe(true);
+  }
  });
 });

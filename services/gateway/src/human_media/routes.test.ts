@@ -4,13 +4,14 @@ import { registerHumanVoiceRoutes } from "./routes.js";
 import { createPrivateVoiceNoteService } from "./service.js";
 import type { VoiceNoteRepository } from "./model.js";
 import { validOpus } from "./ogg_opus_test_fixture.js";
+import {createHash} from 'node:crypto';
 
 const conversationId="00000000-0000-4000-8000-000000000001";
 const messageId="00000000-0000-4000-8000-000000000002";
 const requestId="requestABC1234";
 const audio=validOpus();
 function fixture(){
- let permitted=true,objects=0;
+ let permitted=true,objects=0,sessionActive=true;
  const receipt={
   messageId,conversationId,sequence:"1",senderUserId:"user_a",
   clientRequestId:requestId,durationMs:1000,sizeBytes:audio.length,
@@ -20,27 +21,26 @@ function fixture(){
   stage:vi.fn(async(stage)=>permitted?stage:"forbidden" as const),
   attach:vi.fn(async()=>permitted?receipt:"forbidden" as const),
   find:vi.fn(async()=>permitted?{...receipt,objectKey:"dm-voice/private",sha256:
-   "bad"}:null),
+   createHash('sha256').update(audio).digest('hex')}:null),
   list:vi.fn(async()=>permitted?[receipt]:null),
   remove:vi.fn(async()=>permitted),
   stale:vi.fn(async()=>[]),
   deleted:vi.fn(async()=>{}),
  } satisfies VoiceNoteRepository;
+ const objectStore={put:async()=>{objects++},get:vi.fn(async()=>audio),delete:async()=>{}};
  const svc=createPrivateVoiceNoteService({
   authorizer:{authorize:async ({authorizationHeader})=>{
-   if(authorizationHeader!=="Bearer approved")throw Object.assign(new Error("unauthorized"),{statusCode:401});
+   if(!sessionActive||authorizationHeader!=="Bearer approved")throw Object.assign(new Error("unauthorized"),{statusCode:401});
    return {tenantId:"tenant_a",userId:"user_a"} as never;
   }},
   repository,
-  objects:{
-   put:async()=>{objects++},get:async()=>audio,delete:async()=>{},
-  },
+  objects:objectStore,
  });
  const app=Fastify();
  app.setErrorHandler((error,_request,reply)=>reply.code((error as Error & {statusCode?: number}).statusCode??500)
   .send({code:(error as Error).message}));
  registerHumanVoiceRoutes(app,svc);
- return {app,repository,deny:()=>{permitted=false},get objects(){return objects}};
+ return {app,repository,objectStore,deny:()=>{permitted=false},revokeSession:()=>{sessionActive=false},get objects(){return objects}};
 }
 const opened:ReturnType<typeof fixture>[]=[];
 afterEach(async()=>{for(const f of opened.splice(0))await f.app.close()});
@@ -81,5 +81,15 @@ describe("C04 private audio HTTP admission",()=>{
   const revoked=await f.app.inject({method:"GET",url:`/messages/voice/${messageId}`,
    headers:{authorization:"Bearer approved"}});
   expect(revoked.statusCode).toBe(404);
+ });
+ it('returns verified private audio and refuses bytes after session loss during storage I/O',async()=>{
+  const f=fixture();opened.push(f);
+  const request={method:'GET' as const,url:`/messages/voice/${messageId}`,headers:{authorization:'Bearer approved'}};
+  const valid=await f.app.inject(request);expect(valid.statusCode).toBe(200);expect(valid.rawPayload).toEqual(audio);
+  expect(valid.headers['content-type']).toMatch(/^audio\/ogg/);expect(valid.headers['cache-control']).toBe('no-store, private');
+  f.objectStore.get.mockImplementationOnce(async()=>{f.revokeSession();return audio});
+  const denied=await f.app.inject(request);expect(denied.statusCode).toBe(401);
+  expect(denied.headers['content-type']).toMatch(/application\/json/);expect(denied.body).not.toContain('OggS');
+  expect(denied.headers['content-disposition']).toBeUndefined();expect(denied.headers['cache-control']).toBe('no-store, private');
  });
 });

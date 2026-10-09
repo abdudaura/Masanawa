@@ -70,4 +70,13 @@ describe("C04 lifecycle-bound private voice reconciliation", () => {
     })).toThrow("Complete private human voice S3 configuration");
     await app.close();
   });
+  it('signals failed object deletions without keys and continues the next scheduled batch',async()=>{
+    const onFailure=vi.fn(()=>{throw Error('broken metrics sink')});
+    const collectGarbage=vi.fn(async()=>({deleted:2,failed:3}));
+    const task=startHumanVoiceGarbageCollector({collectGarbage},{intervalMs:10000,onFailure});
+    await task.sweep();expect(onFailure).toHaveBeenCalledTimes(1);expect(onFailure).toHaveBeenCalledWith();
+    collectGarbage.mockResolvedValue({deleted:3,failed:0});
+    await vi.advanceTimersByTimeAsync(10000);expect(collectGarbage).toHaveBeenCalledTimes(2);expect(onFailure).toHaveBeenCalledTimes(1);
+    await task.stop();
+  });
 });

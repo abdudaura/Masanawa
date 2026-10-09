@@ -29,16 +29,17 @@ export function startHumanVoiceGarbageCollector(
   }
   let stopped = false;
   let inFlight: Promise<void> | undefined;
+  const signalFailure=()=>{try{input.onFailure?.()}catch{/* payload-free observability must not stop retries */}};
   const sweep = (): Promise<void> => {
     if (stopped) return Promise.resolve();
     if (inFlight) return inFlight;
     const run = Promise.resolve()
       .then(() => service.collectGarbage(batchSize))
-      .then(() => undefined)
+      .then(result => {if(result.failed>0)signalFailure();})
       .catch(() => {
         // A failure MUST NOT stop future cleanup attempts. The callback is
         // intentionally payload-free: no storage keys, account IDs or audio.
-        try { input.onFailure?.(); } catch { /* noncritical observability */ }
+        signalFailure();
       });
     inFlight = run.finally(() => { inFlight = undefined; });
     return inFlight;

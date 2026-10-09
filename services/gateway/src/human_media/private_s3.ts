@@ -52,15 +52,16 @@ export function createPrivateVoiceS3(input:Readonly<{
       throw new TypeError("Private media exceeds fixed bound");
     const target=url(key);
     const result=await client(target,{method:"PUT",headers:headers("PUT",target,bytes),
-      body:bytes,redirect:"error",signal:AbortSignal.timeout(15000)});
+      body:new Uint8Array(bytes),redirect:"error",signal:AbortSignal.timeout(15000)});
+    await result.body?.cancel();
     if(!result.ok)throw new Error("messages.voice.storage_write_failed");
   },
   async get(key,maxBytes) {
-    if(maxBytes<84||maxBytes>1536*1024)throw new TypeError("Invalid private media read limit");
+    if(!Number.isSafeInteger(maxBytes)||maxBytes<84||maxBytes>1536*1024)throw new TypeError("Invalid private media read limit");
     const target=url(key);
     const response=await client(target,{method:"GET",headers:headers("GET",target,Buffer.alloc(0)),
       redirect:"error",signal:AbortSignal.timeout(15000)});
-    if(!response.ok||!response.body)throw new Error("messages.voice.storage_read_failed");
+    if(!response.ok||!response.body){await response.body?.cancel();throw new Error("messages.voice.storage_read_failed")}
     const reader=response.body.getReader();
     const chunks:Uint8Array[]=[];
     let size=0;
@@ -79,6 +80,7 @@ export function createPrivateVoiceS3(input:Readonly<{
     const target=url(key);
     const response=await client(target,{method:"DELETE",headers:headers("DELETE",target,Buffer.alloc(0)),
       redirect:"error",signal:AbortSignal.timeout(15000)});
+    await response.body?.cancel();
     if(!response.ok&&response.status!==404)throw new Error("messages.voice.storage_delete_failed");
   },
  });
