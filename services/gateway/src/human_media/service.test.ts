@@ -155,6 +155,55 @@ describe("C04 private human voice-note mutation and access contracts",()=>{
    await expect(v.service.read({authorizationHeader:"x",messageId})).rejects.toMatchObject({code:"messages.voice.storage_corrupt",statusCode:503});
   }
  });
+ it("serves a validated private byte snapshot even when the storage buffer changes during authorization",async()=>{
+  const v=fixture();
+  await v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes});
+  const mutable=Buffer.from(bytes),find=v.repository.find.getMockImplementation()!;
+  v.objects.get.mockResolvedValueOnce(mutable);
+  let lookups=0;
+  v.repository.find.mockImplementation(async request=>{
+    const result=await find(request);
+    // Emulate a buffer pool reusing the provider's backing bytes while the
+    // service awaits its second authorized SQL membership check.
+    if(++lookups===2)mutable.fill(0);
+    return result;
+  });
+  const played=await v.service.read({authorizationHeader:"x",messageId});
+  expect(played).toEqual(bytes);
+  expect(played).not.toBe(mutable);
+  expect(mutable).toEqual(Buffer.alloc(bytes.length));
+ });
+ it("continues deleting other objects when a failed S3 delete cannot release its SQL claim",async()=>{
+  const v=fixture(),first="dm-voice/failure",second="dm-voice/other";
+  v.repository.stale.mockResolvedValueOnce([{objectKey:first},{objectKey:second}]);
+  v.objects.delete.mockRejectedValueOnce(new Error("S3 timed out"));
+  v.repository.deleted.mockImplementation(async(key,success)=>{
+    if(key===first&&!success)throw new Error("database unavailable while releasing lease");
+  });
+  expect(await v.service.collectGarbage(2)).toEqual({deleted:1,failed:1});
+  expect(v.objects.delete).toHaveBeenCalledTimes(2);
+  expect(v.repository.deleted).toHaveBeenCalledWith(first,false);
+  expect(v.repository.deleted).toHaveBeenCalledWith(second,true);
+  // The repository retries a stuck deleting-state claim after 15 minutes.
+  v.repository.stale.mockResolvedValueOnce([{objectKey:first}]);
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:1,failed:0});
+  expect(v.repository.deleted).toHaveBeenCalledWith(first,true);
+ });
+ it("does not overwrite uncertain SQL erasure finalization with deleted(false)",async()=>{
+  const v=fixture(),key="dm-voice/uncertain-erasure";
+  v.repository.stale.mockResolvedValueOnce([{objectKey:key}]);
+  v.repository.deleted.mockRejectedValueOnce(new Error("SQL commit acknowledgement lost"));
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:0,failed:1});
+  expect(v.objects.delete).toHaveBeenCalledWith(key);
+  expect(v.repository.deleted).toHaveBeenCalledTimes(1);
+  expect(v.repository.deleted).toHaveBeenCalledWith(key,true);
+  // An idempotent S3 retry is safe regardless of whether the SQL commit
+  // succeeded. No fabricated erasure status is returned to the worker.
+  v.repository.stale.mockResolvedValueOnce([{objectKey:key}]);
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:1,failed:0});
+  expect(v.repository.deleted).toHaveBeenCalledTimes(2);
+  expect(v.repository.deleted).not.toHaveBeenCalledWith(key,false);
+ });
  it("writes and verifies actual private files and rejects later filesystem corruption",async()=>{
   const root=await mkdtemp(join(tmpdir(),'masanawa-f17-voice-'));
   try {
