@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "active": [
+    {
+      "claim_id": "f11-ci-evidence-gpt6-20261009",
+      "owner": "chatgpt-gpt6-f11-ci-evidence",
+      "scope": "F11 read-only zero-step workflow evidence verification",
+      "paths": [
+        "tools/ci-evidence/check-run.mjs",
+        "tools/ci-evidence/check-run.test.mjs",
+        "docs/workstreams/f11-zero-step-ci-evidence-20261009.md"
+      ],
+      "branch": "work/f11-zero-step-ci-evidence-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "",
+      "claimed_at": "2026-10-09T03:41:41Z",
+      "heartbeat_at": "2026-10-09T03:41:41Z",
+      "expires_at": "2026-10-09T03:46:41Z"
+    }
+  ],
+  "history": []
+}
