@@ -83,6 +83,23 @@
       "heartbeat_at": "2026-10-09T21:57:33.448Z",
       "expires_at": "2026-10-09T22:02:33.448Z",
       "notes": "AF15 wave-one bounded path. Existing root worker composition remains AF00. Reuse existing data authorities; do not create a second ledger, migrations, object signer or production job."
+    },
+    {
+      "claim_id": "masanawa-01-af13-evidence-ledger-20261009",
+      "owner": "MASANAWA-01 / AF13",
+      "scope": "AF13 read-only audio-first acceptance evidence and release safety gate",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "tools/audio-first-qualification/journeys.json",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "",
+      "claimed_at": "2026-10-09T21:59:05Z",
+      "heartbeat_at": "2026-10-09T21:59:05Z",
+      "expires_at": "2026-10-09T22:04:05Z"
     }
   ],
   "history": [
