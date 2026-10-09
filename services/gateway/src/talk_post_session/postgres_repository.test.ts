@@ -30,7 +30,7 @@ describe("U16 Postgres privacy and compare-and-set", () => {
     expect(await repo.complete({source,leaseToken:"lease-1"}, {
       summary:"safe",highlights:[],nextTalkTitle:null,
     })).toBe(true);
-    expect(query.mock.calls[1]![0]).toContain("lease_token=$6");
+    expect(query.mock.calls[1]![0]).toContain("lease_token=$5");
     expect(query.mock.calls[1]![0]).toContain("talks.safety_enforcement");
     expect(query.mock.calls[1]![0]).toContain("m.status='ready'");
   });

@@ -111,11 +111,11 @@ export function createPostgresReplayInsightRepository(pool: InsightSqlPool): Rep
       const result = await pool.query(`
         UPDATE talks.post_session_insights i
            SET status='ready',lease_token=NULL,lease_until=NULL,
-               summary=$7,highlights=$8::jsonb,next_talk_title=$9,
+               summary=$6,highlights=$7::jsonb,next_talk_title=$8,
                updated_at=now()
-         WHERE i.tenant_id=$1 AND i.talk_id=$3
-           AND i.recording_id=$4 AND i.media_checksum=$5
-           AND i.lease_token=$6 AND i.status='processing'
+         WHERE i.tenant_id=$1 AND i.talk_id=$2
+           AND i.recording_id=$3 AND i.media_checksum=$4
+           AND i.lease_token=$5 AND i.status='processing'
            AND i.lease_until>now()
            AND EXISTS (
              SELECT 1 FROM talks.talks t
@@ -124,22 +124,22 @@ export function createPostgresReplayInsightRepository(pool: InsightSqlPool): Rep
              JOIN talks.replay_media_jobs m
                ON m.tenant_id=r.tenant_id AND m.talk_id=r.talk_id
                AND m.recording_id=r.recording_id
-             WHERE t.tenant_id=$1 AND t.talk_id=$3
+             WHERE t.tenant_id=$1 AND t.talk_id=$2
                AND t.host_user_id=i.host_user_id AND t.state='ended'
-               AND r.recording_id=$4 AND m.checksum_sha256=$5
+               AND r.recording_id=$3 AND m.checksum_sha256=$4
                AND m.status='ready' AND r.recording_state='finalized'
                AND r.publication_state<>'blocked'
                AND r.session_json->>'hostRecordingConsent'='true'
                AND NOT EXISTS (
                  SELECT 1 FROM talks.safety_enforcement se
                   WHERE se.tenant_id=$1
-                    AND ((se.target_kind='talk' AND se.target_id=$3)
-                      OR (se.target_kind='replay' AND se.target_id=$4))
+                    AND ((se.target_kind='talk' AND se.target_id=$2)
+                      OR (se.target_kind='replay' AND se.target_id=$3))
                     AND se.visibility IN ('restricted','blocked')
                )
            )
          RETURNING 1`,
-        [source.tenantId, null, source.talkId, source.recordingId,
+        [source.tenantId, source.talkId, source.recordingId,
          source.checksumSha256, leaseToken, draft.summary,
          JSON.stringify(draft.highlights), draft.nextTalkTitle]);
       return (result.rowCount ?? 0) === 1;

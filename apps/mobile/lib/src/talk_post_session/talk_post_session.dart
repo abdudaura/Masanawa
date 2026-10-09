@@ -80,6 +80,7 @@ class TalkInsightController extends ChangeNotifier {
   bool get isCurrentOwner => _ownerId.isNotEmpty && activeOwnerId() == _ownerId;
   void resetOwner(String ownerId) {
     _epoch++;
+    _busy = false; // old account's network response may still be in flight
     _ownerId = ownerId;
     draft = null;
     errorMessage = null;
@@ -128,7 +129,7 @@ class TalkInsightController extends ChangeNotifier {
         notifyListeners();
       }
     } finally {
-      _busy = false;
+      if (epoch == _epoch) _busy = false;
     }
   }
   @override

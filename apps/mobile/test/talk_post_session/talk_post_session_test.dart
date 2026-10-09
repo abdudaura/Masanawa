@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/talk_post_session/talk_post_session.dart';
+import 'package:masanawa/src/talk_post_session/talk_post_session.dart';
 
 class FakeTransport implements TalkInsightTransport {
   final delayed = Completer<TalkInsightDraft?>();
@@ -25,7 +25,7 @@ void main() {
     }), throwsFormatException);
     expect(() => TalkInsightDraft.fromJson({
       'talkId':'t','recordingId':'r','status':'ready',
-      'updatedAt':'2026-10-09T00:00:00.000Z','highlights':['x'*301],
+      'updatedAt':'2026-10-09T00:00:00.000Z','highlights':[List.filled(301, 'x').join()],
     }), throwsFormatException);
   });
   test('wrong owner cannot send generation, even with consent', () async {

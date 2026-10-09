@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createReplayInsightService, ReplayInsightError } from "./service.js";
 import type {
-  ReplayInsightRepository, ReplayInsightSource, ReplayInsightView,
+  ReplayInsightDraft, ReplayInsightRepository, ReplayInsightSource, ReplayInsightView,
 } from "./model.js";
 
 const source: ReplayInsightSource = {
@@ -26,7 +26,7 @@ function fixtures() {
       ...ready, status: "failed", summary: null, highlights: [], nextTalkTitle: null,
     }; }),
   };
-  const processor = { generate: vi.fn(async () => ({
+  const processor = { generate: vi.fn(async (): Promise<ReplayInsightDraft> => ({
     summary: "Host review", highlights: ["One highlight"], nextTalkTitle: "Next Talk",
   })) };
   const service = createReplayInsightService({
