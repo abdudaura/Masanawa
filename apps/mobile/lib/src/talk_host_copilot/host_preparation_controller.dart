@@ -18,6 +18,7 @@ class HostPreparationController extends ChangeNotifier {
   bool publicationNeedsReadback = false;
   String? error;
   HostPreparation? draft;
+  List<HostPreparation> available = const [];
 
   bool get mayGoLive => !busy && !publicationNeedsReadback &&
       draft?.phase == HostPreparationPhase.draft;
@@ -27,10 +28,41 @@ class HostPreparationController extends ChangeNotifier {
     _generation++;
     _accountKey = accountKey;
     draft = null;
+    available = const [];
     publicationNeedsReadback = false;
     error = null;
     busy = false;
     notifyListeners();
+  }
+
+  void newDraft() {
+    if (busy || _disposed) return;
+    _generation++;
+    draft = null;
+    publicationNeedsReadback = false;
+    error = null;
+    notifyListeners();
+  }
+
+  Future<void> refreshList() async {
+    if (busy || _disposed) return;
+    final turn = ++_generation;
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      final rows = await _transport.list();
+      if (!_disposed && turn == _generation) {
+        available = List<HostPreparation>.unmodifiable(rows);
+      }
+    } catch (e) {
+      if (!_disposed && turn == _generation) error = hostPreparationError(e);
+    } finally {
+      if (!_disposed && turn == _generation) {
+        busy = false;
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> create({
