@@ -26,6 +26,8 @@ export interface ArtifactObjectStore {
   delete(key: string): Promise<void>;
 }
 export class ArtifactError extends Error {
-  constructor(public readonly code: string, public readonly statusCode: number) { super(code); }
+  readonly code: string;
+  readonly statusCode: number;
+  constructor(code: string, statusCode: number) { super(code); this.code=code; this.statusCode=statusCode; }
 }
 export const MAX_BYTES = 256 * 1024;

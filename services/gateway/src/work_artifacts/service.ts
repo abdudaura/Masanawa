@@ -104,6 +104,7 @@ export function createArtifactService(input: {
       return {items: rows.slice(0,30).map(row => view(row, owner)), next: rows.length > 30 ? rows[29]!.id : null};
     },
     async get(actor: Owner, id: string) {
+      identity(actor);
       const row = await repo.find(actor.tenantId, id);
       return view(row?.userId === actor.userId ? await owned(actor,id) : await readable(actor,id), actor);
     },
