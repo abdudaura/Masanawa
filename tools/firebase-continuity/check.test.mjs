@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -62,4 +63,28 @@ test('no actual config bytes leak into structured diagnostics', () => {
   const f = fixture();
   try { assert(!JSON.stringify(checkFirebaseContinuity(f.root)).includes('synthetic-public-key')); }
   finally { f.clean(); }
+});
+
+test('CLI exits zero and emits only structural success for a valid tree', () => {
+  const f = fixture();
+  try {
+    const result = spawnSync(process.execPath, [new URL('./check.mjs', import.meta.url).pathname, '--root=' + f.root, '--json'], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(result.stdout), { ok: true, codes: [], checked: 7 });
+    assert(!result.stdout.includes('synthetic-public-key'));
+  } finally { f.clean(); }
+});
+test('CLI exits nonzero with redacted failure codes for invalid configuration', () => {
+  const f = fixture({ 'apps/mobile/android/app/google-services.json': '{' });
+  try {
+    const result = spawnSync(process.execPath, [new URL('./check.mjs', import.meta.url).pathname, '--root=' + f.root, '--json'], { encoding: 'utf8' });
+    assert.equal(result.status, 1);
+    assert.equal(JSON.parse(result.stdout).ok, false);
+    assert(!result.stdout.includes('synthetic-public-key'));
+  } finally { f.clean(); }
+});
+test('CLI rejects unknown flags without inspecting a repository', () => {
+  const result = spawnSync(process.execPath, [new URL('./check.mjs', import.meta.url).pathname, '--unsafe'], { encoding: 'utf8' });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /Usage:/);
 });
