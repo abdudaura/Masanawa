@@ -38,8 +38,8 @@ Inspected fresh `main`, the two required re-audits, `CONTINUE-HERE.md`, U09 in t
 
 **Test commands to run in complete workspace** (not run here: connected GitHub code API has no executable checkout and local container has no Dart/Flutter SDK, root project checkout or installed workspace node_modules):
 ```sh
-pnpm --filter @masanawa/gateway exec vitest run src/operator_voice/private_voice_service.test.ts
-pnpm --filter @masanawa/gateway exec tsc --noEmit
+pnpm --filter @masanawa/gateway-service exec vitest run src/operator_voice/private_voice_service.test.ts
+pnpm --filter @masanawa/gateway-service exec tsc --noEmit
 cd apps/mobile && flutter test test/operator_voice/
 cd apps/mobile && flutter analyze lib/src/operator_voice test/operator_voice
 ```
