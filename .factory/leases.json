@@ -1,6 +1,24 @@
 {
   "schema_version": 1,
-  "active": [],
+  "active": [
+    {
+      "claim_id": "gpt6-f04-r04-error-redaction-20261009",
+      "owner": "GPT-6 F04/R04 existing PR continuation",
+      "scope": "Fail-closed AI Seat repository error code classification and safe HTTP response",
+      "paths": [
+        "services/gateway/src/talk_ai_seats/service.ts",
+        "services/gateway/src/talk_ai_seats/error_mapping.test.ts",
+        "docs/workstreams/f04-r04-error-redaction-20261009.md"
+      ],
+      "branch": "work/r04-create-participant-intents-20261008",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/433",
+      "claimed_at": "2026-10-09T04:12:18.431Z",
+      "heartbeat_at": "2026-10-09T04:12:18.436Z",
+      "expires_at": "2026-10-09T04:17:18.436Z",
+      "notes": "No active registry claims; continuing canonical draft PR #433; no shared composer/router/finance/native edits."
+    }
+  ],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
