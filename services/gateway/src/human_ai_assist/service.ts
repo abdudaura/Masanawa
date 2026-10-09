@@ -23,6 +23,10 @@ export interface SelectedMessageSource {
 export interface HumanAiIdentity {
   authorize(header: string | undefined): Promise<Principal>;
 }
+export interface HumanAiBudget {
+  /** Durable per-tenant/user inference admission. Fail closed on database error. */
+  reserve(input: Principal): Promise<boolean>;
+}
 export interface HumanAiGenerator {
   /** Private no-history/no-memory inference; user messages are untrusted data. */
   generate(input: { purpose: AssistPurpose; language: string; instruction: string;
@@ -61,7 +65,7 @@ function redact(input: string): string {
     .replace(/\b\d{10,19}\b/gu, "[private number]");
 }
 function selectedText(messages: readonly SelectedMessage[], mode: "mask" | "original"): string {
-  return messages.map(x => `[Untrusted human message ${x.messageId}]\n${mode === "mask" ? redact(x.body) : x.body}`).join("\n\n");
+  return messages.map((x, index) => `[Untrusted selected message ${index + 1}]\n${mode === "mask" ? redact(x.body) : x.body}`).join("\n\n");
 }
 function validateSelection(input: { conversationId: string; messageIds: readonly string[] }): {
   conversationId: string; messageIds: string[];
@@ -126,6 +130,7 @@ function decodeToken(token: string, secret: Buffer, now: number): SignedReview {
 
 export function createHumanAiAssistService(deps: {
   identity: HumanAiIdentity; source: SelectedMessageSource; generator: HumanAiGenerator;
+  budget: HumanAiBudget;
   sender: HumanAiSender; reviewSecret: Buffer; now?: () => number;
 }) {
   if (deps.reviewSecret.length < 32) throw new Error("Human AI assist requires a >=256-bit private signing key");
@@ -144,6 +149,8 @@ export function createHumanAiAssistService(deps: {
       const rows = verifySelection(await deps.source.read({...person, ...select}),
         select.messageIds, select.conversationId);
       const text = selectedText(rows, input.redact);
+      if (!await deps.budget.reserve(person))
+        throw new HumanAiAssistError("assist.quota_exceeded", 429);
       const instruction = input.purpose === "reply"
         ? "Suggest a respectful plain-text reply for the account owner to review. Never send a message."
         : input.purpose === "translate"
