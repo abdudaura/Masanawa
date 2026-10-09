@@ -60,9 +60,7 @@ function view(record: HostPrepRecord): HostPrepView {
 function sameTalk(record: TalkRecord, prep: HostPrepRecord, talkId: string): boolean {
   return record.talkId === talkId &&
     record.tenantId === prep.tenantId &&
-    record.hostUserId === prep.hostUserId &&
-    record.title === prep.title &&
-    record.topic === prep.topic;
+    record.hostUserId === prep.hostUserId;
 }
 
 export interface HostPrepService {
