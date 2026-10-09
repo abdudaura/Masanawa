@@ -67,22 +67,6 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
-    },
-    {
-      "claim_id": "masanawa-01-af13-evidence-gate-20261009",
-      "owner": "MASANAWA-01 / AF13",
-      "scope": "Implement executable fail-closed audio-first acceptance evidence validation; no false-green live/provider/device/source promotion and no production/CI changes",
-      "paths": [
-        "tools/audio-first-qualification/evidence-gate.mjs",
-        "tools/audio-first-qualification/evidence-gate.test.mjs",
-        "docs/workstreams/AF13-evidence-gate-20261009.md"
-      ],
-      "branch": "work/af13-evidence-gate-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-09T21:36:29.049Z",
-      "heartbeat_at": "2026-10-09T21:40:34.624Z",
-      "expires_at": "2026-10-09T21:45:34.624Z",
-      "notes": "Working tool/tests pushed and read back; 14/14 real local Node tests against exact Git blob bytes; preparing SHA-specific handoff."
     }
   ],
   "history": [
@@ -563,6 +547,24 @@
       "notes": "AF00 composition awaits separate integrator; preserve Work #497, U09 #534 and R02 #456 without modifying their paths. No local owner APK available.",
       "released_at": "2026-10-09T21:40:47.945Z",
       "release_reason": "AF05 PR #589 source + tests + immutable SHA-specific handoff at 889dc098fc2543b9659c3f25292edd373feb71c4; Dart runtime/Android tests NOT_RUN, Vercel build-rate-limit check failed, no main merge or release."
+    },
+    {
+      "claim_id": "masanawa-01-af13-evidence-gate-20261009",
+      "owner": "MASANAWA-01 / AF13",
+      "scope": "Implement executable fail-closed audio-first acceptance evidence validation; no false-green live/provider/device/source promotion and no production/CI changes",
+      "paths": [
+        "tools/audio-first-qualification/evidence-gate.mjs",
+        "tools/audio-first-qualification/evidence-gate.test.mjs",
+        "docs/workstreams/AF13-evidence-gate-20261009.md"
+      ],
+      "branch": "work/af13-evidence-gate-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:36:29.049Z",
+      "heartbeat_at": "2026-10-09T21:40:34.624Z",
+      "expires_at": "2026-10-09T21:45:34.624Z",
+      "notes": "Working tool/tests pushed and read back; 14/14 real local Node tests against exact Git blob bytes; preparing SHA-specific handoff.",
+      "released_at": "2026-10-09T21:42:41.536Z",
+      "release_reason": "AF13 structural evidence gate 14/14 actual Node tests, exact integrated source/test blob readback; merged PR #592 to nonproduction integration/af13-qualification-20261009 at fc179dd1e857dfdcc87c9f42c65f8e98a9590f96; final handoff at 3263fc25a9ab64ff15f76c436274cdcffe518581. No real device/provider/DB/release qualification."
     }
   ]
 }
