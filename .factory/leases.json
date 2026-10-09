@@ -4,7 +4,7 @@
     {
       "claim_id": "recovery-02-u02-journal-20261009",
       "owner": "RECOVERY-02",
-      "scope": "U02 continuation #520 approval expiry and concurrent persisted reconciliation; execute real isolated tests and PostgreSQL adapter checks",
+      "scope": "U02 continuation #520 approval expiry and concurrent persisted reconciliation; execute real isolated tests and PostgreSQL adapter checks; implement original U02 missing durable status-only recovery scanner using journal revisions as leases, no new schema",
       "paths": [
         "packages/operator-tasks/src/index.ts",
         "packages/operator-tasks/src/index.test.ts",
@@ -12,15 +12,17 @@
         "packages/operator-tasks/src/postgres.execution.test.mjs",
         "services/gateway/src/operator_tasks/routes.ts",
         "services/gateway/src/operator_tasks/routes.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md"
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/recovery.test.ts"
       ],
       "branch": "work/recovery-02-u02-task-journal-20261009",
       "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
       "source_pr": 520,
       "source_head": "36e412b59f080048a034aa0cffd697276e19f9ba",
       "claimed_at": "2026-10-09T10:21:59.304Z",
-      "heartbeat_at": "2026-10-09T10:26:22.021Z",
-      "expires_at": "2026-10-09T10:31:22.021Z",
+      "heartbeat_at": "2026-10-09T10:28:33.409Z",
+      "expires_at": "2026-10-09T10:33:33.409Z",
       "notes": "No active CAS claims; #520 last updated 2026-10-08T23:59:41Z. Preserve authentic branch lineage; no shared Gateway composer, root router, native, finance, migration or dependency changes."
     },
     {
