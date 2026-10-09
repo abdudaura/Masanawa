@@ -177,4 +177,45 @@ void main() {
     expect(source.searches, 0);
     expect(opened, isEmpty);
   });
+
+  testWidgets('a double tap starts one server resolve, never two routes',
+      (tester) async {
+    final resolving = Completer<TwinDirectoryEntry?>();
+    final source = _PublicDirectory()
+      ..resolveHandler = (_) => resolving.future;
+    final opened = <TwinDirectoryEntry>[];
+    await tester.pumpWidget(_screen(source, opened));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Gwani'));
+    await tester.pump();
+    expect(source.resolutions, 1);
+    // The visible row is disabled while server authorization is unresolved.
+    final row = tester.widget<ListTile>(
+        find.byKey(const ValueKey('masana-gwani')));
+    expect(row.enabled, false);
+    resolving.complete(_masana('gwani', 'Gwani'));
+    await tester.pumpAndSettle();
+    expect(source.resolutions, 1);
+    expect(opened.length, 1);
+  });
+
+  testWidgets('switching to human Contacts invalidates in-flight AI open',
+      (tester) async {
+    final resolving = Completer<TwinDirectoryEntry?>();
+    final source = _PublicDirectory()
+      ..resolveHandler = (_) => resolving.future;
+    final opened = <TwinDirectoryEntry>[];
+    await tester.pumpWidget(_screen(source, opened));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gwani'));
+    await tester.pump();
+    await tester.tap(find.text('Contacts'));
+    await tester.pump();
+    resolving.complete(_masana('gwani', 'Gwani'));
+    await tester.pumpAndSettle();
+    expect(opened, isEmpty);
+    expect(find.text('Accepted human contacts only'), findsOneWidget);
+  });
+
 }
