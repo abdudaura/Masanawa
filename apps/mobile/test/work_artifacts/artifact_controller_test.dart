@@ -15,10 +15,10 @@ class Transport implements ArtifactTransport {
   int loads=0,downloads=0;
   bool fail=false;
   @override Future<WorkArtifact> load(String a,String id,CancelToken c) async {
-    loads++;if(fail)throw StateError('offline');return pending?.future ?? sample;
+    loads++;if(fail)throw StateError('offline');if(pending!=null)return await pending!.future;return sample;
   }
   @override Future<Uint8List> download(String a,WorkArtifact f,CancelToken c,void Function(int,int) progress) async {
-    downloads++;return pendingBytes?.future ?? Uint8List.fromList(utf8.encode('hello'));
+    downloads++;if(pendingBytes!=null)return await pendingBytes!.future;return Uint8List.fromList(utf8.encode('hello'));
   }
   @override Future<WorkArtifact> recover(String a,String id,CancelToken c)=>load(a,id,c);
   @override Future<WorkArtifact> revoke(String a,WorkArtifact f,CancelToken c)=>load(a,f.id,c);
