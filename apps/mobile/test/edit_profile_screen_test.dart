@@ -343,7 +343,12 @@ void main() {
     );
     await tester.tap(find.byKey(const ValueKey('profile-reload')));
     await tester.pumpAndSettle();
-    expect(find.text('Already committed'), findsWidgets);
+    expect(
+      tester.widget<TextFormField>(
+        find.byKey(const ValueKey('profile-edit-name')),
+      ).controller!.text,
+      'Already committed',
+    );
     expect(transport.updates, 1);
     expect(find.textContaining('Could not confirm whether'), findsNothing);
   });
