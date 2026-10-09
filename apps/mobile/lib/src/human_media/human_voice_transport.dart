@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
@@ -62,19 +63,59 @@ class GatewayHumanVoiceTransport implements HumanVoiceTransport {
   Future<Uint8List> read(String messageId) async {
     auth();uuid(messageId);
     final token=api.accessToken;
-    final response=await api.dio.get<List<int>>(
+    // Dio's ResponseType.bytes buffers the whole server response before this
+    // client can enforce its 1.5 MiB limit. A faulty upstream proxy (or a
+    // compromised endpoint) can otherwise exhaust a budget Android device.
+    final response=await api.dio.get<ResponseBody>(
       '/messages/voice/$messageId',
-      options:Options(responseType:ResponseType.bytes),
+      options:Options(responseType:ResponseType.stream),
     );
-    if(token!=api.accessToken)throw const ApiException('Account session changed');
-    final bytes=response.data;
-    if(bytes==null||bytes.length<84||bytes.length>1536*1024)
-      throw const FormatException('Invalid private voice download');
-    return Uint8List.fromList(bytes);
+    final stream=response.data;
+    if(stream==null)throw const FormatException('Empty private voice response');
+    final iterator=StreamIterator<Uint8List>(stream.stream);
+    try {
+      final type=response.headers.value(Headers.contentTypeHeader)
+          ?.split(';').first.trim().toLowerCase();
+      if(type!='audio/ogg')
+        throw const FormatException('Invalid private voice content type');
+      final rawLength=response.headers.value(Headers.contentLengthHeader);
+      final claimedLength=rawLength==null?null:int.tryParse(rawLength);
+      if(rawLength!=null&&(claimedLength==null||
+          claimedLength<84||claimedLength>1536*1024))
+        throw const FormatException('Invalid private voice content length');
+
+      final builder=BytesBuilder(copy:true);
+      var received=0;
+      while(await iterator.moveNext()) {
+        // A sign-out/account switch during a slow download must cancel the
+        // unread stream rather than caching private audio for the next user.
+        if(token!=api.accessToken)
+          throw const ApiException('Account session changed');
+        final chunk=iterator.current;
+        if(chunk.length>1536*1024-received)
+          throw const FormatException('Private voice response exceeds size limit');
+        received+=chunk.length;
+        builder.add(chunk);
+      }
+      if(token!=api.accessToken)
+        throw const ApiException('Account session changed');
+      if(received<84||(claimedLength!=null&&received!=claimedLength))
+        throw const FormatException('Truncated private voice response');
+      return builder.takeBytes();
+    } finally {
+      // Also cancel on invalid headers, oversized chunks, network exceptions,
+      // and sign-out, so the remaining body never drains into memory.
+      await iterator.cancel();
+    }
   }
   @override
   Future<void> remove(String messageId) async {
     auth();uuid(messageId);
+    final token=api.accessToken;
     await api.dio.delete<dynamic>('/messages/voice/$messageId');
+    // Deletion may already be committed by the server; if account A signs out
+    // while it is pending, never let account B's UI treat A's receipt as its own.
+    if(token!=api.accessToken)
+      throw const ApiException('Account session changed; check voice history');
   }
 }
