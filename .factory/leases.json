@@ -18,6 +18,29 @@
       "claimed_at": "2026-10-09T09:03:36.239Z",
       "heartbeat_at": "2026-10-09T09:11:15.593Z",
       "expires_at": "2026-10-09T09:16:15.593Z"
+    },
+    {
+      "claim_id": "gpt6-c09-integrator-work-20261009",
+      "owner": "GPT-6 C09 Gateway+Chats integrator",
+      "scope": "Work #497 stacked integration of all C09 existing PR #575 full calling backend and UI",
+      "paths": [
+        "services/gateway/src/human_calls/**",
+        "apps/mobile/lib/src/human_calls/**",
+        "apps/mobile/test/human_calls/**",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/lib/src/messages/human_dm_screen.dart",
+        "packages/talks/migrations/0021_human_private_calls.sql",
+        "docs/workstreams/c09-work-integration-20261009.md"
+      ],
+      "branch": "work/c09-calling-work-integration-20261009",
+      "base_sha": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
+      "pr": "pending stacked draft PR",
+      "claimed_at": "2026-10-09T09:13:07.942Z",
+      "heartbeat_at": "2026-10-09T09:13:07.942Z",
+      "expires_at": "2026-10-09T09:18:07.942Z",
+      "notes": "Base latest #497 Work, preserve existing C09 PR #575. C09 approved user; isolated claimed shared app/main/flutter only; no prod deploy/merge while unverified."
     }
   ],
   "history": [
