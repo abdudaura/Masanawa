@@ -132,7 +132,7 @@ export function createLiveStageCopilot(input: Readonly<{
             kind: "question" as const, prompt: q, trust: "public-untrusted-data" as const,
           }));
         } else if (event.kind === "poll" && event.summary.startsWith("Public poll ")) {
-          const q = cleanPublic(event.summary.split(" | Votes: ")[0].replace(/^Public poll (opened|closed): /u, ""), 130);
+          const q = cleanPublic((event.summary.split(" | Votes: ")[0] ?? "").replace(/^Public poll (opened|closed): /u, ""), 130);
           if (q) items.push(Object.freeze({
             kind: "poll" as const, prompt: "Invite discussion about: " + q,
             trust: "public-untrusted-data" as const,
