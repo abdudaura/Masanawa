@@ -55,8 +55,20 @@ export function registerU04ReadRoutes(
         authorized: authorized.authorized,
       });
     } catch (error) {
-      const safe = error instanceof U04ReadError ? error :
-        new U04ReadError("OPERATOR_UNAUTHORIZED", 401);
+      // Only typed public errors escape; never serialize provider/DB details.
+      const record = error !== null && typeof error === "object" ? error as {
+        name?: unknown; code?: unknown; statusCode?: unknown;
+      } : {};
+      let safe: U04ReadError;
+      if (error instanceof U04ReadError) safe = error;
+      else if (record.name === "OperatorContractError") {
+        if (record.code === "not_authorized") safe = new U04ReadError("OPERATOR_FORBIDDEN", 403);
+        else if (record.code === "not_qualified") safe = new U04ReadError("OPERATOR_NOT_QUALIFIED", 503);
+        else safe = new U04ReadError("OPERATOR_INVALID_PROPOSAL", 400);
+      } else if (record.statusCode === 401) safe = new U04ReadError("OPERATOR_UNAUTHORIZED", 401);
+      else if (record.statusCode === 403) safe = new U04ReadError("OPERATOR_FORBIDDEN", 403);
+      else if (record.statusCode === 429) safe = new U04ReadError("OPERATOR_RATE_LIMITED", 429);
+      else safe = new U04ReadError("OPERATOR_SOURCE_UNAVAILABLE", 503);
       reply.code(safe.statusCode);
       return Object.freeze({ error: safe.code });
     }
