@@ -19,3 +19,5 @@ The proposed migration has the same duplicated/truncated checksum defect. Claim 
 - services/gateway/src/talk_post_session/postgres_execution.test.ts
 
 This remains an unregistered proposal; no applied migration or database is changed. Execute embedded PostgreSQL SQL against synthetic schema and consent/safety fixtures, separate from production PG18 acceptance.
+
+Additional compiler claim: services/gateway/src/talk_post_session/service.ts. Strict TypeScript reproduced lost contextual typing in frozen service/repository literals; preserve behavior and restore explicit canonical interface context, without compiler relaxation.
