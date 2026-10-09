@@ -12,6 +12,8 @@ Window ID: AF00-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF00 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: Preserve and reconcile local fixes/APK with main and every relevant draft. Publish unique-change/old-lane disposition, canonical imports/migrations, route aliases, dependency integration and final APK/rollback evidence. Update stale shell guards for current decisions; do not drop their security assertions.
@@ -52,6 +54,8 @@ Window ID: AF01-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF01 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: Elect existing ledger authority, reconcile #576 and internal crypto transfers, define exact MSN/backing/liquidity rules, implement fiat purchase of MSN, supported crypto deposit/hold/convert/withdraw, transfer/escrow primitives and one receipt/status authority. No spendable fiat/direct fiat cashout or silent Cr migration.
@@ -89,6 +93,8 @@ Window ID: AF02-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF02 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: MSN-only offers/order/escrow orchestration and themed Buy/Sell/My orders UI, role-checked dispute console, verified receipt or seller confirmation, frozen paid/disputed orders, reminders and reconciliation. Use AF01 transaction/escrow primitives, never a second ledger.
@@ -119,6 +125,8 @@ Window ID: AF03-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF03 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: MSN-first home, crypto holdings, Add/Send/Convert/P2P handoff, funding/withdraw/conversion reviews, durable status and tappable receipts. Preserve #576 panel and real crypto code, remove consumer Cr/spendable fiat with compatible server contracts.
@@ -140,7 +148,7 @@ Map evidence to current UX/WF acceptance IDs. Distinguish actual real provider/d
 Publish committed source/tests and immutable SHA-specific handoff with base/head, PR, owned paths, contract versions, commands/results, source gaps, migrations, dependencies and next merge action. Promptly merge dependency-ready source-tested compatible work through AF00 into a safe target; draft/handoff is interim for unfinished work. Never implicitly deploy, bypass failures or spend on providers. If checks cannot run, preserve work and state the exact blocker; do not stop implementable code or repeatedly retry unavailable dependencies.
 ```
 
-## AF04 — Assistant service menus
+## AF04 — Gwani service menus
 
 ```text
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF04
@@ -149,6 +157,8 @@ Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
 Window ID: AF04-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF04 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
+
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
 
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
@@ -184,6 +194,8 @@ Window ID: AF05-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF05 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: Diagnose recorder vs transport/provider/output stages, capture/preview/upload/readback independent of Gemini Live, shared audio focus, lifecycle release, Bluetooth/headphones, explicit permission flow and useful errors. Give AF00 manifest/session/screen hooks; native permission edits require a visible transfer.
@@ -216,6 +228,8 @@ Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
 Window ID: AF06-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF06 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
+
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
 
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
@@ -254,6 +268,8 @@ Window ID: AF07-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF07 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: New chat opens Masana & Contacts with typed AI/person entries, roles/search/recents/favorites and real accepted people/request lifecycle. Reuse C01/U21; voluntary local phonebook without silent upload or treating an unverified number as identity.
@@ -287,6 +303,8 @@ Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
 Window ID: AF08-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF08 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
+
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
 
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
@@ -331,6 +349,8 @@ Window ID: AF09-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF09 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: Audio-post feed, recording/trim/preview/upload/processing/publish, following/discover, engaging waveform cards, likes/comments/play counts/save/share/report. Reuse media/social/replay assets safely; old live IDs remain typed legacy resources, never coerced into new posts.
@@ -364,6 +384,8 @@ Window ID: AF10-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF10 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
 Lane goal: Persistent groups, membership, roles, invite/join/leave, audio history, moderation and notifications through adapters. Optional live room integration only after qualified session authority; reuse existing live infrastructure without restarting public Talk feed.
@@ -395,9 +417,11 @@ Window ID: AF11-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF11 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
 
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
-Lane goal: Reconcile existing C09 calling, recent/missed calls, typed directory selection, ringing/connect/mute/output/end/reconnect; proposed Chats Calls filter. AF00 integrates push/deep links/composition; do not duplicate those files from old call branches.
+Lane goal: Reconcile existing C09 calling, recent/missed calls, typed directory selection, ringing/connect/mute/output/end/reconnect; Chats Calls filter. AF00 integrates push/deep links/composition; do not duplicate those files from old call branches.
 Dependencies: AF05, AF07.
 Inspect existing PR inputs: #575, #578.
 Initial allowed paths:
@@ -423,6 +447,8 @@ Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
 Window ID: AF12-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF12 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
+
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
 
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 
@@ -456,6 +482,8 @@ Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
 Window ID: AF13-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF13 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
+
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
 
 Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
 

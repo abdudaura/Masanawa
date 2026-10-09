@@ -9,3 +9,5 @@ Existing architecture/security/domain references remain useful: ARCHITECTURE.md,
 Existing DEFAULT-AI-PERSONAS.md retains persona profiles; its live-stage product assumptions are superseded by the current Talks publishing/Rooms separation. FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md remains applicable.
 
 Historical launch, readiness and recovery originals are [archived](archive/20261009/README.md). Old task IDs remain traceable in [recovery](AUDIO-FIRST-RECOVERY-20261009.md); none is auto-completed by moving a document.
+
+Latest confirmed shell: **Chats · Rooms · Talks · Gwani · Wallet**; Talks centre/default. Read the [completeness audit](AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md) for unresolved boundaries and activation gates.

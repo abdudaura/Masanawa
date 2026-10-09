@@ -122,9 +122,9 @@ Transfer cards display server status and reference the canonical receipt. Chat d
 
 Never expose balances or private receipts in public Talks or Rooms.
 
-## 7. Assistant purchases
+## 7. Gwani purchases
 
-The Assistant’s centred vertical billing menu and free-form composer share one server-backed purchase draft.
+The Gwani screen’s centrally arranged vertical billing menu and free-form composer share one server-backed purchase draft.
 
 Select service → progressively select options → supply missing values through menu, text or voice → review → explicit authorization → execute → receipt.
 
@@ -176,7 +176,7 @@ Required tests:
 - Screenshot upload cannot independently release escrow.
 - Dispute and settlement retries cannot double-release or double-refund.
 - Chat and Wallet produce identical canonical transfers and receipts.
-- Assistant menu/text/voice journeys share the same draft and consent.
+- Gwani menu/text/voice journeys share the same draft and consent.
 - Account takeover, guessed PIN and unverified-number recipient cases.
 - Real provider sandbox qualification, then controlled production qualification.
 - Device journeys, reconnects, interrupted app lifecycle and accessible controls.

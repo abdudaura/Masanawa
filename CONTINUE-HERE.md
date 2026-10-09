@@ -9,13 +9,14 @@ Updated 2026-10-09. This is the active entry point. Older freezes, repeated laun
 3. [Screen specifications](docs/AUDIO-FIRST-SCREEN-SPECS.md), [wallet/P2P contract](docs/MSN-WALLET-P2P-CONTRACT.md), [cross-slice contracts](docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md).
 4. [Recovery and supersession map](docs/AUDIO-FIRST-RECOVERY-20261009.md).
 5. [Window allocation](docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md), then use exactly one [copyable lane prompt](docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md).
-6. [Acceptance journeys](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md) and relevant existing domain references.
+6. [Completeness audit and unresolved gates](docs/AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md).
+7. [Acceptance journeys](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md) and relevant existing domain references.
 
 ## Current direction
 
-Talks are published audio posts, not endless live sessions. New chat opens **Masana & Contacts**; real people remain distinct from AI personas. Assistant is centred, with progressive floating billing choices and the existing text/voice composer addressing one durable task. MSN is the platform currency; confirmed fiat funding buys MSN automatically. Crypto can be held or converted with MSN where qualified. P2P exchanges MSN only against counterparty fiat, with escrow; there is no direct platform fiat withdrawal. Rooms are audio-focused groups. Masana can publish scheduled, disclosed AI audio and be followed.
+Talks are published audio posts, not endless live sessions. New chat opens **Masana & Contacts**; real people remain distinct from AI personas. Gwani is the private service destination, with progressive floating billing choices and the existing text/voice composer addressing one durable task. MSN is the platform currency; confirmed fiat funding buys MSN automatically. Crypto can be held or converted with MSN where qualified. P2P exchanges MSN only against counterparty fiat, with escrow; there is no direct platform fiat withdrawal. Rooms are audio-focused groups. Masana can publish scheduled, disclosed AI audio and be followed.
 
-Proposed five-tab integration default: **Talks · Chats · Assistant · Wallet · Rooms**, Calls nested under Chats. Assistant centring is owner-confirmed; Calls placement and the three-minute post cap are reversible recommendations, not a newly confirmed owner decision. Isolate tab placement until settled; no competing root shell.
+Confirmed bottom navigation: **Chats · Rooms · Talks · Gwani · Wallet**. **Talks is the centre and default tab** on ordinary authenticated app launch. The former Assistant consumer label is **Gwani**. Calls stay nested in Chats; there is no Calls/Contacts/Agents bottom tab. The three-minute audio-post cap remains a reversible design default.
 
 ## Recover before implementing
 

@@ -1,6 +1,6 @@
 # Masanawa
 
-Masanawa is an audio-first social and assistant app: published Talks, private Chats, a centred service Assistant, MSN/crypto Wallet and audio-focused Rooms. New chat opens Masana & Contacts. Calls placement is currently a reversible navigation proposal; see the current decision record.
+Masanawa is an audio-first social and assistant app: published Talks, private Chats, a service Gwani, MSN/crypto Wallet and audio-focused Rooms. New chat opens Masana & Contacts. Bottom navigation is **Chats · Rooms · Talks · Gwani · Wallet**, with Talks centred and the ordinary launch default. Calls are inside Chats.
 
 Start at [CONTINUE-HERE.md](CONTINUE-HERE.md) and [AGENTS.md](AGENTS.md).
 
@@ -9,6 +9,7 @@ Start at [CONTINUE-HERE.md](CONTINUE-HERE.md) and [AGENTS.md](AGENTS.md).
 - [MSN wallet and escrow](docs/MSN-WALLET-P2P-CONTRACT.md)
 - [Window plan](docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md)
 - [Copyable window prompts](docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md)
+- [Completeness audit](docs/AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md)
 - [Recovery and old-work reconciliation](docs/AUDIO-FIRST-RECOVERY-20261009.md)
 - [Documentation index](docs/README.md)
 
