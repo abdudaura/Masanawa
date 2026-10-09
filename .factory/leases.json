@@ -46,25 +46,6 @@
       "heartbeat_at": "2026-10-09T10:26:54.338Z",
       "expires_at": "2026-10-09T10:31:54.338Z",
       "notes": "Original source preserved. No composer/router/financial/migration/native/dependency/CI edits. Reproduce extra-field stripping before auth/dispatch, then run real focused suites and strict TS. 23 focused real Fastify/Vitest tests PASS with mock authority/worker/store; strict TypeScript PASS; publishing exact source repair 940b0623f051c87506e973b8e31945b28012a580 Strict TS demonstrated lost frozen-interface context and incomplete session fixture; extending exact paths before repairs; finance baseline untouched."
-    },
-    {
-      "claim_id": "recovery-03-u01-approval-20261009",
-      "owner": "RECOVERY-03",
-      "scope": "U01 #519 immutable approval bindings and exact terms; actual Node/typecheck",
-      "paths": [
-        "packages/operator-contract/src/index.js",
-        "packages/operator-contract/test/index.test.mjs",
-        "docs/workstreams/recovery-03-u01-approval-20261009.md"
-      ],
-      "branch": "work/u01-operator-contract-20261009-gpt6",
-      "base_sha": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
-      "source_pr": 519,
-      "source_head": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
-      "claimed_at": "2026-10-09T10:24:44.093Z",
-      "heartbeat_at": "2026-10-09T10:27:10.753Z",
-      "expires_at": "2026-10-09T10:32:10.753Z",
-      "notes": "Reproduced 4 failing regression groups on source #519; repaired approval data snapshots/ambiguous JSON. Actual Node24 18/18 PASS, TS5.9 strict package declarations PASS. Exact GitHub source/test readbacks match executed bytes. Preparing handoff; shared integration still gated.",
-      "source_commit": "b16a628979c9cd24b7bd5e4afb7619d4f817abb8"
     }
   ],
   "history": [
@@ -403,6 +384,27 @@
       "notes": "Original #525 source preserved; #497 bb73b528 current inspected. No composer/router/migration/financial/native/manifest/CI changes. Next reproduce Vitest and strict TS, fix first action + DTO, publish immutable handoff. Tested source a0ba3c22c1f86336d0d2e46703c230ae1d372c65, 14 focused Vitest pass and strict typing pass.",
       "released_at": "2026-10-09T10:20:54.814Z",
       "release_reason": "Four owned source/test files repaired, 14 focused Vitest/Fastify and strict TS PASS; byte-for-byte committed source readback verified; draft #579 final immutable SHA aee7d368a660d74c10184cb7bb00febb0652551e; U06 integration/model/DB/Flutter/device remain pending. Transfer to sole #497 integrator."
+    },
+    {
+      "claim_id": "recovery-03-u01-approval-20261009",
+      "owner": "RECOVERY-03",
+      "scope": "U01 #519 immutable approval bindings and exact terms; actual Node/typecheck",
+      "paths": [
+        "packages/operator-contract/src/index.js",
+        "packages/operator-contract/test/index.test.mjs",
+        "docs/workstreams/recovery-03-u01-approval-20261009.md"
+      ],
+      "branch": "work/u01-operator-contract-20261009-gpt6",
+      "base_sha": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
+      "source_pr": 519,
+      "source_head": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
+      "claimed_at": "2026-10-09T10:24:44.093Z",
+      "heartbeat_at": "2026-10-09T10:27:10.753Z",
+      "expires_at": "2026-10-09T10:32:10.753Z",
+      "notes": "Reproduced 4 failing regression groups on source #519; repaired approval data snapshots/ambiguous JSON. Actual Node24 18/18 PASS, TS5.9 strict package declarations PASS. Exact GitHub source/test readbacks match executed bytes. Preparing handoff; shared integration still gated.",
+      "source_commit": "b16a628979c9cd24b7bd5e4afb7619d4f817abb8",
+      "released_at": "2026-10-09T10:28:44.614Z",
+      "release_reason": "Source b16a628979c9cd24b7bd5e4afb7619d4f817abb8, final c4311cc9c885479010b5d9b849f3436c17d4b2ac, original draft #519 preserved; actual Node24 18/18 and strict TS5.9 declaration PASS. Immutable handoff posted to #519 and sole #497 integrator. U01 overall partial; no merges/deploy."
     }
   ]
 }
