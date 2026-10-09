@@ -57,6 +57,7 @@ export function createGeminiReplayInsightProcessor(input: Readonly<{
   media: ReplayMediaRepository;
   objects: ReplayObjectStore;
   credentials: GeminiCredentialPool;
+  authorizeSource: (source: ReplayInsightSource) => Promise<boolean>;
   objectOrigin: string;
   fetchImpl?: typeof fetch;
 }>): ReplayInsightProcessor {
@@ -74,6 +75,7 @@ export function createGeminiReplayInsightProcessor(input: Readonly<{
   return Object.freeze({
     async generate(source: ReplayInsightSource, signal: AbortSignal): Promise<ReplayInsightDraft> {
       if (signal.aborted) throw new Error("talks.insights.timeout");
+      if (!await input.authorizeSource(source)) throw new Error("talks.insights.replay_unavailable");
       const current = await input.media.current({
         tenantId: source.tenantId, talkId: source.talkId,
         recordingId: source.recordingId,
@@ -102,6 +104,11 @@ export function createGeminiReplayInsightProcessor(input: Readonly<{
           createHash("sha256").update(audio).digest("hex").toLowerCase() !==
           source.checksumSha256.toLowerCase()) {
         throw new Error("talks.insights.media_integrity_failed");
+      }
+      // Clearance/Host permission can change during signing or media download.
+      // Recheck before any private audio crosses the provider boundary.
+      if (signal.aborted || !await input.authorizeSource(source)) {
+        throw new Error("talks.insights.replay_unavailable");
       }
       const apiUrl = new URL(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -148,3 +155,4 @@ export function createGeminiReplayInsightProcessor(input: Readonly<{
     },
   });
 }
+

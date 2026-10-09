@@ -11,7 +11,8 @@ const source: ReplayInsightSource = {
   tenantId:"tenant-a",talkId:"talk_1",recordingId:"recording_1",
   checksumSha256:sha,replayRevision:3,hostUserId:"host",
 };
-function fixture(override: {audio?:Buffer; deny?:boolean} = {}) {
+function fixture(override: {audio?:Buffer; deny?:boolean; revokeDuringDownload?:boolean} = {}) {
+  let consented = true;
   const media = {
     current: vi.fn(async () => ({
       status:"ready", checksumSha256:sha, objectKey:"talk-replays/tenant-a/talk_1/recording_1.ogg",
@@ -25,13 +26,17 @@ function fixture(override: {audio?:Buffer; deny?:boolean} = {}) {
     expiresAt:"2026-10-09T01:00:00Z",
   })) } as unknown as ReplayObjectStore;
   const network = vi.fn(async (_url: string | URL | Request) => {
-    if (network.mock.calls.length === 1) return new Response(new Uint8Array(override.audio ?? audio));
+    if (network.mock.calls.length === 1) {
+      if (override.revokeDuringDownload) consented = false;
+      return new Response(new Uint8Array(override.audio ?? audio));
+    }
     return Response.json({candidates:[{content:{parts:[{text:JSON.stringify({
       summary:"Host draft",highlights:["Safe summary"],nextTalkTitle:null,
     })}]}}]});
   });
   const processor = createGeminiReplayInsightProcessor({
     media,objects,
+    authorizeSource: async () => consented,
     credentials:{apiKeys:["secret-for-test"],models:["gemini-test-model"]},
     objectOrigin:"https://storage.example/",
     fetchImpl:network as unknown as typeof fetch,
@@ -39,6 +44,12 @@ function fixture(override: {audio?:Buffer; deny?:boolean} = {}) {
   return {processor,network,media,objects};
 }
 describe("U16 real provider adapter safety boundary",()=>{
+  it("does not send downloaded private audio after clearance is revoked", async () => {
+    const f=fixture({revokeDuringDownload:true});
+    await expect(f.processor.generate(source,AbortSignal.timeout(1000)))
+      .rejects.toThrow("replay_unavailable");
+    expect(f.network).toHaveBeenCalledTimes(1);
+  });
   it("verifies actual OGG checksum, fetches R13-authorized media, calls Gemini with structured draft only",async()=>{
     const f=fixture();
     expect(await f.processor.generate(source,AbortSignal.timeout(1000))).toEqual({

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   ReplayInsightAuthorizer, ReplayInsightDraft, ReplayInsightProcessor,
   ReplayInsightRepository, ReplayInsightView,
+  ReplayInsightSource,
 } from "./model.js";
 
 export class ReplayInsightError extends Error {
@@ -15,6 +16,16 @@ function talkId(value: string): string {
     throw new ReplayInsightError("talks.insights.invalid_talk", 400);
   }
   return value;
+}
+async function withinDeadline<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+  let rejectTimeout: (() => void) | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    rejectTimeout = () => reject(new ReplayInsightError("talks.insights.generation_failed", 503));
+    signal.addEventListener("abort", rejectTimeout, {once:true});
+    if (signal.aborted) rejectTimeout();
+  });
+  try { return await Promise.race([operation, timeout]); }
+  finally { if (rejectTimeout) signal.removeEventListener("abort", rejectTimeout); }
 }
 function normalizeDraft(value: ReplayInsightDraft): ReplayInsightDraft {
   if (!value || typeof value.summary !== "string" ||
@@ -50,6 +61,19 @@ export function createReplayInsightService(input: {
   async function verified(header: string | undefined) {
     return input.authorizer.authorize({ authorizationHeader: header });
   }
+  async function recheck(header: string | undefined, source: ReplayInsightSource) {
+    const actor = await verified(header);
+    if (actor.tenantId !== source.tenantId || actor.userId !== source.hostUserId) {
+      throw new ReplayInsightError("talks.insights.unauthorized", 401);
+    }
+    const current = await input.repository.source(actor.tenantId, actor.userId, source.talkId);
+    if (!current || current.recordingId !== source.recordingId ||
+        current.checksumSha256 !== source.checksumSha256 ||
+        current.replayRevision !== source.replayRevision ||
+        current.hostUserId !== source.hostUserId) {
+      throw new ReplayInsightError("talks.insights.source_changed", 409);
+    }
+  }
   return Object.freeze<ReplayInsightService>({
     async read(request) {
       const actor = await verified(request.authorizationHeader);
@@ -57,6 +81,7 @@ export function createReplayInsightService(input: {
       const source = await input.repository.source(actor.tenantId, actor.userId, id);
       if (!source) throw new ReplayInsightError("talks.insights.replay_unavailable", 404);
       const existing = await input.repository.read(actor.tenantId, actor.userId, id);
+      await recheck(request.authorizationHeader, source);
       if (existing) return existing;
       // This source comes from the current R13 authenticated SQL eligibility,
       // not from a client guess or an unverified model result.
@@ -81,22 +106,26 @@ export function createReplayInsightService(input: {
       if (!acquired) {
         const previous = await input.repository.read(actor.tenantId, actor.userId, id);
         if (!previous) throw new ReplayInsightError("talks.insights.replay_unavailable", 404);
+        await recheck(request.authorizationHeader, source);
         return previous; // no duplicate generation for ready or leased processing
       }
       const claim = { source, leaseToken };
       try {
-        const draft = normalizeDraft(await input.processor.generate(
-          source, AbortSignal.timeout(timeoutMs),
-        ));
+        await recheck(request.authorizationHeader, source);
+        const signal = AbortSignal.timeout(timeoutMs);
+        const draft = normalizeDraft(await withinDeadline(input.processor.generate(source, signal), signal));
+        if (signal.aborted) throw new ReplayInsightError("talks.insights.generation_failed", 503);
+        await recheck(request.authorizationHeader, source);
         const applied = await input.repository.complete(claim, draft);
         if (!applied) throw new ReplayInsightError("talks.insights.source_changed", 409);
         const current = await input.repository.read(actor.tenantId, actor.userId, id);
         if (!current) throw new ReplayInsightError("talks.insights.replay_unavailable", 404);
+        await recheck(request.authorizationHeader, source);
         return current;
       } catch (error) {
         try { await input.repository.fail(claim); } catch { /* lease can already be revoked */ }
         if (error instanceof ReplayInsightError &&
-            (error.statusCode === 409 || error.statusCode === 404)) throw error;
+            (error.statusCode === 409 || error.statusCode === 404 || error.statusCode === 401)) throw error;
         // No provider details or transcript text in errors or logs.
         throw new ReplayInsightError("talks.insights.generation_failed", 503);
       }
