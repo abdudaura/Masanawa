@@ -73,6 +73,8 @@ class TalkInsightController extends ChangeNotifier {
   String _ownerId;
   int _epoch = 0;
   bool _disposed = false;
+  int _ownerRevision = 0;
+  int get ownerRevision => _ownerRevision;
   TalkInsightUiState state = TalkInsightUiState.idle;
   TalkInsightDraft? draft;
   String? errorMessage;
@@ -80,6 +82,7 @@ class TalkInsightController extends ChangeNotifier {
 
   bool get isCurrentOwner => _ownerId.isNotEmpty && activeOwnerId() == _ownerId;
   void resetOwner(String ownerId) {
+    _ownerRevision++;
     _epoch++;
     _busy = false; // old account's network response may still be in flight
     _ownerId = ownerId;

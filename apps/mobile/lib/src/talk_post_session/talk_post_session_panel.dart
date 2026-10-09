@@ -12,6 +12,7 @@ class TalkPostSessionPanel extends StatefulWidget {
 }
 class _TalkPostSessionPanelState extends State<TalkPostSessionPanel> {
   bool _consent = false;
+  int? _consentOwnerRevision;
   @override
   void initState() {
     super.initState();
@@ -54,12 +55,16 @@ class _TalkPostSessionPanelState extends State<TalkPostSessionPanel> {
               ListTile(title: const Text('Suggested next Talk title'),
                 subtitle: SelectableText(draft.nextTalkTitle!)),
           ],
-          if (controller.state != TalkInsightUiState.loading &&
-              controller.state != TalkInsightUiState.ready)
+          if (controller.state == TalkInsightUiState.eligible ||
+              controller.state == TalkInsightUiState.failed ||
+              controller.state == TalkInsightUiState.processing)
             CheckboxListTile(
-              value: _consent,
+              value: _consent && _consentOwnerRevision == controller.ownerRevision,
               onChanged: controller.isCurrentOwner
-                  ? (value) => setState(() => _consent = value ?? false)
+                  ? (value) => setState(() {
+                      _consent = value ?? false;
+                      _consentOwnerRevision = _consent ? controller.ownerRevision : null;
+                    })
                   : null,
               title: const Text('I consent to process this retained recording for a private draft'),
               subtitle: const Text('May use an external transcription/model provider. No public post is created.'),
@@ -72,12 +77,18 @@ class _TalkPostSessionPanelState extends State<TalkPostSessionPanel> {
                   ? controller.refresh : null,
               child: const Text('Check status'),
             ),
-            if (controller.state != TalkInsightUiState.ready)
+            if (controller.state == TalkInsightUiState.eligible ||
+                controller.state == TalkInsightUiState.failed ||
+                controller.state == TalkInsightUiState.processing)
               FilledButton(
-                onPressed: _consent && controller.isCurrentOwner &&
+                onPressed: _consent && _consentOwnerRevision == controller.ownerRevision &&
+                        controller.isCurrentOwner &&
                         controller.state != TalkInsightUiState.loading
                     ? () {
-                        setState(() => _consent = false);
+                        setState(() {
+                          _consent = false;
+                          _consentOwnerRevision = null;
+                        });
                         controller.generate(explicitConsent: true);
                       }
                     : null,
