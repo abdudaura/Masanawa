@@ -127,7 +127,24 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
     // authoritative post-write readback. The mutation owns that refresh.
     if (!_authorized || state.busy) return;
     final epoch = ++_readEpoch;
-    state = state.copyWith(loading: true, loadingMore: false, clearError: true, clearNextCursor: true);
+    // Full reload is an authorization boundary, not a background decoration.
+    // A previously accepted contact may have revoked or blocked this account
+    // since the last read. Never leave stale rights (including a prior lookup
+    // and its Message action) usable while readback is pending or if it fails.
+    // A scoped, protected offline directory would need an explicit stale,
+    // non-sendable state; this controller intentionally has no such cache.
+    ++_searchEpoch;
+    state = state.copyWith(
+      loading: true,
+      loadingMore: false,
+      searching: false,
+      contacts: const <HumanContact>[],
+      clearPreferences: true,
+      clearLookup: true,
+      clearNextCursor: true,
+      clearError: true,
+      clearNotice: true,
+    );
     try {
       final results = await Future.wait<Object>([
         _transport.preferences(),
