@@ -100,6 +100,58 @@ void main() {
     await dir.delete(recursive:true);
   });
 
+  test('Stop erases an audio file materialized by a late private path factory', () async {
+    final dir=await sandbox(),player=_Player(),transport=_Transport();
+    final requested=Completer<void>(),pendingPath=Completer<String>();
+    final controller=HumanVoiceController(
+      conversationId:conversationId,ownerUserId:ownUserId,transport:transport,
+      capture:_Capture(),player:player,privatePath:(){
+        requested.complete();
+        return pendingPath.future;
+      },
+    );
+    final playback=controller.play(sampleNote());
+    await requested.future;
+    await controller.stopPlayback();
+    final file=File('${dir.path}/late-playback.ogg');
+    // An asynchronous path provider can have allocated a file before it
+    // resolves. It must not survive cancellation of the owning generation.
+    await file.writeAsBytes(List<int>.filled(120, 7),flush:true);
+    pendingPath.complete(file.path);
+    await playback;
+    expect(await file.exists(),isFalse);
+    expect(player.loads,0);
+    expect(player.plays,0);
+    expect(controller.playing,isFalse);
+    await controller.shutdown();
+    await dir.delete(recursive:true);
+  });
+
+  test('Sign-out erases a late private playback path after player disposal', () async {
+    final dir=await sandbox(),player=_Player(),transport=_Transport();
+    final requested=Completer<void>(),pendingPath=Completer<String>();
+    final controller=HumanVoiceController(
+      conversationId:conversationId,ownerUserId:ownUserId,transport:transport,
+      capture:_Capture(),player:player,privatePath:(){
+        requested.complete();
+        return pendingPath.future;
+      },
+    );
+    final playback=controller.play(sampleNote());
+    await requested.future;
+    await controller.shutdown();
+    final file=File('${dir.path}/late-after-logout.ogg');
+    await file.writeAsBytes(List<int>.filled(120, 6),flush:true);
+    pendingPath.complete(file.path);
+    await playback;
+    expect(await file.exists(),isFalse);
+    expect(player.loads,0);
+    expect(player.plays,0);
+    expect(player.disposals,1);
+    expect(controller.closed,isTrue);
+    await dir.delete(recursive:true);
+  });
+
   test('Stop preview keeps reviewed private recording for deliberate send/discard', () async {
     final dir=await sandbox(),player=_Player(),transport=_Transport();
     final controller=HumanVoiceController(
