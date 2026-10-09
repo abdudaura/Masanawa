@@ -73,7 +73,7 @@ export function registerOperatorLearningRoutes(
         dispatcher: { async dispatch() { return { state: "rejected" }; } },
       });
       reply.header("cache-control", "no-store");
-      return service.read({
+      return await service.read({
         tenantId: admission.scope.tenantId,
         userId: admission.scope.userId,
       }, admission.scope);
