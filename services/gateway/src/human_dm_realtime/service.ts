@@ -46,7 +46,7 @@ export function createHumanDmRealtimeService(input: {
   const sleep = input.sleep ?? ((ms: number) =>
     new Promise<void>((resolve) => setTimeout(resolve,ms)));
   return Object.freeze({
-    async sync({ authorizationHeader, cursor, limit, waitMs, shouldStop }) {
+    async sync({ authorizationHeader, cursor, limit, waitMs, shouldStop }: Parameters<HumanDmRealtimeService["sync"]>[0]) {
       // Verify real Gateway session before DB calls and before opening a
       // wait loop. Never accept tenant/user/device IDs from the request body.
       const principal = await input.authorizer.authorize({ authorizationHeader });
