@@ -31,6 +31,7 @@ class TwinTrainingFlow extends ChangeNotifier {
   bool requiresRefresh = true;
   String? error;
   bool _disposed = false;
+  bool _onboardingDisposed = false;
   int _generation = 0;
 
   CloneOnboardingView? get view => onboarding.view;
@@ -236,6 +237,9 @@ class TwinTrainingFlow extends ChangeNotifier {
   void invalidateAccount() {
     if (_disposed) return;
     _generation++;
+    // The old profile must not remain renderable after an auth/account change.
+    onboarding.dispose();
+    _onboardingDisposed = true;
     requiresRefresh = true;
     consentToRepresentSelf = false;
     reviewedPrivateTest = false;
@@ -249,7 +253,7 @@ class TwinTrainingFlow extends ChangeNotifier {
     _disposed = true;
     _generation++;
     _subscription.cancel();
-    onboarding.dispose();
+    if (!_onboardingDisposed) onboarding.dispose();
     super.dispose();
   }
 }
