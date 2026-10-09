@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Pool } from "@masanawa/postgres";
+import type { PlatformSessionIdentity } from "@masanawa/security";
+import { readFile } from "node:fs/promises";
 import {
   createPostgresCopilotTurnStore,
   createPostgresStageHostAuthorizer,
@@ -11,6 +13,40 @@ const claim = {
   transcript: "One Host-approved question", now: "2026-10-09T00:30:00Z",
   maxPerHour: 2,
 };
+
+const sqlModule = process.env.MASANAWA_PGLITE_MODULE;
+describe.skipIf(!sqlModule)("U15 exact SQL against embedded PostgreSQL", () => {
+  it("persists claims, replay/conflict/tenant boundaries, quotas and terminal fencing", async () => {
+    const { PGlite } = await import(sqlModule!) as { PGlite: new () => {
+      exec(sql: string): Promise<unknown>;
+      query(sql: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
+      close(): Promise<void>;
+    } };
+    const db = new PGlite();
+    const pool = { connect: async () => ({ query: db.query.bind(db), release: () => {} }) } as unknown as Pick<Pool, "connect">;
+    try {
+      await db.exec("CREATE SCHEMA talks");
+      await db.exec(await readFile(new URL("./migration.proposed.sql", import.meta.url), "utf8"));
+      const store = createPostgresCopilotTurnStore(pool);
+      expect(await store.acquire(claim)).toEqual({ kind: "acquired" });
+      expect(await store.acquire(claim)).toEqual({ kind: "in_progress" });
+      expect(await store.acquire({ ...claim, transcript: "Different" })).toEqual({ kind: "conflict" });
+      expect(await store.acquire({ ...claim, talkId: "talk-other" })).toEqual({ kind: "conflict" });
+      await expect(store.finish({ ...claim, userId: "host-other", outcome: "published" })).rejects.toThrow();
+      await store.finish({ ...claim, outcome: "unknown" });
+      expect(await store.acquire(claim)).toEqual({ kind: "replay", outcome: "unknown" });
+      await expect(store.finish({ ...claim, outcome: "published" })).rejects.toThrow();
+      expect(await store.acquire({ ...claim, requestId: "turn-2" })).toEqual({ kind: "acquired" });
+      expect(await store.acquire({ ...claim, requestId: "turn-3" })).toEqual({ kind: "budget_exhausted" });
+      expect(await store.acquire({ ...claim, tenantId: "tenant-B" })).toEqual({ kind: "acquired" });
+      const rows = await db.query("SELECT tenant_id,state,transcript_hash FROM talks.live_copilot_turns ORDER BY tenant_id,request_id");
+      expect(rows.rows).toHaveLength(3);
+      expect(rows.rows[0]?.state).toBe("unknown");
+      expect(rows.rows.every(row => typeof row.transcript_hash === "string" && row.transcript_hash.length === 64)).toBe(true);
+      expect(JSON.stringify(rows.rows)).not.toContain(claim.transcript);
+    } finally { await db.close(); }
+  });
+});
 function fakePool(input: Readonly<{
   existing?: {
     talk_id: string; seat_id: string; transcript_hash: string;
@@ -105,16 +141,18 @@ describe("U15 PostgreSQL durable turn admissions", () => {
 
   it("reads the Host from the existing session and scopes live Talk access to tenant", async () => {
     const query = vi.fn(async () => ({ rows: [{ "?column?": 1 }] }));
+    const identity = { tenantId: "tenant-A", userId: "host-A", profile: {
+      tenantId: "tenant-A", userId: "host-A", name: "Host", email: null,
+      phone: null, locale: "en", createdAt: claim.now,
+    } } as PlatformSessionIdentity;
     const sessions = {
-      authorize: vi.fn(async () => ({ tenantId: "tenant-A", userId: "host-A" })),
+      authorize: vi.fn(async () => identity),
     };
     const auth = createPostgresStageHostAuthorizer(
       { query } as unknown as Pick<Pool, "query">,
-      sessions as Parameters<typeof createPostgresStageHostAuthorizer>[1],
+      sessions,
     );
-    expect(await auth.authorize({ authorizationHeader: "Bearer real" })).toEqual({
-      tenantId: "tenant-A", userId: "host-A",
-    });
+    expect(await auth.authorize({ authorizationHeader: "Bearer real" })).toEqual(identity);
     expect(await auth.isCurrentHost({
       tenantId: "tenant-A", talkId: "talk-A", userId: "host-A",
     })).toBe(true);
@@ -124,3 +162,4 @@ describe("U15 PostgreSQL durable turn admissions", () => {
     );
   });
 });
+

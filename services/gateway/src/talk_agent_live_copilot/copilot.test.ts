@@ -106,6 +106,40 @@ function setup(opts: Readonly<{
   return { copilot, auth, seats, events, worker, turns, stored };
 }
 describe("U15 live Host copilot admission and safety", () => {
+  it("denies stale Host suggestions after delayed stage projection", async () => {
+    const h = setup();
+    h.events.readAuthorizedStage.mockImplementationOnce(async () => {
+      h.auth.isCurrentHost.mockResolvedValueOnce(false);
+      return stage;
+    });
+    await expect(h.copilot.suggestions({ authorizationHeader: request.authorizationHeader, talkId: request.talkId }))
+      .rejects.toMatchObject({ code: "talks.host_forbidden" });
+    expect(h.worker.handleTurn).not.toHaveBeenCalled();
+  });
+
+  it("persists denial and never invokes the worker if Host changes during durable claim", async () => {
+    const h = setup();
+    h.turns.acquire.mockImplementationOnce(async () => {
+      h.auth.isCurrentHost.mockResolvedValueOnce(false);
+      return { kind: "acquired" } as const;
+    });
+    expect(await h.copilot.approveTurn(request)).toEqual({
+      status: "denied", reason: "host_authorization_changed",
+    });
+    expect(h.worker.handleTurn).not.toHaveBeenCalled();
+    expect(h.turns.finish).toHaveBeenCalledWith(expect.objectContaining({ outcome: "denied" }));
+  });
+
+  it("cannot transfer the admitted turn to a different account after claim", async () => {
+    const h = setup();
+    h.turns.acquire.mockImplementationOnce(async () => {
+      h.auth.authorize.mockResolvedValueOnce({ tenantId: "tenant-B", userId: "host-B" });
+      return { kind: "acquired" } as const;
+    });
+    expect((await h.copilot.approveTurn(request)).status).toBe("denied");
+    expect(h.worker.handleTurn).not.toHaveBeenCalled();
+    expect(h.turns.finish).toHaveBeenCalledWith(expect.objectContaining({ tenantId: "tenant-A", userId: "host-A" }));
+  });
   it("displays only bounded approved public questions and polls, not private comments", async () => {
     const { copilot, events, worker } = setup();
     const result = await copilot.suggestions({
@@ -251,3 +285,4 @@ describe("U15 live Host copilot admission and safety", () => {
     expect(worker.handleTurn).not.toHaveBeenCalled();
   });
 });
+

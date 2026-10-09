@@ -24,10 +24,19 @@ ResponseBody _json(String body, int status) => ResponseBody.fromString(
 );
 
 void main() {
+  test('suggestions use versioned Gateway route and encode the Talk reference', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      expect(options.path, '/v1/talks/talk%2FA/ai-stage/suggestions');
+      return _json('{"suggestions":[]}', 200);
+    });
+    expect(await GatewayHostCopilotTransport(api: ApiClient(dio: dio))
+        .suggestions('talk/A'), isEmpty);
+  });
   test('typed quota 429 remains a known server outcome, not a retryable unknown', () async {
     final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
     dio.httpClientAdapter = _Adapter((options) async {
-      expect(options.path, '/talks/talk-A/ai-stage/seats/seat-A/turns');
+      expect(options.path, '/v1/talks/talk-A/ai-stage/seats/seat-A/turns');
       expect(options.data, {
         'requestId': 'id-1', 'hostApprovedTranscript': 'Question',
       });
@@ -68,3 +77,4 @@ void main() {
     );
   });
 }
+

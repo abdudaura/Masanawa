@@ -11,7 +11,7 @@ class GatewayHostCopilotTransport implements HostCopilotTransport {
   @override
   Future<List<HostCopilotSuggestion>> suggestions(String talkId) async {
     final response = await api.dio.get<dynamic>(
-      '/talks/' + Uri.encodeComponent(talkId) + '/ai-stage/suggestions',
+      '/v1/talks/' + Uri.encodeComponent(talkId) + '/ai-stage/suggestions',
     );
     final data = response.data;
     if (data is! Map || data['suggestions'] is! List ||
@@ -33,7 +33,7 @@ class GatewayHostCopilotTransport implements HostCopilotTransport {
   }) async {
     try {
       final response = await api.dio.post<dynamic>(
-        '/talks/' + Uri.encodeComponent(talkId) +
+        '/v1/talks/' + Uri.encodeComponent(talkId) +
         '/ai-stage/seats/' + Uri.encodeComponent(seatId) + '/turns',
         data: {
           'requestId': requestId,
@@ -55,3 +55,4 @@ class GatewayHostCopilotTransport implements HostCopilotTransport {
     }
   }
 }
+

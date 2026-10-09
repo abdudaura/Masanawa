@@ -92,11 +92,12 @@ export function createLiveStageCopilot(input: Readonly<{
   const now = input.now ?? (() => new Date());
 
   async function host(header: string | undefined, talkId: string): Promise<LiveStageHostIdentity> {
-    const identity = await input.authorizer.authorize({ authorizationHeader: header });
+    const verified = await input.authorizer.authorize({ authorizationHeader: header });
+    const identity = Object.freeze({ tenantId: verified.tenantId, userId: verified.userId });
     if (!identity.tenantId || !identity.userId ||
-        !await input.authorizer.isCurrentHost({
+        await input.authorizer.isCurrentHost({
           tenantId: identity.tenantId, userId: identity.userId, talkId,
-        })) {
+        }) !== true) {
       throw new LiveStageCopilotError("talks.host_forbidden", 403);
     }
     const live = await input.seats.readLiveState({ tenantId: identity.tenantId, talkId });
@@ -110,7 +111,8 @@ export function createLiveStageCopilot(input: Readonly<{
       authorizationHeader: string | undefined; talkId: string;
     }>): Promise<readonly HostSuggestion[]> {
       const talkId = bounded(request.talkId, "talk_id", 160);
-      const identity = await host(request.authorizationHeader, talkId);
+      const header = request.authorizationHeader;
+      const identity = await host(header, talkId);
       const before = now().toISOString();
       const authorized = await input.stage.readAuthorizedStage({
         tenantId: identity.tenantId, talkId, before,
@@ -132,7 +134,7 @@ export function createLiveStageCopilot(input: Readonly<{
             kind: "question" as const, prompt: q, trust: "public-untrusted-data" as const,
           }));
         } else if (event.kind === "poll" && event.summary.startsWith("Public poll ")) {
-          const q = cleanPublic(event.summary.split(" | Votes: ")[0].replace(/^Public poll (opened|closed): /u, ""), 130);
+          const q = cleanPublic((event.summary.split(" | Votes: ")[0] ?? "").replace(/^Public poll (opened|closed): /u, ""), 130);
           if (q) items.push(Object.freeze({
             kind: "poll" as const, prompt: "Invite discussion about: " + q,
             trust: "public-untrusted-data" as const,
@@ -147,6 +149,10 @@ export function createLiveStageCopilot(input: Readonly<{
           trust: "public-untrusted-data" as const,
         }));
       }
+      const latest = await host(header, talkId);
+      if (latest.tenantId !== identity.tenantId || latest.userId !== identity.userId) {
+        throw new LiveStageCopilotError("talks.host_forbidden", 403);
+      }
       return Object.freeze(items);
     },
 
@@ -160,7 +166,8 @@ export function createLiveStageCopilot(input: Readonly<{
       const seatId = bounded(request.seatId, "seat_id", 160);
       const requestId = bounded(request.requestId, "request_id", 128);
       const transcript = bounded(request.hostApprovedTranscript, "transcript", 500);
-      const identity = await host(request.authorizationHeader, talkId);
+      const header = request.authorizationHeader;
+      const identity = await host(header, talkId);
       const seat = await input.seats.readSeat({ tenantId: identity.tenantId, talkId, seatId });
       if (!eligible(seat)) return Object.freeze({
         status: "denied" as const, reason: "seat_not_authorized",
@@ -184,6 +191,17 @@ export function createLiveStageCopilot(input: Readonly<{
       });
       let outcome: CopilotTurnOutcome = "unknown";
       try {
+        // The durable claim may have waited behind another transaction. The
+        // caller must still be the authenticated current Host before inference.
+        try {
+          const latest = await host(header, talkId);
+          if (latest.tenantId !== identity.tenantId || latest.userId !== identity.userId) {
+            throw new LiveStageCopilotError("talks.host_forbidden", 403);
+          }
+        } catch {
+          outcome = "denied";
+          return Object.freeze({ status: "denied" as const, reason: "host_authorization_changed" });
+        }
         // Only the canonical worker calls the persona and publishes audio.
         // It re-reads admission, Host presence and commerce after inference.
         const result = await input.worker.handleTurn({
@@ -211,3 +229,4 @@ export function createLiveStageCopilot(input: Readonly<{
     },
   });
 }
+
