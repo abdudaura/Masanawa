@@ -67,6 +67,22 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
+    },
+    {
+      "claim_id": "masanawa-01-af14-clear-local-ai-chat-20261009",
+      "owner": "MASANAWA-01",
+      "scope": "AF14 P1: correct AI-only local chat clearing semantics; require explicit cancellation-safe confirmation, busy/error UI, account-fenced access, and widget regression tests. Isolated Settings change; AF00 owns composition. Preserve #497 settings and unknown owner's local APK.",
+      "paths": [
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/test/audio_first/af14/clear_local_ai_chats_test.dart",
+        "docs/workstreams/AF14-clear-local-ai-chats-20261009.md"
+      ],
+      "branch": "work/af14-confirm-local-ai-chat-clear-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:21:09.623Z",
+      "heartbeat_at": "2026-10-09T21:21:09.623Z",
+      "expires_at": "2026-10-09T21:26:09.623Z",
+      "notes": "AF00 route/integration partial; AF14 self-contained existing Settings module on main; no router/auth/ledger/production/migrations touched."
     }
   ],
   "history": [
