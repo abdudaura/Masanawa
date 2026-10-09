@@ -24,6 +24,12 @@ class _SelectedMessageAssistSheetState extends State<SelectedMessageAssistSheet>
   }
   void _onChange() {
     if (!mounted) return;
+    // A new AI suggestion/discard is never approved by an older checkbox.
+    if (widget.controller.phase==HumanAiAssistPhase.preparing ||
+        widget.controller.phase==HumanAiAssistPhase.choose) {
+      reviewedRecipient=false;
+    }
+    if (widget.controller.phase==HumanAiAssistPhase.choose) disclosed=false;
     if (widget.controller.phase==HumanAiAssistPhase.review &&
         draft.text!=widget.controller.reviewedText) {
       draft.value=TextEditingValue(text:widget.controller.reviewedText,
