@@ -1,6 +1,17 @@
 import type { Artifact, ArtifactRepository, Owner } from './model.js';
 /** Structural port implemented by the existing pg Pool; no new connection/configuration authority. */
 export interface QueryPort { query(sql: string, values?: any[]): Promise<{rows: any[]}>; }
+/** DB-clock daily cap is atomic across workers, accounts are independent, retries count toward abuse limits. */
+export function createArtifactCreationLimiter(db:QueryPort) {
+  return async(owner:Owner):Promise<boolean> => {
+    const result=await db.query(`INSERT INTO work_artifacts.creation_budgets(tenant_id,user_id,day,attempts)
+      VALUES($1,$2,(now() AT TIME ZONE 'UTC')::date,1)
+      ON CONFLICT(tenant_id,user_id) DO UPDATE SET day=EXCLUDED.day,
+        attempts=CASE WHEN creation_budgets.day < EXCLUDED.day THEN 1 ELSE creation_budgets.attempts+1 END
+      WHERE creation_budgets.day < EXCLUDED.day OR creation_budgets.attempts < 20 RETURNING attempts`,[owner.tenantId,owner.userId]);
+    return result.rows.length===1;
+  };
+}
 function row(r: any): Artifact {
   return {id:r.id, tenantId:r.tenant_id, userId:r.user_id, requestId:r.request_id,
     filename:r.filename, mimeType:r.mime_type, sizeBytes:r.size_bytes, sha256:r.sha256,

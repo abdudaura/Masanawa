@@ -23,5 +23,10 @@ CREATE TABLE work_artifacts.files (
 );
 CREATE INDEX work_artifacts_owner_page ON work_artifacts.files(tenant_id,user_id,id);
 CREATE INDEX work_artifacts_cleanup ON work_artifacts.files(cleanup_checked_at NULLS FIRST, expires_at);
+CREATE TABLE work_artifacts.creation_budgets (
+  tenant_id text NOT NULL,user_id text NOT NULL,day date NOT NULL,attempts integer NOT NULL CHECK(attempts BETWEEN 1 AND 20),
+  PRIMARY KEY(tenant_id,user_id),
+  FOREIGN KEY(tenant_id,user_id) REFERENCES security.platform_user_profiles(tenant_id,user_id)
+);
 -- Do not cascade metadata on account deletion before the private object is erased.
 -- F08 invokes owner purge and confirms object deletion before deleting the profile FK.

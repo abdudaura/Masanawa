@@ -38,7 +38,7 @@ export function createArtifactService(input: {
   }
   function view(row: Artifact, actor: Owner): ArtifactView {
     const {tenantId, userId, requestId, objectKey, grants, ...publicFields} = row;
-    return {...publicFields, owned: userId === actor.userId,
+    return {...publicFields, provenance:userId === actor.userId ? row.provenance : {kind:row.provenance.kind}, owned: userId === actor.userId,
       sharedWith: userId === actor.userId ? grants : []};
   }
   async function readable(actor: Owner, id: string): Promise<Artifact> {
@@ -150,7 +150,7 @@ export function createArtifactService(input: {
       const expected = createHmac('sha256',signingSecret).update(payload).digest('base64url');
       if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature),Buffer.from(expected))) fail('invalid_ticket',403);
       let claim; try { claim = JSON.parse(Buffer.from(payload,'base64url').toString('utf8')); } catch { return fail('invalid_ticket',403); }
-      if (claim.id !== id || claim.tenantId !== actor.tenantId || claim.userId !== actor.userId || !Number.isFinite(claim.expiresAt) || claim.expiresAt <= now().getTime()) fail('invalid_ticket',403);
+      if (!claim || typeof claim !== 'object' || claim.id !== id || claim.tenantId !== actor.tenantId || claim.userId !== actor.userId || !Number.isFinite(claim.expiresAt) || claim.expiresAt <= now().getTime()) fail('invalid_ticket',403);
       const row = await readable(actor,id);
       if (claim.revision !== row.revision) fail('invalid_ticket',403);
       const bytes = await input.objects.get(row.objectKey,MAX_BYTES); verify(bytes,row);
