@@ -61,6 +61,9 @@ class _FakeProfile implements OwnProfileTransport {
   String savedBio = 'Old bio';
   String savedHandle = 'amina';
   bool failNextUpdate = false;
+  bool failNextLoad = false;
+  bool failAfterServerSave = false;
+  bool failAfterCreate = false;
   int updates = 0;
   int creates = 0;
   String? lastName;
@@ -81,6 +84,10 @@ class _FakeProfile implements OwnProfileTransport {
 
   @override
   Future<HumanProfile> loadSelf() async {
+    if (failNextLoad) {
+      failNextLoad = false;
+      throw StateError('Simulated profile read failure');
+    }
     if (!exists) {
       final options = RequestOptions(path: '/profiles/me');
       throw DioException(
@@ -108,6 +115,10 @@ class _FakeProfile implements OwnProfileTransport {
     savedHandle = handle;
     savedName = displayName;
     savedBio = bio;
+    if (failAfterCreate) {
+      failAfterCreate = false;
+      throw StateError('Response lost after profile was created');
+    }
     return _profile(handle: handle, name: displayName, bio: bio);
   }
 
@@ -126,6 +137,10 @@ class _FakeProfile implements OwnProfileTransport {
     lastBio = bio;
     savedName = displayName ?? savedName;
     savedBio = bio ?? savedBio;
+    if (failAfterServerSave) {
+      failAfterServerSave = false;
+      throw StateError('Response lost after profile was committed');
+    }
     return _profile(name: savedName, bio: savedBio, handle: savedHandle);
   }
 }
@@ -281,9 +296,119 @@ void main() {
     expect(find.textContaining('Could not confirm whether your changes saved'), findsOneWidget);
     expect(find.byKey(const ValueKey('profile-reload')), findsOneWidget);
 
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('profile-edit-save')),
+      ).onPressed,
+      isNull,
+    );
+    // A second tap must not issue another PATCH before a confirming GET.
+    expect(transport.updates, 1);
+    await tester.tap(find.byKey(const ValueKey('profile-reload')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextFormField>(
+        find.byKey(const ValueKey('profile-edit-name')),
+      ).controller?.text,
+      'Amina',
+    );
+    expect(transport.savedName, 'Amina');
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
+    );
     await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
     await tester.pumpAndSettle();
+    expect(transport.updates, 2);
     expect(transport.savedName, 'Amina Bello');
+  });
+
+  testWidgets('committed but unacknowledged profile save is not replayed',
+      (tester) async {
+    final transport = _FakeProfile()..failAfterServerSave = true;
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-edit-name')), 'Already committed',
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
+    await tester.pumpAndSettle();
+
+    expect(transport.updates, 1);
+    expect(transport.savedName, 'Already committed');
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('profile-edit-save')),
+      ).onPressed,
+      isNull,
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-reload')));
+    await tester.pumpAndSettle();
+    expect(find.text('Already committed'), findsWidgets);
+    expect(transport.updates, 1);
+    expect(find.textContaining('Could not confirm whether'), findsNothing);
+  });
+
+  testWidgets('lost create response reconciles without duplicate profile creation',
+      (tester) async {
+    final transport = _FakeProfile(exists: false)..failAfterCreate = true;
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-create-handle')), 'new_amina',
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
+    await tester.pumpAndSettle();
+
+    expect(transport.creates, 1);
+    expect(transport.exists, isTrue);
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('profile-edit-save')),
+      ).onPressed,
+      isNull,
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-reload')));
+    await tester.pumpAndSettle();
+    expect(find.text('@new_amina'), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile-create-handle')), findsNothing);
+    expect(transport.creates, 1);
+  });
+
+  testWidgets('failed readback retains lock until a successful authenticated GET',
+      (tester) async {
+    final transport = _FakeProfile()..failNextUpdate = true;
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-edit-bio')), 'Unsure bio',
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
+    await tester.pumpAndSettle();
+
+    transport.failNextLoad = true;
+    await tester.tap(find.byKey(const ValueKey('profile-reload')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const ValueKey('profile-edit-save')),
+      ).onPressed,
+      isNull,
+    );
+    expect(transport.updates, 1);
+    await tester.tap(find.byKey(const ValueKey('profile-reload')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextFormField>(
+        find.byKey(const ValueKey('profile-edit-bio')),
+      ).controller!.text,
+      'Old bio',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('profile-edit-bio')), 'Retry after read',
+    );
+    await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
+    await tester.pumpAndSettle();
+    expect(transport.updates, 2);
   });
 
   testWidgets('photo editor does not discard unsaved name or biography',
