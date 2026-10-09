@@ -7,7 +7,7 @@ Status: **PARTIAL_IMPLEMENTATION** (connected Flutter source and widget tests au
 - Claim: `masanawa-01-af14-clear-local-ai-chat-20261009`, acquired and **read back before code edits** on GitHub CAS `factory/claims` branch, registry commit `97091ea050030eec965c15d40d7b743f8b8b2f64`.
 - Owner/window: `MASANAWA-01`; lane `AF14`; work branch `work/af14-confirm-local-ai-chat-clear-20261009-masanawa01`.
 - Base: `main@f381f077c485c04261459b77a42c215d3ce3a14b`.
-- Source checkpoint: `3cb0920c4731efe47d0b372f4a79c6044cc2e61f`. Flutter test source checkpoint: `69b585e1b5b024d8099dc3b3d96173a8902d76fa`. This handoff commit supersedes both; use PR head SHA after creation.
+- Source checkpoint: `16b48400a39f97649cae38847bf8415e62cf053d` (latest Settings change); Flutter test checkpoint: `a53ed9a3c56d75ce3cc83f478aaf7036fdb67915`. PR **#587** supplies the moving head SHA; review the exact new head before merging.
 - Exact paths:
   - `apps/mobile/lib/src/screens/settings/settings_screen.dart`
   - `apps/mobile/test/audio_first/af14/clear_local_ai_chats_test.dart`
@@ -22,7 +22,7 @@ The real Settings action now uses `ClearLocalAiChatsTile` and explicitly describ
 
 ## Executable evidence and gaps
 
-- GitHub exact-source readback: source blob `2bc554d9622ed4f9e7c04d5dde02cc9d1d14ea45`; test blob `04500b77ca657e064a386d06b8e00a058205fa37`. Confirm these/updated blobs when integrating.
+- GitHub exact-source readback: source blob `4a4311542d00f24f115bf6c81f775715b521ea48`; test blob `ca6ca3095da14c707f3dade45943e38bb852ab61`. Confirm these/updated blobs when integrating.
 - **PASS_STATIC (17/17):** content-level checks exercised against fetched branch source/test for confirmation, busy guard, cancellation, account check, explicit local-only copy, no fake version, negative tests and error handling. This is **not Flutter execution**.
 - Authored Flutter widget tests:
   1. Cancellation never invokes clear and copy excludes human/server/Wallet.
@@ -34,6 +34,6 @@ The real Settings action now uses `ClearLocalAiChatsTile` and explicitly describ
 
 ## Merge/release next action
 
-Create PR against `main` for review and attempt the Mobile Build workflow (pull_request path filter). AF00 must examine #497 overlapping Settings source and locally fixed APK/patch before integrating on a non-deploying safe target, execute the authored Flutter tests plus analyzer and apply tested source if compatible. Main push triggers GitHub Mobile Build and Foundation CI; external Git deployment triggers remain unqualified. **Do not auto-merge or deploy to main** without audited triggers and executable checks. This narrow Settings change is local UI only; no migrations, paid/provider operations or credentials were executed.
+PR [#587](https://github.com/Baatiku/masanawa/pull/587) is open against `main`. At PR head `a53ed9a3c56d75ce3cc83f478aaf7036fdb67915`, Mobile Build run **37993200966** and Foundation CI run **37993200932** both report failure with **zero job steps** (`114032427527`, `114032426679`). This is a CI runner/infrastructure failure, **not** a demonstrated Flutter/Dart test failure or pass. A qualified alternate Flutter runner is still required. AF00 must examine #497 overlapping Settings source and locally fixed APK/patch before integrating on a non-deploying safe target, execute the authored Flutter tests plus analyzer and apply tested source if compatible. Main push triggers GitHub Mobile Build and Foundation CI; external Git deployment triggers remain unqualified. **Do not auto-merge or deploy to main** without audited triggers and executable checks. This narrow Settings change is local UI only; no migrations, paid/provider operations or credentials were executed.
 
 Acceptance mapping: `SA01` / `SA-A05` safe scope-confirmed local cache clearing, with other AF14 acceptance IDs pending. No claim of verified end-to-end or APK production readiness.
