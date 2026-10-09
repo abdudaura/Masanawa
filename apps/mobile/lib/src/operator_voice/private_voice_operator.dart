@@ -124,6 +124,8 @@ class PrivateVoiceOperator extends ChangeNotifier {
   bool _disposed = false;
   bool _opening = false;
   bool _muted = false;
+  bool _submitting = false;
+  bool _outcomeUnknown = false;
   PrivateVoicePhase _phase = PrivateVoicePhase.idle;
   String? _error;
   String? _lastAgentSpeech;
@@ -139,6 +141,8 @@ class PrivateVoiceOperator extends ChangeNotifier {
   String? get lastAgentSpeech => _lastAgentSpeech;
   String get draftText => _draft;
   bool get isMuted => _muted;
+  bool get isSubmitting => _submitting;
+  bool get outcomeUnknown => _outcomeUnknown;
   bool get hasDraft => _draft.trim().isNotEmpty;
   bool get needsReview => hasDraft;
   bool get isConnected =>
@@ -276,6 +280,7 @@ class PrivateVoiceOperator extends ChangeNotifier {
   /// Text, tap, and a *separate opt-in ASR integration* use the same draft.
   /// Gemini live output transcripts never enter this method automatically.
   void editDraft(String text, {bool recognizedSpeech = false}) {
+    if (_outcomeUnknown) throw StateError('Reconcile or discard the uncertain draft first');
     if (_disposed || _accountId == null || _characterSessionId == null) {
       throw StateError('No active Assistant context');
     }
@@ -317,7 +322,9 @@ class PrivateVoiceOperator extends ChangeNotifier {
         reviewed.characterSessionId != _characterSessionId ||
         reviewed.version != _draftVersion ||
         reviewed.text != _draft.trim() ||
-        !hasDraft) return false;
+        !hasDraft || _submitting || _outcomeUnknown) return false;
+    _submitting = true;
+    _notify();
     try {
       await submitToAssistant(reviewed);
       // If the canonical transport reports an ambiguous outcome, it MUST throw
@@ -326,14 +333,30 @@ class PrivateVoiceOperator extends ChangeNotifier {
           reviewed.accountId != _accountId) return false;
       _draft = '';
       _speechDraft = false;
+      _outcomeUnknown = false;
       _draftVersion++;
       _notify();
       return true;
     } catch (_) {
-      _error = 'Could not confirm the result. Check Assistant task status before retrying.';
+      _outcomeUnknown = true;
+      _error = 'Result uncertain. Check Assistant task status; do not retry this draft.';
       _notify();
       return false;
+    } finally {
+      _submitting = false;
+      _notify();
     }
+  }
+
+  /// Discard the local uncertain draft only; never claim the server action
+  /// was cancelled. A fresh task must use a new canonical request identity.
+  void discardUncertainDraft() {
+    if (!_outcomeUnknown || _submitting) return;
+    _draft = '';
+    _speechDraft = false;
+    _outcomeUnknown = false;
+    _draftVersion++;
+    _notify();
   }
 
   /// Explicit microphone mute while retaining Gemini Live session context.
@@ -397,6 +420,7 @@ class PrivateVoiceOperator extends ChangeNotifier {
       _characterSessionId = null;
       _draft = '';
       _speechDraft = false;
+      _outcomeUnknown = false;
       _draftVersion++;
       _lastAgentSpeech = null;
       _error = null;
