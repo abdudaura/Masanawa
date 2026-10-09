@@ -53,6 +53,7 @@ class HostPreparation {
 }
 
 abstract interface class HostPreparationTransport {
+  Future<List<HostPreparation>> list();
   Future<HostPreparation> create({
     required String title, required String topic, required List<String> questions,
   });
@@ -79,6 +80,13 @@ class GatewayHostPreparationTransport implements HostPreparationTransport {
       throw const FormatException('Invalid host preparation response');
     }
     return HostPreparation.fromJson(Map<String, dynamic>.from(data));
+  }
+
+  @override
+  Future<List<HostPreparation>> list() async {
+    final response = await api.dio.get<dynamic>('/v1/talk-host-preparations');
+    if (response.data is! List) throw const FormatException('Invalid host draft list');
+    return [for (final item in response.data as List) _decode(item)];
   }
 
   @override
