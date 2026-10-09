@@ -38,13 +38,43 @@ describe("C02 SQL authorization and transactional safety",()=>{
     expect(h.calls.some(x=>x.sql.includes("LEAST($2,$3)"))).toBe(true);
     expect(h.calls.some(x=>x.sql.includes("INSERT INTO talks.human_dm_conversations"))).toBe(false);
   });
-  it("read cursor clamps to current server sequence rather than trusting caller",async()=>{
-    const h=harness((sql)=>sql.includes("SELECT c.conversation_id FROM talks.human_dm_conversations")?[{conversation_id:cid}]:
-      sql.includes("RETURNING last_read_sequence")?[{last_read_sequence:"99"}]:[]);
-    expect(await h.repo.read({tenantId:"tenant_a",userId:"user_a",conversationId:cid,throughSequence:"999"})).toBe("99");
-    const update=h.calls.find(x=>x.sql.includes("INSERT INTO talks.human_dm_reads"));
-    expect(update?.sql).toContain("LEAST(c.last_sequence,$4::bigint)");
-    expect(update?.sql).toContain("GREATEST(talks.human_dm_reads.last_read_sequence");
+  it("read receipt authorizes the SAME statement as the upsert and clamps the cursor",async()=>{
+    const h=harness((sql)=>sql.includes("INSERT INTO talks.human_dm_reads")?
+      [{last_read_sequence:"99"}]:[]);
+    expect(await h.repo.read({tenantId:"tenant_a",userId:"user_a",
+      conversationId:cid,throughSequence:"999"})).toBe("99");
+    // No authorization preflight statement (nor a separate BEGIN/COMMIT).
+    expect(h.calls).toHaveLength(1);
+    expect(h.lifecycle).toEqual([]);
+    const {sql,values}=h.calls[0]!;
+    expect(sql).toContain("INSERT INTO talks.human_dm_reads");
+    expect(sql).toContain("LEAST(c.last_sequence,$4::bigint)");
+    expect(sql).toContain("GREATEST(");
+    expect(sql).toContain("talks.human_dm_reads.last_read_sequence");
+    expect(sql).toContain("c.tenant_id=$1 AND c.conversation_id=$3");
+    expect(sql).toContain("$2 IN (c.first_user_id,c.second_user_id)");
+    expect(sql).toContain("a.state='active'");
+    expect(sql).toContain("b.state='active'");
+    expect(sql).toContain("revoked.status='declined'");
+    expect(sql).toContain("talks.safety_preferences");
+    expect(sql).toContain("sp.blocked=true");
+    expect(sql).toContain("talks.safety_enforcement");
+    expect(sql).toContain("se.visibility IN ('restricted','blocked')");
+    expect(values).toEqual(["tenant_a","user_a",cid,"999"]);
+  });
+  it("read receipt returns unavailable without a second statement or unauthorised write",async()=>{
+    const h=harness(()=>[]); // SQL CTE/WHERE vetoes absent, blocked or revoked member
+    expect(await h.repo.read({tenantId:"tenant_a",userId:"outsider",
+      conversationId:cid,throughSequence:"15"})).toBeNull();
+    expect(h.calls).toHaveLength(1);
+    expect(h.calls[0]!.sql).toContain("WHERE");
+    expect(h.calls[0]!.sql).toContain("NOT EXISTS");
+  });
+  it("read receipt preserves database failures and never reports a successful ack",async()=>{
+    const h=harness(sql=>{if(sql.includes("INSERT INTO talks.human_dm_reads"))throw new Error("db down");return[];});
+    await expect(h.repo.read({tenantId:"tenant_a",userId:"user_a",
+      conversationId:cid,throughSequence:"3"})).rejects.toThrow("db down");
+    expect(h.calls).toHaveLength(1);
   });
   it("rolls back and releases the client on SQL failure",async()=>{
     const h=harness(sql=>{if(sql.includes("SELECT user_id FROM identity.users"))throw new Error("db down");return[];});
