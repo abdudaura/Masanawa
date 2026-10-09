@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { TalkReplayRepository, TalkReplayPlaybackView } from "../model.js";
 import type { LiveKitReplayEgress } from "./livekit_egress.js";
 import type { ReplayObjectStore } from "../playback/s3_object_store.js";
@@ -37,11 +38,16 @@ export function createTalkReplayCoordinator(input:Readonly<{
         tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
       });
       if(existing) return;
+      // External StartEgress precedes the PostgreSQL identity claim. Two
+      // Gateways can both see no row and start concurrently. Give each
+      // attempt a distinct object so a losing claim never deletes or
+      // overwrites the winning recording during compensating cleanup.
+      // The winning attempt's exact key is persisted by createStarted.
       const objectKey=[
         "talk-replays",
         safePart(request.tenantId),
         safePart(request.talkId),
-        `${safePart(request.recordingId)}.ogg`,
+        `${safePart(request.recordingId)}_${randomUUID()}.ogg`,
       ].join("/");
       const started=await input.egress.start({roomName:request.talkId,objectKey});
       try{
