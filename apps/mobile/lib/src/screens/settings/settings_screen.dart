@@ -370,7 +370,7 @@ class _Card extends StatelessWidget {
   }
 }
 
- 
+
 /// Deletes only the locally cached AI conversation list for the current
 /// account. Human messages, server records, financial receipts and account
 /// deletion are separate operations and are never implied by this control.
@@ -418,16 +418,20 @@ class _ClearLocalAiChatsTileState extends State<ClearLocalAiChatsTile> {
     try {
       await widget.onClear();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Local AI chats cleared')),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Local AI chats cleared')),
+        );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not clear local AI chats. Please try again.'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Could not clear local AI chats. Please try again.'),
+          ),
+        );
     } finally {
       if (mounted) setState(() => _clearing = false);
     }
