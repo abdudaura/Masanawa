@@ -186,6 +186,8 @@ import {
   type TalkProfileAuthorizer,
 } from "./talk_profiles/service.js";
 import { createPostgresTalkProfileRepository } from "./talk_profiles/postgres_repository.js";
+import { createPostgresHumanContactRepository } from "./human_contacts/postgres_repository.js";
+import { createHumanContactService, type HumanContactAuthorizer } from "./human_contacts/service.js";
 import {
   createTalkActivityService,
   type TalkActivityAuthorizer,
@@ -334,6 +336,7 @@ export interface ServiceDatabaseDependency {
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
+  readonly humanContacts?: ReturnType<typeof createPostgresHumanContactRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
@@ -498,6 +501,7 @@ function createDefaultDatabaseDependency(
     talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
+    humanContacts: createPostgresHumanContactRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
     talkLibrary: createPostgresTalkLibraryRepository(database.pool),
@@ -653,6 +657,7 @@ export async function startGatewayService(
   let talkModerationAuthorizer: TalkModerationAuthorizer | undefined;
   let talkAiSeatAuthorizer: TalkAiSeatAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
+  let humanContactAuthorizer: HumanContactAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
   let talkLibraryAuthorizer: TalkLibraryAuthorizer | undefined;
@@ -815,6 +820,7 @@ export async function startGatewayService(
     talkModerationAuthorizer = customerSessions;
     talkAiSeatAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
+    humanContactAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     talkSearchAuthorizer = customerSessions;
     talkLibraryAuthorizer = customerSessions;
@@ -1882,6 +1888,15 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedHumanContacts =
+    options.appOptions?.humanContacts ??
+    (database.humanContacts && humanContactAuthorizer
+      ? createHumanContactService({
+          repository: database.humanContacts,
+          authorizer: humanContactAuthorizer,
+        })
+      : undefined);
+
   const composedTalkSearch =
     options.appOptions?.talkSearch ??
     (database.talkSearch && talkSearchAuthorizer
@@ -2242,6 +2257,7 @@ export async function startGatewayService(
       ...(composedTalkAiSeats ? { talkAiSeats: composedTalkAiSeats } : {}),
       ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
+      ...(composedHumanContacts ? { humanContacts: composedHumanContacts } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedTalkSearch ? { talkSearch: composedTalkSearch } : {}),
       ...(composedTalkLibrary ? { talkLibrary: composedTalkLibrary } : {}),
