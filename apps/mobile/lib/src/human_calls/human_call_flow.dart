@@ -30,11 +30,12 @@ class HumanCallFlowScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<HumanCallFlowScreen> createState()=>_HumanCallFlowScreenState();
 }
-class _HumanCallFlowScreenState extends ConsumerState<HumanCallFlowScreen> {
+class _HumanCallFlowScreenState extends ConsumerState<HumanCallFlowScreen> with WidgetsBindingObserver {
   HumanCallController? _call;
   @override
   void initState(){
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final principal=ref.read(sessionProvider);
     if(principal is! SessionSignedIn)return;
     final userId=principal.user.id;
@@ -61,7 +62,20 @@ class _HumanCallFlowScreenState extends ConsumerState<HumanCallFlowScreen> {
     });
   }
   @override
-  void dispose(){_call?.dispose();super.dispose();}
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if(state==AppLifecycleState.paused || state==AppLifecycleState.detached) {
+      // No native foreground calling service has been qualified. Do not
+      // silently keep a camera/mic streaming when the UI goes background.
+      final call=_call;
+      if(call!=null) unawaited(call.end());
+    }
+  }
+  @override
+  void dispose(){
+    WidgetsBinding.instance.removeObserver(this);
+    _call?.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context){
     final user=ref.watch(sessionProvider);
