@@ -127,7 +127,16 @@ class _HumanCallIncomingStripState extends ConsumerState<HumanCallIncomingStrip>
         final session=ref.read(sessionProvider);
         return session is SessionSignedIn&&session.user.id==userId;
       },
-    )..start();
+    );
+    unawaited(_probeAndStart());
+  }
+  Future<void> _probeAndStart() async {
+    try {
+      await ref.read(humanCallTransportProvider).recent();
+      if (mounted) watcher?.start();
+    } catch (_) {
+      // Unavailable calling backend: do not repeat 404 every five seconds.
+    }
   }
   @override
   void dispose(){watcher?.dispose();super.dispose();}
