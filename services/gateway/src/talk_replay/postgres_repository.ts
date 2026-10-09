@@ -342,8 +342,35 @@ export function createPostgresTalkReplayRepository(
     },
 
     async finalizeFromLive(input){
-      const current=await session(pool,input.tenantId,input.talkId);
-      if(!current) return null;
+      let current=await session(pool,input.tenantId,input.talkId);
+      if(!current) {
+        const talkRow=await talk(pool,input.tenantId,input.talkId);
+        if(!talkRow) return null;
+        const recordingId=`rec_${input.talkId}` as TalkRecordingId;
+        const created=createTalkReplaySession({
+          tenantId:input.tenantId as TenantId,
+          talkId:input.talkId as never,
+          recordingId,
+          hostUserId:talkRow.host_user_id as UserId,
+          hostRecordingConsent:true,
+          publicationPreference:"publish",
+          startedAt:toInstant(talkRow.created_at ?? input.now),
+        },launchTalkReplayPolicy);
+        await pool.query(
+          `INSERT INTO talks.replay_sessions(
+            tenant_id,talk_id,recording_id,host_user_id,revision,
+            recording_state,publication_state,publication_preference,
+            session_json,started_at,updated_at,finalized_at,published_at
+          ) VALUES($1,$2,$3,$4,$5,'recording','published','publish',$6::jsonb,$7,$7,NULL,NULL)
+          ON CONFLICT(tenant_id,talk_id) DO NOTHING`,
+          [
+            input.tenantId,input.talkId,recordingId,talkRow.host_user_id,created.revision,
+            JSON.stringify(created),input.now,
+          ],
+        );
+        current=await session(pool,input.tenantId,input.talkId);
+        if(!current) return null;
+      }
       if(current.recordingState!=="recording") return view(current);
       const transitioned=transitionTalkReplaySession(
         current,

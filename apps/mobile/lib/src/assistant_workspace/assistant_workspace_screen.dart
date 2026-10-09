@@ -228,6 +228,9 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
           ),
         ],
       ),
+      backgroundColor: Theme.of(context).brightness == Brightness.light
+          ? const Color(0xFFEFEAE2)
+          : const Color(0xFF111B21),
       body: SafeArea(
         child: Column(children: [
           if (widget.pendingServiceIntent?.belongsTo(widget.ownerId) == true)
@@ -272,32 +275,36 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: Text(workspace.notice!, semanticsLabel: workspace.notice!),
             ),
-          if (workspace.pending != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Pending to ' + workspace.pending!.role.label,
-                        style: Theme.of(context).textTheme.labelLarge),
-                    Text(workspace.pending!.text,
-                        maxLines: 3, overflow: TextOverflow.ellipsis),
-                    const Text('Not yet confirmed delivered'),
-                    Row(children: [
-                      TextButton(
-                        onPressed: workspace.busy
-                            ? null : () => unawaited(workspace.retryPending()),
-                        child: const Text('Check / retry'),
-                      ),
-                      TextButton(
-                        onPressed: workspace.busy
-                            ? null : () => unawaited(_discardPending()),
-                        child: const Text('Stop retrying'),
-                      ),
-                    ]),
-                  ],
-                ),
+          if (workspace.pending != null && workspace.pending!.text.trim().isNotEmpty)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule_rounded, size: 18, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Pending to ' + workspace.pending!.role.label + ': ' + workspace.pending!.text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: workspace.busy ? null : () => unawaited(workspace.retryPending()),
+                    child: const Text('Retry', style: TextStyle(fontSize: 12)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: workspace.busy ? null : () => unawaited(_discardPending()),
+                  ),
+                ],
               ),
             ),
           Expanded(
@@ -310,8 +317,10 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
                 : ListView.builder(
                     controller: scroll,
                     key: ValueKey('assistant-' + widget.ownerId),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: workspace.history.length,
                     itemBuilder: (context, i) {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
                       final item = workspace.history[i];
                       final isUser = item.message.direction == 'user';
                       return Semantics(
@@ -321,18 +330,50 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
                           alignment: isUser
                               ? Alignment.centerRight : Alignment.centerLeft,
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 330),
-                            child: Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(isUser ? 'You' : item.role.label + ' · AI',
-                                        style: Theme.of(context).textTheme.labelSmall),
-                                    SelectableText(item.message.text),
-                                  ],
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isUser
+                                    ? (isDark ? const Color(0xFF005C4B) : const Color(0xFFDCF8C6))
+                                    : (isDark ? const Color(0xFF1F2C34) : Colors.white),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(14),
+                                  topRight: const Radius.circular(14),
+                                  bottomLeft: Radius.circular(isUser ? 14 : 2),
+                                  bottomRight: Radius.circular(isUser ? 2 : 14),
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!isUser) ...[
+                                    Text(
+                                      item.role.label + ' · AI',
+                                      style: TextStyle(
+                                        color: isDark ? const Color(0xFF25D366) : const Color(0xFF075E54),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                  ],
+                                  SelectableText(
+                                    item.message.text,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: isDark ? Colors.white : const Color(0xFF111827),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -342,37 +383,58 @@ class _AssistantWorkspaceScreenState extends State<AssistantWorkspaceScreen> {
                   ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
             child: Row(children: [
               if (widget.onStartNativeVoice != null)
                 IconButton(
                   tooltip: 'Start private native voice',
                   onPressed: workspace.canSend
                       ? widget.onStartNativeVoice : null,
-                  icon: const Icon(Icons.mic),
+                  icon: const Icon(Icons.mic, color: Color(0xFF128C7E)),
                 ),
               Expanded(
-                child: TextField(
-                  controller: input,
-                  enabled: workspace.ready,
-                  minLines: 1,
-                  maxLines: 5,
-                  maxLength: 6000,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    hintText: role == null
-                        ? 'Message Assistant' : 'Message ' + role.label,
-                    border: const OutlineInputBorder(),
-                    counterText: '',
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1F2C34)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
-                  onSubmitted: (_) => unawaited(_send()),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: TextField(
+                    controller: input,
+                    enabled: workspace.ready,
+                    minLines: 1,
+                    maxLines: 5,
+                    maxLength: 6000,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: role == null
+                          ? 'Message Assistant' : 'Message ' + role.label,
+                      border: InputBorder.none,
+                      counterText: '',
+                    ),
+                    onSubmitted: (_) => unawaited(_send()),
+                  ),
                 ),
               ),
-              IconButton(
-                tooltip: 'Send message',
-                onPressed: workspace.canSend
-                    ? () => unawaited(_send()) : null,
-                icon: const Icon(Icons.send),
+              const SizedBox(width: 6),
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: workspace.canSend ? const Color(0xFF128C7E) : Colors.grey.shade400,
+                child: IconButton(
+                  tooltip: 'Send message',
+                  onPressed: workspace.canSend
+                      ? () => unawaited(_send()) : null,
+                  icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                ),
               ),
             ]),
           ),

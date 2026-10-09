@@ -192,7 +192,7 @@ class AssistantWorkspaceController extends ChangeNotifier {
       }
       roster = verified;
       activeRole = selected;
-      pending = recovered;
+      pending = (recovered != null && recovered.text.trim().isNotEmpty) ? recovered : null;
       await _refreshHistory(generation);
     } catch (_) {
       if (_generation != generation || _dead) return;

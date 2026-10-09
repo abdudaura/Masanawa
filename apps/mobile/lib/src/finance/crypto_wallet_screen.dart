@@ -52,21 +52,17 @@ class CryptoWalletScreen extends ConsumerWidget {
     CryptoWalletSnapshot wallet,
   ) async {
     final capabilities = wallet.capabilities;
-    final settlement = capabilities.fiatSettlementProviderCode;
-    if (
-      !capabilities.fiatOnRamp ||
-      capabilities.fiatCurrencies.isEmpty ||
-      settlement == null
-    ) {
-      return;
-    }
+    final settlement = capabilities.fiatSettlementProviderCode ?? 'USDT';
+    final currencies = capabilities.fiatCurrencies.isNotEmpty
+        ? capabilities.fiatCurrencies
+        : const ['NGN', 'USD'];
 
     final input = await showModalBottomSheet<_BuyInput>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => _BuySheet(
-        fiatCurrencies: capabilities.fiatCurrencies,
+        fiatCurrencies: currencies,
         settlementAsset: settlement,
       ),
     );
@@ -143,7 +139,7 @@ class CryptoWalletScreen extends ConsumerWidget {
     WidgetRef ref,
     CryptoWalletSnapshot wallet,
   ) async {
-    final route = wallet.selectedRoute;
+    final route = wallet.selectedRoute ?? (wallet.depositRoutes.isNotEmpty ? wallet.depositRoutes.first : null);
     if (route == null) return;
     final input = await showModalBottomSheet<_ReceiveInput>(
       context: context,
@@ -173,8 +169,8 @@ class CryptoWalletScreen extends ConsumerWidget {
     WidgetRef ref,
     CryptoWalletSnapshot wallet,
   ) async {
-    final source = wallet.selectedRoute;
-    if (source == null || !wallet.capabilities.conversions) return;
+    final source = wallet.selectedRoute ?? (wallet.depositRoutes.isNotEmpty ? wallet.depositRoutes.first : null);
+    if (source == null) return;
     final targets = wallet.conversionRoutes
         .where((route) => route.providerCode != source.providerCode)
         .toList(growable: false);
@@ -254,8 +250,8 @@ class CryptoWalletScreen extends ConsumerWidget {
     WidgetRef ref,
     CryptoWalletSnapshot wallet,
   ) async {
-    final route = wallet.selectedRoute;
-    if (route == null || !wallet.capabilities.withdrawals) return;
+    final route = wallet.selectedRoute ?? (wallet.depositRoutes.isNotEmpty ? wallet.depositRoutes.first : null);
+    if (route == null) return;
     final input = await showModalBottomSheet<_WithdrawInput>(
       context: context,
       isScrollControlled: true,
@@ -439,9 +435,7 @@ class CryptoWalletScreen extends ConsumerWidget {
                     child: _ActionButton(
                       icon: Icons.add_card_rounded,
                       label: 'Buy',
-                      enabled: data.capabilities.fiatOnRamp &&
-                          data.capabilities.fiatCurrencies.isNotEmpty &&
-                          data.capabilities.fiatSettlementProviderCode != null,
+                      enabled: true,
                       onTap: () => _buy(context, ref, data),
                     ),
                   ),
@@ -450,8 +444,7 @@ class CryptoWalletScreen extends ConsumerWidget {
                     child: _ActionButton(
                       icon: Icons.call_received_rounded,
                       label: 'Receive',
-                      enabled:
-                          data.capabilities.deposits && data.selectedRoute != null,
+                      enabled: true,
                       onTap: () => _receive(context, ref, data),
                     ),
                   ),
@@ -464,8 +457,7 @@ class CryptoWalletScreen extends ConsumerWidget {
                     child: _ActionButton(
                       icon: Icons.swap_horiz_rounded,
                       label: 'Convert',
-                      enabled: data.capabilities.conversions &&
-                          data.selectedRoute != null,
+                      enabled: true,
                       onTap: () => _convert(context, ref, data),
                     ),
                   ),
@@ -474,19 +466,12 @@ class CryptoWalletScreen extends ConsumerWidget {
                     child: _ActionButton(
                       icon: Icons.call_made_rounded,
                       label: 'Withdraw',
-                      enabled: data.capabilities.withdrawals &&
-                          data.selectedRoute != null,
+                      enabled: true,
                       onTap: () => _withdraw(context, ref, data),
                     ),
                   ),
                 ],
               ),
-              if (!data.capabilities.fiatOnRamp ||
-                  !data.capabilities.conversions ||
-                  !data.capabilities.withdrawals) ...[
-                const SizedBox(height: 14),
-                _CapabilityNotice(capabilities: data.capabilities),
-              ],
               const SizedBox(height: 22),
               Text(
                 'Activity',

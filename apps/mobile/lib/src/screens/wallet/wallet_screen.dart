@@ -81,12 +81,6 @@ class WalletScreen extends ConsumerWidget {
                   view: value,
                   onRetry: () => ref.read(walletProvider.notifier).refresh(),
                 ),
-                const SizedBox(height: 12),
-                WalletServiceShortcuts(
-                  onOpenCrypto: onOpenCrypto,
-                  onBuyBills: onBuyBills,
-                  onOpenBillingService: onOpenBillingService,
-                ),
                 if (onAddMoney != null || onSend != null || onWithdraw != null) ...[
                   const SizedBox(height: 12),
                   _Actions(
@@ -95,6 +89,12 @@ class WalletScreen extends ConsumerWidget {
                     onWithdraw: onWithdraw,
                   ),
                 ],
+                const SizedBox(height: 16),
+                WalletServiceShortcuts(
+                  onOpenCrypto: onOpenCrypto,
+                  onBuyBills: onBuyBills,
+                  onOpenBillingService: onOpenBillingService,
+                ),
                 const SizedBox(height: 20),
                 Text(
                   'History',
@@ -151,74 +151,78 @@ class _Balances extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: u.surfaceCard,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: u.structuralBorder),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Nigerian naira · NGN', style: TextStyle(color: u.textMuted)),
-          const SizedBox(height: 4),
-          if (view.ngnBalanceVerified)
-            Text(
-              formatNativeNgnKobo(
-                view.ngnBalanceKobo,
-                Localizations.localeOf(context).toLanguageTag(),
-              ),
-              textDirection: TextDirection.ltr,
-              style: TextStyle(
-                color: u.textPrimary,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
-            )
-          else
-            Row(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Text(
-                    'Balance unavailable',
-                    style: TextStyle(color: u.textMuted),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'MSN Balance',
+                      style: TextStyle(color: u.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: u.brand.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Platform Currency',
+                        style: TextStyle(color: u.brandStrong, fontSize: 10, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: onRetry,
-                  child: const Text('Retry'),
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${view.spendableCredits}',
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'MSN',
+                      style: TextStyle(
+                        color: u.brandStrong,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (view.ngnBalanceVerified) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '≈ ${formatNativeNgnKobo(view.ngnBalanceKobo, Localizations.localeOf(context).toLanguageTag())}',
+                        style: TextStyle(color: u.textMuted, fontSize: 13),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
-          const SizedBox(height: 14),
-          Divider(height: 1, color: u.structuralBorder),
-          const SizedBox(height: 14),
-          Text('Spendable Credits', style: TextStyle(color: u.textMuted)),
-          const SizedBox(height: 4),
-          Text(
-            '${view.spendableCredits} Cr',
-            style: TextStyle(
-              color: u.textPrimary,
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-            ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _SmallBalance(
-                  label: 'Pending',
-                  value: '${view.pendingEarningsCredits} Cr',
-                ),
-              ),
-              Expanded(
-                child: _SmallBalance(
-                  label: 'Available',
-                  value: '${view.availableEarningsCredits} Cr',
-                ),
-              ),
-            ],
+          IconButton(
+            tooltip: 'Refresh balance',
+            onPressed: onRetry,
+            icon: Icon(Icons.sync_rounded, color: u.brandStrong),
           ),
         ],
       ),
@@ -265,39 +269,47 @@ class WalletServiceShortcuts extends StatelessWidget {
     if (onOpenCrypto == null && onBuyBills == null && billing == null) {
       return const SizedBox.shrink();
     }
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        if (onOpenCrypto != null)
-          ActionChip(
-            avatar: const Icon(Icons.currency_bitcoin, size: 18),
-            label: const Text('Crypto'),
-            onPressed: onOpenCrypto,
-          ),
-        if (billing != null) ...[
-          ActionChip(
-            label: const Text('Data bundles'),
-            onPressed: () => billing('data'),
-          ),
-          ActionChip(
-            label: const Text('Airtime'),
-            onPressed: () => billing('airtime'),
-          ),
-          ActionChip(
-            label: const Text('Electricity'),
-            onPressed: () => billing('electricity'),
-          ),
-          ActionChip(
-            label: const Text('TV / Cable'),
-            onPressed: () => billing('tv'),
-          ),
-        ] else if (onBuyBills != null)
-          ActionChip(
-            label: const Text('Billing'),
-            onPressed: onBuyBills,
-          ),
-      ],
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (onOpenCrypto != null)
+            ActionChip(
+              avatar: const Icon(Icons.currency_bitcoin, size: 18),
+              label: const Text('Crypto'),
+              onPressed: onOpenCrypto,
+            ),
+          if (billing != null) ...[
+            ActionChip(
+              avatar: const Icon(Icons.wifi, size: 18),
+              label: const Text('Data bundles'),
+              onPressed: () => billing('data'),
+            ),
+            ActionChip(
+              avatar: const Icon(Icons.phone_android, size: 18),
+              label: const Text('Airtime'),
+              onPressed: () => billing('airtime'),
+            ),
+            ActionChip(
+              avatar: const Icon(Icons.bolt, size: 18),
+              label: const Text('Electricity'),
+              onPressed: () => billing('electricity'),
+            ),
+            ActionChip(
+              avatar: const Icon(Icons.tv, size: 18),
+              label: const Text('TV / Cable'),
+              onPressed: () => billing('tv'),
+            ),
+          ] else if (onBuyBills != null)
+            ActionChip(
+              avatar: const Icon(Icons.receipt_long, size: 18),
+              label: const Text('Billing'),
+              onPressed: onBuyBills,
+            ),
+        ],
+      ),
     );
   }
 }
@@ -321,7 +333,7 @@ class _Actions extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: onAddMoney,
             icon: const Icon(Icons.add),
-            label: const Text('Add money'),
+            label: const Text('Deposit MSN'),
           ),
         ),
         const SizedBox(width: 8),
@@ -332,12 +344,14 @@ class _Actions extends StatelessWidget {
             label: const Text('Send'),
           ),
         ),
-        const SizedBox(width: 8),
-        IconButton.outlined(
-          tooltip: 'Withdraw',
-          onPressed: onWithdraw,
-          icon: const Icon(Icons.south_west),
-        ),
+        if (onWithdraw != null) ...[
+          const SizedBox(width: 8),
+          IconButton.outlined(
+            tooltip: 'Withdraw',
+            onPressed: onWithdraw,
+            icon: const Icon(Icons.south_west),
+          ),
+        ],
       ],
     );
   }
@@ -380,7 +394,7 @@ class _WalletEntryTile extends StatelessWidget {
           style: TextStyle(color: u.textPrimary, fontSize: 14),
         ),
         trailing: Text(
-          '$sign${entry.amountCredits} Cr',
+          '$sign${entry.amountCredits} MSN',
           style: TextStyle(
             color: u.textPrimary,
             fontWeight: FontWeight.w600,

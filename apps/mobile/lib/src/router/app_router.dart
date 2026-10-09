@@ -192,7 +192,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/talk/create',
         builder: (context, _) => CreateTalkScreen(
-          onCreated: (talk) => context.go(
+          onCreated: (talk) => context.pushReplacement(
             '/talk/' + Uri.encodeComponent(talk.id) + '?host=1',
             extra: talk,
           ),

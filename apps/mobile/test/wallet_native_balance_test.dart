@@ -40,40 +40,49 @@ void main() {
     expect(() => formatNativeNgnKobo(-1, 'en'), throwsRangeError);
   });
 
-  testWidgets('wallet displays verified native money separately from Credits',
+  testWidgets('wallet displays compact MSN platform balance with indicative NGN conversion',
       (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         walletProvider.overrideWith(_VerifiedWalletController.new),
       ],
-      child: MaterialApp(theme: buildMasanawaTheme(brightness: Brightness.light), localizationsDelegates: MasanawaLocalization.delegates, supportedLocales: MasanawaLocalization.supportedLocales, home: WalletScreen()),
+      child: MaterialApp(
+        theme: buildMasanawaTheme(brightness: Brightness.light),
+        localizationsDelegates: MasanawaLocalization.delegates,
+        supportedLocales: MasanawaLocalization.supportedLocales,
+        home: const WalletScreen(),
+      ),
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nigerian naira · NGN'), findsOneWidget);
-    expect(find.text('₦1,234.56'), findsOneWidget);
-    expect(find.text('Spendable Credits'), findsOneWidget);
-    expect(find.text('50 Cr'), findsOneWidget);
-    expect(find.text('Pending'), findsOneWidget);
-    expect(find.text('Available'), findsOneWidget);
+    expect(find.text('MSN Balance'), findsOneWidget);
+    expect(find.text('Platform Currency'), findsOneWidget);
+    expect(find.text('50'), findsOneWidget);
+    expect(find.text('MSN'), findsWidgets);
+    expect(find.textContaining('₦1,234.56'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('unknown native balance displays retry, not fabricated ₦0',
+  testWidgets('unverified native balance displays MSN without fabricated ₦ amount',
       (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         walletProvider.overrideWith(_UnavailableNgnController.new),
       ],
-      child: MaterialApp(theme: buildMasanawaTheme(brightness: Brightness.light), localizationsDelegates: MasanawaLocalization.delegates, supportedLocales: MasanawaLocalization.supportedLocales, home: WalletScreen()),
+      child: MaterialApp(
+        theme: buildMasanawaTheme(brightness: Brightness.light),
+        localizationsDelegates: MasanawaLocalization.delegates,
+        supportedLocales: MasanawaLocalization.supportedLocales,
+        home: const WalletScreen(),
+      ),
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nigerian naira · NGN'), findsOneWidget);
-    expect(find.text('Balance unavailable'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
-    expect(find.text('₦0.00'), findsNothing);
-    expect(find.text('50 Cr'), findsOneWidget);
+    expect(find.text('MSN Balance'), findsOneWidget);
+    expect(find.text('Platform Currency'), findsOneWidget);
+    expect(find.text('50'), findsOneWidget);
+    expect(find.text('MSN'), findsWidgets);
+    expect(find.textContaining('₦'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

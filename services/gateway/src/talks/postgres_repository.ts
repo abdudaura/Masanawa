@@ -198,19 +198,26 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
               state IN ('live','reconnecting')
               OR (
                 state = 'ended'
-                AND EXISTS (
-                  SELECT 1 FROM talks.replay_sessions r
-                   WHERE r.tenant_id=t.tenant_id
-                     AND r.talk_id=t.talk_id
-                     AND r.recording_state='finalized'
-                     AND r.publication_state='published'
-                     AND NOT EXISTS (
-                       SELECT 1 FROM talks.safety_enforcement replay_se
-                        WHERE replay_se.tenant_id=r.tenant_id
-                          AND replay_se.target_kind='replay'
-                          AND replay_se.target_id=r.recording_id
-                          AND replay_se.visibility IN ('restricted','blocked')
-                     )
+                AND (
+                  EXISTS (
+                    SELECT 1 FROM talks.replay_sessions r
+                     WHERE r.tenant_id=t.tenant_id
+                       AND r.talk_id=t.talk_id
+                       AND r.recording_state='finalized'
+                       AND r.publication_state='published'
+                       AND NOT EXISTS (
+                         SELECT 1 FROM talks.safety_enforcement replay_se
+                          WHERE replay_se.tenant_id=r.tenant_id
+                            AND replay_se.target_kind='replay'
+                            AND replay_se.target_id=r.recording_id
+                            AND replay_se.visibility IN ('restricted','blocked')
+                       )
+                  )
+                  OR NOT EXISTS (
+                    SELECT 1 FROM talks.replay_sessions r
+                     WHERE r.tenant_id=t.tenant_id
+                       AND r.talk_id=t.talk_id
+                  )
                 )
               )
             )

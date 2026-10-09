@@ -306,8 +306,17 @@ class _HumanNewMessageScreenState
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Find a person by their exact @handle. Only real people '
-                'who permit messaging can start a private conversation.'),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF128C7E),
+                child: Icon(Icons.person_add_outlined, color: Colors.white),
+              ),
+              title: const Text('Load device contacts'),
+              subtitle: const Text('Find your contacts on Masanawa'),
+              trailing: _loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right),
+              onTap: _loading ? null : _loadContacts,
+            ),
             const SizedBox(height: 12),
             TextField(
               key: const ValueKey('human-contact-handle'),
@@ -315,13 +324,18 @@ class _HumanNewMessageScreenState
               maxLength: 41,
               textCapitalization: TextCapitalization.none,
               autocorrect: false,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Person’s @handle',
-                prefixIcon: Icon(Icons.alternate_email),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.alternate_email),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: _searching || _acting ? null : _search,
+                ),
               ),
               onSubmitted: (_) => _search(),
             ),
+            const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: _searching || _acting ? null : _search,
               icon: const Icon(Icons.search),

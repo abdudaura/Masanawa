@@ -184,23 +184,23 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: masanawa.surfaceCard,
-      indicatorColor: Colors.transparent,
+      indicatorColor: isDark ? masanawa.brand.withValues(alpha: 0.25) : const Color(0xFFDCF8C6),
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
           color: states.contains(WidgetState.selected)
               ? masanawa.brandStrong
-              : masanawa.textMuted,
+              : (isDark ? Colors.white70 : const Color(0xFF1E293B)),
         ),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (states) => TextStyle(
           color: states.contains(WidgetState.selected)
               ? masanawa.brandStrong
-              : masanawa.textMuted,
+              : (isDark ? Colors.white70 : const Color(0xFF1E293B)),
           fontSize: 12,
           fontWeight: states.contains(WidgetState.selected)
               ? FontWeight.w700
-              : FontWeight.w500,
+              : FontWeight.w600,
         ),
       ),
     ),

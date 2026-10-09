@@ -3,6 +3,7 @@ import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../state/talk_direct_twin_state.dart';
 import '../../state/talk_gift_state.dart';
@@ -475,9 +476,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       if (!mounted) return;
       final popped = await Navigator.of(context).maybePop();
       if (!popped && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Talk ended.')));
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home?tab=talk');
+        }
       }
     } catch (_) {
       if (!mounted) return;
@@ -794,7 +797,22 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
                 : () => _raiseHand(participation.handStatus),
           );
         }
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to Talks',
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home?tab=talk');
+                }
+              },
+            ),
+          ),
+          body: const Center(child: CircularProgressIndicator()),
+        );
       },
       error: (_, __) {
         if (fallback != null) {
@@ -848,7 +866,19 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
           );
         }
         return Scaffold(
-          appBar: AppBar(),
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to Talks',
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home?tab=talk');
+                }
+              },
+            ),
+          ),
           body: _TalkUnavailable(
             onRetry: () => ref.invalidate(talkDetailProvider(widget.talkId)),
           ),
@@ -960,14 +990,35 @@ class _TalkBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return Scaffold(
-      backgroundColor: u.surfaceBg,
-      appBar: AppBar(
-        title: Text(
-          talk.isLive ? 'Live Talk' : 'Talk Replay',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home?tab=talk');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: u.surfaceBg,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back to Talks',
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home?tab=talk');
+              }
+            },
+          ),
+          title: Text(
+            talk.isLive ? 'Live Talk' : 'Talk Replay',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         actions: [
           IconButton(
             key: const ValueKey('talk-share'),
@@ -1138,7 +1189,8 @@ class _TalkBody extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 

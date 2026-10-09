@@ -118,10 +118,15 @@ class GatewayHumanDmTransport implements HumanDmTransport {
   }
   @override
   Future<List<HumanDmThread>> inbox({int limit=40}) async {
-    final j=await _request('GET','/messages',query:{'limit':limit});
-    final rows=j['conversations'];
-    if(rows is! List) throw const FormatException('Invalid conversation list');
-    return List.unmodifiable(rows.map(HumanDmThread.fromJson));
+    try {
+      final j=await _request('GET','/messages',query:{'limit':limit});
+      final rows=j['conversations'];
+      if(rows is! List) throw const FormatException('Invalid conversation list');
+      return List.unmodifiable(rows.map(HumanDmThread.fromJson));
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) return const [];
+      rethrow;
+    }
   }
   @override
   Future<HumanDmPage> history(String conversationId,{int limit=40,int? beforeSequence}) async {

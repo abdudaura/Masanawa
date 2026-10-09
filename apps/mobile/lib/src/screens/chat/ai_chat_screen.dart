@@ -1000,16 +1000,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         appBar: AppBar(
           backgroundColor: u.brandStrong,
           foregroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actionsIconTheme: const IconThemeData(color: Colors.white),
           elevation: 0,
           leadingWidth: 40,
           leading: widget.embeddedInShell
               ? IconButton(
                   tooltip: 'Agents',
-                  icon: const Icon(Icons.smart_toy_outlined),
+                  icon: const Icon(Icons.smart_toy_outlined, color: Colors.white),
                   onPressed: widget.onOpenAgents,
                 )
               : IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => context.canPop()
                       ? context.pop()
                       : context.go('/home?tab=talk'),
@@ -1113,7 +1115,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ] else
             IconButton(
               tooltip: _showSearch ? 'Close search' : 'Search',
-              icon: Icon(_showSearch ? Icons.close : Icons.search),
+              icon: Icon(_showSearch ? Icons.close : Icons.search, color: Colors.white),
               onPressed: () => setState(() {
                 _showSearch = !_showSearch;
                 if (!_showSearch) _search.clear();
@@ -1125,30 +1127,31 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 child: Center(
                   child: Text(
                     '${_searchIndex + 1}/${searchMatches.length}',
-                    style: const TextStyle(fontSize: 12),
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
                   ),
                 ),
               ),
               IconButton(
                 tooltip: 'Previous result',
-                icon: const Icon(Icons.keyboard_arrow_up),
+                icon: const Icon(Icons.keyboard_arrow_up, color: Colors.white),
                 onPressed: () => _moveSearch(-1, searchMatches),
               ),
               IconButton(
                 tooltip: 'Next result',
-                icon: const Icon(Icons.keyboard_arrow_down),
+                icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
                 onPressed: () => _moveSearch(1, searchMatches),
               ),
             ],
             IconButton(
               tooltip: 'Call',
-              icon: const Icon(Icons.call_outlined),
+              icon: const Icon(Icons.call_outlined, color: Colors.white),
               onPressed: updateRequired || !liveVoiceEnabled
                   ? null
                   : () => _openLiveVoice(agent),
             ),
             PopupMenuButton<String>(
               tooltip: 'More',
+              icon: const Icon(Icons.more_vert, color: Colors.white),
               onSelected: (value) async {
                 final ctl = ref.read(aiChatProvider.notifier);
                 if (value == 'activity') widget.onOpenActivity?.call();
