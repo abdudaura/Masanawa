@@ -122,7 +122,7 @@ export function createTwinQualityService(input: {
   readonly activity: Pick<TwinActivityService,"read">;
 }): TwinQualityService {
   return Object.freeze({
-    async read(request) {
+    async read(request: { readonly authorizationHeader: string | undefined; readonly limit?: number }) {
       const limit = pageLimit(request.limit);
       const [economy,activity] = await Promise.all([
         input.economy.read({ authorizationHeader: request.authorizationHeader }),
