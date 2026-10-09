@@ -115,7 +115,7 @@ void main() {
       'masanawa://chat/character_abc?characterId=character_abc&characterId=character_xyz',
       'masanawa://owner-session/character_abc/request_owner_123?x=1&x=2',
       'masanawa://chat/character_${List.filled(247, 'a').join()}',
-      'masanawa://work/work_123?characterId=character_${'a' * 247}',
+      'masanawa://work/work_123?characterId=character_${List.filled(247, 'a').join()}',
       'masanawa://work/${List.filled(257, 'a').join()}?characterId=character_abc',
       'masanawa://chat/${'character_abc' + List.filled(2048, 'a').join()}',
     ]) {
