@@ -100,7 +100,8 @@ describe("AF01 billing receipt recovery (UX-A07 / WF-A08)", () => {
     expect(result.state).toBe("succeeded");
     expect(result.providerReference).toBe("BP-TEST");
     expect(h.providerRequests).toHaveBeenCalledOnce();
-    expect(h.settleBill).toHaveBeenCalledExactlyOnceWith({
+    expect(h.settleBill).toHaveBeenCalledTimes(1);
+    expect(h.settleBill).toHaveBeenCalledWith({
       ...identity,
       fulfillmentReference: reference,
       state: "succeeded",
@@ -131,7 +132,8 @@ describe("AF01 billing receipt recovery (UX-A07 / WF-A08)", () => {
     }));
 
     expect(result).toEqual({ duplicate: false, reference });
-    expect(h.admitProviderWebhook).toHaveBeenCalledExactlyOnceWith(
+    expect(h.admitProviderWebhook).toHaveBeenCalledTimes(1);
+    expect(h.admitProviderWebhook).toHaveBeenCalledWith(
       expect.objectContaining({
         provider: "flutterwave",
         eventKey: `bill:${reference}:bill.completed`,
@@ -169,7 +171,8 @@ describe("AF01 billing receipt recovery (UX-A07 / WF-A08)", () => {
       event: "charge.completed",
       data: { status: "successful" },
     }))).toEqual({ duplicate: false, reference: null });
-    expect(h.admitProviderWebhook).toHaveBeenCalledExactlyOnceWith(
+    expect(h.admitProviderWebhook).toHaveBeenCalledTimes(1);
+    expect(h.admitProviderWebhook).toHaveBeenCalledWith(
       expect.objectContaining({ eventKey: "event:charge.completed" }),
     );
     expect(h.settleBill).not.toHaveBeenCalled();
