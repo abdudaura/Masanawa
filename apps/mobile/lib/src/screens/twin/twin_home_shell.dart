@@ -11,6 +11,7 @@ import '../../state/agent_directory_state.dart';
 import '../../state/session_state.dart';
 import '../../state/talk_social_profile_state.dart';
 import '../../social/profile_header.dart';
+import '../../services/private_service_intent.dart';
 import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
 import '../chat/ai_chat_screen.dart';
@@ -272,17 +273,49 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     context.push('/chat/' + Uri.encodeComponent(agent.characterId));
   }
 
+  void _beginPrivateService(PrivateServiceIntent intent) {
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn) return;
+    ref.read(pendingPrivateServiceIntentProvider.notifier).select(
+          intent: intent,
+          ownerUserId: session.user.id,
+        );
+    // This only selects a private tab. No audio capture, quote or charge.
+    _selectTab(MasanawaRootTab.talk.index);
+  }
+
+  void _beginBillingService(String code) {
+    final intent = PrivateServiceIntent.fromBillingCode(code);
+    if (intent == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This service is unavailable.')),
+      );
+      return;
+    }
+    _beginPrivateService(intent);
+  }
+
+  void _clearServiceIntent(PendingPrivateServiceIntent request) {
+    ref.read(pendingPrivateServiceIntentProvider.notifier).consume(request);
+  }
+
   Widget _wallet() => WalletScreen(
         embeddedInShell: true,
-        onOpenCrypto: () => context.push('/crypto'),
-        onOpenBillingService: (service) => context.push(
-          '/billing?service=' + Uri.encodeQueryComponent(service)),
+        onOpenCrypto: () => _beginPrivateService(PrivateServiceIntent.crypto),
+        onOpenBillingService: _beginBillingService,
       );
 
   Widget _privateTalk() {
     final directory = ref.watch(agentDirectoryProvider);
     final agent = _supportAgent();
     final strings = AppLocalizations.of(context);
+    final session = ref.watch(sessionProvider);
+    final selected = ref.watch(pendingPrivateServiceIntentProvider);
+    final request = session is SessionSignedIn &&
+            selected != null &&
+            selected.belongsTo(session.user.id)
+        ? selected
+        : null;
     if (agent != null) {
       // Private chat owns its own voice controls; tab selection never
       // grants microphone permission or broadcasts public Talk audio.
@@ -290,6 +323,12 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         key: ValueKey('private-talk-' + agent.characterId),
         characterId: agent.characterId,
         embeddedInShell: true,
+        pendingServiceIntent: request,
+        onServiceIntentConsumed: _clearServiceIntent,
+        onOpenServiceEditor: (selection) {
+          _clearServiceIntent(selection);
+          context.push(selection.intent.editorLocation);
+        },
         onOpenAgents: () => _selectTab(MasanawaRootTab.agents.index),
         onOpenActivity: _openActivity,
         onOpenProfile: _openYou,
