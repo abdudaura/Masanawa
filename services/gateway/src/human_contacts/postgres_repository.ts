@@ -304,6 +304,14 @@ export function createPostgresHumanContactRepository(pool: HumanContactSqlPool):
            AND e.second_user_id=GREATEST($2,$3)
            AND $2<>$3
            AND ($2=e.first_user_id OR $2=e.second_user_id)
+           -- A token issued before account disablement must not mutate contact
+           -- consent. Recheck the ACTOR in the write statement, while still
+           -- allowing an active user to revoke a now-disabled peer.
+           AND EXISTS (
+             SELECT 1 FROM identity.users actor
+              WHERE actor.tenant_id=e.tenant_id
+                AND actor.user_id=$2 AND actor.state='active'
+           )
            AND (e.revoked_by IS NULL OR e.revoked_by=$2)
         RETURNING e.first_user_id
       `, [tenantId, actorId, otherUserId]);
