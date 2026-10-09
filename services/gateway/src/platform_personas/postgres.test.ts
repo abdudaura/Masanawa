@@ -116,4 +116,25 @@ describe("F03 durable Postgres persona identity lease", () => {
     })).rejects.toThrow("advisory lock was not released");
     expect(f.statistics().poisoned).toBe(1);
   });
+  it("fails immediately when a second process owns the seed lock", async () => {
+    const f = database();
+    const busy = {
+      ...f.client,
+      async query(sql: string, params: unknown[] = []) {
+        if (sql.includes("pg_try_advisory_lock")) return { rows: [{ acquired: false }] };
+        return f.client.query(sql, params);
+      },
+    };
+    const reservation = createPostgresPersonaSeedReservations({ connect: async () => busy });
+    const run = vi.fn(async (x: PersonaSeedBinding) => x);
+    await expect(reservation.withSeedLease({
+      tenantId: createCanonicalId("tenant"),
+      seedKey: "platform.basira", allocate, run,
+    })).rejects.toThrow("lease is busy");
+    expect(run).not.toHaveBeenCalled();
+    expect(f.rows.size).toBe(0);
+    expect(f.statistics().released).toBe(1);
+    expect(f.statistics().unlocked).toBe(0);
+  });
+
 });
