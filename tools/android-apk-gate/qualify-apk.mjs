@@ -20,11 +20,11 @@ function normalizedPin(value) {
   return value.toLowerCase();
 }
 function attribute(markup, name) {
-  const escaped = name.replace(/[.*+?^${}()+|[\]\\]/g, '\\$&');
-  return markup.match(new RegExp(`(?:^|\s)${escaped}\s*=\s*(["'])(.*?)\1`, 's'))?.[2] ?? null;
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return markup.match(new RegExp(String.raw`(?:^|\s)${escaped}\s*=\s*(["'])(.*?)\1`, 's'))?.[2] ?? null;
 }
 function element(xml, name) {
-  const matches = [...xml.matchAll(new RegExp(`<${name}\b([^>]+)>`, 'gs'))];
+  const matches = [...xml.matchAll(new RegExp(String.raw`<${name}\b([^>]+)>`, 'gs'))];
   requireCondition(matches.length === 1, `effective_manifest_${name}_invalid`);
   return matches[0][1];
 }
