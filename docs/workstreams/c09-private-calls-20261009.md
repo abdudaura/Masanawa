@@ -1,0 +1,57 @@
+# C09 — Private human voice/video calls: isolated full-stack draft handoff
+
+**Owner approval:** 2026-10-09 explicitly adds direct one-to-one human voice and video calls to the Chats product, superseding the older future-only deferral. **Classification: PARTIAL_IMPLEMENTATION / DRAFT / UNMERGED / NOT INTEGRATED / NOT DEPLOYED.** This is real application source but **not an operational end-to-end feature**.
+
+## Ownership, provenance and traceability
+- Latest `main` inspected before claim: `5e758673ae91082520b21b3153da53791ae2cbf3`.
+- Branch `work/c09-private-calls-20261009-gpt6`. **Source/tests checkpoint before handoff** `23afa724212746e82d06c372d7f8b73797ebe605` (27 commits ahead of base, no behind).
+- Claim ID `gpt6-c09-human-private-calling-20261009`, published **before first source edit** on `factory/claims` commit `f09dcc6b36b2f6d70b341d32514fb8402fe2b064`; renewed as needed. Three exact-path roots: `services/gateway/src/human_calls/**`, `apps/mobile/lib/src/human_calls/**`, `apps/mobile/test/human_calls/**`; docs `PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md` and this handoff. This commits no existing shared file.
+- Original C01 #468, C02 #472 vs #475, C03 #483/#486, C04 #478, C05 #474 vs #476, R14/FCM #461/#497, F12 #493/#497, public LiveKit R02 and F02 #549 all reviewed as **unmerged** dependency owners. No competing private call PR found in live PR sample when claim was created. Do not replace/merge their paths.
+- UX/screen specification, current competitor research, provider costs and K21–K27 acceptance: [docs/PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md](../PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md). Preserve five bottom tabs: **Talks · Chats · Assistant · Wallet · Agents**.
+
+## Implemented source — 19 paths (not merged)
+**Gateway/service** `services/gateway/src/human_calls/`:
+- `service.ts`: per-bearer tenant/principal C01/C02/R15 admission, no media while ringing, only invited callee may accept via repository, fresh permission recheck on every read/media issuance and after provider issuance, safe end even after block, explicit 404/409/429 error states.
+- `postgres_repository.ts`: durable call state, ordered user row locks to serialize overlapping calls, stable dial idempotency, max 3 attempts/min & 15/hour, tenant/member/active accepted C01 relationship and reciprocal safety checks inside start/accept transactions, atomically emitted receiver/sender signals, deadline expiry (45s ring; up to 2h active), server readback.
+- `schema.sql`: **proposed-only** additive tables and index for private calls and leased no-PII signal outbox. **No auto-registration or migration executed.** Canonical migration owner must assign next safe sequence after elected C01/C02/C03 migrations.
+- `livekit_media.ts`: server-only HS256 narrow participant tokens (microphone or microphone+camera, no record/screen/data/moderator), opaque room and identity, short-lived expiry, backend room revoker interface. `signal_worker.ts`: bounded skip-locked/outbox lease retry, terminal media revocation and generic idempotent private hint (no profile/chat text).
+- `composition.ts`: existing `PlatformCustomerSessionAuthorizer` and Postgres/C01/C02/R15 policy seam without Gateway root changes. `routes.ts`: real typed Fastify route handlers for start, recent, one call, accept/decline/end and media token.
+
+**Flutter** `apps/mobile/lib/src/human_calls/`:
+- `human_call_models.dart` rejects unknown server state/media token/invalid URL/expiry. `human_call_transport.dart` uses existing authenticated `ApiClient` and the real C09 routes.
+- `human_call_controller.dart` session-bound lifecycle, stable repeated dial request ID after uncertain response, no token/camera before accepted call and explicit permissions, ring/active/ended polling, fail-closed media recovery, camera/mute/speaker controls and account-switch cleanup.
+- `human_call_room.dart` actual `livekit_client` v2 audio/video room, local mic/camera on accepted call, 15fps low-end camera option, flip camera and cleanup. `human_call_screens.dart` incoming/outgoing/active audio+video states, remote and self video tracks, large controls, permission gating, call history, back/end teardown. `human_call_entries.dart` accepted human DM header icons and authenticated foreground Chats ring-watcher/banner.
+
+**Authored tests**:
+- Gateway `service.test.ts` (6), `livekit_media.test.ts` (5), `signal_worker.test.ts` (4).
+- Flutter `human_call_controller_test.dart` (6), `incoming_call_watcher_test.dart` (2).
+- **Total 23 new automated test cases authored, zero executed**. They test faked service/media boundaries where applicable and cannot stand in for real Postgres/WebRTC/Android.
+
+## Checks executed vs not run (honest gate)
+- **Executed GitHub readback:** 15/15 static source/contract assertions against committed service, SQL, API, Flutter and tests. Branch compare after source checkpoint: 19 files, 27 commits ahead, zero behind, none in protected shared trees; this verifies source presence/layout **only**.
+- Container check: Node `v22.16.0` / TypeScript `5.8.3` available; **Flutter and Dart not installed**. Local GitHub hostname DNS resolution returned no address; connected private repo contents available via GitHub plugin only, not a local runnable checkout. No actual Vitest, tsc, Flutter analyze, widget/device test, Postgres integration, real LiveKit, FCM, Android signed build, end-to-end call or provider deployment was run. Actions #457 runner/quota was previously failing before test steps; do not call that an app failure or success.
+- **No production writes, migrations, FCM sends, charged LiveKit provisioning, secrets changes, branches merged/deleted or native config changes.**
+
+## Explicit remaining implementation (release blockers)
+1. **F15 integration owner** chooses C02 #472's one canonical 0017 migration and C01 0016; inspect evolving schema for collision before assigning **one** C09 migration name after C03. Compose `composeHumanCallService` + `registerHumanCallRoutes` into existing shared Gateway app/main only after auth policy compatibility, without overwriting #497/#468. Verify SQL transaction behavior and exact status/permission/error semantics in disposable PG18.
+2. **F12/C08** mounts `HumanCallChatActions` on authorized C02 header and `HumanIncomingCallBanner` on active human Chats, typed nested Call/Calls History routes with accurate peer identity, deep link `/messages/calls/:callId`, durable navigation/back/foreground and account logout. Do not add sixth tab or enable call icons before backend is live. Integrate strings into R11 Hausa/English accessibility/localization catalog.
+3. **R14/F10** compose/schedule `processHumanCallSignals` with real authenticated FCM token/preferences and OS notification action handling; incoming generic call hint must fetch real call from Gateway. Configure Android 12+ foreground notifications/full-screen policies, mic/camera/telecom permissions and iOS entitlement/CallKit separately under native owner; test background/terminated/ring timeout, do not claim killed-app calls from polling fallback. Worker must enforce quota, lease recovery and alert on max attempts.
+4. **Provider/media owner** supply credential secret via secret store and actual `RoomServiceClient.deleteRoom` implementation to `HumanCallRoomRevoker`, ensure room disconnect on end, timeout, block, account deletion, retry/worker crash. Must coordinate audio focus with public Talk, Gemini and voice-note recorder. Tune TURN/WebRTC video resolution, route/Bluetooth and bandwidth for cheap Androids; qualify unadvertised E2EE claim.
+5. **Scope gap:** A permission-denied video call currently offers Retry/Decline rather than negotiated voice downgrade; there is no OS-level incoming ringing/call waiting or media connection health provider callback. Persist unresolved outgoing request ID through app process death via elected C05 encrypted store; current controller preserves only within current session. Build call-specific safety/audit and abuse observability; do not promise call quality or success without actual two-device proof.
+
+## Executable Work acceptance after integration (NOT RUN now)
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @masanawa/gateway-service typecheck
+pnpm exec vitest run services/gateway/src/human_calls/service.test.ts services/gateway/src/human_calls/livekit_media.test.ts services/gateway/src/human_calls/signal_worker.test.ts
+# With explicitly approved disposable PostgreSQL 18 schema, never customer DB:
+MASANAWA_TEST_DATABASE_URL=<disposable_test_only> pnpm exec vitest run services/gateway/src/human_calls/
+cd apps/mobile
+flutter pub get
+flutter analyze lib/src/human_calls
+flutter test test/human_calls
+flutter build apk --debug
+```
+Then run acceptance **K21–K27** A/B authenticated real Android devices: denied/accepted/blocked, concurrent calls, auth revocation in flight, incoming background and killed-app, slow/reconnect and correct server history, camera/mic/Bluetooth and public Talk/Gemini recorder audio-focus, LiveKit forced room delete on hangup and 2h expiry. Review battery/CPU, privacy-safe lockscreen, crash/cleanup/rollback. Sign final SHA and rerun all tests after merge. Status stays **PARTIAL_IMPLEMENTATION** until real wiring+proof exists.
+
+**Source/test checkpoint: `23afa724212746e82d06c372d7f8b73797ebe605`. Handoff commit and PR final SHA are referenced from the PR body because a Git commit cannot contain its own final SHA.**
