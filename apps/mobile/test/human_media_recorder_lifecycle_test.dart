@@ -9,11 +9,12 @@ import 'package:masanawa/src/human_media/human_voice_transport.dart';
 
 class _Capture implements HumanVoiceCapture {
   _Capture({this.permissionGate, this.startGate, this.stopGate,
-    this.nullStopPath=false});
+    this.nullStopPath=false, this.alternateStopPath});
   final Completer<bool>? permissionGate;
   final Completer<void>? startGate;
   final Completer<void>? stopGate;
   final bool nullStopPath;
+  final String? alternateStopPath;
   int permissions=0, starts=0, stops=0, disposals=0;
   String? path;
 
@@ -32,6 +33,12 @@ class _Capture implements HumanVoiceCapture {
   @override Future<String?> stop() async {
     stops++;
     if(stopGate!=null)await stopGate!.future;
+    if(alternateStopPath!=null){
+      // Simulate a native encoder finalizing at a different file location.
+      await File(alternateStopPath!).writeAsBytes(
+          List<int>.filled(84, 24),flush:true);
+      return alternateStopPath;
+    }
     return nullStopPath ? null : path;
   }
   @override Future<void> dispose() async {disposals++;}
@@ -192,6 +199,51 @@ void main() {
     await subject.discard();
     expect(await File(path).exists(),isFalse);
     await subject.shutdown();
+  });
+
+  test('discard wipes original and alternate native output paths',() async {
+    final alternate='${directory.path}/native-finalized.ogg';
+    final capture=_Capture(alternateStopPath:alternate);
+    final subject=controller(capture);
+    await subject.begin();
+    expect(await File(path).exists(),isTrue);
+    await subject.discard();
+    expect(capture.stops,1);
+    expect(subject.recording,isFalse);
+    expect(await File(path).exists(),isFalse);
+    expect(await File(alternate).exists(),isFalse);
+    await subject.shutdown();
+  });
+
+  test('account shutdown wipes alternate native stop output before dispose',() async {
+    final alternate='${directory.path}/native-finalized.ogg';
+    final capture=_Capture(alternateStopPath:alternate);
+    final subject=controller(capture);
+    await subject.begin();
+    await subject.shutdown();
+    expect(capture.stops,1);
+    expect(capture.disposals,1);
+    expect(subject.closed,isTrue);
+    expect(await File(path).exists(),isFalse);
+    expect(await File(alternate).exists(),isFalse);
+  });
+
+  test('logout racing with discard does not preserve alternate recording',() async {
+    final stopGate=Completer<void>();
+    final alternate='${directory.path}/native-finalized.ogg';
+    final capture=_Capture(stopGate:stopGate,alternateStopPath:alternate);
+    final subject=controller(capture);
+    await subject.begin();
+    final discardFuture=subject.discard();
+    await _yieldUntil(()=>capture.stops==1);
+    final signOutFuture=subject.shutdown();
+    expect(capture.disposals,0);
+    stopGate.complete();
+    await Future.wait([discardFuture,signOutFuture]);
+    expect(capture.stops,1);
+    expect(capture.disposals,1);
+    expect(await File(path).exists(),isFalse);
+    expect(await File(alternate).exists(),isFalse);
   });
 
   test('shutdown during permission prompt never starts or saves a recording',() async {
