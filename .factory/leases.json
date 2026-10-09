@@ -2,23 +2,6 @@
   "schema_version": 1,
   "active": [
     {
-      "claim_id": "gpt6-f14-contacts-reload-privacy-20261009",
-      "owner": "GPT-6 F14 C01 privacy readback",
-      "scope": "F14/C01 fail-closed Flutter contacts refresh after uncertain read",
-      "paths": [
-        "apps/mobile/lib/src/messages/human_contacts_controller.dart",
-        "apps/mobile/test/human_contacts_controller_test.dart",
-        "docs/workstreams/f14-contact-refresh-privacy-fence-20261009.md"
-      ],
-      "branch": "work/c01-private-contact-admission-20261008",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "https://github.com/Baatiku/masanawa/pull/468",
-      "claimed_at": "2026-10-09T04:32:03.690Z",
-      "heartbeat_at": "2026-10-09T04:32:03.690Z",
-      "expires_at": "2026-10-09T04:37:03.690Z",
-      "notes": "Continue canonical draft #468 only; no Gateway composer/migration, Firebase, finance or Flutter root edits."
-    },
-    {
       "claim_id": "gpt6-u01-approval-terms-fence-20261009-0434",
       "owner": "GPT-6 U01 approval terms security continuation",
       "scope": "U01 exact approval terms and capability authorization security",
@@ -146,6 +129,25 @@
       "notes": "No active registry claims; continuing canonical draft PR #433; no shared composer/router/finance/native edits.",
       "released_at": "2026-10-09T04:17:14.985Z",
       "release_reason": "Existing draft PR #433 updated, handoff committed at 24e7e82b8b2fefc79fb3bcbd1f81bd39083bc6ad. 21/21 isolated function probes PASS, 11 Vitest cases authored NOT_RUN; F04/R04 remains partial, integration blocked by checkout/CI/DB/device/provider."
+    },
+    {
+      "claim_id": "gpt6-f14-contacts-reload-privacy-20261009",
+      "owner": "GPT-6 F14 C01 privacy readback",
+      "scope": "F14/C01 fail-closed Flutter contacts refresh after uncertain read",
+      "paths": [
+        "apps/mobile/lib/src/messages/human_contacts_controller.dart",
+        "apps/mobile/test/human_contacts_controller_test.dart",
+        "docs/workstreams/f14-contact-refresh-privacy-fence-20261009.md"
+      ],
+      "branch": "work/c01-private-contact-admission-20261008",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/468",
+      "claimed_at": "2026-10-09T04:32:03.690Z",
+      "heartbeat_at": "2026-10-09T04:32:03.690Z",
+      "expires_at": "2026-10-09T04:37:03.690Z",
+      "notes": "Continue canonical draft #468 only; no Gateway composer/migration, Firebase, finance or Flutter root edits.",
+      "released_at": "2026-10-09T04:34:04.232Z",
+      "release_reason": "Draft PR #468 handoff, source/tests committed at 2a501e0e01c12e7996b33eaf89b0bc1e78332e8c; source readback verified, Flutter/runtime tests not run; C01 remains partial."
     }
   ]
 }
