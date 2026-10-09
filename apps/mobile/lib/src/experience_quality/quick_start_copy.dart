@@ -36,7 +36,7 @@ final class QuickStartCopy {
     QuickStartTarget.talks => hausa ? 'Tattaunawa kai tsaye' : 'Talks',
     QuickStartTarget.chats => hausa ? 'Saƙonnin mutane' : 'Chats',
     QuickStartTarget.assistant => hausa ? 'Mataimaki' : 'Assistant',
-    QuickStartTarget.wallet => hausa ? 'Walƙiya' : 'Wallet',
+    QuickStartTarget.wallet => hausa ? 'Walit' : 'Wallet',
     QuickStartTarget.agents => hausa ? 'Masana da Twins' : 'Agents',
   };
 
