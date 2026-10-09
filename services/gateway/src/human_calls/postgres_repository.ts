@@ -114,6 +114,17 @@ export function createPostgresHumanCallRepository(pool:HumanCallSqlPool):HumanCa
             AND (caller_user_id IN ($2,$3) OR callee_user_id IN ($2,$3))
           LIMIT 1`,[tenantId,actorId,other]);
         if(busy.rows.length) return "busy";
+        // Account row lock above serializes caller quotas across nodes.
+        const rate=await q.query<{recent_minute:number;recent_hour:number}&Record<string,unknown>>(
+          `SELECT count(*) FILTER (
+               WHERE created_at>clock_timestamp()-interval '1 minute'
+             )::int AS recent_minute, count(*)::int AS recent_hour
+           FROM talks.human_private_calls
+           WHERE tenant_id=$1 AND caller_user_id=$2
+             AND created_at>clock_timestamp()-interval '1 hour'`,
+          [tenantId,actorId]);
+        if((rate.rows[0]?.recent_minute??0)>=3 ||
+           (rate.rows[0]?.recent_hour??0)>=15) return "rate_limited";
         const created=await q.query<CallRow>(`
           INSERT INTO talks.human_private_calls
             (tenant_id,conversation_id,caller_user_id,callee_user_id,client_request_id,kind)
