@@ -9,9 +9,9 @@
 - Inherited C01 draft head: `3a51a88820ba483db25152777414d1be786c9ca1` (preserved).
 - Before-source five-minute exact-path claim: https://github.com/Baatiku/masanawa/pull/468#issuecomment-6073980178. Heartbeat: https://github.com/Baatiku/masanawa/pull/468#issuecomment-6073993404. Earlier F14 owner released its previous different-path claim: #6073492822.
 - Production-controller source checkpoint: `e6cbc0d66879b84bc470d6f2736e1abae9589b3f`.
-- Four-regression-test source checkpoint: `0575cb38ef0c342b9c7bf33b1a6abe3bf810ff2d`.
+- Four-regression-test source checkpoint: `0575cb38ef0c342b9c7bf33b1a6abe3bf810ff2d`; subsequent no-behavior-change test-fixture await clarification: `67091d394105d73acb592b5cee4a21182434e0e9`.
 - Exact isolated paths owned and changed: `apps/mobile/lib/src/messages/human_contacts_controller.dart`, `apps/mobile/test/human_contacts_controller_test.dart`, and **this new** `docs/workstreams/f14-contact-controller-revision-fence-20261009.md`. There are **no** edits to `app.ts`, `main.ts`, migrations, Flutter root/router, U21 `contact_hub/**`, provider, native Firebase, CI configuration, or finance.
-- At source checkpoint, GitHub compare against inherited head: **ahead 2 / behind 0**; exactly two Dart paths. This handoff is an additional documentation-only commit; its own SHA must be taken from GitHub's final branch head.
+- At initial source checkpoint, GitHub compare against inherited head: **ahead 2 / behind 0**; exactly two Dart paths. The final fixture-only amendment and handoff add commits, without expanding the owned Dart paths. This handoff is an additional documentation-only commit; its own SHA must be taken from GitHub's final branch head.
 
 ## Verified gap, actual behavior and owned scope
 
@@ -31,7 +31,7 @@ Prior C01 `HumanContactsController._mutate` set `busy` but did not invalidate a 
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Claim before code | **PASS (GitHub)** | C01 PR comment #6073980178 precedes the two committed Dart files |
-| Existing draft continuity | **PASS (GitHub)** | Inherited `3a51a888`; source checkpoint `0575cb38`; compare ahead 2, behind 0, exactly owned source/test paths |
+| Existing draft continuity | **PASS (GitHub)** | Inherited `3a51a888`; source checkpoint `0575cb38`, fixture clarity `67091d39`; readback confirmed only owned source/test paths |
 | Pushed source readback and structural guards | **PASS (static only)** | Connector fetched and inspected committed Dart controller and tests; 4 test declarations present; guards and epoch increment present |
 | Flutter unit/widget tests | **BLOCKED / NOT RUN** | No `dart` or `flutter` installed in available container, and no GitHub DNS/checkout |
 | Full Flutter analyzer and Android app | **BLOCKED / NOT RUN** | No Flutter SDK or real Android handset bound to this session |
