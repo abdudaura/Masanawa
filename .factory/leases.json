@@ -69,22 +69,6 @@
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
     },
     {
-      "claim_id": "masanawa-01-af05-live-voice-recovery-20261009",
-      "owner": "MASANAWA-01 / AF05",
-      "scope": "AF05 stage-specific microphone and transport failure recovery without shared routing or native edits",
-      "paths": [
-        "apps/mobile/lib/src/core/live_voice_session.dart",
-        "apps/mobile/test/audio_first/af05/live_voice_stage_recovery_test.dart",
-        "docs/workstreams/AF05-live-voice-recovery-20261009.md"
-      ],
-      "branch": "work/af05-live-voice-recovery-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-09T21:36:17.817Z",
-      "heartbeat_at": "2026-10-09T21:36:17.817Z",
-      "expires_at": "2026-10-09T21:41:17.817Z",
-      "notes": "AF00 composition awaits separate integrator; preserve Work #497, U09 #534 and R02 #456 without modifying their paths. No local owner APK available."
-    },
-    {
       "claim_id": "masanawa-01-af13-evidence-gate-20261009",
       "owner": "MASANAWA-01 / AF13",
       "scope": "Implement executable fail-closed audio-first acceptance evidence validation; no false-green live/provider/device/source promotion and no production/CI changes",
@@ -561,6 +545,24 @@
       "released_at": "2026-10-09T21:33:06.750Z",
       "release_reason": "AF08 scoped source and regression authored, 4/4 isolated JS simulation, PR #588 handoff SHA ec372e0e89ea3dcf815b2511e66bb92f548327d6. Full Vitest/TS/Fastify/DB/Android not run; AF00 app.ts mapping pending; no production merge.",
       "pr": "https://github.com/Baatiku/masanawa/pull/588"
+    },
+    {
+      "claim_id": "masanawa-01-af05-live-voice-recovery-20261009",
+      "owner": "MASANAWA-01 / AF05",
+      "scope": "AF05 stage-specific microphone and transport failure recovery without shared routing or native edits",
+      "paths": [
+        "apps/mobile/lib/src/core/live_voice_session.dart",
+        "apps/mobile/test/audio_first/af05/live_voice_stage_recovery_test.dart",
+        "docs/workstreams/AF05-live-voice-recovery-20261009.md"
+      ],
+      "branch": "work/af05-live-voice-recovery-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:36:17.817Z",
+      "heartbeat_at": "2026-10-09T21:36:17.817Z",
+      "expires_at": "2026-10-09T21:41:17.817Z",
+      "notes": "AF00 composition awaits separate integrator; preserve Work #497, U09 #534 and R02 #456 without modifying their paths. No local owner APK available.",
+      "released_at": "2026-10-09T21:40:47.945Z",
+      "release_reason": "AF05 PR #589 source + tests + immutable SHA-specific handoff at 889dc098fc2543b9659c3f25292edd373feb71c4; Dart runtime/Android tests NOT_RUN, Vercel build-rate-limit check failed, no main merge or release."
     }
   ]
 }
