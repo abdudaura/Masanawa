@@ -86,9 +86,19 @@ function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): strin
   // A generic provider reference can be different; never let it override an
   // explicit customer reference or silently pick between contradictory aliases.
   function resolve(candidates: readonly unknown[]): string | null {
-    const values = candidates.filter((value): value is string => typeof value === "string")
-      .map((value) => value.trim())
-      .filter((value) => value.length > 0 && value.length <= 128);
+    const values: string[] = [];
+    for (const candidate of candidates) {
+      if (typeof candidate !== "string") continue;
+      const value = candidate.trim();
+      if (!value) continue;
+      if (value.length > 128 || /[\\u0000-\\u001f\\u007f]/u.test(value)) {
+        throw new FlutterwaveWebhookError(
+          "invalid_webhook",
+          "Flutterwave webhook reference is invalid",
+        );
+      }
+      values.push(value);
+    }
     if (new Set(values).size > 1) {
       throw new FlutterwaveWebhookError(
         "invalid_webhook",
