@@ -33,6 +33,14 @@ export interface CustomerChannelOptions {
   readonly telegram?: TelegramChannelConfig;
 }
 
+// Webhook envelopes contain metadata only. Media bytes are downloaded through
+// their authenticated provider endpoints, not embedded in the webhook POST.
+const WEBHOOK_BODY_LIMIT = 1_048_576;
+// External provider metadata/replies must not be read without a byte or time
+// budget. Provider media keeps its existing separate 8 MiB content cap.
+const PROVIDER_JSON_LIMIT = 256 * 1024;
+const PROVIDER_HTTP_TIMEOUT_MS = 15_000;
+
 function exactHeader(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
@@ -43,13 +51,69 @@ function safeEqual(left: string, right: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+/**
+ * Read HTTP responses within a fixed allocation cap, regardless of a missing
+ * or dishonest Content-Length. Cancels the stream on overflow or read failure.
+ * Fetch's deadline signal also bounds a stalled response/body when the runtime
+ * supports standard AbortSignal.timeout (Node >= 20).
+ */
+async function readProviderBody(
+  response: Response,
+  maxBytes: number,
+  oversizedCode: string,
+  emptyCode: string,
+): Promise<Buffer> {
+  const length = Number(response.headers.get("content-length") ?? "0");
+  if (Number.isFinite(length) && length > maxBytes) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new RangeError(oversizedCode);
+  }
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error(emptyCode);
+  const chunks: Buffer[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value || value.byteLength === 0) continue;
+      size += value.byteLength;
+      if (size > maxBytes) throw new RangeError(oversizedCode);
+      chunks.push(Buffer.from(value));
+    }
+  } catch (error) {
+    await reader.cancel().catch(() => undefined);
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+  if (size === 0) throw new Error(emptyCode);
+  return Buffer.concat(chunks, size);
+}
+
 async function fetchJson(url: string, init: RequestInit): Promise<Record<string, unknown>> {
-  const response = await fetch(url, init);
-  const body = await response.json().catch(() => ({})) as Record<string, unknown>;
+  const response = await fetch(url, {
+    ...init,
+    signal: AbortSignal.timeout(PROVIDER_HTTP_TIMEOUT_MS),
+  });
   if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
     throw new Error(`channels.provider_http_${response.status}`);
   }
-  return body;
+  const data = await readProviderBody(
+    response, PROVIDER_JSON_LIMIT,
+    "channels.provider_json_too_large", "channels.provider_json_empty",
+  );
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(data.toString("utf8")) as unknown;
+  } catch {
+    throw new Error("channels.provider_invalid_json");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("channels.provider_invalid_json");
+  }
+  return parsed as Record<string, unknown>;
 }
 
 async function download(
@@ -57,17 +121,18 @@ async function download(
   headers: Readonly<Record<string, string>>,
   maxBytes = 8 * 1024 * 1024,
 ): Promise<Buffer> {
-  const response = await fetch(url, { headers });
-  if (!response.ok) throw new Error(`channels.media_http_${response.status}`);
-  const length = Number(response.headers.get("content-length") ?? "0");
-  if (Number.isFinite(length) && length > maxBytes) {
-    throw new RangeError("channels.media_too_large");
+  const response = await fetch(url, {
+    headers,
+    signal: AbortSignal.timeout(PROVIDER_HTTP_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new Error(`channels.media_http_${response.status}`);
   }
-  const data = Buffer.from(await response.arrayBuffer());
-  if (data.length < 1 || data.length > maxBytes) {
-    throw new RangeError("channels.media_too_large");
-  }
-  return data;
+  return readProviderBody(
+    response, maxBytes,
+    "channels.media_too_large", "channels.media_empty_response",
+  );
 }
 
 function splitText(value: string, max = 3500): readonly string[] {
@@ -278,14 +343,27 @@ export function registerCustomerChannelRoutes(
     app.post(
       "/channels/whatsapp/webhook",
       {
+        bodyLimit: WEBHOOK_BODY_LIMIT,
         preParsing: async (request, _reply, payload) => {
           const pass = new PassThrough();
           const chunks: Buffer[] = [];
+          let length = 0;
+          let oversized = false;
           payload.on("data", (chunk: Buffer | string) => {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            if (oversized) return;
+            const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            length += bytes.length;
+            if (length > WEBHOOK_BODY_LIMIT) {
+              // Do not keep buffering an attacker-controlled HTTP stream;
+              // Fastify's route bodyLimit rejects the request with HTTP 413.
+              oversized = true;
+              chunks.length = 0;
+              return;
+            }
+            chunks.push(bytes);
           });
           payload.on("end", () => {
-            rawBodies.set(request, Buffer.concat(chunks));
+            if (!oversized) rawBodies.set(request, Buffer.concat(chunks, length));
           });
           payload.pipe(pass);
           return pass;
@@ -375,20 +453,29 @@ export function registerCustomerChannelRoutes(
       ) {
         return { received: true };
       }
-      const chatType = (chat as Record<string, unknown>).type;
-      if (typeof chatType === "string" && chatType !== "private") {
+      const fromRawId = (from as Record<string, unknown>).id;
+      const chatRawId = (chat as Record<string, unknown>).id;
+      const messageRawId = message.message_id;
+      // Telegram private chats have the same numeric chat and sender IDs.
+      // Reject missing/forged chat kinds and structurally invalid IDs before
+      // identity linking, media fetch or private assistant execution.
+      if (
+        (chat as Record<string, unknown>).type !== "private" ||
+        !Number.isSafeInteger(fromRawId) || (fromRawId as number) <= 0 ||
+        !Number.isSafeInteger(chatRawId) || chatRawId !== fromRawId ||
+        !Number.isSafeInteger(messageRawId) || (messageRawId as number) <= 0
+      ) {
         return { received: true };
       }
-      const fromId = String((from as Record<string, unknown>).id ?? "");
-      const chatId = String((chat as Record<string, unknown>).id ?? "");
-      const messageId = String(message.message_id ?? "");
-      if (!fromId || !chatId || !messageId) return { received: true };
+      const fromId = String(fromRawId);
+      const chatId = String(chatRawId);
+      const messageId = String(messageRawId);
 
       let phone: string | undefined;
       const contact = message.contact;
       if (contact && typeof contact === "object" && !Array.isArray(contact)) {
         const row = contact as Record<string, unknown>;
-        if (String(row.user_id ?? "") === fromId && typeof row.phone_number === "string") {
+        if (row.user_id === fromRawId && typeof row.phone_number === "string") {
           phone = row.phone_number;
         }
       }
@@ -423,3 +510,4 @@ export function registerCustomerChannelRoutes(
     });
   }
 }
+

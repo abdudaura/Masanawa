@@ -36,9 +36,11 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
     required TalkSafetyReportReason reason,
     String? detail,
     required String requestPrefix,
+    String? clientRequestId,
+    bool requireReceipt = false,
   }) async {
     final normalizedDetail = detail?.trim();
-    await api.dio.post<dynamic>(
+    final response = await api.dio.post<dynamic>(
       '/safety/reports',
       data: {
         'targetKind': targetKind,
@@ -46,10 +48,20 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
         'reason': reason.wire,
         if (normalizedDetail != null && normalizedDetail.isNotEmpty)
           'detail': normalizedDetail,
-        'clientRequestId':
-            requestPrefix + '-' + DateTime.now().microsecondsSinceEpoch.toString(),
+        'clientRequestId': clientRequestId ??
+            (requestPrefix + '-' + DateTime.now().microsecondsSinceEpoch.toString()),
       },
     );
+    if (requireReceipt) {
+      final raw = response.data;
+      if (response.statusCode != 202 ||
+          raw is! Map ||
+          raw['accepted'] != true ||
+          raw['reportId'] is! String ||
+          (raw['reportId'] as String).isEmpty) {
+        throw const FormatException('Could not confirm safety report receipt');
+      }
+    }
   }
 
   @override
@@ -74,13 +86,23 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
     required String targetId,
     required TalkSafetyReportReason reason,
     String? detail,
+    String? clientRequestId,
   }) async {
+    if (targetId.trim().isEmpty || targetId.length > 256) {
+      throw const FormatException('Invalid safety report target');
+    }
+    if (clientRequestId != null &&
+        (clientRequestId.isEmpty || clientRequestId.length > 256)) {
+      throw const FormatException('Invalid safety report request key');
+    }
     await _report(
       targetKind: targetKind.wire,
       targetId: targetId,
       reason: reason,
       detail: detail,
       requestPrefix: 'participant-report',
+      clientRequestId: clientRequestId,
+      requireReceipt: true,
     );
   }
 
@@ -94,3 +116,4 @@ class GatewayTalkSafetyTransport implements TalkSafetyTransport {
     throw const FormatException('Invalid Talk safety preference response');
   }
 }
+

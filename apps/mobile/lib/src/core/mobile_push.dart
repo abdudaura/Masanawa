@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import '../agents/agent_shell.dart';
 import 'request_id.dart';
 import 'shell_deep_link.dart';
+import 'private_push_preview.dart';
 
 const _firebaseApiKey =
     String.fromEnvironment('FIREBASE_API_KEY', defaultValue: '');
@@ -131,10 +132,14 @@ class MobilePushService {
     _foreground = FirebaseMessaging.onMessage.listen((message) async {
       final notification = message.notification;
       if (notification == null) return;
+      // Provider display text can contain untrusted profile names, private
+      // amounts or legacy payloads. Foreground OS banners must be generic.
+      // Navigation still uses the separately validated typed deep-link path.
+      final safePreview = privatePushPreview(message.data);
       await _notifications.show(
         id: message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
-        title: notification.title ?? 'Masanawa',
-        body: notification.body,
+        title: safePreview.title,
+        body: safePreview.body,
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'masanawa_work',
@@ -288,3 +293,4 @@ class MobilePushService {
     _initialized = false;
   }
 }
+

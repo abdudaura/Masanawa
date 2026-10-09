@@ -1,0 +1,12 @@
+diff --git a/pkg/whatsapp_rust_bridge.d.ts b/pkg/whatsapp_rust_bridge.d.ts
+--- a/pkg/whatsapp_rust_bridge.d.ts
++++ b/pkg/whatsapp_rust_bridge.d.ts
+@@ -1,5 +1,8 @@
+ /* tslint:disable */
+ /* eslint-disable */
++
++// The encoder accepts the same recursive node structure as the decoder.
++export type EncodingNode = BinaryNode;
+ 
+ export interface BinaryNode {
+     tag: string;

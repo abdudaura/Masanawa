@@ -13,7 +13,7 @@ import {
   type UserAgentPreferenceRepository,
 } from "@masanawa/agents";
 import { PlatformError } from "@masanawa/contracts";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../transaction.js";
 
 function conflict(code: string, message: string): PlatformError {
@@ -129,7 +129,7 @@ function assignmentFromRow(row: AssignmentRow): CharacterSkillAssignment {
 }
 
 export function createPostgresAgentPresentationRepository(
-  pool: Pool,
+  pool: Pool | PoolClient,
 ): AgentPresentationRepository {
   return Object.freeze({
     async readForCharacter(
@@ -249,7 +249,7 @@ export function createPostgresAgentPresentationRepository(
 }
 
 export function createPostgresCharacterSkillAssignmentRepository(
-  pool: Pool,
+  pool: Pool | PoolClient,
 ): CharacterSkillAssignmentRepository {
   return Object.freeze({
     async readForCharacter(
@@ -319,7 +319,7 @@ export function createPostgresCharacterSkillAssignmentRepository(
 
 
 export function createPostgresPlatformAgentProfileRepository(
-  pool: Pool,
+  pool: Pool | PoolClient,
 ): PlatformAgentProfileRepository {
   return Object.freeze<PlatformAgentProfileRepository>({
     async readForCharacter(input) {
@@ -389,7 +389,7 @@ export function createPostgresPlatformAgentProfileRepository(
 }
 
 export function createPostgresUserAgentPreferenceRepository(
-  pool: Pool,
+  pool: Pool | PoolClient,
 ): UserAgentPreferenceRepository {
   return Object.freeze<UserAgentPreferenceRepository>({
     async readForUser(input) {
@@ -439,3 +439,4 @@ export function createPostgresUserAgentPreferenceRepository(
     },
   });
 }
+

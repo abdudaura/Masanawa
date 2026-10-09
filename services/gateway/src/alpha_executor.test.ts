@@ -12,7 +12,7 @@ function response(text: string): Response {
 
 describe("Gemini Alpha inference provider", () => {
   it("translates provider-neutral text inference without leaking provider shapes upstream", async () => {
-    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit | undefined) => {
       const body = JSON.parse(String(init?.body)) as {
         system_instruction: { parts: { text: string }[] };
         contents: { parts: { text?: string }[] }[];
@@ -39,7 +39,7 @@ describe("Gemini Alpha inference provider", () => {
   });
 
   it("preserves media MIME/data only at the inference adapter boundary", async () => {
-    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit | undefined) => {
       const body = JSON.parse(String(init?.body)) as {
         contents: {
           parts: Array<{
@@ -73,3 +73,4 @@ describe("Gemini Alpha inference provider", () => {
     ).resolves.toEqual({ text: "Heard" });
   });
 });
+

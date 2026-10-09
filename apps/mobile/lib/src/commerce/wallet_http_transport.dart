@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import 'wallet_models.dart';
 
@@ -23,18 +24,43 @@ class GatewayWalletTransport implements WalletTransport {
     throw const FormatException('Invalid Wallet response');
   }
 
+  /// Only an authenticated, exact integer response from the native NGN
+  /// ledger is a valid balance. Temporary unavailability must not invent ₦0.
+  /// Authentication failures remain fatal to the whole wallet session.
+  Future<int?> _readNativeNgn() async {
+    try {
+      final response = await api.dio.get<dynamic>('/v1/wallet/ngn');
+      final raw = _map(response.data)['balanceKobo'];
+      if (raw is! int || raw < 0 || raw > 9007199254740991) {
+        return null;
+      }
+      return raw;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401 ||
+          error.response?.statusCode == 403) {
+        rethrow;
+      }
+      // A 404/5xx or interrupted native-rail request does not revoke the
+      // independent Credits/earnings projection. The UI shows unavailable.
+      return null;
+    } on FormatException {
+      return null;
+    }
+  }
+
   @override
   Future<WalletView> load() async {
-    final results = await Future.wait([
+    // Both authenticated projections fetch concurrently, but a native
+    // provider outage must not hide already-authorized Credits/earnings.
+    final results = await Future.wait<dynamic>([
       api.dio.get<dynamic>('/v1/wallet'),
-      api.dio.get<dynamic>('/v1/wallet/ngn'),
+      _readNativeNgn(),
     ]);
-    final base = _map(results[0].data);
-    final ngn = _map(results[1].data);
+    final base = _map((results[0] as Response<dynamic>).data);
+    final ngnAmount = results[1] as int?;
     return WalletView.fromJson({
       ...base,
-      'ngnBalanceKobo': ngn['balanceKobo'] ?? 0,
-      'ngnBalance': ngn['balance'],
+      if (ngnAmount != null) 'ngnBalanceKobo': ngnAmount,
     });
   }
 
@@ -90,3 +116,4 @@ class GatewayWalletTransport implements WalletTransport {
     }
   }
 }
+

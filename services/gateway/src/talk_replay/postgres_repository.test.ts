@@ -24,10 +24,10 @@ function activeReplay():TalkReplaySession{
 describe("Postgres Talk replay repository",()=>{
   it("stores segment metadata and replay revision in one CTE",async()=>{
     const replay=activeReplay();
-    const calls:Array<{text:string;values?:unknown[]}>=[];
+    const calls:Array<{text:string;values?:unknown[] | undefined}>=[];
 
     const pool:TalkReplaySqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         calls.push({text,...(values===undefined?{}:{values})});
         if(text.includes("SELECT session_json FROM talks.replay_sessions")){
           return {rowCount:1,rows:[{session_json:replay}] as unknown as Row[]};
@@ -60,7 +60,7 @@ describe("Postgres Talk replay repository",()=>{
 
   it("lists finalized private replay for its Host library without making it public",async()=>{
     const pool:TalkReplaySqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         if(text.includes("FROM talks.talks t") && text.includes("host_user_id=$2")){
           expect(values?.[0]).toBe("tenant_1");
           expect(values?.[1]).toBe("user_host");
@@ -87,3 +87,4 @@ describe("Postgres Talk replay repository",()=>{
     expect(result.replays[0]?.id).toBe("talk_1");
   });
 });
+

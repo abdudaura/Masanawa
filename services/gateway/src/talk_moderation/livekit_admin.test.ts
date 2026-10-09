@@ -28,6 +28,32 @@ describe("LiveKit Talk media admin",()=>{
       fetchImpl:async (_url,init)=>{body=JSON.parse(String(init?.body));return new Response("{}",{status:200});},
     });
     await admin.removeParticipant({room:"talk_1",identity:"user:session"});
-    expect(body).toMatchObject({room:"talk_1",identity:"user:session"});
+    expect(body).toMatchObject({
+      room:"talk_1",
+      identity:"user:session",
+    });
+    expect((body as {revoke_token_ts:number}).revoke_token_ts).toBeGreaterThan(1_700_000_000_000);
+  });
+
+  it("uses exact Unix milliseconds for LiveKit Cloud revocation, not JWT seconds",async()=>{
+    let body:unknown;
+    const now=new Date("2026-10-08T06:30:00.000Z");
+    const admin=createLiveKitTalkMediaAdmin({
+      serverUrl:"wss://live.example.test",
+      apiKey:"key",
+      apiSecret:"0123456789abcdef0123456789abcdef",
+      now:()=>now,
+      fetchImpl:async (_url,init)=>{
+        body=JSON.parse(String(init?.body));
+        return new Response("{}",{status:200});
+      },
+    });
+    await admin.removeParticipant({room:"talk_1",identity:"user:talk-live_old"});
+    expect(body).toMatchObject({
+      room:"talk_1",
+      identity:"user:talk-live_old",
+      revoke_token_ts:now.getTime(),
+    });
   });
 });
+

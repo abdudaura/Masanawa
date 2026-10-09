@@ -20,6 +20,7 @@ class TalkAiSeatCandidate {
     this.avatarUrl,
     this.topics = const [],
     this.isAvailable = false,
+    this.isOwnedByViewer = false,
   });
 
   final String personaId;
@@ -30,6 +31,8 @@ class TalkAiSeatCandidate {
   final String? avatarUrl;
   final List<String> topics;
   final bool isAvailable;
+  /// Set only by the authenticated server's owner resolution.
+  final bool isOwnedByViewer;
 
   factory TalkAiSeatCandidate.fromJson(Map<String, dynamic> json) {
     final personaId = json['personaId'];
@@ -59,6 +62,8 @@ class TalkAiSeatCandidate {
           : const [],
       // An omitted/non-boolean flag is not proof a paid AI Seat is ready.
       isAvailable: json['isAvailable'] == true,
+      isOwnedByViewer: json['kind'] == 'twin' &&
+          json['isOwnedByViewer'] == true,
     );
   }
 }
@@ -173,3 +178,4 @@ abstract interface class TalkAiSeatTransport {
     required String quoteId,
   });
 }
+

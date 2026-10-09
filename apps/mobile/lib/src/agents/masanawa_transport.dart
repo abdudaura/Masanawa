@@ -10,6 +10,7 @@ import 'creator_skills.dart';
 import 'creator_economy.dart';
 import 'creator_clone.dart';
 import 'agent_session.dart';
+import 'agent_session_recovery.dart';
 import 'agent_shell.dart';
 import '../chat/shell_document.dart';
 
@@ -409,6 +410,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     try {
       if (onTextDelta != null) {
         var streamedText = '';
+        var outputReceived = false;
         Map<String, dynamic>? done;
         await for (final event in _client.postStream(
           '/agent/sessions/${binding.characterSessionId}/turn-stream',
@@ -420,12 +422,14 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
           if (type == 'delta') {
             final delta = event['text'];
             if (delta is String && delta.isNotEmpty) {
+              outputReceived = true;
               streamedText += delta;
               onTextDelta(delta);
             }
             continue;
           }
           if (type == 'audio') {
+            outputReceived = true;
             final data = event['dataBase64'];
             if (data is String && data.isNotEmpty && onAudioPcmChunk != null) {
               await onAudioPcmChunk(base64Decode(data));
@@ -433,7 +437,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
             continue;
           }
           if (type == 'error') {
-            throw const ApiException('Agent streaming turn failed');
+            throw streamedAgentTurnError(event, outputReceived: outputReceived);
           }
           if (type == 'done') done = event;
         }
@@ -812,3 +816,4 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     }
   }
 }
+

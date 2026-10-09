@@ -337,4 +337,163 @@ describe("Alpha conversation service", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+
+  it.each(["tenant", "user", "character", "relationship", "session"] as const)(
+    "fails closed when a repository returns a %s-mismatched persona session",
+    async (kind) => {
+      const f = fixture();
+      const original = sessionFor(f);
+      const session: CharacterSession =
+        kind === "tenant" ? { ...original, tenantId: createCanonicalId("tenant") } :
+        kind === "user" ? { ...original, userId: createCanonicalId("user") } :
+        kind === "character" ? { ...original, characterId: createCanonicalId("character") } :
+        kind === "relationship" ? { ...original, relationshipId: createCanonicalId("relationship") } :
+        { ...original, characterSessionId: createCanonicalId("character-session") };
+      const execute = vi.fn(async () => ({ reply: "should not run", parts: [] }));
+      const sessions: CharacterSessionRepository = {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { throw new Error("must not close"); },
+        async reset() { throw new Error("not used"); },
+      };
+      const runs: AgentRunRepository = {
+        async create() { throw new Error("run must not start"); },
+        async read() { throw new Error("not used"); },
+        async finish() { throw new Error("run must not finish"); },
+      };
+      const service = createAgentConversationService({
+        sessions, runs,
+        authorizer: { async authorize() { return f.admission; } },
+        strategy: { execute },
+        sessionDurationMs: 60_000,
+      });
+      await expect(service.turn({
+        authorizationHeader: "Bearer current",
+        characterSessionId: original.characterSessionId,
+        characterId: f.scope.characterId,
+        text: "hello",
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      })).rejects.toMatchObject({ code: "agents.session_scope_mismatch" });
+      expect(execute).not.toHaveBeenCalled();
+    },
+  );
+
+  it("blocks text, media and media-set turns after an authorized persona version changes", async () => {
+    const f = fixture();
+    const priorSession = {
+      ...sessionFor(f),
+      characterVersionId: createCanonicalId("character-version"),
+    };
+    const execute = vi.fn(async () => ({ reply: "should not run", parts: [] }));
+    const sessions: CharacterSessionRepository = {
+      async create() { return priorSession; },
+      async read() { return priorSession; },
+      async updateBindings() { throw new Error("not used"); },
+      async close() { throw new Error("not used"); },
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create() { throw new Error("run must not start"); },
+      async read() { throw new Error("not used"); },
+      async finish() { throw new Error("run must not finish"); },
+    };
+    const service = createAgentConversationService({
+      sessions, runs,
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: { execute },
+      sessionDurationMs: 60_000,
+    });
+    const common = {
+      authorizationHeader: "Bearer current",
+      characterSessionId: priorSession.characterSessionId,
+      characterId: f.scope.characterId,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    };
+    const attempts = [
+      () => service.turn({ ...common, text: "continue" }),
+      () => service.mediaTurn({
+        ...common, caption: "Please listen", mimeType: "audio/mp4", dataBase64: "YWJj",
+      }),
+      () => service.mediaSetTurn({
+        ...common, caption: "Look at these", media: [
+          { mimeType: "image/jpeg", dataBase64: "YWJj" },
+          { mimeType: "image/jpeg", dataBase64: "ZGVm" },
+        ],
+      }),
+    ];
+    for (const attempt of attempts) {
+      await expect(attempt()).rejects.toMatchObject({
+        code: "agents.session_persona_changed",
+        retryable: false,
+      });
+    }
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("allows the rightful account to close an earlier persona version without generating a reply", async () => {
+    const f = fixture();
+    const previous = {
+      ...sessionFor(f),
+      characterVersionId: createCanonicalId("character-version"),
+    };
+    const closed = vi.fn(async () => previous);
+    const sessions: CharacterSessionRepository = {
+      async create() { return previous; },
+      async read() { return previous; },
+      async updateBindings() { throw new Error("not used"); },
+      close: closed,
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create() { throw new Error("not used"); },
+      async read() { throw new Error("not used"); },
+      async finish() { throw new Error("not used"); },
+    };
+    const execute = vi.fn(async () => ({ reply: "should not run", parts: [] }));
+    const service = createAgentConversationService({
+      sessions, runs, strategy: { execute },
+      authorizer: { async authorize() { return f.admission; } },
+      sessionDurationMs: 60_000,
+    });
+    await service.close({
+      authorizationHeader: "Bearer current",
+      characterSessionId: previous.characterSessionId,
+      characterId: f.scope.characterId,
+    });
+    expect(closed).toHaveBeenCalledTimes(1);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("rejects a mismatched created session before returning a usable conversation ID", async () => {
+    const f = fixture();
+    const sessions: CharacterSessionRepository = {
+      async create(input) {
+        return { ...sessionFor(f, input.characterSessionId), characterId: createCanonicalId("character") };
+      },
+      async read() { throw new Error("not used"); },
+      async updateBindings() { throw new Error("not used"); },
+      async close() { throw new Error("not used"); },
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create() { throw new Error("not used"); },
+      async read() { throw new Error("not used"); },
+      async finish() { throw new Error("not used"); },
+    };
+    const service = createAgentConversationService({
+      sessions, runs,
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: { async execute() { throw new Error("must not infer"); } },
+      sessionDurationMs: 60_000,
+    });
+    await expect(service.open({
+      authorizationHeader: "Bearer current",
+      characterId: f.scope.characterId,
+    })).rejects.toMatchObject({ code: "agents.session_scope_mismatch" });
+  });
+
 });
+

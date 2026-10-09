@@ -79,6 +79,27 @@
       "description": "Deployment-host compatibility bind address."
     },
     {
+      "name": "LIVEKIT_API_KEY",
+      "owner": "gateway/talk-live",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "LiveKit server API key; required only when public Talk live media is enabled."
+    },
+    {
+      "name": "LIVEKIT_API_SECRET",
+      "owner": "gateway/talk-live",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "LiveKit server API secret used to authorize media and dispatch; required when live media is enabled."
+    },
+    {
+      "name": "LIVEKIT_URL",
+      "owner": "gateway/talk-live",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "LiveKit server URL used by the public Talk live runtime; required when live media is enabled."
+    },
+    {
       "name": "MASANAWA_ADMIN_EMAILS",
       "owner": "gateway/security",
       "classification": "secret",
@@ -254,6 +275,13 @@
         "production"
       ],
       "description": "Canonical PostgreSQL bootstrap connection secret for deployable services."
+    },
+    {
+      "name": "MASANAWA_DELETION_GATEWAY_URL",
+      "owner": "worker/account-deletion",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Gateway endpoint used by the opt-in account deletion access-revocation worker."
     },
     {
       "name": "MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON",
@@ -438,6 +466,48 @@
       "description": "Canonical platform tenant identity."
     },
     {
+      "name": "MASANAWA_PROFILE_AVATAR_PUBLIC_BASE_URL",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_ACCESS_KEY",
+      "owner": "gateway/profile-avatar",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_BUCKET",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_ENDPOINT",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_REGION",
+      "owner": "gateway/profile-avatar",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
+      "name": "MASANAWA_PROFILE_AVATAR_S3_SECRET_KEY",
+      "owner": "gateway/profile-avatar",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Conditional avatar storage configuration. All six profile avatar settings are required together when avatar uploads are enabled."
+    },
+    {
       "name": "MASANAWA_PUBLIC_BASE_URL",
       "owner": "gateway",
       "classification": "public",
@@ -450,6 +520,90 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Bounded graceful shutdown timeout."
+    },
+    {
+      "name": "MASANAWA_TALK_AI_AGENT_NAME",
+      "owner": "gateway/talk-live",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "LiveKit agent dispatch name for authorized public Talk AI Seats."
+    },
+    {
+      "name": "MASANAWA_TALK_AI_SEAT_HOST_SHARE_BPS",
+      "owner": "gateway/talk-ai-seats",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Host share in basis points for AI Seat settlement; validated by the canonical pricing policy."
+    },
+    {
+      "name": "MASANAWA_TALK_AI_SEAT_QUOTE_TTL_SECONDS",
+      "owner": "gateway/talk-ai-seats",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Bounded lifetime in seconds of AI Seat price quotes."
+    },
+    {
+      "name": "MASANAWA_TALK_EXPERT_SEAT_PRICE_CREDITS",
+      "owner": "gateway/talk-ai-seats",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Server-configured Expert Seat price in Credits."
+    },
+    {
+      "name": "MASANAWA_TALK_REPLAY_PLAYBACK_TTL_SECONDS",
+      "owner": "gateway/talk-replay",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Bounded validity in seconds for member-authorized replay playback access."
+    },
+    {
+      "name": "MASANAWA_TALK_REPLAY_S3_ACCESS_KEY",
+      "owner": "gateway/talk-replay",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "S3-compatible replay object-store access key; required when replay media storage is enabled."
+    },
+    {
+      "name": "MASANAWA_TALK_REPLAY_S3_BUCKET",
+      "owner": "gateway/talk-replay",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "S3-compatible replay media bucket; required when replay media storage is enabled."
+    },
+    {
+      "name": "MASANAWA_TALK_REPLAY_S3_ENDPOINT",
+      "owner": "gateway/talk-replay",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "S3-compatible replay object-store endpoint; required when replay media storage is enabled."
+    },
+    {
+      "name": "MASANAWA_TALK_REPLAY_S3_REGION",
+      "owner": "gateway/talk-replay",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "S3 signing region for replay media storage; required when replay media storage is enabled."
+    },
+    {
+      "name": "MASANAWA_TALK_REPLAY_S3_SECRET",
+      "owner": "gateway/talk-replay",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "S3-compatible replay object-store signing secret; required when replay media storage is enabled."
+    },
+    {
+      "name": "MASANAWA_TALK_TWIN_OWNER_SHARE_BPS",
+      "owner": "gateway/talk-ai-seats",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Twin owner share in basis points for canonical AI Seat settlement."
+    },
+    {
+      "name": "MASANAWA_TALK_TWIN_SEAT_PRICE_CREDITS",
+      "owner": "gateway/talk-ai-seats",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Server-configured Twin Seat price in Credits."
     },
     {
       "name": "MASANAWA_TELEGRAM_BOT_TOKEN",
@@ -517,11 +671,32 @@
       "description": "Twin paid-voice metering unit duration in seconds."
     },
     {
+      "name": "MASANAWA_WHATSAPP_ADMIN_TOKEN",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Bearer token protecting linked-device WhatsApp QR, status, and reset administration routes."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_AUTH_DIR",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Persistent filesystem directory for the encrypted linked-device WhatsApp authentication state."
+    },
+    {
       "name": "MASANAWA_WHATSAPP_ENABLED",
       "owner": "gateway/channels",
       "classification": "public",
       "requiredIn": [],
       "description": "Enables the WhatsApp customer channel webhook and delivery adapter."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_MODE",
+      "owner": "gateway/channels",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production WhatsApp transport mode. Must be linked-device when WhatsApp is enabled."
     },
     {
       "name": "MASANAWA_WORKER_HOST",
@@ -559,6 +734,13 @@
       "description": "Production configuration for NOWPAYMENTS_API_KEY."
     },
     {
+      "name": "NOWPAYMENTS_CONVERSIONS_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_CONVERSIONS_ENABLED."
+    },
+    {
       "name": "NOWPAYMENTS_CONVERSION_ENABLED",
       "owner": "gateway/crypto",
       "classification": "public",
@@ -571,13 +753,6 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Production configuration for NOWPAYMENTS_CONVERSION_PROVIDER_CODES."
-    },
-    {
-      "name": "NOWPAYMENTS_CONVERSIONS_ENABLED",
-      "owner": "gateway/crypto",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Production configuration for NOWPAYMENTS_CONVERSIONS_ENABLED."
     },
     {
       "name": "NOWPAYMENTS_CUSTODY_ENABLED",
@@ -629,6 +804,13 @@
       "description": "Production configuration for NOWPAYMENTS_IPN_SECRET."
     },
     {
+      "name": "NOWPAYMENTS_PAYOUTS_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUTS_ENABLED."
+    },
+    {
       "name": "NOWPAYMENTS_PAYOUT_2FA_READY",
       "owner": "gateway/crypto",
       "classification": "public",
@@ -676,13 +858,6 @@
       "classification": "secret",
       "requiredIn": [],
       "description": "Production configuration for NOWPAYMENTS_PAYOUT_VERIFICATION_CODE."
-    },
-    {
-      "name": "NOWPAYMENTS_PAYOUTS_ENABLED",
-      "owner": "gateway/crypto",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Production configuration for NOWPAYMENTS_PAYOUTS_ENABLED."
     },
     {
       "name": "NOWPAYMENTS_RELAY_URL",
@@ -748,25 +923,32 @@
       "description": "Production configuration for SUPABASE_URL."
     },
     {
-      "name": "MASANAWA_WHATSAPP_MODE",
-      "owner": "gateway/channels",
+      "name": "MASANAWA_ACCOUNT_DELETION_RECONCILIATION_ENABLED",
+      "owner": "gateway and database operations",
       "classification": "public",
       "requiredIn": [],
-      "description": "Production WhatsApp transport mode. Must be linked-device when WhatsApp is enabled."
+      "description": "Enables the account deletion reconciliation worker; disabled unless explicitly configured."
     },
     {
-      "name": "MASANAWA_WHATSAPP_AUTH_DIR",
-      "owner": "gateway/channels",
-      "classification": "secret",
+      "name": "MASANAWA_C03_RETENTION_OPERATOR_CONFIRM",
+      "owner": "gateway and database operations",
+      "classification": "public",
       "requiredIn": [],
-      "description": "Persistent filesystem directory for the encrypted linked-device WhatsApp authentication state."
+      "description": "Explicit operator confirmation required before messaging retention execution."
     },
     {
-      "name": "MASANAWA_WHATSAPP_ADMIN_TOKEN",
-      "owner": "gateway/channels",
-      "classification": "secret",
+      "name": "MASANAWA_DB_APPLY_APPROVAL",
+      "owner": "gateway and database operations",
+      "classification": "public",
       "requiredIn": [],
-      "description": "Bearer token protecting linked-device WhatsApp QR, status, and reset administration routes."
+      "description": "Explicit operator approval required before applying database migrations."
+    },
+    {
+      "name": "MASANAWA_DB_TEST_DISPOSABLE_ACK",
+      "owner": "gateway and database operations",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Acknowledges that the configured integration test database is disposable."
     }
   ]
 }

@@ -29,9 +29,9 @@ describe("Postgres Direct Twin repository",()=>{
   });
 
   it("lists only active Twin Seats owned by the current user",async()=>{
-    let call:{text:string;values?:unknown[]}|undefined;
+    let call:{text:string;values?:unknown[] | undefined}|undefined;
     const pool:DirectTwinSqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         call={text,values};
         return {rowCount:1,rows:[{
           tenant_id:"tenant-1",talk_id:"talk-1",seat_id:"seat-1",
@@ -50,9 +50,9 @@ describe("Postgres Direct Twin repository",()=>{
   });
 
   it("uses compare-and-swap revision when replacing an instruction",async()=>{
-    let call:{text:string;values?:unknown[]}|undefined;
+    let call:{text:string;values?:unknown[] | undefined}|undefined;
     const pool:DirectTwinSqlPool={
-      async query<Row>(text:string,values?:unknown[]){
+      async query<Row>(text:string,values?:unknown[] | undefined){
         call={text,values};
         return {
           rowCount:1,
@@ -86,3 +86,4 @@ describe("Postgres Direct Twin repository",()=>{
     })).rejects.toThrow("revision conflict");
   });
 });
+

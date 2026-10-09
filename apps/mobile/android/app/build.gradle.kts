@@ -3,6 +3,7 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -43,7 +44,7 @@ if (requiresStoreSigning) {
 }
 
 android {
-    namespace = "ng.unigeria.unigeria"
+    namespace = "com.masanawa.app"
     // Current Android plugins require API 37 at compile time. Runtime support
     // remains governed by minSdk/targetSdk; compileSdk only exposes newer APIs
     // to the compiler.
@@ -57,8 +58,8 @@ android {
     }
 
     defaultConfig {
-        // Application ID is reserved for the Masanawa shell (ng.unigeria.unigeria).
-        applicationId = "ng.unigeria.unigeria"
+        // Application ID is reserved for the Masanawa consumer app.
+        applicationId = "com.masanawa.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // video_player 2.14.x requires Android API 24+.
@@ -111,3 +112,4 @@ dependencies {
 flutter {
     source = "../.."
 }
+

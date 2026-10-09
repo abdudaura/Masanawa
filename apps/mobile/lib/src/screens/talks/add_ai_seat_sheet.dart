@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../state/talk_ai_seat_state.dart';
 import '../../talks/talk_ai_seat.dart';
@@ -11,6 +12,8 @@ Future<TalkAiSeatRequest?> showAddAiSeatSheet(
   BuildContext context, {
   required String talkId,
   required bool isHost,
+  TalkAiPersonaKind initialKind = TalkAiPersonaKind.expert,
+  bool onlyOwnedTwin = false,
 }) {
   return showModalBottomSheet<TalkAiSeatRequest>(
     context: context,
@@ -21,6 +24,8 @@ Future<TalkAiSeatRequest?> showAddAiSeatSheet(
       child: AddAiSeatSheet(
         talkId: talkId,
         isHost: isHost,
+        initialKind: initialKind,
+        onlyOwnedTwin: onlyOwnedTwin,
       ),
     ),
   );
@@ -31,10 +36,14 @@ class AddAiSeatSheet extends ConsumerStatefulWidget {
     super.key,
     required this.talkId,
     required this.isHost,
+    this.initialKind = TalkAiPersonaKind.expert,
+    this.onlyOwnedTwin = false,
   });
 
   final String talkId;
   final bool isHost;
+  final TalkAiPersonaKind initialKind;
+  final bool onlyOwnedTwin;
 
   @override
   ConsumerState<AddAiSeatSheet> createState() => _AddAiSeatSheetState();
@@ -56,7 +65,12 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(
+      length: widget.onlyOwnedTwin ? 1 : 2,
+      vsync: this,
+      initialIndex: widget.onlyOwnedTwin ||
+              widget.initialKind == TalkAiPersonaKind.expert ? 0 : 1,
+    );
     _tabs.addListener(() {
       if (!_tabs.indexIsChanging) setState(() {});
     });
@@ -213,10 +227,9 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         ),
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: 'Experts'),
-            Tab(text: 'Twins'),
-          ],
+          tabs: widget.onlyOwnedTwin
+              ? const [Tab(text: 'My Twin')]
+              : const [Tab(text: 'Experts'), Tab(text: 'Twins')],
         ),
       ),
       body: Column(
@@ -277,12 +290,17 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
                     ref.invalidate(talkAiSeatCatalogProvider(widget.talkId)),
               ),
               data: (all) {
-                final kind = _tabs.index == 0
-                    ? TalkAiPersonaKind.expert
-                    : TalkAiPersonaKind.twin;
+                final kind = widget.onlyOwnedTwin
+                    ? TalkAiPersonaKind.twin
+                    : _tabs.index == 0
+                        ? TalkAiPersonaKind.expert
+                        : TalkAiPersonaKind.twin;
                 final query = _search.text.trim().toLowerCase();
                 final items = all.where((candidate) {
                   if (candidate.kind != kind) return false;
+                  if (widget.onlyOwnedTwin && !candidate.isOwnedByViewer) {
+                    return false;
+                  }
                   if (query.isEmpty) return true;
                   return candidate.displayName.toLowerCase().contains(query) ||
                       candidate.subtitle.toLowerCase().contains(query) ||
@@ -299,11 +317,32 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
                     title: query.isEmpty
                         ? kind == TalkAiPersonaKind.expert
                             ? 'No Experts available yet.'
-                            : 'No Twins available yet.'
+                            : widget.onlyOwnedTwin
+                                ? 'No verified owned Twin is available.'
+                                : 'No Twins available yet.'
                         : 'No matches found.',
                     subtitle: query.isEmpty
-                        ? 'Available AI personas will appear here.'
+                        ? kind == TalkAiPersonaKind.twin
+                            ? 'Create a Twin, then return to this Talk to request a Seat.'
+                            : 'Available AI personas will appear here.'
                         : 'Try a different name or topic.',
+                    action: query.isNotEmpty
+                        ? 'Clear search'
+                        : kind == TalkAiPersonaKind.twin
+                            ? 'Create My Twin'
+                            : 'Refresh list',
+                    onAction: () {
+                      if (query.isNotEmpty) {
+                        _search.clear();
+                        setState(() {});
+                      } else if (kind == TalkAiPersonaKind.twin) {
+                        final router = GoRouter.of(context);
+                        Navigator.of(context).pop();
+                        router.push('/my-twin');
+                      } else {
+                        ref.invalidate(talkAiSeatCatalogProvider(widget.talkId));
+                      }
+                    },
                   );
                 }
 
@@ -696,3 +735,4 @@ class _SeatState extends StatelessWidget {
     );
   }
 }
+

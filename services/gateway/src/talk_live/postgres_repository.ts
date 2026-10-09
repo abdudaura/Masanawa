@@ -130,6 +130,31 @@ async function currentState(
   );
   if (!talk.rows[0]) return null;
 
+  // A terminal Talk is authoritative even if its runtime projection is stale.
+  // Do not expire or resurrect presence records after the Talk has ended.
+  if (talk.rows[0].state === "ended") {
+    const canonical = await pool.query<{ end_reason: string | null }>(
+      `SELECT session_json->>'endReason' AS end_reason
+         FROM talks.live_canonical
+        WHERE tenant_id=$1 AND talk_id=$2 LIMIT 1`,
+      [tenantId, talkId],
+    );
+    const value = canonical.rows[0]?.end_reason;
+    const endReason =
+      value === "host_grace_expired" || value === "host_ended" || value === "platform_ended"
+        ? value
+        : null;
+    return Object.freeze({
+      talkId,
+      state: "ended",
+      hostConnected: false,
+      listenerCount: 0,
+      aiGenerationAllowed: false,
+      reconnectGraceEndsAt: null,
+      endReason,
+    });
+  }
+
   const staleBefore = new Date(Date.parse(now) - 15_000).toISOString();
   const stale = await pool.query<{ role: "host" | "listener" }>(
     `UPDATE talks.live_sessions
@@ -315,11 +340,24 @@ export function createPostgresTalkLiveRepository(
           isMuted = seat.rows[0].is_muted;
         }
       }
-      await pool.query(
+      // The database permits only one connected human Host session per Talk.
+      // A resumed Host atomically supersedes its previous lease, rather than
+      // failing the unique index during app/network restarts. The old session
+      // ID immediately stops authorizing heartbeat or new media credentials.
+      const sessionWrite = await pool.query(
         `INSERT INTO talks.live_sessions (
           tenant_id, talk_id, session_id, user_id, role, is_muted,
           connection_state, connected_at, last_seen_at
-        ) VALUES ($1,$2,$3,$4,$5,$6,'connected',$7,$7)`,
+        ) VALUES ($1,$2,$3,$4,$5,$6,'connected',$7,$7)${role === "host" ? `
+        ON CONFLICT (tenant_id, talk_id)
+          WHERE role = 'host' AND connection_state = 'connected'
+        DO UPDATE SET
+          session_id = EXCLUDED.session_id,
+          connected_at = EXCLUDED.connected_at,
+          last_seen_at = EXCLUDED.last_seen_at,
+          disconnected_at = NULL,
+          is_muted = false
+        WHERE talks.live_sessions.user_id = EXCLUDED.user_id` : ""}`,
         [
           input.tenantId,
           input.talkId,
@@ -330,6 +368,10 @@ export function createPostgresTalkLiveRepository(
           input.now,
         ],
       );
+      if (sessionWrite.rowCount === 0) {
+        // Never steal an unrelated user's Host lease if storage is corrupt.
+        throw new Error("talks.live.host_session_owner_mismatch");
+      }
 
       if (role === "host") {
         await pool.query(
@@ -394,6 +436,7 @@ export function createPostgresTalkLiveRepository(
             AND talk_id = $2
             AND session_id = $3
             AND user_id = $4
+            AND connection_state = 'connected'
           RETURNING session_id, role, connection_state, is_muted`,
         [
           input.tenantId,
@@ -499,3 +542,4 @@ export function createPostgresTalkLiveRepository(
     },
   });
 }
+

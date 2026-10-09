@@ -52,13 +52,48 @@ export function createPostgresTalkGiftRepository(
                      AND r.talk_id = t.talk_id
                      AND r.recording_state = 'finalized'
                      AND r.publication_state = 'published'
+                     AND NOT EXISTS (
+                       SELECT 1 FROM talks.safety_enforcement se
+                        WHERE se.tenant_id = r.tenant_id
+                          AND se.target_kind = 'replay'
+                          AND se.target_id = r.recording_id
+                          AND se.visibility IN ('restricted','blocked')
+                     )
                 )
               )
             )
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id = t.tenant_id
+                 AND se.target_kind = 'talk'
+                 AND se.target_id = t.talk_id
+                 AND se.visibility IN ('restricted','blocked')
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               JOIN talks.public_profiles hp
+                 ON hp.tenant_id = se.tenant_id
+                AND hp.user_id = t.host_user_id
+                AND hp.handle = se.target_id
+               WHERE se.tenant_id = t.tenant_id
+                 AND se.target_kind = 'profile'
+                 AND se.visibility IN ('restricted','blocked')
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_preferences sp
+               WHERE sp.tenant_id = t.tenant_id
+                 AND sp.blocked = TRUE
+                 AND (
+                   (sp.viewer_user_id = $3 AND sp.subject_user_id = t.host_user_id)
+                   OR
+                   (sp.viewer_user_id = t.host_user_id AND sp.subject_user_id = $3)
+                 )
+            )
           LIMIT 1`,
-        [input.tenantId, input.talkId],
+        [input.tenantId, input.talkId, input.senderUserId],
       );
       return result.rows[0] ? target(result.rows[0]) : null;
     },
   });
 }
+

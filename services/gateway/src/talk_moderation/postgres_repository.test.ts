@@ -140,9 +140,9 @@ describe("Postgres Talk moderation repository", () => {
   });
 
   it("creates a durable pending human invitation for a verified profile", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkModerationSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
@@ -297,11 +297,11 @@ describe("Postgres Talk moderation repository", () => {
       toInstant("2026-10-07T10:01:00.000Z"),
       launchTalkLivePolicy,
     ).session;
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     let canonicalReads = 0;
 
     const pool: TalkModerationSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
@@ -416,9 +416,9 @@ describe("Postgres Talk moderation repository", () => {
   });
 
   it("persists bounded pending audience questions for a live Talk", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkModerationSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
@@ -546,3 +546,4 @@ describe("Postgres Talk moderation repository", () => {
     ).rejects.toThrow("talks.host_immutable");
   });
 });
+

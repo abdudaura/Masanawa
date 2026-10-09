@@ -93,7 +93,7 @@ export function createTalkGiftService(input: Readonly<{
   async function authorizedTarget(authorizationHeader: string | undefined, rawTalkId: string) {
     const viewer = await input.authorizer.authorize({ authorizationHeader });
     const talkId = text(rawTalkId, "talk_id", 160);
-    const target = await input.repository.resolveTarget({ tenantId: viewer.tenantId, talkId });
+    const target = await input.repository.resolveTarget({ tenantId: viewer.tenantId, talkId, senderUserId: viewer.userId });
     if (!target) throw new TalkGiftError("talks.not_found", 404);
     if (target.hostUserId === viewer.userId) {
       throw new TalkGiftError("talks.gift.self_forbidden", 409);
@@ -189,3 +189,4 @@ export function createTalkGiftService(input: Readonly<{
     },
   });
 }
+

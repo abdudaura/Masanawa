@@ -1,0 +1,1493 @@
+[
+  {
+    "pr": 575,
+    "title": "C09: private human voice and video calls — guarded full-stack draft (integration pending)",
+    "url": "https://github.com/Baatiku/masanawa/pull/575",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "4f15bb681bc52d4d15902feb0513c30792dd1ab7",
+    "branch": "work/c09-private-calls-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-575/c09-private-calls-20261009.md"
+    ]
+  },
+  {
+    "pr": 574,
+    "title": "F07: strip implicit Unicode direction marks from displayed identifiers (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/574",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "6d8d1c823f5dd507bd0dd0c01bc4ef3a9915f632",
+    "branch": "work/f07-bidi-identifier-controls-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-574/f07-bidi-identifier-controls-20261009.md"
+    ]
+  },
+  {
+    "pr": 571,
+    "title": "F08: prevent retained phone evidence and cross-account channel sessions (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/571",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "a2f6eecc2525a2f8eb159394fe7db42ecbfca7cc",
+    "branch": "work/f08-channel-phone-cache-isolation-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-571/f08-channel-phone-isolation-20261009.md"
+    ]
+  },
+  {
+    "pr": 570,
+    "title": "F11: fail-closed Gateway /readyz evidence verifier (draft; isolated tests)",
+    "url": "https://github.com/Baatiku/masanawa/pull/570",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "99a81e015add9467b38b0702839ccbf52e0c5b56",
+    "branch": "work/f11-gateway-readiness-evidence-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-570/f11-gateway-readiness-evidence-20261009.md"
+    ]
+  },
+  {
+    "pr": 569,
+    "title": "F11 verification: read-only draft handoff SHA and evidence integrity (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/569",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "3f52aa92f70444fd424b2615c080e07ac9725b9d",
+    "branch": "work/f11-handoff-evidence-checker-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-569/f11-handoff-evidence-integrity-20261009.md"
+    ]
+  },
+  {
+    "pr": 567,
+    "title": "F11: classify zero-step Actions failures without false test evidence (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/567",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "6517778d41acab7ad0b6472d702fedb297b397ea",
+    "branch": "work/f11-zero-step-ci-evidence-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-567/f11-zero-step-ci-evidence-20261009.md"
+    ]
+  },
+  {
+    "pr": 566,
+    "title": "F11: add redacted source-secret exposure verification gate (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/566",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "382d2a757bf30ac9673d7cc4546c9c49a9c861ff",
+    "branch": "work/f11-source-secret-exposure-gate-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-566/f11-source-secret-exposure-gate-20261009.md"
+    ]
+  },
+  {
+    "pr": 565,
+    "title": "F13: reject unsafe public profile control characters before SQL (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/565",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "96e1d19d1f6fcd1626baa43d3fbd9cc38062c2ec",
+    "branch": "work/f13-profile-text-input-guard-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-565/f13-profile-input-integrity-20261009.md"
+    ]
+  },
+  {
+    "pr": 563,
+    "title": "F11: fail-closed alpha demo-bootstrap database target guard (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/563",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "a2e8a455765e5baf4cf51fb1309db3877b9d3713",
+    "branch": "work/f11-alpha-bootstrap-target-guard-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-563/f11-alpha-bootstrap-target-guard-20261009.md"
+    ]
+  },
+  {
+    "pr": 561,
+    "title": "F11: guarded offline archive inspection and disposable PostgreSQL restore rehearsal (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/561",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "d6f149f4c6fc3490afe63b45be265194caa83a6a",
+    "branch": "work/f11-disposable-pg-restore-rehearsal-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-561/f11-disposable-pg-restore-rehearsal-20261009.md"
+    ]
+  },
+  {
+    "pr": 559,
+    "title": "F11: qualify effective Android release APK manifest and pinned signer (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/559",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "ea50a00334ddfff7608e7a3934d71ad292e5a8c6",
+    "branch": "work/f11-apk-artifact-qualification-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-559/f11-apk-artifact-gate-20261009.md"
+    ]
+  },
+  {
+    "pr": 557,
+    "title": "R16 verification: fail-closed Android APK certificate and package gate (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/557",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "16bd851b4f7b3df00dfb703741d9d6e6b365bea3",
+    "branch": "verify/r16-apk-release-certificate-gate-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-557/r16-apk-release-certificate-gate-20261009.md"
+    ]
+  },
+  {
+    "pr": 555,
+    "title": "F10: pin FCM OAuth assertions to canonical Google endpoint (stacked, draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/555",
+    "state": "open",
+    "draft": true,
+    "base": "0098f4d05d72ea1dc2ad3a3b683111a0f68499cd",
+    "head": "fa6e6cfcc88e9d1e1b79475b9b2dbdddc3cb5cbb",
+    "branch": "work/f10-fcm-oauth-trust-boundary-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-555/f10-fcm-oauth-trust-boundary-20261009.md"
+    ]
+  },
+  {
+    "pr": 554,
+    "title": "F11: add fail-closed Firebase cross-platform continuity preflight (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/554",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "ed0a1ca19675cd98aeedf35024464031d515c397",
+    "branch": "work/f11-firebase-continuity-guard-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-554/f11-firebase-continuity-20261009.md"
+    ]
+  },
+  {
+    "pr": 552,
+    "title": "F12 verification: fail-closed five-tab and legacy-route source guard (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/552",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "21f8a867ef40c415ca8466a6175508aba4e06aeb",
+    "branch": "work/verify-f12-five-tab-guard-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-552/f12-five-tab-guard-20261009.md"
+    ]
+  },
+  {
+    "pr": 549,
+    "title": "F02: fail-closed Live Talk session grants and media envelope (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/549",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "3350c3aad6b62050c08776ecb90bc5119b0ebdfe",
+    "branch": "work/f02-live-response-fail-closed-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-549/f02-live-response-fail-closed-20261009.md"
+    ]
+  },
+  {
+    "pr": 548,
+    "title": "F08: filter moderated and blocked Talk comments at authenticated read (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/548",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "ab0a7f8bddbc0e9167d6065a6511fa1581a4360e",
+    "branch": "work/f08-talk-comment-visibility-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-548/f08-talk-comment-visibility-20261009.md"
+    ]
+  },
+  {
+    "pr": 547,
+    "title": "F01: Restore dark feedback text contrast with executable WCAG guards (DRAFT)",
+    "url": "https://github.com/Baatiku/masanawa/pull/547",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "8c861b10616eefd5c4b249a46f241307955fc07b",
+    "branch": "work/f01-semantic-contrast-recovery-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-547/f01-semantic-contrast-20261009.md"
+    ]
+  },
+  {
+    "pr": 546,
+    "title": "U18: owner Twin quality and ledger-verified earnings visibility (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/546",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "08509e2b2bc112fdf19b4586409f35de02b683db",
+    "branch": "work/u18-twin-quality-economics-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-546/u18-twin-quality-economics-20261008.md"
+    ]
+  },
+  {
+    "pr": 545,
+    "title": "F03: 17-persona catalog and fail-closed private Expert seed recovery (DRAFT)",
+    "url": "https://github.com/Baatiku/masanawa/pull/545",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "3ea4fcfece06c6db0bc8228ba717375c937d3515",
+    "branch": "work/f03-approved-persona-provisioning-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-545/f03-persona-catalog-recovery-20261009.md"
+    ]
+  },
+  {
+    "pr": 543,
+    "title": "U16: host-consented post-Talk replay insights and review (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/543",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "b98fb175f2f5b233ea235d73651618733d507257",
+    "branch": "work/u16-talk-post-session-consent-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-543/u16-talk-replay-insights-20261008.md"
+    ]
+  },
+  {
+    "pr": 542,
+    "title": "F07: fail-closed R11 locale catalog and ICU merge-integrity audit (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/542",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "25d0b7c3b09607c3f7f994867ea8a2f997b8ec80",
+    "branch": "work/f07-localization-integrity-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-542/f07-localization-integrity-20261009.md"
+    ]
+  },
+  {
+    "pr": 539,
+    "title": "U19: silent multilingual onboarding and account-fenced low-end measurement (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/539",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "56d9a81b34676dfce73779e630c951d96ee66114",
+    "branch": "work/u19-access-lowend-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-539/u19-access-performance-20261008.md"
+    ]
+  },
+  {
+    "pr": 538,
+    "title": "U17: owner Twin interview and fail-closed preview/publication (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/538",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "406d00314f5bc6d6851c1069a8557b6ed85a48f2",
+    "branch": "work/u17-owner-twin-training-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-538/u17-twin-training-20261008.md"
+    ]
+  },
+  {
+    "pr": 537,
+    "title": "U13: authenticated human DM notification preferences and safe push hints (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/537",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "4e2a073036d861e80ae6289c198aedc22fb99f43",
+    "branch": "work/u13-chat-notification-trust-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-537/u13-chat-notification-trust-20261008.md"
+    ]
+  },
+  {
+    "pr": 536,
+    "title": "U15: Host-approved Live Talk AI stage copilot with durable turn fencing (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/536",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "061b637f3386f67596ca3997b8dac5ac5b619eac",
+    "branch": "work/u15-safe-live-stage-copilot-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-536/u15-live-talk-agent-copilot-20261008.md"
+    ]
+  },
+  {
+    "pr": 535,
+    "title": "U14: private Talk Host preparation, revision-safe Go Live and Expert quote preview (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/535",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "7998aa13de82d7f5a07d6c3485e4f9ad964defaa",
+    "branch": "work/u14-talk-host-copilot-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-535/u14-talk-host-copilot-20261008.md"
+    ]
+  },
+  {
+    "pr": 534,
+    "title": "U09: private Gemini Live voice focus and reviewed Assistant continuity (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/534",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "f099a252de51e6c13bedf2fa8d8273efafcf284e",
+    "branch": "work/u09-private-voice-operator-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-534/u09-private-live-voice-operator-20261008.md"
+    ]
+  },
+  {
+    "pr": 533,
+    "title": "U12: private human media review UX with account-fenced retry and safe previews (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/533",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "0bc8acf665d0ae73e9856976ab1501b22edaad19",
+    "branch": "work/u12-private-human-media-ux-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-533/u12-human-media-ux-20261008.md"
+    ]
+  },
+  {
+    "pr": 531,
+    "title": "U11: account-fenced human DM search with read-only SQL and Flutter (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/531",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "1b4fb5df981a331298419e86bc7840823e450b10",
+    "branch": "work/u11-permissioned-dm-search-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-531/u11-chat-search-privacy-20261008.md"
+    ]
+  },
+  {
+    "pr": 530,
+    "title": "U10: account-safe human chat composer and idempotent send recovery (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/530",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "c491bd3a12515235a0f8649c6ba2cd47d64e9dbe",
+    "branch": "work/u10-human-chat-polish-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-530/u10-chat-polish-20261008.md"
+    ]
+  },
+  {
+    "pr": 529,
+    "title": "U10: protected human DM composer and honest retry UX (draft, integration pending)",
+    "url": "https://github.com/Baatiku/masanawa/pull/529",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "5fd1a41f8e4028532bad1e2f3a665a0e1e907540",
+    "branch": "work/u10-human-chat-composer-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-529/u10-chat-polish-20261008.md"
+    ]
+  },
+  {
+    "pr": 527,
+    "title": "U20: fail-closed release evidence qualification, safe test capture and migration inventory",
+    "url": "https://github.com/Baatiku/masanawa/pull/527",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "9b3f099e66850e7d9dea5a028772f58f7d8efbb8",
+    "branch": "work/u20-release-qualification-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-527/u20-release-qualification-20261009.md"
+    ]
+  },
+  {
+    "pr": 526,
+    "title": "U08: consented selected human-message AI assistance with reviewed C02 send (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/526",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "a7faf7f68f1e48f4400f7092531546ae49e8ab78",
+    "branch": "work/u08-selected-dm-ai-assist-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-526/u08-selected-dm-ai-assist-20261009.md"
+    ]
+  },
+  {
+    "pr": 525,
+    "title": "U06: authenticated teaching continuity, Study routes and Flutter learning progress (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/525",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "da324917d6387f1107348d43306294e589ca2d48",
+    "branch": "work/u06-teaching-continuity-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-525/u06-teaching-depth-20261008.md"
+    ]
+  },
+  {
+    "pr": 524,
+    "title": "U07: verified work artifacts and revocable file access (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/524",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "79052203dd3cf101177fc1d977c3a726fedc1b33",
+    "branch": "work/u07-verified-work-artifacts-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-524/u07-trustworthy-work-artifacts-20261008.md"
+    ]
+  },
+  {
+    "pr": 523,
+    "title": "U04: authenticated scoped operator reads over canonical Masanawa services (partial, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/523",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "c961de034a5d86c80196d7adfb3cd53a31012006",
+    "branch": "work/u04-scoped-service-adapters-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-523/u04-operator-service-adapters-20261008.md"
+    ]
+  },
+  {
+    "pr": 522,
+    "title": "U05: consented private assistant memory adapter and review UI (draft, partial)",
+    "url": "https://github.com/Baatiku/masanawa/pull/522",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "4d21a3e16a4165a71e432255425194b37f971583",
+    "branch": "work/u05-opt-in-agent-memory-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-522/u05-opt-in-agent-memory-20261008.md"
+    ]
+  },
+  {
+    "pr": 521,
+    "title": "U03: account-fenced Assistant task center and safe U02 readback (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/521",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "5ba92c1b0c89a3eaf1b0a362fcc484c3ba8f2130",
+    "branch": "work/u03-assistant-task-center-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-521/u03-assistant-task-center-20261008.md"
+    ]
+  },
+  {
+    "pr": 520,
+    "title": "U02: durable operator task journal, approval fencing and reconciliation (DRAFT)",
+    "url": "https://github.com/Baatiku/masanawa/pull/520",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "36e412b59f080048a034aa0cffd697276e19f9ba",
+    "branch": "work/u02-durable-operator-tasks-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-520/u02-durable-operator-tasks-20261009.md"
+    ]
+  },
+  {
+    "pr": 519,
+    "title": "U01: fail-closed operator permission callbacks and persisted approval bindings (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/519",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
+    "branch": "work/u01-operator-contract-20261009-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-519/u01-operator-contract-20261009.md"
+    ]
+  },
+  {
+    "pr": 518,
+    "title": "F11: read-only PR collision and migration-sequence audit (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/518",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "08e9fc6424a06bbde5784a9da2cb19a02906dac2",
+    "branch": "work/f11-draft-pr-collision-auditor-20261009",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-518/f11-draft-pr-collision-audit-20261009.md"
+    ]
+  },
+  {
+    "pr": 517,
+    "title": "U25: consented durable operator reminders with safe occurrence leasing (DRAFT)",
+    "url": "https://github.com/Baatiku/masanawa/pull/517",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "a0d7e83f4f9db9a9dae9fd013f82f404ad90b5ee",
+    "branch": "work/u25-operator-scheduler-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-517/u25-proactive-task-scheduler-20261008.md"
+    ]
+  },
+  {
+    "pr": 516,
+    "title": "U27: privilege-fenced agent operations catalog and safe skill removal (partial, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/516",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "4e16c5957e8ba2aa2dae5729fb44ba4119a4ff7e",
+    "branch": "work/u27-agent-admin-control-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-516/u27-agent-admin-control-20261008.md"
+    ]
+  },
+  {
+    "pr": 515,
+    "title": "U26: secure opt-in WhatsApp/Telegram assistant channel linking (draft, integration gated)",
+    "url": "https://github.com/Baatiku/masanawa/pull/515",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "4a7e66faeca3650e04d5e619cc8105c098d4d2e2",
+    "branch": "work/u26-safe-linked-assistant-channels-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-515/u26-linked-channels-20261008.md"
+    ]
+  },
+  {
+    "pr": 514,
+    "title": "U28: governed research provider, provenance, quotas and mobile source cards (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/514",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "a7aad218d51cac9dbb085a99678c301fd52ee9fc",
+    "branch": "work/u28-source-backed-research-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-514/u28-evidence-research-20261008.md"
+    ]
+  },
+  {
+    "pr": 513,
+    "title": "U30: authenticated public discovery for Talks, People, Experts and Twins (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/513",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "b4ab386f74bea89547b5c8059eecfb8c55f125b1",
+    "branch": "work/u30-public-discovery-20261008-isolated",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-513/u30-unified-public-discovery-20261008.md"
+    ]
+  },
+  {
+    "pr": 512,
+    "title": "U29: Consent-based customer support, read-only payment status and triage (UNVERIFIED)",
+    "url": "https://github.com/Baatiku/masanawa/pull/512",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "ec460e99e295ea023bf43f635e077854f20e5fc8",
+    "branch": "work/u29-real-customer-support-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-512/u29-real-customer-support-20261008.md"
+    ]
+  },
+  {
+    "pr": 511,
+    "title": "U23: privacy-fenced invitation and opt-in public sharing (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/511",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "be18b77cd4d204d16ee703bbb73d222930bbced7",
+    "branch": "work/u23-safe-invite-share-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-511/u23-invite-share-acquisition-20261008.md"
+    ]
+  },
+  {
+    "pr": 510,
+    "title": "U24: revision-fenced contact request inbox and privacy readback (DRAFT, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/510",
+    "state": "open",
+    "draft": true,
+    "base": "f8c5973437090e3aec38fd7bd4ac4376ae050f42",
+    "head": "7deb1dd40e6bd39cfce57f58640b8e4719b5fac8",
+    "branch": "work/u24-message-requests-privacy-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-510/u24-message-requests-privacy-20261008.md"
+    ]
+  },
+  {
+    "pr": 509,
+    "title": "U22: opt-in local-only phone contacts and consent-safe invitations (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/509",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "36a51277a2467bd15f8567135bbf2abce3e3d462",
+    "branch": "work/u22-local-phonebook-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-509/u22-device-contacts-opt-in-20261008.md"
+    ]
+  },
+  {
+    "pr": 508,
+    "title": "U21: human Contacts Hub with C01 admission, C02 compose and account-fenced favorites (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/508",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "fff8fb6af0bfa845df865d1b1491029ee5809d4a",
+    "branch": "work/u21-human-contacts-hub-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-508/u21-hub-typed-entries-recovery-20261009.md",
+      "docs/workstreams/window-handoffs/pr-508/u21-contacts-hub-20261008.md"
+    ]
+  },
+  {
+    "pr": 503,
+    "title": "R13: Reauthorize expiring private replay audio and prevent signed-link caching (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/503",
+    "state": "open",
+    "draft": true,
+    "base": "226d0c58632b243661ab24904cca75700ed474d4",
+    "head": "7809b0bd1041b3d3a94f5824a99475113a3e7bfd",
+    "branch": "work/r13-replay-expiring-playback-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-503/r13-expiring-playback-client-20261008.md",
+      "docs/workstreams/window-handoffs/pr-503/f09-cached-seek-authorization-20261009.md",
+      "docs/workstreams/window-handoffs/pr-503/f09-r13-awaiting-seek-authority-20261008.md"
+    ]
+  },
+  {
+    "pr": 502,
+    "title": "R14: actor-free Talk push previews and safe Flutter foreground copy (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/502",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "4b0811502006dfdcdda17e81091cd25972eaffe9",
+    "branch": "work/r14-talk-push-privacy-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-502/r14-talk-push-private-preview-20261008.md"
+    ]
+  },
+  {
+    "pr": 501,
+    "title": "R11: localize authoritative Billing journey and receipts (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/501",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "6ad0f937737a2a99849bd9e06442d222a8a25880",
+    "branch": "work/r11-billing-localization-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-501/r11-billing-localization-20261008.md"
+    ]
+  },
+  {
+    "pr": 500,
+    "title": "R16: single-flight OTP verification and safe session/logout races (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/500",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "5c293078f970855980961bcbc20a49106bfe7b66",
+    "branch": "work/r16-otp-auth-singleflight-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-500/r16-otp-auth-singleflight-20261008.md"
+    ]
+  },
+  {
+    "pr": 499,
+    "title": "R03: protect offline agent directory roster, purge plaintext and fence logout races (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/499",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "352fc8a7e814f0659cfb65a0d37d13a42a843b7f",
+    "branch": "work/r03-protected-agent-directory-cache-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-499/r03-protected-agent-directory-cache-20261008.md"
+    ]
+  },
+  {
+    "pr": 498,
+    "title": "R19: role-safe AI persona response and explicit private-chat disclosure (DRAFT)",
+    "url": "https://github.com/Baatiku/masanawa/pull/498",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "9cff45ffa4cb84eaf51ffa728a55e046d8e5bf82",
+    "branch": "work/r19-role-guardrails-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-498/r19-role-guardrails-20261008.md"
+    ]
+  },
+  {
+    "pr": 497,
+    "title": "Work: unify R/C foundations with revised U/F plans and passing backend gates",
+    "url": "https://github.com/Baatiku/masanawa/pull/497",
+    "state": "open",
+    "draft": true,
+    "base": "5e758673ae91082520b21b3153da53791ae2cbf3",
+    "head": "c105108aaa461ee6006e8fefb0a835f581e56710",
+    "branch": "work/work-lane-consolidation-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-497/work-integration-verification-20261008.md"
+    ]
+  },
+  {
+    "pr": 496,
+    "title": "R15: authenticated human-profile report with durable retry (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/496",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "fcfd820abf08c271fd12ed70aa1723b1ffbfb57e",
+    "branch": "work/r15-human-profile-safety-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-496/r15-human-profile-safety-20261008.md"
+    ]
+  },
+  {
+    "pr": 495,
+    "title": "R03: secure and recover default support-agent selection (DRAFT, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/495",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "8dc7bf3a0570b5e3ce90c5d4d6b7ddca976136d3",
+    "branch": "work/r03-support-preference-authorization-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-495/r03-support-preference-authority-20261008.md",
+      "docs/workstreams/window-handoffs/pr-495/f03-support-default-recovery-20261009.md"
+    ]
+  },
+  {
+    "pr": 494,
+    "title": "R15: authenticated human-profile block and mute with readback (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/494",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "84f516e14b6138f0639ac813c362a300f16d4b4a",
+    "branch": "work/r15-human-profile-safety-preferences-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-494/r15-human-profile-safety-preferences-20261008.md"
+    ]
+  },
+  {
+    "pr": 493,
+    "title": "R17/C08: integrate five-tab Flutter shell and typed private routes (DRAFT, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/493",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "050b101c3f701db8b1d68f15d455a9bf3acd8dcb",
+    "branch": "work/r17-c08-five-tab-shell-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-493/r17-c08-five-tab-integration-20261008.md"
+    ]
+  },
+  {
+    "pr": 492,
+    "title": "R16: reject ambiguous and hostile Android deep-link hints",
+    "url": "https://github.com/Baatiku/masanawa/pull/492",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "7453199a6aff92df78b4e7e1c082c968b52463f8",
+    "branch": "work/r16-untrusted-deeplink-validation-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-492/r16-untrusted-deeplink-validation.md"
+    ]
+  },
+  {
+    "pr": 491,
+    "title": "R15: Report Expert and Twin personas privately (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/491",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "59b0ccc47ab7de7799d88f6a362be34c0c0d4e83",
+    "branch": "work/r15-persona-reporting-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-491/r15-persona-reporting-20261008.md"
+    ]
+  },
+  {
+    "pr": 490,
+    "title": "C06: partial internal crypto ledger/Gateway/Flutter transfer (draft; compare #487; unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/490",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "532b158e77909d0c8c81ffe59124e673663ab876",
+    "branch": "work/c06-internal-crypto-book-transfer-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-490/c06-internal-crypto-book-transfer-20261008.md"
+    ]
+  },
+  {
+    "pr": 489,
+    "title": "R15: persona reporting source [MERGE-STOP: overlaps #491; draft]",
+    "url": "https://github.com/Baatiku/masanawa/pull/489",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "73a392342cfc7d9487edfbf9b0781076a8d3b9b6",
+    "branch": "work/r15-persona-profile-report-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-489/r15-persona-profile-report-20261008.md"
+    ]
+  },
+  {
+    "pr": 488,
+    "title": "R15: bound WhatsApp and Telegram provider response bytes and lifetime (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/488",
+    "state": "open",
+    "draft": true,
+    "base": "eb14419a5290c52680fe0896418a199383dd8532",
+    "head": "0d56bd58d866f4ec5a4959881795f9205c173944",
+    "branch": "work/r15-provider-response-bounds-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-488/r15-provider-response-bounds-20261008.md"
+    ]
+  },
+  {
+    "pr": 487,
+    "title": "C06: internal crypto transfer with custody & active-user guards — DRAFT / UNVERIFIED",
+    "url": "https://github.com/Baatiku/masanawa/pull/487",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "0e78956b78dd578d10a782355a6ab3cfbfdf8800",
+    "branch": "work/c06-internal-crypto-transfer-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-487/c06-internal-crypto-transfers-20261008.md",
+      "docs/workstreams/window-handoffs/pr-487/f06-auth-continuity-fence-20261009.md"
+    ]
+  },
+  {
+    "pr": 486,
+    "title": "C03: guard journal retention operator with tenant preflight and bounded batches (stacked)",
+    "url": "https://github.com/Baatiku/masanawa/pull/486",
+    "state": "open",
+    "draft": true,
+    "base": "65c91bb239f9f8e9bf177a1f707f98c7fa391e78",
+    "head": "4981e6d7324bef060e18f1feec38ba0d006564e4",
+    "branch": "work/c03-retention-operator-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-486/f16-retention-operator-recovery-20261009.md",
+      "docs/workstreams/window-handoffs/pr-486/c03-retention-operator-20261008.md"
+    ]
+  },
+  {
+    "pr": 485,
+    "title": "R16: refuse non-empty disposable databases before schema rehearsal (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/485",
+    "state": "open",
+    "draft": true,
+    "base": "65c53ecd9060af701d30ffbe8914a6e6567863e4",
+    "head": "0873733191db3be9786e719f70e37894b4c735c7",
+    "branch": "work/r16-disposable-bootstrap-freshness-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-485/r16-disposable-bootstrap-freshness-20261008.md"
+    ]
+  },
+  {
+    "pr": 484,
+    "title": "R10: require fresh catalog after uncertain gift send (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/484",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "fc60bbd2c4011de0bc3b6e99adc27c276a00a0cd",
+    "branch": "work/r10-gift-sheet-uncertain-recovery-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-484/r10-gift-sheet-uncertain-recovery-20261008.md"
+    ]
+  },
+  {
+    "pr": 483,
+    "title": "C03: recover realtime source and fence pruned cursors (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/483",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "9c113d0848e9b78e9c63a37a6a2515e25cc32da9",
+    "branch": "work/c03-reclaim-realtime-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-483/f16-c03-foreground-singleflight-20261009.md",
+      "docs/workstreams/window-handoffs/pr-483/f16-cursor-reset-immediate-20261009.md",
+      "docs/workstreams/window-handoffs/pr-483/communications-realtime-c03-reclaim-20261008.md"
+    ]
+  },
+  {
+    "pr": 482,
+    "title": "R11: expose secure UI language preference in Settings (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/482",
+    "state": "open",
+    "draft": true,
+    "base": "1d6a67ea3c182455b55a7d1d07eacdb4311682e3",
+    "head": "ee3faff4b3fbe682027e15a0fff762f18bf10c28",
+    "branch": "work/r11-settings-language-preference-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-482/r11-settings-language-preference-20261008.md"
+    ]
+  },
+  {
+    "pr": 480,
+    "title": "C07: Assistant Gwani/Gwana transport continuity adapter (partial, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/480",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "0594c8d8c9ca7f0595d693817fd64980aab93556",
+    "branch": "work/c07-assistant-workspace-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-480/f18-assistant-snapshot-revalidation-20261009.md",
+      "docs/workstreams/window-handoffs/pr-480/f18-assistant-role-integrity-20261009.md",
+      "docs/workstreams/window-handoffs/pr-480/communications-ai-actions-c07-20261008.md"
+    ]
+  },
+  {
+    "pr": 479,
+    "title": "R16: portable schema migration status, guarded apply and disposable recovery rehearsal (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/479",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "65c53ecd9060af701d30ffbe8914a6e6567863e4",
+    "branch": "work/r16-schema-portability-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-479/r16-schema-ops-20261008.md"
+    ]
+  },
+  {
+    "pr": 478,
+    "title": "C04: bounded authenticated private human voice notes (draft, integration unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/478",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "e474b0ea3bfba2876c8e4f723d2b16794e64b2e5",
+    "branch": "work/c04-private-voice-notes-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-478/f17-alternate-recorder-output-cleanup-20261009.md",
+      "docs/workstreams/window-handoffs/pr-478/communications-media-c04-20261008.md",
+      "docs/workstreams/window-handoffs/pr-478/f17-playback-temp-file-recovery-20261009.md",
+      "docs/workstreams/window-handoffs/pr-478/f17-private-media-backend-20261009.md",
+      "docs/workstreams/window-handoffs/pr-478/f17-private-recorder-lifecycle-20261009.md",
+      "docs/workstreams/window-handoffs/pr-478/f17-voice-transport-streaming-20261009.md",
+      "docs/workstreams/window-handoffs/pr-478/f17-voice-readback-integrity-gc-recovery-20261009.md"
+    ]
+  },
+  {
+    "pr": 476,
+    "title": "C05: encrypted local-first human Chats cache, outbox and widgets (draft, integration blocked)",
+    "url": "https://github.com/Baatiku/masanawa/pull/476",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "0ebf63c1d14b41f88cdaec6e495e1ac4c0d72829",
+    "branch": "work/c05-protected-human-chat-cache-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-476/c05-protected-human-chat-cache-20261008.md"
+    ]
+  },
+  {
+    "pr": 475,
+    "title": "C02: authenticated durable human text messaging with PostgreSQL and Flutter (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/475",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "91973de513845fb57d9f50e446c89dadd5af4f5c",
+    "branch": "work/c02-private-text-core-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-475/communications-core-c02-20261008.md"
+    ]
+  },
+  {
+    "pr": 474,
+    "title": "C05: protected indexed offline human DM cache and durable retry journal (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/474",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "0567c829027d792d00e187fac2abacfd7e642a44",
+    "branch": "work/c05-protected-dm-cache-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-474/communications-mobile-performance-c05-20261008.md"
+    ]
+  },
+  {
+    "pr": 473,
+    "title": "C03: claim private human messaging realtime and recovery lane (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/473",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "07f52032fc6c1dac0cf6ae6f6a43fca47b2e91db",
+    "branch": "work/c03-human-dm-realtime-20261008-gpt6",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-473/communications-realtime-c03-20261008.md"
+    ]
+  },
+  {
+    "pr": 472,
+    "title": "C02: authenticated durable human DM backend and isolated Flutter conversation (draft, unverified)",
+    "url": "https://github.com/Baatiku/masanawa/pull/472",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "6c9ae9b0ad79d42966b654640f46417b4ae486f6",
+    "branch": "work/c02-durable-human-dm-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-472/communications-core-c02-20261008.md",
+      "docs/workstreams/window-handoffs/pr-472/f15-atomic-read-permission-20261009.md",
+      "docs/workstreams/window-handoffs/pr-472/f15-message-mutation-authorization-20261009.md"
+    ]
+  },
+  {
+    "pr": 471,
+    "title": "R10: repair corrupt durable Talk gift transport and empty catalog flow",
+    "url": "https://github.com/Baatiku/masanawa/pull/471",
+    "state": "open",
+    "draft": true,
+    "base": "5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762",
+    "head": "b6186eae666389797f810af2534eef5b751c2a5e",
+    "branch": "work/r10-gift-transport-recovery-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-471/r10-gift-transport-recovery-20261008.md"
+    ]
+  },
+  {
+    "pr": 468,
+    "title": "C01: private contact admission with Work-verified backend and Flutter tests (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/468",
+    "state": "open",
+    "draft": true,
+    "base": "0bed6fe5ada04fc64189a06d64619ef1dd4db87d",
+    "head": "2a501e0e01c12e7996b33eaf89b0bc1e78332e8c",
+    "branch": "work/c01-private-contact-admission-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-468/f14-moderated-contact-originator-fence-20261009.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-contact-controller-revision-fence-20261009.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-consent-response-fence-20261009.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-contact-response-cache-control-20261009.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-contacts-pagination-20261008.md",
+      "docs/workstreams/window-handoffs/pr-468/communications-identity-c01-20261008.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-contact-refresh-privacy-fence-20261009.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-cursor-calendar-validation-20261009.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-revocation-active-actor-20261009.md",
+      "docs/workstreams/window-handoffs/pr-468/f14-uncertain-contact-write-20261009.md"
+    ]
+  },
+  {
+    "pr": 467,
+    "title": "docs: messaging UX benchmark and implementation guide",
+    "url": "https://github.com/Baatiku/masanawa/pull/467",
+    "state": "open",
+    "draft": true,
+    "base": "0bed6fe5ada04fc64189a06d64619ef1dd4db87d",
+    "head": "2f9c8d5d17123ec7f43a82831128c41559c40cd6",
+    "branch": "docs/messaging-ux-benchmark-20261008",
+    "referencedHandoffs": []
+  },
+  {
+    "pr": 461,
+    "title": "Configure Firebase for Masanawa mobile",
+    "url": "https://github.com/Baatiku/masanawa/pull/461",
+    "state": "open",
+    "draft": false,
+    "base": "f4cd25420ae24be78cddd7c3d17bdc34e0f8a060",
+    "head": "11de4361eb7924108b5bd888101eaaac46be5a0a",
+    "branch": "codex/firebase-masanawa-mobile",
+    "referencedHandoffs": []
+  },
+  {
+    "pr": 460,
+    "title": "Shared CI recovery: confirmed Actions quota exhaustion and Work verification",
+    "url": "https://github.com/Baatiku/masanawa/pull/460",
+    "state": "open",
+    "draft": true,
+    "base": "f4cd25420ae24be78cddd7c3d17bdc34e0f8a060",
+    "head": "afb47ebdbced61d6f46c82b7df6926c52a1b98ff",
+    "branch": "work/shared-ci-recovery-work-20261008",
+    "referencedHandoffs": []
+  },
+  {
+    "pr": 459,
+    "title": "R09: Supply authorized public Talk stage to production Gemini Live worker",
+    "url": "https://github.com/Baatiku/masanawa/pull/459",
+    "state": "open",
+    "draft": true,
+    "base": "f4cd25420ae24be78cddd7c3d17bdc34e0f8a060",
+    "head": "e8523f64ecf15f67e998d7376a99f8ee3428819c",
+    "branch": "work/r09-python-live-stage-context-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-459/r09-python-live-stage-context-20261008.md"
+    ]
+  },
+  {
+    "pr": 456,
+    "title": "R02: Revoke microphone grants on LiveKit mute/reconnect failures",
+    "url": "https://github.com/Baatiku/masanawa/pull/456",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "20aef41f031be9bf4c0621fbc1eca20a4bc4d77f",
+    "branch": "work/r02-mobile-audio-late-token-cleanup-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-456/r02-mobile-audio-late-token-cleanup-20261008.md"
+    ]
+  },
+  {
+    "pr": 455,
+    "title": "R16: Block Android app-data backups and plaintext network traffic",
+    "url": "https://github.com/Baatiku/masanawa/pull/455",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "26a19e603d3820d23fb9c9fab90b88631a322bce",
+    "branch": "work/r16-android-private-data-security-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-455/r16-android-private-data-security-20261008.md"
+    ]
+  },
+  {
+    "pr": 454,
+    "title": "R08: Require quote-specific crypto consent, never model-generated approval (draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/454",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "df4e4c72cbcc324deca485fe0ec9e77b99fca7d5",
+    "branch": "work/r08-crypto-quote-consent-boundary-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-454/r08-crypto-quote-consent-20261008.md"
+    ]
+  },
+  {
+    "pr": 453,
+    "title": "R13: Recover replay with exact media stop time and ready-first publication",
+    "url": "https://github.com/Baatiku/masanawa/pull/453",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "6b6b4ce174d11633e40e0ab0a6a865fc56271b98",
+    "branch": "work/r13-replay-finalize-recovery-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-453/r13-replay-finalize-recovery-20261008.md",
+      "docs/workstreams/window-handoffs/pr-453/f09-replay-postsign-recheck-20261009.md",
+      "docs/workstreams/window-handoffs/pr-453/f09-s3-boundary-hardening-20261009.md",
+      "docs/workstreams/window-handoffs/pr-453/f09-livekit-egress-boundary-20261009.md",
+      "docs/workstreams/window-handoffs/pr-453/f09-unique-egress-attempt-20261009.md",
+      "docs/workstreams/window-handoffs/pr-453/f09-stop-compensation-20261009.md",
+      "docs/workstreams/window-handoffs/pr-453/f09-livekit-timeout-20261009.md"
+    ]
+  },
+  {
+    "pr": 452,
+    "title": "R09: Expose only safety-approved Talk comments to AI stage context",
+    "url": "https://github.com/Baatiku/masanawa/pull/452",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "772c89d33cc04a1a921dc7346e0e947a095e4c74",
+    "branch": "work/r09-moderated-comments-stage-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-452/r09-moderated-talk-comments-20261008.md",
+      "docs/workstreams/window-handoffs/pr-452/f04-stage-recheck-20261009.md"
+    ]
+  },
+  {
+    "pr": 451,
+    "title": "R15: Require genuine Telegram private identities and bound WhatsApp webhook bodies",
+    "url": "https://github.com/Baatiku/masanawa/pull/451",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "eb14419a5290c52680fe0896418a199383dd8532",
+    "branch": "work/r15-channel-webhook-boundaries-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-451/r15-channel-webhook-boundaries-20261008.md"
+    ]
+  },
+  {
+    "pr": 450,
+    "title": "R15: Gate restricted replays and reciprocal Host blocks in Talks",
+    "url": "https://github.com/Baatiku/masanawa/pull/450",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "a06b154893f51735c4b0008e9c8224a6cf03f92f",
+    "branch": "work/r15-replay-comment-safety-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-450/r15-replay-comment-safety-20261008.md"
+    ]
+  },
+  {
+    "pr": 449,
+    "title": "R02: Fence LiveKit AI dispatch identity, duplicate jobs and uncertain sends",
+    "url": "https://github.com/Baatiku/masanawa/pull/449",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "71186a009a6916958c9594084f3596e0522c15af",
+    "branch": "work/r02-livekit-dispatch-identity-fence-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-449/r02-livekit-dispatch-identity-fence-20261008.md"
+    ]
+  },
+  {
+    "pr": 448,
+    "title": "R02/R19: Fence concurrent AI Seat turns and persona reassignments",
+    "url": "https://github.com/Baatiku/masanawa/pull/448",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "bc2dafe54bebb2eb665db84deb0bff515ae9b77f",
+    "branch": "work/r02-r19-ai-turn-fencing-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-448/r02-r19-ai-turn-fencing-20261008.md"
+    ]
+  },
+  {
+    "pr": 447,
+    "title": "R07: Refuse ambiguous bill plans and model-invented payment confirmations",
+    "url": "https://github.com/Baatiku/masanawa/pull/447",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "c5ece5920b0b4437a24613bbd8f20db25912995d",
+    "branch": "work/r07-billing-chat-ambiguity-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-447/r07-billing-chat-ambiguity-20261008.md"
+    ]
+  },
+  {
+    "pr": 446,
+    "title": "R15: Scope Talk gifts to authorized viewers and safety-visible targets",
+    "url": "https://github.com/Baatiku/masanawa/pull/446",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "dd2d75db399887f1cb1df27a0722b4e5450c9206",
+    "branch": "work/r15-gift-safety-eligibility-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-446/r15-gift-safety-eligibility-20261008.md"
+    ]
+  },
+  {
+    "pr": 445,
+    "title": "R17: Safe Wallet-to-private-Talk service selection (unverified draft)",
+    "url": "https://github.com/Baatiku/masanawa/pull/445",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "37a1c190110fd0f7f5499d89b71c371aa2477fad",
+    "branch": "work/r17-wallet-private-intent-handoff-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-445/r17-wallet-private-intent-handoff-20261008.md"
+    ]
+  },
+  {
+    "pr": 444,
+    "title": "R08: Isolate crypto wallet state across sign-out and account switching",
+    "url": "https://github.com/Baatiku/masanawa/pull/444",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "9836854f534306e1dea18925be5be21d31b768e3",
+    "branch": "work/r08-crypto-session-isolation-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-444/r08-crypto-session-isolation-20261008.md"
+    ]
+  },
+  {
+    "pr": 443,
+    "title": "R15: Enforce persona safety across paid AI Seat authorization",
+    "url": "https://github.com/Baatiku/masanawa/pull/443",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "287191c787ba05f460fba8759d8be9c4759f27d9",
+    "branch": "work/r15-ai-seat-safety-authorization-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-443/r15-ai-seat-safety-authorization-20261008.md"
+    ]
+  },
+  {
+    "pr": 442,
+    "title": "R01: Give shared primary actions accessible green contrast and safe states",
+    "url": "https://github.com/Baatiku/masanawa/pull/442",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "86ed75fd769a0ec8020c8fa2c05e2c0255d647bf",
+    "branch": "work/r01-primary-action-accessibility-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-442/r01-primary-action-accessibility-20261008.md"
+    ]
+  },
+  {
+    "pr": 441,
+    "title": "R03: Restore missing canonical support agent after interrupted bootstrap",
+    "url": "https://github.com/Baatiku/masanawa/pull/441",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "3a7465e6e4c4e8e1a33ecfc551942e9d019c8ffe",
+    "branch": "work/r03-support-seed-recovery-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-441/r03-support-seed-recovery-20261008.md"
+    ]
+  },
+  {
+    "pr": 440,
+    "title": "R05: Restore authenticated bill funding instructions after restart",
+    "url": "https://github.com/Baatiku/masanawa/pull/440",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "7a25f8fc59c20973f25fb4e0083eb99652863d8b",
+    "branch": "work/r05-quote-funding-restoration-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-440/r05-billing-funding-restoration-20261008.md",
+      "docs/workstreams/window-handoffs/pr-440/f05-funding-recovery-no-store-20261009.md"
+    ]
+  },
+  {
+    "pr": 439,
+    "title": "R02: Make Host live-session renewal atomic and reject disconnected leases",
+    "url": "https://github.com/Baatiku/masanawa/pull/439",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "62ec4ccfe2d2990d02760481e8cc4a09599769a6",
+    "branch": "work/r02-server-session-lease-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-439/r02-server-session-lease-20261008.md"
+    ]
+  },
+  {
+    "pr": 438,
+    "title": "R06: Separate verified NGN balance from Credits with fail-closed recovery",
+    "url": "https://github.com/Baatiku/masanawa/pull/438",
+    "state": "open",
+    "draft": true,
+    "base": "ae80941295d67c53d8e3eff1aa0447af8f49ec6e",
+    "head": "4b823ffd40e764416c3840a91ba0815ce3274dfa",
+    "branch": "work/r06-native-ngn-wallet-visibility-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-438/r06-native-ngn-wallet-visibility-20261008.md"
+    ]
+  },
+  {
+    "pr": 436,
+    "title": "R14: Harden FCM retry, OAuth recovery and multi-device delivery",
+    "url": "https://github.com/Baatiku/masanawa/pull/436",
+    "state": "open",
+    "draft": true,
+    "base": "f91519fb05ae6b244ba9a721479aada03e7e08ba",
+    "head": "0098f4d05d72ea1dc2ad3a3b683111a0f68499cd",
+    "branch": "work/r14-fcm-delivery-resilience-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-436/r14-fcm-delivery-resilience-20261008.md",
+      "docs/workstreams/window-handoffs/pr-436/f10-fcm-credential-race-recovery-20261009.md"
+    ]
+  },
+  {
+    "pr": 435,
+    "title": "R18: Integrate canonical WebP/S3 avatar upload, crop, CAS and durable cleanup",
+    "url": "https://github.com/Baatiku/masanawa/pull/435",
+    "state": "open",
+    "draft": true,
+    "base": "f91519fb05ae6b244ba9a721479aada03e7e08ba",
+    "head": "3cb5583c9e981ba97e5fdabcb0369118ab8c1c40",
+    "branch": "work/r18-avatar-end-to-end-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-435/f13-avatar-staging-lease-20261009.md",
+      "docs/workstreams/window-handoffs/pr-435/f13-profile-account-switch-fence-20261009.md",
+      "docs/workstreams/window-handoffs/pr-435/r18-avatar-end-to-end-20261008.md",
+      "docs/workstreams/window-handoffs/pr-435/f13-profile-uncertain-writes-20261009.md",
+      "docs/workstreams/window-handoffs/pr-435/f13-avatar-session-fencing-20261009.md"
+    ]
+  },
+  {
+    "pr": 433,
+    "title": "R04: Connect Create Talk participant actions to safe post-create invite and AI Seat flows",
+    "url": "https://github.com/Baatiku/masanawa/pull/433",
+    "state": "open",
+    "draft": true,
+    "base": "453045fe30f6a0c32f46bf8562b237bdb595fb62",
+    "head": "24e7e82b8b2fefc79fb3bcbd1f81bd39083bc6ad",
+    "branch": "work/r04-create-participant-intents-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-433/r04-create-participant-intents-20261008.md",
+      "docs/workstreams/window-handoffs/pr-433/f04-r04-error-redaction-20261009.md"
+    ]
+  },
+  {
+    "pr": 430,
+    "title": "R12: Audited financial exposure and crash-recoverable deletion review worker",
+    "url": "https://github.com/Baatiku/masanawa/pull/430",
+    "state": "open",
+    "draft": true,
+    "base": "fd9779b7a717827a189e01a50cb72390b036c22e",
+    "head": "df47cd8bbff62d008f7f96b0af7a2091153e0eac",
+    "branch": "work/r12-financial-preflight-worker-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-430/r12-financial-preflight-worker-20261008.md"
+    ]
+  },
+  {
+    "pr": 426,
+    "title": "R11: Localize four-tab shell, agent presence and public Twins",
+    "url": "https://github.com/Baatiku/masanawa/pull/426",
+    "state": "open",
+    "draft": true,
+    "base": "af0f4254156a1d6d2745e47c3d07096aa0ed7980",
+    "head": "75cb6a3ae9c2ded67b7842235894ed2ecaa10fa0",
+    "branch": "work/r11-shell-localization-20261008",
+    "referencedHandoffs": [
+      "docs/workstreams/window-handoffs/pr-426/r11-root-shell-localization-20261008.md"
+    ]
+  }
+]

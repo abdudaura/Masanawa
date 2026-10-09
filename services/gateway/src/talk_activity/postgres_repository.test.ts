@@ -27,9 +27,9 @@ function row(overrides: Record<string, unknown> = {}) {
 
 describe("Postgres Talk Activity repository", () => {
   it("scopes reads by tenant and user before applying filter kinds", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkActivitySqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 1, rows: [row()] as unknown as Row[] };
       },
@@ -106,3 +106,4 @@ describe("Postgres Talk Activity repository", () => {
     ).rejects.toThrow("talks.activity_idempotency_conflict");
   });
 });
+

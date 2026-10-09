@@ -174,6 +174,23 @@ void main() {
     await expectLater(t.loadCatalog(talkId: 'talk-1'), throwsFormatException);
   });
 
+  test('qualified empty catalog is parsed without inventing gift options', () async {
+    var posts = 0;
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      if (options.method != 'GET') posts++;
+      return ResponseBody.fromString(
+        '{"talkId":"talk-1","currency":"Credits","items":[]}',
+        200,
+        headers: {Headers.contentTypeHeader: ['application/json']},
+      );
+    });
+    final transport = GatewayTalkGiftTransport(api: ApiClient(dio: dio));
+    final catalog = await transport.loadCatalog(talkId: 'talk-1');
+    expect(catalog.items, isEmpty);
+    expect(posts, 0);
+  });
+
   test('a mismatched settled receipt is never treated as successful gift', () async {
     final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
     dio.httpClientAdapter = _Adapter((options) async =>

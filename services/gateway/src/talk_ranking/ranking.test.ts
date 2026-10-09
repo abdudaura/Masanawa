@@ -68,6 +68,7 @@ describe("Talk Explore ranking", () => {
       reactionCount: 0,
       relevance: 0.1,
       languageMatch: 0.1,
+      startedAt: "2026-10-07T08:00:00.000Z",
       updatedAt: "2026-10-07T09:00:00.000Z",
     });
     const unfamiliarStrong = candidate({
@@ -130,6 +131,10 @@ describe("Talk Explore ranking", () => {
     ).toThrow("languageMatch");
 
     expect(() =>
+      scoreTalkForExplore(candidate({ updatedAt: "2026-10-07T09:00:00.000Z" }), { now }),
+    ).toThrow("Talk timestamps are inconsistent");
+
+    expect(() =>
       scoreTalkForExplore(candidate({ listenerCount: -1 }), { now }),
     ).toThrow("listenerCount");
   });
@@ -142,8 +147,9 @@ describe("Talk Explore ranking", () => {
       { item: { ...candidate({ talkId: "b1" }), hostId: "host-b" }, score: 80, reasons: [] },
     ] as const;
 
-    const diversified = diversifyRankedTalks(ranked, 2);
+    const diversified = diversifyRankedTalks<(typeof ranked)[number]["item"]>(ranked, 2);
     expect(diversified.map((entry) => entry.item.talkId)).toEqual(["a1", "a2", "b1", "a3"]);
     expect(diversified.find((entry) => entry.item.talkId === "a3")?.score).toBe(98);
   });
 });
+

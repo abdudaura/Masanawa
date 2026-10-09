@@ -106,7 +106,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
     return Scaffold(
       key: const ValueKey('talk-activity-screen'),
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(title: const Text('Activity')),
       body: Column(
         children: [
@@ -513,3 +513,4 @@ String _timeLabel(DateTime value) {
       '/' +
       local.month.toString().padLeft(2, '0');
 }
+

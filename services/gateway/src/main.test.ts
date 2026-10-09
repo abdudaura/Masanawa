@@ -119,7 +119,7 @@ describe("gateway production lifecycle", () => {
       }),
       appFactory,
     })).rejects.toThrow(
-      "Billing is enabled but canonical customer auth or Flutterwave billing configuration is incomplete",
+      "Billing is enabled but canonical customer auth, NGN wallet, or Flutterwave configuration is incomplete",
     );
 
     expect(appFactory).not.toHaveBeenCalled();
@@ -154,3 +154,33 @@ describe("gateway production lifecycle", () => {
     await runtime.shutdown();
   });
 });
+
+
+
+describe("R03 Gateway fail-closed platform Agent bootstrap configuration", () => {
+  it("refuses silently skipped bootstrap without tenant/customer authorization dependencies", async () => {
+    const close = vi.fn(async () => undefined);
+    const appFactory = vi.fn(() => {
+      throw new Error("bootstrap misconfiguration must stop before application startup");
+    });
+    await expect(startGatewayService({
+      env: {
+        NODE_ENV: "production",
+        MASANAWA_BOOTSTRAP_PLATFORM_AGENTS: "true",
+      },
+      processRef: processRef(),
+      logger: { info: vi.fn(), error: vi.fn() },
+      databaseFactory: () => ({
+        readinessCheck: {
+          name: "schema",
+          check: async () => ({ ready: true }),
+        },
+        close,
+      }),
+      appFactory,
+    })).rejects.toThrow("Platform Agent bootstrap requires platform tenant and canonical customer database/auth dependencies");
+    expect(appFactory).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+});
+

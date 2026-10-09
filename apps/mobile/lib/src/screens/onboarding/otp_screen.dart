@@ -83,6 +83,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   void _verify() {
+    if (ref.read(sessionProvider) is SessionVerifying) return;
     final digits = normalizeInternationalDigits(_code.text).replaceAll(RegExp(r'\D'), '');
     if (digits.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -226,14 +227,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           PrimaryButton(
             label: verifying ? l10n.verifyingCode : l10n.verifyCode,
             loading: verifying,
-            onPressed: _verify,
+            onPressed: verifying ? null : _verify,
           ),
           const SizedBox(height: 16),
           TextButton(
             // Resend stays available from a failed-verify state too (the
             // retry context carries the channel/identifier), gated only by the
             // live cooldown.
-            onPressed: ctx == null || _remaining > 0
+            onPressed: ctx == null || verifying || _remaining > 0
                 ? null
                 : () => _resend(ctx.channel!, ctx.identifier!),
             child: Text(

@@ -68,6 +68,8 @@ import {
   createPostgresIdentityRepository,
   createPostgresCommerceRepository,
   createPostgresCryptoRepository,
+  createPostgresInternalCryptoTransferStore,
+  type InternalCryptoTransferStore,
   createPostgresCryptoChatActionRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
@@ -149,6 +151,7 @@ import {
   createFinancialService,
   type FinancialAuthorizer,
 } from "./financial_service.js";
+import { createInternalCryptoTransferService, type TransferRiskPolicy } from "./internal_crypto_transfer.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createAgentShellService } from "./agent_shell.js";
 import type {
@@ -186,6 +189,16 @@ import {
   type TalkProfileAuthorizer,
 } from "./talk_profiles/service.js";
 import { createPostgresTalkProfileRepository } from "./talk_profiles/postgres_repository.js";
+import { createPostgresAvatarRepository } from "./profile_avatar/repository.js";
+import { createS3AvatarObjectStore } from "./profile_avatar/s3_store.js";
+import { createProfileAvatarService } from "./profile_avatar/service.js";
+import { createPostgresHumanContactRepository } from "./human_contacts/postgres_repository.js";
+import { createPostgresHumanDmRepository } from "./human_messages/postgres_repository.js";
+import { createHumanDmService } from "./human_messages/service.js";
+import { createAssistantWorkspaceService } from "./assistant_workspace/service.js";
+import { createPostgresHumanDmRealtimeRepository } from "./human_dm_realtime/postgres_repository.js";
+import { createHumanDmRealtimeService } from "./human_dm_realtime/service.js";
+import { createHumanContactService, type HumanContactAuthorizer } from "./human_contacts/service.js";
 import {
   createTalkActivityService,
   type TalkActivityAuthorizer,
@@ -274,9 +287,9 @@ import {
   type LinkedWhatsAppController,
 } from "./whatsapp_linked_device.js";
 import {
-  ensureDefaultPlatformAgents,
-  type PlatformAgentIdentityProvisioner,
+  type PlatformAgentBootstrapResult,
 } from "./platform_agent_bootstrap.js";
+import { bootstrapDefaultPlatformAgentsFromPostgres } from "./platform_agent_bootstrap_postgres.js";
 import {
   createTwinProductionRuntime,
   type TwinProductionRuntime,
@@ -291,7 +304,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
-  readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
+  readonly bootstrapPlatformAgents?: (tenantId: TenantId) => Promise<PlatformAgentBootstrapResult>;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
   readonly agentPresentations?: AgentPresentationRepository;
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
@@ -313,6 +326,7 @@ export interface ServiceDatabaseDependency {
   readonly customerChannels?: CustomerChannelRepository;
   readonly commerce?: CommerceRepository;
   readonly crypto?: CryptoRepository;
+  readonly internalCryptoTransfers?: InternalCryptoTransferStore;
   readonly cryptoChatActions?: CryptoChatActionRepository;
   readonly ownerships?: CharacterOwnershipReader;
   readonly mobileShell?: MobileShellRepository;
@@ -334,6 +348,10 @@ export interface ServiceDatabaseDependency {
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
+  readonly profileAvatars?: ReturnType<typeof createPostgresAvatarRepository>;
+  readonly humanDm?: ReturnType<typeof createPostgresHumanDmRepository>;
+  readonly humanDmRealtime?: ReturnType<typeof createPostgresHumanDmRealtimeRepository>;
+  readonly humanContacts?: ReturnType<typeof createPostgresHumanContactRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
@@ -364,6 +382,7 @@ export interface StartGatewayServiceOptions {
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
   readonly commerceAuthorizer?: CommerceUserAuthorizer;
   readonly financialAuthorizer?: FinancialAuthorizer;
+  readonly internalCryptoPolicy?: TransferRiskPolicy;
   readonly agentStrategy?: AgentStrategy;
   readonly agentShellActionExecutor?: AgentShellActionExecutor;
 }
@@ -413,47 +432,10 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    bootstrapPlatformAgents: (tenantId: TenantId) =>
+      bootstrapDefaultPlatformAgentsFromPostgres({ pool: database.pool, tenantId }),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
-    platformAgentIdentity: Object.freeze({
-      async provision(input: Parameters<PlatformAgentIdentityProvisioner["provision"]>[0]) {
-        await withTransaction(database.pool, async (client) => {
-          const identity = createPostgresIdentityRepository(client);
-          await identity.createCharacter({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            createdAt: input.createdAt,
-          });
-          await identity.assignCharacterOwnership({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            kind: "platform",
-            ownerUserId: null,
-            createdAt: input.createdAt,
-          });
-          await identity.createCharacterVersion({
-            tenantId: input.tenantId,
-            characterVersionId: input.characterVersionId,
-            characterId: input.characterId,
-            versionNumber: 1,
-            constitution: input.constitution,
-            createdAt: input.createdAt,
-          });
-          await identity.publishCharacterVersion({
-            tenantId: input.tenantId,
-            characterVersionId: input.characterVersionId,
-            publishedAt: input.createdAt,
-          });
-          await identity.activateCharacterVersion({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            characterVersionId: input.characterVersionId,
-            expectedCharacterRevision: 1,
-            activatedAt: input.createdAt,
-          });
-        });
-      },
-    }),
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
@@ -478,6 +460,7 @@ function createDefaultDatabaseDependency(
     customerChannels: createPostgresCustomerChannelRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
+    internalCryptoTransfers: createPostgresInternalCryptoTransferStore(database.pool),
     cryptoChatActions: createPostgresCryptoChatActionRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
     mobileShell: createPostgresMobileShellRepository(database.pool),
@@ -498,6 +481,10 @@ function createDefaultDatabaseDependency(
     talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
+    profileAvatars: createPostgresAvatarRepository(database.pool),
+    humanDm: createPostgresHumanDmRepository(database.pool),
+    humanDmRealtime: createPostgresHumanDmRealtimeRepository(database.pool),
+    humanContacts: createPostgresHumanContactRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
     talkLibrary: createPostgresTalkLibraryRepository(database.pool),
@@ -638,6 +625,8 @@ export async function startGatewayService(
   let ownerAccessSweepTenantId: TenantId | undefined;
   let ownerAccessSweepTimer: ReturnType<typeof setInterval> | undefined;
   let ownerAccessSweepRunning = false;
+  let avatarCleanupTimer: ReturnType<typeof setInterval> | undefined;
+  let avatarCleanupRunning = false;
   let talkPushDedupePurgeTimer: ReturnType<typeof setInterval> | undefined;
   let talkPushDedupePurgeRunning = false;
   let customerAuth: CustomerAuthService | undefined =
@@ -653,6 +642,7 @@ export async function startGatewayService(
   let talkModerationAuthorizer: TalkModerationAuthorizer | undefined;
   let talkAiSeatAuthorizer: TalkAiSeatAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
+  let humanContactAuthorizer: HumanContactAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
   let talkLibraryAuthorizer: TalkLibraryAuthorizer | undefined;
@@ -764,6 +754,20 @@ export async function startGatewayService(
 
   const platformTenantRaw = env.MASANAWA_PLATFORM_TENANT_ID?.trim();
   const otpPepper = env.MASANAWA_AUTH_OTP_PEPPER?.trim();
+  const bootstrapPlatformAgents = env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true";
+  const canInitializePlatform =
+    !!platformTenantRaw &&
+    !!otpPepper &&
+    !!database.platformSessions &&
+    !!database.agentPresentations &&
+    !!database.characterSkillAssignments &&
+    !!database.relationships &&
+    !!database.relationshipProvisioner &&
+    !!database.platformAgentProfiles;
+  if (bootstrapPlatformAgents && !canInitializePlatform) {
+    await database.close().catch(() => undefined);
+    throw new Error("Platform Agent bootstrap requires platform tenant and canonical customer database/auth dependencies");
+  }
   let platformTenantId: TenantId | undefined;
   if (
     platformTenantRaw &&
@@ -788,21 +792,20 @@ export async function startGatewayService(
       throw error;
     }
 
-    if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
-      if (!database.platformAgentIdentity || !database.skillDistribution) {
+    if (bootstrapPlatformAgents) {
+      // Every identity, skill, presentation and profile write must share a
+      // single tenant-locked PostgreSQL transaction across gateway replicas.
+      // Never fall back to the unprotected per-repository bootstrap.
+      if (!database.bootstrapPlatformAgents) {
         await database.close().catch(() => undefined);
-        throw new Error(
-          "Platform Agent bootstrap requires Identity and Skill distribution repositories",
-        );
+        throw new Error("Platform Agent bootstrap requires an atomic PostgreSQL provisioner");
       }
-      await ensureDefaultPlatformAgents({
-        tenantId: activePlatformTenantId,
-        identity: database.platformAgentIdentity,
-        presentations: database.agentPresentations,
-        profiles: database.platformAgentProfiles,
-        skillAssignments: database.characterSkillAssignments,
-        skillDistribution: database.skillDistribution,
-      });
+      try {
+        await database.bootstrapPlatformAgents(activePlatformTenantId);
+      } catch (error) {
+        await database.close().catch(() => undefined);
+        throw error;
+      }
     }
 
     const customerSessions = createPlatformCustomerSessionAuthorizer({
@@ -815,6 +818,7 @@ export async function startGatewayService(
     talkModerationAuthorizer = customerSessions;
     talkAiSeatAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
+    humanContactAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     talkSearchAuthorizer = customerSessions;
     talkLibraryAuthorizer = customerSessions;
@@ -1873,12 +1877,58 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedAssistantWorkspace = options.appOptions?.assistantWorkspace ??
+    (composedDirectory && composedShell && composedConversation
+      ? createAssistantWorkspaceService({directory:composedDirectory,
+          shell:composedShell,conversations:composedConversation}) : undefined);
+
   const composedTalkProfiles =
     options.appOptions?.talkProfiles ??
     (database.talkProfiles && talkProfileAuthorizer
       ? createTalkProfileService({
           repository: database.talkProfiles,
           authorizer: talkProfileAuthorizer,
+        })
+      : undefined);
+
+  const composedHumanContacts =
+    options.appOptions?.humanContacts ??
+    (database.humanContacts && humanContactAuthorizer
+      ? createHumanContactService({
+          repository: database.humanContacts,
+          authorizer: humanContactAuthorizer,
+        })
+      : undefined);
+
+  const avatarConfig = [
+    env.MASANAWA_PROFILE_AVATAR_S3_ENDPOINT?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_REGION?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_BUCKET?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_ACCESS_KEY?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_S3_SECRET_KEY?.trim(),
+    env.MASANAWA_PROFILE_AVATAR_PUBLIC_BASE_URL?.trim(),
+  ];
+  const avatarAny = avatarConfig.some(Boolean);
+  const avatarAll = avatarConfig.every(Boolean);
+  if (avatarAny && !avatarAll) {
+    throw new TypeError("Profile avatar S3/CDN configuration must be complete");
+  }
+  if (avatarAll && (!database.profileAvatars || !talkProfileAuthorizer)) {
+    throw new TypeError("Profile avatar storage requires authenticated profile SQL");
+  }
+  const composedProfileAvatar = options.appOptions?.profileAvatar ??
+    (avatarAll && database.profileAvatars && talkProfileAuthorizer
+      ? createProfileAvatarService({
+          authorizer: talkProfileAuthorizer,
+          repository: database.profileAvatars,
+          objects: createS3AvatarObjectStore({
+            endpoint: avatarConfig[0]!,
+            region: avatarConfig[1]!,
+            bucket: avatarConfig[2]!,
+            accessKey: avatarConfig[3]!,
+            secretKey: avatarConfig[4]!,
+            publicBaseUrl: avatarConfig[5]!,
+          }),
         })
       : undefined);
 
@@ -1916,6 +1966,15 @@ export async function startGatewayService(
             : base;
         })()
       : undefined);
+
+  const composedHumanDm = options.appOptions?.humanDm ??
+    (database.humanDm && talkSafetyCustomerAuthorizer
+      ? createHumanDmService({repository: database.humanDm,
+          authorizer: talkSafetyCustomerAuthorizer}) : undefined);
+  const composedHumanDmRealtime = options.appOptions?.humanDmRealtime ??
+    (database.humanDmRealtime && talkSafetyCustomerAuthorizer
+      ? createHumanDmRealtimeService({repository: database.humanDmRealtime,
+          authorizer: talkSafetyCustomerAuthorizer}) : undefined);
 
   const composedDirectTwin =
     options.appOptions?.directTwin ??
@@ -2230,6 +2289,17 @@ export async function startGatewayService(
     });
   }
 
+  const composedInternalCryptoTransfers =
+    options.appOptions?.internalCryptoTransfers ??
+    (financialAuthorizer && composedFinancial && database.internalCryptoTransfers
+      ? createInternalCryptoTransferService({
+          authorizer: financialAuthorizer,
+          financial: composedFinancial,
+          store: database.internalCryptoTransfers,
+          ...(options.internalCryptoPolicy ? { policy: options.internalCryptoPolicy } : {}),
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
@@ -2242,6 +2312,8 @@ export async function startGatewayService(
       ...(composedTalkAiSeats ? { talkAiSeats: composedTalkAiSeats } : {}),
       ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
+      ...(composedProfileAvatar ? { profileAvatar: composedProfileAvatar } : {}),
+      ...(composedHumanContacts ? { humanContacts: composedHumanContacts } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedTalkSearch ? { talkSearch: composedTalkSearch } : {}),
       ...(composedTalkLibrary ? { talkLibrary: composedTalkLibrary } : {}),
@@ -2249,10 +2321,13 @@ export async function startGatewayService(
       ...(composedTalkPolls ? { talkPolls: composedTalkPolls } : {}),
       ...(composedTalkSafety ? { talkSafety: composedTalkSafety } : {}),
       ...(composedDirectTwin ? { directTwin: composedDirectTwin } : {}),
+      ...(composedHumanDm ? { humanDm: composedHumanDm } : {}),
+      ...(composedHumanDmRealtime ? { humanDmRealtime: composedHumanDmRealtime } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedInternalCryptoTransfers ? { internalCryptoTransfers: composedInternalCryptoTransfers } : {}),
       ...(composedCustomerChannels
         ? { customerChannels: composedCustomerChannels }
         : {}),
@@ -2265,6 +2340,7 @@ export async function startGatewayService(
         ? { agentConversation: composedConversation }
         : {}),
       ...(composedShell ? { agentShell: composedShell } : {}),
+      ...(composedAssistantWorkspace ? { assistantWorkspace: composedAssistantWorkspace } : {}),
       ...(liveVoiceTokens ? { liveVoiceTokens } : {}),
       ...(composedPush ? { mobilePush: composedPush } : {}),
       ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),
@@ -2318,6 +2394,10 @@ export async function startGatewayService(
         clearInterval(talkPushDedupePurgeTimer);
         talkPushDedupePurgeTimer = undefined;
       }
+      if (avatarCleanupTimer) {
+        clearInterval(avatarCleanupTimer);
+        avatarCleanupTimer = undefined;
+      }
     },
     onAfterClose: async () => {
       if (linkedWhatsAppController) {
@@ -2330,6 +2410,10 @@ export async function startGatewayService(
       if (talkPushDedupePurgeTimer) {
         clearInterval(talkPushDedupePurgeTimer);
         talkPushDedupePurgeTimer = undefined;
+      }
+      if (avatarCleanupTimer) {
+        clearInterval(avatarCleanupTimer);
+        avatarCleanupTimer = undefined;
       }
       await database.close();
     },
@@ -2345,6 +2429,36 @@ export async function startGatewayService(
       await lifecycle.stop("manual").catch(() => undefined);
       throw error;
     }
+  }
+
+  const runAvatarCleanup = async () => {
+    if (!composedProfileAvatar || avatarCleanupRunning || drain.isDraining()) {
+      return;
+    }
+    avatarCleanupRunning = true;
+    try {
+      const outcome = await composedProfileAvatar.collectGarbage(20);
+      if (outcome.failed > 0) {
+        process.stderr.write(JSON.stringify({
+          event: "profile.avatar.cleanup_retry_pending",
+          failedCount: outcome.failed,
+        }) + "\n");
+      }
+    } catch {
+      // Durable leases survive process restarts and are retried on next sweep.
+      process.stderr.write(JSON.stringify({
+        event: "profile.avatar.cleanup_retry_pending",
+      }) + "\n");
+    } finally {
+      avatarCleanupRunning = false;
+    }
+  };
+  if (composedProfileAvatar) {
+    avatarCleanupTimer = setInterval(() => {
+      void runAvatarCleanup();
+    }, 10 * 60 * 1000);
+    avatarCleanupTimer.unref();
+    void runAvatarCleanup();
   }
 
   const runTalkPushDedupePurge = async () => {
@@ -2433,3 +2547,6 @@ if (isDirectExecution()) {
     process.exitCode = 1;
   });
 }
+
+
+

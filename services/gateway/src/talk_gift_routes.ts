@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import Type from "typebox";
 import type { TalkGiftService } from "./talk_gifts/service.js";
+import { strictRequestBody } from "./strict_request_body.js";
 
 export function registerTalkGiftRoutes(
   app: FastifyInstance,
@@ -22,6 +23,7 @@ export function registerTalkGiftRoutes(
   app.post(
     "/talks/:talkId/gifts",
     {
+      preValidation: strictRequestBody(["requestId", "catalogItemId", "amountCredits"]),
       schema: {
         params: Type.Object(
           { talkId: Type.String({ minLength: 1, maxLength: 160 }) },
@@ -57,3 +59,4 @@ export function registerTalkGiftRoutes(
     },
   );
 }
+

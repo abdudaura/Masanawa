@@ -62,11 +62,15 @@ export function createTalkReplayCoordinator(input:Readonly<{
       if(media.status==="recording"){
         await input.egress.stop(media.egressId);
       }
-      await input.objects.deleteObject(media.objectKey);
+      // Revoke authoritative playback access before attempting external
+      // object deletion. A failed delete must never leave a ready/recording
+      // database row capable of serving a signed replay URL. Retrying abort
+      // reattempts deletion for an already-aborted job without re-stopping it.
       await input.media.markAborted({
         tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
         completedAt:request.now??new Date().toISOString(),
       });
+      await input.objects.deleteObject(media.objectKey);
     },
 
     async finalize(request){
@@ -77,7 +81,14 @@ export function createTalkReplayCoordinator(input:Readonly<{
         await input.replay.finalizeFromLive(request);
         return;
       }
-      if(media.status==="ready"||media.status==="aborted"){
+      if(media.status==="aborted"){
+        // An aborted object must never publish a surviving replay segment,
+        // including after a concurrent Host discard.
+        return;
+      }
+      if(media.status==="ready"){
+        // A crash after media.markReady but before replay publication resumes
+        // only the canonical live-finalization transaction.
         await input.replay.finalizeFromLive(request);
         return;
       }
@@ -91,6 +102,14 @@ export function createTalkReplayCoordinator(input:Readonly<{
         });
         stoppedMedia=Object.freeze({...media,status:"stopped" as const,completedAt:request.now});
       }
+      // Stop time is part of the durable media custody record. A retry may
+      // occur minutes or hours later and must not inflate the audio duration.
+      const stoppedAt=stoppedMedia.completedAt;
+      const startMs=Date.parse(stoppedMedia.startedAt);
+      const stopMs=stoppedAt===null?NaN:Date.parse(stoppedAt);
+      if(!Number.isFinite(startMs)||!Number.isFinite(stopMs)||stopMs<=startMs){
+        throw new Error("talks.replay.media_stop_timestamp_invalid");
+      }
       const checksum=await input.objects.checksumSha256(stoppedMedia.objectKey);
       const segmentId=`egress_${safePart(stoppedMedia.egressId)}`;
       const appended=await input.replay.appendSegment({
@@ -98,18 +117,21 @@ export function createTalkReplayCoordinator(input:Readonly<{
         talkId:request.talkId,
         segmentId,
         startedAt:stoppedMedia.startedAt,
-        endedAt:request.now,
+        endedAt:stoppedAt!,
         mediaRef:`s3:${stoppedMedia.objectKey}`,
         checksumSha256:checksum,
         now:request.now,
       });
       if(!appended) throw new Error("talks.replay.not_found");
-      const finalized=await input.replay.finalizeFromLive(request);
-      if(!finalized) throw new Error("talks.replay.not_found");
+      // Authoritative media readiness precedes replay publication. After a
+      // crash in between, status=ready resumes finalizeFromLive on retry.
+      // A concurrent abort cannot be resurrected by markReady.
       await input.media.markReady({
         tenantId:request.tenantId,talkId:request.talkId,recordingId:stoppedMedia.recordingId,
-        checksumSha256:checksum,completedAt:request.now,
+        checksumSha256:checksum,completedAt:stoppedAt!,
       });
+      const finalized=await input.replay.finalizeFromLive(request);
+      if(!finalized) throw new Error("talks.replay.not_found");
     },
 
     async playback(request){
@@ -124,3 +146,4 @@ export function createTalkReplayCoordinator(input:Readonly<{
     },
   });
 }
+

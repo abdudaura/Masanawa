@@ -6,7 +6,7 @@ import {
   type SkillDistributionRepository,
 } from "@masanawa/skills";
 import { PlatformError } from "@masanawa/contracts";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../transaction.js";
 
 function conflict(code: string, message: string): PlatformError {
@@ -23,7 +23,7 @@ function fromDefinition(value: unknown): SkillDistributionProfile {
 }
 
 export function createPostgresSkillDistributionRepository(
-  pool: Pool,
+  pool: Pool | PoolClient,
 ): SkillDistributionRepository {
   return Object.freeze<SkillDistributionRepository>({
     async put(input) {
@@ -86,3 +86,4 @@ export function createPostgresSkillDistributionRepository(
     },
   });
 }
+

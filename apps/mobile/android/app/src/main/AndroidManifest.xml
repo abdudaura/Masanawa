@@ -16,7 +16,12 @@
         android:label="Masanawa"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher">
+        android:roundIcon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/masanawa_data_extraction_rules"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/masanawa_network_security_config">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -85,3 +90,4 @@
         </intent>
     </queries>
 </manifest>
+

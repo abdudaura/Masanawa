@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDb4I1ja4gg0Sobiso3to8QWD9JkEZ3oLE</string>
+	<key>GCM_SENDER_ID</key>
+	<string>621210420002</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.masanawa.app</string>
+	<key>PROJECT_ID</key>
+	<string>masanawa-mobile</string>
+	<key>STORAGE_BUCKET</key>
+	<string>masanawa-mobile.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:621210420002:ios:cb95d2e72e10ae70dd1b7b</string>
+</dict>
+</plist>

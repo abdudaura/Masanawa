@@ -32,6 +32,7 @@ export interface TalkSafetyService {
     reason: TalkSafetyReportReason;
     detail?: string | null;
     clientRequestId: string;
+    expectedReporterUserId?: string;
   }>): Promise<Readonly<{ reportId: string; accepted: true }>>;
   readPreference(input: Readonly<{
     authorizationHeader: string | undefined;
@@ -109,12 +110,35 @@ export function createTalkSafetyService(input:Readonly<{
   return Object.freeze<TalkSafetyService>({
     async report(request){
       const reporter=await customer(request.authorizationHeader);
+      if(request.expectedReporterUserId !== undefined &&
+         request.expectedReporterUserId !== reporter.userId){
+        throw Object.assign(new Error("reporter.session_changed"),{statusCode:409});
+      }
+      // A public human profile is addressed by a mutable handle in mobile UI,
+      // but the moderation queue must retain the immutable tenant-scoped user ID.
+      // Existing callers may supply a user ID directly (e.g. Talk participant).
+      let targetId=text(request.targetId,"targetId");
+      if(request.targetKind==="profile"){
+        const resolvedById=/^[A-Za-z0-9][A-Za-z0-9_.:-]{2,255}$/u.test(targetId)
+          ? await input.repository.resolveProfileUserById({
+              tenantId:reporter.tenantId,userId:targetId,
+            })
+          : null;
+        const resolved=resolvedById ?? await input.repository.resolveProfileUser({
+          tenantId:reporter.tenantId,handle:handle(targetId),
+        });
+        if(!resolved) throw Object.assign(new Error("profiles.not_found"),{statusCode:404});
+        if(resolved===reporter.userId){
+          throw Object.assign(new Error("Cannot report your own profile"),{statusCode:400});
+        }
+        targetId=resolved;
+      }
       const report=normalizeTalkSafetyReport({
         schemaVersion:1,
         reportId:createReportId(),
         tenantId:reporter.tenantId,
         reporterUserId:reporter.userId,
-        target:{kind:request.targetKind,id:text(request.targetId,"targetId")},
+        target:{kind:request.targetKind,id:targetId},
         reason:request.reason,
         detail:request.detail ?? null,
         clientRequestId:text(request.clientRequestId,"clientRequestId"),
@@ -255,3 +279,4 @@ export function createTalkSafetyService(input:Readonly<{
     },
   });
 }
+

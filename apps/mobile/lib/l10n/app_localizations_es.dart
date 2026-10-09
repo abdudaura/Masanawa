@@ -1,0 +1,523 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Spanish Castilian (`es`).
+class AppLocalizationsEs extends AppLocalizations {
+  AppLocalizationsEs([String locale = 'es']) : super(locale);
+
+  @override
+  String get appTitle => 'Masanawa';
+
+  @override
+  String get home => 'Inicio';
+
+  @override
+  String get agents => 'Agentes';
+
+  @override
+  String get wallet => 'Billetera';
+
+  @override
+  String get talk => 'Hablar';
+
+  @override
+  String get explore => 'Explorar';
+
+  @override
+  String get liveTalks => 'Charlas en vivo';
+
+  @override
+  String get startTalk => 'Iniciar charla';
+
+  @override
+  String get activity => 'Actividad';
+
+  @override
+  String get profile => 'Perfil';
+
+  @override
+  String get settings => 'Configuración';
+
+  @override
+  String get retry => 'Reintentar';
+
+  @override
+  String get cancel => 'Cancelar';
+
+  @override
+  String get confirm => 'Confirmar';
+
+  @override
+  String get loading => 'Cargando…';
+
+  @override
+  String get listen => 'Escuchar';
+
+  @override
+  String get raiseHand => 'Levantar la mano';
+
+  @override
+  String speakerSeats(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count asientos para hablar',
+      one: '1 asiento para hablar',
+      zero: 'No hay asientos para hablar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletAmount(String amount, String currency) {
+    return '$amount $currency';
+  }
+
+  @override
+  String get splashTagline => 'Conversaciones en vivo entre personas e IA';
+
+  @override
+  String get welcomeTitle => 'Te damos la bienvenida a Masanawa';
+
+  @override
+  String get checkingSignInMethods =>
+      'Comprobando los métodos de inicio de sesión…';
+
+  @override
+  String get signInInstruction =>
+      'Inicia sesión con tu correo o teléfono. Te enviaremos un código de un solo uso.';
+
+  @override
+  String get signInMethodsUnavailable =>
+      'El inicio de sesión no está disponible temporalmente. Inténtalo de nuevo en unos momentos.';
+
+  @override
+  String get signInMethodsLoadFailed =>
+      'No se pudieron cargar los métodos de inicio de sesión. Comprueba tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get invalidPhoneNumber => 'Introduce un número de teléfono válido';
+
+  @override
+  String get invalidEmailAddress => 'Introduce una dirección de correo válida';
+
+  @override
+  String get phoneMethod => 'Teléfono';
+
+  @override
+  String get emailMethod => 'Correo';
+
+  @override
+  String get emailExample => 'tu@ejemplo.com';
+
+  @override
+  String get sendingCode => 'Enviando código…';
+
+  @override
+  String get sendCode => 'Enviar código';
+
+  @override
+  String get continueAction => 'Continuar';
+
+  @override
+  String get termsNotice =>
+      'Al continuar, aceptas nuestros Términos y Política de privacidad.';
+
+  @override
+  String get otpTitle => 'Introduce el código';
+
+  @override
+  String otpSentTo(String identifier) {
+    return 'Enviado a $identifier';
+  }
+
+  @override
+  String get invalidOtpCode =>
+      'Introduce el código de verificación de 6 dígitos';
+
+  @override
+  String get otpSessionExpired =>
+      'La sesión ha caducado. Solicita un código nuevo.';
+
+  @override
+  String get verifyingCode => 'Verificando…';
+
+  @override
+  String get verifyCode => 'Verificar';
+
+  @override
+  String resendCodeIn(int seconds) {
+    return 'Reenviar código en $seconds s';
+  }
+
+  @override
+  String get resendCode => 'Reenviar código';
+
+  @override
+  String get nameQuestion => '¿Cómo quieres que te llamemos?';
+
+  @override
+  String get completeProfile => 'Completa tu perfil de Masanawa.';
+
+  @override
+  String get codeVerifiedName =>
+      'Tu código está verificado. Añade tu nombre para completar el inicio de sesión.';
+
+  @override
+  String get fullNameLabel => 'Nombre completo';
+
+  @override
+  String get fullNameExample => 'Ej.: Amina Bello';
+
+  @override
+  String get fullNameRequired => 'Introduce tu nombre completo';
+
+  @override
+  String get finishingSignIn => 'Finalizando inicio de sesión…';
+
+  @override
+  String get verifiedSignInNotice =>
+      'El teléfono o correo verificado seguirá siendo tu método de inicio de sesión.';
+
+  @override
+  String countryDialCode(String code) {
+    return 'Prefijo telefónico: $code';
+  }
+
+  @override
+  String get unknownCountryDialCode => 'No se reconoce el prefijo telefónico';
+
+  @override
+  String get authCodeInvalid =>
+      'El código es incorrecto. Compruébalo e inténtalo de nuevo.';
+
+  @override
+  String get authCodeLocked =>
+      'Demasiados intentos. Solicita un código nuevo más tarde.';
+
+  @override
+  String get authCodeExpired => 'Este código ha caducado. Solicita uno nuevo.';
+
+  @override
+  String get authRateLimited =>
+      'Demasiadas solicitudes. Inténtalo de nuevo más tarde.';
+
+  @override
+  String get authSendFailed =>
+      'No se pudo enviar el código. Comprueba tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get authVerifyFailed =>
+      'No se pudo verificar el código. Inténtalo de nuevo.';
+
+  @override
+  String get authProfileFailed =>
+      'No se pudo completar tu perfil. Comprueba tus datos e inténtalo de nuevo.';
+
+  @override
+  String get languageAction => 'Idioma de la aplicación';
+
+  @override
+  String get languageDialogTitle => 'Elegir idioma de la aplicación';
+
+  @override
+  String get languageSystem => 'Usar el idioma del dispositivo';
+
+  @override
+  String get languageSaveFailed =>
+      'No se pudo guardar el idioma. Inténtalo de nuevo.';
+
+  @override
+  String get languagePreviewNotice =>
+      'Algunas pantallas todavía no están completamente traducidas.';
+
+  @override
+  String get languageHausaUnavailable =>
+      'Se está completando la interfaz en hausa.';
+
+  @override
+  String get languageSelected => 'Seleccionado';
+
+  @override
+  String get platformAgentsTab => 'Agentes de Masanawa';
+
+  @override
+  String get twinsTab => 'Gemelos';
+
+  @override
+  String get searchPlatformAgents => 'Buscar agentes de Masanawa';
+
+  @override
+  String get clearAgentSearch => 'Borrar búsqueda de agentes';
+
+  @override
+  String get agentsLoadFailed =>
+      'No se pudieron cargar los agentes. Inténtalo de nuevo.';
+
+  @override
+  String get noPlatformAgents =>
+      'Todavía no hay agentes de Masanawa disponibles.';
+
+  @override
+  String get noMatchingAgents =>
+      'No hay agentes que coincidan con tu búsqueda.';
+
+  @override
+  String get gwaniUnavailableRetry =>
+      'Gwani no está disponible. Vuelve a intentarlo pronto.';
+
+  @override
+  String get gwaniUnavailableNow => 'Gwani no está disponible ahora.';
+
+  @override
+  String privateTwinTalkUnavailable(String name) {
+    return 'La charla privada con $name aún no está disponible.';
+  }
+
+  @override
+  String get viewTwinProfile => 'Ver perfil';
+
+  @override
+  String get searchTalks => 'Buscar charlas';
+
+  @override
+  String get searchPublicTwins => 'Buscar gemelos públicos';
+
+  @override
+  String get clearTwinSearch => 'Borrar búsqueda';
+
+  @override
+  String get myTwin => 'Mi gemelo';
+
+  @override
+  String get publicTwin => 'Gemelo público';
+
+  @override
+  String get noPublicTwins => 'No se encontraron gemelos públicos.';
+
+  @override
+  String get publicTwinsLoadFailed =>
+      'No se pudieron cargar los gemelos públicos. Inténtalo de nuevo.';
+
+  @override
+  String get loadMore => 'Cargar más';
+
+  @override
+  String get statusAvailable => 'Disponible';
+
+  @override
+  String get statusListening => 'Escuchando…';
+
+  @override
+  String get statusWorking => 'Trabajando';
+
+  @override
+  String get statusOnCall => 'En llamada';
+
+  @override
+  String get statusOffline => 'Sin conexión';
+
+  @override
+  String get statusUnverified => 'Estado sin verificar';
+
+  @override
+  String statusWorkingTasks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Trabajando · $count tareas',
+      one: 'Trabajando · 1 tarea',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String twinShareText(String name, String url) {
+    return 'Habla con $name en Masanawa: $url';
+  }
+
+  @override
+  String get talksTab => 'Charlas';
+
+  @override
+  String get chatsTab => 'Chats';
+
+  @override
+  String get assistantTab => 'Asistente';
+
+  @override
+  String get billingRecent => 'Pagos recientes';
+
+  @override
+  String get billingRefreshHistory => 'Actualizar historial';
+
+  @override
+  String get billingNoPayments => 'Todavía no hay pagos';
+
+  @override
+  String get billingRecipientLabel => 'Destinatario';
+
+  @override
+  String get billingServiceAmountLabel => 'Servicio';
+
+  @override
+  String get billingFeeLabel => 'Comisión';
+
+  @override
+  String get billingTotalLabel => 'Total';
+
+  @override
+  String get billingStatusLabel => 'Estado';
+
+  @override
+  String get billingProviderRef => 'Referencia del proveedor';
+
+  @override
+  String get billingTokenLabel => 'Token / código';
+
+  @override
+  String get billingRefundedInfo => 'El pago verificado fue reembolsado.';
+
+  @override
+  String get billingSuccess => 'Factura pagada correctamente.';
+
+  @override
+  String get billingStatusQuoted => 'Cotización lista';
+
+  @override
+  String get billingStatusAwaiting => 'Esperando pago';
+
+  @override
+  String get billingStatusFunded => 'Pago verificado';
+
+  @override
+  String get billingStatusProcessing => 'Procesando';
+
+  @override
+  String get billingStatusCompleted => 'Completado';
+
+  @override
+  String get billingStatusRefundProcessing => 'Reembolso en curso';
+
+  @override
+  String get billingStatusRefunded => 'Reembolsado';
+
+  @override
+  String get billingStatusExpired => 'Vencido';
+
+  @override
+  String get billingStatusFailed => 'Fallido';
+
+  @override
+  String get billingStatusAwaitingFunds => 'Esperando fondos';
+
+  @override
+  String get billingStatusUnknown => 'Estado no disponible';
+
+  @override
+  String get billingTitle => 'Facturas y pagos';
+
+  @override
+  String get billingNew => 'Nueva factura';
+
+  @override
+  String get billingPayTitle => 'Pagar una factura';
+
+  @override
+  String get billingInstructions =>
+      'Elige un servicio disponible. El pago se realiza desde tu billetera Masanawa en la aplicación.';
+
+  @override
+  String get billingCategory => 'Categoría';
+
+  @override
+  String get billingProvider => 'Proveedor';
+
+  @override
+  String get billingService => 'Servicio';
+
+  @override
+  String get billingPhone => 'Número de teléfono';
+
+  @override
+  String get billingRecipient => 'Número de cliente / medidor / tarjeta';
+
+  @override
+  String get billingAmount => 'Importe (NGN)';
+
+  @override
+  String get billingVariableHelp =>
+      'Introduce un importe admitido por el proveedor.';
+
+  @override
+  String get billingFixedHelp => 'Importe fijo del proveedor.';
+
+  @override
+  String get billingReview => 'Revisar cotización';
+
+  @override
+  String billingConfirmWallet(String amount) {
+    return 'Confirmar $amount desde la billetera';
+  }
+
+  @override
+  String billingAddFunds(String amount) {
+    return 'Añadir $amount';
+  }
+
+  @override
+  String get billingTransferInstructions =>
+      'Transfiere el importe exacto indicado. Masanawa continuará el pago automáticamente cuando se verifique la transferencia.';
+
+  @override
+  String get billingExpires => 'Vence:';
+
+  @override
+  String get billingRefresh => 'Actualizar estado';
+
+  @override
+  String get billingAnother => 'Pagar otra factura';
+
+  @override
+  String get billingUnavailable => 'Los pagos no están disponibles ahora.';
+
+  @override
+  String get billingProvidersUnavailable =>
+      'No se pudieron cargar los proveedores.';
+
+  @override
+  String get billingServicesUnavailable =>
+      'No se pudieron cargar los servicios.';
+
+  @override
+  String get billingSelectionRequired =>
+      'Elige una categoría, un proveedor y un servicio.';
+
+  @override
+  String get billingInvalidDetails =>
+      'Introduce un destinatario y un importe válidos.';
+
+  @override
+  String get billingQuoteFailed => 'No se pudo crear esta cotización.';
+
+  @override
+  String get billingPurchaseFailed =>
+      'No se pudo completar la compra desde tu billetera.';
+
+  @override
+  String get billingRefreshFailed => 'No se pudo actualizar el estado.';
+
+  @override
+  String get billingDetailsFailed => 'No se pudieron cargar los detalles.';
+
+  @override
+  String get billingSignInAgain =>
+      'Tu sesión ha caducado. Inicia sesión de nuevo.';
+
+  @override
+  String get billingExpiredTryAgain =>
+      'Esta cotización ha caducado. Solicita otra.';
+}

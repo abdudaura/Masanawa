@@ -29,6 +29,12 @@ function fixture(available = true) {
       question_id: "answered-1", author_name: "Mariam",
       body: "How can we verify this?", resolved_at: "2026-10-08T04:59:30Z",
     }] };
+    if (sql.includes("FROM talks.comments ")) return { rows: [{
+      comment_id: "moderator-approved-1",
+      body: "Could this work in other regions?",
+      author_name: "Zainab",
+      approved_at: "2026-10-08T04:59:45Z",
+    }] };
     if (sql.includes("FROM talks.polls ")) return { rows: [{
       poll_id: "poll-1", question: "Which alternative?", status: "open",
       event_at: "2026-10-08T04:59:40Z",
@@ -55,7 +61,7 @@ describe("canonical PostgreSQL Talk stage context source", () => {
       tenantId: "tenant-1", talkId: "talk-1", before, stage,
     });
     expect(context?.events.map((event) => event.kind)).toEqual([
-      "seat", "seat", "reaction", "hand", "question", "poll",
+      "seat", "seat", "reaction", "hand", "question", "poll", "comment",
     ]);
     expect(context?.events[1]?.summary).toBe("human seat left");
     expect(context?.events.find((e) => e.kind === "reaction")?.summary)
@@ -64,13 +70,31 @@ describe("canonical PostgreSQL Talk stage context source", () => {
       .toContain("How can we verify this?");
     expect(context?.events.find((e) => e.kind === "poll")?.summary)
       .toContain("Option A: 7; Option B: 3");
+    expect(context?.events.find((event) => event.kind === "comment")).toMatchObject({
+      actorName: "Zainab",
+      summary: "Moderated public comment: Could this work in other regions?",
+    });
     expect(context?.contentTrust).toBe("public-untrusted-data");
 
-    expect(query).toHaveBeenCalledTimes(7);
+    expect(query).toHaveBeenCalledTimes(8);
     for (const [sql, params] of query.mock.calls) {
-      expect(sql).toMatch(/(?:(?:q|p|s)\.)?tenant_id=\$1 AND (?:(?:q|p|s)\.)?talk_id=\$2/);
+      expect(sql).toMatch(/(?:(?:q|p|s|c)\.)?tenant_id=\$1 AND (?:(?:q|p|s|c)\.)?talk_id=\$2/);
       expect(params?.slice(0, 2)).toEqual(["tenant-1", "talk-1"]);
-      expect(sql).not.toContain("FROM talks.comments");
+      if (sql.includes("FROM talks.comments")) {
+        // Reading raw comments requires an explicit current safety approval,
+        // with its decision time bounded so later approval cannot leak into
+        // an earlier AI conversation or a blocked viewer's Talk.
+        expect(sql).toContain("JOIN talks.safety_enforcement se");
+        expect(sql).toContain("se.target_kind='comment'");
+        expect(sql).toContain("se.target_id=c.comment_id");
+        expect(sql).toContain("se.visibility='public'");
+        expect(sql).toContain("GREATEST(c.created_at,se.updated_at) <= $3");
+        expect(sql).toContain("GREATEST(c.created_at,se.updated_at) >= $4");
+        expect(sql).toContain("sp.subject_user_id=c.author_user_id");
+        expect(sql).toContain("sp.blocked=true");
+        expect(sql).toContain("ORDER BY approved_at DESC");
+        expect(sql).toContain("LIMIT 16");
+      }
       expect(sql).not.toContain("FROM talks.activity");
       expect(sql).not.toContain("wallet");
       expect(sql).not.toContain("private");
@@ -89,8 +113,27 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     expect(allSql).toContain("COALESCE(p.closed_at,recent.latest_vote,p.created_at)");
     expect(allSql).toContain("p.status='open'");
     expect(allSql).not.toContain("SELECT v.user_id");
+    expect(allSql).not.toContain("SELECT c.author_user_id");
+    expect(allSql).not.toContain("SELECT *");
+    expect(allSql).not.toContain("talks.safety_reports");
     expect(allSql).toContain("LIMIT 16");
     expect(allSql).toContain("LIMIT 6");
+  });
+
+  it("fails closed when explicit comment moderation enforcement is unavailable", async () => {
+    const failingPool: TalkAiStageSqlPool = {
+      query: async <Row extends Record<string, unknown>>(sql: string) => {
+        if (sql.includes("FROM talks.talks ")) {
+          return { rows: [{ topic: "Public topic", host_name: "Host" }] as unknown as Row[] };
+        }
+        if (sql.includes("FROM talks.comments ")) throw new Error("safety enforcement unavailable");
+        return { rows: [] };
+      },
+    };
+    const repository = createPostgresTalkAiStageEventRepository(failingPool);
+    await expect(repository.readAuthorizedStage({
+      tenantId: "tenant-1", talkId: "talk-1", before: "2026-10-08T05:00:00Z",
+    })).rejects.toThrow("safety enforcement unavailable");
   });
 
   it("does not query audience data for missing or non-live Talks", async () => {
@@ -123,3 +166,4 @@ describe("canonical PostgreSQL Talk stage context source", () => {
     })).rejects.toThrow("database is unavailable");
   });
 });
+

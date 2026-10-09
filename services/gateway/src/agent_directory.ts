@@ -7,6 +7,14 @@ import type {
 import type { CharacterId, TenantId, UserId } from "@masanawa/contracts";
 import { parseCanonicalId } from "@masanawa/contracts";
 
+/** Safe HTTP failures for customer preference edits; no internal SQL details. */
+export class AgentDirectoryPreferenceError extends Error {
+  constructor(readonly statusCode: number, message: string) {
+    super(message);
+    this.name = "AgentDirectoryPreferenceError";
+  }
+}
+
 export interface AgentDirectoryAuthority {
   readonly tenantId: TenantId;
   readonly userId: UserId;
@@ -147,36 +155,53 @@ export function createAgentDirectoryService(input: {
 
     async setDefaultPlatformAgent(request) {
       if (!input.platformProfiles || !input.userPreferences) {
-        throw new Error("Platform agent preferences are unavailable");
+        throw new AgentDirectoryPreferenceError(503, "Platform agent preferences are unavailable");
       }
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         capability: "agents.preferences.write",
       });
-      const characterId = parseCanonicalId(
-        "character",
-        request.characterId,
-      );
+      let characterId: CharacterId;
+      try {
+        characterId = parseCanonicalId("character", request.characterId);
+      } catch {
+        throw new AgentDirectoryPreferenceError(400, "Invalid Character ID");
+      }
       if (
         authority.characterIds &&
         !authority.characterIds.includes(characterId)
       ) {
-        throw new Error("Character is not available to this user");
+        throw new AgentDirectoryPreferenceError(404, "Character is not available to this user");
+      }
+      // A support profile is not itself permission to expose or select the
+      // Character. A hidden/unpublished presentation (or revoked audience
+      // scope) must never be writable as the user's private default.
+      const visible = await input.presentations.listVisible({
+        tenantId: authority.tenantId,
+      });
+      if (!visible.some((item) => item.characterId === characterId)) {
+        throw new AgentDirectoryPreferenceError(404, "Character is not available to this user");
       }
       const profile = await input.platformProfiles.readForCharacter({
         tenantId: authority.tenantId,
         characterId,
       });
       if (!profile?.supportAgent) {
-        throw new Error("Selected Character is not a platform support agent");
+        throw new AgentDirectoryPreferenceError(409, "Selected Character is not a platform support agent");
       }
 
       const existing = await input.userPreferences.readForUser({
         tenantId: authority.tenantId,
         userId: authority.userId,
       });
-      await input.userPreferences.put({
-        expectedRevision: existing?.revision ?? null,
+      // Selecting the current value is idempotent, avoids an unnecessary CAS
+      // and remains safe when two devices repeat a successful request.
+      if (existing?.defaultPlatformCharacterId === characterId) {
+        return Object.freeze({ characterId });
+      }
+      try {
+        await input.userPreferences.put({
+          expectedRevision: existing?.revision ?? null,
         preference: {
           schemaVersion: 1,
           tenantId: authority.tenantId,
@@ -185,7 +210,22 @@ export function createAgentDirectoryService(input: {
           revision: existing?.revision ?? 1,
         },
       });
+      } catch {
+        // Concurrent changes, lost sessions or database failures may have
+        // unknown outcomes. Never leak SQL internals or advertise success.
+        throw new AgentDirectoryPreferenceError(503, "Preference outcome unknown; refresh and retry");
+      }
+      // Never tell Flutter that the choice persisted merely because a write
+      // call returned; verify the authoritative per-user tenant-scoped state.
+      const committed = await input.userPreferences.readForUser({
+        tenantId: authority.tenantId,
+        userId: authority.userId,
+      });
+      if (committed?.defaultPlatformCharacterId !== characterId) {
+        throw new AgentDirectoryPreferenceError(503, "Default agent change could not be verified; refresh and retry");
+      }
       return Object.freeze({ characterId });
     },
   });
 }
+

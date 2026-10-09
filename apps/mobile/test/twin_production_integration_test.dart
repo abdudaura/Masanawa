@@ -1,3 +1,6 @@
+import 'package:masanawa/src/agents/agent_directory.dart';
+import 'package:masanawa/src/agents/agent_directory_cache.dart';
+import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -60,6 +63,15 @@ ResponseBody _json(Object value) => ResponseBody.fromString(
   },
 );
 
+class _TestDirectoryCache implements AgentDirectoryCache {
+  @override
+  Future<List<AgentDirectoryEntry>?> read(String owner) async => null;
+  @override
+  Future<void> write(String owner, List<AgentDirectoryEntry> agents) async {}
+  @override
+  Future<void> clear() async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
@@ -71,6 +83,8 @@ void main() {
         expect(options.headers['Authorization'], 'Bearer test-access');
         seenPaths.add(options.path);
         switch (options.path) {
+          case 'https://masanawa-gateway-production.up.railway.app/agent/directory':
+            return _json({'agents': []});
           case '/home':
             return _json({
               'assistants': [
@@ -163,11 +177,13 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          dioProvider.overrideWithValue(dio),
           apiClientProvider.overrideWithValue(
             ApiClient(dio: dio)..accessToken = 'test-access',
           ),
           sessionProvider.overrideWith(_Session.new),
           isSignedInProvider.overrideWithValue(true),
+          agentDirectoryCacheProvider.overrideWithValue(_TestDirectoryCache()),
         ],
       );
       addTearDown(container.dispose);
@@ -176,6 +192,8 @@ void main() {
       expect(mine?.displayName, 'Amina Bello');
       expect(mine?.publicUrl, 'https://masanawa.com/amina-bello');
 
+      await container.read(agentDirectoryProvider.notifier).refresh();
+      await Future<void>.delayed(Duration.zero);
       final home = await container.read(homeProvider.future);
       expect(
         home.assistantFor(HomeAssistantRole.gwana)?.characterId,
@@ -216,3 +234,4 @@ void main() {
     },
   );
 }
+

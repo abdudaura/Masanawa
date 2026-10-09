@@ -274,11 +274,14 @@ describe("live Talk AI Seat worker", () => {
 
   it("stop aborts in-flight inference and suppresses publication", async () => {
     let resolveReply!: (value: { text: string; correlationId: string }) => void;
+    let inferenceStarted!: () => void;
+    const started = new Promise<void>((resolve) => { inferenceStarted = resolve; });
     const persona: TalkAiSeatPersonaRuntime = {
       respond: vi.fn(
         () =>
-          new Promise((resolve) => {
+          new Promise<{ text: string; correlationId: string }>((resolve) => {
             resolveReply = resolve;
+            inferenceStarted();
           }),
       ),
     };
@@ -290,7 +293,7 @@ describe("live Talk AI Seat worker", () => {
       seatId: "seat-ai-1",
       turn,
     });
-    await Promise.resolve();
+    await started;
     worker.stop();
     resolveReply({ text: "too late", correlationId: "corr-late" });
 
@@ -327,3 +330,184 @@ describe("live Talk AI Seat worker", () => {
     ).rejects.toThrow("too long");
   });
 });
+
+
+describe("AI Seat turn fencing and persona continuity", () => {
+  const request = {
+    tenantId: "tenant-1",
+    talkId: "talk-1",
+    seatId: "seat-ai-1",
+    turn,
+  };
+
+  it("preempts an older model reply when a newer human turn reaches the same Seat", async () => {
+    let releaseFirst!: (reply: { text: string; correlationId: string }) => void;
+    let firstStarted!: () => void;
+    const started = new Promise<void>((resolve) => { firstStarted = resolve; });
+    const firstReply = new Promise<{ text: string; correlationId: string }>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const signals: AbortSignal[] = [];
+    const persona: TalkAiSeatPersonaRuntime = {
+      respond: vi.fn(async ({ signal }) => {
+        signals.push(signal);
+        if (signals.length === 1) {
+          firstStarted();
+          return firstReply;
+        }
+        return { text: "new response", correlationId: "new-correlation" };
+      }),
+    };
+    const { worker, audio } = setup({ persona });
+    const old = worker.handleTurn(request);
+    await started;
+    const newer = worker.handleTurn({
+      ...request,
+      turn: { ...turn, transcript: "Actually, answer this instead." },
+    });
+    releaseFirst({ text: "obsolete response", correlationId: "old-correlation" });
+
+    expect(await old).toEqual({
+      disposition: "aborted",
+      reason: "state-changed-before-publish",
+    });
+    expect(await newer).toEqual({ disposition: "published", reason: "published" });
+    expect(signals[0]?.aborted).toBe(true);
+    expect(signals[1]?.aborted).toBe(false);
+    expect(audio.publish).toHaveBeenCalledTimes(1);
+    expect(audio.publish).toHaveBeenCalledWith(
+      expect.objectContaining({ text: "new response", correlationId: "new-correlation" }),
+    );
+  });
+
+  it("suppresses a superseded turn still waiting on initial repository reads", async () => {
+    let releaseRead!: (value: TalkAiSeatWorkerSeat) => void;
+    let firstReadStarted!: () => void;
+    const started = new Promise<void>((resolve) => { firstReadStarted = resolve; });
+    const pendingRead = new Promise<TalkAiSeatWorkerSeat>((resolve) => {
+      releaseRead = resolve;
+    });
+    let reads = 0;
+    const repository: TalkAiSeatWorkerRepository = {
+      readSeat: vi.fn(async () => {
+        if (++reads === 1) {
+          firstReadStarted();
+          return pendingRead;
+        }
+        return seat;
+      }),
+      readLiveState: vi.fn(async () => live),
+    };
+    const persona: TalkAiSeatPersonaRuntime = {
+      respond: vi.fn(async () => ({ text: "current", correlationId: "corr-current" })),
+    };
+    const audio: TalkAiSeatAudioPublisher = { publish: vi.fn(async () => undefined) };
+    const worker = createTalkAiSeatWorker({ repository, persona, audio });
+    const old = worker.handleTurn(request);
+    await started;
+    const newer = worker.handleTurn({
+      ...request, turn: { ...turn, transcript: "new human question" },
+    });
+    releaseRead(seat);
+
+    expect(await old).toEqual({
+      disposition: "aborted",
+      reason: "state-changed-before-publish",
+    });
+    expect(await newer).toEqual({ disposition: "published", reason: "published" });
+    expect(persona.respond).toHaveBeenCalledTimes(1);
+    expect(audio.publish).toHaveBeenCalledTimes(1);
+  });
+
+  it("preempts an older turn during stage-context loading before model inference", async () => {
+    let releaseStage!: (value: null) => void;
+    let firstStageStarted!: () => void;
+    const started = new Promise<void>((resolve) => { firstStageStarted = resolve; });
+    const pendingStage = new Promise<null>((resolve) => { releaseStage = resolve; });
+    let reads = 0;
+    const stage: TalkAiStageEventRepository = {
+      readAuthorizedStage: vi.fn(async () => {
+        if (++reads === 1) {
+          firstStageStarted();
+          return pendingStage;
+        }
+        return null;
+      }),
+    };
+    const { worker, persona, audio } = setup({ stage });
+    const old = worker.handleTurn(request);
+    await started;
+    const newer = worker.handleTurn({
+      ...request, turn: { ...turn, transcript: "fresh question" },
+    });
+    releaseStage(null);
+    expect((await old).reason).toBe("state-changed-before-publish");
+    expect((await newer).disposition).toBe("published");
+    expect(persona.respond).toHaveBeenCalledTimes(1);
+    expect(audio.publish).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a different tenant, Talk or Seat returned by storage before inference", async () => {
+    for (const bad of [
+      { ...seat, tenantId: "another-tenant" },
+      { ...seat, talkId: "another-talk" },
+      { ...seat, seatId: "another-seat" },
+    ]) {
+      const { worker, persona, audio } = setup({ seats: [bad] });
+      expect(await worker.handleTurn(request)).toEqual({
+        disposition: "not-admitted", reason: "seat-missing",
+      });
+      expect(persona.respond).not.toHaveBeenCalled();
+      expect(audio.publish).not.toHaveBeenCalled();
+    }
+  });
+
+  it("drops a reply when the admitted persona or Seat kind changes during inference", async () => {
+    for (const replacement of [
+      { ...seat, personaId: "replacement-persona" },
+      { ...seat, kind: "twin" as const },
+    ]) {
+      const { worker, audio } = setup({ seats: [seat, replacement] });
+      expect(await worker.handleTurn(request)).toEqual({
+        disposition: "aborted", reason: "state-changed-before-publish",
+      });
+      expect(audio.publish).not.toHaveBeenCalled();
+    }
+  });
+
+  it("allows parallel replies on independently authorized Seats", async () => {
+    let releaseFirst!: (reply: { text: string; correlationId: string }) => void;
+    let startedFirst!: () => void;
+    const firstStarted = new Promise<void>((resolve) => { startedFirst = resolve; });
+    const pendingFirst = new Promise<{ text: string; correlationId: string }>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const repository: TalkAiSeatWorkerRepository = {
+      readSeat: vi.fn(async ({ seatId }) => ({
+        ...seat,
+        seatId,
+        personaId: seatId === "seat-ai-1" ? "persona-1" : "persona-2",
+      })),
+      readLiveState: vi.fn(async () => live),
+    };
+    const persona: TalkAiSeatPersonaRuntime = {
+      respond: vi.fn(async ({ seatId }) => {
+        if (seatId === "seat-ai-1") {
+          startedFirst();
+          return pendingFirst;
+        }
+        return { text: "second seat", correlationId: "second" };
+      }),
+    };
+    const audio: TalkAiSeatAudioPublisher = { publish: vi.fn(async () => undefined) };
+    const worker = createTalkAiSeatWorker({ repository, persona, audio });
+    const first = worker.handleTurn(request);
+    await firstStarted;
+    const second = worker.handleTurn({ ...request, seatId: "seat-ai-2" });
+    expect(await second).toEqual({ disposition: "published", reason: "published" });
+    releaseFirst({ text: "first seat", correlationId: "first" });
+    expect(await first).toEqual({ disposition: "published", reason: "published" });
+    expect(audio.publish).toHaveBeenCalledTimes(2);
+  });
+});
+

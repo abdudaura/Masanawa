@@ -15,6 +15,10 @@ class _Transport implements TalkLiveTransport {
   DateTime? credentialsExpireAt;
   String credentialUrl = 'wss://live.example.test';
   Completer<void>? connectGate;
+  Completer<void>? mediaTokenGate;
+  Completer<void>? mediaTokenEntered;
+  Completer<void>? heartbeatGate;
+  Completer<void>? heartbeatEntered;
   int heartbeats = 0;
   bool failHeartbeat = false;
   int disconnects = 0;
@@ -45,6 +49,10 @@ class _Transport implements TalkLiveTransport {
     required String sessionId,
   }) async {
     heartbeats += 1;
+    if (heartbeatEntered != null && !heartbeatEntered!.isCompleted) {
+      heartbeatEntered!.complete();
+    }
+    await heartbeatGate?.future;
     if (failHeartbeat) throw StateError('Simulated network heartbeat failure');
     return _session(heartbeatState);
   }
@@ -69,6 +77,10 @@ class _Transport implements TalkLiveTransport {
     required String talkId,
     required String sessionId,
   }) async {
+    if (mediaTokenEntered != null && !mediaTokenEntered!.isCompleted) {
+      mediaTokenEntered!.complete();
+    }
+    await mediaTokenGate?.future;
     if (failNextToken) {
       failNextToken = false;
       throw StateError('Simulated media-token rejection');
@@ -98,6 +110,7 @@ class _Room implements TalkLiveRoom {
   final List<bool> microphone = [];
   int closes = 0;
   bool failNextConnect = false;
+  bool failNextMicrophone = false;
   Completer<void>? mediaConnectGate;
   Completer<void>? mediaConnectEntered;
   int connects = 0;
@@ -120,6 +133,10 @@ class _Room implements TalkLiveRoom {
   @override
   Future<void> setMicrophoneEnabled(bool enabled) async {
     microphone.add(enabled);
+    if (failNextMicrophone) {
+      failNextMicrophone = false;
+      throw StateError('Simulated microphone hardware failure');
+    }
   }
 
   @override
@@ -459,4 +476,102 @@ void main() {
     await session.close();
   });
 
+  test('close during late media-token response does not reopen media or leak session',
+      () async {
+    final tokenGate = Completer<void>();
+    final entered = Completer<void>();
+    final transport = _Transport(role: TalkLiveRole.host, canPublishAudio: true)
+      ..mediaTokenGate = tokenGate
+      ..mediaTokenEntered = entered;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1', transport: transport, room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+    final starting = session.start();
+    await entered.future.timeout(const Duration(seconds: 2));
+    await session.close();
+    tokenGate.complete();
+    await starting;
+    expect(session.status, TalkLiveAudioStatus.ended);
+    expect(transport.disconnects, 1);
+    expect(room.connects, 0);
+  });
+
+  test('microphone control failure revokes lease and allows explicit safe rejoin',
+      () async {
+    final transport = _Transport(role: TalkLiveRole.host, canPublishAudio: true);
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1', transport: transport, room: room,
+      heartbeatInterval: const Duration(hours: 1),
+    );
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.publishing);
+    room.failNextMicrophone = true;
+    await session.setMuted(true);
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(session.errorMessage, contains('Rejoin'));
+    expect(session.muted, isTrue);
+    expect(room.closes, 1);
+    expect(transport.disconnects, 1);
+
+    final updates = room.microphone.length;
+    await session.setMuted(false);
+    expect(room.microphone.length, updates);
+    await session.start();
+    expect(session.status, TalkLiveAudioStatus.publishing);
+    expect(room.connects, 2);
+    await session.close();
+    expect(transport.disconnects, 2);
+  });
+
+  test('failed microphone shutdown during server reconnect tears down media',
+      () async {
+    final transport = _Transport(role: TalkLiveRole.host, canPublishAudio: true);
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1', transport: transport, room: room,
+      heartbeatInterval: const Duration(milliseconds: 10),
+    );
+    await session.start();
+    room.failNextMicrophone = true;
+    transport.heartbeatState = TalkLiveLifecycle.reconnecting;
+    await Future<void>.delayed(const Duration(milliseconds: 35));
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(session.errorMessage, contains('Rejoin'));
+    expect(room.closes, 1);
+    expect(transport.disconnects, 1);
+    await session.close();
+  });
+
+  test('late heartbeat cannot restore microphone grants after mute failure',
+      () async {
+    final entered = Completer<void>();
+    final heartbeatGate = Completer<void>();
+    final transport = _Transport(role: TalkLiveRole.host, canPublishAudio: true)
+      ..heartbeatGate = heartbeatGate
+      ..heartbeatEntered = entered;
+    final room = _Room();
+    final session = TalkLiveAudioSession(
+      talkId: 'talk-1', transport: transport, room: room,
+      heartbeatInterval: const Duration(milliseconds: 10),
+    );
+    await session.start();
+    await entered.future.timeout(const Duration(seconds: 2));
+    room.failNextMicrophone = true;
+    await session.setMuted(true);
+    expect(session.status, TalkLiveAudioStatus.failed);
+    heartbeatGate.complete();
+    await Future<void>.delayed(const Duration(milliseconds: 15));
+    expect(session.status, TalkLiveAudioStatus.failed);
+    expect(room.microphone, contains(false)); // revoke attempted the hardware mute
+    final updates = room.microphone.length;
+    await session.setMuted(false);
+    expect(room.microphone.length, updates);
+    await session.close();
+    expect(transport.disconnects, 1);
+  });
+
 }
+

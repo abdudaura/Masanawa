@@ -107,56 +107,91 @@ export function createFcmPushSender(input: {
   readonly repository: MobilePushRepository;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => Date;
+  /** Injected for deterministic tests; production uses bounded timer delays. */
+  readonly wait?: (milliseconds: number) => Promise<void>;
 }): MobilePushSender {
   const credentials = serviceAccount(input.serviceAccountJson);
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? (() => new Date());
+  const wait = input.wait ?? ((milliseconds: number) =>
+    new Promise<void>((resolve) => setTimeout(resolve, milliseconds)));
   let cached: { token: string; expiresAt: number } | undefined;
+  let pendingToken: Promise<string> | undefined;
 
-  async function accessToken(): Promise<string> {
+  // Coalesce concurrent sends for the same project. Expired/invalid credentials
+  // are never reused after an OAuth rejection from FCM.
+  async function accessToken(forceRefresh = false): Promise<string> {
+    if (forceRefresh) cached = undefined;
     const current = now().getTime();
     if (cached && cached.expiresAt - 60_000 > current) return cached.token;
-    const issued = Math.floor(current / 1000);
-    const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-    const claims = base64Url(
-      JSON.stringify({
-        iss: credentials.client_email,
-        scope: "https://www.googleapis.com/auth/firebase.messaging",
-        aud: credentials.token_uri,
-        iat: issued,
-        exp: issued + 3600,
-      }),
-    );
-    const unsigned = `${header}.${claims}`;
-    const signer = createSign("RSA-SHA256");
-    signer.update(unsigned);
-    signer.end();
-    const assertion = `${unsigned}.${signer
-      .sign(credentials.private_key)
-      .toString("base64url")}`;
-    const response = await fetchImpl(credentials.token_uri!, {
-      method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion,
-      }),
-    });
-    if (!response.ok) throw new Error("Firebase OAuth failed");
-    const payload = (await response.json()) as {
-      access_token?: unknown;
-      expires_in?: unknown;
+    if (pendingToken) return pendingToken;
+
+    const refresh = async (): Promise<string> => {
+      const issued = Math.floor(current / 1000);
+      const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+      const claims = base64Url(
+        JSON.stringify({
+          iss: credentials.client_email,
+          scope: "https://www.googleapis.com/auth/firebase.messaging",
+          aud: credentials.token_uri,
+          iat: issued,
+          exp: issued + 3600,
+        }),
+      );
+      const unsigned = `${header}.${claims}`;
+      const signer = createSign("RSA-SHA256");
+      signer.update(unsigned);
+      signer.end();
+      const assertion = `${unsigned}.${signer
+        .sign(credentials.private_key)
+        .toString("base64url")}`;
+      let response: Response;
+      try {
+        response = await fetchImpl(credentials.token_uri!, {
+          method: "POST",
+          signal: AbortSignal.timeout(15_000),
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion,
+          }),
+        });
+      } catch {
+        // A timed-out OAuth call cannot authorize a send. Never include
+        // transport or service-account details in caller-visible errors.
+        throw new Error("Firebase OAuth failed");
+      }
+      if (!response.ok) throw new Error("Firebase OAuth failed");
+      const payload = (await response.json()) as {
+        access_token?: unknown;
+        expires_in?: unknown;
+      };
+      if (typeof payload.access_token !== "string" || !payload.access_token) {
+        throw new Error("Firebase OAuth returned no token");
+      }
+      const expires =
+        typeof payload.expires_in === "number" && Number.isFinite(payload.expires_in)
+          ? payload.expires_in
+          : 3600;
+      cached = {
+        token: payload.access_token,
+        expiresAt: current + Math.max(60, expires) * 1000,
+      };
+      return cached.token;
     };
-    if (typeof payload.access_token !== "string") {
-      throw new Error("Firebase OAuth returned no token");
+    const promise = refresh();
+    pendingToken = promise;
+    try {
+      return await promise;
+    } finally {
+      if (pendingToken === promise) pendingToken = undefined;
     }
-    const expires =
-      typeof payload.expires_in === "number" ? payload.expires_in : 3600;
-    cached = {
-      token: payload.access_token,
-      expiresAt: current + Math.max(60, expires) * 1000,
-    };
-    return cached.token;
+  }
+
+  // A definite 429/5xx rejection did not enqueue the message. A transport
+  // exception is ambiguous: retrying it can duplicate a user notification.
+  function retryable(status: number): boolean {
+    return status === 429 || (status >= 500 && status <= 599);
   }
 
   const sender: MobilePushSender = {
@@ -165,44 +200,82 @@ export function createFcmPushSender(input: {
       if (registrations.length === 0) {
         return Object.freeze({ attempted: 0, delivered: 0 });
       }
-      const bearer = await accessToken();
+      let bearer = await accessToken();
       let delivered = 0;
       for (const registration of registrations) {
-        const response = await fetchImpl(
-          `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(
-            credentials.project_id,
-          )}/messages:send`,
-          {
-            method: "POST",
-            headers: {
-              authorization: `Bearer ${bearer}`,
-              "content-type": "application/json",
+        const message = JSON.stringify({
+          message: {
+            token: registration.token,
+            notification: {
+              title: request.title.slice(0, 120),
+              body: request.body.slice(0, 1000),
             },
-            body: JSON.stringify({
-              message: {
-                token: registration.token,
-                notification: {
-                  title: request.title.slice(0, 120),
-                  body: request.body.slice(0, 1000),
-                },
-                data: {
-                  ...(request.data ?? {}),
-                  masanawa: "1",
-                },
-                android: {
-                  priority: "high",
-                  notification: {
-                    channel_id: "masanawa_work",
-                  },
-                },
-                apns: {
-                  payload: { aps: { sound: "default" } },
-                },
+            data: {
+              ...(request.data ?? {}),
+              masanawa: "1",
+            },
+            android: {
+              priority: "high",
+              notification: {
+                channel_id: "masanawa_work",
               },
-            }),
+            },
+            apns: {
+              payload: { aps: { sound: "default" } },
+            },
           },
-        );
-        if (response.ok) delivered += 1;
+        });
+        let refreshedAuth = false;
+        let transientRetries = 0;
+        while (true) {
+          let response: Response;
+          try {
+            response = await fetchImpl(
+              `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(
+                credentials.project_id,
+              )}/messages:send`,
+              {
+                method: "POST",
+                // A timeout after dispatch is ambiguous and must not be retried
+                // as a new push. The catch below advances to the next device.
+                signal: AbortSignal.timeout(15_000),
+                headers: {
+                  authorization: `Bearer ${bearer}`,
+                  "content-type": "application/json",
+                },
+                body: message,
+              },
+            );
+          } catch {
+            // FCM may have accepted a request before the connection dropped.
+            // Do not resend this token with a fresh message identity.
+            break;
+          }
+          if (response.ok) {
+            delivered += 1;
+            break;
+          }
+          if (response.status === 401) {
+            if (refreshedAuth) {
+              // All further sends use these credentials: fail closed rather
+              // than silently mark an entire batch as delivered.
+              throw new Error("Firebase FCM rejected refreshed credentials");
+            }
+            bearer = await accessToken(true);
+            refreshedAuth = true;
+            continue;
+          }
+          if (retryable(response.status) && transientRetries < 2) {
+            // Bounded backoff, total 250ms + 500ms per rejected token.
+            await wait(250 * 2 ** transientRetries);
+            transientRetries += 1;
+            continue;
+          }
+          // 400/403/404 and exhausted transient failures are not successes.
+          // A device token is not pruned without verifying the FCM error code
+          // and exact tenant/user/installation identity.
+          break;
+        }
       }
       return Object.freeze({
         attempted: registrations.length,
@@ -212,3 +285,4 @@ export function createFcmPushSender(input: {
   };
   return Object.freeze(sender);
 }
+

@@ -5,6 +5,11 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../agents/agent_directory.dart';
+import '../../agents/agent_shell.dart';
+import '../../assistant_workspace/assistant_workspace_screen.dart';
+import '../../services/private_service_intent.dart';
+import '../../core/providers.dart';
+import '../../messages/human_dm_screen.dart';
 import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
@@ -13,7 +18,6 @@ import '../../state/talk_social_profile_state.dart';
 import '../../social/profile_header.dart';
 import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
-import '../chat/ai_chat_screen.dart';
 import '../talks/talk_home_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'my_twin_screen.dart';
@@ -58,8 +62,8 @@ String localizedAgentPresence(
 
 /// Compatibility class name retained while the consumer shell is migrated.
 ///
-/// Approved root shell: Home · Agents · Wallet · Talk.
-/// Home owns the Explore / Live Talks tabs.
+/// Permanent five-root shell: Talks · Chats · Assistant · Wallet · Agents.
+/// Private human DM and authorized Assistant are separate domains.
 class TwinHomeShell extends ConsumerStatefulWidget {
   const TwinHomeShell({super.key, this.initialIndex = 0});
   final int initialIndex;
@@ -77,7 +81,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   @override
   void initState() {
     super.initState();
-    _index = widget.initialIndex.clamp(0, 3).toInt();
+    _index = widget.initialIndex.clamp(0, 4).toInt();
     _visitedTabs = <int>{_index};
   }
 
@@ -91,7 +95,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   void didUpdateWidget(covariant TwinHomeShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialIndex != widget.initialIndex) {
-      _index = widget.initialIndex.clamp(0, 3).toInt();
+      _index = widget.initialIndex.clamp(0, 4).toInt();
       _visitedTabs.add(_index);
     }
   }
@@ -129,7 +133,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       );
       return;
     }
-    context.push('/chat/' + Uri.encodeComponent(agent.characterId));
+    context.push('/assistant');
   }
 
   void _openTalk(TalkDiscoveryItem talk) {
@@ -272,46 +276,58 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     context.push('/chat/' + Uri.encodeComponent(agent.characterId));
   }
 
+  void _beginPrivateService(PrivateServiceIntent intent) {
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn) return;
+    ref.read(pendingPrivateServiceIntentProvider.notifier).select(
+      intent: intent, ownerUserId: session.user.id);
+    _selectTab(MasanawaRootTab.assistant.index);
+  }
+
+  void _beginBillingService(String code) {
+    final intent = PrivateServiceIntent.fromBillingCode(code);
+    if (intent == null) return;
+    _beginPrivateService(intent);
+  }
+
+  void _clearServiceIntent(PendingPrivateServiceIntent request) {
+    ref.read(pendingPrivateServiceIntentProvider.notifier).consume(request);
+  }
+
   Widget _wallet() => WalletScreen(
-        embeddedInShell: true,
-        onOpenCrypto: () => context.push('/crypto'),
-        onOpenBillingService: (service) => context.push(
-          '/billing?service=' + Uri.encodeQueryComponent(service)),
+    embeddedInShell: true,
+    onOpenCrypto: () => _beginPrivateService(PrivateServiceIntent.crypto),
+    onOpenBillingService: _beginBillingService,
+  );
+
+  // Human inbox is strictly the authenticated server-backed C02 transport.
+  Widget _chats() => HumanDmInboxScreen(
+        onNewMessage: () => context.push('/messages/new'),
       );
 
-  Widget _privateTalk() {
-    final directory = ref.watch(agentDirectoryProvider);
-    final agent = _supportAgent();
-    final strings = AppLocalizations.of(context);
-    if (agent != null) {
-      // Private chat owns its own voice controls; tab selection never
-      // grants microphone permission or broadcasts public Talk audio.
-      return AiChatScreen(
-        key: ValueKey('private-talk-' + agent.characterId),
-        characterId: agent.characterId,
-        embeddedInShell: true,
-        onOpenAgents: () => _selectTab(MasanawaRootTab.agents.index),
-        onOpenActivity: _openActivity,
-        onOpenProfile: _openYou,
+  Widget _assistant() {
+    final session = ref.watch(sessionProvider);
+    final transport = ref.read(agentTransportProvider);
+    final selected = ref.watch(pendingPrivateServiceIntentProvider);
+    if (session is! SessionSignedIn || transport is! AgentShellTransport) {
+      return const Scaffold(
+        body: Center(child: Text('Sign in to open your private Assistant.')),
       );
     }
-    return Scaffold(
-      appBar: AppBar(title: Text(strings.talk)),
-      body: Center(
-        child: directory.loading
-            ? const CircularProgressIndicator()
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(strings.gwaniUnavailableNow),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: () => ref.read(agentDirectoryProvider.notifier).refresh(),
-                    child: Text(strings.retry),
-                  ),
-                ],
-              ),
-      ),
+    // C07 owns encrypted drafts and durable turn status; no microphone is
+    // started by navigation or silently shared with a public Talk.
+    return AssistantWorkspaceScreen(
+      key: ValueKey('assistant-owner-' + session.user.id),
+      ownerId: session.user.id,
+      pendingServiceIntent: selected?.belongsTo(session.user.id) == true ? selected : null,
+      onServiceIntentConsumed: _clearServiceIntent,
+      onOpenServiceEditor: (request) {
+        _clearServiceIntent(request);
+        context.push(request.intent.editorLocation);
+      },
+      directory: ref.read(agentDirectoryTransportProvider),
+      agents: transport,
+      shell: transport as AgentShellTransport,
     );
   }
 
@@ -321,9 +337,10 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _page(int index) => switch (index) {
         0 => _home(),
-        1 => _agents(),
-        2 => _wallet(),
-        3 => _privateTalk(),
+        1 => _chats(),
+        2 => _assistant(),
+        3 => _wallet(),
+        4 => _agents(),
         _ => const SizedBox.shrink(),
       };
 
@@ -349,14 +366,11 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       publicAvatarUrl: publicProfile?.avatarUrl,
     );
     return Scaffold(
-      appBar: _index == 3 ? null : AppBar(
+      appBar: (_index == 1 || _index == 2) ? null : AppBar(
         toolbarHeight: 48,
         title: Text(
-          _index == 0
-              ? strings.appTitle
-              : _index == 1
-                  ? strings.agents
-                  : strings.wallet,
+          _index == 0 ? strings.talksTab
+              : _index == 4 ? strings.agents : strings.wallet,
         ),
         actions: [
           if (_index == 0)
@@ -395,14 +409,14 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       ),
       body: IndexedStack(
         index: _index,
-        // Unmount private voice/chat when the user leaves Talk, rather than
-        // retaining a potentially active microphone behind another tab.
-        children: List.generate(4, (index) =>
-          _visitedTabs.contains(index) && (index != 3 || _index == 3)
+        // Unmount private Assistant when leaving the tab; do not preserve any
+        // hidden private microphone/session in an inactive root.
+        children: List.generate(5, (index) =>
+          _visitedTabs.contains(index) && (index != 2 || _index == 2)
               ? _page(index)
               : const SizedBox.shrink()),
       ),
-      floatingActionButton: (_index == 0 || _index == 1) &&
+      floatingActionButton: _index == 0 &&
               MediaQuery.viewInsetsOf(context).bottom == 0
           ? FloatingActionButton(
               tooltip: strings.startTalk,
@@ -415,14 +429,19 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         onDestinationSelected: _selectTab,
         destinations: [
           NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: strings.home,
+            icon: const Icon(Icons.record_voice_over_outlined),
+            selectedIcon: const Icon(Icons.record_voice_over_rounded),
+            label: strings.talksTab,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.smart_toy_outlined),
-            selectedIcon: const Icon(Icons.smart_toy_rounded),
-            label: strings.agents,
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: const Icon(Icons.chat_bubble_rounded),
+            label: strings.chatsTab,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.auto_awesome_outlined),
+            selectedIcon: const Icon(Icons.auto_awesome_rounded),
+            label: strings.assistantTab,
           ),
           NavigationDestination(
             icon: const Icon(Icons.account_balance_wallet_outlined),
@@ -430,9 +449,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
             label: strings.wallet,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.graphic_eq_outlined),
-            selectedIcon: const Icon(Icons.graphic_eq_rounded),
-            label: strings.talk,
+            icon: const Icon(Icons.smart_toy_outlined),
+            selectedIcon: const Icon(Icons.smart_toy_rounded),
+            label: strings.agents,
           ),
         ],
       ),
@@ -601,3 +620,4 @@ class MyTwinRouteScreen extends ConsumerWidget {
     );
   }
 }
+

@@ -177,6 +177,54 @@ void main() {
     expect(calls, 0);
   });
 
+  test('a forged request marker cannot trigger a new charge', () async {
+    final store = _Store();
+    store.records['owner-1|talk-1:heart:100'] =
+        'pending:talk-gift-100-1-2-3-forged';
+    var posts = 0;
+    final transport = _transport(store: store, handler: (_) async {
+      posts++;
+      return _completed();
+    });
+    await expectLater(_send(transport), throwsFormatException);
+    expect(posts, 0);
+  });
+
+  test('account switch after HTTP acknowledgment retains original pending ID', () async {
+    final store = _Store();
+    final pendingResponse = Completer<ResponseBody>();
+    final called = Completer<void>();
+    var currentUser = 'owner-1';
+    final original = _transport(
+      store: store,
+      activeUserId: () => currentUser,
+      handler: (_) {
+        called.complete();
+        return pendingResponse.future;
+      },
+    );
+    final send = _send(original);
+    await called.future;
+    currentUser = 'owner-2';
+    pendingResponse.complete(_completed());
+    await expectLater(send, throwsStateError);
+    expect(store.records.values.single, startsWith('pending:talk-gift-'));
+
+    currentUser = 'owner-1';
+    var retries = 0;
+    final recovered = _transport(
+      store: store,
+      activeUserId: () => currentUser,
+      handler: (_) async {
+        retries++;
+        return _completed();
+      },
+    );
+    await _send(recovered);
+    expect(retries, 1);
+    expect(store.records.values.single, startsWith('completed:talk-gift-'));
+  });
+
   test('two signed-in accounts never reuse the same durable task record', () async {
     final store = _Store();
     final one = _transport(

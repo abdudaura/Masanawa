@@ -644,14 +644,14 @@ describe("billing checkout", () => {
       revision: number;
       nodes: Array<{ action?: string; token?: string }>;
     };
-    const start = quotedDoc.nodes.find((node) => node.action === "billing.checkout.start")!;
+    // New quotes use the canonical wallet flow. Explicit legacy hosted callers
+    // still need bounded checkout verification after the economic quote TTL.
+    expect(quotedDoc.nodes.some((node) => node.action === "billing.wallet.confirm")).toBe(true);
     at = "2026-10-04T20:00:30.000Z";
-    const checkoutExecution = await service.executeShellAction({
+    const checkoutExecution = await service.startCheckout({
       authorizationHeader: "Bearer session",
-      documentId: quotedDoc.id,
-      revision: quotedDoc.revision,
-      actionId: "billing.checkout.start",
-      token: start.token!,
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
     });
     const checkoutDoc = checkoutExecution.document as {
       id: string;
@@ -1370,4 +1370,5 @@ describe("billing refund safety", () => {
     expect(refundPosts).toBe(0);
   });
 });
+
 

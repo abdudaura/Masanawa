@@ -38,6 +38,7 @@ interface ApiLifecycle {
     readonly supportedMajors: readonly number[];
     readonly operationalUnversionedPaths: readonly string[];
     readonly compatibilityUnversionedPrefixes: readonly string[];
+    readonly compatibilityUnversionedPaths: readonly string[];
   };
   readonly deprecations: readonly ApiDeprecation[];
 }
@@ -215,6 +216,7 @@ describe("public API lifecycle", () => {
       )) {
         const route = match[1]!;
         if (operational.has(route)) continue;
+        if (lifecycle.http.compatibilityUnversionedPaths.includes(route)) continue;
         if (compatibility.some(
           (prefix) => route === prefix || route.startsWith(`${prefix}/`),
         )) continue;
@@ -286,3 +288,4 @@ describe("public API lifecycle", () => {
     }
   });
 });
+

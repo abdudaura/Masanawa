@@ -42,7 +42,20 @@ void main() {
     expect(() => TalkGiftCatalog.fromJson(catalog([
       {...option(), 'visual': 'remote-code'},
     ])), throwsFormatException);
-    expect(() => TalkGiftCatalog.fromJson(catalog([])), throwsFormatException);
+    // No enabled options is a valid, server-qualified response, not a parser error.
+  });
+
+  test('empty server catalog is a valid unavailable state', () {
+    expect(TalkGiftCatalog.fromJson(catalog([])).items, isEmpty);
+    expect(TalkGiftCatalog.fromJson(catalog([
+      option(available: false),
+    ])).items, isEmpty);
+    expect(() => TalkGiftCatalog.fromJson({
+      ...catalog([]), 'items': null,
+    }), throwsFormatException);
+    expect(() => TalkGiftCatalog.fromJson({
+      ...catalog([]), 'items': List.generate(25, (_) => option()),
+    }), throwsFormatException);
   });
 
   test('only a completed receipt may trigger settlement feedback', () {

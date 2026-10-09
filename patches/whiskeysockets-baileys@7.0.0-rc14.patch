@@ -1,0 +1,9 @@
+diff --git a/lib/Types/Bussines.d.ts b/lib/Types/Bussines.d.ts
+--- a/lib/Types/Bussines.d.ts
++++ b/lib/Types/Bussines.d.ts
+@@ -1,4 +1,4 @@
+-import type { proto } from '../../WAProto';
++import type { proto } from '../../WAProto/index.js';
+ export type DayOfWeekBussines = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+ export type HoursDay = {
+     day: DayOfWeekBussines;

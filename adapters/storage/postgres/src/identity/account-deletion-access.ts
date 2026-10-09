@@ -107,12 +107,18 @@ export function createPostgresAccountDeletionAccessRevoker(
           requestId: input.requestId,
           at: input.now,
         });
+        // Validate against database time, not the scheduler's earlier
+        // timestamp: the reconciliation scan is written *during* this
+        // transaction and may occur milliseconds after input.now.
+        const current = await client.query<{ now: Date | string }>(
+          "SELECT clock_timestamp() AS now",
+        );
         const verifiedAt = Date.parse(clearance.checkedAt);
-        const requestedAt = Date.parse(input.now);
+        const databaseNow = new Date(current.rows[0]!.now).getTime();
         if (!clearance.clear ||
             !Number.isFinite(verifiedAt) ||
-            verifiedAt > requestedAt ||
-            verifiedAt < requestedAt - 5 * 60_000 ||
+            verifiedAt > databaseNow ||
+            verifiedAt < databaseNow - 5 * 60_000 ||
             !/^[A-Za-z0-9:_-]{8,160}$/u.test(clearance.reference)) {
           throw new Error("account_deletion.financial_clearance_required");
         }
@@ -205,3 +211,4 @@ export function createPostgresAccountDeletionAccessRevoker(
     },
   });
 }
+

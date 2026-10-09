@@ -11,9 +11,9 @@ const liveTalk = {
 
 describe("Postgres Talk poll repository", () => {
   it("requires the human Host and live runtime before creating a poll", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkPollSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [liveTalk] as unknown as Row[] };
@@ -168,9 +168,9 @@ describe("Postgres Talk poll repository", () => {
   });
 
   it("lets only the Talk Host close an open poll", async () => {
-    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const calls: Array<{ text: string; values?: unknown[] | undefined }> = [];
     const pool: TalkPollSqlPool = {
-      async query<Row>(text: string, values?: unknown[]) {
+      async query<Row>(text: string, values?: unknown[] | undefined) {
         calls.push({ text, values });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [liveTalk] as unknown as Row[] };
@@ -220,3 +220,4 @@ describe("Postgres Talk poll repository", () => {
     ]);
   });
 });
+

@@ -59,6 +59,30 @@ describe("Talk safety HTTP routes",()=>{
     expect(response.json()).toEqual({reportId:"report-1",accepted:true});
   });
 
+  it("accepts a public AI persona report only from an authenticated customer",async()=>{
+    const payload={
+      targetKind:"persona",targetId:"persona-public-7",reason:"fraud",
+      detail:"Concern about misleading identity",clientRequestId:"request-stable-1",
+    };
+    const unauthenticated=await app().inject({
+      method:"POST",url:"/safety/reports",payload,
+    });
+    expect(unauthenticated.statusCode).toBe(401);
+    const accepted=await app().inject({
+      method:"POST",url:"/safety/reports",
+      headers:{authorization:"Bearer customer"},
+      payload,
+    });
+    expect(accepted.statusCode).toBe(202);
+    expect(accepted.json()).toEqual({reportId:"report-1",accepted:true});
+    const wrongKind=await app().inject({
+      method:"POST",url:"/safety/reports",
+      headers:{authorization:"Bearer customer"},
+      payload:{...payload,targetKind:"private-ai-chat"},
+    });
+    expect(wrongKind.statusCode).toBe(400);
+  });
+
   it("validates malformed report reasons at route boundary",async()=>{
     const response=await app().inject({
       method:"POST",
@@ -114,3 +138,4 @@ describe("Talk safety HTTP routes",()=>{
     expect(allowed.json()).toMatchObject({revision:1,visibility:"blocked"});
   });
 });
+

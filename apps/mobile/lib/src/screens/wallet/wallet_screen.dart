@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart' show NumberFormat;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -64,7 +65,7 @@ class WalletScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: embeddedInShell ? null : AppBar(title: const Text('Wallet')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
@@ -76,7 +77,10 @@ class WalletScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               children: [
-                _Balances(view: value),
+                _Balances(
+                  view: value,
+                  onRetry: () => ref.read(walletProvider.notifier).refresh(),
+                ),
                 const SizedBox(height: 12),
                 WalletServiceShortcuts(
                   onOpenCrypto: onOpenCrypto,
@@ -121,9 +125,27 @@ class WalletScreen extends ConsumerWidget {
   }
 }
 
+/// Format native NGN minor units as integers: never convert financial units
+/// through double, which would round large wallet balances.
+String formatNativeNgnKobo(int amountKobo, String locale) {
+  if (amountKobo < 0 || amountKobo > 9007199254740991) {
+    throw RangeError.range(amountKobo, 0, 9007199254740991);
+  }
+  NumberFormat formatter;
+  try {
+    formatter = NumberFormat.decimalPattern(locale.replaceAll('-', '_'));
+  } on ArgumentError {
+    formatter = NumberFormat.decimalPattern('en');
+  }
+  final whole = formatter.format(amountKobo ~/ 100);
+  final fractional = (amountKobo % 100).toString().padLeft(2, '0');
+  return '₦$whole.$fractional';
+}
+
 class _Balances extends StatelessWidget {
-  const _Balances({required this.view});
+  const _Balances({required this.view, required this.onRetry});
   final WalletView view;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +160,39 @@ class _Balances extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text('Nigerian naira · NGN', style: TextStyle(color: u.textMuted)),
+          const SizedBox(height: 4),
+          if (view.ngnBalanceVerified)
+            Text(
+              formatNativeNgnKobo(
+                view.ngnBalanceKobo,
+                Localizations.localeOf(context).toLanguageTag(),
+              ),
+              textDirection: TextDirection.ltr,
+              style: TextStyle(
+                color: u.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Balance unavailable',
+                    style: TextStyle(color: u.textMuted),
+                  ),
+                ),
+                TextButton(
+                  onPressed: onRetry,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          const SizedBox(height: 14),
+          Divider(height: 1, color: u.structuralBorder),
+          const SizedBox(height: 14),
           Text('Spendable Credits', style: TextStyle(color: u.textMuted)),
           const SizedBox(height: 4),
           Text(
@@ -335,3 +390,4 @@ class _WalletEntryTile extends StatelessWidget {
     );
   }
 }
+

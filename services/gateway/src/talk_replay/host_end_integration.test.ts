@@ -6,6 +6,12 @@ describe("Talk replay Host-end integration",()=>{
   it("finalizes replay only after durable Host End succeeds",async()=>{
     const ended:Array<{tenantId:string;talkId:string;reason:string;now:string}>=[];
     const repository:TalkModerationRepository={
+      async leaveHumanSeat() { throw new Error("Unexpected fixture method: leaveHumanSeat"); },
+      async submitQuestion() { throw new Error("Unexpected fixture method: submitQuestion"); },
+      async listQuestions() { throw new Error("Unexpected fixture method: listQuestions"); },
+      async resolveQuestion() { throw new Error("Unexpected fixture method: resolveQuestion"); },
+      async inviteHuman() { throw new Error("Unexpected fixture method: inviteHuman"); },
+      async respondHumanInvitation() { throw new Error("Unexpected fixture method: respondHumanInvitation"); },
       async participation(){return {handStatus:"idle"};},
       async setReaction(input){return {handStatus:"idle",reaction:input.reaction};},
       async setRaised(){return {handStatus:"idle"};},
@@ -34,3 +40,4 @@ describe("Talk replay Host-end integration",()=>{
     }]);
   });
 });
+

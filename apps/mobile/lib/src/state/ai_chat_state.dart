@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:mime/mime.dart';
 
 import '../agents/agent_session.dart';
+import '../agents/agent_session_recovery.dart';
 import '../agents/agent_feedback.dart';
 import '../chat/chat_format.dart';
 import '../chat/message_parts.dart';
@@ -1389,7 +1390,7 @@ class AiChatController extends Notifier<AiChatState> {
     try {
       return await send();
     } catch (error) {
-      if (!hadCachedBinding || !_isStaleSessionError(error)) rethrow;
+      if (!hadCachedBinding || !isRecoverableAgentSessionError(error)) rethrow;
       _bindings.remove(characterId);
       binding = await _bindingFor(characterId, transport);
       return send();
@@ -1441,8 +1442,9 @@ class AiChatController extends Notifier<AiChatState> {
       );
     }
     final transport = ref.read(agentTransportProvider);
-    final binding = await _bindingFor(characterId, transport);
-    return transport.sendMediaSetTurn(
+    final hadCachedBinding = _bindings.containsKey(characterId);
+    var binding = await _bindingFor(characterId, transport);
+    Future<AgentTurnResult> send() => transport.sendMediaSetTurn(
       binding: binding,
       media: media,
       caption: caption,
@@ -1460,14 +1462,17 @@ class AiChatController extends Notifier<AiChatState> {
         );
       },
     );
+    try {
+      return await send();
+    } catch (error) {
+      if (!hadCachedBinding || !isRecoverableAgentSessionError(error)) rethrow;
+      // The server rejected the old persona/session *before* executing it.
+      // Preserve requestId on the reopened send; do not replay other 409s.
+      _bindings.remove(characterId);
+      binding = await _bindingFor(characterId, transport);
+      return send();
+    }
   }
-
-  bool _isStaleSessionError(Object error) =>
-      error is ApiException &&
-      (error.statusCode == 404 ||
-          error.statusCode == 409 ||
-          error.code == 'agents.session_not_found' ||
-          error.code == 'agents.session_closed');
 
   Future<AgentTurnResult> _sendViaTransport(
     String characterId,
@@ -1488,7 +1493,7 @@ class AiChatController extends Notifier<AiChatState> {
         requestId: requestId,
       );
     } catch (error) {
-      if (!hadCachedBinding || !_isStaleSessionError(error)) rethrow;
+      if (!hadCachedBinding || !isRecoverableAgentSessionError(error)) rethrow;
       _bindings.remove(characterId);
       binding = await _bindingFor(characterId, transport);
       return transport.sendTurn(
@@ -2133,3 +2138,4 @@ class AiChatController extends Notifier<AiChatState> {
 final aiChatProvider = NotifierProvider<AiChatController, AiChatState>(
   AiChatController.new,
 );
+

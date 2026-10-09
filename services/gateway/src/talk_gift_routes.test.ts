@@ -15,14 +15,16 @@ function app(input: Readonly<{
   fail?: Error;
   activityFail?: boolean;
   catalogSource?: TalkGiftCatalogSource;
+  hiddenBySafety?: boolean;
 }> = {}) {
   const activity: Parameters<TalkGiftActivitySink["append"]>[0][] = [];
   const executions: Parameters<TalkGiftExecutor["execute"]>[0][] = [];
 
   const repository: TalkGiftRepository = {
-    async resolveTarget({ tenantId, talkId }) {
+    async resolveTarget({ tenantId, talkId, senderUserId }) {
       expect(tenantId).toBe("tenant_1");
-      if (talkId === "talk_missing") return null;
+      expect(senderUserId).toBe(input.viewerUserId ?? "listener_1");
+      if (talkId === "talk_missing" || input.hiddenBySafety) return null;
       return Object.freeze({
         talkId,
         talkTitle: "Can AI create more jobs?",
@@ -72,7 +74,7 @@ function app(input: Readonly<{
         },
       },
       executor,
-      catalogSource: input.catalogSource,
+      ...(input.catalogSource ? { catalogSource: input.catalogSource } : {}),
       activity: {
         async append(event) {
           if (input.activityFail) throw new Error('activity unavailable');
@@ -376,4 +378,24 @@ describe("Talk Host gift route", () => {
     expect(executions).toHaveLength(0);
   });
 
+
+  it("blocks catalog disclosure and Credits execution for a safety-hidden Talk or Host", async () => {
+    const { server, executions, activity } = app({ hiddenBySafety: true });
+    const catalog = await server.inject({
+      method: "GET",
+      url: "/talks/talk_12345678/gifts/catalog",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(catalog.statusCode).toBe(404);
+    const gift = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: { requestId: "blocked-host-1", catalogItemId: "heart", amountCredits: 100 },
+    });
+    expect(gift.statusCode).toBe(404);
+    expect(executions).toHaveLength(0);
+    expect(activity).toHaveLength(0);
+  });
 });
+

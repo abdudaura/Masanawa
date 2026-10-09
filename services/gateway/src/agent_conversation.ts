@@ -8,11 +8,13 @@ import {
 import type {
   AgentRunRepository,
   AgentStrategy,
+  CharacterSession,
   CharacterSessionRepository,
   MobileShellRepository,
   MobileTurnCommand,
 } from "@masanawa/agents";
 import type {
+  AgentConversationAdmission,
   AgentConversationAuthorizer,
   AgentConversationService,
 } from "./agent_conversation_contract.js";
@@ -40,6 +42,42 @@ function assertConversationSessionOpen(session: {
       category: "conflict",
       message: "The conversation session is closed or expired.",
       retryable: true,
+    });
+  }
+}
+
+/**
+ * Defense in depth on top of the repository's tenant-scoped read.
+ * Never infer the AI identity from a user-supplied handle/display label.
+ * An admin profile version change requires a fresh conversation before
+ * sending another turn; existing sessions are still closable by their owner.
+ */
+function assertAdmittedPersonaSession(
+  admission: AgentConversationAdmission,
+  session: CharacterSession,
+  requestedSessionId: string,
+  requestedCharacterId: string,
+  allowVersionDrift = false,
+): void {
+  if (admission.scope.characterId !== requestedCharacterId ||
+      session.tenantId !== admission.scope.tenantId ||
+      session.userId !== admission.scope.userId ||
+      session.characterId !== requestedCharacterId ||
+      session.relationshipId !== admission.scope.relationshipId ||
+      session.characterSessionId !== requestedSessionId) {
+    throw new PlatformError({
+      code: "agents.session_scope_mismatch",
+      category: "authorization",
+      message: "This conversation is not available to the current account.",
+      retryable: false,
+    });
+  }
+  if (!allowVersionDrift && session.characterVersionId !== admission.characterVersionId) {
+    throw new PlatformError({
+      code: "agents.session_persona_changed",
+      category: "conflict",
+      message: "This AI persona was updated. Open a new conversation to continue.",
+      retryable: false,
     });
   }
 }
@@ -136,7 +174,7 @@ export function createAgentConversationService(input: {
       }
 
       const characterSessionId = createCanonicalId("character-session");
-      await observeSessionOpen("session-create", () => input.sessions.create({
+      const createdSession = await observeSessionOpen("session-create", () => input.sessions.create({
         authority: admission.authority,
         scope: admission.scope,
         characterSessionId,
@@ -144,6 +182,7 @@ export function createAgentConversationService(input: {
         durationMs: input.sessionDurationMs,
         bindings: admission.bindings,
       }));
+      assertAdmittedPersonaSession(admission, createdSession, characterSessionId, characterId);
       await input.twinObserver?.opened({
         tenantId: admission.scope.tenantId,
         userId: admission.scope.userId,
@@ -172,6 +211,9 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertAdmittedPersonaSession(
+        admission, session, characterSessionId, parseCanonicalId("character", request.characterId),
+      );
       assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
@@ -274,6 +316,7 @@ export function createAgentConversationService(input: {
                 authorizationHeader: request.authorizationHeader,
                 characterId: admission.scope.characterId,
                 modelReply: generated.reply,
+                userText: text,
               })) ??
               generated;
         const reply = result.reply.trim();
@@ -394,6 +437,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertAdmittedPersonaSession(admission, session, characterSessionId, characterId);
       assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
@@ -580,6 +624,7 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertAdmittedPersonaSession(admission, session, characterSessionId, characterId);
       assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
@@ -735,6 +780,9 @@ export function createAgentConversationService(input: {
         scope: admission.scope,
         characterSessionId,
       });
+      assertAdmittedPersonaSession(
+        admission, session, characterSessionId, parseCanonicalId("character", request.characterId), true,
+      );
       assertConversationSessionOpen(session);
       if (session.state === "closed") return;
 
@@ -748,3 +796,4 @@ export function createAgentConversationService(input: {
   };
   return Object.freeze(service);
 }
+

@@ -66,11 +66,23 @@ describe("Talk replay routes",()=>{
       method:"GET",url:"/talks/talk_1/replay/playback",headers:{authorization:"Bearer host"},
     });
     expect(response.statusCode).toBe(200);
+    expect(response.headers["cache-control"]).toBe("private, no-store, max-age=0");
+    expect(response.headers["pragma"]).toBe("no-cache");
+    expect(response.headers["vary"]).toBe("Authorization");
     expect(response.json()).toEqual({
       url:"https://signed.example/replay.ogg",
       expiresAt:"2026-10-07T10:05:00.000Z",
       contentType:"audio/ogg",
     });
+  });
+
+  it("never serves a signed replay credential without a verified session",async()=>{
+    const response=await app().inject({
+      method:"GET",url:"/talks/talk_1/replay/playback",
+    });
+    expect(response.statusCode).toBe(401);
+    expect(response.body).not.toContain("https://signed.example/");
+    expect(response.headers["cache-control"]).toBe("private, no-store, max-age=0");
   });
 
   it("serves the My Talks library contract",async()=>{
@@ -79,3 +91,4 @@ describe("Talk replay routes",()=>{
     expect(response.json()).toEqual({live:[],replays:[]});
   });
 });
+

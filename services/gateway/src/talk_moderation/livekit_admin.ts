@@ -73,8 +73,10 @@ export function createLiveKitTalkMediaAdmin(input:Readonly<{
       await call("RemoveParticipant",request.room,{
         room:request.room,
         identity:request.identity,
-        revoke_token_ts:Math.floor(now().getTime()/1000),
+        // LiveKit Cloud revocation timestamps are Unix milliseconds, not JWT seconds.
+        revoke_token_ts:now().getTime(),
       });
     },
   });
 }
+

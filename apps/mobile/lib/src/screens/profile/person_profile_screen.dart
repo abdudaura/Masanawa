@@ -5,6 +5,9 @@ import '../../social/talk_social_profiles.dart';
 import '../../state/talk_social_profile_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
+import 'human_profile_safety_sheet.dart';
+import 'human_profile_report_sheet.dart';
+import '../../state/session_state.dart';
 
 class PersonProfileScreen extends ConsumerStatefulWidget {
   const PersonProfileScreen({
@@ -12,11 +15,13 @@ class PersonProfileScreen extends ConsumerStatefulWidget {
     required this.handle,
     this.onOpenTalk,
     this.onOpenTwin,
+    this.onOpenMessage,
   });
 
   final String handle;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String publicId)? onOpenTwin;
+  final void Function(String handle)? onOpenMessage;
 
   @override
   ConsumerState<PersonProfileScreen> createState() => _PersonProfileScreenState();
@@ -54,6 +59,18 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
     }
   }
 
+  Future<void> _openSafety(HumanProfile profile) async {
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn || !session.user.isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign in to manage profile safety.')));
+      return;
+    }
+    await showModalBottomSheet<void>(context: context, isScrollControlled: true,
+      showDragHandle: true, builder: (_) => HumanProfileReportSheet(
+        handle: profile.handle, reporterUserId: session.user.id));
+  }
+
   @override
   Widget build(BuildContext context) {
     final asyncProfile = ref.watch(humanProfileProvider(widget.handle));
@@ -75,8 +92,10 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
           followBusy: _followBusy,
           onFollow: () => _toggleFollow(profile),
           onRefresh: _refresh,
+          onSafety: () => _openSafety(profile),
           onOpenTalk: widget.onOpenTalk,
           onOpenTwin: widget.onOpenTwin,
+          onOpenMessage: widget.onOpenMessage,
         );
       },
     );
@@ -89,16 +108,20 @@ class _PersonProfileBody extends StatelessWidget {
     required this.followBusy,
     required this.onFollow,
     required this.onRefresh,
+    required this.onSafety,
     this.onOpenTalk,
     this.onOpenTwin,
+    this.onOpenMessage,
   });
 
   final HumanProfile profile;
   final bool followBusy;
   final VoidCallback onFollow;
   final Future<void> Function() onRefresh;
+  final VoidCallback onSafety;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String publicId)? onOpenTwin;
+  final void Function(String handle)? onOpenMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -107,8 +130,17 @@ class _PersonProfileBody extends StatelessWidget {
     final twinId = profile.twinPublicId?.trim();
 
     return Scaffold(
-      backgroundColor: u.surfaceBg,
-      appBar: AppBar(title: Text('@' + profile.handle)),
+      backgroundColor: u.surfaceCard,
+      appBar: AppBar(title: Text('@' + profile.handle), actions: [
+        IconButton(key: const ValueKey('human-profile-safety-open'),
+          tooltip: 'Block or mute person', icon: const Icon(Icons.shield_outlined),
+          onPressed: () => showModalBottomSheet<void>(context: context,
+            useSafeArea: true, isScrollControlled: true,
+            builder: (_) => HumanProfileSafetySheet(handle: profile.handle,
+              displayName: profile.displayName))),
+        IconButton(key: const ValueKey('human-profile-report-open'),
+          tooltip: 'Report profile', icon: const Icon(Icons.flag_outlined), onPressed: onSafety),
+      ]),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: ListView(
@@ -233,6 +265,15 @@ class _PersonProfileBody extends StatelessWidget {
                 ],
               ],
             ),
+            if (onOpenMessage != null) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const ValueKey('person-profile-message'),
+                onPressed: () => onOpenMessage!(profile.handle),
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Message privately'),
+              ),
+            ],
             if (twinId != null && twinId.isNotEmpty) ...[
               const SizedBox(height: 14),
               Material(
@@ -358,3 +399,4 @@ String _compact(int value) {
   }
   return value.toString();
 }
+

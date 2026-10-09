@@ -204,7 +204,9 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         talkId: talkId,
         sessionId: sessionId,
       );
-      if (_closed) return;
+      // A late heartbeat must never restore microphone authority after the
+      // session was disconnected by a concurrent failed mute/cleanup.
+      if (_closed || _sessionId != sessionId) return;
 
       _role = session.role;
       if (session.state == TalkLiveLifecycle.ended || !session.canHearAudio) {
@@ -224,10 +226,13 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
           try {
             await room.setMicrophoneEnabled(false);
           } catch (_) {
-            // Reconnection state is still authoritative even if local media
-            // is already torn down.
+            // The local microphone might still be publishing. Disconnecting
+            // the room is safer than claiming we muted successfully.
+            await _revokeUnsafeMicrophone();
+            return;
           }
         }
+        if (_closed || _sessionId != sessionId) return;
         _setStatus(TalkLiveAudioStatus.reconnecting);
         return;
       }
@@ -237,21 +242,30 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       _canPublishAudio = mayPublish;
       if (mayPublish) {
         await room.setMicrophoneEnabled(!_muted);
+        if (_closed || _sessionId != sessionId) {
+          await _closeMediaOnly();
+          return;
+        }
         _setStatus(TalkLiveAudioStatus.publishing);
       } else {
         await room.setMicrophoneEnabled(false);
+        if (_closed || _sessionId != sessionId) return;
         _setStatus(TalkLiveAudioStatus.listening);
       }
     } catch (_) {
-      if (_closed) return;
-      // Failed heartbeats do not authorize continued microphone publication.
+      if (_closed || _sessionId != sessionId) return;
+      // Failed heartbeats revoke published audio. If local mute fails,
+      // tear down both the media room and server lease.
       _canPublishAudio = false;
       try {
         await room.setMicrophoneEnabled(false);
       } catch (_) {
-        // Best effort: network/media failure may already have closed the room.
+        await _revokeUnsafeMicrophone();
+        return;
       }
-      _setStatus(TalkLiveAudioStatus.reconnecting);
+      if (!_closed && _sessionId == sessionId) {
+        _setStatus(TalkLiveAudioStatus.reconnecting);
+      }
     }
   }
 
@@ -267,8 +281,29 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         _setStatus(TalkLiveAudioStatus.publishing);
       }
     } catch (_) {
-      _fail('Couldn’t update the microphone.');
+      await _revokeUnsafeMicrophone();
     }
+  }
+
+  /// A failed mute is a privacy failure, not just a cosmetic button error.
+  /// Drop stale publish grants and the server lease before allowing rejoin.
+  Future<void> _revokeUnsafeMicrophone() async {
+    _canPublishAudio = false;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _muted = true;
+    _role = null;
+    final revokedSessionId = _sessionId;
+    _sessionId = null;
+    await _closeMediaOnly();
+    if (revokedSessionId != null) {
+      try {
+        await transport.disconnect(talkId: talkId, sessionId: revokedSessionId);
+      } catch (_) {
+        // A missed disconnect is constrained by the server lease.
+      }
+    }
+    if (!_closed) _fail('Could not safely control the microphone. Rejoin the Talk.');
   }
 
   void _setStatus(TalkLiveAudioStatus status) {
@@ -332,3 +367,4 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
     }
   }
 }
+

@@ -45,6 +45,8 @@ export interface TalkGiftRepository {
   resolveTarget(input: Readonly<{
     tenantId: string;
     talkId: string;
+    /** Derived solely from authenticated platform session, not the caller body. */
+    senderUserId: string;
   }>): Promise<TalkGiftTarget | null>;
 }
 
@@ -77,3 +79,4 @@ export interface TalkGiftActivitySink {
     completedAt: string;
   }>): Promise<void>;
 }
+

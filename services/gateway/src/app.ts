@@ -1,8 +1,12 @@
+import { registerVersionedCompatibility } from "./api_compatibility.js";
+import { AgentDirectoryPreferenceError } from './agent_directory.js';
+import { strictRequestBody } from './strict_request_body.js';
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import { safeAgentTurnStreamErrorCode } from "./agent_turn_stream_error.js";
 import { registerCloneOnboardingRoutes } from "./clone_onboarding_routes.js";
 import type { CloneOnboardingService } from "./clone_onboarding.js";
 import type { CreatorCloneService } from "./creator_clone.js";
@@ -26,6 +30,16 @@ import type { TalkAiSeatService } from "./talk_ai_seats/service.js";
 import { registerTalkLiveRoutes } from "./talk_live_routes.js";
 import type { TalkLiveService } from "./talk_live/service.js";
 import { registerTalkProfileRoutes } from "./talk_profile_routes.js";
+import { registerProfileAvatarRoutes } from "./profile_avatar/routes.js";
+import type { createProfileAvatarService } from "./profile_avatar/service.js";
+import { registerHumanContactRoutes } from "./human_contacts/routes.js";
+import { registerHumanDmRoutes } from "./human_messages/routes.js";
+import { registerAssistantWorkspaceRoutes } from "./assistant_workspace/routes.js";
+import type { AssistantWorkspaceService } from "./assistant_workspace/service.js";
+import { HumanDmError, type HumanDmService } from "./human_messages/service.js";
+import { registerHumanDmRealtimeRoutes } from "./human_dm_realtime/routes.js";
+import { HumanDmRealtimeError, type HumanDmRealtimeService } from "./human_dm_realtime/service.js";
+import { HumanContactError, type HumanContactService } from "./human_contacts/service.js";
 import type { TalkProfileService } from "./talk_profiles/service.js";
 import { registerTalkActivityRoutes } from "./talk_activity_routes.js";
 import type { TalkActivityService } from "./talk_activity/service.js";
@@ -66,6 +80,8 @@ import type { BillingFinancialService } from "./financial_billing.js";
 import type { BillingWalletService } from "./billing_wallet.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
+import { registerInternalCryptoTransferRoutes } from "./internal_crypto_transfer_routes.js";
+import type { InternalCryptoTransferService } from "./internal_crypto_transfer.js";
 import {
   registerCustomerChannelRoutes,
   type CustomerChannelOptions,
@@ -111,6 +127,11 @@ export interface GatewayAppOptions {
   readonly talkAiSeats?: TalkAiSeatService;
   readonly talkLive?: TalkLiveService;
   readonly talkProfiles?: TalkProfileService;
+  readonly profileAvatar?: ReturnType<typeof createProfileAvatarService>;
+  readonly humanContacts?: HumanContactService;
+  readonly humanDm?: HumanDmService;
+  readonly assistantWorkspace?: AssistantWorkspaceService;
+  readonly humanDmRealtime?: HumanDmRealtimeService;
   readonly talkActivity?: TalkActivityService;
   readonly talkSearch?: TalkSearchService;
   readonly talkLibrary?: TalkLibraryService;
@@ -122,6 +143,7 @@ export interface GatewayAppOptions {
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
   readonly financial?: FinancialService;
+  readonly internalCryptoTransfers?: InternalCryptoTransferService;
   readonly customerChannels?: CustomerChannelOptions;
   readonly linkedWhatsApp?: Readonly<{
     controller: LinkedWhatsAppController;
@@ -301,11 +323,31 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     bodyLimit: 1_048_576,
     requestTimeout: 30_000,
   }).withTypeProvider<TypeBoxTypeProvider>();
+  registerVersionedCompatibility(app);
 
   const now = options.now ?? nowInstant;
   const checks = options.readinessChecks ?? [];
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AgentDirectoryPreferenceError) {
+      void reply.code(error.statusCode).send({ error: {
+        code: "gateway.agent_preference_rejected",
+        message: error.statusCode === 503 ? "Preference outcome unknown; refresh and retry" : "Preference rejected",
+      }});
+      return;
+    }
+    if (error instanceof HumanContactError || error instanceof HumanDmError ||
+        error instanceof HumanDmRealtimeError) {
+      // Exact private contact status (missing / hidden / blocked) shares one
+      // indistinguishable response. Codes contain no other user's private policy.
+      void reply.code(error.statusCode).send({
+        error: {
+          code: error.code,
+          message: error.statusCode === 404 ? "Contact unavailable" : "Contact request rejected",
+        },
+      });
+      return;
+    }
     if (error instanceof Error && error.message === "financial.auth.unauthorized") {
       void reply.code(401).send({
         error: {
@@ -603,6 +645,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     app.put(
       "/agent/preferences/default",
       {
+        preValidation: strictRequestBody(["characterId"]),
         schema: {
           body: Type.Object(
             { characterId: Type.String() },
@@ -985,6 +1028,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.setHeader("cache-control", "no-cache, no-transform");
         reply.raw.setHeader("x-content-type-options", "nosniff");
 
+        let outputEmitted = false;
         const controller = new AbortController();
         let finished = false;
         const abort = () => {
@@ -1012,10 +1056,14 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
               request.headers["x-correlation-id"] as string,
             ),
             onTextDelta: async (delta) => {
-              if (delta) emit({ type: "delta", text: delta });
+              if (delta) {
+                outputEmitted = true;
+                emit({ type: "delta", text: delta });
+              }
             },
             onAudioPcmChunk: async (dataBase64) => {
               if (dataBase64) {
+                outputEmitted = true;
                 emit({
                   type: "audio",
                   mimeType: "audio/pcm;rate=24000",
@@ -1027,8 +1075,11 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             signal: controller.signal,
           });
           emit({ type: "done", ...resultBody(result) });
-        } catch {
-          emit({ type: "error", code: "turn_failed" });
+        } catch (error) {
+          emit({
+            type: "error",
+            code: safeAgentTurnStreamErrorCode(error, outputEmitted),
+          });
         } finally {
           finished = true;
           reply.raw.off("close", abort);
@@ -1146,6 +1197,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         return { closed: true as const };
       },
     );
+  }
+
+  if (options.internalCryptoTransfers) {
+    registerInternalCryptoTransferRoutes(app, options.internalCryptoTransfers);
   }
 
   if (options.financial) {
@@ -1410,6 +1465,21 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   if (options.talkProfiles) {
     registerTalkProfileRoutes(app, options.talkProfiles);
   }
+  if (options.profileAvatar) {
+    registerProfileAvatarRoutes(app, options.profileAvatar);
+  }
+  if (options.humanContacts) {
+    registerHumanContactRoutes(app, options.humanContacts);
+  }
+  if (options.humanDm) {
+    registerHumanDmRoutes(app, options.humanDm);
+  }
+  if (options.assistantWorkspace) {
+    registerAssistantWorkspaceRoutes(app, options.assistantWorkspace);
+  }
+  if (options.humanDmRealtime) {
+    registerHumanDmRealtimeRoutes(app, options.humanDmRealtime);
+  }
   if (options.talkActivity) {
     registerTalkActivityRoutes(app, options.talkActivity);
   }
@@ -1542,3 +1612,6 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   return app;
 }
+
+
+

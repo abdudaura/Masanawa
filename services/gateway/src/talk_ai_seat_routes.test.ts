@@ -9,7 +9,7 @@ const tenantId = createCanonicalId("tenant");
 const viewerId = createCanonicalId("user");
 const hostId = createCanonicalId("user");
 
-function repository(): TalkAiSeatRepository {
+function repository(confirmationStatus: "admitted" | "pending_host" = "pending_host", twinOwnerUserId: string = createCanonicalId("user")): TalkAiSeatRepository {
   return {
     async listCandidates() {
       return [
@@ -31,7 +31,7 @@ function repository(): TalkAiSeatRepository {
           avatarUrl: null,
           topics: ["Culture"],
           isAvailable: true,
-          twinOwnerUserId: createCanonicalId("user"),
+          twinOwnerUserId,
         },
       ];
     },
@@ -77,10 +77,10 @@ function repository(): TalkAiSeatRepository {
         },
       };
     },
-    async confirm({ quoteId }) {
+    async confirm() {
       return {
         requestId: createCanonicalId("request"),
-        status: quoteId.endsWith("0") ? "admitted" : "pending_host",
+        status: confirmationStatus,
         displayName: "Gwani",
       };
     },
@@ -102,10 +102,10 @@ function repository(): TalkAiSeatRepository {
   };
 }
 
-function app(authenticated = true) {
+function app(authenticated = true, confirmationStatus: "admitted" | "pending_host" = "pending_host", twinOwnerUserId?: string) {
   const server = Fastify();
   const service = createTalkAiSeatService({
-    repository: repository(),
+    repository: repository(confirmationStatus, twinOwnerUserId),
     pricing: {
       expertPriceCredits: 100,
       twinPriceCredits: 120,
@@ -153,13 +153,27 @@ describe("Talk AI Seat API", () => {
         kind: "expert",
         seatFeeLabel: "100 Credits",
         isAvailable: true,
+        isOwnedByViewer: false,
       }),
       expect.objectContaining({
         personaId: "twin_amira",
         kind: "twin",
         seatFeeLabel: "120 Credits",
+        isOwnedByViewer: false,
       }),
     ]);
+  });
+
+  it("marks only a Twin owned by the authenticated viewer as mine", async () => {
+    const response = await app(true, "pending_host", viewerId).inject({
+      method: "GET",
+      url: "/talks/talk_1/ai-seats",
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(response.statusCode).toBe(200);
+    const rows = response.json() as Array<{ kind: string; isOwnedByViewer: boolean }>;
+    expect(rows.find((row) => row.kind === "expert")?.isOwnedByViewer).toBe(false);
+    expect(rows.find((row) => row.kind === "twin")?.isOwnedByViewer).toBe(true);
   });
 
   it("creates a sponsored quote that explicitly requires Host approval", async () => {
@@ -207,6 +221,17 @@ describe("Talk AI Seat API", () => {
     expect(response.json().message).toContain("Host");
   });
 
+  it("returns an admitted confirmation without inventing a second Host approval", async () => {
+    const response = await app(true, "admitted").inject({
+      method: "POST",
+      url: `/talks/talk_1/ai-seat-quotes/${createCanonicalId("quote")}/confirm`,
+      headers: { authorization: "Bearer viewer" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ status: "admitted" });
+    expect(response.json().message).not.toContain("waiting for");
+  });
+
   it("requires the customer session on all AI Seat routes", async () => {
     const response = await app(false).inject({
       method: "GET",
@@ -215,3 +240,4 @@ describe("Talk AI Seat API", () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
