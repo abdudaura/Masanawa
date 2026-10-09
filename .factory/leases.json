@@ -42,6 +42,24 @@
       "heartbeat_at": "2026-10-09T10:24:17.294Z",
       "expires_at": "2026-10-09T10:29:17.294Z",
       "notes": "Original source preserved. No composer/router/financial/migration/native/dependency/CI edits. Reproduce extra-field stripping before auth/dispatch, then run real focused suites and strict TS."
+    },
+    {
+      "claim_id": "recovery-03-u01-approval-20261009",
+      "owner": "RECOVERY-03",
+      "scope": "U01 #519 immutable approval bindings and exact terms; actual Node/typecheck",
+      "paths": [
+        "packages/operator-contract/src/index.js",
+        "packages/operator-contract/test/index.test.mjs",
+        "docs/workstreams/recovery-03-u01-approval-20261009.md"
+      ],
+      "branch": "work/u01-operator-contract-20261009-gpt6",
+      "base_sha": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
+      "source_pr": 519,
+      "source_head": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
+      "claimed_at": "2026-10-09T10:24:44.093Z",
+      "heartbeat_at": "2026-10-09T10:24:44.093Z",
+      "expires_at": "2026-10-09T10:29:44.093Z",
+      "notes": "Nonoverlapping U01; preserve #519; next reproduce mutable approval record and verify tests. No shared composition/financial/native/migration edits."
     }
   ],
   "history": [
