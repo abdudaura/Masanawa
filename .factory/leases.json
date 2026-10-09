@@ -1,6 +1,24 @@
 {
   "schema_version": 1,
-  "active": [],
+  "active": [
+    {
+      "claim_id": "gpt6-f16-c03-foreground-singleflight-20261009",
+      "owner": "GPT-6 F16 C03 existing PR #483 continuation",
+      "scope": "F16 C03 account-safe single foreground realtime polling runner",
+      "paths": [
+        "apps/mobile/lib/src/messages/realtime/human_dm_realtime_sync.dart",
+        "apps/mobile/test/messages/realtime/human_dm_realtime_test.dart",
+        "docs/workstreams/f16-c03-foreground-singleflight-20261009.md"
+      ],
+      "branch": "work/c03-reclaim-realtime-20261008-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/483",
+      "claimed_at": "2026-10-09T04:38:45.610Z",
+      "heartbeat_at": "2026-10-09T04:38:45.610Z",
+      "expires_at": "2026-10-09T04:43:45.610Z",
+      "notes": "Continue single C03 PR #483; no protected composer/ledger/migration/FCM/router/native edits. #486 retention and C05 PRs remain untouched."
+    }
+  ],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
