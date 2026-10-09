@@ -177,6 +177,32 @@ describe("U04 authoritative operator readers", () => {
       code: "OPERATOR_SOURCE_TIMEOUT" });
   });
 
+
+  it("suppresses A's balance if access changes to B after a slow domain read", async () => {
+    const h = harness();
+    h.sessions.authorize.mockResolvedValueOnce(identity)
+      .mockResolvedValueOnce({ ...identity, userId: "user_B" } as PlatformSessionIdentity);
+    await expect(run(h.service, action("wallet.balance.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_UNAUTHORIZED" });
+    expect(h.wallet.balance).toHaveBeenCalledTimes(1);
+    expect(h.append).toHaveBeenCalledWith(expect.objectContaining({
+      status: "failed", code: "OPERATOR_UNAUTHORIZED",
+    }));
+  });
+
+  it("fails closed if audit, quota or identity reader stalls indefinitely", async () => {
+    const never = new Promise<never>(() => {});
+    const slowAuth = harness({ sessions: { authorize: () => never }, timeoutMs: 50 });
+    await expect(run(slowAuth.service, action("accounts.me.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_SOURCE_TIMEOUT" });
+    const slowQuota = harness({ quota: { consume: () => never }, timeoutMs: 50 });
+    await expect(run(slowQuota.service, action("accounts.me.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_SOURCE_TIMEOUT" });
+    const slowAudit = harness({ audit: { append: () => never }, timeoutMs: 50 });
+    await expect(run(slowAudit.service, action("accounts.me.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_AUDIT_UNAVAILABLE" });
+  });
+
   it("never converts unapproved write instructions to an operator tool call", () => {
     for (const capability of ["talks.create", "human.message.send",
       "billing.purchase.confirm", "crypto.transfer.confirm"]) {
