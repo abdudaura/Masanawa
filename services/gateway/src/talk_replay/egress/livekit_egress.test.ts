@@ -172,3 +172,51 @@ describe("LiveKit Egress credential boundary",()=>{
     expect(observedUrl).toBe("https://live.example.test/twirp/livekit.Egress/StartEgress");
   });
 });
+
+
+describe("F09 bounded LiveKit Egress side-effect uncertainty",()=>{
+  it.each(["start","stop"] as const)(
+    "aborts an unresponsive %s request without blindly retrying",async(operation)=>{
+      let calls=0;
+      let signalSeen:AbortSignal|undefined;
+      const client=createLiveKitReplayEgress({
+        ...config,
+        requestTimeoutMs:20,
+        fetchImpl:async(_url,init)=>{
+          calls++;
+          signalSeen=init?.signal??undefined;
+          return await new Promise<Response>((_resolve,reject)=>{
+            if(!init?.signal) return reject(new Error("missing AbortSignal"));
+            init.signal.addEventListener("abort",()=>{
+              reject(init.signal?.reason??new Error("aborted"));
+            },{once:true});
+          });
+        },
+      });
+      const attempt=operation==="start"
+        ? client.start({roomName:"talk_1",objectKey:"talk-replays/tenant/recording.ogg"})
+        : client.stop("EG_active");
+      await expect(attempt).rejects.toThrow(
+        `talks.replay.egress_${operation==="start"?"startegress":"stopegress"}_timeout_uncertain`,
+      );
+      expect(calls).toBe(1);
+      expect(signalSeen?.aborted).toBe(true);
+    },
+  );
+
+  it.each([0,-1,1,9,120001,1.5,Number.NaN,Number.POSITIVE_INFINITY])(
+    "rejects unsafe request timeout %s before any provider operation",(requestTimeoutMs)=>{
+      expect(()=>createLiveKitReplayEgress({...config,requestTimeoutMs}))
+        .toThrow("LiveKit Egress request timeout");
+    },
+  );
+
+  it("keeps ordinary provider denial distinct from timeout uncertainty",async()=>{
+    const client=createLiveKitReplayEgress({
+      ...config,requestTimeoutMs:50,
+      fetchImpl:async()=>new Response("denied",{status:403}),
+    });
+    await expect(client.stop("EG_active"))
+      .rejects.toThrow("talks.replay.egress_stopegress_failed");
+  });
+});
