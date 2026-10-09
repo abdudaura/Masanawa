@@ -67,6 +67,9 @@ void main() {
       find.widgetWithText(FilledButton, 'Test private Twin conversation'),
     );
     expect(testButton.onPressed, isNull);
+    await tester.scrollUntilVisible(find.text('Publish Twin'), 150,
+      scrollable: find.byType(Scrollable).first,
+    );
     final publishButton = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Publish Twin'),
     );
