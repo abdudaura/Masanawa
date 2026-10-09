@@ -16,6 +16,8 @@ describe("U16 Postgres privacy and compare-and-set", () => {
     expect(sql).toContain("m.status='ready'");
     expect(sql).toContain("r.recording_state='finalized'");
     expect(sql).toContain("hostRecordingConsent");
+    expect(sql).toContain("post_session_processing_clearances");
+    expect(sql).toContain("all_speakers_consented=true");
     expect(sql).toContain("talks.safety_enforcement");
   });
   it("leases only matching verified media checksum; CAS update rechecks replay", async () => {
@@ -33,6 +35,7 @@ describe("U16 Postgres privacy and compare-and-set", () => {
     expect(query.mock.calls[1]![0]).toContain("lease_token=$5");
     expect(query.mock.calls[1]![0]).toContain("talks.safety_enforcement");
     expect(query.mock.calls[1]![0]).toContain("m.status='ready'");
+    expect(query.mock.calls[1]![0]).toContain("post_session_processing_clearances");
   });
   it("never returns previous text after a replay is blocked or changed", async () => {
     const pool: InsightSqlPool = { async query<Row>(sql) {
