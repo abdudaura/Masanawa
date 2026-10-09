@@ -123,6 +123,7 @@ class PrivateVoiceOperator extends ChangeNotifier {
   int _epoch = 0;
   bool _disposed = false;
   bool _opening = false;
+  bool _muted = false;
   PrivateVoicePhase _phase = PrivateVoicePhase.idle;
   String? _error;
   String? _lastAgentSpeech;
@@ -137,6 +138,7 @@ class PrivateVoiceOperator extends ChangeNotifier {
   String? get error => _error;
   String? get lastAgentSpeech => _lastAgentSpeech;
   String get draftText => _draft;
+  bool get isMuted => _muted;
   bool get hasDraft => _draft.trim().isNotEmpty;
   bool get needsReview => hasDraft;
   bool get isConnected =>
@@ -176,6 +178,7 @@ class PrivateVoiceOperator extends ChangeNotifier {
     _characterId = characterId;
     _characterSessionId = characterSessionId;
     _phase = PrivateVoicePhase.connecting;
+    _muted = false;
     _error = null;
     _notify();
 
@@ -333,6 +336,40 @@ class PrivateVoiceOperator extends ChangeNotifier {
     }
   }
 
+  /// Explicit microphone mute while retaining Gemini Live session context.
+  Future<void> setMuted(bool muted) async {
+    final live = _live;
+    if (live == null || !isConnected || _disposed) return;
+    final epoch = _epoch;
+    try {
+      await live.mute(muted);
+      if (epoch != _epoch || _disposed) return;
+      _muted = muted;
+      _notify();
+    } catch (_) {
+      // A failed native mute cannot be treated as privacy success.
+      _error = 'Could not change the microphone. Voice was stopped.';
+      _notify();
+      await stop(clearContext: false);
+    }
+  }
+
+  /// Reconcile by the *canonical authenticated turn status*, never replay an
+  /// uncertain voice-derived side effect. A switched account drops readback.
+  Future<AgentTurnStatus?> readbackTurn({
+    required String accountId,
+    required String requestId,
+  }) async {
+    if (_disposed || _accountId != accountId || _characterId == null ||
+        requestId.trim().isEmpty) return null;
+    final epoch = _epoch;
+    final characterId = _characterId!;
+    final status = await _shell.turnStatus(characterId, requestId);
+    if (_disposed || epoch != _epoch || _accountId != accountId ||
+        _characterId != characterId) return null;
+    return status;
+  }
+
   Future<void> stop({bool clearContext = false}) async {
     ++_epoch; // invalidates late WebSocket grant and transcription callbacks
     _opening = false;
@@ -364,6 +401,7 @@ class PrivateVoiceOperator extends ChangeNotifier {
       _lastAgentSpeech = null;
       _error = null;
     }
+    _muted = false;
     _phase = PrivateVoicePhase.idle;
     _notify();
   }
