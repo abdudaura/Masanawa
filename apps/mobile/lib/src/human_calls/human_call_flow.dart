@@ -66,8 +66,19 @@ class _HumanCallFlowScreenState extends ConsumerState<HumanCallFlowScreen> with 
     if(state==AppLifecycleState.paused || state==AppLifecycleState.detached) {
       // No native foreground calling service has been qualified. Do not
       // silently keep a camera/mic streaming when the UI goes background.
-      final call=_call;
-      if(call!=null) unawaited(call.end());
+      final controller=_call;
+      if(controller!=null) {
+        final current=controller.call;
+        unawaited(() async {
+          // stop() closes mic/camera immediately even if accept/start is
+          // still pending. Late server admission is compensated by C09.
+          await controller.stop();
+          if(current!=null && !current.terminal) {
+            try { await controller.transport.act(current.callId,'end'); }
+            catch (_) { /* Server expiry and revocation worker are fallback. */ }
+          }
+        }());
+      }
     }
   }
   @override
