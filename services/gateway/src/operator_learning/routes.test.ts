@@ -53,7 +53,7 @@ function fixture() {
     return { scope };
   });
   const authorizer = { authorize } as unknown as AgentConversationAuthorizer;
-  const turn = vi.fn(async () => ({ reply: "Practice: x=3.", agentRunId: "run", parts: [] }));
+  const turn = vi.fn(async (_input: Parameters<AgentConversationService["turn"]>[0]) => ({ reply: "Practice: x=3.", agentRunId: "run", parts: [] }));
   const conversation = { turn } as unknown as AgentConversationService;
   const app = Fastify();
   apps.push(app);
