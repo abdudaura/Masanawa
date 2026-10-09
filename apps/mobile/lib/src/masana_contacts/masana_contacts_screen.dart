@@ -260,3 +260,4 @@ class _MasanaContactsScreenState extends State<MasanaContactsScreen> {
           );
         },
       );
+}
