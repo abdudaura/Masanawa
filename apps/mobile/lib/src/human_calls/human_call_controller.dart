@@ -42,6 +42,14 @@ class HumanCallController extends ChangeNotifier {
   bool get isIncoming => call?.calleeUserId==currentUserId;
   bool get terminal => call?.terminal ?? false;
   void _notify() { if(!_disposed) notifyListeners(); }
+  Future<void> _endOrphanedCall(HumanCall late) async {
+    // A server dial/answer may finish AFTER logout, Back or widget disposal.
+    // Do not leave its invitation/active room running invisibly when we
+    // receive the definitive call ID. If auth switched, safe lease expiry
+    // and worker room revocation remain authoritative.
+    if(late.terminal)return;
+    try { await transport.act(late.callId,'end'); } catch (_) {}
+  }
   bool _current(int token)=>active && token==_generation;
 
   String _newRequestId() {
@@ -64,7 +72,10 @@ class HumanCallController extends ChangeNotifier {
       final next=await transport.start(
         conversationId:conversationId,kind:kind,requestId:requestId,
       );
-      if(!_current(epoch)) return;
+      if(!_current(epoch)) {
+        await _endOrphanedCall(next);
+        return;
+      }
       if(next.callerUserId!=currentUserId ||
           next.conversationId!=conversationId || next.kind!=kind) {
         throw const FormatException('Call admission did not match the current user');
@@ -168,7 +179,10 @@ class HumanCallController extends ChangeNotifier {
     busy=true;error=null;_notify();
     try {
       final next=await transport.act(current.callId,'accept');
-      if(!_current(epoch))return;
+      if(!_current(epoch)){
+        await _endOrphanedCall(next);
+        return;
+      }
       call=next;
       await _joinIfAllowed(epoch,permissionGranted:true);
     } catch (_) {
