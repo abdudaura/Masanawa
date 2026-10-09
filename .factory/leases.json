@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
-  "active": [
+  "active": [],
+  "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
       "owner": "chatgpt-gpt6-f11-ci-evidence",
@@ -15,8 +16,9 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/567",
       "claimed_at": "2026-10-09T03:41:41Z",
       "heartbeat_at": "2026-10-09T03:44:04Z",
-      "expires_at": "2026-10-09T03:49:04Z"
+      "expires_at": "2026-10-09T03:49:04Z",
+      "released_at": "2026-10-09T03:44:56Z",
+      "release_reason": "Draft PR #567 handoff committed at 6517778d41acab7ad0b6472d702fedb297b397ea; isolated source/tests completed, F11 overall remains partial"
     }
-  ],
-  "history": []
+  ]
 }
