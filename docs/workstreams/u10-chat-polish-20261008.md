@@ -5,7 +5,7 @@
 ## Baseline / exact lease
 - Canonical base main SHA: 5e758673ae91082520b21b3153da53791ae2cbf3.
 - Branch: work/u10-human-chat-composer-20261009-gpt6.
-- Latest source + test checkpoint (before this documentation commit): b07ba63f3e88ac4ff2810f7178251bb9d2597249.
+- Latest source + test checkpoint (before this documentation commit): ca67c16045c6bf8890616eb7cb2777a1f3e6615b. Initial substantive checkpoint: b07ba63f3e88ac4ff2810f7178251bb9d2597249.
 - Exact owned paths: apps/mobile/lib/src/human_chat_ux/**, apps/mobile/test/human_chat_ux/**, this workstream handoff. Five-minute lease refreshed by scoped commits. Confirm no newer owner before adopting.
 - Inspected: CONTINUE-HERE.md; updated re-audit; U21–U30/F01–F18 and U10 contracts; HUMAN-CHAT-AND-CONTEXTUAL-AI; C02 #472; C04 #478; C05 #474 and competing #476; Work #497; open PR/branch inventory. No pre-existing U10 PR/branch at claim.
 
