@@ -194,6 +194,9 @@ import { createS3AvatarObjectStore } from "./profile_avatar/s3_store.js";
 import { createProfileAvatarService } from "./profile_avatar/service.js";
 import { createPostgresHumanContactRepository } from "./human_contacts/postgres_repository.js";
 import { createPostgresHumanDmRepository } from "./human_messages/postgres_repository.js";
+import { composeLiveKitHumanCalls } from "./human_calls/composition.js";
+import { processHumanCallSignals } from "./human_calls/signal_worker.js";
+import type { HumanCallSqlPool } from "./human_calls/postgres_repository.js";
 import { createHumanDmService } from "./human_messages/service.js";
 import { createAssistantWorkspaceService } from "./assistant_workspace/service.js";
 import { createPostgresHumanDmRealtimeRepository } from "./human_dm_realtime/postgres_repository.js";
@@ -350,6 +353,7 @@ export interface ServiceDatabaseDependency {
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly profileAvatars?: ReturnType<typeof createPostgresAvatarRepository>;
   readonly humanDm?: ReturnType<typeof createPostgresHumanDmRepository>;
+  readonly humanCallPool?: HumanCallSqlPool;
   readonly humanDmRealtime?: ReturnType<typeof createPostgresHumanDmRealtimeRepository>;
   readonly humanContacts?: ReturnType<typeof createPostgresHumanContactRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
@@ -483,6 +487,7 @@ function createDefaultDatabaseDependency(
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
     profileAvatars: createPostgresAvatarRepository(database.pool),
     humanDm: createPostgresHumanDmRepository(database.pool),
+    humanCallPool: database.pool,
     humanDmRealtime: createPostgresHumanDmRealtimeRepository(database.pool),
     humanContacts: createPostgresHumanContactRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
@@ -629,6 +634,8 @@ export async function startGatewayService(
   let avatarCleanupRunning = false;
   let talkPushDedupePurgeTimer: ReturnType<typeof setInterval> | undefined;
   let talkPushDedupePurgeRunning = false;
+  let humanCallSweepTimer: ReturnType<typeof setInterval> | undefined;
+  let humanCallSweepRunning = false;
   let customerAuth: CustomerAuthService | undefined =
     options.appOptions?.customerAuth;
   let accountDeletion: AccountDeletionService | undefined =
@@ -1971,6 +1978,19 @@ export async function startGatewayService(
     (database.humanDm && talkSafetyCustomerAuthorizer
       ? createHumanDmService({repository: database.humanDm,
           authorizer: talkSafetyCustomerAuthorizer}) : undefined);
+  // Disabled until explicitly configured. Neither public Talks nor AI audio
+  // tokens can grant private human-call authority.
+  const callFeatureEnabled = env.MASANAWA_HUMAN_CALLS_ENABLED === "true";
+  const callLiveKitReady = !!(env.LIVEKIT_URL?.trim() && env.LIVEKIT_API_KEY?.trim() && env.LIVEKIT_API_SECRET?.trim());
+  const composedHumanCalls = callFeatureEnabled && callLiveKitReady &&
+    database.humanCallPool && talkSafetyCustomerAuthorizer && pushSender
+      ? composeLiveKitHumanCalls({
+          pool: database.humanCallPool,
+          sessions: talkSafetyCustomerAuthorizer,
+          serverUrl: env.LIVEKIT_URL!,
+          apiKey: env.LIVEKIT_API_KEY!,
+          apiSecret: env.LIVEKIT_API_SECRET!,
+        }) : undefined;
   const composedHumanDmRealtime = options.appOptions?.humanDmRealtime ??
     (database.humanDmRealtime && talkSafetyCustomerAuthorizer
       ? createHumanDmRealtimeService({repository: database.humanDmRealtime,
@@ -2322,6 +2342,7 @@ export async function startGatewayService(
       ...(composedTalkSafety ? { talkSafety: composedTalkSafety } : {}),
       ...(composedDirectTwin ? { directTwin: composedDirectTwin } : {}),
       ...(composedHumanDm ? { humanDm: composedHumanDm } : {}),
+      ...(composedHumanCalls ? { humanCalls: composedHumanCalls.service } : {}),
       ...(composedHumanDmRealtime ? { humanDmRealtime: composedHumanDmRealtime } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
@@ -2394,6 +2415,10 @@ export async function startGatewayService(
         clearInterval(talkPushDedupePurgeTimer);
         talkPushDedupePurgeTimer = undefined;
       }
+      if (humanCallSweepTimer) {
+        clearInterval(humanCallSweepTimer);
+        humanCallSweepTimer = undefined;
+      }
       if (avatarCleanupTimer) {
         clearInterval(avatarCleanupTimer);
         avatarCleanupTimer = undefined;
@@ -2429,6 +2454,42 @@ export async function startGatewayService(
       await lifecycle.stop("manual").catch(() => undefined);
       throw error;
     }
+  }
+
+  // Scheduled private call lifecycle: the expired/revoked participant room
+  // gets forcibly closed by LiveKit RoomService, and only a generic FCM
+  // hint is delivered. No caller display name, body, or token in push data.
+  const runHumanCallSweep = async () => {
+    if (humanCallSweepRunning || drain.isDraining() ||
+        !composedHumanCalls || !database.humanCallPool || !pushSender) return;
+    humanCallSweepRunning = true;
+    try {
+      await processHumanCallSignals({
+        pool: database.humanCallPool,
+        revoker: composedHumanCalls.roomRevoker,
+        sender: {
+          async notify(signal) {
+            await pushSender!.send({
+              scope: { tenantId: signal.tenantId as never, userId: signal.recipientUserId as never },
+              title: "Masanawa private call",
+              body: signal.eventType === "ringing" ? "Incoming call. Open Chats to answer." :
+                "Your call status has changed.",
+              data: { type: "human_private_call", callId: signal.callId },
+            });
+          },
+        },
+      });
+    } catch {
+      // SQL/provider errors remain private and retry at next bounded tick.
+      process.stderr.write(JSON.stringify({event:"human_call.recovery_retry_pending"})+"\n");
+    } finally {
+      humanCallSweepRunning = false;
+    }
+  };
+  if (composedHumanCalls) {
+    humanCallSweepTimer = setInterval(() => { void runHumanCallSweep(); }, 5000);
+    humanCallSweepTimer.unref();
+    void runHumanCallSweep();
   }
 
   const runAvatarCleanup = async () => {
