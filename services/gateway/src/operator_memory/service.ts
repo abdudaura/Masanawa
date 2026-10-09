@@ -193,6 +193,15 @@ export function createMemoryService(deps: Readonly<{
       await requireOptIn(actor);
       const safeKind = validKind(kind);
       const safeContent = boundedContent(content);
+      // Refuse unbounded accumulation if the canonical scope contains too many
+      // active memories; the authoritative repository alone controls the count.
+      const existing = await deps.memory.listMemoryRecordsByScopes({
+        tenantId: actor.tenantId, scopes: [scope],
+        lifecycleStates: ["active"], limit: MAX_RECORDS,
+      });
+      if (existing.length >= MAX_RECORDS) {
+        throw new OperatorMemoryError("MEMORY_CAP_REACHED", 429);
+      }
       if (!Number.isSafeInteger(ttlDays) || ttlDays < 1 || ttlDays > 365) {
         invalid("MEMORY_INVALID_TTL");
       }
