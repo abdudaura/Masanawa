@@ -100,3 +100,20 @@
 | Actual Node/pnpm & CI | NOT RUN / BLOCKED |
 | Authenticated API/DB/provider/device/Flutter | NOT INTEGRATED / UNVERIFIED |
 | PR / release | DRAFT, UNMERGED, NOT DEPLOYED |
+
+
+## 2026-10-09 — U01 immutable authorization snapshot continuation
+
+**Claim:** `gpt6-u01-mutability-fence-20261009-0346` on `factory/claims`, CAS commit `9e9ae7c8696265558c3b2d51d641287cd31efbe2`, owned paths `packages/operator-contract/src/index.js`, `packages/operator-contract/test/index.test.mjs`, and this handoff only. Inspected `main@5e758673ae91082520b21b3153da53791ae2cbf3`, existing draft PR #519 and its inherited tests/handoff; resumed existing branch rather than creating competing work. The original U01 source and its test bodies remain intact.
+
+**Risk fixed:** previously the verified catalog object and identity `principal` were passed by reference to arbitrary policy callbacks, then reused for the result. A callback could mutate a prechecked read-only capability into `financial`, replace the capability ID, widen regions/scopes, or replace authenticated identity between capability and context checks. Such side effects must not modify the admitted authorization result.
+
+**Source commit:** `086276d0af10b1506fbf302f1b23657157370474` (new blob `b9a2a08b6df2aec8979b95aacded4cb8cec167d3`). Snapshot and freeze the canonical capability descriptor and its eligibility arrays *before* validation/callbacks, and snapshot/freeze the server principal before it reaches either authorizer. Preserve existing API, catalog version matching, untrusted-argument sanitizer, policy callback contracts, approval rules and exact entitlement checks. Only the U01 JS implementation changed.
+
+**Test commit:** `a6b96b7cb24a3f709e6cbe0f45190342f69bea23` (new blob `f1c1406ffeae1e953721c87b80bc1802062d91fe`). Added two real regression test bodies for catalog and principal mutation, including selected human DM context authorization seeing the original authenticated identity. The production code does not trust callback-mutated values or promote an admitted read into a financial action.
+
+**Executed evidence:** fetched current source/test GitHub blobs at the SHAs above, evaluated the source under the available V8 JavaScript runtime, and invoked all **11/11 existing and new committed `node:test` test callbacks** with an adapted strict assertion/test harness. **11 PASS, 0 FAIL (adapted V8 only)**. This confirms the focused JavaScript behavior; it is **not** a real Node test-runner, CI, TypeScript or E2E pass. No network/production/credential/provider calls were made. Preexisting 9 test bodies remain covered; two new mutation tests pass. The harness supports only the assertion methods actually used in the committed file.
+
+**Not executed / release blocked:** exact `node --test packages/operator-contract/test/index.test.mjs` and `pnpm --filter @masanawa/operator-contract typecheck` require checkout plus package installation; local container cannot resolve GitHub and has no authenticated checkout. Full `pnpm -r typecheck`, Gateway auth+DB/migration tests, U02 durable approvals, U03/C07 five-tab Flutter operation cards, device/provider trials, CI #457 zero-step Actions and financial/cross-account acceptance are **NOT RUN / UNVERIFIED**. These must be executed on the same integrated commit before merge/release. No shared Gateway composer, R05–R08 finance/ledger, Flutter root, Firebase, native or production files changed.
+
+**Integrator handoff:** preserve PR #519 and use its latest head. Run focused Node 24 and package typecheck on a clean checkout; test policy mutation with actual Gateway authorizer adapters and account switching; integrate U01 with U02 persisted ticket single-use fencing and U03/C07 private Assistant, ensuring current auth/domain permission is still checked again at execution. Recheck F12 five-tab and DM C01/C02 authorization; financial actions must still require exact human approval and authoritative readback. No false `VERIFIED_E2E` claim; current entire workstream status **PARTIAL_IMPLEMENTATION / draft / unmerged**.
