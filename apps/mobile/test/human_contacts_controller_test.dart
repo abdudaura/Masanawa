@@ -104,6 +104,60 @@ Future<void> _tick() async {
 }
 
 void main() {
+  test('failed full reload cannot retain old contact rights or privacy settings', () async {
+    final fake = _FakeContacts();
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    expect(controller.state.contacts.single.userId, 'user_b');
+    expect(controller.state.preferences, isNotNull);
+    await controller.findByHandle('bob');
+    expect(controller.state.lookup, isNotNull);
+
+    // A previously admitted peer may have since revoked or blocked us.
+    // Even if the new network read fails, the old Message/consent state
+    // must not be rendered as if it remained server-authorized.
+    fake.failList = true;
+    final reload = controller.refresh();
+    expect(controller.state.loading, isTrue);
+    expect(controller.state.contacts, isEmpty);
+    expect(controller.state.preferences, isNull);
+    expect(controller.state.lookup, isNull);
+    expect(controller.state.lookupHandle, isNull);
+    await reload;
+    expect(controller.state.loading, isFalse);
+    expect(controller.state.contacts, isEmpty);
+    expect(controller.state.preferences, isNull);
+    expect(controller.state.error, 'List unavailable');
+
+    fake.failList = false;
+    await controller.refresh();
+    expect(controller.state.contacts.single.userId, 'user_b');
+    expect(controller.state.preferences, isNotNull);
+    expect(controller.state.error, isNull);
+    controller.dispose();
+  });
+
+  test('old lookup cannot publish Message eligibility after full reload starts', () async {
+    final fake = _FakeContacts()..pendingLookup = Completer<HumanContact?>();
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    final oldLookup = controller.findByHandle('bob');
+    await _tick();
+    expect(controller.state.searching, isTrue);
+
+    await controller.refresh();
+    expect(controller.state.searching, isFalse);
+    fake.pendingLookup!.complete(_bob);
+    await oldLookup;
+    expect(controller.state.lookup, isNull);
+    expect(controller.state.lookupHandle, isNull);
+    controller.dispose();
+  });
+
   test('signed-out controller does not call private Gateway', () async {
     final fake = _FakeContacts();
     final controller = HumanContactsController(
