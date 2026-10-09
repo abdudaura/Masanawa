@@ -60,6 +60,7 @@ class HumanDmRealtimeSync {
   bool _bootstrapped = false;
   String? _cursor;
   Future<void>? _inflight;
+  Future<void>? _foregroundRun;
   CancelToken? _cancel;
   int _failureCount = 0;
 
@@ -175,8 +176,29 @@ class HumanDmRealtimeSync {
 
   /// Runs only when the authenticated UI lifecycle explicitly requests it.
   /// Do not run a foreground poll loop from an app-killed/background isolate.
-  Future<void> runWhileForeground() async {
+  /// Concurrent foreground listeners share one loop, rather than starting
+  /// overlapping polls/backoffs against the same protected C05 cursor.
+  Future<void> runWhileForeground() {
     _checkActive();
+    final existing = _foregroundRun;
+    if (existing != null) return existing;
+
+    // Schedule after storing the shared future so a status listener cannot
+    // re-enter and start a second loop. An immediate sign-out before the
+    // microtask must end quietly, without opening a network request.
+    late final Future<void> task;
+    task = Future<void>.microtask(() async {
+      if (!active) return;
+      await _runForegroundLoop();
+    }).whenComplete(() {
+      if (identical(_foregroundRun, task)) _foregroundRun = null;
+    });
+    _foregroundRun = task;
+    return task;
+  }
+
+  Future<void> _runForegroundLoop() async {
+    if (!active) return;
     onStatus?.call(HumanDmRealtimeStatus.connecting);
     while (active) {
       try {
