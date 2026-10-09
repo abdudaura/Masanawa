@@ -220,11 +220,11 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
       // A valid bearer token for a different account is insufficient.
       let identity: PlatformSessionIdentity;
       try {
-        identity = await input.sessions.authorize({ authorizationHeader: request.authorizationHeader });
+        identity = await timeoutRead(input.sessions.authorize({ authorizationHeader: request.authorizationHeader }), timeoutMs);
         if (identity.tenantId !== principal.tenantId || identity.userId !== principal.userId ||
-            !(await input.bindSession({
+            !(await timeoutRead(input.bindSession({
               authorizationHeader: request.authorizationHeader, principal, identity,
-            }))) return failure("OPERATOR_UNAUTHORIZED", 401);
+            }), timeoutMs))) return failure("OPERATOR_UNAUTHORIZED", 401);
       } catch (error) { throw normalizeFailure(error); }
 
       // Invalid arguments fail before quota or service dispatch.
@@ -247,10 +247,10 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
       let status: "succeeded" | "failed" = "failed";
       let code = "OPERATOR_SOURCE_UNAVAILABLE";
       try {
-        if (!(await input.quota.consume({
+        if (!(await timeoutRead(input.quota.consume({
           tenantId: identity.tenantId, userId: identity.userId,
           capabilityId, requestId: action.requestId, cost: spec.cost,
-        }))) return failure("OPERATOR_RATE_LIMITED", 429);
+        }), timeoutMs))) return failure("OPERATOR_RATE_LIMITED", 429);
 
         // These canonical services authenticate AGAIN and enforce owner,
         // membership, tenant and visibility at their repository boundaries.
@@ -329,8 +329,8 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
         throw failure;
       } finally {
         try {
-          await input.audit.append({ tenantId: identity.tenantId, userId: identity.userId,
-            capabilityId, requestId: action.requestId, status, code });
+          await timeoutRead(input.audit.append({ tenantId: identity.tenantId, userId: identity.userId,
+            capabilityId, requestId: action.requestId, status, code }), timeoutMs);
         } catch {
           // Read-only responses are suppressed when mandatory audit fails.
           // A read may have completed but no irreversible effect was performed.
