@@ -130,27 +130,27 @@ class LiveVoiceSession with WidgetsBindingObserver {
       try {
         audioSession = await AudioSession.instance;
         await audioSession.configure(
-        AudioSessionConfiguration(
-          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-          avAudioSessionCategoryOptions:
-              AVAudioSessionCategoryOptions.allowBluetooth |
-              AVAudioSessionCategoryOptions.defaultToSpeaker,
-          avAudioSessionMode: AVAudioSessionMode.voiceChat,
-          androidAudioAttributes: const AndroidAudioAttributes(
-            contentType: AndroidAudioContentType.speech,
-            usage: AndroidAudioUsage.voiceCommunication,
+          AudioSessionConfiguration(
+            avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+            avAudioSessionCategoryOptions:
+                AVAudioSessionCategoryOptions.allowBluetooth |
+                AVAudioSessionCategoryOptions.defaultToSpeaker,
+            avAudioSessionMode: AVAudioSessionMode.voiceChat,
+            androidAudioAttributes: const AndroidAudioAttributes(
+              contentType: AndroidAudioContentType.speech,
+              usage: AndroidAudioUsage.voiceCommunication,
+            ),
+            androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+            androidWillPauseWhenDucked: true,
           ),
-          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
-        ),
-      );
-      if (_closed) return;
-      if (!await audioSession.setActive(true)) {
-        throw const _LiveVoiceFault(
-          LiveVoiceFailureStage.focus,
-          'Audio is in use. End the other call and try again.',
         );
-      }
+        if (_closed) return;
+        if (!await audioSession.setActive(true)) {
+          throw const _LiveVoiceFault(
+            LiveVoiceFailureStage.focus,
+            'Audio is in use. End the other call and try again.',
+          );
+        }
         if (_closed) {
           await audioSession.setActive(false);
           return;
