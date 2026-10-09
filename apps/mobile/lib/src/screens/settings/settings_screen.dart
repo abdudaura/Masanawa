@@ -419,14 +419,14 @@ class _ClearLocalAiChatsTileState extends State<ClearLocalAiChatsTile> {
       await widget.onClear();
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
+        ..removeCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(content: Text('Local AI chats cleared')),
         );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
+        ..removeCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
             content: Text('Could not clear local AI chats. Please try again.'),
