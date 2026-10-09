@@ -136,19 +136,32 @@ class MobilePushService {
       // amounts or legacy payloads. Foreground OS banners must be generic.
       // Navigation still uses the separately validated typed deep-link path.
       final safePreview = privatePushPreview(message.data);
+      final isIncomingHumanCall =
+          message.data['type']=='human_private_call' &&
+          message.data['eventType']=='ringing';
       await _notifications.show(
         id: message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
         title: safePreview.title,
         body: safePreview.body,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'masanawa_work',
-            'Masanawa updates',
-            channelDescription: 'Agent replies, approvals and completed work',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(),
+        notificationDetails: NotificationDetails(
+          android: isIncomingHumanCall
+              ? const AndroidNotificationDetails(
+                  'masanawa_private_calls',
+                  'Private calls',
+                  channelDescription: 'Incoming one-to-one calls',
+                  importance: Importance.max,
+                  priority: Priority.max,
+                  category: AndroidNotificationCategory.call,
+                  visibility: NotificationVisibility.private,
+                )
+              : const AndroidNotificationDetails(
+                  'masanawa_work',
+                  'Masanawa updates',
+                  channelDescription: 'Agent replies, approvals and completed work',
+                  importance: Importance.high,
+                  priority: Priority.high,
+                ),
+          iOS: const DarwinNotificationDetails(),
         ),
         payload: _linkFor(message),
       );
