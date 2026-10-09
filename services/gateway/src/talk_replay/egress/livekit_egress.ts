@@ -13,6 +13,9 @@ function base64url(value:string):string{
 }
 
 const MAX_EGRESS_RESPONSE_BYTES=64*1024;
+// External Egress RPCs can have uncertain side effects after a client timeout.
+// Abort the HTTPS request, but do not automatically retry Start/StopEgress.
+const DEFAULT_EGRESS_REQUEST_TIMEOUT_MS=30_000;
 
 function secureOrigin(raw:string,label:string,websocket=false):string{
   const candidate=raw.trim();
@@ -96,6 +99,7 @@ export function createLiveKitReplayEgress(input:Readonly<{
   }>;
   fetchImpl?:typeof fetch;
   now?:()=>Date;
+  requestTimeoutMs?:number;
 }>):LiveKitReplayEgress{
   const serverUrl=secureOrigin(input.serverUrl,"LiveKit Egress URL",true);
   const apiKey=input.apiKey.trim();
@@ -109,21 +113,37 @@ export function createLiveKitReplayEgress(input:Readonly<{
   if(!region || !bucket || !accessKey || secret.length<8) throw new TypeError("Replay S3 configuration is incomplete");
   const fetchImpl=input.fetchImpl??fetch;
   const now=input.now??(()=>new Date());
+  const timeoutMs=input.requestTimeoutMs??DEFAULT_EGRESS_REQUEST_TIMEOUT_MS;
+  if(!Number.isSafeInteger(timeoutMs)||timeoutMs<10||timeoutMs>120_000){
+    throw new TypeError("LiveKit Egress request timeout must be 10–120000 milliseconds");
+  }
 
   async function call(method:"StartEgress"|"StopEgress",body:Record<string,unknown>):Promise<Record<string,unknown>>{
-    const response=await fetchImpl(`${serverUrl}/twirp/livekit.Egress/${method}`,{
-      method:"POST",
-      redirect:"manual",
-      headers:{
-        authorization:`Bearer ${accessToken({apiKey,apiSecret,now:now()})}`,
-        "content-type":"application/json",
-      },
-      body:JSON.stringify(body),
-    });
-    if(!response.ok){
-      throw new Error(`talks.replay.egress_${method.toLowerCase()}_failed`);
+    // The timeout signal covers connection establishment and response-body
+    // streaming. A timed-out StartEgress may still have started remotely;
+    // callers must reconcile provider truth rather than blindly retrying.
+    const signal=AbortSignal.timeout(timeoutMs);
+    try{
+      const response=await fetchImpl(`${serverUrl}/twirp/livekit.Egress/${method}`,{
+        method:"POST",
+        redirect:"manual",
+        signal,
+        headers:{
+          authorization:`Bearer ${accessToken({apiKey,apiSecret,now:now()})}`,
+          "content-type":"application/json",
+        },
+        body:JSON.stringify(body),
+      });
+      if(!response.ok){
+        throw new Error(`talks.replay.egress_${method.toLowerCase()}_failed`);
+      }
+      return await boundedEgressResponse(response);
+    }catch(error){
+      if(signal.aborted){
+        throw new Error(`talks.replay.egress_${method.toLowerCase()}_timeout_uncertain`,{cause:error});
+      }
+      throw error;
     }
-    return await boundedEgressResponse(response);
   }
 
   return Object.freeze<LiveKitReplayEgress>({
