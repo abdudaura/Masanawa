@@ -222,6 +222,26 @@ void main() {
     expect(find.text('Favorites'), findsOneWidget);
   });
 
+  testWidgets('lazy Contacts rows use distinct section and human ID keys',
+      (tester) async {
+    final store = _Favorites()..values['person_a'] = {'person_b'};
+    final contacts = _Contacts();
+    contacts.people = [
+      _person('person_e', 'Emeka', HumanContactStatus.incoming),
+      _person('person_b', 'Bello', HumanContactStatus.accepted),
+    ];
+    await _mount(tester, contacts, _Messages(), store, (_, __) {});
+
+    // The same human can appear in Favorites and Masanawa contacts;
+    // each visible row must have its own stable, real (interpolated) key.
+    expect(find.byKey(const ValueKey('Favorites_person_b')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey('Masanawa contacts_person_b')),
+        findsOneWidget);
+    expect(find.text('Bello'), findsNWidgets(2));
+    expect(find.text('Incoming requests'), findsOneWidget);
+  });
+
   testWidgets('logout hides contact names without requiring phone permission',
       (tester) async {
     await _mount(tester, _Contacts(), _Messages(), _Favorites(), (_, __) {});
