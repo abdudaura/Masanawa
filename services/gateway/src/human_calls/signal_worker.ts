@@ -112,6 +112,12 @@ export async function processHumanCallSignals(input:{
     WITH selected AS(
       SELECT signal_id FROM talks.human_call_signal_outbox
       WHERE delivered_at IS NULL
+        -- Ordinary incoming/ringing hints have a finite retry budget so
+        -- unavailable push devices are not pinged forever. Terminal hints
+        -- carry mandatory room termination and MUST continue retrying
+        -- until deleteRoom is acknowledged by LiveKit.
+        AND (attempt_count < 10 OR event_type IN
+          ('declined','cancelled','missed','ended'))
         AND (leased_until IS NULL OR leased_until<clock_timestamp())
       ORDER BY signal_id FOR UPDATE SKIP LOCKED LIMIT $1
     )
