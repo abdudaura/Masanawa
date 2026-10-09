@@ -264,6 +264,48 @@ class MobilePushService {
   }
 
   String? _linkFor(RemoteMessage message) {
+    // A push contains only an opaque ID; the protected call route fetches
+    // current server admission before offering Answer, and no microphone
+    // starts from push receipt or navigation.
+    if (message.data['type'] == 'human_private_call') {
+      final id = message.data['callId'];
+      if (id is String && RegExp(
+        r'^[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}
+    if (explicit is String && explicit.isNotEmpty) return explicit;
+    final characterId = message.data['characterId'];
+    if (characterId is String && characterId.startsWith('character_')) {
+      return 'masanawa://chat/${Uri.encodeComponent(characterId)}';
+    }
+    return null;
+  }
+
+  void _emitLink(String raw) {
+    final uri = Uri.tryParse(raw);
+    if (uri == null || shellDeepLinkRoute(uri) == null) return;
+    if (_links.hasListener) {
+      _links.add(uri);
+    } else {
+      _initialLink = uri;
+    }
+  }
+
+  Future<void> dispose() async {
+    await _tokenRefresh?.cancel();
+    await _foreground?.cancel();
+    await _opened?.cancel();
+    _tokenRefresh = null;
+    _foreground = null;
+    _opened = null;
+    _initialized = false;
+  }
+}
+
+,
+      ).hasMatch(id)) {
+        return 'masanawa://calls/${Uri.encodeComponent(id)}';
+      }
+      return null;
+    }
     final explicit = message.data['deepLink'];
     if (explicit is String && explicit.isNotEmpty) return explicit;
     final characterId = message.data['characterId'];
