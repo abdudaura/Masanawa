@@ -139,6 +139,9 @@ export function createHumanAiAssistService(deps: {
     async prepare(input: { authorizationHeader?: string; conversationId: string;
       messageIds: string[]; purpose: AssistPurpose; language: string; redact: "mask" | "original";
       disclosureConfirmed: boolean }) {
+      // Copy caller-owned options before any await; consent must describe the
+      // operation we execute, even when an in-process caller reuses its object.
+      input = {...input};
       if (input.disclosureConfirmed !== true) throw new HumanAiAssistError("assist.consent_required", 403);
       if (!["reply","translate","prepare_talk"].includes(input.purpose) ||
           !["mask","original"].includes(input.redact) ||
@@ -182,6 +185,7 @@ export function createHumanAiAssistService(deps: {
     },
     async sendReviewed(input: { authorizationHeader?: string; reviewToken: string;
       recipientUserId: string; reviewedBody: string; confirmed: boolean }) {
+      input = {...input};
       if (input.confirmed !== true) throw new HumanAiAssistError("assist.review_required", 403);
       const principal = await deps.identity.authorize(input.authorizationHeader);
       const review = decodeToken(input.reviewToken, deps.reviewSecret, now());
