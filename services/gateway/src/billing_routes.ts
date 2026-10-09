@@ -242,6 +242,14 @@ export function registerBillingRoutes(
     app.get(
       "/v1/commerce/bills/quotes/:quoteId/wallet-status",
       {
+        // A successful read contains a customer's temporary virtual bank
+        // account. Set policy before validation so 200/400/401/404/503 and
+        // automatically generated HEAD responses cannot be cached either.
+        onRequest: async (_request, reply) => {
+          reply.header("Cache-Control", "private, no-store, max-age=0");
+          reply.header("Pragma", "no-cache");
+          reply.header("Expires", "0");
+        },
         schema: {
           params: Type.Object(
             { quoteId: Type.String({ minLength: 1, maxLength: 180 }) },
