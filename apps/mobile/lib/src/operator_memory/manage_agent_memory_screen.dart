@@ -123,7 +123,7 @@ class _ManageAgentMemoryScreenState extends State<ManageAgentMemoryScreen> {
         const Divider(),
         ListTile(
           title: const Text('Saved information'),
-          subtitle: Text(state.entries.isEmpty ? 'No saved items' : ''),
+          subtitle: Text(state.entries.isEmpty ? 'No saved items' : state.entries.length.toString() + ' saved items'),
           trailing: FilledButton.icon(onPressed: (!state.enabled || state.busy) ? null : _remember,
             icon: const Icon(Icons.add), label: const Text('Remember')),
         ),
