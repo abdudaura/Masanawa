@@ -120,6 +120,22 @@ class MobilePushService {
       },
     );
 
+    // Create this user-controllable channel BEFORE the first background FCM
+    // call hint arrives; Android would otherwise silently use a default
+    // low-priority channel and fail to surface an incoming invitation.
+    final android = _notifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android != null) {
+      await android.createNotificationChannel(const AndroidNotificationChannel(
+        'masanawa_private_calls',
+        'Private calls',
+        description: 'Incoming private person-to-person calls',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      ));
+    }
+
     final launch = await _notifications.getNotificationAppLaunchDetails();
     final localPayload = launch?.notificationResponse?.payload;
     if (launch?.didNotificationLaunchApp == true && localPayload != null) {
