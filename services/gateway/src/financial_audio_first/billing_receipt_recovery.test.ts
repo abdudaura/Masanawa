@@ -199,6 +199,19 @@ describe("AF01 billing receipt recovery (UX-A07 / WF-A08)", () => {
     expect(h.providerRequests).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["overlength", "x".repeat(129)],
+    ["control-byte", `bill-\\u0000other`],
+    ["bidi override", `bill-\\u202eother`],
+  ])("rejects %s signed identifiers before durable admission", async (_, invalidReference) => {
+    const h = harness();
+    await expect(h.service.receiveWebhook(webhook({
+      event: "bill.completed",
+      data: { customer_reference: invalidReference },
+    }))).rejects.toMatchObject({ code: "invalid_webhook" });
+    expect(h.admitProviderWebhook).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid webhook signature before database admission", async () => {
     const h = harness();
     await expect(h.service.receiveWebhook({
