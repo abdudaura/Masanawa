@@ -1,6 +1,29 @@
 {
   "schema_version": 1,
-  "active": [],
+  "active": [
+    {
+      "claim_id": "recovery-02-u02-journal-20261009",
+      "owner": "RECOVERY-02",
+      "scope": "U02 continuation #520 approval expiry and concurrent persisted reconciliation; execute real isolated tests and PostgreSQL adapter checks",
+      "paths": [
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "packages/operator-tasks/src/postgres.ts",
+        "packages/operator-tasks/src/postgres.execution.test.ts",
+        "services/gateway/src/operator_tasks/routes.ts",
+        "services/gateway/src/operator_tasks/routes.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 520,
+      "source_head": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "claimed_at": "2026-10-09T10:21:59.304Z",
+      "heartbeat_at": "2026-10-09T10:21:59.304Z",
+      "expires_at": "2026-10-09T10:26:59.304Z",
+      "notes": "No active CAS claims; #520 last updated 2026-10-08T23:59:41Z. Preserve authentic branch lineage; no shared Gateway composer, root router, native, finance, migration or dependency changes."
+    }
+  ],
   "history": [
     {
       "claim_id": "gpt6-f17-alternate-recorder-erasure-20261009",
