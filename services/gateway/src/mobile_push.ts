@@ -80,7 +80,18 @@ function base64Url(value: string | Buffer): string {
 }
 
 function serviceAccount(raw: string): ServiceAccount {
-  const parsed = JSON.parse(raw) as Partial<ServiceAccount>;
+  // The token endpoint is part of the OAuth trust boundary. Never post a
+  // signed service-account JWT to a caller/configuration-supplied origin.
+  let document: unknown;
+  try {
+    document = JSON.parse(raw) as unknown;
+  } catch {
+    throw new TypeError("Invalid Firebase service account");
+  }
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    throw new TypeError("Invalid Firebase service account");
+  }
+  const parsed = document as Partial<ServiceAccount>;
   if (
     typeof parsed.project_id !== "string" ||
     !parsed.project_id ||
@@ -91,14 +102,21 @@ function serviceAccount(raw: string): ServiceAccount {
   ) {
     throw new TypeError("Invalid Firebase service account");
   }
+  const tokenUri =
+    parsed.token_uri === undefined
+      ? "https://oauth2.googleapis.com/token"
+      : parsed.token_uri;
+  // Exact canonical comparison also rejects URLs with credentials, ports,
+  // redirects encoded in the path, queries, fragments and extra whitespace.
+  // This is the standard endpoint in generated Google service-account JSON.
+  if (tokenUri !== "https://oauth2.googleapis.com/token") {
+    throw new TypeError("Invalid Firebase OAuth token URI");
+  }
   return {
     project_id: parsed.project_id,
     client_email: parsed.client_email,
     private_key: parsed.private_key,
-    token_uri:
-      typeof parsed.token_uri === "string" && parsed.token_uri
-        ? parsed.token_uri
-        : "https://oauth2.googleapis.com/token",
+    token_uri: tokenUri,
   };
 }
 
@@ -153,6 +171,8 @@ export function createFcmPushSender(input: {
       try {
         response = await fetchImpl(credentials.token_uri!, {
           method: "POST",
+          // Refuse a cross-origin redirect carrying the signed assertion.
+          redirect: "error",
           signal: AbortSignal.timeout(15_000),
           headers: { "content-type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({
