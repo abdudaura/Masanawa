@@ -7,13 +7,13 @@
 - Latest main inspected: `5e758673ae91082520b21b3153da53791ae2cbf3`.
 - New branch: `work/f11-apk-artifact-qualification-20261009`, directly from that main SHA.
 - Exact only owned paths: `tools/android-apk-gate/qualify-apk.mjs`, `tools/android-apk-gate/qualify-apk.test.mjs`, this handoff.
-- Production helper blob: `a1c5db8186c659590196dbc0ff75037f80e26afa`; committed tests blob: `09bf8d85d3699662a590ce423269c6d098abc6fa`.
-- Pre-handoff source/test checkpoint commits: `d439081b14fb0c06451a4cc43ba2dc46ac786779`, `d4d3b033a38300ce40cacf3880f5e5ac7bf9ce41`, `6cff91b325f0fcc5f1cea1f90472f975e9377e1a`. Current branch SHA/PR link is authoritative for final head.
+- Production helper blob: `3dd987502f80d90193cc89f819e9b936c8d5e481`; committed tests blob: `cd81598010fe46efb5ff0c9bcb12f3a8caf1b431`.
+- Source/test commits (including later Android 24 signature hardening `0738840520e27943e468b53626460e61a44c7011` and `c75b6a3748d7e8ea1eb7ed7636a62acea1018f16`): `d439081b14fb0c06451a4cc43ba2dc46ac786779`, `d4d3b033a38300ce40cacf3880f5e5ac7bf9ce41`, `6cff91b325f0fcc5f1cea1f90472f975e9377e1a`. Current branch SHA/PR link is authoritative for final head.
 - Reviewed open PRs/paths: F11 draft collision auditor #518 (`scripts/audit-draft-pr-collisions*`), R16 Android private-data #455 (native manifest/network XML plus Vitest), R16 store AAB signing #410, F12 five-tab guard, F09 media, F10/Firebase, final Work #497. None owns these exact paths. This task does not replace or subsume any.
 
 ## Actual deliverable
 
-`qualify-apk.mjs` reads a **built APK**, not source AndroidManifest or Gradle. It calls the Android SDK's `apksigner verify --verbose --print-certs` and `apkanalyzer manifest print` / `manifest min-sdk`, with subprocess time and output caps and no shell. It refuses unknown or missing signer information, extra signers, a debug signer, unsigned/only-v1 APKs, a wrong/empty release certificate pin, malformed manifest or mismatched Android package, a changed minSDK, debuggable builds, unsafe/missing no-backup/cleartext flags, and missing compiled-policy *references*. On acceptance it reports SHA-256 of actual file bytes, not an inferred Git SHA.
+`qualify-apk.mjs` reads a **built APK**, not source AndroidManifest or Gradle. It calls the Android SDK's `apksigner verify --verbose --print-certs` and `apkanalyzer manifest print` / `manifest min-sdk`, with subprocess time and output caps and no shell. It refuses unknown or missing signer information, extra signers, a debug signer, unsigned/only-v1 or v3-only APKs (APK v2 is required for minSdk 24), a wrong/empty release certificate pin, malformed manifest or mismatched Android package, a changed minSDK, debuggable builds, unsafe/missing no-backup/cleartext flags, and missing compiled-policy *references*. On acceptance it reports SHA-256 of actual file bytes, not an inferred Git SHA.
 
 This is **not** an APK builder or a distributor. It deliberately requires the approved release signing certificate SHA-256 from the operator; no real fingerprint or signing secrets are stored in source. It will correctly reject debug-signed local APKs created for alpha testing.
 
@@ -29,7 +29,7 @@ Run on a machine with Android SDK `apksigner` and `apkanalyzer` executables in P
 ## Evidence — executed versus absent
 
 - Local available Node `v22.16.0`: `node --check` on production module and equivalent adversarial test harness passed.
-- Local production file SHA-1 Git blob hash **matches the actual connector readback committed blob** `a1c5db8186c659590196dbc0ff75037f80e26afa`. A two-line tagged-template regexp-escaping correction was made, copied into that local file, then its smoke tests were rerun.
+- Local production file SHA-1 Git blob hash **matches the actual connector readback committed blob** `3dd987502f80d90193cc89f819e9b936c8d5e481`. A tagged-template regexp-escaping correction and an Android API 24 v2-signature compatibility correction were copied into that local file, then its smoke tests (including v3-only rejection) were rerun.
 - `node --test` against **that exact production blob** and the locally authored (longer, equivalent) adversarial fixture harness: **8 passed, 0 failed**. It checks manifest, signer, multiple negative cases, tool dispatch, artifact hashing, file/tool absence and strict options. The compact `qualify-apk.test.mjs` included in this PR is separately written and read back from GitHub; **its exact committed test blob was not run in this container**, due to the connector-only private repository and blocked DNS clone.
 - Local CLI `--help` returned correct usage; no-file invocation returned exit code **1** with `apk_file_unavailable`.
 - `apksigner`, `apkanalyzer`, Flutter and pnpm are unavailable here; `git ls-remote` could not resolve github.com. **No true APK, app compile, Android build, AAB, device, Firebase integration, provider, user journey, full Gateway suites or CI run was executed.** No GitHub Actions retries were attempted given known Actions capacity issue #457.
