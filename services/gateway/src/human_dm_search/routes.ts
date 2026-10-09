@@ -19,7 +19,7 @@ export function registerHumanDmSearchRoutes(
     reply.header("X-Content-Type-Options", "nosniff");
     try {
       return await service.search({
-        authorizationHeader: request.headers.authorization,
+        ...(request.headers.authorization ? {authorizationHeader: request.headers.authorization} : {}),
         ...(request.query as {text:string;conversationId?:string;after?:string;limit?:number}),
       });
     } catch (error) {
