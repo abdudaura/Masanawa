@@ -1,26 +1,6 @@
 {
   "schema_version": 1,
-  "active": [
-    {
-      "claim_id": "RECOVERY-01-u06-teaching-20261009",
-      "owner": "RECOVERY-01",
-      "scope": "U06 existing teaching continuity: initial checkpoint and strict DTO recovery",
-      "paths": [
-        "packages/skills/src/teaching_extensions/lesson_continuity.ts",
-        "packages/skills/src/teaching_extensions/lesson_continuity.test.ts",
-        "services/gateway/src/operator_learning/routes.ts",
-        "services/gateway/src/operator_learning/routes.test.ts",
-        "docs/workstreams/recovery-01-u06-teaching-20261009.md"
-      ],
-      "branch": "work/recovery-01-u06-teaching-20261009",
-      "base_sha": "da324917d6387f1107348d43306294e589ca2d48",
-      "pr": "https://github.com/Baatiku/masanawa/pull/525",
-      "claimed_at": "2026-10-09T09:22:35.129Z",
-      "heartbeat_at": "2026-10-09T09:27:03.910Z",
-      "expires_at": "2026-10-09T09:32:03.910Z",
-      "notes": "Original #525 source preserved; #497 bb73b528 current inspected. No composer/router/migration/financial/native/manifest/CI changes. Next reproduce Vitest and strict TS, fix first action + DTO, publish immutable handoff. Tested source a0ba3c22c1f86336d0d2e46703c230ae1d372c65, 14 focused Vitest pass and strict typing pass."
-    }
-  ],
+  "active": [],
   "history": [
     {
       "claim_id": "gpt6-f17-alternate-recorder-erasure-20261009",
@@ -336,6 +316,27 @@
       "notes": "Base latest #497 Work, preserve existing C09 PR #575. C09 approved user; isolated claimed shared app/main/flutter only; no prod deploy/merge while unverified.",
       "released_at": "2026-10-09T09:39:43.551Z",
       "release_reason": "Stacked Work #497 C09 integration pushed to draft PR #578 HEAD fc5ce19e937cb0f016e2cc14562f78c738f4e0c0; 34 claimed paths, 17/17 GitHub static readbacks, 9/9 SHA-matched isolated mock runtime; GH Actions zero-step failures. No Flutter/DB/LiveKit/device/FCM E2E, no APK, unmerged/feature-off."
+    },
+    {
+      "claim_id": "RECOVERY-01-u06-teaching-20261009",
+      "owner": "RECOVERY-01",
+      "scope": "U06 existing teaching continuity: initial checkpoint and strict DTO recovery",
+      "paths": [
+        "packages/skills/src/teaching_extensions/lesson_continuity.ts",
+        "packages/skills/src/teaching_extensions/lesson_continuity.test.ts",
+        "services/gateway/src/operator_learning/routes.ts",
+        "services/gateway/src/operator_learning/routes.test.ts",
+        "docs/workstreams/recovery-01-u06-teaching-20261009.md"
+      ],
+      "branch": "work/recovery-01-u06-teaching-20261009",
+      "base_sha": "da324917d6387f1107348d43306294e589ca2d48",
+      "pr": "https://github.com/Baatiku/masanawa/pull/579",
+      "claimed_at": "2026-10-09T09:22:35.129Z",
+      "heartbeat_at": "2026-10-09T09:27:03.910Z",
+      "expires_at": "2026-10-09T09:32:03.910Z",
+      "notes": "Original #525 source preserved; #497 bb73b528 current inspected. No composer/router/migration/financial/native/manifest/CI changes. Next reproduce Vitest and strict TS, fix first action + DTO, publish immutable handoff. Tested source a0ba3c22c1f86336d0d2e46703c230ae1d372c65, 14 focused Vitest pass and strict typing pass.",
+      "released_at": "2026-10-09T10:20:54.814Z",
+      "release_reason": "Four owned source/test files repaired, 14 focused Vitest/Fastify and strict TS PASS; byte-for-byte committed source readback verified; draft #579 final immutable SHA aee7d368a660d74c10184cb7bb00febb0652551e; U06 integration/model/DB/Flutter/device remain pending. Transfer to sole #497 integrator."
     }
   ]
 }
