@@ -76,6 +76,75 @@ describe("C02 SQL authorization and transactional safety",()=>{
       conversationId:cid,throughSequence:"3"})).rejects.toThrow("db down");
     expect(h.calls).toHaveLength(1);
   });
+  it("edits only with same-statement sender, tenant, active-member and C01 safety grants",async()=>{
+    const h=harness(sql=>sql.includes("UPDATE talks.human_dm_messages m")?
+      [{conversation_id:cid,message_id:cid,sequence:"9",sender_user_id:"user_a",
+        client_request_id:"request_0123456789",body:"corrected",created_at:"2026-10-08T10:00:00Z",
+        edited_at:"2026-10-08T10:01:00Z",deleted_at:null}]:[]);
+    const result=await h.repo.edit({tenantId:"tenant_a",userId:"user_a",messageId:cid,body:"corrected"});
+    expect(result?.body).toBe("corrected");
+    expect(h.calls).toHaveLength(1);
+    expect(h.lifecycle).toEqual([]);
+    const {sql,values}=h.calls[0]!;
+    expect(sql).toContain("UPDATE talks.human_dm_messages m");
+    expect(sql).toContain("FROM talks.human_dm_conversations c");
+    expect(sql).toContain("m.tenant_id=$1 AND m.message_id=$3 AND m.sender_user_id=$2");
+    expect(sql).toContain("c.tenant_id=m.tenant_id AND c.conversation_id=m.conversation_id");
+    expect(sql).toContain("$2 IN (c.first_user_id,c.second_user_id)");
+    expect(sql).toContain("a.state='active'");
+    expect(sql).toContain("b.state='active'");
+    expect(sql).toContain("revoked.status='declined'");
+    expect(sql).toContain("sp.blocked=true");
+    expect(sql).toContain("se.visibility IN ('restricted','blocked')");
+    expect(sql).toContain("m.created_at>clock_timestamp()-interval '15 minutes'");
+    expect(values).toEqual(["tenant_a","user_a",cid,"corrected"]);
+  });
+  it("refuses unauthorized edit with no preliminary grant or mutation fallback",async()=>{
+    const h=harness(()=>[]);
+    expect(await h.repo.edit({tenantId:"tenant_a",userId:"outsider",messageId:cid,body:"bad"})).toBeNull();
+    expect(h.calls).toHaveLength(1);
+    expect(h.calls[0]!.sql).toContain("UPDATE talks.human_dm_messages m");
+    expect(h.calls[0]!.sql).toContain("$2 IN (c.first_user_id,c.second_user_id)");
+    expect(h.calls[0]!.sql).toContain("talks.safety_enforcement");
+  });
+  it("tombstones with same-statement authorization; repeat-delete lookup remains guarded",async()=>{
+    const now="2026-10-08T10:00:00Z";
+    const tombstone={conversation_id:cid,message_id:cid,sequence:"9",sender_user_id:"user_a",
+      client_request_id:"request_0123456789",body:null,created_at:now,edited_at:null,deleted_at:now};
+    const h=harness(sql=>sql.includes("UPDATE talks.human_dm_messages m")?[tombstone]:[]);
+    const deleted=await h.repo.remove({tenantId:"tenant_a",userId:"user_a",messageId:cid});
+    expect(deleted?.deletedAt).toBe(now.replace("Z",".000Z"));
+    expect(deleted?.body).toBeNull();
+    expect(h.calls).toHaveLength(1);
+    const {sql,values}=h.calls[0]!;
+    expect(sql).toContain("UPDATE talks.human_dm_messages m");
+    expect(sql).toContain("FROM talks.human_dm_conversations c");
+    expect(sql).toContain("$2 IN (c.first_user_id,c.second_user_id)");
+    expect(sql).toContain("revoked.status='declined'");
+    expect(sql).toContain("sp.blocked=true");
+    expect(sql).toContain("m.deleted_at IS NULL");
+    expect(values).toEqual(["tenant_a","user_a",cid]);
+
+    const retry=harness(sql=>sql.includes("m.deleted_at IS NOT NULL")?[tombstone]:[]);
+    expect((await retry.repo.remove({tenantId:"tenant_a",userId:"user_a",messageId:cid}))?.body).toBeNull();
+    expect(retry.calls).toHaveLength(2);
+    expect(retry.calls[1]!.sql).toContain("JOIN talks.human_dm_conversations c");
+    expect(retry.calls[1]!.sql).toContain("sp.blocked=true");
+    expect(retry.calls[1]!.sql).toContain("a.state='active'");
+  });
+  it("hides unauthorized or erroring delete rather than revealing a prior tombstone",async()=>{
+    const h=harness(()=>[]);
+    expect(await h.repo.remove({tenantId:"tenant_a",userId:"blocked",messageId:cid})).toBeNull();
+    expect(h.calls).toHaveLength(2);
+    for(const call of h.calls){
+      expect(call.sql).toContain("$2 IN (c.first_user_id,c.second_user_id)");
+      expect(call.sql).toContain("talks.safety_preferences");
+      expect(call.values).toEqual(["tenant_a","blocked",cid]);
+    }
+    const failing=harness(sql=>{if(sql.includes("UPDATE talks.human_dm_messages m"))throw new Error("db down");return[];});
+    await expect(failing.repo.remove({tenantId:"tenant_a",userId:"user_a",messageId:cid})).rejects.toThrow("db down");
+    expect(failing.calls).toHaveLength(1);
+  });
   it("rolls back and releases the client on SQL failure",async()=>{
     const h=harness(sql=>{if(sql.includes("SELECT user_id FROM identity.users"))throw new Error("db down");return[];});
     await expect(h.repo.open({tenantId:"tenant_a",userId:"user_a",otherUserId:"user_b"})).rejects.toThrow("db down");
