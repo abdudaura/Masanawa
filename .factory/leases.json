@@ -18,22 +18,6 @@
       "claimed_at": "2026-10-09T09:03:36.239Z",
       "heartbeat_at": "2026-10-09T09:03:36.239Z",
       "expires_at": "2026-10-09T09:08:36.239Z"
-    },
-    {
-      "claim_id": "gpt6-c09-terminal-only-unbounded-revoke-20261009",
-      "owner": "GPT-6 C09 signal bounded delivery continuation",
-      "scope": "Never abandon terminal LiveKit revoke but cap nonterminal notification retries",
-      "paths": [
-        "services/gateway/src/human_calls/signal_worker.ts",
-        "services/gateway/src/human_calls/signal_worker.test.ts",
-        "docs/workstreams/c09-private-calls-20261009.md"
-      ],
-      "branch": "work/c09-private-calls-20261009-gpt6",
-      "pr": "https://github.com/Baatiku/masanawa/pull/575",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "claimed_at": "2026-10-09T09:04:15.640Z",
-      "heartbeat_at": "2026-10-09T09:04:15.640Z",
-      "expires_at": "2026-10-09T09:09:15.640Z"
     }
   ],
   "history": [
@@ -283,6 +267,24 @@
       "notes": "Added only owned C09 concrete Twirp DeleteRoom implementation and composer adapter to provide real media shutdown without new dependency; no external provider request or production change.",
       "released_at": "2026-10-09T09:03:40.043Z",
       "release_reason": "Pushed six exact-path C09 changes and SHA-specific handoff to draft PR #575 HEAD e58efa5cd3519f5c9fe76fe74e2863ed09241117; Node simulated runtime 4/4 revoker and 5/5 worker PASS; real Postgres/LiveKit/Flutter/Android/FCM NOT RUN; C09 remains partial."
+    },
+    {
+      "claim_id": "gpt6-c09-terminal-only-unbounded-revoke-20261009",
+      "owner": "GPT-6 C09 signal bounded delivery continuation",
+      "scope": "Never abandon terminal LiveKit revoke but cap nonterminal notification retries",
+      "paths": [
+        "services/gateway/src/human_calls/signal_worker.ts",
+        "services/gateway/src/human_calls/signal_worker.test.ts",
+        "docs/workstreams/c09-private-calls-20261009.md"
+      ],
+      "branch": "work/c09-private-calls-20261009-gpt6",
+      "pr": "https://github.com/Baatiku/masanawa/pull/575",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "claimed_at": "2026-10-09T09:04:15.640Z",
+      "heartbeat_at": "2026-10-09T09:04:15.640Z",
+      "expires_at": "2026-10-09T09:09:15.640Z",
+      "released_at": "2026-10-09T09:05:35.184Z",
+      "release_reason": "Pushed terminal-only C09 retry limit and handoff HEAD 5f36f9fc68630726cac82c23202dac811797f8a3; exact blob Node fake-SQL tests 5/5; C09 remains PARTIAL and unmerged."
     }
   ]
 }
