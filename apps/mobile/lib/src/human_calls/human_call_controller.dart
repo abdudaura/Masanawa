@@ -42,13 +42,13 @@ class HumanCallController extends ChangeNotifier {
   bool get isIncoming => call?.calleeUserId==currentUserId;
   bool get terminal => call?.terminal ?? false;
   void _notify() { if(!_disposed) notifyListeners(); }
-  Future<void> _endOrphanedCall(HumanCall late) async {
+  Future<void> _endOrphanedCall(HumanCall orphaned) async {
     // A server dial/answer may finish AFTER logout, Back or widget disposal.
     // Do not leave its invitation/active room running invisibly when we
     // receive the definitive call ID. If auth switched, safe lease expiry
     // and worker room revocation remain authoritative.
-    if(late.terminal)return;
-    try { await transport.act(late.callId,'end'); } catch (_) {}
+    if(orphaned.terminal)return;
+    try { await transport.act(orphaned.callId,'end'); } catch (_) {}
   }
   bool _current(int token)=>active && token==_generation;
 
