@@ -72,18 +72,28 @@ class GatewayHumanVoiceTransport implements HumanVoiceTransport {
     );
     final stream=response.data;
     if(stream==null)throw const FormatException('Empty private voice response');
+    // A StreamIterator need not subscribe until its first moveNext(). On bad
+    // headers, explicitly subscribe then cancel to close the upstream HTTP
+    // response without waiting for any attacker-controlled body bytes.
+    Future<void> cancelUnread() async {
+      final subscription=stream.stream.listen((_) {});
+      await subscription.cancel();
+    }
+    final type=response.headers.value(Headers.contentTypeHeader)
+        ?.split(';').first.trim().toLowerCase();
+    if(type!='audio/ogg') {
+      await cancelUnread();
+      throw const FormatException('Invalid private voice content type');
+    }
+    final rawLength=response.headers.value(Headers.contentLengthHeader);
+    final claimedLength=rawLength==null?null:int.tryParse(rawLength);
+    if(rawLength!=null&&(claimedLength==null||
+        claimedLength<84||claimedLength>1536*1024)) {
+      await cancelUnread();
+      throw const FormatException('Invalid private voice content length');
+    }
     final iterator=StreamIterator<Uint8List>(stream.stream);
     try {
-      final type=response.headers.value(Headers.contentTypeHeader)
-          ?.split(';').first.trim().toLowerCase();
-      if(type!='audio/ogg')
-        throw const FormatException('Invalid private voice content type');
-      final rawLength=response.headers.value(Headers.contentLengthHeader);
-      final claimedLength=rawLength==null?null:int.tryParse(rawLength);
-      if(rawLength!=null&&(claimedLength==null||
-          claimedLength<84||claimedLength>1536*1024))
-        throw const FormatException('Invalid private voice content length');
-
       final builder=BytesBuilder(copy:true);
       var received=0;
       while(await iterator.moveNext()) {
