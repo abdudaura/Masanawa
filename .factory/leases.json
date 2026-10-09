@@ -18,8 +18,8 @@
       "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
       "pr": "https://github.com/Baatiku/masanawa/pull/575",
       "claimed_at": "2026-10-09T08:55:59.820Z",
-      "heartbeat_at": "2026-10-09T08:58:06.944Z",
-      "expires_at": "2026-10-09T09:03:06.944Z",
+      "heartbeat_at": "2026-10-09T09:00:50.664Z",
+      "expires_at": "2026-10-09T09:05:50.664Z",
       "notes": "Added only owned C09 concrete Twirp DeleteRoom implementation and composer adapter to provide real media shutdown without new dependency; no external provider request or production change."
     }
   ],
