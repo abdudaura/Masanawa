@@ -26,8 +26,12 @@ class DirectoryFake implements AgentDirectoryTransport {
     entry('character-gwana', 'Gwana'),
   ];
   bool failSwitch = false;
+  bool failLoad = false;
   @override
-  Future<List<AgentDirectoryEntry>> loadDirectory() async => entries;
+  Future<List<AgentDirectoryEntry>> loadDirectory() async {
+    if (failLoad) throw StateError('offline');
+    return entries;
+  }
   @override
   Future<void> setDefaultPlatformAgent(String id) async {
     if (failSwitch) throw StateError('server rejected');
@@ -182,6 +186,11 @@ void main() {
     final c = controller(d, AgentsFake(), s, JournalFake());
     await c.load();
     expect(c.history, hasLength(1));
+    d.failLoad = true;
+    await c.refreshHistory();
+    expect(c.history, hasLength(1)); // Transport failure is not revocation.
+    expect(c.ready, true);
+    d.failLoad = false;
     d.entries = [entry('character-gwani', 'Gwani', preferred: true)];
     await c.refreshHistory();
     expect(c.history, isEmpty);
