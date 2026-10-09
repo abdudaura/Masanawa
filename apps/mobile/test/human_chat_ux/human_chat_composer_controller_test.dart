@@ -28,7 +28,9 @@ class MemoryDrafts implements HumanChatDraftStore {
     data[key(scope)] = value;
   }
   @override
-  Future<void> remove(HumanChatScope scope) async => data.remove(key(scope));
+  Future<void> remove(HumanChatScope scope) async {
+    data.remove(key(scope));
+  }
   @override
   Future<void> clearAccount(String tenantId, String userId) async {
     data.removeWhere((k, _) => k.startsWith('$tenantId:$userId:'));
@@ -197,7 +199,9 @@ void main() {
       throwsFormatException,
     );
     expect(
-      () => HumanChatDraft.fromJson({'text': 'x' * 4001}),
+      () => HumanChatDraft.fromJson({
+        'text': List<String>.filled(4001, 'x').join(),
+      }),
       throwsFormatException,
     );
   });
