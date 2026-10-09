@@ -24,6 +24,30 @@
       "heartbeat_at": "2026-10-09T10:28:33.409Z",
       "expires_at": "2026-10-09T10:33:33.409Z",
       "notes": "No active CAS claims; #520 last updated 2026-10-08T23:59:41Z. Preserve authentic branch lineage; no shared Gateway composer, root router, native, finance, migration or dependency changes."
+    },
+    {
+      "claim_id": "recovery-03-u05-memory-20261009",
+      "owner": "RECOVERY-03",
+      "scope": "U05 #522 actual backend tests/typing, consent-revocation read fence, strict HTTP authority boundary and expiry validation",
+      "paths": [
+        "services/gateway/src/operator_memory/service.ts",
+        "services/gateway/src/operator_memory/service.test.ts",
+        "services/gateway/src/operator_memory/routes.ts",
+        "services/gateway/src/operator_memory/routes.test.ts",
+        "services/gateway/src/operator_memory/agent_context.ts",
+        "services/gateway/src/operator_memory/agent_context.test.ts",
+        "services/gateway/src/operator_memory/consent_postgres.ts",
+        "services/gateway/src/operator_memory/consent_postgres.test.ts",
+        "docs/workstreams/recovery-03-u05-memory-20261009.md"
+      ],
+      "branch": "work/u05-opt-in-agent-memory-20261009-gpt6",
+      "base_sha": "4d21a3e16a4165a71e432255425194b37f971583",
+      "source_pr": 522,
+      "source_head": "4d21a3e16a4165a71e432255425194b37f971583",
+      "claimed_at": "2026-10-09T10:31:51.352Z",
+      "heartbeat_at": "2026-10-09T10:31:51.352Z",
+      "expires_at": "2026-10-09T10:36:51.352Z",
+      "notes": "No overlap with active U02. Preserve original #522. No SQL/migration/composer/router/Firebase/native/financial/manifests/CI edits. Next run original tests, reproduce races and fix."
     }
   ],
   "history": [
