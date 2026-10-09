@@ -92,7 +92,7 @@ class _HumanContactsScreenState extends ConsumerState<HumanContactsScreen> {
               _MessageBanner(
                 text: value.error!,
                 icon: Icons.error_outline,
-                onRetry: value.loading ? actions.refresh : null,
+                onRetry: value.loading || value.busy ? null : actions.refresh,
               ),
             ],
             if (value.notice != null) ...[
