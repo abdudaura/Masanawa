@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import type { HumanCall,HumanCallMediaIssuer,CallCredentials } from "./service.js";
 
 export interface HumanCallRoomRevoker {
@@ -38,7 +38,7 @@ export function createHumanCallMediaIssuer(input: {
       const room=name(call.callId);
       // Do not put phone numbers, person names, private DM content, tenant IDs,
       // raw auth tokens, or financial identifiers in LiveKit room metadata.
-      const identity=base64(userId).slice(0,100);
+      const identity=createHash("sha256").update(userId).digest("hex");
       const grant={
         roomJoin:true,room,
         canPublish:true,canSubscribe:true,canPublishData:false,
