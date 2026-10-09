@@ -1,6 +1,22 @@
 import {describe,expect,it} from "vitest";
 import {pruneHumanDmJournal,verifyHumanDmRetentionTarget} from "./retention.js";
 
+// All mutation-success test doubles must exercise the same one-use preflight
+// as the CLI. The mock only proves orchestration, never real PostgreSQL safety.
+async function preflightedPool(tenantId:string,mutationQuery:(sql:string,values?:unknown[])=>Promise<{
+  rows:Record<string,unknown>[];rowCount:number|null;
+}>) {
+  const pool={async query(sql:string,values?:unknown[]){
+    if(sql.includes("current_database()")) return {rows:[{
+      database_name:"masanawa_test",database_role:"maintenance_role",
+      tenant_exists:true,can_trim:true,
+    }],rowCount:1};
+    return mutationQuery(sql,values);
+  }};
+  await verifyHumanDmRetentionTarget({pool,tenantId,expectedDatabase:"masanawa_test"});
+  return pool;
+}
+
 describe("C03 bounded private-message retention operator",()=>{
   it("preflights actual database, selected tenant and invoker permission",async()=>{
     const sql: string[]=[];
@@ -56,12 +72,12 @@ describe("C03 bounded private-message retention operator",()=>{
   });
   it("binds tenant/age and never uses a client-controlled SQL fragment",async()=>{
     const requests:unknown[][]=[];
-    const pool={async query(sql:string,values?:readonly unknown[]){
+    const pool=await preflightedPool("tenant; DROP",async (sql,values)=>{
       expect(sql).toContain("talks.trim_human_dm_events");
       expect(sql).not.toContain("tenant; DROP");
       requests.push([...(values??[])]);
       return {rows:[{deleted:"4"}],rowCount:1};
-    }};
+    });
     const result=await pruneHumanDmJournal({
       pool,tenantId:"tenant; DROP",retentionDays:30,batchSize:50,
     });
@@ -70,11 +86,11 @@ describe("C03 bounded private-message retention operator",()=>{
   });
   it("propagates database failure and never advances extra batches",async()=>{
     let calls=0;
-    const pool={async query(){
+    const pool=await preflightedPool("tenant_a",async()=>{
       calls++;
       if(calls===2)throw new Error("test transaction unavailable");
       return {rows:[{deleted:2}],rowCount:1};
-    }};
+    });
     await expect(pruneHumanDmJournal({
       pool,tenantId:"tenant_a",batchSize:2,maxBatches:4,
     })).rejects.toThrow("test transaction unavailable");
@@ -82,9 +98,9 @@ describe("C03 bounded private-message retention operator",()=>{
   });
   it("rejects NULL, absent and nondecimal database replies instead of logging zero",async()=>{
     for(const raw of [null,undefined,"",true,"01",1.5,-1,1001,"0.0"]) {
-      const pool={async query(){return {
+      const pool=await preflightedPool("tenant_a",async()=>({
         rows:[{deleted:raw}],rowCount:1,
-      };}};
+      }));
       await expect(pruneHumanDmJournal({
         pool,tenantId:"tenant_a",batchSize:1000,
       })).rejects.toThrow("Invalid C03 prune result");
@@ -92,17 +108,53 @@ describe("C03 bounded private-message retention operator",()=>{
   });
   it("caps runtime and reports possible remaining journal rows",async()=>{
     let calls=0;
+    const pool=await preflightedPool("t",async()=>{
+      calls++;return {rows:[{deleted:2}],rowCount:1};
+    });
     const result=await pruneHumanDmJournal({
-      pool:{async query(){calls++;return {rows:[{deleted:2}],rowCount:1};}},
+      pool,
       tenantId:"t",batchSize:2,maxBatches:3,
     });
     expect(calls).toBe(3);
     expect(result).toEqual({deleted:6,batches:3,possiblyMore:true});
   });
+  it("rejects pruning before a target preflight without contacting the database",async()=>{
+    let calls=0;
+    const pool={async query(){calls++;return {rows:[{deleted:0}],rowCount:1};}};
+    await expect(pruneHumanDmJournal({pool,tenantId:"t"}))
+      .rejects.toThrow("fresh matching target preflight");
+    expect(calls).toBe(0);
+  });
+  it("consumes one preflight, refuses replay and mismatched tenant",async()=>{
+    let mutations=0;
+    const pool=await preflightedPool("tenant_a",async()=>{
+      mutations++;return {rows:[{deleted:0}],rowCount:1};
+    });
+    await expect(pruneHumanDmJournal({pool,tenantId:"tenant_b"}))
+      .rejects.toThrow("fresh matching target preflight");
+    await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
+      .rejects.toThrow("fresh matching target preflight");
+    expect(mutations).toBe(0);
+    await verifyHumanDmRetentionTarget({pool,tenantId:"tenant_a",expectedDatabase:"masanawa_test"});
+    await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
+      .resolves.toEqual({deleted:0,batches:1,possiblyMore:false});
+    await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
+      .rejects.toThrow("fresh matching target preflight");
+    expect(mutations).toBe(1);
+  });
+  it("invalidates previous authorization before a failed recheck",async()=>{
+    const pool=await preflightedPool("tenant_a",async()=>({rows:[{deleted:1}],rowCount:1}));
+    await expect(verifyHumanDmRetentionTarget({
+      pool,tenantId:"tenant_a",expectedDatabase:"wrong_database",
+    })).rejects.toThrow("preflight failed");
+    await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
+      .rejects.toThrow("fresh matching target preflight");
+  });
   it("rejects fabricated/over-limit database counts",async()=>{
-    await expect(pruneHumanDmJournal({
-      pool:{async query(){return {rows:[{deleted:"NaN"}],rowCount:1};}},
-      tenantId:"t",
-    })).rejects.toThrow("Invalid C03 prune result");
+    const pool=await preflightedPool("t",async()=>({
+      rows:[{deleted:"NaN"}],rowCount:1,
+    }));
+    await expect(pruneHumanDmJournal({pool,tenantId:"t"}))
+      .rejects.toThrow("Invalid C03 prune result");
   });
 });
