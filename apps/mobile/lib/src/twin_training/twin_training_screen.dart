@@ -127,12 +127,8 @@ class _TwinTrainingScreenState extends State<TwinTrainingScreen> {
               ] else ...[
                 Text(flow.question, style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 14),
-                if (saved?.profile case final profile?) ...[
-                  _SavedLine('Name', profile.displayName ?? 'Not yet set'),
-                  _SavedLine('Languages', profile.languages.join(', ')),
-                  _SavedLine('Experience', profile.biography),
-                  _SavedLine('Expertise', profile.expertise.join(', ')),
-                  _SavedLine('Style', profile.personality.join(', ')),
+                if (saved?.profile != null) ...[
+                  _SavedProfile(saved!.profile!),
                   const SizedBox(height: 14),
                 ],
                 if (flow.step.index <= TwinInterviewStep.style.index) ...[
@@ -197,8 +193,7 @@ class _TwinTrainingScreenState extends State<TwinTrainingScreen> {
                 ],
                 if (flow.step == TwinInterviewStep.recover)
                   FilledButton(
-                    onPressed: flow.busy || !flow.consentToRepresentSelf
-                        ? null : flow.confirmCreation,
+                    onPressed: flow.busy ? null : flow.confirmCreation,
                     child: const Text('Recover confirmed setup'),
                   ),
                 if (flow.ready) ...[
@@ -243,5 +238,22 @@ class _SavedLine extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Text('$label: $value'),
+  );
+}
+
+class _SavedProfile extends StatelessWidget {
+  const _SavedProfile(this.profile);
+  final dynamic profile;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _SavedLine('Name', profile.displayName ?? 'Not yet set'),
+      _SavedLine('Languages', profile.languages.join(', ')),
+      _SavedLine('Experience', profile.biography),
+      _SavedLine('Expertise', profile.expertise.join(', ')),
+      _SavedLine('Style', profile.personality.join(', ')),
+    ],
   );
 }
