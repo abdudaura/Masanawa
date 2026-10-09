@@ -67,6 +67,22 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
+    },
+    {
+      "claim_id": "masanawa-01-af15-durable-media-cleanup-20261009",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "AF15 canonical worker media cleanup candidate safety, fence validation, idempotent object deletion and result checkpoint (isolated module, no startup or migration edits)",
+      "paths": [
+        "services/worker/src/durable_operations/media_cleanup.ts",
+        "services/worker/src/durable_operations/media_cleanup.test.ts",
+        "docs/workstreams/AF15-media-cleanup-20261009.md"
+      ],
+      "branch": "work/af15-media-cleanup-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:57:33.448Z",
+      "heartbeat_at": "2026-10-09T21:57:33.448Z",
+      "expires_at": "2026-10-09T22:02:33.448Z",
+      "notes": "AF15 wave-one bounded path. Existing root worker composition remains AF00. Reuse existing data authorities; do not create a second ledger, migrations, object signer or production job."
     }
   ],
   "history": [
