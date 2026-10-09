@@ -50,3 +50,14 @@ test('real proof requires verified checksum AND review remains necessary',async(
   assert.ok((await verifyProofs([traversal],dir)).errors.length);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+test('malformed proof object is rejected without exceptions',()=>{
+ const real=rec({result:'PASS_REAL',environment:{mode:'real',databaseRef:'db',providerRef:'provider'},boundaries:mat.journeys[0].boundaries,proofs:'malformed',review:{reviewer:'QA',reference:'QA-1234'}});
+ assert.doesNotThrow(()=>checkRecord(real,mat.journeys[0],sha));
+ assert.ok(checkRecord(real,mat.journeys[0],sha).length>0);
+});
+test('device evidence needs a hashed APK proof, not just a user supplied APK string',()=>{
+ const device={id:'UX-A05',boundaries:['device'],tier:'release'};
+ const clip=rec({journeyId:'UX-A05',result:'PASS_REAL',environment:{mode:'real',physicalDevice:true,deviceOS:'Android 12'},apkSha256:'a'.repeat(64),boundaries:['device'],proofs:[{path:'run.log',sha256:'b'.repeat(64)}],review:{reviewer:'QA',reference:'QA-1234'}});
+ assert.ok(checkRecord(clip,device,sha).some(x=>x.includes('APK')));
+});
