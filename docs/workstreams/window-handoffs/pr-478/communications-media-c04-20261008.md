@@ -1,0 +1,110 @@
+# C04 — Secure private voice-note transport (lease)
+
+- Window: GPT-6 independent C04 implementation, 2026-10-08 around 12:00 Africa/Lagos.
+- Branch: `work/c04-private-voice-notes-20261008`, base current `main` SHA `5d19afc952b3dcabd18ee8f8d1c3ad13b72e6762`.
+- Work item: C04 / M03, M04, M10, J04/J11. Authenticated person-to-person **voice note** media (not LiveKit Talk/audio call).
+- Owned exact paths: `services/gateway/src/human_media/**`, `packages/talks/migrations/0018_human_dm_media.sql`, `apps/mobile/lib/src/human_media/**`, `apps/mobile/test/human_media_*.dart`, `docs/contracts/HUMAN-DM-MEDIA-C04.md`, this claim.
+- Excluded from claim: shared Gateway app.ts/main.ts, Flutter root/router, existing media/store helpers, C01 contacts, C02 human_messages/**, C03 events, C05 cache, financial provider/ledger, existing migration 0016 or 0017. Another owner must coordinate additive composition without losing C01/R18 changes. Verify exact C02 message schema/API before FK integration.
+- Source scope: bounded voice upload, real canonical session + participant checks, content validation/secure object storage, read access recheck after block/revoke, retry/delete and app recorder/preview/playback with typed transport/tests. No false E2EE or delivered/read claims.
+- Status: CLAIMED; SOURCE_WRITTEN=no, LOCAL_TESTED=no, CI_EXECUTED=no, DB_INTEGRATED=no, APP_INTEGRATED=no, DEVICE_VERIFIED=no, DEPLOYED=no, MERGED=no. Shared Actions #457 prevents cloud execution; local shell cannot access private GitHub clone.
+- Five-minute repository-visible lease; claim expires without new branch activity. Preserve other owners' work.
+
+## Implementation checkpoint and ChatGPT Work handoff — 2026-10-08
+
+- Source checkpoint: `361b7654eae1406643e5fabde51321d650043c5f`; later handoff commit/PR head supersedes this checkpoint.
+- Source-written paths: SQL migration `0018_human_dm_media.sql`; Gateway `human_media/{model,ogg_opus,private_s3,postgres_repository,service,routes,composition}.ts`; Flutter `human_media/{human_voice_models,human_voice_transport,human_voice_controller,human_voice_controls}.dart`; three real Gateway test suites plus Ogg fixture/HTTP/real Postgres, two Flutter test files; `docs/contracts/HUMAN-DM-MEDIA-C04.md`.
+- Actual states: **PARTIAL_IMPLEMENTATION**, SOURCE_WRITTEN=yes (bounded C04 code), LOCAL_TESTED=no, CI_EXECUTED=no, DB_INTEGRATED=no, APP_INTEGRATED=no, DEPLOYED=no, DEVICE_VERIFIED=no, PROVIDER_QUALIFIED=no, MERGED=no. The current application cannot open/receive C04 voice notes from the shared Flutter human chat shell, and the Gateway has not registered these routes. No executed verification proof exists.
+- Critical C01/C02 dependencies: C01 draft #468 private-contact `0016` and canonical session, C02 contemporaneous `work/c02-durable-human-dm-20261008` message migration `0017` and typed UI. Schema `0018` extends `talks.human_dm_messages`, so cannot migrate C04 in isolation on `main`. C01 and R18 #435 both modify shared `app.ts`/`main.ts`. **Do not overwrite them.**
+- C04 authorization source enforces canonical session user, same-tenant C02 conversation, current active participants, C01 reciprocal blocks, current profile restrictions and explicit decline. The C04 transaction rechecks send consent, atomically binds staged S3 key and message once, stores only opaque internal keys, verifies downloaded sha256 and rechecks read before returning. Private S3 SigV4 signed PUT with SSE, streamed bounded authenticated GET, tombstones and skip-locked delete retries. These claims describe source behavior to verify, **not a tested guarantee**.
+- Mobile controls explicitly record/review/play/send/retry/discard, no automatic mic; retry preserves request ID while screen/process stays alive. **Process death loses unsent local audio/request ID** until C05 protected outbox is integrated. `record` Ogg Opus container/codec support on a target Android device not exercised; iOS media container may be incompatible. Failed media preview, permission denial and logout are authored but unverified.
+- **Known outstanding integration/code boundaries:** shared composer `app.ts`/`main.ts` register C04 only with complete `MASANAWA_DM_VOICE_S3_*` private bucket credentials; scheduled media orphan worker; C02 combined ordered text+voice message-kind projection; shared Flutter C02/C08 human-only chat injection; C03 push/sync; C05 per-account encrypted pending durable outbox; R12 pre-erasure/object cleanup and retention review; real provider bucket policy, virus/format robustness and Android platform verification.
+- **Blocker:** GitHub Actions #457 quota exhaustion caused zero-step jobs. This connector environment has no executable private source workspace, disposable PostgreSQL, Dart/Flutter, actual phone or S3 credentials. Tests are written but absolutely **not executed**. No repeated CI retries.
+- **Work commands and exact verification:** See `docs/contracts/HUMAN-DM-MEDIA-C04.md` for `corepack pnpm install --frozen-lockfile`, Gateway `typecheck`, focused `vitest run services/gateway/src/human_media/{ogg_opus,private_s3,service,routes}.test.ts`, gate real PostgreSQL tests with `MASANAWA_C04_ENABLE_DB_TESTS=yes` and `MASANAWA_C04_TEST_DATABASE_URL` to an isolated localhost `*_test` DB **after C01/C02/C04 schema integration**, `flutter analyze`, `flutter test test/human_media_models_test.dart test/human_media_controls_test.dart`, debug APK, 2 signed-in physical Android user/device media tests and storage policy proof. Fix **actual** compiler/migration/test failures; add S3 down/retry, malformed hostile streams, 401 token rotation and multi-device tests before qualification.
+- **Merge gate:** PR must remain DRAFT / UNMERGED; Work owns CI repair, semantic integration and qualification, not permission to label DONE without executed evidence. Exact entry→action→authoritative message ID→read→revoke/delete→restart/error→return state J04/J11 required.
+- After lease inactivity >5 minutes, another window may reclaim by reviewing this branch/PR first; no force-push or duplicate C04 schema.
+
+## Live overlap collision and draft PR checkpoint (latest review)
+
+- **C04 PR:** [#478](https://github.com/Baatiku/masanawa/pull/478), branch `work/c04-private-voice-notes-20261008`, deliberately DRAFT / UNMERGED.
+- Source also includes post-PR SQL consent/read fix, staged metadata replay guard, and bounded lazy 30-item Flutter voice history load. Latest implementation checkpoint before this handoff: `9b1f28e570239e80da47bc9f7a54de85df2a29e0`.
+- **Two incompatible active C02 drafts:** [#472](https://github.com/Baatiku/masanawa/pull/472) uses `0017_human_dm_core.sql` and `services/gateway/src/human_messages/**`; [#475](https://github.com/Baatiku/masanawa/pull/475) uses `0017_human_dm_text.sql` and `services/gateway/src/human_dm/**`, changes shared app/main, and has a different Flutter transport. This C04 branch explicitly depends on **#472** schema. Work MUST choose/reconcile a single durable human messaging authority *before* C04's `0018`, not run both 0017 variants or import incompatible models. An informational collision warning was posted to PR #475 and PR #478.
+- **Two active C05 drafts:** [#474](https://github.com/Baatiku/masanawa/pull/474) and [#476](https://github.com/Baatiku/masanawa/pull/476); both touch `apps/mobile/pubspec.yaml` and independent cache/outbox models. Require one integrated per-account encryption and crash recovery contract; do not ship duplicate durable message journals.
+- **Other concurrent lane owners:** C03 #473 and C07 #480; C06 custody requires R06/R08 exclusive finance authority; C08 shared shell remains one R17/C08 integration owner. After this live check no unclaimed independent consumer messaging lane can safely be taken without finance/shared-file coordination; leave existing owners' code untouched.
+- The PR HEAD SHA changes with every subsequent claim update. Work should inspect the branch's **live** SHA, not reuse the earlier commit as the final head.
+
+## Reclaimed ownership checkpoint (2026-10-08T11:39:24.041Z)
+
+- Same original C04 PR #478 and branch reused to avoid duplicate implementation; prior lease inactive >5 minutes when inspected. Reclaim owner: this ChatGPT implementation window. Current base main is `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`; existing branch head before reclaim: `0d84328cc1fb7e29ef6e625a0272587a430d8502`. Preserve all original C04 files and C01/C02/C05 parallel branches.
+- Scoped new work: fix C04-owned voice routes/storage replay, private-media runtime composition and tests, prevent media/provisioning leaks, extend exact handoff. No changes to shared Flutter router, Gateway app.ts/main.ts, C02 0017, R18, C03/C05, or financial authority until shared owner coordination.
+- Evidence status remains PARTIAL_IMPLEMENTATION / UNVERIFIED; re-evaluate after source changes, do not report E2E completion merely from pushed code. The PR stays draft.
+
+
+## Reclaimed C04 privacy + cleanup checkpoint — 2026-10-08T11:44:21.817Z
+
+**Window:** GPT-6, reclaimed after original #478 activity was >5 minutes old; reused its exact branch and PR without force pushes or duplicate C04 schemas. **Classification: PARTIAL_IMPLEMENTATION, NOT DONE.**
+**Base main inspected:** `1d6a67ea3c182455b55a7d1d07eacdb4311682e3`; **old C04 head:** `0d84328cc1fb7e29ef6e625a0272587a430d8502`; **last substantive code checkpoint before this handoff:** `e78aa5404cf71931cd03c1b2c0aa190250492ec4`; branch `work/c04-private-voice-notes-20261008`, draft/unmerged [PR #478](https://github.com/Baatiku/masanawa/pull/478). The PR head after this handoff is the authoritative final commit; **no sha claimed as merged**.
+
+**Changed paths from this window (all C04-owned):**
+- `packages/talks/migrations/0018_human_dm_media.sql`: `storage_erased_at` and row-level SQL guard prevent account/conversation cascades from deleting the ONLY reference to an unerased S3 object. Unmerged draft migration only — no applied migration was mutated.
+- `services/gateway/src/human_media/postgres_repository.ts`: after S3 DELETE success, atomically stamp confirmed storage erasure and delete SQL journal; rollback retains retryable key. Failed remote deletion does not acknowledge erasure.
+- `services/gateway/src/human_media/runtime.ts` **new**: fail-closed C04 module installer that composes existing canonical session authorizer/SQL/private S3, authenticated routes, periodic bounded single-flight cleanup and Fastify shutdown hook. No new auth server, public bucket or separate payment authority.
+- `services/gateway/src/human_media/runtime.test.ts` **new**: timer/cleanup concurrency/shutdown/recovery/partial-configuration checks, source-authored but UNEXECUTED.
+- `services/gateway/src/human_media/postgres_integration.test.ts`: disposable DB tests for blocked direct and cascading conversation removal while audio is unerased, plus successful GC acknowledgment/journal purge.
+- `services/gateway/src/human_media/service.test.ts`: failed S3 DELETE preserves failure state, then retry success.
+- `docs/contracts/HUMAN-DM-MEDIA-C04.md`, this handoff: extended erasure and lifecycle operator contract.
+
+**Implemented vs missing:** Existing branch also has C04 voice capture/preview/send/read/delete and SQL journal, Fastify handlers, private S3 SigV4 and media DTO/widget/tests. This checkpoint closes the *privacy-loss risk* in C04-owned schema and supplies the lifecycle-bound cleanup installer. **Not integrated into running Gateway**: shared `services/gateway/src/app.ts` and `main.ts` remain with one eventual integration owner because C01 #468 and R18 #435 both edit them. **Not integrated into human Chats**: the original C04 Flutter panel is isolated; C02 #472/#475 must reconcile into one schema/typed message stream, C05 #474/#476 must reconcile into protected per-user crash-safe outbox, C03 #473/#483 must be synchronized, and R17/C08 root shell must supply the human-only thread. Incoming image/document attachments (M04), C04 account-erasure orchestration and durable media process-death recovery remain **missing source/integration**. The new SQL trigger intentionally makes R12 hard deletion fail until S3 is erased; a controlled pre-erasure workflow must be wired before account deletion can be qualified.
+
+**Tests ACTUALLY executed:** NONE — no local private clone in this connected environment; no `pnpm`/Vitest/Postgres/Flutter/Android run performed; Actions issue #457 exhausts hosted minutes before steps. New tests are author-written **not passing evidence**. No changes to CI or billing, no runner retry, no claims of S3 provisioning. The existing R12 owner, C01/02 integration owners and CI Work window must execute:
+```sh
+corepack pnpm install --frozen-lockfile
+corepack pnpm --filter @masanawa/gateway-service typecheck
+corepack pnpm exec vitest run services/gateway/src/human_media/ogg_opus.test.ts services/gateway/src/human_media/private_s3.test.ts services/gateway/src/human_media/routes.test.ts services/gateway/src/human_media/service.test.ts services/gateway/src/human_media/runtime.test.ts
+# disposable LOCAL PG *_test database only; C01 0016 + ONE selected C02 0017 + C04 0018 present
+MASANAWA_C04_ENABLE_DB_TESTS=yes MASANAWA_C04_TEST_DATABASE_URL=postgresql://localhost/masanawa_c04_test corepack pnpm exec vitest run services/gateway/src/human_media/postgres_integration.test.ts
+cd apps/mobile && flutter pub get && flutter analyze
+flutter test test/human_media_controls_test.dart test/human_media_models_test.dart
+flutter build apk --debug
+```
+Confirm migration parsing (especially new deletion guard), new worker fake-timer tests, S3 403/5xx outage+retry, `DELETE` cascade refusal vs verified S3 removal, two-user JWT/tenant/block/revocation/streaming cases, deliberate mic/no auto-public audio, account switch/restart, App build and device Ogg Opus codec, real private S3 ACL/SSE/retention and integration of the five-tab Chats thread. **No tests reclassified as passed until actually run.**
+
+**Security/privacy/data:** No audio, keys or IDs emitted by cleanup callback; client has bearer-gated media fetch, never public URLs; SQL fail-closed on erasure helps prevent private media leak but can temporarily block deletion workflows until coordinator/worker make progress. Do not disable guard to clear a failing test. Safe rollback requires confirming private S3 purge/recovery before removing any rows/schemas. Prerequisite migration `0016`/single canonical `0017` unresolved. C02 duplicate PRs #472/#475; C05 duplicate PRs #474/#476; preserve both until Work reconciles. No production backup, migrations, private bucket credentials/policy, deployment or Android evidence.
+
+**Release evidence:** SOURCE_WRITTEN=yes (new guarded C04 paths); LOCAL_TESTED=no; CI_EXECUTED=no; DB_INTEGRATED=no; APP_INTEGRATED=no; DEVICE_VERIFIED=no; PROVIDER_QUALIFIED=no; DEPLOYED=no; MERGED=no. J04/J11, M03/M04/M10 still OPEN.
+
+**Work integration handoff:** Read both C02 variants' exact `0017` definitions; choose one, coordinate Gateway `app.ts/main.ts` with C01/R18 and call `installHumanVoiceModule(app,{pool,authorizer,privateS3})` with the existing canonical customer auth; supply confidential private S3 env from authorized deployment; ensure shutdown hook is exercised. Coordinate C03+C05 voice-receipt/event/outbox and C02/C08 inline composer, then wire R12 preaccount-erasure/media cleanup before enabling hard deletion. Run listed verification with exact SHAs; fix discovered compiler/schema/runtime defects, rerun green CI when #457 restored, real 2-device and provider qualification. Keep PR draft until all applicable gates satisfied. Re-check active lease on every new change.
+
+**Further test-fixture hardening (commit `ce536bf4a659be473aefc2e84a4f84809d6b4dbf`):** the disposable PostgreSQL suite's `afterAll` now simulates absent fixture-only S3 objects via the real GC/journal API if a previous assertion failed, so the new production SQL deletion guard remains enabled in failure cleanup. The test has **not** been executed; this does not authorize production deletion without confirmed provider erasure. Final HEAD is recorded in the PR comment.
+
+## 2026-10-08 — reclaimed C04 private-player cancellation lease
+
+Window: GPT-6 new continuation; previous PR #478 last repository activity at 2026-10-08T11:47:04Z (stale >5 minutes). Current main inspected `226d0c58632b243661ab24904cca75700ed474d4`; **reuse** unchanged C04 branch `work/c04-private-voice-notes-20261008` and draft [#478](https://github.com/Baatiku/masanawa/pull/478), preserving the original SQL/media/S3 contracts and tests. This claim update is the new five-minute lease activity.
+
+Exact bounded owned files for this checkpoint: `apps/mobile/lib/src/human_media/human_voice_controller.dart`, `apps/mobile/lib/src/human_media/human_voice_controls.dart`, `apps/mobile/test/human_media_controls_test.dart`, this workstream handoff. Exclude shared `app.ts/main.ts`, root tabs/router, C02 message model and migrations, C05 durable queue and all production provider setup. Feature target: user can deliberately Stop an in-progress private voice note/preview without waiting for `just_audio.play()` to finish, delayed callbacks cannot revive private media after disposal/account switch, UI recovers and test cases demonstrate behavior. No claim of completed C04 cross-feature integration. Current code-before-claim HEAD `386361ad6c63014651958ff9efbb51b33ae4b772`; status PARTIAL_IMPLEMENTATION / no executable tests.
+## 2026-10-08 — interruptible C04 voice playback / latest owner handoff
+
+**Status: PARTIAL_IMPLEMENTATION; feature not done. PR #478 remains DRAFT / UNMERGED.** Owner: GPT-6 bounded C04 playback source continuation, not full C04 completion.
+Base latest main observed: 226d0c58632b243661ab24904cca75700ed474d4. Reclaimed original branch work/c04-private-voice-notes-20261008 at old SHA 386361ad6c63014651958ff9efbb51b33ae4b772, after >5min inactivity; new claim commit 1de4cb54ebefe6491fb9e5f2db8d0ee0108f6676. Substantive code/test HEAD before this handoff: d3c7c5d06f10db99763ddf938d37046239086b41. Final pushed HEAD is the handoff commit linked in PR #478.
+
+Changed owned files:
+- apps/mobile/lib/src/human_media/human_voice_controller.dart: introduce injected platform audio adapter, Stop operation, play generation fence for post-cancel network/file/audio callbacks, downloaded local temporary media removal, preview Stop preserves draft, Send disabled while preview plays, and avoid awaiting long-running just_audio.play() on user UI event.
+- apps/mobile/lib/src/human_media/human_voice_controls.dart: clear Stop action for playing remote voice and recording preview; passes player/path test seams through to controller, reinitializes on session/conversation changes.
+- apps/mobile/test/human_media_playback_stop_test.dart: four source-authored unexecuted cases for Stop while audio Future pending, late private fetch cancellation, review preservation/discard, and Stop button state.
+- docs/workstreams/communications-media-c04-20261008.md: updated claim and this durable handoff.
+
+No financial, shared Flutter router, C02 message authority, Gateway app.ts/main.ts, SQL/migrations, provider secrets or production configuration touched in this window. Gateway C04 read remains existing authenticated tenant/member/consent policy; no new bearer/membership shortcut. Source is not yet in root Chats UI.
+
+**Missing implementable full-C04 integration:** C01 #468 + reconcile C02 #472/#475 and ordered migration 0016/0017/0018; mount human_media module through authorized shared Gateway composition; integrate C04 voice rendering/controls with single human DM thread and C08 root #493; C03 realtime/cursors and C05 secure durable post-crash media outbox; R12 erasure synchronization; native Ogg/Opus device and S3 private provider qualification. Concurrent Work draft #497 touches many shared files; preserve it. Original C04 PR #478 and its full prior SQL/S3/test/handoff remain intact. Stop/erase uses best-effort filesystem unlink; do not claim forensic secure deletion or external URL revocation.
+
+**Executed proof:** GitHub connector file source write/read acknowledgements only. **NOT RUN:** Flutter/Dart compilation, test suite, pnpm/Vitest/typecheck, isolated PostgreSQL, real S3 provider, Android physical device or app-to-app send. Known GitHub Actions #457 quota/runner zero-step failure. No CI retry was attempted.
+
+**Exact Work commands, after C01/C02/C04 integration:**
+- corepack pnpm install --frozen-lockfile
+- corepack pnpm --filter @masanawa/gateway-service typecheck
+- corepack pnpm exec vitest run services/gateway/src/human_media/ogg_opus.test.ts services/gateway/src/human_media/service.test.ts services/gateway/src/human_media/routes.test.ts services/gateway/src/human_media/private_s3.test.ts services/gateway/src/human_media/runtime.test.ts
+- disposable PostgreSQL only: MASANAWA_C04_ENABLE_DB_TESTS=yes MASANAWA_C04_TEST_DATABASE_URL=postgresql://localhost/masanawa_c04_test corepack pnpm exec vitest run services/gateway/src/human_media/postgres_integration.test.ts
+- cd apps/mobile && flutter pub get && flutter analyze && flutter test test/human_media_playback_stop_test.dart test/human_media_controls_test.dart test/human_media_models_test.dart && flutter build apk --debug
+- Real two-account Android: Talk vs private mic isolation, Stop while media playing and load pending, block/unpublish/revoke/auth switch, offline/restart/multiple devices, S3 object erasure and retry, budget-phone Ogg codec.
+Fix actual failures before merge. No schema written this continuation; prior 0018 remains unmerged and requires migration review. Rollback isolated player changes if physical tests show media-focus failures while preserving existing C04 work.
+
+**Gates:** bounded playback SOURCE_WRITTEN=yes; LOCAL_TESTED=no; CI_EXECUTED=no; DB_INTEGRATED=no; APP_INTEGRATED=no (root human Chats pending); DEVICE_VERIFIED=no; PROVIDER_QUALIFIED=no; DEPLOYED=no; MERGED=no; FULL_C04_DONE=no.
