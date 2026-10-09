@@ -116,11 +116,13 @@ test('authenticated live reader paginates file lists without missing second page
     else if (u.pathname === '/repos/test/repo/pulls') json = [{ number: 3, title: 'U21', body: '', head: { sha: sha('3') }, changed_files: 101 }];
     else if (u.pathname === '/repos/test/repo/pulls/3/files')
       json = u.searchParams.get('page') === '1' ? firstPage : [{ filename: 'last.ts', sha: sha('b') }];
+    else if (u.pathname === '/repos/test/repo/pulls/3') json = { head: { sha: sha('3') }, changed_files: 101 };
     else throw new Error('wrong URL');
     return { ok: true, json: async () => json };
   };
   const result = await loadGithubSnapshot({ repo: 'test/repo', token: 'testing', fetcher });
   assert.equal(result.pulls[0].completeFiles, true);
+  assert.equal(result.pulls[0].headStable, true);
   assert.equal(result.pulls[0].files.length, 101);
   assert.ok(seen.some(x => x.path.endsWith('/files') && x.page === '2'));
   assert.ok(seen.every(x => x.auth === 'Bearer testing'));
@@ -132,4 +134,57 @@ test('GitHub failures never echo authentication tokens or remote bodies', async 
     (error) => /HTTP 403/.test(error.message) && !error.message.includes('private-secret'),
   );
   await assert.rejects(loadGithubSnapshot({ repo: '../evil', token: 'private-secret' }), /expected owner\/repo/);
+});
+
+test('one PR with two migration filenames at the same sequence is critical', () => {
+  const result = auditSnapshot(snap([create(600, 'F15 migration', [
+    ['packages/talks/migrations/0017_first.sql'],
+    ['packages/talks/migrations/0017_second.sql'],
+  ])]));
+  assert.equal(result.summary.pathCollisions, 0);
+  assert.equal(result.summary.migrationCollisions, 1);
+  assert.equal(result.migrationCollisions[0].withinPullRequest, true);
+  assert.deepEqual(result.migrationCollisions[0].prs.map(p => p.filename), [
+    'packages/talks/migrations/0017_first.sql',
+    'packages/talks/migrations/0017_second.sql',
+  ]);
+});
+
+test('live snapshot becomes incomplete if PR head moves during file retrieval', async () => {
+  const oldSha = sha('1'), newSha = sha('2');
+  const fetcher = async url => {
+    const u = new URL(url);
+    let json;
+    if (u.pathname === '/repos/test/repo') json = { default_branch: 'main' };
+    else if (u.pathname.endsWith('/branches/main')) json = { commit: { sha: sha('a') } };
+    else if (u.pathname === '/repos/test/repo/pulls') json = [{ number: 1, title: 'U21', head: { sha: oldSha } }];
+    else if (u.pathname.endsWith('/pulls/1/files')) json = [{ filename: 'new-code.ts', sha: sha('b') }];
+    else if (u.pathname.endsWith('/pulls/1')) json = { head: { sha: newSha }, changed_files: 1 };
+    else throw new Error('wrong URL');
+    return { ok: true, json: async () => json };
+  };
+  const result = await loadGithubSnapshot({ repo: 'test/repo', token: 'fake', fetcher });
+  assert.equal(result.pulls[0].headStable, false);
+  assert.equal(result.pulls[0].completeFiles, false);
+  const report = auditSnapshot(result);
+  assert.equal(report.summary.incompletePullRequests, 1);
+  assert.deepEqual(report.incomplete.map(x => x.reason), ['unverified_file_list', 'head_changed_during_audit']);
+});
+
+test('live snapshot becomes incomplete when authenticated detail count disagrees', async () => {
+  const fetcher = async url => {
+    const u = new URL(url);
+    let json;
+    if (u.pathname === '/repos/test/repo') json = { default_branch: 'main' };
+    else if (u.pathname.endsWith('/branches/main')) json = { commit: { sha: sha('a') } };
+    else if (u.pathname === '/repos/test/repo/pulls') json = [{ number: 1, title: 'U21', head: { sha: sha('1') } }];
+    else if (u.pathname.endsWith('/pulls/1/files')) json = [{ filename: 'a.ts', sha: sha('b') }];
+    else if (u.pathname.endsWith('/pulls/1')) json = { head: { sha: sha('1') }, changed_files: 2 };
+    else throw new Error('wrong URL');
+    return { ok: true, json: async () => json };
+  };
+  const result = await loadGithubSnapshot({ repo: 'test/repo', token: 'fake', fetcher });
+  assert.equal(result.pulls[0].headStable, true);
+  assert.equal(result.pulls[0].completeFiles, false);
+  assert.equal(auditSnapshot(result).summary.incompletePullRequests, 1);
 });
