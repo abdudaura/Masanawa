@@ -2,6 +2,7 @@ import type { PlatformCustomerSessionAuthorizer } from "../customer_auth.js";
 import { createHumanCallService } from "./service.js";
 import { createPostgresHumanCallRepository,type HumanCallSqlPool } from "./postgres_repository.js";
 import { createHumanCallMediaIssuer,type HumanCallRoomRevoker } from "./livekit_media.js";
+import { createLiveKitHumanCallRoomRevoker } from "./livekit_room_revoker.js";
 
 /**
  * Integration seam for C01/C02/F12/R14 owners. No shared app.ts/main.ts edit.
@@ -55,5 +56,38 @@ export function composeHumanCallService(input: {
         return result.rows.length===1;
       },
     },
+  });
+}
+
+/**
+ * Production integration factory: one concrete room revoker shared between
+ * API-initiated hangup and retrying terminal/revoked outbox worker.
+ * The R14 owner still supplies the authorized private notification sender.
+ * No routes or workers are started merely by constructing this object.
+ */
+export function composeLiveKitHumanCalls(input: {
+  readonly pool: HumanCallSqlPool;
+  readonly sessions: PlatformCustomerSessionAuthorizer;
+  readonly serverUrl: string;
+  readonly apiKey: string;
+  readonly apiSecret: string;
+  readonly fetchImpl?: typeof fetch;
+}) {
+  const revoker = createLiveKitHumanCallRoomRevoker({
+    serverUrl: input.serverUrl,
+    apiKey: input.apiKey,
+    apiSecret: input.apiSecret,
+    fetchImpl: input.fetchImpl,
+  });
+  return Object.freeze({
+    service: composeHumanCallService({
+      pool: input.pool,
+      sessions: input.sessions,
+      serverUrl: input.serverUrl,
+      apiKey: input.apiKey,
+      apiSecret: input.apiSecret,
+      roomRevoker: revoker,
+    }),
+    roomRevoker: revoker,
   });
 }
