@@ -1,23 +1,6 @@
 {
   "schema_version": 1,
-  "active": [
-    {
-      "claim_id": "gpt6-f08-channel-phone-isolation-20261009",
-      "owner": "GPT-6 F08 channel identity isolation",
-      "scope": "F08/R15 prevent process-wide phone retention and cross-link principal substitution",
-      "paths": [
-        "services/gateway/src/customer_channel_bridge.ts",
-        "services/gateway/src/customer_channel_bridge.test.ts",
-        "docs/workstreams/f08-channel-phone-isolation-20261009.md"
-      ],
-      "branch": "work/f08-channel-phone-cache-isolation-20261009-gpt6",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "",
-      "claimed_at": "2026-10-09T03:57:09.618Z",
-      "heartbeat_at": "2026-10-09T03:57:09.618Z",
-      "expires_at": "2026-10-09T04:02:09.618Z"
-    }
-  ],
+  "active": [],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
@@ -72,6 +55,24 @@
       "expires_at": "2026-10-09T03:52:37.777Z",
       "released_at": "2026-10-09T03:50:51.496Z",
       "release_reason": "Pushed handoff HEAD 99a81e015add9467b38b0702839ccbf52e0c5b56; local node tests 10/10; wider F11 remains partial, draft PR #570 unmerged"
+    },
+    {
+      "claim_id": "gpt6-f08-channel-phone-isolation-20261009",
+      "owner": "GPT-6 F08 channel identity isolation",
+      "scope": "F08/R15 prevent process-wide phone retention and cross-link principal substitution",
+      "paths": [
+        "services/gateway/src/customer_channel_bridge.ts",
+        "services/gateway/src/customer_channel_bridge.test.ts",
+        "docs/workstreams/f08-channel-phone-isolation-20261009.md"
+      ],
+      "branch": "work/f08-channel-phone-cache-isolation-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/571",
+      "claimed_at": "2026-10-09T03:57:09.618Z",
+      "heartbeat_at": "2026-10-09T03:57:09.618Z",
+      "expires_at": "2026-10-09T04:02:09.618Z",
+      "released_at": "2026-10-09T03:58:58.933Z",
+      "release_reason": "Draft PR #571 pushed at a2f6eecc2525a2f8eb159394fe7db42ecbfca7cc; F08 isolated phone-principal guard and tests committed, static source predicates 9/9, executable tests blocked/unrun; precise handoff committed."
     }
   ]
 }
