@@ -225,7 +225,7 @@ describe("AF01 billing receipt recovery (UX-A07 / WF-A08)", () => {
     const h = harness();
     expect(await h.service.receiveWebhook(webhook({
       event: "charge.completed",
-      data: { status: "successful" },
+      data: { status: "successful", tx_ref: "unrelated-charge" },
     }))).toEqual({ duplicate: false, reference: null });
     expect(h.admitProviderWebhook).toHaveBeenCalledTimes(1);
     expect(h.admitProviderWebhook).toHaveBeenCalledWith(
