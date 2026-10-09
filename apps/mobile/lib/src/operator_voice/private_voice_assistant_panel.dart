@@ -227,6 +227,12 @@ class _PrivateVoiceAssistantPanelState
                 border: OutlineInputBorder(),
               ),
             ),
+            if (voice.outcomeUnknown)
+              TextButton(
+                key: const Key('u09_discard_uncertain'),
+                onPressed: voice.discardUncertainDraft,
+                child: const Text('Discard uncertain draft (does not cancel task)'),
+              ),
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton(
