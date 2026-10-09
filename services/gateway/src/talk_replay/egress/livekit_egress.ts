@@ -105,8 +105,8 @@ export function createLiveKitReplayEgress(input:Readonly<{
   const bucket=input.s3.bucket.trim();
   const accessKey=input.s3.accessKey.trim();
   const secret=input.s3.secret.trim();
-    if(!apiKey || apiSecret.length<16) throw new TypeError("LiveKit Egress credentials are invalid");
-    if(!region || !bucket || !accessKey || secret.length<8) throw new TypeError("Replay S3 configuration is incomplete");
+  if(!apiKey || apiSecret.length<16) throw new TypeError("LiveKit Egress credentials are invalid");
+  if(!region || !bucket || !accessKey || secret.length<8) throw new TypeError("Replay S3 configuration is incomplete");
   const fetchImpl=input.fetchImpl??fetch;
   const now=input.now??(()=>new Date());
 
