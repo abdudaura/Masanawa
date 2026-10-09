@@ -81,6 +81,12 @@ class SavedSetup implements CloneOnboardingTransport {
     required String requestId,
   }) async {
     confirmations++;
+    if (state == 'confirmed' && requestId == _requestId &&
+        expectedPreviewRevision == revision - 1) {
+      revision++;
+      state = 'ready';
+      return _read();
+    }
     if (requestId != _requestId || state != 'preview' ||
         expectedPreviewRevision != revision) throw StateError('bad confirmation');
     revision++;
@@ -221,6 +227,20 @@ void main() {
     expect(await flow.answer('Hausa, hausa'), false);
     expect(await flow.answer('Hausa\u0000'), false);
     expect(setup.languages, isEmpty);
+    flow.dispose();
+  });
+
+  test('confirmed provisioning after restart resumes canonical request', () async {
+    final setup = SavedSetup()
+      ..name = 'Owner'
+      ..languages = ['Hausa']
+      ..state = 'confirmed';
+    final flow = fixture(setup, SavedTwin());
+    expect(await flow.reload(), true);
+    expect(flow.step, TwinInterviewStep.recover);
+    expect(await flow.confirmCreation(), true);
+    expect(flow.ready, true);
+    expect(setup.confirmations, 1);
     flow.dispose();
   });
 
