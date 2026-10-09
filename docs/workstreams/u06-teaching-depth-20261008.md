@@ -1,23 +1,37 @@
-# U06 — Teaching depth and lesson continuity (claim + handoff)
+# U06 — Teaching depth and persisted lesson continuity
 
-**Status:** CLAIMED / PARTIAL_IMPLEMENTATION, 2026-10-09 ~01:10 Africa/Lagos (UTC+01:00). Exclusive five-minute source lease renewed by commits. Branch `work/u06-teaching-continuity-20261009-gpt6`; base `main` SHA `5e758673ae91082520b21b3153da53791ae2cbf3`.
+**Status: PARTIAL_IMPLEMENTATION / EXECUTABLE TESTS UNVERIFIED / DRAFT ONLY.** This is a real isolated backend/API/Flutter teaching extension, not an integrated/released feature. No merge or production modification is authorized.
 
-## Selection and exact ownership
+## Ownership and immutable source lineage
 
-Live U06 branch/PR search returned no existing work; U01–U05, U21–U30, F11 and numerous R/C recovery PRs are already represented. Preserve existing `services/gateway/src/agent_teaching_assistant.ts` (and its tests). Own only:
-- `packages/skills/src/teaching_extensions/**` (lesson engine/contract, tests)
-- `apps/mobile/lib/src/learning/**` (learning presentation/state)
-- `apps/mobile/test/learning/**` (bounded Flutter tests)
-- `services/gateway/src/operator_learning/**` (isolated authenticated route adapter and tests)
-- `packages/skills/src/index.ts` (single additive export only)
-- this claim/handoff file.
+- **Branch:** `work/u06-teaching-continuity-20261009-gpt6`.
+- **Base main:** `5e758673ae91082520b21b3153da53791ae2cbf3`.
+- **First repository-visible claim:** `10094f3db306b6100b3313bdd1049acd10d9a97d`, before application source changes.
+- **Source checkpoint before final handoff:** `ece95e64af11bc31d9ab6c0ff0b37ed496ff2748`.
+- **PR:** see draft U06 PR linked from this branch; remain unmerged.
+- **Live conflicts inspected:** U01–U05 and U21–U30 already have draft source; existing canonical teaching lives in `services/gateway/src/agent_teaching_assistant.ts`, `packages/skills/src/teaching.ts`, PG adapter `adapters/storage/postgres/src/skills/teaching.ts`, migration `packages/skills/migrations/0004_teaching_progress.sql`. Their source was NOT overwritten. PR #497 owns multi-domain composition; #457 shared Actions quota is unresolved.
+- **Exclusive changed paths:** `packages/skills/src/teaching_extensions/**`, single append-only export in `packages/skills/src/index.ts`, `services/gateway/src/operator_learning/**`, `apps/mobile/lib/src/learning/**`, `apps/mobile/test/learning/**`, and this handoff. Do not edit Gateway `app.ts`/`main.ts`, global router, money authority, native Firebase, Android/iOS, or migration registry on this branch.
 
-No edits to shared `main.ts`, `app.ts`, router, Android/iOS native, Firebase, financial ledger, migration registry, canonical agents, legacy teaching assistant, or other claimed U/R/C roots. Existing `@masanawa/skills` and Gateway teacher are normative dependencies, not targets for replacement. **Integration will require designated Gateway/Flutter composer**; isolated work is PARTIAL_IMPLEMENTATION until composed and exercised end-to-end.
+## Implemented source
 
-## Intended complete bounded slice
+1. **Real DB-backed checkpoint readback:** `createTeachingContinuity` consumes the pre-existing `TeachingProgressRepository`. Scope is matched to current verified tenant/user and canonical character/relationship. No parallel lesson table, counterfeit reward, or hardcoded user checkpoint. A missing checkpoint remains explicitly empty.
+2. **Bounded Study actions:** continue, practice, explain again, simpler, slower, and learner answer; validation of action/answer/request ID/exact last-read checkpoint; stale revision returns conflict; injected hidden tags are serialized as untrusted text. A dispatcher explicitly reuses canonical Study turns rather than a new model tool executor. Never treat a successful dispatch ACK as completed/persisted progress; ambiguous outcome stays `uncertain` with the same request ID.
+3. **Gateway REST adapter (NOT composed yet):** `registerOperatorLearningRoutes` provides `GET /agent/learning/progress` and `POST /agent/learning/actions`. Uses existing `AgentConversationAuthorizer` for current relationship/tenant/user, existing `AgentConversationService.turn` for canonical session, correlation and idempotent turn path, and existing Postgres teaching checkpoint repository. Strict body shape, auth/privacy, no-store and invalid/stale responses; does not create new tables or finance operations.
+4. **Flutter real Gateway transport + UI:** `GatewayLearningTransport` reuses authenticated `ApiClient`, sends the server-issued session ID and canonical request ID and parses strict actual readback; `LearningProgressController` handles offline/read errors, unknown status without blind retry, actual checkpoint readback, account/session switching with stale response fencing; `LearningProgressCard` renders genuine topic/goal/level/checkpoint/next step, practice/explain controls and accessible answer input. Private answer draft is purged on account switch; no sixth tab or fake local lesson success.
+5. **Tests authored:** TypeScript isolated service tests for scope, invalid action, stale checkpoint, injection, missing previous lesson and uncertain write; Fastify inject tests for authenticated GET/POST, forbidden access, stale data and lost turn reply; Flutter controller/widget tests for malformed progress, readback, unknown action, account switch, stale asynchronous result and private draft purge.
 
-Typed server-authoritative lesson state and checkpoint validation with scoped learner and session; explicit topic, goal, language, level, worked examples, exercises, answer feedback and next-step progression; restart/account-switch-safe Flutter readback/presentation. Error handling, malformed model results, replay and unauthorized state changes must fail closed. Reuse canonical U01 versioned operator action where available.
+## Actual verification status (do not convert authored tests into PASS)
 
-## Live review / next evidence
+- **Source examination:** module paths, prior teaching DB/Gateway contracts, current branch diff and claim were inspected via connected GitHub.
+- **Executed tests:** NONE. The available execution container does not have this private repository checked out or a usable authenticated Git remote (GitHub host DNS resolution failed), `pnpm` and Flutter SDK are not installed there. Shared Actions incident #457 reports exhausted runner quota; no workflow test run was attempted or represented as passing.
+- **Deferred executable commands:** `pnpm exec vitest run packages/skills/src/teaching_extensions/lesson_continuity.test.ts services/gateway/src/operator_learning/routes.test.ts`; `pnpm --filter @masanawa/skills typecheck`; `pnpm --filter @masanawa/gateway-service typecheck`; `cd apps/mobile && flutter analyze && flutter test test/learning/learning_progress_test.dart`. Then run full CI on a qualified runner after #457 is resolved. Test real backend with an isolated migrated PostgreSQL database and two accounts, an Android device, offline kill/restart and Hausa/English model evaluation.
 
-Review U06 exact requirements in `docs/20-WINDOW-AI-CHAT-EXECUTION-20261008.md`, `docs/AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md`, `docs/MULTI-WINDOW-WORK.md`, current `agent_teaching_assistant.ts`, package exports/build/tests before implementation. Update this file with changed source, tests executed, blockers, branch SHA and PR link before handoff. No merging, destructive edits or production calls.
+## Remaining exact integration/quality tasks
+
+1. **Designated shared Gateway composer** should review and register `registerOperatorLearningRoutes` in `app.ts` using already instantiated `AgentConversationAuthorizer`, `AgentConversationService` and `createPostgresTeachingProgressRepository(pool)` from the canonical existing DB adapter; ensure the current existing `skills/0004` migration is installed in production migration order before enabling. No new migration was created.
+2. **Designated Flutter/C07/U03 integrator** should create `GatewayLearningTransport(api, characterSessionId, authorizedRelationshipId)` with the genuine signed-in session, supply durable canonical `requestId` issuance/reconciliation from U02 and mount `LearningProgressCard` within Assistant/Agent conversation (not a root tab). Replace controller when identity changes and call `changeSession` on logout/re-auth. Never allow a UI retry of an unknown turn under a new ID.
+3. **U06 remaining breadth:** detailed model lesson plan quality, honest exercise/question association and correctness evaluation, multilingual Hausa/English/code-switch fixtures, long-term mastery progression and fine-grained typed exercise states are NOT verified and still require domain/device tests. Current learning checkpoints reuse the original schema and teacher, so multi-device concurrent different-request updates remain subject to the existing last-write-wins upsert; coordinate durable compare-and-swap/progression with DB migration owner rather than silently changing that shared table.
+4. **Security / evidence:** validate actual two-user relationship isolation and session rejection in integrated API, late/offline result and signout, real persisted progress after turns, malformed model output, downstream timeouts, source-of-truth task status, device speech/typing parity and accessibility. Do not advertise certifications, grading truth or course completion without verified assessment.
+5. **Release:** #497/Firebase #461 and five-tab R17/C08 shared composition must remain intact; no native signing/provider/financial modification on this branch.
+
+**Handoff acceptance rule:** this branch is reviewable source and authored tests, not feature-DONE, E2E-verified, device-verified or deployed. Remain draft/unmerged for Work integration.
