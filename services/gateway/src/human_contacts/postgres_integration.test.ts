@@ -414,4 +414,78 @@ run("C01 canonical PostgreSQL contact admission integration", () => {
     expect(await repo.lookup({ tenantId: tenant, viewerId: alice, handle: bobHandle }))
       .toBeNull();
   });
+
+  it("prevents a restricted contact-originator from discovering or paging people", async () => {
+    // Dedicated pair avoids changing the lifetime/ordering of other consent tests.
+    const originator = `c01_restricted_origin_${nonce}`;
+    const peer = `c01_restricted_peer_${nonce}`;
+    const originHandle = `restricted_origin_${nonce}`;
+    const peerHandle = `restricted_peer_${nonce}`;
+    for (const [id, publicHandle] of [[originator, originHandle], [peer, peerHandle]] as const) {
+      await pool.query(
+        `INSERT INTO identity.users(tenant_id,user_id,created_at,updated_at)
+         VALUES ($1,$2,clock_timestamp(),clock_timestamp())`, [tenant, id],
+      );
+      await pool.query(
+        `INSERT INTO talks.public_profiles(tenant_id,user_id,handle,display_name)
+         VALUES ($1,$2,$3,$3)`, [tenant, id, publicHandle],
+      );
+    }
+    const repo = createPostgresHumanContactRepository(pool);
+    expect(await repo.request({
+      tenantId: tenant, requesterId: originator, handle: peerHandle,
+    })).toBe("pending");
+    expect(await repo.lookup({
+      tenantId: tenant, viewerId: originator, handle: peerHandle,
+    })).toMatchObject({ status: "outgoing" });
+    expect(await repo.list({
+      tenantId: tenant, userId: originator, limit: 20,
+    })).toHaveLength(1);
+
+    await pool.query(
+      `INSERT INTO talks.safety_enforcement
+       (tenant_id,target_kind,target_id,revision,visibility,reason_code,updated_at)
+       VALUES ($1,'profile',$2,1,'restricted','moderation',clock_timestamp())`,
+      [tenant, originHandle],
+    );
+    try {
+      for (const visibility of ["restricted", "blocked"] as const) {
+        await pool.query(
+          `UPDATE talks.safety_enforcement SET visibility=$3,updated_at=clock_timestamp()
+            WHERE tenant_id=$1 AND target_kind='profile' AND target_id=$2`,
+          [tenant, originHandle, visibility],
+        );
+        expect(await repo.lookup({
+          tenantId: tenant, viewerId: originator, handle: peerHandle,
+        })).toBeNull();
+        expect(await repo.request({
+          tenantId: tenant, requesterId: originator, handle: peerHandle,
+        })).toBe("unavailable");
+        expect(await repo.list({
+          tenantId: tenant, userId: originator, limit: 20,
+        })).toEqual([]);
+        expect(await repo.listPage!({
+          tenantId: tenant, userId: originator, limit: 20, after: null,
+        })).toEqual({ contacts: [], next: null });
+      }
+      // R15 restrictions must not destroy durable contacts or allow an
+      // interrupted read to mutate the underlying consent record.
+      const row = await pool.query<{ status: string }>(
+        `SELECT status FROM talks.human_dm_contact_requests
+          WHERE tenant_id=$1 AND first_user_id=LEAST($2::text,$3::text)
+            AND second_user_id=GREATEST($2::text,$3::text)`,
+        [tenant, originator, peer],
+      );
+      expect(row.rows[0]?.status).toBe("pending");
+    } finally {
+      await pool.query(
+        `DELETE FROM talks.safety_enforcement
+         WHERE tenant_id=$1 AND target_kind='profile' AND target_id=$2`,
+        [tenant, originHandle],
+      );
+    }
+    expect(await repo.list({
+      tenantId: tenant, userId: originator, limit: 20,
+    })).toHaveLength(1);
+  });
 });
