@@ -29,7 +29,7 @@ The existing operator CLI called a database/tenant/privilege preflight, but expo
 | --- | --- | --- |
 | GitHub source integrity | **PASS** | Copied exact `retention.ts` blob into an isolated local folder; `git hash-object` matched repository blob `2859932d77411db11d9ea0252c766f48c1b2a5c9` |
 | Strict standalone TypeScript compile | **PASS, isolated** | `tsc --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext retention.ts`, TypeScript 5.8.3, Node 22.16.0, exit 0 |
-| Isolated runtime smoke | **PASS_SIMULATED 11/11** | Compiled exact source blob, executed Node assertions on valid preflight, denied DB/tenant/role/privilege, first and repeated runs, mismatched tenant, failed recheck, 5-minute expiry, parameterized SQL, invalid returns, bounded batches, SQL failure, invalid bounds. Uses in-memory fake SQL pool; **not a real database/Vitest pass** |
+| Isolated runtime smoke | **PASS_SIMULATED 12/12** | Compiled exact source blob, executed Node assertions on valid preflight, denied DB/tenant/role/privilege, first and repeated runs, mismatched tenant, failed or malformed recheck, 5-minute expiry, parameterized SQL, invalid returns, bounded batches, SQL failure, invalid bounds. Uses in-memory fake SQL pool; **not a real database/Vitest pass** |
 | Repository Vitest source | **NOT_RUN** | `pnpm exec vitest run services/gateway/src/human_dm_realtime/retention.test.ts services/gateway/src/human_dm_realtime/retention_config.test.ts` (no pnpm/root checkout or node_modules here) |
 | Gateway typecheck | **NOT_RUN** | `pnpm --filter @masanawa/gateway-service typecheck` (project dependencies unavailable). Isolated `retention.ts` compile does **not** typecheck imports or entire Gateway |
 | PostgreSQL 18 migration/preflight/retention/restart | **NOT_RUN** | Disposable PG18 with C01/C02/#483 migrations required, including role/revoke tests, retention-concurrent-insert/high-water cursor reset/restore drill |
@@ -50,3 +50,8 @@ These results apply **only to the exact retention source blob and listed isolate
 - **C03 isolated retention operator guard:** SOURCE_WRITTEN=yes and ISOLATED_COMPILE/SMOKE_PASS_SIMULATED=yes; **repository Vitest, real DB auth/backup/rollback, CI, Flutter, Android, full E2E and deployment remain unverified**.
 - DB_INTEGRATED=no; APP_INTEGRATED=no; PROVIDER_QUALIFIED=no; DEVICE_VERIFIED=no; MERGED=no; DEPLOYED=no.
 - No production systems touched. Preserve both existing PR and this SHA-specific handoff for final Work reconciliation.
+
+## Claim release and final snapshot
+
+- Work branch was updated with code/tests and this handoff; isolated exact-path F16 ownership is **RELEASED** after the SHA-specific checkpoint `b03b252507cc59a94258aeab3e626e19831831d7`. No exclusive C03/F16 claim persists from this window. Future integrators must still recheck live paths and PR heads before working.
+- The final handoff commit is the commit that adds this release line; use the updated PR body for its immutable SHA. All unverified merge/deployment gates remain STOP.
