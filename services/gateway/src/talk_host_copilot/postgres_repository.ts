@@ -34,6 +34,14 @@ export function postgresHostPrepRepository(sql: HostPrepSql): HostPrepRepository
           JSON.stringify(input.questions), input.createdAt, input.updatedAt]);
       return map(result.rows[0]!);
     },
+    async list(input) {
+      const result = await sql.query<Row>(
+        `SELECT ${cols} FROM talks.host_preparations
+         WHERE tenant_id=$1 AND host_user_id=$2
+         ORDER BY updated_at DESC, prep_id DESC LIMIT $3`,
+        [input.tenantId, input.hostUserId, input.limit]);
+      return Object.freeze(result.rows.map(map));
+    },
     async read(input) {
       const result = await sql.query<Row>(
         `SELECT ${cols} FROM talks.host_preparations
