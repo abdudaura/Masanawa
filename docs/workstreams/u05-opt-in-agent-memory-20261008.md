@@ -14,9 +14,9 @@ Chosen after reading `CONTINUE-HERE.md`, U/F reconciliation, U execution/contrac
 
 ## Exact files by layer
 
-- Gateway: `services/gateway/src/operator_memory/service.ts`, `routes.ts`, `consent_postgres.ts`.
+- Gateway: `services/gateway/src/operator_memory/service.ts`, `routes.ts`, `consent_postgres.ts`, `agent_context.ts`.
 - Proposed DB DDL (NOT registered/applied): `services/gateway/src/operator_memory/sql/001_opt_in_consent.sql`.
-- Gateway tests: `services/gateway/src/operator_memory/service.test.ts`, `consent_postgres.test.ts`.
+- Gateway tests: `services/gateway/src/operator_memory/service.test.ts`, `consent_postgres.test.ts`, `routes.test.ts`, `agent_context.test.ts`.
 - Flutter: `apps/mobile/lib/src/operator_memory/agent_memory_controller.dart`, `manage_agent_memory_screen.dart`.
 - Flutter tests: `apps/mobile/test/operator_memory/agent_memory_test.dart`.
 - Handoff: this file.
@@ -27,7 +27,7 @@ Chosen after reading `CONTINUE-HERE.md`, U/F reconciliation, U execution/contrac
 2. Durable opt-in consent is explicitly default-OFF with atomic compare-and-set revision. Opt-out denies assistant memory retrieval. Signed-in user may still review/edit/delete with proper guards. Consent table contains no memory text.
 3. Explicit `remember` and `correct` use canonical record/revision methods, user-and-scope markers, canonical UUIDv7 IDs, 512-character bounds, expiry 1–365 days, SHA-256 provenance, bounded count, readback and optimistic revision; rejects wrong account, wrong scope, expired/tombstoned records, stale revision, unsupported kind and background assistant recall without consent. Preferences, manually entered task checkpoints and research notes are distinct categories; there is no silent source ingestion.
 4. `prepareForget` refuses without the **canonical** one-time governed tombstone/approval port, never mutates lifecycle directly. The Flutter screen never pretends a prepared request is deleted.
-5. Isolated Fastify route registration (no shared composer edits); Dio requests use current bearer credentials, no client-selected identity, no plaintext local persistence; account-bound controller discards late responses and exposes explicit reset; nested privacy UI provides opt-in, review, remember, correct, prepare forget, retry and honest failure states.
+5. Assistant context compilation forces a fresh consent-gated `forAssistant=true` lookup and encloses manual memories in a lower-trust, data-only JSON envelope. No memory text becomes a tool authorization, validated fact, or higher-priority prompt instruction. Isolated Fastify route registration (no shared composer edits); Dio requests use current bearer credentials, no client-selected identity, no plaintext local persistence; account-bound controller discards late responses and exposes explicit reset; nested privacy UI provides opt-in, review, remember, correct, prepare forget, retry and honest failure states.
 
 ## Exact missing implementation/integration — blockers NOT silently done
 
@@ -54,3 +54,7 @@ Chosen after reading `CONTINUE-HERE.md`, U/F reconciliation, U execution/contrac
 5. Run gateway typecheck + Vitest and Flutter analyze/widget tests, then real 2-account/2-device and restart/privacy tests. Fix any failures before considering merge. CI #457 restore is separate and not resolved by this PR.
 
 **No merges, branch deletion, production mutations, spending or Firebase changes.**
+
+## Latest additive checkpoint
+
+The follow-up committed `agent_context.ts`, `agent_context.test.ts` and `routes.test.ts`: bounded lower-trust consented AI memory projection, explicit no-authority flags, prompt-injection fixture, and Fastify payload identity-spoofing / unavailable-scope regression tests. **These tests are source-authored, NOT run.** The PR head will reflect those newer commits and this updated handoff.
