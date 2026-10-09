@@ -12,3 +12,10 @@ First exact-path compiler repair claim, continuing U16 #543 rather than replacin
 - docs/workstreams/work-resume-build-recovery-20261009.md
 
 Next: recover immutable U16 source, repair duplicated/outside-template SQL while preserving recording-specific speaker clearance and safety fences, execute focused tests/type checks, publish reviewed source to Work #497. Then continue remaining source/build recovery. No production mutation, money enablement, CI bypass, branch deletion or merge authorized by this claim.
+
+## Claim extension after source recovery
+The proposed migration has the same duplicated/truncated checksum defect. Claim additionally:
+- services/gateway/src/talk_post_session/migration.proposed.sql
+- services/gateway/src/talk_post_session/postgres_execution.test.ts
+
+This remains an unregistered proposal; no applied migration or database is changed. Execute embedded PostgreSQL SQL against synthetic schema and consent/safety fixtures, separate from production PG18 acceptance.
