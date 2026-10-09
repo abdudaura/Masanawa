@@ -67,6 +67,22 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
+    },
+    {
+      "claim_id": "masanawa-01-af08-auth-revocation-delivery-20261009",
+      "owner": "MASANAWA-01",
+      "scope": "AF08: ensure OTP unavailable channels do not create challenges; prevent silent logout/revocation failure and test server-auth behavior; avoid OTP bypass, new identity authority and shared composition",
+      "paths": [
+        "services/gateway/src/customer_auth.ts",
+        "services/gateway/src/customer_auth.test.ts",
+        "docs/workstreams/AF08-auth-revocation-delivery-20261009.md"
+      ],
+      "branch": "work/af08-auth-revocation-delivery-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:29:14.969Z",
+      "heartbeat_at": "2026-10-09T21:29:14.969Z",
+      "expires_at": "2026-10-09T21:34:14.969Z",
+      "notes": "Fresh main + #497/#539 + CAS and canonical AF08 ownership inspected. No migration, app router, finance, launch manifest or auth schema changes."
     }
   ],
   "history": [
