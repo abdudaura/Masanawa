@@ -10,7 +10,8 @@ Updated 2026-10-09. This is the active entry point. Older freezes, repeated laun
 4. [Recovery and supersession map](docs/AUDIO-FIRST-RECOVERY-20261009.md).
 5. [Window allocation](docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md), then use exactly one [copyable lane prompt](docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md).
 6. [Completeness audit and unresolved gates](docs/AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md).
-7. [Acceptance journeys](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md) and relevant existing domain references.
+7. [Whole-app source findings and Settings](docs/WHOLE-APP-SOURCE-AUDIT-20261009.md), [database/storage operations](docs/BACKEND-STORAGE-OPERATIONS-20261009.md) and [screen inventory](docs/WHOLE-APP-SCREEN-INVENTORY-20261009.json).
+8. [Acceptance journeys](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md) and relevant existing domain references.
 
 ## Current direction
 

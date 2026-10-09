@@ -360,6 +360,8 @@ Initial allowed paths:
 - apps/mobile/lib/src/audio_posts/**
 - apps/mobile/lib/src/screens/talks/talk_home_screen.dart
 - apps/mobile/lib/src/screens/talks/create_audio_post_screen.dart
+- apps/mobile/lib/src/screens/you/my_talks_screen.dart
+- apps/mobile/lib/src/screens/you/saved_talks_screen.dart
 - services/gateway/src/audio_posts/**
 - packages/talks/audio_posts/**
 - adapters/storage/postgres/src/audio_posts/**
@@ -506,3 +508,76 @@ Map evidence to current UX/WF acceptance IDs. Distinguish actual real provider/d
 Publish committed source/tests and immutable SHA-specific handoff with base/head, PR, owned paths, contract versions, commands/results, source gaps, migrations, dependencies and next merge action. Promptly merge dependency-ready source-tested compatible work through AF00 into a safe target; draft/handoff is interim for unfinished work. Never implicitly deploy, bypass failures or spend on providers. If checks cannot run, preserve work and state the exact blocker; do not stop implementable code or repeatedly retry unavailable dependencies.
 ```
 
+
+## AF14 — Settings, account and activity surfaces
+
+```text
+MASANAWA AUDIO-FIRST IMPLEMENTATION — AF14
+Repository: https://github.com/Baatiku/masanawa
+Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Window ID: AF14-<unique-label>
+
+Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF14 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
+
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
+Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
+
+Lane goal: Recover Settings/profile improvements. Implement concise Settings, account-fenced preferences, avatar/profile, notification and audio/data controls, correct app metadata/support, activity and lifecycle status. Consume AF08 credential/session APIs and AF01 financial obligations; preserve real deletion workflow. No auth/ledger replacement; AF00 integrates push, router and locale hooks.
+Dependencies: AF00 baseline and contract handoffs from relevant feature owners.
+Inspect existing PR inputs: #497, #435, #430.
+Read docs/WHOLE-APP-SOURCE-AUDIT-20261009.md and docs/BACKEND-STORAGE-OPERATIONS-20261009.md.
+Initial allowed paths:
+- apps/mobile/lib/src/screens/settings/settings_screen.dart
+- apps/mobile/lib/src/screens/settings/account_deletion_dialog.dart
+- apps/mobile/lib/src/screens/profile/edit_profile_screen.dart
+- apps/mobile/lib/src/screens/you/you_screen.dart
+- apps/mobile/lib/src/screens/activity/**
+- apps/mobile/lib/src/account_preferences/**
+- services/gateway/src/account_preferences/**
+- adapters/storage/postgres/src/account_preferences/**
+- apps/mobile/test/audio_first/af14/**
+Claim only the paths actually needed, including named tests and your docs/workstreams/AF14-<scope>-20261009.md. Check overlap and five-minute activity; publish/read back claim before edits. Shared composition/router/export/migration registries/native manifest/locale files remain AF00 unless explicitly transferred. AF01 owns money authority, AF08 authentication and AF05 allocated audio.
+
+Implement complete connected behavior within your lane: persistence, authorization, API/transport, state/UI, errors, retries/offline, tests and recovery as applicable. Consume published contracts; don't invent a second ledger/task/chat/identity authority. Route/composition changes outside your ownership go to AF00 as exact instructions with tests. New SQL needs AF00 allocation; don't alter applied migrations.
+
+Required verification: SA-A01..08: restart/failed saves/account-switch, profile/avatar readback, blocked-user denial, OS/token notification states, safe scope-confirmed cache clearing, installed metadata/support, server deletion/export with unsettled funds. Never claim request==deletion.
+Map evidence to current UX/WF acceptance IDs. Distinguish actual real provider/device/DB evidence, simulated tests, blocked/unrun tests and source still missing. Do not label source-only or mock tests VERIFIED_E2E.
+
+Publish committed source/tests and immutable SHA-specific handoff with base/head, PR, owned paths, contract versions, commands/results, source gaps, migrations, dependencies and next merge action. Promptly merge dependency-ready source-tested compatible work through AF00 into a safe target; draft/handoff is interim for unfinished work. Never implicitly deploy, bypass failures or spend on providers. If checks cannot run, preserve work and state the exact blocker; do not stop implementable code or repeatedly retry unavailable dependencies.
+```
+
+## AF15 — Storage and durable operations
+
+```text
+MASANAWA AUDIO-FIRST IMPLEMENTATION — AF15
+Repository: https://github.com/Baatiku/masanawa
+Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Window ID: AF15-<unique-label>
+
+Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF15 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
+
+Confirmed owner navigation: Chats · Rooms · Talks · Gwani · Wallet. Talks is centre and ordinary authenticated launch default; Assistant consumer label is Gwani. Calls remain inside Chats. AF00 owns route/saved-tab compatibility; do not build another shell. Explicit deep links/calls and background resume preserve active context.
+
+Recover fresh main, local working-tree status, relevant PR heads/changed paths and live claims. Preserve the owner's locally fixed app/APK; AF00 must reconcile its source, which was unavailable to the planning window. Never reset/clean/force-push or rebuild an existing implementation from scratch.
+
+Lane goal: Inventory/reuse existing stores/jobs and publish DB/storage/job closure contracts. Implement reusable private media lifecycle, retention/orphan cleanup and durable operational adapters; qualify schema roots, backups/restore/capacity and restart. Domain jobs stay feature-owned, AF13 owns independent evidence, AF00 owns roots/migration registry/deploy config, AF01 money. Existing adapter changes require explicit exact-path transfer, not parallel replacement.
+Dependencies: AF00 baseline and contract handoffs from relevant feature owners.
+Inspect existing PR inputs: #497, #430, #518, #561, #570.
+Read docs/WHOLE-APP-SOURCE-AUDIT-20261009.md and docs/BACKEND-STORAGE-OPERATIONS-20261009.md.
+Initial allowed paths:
+- services/gateway/src/media_lifecycle/**
+- services/worker/src/durable_operations/**
+- adapters/storage/postgres/src/media_lifecycle/**
+- adapters/storage/object_lifecycle/**
+- tests/integration/audio_first_operations/**
+- apps/mobile/test/audio_first/af15/**
+Claim only the paths actually needed, including named tests and your docs/workstreams/AF15-<scope>-20261009.md. Check overlap and five-minute activity; publish/read back claim before edits. Shared composition/router/export/migration registries/native manifest/locale files remain AF00 unless explicitly transferred. AF01 owns money authority, AF08 authentication and AF05 allocated audio.
+
+Implement complete connected behavior within your lane: persistence, authorization, API/transport, state/UI, errors, retries/offline, tests and recovery as applicable. Consume published contracts; don't invent a second ledger/task/chat/identity authority. Route/composition changes outside your ownership go to AF00 as exact instructions with tests. New SQL needs AF00 allocation; don't alter applied migrations.
+
+Required verification: DB-A01..08: actual PG migration/upgrade/concurrency, signed-media access/revocation, coupled DB/object restore, measured capacity, restart/lease/idempotency, settlement-aware deletion. Record unavailable live credentials/devices/providers as NOT_RUN or BLOCKED.
+Map evidence to current UX/WF acceptance IDs. Distinguish actual real provider/device/DB evidence, simulated tests, blocked/unrun tests and source still missing. Do not label source-only or mock tests VERIFIED_E2E.
+
+Publish committed source/tests and immutable SHA-specific handoff with base/head, PR, owned paths, contract versions, commands/results, source gaps, migrations, dependencies and next merge action. Promptly merge dependency-ready source-tested compatible work through AF00 into a safe target; draft/handoff is interim for unfinished work. Never implicitly deploy, bypass failures or spend on providers. If checks cannot run, preserve work and state the exact blocker; do not stop implementable code or repeatedly retry unavailable dependencies.
+```

@@ -11,3 +11,8 @@ Existing DEFAULT-AI-PERSONAS.md retains persona profiles; its live-stage product
 Historical launch, readiness and recovery originals are [archived](archive/20261009/README.md). Old task IDs remain traceable in [recovery](AUDIO-FIRST-RECOVERY-20261009.md); none is auto-completed by moving a document.
 
 Latest confirmed shell: **Chats · Rooms · Talks · Gwani · Wallet**; Talks centre/default. Read the [completeness audit](AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md) for unresolved boundaries and activation gates.
+
+
+## Further whole-app inspection
+
+Read [source findings and Settings contract](WHOLE-APP-SOURCE-AUDIT-20261009.md), [all-screen inventory](WHOLE-APP-SCREEN-INVENTORY-20261009.json) and [backend/storage/operations gates](BACKEND-STORAGE-OPERATIONS-20261009.md). These extend the prior planning audit with actual source observations; none certifies runtime completeness. AF14 owns Settings/account/activity; AF15 owns reusable media/operational lifecycle and DB/storage qualification proposals. The allocation now has sixteen slots; concurrency remains limited.

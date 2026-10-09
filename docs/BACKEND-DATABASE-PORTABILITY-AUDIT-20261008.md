@@ -1,5 +1,7 @@
 # Backend & Database Portability Audit — 2026-10-08
 
+> Historical 2026-10-08 snapshot. Current source correction: gateway package start now runs migrations before main; the presence wrapper delegates to that start. Earlier startup/readiness statements below describe the old snapshot, not current source or deployment proof. Use [2026-10-09 backend/storage closure plan](BACKEND-STORAGE-OPERATIONS-20261009.md) for current requirements. Dated infrastructure metadata does not prove present backup/restore/capacity.
+
 > **Audit status:** source and connected Railway *control-plane metadata* examined, but **no production SQL query, backup inspection, restore, payment, provider call, executable build, device test, or new deployment was performed**. Evidence statements below are deliberately qualified. This audit supplements `DATA-ARCHITECTURE.md`, `CONFIGURATION-DEPLOYMENT.md`, `API-LIFECYCLE.md`, `IMPLEMENTATION-KICKOFF-20261008.md`, and the existing R01–R19/C01–C08 ledger. It does not launch a competing workstream or reserve existing code-owner paths.
 
 ## 1. Decision

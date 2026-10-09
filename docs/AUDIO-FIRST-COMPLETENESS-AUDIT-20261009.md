@@ -70,3 +70,8 @@ Global mic/media failures do not block working text or tap purchase paths. Gwani
 AF00 maintains the gap dispositions and publishes ready contract SHAs; AF13 records evidence. A feature can be source-integrated when its relevant executable checks pass on a safe merge target. External gaps remain explicit production activation blockers for their affected capabilities.
 
 Use NOT_RUN / BLOCKED / FAIL / PASS_SIMULATED / PASS_REAL with immutable source/artifact identities. A completed ledger row, a screenshot, docs checker or APK build does not prove provider/device/escrow functionality. Re-audit after local-source recovery and every material integration; only executed journeys can close verified behavior gaps.
+
+
+## Further whole-app inspection
+
+Read [source findings and Settings contract](WHOLE-APP-SOURCE-AUDIT-20261009.md), [all-screen inventory](WHOLE-APP-SCREEN-INVENTORY-20261009.json) and [backend/storage/operations gates](BACKEND-STORAGE-OPERATIONS-20261009.md). These extend the prior planning audit with actual source observations; none certifies runtime completeness. AF14 owns Settings/account/activity; AF15 owns reusable media/operational lifecycle and DB/storage qualification proposals. The allocation now has sixteen slots; concurrency remains limited.

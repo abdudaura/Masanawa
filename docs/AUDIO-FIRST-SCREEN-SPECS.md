@@ -109,3 +109,8 @@ Use stable semantic tab keys: chats, rooms, talks, gwani, wallet, with Talks at 
 Ordinary authenticated cold start/home opening lands on Talks; signup/login without a pending destination does the same. Explicit deep links/notifications restore their validated resource after auth. Background resume preserves ongoing conversation/recording/call/order state; never interrupt an active operation just to show the default feed. Tabs retain independent scroll/draft stacks during the session. Back closes sheets/details before returning to their origin. Re-tapping Talks does not discard a recording or silently start playback.
 
 Persist semantic tab names, not raw old indices. Migrate old saved navigation using the source version and tested aliases; the old assistant/gwani technical route continues to resolve to Gwani. Do not turn old private AI links into human Chats or old live Talk IDs into audio posts. Unknown/deleted/forbidden deep links show a recoverable error and a safe Talks return. Verify launch, resume, auth redirect, notification, back, logout/account switch, reduced motion and keyboard on the actual app.
+
+
+## Further whole-app inspection
+
+Read [source findings and Settings contract](WHOLE-APP-SOURCE-AUDIT-20261009.md), [all-screen inventory](WHOLE-APP-SCREEN-INVENTORY-20261009.json) and [backend/storage/operations gates](BACKEND-STORAGE-OPERATIONS-20261009.md). These extend the prior planning audit with actual source observations; none certifies runtime completeness. AF14 owns Settings/account/activity; AF15 owns reusable media/operational lifecycle and DB/storage qualification proposals. The allocation now has sixteen slots; concurrency remains limited.
