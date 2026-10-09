@@ -14,14 +14,17 @@
         "apps/mobile/lib/src/router/app_router.dart",
         "apps/mobile/lib/src/messages/human_dm_screen.dart",
         "packages/talks/migrations/0021_human_private_calls.sql",
-        "docs/workstreams/c09-work-integration-20261009.md"
+        "docs/workstreams/c09-work-integration-20261009.md",
+        "apps/mobile/lib/src/core/mobile_push.dart",
+        "apps/mobile/lib/src/core/shell_deep_link.dart",
+        "apps/mobile/test/shell_deep_link_test.dart"
       ],
       "branch": "work/c09-calling-work-integration-20261009",
       "base_sha": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
       "pr": "pending stacked draft PR",
       "claimed_at": "2026-10-09T09:13:07.942Z",
-      "heartbeat_at": "2026-10-09T09:19:43.238Z",
-      "expires_at": "2026-10-09T09:24:43.238Z",
+      "heartbeat_at": "2026-10-09T09:21:00.640Z",
+      "expires_at": "2026-10-09T09:26:00.640Z",
       "notes": "Base latest #497 Work, preserve existing C09 PR #575. C09 approved user; isolated claimed shared app/main/flutter only; no prod deploy/merge while unverified."
     }
   ],
