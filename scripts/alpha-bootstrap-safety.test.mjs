@@ -11,6 +11,7 @@ const good = Object.freeze({
   MASANAWA_ALPHA_BOOTSTRAP_CONFIRM: ALPHA_BOOTSTRAP_ACK,
   MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_DATABASE: "masanawa_dev",
   MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_HOST: "127.0.0.1",
+  MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_PORT: "5432",
   NODE_ENV: "development",
 });
 
@@ -62,6 +63,9 @@ test("missing/mismatched target pins denied", () => {
   rejected({ MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_HOST: "localhost" }, "expected database host");
   rejected({ MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_DATABASE: undefined }, "expected database name");
   rejected({ MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_DATABASE: "masanawa_prod" }, "expected database name");
+  rejected({ MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_PORT: undefined }, "expected database port");
+  rejected({ MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_PORT: "5433" }, "expected database port");
+  rejected({ MASANAWA_DATABASE_URL: "postgresql://demo:secret@127.0.0.1:5433/masanawa_dev" }, "expected database port");
 });
 
 test("invalid/unsupported URL and system DBs denied", () => {
