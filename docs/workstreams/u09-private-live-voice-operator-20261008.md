@@ -5,7 +5,7 @@
 **Branch:** `work/u09-private-voice-operator-20261009-gpt6`.
 **Pushed source checkpoint (before this handoff):** `70366269bf78729bf9a74bc588d375fa35656c49`.
 **Claim commit:** `98f148ee1786426b1c828d24773c906f433709c0`. First commit was a claim recorded in this exact handoff path *before source edits*. This is a five-minute activity lease, not an indefinite lock.
-**PR:** see branch-associated draft PR (created after this commit); do not merge before final qualified integration.
+**PR:** [#534 — U09 private Gemini Live voice operator](https://github.com/Baatiku/masanawa/pull/534) — OPEN / DRAFT / UNMERGED. Do not merge before final qualified integration.
 
 ## Why U09, and collision avoidance
 
@@ -33,6 +33,8 @@ Inspected fresh `main`, the two required re-audits, `CONTINUE-HERE.md`, U09 in t
 - `apps/mobile/test/operator_voice/private_voice_operator_test.dart` — exclusive focus preemption/stale lease, no-mic typed mode/account switch, stale approval, uncertain submit quarantine, concurrent approve single-flight, invalid grant/no media, agent output not submitted.
 - `apps/mobile/test/operator_voice/private_voice_assistant_panel_test.dart` — typed send requires review (edit cancels), and account change removes another user's draft.
 - `services/gateway/src/operator_voice/private_voice_service.test.ts` — canonical authorization, exact active session + token mint, closed/unauthorized/expired and forged character rejection, safe persisted status, hostile-field rejection at Fastify boundary.
+
+**CI follow-up:** GitHub reported failed pull-request workflows at source/handoff SHA `dcaedf47c425b0e62cdf8f747f77b00c56ac20b8`: Mobile Build run `37865050824`, Foundation CI run `37865050700`. Job logs could not be retrieved (GitHub returned `BlobNotFound` 404), so the cause is **unknown**, not a proven test failure or quota failure. Separate Vercel commit status was `failure` with a build-rate-limit/upgrade URL. No rerun attempted; no CI PASS claimed.
 
 **Executed verification:** GitHub compare `main...branch` showed 8 touched paths only (7 source/test files plus this handoff), no shared path; it was ahead of the claimed main and behind by zero at source checkpoint. Fetched server source and verified explicit persisted-scope and expiry guards. **This is a source-level inspection, not Vitest, typecheck, Flutter test or device pass.**
 
