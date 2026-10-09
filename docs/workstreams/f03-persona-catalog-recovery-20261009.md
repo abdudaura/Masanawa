@@ -1,11 +1,11 @@
 # F03 — Canonical 17-persona catalog and conservative hidden Expert bootstrap
 
-Updated UTC: 2026-10-09 00:52. Window: GPT-6 F03 recovery.
+Updated UTC: 2026-10-09 00:55. Window: GPT-6 F03 recovery.
 **Status: PARTIAL_IMPLEMENTATION** (NOT integrated, NOT tested end to end, NOT deployed, NOT merged).
 Claim/lease: [#541](https://github.com/Baatiku/masanawa/issues/541), renewed 00:51 UTC. Only `services/gateway/src/platform_personas/**` and this handoff were modified.
 Base `main`: `5e758673ae91082520b21b3153da53791ae2cbf3`.
 Branch: `work/f03-approved-persona-provisioning-20261009-gpt6`.
-Source checkpoint (prior to handoff): `e00aab26c6fb64a466dc4a775105ad21c7a6cece`. See draft PR metadata for final handoff/branch HEAD.
+Source checkpoint: `68cf448e8d3a21e0d4b0c0748b70c02d1348dc09` (before this documentation update). Draft PR [#545](https://github.com/Baatiku/masanawa/pull/545). The PR body records the final branch HEAD.
 Requirements: F03, R03/R19; assisted J06/J10/J11 only after integrated, not accepted now.
 
 ## Collision-safe ownership and reusable predecessors
@@ -23,13 +23,14 @@ Requirements: F03, R03/R19; assisted J06/J10/J11 only after integrated, not acce
 3. `services/gateway/src/platform_personas/0001_seed_bindings.sql`: additive immutable tenant-scoped ID reservation table with uniqueness and seed-key constraints; **not registered or migrated**.
 4. `services/gateway/src/platform_personas/postgres.ts`: prepared, parameter-bound tenant-safe SQL adapter using session advisory try-lock across pods; durable reservation before mutation; refusal on busy lock/invalid keys, bounded no-wait policy, unlock in finally and poison failed connections. Requires F11 schema sequencing and an authorized DB before use.
 5. `services/gateway/src/platform_personas/bootstrap.test.ts`: 7 authored Vitest cases covering roster, private unqualified creation, idempotency, admin edits, name collision, post-identity restart, partial/foreign ownership, tenant isolation.
-6. `services/gateway/src/platform_personas/postgres.test.ts`: 5 authored Vitest cases covering durable ID reuse, tenant+parameter isolation, lease release on failure, injection guards, unavailable reservation and failed unlock.
+6. `services/gateway/src/platform_personas/postgres.test.ts`: 6 authored Vitest cases covering durable ID reuse, tenant+parameter isolation, lease release on failure, injection guards, unavailable reservation and failed unlock.
 
 ## Verification EVIDENCE
 
 - **Executed** GitHub connector main/PR/claim inventory; verified base `main` SHA and distinct F03 branch; source readback of six new paths, JSON parse of all 17 catalog entries (17 unique; male 9, female 8; voices only Gwani/Gwana; continuous ordering), source assertions for session advisory try-lock, hidden-only Expert path, additive/unregistered migration and no voice-profile writes.
+- **GitHub CI observation on first handoff SHA `bf38d2dc04e817142693d9005095016a8628f850`**: [Foundation CI run 37867026857](https://github.com/Baatiku/masanawa/actions/runs/37867026857) completed `failure` but the single `check` job returned `steps: null`: **zero steps executed**. Combined status also reports Vercel failure pointing to `upgradeToPro=build-rate-limit`; it is a service limit, not code execution. A new commit may trigger a different run; inspect exact final SHA separately.
 - **NOT EXECUTED:** `pnpm --filter @masanawa/gateway-service typecheck`; `pnpm exec vitest run services/gateway/src/platform_personas/bootstrap.test.ts services/gateway/src/platform_personas/postgres.test.ts`; normal Gateway/full repository Vitest; PostgreSQL transaction/advisory contention tests; app unit and Flutter analyzer; Android/device/provider/LiveKit/Gemini checks.
-- Reason: connector-only private GitHub checkout; local `git ls-remote https://github.com/Baatiku/masanawa.git` fails with `Could not resolve host: github.com`, and no checked-out repository/workspace packages or disposable PG/Flutter/Android runtime in this window. GitHub Actions issue #457 previously documents quota/exhaustion/zero-step jobs; do not interpret absent CI as pass or code failure. Static source readback is NOT TypeScript compilation and authored tests are NOT executed tests.
+- Reason: connector-only private GitHub checkout; local `git ls-remote https://github.com/Baatiku/masanawa.git` fails with `Could not resolve host: github.com`, and no checked-out repository/workspace packages or disposable PG/Flutter/Android runtime in this window. GitHub Actions issue #457 documents quota/exhaustion/zero-step jobs, and this branch reproduced zero-step CI; do not interpret absent CI as pass or code failure. Static source readback is NOT TypeScript compilation and authored tests are NOT executed tests.
 - The SQL file has **not** been applied to any database, and no provider, real user data or production system was changed.
 
 ## Missing implementable source / integration
