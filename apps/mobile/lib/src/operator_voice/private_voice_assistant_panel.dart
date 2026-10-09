@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'private_voice_operator.dart';
@@ -39,6 +41,11 @@ class _PrivateVoiceAssistantPanelState
     super.initState();
     _text.text = widget.operator.draftText;
     widget.operator.addListener(_onOperatorChanged);
+    unawaited(widget.operator.bindAssistantContext(
+      accountId: widget.accountId,
+      characterId: widget.characterId,
+      characterSessionId: widget.characterSessionId,
+    ));
   }
 
   void _onOperatorChanged() {
@@ -64,7 +71,11 @@ class _PrivateVoiceAssistantPanelState
         oldWidget.characterId != widget.characterId ||
         oldWidget.characterSessionId != widget.characterSessionId) {
       // Invalidate drafts/grants on account, persona, or session switch.
-      widget.operator.onAccountChanged();
+      unawaited(widget.operator.bindAssistantContext(
+        accountId: widget.accountId,
+        characterId: widget.characterId,
+        characterSessionId: widget.characterSessionId,
+      ));
     }
   }
 
