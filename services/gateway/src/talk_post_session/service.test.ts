@@ -42,6 +42,29 @@ function fixtures() {
 }
 const request = { authorizationHeader: "Bearer host", talkId: "talk_1", processingConsent: true as const };
 describe("U16 explicit host-only recorded-media insights", () => {
+  it("expires a processor that ignores cancellation without accepting its late draft", async () => {
+    const f=fixtures();
+    let finish!: (value: ReplayInsightDraft) => void;
+    f.processor.generate.mockImplementationOnce(async()=>new Promise(resolve=>{finish=resolve;}));
+    const pending=f.service.request(request);
+    await expect(pending).rejects.toMatchObject({statusCode:503});
+    finish({summary:"Too late",highlights:[],nextTalkTitle:null});
+    await Promise.resolve();
+    expect(f.repository.complete).not.toHaveBeenCalled();
+    expect(f.repository.fail).toHaveBeenCalledOnce();
+  }, 25_000);
+  it("checks source again after acquisition and refuses provider dispatch on revocation", async () => {
+    const f=fixtures();
+    f.repository.claim=vi.fn(async()=>{f.revoke(); return true;});
+    await expect(f.service.request(request)).rejects.toMatchObject({statusCode:409});
+    expect(f.processor.generate).not.toHaveBeenCalled();
+    expect(f.repository.fail).toHaveBeenCalledOnce();
+  });
+  it("does not return stored content revoked while repository read is in flight", async () => {
+    const f=fixtures(); f.setReady();
+    f.repository.read=vi.fn(async()=>{f.revoke(); return ready;});
+    await expect(f.service.read(request)).rejects.toMatchObject({statusCode:409});
+  });
   it("refuses all guests and cross-tenant or missing replay without invoking providers", async () => {
     const f = fixtures();
     await expect(f.service.request({...request, authorizationHeader: "Bearer outsider"}))
@@ -93,3 +116,4 @@ describe("U16 explicit host-only recorded-media insights", () => {
       .rejects.toMatchObject({code:"talks.insights.generation_failed",message:"talks.insights.generation_failed"});
   });
 });
+

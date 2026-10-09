@@ -32,6 +32,17 @@ function setup() {
   return {app,calls};
 }
 describe("U16 isolated Host-only routes",()=>{
+  it("rejects injected authority before AJV strips unknown body properties", async () => {
+    const {app,calls}=setup();
+    for (const field of ["tenantId","hostUserId","recordingId","mediaChecksum","allSpeakersConsented"]) {
+      const result=await app.inject({method:"POST",url:"/talks/talk_1/post-session/insights",
+        headers:{authorization:"Bearer host"},payload:{processingConsent:true,[field]:"injected"}});
+      expect(result.statusCode).toBe(400);
+      expect(result.headers["cache-control"]).toBe("no-store");
+    }
+    expect(calls).toHaveLength(0);
+    await app.close();
+  });
   it("returns only the authenticated replay-ready eligibility state",async()=>{
     const {app}=setup();
     const result=await app.inject({
@@ -39,6 +50,8 @@ describe("U16 isolated Host-only routes",()=>{
       headers:{authorization:"Bearer host"},
     });
     expect(result.statusCode).toBe(200);
+    expect(result.headers["cache-control"]).toBe("no-store");
+    expect(result.headers.vary).toBe("Authorization");
     expect(result.json()).toMatchObject({
       status:"eligible",summary:null,recordingId:"recording_1",
     });
@@ -76,3 +89,4 @@ describe("U16 isolated Host-only routes",()=>{
     await app.close();
   });
 });
+
