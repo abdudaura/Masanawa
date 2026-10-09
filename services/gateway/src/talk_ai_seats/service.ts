@@ -143,6 +143,18 @@ const PUBLIC_REPOSITORY_FAILURES: Readonly<
   "talks.ai_commerce_required": { code: "talks.ai_commerce_required", statusCode: 503 },
   "AI Seat quote revision conflict": { code: "talks.ai_seat_quote_revision_conflict", statusCode: 409 },
   "Talk live revision conflict": { code: "talks.live_revision_conflict", statusCode: 409 },
+  // Exact error messages emitted by the canonical commerce AI Seat state machine.
+  // Preserve actionable conflict/permission semantics without echoing internals.
+  "AI Seat quote has expired": { code: "talks.ai_seat_quote_expired", statusCode: 409 },
+  "AI Seat authorization has expired": { code: "talks.ai_seat_authorization_expired", statusCode: 409 },
+  "AI Seat quote is terminal": { code: "talks.ai_seat_quote_terminal", statusCode: 409 },
+  "AI Seat quote is already confirmed": { code: "talks.ai_seat_quote_already_confirmed", statusCode: 409 },
+  "AI Seat is not awaiting admission": { code: "talks.ai_seat_not_awaiting_admission", statusCode: 409 },
+  "AI Seat is not awaiting a Host decision": { code: "talks.ai_seat_not_awaiting_host_decision", statusCode: 409 },
+  "AI Seat quote has not expired": { code: "talks.ai_seat_quote_not_expired", statusCode: 409 },
+  "Only the quoted payer may confirm the AI Seat purchase": { code: "talks.ai_seat_payer_forbidden", statusCode: 403 },
+  "Only the human Talk Host may admit an AI Seat": { code: "talks.host_forbidden", statusCode: 403 },
+  "Only the human Talk Host may decline an AI Seat": { code: "talks.host_forbidden", statusCode: 403 },
 });
 
 function mapRepositoryError(error: unknown): never {
