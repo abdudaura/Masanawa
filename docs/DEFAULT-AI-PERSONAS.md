@@ -1,3 +1,5 @@
+> Current overlay — 2026-10-09: retain these seventeen persona identities/profiles as recovery input. Consumer naming is **Masana**. Published audio-post creator behavior and scheduled disclosed Gemini production are defined in [current screens](AUDIO-FIRST-SCREEN-SPECS.md) and [product](AUDIO-FIRST-PRODUCT-20261009.md). Live-stage/Seat product requirements below are historical or optional Room-session capabilities, not the current Talks feed. The roster is not proof of provisioning. AF12 reconciles these personas; do not invent replacements or impersonate real people.
+
 # Default AI Personas and Live Context Contract
 
 Status: **canonical planned launch roster — 2026-10-08**
