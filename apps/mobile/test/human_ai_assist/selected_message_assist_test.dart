@@ -99,6 +99,32 @@ void main() {
     c.dispose();
   });
 
+  testWidgets('editing or discarding revokes the old exact-text approval',(tester) async {
+    final spy=SpyHumanAiTransport(), c=make(spy);
+    await tester.pumpWidget(MaterialApp(home:Scaffold(
+      body:SelectedMessageAssistSheet(controller:c,recipientLabel:'Human B'))));
+    await c.prepare(purpose:HumanAiAssistPurpose.reply,language:'ha',
+      disclosureAccepted:true,maskPrivateNumbers:true);
+    await tester.pumpAndSettle();
+    final checkbox=find.text('I verified the recipient and exact text');
+    await tester.ensureVisible(checkbox);
+    await tester.tap(checkbox);
+    await tester.pump();
+    expect(tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton,'Send reviewed reply')).onPressed,isNotNull);
+    await tester.enterText(find.byType(TextField),'Changed since review');
+    await tester.pump();
+    expect(tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton,'Send reviewed reply')).onPressed,isNull);
+    expect(spy.sent,0);
+    c.discard();
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton,'Prepare private preview')).onPressed,isNull);
+    await tester.pumpWidget(const MaterialApp(home:SizedBox()));
+    c.dispose();
+  });
+
   testWidgets('sheet blocks AI preview until explicit selection disclosure',(tester) async {
     final spy=SpyHumanAiTransport(), c=make(spy);
     await tester.pumpWidget(MaterialApp(home:Scaffold(
