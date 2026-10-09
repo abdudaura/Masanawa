@@ -46,6 +46,10 @@ CREATE TABLE talks.human_call_signal_outbox (
   ),
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   delivered_at timestamptz,
+  lease_token uuid,
+  leased_until timestamptz,
+  attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+  last_error_code text,
   FOREIGN KEY (tenant_id,call_id)
     REFERENCES talks.human_private_calls(tenant_id,call_id) ON DELETE CASCADE,
   FOREIGN KEY (tenant_id,recipient_user_id)
