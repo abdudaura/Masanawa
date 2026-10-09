@@ -15,16 +15,19 @@ class HostPreparationController extends ChangeNotifier {
   int _generation = 0;
   bool _disposed = false;
   bool busy = false;
+  bool publicationNeedsReadback = false;
   String? error;
   HostPreparation? draft;
 
-  bool get mayGoLive => !busy && draft?.phase == HostPreparationPhase.draft;
+  bool get mayGoLive => !busy && !publicationNeedsReadback &&
+      draft?.phase == HostPreparationPhase.draft;
 
   void switchAccount(String accountKey) {
     if (_accountKey == accountKey) return;
     _generation++;
     _accountKey = accountKey;
     draft = null;
+    publicationNeedsReadback = false;
     error = null;
     busy = false;
     notifyListeners();
@@ -50,7 +53,9 @@ class HostPreparationController extends ChangeNotifier {
   /// Caller MUST present a human-reviewed confirmation; no other method calls this.
   Future<void> goLiveAfterReview() async {
     final current = draft;
-    if (current == null || current.phase != HostPreparationPhase.draft) return;
+    if (current == null || !mayGoLive) return;
+    publicationNeedsReadback = true;
+    notifyListeners();
     await _run(() => _transport.goLive(current.prepId, current.revision));
   }
 
@@ -68,7 +73,11 @@ class HostPreparationController extends ChangeNotifier {
     notifyListeners();
     try {
       final received = await action();
-      if (!_disposed && turn == _generation) draft = received;
+      if (!_disposed && turn == _generation) {
+        draft = received;
+        publicationNeedsReadback =
+            received.phase == HostPreparationPhase.publishing;
+      }
     } catch (e) {
       if (!_disposed && turn == _generation) error = hostPreparationError(e);
     } finally {
