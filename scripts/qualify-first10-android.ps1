@@ -60,7 +60,8 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "Unable to determine Git HEAD." }
   Write-Host "HEAD: $head"
 
-  $dirty = (& git status --porcelain -- apps/mobile).Trim()
+  $dirtyRaw = (& git status --porcelain -- apps/mobile)
+  $dirty = if ($dirtyRaw) { [string]$dirtyRaw.Trim() } else { "" }
   if ($LASTEXITCODE -ne 0) { throw "Unable to inspect mobile working tree." }
   if (-not [string]::IsNullOrWhiteSpace($dirty)) {
     Write-Host $dirty -ForegroundColor Red
