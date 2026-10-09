@@ -22,6 +22,26 @@
       "heartbeat_at": "2026-10-09T10:21:59.304Z",
       "expires_at": "2026-10-09T10:26:59.304Z",
       "notes": "No active CAS claims; #520 last updated 2026-10-08T23:59:41Z. Preserve authentic branch lineage; no shared Gateway composer, root router, native, finance, migration or dependency changes."
+    },
+    {
+      "claim_id": "RECOVERY-01-u15-20261009",
+      "owner": "RECOVERY-01",
+      "scope": "U15 continuation #536 strict HTTP authority boundary and source/type verification",
+      "paths": [
+        "services/gateway/src/talk_agent_live_copilot/routes.ts",
+        "services/gateway/src/talk_agent_live_copilot/routes.test.ts",
+        "services/gateway/src/talk_agent_live_copilot/copilot.ts",
+        "services/gateway/src/talk_agent_live_copilot/copilot.test.ts",
+        "docs/workstreams/recovery-01-u15-copilot-20261009.md"
+      ],
+      "branch": "work/recovery-01-u15-copilot-20261009",
+      "base_sha": "061b637f3386f67596ca3997b8dac5ac5b619eac",
+      "source_pr": 536,
+      "source_head": "061b637f3386f67596ca3997b8dac5ac5b619eac",
+      "claimed_at": "2026-10-09T10:24:17.294Z",
+      "heartbeat_at": "2026-10-09T10:24:17.294Z",
+      "expires_at": "2026-10-09T10:29:17.294Z",
+      "notes": "Original source preserved. No composer/router/financial/migration/native/dependency/CI edits. Reproduce extra-field stripping before auth/dispatch, then run real focused suites and strict TS."
     }
   ],
   "history": [
