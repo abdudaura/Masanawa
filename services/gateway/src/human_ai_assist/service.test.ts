@@ -24,6 +24,7 @@ function setup() {
       return [{messageId,conversationId:conversation,senderUserId:bob,body:text,sequence:"23",
         editedAt,peerUserId:bob}] as SelectedMessage[];
     }},
+    budget:{reserve:async ()=>allowed},
     generator:{generate:async (input:{selectedText:string;retain:false;allowTools:false})=>{
       calls.push({prompt:input.selectedText,retain:input.retain,tools:input.allowTools});
       return "Sounds good, I will reply after reviewing.";
