@@ -9,15 +9,18 @@
         "services/gateway/src/human_calls/signal_worker.ts",
         "services/gateway/src/human_calls/signal_worker.test.ts",
         "services/gateway/src/human_calls/schema.sql",
-        "docs/workstreams/c09-private-calls-20261009.md"
+        "docs/workstreams/c09-private-calls-20261009.md",
+        "services/gateway/src/human_calls/livekit_room_revoker.ts",
+        "services/gateway/src/human_calls/livekit_room_revoker.test.ts",
+        "services/gateway/src/human_calls/composition.ts"
       ],
       "branch": "work/c09-private-calls-20261009-gpt6",
       "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
       "pr": "https://github.com/Baatiku/masanawa/pull/575",
       "claimed_at": "2026-10-09T08:55:59.820Z",
-      "heartbeat_at": "2026-10-09T08:55:59.820Z",
-      "expires_at": "2026-10-09T09:00:59.820Z",
-      "notes": "Existing C09 branch only; no root, auth, C01/C02 schema changes, native, finance, deployment or PR merge. Guard after active block and durable revoke retry."
+      "heartbeat_at": "2026-10-09T08:58:06.944Z",
+      "expires_at": "2026-10-09T09:03:06.944Z",
+      "notes": "Added only owned C09 concrete Twirp DeleteRoom implementation and composer adapter to provide real media shutdown without new dependency; no external provider request or production change."
     }
   ],
   "history": [
