@@ -82,3 +82,53 @@ test("persisted approval must bind real, present identity and exact nonempty tra
     {...valid,presentedTicketId:""}
   ]) assert.throws(()=>verifyIssuedApproval(bad),{code:"approval_invalid"});
 });
+
+
+test("authorization callbacks cannot rewrite admitted identity or capability classification",()=>{
+  const candidate={...descriptor,scopes:[...descriptor.scopes],regions:[...descriptor.regions],argumentKeys:[...descriptor.argumentKeys]};
+  const caller={...principal};
+  let capabilityView, principalView;
+  const admitted=admit({catalog:[candidate],principal:caller,authorizeCapability:({capability,principal:authenticated})=>{
+    capabilityView=capability;
+    principalView=authenticated;
+    // A policy callback may reference and mutate its original inputs, but the
+    // authorization decision must keep the exact server-checked snapshot.
+    candidate.id="crypto.transfer.confirm";
+    candidate.executionClass="financial";
+    candidate.enabled=false;
+    candidate.scopes.push("human-dm");
+    candidate.regions.push("XX");
+    candidate.argumentKeys.push("recipient");
+    caller.tenantId="attacker_tenant";
+    return true;
+  }});
+  assert.equal(admitted.classification,"read");
+  assert.equal(admitted.capability.id,"wallet.balance.read");
+  assert.equal(admitted.capability.enabled,true);
+  assert.deepEqual(admitted.capability.scopes,["private-assistant"]);
+  assert.deepEqual(admitted.capability.regions,["NG"]);
+  assert.deepEqual(admitted.capability.argumentKeys,["currency"]);
+  assert.equal(principalView.tenantId,"tenant_1");
+  assert.equal(capabilityView,admitted.capability);
+  assert.notEqual(admitted.capability,candidate);
+  assert.notEqual(principalView,caller);
+  assert.equal(Object.isFrozen(admitted.capability),true);
+  assert.equal(Object.isFrozen(admitted.capability.scopes),true);
+  assert.equal(Object.isFrozen(admitted.capability.regions),true);
+  assert.equal(Object.isFrozen(admitted.capability.argumentKeys),true);
+  assert.equal(Object.isFrozen(principalView),true);
+});
+
+test("context authorization sees the same checked principal snapshot",()=>{
+  const caller={...principal};
+  const selected=parseOperatorProposal({...proposal,contextRef:{kind:"dm-selected-message",id:"message_1"}});
+  let seenUser;
+  assert.equal(admit({proposal:selected,principal:caller,authorizeCapability:()=>{
+    caller.userId="different_user";
+    return true;
+  },authorizeContext:({principal:authenticated})=>{
+    seenUser=authenticated.userId;
+    return authenticated.userId==="user_1";
+  }}).classification,"read");
+  assert.equal(seenUser,"user_1");
+});
