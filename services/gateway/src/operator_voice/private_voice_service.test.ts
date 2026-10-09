@@ -23,7 +23,12 @@ function fixture() {
     authority: {},
   } as AgentConversationAdmission;
   const authorize = vi.fn(async () => admission);
-  const read = vi.fn(async () => ({ state: "active" }));
+  const read = vi.fn(async () => ({
+    state: "active",
+    ...scope,
+    characterSessionId,
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  }));
   const mint = vi.fn(async () => ({
     token: "private-ephemeral-provider-token",
     websocketUrl: "wss://generativelanguage.googleapis.com/ws/",
@@ -72,7 +77,9 @@ describe("U09 exact-session private voice admission", () => {
 
   it("rejects closed, expired or unauthorized sessions without issuing token", async () => {
     const f = fixture();
-    f.read.mockResolvedValueOnce({ state: "closed" });
+    f.read.mockResolvedValueOnce({
+      state: "closed", ...f.body, expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
     await expect(f.service.start({ ...f.body,
       authorizationHeader: f.authorizationHeader,
     })).rejects.toThrow();
@@ -81,6 +88,18 @@ describe("U09 exact-session private voice admission", () => {
     await expect(f.service.start({ ...f.body,
       authorizationHeader: f.authorizationHeader,
     })).rejects.toThrow("account revoked");
+    expect(f.mint).not.toHaveBeenCalled();
+  });
+
+  it("rejects an expired persisted session even when its state is active", async () => {
+    const f = fixture();
+    const valid = await f.read();
+    f.read.mockResolvedValueOnce({
+      ...valid, expiresAt: new Date(Date.now() - 1000).toISOString(),
+    });
+    await expect(f.service.start({
+      ...f.body, authorizationHeader: f.authorizationHeader,
+    })).rejects.toThrow();
     expect(f.mint).not.toHaveBeenCalled();
   });
 
