@@ -62,6 +62,19 @@ const visibleTarget = `
        WHERE se.tenant_id = p.tenant_id AND se.target_kind = 'profile'
          AND se.target_id = p.handle AND se.visibility IN ('restricted','blocked')
     )
+    -- An active identity is not necessarily allowed to initiate discovery:
+    -- moderation may restrict the VIEWER's own public profile. Check the
+    -- originator as well as the target at the SQL authorization boundary.
+    AND NOT EXISTS (
+      SELECT 1 FROM talks.public_profiles viewer_profile
+      JOIN talks.safety_enforcement viewer_moderation
+        ON viewer_moderation.tenant_id = viewer_profile.tenant_id
+       AND viewer_moderation.target_kind = 'profile'
+       AND viewer_moderation.target_id = viewer_profile.handle
+       AND viewer_moderation.visibility IN ('restricted','blocked')
+      WHERE viewer_profile.tenant_id = p.tenant_id
+        AND viewer_profile.user_id = $2
+    )
 `;
 
 async function queryContactRows(pool: HumanContactSqlPool, tenantId: string, userId: string, limit: number, after: HumanContactPageAfter | null): Promise<readonly RequestRow[]> {
@@ -96,6 +109,18 @@ async function queryContactRows(pool: HumanContactSqlPool, tenantId: string, use
               WHERE se.tenant_id=$1 AND se.target_kind='profile'
                 AND se.target_id=other.handle
                 AND se.visibility IN ('restricted','blocked')
+           )
+           -- Restrict a moderated VIEWER too. Otherwise an already-restricted
+           -- profile can still enumerate previously admitted contacts/pages.
+           AND NOT EXISTS (
+             SELECT 1 FROM talks.public_profiles viewer_profile
+             JOIN talks.safety_enforcement viewer_moderation
+               ON viewer_moderation.tenant_id=viewer_profile.tenant_id
+              AND viewer_moderation.target_kind='profile'
+              AND viewer_moderation.target_id=viewer_profile.handle
+              AND viewer_moderation.visibility IN ('restricted','blocked')
+             WHERE viewer_profile.tenant_id=edge.tenant_id
+               AND viewer_profile.user_id=$2
            )
            AND ($4::timestamptz IS NULL OR edge.updated_at < $4::timestamptz
                 OR (edge.updated_at = $4::timestamptz AND other.user_id > $5::text))
