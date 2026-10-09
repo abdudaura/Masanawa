@@ -1,10 +1,59 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {parseOperatorProposal,authorizeOperatorProposal,verifyIssuedApproval,admitTaskExecution,advanceTaskPhase,validateTaskEventPage,selectOperatorCard} from "../src/index.js";
+import {parseOperatorProposal,authorizeOperatorProposal,verifyIssuedApproval,normalizedTerms,admitTaskExecution,advanceTaskPhase,validateTaskEventPage,selectOperatorCard} from "../src/index.js";
 const principal={tenantId:"tenant_1",userId:"user_1",accountId:"account_1",sessionId:"character-session_1",deviceId:"device_1"};
 const proposal={requestId:"request_0199abcd-1234-7123-8123-123456789abc",capabilityId:"wallet.balance.read",capabilityVersion:1,untrustedArguments:{currency:"NGN"}};
 const descriptor={id:"wallet.balance.read",version:1,enabled:true,executionClass:"read",scopes:["private-assistant"],regions:["NG"],argumentKeys:["currency"]};
 const admit=(more={})=>authorizeOperatorProposal({proposal:parseOperatorProposal(proposal),catalog:[descriptor],principal,scope:"private-assistant",region:"NG",authorizeCapability:()=>true,authorizeContext:()=>true,...more});
+
+function approvalFixture(){
+  const issued={state:"issued",ticketId:"opaque-approval",...principal,operationId:"operation_1",capabilityId:"billing.purchase.confirm",capabilityVersion:1,revision:"revision_1",issuedAtMs:100,expiresAtMs:200,terms:{amountMinor:"10000",currency:"NGN"}};
+  const expected={operationId:issued.operationId,capabilityId:issued.capabilityId,capabilityVersion:1,revision:issued.revision,terms:{currency:"NGN",amountMinor:"10000"}};
+  return {issued,presentedTicketId:issued.ticketId,principal:{...principal},expected,now:150};
+}
+
+test("approval terms cannot change the returned operation after binding verification",()=>{
+  const input=approvalFixture();
+  let getterCalls=0;
+  Object.defineProperty(input.issued.terms,"amountMinor",{enumerable:true,get(){getterCalls++;input.issued.operationId="operation_attacker";return "10000";}});
+  assert.throws(()=>verifyIssuedApproval(input),{code:"invalid_terms"});
+  assert.equal(getterCalls,0);
+});
+
+test("approval bindings and verification envelope reject computed values without evaluating them",()=>{
+  for(const target of ["issued","principal","expected","envelope"]){
+    const input=approvalFixture();
+    const row=target==="envelope"?input:input[target];
+    const key=target==="envelope"?"now":target==="principal"?"userId":"operationId";
+    const value=row[key];
+    let calls=0;
+    Object.defineProperty(row,key,{enumerable:true,get(){calls++;return value;}});
+    assert.throws(()=>verifyIssuedApproval(input),{code:"approval_invalid"});
+    assert.equal(calls,0);
+  }
+});
+
+test("canonical terms reject sparse arrays and hidden data instead of aliasing different terms",()=>{
+  for(const terms of [{items:new Array(1)},{items:Object.assign([null],{recipient:"other"})},Object.defineProperty({amountMinor:"10000"},"recipient",{value:"other"}),{[Symbol("recipient")]:"other"}]){
+    assert.throws(()=>normalizedTerms(terms),{code:"invalid_terms"});
+  }
+  assert.equal(normalizedTerms({items:[null,{amountMinor:"10000"}]}),normalizedTerms({items:[null,{amountMinor:"10000"}]}));
+});
+
+test("approval identities and transaction refs obey bounded canonical string validation",()=>{
+  for(const [target,key] of [["principal","userId"],["issued","ticketId"],["expected","revision"]]){
+    for(const value of ["bad\u0000reference"," badreference", "x".repeat(1025)]){
+      const input=approvalFixture();
+      input[target][key]=value;
+      if(target==="principal")input.issued[key]=value;
+      if(target==="expected")input.issued[key]=value;
+      if(key==="ticketId")input.presentedTicketId=value;
+      assert.throws(()=>verifyIssuedApproval(input),{code:"approval_invalid"});
+    }
+  }
+  const input=approvalFixture();
+  assert.deepEqual(verifyIssuedApproval(input),{operationId:"operation_1",ticketId:"opaque-approval",revision:"revision_1"});
+});
 test("strict proposals reject forged model authority, unknown keys and versions",()=>{
   assert.equal(parseOperatorProposal(proposal).capabilityId,proposal.capabilityId);
   for(const bad of [{...proposal,userId:"user_2"},{...proposal,untrustedArguments:{approval:true}},{...proposal,untrustedArguments:JSON.parse('{"__proto__":"x"}')},{...proposal,untrustedArguments:{account_id:"another"}},{...proposal,capabilityVersion:0}]){

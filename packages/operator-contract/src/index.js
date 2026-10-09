@@ -42,16 +42,62 @@ const item=isRecord(rawItem)?Object.freeze({...rawItem,
   regions:Array.isArray(rawItem.regions)?Object.freeze([...rawItem.regions]):rawItem.regions,
   argumentKeys:Array.isArray(rawItem.argumentKeys)?Object.freeze([...rawItem.argumentKeys]):rawItem.argumentKeys}):null;if(!item||item.id!==checked.capabilityId||item.version!==checked.capabilityVersion||item.enabled!==true||!["read","draft","send","financial"].includes(item.executionClass)||!Array.isArray(item.scopes)||!item.scopes.includes(scope)||!Array.isArray(item.regions)||!item.regions.includes(region))throw new OperatorContractError("not_qualified");if(!Array.isArray(item.argumentKeys)||item.argumentKeys.length>32||!item.argumentKeys.every(k=>typeof k==="string"))throw new OperatorContractError("invalid_catalog");for(const k of Object.keys(checked.untrustedArguments))if(!item.argumentKeys.includes(k))throw new OperatorContractError("unknown_argument");if(!isExplicitlyAuthorized(authorizeCapability,{principal:stablePrincipal,scope,region,capability:item,arguments:checked.untrustedArguments}))throw new OperatorContractError("not_authorized");if(checked.contextRef&&!isExplicitlyAuthorized(authorizeContext,{principal:stablePrincipal,scope,contextRef:checked.contextRef}))throw new OperatorContractError("not_authorized");return Object.freeze({capability:item,arguments:checked.untrustedArguments,contextRef:checked.contextRef??null,classification:item.executionClass,requestId:checked.requestId})}
 
-export function normalizedTerms(v){function norm(x,d){if(d>5)throw new OperatorContractError("invalid_terms");if(x===null||typeof x==="boolean"||(typeof x==="string"&&x.length<=256)||(typeof x==="number"&&Number.isSafeInteger(x)))return x;if(Array.isArray(x)){if(x.length>20)throw new OperatorContractError("invalid_terms");return x.map(y=>norm(y,d+1))}if(isRecord(x)){if(Object.keys(x).length>30)throw new OperatorContractError("invalid_terms");const o=Object.create(null);for(const k of Object.keys(x).sort()){if(["__proto__","constructor","prototype"].includes(k)||k.length>64)throw new OperatorContractError("invalid_terms");o[k]=norm(x[k],d+1)}return o}throw new OperatorContractError("invalid_terms")}if(!isRecord(v))throw new OperatorContractError("invalid_terms");const s=JSON.stringify(norm(v,0));if(s.length>4096)throw new OperatorContractError("invalid_terms");return s}
+export function normalizedTerms(v){
+  // Approval terms are persisted JSON data. Never evaluate computed fields or
+  // collapse sparse/extended arrays into a different transaction's JSON terms.
+  function norm(x,d){
+    if(d>5)throw new OperatorContractError("invalid_terms");
+    if(x===null||typeof x==="boolean"||(typeof x==="string"&&x.length<=256)||(typeof x==="number"&&Number.isSafeInteger(x)))return x;
+    if(Array.isArray(x)){
+      const properties=Object.getOwnPropertyDescriptors(x);
+      const length=properties.length?.value;
+      if(!Number.isSafeInteger(length)||length<0||length>20||Reflect.ownKeys(x).length!==length+1)
+        throw new OperatorContractError("invalid_terms");
+      const out=[];
+      for(let i=0;i<length;i++){
+        const property=properties[String(i)];
+        if(!property||!Object.hasOwn(property,"value")||property.enumerable!==true)
+          throw new OperatorContractError("invalid_terms");
+        out.push(norm(property.value,d+1));
+      }
+      return out;
+    }
+    if(isRecord(x)){
+      const snapshot=dataSnapshot(x,"invalid_terms");
+      if(Object.keys(snapshot).length>30)throw new OperatorContractError("invalid_terms");
+      const out=Object.create(null);
+      for(const k of Object.keys(snapshot).sort()){
+        if(["__proto__","constructor","prototype"].includes(k)||k.length>64)throw new OperatorContractError("invalid_terms");
+        out[k]=norm(snapshot[k],d+1);
+      }
+      return out;
+    }
+    throw new OperatorContractError("invalid_terms");
+  }
+  if(!isRecord(v))throw new OperatorContractError("invalid_terms");
+  const s=JSON.stringify(norm(v,0));
+  if(s.length>4096)throw new OperatorContractError("invalid_terms");
+  return s;
+}
 
 export function verifyIssuedApproval(input){
+  input=dataSnapshot(input,"approval_invalid");
   strict(input,["issued","presentedTicketId","principal","expected","now"]);
-  const{issued,presentedTicketId,principal,expected,now}=input;
+  const{presentedTicketId,now}=input;
+  const issued=dataSnapshot(input.issued,"approval_invalid");
+  const principal=dataSnapshot(input.principal,"approval_invalid");
+  const expected=dataSnapshot(input.expected,"approval_invalid");
   // 'issued' must originate in authenticated server persistence, never from model, card or client JSON.
   // Validate all identity fields independently: two missing/undefined bindings must not compare equal.
   if(!isRecord(issued)||!isRecord(principal)||!isRecord(expected)||!Number.isSafeInteger(now)||now<0)
     throw new OperatorContractError("approval_invalid");
   const identities=["tenantId","userId","accountId","sessionId","deviceId"];
+  try{
+    for(const k of identities){str(principal[k]);str(issued[k]);}
+    for(const k of ["operationId","revision"]){str(issued[k]);str(expected[k]);}
+    capability(issued.capabilityId);capability(expected.capabilityId);
+    str(presentedTicketId,8,256);str(issued.ticketId,8,256);
+  }catch{throw new OperatorContractError("approval_invalid");}
   if(!identities.every(k=>Object.hasOwn(principal,k)&&Object.hasOwn(issued,k)&&typeof principal[k]==="string"&&principal[k].trim().length>0&&principal[k].trim()===principal[k]&&issued[k]===principal[k]))
     throw new OperatorContractError("approval_invalid");
   const refs=["operationId","capabilityId","revision"];
