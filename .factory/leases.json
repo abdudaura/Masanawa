@@ -1,24 +1,6 @@
 {
   "schema_version": 1,
-  "active": [
-    {
-      "claim_id": "gpt6-f09-livekit-timeout-20261009",
-      "owner": "GPT-6 F09 replay egress bounded requests",
-      "scope": "F09/R13 fail-closed bounded LiveKit Start/StopEgress request timeout",
-      "paths": [
-        "services/gateway/src/talk_replay/egress/livekit_egress.ts",
-        "services/gateway/src/talk_replay/egress/livekit_egress.test.ts",
-        "services/gateway/src/talk_replay/egress/verify_livekit_timeout.mjs",
-        "docs/workstreams/f09-livekit-timeout-20261009.md"
-      ],
-      "branch": "work/r13-replay-finalize-recovery-20261008",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "https://github.com/Baatiku/masanawa/pull/453",
-      "claimed_at": "2026-10-09T03:59:36.977Z",
-      "heartbeat_at": "2026-10-09T03:59:36.977Z",
-      "expires_at": "2026-10-09T04:04:36.977Z"
-    }
-  ],
+  "active": [],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
@@ -91,6 +73,25 @@
       "expires_at": "2026-10-09T04:02:09.618Z",
       "released_at": "2026-10-09T03:58:58.933Z",
       "release_reason": "Draft PR #571 pushed at a2f6eecc2525a2f8eb159394fe7db42ecbfca7cc; F08 isolated phone-principal guard and tests committed, static source predicates 9/9, executable tests blocked/unrun; precise handoff committed."
+    },
+    {
+      "claim_id": "gpt6-f09-livekit-timeout-20261009",
+      "owner": "GPT-6 F09 replay egress bounded requests",
+      "scope": "F09/R13 fail-closed bounded LiveKit Start/StopEgress request timeout",
+      "paths": [
+        "services/gateway/src/talk_replay/egress/livekit_egress.ts",
+        "services/gateway/src/talk_replay/egress/livekit_egress.test.ts",
+        "services/gateway/src/talk_replay/egress/verify_livekit_timeout.mjs",
+        "docs/workstreams/f09-livekit-timeout-20261009.md"
+      ],
+      "branch": "work/r13-replay-finalize-recovery-20261008",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/453",
+      "claimed_at": "2026-10-09T03:59:36.977Z",
+      "heartbeat_at": "2026-10-09T03:59:36.977Z",
+      "expires_at": "2026-10-09T04:04:36.977Z",
+      "released_at": "2026-10-09T04:03:14.129Z",
+      "release_reason": "Completed committed bounded F09 source/tests/handoff on draft PR #453 at 6b6b4ce174d11633e40e0ab0a6a865fc56271b98; 5 simulated Node tests passed; provider/DB/device/CI unverified; status overall partial."
     }
   ]
 }
