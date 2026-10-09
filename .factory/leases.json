@@ -84,27 +84,6 @@
       "claimed_at": "2026-10-09T21:59:05Z",
       "heartbeat_at": "2026-10-09T22:03:55Z",
       "expires_at": "2026-10-09T22:08:55Z"
-    },
-    {
-      "claim_id": "masanawa-01-af08-neutral-launch-20261009-b",
-      "owner": "MASANAWA-01 / AF08-launch",
-      "scope": "AF08 neutral Android native / Flutter splash continuity (no auth, navigation, locale or theme global edits)",
-      "paths": [
-        "apps/mobile/android/app/src/main/res/drawable-night-v21/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/drawable-night/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/drawable-v21/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/drawable/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/values/colors.xml",
-        "apps/mobile/lib/src/screens/splash/splash_screen.dart",
-        "apps/mobile/test/audio_first/af08/neutral_launch_test.dart",
-        "docs/workstreams/AF08-neutral-launch-20261009.md"
-      ],
-      "branch": "work/af08-neutral-launch-20261009-masanawa01-b",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "pr": "",
-      "claimed_at": "2026-10-09T22:01:50.710Z",
-      "heartbeat_at": "2026-10-09T22:01:50.710Z",
-      "expires_at": "2026-10-09T22:06:50.715Z"
     }
   ],
   "history": [
@@ -641,6 +620,29 @@
       "released_at": "2026-10-09T22:02:07.353Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/595",
       "release_reason": "Scoped source/tests/handoff merged PR #595 into nonproduction integration/af15-media-cleanup-20261009 at a0fddc155c98e427f2952e2c044ca2225e42dc63; both blob hashes read back; local strict tsc and 8+3 Node simulation checks passed; real PG/object/worker/deploy NOT_RUN, module not composed."
+    },
+    {
+      "claim_id": "masanawa-01-af08-neutral-launch-20261009-b",
+      "owner": "MASANAWA-01 / AF08-launch",
+      "scope": "AF08 neutral Android native / Flutter splash continuity (no auth, navigation, locale or theme global edits)",
+      "paths": [
+        "apps/mobile/android/app/src/main/res/drawable-night-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-night/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/values/colors.xml",
+        "apps/mobile/lib/src/screens/splash/splash_screen.dart",
+        "apps/mobile/test/audio_first/af08/neutral_launch_test.dart",
+        "docs/workstreams/AF08-neutral-launch-20261009.md"
+      ],
+      "branch": "work/af08-neutral-launch-20261009-masanawa01-b",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "https://github.com/Baatiku/masanawa/pull/597",
+      "claimed_at": "2026-10-09T22:01:50.710Z",
+      "heartbeat_at": "2026-10-09T22:01:50.710Z",
+      "expires_at": "2026-10-09T22:06:50.715Z",
+      "released_at": "2026-10-09T22:05:26.027Z",
+      "release_reason": "PR #597 source/handoff head bf9bfbfb96904ec3384ca1d9409b26d4846b4b20; 15/15 exact-head static/readback checks passed, authored Flutter widget tests NOT_RUN (missing Flutter SDK). No APK/device/providers/deploy; AF00 must finish five-tab route integration and guarded merge."
     }
   ]
 }
