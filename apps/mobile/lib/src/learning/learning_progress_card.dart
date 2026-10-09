@@ -16,9 +16,35 @@ class LearningProgressCard extends StatefulWidget {
 
 class _LearningProgressCardState extends State<LearningProgressCard> {
   final TextEditingController _answer = TextEditingController();
+  late int _observedSessionRevision;
+
+  @override
+  void initState() {
+    super.initState();
+    _observedSessionRevision = widget.controller.sessionRevision;
+    widget.controller.addListener(_purgeOnSessionChange);
+  }
+
+  void _purgeOnSessionChange() {
+    if (_observedSessionRevision == widget.controller.sessionRevision) return;
+    _observedSessionRevision = widget.controller.sessionRevision;
+    _answer.clear(); // Never carry A's private lesson draft into account B.
+  }
+
+  @override
+  void didUpdateWidget(covariant LearningProgressCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller.removeListener(_purgeOnSessionChange);
+      _answer.clear();
+      _observedSessionRevision = widget.controller.sessionRevision;
+      widget.controller.addListener(_purgeOnSessionChange);
+    }
+  }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_purgeOnSessionChange);
     _answer.dispose();
     super.dispose();
   }
