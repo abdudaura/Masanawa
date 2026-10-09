@@ -59,9 +59,10 @@
       "source_pr": 519,
       "source_head": "350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7",
       "claimed_at": "2026-10-09T10:24:44.093Z",
-      "heartbeat_at": "2026-10-09T10:24:44.093Z",
-      "expires_at": "2026-10-09T10:29:44.093Z",
-      "notes": "Nonoverlapping U01; preserve #519; next reproduce mutable approval record and verify tests. No shared composition/financial/native/migration edits."
+      "heartbeat_at": "2026-10-09T10:27:10.753Z",
+      "expires_at": "2026-10-09T10:32:10.753Z",
+      "notes": "Reproduced 4 failing regression groups on source #519; repaired approval data snapshots/ambiguous JSON. Actual Node24 18/18 PASS, TS5.9 strict package declarations PASS. Exact GitHub source/test readbacks match executed bytes. Preparing handoff; shared integration still gated.",
+      "source_commit": "b16a628979c9cd24b7bd5e4afb7619d4f817abb8"
     }
   ],
   "history": [
