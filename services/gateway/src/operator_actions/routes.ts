@@ -35,9 +35,14 @@ export function registerU04ReadRoutes(
   input: Readonly<{
     authorizer: U04ReadRouteAuthorizer;
     reader: U04RouteReader;
+    authorizationTimeoutMs?: number;
   }>,
 ): void {
-  app.post("/operator/v1/read", {
+  const authorizationTimeoutMs = input.authorizationTimeoutMs ?? 5000;
+  if (!Number.isSafeInteger(authorizationTimeoutMs) || authorizationTimeoutMs < 50 || authorizationTimeoutMs > 30_000) {
+    throw new U04ReadError("OPERATOR_INVALID_CONFIGURATION", 500);
+  }
+  app.post("/v1/operator/read", {
     bodyLimit: 12 * 1024,
     onRequest: async (_request, reply) => {
       reply.header("Cache-Control", "no-store");
@@ -58,10 +63,19 @@ export function registerU04ReadRoutes(
   }, async (request, reply) => {
     try {
       const { proposal } = request.body as { proposal: unknown };
-      const authorized = await input.authorizer.authorize({
-        authorizationHeader: request.headers.authorization,
-        proposal,
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const deadline = new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new U04ReadError("OPERATOR_SOURCE_TIMEOUT", 504)), authorizationTimeoutMs);
       });
+      let authorized: Awaited<ReturnType<U04ReadRouteAuthorizer["authorize"]>>;
+      try {
+        authorized = await Promise.race([input.authorizer.authorize({
+          authorizationHeader: request.headers.authorization,
+          proposal,
+        }), deadline]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
       return await input.reader.read({
         authorizationHeader: request.headers.authorization,
         principal: authorized.principal,

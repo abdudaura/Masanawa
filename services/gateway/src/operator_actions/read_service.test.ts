@@ -62,6 +62,26 @@ const run = (s: ReturnType<typeof harness>["service"], a: U04AuthorizedRead,
   principal, authorized: a });
 
 describe("U04 authoritative operator readers", () => {
+  it("retains admitted principal, arguments and audit ID across collaborator I/O", async () => {
+    const h = harness();
+    const args = { talkId: "talk_allowed" };
+    const authorized = action("talks.detail.read", args);
+    const callerPrincipal = { ...principal };
+    h.sessions.authorize.mockImplementationOnce(async () => {
+      args.talkId = "talk_another";
+      callerPrincipal.userId = "user_another";
+      Object.assign(authorized, { requestId: "request_0199abcd-efab-7abc-8abc-aaaaaaaaaaaa" });
+      return identity;
+    });
+    const value = await h.service.read({ authorizationHeader: "Bearer authenticated",
+      principal: callerPrincipal, authorized });
+    expect(h.talks.detail).toHaveBeenCalledWith(expect.objectContaining({ talkId: "talk_allowed" }));
+    expect(h.bindSession).toHaveBeenLastCalledWith(expect.objectContaining({
+      principal: expect.objectContaining({ userId: principal.userId }),
+    }));
+    expect(value.requestId).toBe("request_0199abcd-efab-7abc-8abc-abcdefabcdef");
+    expect(h.append).toHaveBeenCalledWith(expect.objectContaining({ requestId: value.requestId }));
+  });
   it("uses the actual authorized profile and does not expose contact details", async () => {
     const h = harness();
     const value = await run(h.service, action("accounts.me.read"));

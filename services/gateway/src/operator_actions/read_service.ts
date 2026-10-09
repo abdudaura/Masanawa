@@ -202,7 +202,9 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
         return unavailable();
       }
       const spec = specs[capabilityId];
-      const args = validatedArguments(action.arguments, spec);
+      // Capture server-admitted scalars before any asynchronous collaborator.
+      const requestId = action.requestId;
+      const args = Object.freeze({ ...validatedArguments(action.arguments, spec) });
       if (spec.context === "none" && action.contextRef !== null && action.contextRef !== undefined) {
         return failure("OPERATOR_CONTEXT_NOT_AUTHORIZED", 403);
       }
@@ -210,20 +212,21 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
           (action.contextRef.kind !== "talk" || action.contextRef.id !== args.talkId)) {
         return failure("OPERATOR_CONTEXT_NOT_AUTHORIZED", 403);
       }
-      const principal = request.principal;
+      const principal = Object.freeze({ ...request.principal });
+      const authorizationHeader = request.authorizationHeader;
       if (!principal || ![principal.tenantId, principal.userId, principal.accountId,
           principal.sessionId, principal.deviceId].every(s => typeof s === "string" && s.length > 0) ||
-          !request.authorizationHeader?.startsWith("Bearer ")) {
+          !authorizationHeader?.startsWith("Bearer ")) {
         return failure("OPERATOR_UNAUTHORIZED", 401);
       }
       // Read both the platform identity AND the U01 device/session binding.
       // A valid bearer token for a different account is insufficient.
       let identity: PlatformSessionIdentity;
       try {
-        identity = await timeoutRead(input.sessions.authorize({ authorizationHeader: request.authorizationHeader }), timeoutMs);
+        identity = await timeoutRead(input.sessions.authorize({ authorizationHeader }), timeoutMs);
         if (identity.tenantId !== principal.tenantId || identity.userId !== principal.userId ||
             !(await timeoutRead(input.bindSession({
-              authorizationHeader: request.authorizationHeader, principal, identity,
+              authorizationHeader, principal, identity,
             }), timeoutMs))) return failure("OPERATOR_UNAUTHORIZED", 401);
       } catch (error) { throw normalizeFailure(error); }
 
@@ -249,12 +252,12 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
       try {
         if (!(await timeoutRead(input.quota.consume({
           tenantId: identity.tenantId, userId: identity.userId,
-          capabilityId, requestId: action.requestId, cost: spec.cost,
+          capabilityId, requestId, cost: spec.cost,
         }), timeoutMs))) return failure("OPERATOR_RATE_LIMITED", 429);
 
         // These canonical services authenticate AGAIN and enforce owner,
         // membership, tenant and visibility at their repository boundaries.
-        const header = request.authorizationHeader;
+        const header = authorizationHeader;
         let data: unknown;
         switch (capabilityId) {
           case "accounts.me.read":
@@ -322,7 +325,7 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
         const readAt = clock().toISOString();
         status = "succeeded"; code = "OPERATOR_READ_OK";
         return Object.freeze({ capabilityId, contractVersion: 1 as const,
-          requestId: action.requestId, data, readAt });
+          requestId, data, readAt });
       } catch (error) {
         const failure = normalizeFailure(error);
         code = failure.code;
@@ -330,7 +333,7 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
       } finally {
         try {
           await timeoutRead(input.audit.append({ tenantId: identity.tenantId, userId: identity.userId,
-            capabilityId, requestId: action.requestId, status, code }), timeoutMs);
+            capabilityId, requestId, status, code }), timeoutMs);
         } catch {
           // Read-only responses are suppressed when mandatory audit fails.
           // A read may have completed but no irreversible effect was performed.
@@ -343,11 +346,11 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
         if (status === "succeeded") {
           try {
             const latest = await timeoutRead(input.sessions.authorize({
-              authorizationHeader: request.authorizationHeader,
+              authorizationHeader,
             }), timeoutMs);
             if (latest.tenantId !== principal.tenantId || latest.userId !== principal.userId ||
                 !(await timeoutRead(input.bindSession({
-                  authorizationHeader: request.authorizationHeader, principal, identity: latest,
+                  authorizationHeader, principal, identity: latest,
                 }), timeoutMs))) {
               failure("OPERATOR_UNAUTHORIZED", 401);
             }
@@ -355,7 +358,7 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
             const rejected = normalizeFailure(error);
             try {
               await timeoutRead(input.audit.append({ tenantId: identity.tenantId, userId: identity.userId,
-                capabilityId, requestId: action.requestId, status: "failed", code: rejected.code }), timeoutMs);
+                capabilityId, requestId, status: "failed", code: rejected.code }), timeoutMs);
             } catch {
               throw new U04ReadError("OPERATOR_AUDIT_UNAVAILABLE", 503);
             }
