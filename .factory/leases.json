@@ -48,6 +48,25 @@
       "heartbeat_at": "2026-10-09T10:31:51.352Z",
       "expires_at": "2026-10-09T10:36:51.352Z",
       "notes": "No overlap with active U02. Preserve original #522. No SQL/migration/composer/router/Firebase/native/financial/manifests/CI edits. Next run original tests, reproduce races and fix."
+    },
+    {
+      "claim_id": "RECOVERY-01-U11-20261009",
+      "owner": "RECOVERY-01",
+      "scope": "U11 existing #531 backend recovery",
+      "paths": [
+        "services/gateway/src/human_dm_search/search.ts",
+        "services/gateway/src/human_dm_search/search.test.ts",
+        "services/gateway/src/human_dm_search/routes.ts",
+        "services/gateway/src/human_dm_search/routes.test.ts",
+        "docs/workstreams/recovery-01-u11-20261009.md"
+      ],
+      "branch": "work/recovery-01-u11-20261009",
+      "base_sha": "1b4fb5df981a331298419e86bc7840823e450b10",
+      "source_pr": 531,
+      "claimed_at": "2026-10-09T10:32:38.247Z",
+      "heartbeat_at": "2026-10-09T10:32:38.247Z",
+      "expires_at": "2026-10-09T10:37:38.247Z",
+      "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
     }
   ],
   "history": [
