@@ -22,6 +22,12 @@ const proof = (journeyId, kind='real') => ({
   }
 });
 
+test('expands explicit UX acceptance ranges rather than silently omitting journeys', () => {
+  const ids = parseJourneyIds('UX-A01–UX-A12 and WF-A01-WF-A03');
+  assert.equal(ids.length, 15);
+  assert.ok(ids.includes('UX-A07'));
+  assert.ok(ids.includes('WF-A02'));
+});
 test('acceptance IDs are unique and sorted without inventing missing IDs', () => {
   assert.deepEqual(parseJourneyIds(doc), ['DB-A01', 'PF-A04', 'UX-A01', 'UX-A02', 'WF-A01', 'WF-A06']);
 });
