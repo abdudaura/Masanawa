@@ -12,7 +12,7 @@ export interface PersonaSeedSqlPool {
   connect(): Promise<PersonaSeedSqlClient>;
 }
 
-const LOCK_SQL = "SELECT pg_advisory_lock(hashtextextended($1::text, 0))";
+const LOCK_SQL = "SELECT pg_try_advisory_lock(hashtextextended($1::text, 0)) AS acquired";
 const UNLOCK_SQL = "SELECT pg_advisory_unlock(hashtextextended($1::text, 0)) AS unlocked";
 
 /** Requires migration platform_personas/0001_seed_bindings.sql to be applied
@@ -34,7 +34,10 @@ export function createPostgresPersonaSeedReservations(pool: PersonaSeedSqlPool):
       let locked = false;
       let damaged: Error | undefined;
       try {
-        await client.query(LOCK_SQL, [lockKey]);
+        const lock = await client.query(LOCK_SQL, [lockKey]);
+        if (lock.rows[0]?.acquired !== true) {
+          throw new Error("persona seed lease is busy; retry after reconciliation");
+        }
         locked = true;
         const allocated = input.allocate();
         await client.query(
