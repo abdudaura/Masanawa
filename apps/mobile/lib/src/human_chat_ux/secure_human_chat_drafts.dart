@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -13,6 +14,26 @@ class SecureHumanChatDraftStore implements HumanChatDraftStore {
   final FlutterSecureStorage _storage;
   static const _prefix = 'masanawa.human_dm_drafts.v1.';
   static const _maxThreads = 16;
+  // Serialize account read/modify/write and purge across all store instances
+  // in this Flutter isolate to avoid clobbering parallel thread drafts.
+  static final Map<String, Future<void>> _operations = {};
+
+  Future<T> _withAccountLock<T>(String key, Future<T> Function() action) {
+    final previous = _operations[key] ?? Future<void>.value();
+    final gate = Completer<void>();
+    _operations[key] = gate.future;
+    return () async {
+      await previous;
+      try {
+        return await action();
+      } finally {
+        gate.complete();
+        if (identical(_operations[key], gate.future)) {
+          _operations.remove(key);
+        }
+      }
+    }();
+  }
 
   String _key(String tenantId, String userId) {
     if (tenantId.trim().isEmpty || userId.trim().isEmpty) {
@@ -36,13 +57,16 @@ class SecureHumanChatDraftStore implements HumanChatDraftStore {
   @override
   Future<HumanChatDraft?> read(HumanChatScope scope) async {
     if (!scope.valid) throw ArgumentError('Invalid conversation scope');
-    final threads = await _readAccount(_key(scope.tenantId, scope.userId));
-    final data = threads[scope.conversationId];
-    if (data == null) return null;
-    if (data is! Map<String, dynamic>) {
-      throw const FormatException('Invalid saved conversation draft');
-    }
-    return HumanChatDraft.fromJson(data);
+    final key = _key(scope.tenantId, scope.userId);
+    return _withAccountLock(key, () async {
+      final threads = await _readAccount(key);
+      final data = threads[scope.conversationId];
+      if (data == null) return null;
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Invalid saved conversation draft');
+      }
+      return HumanChatDraft.fromJson(data);
+    });
   }
 
   @override
@@ -53,35 +77,41 @@ class SecureHumanChatDraftStore implements HumanChatDraftStore {
       throw ArgumentError('Oversized draft');
     }
     final key = _key(scope.tenantId, scope.userId);
-    final threads = await _readAccount(key);
-    threads.remove(scope.conversationId);
-    threads[scope.conversationId] = value.toJson();
-    // Retain newest entries and a hard storage bound on low-RAM devices.
-    while (threads.length > _maxThreads) {
-      threads.remove(threads.keys.first);
-    }
-    await _storage.write(
-      key: key,
-      value: jsonEncode({'v': 1, 'threads': threads}),
-    );
+    await _withAccountLock(key, () async {
+      final threads = await _readAccount(key);
+      threads.remove(scope.conversationId);
+      threads[scope.conversationId] = value.toJson();
+      // Retain newest entries and a hard storage bound on low-RAM devices.
+      while (threads.length > _maxThreads) {
+        threads.remove(threads.keys.first);
+      }
+      await _storage.write(
+        key: key,
+        value: jsonEncode({'v': 1, 'threads': threads}),
+      );
+    });
   }
 
   @override
   Future<void> remove(HumanChatScope scope) async {
     final key = _key(scope.tenantId, scope.userId);
-    final threads = await _readAccount(key);
-    threads.remove(scope.conversationId);
-    if (threads.isEmpty) {
-      await _storage.delete(key: key);
-    } else {
-      await _storage.write(key: key, value: jsonEncode({
-        'v': 1,
-        'threads': threads,
-      }));
-    }
+    await _withAccountLock(key, () async {
+      final threads = await _readAccount(key);
+      threads.remove(scope.conversationId);
+      if (threads.isEmpty) {
+        await _storage.delete(key: key);
+      } else {
+        await _storage.write(key: key, value: jsonEncode({
+          'v': 1,
+          'threads': threads,
+        }));
+      }
+    });
   }
 
   @override
-  Future<void> clearAccount(String tenantId, String userId) =>
-      _storage.delete(key: _key(tenantId, userId));
+  Future<void> clearAccount(String tenantId, String userId) {
+    final key = _key(tenantId, userId);
+    return _withAccountLock(key, () => _storage.delete(key: key));
+  }
 }
