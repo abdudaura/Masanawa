@@ -9,13 +9,22 @@ import { fileURLToPath } from 'node:url';
 const SHA = /^[0-9a-f]{40}$/i;
 const SHA256 = /^[0-9a-f]{64}$/i;
 const JOURNEY = /\b(?:UX|WF|CR|PF|DB)-A\d{2}\b/g;
+const JOURNEY_RANGE = /\b((?:UX|WF|CR|PF|DB)-A)(\d{2})\s*[–—-]\s*\1(\d{2})\b/g;
 const STATUSES = new Set(['NOT_RUN', 'FAIL', 'PASS_SIMULATED', 'PASS_REAL', 'BLOCKED']);
 const SAFE_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._/-]{5,159}$/;
 const MAX_INPUT_BYTES = 1024 * 1024;
 
 export function parseJourneyIds(markdown) {
   if (typeof markdown !== 'string') throw new TypeError('acceptance document must be text');
-  return [...new Set(markdown.match(JOURNEY) ?? [])].sort();
+  const ids = new Set(markdown.match(JOURNEY) ?? []);
+  for (const match of markdown.matchAll(JOURNEY_RANGE)) {
+    const start = Number(match[2]);
+    const end = Number(match[3]);
+    if (end >= start && end - start <= 50) {
+      for (let n = start; n <= end; n++) ids.add(`${match[1]}${String(n).padStart(2, '0')}`);
+    }
+  }
+  return [...ids].sort();
 }
 
 function safeReason(value) {
