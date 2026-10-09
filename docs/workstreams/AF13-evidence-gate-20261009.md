@@ -66,3 +66,9 @@ Manifest v1 example (explicitly NOT_RUN; do not fabricate PASS_REAL):
 **Acceptance references:** UX-A01..12, WF-A01..10, CR-A01, PF-A01..04 and DB-A01..08. Project direction remains Chats · Rooms · Talks · Gwani · Wallet, Talks default; this lane did not alter UI.
 
 **No production merge, provider operation, migration or expense authorized or performed.**
+
+## Integration readback
+
+- PR #592 was **squash-merged** into the non-production integration branch at commit `fc179dd1e857dfdcc87c9f42c65f8e98a9590f96`. GitHub reported `merged=true`.
+- Independent post-merge GitHub blob readback: source `7d611e5c00f96cdf8b8e00e0c657afa2f07e95a3`; tests `e8e98d71f98c18586c484995958a9b7f5f24ef81` — exactly equal to the local Node-tested bytes.
+- This is a **source integration**, NOT a main merge, production deployment, provider E2E pass, complete AF13 lane or release authorization. AF00 may rebase/cherry-pick after comparing all current source and independent gates.
