@@ -132,3 +132,33 @@ test("context authorization sees the same checked principal snapshot",()=>{
   }}).classification,"read");
   assert.equal(seenUser,"user_1");
 });
+
+test("catalog accessors cannot relabel a read as a financial capability",()=>{
+  const changing={...descriptor,executionClass:"financial"};
+  let reads=0;
+  Object.defineProperty(changing,"id",{enumerable:true,get:()=>++reads===1?"wallet.balance.read":"billing.purchase.confirm"});
+  let policyCalls=0;
+  assert.throws(()=>admit({catalog:[changing],authorizeCapability:()=>{policyCalls++;return true}}),{code:"invalid_catalog"});
+  assert.equal(policyCalls,0);
+  const changingVersion={...descriptor};
+  Object.defineProperty(changingVersion,"version",{enumerable:true,get:()=>1});
+  assert.throws(()=>admit({catalog:[changingVersion]}),{code:"invalid_catalog"});
+  assert.equal(admit().capability.id,"wallet.balance.read");
+});
+
+test("policy principal and catalog must contain data, not computed identity fields",()=>{
+  const changingIdentity={...principal};
+  Object.defineProperty(changingIdentity,"userId",{enumerable:true,get:()=>"user_1"});
+  let calls=0;
+  assert.throws(()=>admit({principal:changingIdentity,authorizeCapability:()=>{calls++;return true}}),{code:"invalid_shape"});
+  assert.equal(calls,0);
+  const catalog=[descriptor,{...descriptor,id:"agents.directory.read",enabled:false}];
+  assert.equal(admit({catalog}).classification,"read");
+});
+
+test("task success rejects blank, whitespace-padded or control-character receipts",()=>{
+  for(const domainReceiptId of ["      "," receipt_real","receipt_real ","receipt_\u0000real", "x".repeat(257)]){
+    assert.throws(()=>advanceTaskPhase({from:"running",to:"succeeded",receipt:{domainReceiptId,verifiedReadback:true}}),{code:"missing_authoritative_receipt"});
+  }
+  assert.equal(advanceTaskPhase({from:"running",to:"succeeded",receipt:{domainReceiptId:"receipt_real",verifiedReadback:true}}),"succeeded");
+});
