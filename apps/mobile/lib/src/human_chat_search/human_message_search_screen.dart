@@ -86,10 +86,16 @@ class _HumanMessageSearchScreenState extends State<HumanMessageSearchScreen> {
               itemCount: state.hits.length + (state.next != null ? 1 : 0),
               itemBuilder: (context, i) {
                 if (i == state.hits.length) {
-                  return Center(child: TextButton(
-                    onPressed: state.loadingMore ? null : state.loadMore,
-                    child: Text(state.loadingMore ? 'Loading…' : 'More results'),
-                  ));
+                  return Column(mainAxisSize: MainAxisSize.min, children: [
+                    if (state.error != null) Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(state.error!, textAlign: TextAlign.center),
+                    ),
+                    TextButton(
+                      onPressed: state.loadingMore ? null : state.loadMore,
+                      child: Text(state.loadingMore ? 'Loading…' : 'More results'),
+                    ),
+                  ]);
                 }
                 final hit = state.hits[i];
                 return ListTile(
