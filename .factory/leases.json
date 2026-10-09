@@ -2,22 +2,6 @@
   "schema_version": 1,
   "active": [
     {
-      "claim_id": "gpt6-u01-mutability-fence-20261009-0346",
-      "owner": "GPT-6 U01 operator contract continuation",
-      "scope": "U01 authorization snapshot immutability",
-      "paths": [
-        "packages/operator-contract/src/index.js",
-        "packages/operator-contract/test/index.test.mjs",
-        "docs/workstreams/u01-operator-contract-20261009.md"
-      ],
-      "branch": "work/u01-operator-contract-20261009-gpt6",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "https://github.com/Baatiku/masanawa/pull/519",
-      "claimed_at": "2026-10-09T03:46:29Z",
-      "heartbeat_at": "2026-10-09T03:46:29Z",
-      "expires_at": "2026-10-09T03:51:29Z"
-    },
-    {
       "claim_id": "gpt6-f11-gateway-readiness-evidence-20261009",
       "owner": "GPT-6 F11 isolated readiness verifier",
       "scope": "F11 DB-P03 guarded read-only Gateway readiness evidence",
@@ -52,6 +36,24 @@
       "expires_at": "2026-10-09T03:49:04Z",
       "released_at": "2026-10-09T03:44:56Z",
       "release_reason": "Draft PR #567 handoff committed at 6517778d41acab7ad0b6472d702fedb297b397ea; isolated source/tests completed, F11 overall remains partial"
+    },
+    {
+      "claim_id": "gpt6-u01-mutability-fence-20261009-0346",
+      "owner": "GPT-6 U01 operator contract continuation",
+      "scope": "U01 authorization snapshot immutability",
+      "paths": [
+        "packages/operator-contract/src/index.js",
+        "packages/operator-contract/test/index.test.mjs",
+        "docs/workstreams/u01-operator-contract-20261009.md"
+      ],
+      "branch": "work/u01-operator-contract-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/519",
+      "claimed_at": "2026-10-09T03:46:29Z",
+      "heartbeat_at": "2026-10-09T03:46:29Z",
+      "expires_at": "2026-10-09T03:51:29Z",
+      "released_at": "2026-10-09T03:48:44Z",
+      "release_reason": "Pushed U01 source, tests and handoff to draft PR #519 at 933f8839cd50bdfd57a655041e311e44cf62644f; 11/11 adapted V8 tests passed; remaining Node/DB/Flutter/CI/provider verification delegated."
     }
   ]
 }
