@@ -9,7 +9,7 @@
 - Repository-visible claim made **before source writes**: \`708dfc6a80c6a07005bf9fc52753ab92ddff5d99\` on 2026-10-09 Africa/Lagos. Subsequent substantive commits refreshed the five-minute activity lease.
 - Latest source/test checkpoint before this handoff: \`3b92dadb06d599d7c2a3991b7be4350075ca2edd\`.
 - Unique paths: \`apps/mobile/lib/src/twin_training/{twin_training_flow,twin_training_screen}.dart\`; \`apps/mobile/test/twin_training/{twin_training_flow_test,twin_training_screen_test}.dart\`; this handoff only.
-- GitHub comparison from \`main\` to source checkpoint showed exactly those five paths, 0 commits behind, no Gateway/shared router/Firebase/native/financial/schema/central auth changes.
+- GitHub comparison from \`main\` to source checkpoint showed exactly those seven paths, 0 commits behind, no Gateway/shared router/Firebase/native/financial/schema/central auth changes.
 - Checked current open PRs and search for U17 issue/branch before claim: no competing U17 implementation found. R03/R19/Twin foundation, C07, U01/U05/U07/U18, Work #497, Firebase #461, CI #457 and F12 protected files remain untouched.
 
 ## Source functionality
@@ -17,6 +17,7 @@
 **Actual current backend reused:** \`CloneOnboardingService\` and \`CloneSetupRepository\` in Gateway and identity; \`/creator/onboarding\`, \`/creator/onboarding/profile\`, \`/creator/onboarding/preview\`, \`/creator/onboarding/confirm\`. Canonical personal-clone provisioning owns Character/version/relationship and core skills. Existing \`TwinProfileService\` and \`/agent/twin/profile/customize/preview\` + \`/agent/twin/profile/customize\` own owner identity, revision-CAS and publication. No new database, Character identity, inference, money ledger or unauthenticated control plane.
 
 **Flutter source:**
+- `TwinTrainingEntry` is an executable, ready-to-mount nested route component: it constructs the existing `HttpCloneOnboardingTransport` with `ApiClient.dio` and the configured Gateway URL, and `GatewayTwinProfileTransport` with the same authenticated API client; it disposes/rebuilds flow on user/session epoch or API-client replacement. It is intentionally not inserted into the globally protected F12 router.
 - Conversational, bounded name/language/experience/expertise/style prompts with optional injected native-user-speech transcription. Actual reply remains a **draft** until explicit submission; no browser TTS or agent-generated audio mistaken for user input.
 - Each answer writes through the existing \`CloneOnboardingController\` to the authenticated, PostgreSQL-backed server setup. Duplicate/overlong/control-text rejection; saved revision and genuine server status, reload after uncertain writes or crash; recovery uses the existing confirmed request ID.
 - Explicit consent checkbox and canonical profile preview/confirmation. Server owns clone creation and idempotent, crash-recoverable confirmation, not a local fake Twin. The checkbox is a *local UX acknowledgement only*, not evidence of legal identity permission.
@@ -33,7 +34,7 @@
 
 ## Authored tests vs executed evidence
 
-**Authored Flutter tests (8 cases, NOT EXECUTED):**
+**Authored Flutter tests (9 cases, NOT EXECUTED):**
 1. Persisted multi-prompt interview + explicit preview consent and canonical confirm.
 2. Verified private-test/explicit-publication gating and CAS readback.
 3. Wrong Twin owner Character rejected before publication.
@@ -42,6 +43,7 @@
 6. Account invalidation revokes send/publication.
 7. Crash/restart after durable confirm resumes the saved request ID.
 8. Narrow 320px Flutter screen: missing real private preview disables publish and test action.
+9. Mounted entry component uses the new bearer and independent server reload when the account/session epoch changes.
 
 **Executed read-only structural checks:** connected GitHub file readback and \`main...head\` compare; all source files present, no conflict markers, correct \`package:masanawa/\` import prefix, all changed paths within lease; privacy/publication adapter required methods present. These are **NOT Dart compiler or widget test passes**.
 
@@ -54,7 +56,7 @@ cd apps/mobile
 flutter pub get
 dart format --output=none --set-exit-if-changed lib/src/twin_training test/twin_training
 flutter analyze lib/src/twin_training test/twin_training
-flutter test test/twin_training/twin_training_flow_test.dart test/twin_training/twin_training_screen_test.dart
+flutter test test/twin_training/twin_training_flow_test.dart test/twin_training/twin_training_screen_test.dart test/twin_training/twin_training_entry_test.dart
 \`\`\`
 
 After F12 adapter composition, run backend \`pnpm --filter @masanawa/gateway-service typecheck\`, Gateway onboarding/profile integration tests and a real two-account/tenant deny suite; test low-end Android Flutter voice, restart with pending confirmation, alternate credential switch, publish/unpublish readback, provider cost/Float refusal and truth of generated agent replies. A format/analyze/test failure must be fixed before merge; no PASS has been assumed.
