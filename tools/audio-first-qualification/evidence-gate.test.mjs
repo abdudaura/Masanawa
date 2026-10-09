@@ -88,6 +88,18 @@ test('manifest types and artifact hashes are bounded', () => {
   const m=base(); m.targetArtifact={sha256:'BAD',packageId:'com.example.app',version:'1.0'};
   assert.equal(validateManifest(m,doc).valid,false);
 });
+test('CLI accepts multiple authoritative acceptance documents', () => {
+  const dir=mkdtempSync(join(tmpdir(),'af13-docs-'));
+  try {
+    const manifest=join(dir,'m.json'), a=join(dir,'a.md'), b=join(dir,'b.md');
+    writeFileSync(manifest,JSON.stringify(base()));
+    writeFileSync(a,'UX-A01–UX-A12'); writeFileSync(b,'DB-A01–DB-A08');
+    const cli=join(dirname(fileURLToPath(import.meta.url)),'evidence-gate.mjs');
+    const result=spawnSync(process.execPath,[cli,'--manifest',manifest,'--journeys',a,'--journeys',b],{encoding:'utf8'});
+    assert.equal(result.status,0);
+    assert.equal(JSON.parse(result.stdout).expectedCount,20);
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
 test('CLI produces structured safe report and distinct incomplete exit code', () => {
   const dir=mkdtempSync(join(tmpdir(),'af13-'));
   try {
