@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../human_calls/human_call_flow.dart';
 
 import '../state/session_state.dart';
 import 'human_dm_controller.dart';
@@ -34,8 +36,11 @@ class _HumanDmInboxScreenState extends ConsumerState<HumanDmInboxScreen> {
     }
     return Scaffold(
       appBar:AppBar(title:const Text('Chats'),actions:[
+        IconButton(tooltip:'Call history',icon:const Icon(Icons.call),
+          onPressed:()=>context.push('/messages/calls')),
         IconButton(tooltip:'Refresh messages',onPressed:_reload,icon:const Icon(Icons.refresh))
       ]),
+      bottomNavigationBar:const HumanCallIncomingStrip(),
       floatingActionButton: widget.onNewMessage == null ? null :
         FloatingActionButton.extended(
           tooltip: 'New message',
@@ -183,6 +188,7 @@ class _HumanDmThreadScreenState extends ConsumerState<HumanDmThreadScreen> {
     final actions=ref.read(humanDmThreadProvider(key).notifier);
     return Scaffold(
       appBar:AppBar(title:Text(widget.otherDisplayName),actions:[
+        HumanDmCallButtons(conversationId:widget.conversationId),
         IconButton(tooltip:'Refresh thread',onPressed:actions.load,icon:const Icon(Icons.refresh))
       ]),
       body:Column(children:[
