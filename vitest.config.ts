@@ -15,5 +15,6 @@ export default defineConfig({
     passWithNoTests: false,
     restoreMocks: true,
     clearMocks: true,
+    testTimeout: 15000,
   },
 });

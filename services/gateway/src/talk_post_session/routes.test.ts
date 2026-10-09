@@ -35,7 +35,7 @@ describe("U16 isolated Host-only routes",()=>{
   it("returns only the authenticated replay-ready eligibility state",async()=>{
     const {app}=setup();
     const result=await app.inject({
-      method:"GET",url:"/talks/talk_1/post-session/insights",
+      method:"GET",url:"/v1/talks/talk_1/post-session/insights",
       headers:{authorization:"Bearer host"},
     });
     expect(result.statusCode).toBe(200);
@@ -47,7 +47,7 @@ describe("U16 isolated Host-only routes",()=>{
   it("requires explicitly true, schema-valid recording-processing consent",async()=>{
     const {app,calls}=setup();
     const response=await app.inject({
-      method:"POST",url:"/talks/talk_1/post-session/insights",
+      method:"POST",url:"/v1/talks/talk_1/post-session/insights",
       headers:{authorization:"Bearer host"},
       payload:{processingConsent:false},
     });
@@ -58,7 +58,7 @@ describe("U16 isolated Host-only routes",()=>{
   it("passes only verified bearer header and bounded talk path to service",async()=>{
     const {app,calls}=setup();
     const response=await app.inject({
-      method:"POST",url:"/talks/talk_1/post-session/insights",
+      method:"POST",url:"/v1/talks/talk_1/post-session/insights",
       headers:{authorization:"Bearer host"},
       payload:{processingConsent:true},
     });
@@ -68,7 +68,7 @@ describe("U16 isolated Host-only routes",()=>{
       authorizationHeader:"Bearer host",talkId:"talk_1",processingConsent:true,
     }]);
     const bad=await app.inject({
-      method:"POST",url:"/talks/talk_1/post-session/insights",
+      method:"POST",url:"/v1/talks/talk_1/post-session/insights",
       headers:{authorization:"Bearer outsider"},
       payload:{processingConsent:true},
     });

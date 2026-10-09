@@ -15,7 +15,7 @@ describeDb("R12 financial preflight with real ledgers",()=>{
   let pool:Pool;
   const tenantId=createCanonicalId("tenant");
   let userId=createCanonicalId("user");
-  let requestId=randomUUID();
+  let requestId: string = randomUUID();
   const at=new Date().toISOString();
 
   beforeAll(async()=>{

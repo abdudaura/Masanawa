@@ -18,7 +18,7 @@ describeDb("R12 durable reconciliation leases",()=>{
   let pool:Pool;
   const tenantId=createCanonicalId("tenant");
   let userId=createCanonicalId("user");
-  let requestId=randomUUID();
+  let requestId: string = randomUUID();
   const now=new Date().toISOString();
 
   beforeAll(async()=>{

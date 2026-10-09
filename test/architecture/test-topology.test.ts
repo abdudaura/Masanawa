@@ -84,10 +84,9 @@ describe("test topology", () => {
   });
 
   it("keeps CI failure classes visible without changing the local check sequence", () => {
-    const workflow = fs.readFileSync(
-      path.resolve(".github/workflows/foundation-ci.yml"),
-      "utf8",
-    );
+    const workflow = fs
+      .readFileSync(path.resolve(".github/workflows/foundation-ci.yml"), "utf8")
+      .replace(/\r\n/g, "\n");
     expect(workflow).toContain("- name: Typecheck\n        run: pnpm typecheck");
     expect(workflow).toContain("- name: Test\n        run: pnpm test:ci");
     expect(workflow).toContain("- name: Build\n        run: pnpm build");

@@ -16,7 +16,7 @@ describe("repository transaction ownership", () => {
       });
       expect(release).not.toHaveBeenCalled();
     });
-    expect(query.mock.calls.map(call => call[0])).toEqual(["BEGIN", "SELECT 1", "COMMIT"]);
+    expect(query.mock.calls.map((call: unknown[]) => call[0])).toEqual(["BEGIN", "SELECT 1", "COMMIT"]);
     expect(connect).toHaveBeenCalledTimes(1);
     expect(release).toHaveBeenCalledTimes(1);
   });
@@ -29,7 +29,7 @@ describe("repository transaction ownership", () => {
     await expect(withTransaction(pool, outer => withTransaction(outer, async () => {
       throw new Error("seed failed");
     }))).rejects.toThrow("seed failed");
-    expect(query.mock.calls.map(call => call[0])).toEqual(["BEGIN", "ROLLBACK"]);
+    expect(query.mock.calls.map((call: unknown[]) => call[0])).toEqual(["BEGIN", "ROLLBACK"]);
     expect(release).toHaveBeenCalledTimes(1);
   });
 });

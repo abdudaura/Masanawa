@@ -195,7 +195,7 @@ integration("R16 schema lifecycle on disposable real PG18",()=>{
     expect((await schemaStatus(pool,manifest)).ready).toBe(true);
   });
   it("aborts a new invalid migration atomically and leaves no extra ledger row/table",async()=>{
-    const invalidName="9999_rollback_"+randomUUID().replaceAll("-")+".sql";
+    const invalidName="9999_rollback_"+randomUUID().replaceAll("-", "")+".sql";
     // Pick a canonical owner at the END of lexical ordering to avoid earlier-missing ordering blockers.
     const temp:SchemaManifest={digest:"b".repeat(64),migrations:[
       ...manifest.migrations,{owner:"zzzz",name:invalidName,sha256:"c".repeat(64),
