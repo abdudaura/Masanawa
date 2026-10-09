@@ -41,10 +41,10 @@ class _HumanCallFlowScreenState extends ConsumerState<HumanCallFlowScreen> {
       currentUserId:userId,
       transport:ref.read(humanCallTransportProvider),
       room:LiveKitHumanCallRoom(),
-      isCurrentSession:()=>{
+      isCurrentSession:(){
         final state=ref.read(sessionProvider);
         return state is SessionSignedIn && state.user.id==userId;
-      }(),
+      },
       requestPermissions:requestHumanCallPermissions,
     );
     _call=call;
