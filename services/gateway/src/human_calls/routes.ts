@@ -15,7 +15,7 @@ export function registerHumanCallRoutes(app:FastifyInstance,service:HumanCallSer
     reply.header("Cache-Control","private, no-store");
     reply.header("Vary","Authorization");
   };
-  app.post("/messages/calls",{
+  app.post("/v1/messages/calls",{
     onRequest:guard,
     schema:{body:RequestBody},
   },async(request,reply)=>{
@@ -28,7 +28,7 @@ export function registerHumanCallRoutes(app:FastifyInstance,service:HumanCallSer
   });
   // Call history is NOT shared as DM plaintext. A blocked/revoked pair must
   // not remain exposed just because local call history was cached.
-  app.get("/messages/calls",{
+  app.get("/v1/messages/calls",{
     onRequest:guard,
     schema:{querystring:Type.Object({
       limit:Type.Optional(Type.Integer({minimum:1,maximum:50})),
@@ -37,14 +37,14 @@ export function registerHumanCallRoutes(app:FastifyInstance,service:HumanCallSer
     const q=request.query as {limit?:number};
     return service.recent({authorizationHeader:request.headers.authorization,limit:q.limit});
   });
-  app.get("/messages/calls/:callId",{
+  app.get("/v1/messages/calls/:callId",{
     onRequest:guard,schema:{params:CallParams},
   },async(request)=>{
     const p=request.params as {callId:string};
     return service.get({authorizationHeader:request.headers.authorization,callId:p.callId});
   });
   for(const action of ["accept","decline","end"] as const) {
-    app.post(`/messages/calls/:callId/${action}`,{
+    app.post(`/v1/messages/calls/:callId/${action}`,{
       onRequest:guard,schema:{params:CallParams,body:Type.Object({},{additionalProperties:false})},
     },async(request)=>{
       const p=request.params as {callId:string};
@@ -53,7 +53,7 @@ export function registerHumanCallRoutes(app:FastifyInstance,service:HumanCallSer
       });
     });
   }
-  app.post("/messages/calls/:callId/media-token",{
+  app.post("/v1/messages/calls/:callId/media-token",{
     onRequest:guard,schema:{params:CallParams,body:Type.Object({},{additionalProperties:false})},
   },async(request)=>{
     const p=request.params as {callId:string};
