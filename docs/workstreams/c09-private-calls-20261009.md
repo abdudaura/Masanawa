@@ -4,12 +4,12 @@
 
 ## Ownership, provenance and traceability
 - Latest `main` inspected before claim: `5e758673ae91082520b21b3153da53791ae2cbf3`.
-- Branch `work/c09-private-calls-20261009-gpt6`. **Source/tests checkpoint before handoff** `23afa724212746e82d06c372d7f8b73797ebe605` (27 commits ahead of base, no behind).
+- Branch `work/c09-private-calls-20261009-gpt6`. **Source/tests checkpoint before handoff** `8847a61e29d4c80868f301e5d60031ad566e3fce` (32 commits ahead of base, no behind).
 - Claim ID `gpt6-c09-human-private-calling-20261009`, published **before first source edit** on `factory/claims` commit `f09dcc6b36b2f6d70b341d32514fb8402fe2b064`; renewed as needed. Three exact-path roots: `services/gateway/src/human_calls/**`, `apps/mobile/lib/src/human_calls/**`, `apps/mobile/test/human_calls/**`; docs `PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md` and this handoff. This commits no existing shared file.
 - Original C01 #468, C02 #472 vs #475, C03 #483/#486, C04 #478, C05 #474 vs #476, R14/FCM #461/#497, F12 #493/#497, public LiveKit R02 and F02 #549 all reviewed as **unmerged** dependency owners. No competing private call PR found in live PR sample when claim was created. Do not replace/merge their paths.
 - UX/screen specification, current competitor research, provider costs and K21–K27 acceptance: [docs/PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md](../PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md). Preserve five bottom tabs: **Talks · Chats · Assistant · Wallet · Agents**.
 
-## Implemented source — 19 paths (not merged)
+## Implemented source — 19 implementation paths + this handoff (not merged)
 **Gateway/service** `services/gateway/src/human_calls/`:
 - `service.ts`: per-bearer tenant/principal C01/C02/R15 admission, no media while ringing, only invited callee may accept via repository, fresh permission recheck on every read/media issuance and after provider issuance, safe end even after block, explicit 404/409/429 error states.
 - `postgres_repository.ts`: durable call state, ordered user row locks to serialize overlapping calls, stable dial idempotency, max 3 attempts/min & 15/hour, tenant/member/active accepted C01 relationship and reciprocal safety checks inside start/accept transactions, atomically emitted receiver/sender signals, deadline expiry (45s ring; up to 2h active), server readback.
@@ -28,7 +28,7 @@
 - **Total 23 new automated test cases authored, zero executed**. They test faked service/media boundaries where applicable and cannot stand in for real Postgres/WebRTC/Android.
 
 ## Checks executed vs not run (honest gate)
-- **Executed GitHub readback:** 15/15 static source/contract assertions against committed service, SQL, API, Flutter and tests. Branch compare after source checkpoint: 19 files, 27 commits ahead, zero behind, none in protected shared trees; this verifies source presence/layout **only**.
+- **Executed GitHub readback:** 15/15 static source/contract assertions against committed service, SQL, API, Flutter and tests. Branch compare after source checkpoint: 20 files including this handoff, 32 commits ahead, zero behind, none in protected shared trees; this verifies source presence/layout **only**.
 - Container check: Node `v22.16.0` / TypeScript `5.8.3` available; **Flutter and Dart not installed**. Local GitHub hostname DNS resolution returned no address; connected private repo contents available via GitHub plugin only, not a local runnable checkout. No actual Vitest, tsc, Flutter analyze, widget/device test, Postgres integration, real LiveKit, FCM, Android signed build, end-to-end call or provider deployment was run. Actions #457 runner/quota was previously failing before test steps; do not call that an app failure or success.
 - **No production writes, migrations, FCM sends, charged LiveKit provisioning, secrets changes, branches merged/deleted or native config changes.**
 
@@ -54,4 +54,10 @@ flutter build apk --debug
 ```
 Then run acceptance **K21–K27** A/B authenticated real Android devices: denied/accepted/blocked, concurrent calls, auth revocation in flight, incoming background and killed-app, slow/reconnect and correct server history, camera/mic/Bluetooth and public Talk/Gemini recorder audio-focus, LiveKit forced room delete on hangup and 2h expiry. Review battery/CPU, privacy-safe lockscreen, crash/cleanup/rollback. Sign final SHA and rerun all tests after merge. Status stays **PARTIAL_IMPLEMENTATION** until real wiring+proof exists.
 
-**Source/test checkpoint: `23afa724212746e82d06c372d7f8b73797ebe605`. Handoff commit and PR final SHA are referenced from the PR body because a Git commit cannot contain its own final SHA.**
+**Source/test checkpoint: `8847a61e29d4c80868f301e5d60031ad566e3fce`. Handoff commit and PR final SHA are referenced from the PR body because a Git commit cannot contain its own final SHA.**
+
+## Post-handoff safety additions (2026-10-09 source checkpoint 8847a61e29d4c80868f301e5d60031ad566e3fce)
+- A bounded worker expiration sweep now turns expired unanswered/active calls into durable MISSED/ENDED outbox events without waiting for a client poll; the terminal signal worker must revoke the provider room when scheduled. Added a partial index on expiration for this sweep; no migration executed.
+- C09 start/accept transaction now locks the accepted C01 request row `FOR SHARE OF cr` to reduce admission/revocation races. Existing C01 block/revoke callback still MUST trigger immediate active-room revocation through the integrated worker.
+- Foreground incoming-call banner now hides a stale invite when `isCurrentSession()` becomes false, even before an explicit watcher teardown callback. Back/navigation closes media rather than keeping hidden microphone/camera capture.
+- Revalidated live main diff: **32 commits ahead, 20 exact claimed files, no protected shared paths** at source checkpoint. Readbacks are structure evidence only, not executable tests.
