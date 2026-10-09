@@ -1,26 +1,6 @@
 {
   "schema_version": 1,
-  "active": [
-    {
-      "claim_id": "gpt6-c09-human-private-calling-20261009",
-      "owner": "GPT-6 C09 private calls full-stack isolated owner",
-      "scope": "C09 newly owner-approved one-to-one human audio/video calls (non-Talks); isolated backend, SQL proposal, Flutter module, tests, complete UX/handoff",
-      "paths": [
-        "services/gateway/src/human_calls/**",
-        "apps/mobile/lib/src/human_calls/**",
-        "apps/mobile/test/human_calls/**",
-        "docs/PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md",
-        "docs/workstreams/c09-private-calls-20261009.md"
-      ],
-      "branch": "work/c09-private-calls-20261009-gpt6",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "pending draft PR",
-      "claimed_at": "2026-10-09T04:48:17.426Z",
-      "heartbeat_at": "2026-10-09T05:01:35.118Z",
-      "expires_at": "2026-10-09T05:06:35.119Z",
-      "notes": "Explicit owner approved formerly deferred private 1:1 audio+video. No changes to root routing, shared composer, migrations registry, C01/C02/F16, LiveKit public Talks, Firebase native or financial source; new isolated C09 source."
-    }
-  ],
+  "active": [],
   "history": [
     {
       "claim_id": "gpt6-f17-alternate-recorder-erasure-20261009",
@@ -224,6 +204,27 @@
       "expires_at": "2026-10-09T04:49:32.712Z",
       "released_at": "2026-10-09T04:46:38.992Z",
       "release_reason": "Draft PR #574 created with exact-path source/tests and final SHA-specific handoff HEAD 6d8d1c823f5dd507bd0dd0c01bc4ef3a9915f632; fetched-source static checks pass, Flutter/Dart/CI/device/E2E NOT RUN; overall F07 remains partial."
+    },
+    {
+      "claim_id": "gpt6-c09-human-private-calling-20261009",
+      "owner": "GPT-6 C09 private calls full-stack isolated owner",
+      "scope": "C09 newly owner-approved one-to-one human audio/video calls (non-Talks); isolated backend, SQL proposal, Flutter module, tests, complete UX/handoff",
+      "paths": [
+        "services/gateway/src/human_calls/**",
+        "apps/mobile/lib/src/human_calls/**",
+        "apps/mobile/test/human_calls/**",
+        "docs/PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md",
+        "docs/workstreams/c09-private-calls-20261009.md"
+      ],
+      "branch": "work/c09-private-calls-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/575",
+      "claimed_at": "2026-10-09T04:48:17.426Z",
+      "heartbeat_at": "2026-10-09T05:01:35.118Z",
+      "expires_at": "2026-10-09T05:06:35.119Z",
+      "notes": "Explicit owner approved formerly deferred private 1:1 audio+video. No changes to root routing, shared composer, migrations registry, C01/C02/F16, LiveKit public Talks, Firebase native or financial source; new isolated C09 source.",
+      "released_at": "2026-10-09T05:02:32.266Z",
+      "release_reason": "Private call scope committed to draft PR #575 at 4f15bb681bc52d4d15902feb0513c30792dd1ab7; 17/17 GitHub static source checks, 23 automated tests authored NOT EXECUTED; shared integration/provider/device pending."
     }
   ]
 }
