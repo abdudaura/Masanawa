@@ -21,7 +21,7 @@ export interface CanonicalPersonaSpec {
 }
 
 export const CANONICAL_PERSONA_ROSTER: readonly CanonicalPersonaSpec[] = Object.freeze(
-  [
+  ([
   {
     "seedKey": "platform.gwani",
     "displayName": "Gwani",
@@ -390,7 +390,7 @@ export const CANONICAL_PERSONA_ROSTER: readonly CanonicalPersonaSpec[] = Object.
     "voiceName": null,
     "supportAgent": false
   }
-].map((entry) => Object.freeze({
+] as const satisfies readonly CanonicalPersonaSpec[]).map((entry) => Object.freeze({
     ...entry,
     topics: Object.freeze(entry.topics),
   })),
