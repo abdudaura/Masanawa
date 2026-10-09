@@ -212,7 +212,6 @@ class HumanChatComposerController extends ChangeNotifier {
     final old = _snapshot;
     text = ''; replyId = null; replyPreview = null;
     pendingId = null; pendingBody = null; pendingReplyId = null;
-    text = ''; replyId = null; replyPreview = null;
     try {
       await _save();
     } catch (_) {
@@ -234,6 +233,7 @@ class HumanChatComposerController extends ChangeNotifier {
     if (_disposed || !hasPending || phase == HumanChatPhase.sending) return false;
     final old = _snapshot;
     pendingId = null; pendingBody = null; pendingReplyId = null;
+    text = ''; replyId = null; replyPreview = null;
     try {
       await _save();
     } catch (_) {
