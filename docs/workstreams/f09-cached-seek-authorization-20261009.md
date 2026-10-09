@@ -65,7 +65,7 @@ Existing refreshed-link seek revocation and expiry regression tests are preserve
 ## Next integrator actions (in order)
 
 1. Review the exact source/test checkpoint `ad26c5af37bcaa2d7345bf5da4fa440b4d0b0689` on #503 and reconcile upstream main+Work #497 before any merge.
-2. With matching Node/pnpm where needed and Flutter/Dart SDK installed, execute `cd apps/mobile && flutter format --output=none --set-exit-if-changed lib/src/talks/talk_replay_playback.dart test/talk_replay_playback_session_test.dart` (if supported), `flutter analyze`, and `flutter test test/talk_replay_playback_session_test.dart`. Fix *actual* failures without losing previous tests.
+2. With matching Node/pnpm where needed and Flutter/Dart SDK installed, execute `cd apps/mobile && dart format --output=none --set-exit-if-changed lib/src/talks/talk_replay_playback.dart test/talk_replay_playback_session_test.dart`, `flutter analyze`, and `flutter test test/talk_replay_playback_session_test.dart`. Fix *actual* failures without losing previous tests.
 3. Test on real Android: play, seek while signed link expires, logout/account swap mid-native seek, pause failure while app killed, denied/stale/revoked server playback, background/restart; verify no private audio continuation or unauthorized bytes. Confirm legacy playback flows.
 4. Integrate with #453 server replay media and auth, S3 signed GET/cache rules and F12 shell, then run real readback, storage, tenant-isolation and publication/removal acceptance.
 5. Keep PR draft; after CI #457 and end-to-end gates are genuinely executed at final merged SHA, reconsider release qualification.
