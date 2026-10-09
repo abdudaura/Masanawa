@@ -31,6 +31,10 @@ class HumanCallController extends ChangeNotifier {
   Timer? _pollTimer;
   Future<void>? _polling;
   Future<void>? _joinTask;
+  String? _pendingRequestId;
+  String? _pendingConversation;
+  HumanCallKind? _pendingKind;
+  bool _permissionRejected=false;
 
   bool get active => !_disposed && isCurrentSession();
   bool get connected => room.connected;
@@ -50,7 +54,12 @@ class HumanCallController extends ChangeNotifier {
     if(!active||busy||call!=null) return;
     final epoch=_generation;
     busy=true;error=null;_notify();
-    final requestId=_newRequestId();
+    if(_pendingConversation!=conversationId || _pendingKind!=kind) {
+      _pendingRequestId=_newRequestId();
+      _pendingConversation=conversationId;
+      _pendingKind=kind;
+    }
+    final requestId=_pendingRequestId!;
     try {
       final next=await transport.start(
         conversationId:conversationId,kind:kind,requestId:requestId,
@@ -61,6 +70,9 @@ class HumanCallController extends ChangeNotifier {
         throw const FormatException('Call admission did not match the current user');
       }
       call=next;
+      _pendingRequestId=null;
+      _pendingConversation=null;
+      _pendingKind=null;
       _beginPolling();
     } catch (_) {
       if(_current(epoch)) error='Could not start a private call. Check connectivity and retry.';
@@ -75,7 +87,7 @@ class HumanCallController extends ChangeNotifier {
     if(!active) return;
     final epoch=++_generation;
     await room.close();
-    call=null;error=null;busy=true;_notify();
+    call=null;error=null;busy=true;_permissionRejected=false;_notify();
     try {
       final next=await transport.get(callId);
       if(!_current(epoch))return;
@@ -186,7 +198,9 @@ class HumanCallController extends ChangeNotifier {
     if(current==null||!_current(epoch))return;
     joining=true;_notify();
     try {
+      if(!granted && _permissionRejected) return;
       if(!granted && !await requestPermissions(current.kind)) {
+        _permissionRejected=true;
         throw StateError('Device media permission denied');
       }
       if(!_current(epoch))return;
@@ -210,6 +224,11 @@ class HumanCallController extends ChangeNotifier {
     } finally {
       if(_current(epoch)){joining=false;_notify();}
     }
+  }
+
+  Future<void> retryMedia() {
+    _permissionRejected=false;
+    return _joinIfAllowed(_generation);
   }
 
   Future<void> decline() => _act('decline');
@@ -263,6 +282,9 @@ class HumanCallController extends ChangeNotifier {
     _pollTimer?.cancel();
     _pollTimer=null;
     call=null;
+    _pendingRequestId=null;
+    _pendingConversation=null;
+    _pendingKind=null;
     await room.close();
     if(!_disposed)_notify();
   }
