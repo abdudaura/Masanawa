@@ -16,6 +16,25 @@
       "claimed_at": "2026-10-09T04:48:10Z",
       "heartbeat_at": "2026-10-09T04:48:10Z",
       "expires_at": "2026-10-09T04:53:10Z"
+    },
+    {
+      "claim_id": "gpt6-c09-human-private-calling-20261009",
+      "owner": "GPT-6 C09 private calls full-stack isolated owner",
+      "scope": "C09 newly owner-approved one-to-one human audio/video calls (non-Talks); isolated backend, SQL proposal, Flutter module, tests, complete UX/handoff",
+      "paths": [
+        "services/gateway/src/human_calls/**",
+        "apps/mobile/lib/src/human_calls/**",
+        "apps/mobile/test/human_calls/**",
+        "docs/PRIVATE-HUMAN-CALLS-END-TO-END-20261009.md",
+        "docs/workstreams/c09-private-calls-20261009.md"
+      ],
+      "branch": "work/c09-private-calls-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "pending draft PR",
+      "claimed_at": "2026-10-09T04:48:17.426Z",
+      "heartbeat_at": "2026-10-09T04:48:17.426Z",
+      "expires_at": "2026-10-09T04:53:17.426Z",
+      "notes": "Explicit owner approved formerly deferred private 1:1 audio+video. No changes to root routing, shared composer, migrations registry, C01/C02/F16, LiveKit public Talks, Firebase native or financial source; new isolated C09 source."
     }
   ],
   "history": [
