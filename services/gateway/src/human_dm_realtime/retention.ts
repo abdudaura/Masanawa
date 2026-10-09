@@ -7,6 +7,12 @@ export interface PruneSqlPool {
     sql: string, values?: unknown[],
   ): Promise<{ rows: Record<string, unknown>[]; rowCount: number | null }>;
 }
+// An operator must preflight the exact pool/tenant immediately before one run.
+// A WeakMap keeps this fail-closed safeguard private to this process and does
+// not pretend to replace PostgreSQL role privileges or restore evidence.
+const authorizedRuns = new WeakMap<PruneSqlPool, { tenantId: string; checkedAt: number }>();
+const PREFLIGHT_TTL_MS = 5 * 60 * 1000;
+
 export interface PruneResult {
   readonly deleted: number;
   readonly batches: number;
@@ -25,6 +31,8 @@ export async function verifyHumanDmRetentionTarget(input: {
       !input.expectedDatabase || input.expectedDatabase.length > 128) {
     throw new Error("Incomplete C03 retention target");
   }
+  // Even a failed recheck revokes any earlier authorization on this pool.
+  authorizedRuns.delete(input.pool);
   const result = await input.pool.query(`
     SELECT current_database()::text AS database_name,
       current_user::text AS database_role,
@@ -40,6 +48,10 @@ export async function verifyHumanDmRetentionTarget(input: {
       row.tenant_exists!==true || row.can_trim!==true) {
     throw new Error("C03 retention database/tenant/role preflight failed");
   }
+  if(result.rows.length!==1 || result.rowCount!==1) {
+    throw new Error("C03 retention database/tenant/role preflight failed");
+  }
+  authorizedRuns.set(input.pool,{tenantId:input.tenantId,checkedAt:Date.now()});
   return {database:row.database_name as string,role:row.database_role as string};
 }
 
@@ -59,6 +71,16 @@ export async function pruneHumanDmJournal(input: {
       !Number.isSafeInteger(batchSize) || batchSize<1 || batchSize>1000 ||
       !Number.isSafeInteger(maxBatches) || maxBatches<1 || maxBatches>100) {
     throw new Error("Unsafe C03 journal retention configuration");
+  }
+  // Consume the one-use authorization before the first async mutation. It
+  // cannot be reused for a second run, another tenant, or after its TTL.
+  const authorization=authorizedRuns.get(pool);
+  authorizedRuns.delete(pool);
+  const now=Date.now();
+  if(!authorization || authorization.tenantId!==tenantId ||
+      !Number.isFinite(now) || now<authorization.checkedAt ||
+      now-authorization.checkedAt>PREFLIGHT_TTL_MS) {
+    throw new Error("C03 retention requires a fresh matching target preflight");
   }
   let deleted=0;
   let batches=0;
