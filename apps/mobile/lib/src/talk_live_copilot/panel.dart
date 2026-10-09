@@ -24,6 +24,7 @@ class _HostCopilotPanelState extends State<HostCopilotPanel> {
   @override
   void initState() {
     super.initState();
+    _question.addListener(_onQuestionEdited);
     widget.controller.openScope(
       accountSessionKey: widget.accountSessionKey,
       talkId: widget.talkId, seatId: widget.seatId,
@@ -42,6 +43,10 @@ class _HostCopilotPanelState extends State<HostCopilotPanel> {
         talkId: widget.talkId, seatId: widget.seatId,
       );
     }
+  }
+
+  void _onQuestionEdited() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _approve() async {
@@ -70,6 +75,7 @@ class _HostCopilotPanelState extends State<HostCopilotPanel> {
 
   @override
   void dispose() {
+    _question.removeListener(_onQuestionEdited);
     _question.dispose();
     super.dispose();
   }
