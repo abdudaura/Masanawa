@@ -34,7 +34,7 @@ function fixture() {
   const read = vi.fn(async (_scope: TeachingProgressScope) => current);
   const upsert = vi.fn(async (progress: TeachingProgress) => { current = progress; });
   const repository: TeachingProgressRepository = { read, upsert };
-  const dispatch = vi.fn(async () => ({ state: "accepted" as const }));
+  const dispatch = vi.fn(async (_input: Parameters<TeachingTurnDispatcher["dispatch"]>[0]) => ({ state: "accepted" as const }));
   const dispatcher: TeachingTurnDispatcher = { dispatch };
   return { repository, read, upsert, dispatch, service: createTeachingContinuity({ repository, dispatcher }),
     set(value: TeachingProgress | null) { current = value; } };
