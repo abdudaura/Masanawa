@@ -217,7 +217,12 @@ export function createFcmPushSender(input: {
             android: {
               priority: "high",
               notification: {
-                channel_id: "masanawa_work",
+                // Preserve normal notifications' channel; incoming 1:1
+                // ringing uses its own user-controllable category.
+                channel_id: request.data?.type === "human_private_call" &&
+                  request.data?.eventType === "ringing"
+                    ? "masanawa_private_calls"
+                    : "masanawa_work",
               },
             },
             apns: {
