@@ -63,3 +63,11 @@ Then compose with C01 #468, chosen canonical C02 #472/#475, C03/C05 and C04 #478
 Further required acceptance (NOT RUN): on two real users/devices check authenticated C02 C04 voice delivery/playback, denied OS microphone, focus with public Talk and Gemini, Revoked/blocked contacts, late 401/OTP refresh, slow network and ambiguous upload, expired private GET, Android MIME/Opus recorder support, data-saver/perf, application restart, and access revocation on deletion. C05 secure pending outbox/restart persistence, private S3 policy, C02 ordered rendering and release tests remain other owners' work. C04 backend/image attachment implementation is explicitly outside this lane.
 
 **Disposition:** Leave DRAFT/UNMERGED. This window owns review UX only; U12 end-to-end capability is **not** complete without the named dependencies.
+
+
+### Draft pull request and final checkpoint
+
+- **Draft PR:** [#533](https://github.com/Baatiku/masanawa/pull/533), opened against `main` with no merge or production action.
+- **Final source patch:** `bdfbad3ce4ef7dd023a111c5301a64a25b39e611` (asynchronous Flutter image-cache eviction type safety); earlier functionality at `3d182cd5fe99f85b22c2a7a3fe6f52390a20f54e`.
+- **Final handoff commit:** this documentation update is the branch HEAD; check PR current HEAD before integrating. Do not treat previous immutable checkpoint SHA as the latest commit.
+- **Test outcome:** code-review/static-path checks only. All **14 authored test cases remain UNEXECUTED** until an SDK-capable environment is available. Existing C04/R17/F12/F17 integrations are still outside this branch and require the named canonical owners.
