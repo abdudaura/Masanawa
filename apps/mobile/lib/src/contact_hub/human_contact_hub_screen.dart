@@ -264,6 +264,11 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
         c.status == HumanContactStatus.revoked ||
         c.status == HumanContactStatus.declined).toList(growable: false);
     final enabled = !contactsState.busy && _openingId == null;
+    final hasMore = contactsState.nextCursor != null;
+    // Legacy transports cannot prove completion once the 50-row cap is hit.
+    // A cursor-aware C01 response with null nextCursor is authoritative.
+    final legacyMayBeTruncated = contactsState.contacts.length >= 50 &&
+        ref.read(humanContactsTransportProvider) is! HumanContactsPaginationTransport;
     final canFavorite = enabled && !_savingFavorite;
 
     // Keep entry metadata lightweight. Flutter builds only visible rows in
@@ -385,14 +390,16 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
                       ),
                     ],
                     if (!contactsState.loading && entries.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(20),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
                         child: Text(
-                          'No matching contacts yet. Add someone by their exact @handle. No phonebook access is required.',
+                          hasMore
+                              ? 'No match among loaded contacts yet. Load more contacts or search by exact @handle.'
+                              : 'No matching contacts yet. Add someone by their exact @handle. No phonebook access is required.',
                           textAlign: TextAlign.center,
                         ),
                       ),
-                    if (contactsState.contacts.length >= 50)
+                    if (legacyMayBeTruncated)
                       const Padding(
                         padding: EdgeInsets.only(top: 10),
                         child: Text(
@@ -435,6 +442,27 @@ class _HumanContactHubScreenState extends ConsumerState<HumanContactHubScreen> {
                 );
               },
             ),
+            if (hasMore)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Column(
+                    children: [
+                      if (contactsState.loadingMore)
+                        const LinearProgressIndicator(),
+                      OutlinedButton.icon(
+                        key: const Key('hubLoadMore'),
+                        onPressed: enabled && !contactsState.loading &&
+                                !contactsState.loadingMore
+                            ? actions.loadMore
+                            : null,
+                        icon: const Icon(Icons.expand_more),
+                        label: const Text('Load more contacts'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
         ),
