@@ -68,11 +68,13 @@ test("invalid/unsupported URL and system DBs denied", () => {
   rejected({ MASANAWA_DATABASE_URL: undefined, DATABASE_URL: undefined }, "connection string");
   rejected({ MASANAWA_DATABASE_URL: "not a URL" }, "invalid PostgreSQL connection string");
   rejected({ MASANAWA_DATABASE_URL: "mysql://demo:secret@127.0.0.1:5432/masanawa_dev" }, "PostgreSQL URL");
+  rejected({ MASANAWA_DATABASE_URL: "postgresql://demo:secret@127.0.0.1:5432/masanawa_dev?host=elsewhere" }, "PostgreSQL URL");
+  rejected({ MASANAWA_DATABASE_URL: "postgresql://demo:secret@127.0.0.1:5432/masanawa_dev#unsafe" }, "PostgreSQL URL");
   for (const database of ["postgres", "template0", "template1", "bad%2Fname", "bad%00name", ""]) {
     rejected({
       MASANAWA_DATABASE_URL: `postgresql://demo:secret@127.0.0.1:5432/${database}`,
       MASANAWA_ALPHA_BOOTSTRAP_EXPECTED_DATABASE: database,
-    }, database === "" ? "database name" : "dedicated non-system database");
+    }, "dedicated non-system database");
   }
 });
 
