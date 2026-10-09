@@ -1,6 +1,23 @@
 {
   "schema_version": 1,
-  "active": [],
+  "active": [
+    {
+      "claim_id": "gpt6-u01-mutability-fence-20261009-0346",
+      "owner": "GPT-6 U01 operator contract continuation",
+      "scope": "U01 authorization snapshot immutability",
+      "paths": [
+        "packages/operator-contract/src/index.js",
+        "packages/operator-contract/test/index.test.mjs",
+        "docs/workstreams/u01-operator-contract-20261009.md"
+      ],
+      "branch": "work/u01-operator-contract-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/519",
+      "claimed_at": "2026-10-09T03:46:29Z",
+      "heartbeat_at": "2026-10-09T03:46:29Z",
+      "expires_at": "2026-10-09T03:51:29Z"
+    }
+  ],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
