@@ -274,9 +274,9 @@ import {
   type LinkedWhatsAppController,
 } from "./whatsapp_linked_device.js";
 import {
-  ensureDefaultPlatformAgents,
-  type PlatformAgentIdentityProvisioner,
+  type PlatformAgentBootstrapResult,
 } from "./platform_agent_bootstrap.js";
+import { bootstrapDefaultPlatformAgentsFromPostgres } from "./platform_agent_bootstrap_postgres.js";
 import {
   createTwinProductionRuntime,
   type TwinProductionRuntime,
@@ -291,7 +291,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
-  readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
+  readonly bootstrapPlatformAgents?: (tenantId: TenantId) => Promise<PlatformAgentBootstrapResult>;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
   readonly agentPresentations?: AgentPresentationRepository;
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
@@ -413,47 +413,10 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    bootstrapPlatformAgents: (tenantId: TenantId) =>
+      bootstrapDefaultPlatformAgentsFromPostgres({ pool: database.pool, tenantId }),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
-    platformAgentIdentity: Object.freeze({
-      async provision(input: Parameters<PlatformAgentIdentityProvisioner["provision"]>[0]) {
-        await withTransaction(database.pool, async (client) => {
-          const identity = createPostgresIdentityRepository(client);
-          await identity.createCharacter({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            createdAt: input.createdAt,
-          });
-          await identity.assignCharacterOwnership({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            kind: "platform",
-            ownerUserId: null,
-            createdAt: input.createdAt,
-          });
-          await identity.createCharacterVersion({
-            tenantId: input.tenantId,
-            characterVersionId: input.characterVersionId,
-            characterId: input.characterId,
-            versionNumber: 1,
-            constitution: input.constitution,
-            createdAt: input.createdAt,
-          });
-          await identity.publishCharacterVersion({
-            tenantId: input.tenantId,
-            characterVersionId: input.characterVersionId,
-            publishedAt: input.createdAt,
-          });
-          await identity.activateCharacterVersion({
-            tenantId: input.tenantId,
-            characterId: input.characterId,
-            characterVersionId: input.characterVersionId,
-            expectedCharacterRevision: 1,
-            activatedAt: input.createdAt,
-          });
-        });
-      },
-    }),
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
@@ -764,6 +727,20 @@ export async function startGatewayService(
 
   const platformTenantRaw = env.MASANAWA_PLATFORM_TENANT_ID?.trim();
   const otpPepper = env.MASANAWA_AUTH_OTP_PEPPER?.trim();
+  const bootstrapPlatformAgents = env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true";
+  const canInitializePlatform =
+    !!platformTenantRaw &&
+    !!otpPepper &&
+    !!database.platformSessions &&
+    !!database.agentPresentations &&
+    !!database.characterSkillAssignments &&
+    !!database.relationships &&
+    !!database.relationshipProvisioner &&
+    !!database.platformAgentProfiles;
+  if (bootstrapPlatformAgents && !canInitializePlatform) {
+    await database.close().catch(() => undefined);
+    throw new Error("Platform Agent bootstrap requires platform tenant and canonical customer database/auth dependencies");
+  }
   let platformTenantId: TenantId | undefined;
   if (
     platformTenantRaw &&
@@ -788,21 +765,20 @@ export async function startGatewayService(
       throw error;
     }
 
-    if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
-      if (!database.platformAgentIdentity || !database.skillDistribution) {
+    if (bootstrapPlatformAgents) {
+      // Every identity, skill, presentation and profile write must share a
+      // single tenant-locked PostgreSQL transaction across gateway replicas.
+      // Never fall back to the unprotected per-repository bootstrap.
+      if (!database.bootstrapPlatformAgents) {
         await database.close().catch(() => undefined);
-        throw new Error(
-          "Platform Agent bootstrap requires Identity and Skill distribution repositories",
-        );
+        throw new Error("Platform Agent bootstrap requires an atomic PostgreSQL provisioner");
       }
-      await ensureDefaultPlatformAgents({
-        tenantId: activePlatformTenantId,
-        identity: database.platformAgentIdentity,
-        presentations: database.agentPresentations,
-        profiles: database.platformAgentProfiles,
-        skillAssignments: database.characterSkillAssignments,
-        skillDistribution: database.skillDistribution,
-      });
+      try {
+        await database.bootstrapPlatformAgents(activePlatformTenantId);
+      } catch (error) {
+        await database.close().catch(() => undefined);
+        throw error;
+      }
     }
 
     const customerSessions = createPlatformCustomerSessionAuthorizer({
