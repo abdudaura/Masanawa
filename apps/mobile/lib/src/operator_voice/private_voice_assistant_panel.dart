@@ -183,6 +183,15 @@ class _PrivateVoiceAssistantPanelState
                     icon: const Icon(Icons.mic_none),
                     label: const Text('Start private voice'),
                   ),
+                if (connected) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    key: const Key('u09_mute_voice'),
+                    tooltip: voice.isMuted ? 'Unmute microphone' : 'Mute microphone',
+                    onPressed: () => voice.setMuted(!voice.isMuted),
+                    icon: Icon(voice.isMuted ? Icons.mic_off_outlined : Icons.mic_outlined),
+                  ),
+                ],
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text('Only you and the Assistant are in this conversation.',
