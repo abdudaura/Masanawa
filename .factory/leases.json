@@ -67,6 +67,23 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
+    },
+    {
+      "claim_id": "masanawa-01-af13-evidence-qualification-20261009",
+      "owner": "MASANAWA-01/AF13",
+      "scope": "AF13 executable fail-closed evidence manifest verifier and acceptance matrix; independent qualification, no runtime or deployment changes",
+      "paths": [
+        "tools/audio-first-qualification/verify-evidence.mjs",
+        "tools/audio-first-qualification/verify-evidence.test.mjs",
+        "tools/audio-first-qualification/acceptance-matrix.json",
+        "docs/workstreams/AF13-evidence-qualification-20261009.md"
+      ],
+      "branch": "work/af13-evidence-manifest-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:45:04.740Z",
+      "heartbeat_at": "2026-10-09T21:45:04.740Z",
+      "expires_at": "2026-10-09T21:50:04.740Z",
+      "notes": "New paths only; PR #527/#518/#559/#561/#554/#567/#570 read; AF07 #593 and AF00/AF01/AF05/AF08/AF14 live branches excluded. No app/device/provider checks claimed."
     }
   ],
   "history": [
