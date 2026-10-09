@@ -7,7 +7,7 @@ import type { HumanAiGenerator } from "./service.js";
  * Gateway integrator injects its established production provider at composition.
  */
 export function createCanonicalHumanAiGenerator(provider:AgentInferenceProvider):HumanAiGenerator {
-  return Object.freeze({
+  return Object.freeze<HumanAiGenerator>({
     async generate(input) {
       if (input.retain !== false || input.allowTools !== false)
         throw new Error("Selected-message inference must be stateless and tool-free");
@@ -25,3 +25,4 @@ export function createCanonicalHumanAiGenerator(provider:AgentInferenceProvider)
     },
   });
 }
+
