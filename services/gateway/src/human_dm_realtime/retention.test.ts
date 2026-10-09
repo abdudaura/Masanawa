@@ -150,6 +150,18 @@ describe("C03 bounded private-message retention operator",()=>{
     await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
       .rejects.toThrow("fresh matching target preflight");
   });
+  it("invalid preflight input revokes a previously valid target without another SQL call",async()=>{
+    let mutations=0;
+    const pool=await preflightedPool("tenant_a",async()=>{
+      mutations++;return {rows:[{deleted:0}],rowCount:1};
+    });
+    await expect(verifyHumanDmRetentionTarget({
+      pool,tenantId:"",expectedDatabase:"masanawa_test",
+    })).rejects.toThrow("Incomplete C03 retention target");
+    await expect(pruneHumanDmJournal({pool,tenantId:"tenant_a"}))
+      .rejects.toThrow("fresh matching target preflight");
+    expect(mutations).toBe(0);
+  });
   it("expires a matching preflight after five minutes before SQL mutation",async()=>{
     const now=Date.now();
     const dateNow=vi.spyOn(Date,"now");
