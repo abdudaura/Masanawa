@@ -34,6 +34,8 @@ CREATE INDEX human_private_calls_callee_idx ON talks.human_private_calls
   (tenant_id,callee_user_id,created_at DESC);
 CREATE INDEX human_private_calls_open_idx ON talks.human_private_calls
   (tenant_id,created_at) WHERE state IN ('ringing','active');
+CREATE INDEX human_private_calls_expiry_idx ON talks.human_private_calls
+  (expires_at,call_id) WHERE state IN ('ringing','active');
 -- A durable, no-PII hint outbox for the existing R14/FCM worker to consume.
 -- This table alone DOES NOT deliver incoming calls.
 CREATE TABLE talks.human_call_signal_outbox (
