@@ -100,6 +100,7 @@ class AssistantWorkspaceController extends ChangeNotifier {
 
   String _ownerId;
   int _generation = 0;
+  int _historyEpoch = 0;
   bool _dead = false;
   bool busy = false;
   String? error;
@@ -122,6 +123,7 @@ class AssistantWorkspaceController extends ChangeNotifier {
     if (_ownerId == ownerId || _dead) return;
     _ownerId = ownerId;
     ++_generation;
+    ++_historyEpoch;
     busy = false;
     error = null;
     notice = null;
@@ -144,16 +146,26 @@ class AssistantWorkspaceController extends ChangeNotifier {
       final voice = item.voiceName?.trim().toLowerCase();
       // Match the Gateway's canonical /home projection: administrator
       // display labels may differ, but configured support voices are stable.
-      final role = switch (name) {
+      final byName = switch (name) {
         'gwani' => AssistantRole.gwani,
         'gwana' => AssistantRole.gwana,
-        _ => switch (voice) {
-          'bodi' => AssistantRole.gwani,
-          'sulafat' => AssistantRole.gwana,
-          _ => null,
-        },
+        _ => null,
       };
-      if (role == null) continue;
+      final byVoice = switch (voice) {
+        'bodi' => AssistantRole.gwani,
+        'sulafat' => AssistantRole.gwana,
+        _ => null,
+      };
+      if (byName != null && byVoice != null && byName != byVoice) {
+        throw StateError('Conflicting support assistant identity');
+      }
+      final role = byName ?? byVoice;
+      if (role == null) {
+        if (item.defaultPlatformAgent) {
+          throw StateError('Selected support assistant is unrecognized');
+        }
+        continue;
+      }
       if (selected.containsKey(role)) {
         throw StateError('Duplicate canonical support agent');
       }
@@ -206,11 +218,37 @@ class AssistantWorkspaceController extends ChangeNotifier {
   }
 
   Future<void> _refreshHistory(int generation) async {
+    // Freeze attribution before awaiting either history read. Persona switches
+    // and overlapping refreshes invalidate older in-flight projections.
+    final epoch = ++_historyEpoch;
+    final source = Map<AssistantRole, AgentDirectoryEntry>.of(roster);
+    final selected = activeRole;
     final results = await Future.wait([
       for (final role in AssistantRole.values)
-        shell.loadHistory(roster[role]!.characterId, limit: 80),
+        shell.loadHistory(source[role]!.characterId, limit: 80),
     ]);
-    if (_generation != generation || _dead) return;
+    if (_generation != generation || _dead || epoch != _historyEpoch) return;
+    // Support identity and the preferred assistant can change on another
+    // device while history is loading. Never attribute old rows using a
+    // newer directory mapping or leave revoked history on this screen.
+    final current = _validateRoster(await directory.loadDirectory());
+    if (_generation != generation || _dead || epoch != _historyEpoch) return;
+    final defaults = current.entries.where(
+        (e) => e.value.defaultPlatformAgent).toList();
+    if (defaults.length > 1 ||
+        (defaults.isNotEmpty ? defaults.single.key : AssistantRole.gwani)
+            != selected ||
+        AssistantRole.values.any((role) =>
+          current[role]!.characterId != source[role]!.characterId ||
+          current[role]!.characterVersionId !=
+              source[role]!.characterVersionId)) {
+      history = const [];
+      roster = const {};
+      activeRole = null;
+      _bindings.clear();
+      _emit(generation);
+      throw StateError('Assistant identity changed while loading history');
+    }
     final seen = <String>{};
     final merged = <AssistantTimelineEntry>[];
     for (var i = 0; i < AssistantRole.values.length; ++i) {
@@ -218,7 +256,7 @@ class AssistantWorkspaceController extends ChangeNotifier {
       for (final message in results[i]) {
         final item = AssistantTimelineEntry(
             role: role,
-            characterId: roster[role]!.characterId,
+            characterId: source[role]!.characterId,
             message: message);
         if (message.key.isNotEmpty && seen.add(item.identityKey)) {
           merged.add(item);
@@ -257,6 +295,7 @@ class AssistantWorkspaceController extends ChangeNotifier {
       return;
     }
     final generation = _generation;
+    ++_historyEpoch;
     busy = true;
     error = null;
     _emit(generation);
@@ -269,6 +308,12 @@ class AssistantWorkspaceController extends ChangeNotifier {
       if (_generation != generation || _dead) return;
       if (refreshed[role]?.defaultPlatformAgent != true) {
         throw StateError('Agent preference was not confirmed');
+      }
+      if (AssistantRole.values.any((r) =>
+          roster[r]!.characterId != refreshed[r]!.characterId ||
+          roster[r]!.characterVersionId != refreshed[r]!.characterVersionId)) {
+        history = const [];
+        _bindings.clear();
       }
       roster = refreshed;
       activeRole = role;
@@ -412,6 +457,7 @@ class AssistantWorkspaceController extends ChangeNotifier {
   @override
   void dispose() {
     ++_generation;
+    ++_historyEpoch;
     _dead = true;
     _bindings.clear();
     super.dispose();
