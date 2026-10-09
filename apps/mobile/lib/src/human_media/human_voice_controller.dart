@@ -308,7 +308,13 @@ class HumanVoiceController extends ChangeNotifier {
       final bytes=await transport.read(note.messageId);
       if(closed||generation!=_playGeneration)return;
       path=await _privatePath();
-      if(closed||generation!=_playGeneration)return;
+      if(closed||generation!=_playGeneration){
+        // The asynchronous path factory may have already created a private
+        // file before Stop or sign-out invalidated this playback generation.
+        // Never orphan that file or allow it to enter a later session.
+        await _erase(path);
+        return;
+      }
       _downloadedPlaybackFile=path;
       await File(path).writeAsBytes(bytes,flush:true);
       if(closed||generation!=_playGeneration){
