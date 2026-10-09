@@ -67,7 +67,7 @@ async function allowed(q:SqlQuery,tenant:string,actor:string,conversationId:stri
       JOIN talks.public_profiles p ON p.tenant_id=s.tenant_id AND p.handle=s.target_id
       WHERE s.tenant_id=$1 AND s.target_kind='profile' AND s.visibility IN ('blocked','restricted')
         AND p.user_id IN (c.first_user_id,c.second_user_id))
-    LIMIT 1`,[tenant,conversationId,actor]);
+    LIMIT 1 FOR SHARE OF cr`,[tenant,conversationId,actor]);
   return hit.rows[0]??null;
 }
 async function emit(q:SqlQuery,tenant:string,record:CallRow) {
