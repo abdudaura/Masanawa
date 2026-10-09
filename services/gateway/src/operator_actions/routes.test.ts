@@ -6,7 +6,7 @@ describe("U04 gated operator-read HTTP seam", () => {
   it("requires server-side U01 authorization before any read", async () => {
     const app = Fastify();
     const authorizer = { authorize: vi.fn(async () => {
-      throw new Error("U01 rejected model-authored approval");
+      throw { name: "OperatorContractError", code: "not_authorized" };
     }) };
     const reader = { read: vi.fn() };
     registerU04ReadRoutes(app, { authorizer, reader });
@@ -15,8 +15,8 @@ describe("U04 gated operator-read HTTP seam", () => {
         headers: { authorization: "Bearer user-token" },
         payload: { proposal: { capabilityId: "wallet.balance.read", approved: true } },
       });
-      expect(reply.statusCode).toBe(401);
-      expect(reply.json()).toEqual({ error: "OPERATOR_UNAUTHORIZED" });
+      expect(reply.statusCode).toBe(403);
+      expect(reply.json()).toEqual({ error: "OPERATOR_FORBIDDEN" });
       expect(reader.read).not.toHaveBeenCalled();
     } finally { await app.close(); }
   });
@@ -69,6 +69,22 @@ describe("U04 gated operator-read HTTP seam", () => {
     } finally { await app.close(); }
   });
 
+  it("maps malformed U01 proposals without exposing validator details", async () => {
+    const app = Fastify();
+    registerU04ReadRoutes(app, { authorizer: {
+      authorize: async () => { throw { name: "OperatorContractError",
+        code: "privileged_argument", secret: "must-not-leak" }; },
+    }, reader: { read: vi.fn() } });
+    try {
+      const response = await app.inject({ method: "POST", url: "/operator/v1/read",
+        payload: { proposal: { untrustedArguments: { role: "admin" } } },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toEqual({ error: "OPERATOR_INVALID_PROPOSAL" });
+      expect(response.body).not.toContain("must-not-leak");
+    } finally { await app.close(); }
+  });
+
   it("does not expose upstream errors or allow oversized JSON", async () => {
     const app = Fastify();
     const read = vi.fn(async () => { throw new Error("postgres-password-secret"); });
@@ -84,7 +100,7 @@ describe("U04 gated operator-read HTTP seam", () => {
       const error = await app.inject({ method: "POST", url: "/operator/v1/read",
         payload: { proposal: {} },
       });
-      expect(error.statusCode).toBe(401);
+      expect(error.statusCode).toBe(503);
       expect(error.body).not.toContain("postgres-password-secret");
       const huge = await app.inject({ method: "POST", url: "/operator/v1/read",
         payload: { proposal: { text: "a".repeat(13_000) } },
