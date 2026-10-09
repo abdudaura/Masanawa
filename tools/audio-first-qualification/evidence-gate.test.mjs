@@ -35,7 +35,7 @@ test('empty manifest is valid as a NOT_RUN baseline but cannot release', () => {
   assert.equal(r.allRealClaimed, false);
 });
 test('require-all-real rejects untested baseline', () => {
-  assert.equal(validateManifest(base(), doc, {requireAllReal:true}).gatePassed, false);
+  assert.equal(validateManifest(base(), doc, {requireAllReal:true}).preflightPassed, false);
 });
 test('mock cannot impersonate PASS_REAL', () => {
   const m = base(); m.observations.push({...proof('WF-A01', 'simulated'), status:'PASS_REAL'});
@@ -65,7 +65,7 @@ test('blocked and failure states require explanatory reasons', () => {
 test('even complete self-reported real evidence requires human verification', () => {
   const m=base(); m.observations=parseJourneyIds(doc).map(id=>proof(id));
   const r=validateManifest(m,doc,{requireAllReal:true});
-  assert.equal(r.gatePassed,true);
+  assert.equal(r.preflightPassed,true);
   assert.equal(r.allRealClaimed,true);
   assert.equal(r.reviewRequired,true);
   assert.equal(r.verifiedE2E,false);
