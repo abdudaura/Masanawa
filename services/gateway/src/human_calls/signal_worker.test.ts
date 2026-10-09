@@ -77,7 +77,10 @@ describe("C09 private call signal processing",()=>{
     expect(await processHumanCallSignals({...x,revoker})).toEqual({
       handled:0,failed:1,
     });
-    expect(x.sql.join("\n")).not.toContain("attempt_count < 10");
+    // Max ten retries for optional ringing hints, but mandatory terminal
+    // LiveKit revocation never silently dead-letters at attempt ten.
+    expect(x.sql.join("\n")).toContain("attempt_count < 10 OR event_type IN");
+    expect(x.sql.join("\n")).toContain("'declined','cancelled','missed','ended'");
     expect(x.sql.join("\n")).toContain("interval '5 minutes'");
     expect(await processHumanCallSignals({...x,revoker})).toEqual({
       handled:1,failed:0,
