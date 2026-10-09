@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum TalkInsightStatus { processing, ready, failed }
+enum TalkInsightStatus { eligible, processing, ready, failed }
 
 class TalkInsightDraft {
   const TalkInsightDraft({
@@ -22,6 +22,7 @@ class TalkInsightDraft {
 
   factory TalkInsightDraft.fromJson(Map<String, dynamic> json) {
     final status = switch (json['status']) {
+      'eligible' => TalkInsightStatus.eligible,
       'processing' => TalkInsightStatus.processing,
       'ready' => TalkInsightStatus.ready,
       'failed' => TalkInsightStatus.failed,
@@ -57,7 +58,7 @@ abstract interface class TalkInsightTransport {
   Future<TalkInsightDraft> generate(String talkId);
 }
 
-enum TalkInsightUiState { idle, loading, unavailable, processing, ready, failed }
+enum TalkInsightUiState { idle, loading, unavailable, eligible, processing, ready, failed }
 
 /// Never caches private insight content between accounts or across app restarts.
 class TalkInsightController extends ChangeNotifier {
@@ -92,6 +93,7 @@ class TalkInsightController extends ChangeNotifier {
     draft = next;
     state = next == null ? TalkInsightUiState.unavailable :
       switch (next.status) {
+        TalkInsightStatus.eligible => TalkInsightUiState.eligible,
         TalkInsightStatus.processing => TalkInsightUiState.processing,
         TalkInsightStatus.ready => TalkInsightUiState.ready,
         TalkInsightStatus.failed => TalkInsightUiState.failed,

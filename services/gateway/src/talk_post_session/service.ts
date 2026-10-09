@@ -34,7 +34,7 @@ function normalizeDraft(value: ReplayInsightDraft): ReplayInsightDraft {
   });
 }
 export interface ReplayInsightService {
-  read(input: { readonly authorizationHeader: string | undefined; readonly talkId: string }): Promise<ReplayInsightView | null>;
+  read(input: { readonly authorizationHeader: string | undefined; readonly talkId: string }): Promise<ReplayInsightView>;
   request(input: { readonly authorizationHeader: string | undefined; readonly talkId: string; readonly processingConsent: true }): Promise<ReplayInsightView>;
 }
 export function createReplayInsightService(input: {
@@ -56,7 +56,15 @@ export function createReplayInsightService(input: {
       const id = talkId(request.talkId);
       const source = await input.repository.source(actor.tenantId, actor.userId, id);
       if (!source) throw new ReplayInsightError("talks.insights.replay_unavailable", 404);
-      return input.repository.read(actor.tenantId, actor.userId, id);
+      const existing = await input.repository.read(actor.tenantId, actor.userId, id);
+      if (existing) return existing;
+      // This source comes from the current R13 authenticated SQL eligibility,
+      // not from a client guess or an unverified model result.
+      return {
+        talkId: id, recordingId: source.recordingId,
+        status: "eligible", summary: null, highlights: [],
+        nextTalkTitle: null, updatedAt: new Date().toISOString(),
+      };
     },
     async request(request) {
       // Exact boolean required by the route AND by direct service callers.

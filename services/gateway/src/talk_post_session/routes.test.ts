@@ -11,7 +11,9 @@ function setup() {
       if(input.authorizationHeader!=="Bearer host") {
         throw new ReplayInsightError("unauthorized",401);
       }
-      return null;
+      return {talkId:input.talkId,recordingId:"recording_1",status:"eligible",
+        summary:null,highlights:[],nextTalkTitle:null,
+        updatedAt:"2026-10-09T01:00:00.000Z"};
     },
     async request(input) {
       calls.push(input);
@@ -30,14 +32,16 @@ function setup() {
   return {app,calls};
 }
 describe("U16 isolated Host-only routes",()=>{
-  it("does not fabricate insights if no eligible recording exists",async()=>{
+  it("returns only the authenticated replay-ready eligibility state",async()=>{
     const {app}=setup();
     const result=await app.inject({
       method:"GET",url:"/talks/talk_1/post-session/insights",
       headers:{authorization:"Bearer host"},
     });
     expect(result.statusCode).toBe(200);
-    expect(result.json()).toBeNull();
+    expect(result.json()).toMatchObject({
+      status:"eligible",summary:null,recordingId:"recording_1",
+    });
     await app.close();
   });
   it("requires explicitly true, schema-valid recording-processing consent",async()=>{

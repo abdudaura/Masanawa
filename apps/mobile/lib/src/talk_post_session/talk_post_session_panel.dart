@@ -35,6 +35,9 @@ class _TalkPostSessionPanelState extends State<TalkPostSessionPanel> {
           if (controller.state == TalkInsightUiState.unavailable)
             const ListTile(title: Text('No eligible recording'),
               subtitle: Text('Insights require a finished, retained recording with Host consent.')),
+          if (controller.state == TalkInsightUiState.eligible)
+            const ListTile(title: Text('Recording ready for private insights'),
+              subtitle: Text('You can consent to generate a Host-only draft.')),
           if (controller.state == TalkInsightUiState.processing)
             const ListTile(title: Text('Processing recording'),
               subtitle: Text('Check again for the completed draft.')),

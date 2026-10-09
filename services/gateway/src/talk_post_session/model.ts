@@ -1,5 +1,5 @@
 /** U16 private post-session insight drafts; never a public replay or monetary receipt. */
-export type InsightStatus = "processing" | "ready" | "failed";
+export type InsightStatus = "eligible" | "processing" | "ready" | "failed";
 export interface ReplayInsightSource {
   readonly tenantId: string;
   readonly talkId: string;

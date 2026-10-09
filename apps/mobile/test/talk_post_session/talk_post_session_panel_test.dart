@@ -6,7 +6,10 @@ import 'package:masanawa/src/talk_post_session/talk_post_session_panel.dart';
 class _Transport implements TalkInsightTransport {
   int generateCalls=0;
   @override
-  Future<TalkInsightDraft?> read(String talkId) async => null;
+  Future<TalkInsightDraft?> read(String talkId) async => TalkInsightDraft(
+    talkId:talkId, recordingId:'recording_1',
+    status:TalkInsightStatus.eligible, updatedAt:DateTime.utc(2026,10,9),
+  );
   @override
   Future<TalkInsightDraft> generate(String talkId) async {
     generateCalls++;
@@ -26,7 +29,7 @@ void main() {
     );
     await tester.pumpWidget(MaterialApp(home:Scaffold(body:TalkPostSessionPanel(controller:controller))));
     await tester.pumpAndSettle();
-    expect(find.text('No eligible recording'),findsOneWidget);
+    expect(find.text('Recording ready for private insights'),findsOneWidget);
     FilledButton generateButton=tester.widget(
       find.widgetWithText(FilledButton,'Generate private draft'),
     );
