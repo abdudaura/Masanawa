@@ -29,6 +29,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _savingPhoto = false;
   bool _creatingProfile = false;
   bool _removeAvatar = false;
+  // A timed-out/uncertain write may already be committed on the server.
+  // Do not send another mutation until an authoritative GET reconciles it.
+  bool _requiresReload = false;
   String? _error;
   String? _accountId;
   int _accountEpoch = 0;
@@ -61,6 +64,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           _profile = null;
           _creatingProfile = false;
           _removeAvatar = false;
+          _requiresReload = false;
           _saving = false;
           _savingPhoto = false;
           _loading = nextId != null;
@@ -108,6 +112,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _name.text = profile.displayName;
         _bio.text = profile.bio;
         _removeAvatar = false;
+        _requiresReload = false;
       });
     } on DioException catch (error) {
       if (!current()) return;
@@ -120,15 +125,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           _name.text = session is SessionSignedIn ? session.user.name : '';
           _bio.clear();
           _removeAvatar = false;
+          _requiresReload = false;
         });
       } else {
-        setState(() => _error =
-            'Could not load your profile. Check your connection and retry.');
+        setState(() {
+          _requiresReload = true;
+          _error = 'Could not load your profile. Check your connection and retry.';
+        });
       }
     } catch (_) {
       if (!current()) return;
-      setState(() => _error =
-          'Could not load your profile. Check your connection and retry.');
+      setState(() {
+        _requiresReload = true;
+        _error = 'Could not load your profile. Check your connection and retry.';
+      });
     } finally {
       if (current()) setState(() => _loading = false);
     }
@@ -149,7 +159,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final epoch = _accountEpoch;
     final current = _profile;
     if (!_sameAccount(epoch) || (current == null && !_creatingProfile) ||
-        _saving || _savingPhoto || !_changed || !_form.currentState!.validate()) return;
+        _requiresReload || _saving || _savingPhoto || !_changed ||
+        !_form.currentState!.validate()) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -204,6 +215,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (!_sameAccount(epoch)) return;
       final status = error.response?.statusCode;
       setState(() {
+        _requiresReload = true;
         if (status == 409) {
           _error = _creatingProfile
               ? 'This handle may be taken, or your profile already exists. '
@@ -218,9 +230,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       });
     } catch (_) {
       if (!_sameAccount(epoch)) return;
-      setState(() => _error =
-          'Could not confirm whether your changes saved. '
-          'Reload your profile before trying again.');
+      setState(() {
+        _requiresReload = true;
+        _error = 'Could not confirm whether your changes saved. '
+            'Reload your profile before trying again.';
+      });
     } finally {
       if (_sameAccount(epoch)) setState(() => _saving = false);
     }
@@ -229,12 +243,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _pickPhoto() async {
     final epoch = _accountEpoch;
     final profile = _profile;
-    if (!_sameAccount(epoch) || profile == null || _saving || _savingPhoto) return;
+    if (!_sameAccount(epoch) || profile == null || _requiresReload ||
+        _saving || _savingPhoto) return;
     if (_changed) {
       setState(() => _error =
           'Save your other profile changes before changing your photo.');
       return;
     }
+    var uploadDispatched = false;
     try {
       final png = await pickAndCropAvatar(context);
       if (png == null || !_sameAccount(epoch)) return;
@@ -242,6 +258,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _savingPhoto = true;
         _error = null;
       });
+      // Once a network mutation starts, even a timeout may represent success.
+      uploadDispatched = true;
       final url = await ref.read(profileAvatarTransportProvider).upload(
         png, expectedUrl: profile.avatarUrl,
       );
@@ -266,15 +284,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       );
     } on DioException catch (error) {
       if (!_sameAccount(epoch)) return;
-      setState(() => _error = error.response?.statusCode == 404
+      setState(() {
+        if (uploadDispatched) _requiresReload = true;
+        _error = error.response?.statusCode == 404
           ? 'Profile photo storage is unavailable right now.'
           : error.response?.statusCode == 409
               ? 'Your photo changed on another device. Reload and try again.'
-              : 'Could not confirm the photo update. Reload before retrying.');
+              : 'Could not confirm the photo update. Reload before retrying.';
+      });
     } catch (_) {
       if (_sameAccount(epoch)) {
-        setState(() => _error =
-            'Could not prepare or confirm the photo. Reload before retrying.');
+        setState(() {
+          if (uploadDispatched) _requiresReload = true;
+          _error = uploadDispatched
+              ? 'Could not confirm the photo update. Reload before retrying.'
+              : 'Could not prepare the photo. Choose another image.';
+        });
       }
     } finally {
       if (_sameAccount(epoch)) setState(() => _savingPhoto = false);
@@ -329,8 +354,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           Center(
                             child: TextButton.icon(
                               key: const ValueKey('profile-change-photo'),
-                              onPressed: _saving || _savingPhoto || _removeAvatar
-                                  ? null : _pickPhoto,
+                              onPressed: _saving || _savingPhoto || _removeAvatar ||
+                                      _requiresReload ? null : _pickPhoto,
                               icon: _savingPhoto
                                   ? const SizedBox(
                                       width: 18, height: 18,
@@ -355,7 +380,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           Center(
                             child: TextButton.icon(
                               key: const ValueKey('profile-remove-photo'),
-                              onPressed: _saving || _savingPhoto
+                              onPressed: _saving || _savingPhoto || _requiresReload
                                   ? null : () => setState(() => _removeAvatar = true),
                               icon: const Icon(Icons.delete_outline_rounded),
                               label: const Text('Remove photo'),
@@ -444,7 +469,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         const SizedBox(height: 16),
                         FilledButton(
                           key: const ValueKey('profile-edit-save'),
-                          onPressed: _saving || _savingPhoto || !_changed ? null : _save,
+                          onPressed: _saving || _savingPhoto || _requiresReload ||
+                              !_changed ? null : _save,
                           child: _saving
                               ? const SizedBox(
                                   height: 20,
