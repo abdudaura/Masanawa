@@ -83,6 +83,22 @@
       "heartbeat_at": "2026-10-09T21:36:17.817Z",
       "expires_at": "2026-10-09T21:41:17.817Z",
       "notes": "AF00 composition awaits separate integrator; preserve Work #497, U09 #534 and R02 #456 without modifying their paths. No local owner APK available."
+    },
+    {
+      "claim_id": "masanawa-01-af13-evidence-gate-20261009",
+      "owner": "MASANAWA-01 / AF13",
+      "scope": "Implement executable fail-closed audio-first acceptance evidence validation; no false-green live/provider/device/source promotion and no production/CI changes",
+      "paths": [
+        "tools/audio-first-qualification/evidence-gate.mjs",
+        "tools/audio-first-qualification/evidence-gate.test.mjs",
+        "docs/workstreams/AF13-evidence-gate-20261009.md"
+      ],
+      "branch": "work/af13-evidence-gate-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:36:29.049Z",
+      "heartbeat_at": "2026-10-09T21:36:29.049Z",
+      "expires_at": "2026-10-09T21:41:29.049Z",
+      "notes": "AF00 source baseline available; isolated qualification utility/tests only, no shared runtime or CI, no competing AF claims."
     }
   ],
   "history": [
