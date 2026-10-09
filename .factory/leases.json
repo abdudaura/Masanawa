@@ -21,6 +21,24 @@
       "heartbeat_at": "2026-10-09T09:00:50.664Z",
       "expires_at": "2026-10-09T09:05:50.664Z",
       "notes": "Added only owned C09 concrete Twirp DeleteRoom implementation and composer adapter to provide real media shutdown without new dependency; no external provider request or production change."
+    },
+    {
+      "claim_id": "gpt6-msn-crypto-primary-20261009",
+      "owner": "GPT-6 MSN wallet crypto-first foundation",
+      "scope": "MSN crypto-backed custody conversion invariant and truthful mobile presentation; no producer enablement",
+      "paths": [
+        "services/gateway/src/msn_wallet/**",
+        "packages/commerce/migrations/0112_msn_wallet.sql",
+        "apps/mobile/lib/src/finance/msn_wallet_panel.dart",
+        "apps/mobile/test/finance/msn_wallet_panel_test.dart",
+        "docs/workstreams/msn-crypto-primary-wallet-20261009.md"
+      ],
+      "branch": "work/msn-crypto-primary-wallet-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "",
+      "claimed_at": "2026-10-09T09:03:36.239Z",
+      "heartbeat_at": "2026-10-09T09:03:36.239Z",
+      "expires_at": "2026-10-09T09:08:36.239Z"
     }
   ],
   "history": [
