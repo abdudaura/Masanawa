@@ -2,22 +2,6 @@
   "schema_version": 1,
   "active": [
     {
-      "claim_id": "gpt6-f17-alternate-recorder-erasure-20261009",
-      "owner": "GPT-6 F17 C04 recovery",
-      "scope": "F17/C04 return-path-aware secure temporary recorder erasure on discard and signout",
-      "paths": [
-        "apps/mobile/lib/src/human_media/human_voice_controller.dart",
-        "apps/mobile/test/human_media_recorder_lifecycle_test.dart",
-        "docs/workstreams/f17-alternate-recorder-output-cleanup-20261009.md"
-      ],
-      "branch": "work/c04-private-voice-notes-20261008",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "https://github.com/Baatiku/masanawa/pull/478",
-      "claimed_at": "2026-10-09T04:48:10Z",
-      "heartbeat_at": "2026-10-09T04:49:04Z",
-      "expires_at": "2026-10-09T04:54:04Z"
-    },
-    {
       "claim_id": "gpt6-c09-human-private-calling-20261009",
       "owner": "GPT-6 C09 private calls full-stack isolated owner",
       "scope": "C09 newly owner-approved one-to-one human audio/video calls (non-Talks); isolated backend, SQL proposal, Flutter module, tests, complete UX/handoff",
@@ -38,6 +22,24 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "gpt6-f17-alternate-recorder-erasure-20261009",
+      "owner": "GPT-6 F17 C04 recovery",
+      "scope": "F17/C04 return-path-aware secure temporary recorder erasure on discard and signout",
+      "paths": [
+        "apps/mobile/lib/src/human_media/human_voice_controller.dart",
+        "apps/mobile/test/human_media_recorder_lifecycle_test.dart",
+        "docs/workstreams/f17-alternate-recorder-output-cleanup-20261009.md"
+      ],
+      "branch": "work/c04-private-voice-notes-20261008",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/478",
+      "claimed_at": "2026-10-09T04:48:10Z",
+      "heartbeat_at": "2026-10-09T04:49:04Z",
+      "expires_at": "2026-10-09T04:54:04Z",
+      "released_at": "2026-10-09T04:50:07Z",
+      "release_reason": "Existing draft PR #478 updated; three reviewed source/test/handoff paths pushed to e474b0ea3bfba2876c8e4f723d2b16794e64b2e5. Flutter/Android/device tests not run; C04/F17 remains partial and unmerged."
+    },
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
       "owner": "chatgpt-gpt6-f11-ci-evidence",
