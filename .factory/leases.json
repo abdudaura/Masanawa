@@ -39,9 +39,9 @@
       "source_pr": 536,
       "source_head": "061b637f3386f67596ca3997b8dac5ac5b619eac",
       "claimed_at": "2026-10-09T10:24:17.294Z",
-      "heartbeat_at": "2026-10-09T10:24:17.294Z",
-      "expires_at": "2026-10-09T10:29:17.294Z",
-      "notes": "Original source preserved. No composer/router/financial/migration/native/dependency/CI edits. Reproduce extra-field stripping before auth/dispatch, then run real focused suites and strict TS."
+      "heartbeat_at": "2026-10-09T10:25:51.493Z",
+      "expires_at": "2026-10-09T10:30:51.493Z",
+      "notes": "Original source preserved. No composer/router/financial/migration/native/dependency/CI edits. Reproduce extra-field stripping before auth/dispatch, then run real focused suites and strict TS. 23 focused real Fastify/Vitest tests PASS with mock authority/worker/store; strict TypeScript PASS; publishing exact source repair 940b0623f051c87506e973b8e31945b28012a580"
     },
     {
       "claim_id": "recovery-03-u01-approval-20261009",
