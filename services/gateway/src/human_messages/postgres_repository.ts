@@ -20,9 +20,10 @@ function message(row: MessageRow): HumanDmMessage {
 }
 const messageFields = `m.conversation_id,m.message_id,m.sequence,m.sender_user_id,
   m.client_request_id,m.body,m.created_at,m.edited_at,m.deleted_at`;
-const eligibleReader = `
-    c.tenant_id=$1 AND c.conversation_id=$3
-    AND $2 IN (c.first_user_id,c.second_user_id)
+// Shared actor/pair policy: every human DM mutation must check this in the
+// SAME SQL statement as the write (no stale permission preflight).
+const eligibleMember = `
+    $2 IN (c.first_user_id,c.second_user_id)
     AND EXISTS (SELECT 1 FROM identity.users a WHERE a.tenant_id=$1
       AND a.user_id=c.first_user_id AND a.state='active')
     AND EXISTS (SELECT 1 FROM identity.users b WHERE b.tenant_id=$1
@@ -44,6 +45,10 @@ const eligibleReader = `
        WHERE se.tenant_id=$1 AND se.target_kind='profile'
          AND se.visibility IN ('restricted','blocked')
          AND pp.user_id IN (c.first_user_id,c.second_user_id))
+`;
+const eligibleReader = `
+    c.tenant_id=$1 AND c.conversation_id=$3
+    AND ${eligibleMember}
 `;
 const sendPermission = `
     AND COALESCE((SELECT e.status FROM talks.human_dm_contact_requests e
@@ -232,41 +237,47 @@ export function createPostgresHumanDmRepository(pool:HumanDmPool):HumanDmReposit
       });
     },
     async edit({tenantId,userId,messageId,body}) {
-      return transact(pool,async q=>{
-        const pair=await q.query<{conversation_id:string}&Record<string,unknown>>(`
-          SELECT m.conversation_id FROM talks.human_dm_messages m
-          WHERE m.tenant_id=$1 AND m.message_id=$2 AND m.sender_user_id=$3
-        `,[tenantId,messageId,userId]);
-        const thread=pair.rows[0]?.conversation_id;
-        if(!thread||!(await conversationAllowed(q,tenantId,userId,thread,false))) return null;
-        const r=await q.query<MessageRow>(`
-          UPDATE talks.human_dm_messages m SET body=$4,edited_at=clock_timestamp()
-          WHERE m.tenant_id=$1 AND m.message_id=$2 AND m.sender_user_id=$3
-            AND m.deleted_at IS NULL AND m.created_at>clock_timestamp()-interval '15 minutes'
-          RETURNING ${messageFields}
-        `,[tenantId,messageId,userId,body]);
-        return r.rows[0]?message(r.rows[0]):null;
-      });
+      // The old read-authorize-then-UPDATE sequence allowed a block/decline or
+      // account deactivation between statements under READ COMMITTED.
+      // Join the conversation and enforce the C01/safety policy on the UPDATE.
+      const r=await pool.query<MessageRow>(`
+        UPDATE talks.human_dm_messages m
+          SET body=$4,edited_at=clock_timestamp()
+        FROM talks.human_dm_conversations c
+        WHERE m.tenant_id=$1 AND m.message_id=$3 AND m.sender_user_id=$2
+          AND c.tenant_id=m.tenant_id AND c.conversation_id=m.conversation_id
+          AND c.tenant_id=$1 AND ${eligibleMember}
+          AND m.deleted_at IS NULL
+          AND m.created_at>clock_timestamp()-interval '15 minutes'
+        RETURNING ${messageFields}
+      `,[tenantId,userId,messageId,body]);
+      return r.rows[0]?message(r.rows[0]):null;
     },
     async remove({tenantId,userId,messageId}) {
-      return transact(pool,async q=>{
-        const r=await q.query<{conversation_id:string}&Record<string,unknown>>(
-          `SELECT conversation_id FROM talks.human_dm_messages
-             WHERE tenant_id=$1 AND message_id=$2 AND sender_user_id=$3`,
-          [tenantId,messageId,userId]);
-        const thread=r.rows[0]?.conversation_id;
-        if(!thread || !(await conversationAllowed(q,tenantId,userId,thread,false))) return null;
-        const deleted=await q.query<MessageRow>(`
-          UPDATE talks.human_dm_messages m SET body=NULL,deleted_at=clock_timestamp()
-          WHERE m.tenant_id=$1 AND m.message_id=$2 AND m.sender_user_id=$3 AND m.deleted_at IS NULL
-          RETURNING ${messageFields}`,[tenantId,messageId,userId]);
-        if(deleted.rows[0]) return message(deleted.rows[0]);
-        const existing=await q.query<MessageRow>(`
-          SELECT ${messageFields} FROM talks.human_dm_messages m
-          WHERE m.tenant_id=$1 AND m.message_id=$2 AND m.sender_user_id=$3`,
-          [tenantId,messageId,userId]);
-        return existing.rows[0]?message(existing.rows[0]):null;
-      });
+      // A tombstone write must not use a preflight grant. Repeated deletes
+      // return the existing tombstone only while the actor is still eligible.
+      const values=[tenantId,userId,messageId];
+      const deleted=await pool.query<MessageRow>(`
+        UPDATE talks.human_dm_messages m
+          SET body=NULL,deleted_at=clock_timestamp()
+        FROM talks.human_dm_conversations c
+        WHERE m.tenant_id=$1 AND m.message_id=$3 AND m.sender_user_id=$2
+          AND c.tenant_id=m.tenant_id AND c.conversation_id=m.conversation_id
+          AND c.tenant_id=$1 AND ${eligibleMember}
+          AND m.deleted_at IS NULL
+        RETURNING ${messageFields}
+      `,values);
+      if(deleted.rows[0]) return message(deleted.rows[0]);
+      const existing=await pool.query<MessageRow>(`
+        SELECT ${messageFields}
+        FROM talks.human_dm_messages m
+        JOIN talks.human_dm_conversations c
+          ON c.tenant_id=m.tenant_id AND c.conversation_id=m.conversation_id
+        WHERE m.tenant_id=$1 AND m.message_id=$3 AND m.sender_user_id=$2
+          AND c.tenant_id=$1 AND ${eligibleMember}
+          AND m.deleted_at IS NOT NULL
+      `,values);
+      return existing.rows[0]?message(existing.rows[0]):null;
     },
     async read({tenantId,userId,conversationId,throughSequence}) {
       // A separate permission preflight followed by a blind UPSERT is unsafe:
