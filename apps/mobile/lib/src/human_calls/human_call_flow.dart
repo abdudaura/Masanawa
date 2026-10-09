@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/providers.dart';
+import '../core/mobile_push.dart' show firebasePushConfigured;
 import '../state/session_state.dart';
 import 'human_call_controller.dart';
 import 'human_call_entries.dart';
@@ -128,7 +129,7 @@ class _HumanCallIncomingStripState extends ConsumerState<HumanCallIncomingStrip>
         return session is SessionSignedIn&&session.user.id==userId;
       },
     );
-    unawaited(_probeAndStart());
+    if (firebasePushConfigured) unawaited(_probeAndStart());
   }
   Future<void> _probeAndStart() async {
     try {
