@@ -7,7 +7,7 @@ import type { AgentShellService } from "../agent_shell_contract.js";
 import { createAssistantWorkspaceService } from "./service.js";
 import { registerAssistantWorkspaceRoutes } from "./routes.js";
 
-function fixture() {
+function fixture(variant?: "conflicting_voice" | "unsupported_default" | "voice_named_alias") {
   const gwani = createCanonicalId("character");
   const gwana = createCanonicalId("character");
   const sessionId = createCanonicalId("character-session");
@@ -48,10 +48,18 @@ function fixture() {
   const directory: AgentDirectoryService = {
     async list({ authorizationHeader }) {
       const header = principal(authorizationHeader);
-      return [
+      const agents = [
         entry(gwani, "Gwani", "Bodi", approved.get(header) === "gwani"),
         entry(gwana, "Gwana", "Sulafat", approved.get(header) === "gwana"),
       ];
+      if (variant === "conflicting_voice") {
+        agents[0] = { ...agents[0]!, voiceName: "Sulafat" };
+      } else if (variant === "unsupported_default") {
+        agents.push(entry(createCanonicalId("character"), "Another support", "Other", true));
+      } else if (variant === "voice_named_alias") {
+        agents[0] = { ...agents[0]!, displayName: "Public support" };
+      }
+      return agents;
     },
     async setDefaultPlatformAgent({ authorizationHeader, characterId }) {
       const header = principal(authorizationHeader);
@@ -170,6 +178,46 @@ describe("C07 isolated authorized Assistant workspace", () => {
     });
     expect(recovered.state).toBe("completed");
     expect(f.captured).toContain("status:" + f.gwani);
+  });
+
+
+  it("rejects Gwani name with Gwana voice instead of silently misattributing private history", async () => {
+    const f = fixture("conflicting_voice");
+    await expect(f.service.snapshot({ authorizationHeader: "Bearer A" }))
+      .rejects.toMatchObject({ code: "assistant.support_identity_conflict" });
+    await expect(f.service.select({ authorizationHeader: "Bearer A", role: "gwana" }))
+      .rejects.toMatchObject({ code: "assistant.support_identity_conflict" });
+    await expect(f.service.turn({
+      authorizationHeader: "Bearer A",
+      role: "gwani",
+      characterSessionId: f.sessionId,
+      requestId: f.requestId,
+      correlationId: createCanonicalId("correlation"),
+      text: "Do not route my private turn",
+    })).rejects.toMatchObject({ code: "assistant.support_identity_conflict" });
+    expect(f.preferredA).toBe("gwani");
+    expect(f.captured).toEqual([]);
+  });
+
+  it("refuses to fall back to Gwani when an unknown support persona is selected", async () => {
+    const f = fixture("unsupported_default");
+    await expect(f.service.open({
+      authorizationHeader: "Bearer A", role: "gwani",
+    })).rejects.toMatchObject({ code: "assistant.selected_support_unrecognized" });
+    await expect(f.service.turnStatus({
+      authorizationHeader: "Bearer A",
+      role: "gwani",
+      requestId: f.requestId,
+    })).rejects.toMatchObject({ code: "assistant.selected_support_unrecognized" });
+    expect(f.captured).toEqual([]);
+  });
+
+  it("continues to resolve approved voice-based aliases without requiring a fixed display label", async () => {
+    const f = fixture("voice_named_alias");
+    const snapshot = await f.service.snapshot({ authorizationHeader: "Bearer A" });
+    expect(snapshot.activeRole).toBe("gwani");
+    expect(snapshot.roles.find(r => r.role === "gwani")?.displayName).toBe("Public support");
+    expect(snapshot.roles.find(r => r.role === "gwani")?.characterId).toBe(f.gwani);
   });
 
   it("never grants a session through an unrecognized or missing principal", async () => {
