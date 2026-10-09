@@ -29,6 +29,10 @@ export function createArtifactService(input: {
     try { input.assertId('tenant', owner.tenantId); input.assertId('user', owner.userId); }
     catch { fail('unauthorized', 401); }
   }
+  function argumentId(kind: string, value: string) {
+    try { input.assertId(kind, value); }
+    catch { fail('invalid_reference'); }
+  }
   async function owned(owner: Owner, id: string): Promise<Artifact> {
     identity(owner);
     try { input.assertId('media-artifact', id); } catch { return fail('not_found', 404); }
@@ -63,7 +67,7 @@ export function createArtifactService(input: {
   }
   async function create(owner: Owner, request: { requestId: string; filename: string; text: string; ttlSeconds: number }, provenance: Provenance) {
     identity(owner);
-    input.assertId('request', request.requestId);
+    argumentId('request', request.requestId);
     if (!/^[\p{L}\p{N}][\p{L}\p{N} _.-]{0,79}\.txt$/u.test(request.filename) || request.filename.includes('..')) fail('invalid_filename');
     if (!Number.isSafeInteger(request.ttlSeconds) || request.ttlSeconds < 60 || request.ttlSeconds > 30 * 86400) fail('invalid_expiry');
     const bytes = textBytes(request.text);
@@ -103,7 +107,7 @@ export function createArtifactService(input: {
     generatedText: (owner: Owner, request: Parameters<typeof create>[1], taskId: string, operationId: string) =>
       create(owner, request, {kind: 'operator', taskId, operationId}),
     async list(owner: Owner, after?: string) {
-      identity(owner); if (after) input.assertId('media-artifact', after);
+      identity(owner); if (after) argumentId('media-artifact', after);
       const rows = await repo.list(owner, after, 31);
       return {items: rows.slice(0,30).map(row => view(row, owner)), next: rows.length > 30 ? rows[29]!.id : null};
     },
@@ -124,7 +128,7 @@ export function createArtifactService(input: {
       return view(await change(row,'ready'),owner);
     },
     async share(owner: Owner, id: string, revision: number, recipient: string, ttlSeconds: number) {
-      input.assertId('user',recipient);
+      argumentId('user',recipient);
       const row = await owned(owner,id);
       if (row.revision !== revision) fail('revision_conflict',409);
       if (recipient === owner.userId || !Number.isSafeInteger(ttlSeconds) || ttlSeconds < 60 || ttlSeconds > 86400) fail('invalid_share');
@@ -154,7 +158,7 @@ export function createArtifactService(input: {
       const parts = ticket.split('.'); if (parts.length !== 2) fail('invalid_ticket',403);
       const payload = parts[0]!, signature = parts[1]!;
       const expected = createHmac('sha256',signingSecret).update(payload).digest('base64url');
-      if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature),Buffer.from(expected))) fail('invalid_ticket',403);
+      if (!/^[A-Za-z0-9_-]{43}$/u.test(signature) || !timingSafeEqual(Buffer.from(signature),Buffer.from(expected))) fail('invalid_ticket',403);
       let claim; try { claim = JSON.parse(Buffer.from(payload,'base64url').toString('utf8')); } catch { return fail('invalid_ticket',403); }
       if (!claim || typeof claim !== 'object' || claim.id !== id || claim.tenantId !== actor.tenantId || claim.userId !== actor.userId || !Number.isFinite(claim.expiresAt) || claim.expiresAt <= now().getTime()) fail('invalid_ticket',403);
       const row = await readable(actor,id);

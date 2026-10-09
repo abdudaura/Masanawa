@@ -115,10 +115,20 @@ test('task cancellation during upload prevents ready state and later recovery',a
 test('ticket expiry, tampering and changed sharing revision are rejected',async t=>{
   const f=await fixture(t),row=await f.service.saveText(a,f.request),ticket=await f.service.ticket(a,row.id);
   await assert.rejects(f.service.download(a,row.id,ticket.ticket+'x'),errorCode('invalid_ticket'));
+  const [payload]=ticket.ticket.split('.');
+  await assert.rejects(f.service.download(a,row.id,payload+'.'+'é'.repeat(43)),errorCode('invalid_ticket'));
   await f.service.share(a,row.id,row.revision,b.userId,60);
   await assert.rejects(f.service.download(a,row.id,ticket.ticket),errorCode('invalid_ticket'));
   const fresh=await f.service.ticket(a,row.id);f.advance(61000);
   await assert.rejects(f.service.download(a,row.id,fresh.ticket),errorCode('invalid_ticket'));
+});
+test('malformed canonical request, recipient and cursor are non-retryable validation errors',async t=>{
+  const f=await fixture(t);
+  await assert.rejects(f.service.saveText(a,{...f.request,requestId:'invalid'}),e=>e.code==='invalid_reference'&&e.statusCode===400);
+  assert.equal(f.repo.rows.size,0);
+  const row=await f.service.saveText(a,f.request);
+  await assert.rejects(f.service.share(a,row.id,row.revision,'invalid',60),e=>e.code==='invalid_reference'&&e.statusCode===400);
+  await assert.rejects(f.service.list(a,'invalid'),e=>e.code==='invalid_reference'&&e.statusCode===400);
 });
 test('revocation while object read is pending prevents returned bytes',async t=>{
   const f=await fixture(t),row=await f.service.saveText(a,f.request),ticket=await f.service.ticket(a,row.id),get=f.objects.get;

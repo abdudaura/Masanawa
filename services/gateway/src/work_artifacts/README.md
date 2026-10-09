@@ -106,7 +106,7 @@ Run exact TypeScript runtime sources with Node 24 (type erasure, **not tsc**):
 node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/*.test.mjs
 ```
 
-The 26 passing cases use real temporary file I/O and injected metadata/policy
+The 27 passing cases use real temporary file I/O and injected metadata/policy
 test doubles. They are not evidence of live S3, Postgres, Fastify or Android.
 Separate tests deliberately require dependencies/environment and are NOT part
 of that successful command:
