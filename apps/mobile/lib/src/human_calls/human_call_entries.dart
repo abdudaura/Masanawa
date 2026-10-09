@@ -113,7 +113,7 @@ class HumanIncomingCallBanner extends StatelessWidget {
   Widget build(BuildContext context)=>AnimatedBuilder(
     animation:watcher,builder:(context,_) {
       final incoming=watcher.incoming;
-      if(incoming==null)return const SizedBox.shrink();
+      if(!watcher.active || incoming==null)return const SizedBox.shrink();
       return Semantics(
         liveRegion:true,
         child:Card(
