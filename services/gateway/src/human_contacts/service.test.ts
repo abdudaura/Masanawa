@@ -171,4 +171,57 @@ describe("C01 authenticated human-contact consent", () => {
     await expect(svc().page({ authorizationHeader: undefined })).rejects.toMatchObject({ statusCode: 401 });
     await expect(svc().page({ authorizationHeader: "Bearer okay", limit: 101 })).rejects.toMatchObject({ statusCode: 400 });
   });
+  it("rejects calendar-overflow and PostgreSQL-invalid page cursors before any SQL call", async () => {
+    const { svc, repo } = harness();
+    const observed: Array<{ updatedAt: string; userId: string } | null> = [];
+    Object.assign(repo, {
+      async listPage({ after }: { after: { updatedAt: string; userId: string } | null }) {
+        observed.push(after);
+        return { contacts: [], next: null };
+      },
+    });
+    // C01 cursors are client-visible positions, not signed capabilities. The
+    // attacker can supply their own actor/tenant, so validate the date itself.
+    const cursor = (timestamp: string) => Buffer.from(
+      JSON.stringify(["tenant_1", "user_al", timestamp, "user_bo"]),
+    ).toString("base64url");
+    expect(Number.isFinite(Date.parse("2026-02-30T11:00:00.123456Z"))).toBe(true);
+    for (const timestamp of [
+      "2026-02-30T11:00:00.123456Z", // JS normalizes it, PostgreSQL rejects it
+      "2026-04-31T11:00:00.123456Z",
+      "2026-11-31T11:00:00.123456Z",
+      "2025-02-29T11:00:00.123456Z",
+      "1900-02-29T11:00:00.123456Z", // century non-leap
+      "0000-01-01T11:00:00.123456Z", // no PostgreSQL year zero
+      "2026-13-01T11:00:00.123456Z",
+      "2026-00-01T11:00:00.123456Z",
+      "2026-01-00T11:00:00.123456Z",
+      "2026-01-01T24:00:00.123456Z",
+      "2026-01-01T11:60:00.123456Z",
+      "2026-01-01T11:00:60.123456Z",
+      "2026-01-01T11:00:00.12345Z", // microsecond keyset required
+      "2026-01-01T11:00:00.123456+00:00", // UTC canonical only
+    ]) {
+      await expect(svc().page({ authorizationHeader: "Bearer okay", cursor: cursor(timestamp) }))
+        .rejects.toMatchObject({ code: "messages.invalid_page_cursor", statusCode: 400 });
+    }
+    expect(observed).toEqual([]); // no repository/SQL reached
+
+    for (const timestamp of [
+      "0001-01-01T00:00:00.000001Z",
+      "2000-02-29T23:59:59.999999Z", // Gregorian 400-year leap
+      "2024-02-29T11:00:00.123456Z",
+      "9999-12-31T23:59:59.999999Z",
+    ]) {
+      expect(await svc().page({ authorizationHeader: "Bearer okay", cursor: cursor(timestamp) }))
+        .toEqual({ contacts: [], nextCursor: null });
+    }
+    expect(observed).toEqual([
+      { updatedAt: "0001-01-01T00:00:00.000001Z", userId: "user_bo" },
+      { updatedAt: "2000-02-29T23:59:59.999999Z", userId: "user_bo" },
+      { updatedAt: "2024-02-29T11:00:00.123456Z", userId: "user_bo" },
+      { updatedAt: "9999-12-31T23:59:59.999999Z", userId: "user_bo" },
+    ]);
+  });
+
 });
