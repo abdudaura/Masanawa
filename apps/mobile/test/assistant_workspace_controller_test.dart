@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
@@ -83,12 +84,15 @@ class AgentsFake implements AgentTransport {
 
 class ShellFake implements AgentShellTransport {
   final Map<String, List<AgentHistoryMessage>> messages = {};
+  Future<void> Function(String)? beforeHistoryReturn;
   final Map<String, String> statuses = {};
 
   @override
   Future<List<AgentHistoryMessage>> loadHistory(
-      String characterId, {int limit = 100, String? before}) async =>
-      messages[characterId] ?? [];
+      String characterId, {int limit = 100, String? before}) async {
+    if (beforeHistoryReturn != null) await beforeHistoryReturn!(characterId);
+    return messages[characterId] ?? [];
+  }
 
   @override
   Future<AgentTurnStatus> turnStatus(
@@ -142,6 +146,77 @@ void main() {
     ]);
     expect(c.history.map((e) => e.message.text),
       ['Gwani answer', 'Gwana answer']);
+    c.dispose();
+  });
+
+  test('refresh refuses to misattribute a Gwana history after directory remap',
+      () async {
+    final d = DirectoryFake();
+    final s = ShellFake();
+    final c = controller(d, AgentsFake(), s, JournalFake());
+    await c.load();
+    final gate = Completer<void>();
+    s.beforeHistoryReturn = (_) => gate.future;
+    final refresh = c.refreshHistory();
+    d.entries = [
+      entry('character-gwani', 'Gwani', preferred: true),
+      entry('character-gwana-new', 'Gwana'),
+    ];
+    gate.complete();
+    await refresh;
+    expect(c.history, isEmpty);
+    expect(c.ready, false);
+    expect(c.error, contains('Could not refresh'));
+    c.dispose();
+  });
+
+  test('revoked directory clears previous history, offline read retains it',
+      () async {
+    final d = DirectoryFake();
+    final s = ShellFake();
+    s.messages['character-gwani'] = [AgentHistoryMessage(
+      key: 'safe-1', direction: 'assistant', requestId: 'request-safe',
+      text: 'Earlier authorized response', parts: const [],
+      createdAt: DateTime.utc(2026, 10, 9),
+    )];
+    final c = controller(d, AgentsFake(), s, JournalFake());
+    await c.load();
+    expect(c.history, hasLength(1));
+    d.entries = [entry('character-gwani', 'Gwani', preferred: true)];
+    await c.refreshHistory();
+    expect(c.history, isEmpty);
+    expect(c.ready, false);
+    c.dispose();
+  });
+
+  test('conflicting official name and voice cannot label another role',
+      () async {
+    final d = DirectoryFake();
+    d.entries = [
+      entry('character-gwani', 'Gwani', voiceName: 'Sulafat', preferred: true),
+      entry('character-gwana', 'Gwana', voiceName: 'Sulafat'),
+    ];
+    final c = controller(d, AgentsFake(), ShellFake(), JournalFake());
+    await c.load();
+    expect(c.ready, false);
+    expect(c.history, isEmpty);
+    expect(c.error, isNotNull);
+    c.dispose();
+  });
+
+  test('late refresh cannot overwrite a successful persona switch', () async {
+    final d = DirectoryFake();
+    final s = ShellFake();
+    final c = controller(d, AgentsFake(), s, JournalFake());
+    await c.load();
+    final gate = Completer<void>();
+    s.beforeHistoryReturn = (_) => gate.future;
+    final refresh = c.refreshHistory();
+    await c.switchTo(AssistantRole.gwana);
+    gate.complete();
+    await refresh;
+    expect(c.activeRole, AssistantRole.gwana);
+    expect(c.ready, true);
     c.dispose();
   });
 
