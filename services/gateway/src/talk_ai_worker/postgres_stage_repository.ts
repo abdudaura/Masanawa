@@ -17,6 +17,7 @@ export interface TalkAiStageSqlPool {
 interface TalkRow extends Record<string, unknown> {
   topic: string;
   host_name: string;
+  host_user_id: string;
 }
 interface SeatRow extends Record<string, unknown> {
   participant_id: string;
@@ -41,6 +42,12 @@ interface QuestionRow extends Record<string, unknown> {
   body: string;
   author_name: string;
   resolved_at: Date | string;
+}
+interface ModeratedCommentRow extends Record<string, unknown> {
+  comment_id: string;
+  body: string;
+  author_name: string;
+  approved_at: Date | string;
 }
 interface PollRow extends Record<string, unknown> {
   poll_id: string;
@@ -75,7 +82,8 @@ function timestamp(value: string | Date): string {
 /**
  * Reads existing authoritative Talk tables without inventing a separate event store.
  * Only accepted public states are projected. In particular:
- * - pending/dismissed questions and unmoderated comments are excluded;
+ * - pending/dismissed questions and comments without explicit public
+ *   safety approval are excluded;
  * - private recipient identities and raw financial activity are never read;
  * - gifts are withheld until a canonical settled PUBLIC event projection exists;
  * - current reactions and hands are aggregated instead of revealing listeners.
@@ -95,19 +103,21 @@ export function createPostgresTalkAiStageEventRepository(
       const since = new Date(until - 10 * 60 * 1000).toISOString();
       const scope = [tenantId, talkId, before, since];
 
-      const talk = await pool.query<TalkRow>(
-        "SELECT topic, host_name FROM talks.talks " +
+      // A reusable authoritative predicate is queried before and after the
+      // parallel audience reads. A Talk may end or become restricted during
+      // those awaits; the early gate alone cannot authorize AI disclosure.
+      const talkAuthorizationSql =
+        "SELECT topic, host_name, host_user_id FROM talks.talks " +
         "WHERE tenant_id=$1 AND talk_id=$2 AND state IN ('live','reconnecting') " +
         "AND NOT EXISTS (SELECT 1 FROM talks.safety_enforcement se " +
         "WHERE se.tenant_id=$1 AND se.target_kind='talk' " +
-        "AND se.target_id=$2 AND se.visibility <> 'public') LIMIT 1",
-        [tenantId, talkId],
-      );
+        "AND se.target_id=$2 AND se.visibility <> 'public') LIMIT 1";
+      const talk = await pool.query<TalkRow>(talkAuthorizationSql, [tenantId, talkId]);
       if (!talk.rows[0]) return null;
 
       // All reads must remain scoped by tenant AND Talk. These queries return
       // only bounded public projections, never whole rows or JSON payloads.
-      const [seats, departures, reactions, hands, questions, polls] = await Promise.all([
+      const [seats, departures, reactions, hands, questions, polls, comments] = await Promise.all([
         pool.query<SeatRow>(
           "SELECT s.participant_id,s.kind,s.display_name,s.is_host,s.admitted_at " +
           "FROM talks.talk_seats s JOIN talks.talks t " +
@@ -188,7 +198,41 @@ export function createPostgresTalkAiStageEventRepository(
           "ORDER BY event_at DESC LIMIT 16",
           scope,
         ),
+        pool.query<ModeratedCommentRow>(
+          // Public-by-default comments are NOT automatically model-visible.
+          // Only an explicit current safety decision can promote a comment.
+          // A subsequent restricted/blocked revision fails this inner join.
+          "SELECT c.comment_id,c.body,c.author_name, " +
+          "GREATEST(c.created_at,se.updated_at) AS approved_at " +
+          "FROM talks.comments c JOIN talks.talks t " +
+          "ON t.tenant_id=c.tenant_id AND t.talk_id=c.talk_id " +
+          "JOIN talks.safety_enforcement se ON se.tenant_id=c.tenant_id " +
+          "AND se.target_kind='comment' AND se.target_id=c.comment_id " +
+          "AND se.visibility='public' " +
+          "WHERE c.tenant_id=$1 AND c.talk_id=$2 " +
+          "AND GREATEST(c.created_at,se.updated_at) <= $3 " +
+          "AND GREATEST(c.created_at,se.updated_at) >= $4 " +
+          "AND NOT EXISTS (SELECT 1 FROM talks.safety_preferences sp " +
+          "WHERE sp.tenant_id=c.tenant_id AND sp.viewer_user_id=t.host_user_id " +
+          "AND sp.subject_user_id=c.author_user_id AND sp.blocked=true) " +
+          "ORDER BY approved_at DESC,c.comment_id DESC LIMIT 16",
+          scope,
+        ),
       ]);
+
+      // Fail closed when the live/visibility gate or Host identity changed
+      // while retrieving bounded events. Reads are only a current snapshot,
+      // not an immutable permission lease.
+      const currentTalk = await pool.query<TalkRow>(
+        talkAuthorizationSql, [tenantId, talkId],
+      );
+      const authorizedTalk = currentTalk.rows[0];
+      if (!authorizedTalk ||
+          typeof authorizedTalk.host_user_id !== "string" ||
+          !authorizedTalk.host_user_id ||
+          authorizedTalk.host_user_id !== talk.rows[0].host_user_id) {
+        return null;
+      }
 
       const common = { tenantId, talkId, visibility: "public" as const };
       const events: TalkStageEvent[] = [
@@ -240,6 +284,15 @@ export function createPostgresTalkAiStageEventRepository(
           action: "answered",
           body: question.body,
         })),
+        ...comments.rows.map((comment): TalkStageEvent => ({
+          ...common,
+          visibility: "moderated_public",
+          eventId: "approved-comment:" + comment.comment_id + ":" + timestamp(comment.approved_at),
+          occurredAt: timestamp(comment.approved_at),
+          actorName: comment.author_name,
+          kind: "comment",
+          body: comment.body,
+        })),
         ...polls.rows.map((poll): TalkStageEvent => ({
           ...common,
           eventId: "poll:" + poll.poll_id + ":" + poll.status,
@@ -254,8 +307,8 @@ export function createPostgresTalkAiStageEventRepository(
       return Object.freeze<TalkAuthorizedStage>({
         tenantId,
         talkId,
-        topic: talk.rows[0].topic,
-        hostName: talk.rows[0].host_name,
+        topic: authorizedTalk.topic,
+        hostName: authorizedTalk.host_name,
         participants: Object.freeze(seats.rows.map((seat) => Object.freeze({
           displayName: seat.display_name,
           kind: seat.kind,
