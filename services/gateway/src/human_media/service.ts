@@ -24,6 +24,20 @@ export function createPrivateVoiceNoteService(input:Readonly<{
   if(!who.tenantId||!who.userId)throw new VoiceNoteError("messages.voice.unauthorized",401);
   return {tenantId:who.tenantId,userId:who.userId};
  }
+ async function current(header:string|undefined,expected:VoiceOwner):Promise<void> {
+  const latest=await owner(header);
+  if(latest.tenantId!==expected.tenantId||latest.userId!==expected.userId)
+    throw new VoiceNoteError("messages.voice.unauthorized",401);
+ }
+ function verified(bytes:Buffer,expected:{sizeBytes:number;sha256:string;durationMs:number}):void {
+  if(bytes.length!==expected.sizeBytes||!/^[0-9a-f]{64}$/u.test(expected.sha256)||
+     !timingSafeEqual(Buffer.from(sha(bytes),"hex"),Buffer.from(expected.sha256,"hex")))
+    throw new VoiceNoteError("messages.voice.storage_corrupt",503);
+  try {
+    const media=inspectOggOpus(bytes);
+    if(media.durationMs!==expected.durationMs)throw new Error("duration mismatch");
+  } catch {throw new VoiceNoteError("messages.voice.storage_corrupt",503)}
+ }
  function uuid(id:string):string {
   if(!ID.test(id))throw new VoiceNoteError("messages.voice.invalid_id",400);
   return id;
@@ -56,7 +70,9 @@ export function createPrivateVoiceNoteService(input:Readonly<{
      if(error instanceof InvalidVoiceNote)throw new VoiceNoteError(error.code,error.statusCode);
      throw error;
    }
-   const digest=sha(args.ogg);
+   // Snapshot before the first repository await: later caller mutation cannot change
+   // bytes after the journal's checksum and Ogg validation have been recorded.
+   const upload=Buffer.from(args.ogg),digest=sha(upload);
    const objectKey=[
     "dm-voice",sha(identity.tenantId).slice(0,32),conversationId,
     sha(identity.userId).slice(0,32),randomUUID()+".ogg",
@@ -68,10 +84,19 @@ export function createPrivateVoiceNoteService(input:Readonly<{
      sizeBytes:info.sizeBytes,durationMs:info.durationMs,
    });
    if(typeof staged==="string")return rejected(staged);
-   try{await input.objects.put(staged.objectKey,args.ogg)}
+   await current(args.authorizationHeader,identity);
+   try{await input.objects.put(staged.objectKey,upload)}
    catch{throw new VoiceNoteError("messages.voice.storage_unavailable",503)}
+   let stored:Buffer;
+   try{stored=await input.objects.get(staged.objectKey,MAX_VOICE_BYTES)}
+   catch{throw new VoiceNoteError("messages.voice.storage_unavailable",503)}
+   verified(stored,staged);
+   await current(args.authorizationHeader,identity);
    const outcome=await input.repository.attach(staged);
    if(typeof outcome==="string")return rejected(outcome);
+   // A lost/revoked session after attachment yields uncertainty, not a fabricated
+   // cancelled send. The durable original request remains the sole retry identity.
+   await current(args.authorizationHeader,identity);
    return outcome;
   },
   async list(args:{
@@ -84,6 +109,7 @@ export function createPrivateVoiceNoteService(input:Readonly<{
     throw new VoiceNoteError("messages.voice.invalid_limit",400);
    const result=await input.repository.list({...identity,conversationId,limit,...(before?{before}:{})});
    if(!result)throw new VoiceNoteError("messages.voice.unavailable",404);
+   await current(args.authorizationHeader,identity);
    return {voiceNotes:result};
   },
   async read(args:{authorizationHeader:string|undefined;messageId:string}):Promise<Buffer> {
@@ -94,22 +120,20 @@ export function createPrivateVoiceNoteService(input:Readonly<{
    let bytes:Buffer;
    try{bytes=await input.objects.get(record.objectKey,MAX_VOICE_BYTES)}
    catch{throw new VoiceNoteError("messages.voice.storage_unavailable",503)}
-   if(bytes.length!==record.sizeBytes)throw new VoiceNoteError("messages.voice.storage_corrupt",503);
-   const hash=sha(bytes);
-   if(!timingSafeEqual(Buffer.from(hash,"hex"),Buffer.from(record.sha256,"hex")))
-     throw new VoiceNoteError("messages.voice.storage_corrupt",503);
-   try{inspectOggOpus(bytes)}catch{throw new VoiceNoteError("messages.voice.storage_corrupt",503)}
+   verified(bytes,record);
    const reread=await input.repository.find({...identity,messageId});
    if(!reread||reread.objectKey!==record.objectKey||
       reread.sizeBytes!==record.sizeBytes||reread.durationMs!==record.durationMs||
       reread.sha256!==record.sha256)
      throw new VoiceNoteError("messages.voice.unavailable",404);
+   await current(args.authorizationHeader,identity);
    return bytes;
   },
   async remove(args:{authorizationHeader:string|undefined;messageId:string}) {
    const identity=await owner(args.authorizationHeader);
    if(!await input.repository.remove({...identity,messageId:uuid(args.messageId)}))
      throw new VoiceNoteError("messages.voice.unavailable",404);
+   await current(args.authorizationHeader,identity);
    return {status:"deleted" as const};
   },
   async collectGarbage(limit=20) {
