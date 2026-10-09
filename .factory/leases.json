@@ -2,27 +2,6 @@
   "schema_version": 1,
   "active": [
     {
-      "claim_id": "gpt6-c09-revocation-remote-privacy-20261009",
-      "owner": "GPT-6 C09 privacy recovery continuation",
-      "scope": "C09 existing PR #575: terminate live human calls on reciprocal block/contact revoke/account inactive and never abandon media-revoke retry",
-      "paths": [
-        "services/gateway/src/human_calls/signal_worker.ts",
-        "services/gateway/src/human_calls/signal_worker.test.ts",
-        "services/gateway/src/human_calls/schema.sql",
-        "docs/workstreams/c09-private-calls-20261009.md",
-        "services/gateway/src/human_calls/livekit_room_revoker.ts",
-        "services/gateway/src/human_calls/livekit_room_revoker.test.ts",
-        "services/gateway/src/human_calls/composition.ts"
-      ],
-      "branch": "work/c09-private-calls-20261009-gpt6",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "https://github.com/Baatiku/masanawa/pull/575",
-      "claimed_at": "2026-10-09T08:55:59.820Z",
-      "heartbeat_at": "2026-10-09T09:00:50.664Z",
-      "expires_at": "2026-10-09T09:05:50.664Z",
-      "notes": "Added only owned C09 concrete Twirp DeleteRoom implementation and composer adapter to provide real media shutdown without new dependency; no external provider request or production change."
-    },
-    {
       "claim_id": "gpt6-msn-crypto-primary-20261009",
       "owner": "GPT-6 MSN wallet crypto-first foundation",
       "scope": "MSN crypto-backed custody conversion invariant and truthful mobile presentation; no producer enablement",
@@ -265,6 +244,29 @@
       "notes": "Explicit owner approved formerly deferred private 1:1 audio+video. No changes to root routing, shared composer, migrations registry, C01/C02/F16, LiveKit public Talks, Firebase native or financial source; new isolated C09 source.",
       "released_at": "2026-10-09T05:02:32.266Z",
       "release_reason": "Private call scope committed to draft PR #575 at 4f15bb681bc52d4d15902feb0513c30792dd1ab7; 17/17 GitHub static source checks, 23 automated tests authored NOT EXECUTED; shared integration/provider/device pending."
+    },
+    {
+      "claim_id": "gpt6-c09-revocation-remote-privacy-20261009",
+      "owner": "GPT-6 C09 privacy recovery continuation",
+      "scope": "C09 existing PR #575: terminate live human calls on reciprocal block/contact revoke/account inactive and never abandon media-revoke retry",
+      "paths": [
+        "services/gateway/src/human_calls/signal_worker.ts",
+        "services/gateway/src/human_calls/signal_worker.test.ts",
+        "services/gateway/src/human_calls/schema.sql",
+        "docs/workstreams/c09-private-calls-20261009.md",
+        "services/gateway/src/human_calls/livekit_room_revoker.ts",
+        "services/gateway/src/human_calls/livekit_room_revoker.test.ts",
+        "services/gateway/src/human_calls/composition.ts"
+      ],
+      "branch": "work/c09-private-calls-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/575",
+      "claimed_at": "2026-10-09T08:55:59.820Z",
+      "heartbeat_at": "2026-10-09T09:00:50.664Z",
+      "expires_at": "2026-10-09T09:05:50.664Z",
+      "notes": "Added only owned C09 concrete Twirp DeleteRoom implementation and composer adapter to provide real media shutdown without new dependency; no external provider request or production change.",
+      "released_at": "2026-10-09T09:03:40.043Z",
+      "release_reason": "Pushed six exact-path C09 changes and SHA-specific handoff to draft PR #575 HEAD e58efa5cd3519f5c9fe76fe74e2863ed09241117; Node simulated runtime 4/4 revoker and 5/5 worker PASS; real Postgres/LiveKit/Flutter/Android/FCM NOT RUN; C09 remains partial."
     }
   ]
 }
