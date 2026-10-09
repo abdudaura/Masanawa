@@ -1,6 +1,7 @@
 // AF13 read-only evidence qualification. This NEVER authorizes deployment.
 // Usage: node tools/audio-first-qualification/qualify.mjs --matrix tools/audio-first-qualification/journeys.json --evidence <redacted-json> --sha <exact-40-char-SHA> --proof-root <directory>
 import fs from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -38,6 +39,7 @@ function checkRecord(record,journey,sha){
     if(journey.boundaries.includes("database")&&!record.environment?.databaseRef)errors.push("database execution reference required");
     if(journey.boundaries.includes("provider")&&!record.environment?.providerRef)errors.push("external provider execution reference required");
     if(!Array.isArray(record.proofs)||record.proofs.length===0||record.proofs.some(p=>!p||!isHash(p.sha256)||typeof p.path!=="string"))errors.push("real evidence must include hashed local proof files");
+    if(journey.boundaries.includes("device")&&!record.proofs?.some(p=>p.kind==="apk"&&p.sha256===record.apkSha256))errors.push("APK must be a hashed proof artifact, not an unverified string");
     if(!record.review||typeof record.review.reviewer!=="string"||record.review.reviewer.length<2||typeof record.review.reference!=="string"||record.review.reference.length<4)errors.push("independent review reference required");
   }
   const prose=[record.reason,record.observation,record.review?.reviewer,record.review?.reference].filter(x=>typeof x==="string").join(" ");
@@ -58,7 +60,7 @@ function assess(matrix,records,sha,verifiedProofs=new Set()){
     if(r?.result==="PASS_REAL"&&Array.isArray(r.proofs))for(const p of r.proofs){
       if(!verifiedProofs.has(`${r.journeyId}|${p.path}|${p.sha256}`))e.push("unverified proof digest");
     }
-    if(e.length)failures.push({journeyId:r?.journeyId||"unknown",issues:e});
+    if(e.length)failures.push({journeyId:ids.has(r?.journeyId)?r.journeyId:"unknown",issues:e});
     else byId.set(r.journeyId,r);
   }
   const journeys=matrix.journeys.map(j=>({id:j.id,result:byId.get(j.id)?.result||"NOT_RUN",tier:j.tier,manualReviewRequired:byId.get(j.id)?.result==="PASS_REAL"}));
@@ -79,7 +81,7 @@ export async function verifyProofs(records,root){
       if(path.isAbsolute(p.path)||bits.some(b=>b===''||b==='.'||b==='..')||p.path.includes('\\0')){errors.push('unsafe proof path');continue;}
       try{
         const candidate=path.resolve(base,p.path), real=await fs.realpath(candidate);
-        if(!real.startsWith(base+path.sep)){errors.push('proof escaped root');continue;}
+        if(!(real.startsWith(base+path.sep))){errors.push('proof escaped root');continue;}
         const stat=await fs.stat(real);
         if(!stat.isFile()||stat.size>16777216||stat.size<1){errors.push('proof not regular bounded file');continue;}
         const digest=createHash('sha256').update(await fs.readFile(real)).digest('hex');
@@ -96,12 +98,19 @@ async function main(args){
   if(!opts['--matrix']||!opts['--evidence']||!opts['--sha']||!opts['--proof-root'])throw Error('All flags required');
   const matrix=JSON.parse(await fs.readFile(opts['--matrix'],'utf8'));
   const records=JSON.parse(await fs.readFile(opts['--evidence'],'utf8'));
+  // A caller cannot weaken release qualification by supplying a smaller custom matrix.
+  const canonicalIds=[...Array.from({length:12},(_,i)=>'UX-A'+String(i+1).padStart(2,'0')),...Array.from({length:10},(_,i)=>'WF-A'+String(i+1).padStart(2,'0')),'CR-A01',...Array.from({length:4},(_,i)=>'PF-A'+String(i+1).padStart(2,'0')),...Array.from({length:8},(_,i)=>'SA-A'+String(i+1).padStart(2,'0')),...Array.from({length:8},(_,i)=>'DB-A'+String(i+1).padStart(2,'0'))];
+  if(matrix?.journeys?.length!==canonicalIds.length||canonicalIds.some(id=>!matrix.journeys.some(j=>j.id===id)))throw Error('Incomplete canonical acceptance matrix');
+  // --sha is not an honor-system field: it must match this checkout's exact HEAD.
+  const currentHead=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',timeout:5000}).trim();
+  if(currentHead!==opts['--sha'])throw Error('Expected SHA does not match checked-out source');
   const proofs=await verifyProofs(Array.isArray(records)?records:[],opts['--proof-root']);
   const report=assess(matrix,records,opts['--sha'],proofs.verified);
   if(proofs.errors.length){report.valid=false;report.readiness='INVALID';report.errors.push(...proofs.errors);}
   // No raw evidence, paths, secrets, account identifiers or device details in output.
   process.stdout.write(JSON.stringify(report,null,2)+'\n');
-  process.exitCode=report.valid&&report.readiness==='REVIEW_REQUIRED'?0:1;
+  // No input document can cryptographically establish real-world test truth; human release review remains mandatory.
+  process.exitCode=report.valid&&report.readiness==='REVIEW_REQUIRED'?3:1;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
   main(process.argv.slice(2)).catch(()=>{process.stderr.write('AF13 qualification input unreadable or malformed; no release proof established\n');process.exitCode=2;});
