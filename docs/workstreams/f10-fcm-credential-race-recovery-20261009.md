@@ -1,0 +1,31 @@
+# F10 / R14 — Reuse fresh OAuth bearer after delayed concurrent FCM 401
+
+**2026-10-09 | DRAFT / UNMERGED / PARTIAL_IMPLEMENTATION.** This is an additive continuation of existing R14 draft [#436](https://github.com/Baatiku/masanawa/pull/436), **not** a competing push service and **not** Firebase/FCM production qualification.
+
+## Discovery and exact-path ownership
+- Latest `main` reviewed at `5e758673ae91082520b21b3153da53791ae2cbf3`; original R14 sender is already on existing branch `work/r14-fcm-delivery-resilience-20261008`. Live PR #436 and R14 preview #502 were inspected. No `f10-*` branch existed at claim.
+- Previous R14 claim expired on 2026-10-08. Five-minute new F10 ownership recorded as repository-visible comment #6072388851 on existing PR #436 at 2026-10-09T01:26Z. Scope exclusively: `services/gateway/src/mobile_push.ts`, `services/gateway/src/mobile_push.test.ts`, this new handoff.
+- Avoided: Firebase/client native files, device-token persistence (R12-owned), `services/gateway/src/talk_notifications/**` (#502), shared app/main, security/finance ledgers, root Flutter navigation, schema/migrations, deployment.
+- Existing PR branch currently **diverges from main**: ahead 12, behind 12 before this handoff. Preserve source and rebase/compose semantically under central Work integration; do not merge without tests. Five tabs remain untouched.
+
+## Root-cause and actual fix
+The existing OAuth cache implementation correctly coalesced an ordinary concurrent refresh but used `accessToken(true)` after *each* FCM 401. A second delayed FCM 401 from the old bearer could clear an already freshly renewed `cached.token`, causing a third unnecessary OAuth exchange. If that new exchange failed, a recoverable push batch failed and other devices could be left unsent. A global unconditional cache clear also made concurrent auth errors generate refresh storms.
+
+- `accessToken(rejectedToken?: string)` invalidates **only when the currently cached token equals the bearer definitively rejected with 401**. If another sender has installed a fresh token, use that token. If a renewal is still pending, reuse the existing `pendingToken` promise.
+- Preserve the existing one-refresh-per-device bound, sanitized OAuth/FCM errors, 15-second deadlines, definite 429/5xx retry rules and **no retries on ambiguous FCM network errors**. No device registration, message payload, receipt or provider contract changed.
+- Test added to the existing Vitest suite: two sends with the same old OAuth token; one gets an immediate 401 and refreshes while a second 401 is artificially delayed until after the fresh token is used. A third OAuth exchange is configured to fail. Expected: both sends delivered through the same replacement token, OAuth called exactly twice, no retry/backoff or changed device tokens.
+
+## SHA-specific source and checks
+- Source fix commit: `e8558e671df622ac725c1e3b40776efb9e87d63f`.
+- Regression test commit: `0ac298b93f908ff9e2c5ea0735dfa09683111e98`.
+- **Executed focused runtime scenario:** fetched exact branch blob `2eace72adf2a6807f98540bdf85c9b3d1abb4208`, evaluated actual `createFcmPushSender` function after removing TypeScript-only annotations. Stubbed RSA signing and OAuth/FCM fetch (no network/provider). Two concurrent device-send outcomes both `{attempted:1,delivered:1}`; OAuth exchanges **2**, old bearer 401s **2**, fresh bearer successful sends **2**, outcome **PASS**. This is a precise isolated real-function race check, **not Vitest, full module typecheck or live Firebase verification**.
+- GitHub readback confirmed the new regression declaration and 12 total existing/new `it(...)` declarations in `mobile_push.test.ts`.
+- **NOT RUN:** `pnpm exec vitest run services/gateway/src/mobile_push.test.ts`, Gateway/typecheck, full test/build, Android Flutter tests, auth/device DB, actual Firebase service-account exchange, FCM device send, foreground/background/killed notification and CI. GitHub Actions issue #457 previously showed zero-step quota failures; no green CI asserted. Private repo clone was blocked by `github.com` DNS from the available shell.
+
+## Integration and release gates
+1. On a correctly provisioned checkout, `pnpm install --frozen-lockfile`, then `pnpm exec vitest run services/gateway/src/mobile_push.test.ts services/gateway/src/talk_notifications/policy.test.ts services/gateway/src/talk_notifications/delivery.test.ts`; `pnpm --filter @masanawa/gateway-service typecheck` and `pnpm check`. Fix actual failures.
+2. Reconcile the current `main` with PR #436 and privacy preview #502, Firebase #461 and Work #497 without overwriting native Firebase configs or custom definitions. Re-run tests against the resulting exact SHA; no automatic PR merge.
+3. Add authorized durable outbox claim/ack or recovery for certain provider failures with the integration owner; never automatically resend ambiguous FCM timeouts. Recheck device-token uniqueness and account switch/unlink (R12), opt-in/quiet-hours, topic privacy and authorization. Never emit a private message sender or payment details in a push preview.
+4. With a test Firebase project and two signed devices, confirm registration/revocation, OAuth credential rotation/concurrent 401, delivery counts, foreground/background/killed handling, deep-link navigation, cancellation/quiet-hours and cross-account isolation; inspect FCM receipt responses without logging tokens. No production sends until qualified.
+
+**Disposition:** This bounded concurrency fix is committed and source-tested in isolation. F10 / R14 end-to-end remains **PARTIAL / UNVERIFIED**, blocked by shared integration and provider/device evidence. PR #436 remains **DRAFT / UNMERGED**.
