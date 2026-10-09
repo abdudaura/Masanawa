@@ -1,6 +1,6 @@
 # U07 — Trustworthy work artifacts handoff
 
-Updated (UTC): 2026-10-09T00:41:02Z. Owner/window: autonomous Work 88b2711eedab.
+Updated (UTC): 2026-10-09T01:03:00Z. Owner/window: autonomous Work 88b2711eedab.
 Status: **PARTIAL_IMPLEMENTATION / ISOLATED / DRAFT / UNMERGED**.
 PR: https://github.com/Baatiku/masanawa/pull/524
 Branch: `work/u07-verified-work-artifacts-20261009`
@@ -14,7 +14,7 @@ Initial claim commit `f1590af294b7378204ee4bb4916185729fe9d0c2` was published in
 The original claim text incorrectly said 00:15Z; the immutable commit/PR timestamp above is authoritative.
 Ownership renewed at this update after checking current PR/head and all matching U07 branches; only this U07 branch was returned.
 Exact owned paths: `services/gateway/src/work_artifacts/**`, `apps/mobile/lib/src/work_artifacts/**`, `apps/mobile/test/work_artifacts/**`, this handoff.
-Implementation review and local verification checkpoint is complete. No continuing exclusive lease is requested; coordinated F11/F18/F08/F12/U04 owners may resume the documented integration work while preserving this source and branch.
+U07 owned module lease renewed for account-erasure source hooks and additional verification. Shared F11/F18/F08/F12/U04 composition remains with its elected owners; no shared files are claimed.
 
 Read order: CONTINUE-HERE; unfinished reconciliation; expanded U/F allocation; U execution workbook; MULTI-WINDOW-WORK; final consolidation handoff; operator V1; human Chat privacy; implementation kickoff and actual object-store/auth/contracts source.
 No applicable AGENTS.md was found in the inspected main/C04 trees.
