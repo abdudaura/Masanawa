@@ -166,6 +166,27 @@ describe("R05 authenticated funding recovery", () => {
       });
       expect(retriable.statusCode).toBe(503);
       expect(retriable.json()).toEqual({ error: "billing_wallet_status_unavailable" });
+
+      // Funding recovery exposes short-lived bank instructions. Neither
+      // successful reads nor error responses may enter shared/browser caches.
+      // The validation error is produced before the handler runs.
+      const invalid = await app.inject({
+        method: "GET",
+        url: `/v1/commerce/bills/quotes/${"x".repeat(181)}/wallet-status`,
+        headers: { authorization: "Bearer owner" },
+      });
+      expect(invalid.statusCode).toBe(400);
+      const head = await app.inject({
+        method: "HEAD", url, headers: { authorization: "Bearer owner" },
+      });
+      expect(head.statusCode).toBe(200);
+      expect(head.body).toBe("");
+      for (const response of [unauthorized, missing, available, retriable, invalid, head]) {
+        expect(response.headers["cache-control"]).toContain("no-store");
+        expect(response.headers["cache-control"]).toContain("private");
+        expect(response.headers.pragma).toBe("no-cache");
+        expect(response.headers.expires).toBe("0");
+      }
     } finally {
       await app.close();
     }
