@@ -88,9 +88,8 @@ describe("F09 unique private Egress attempt storage",()=>{
     expect(f.keys).toHaveLength(2);
     expect(f.keys[0]).not.toBe(f.keys[1]);
     for(const key of f.keys){
-      expect(key).toMatch(
-        /^talk-replays\\/tenant_1\\/talk_1\\/recording_1_[0-9a-f-]{36}\\.ogg$/,
-      );
+      expect(key.startsWith("talk-replays/tenant_1/talk_1/recording_1_")).toBe(true);
+      expect(key).toMatch(/_[0-9a-f-]{36}[.]ogg$/);
     }
     expect(f.stopped).toEqual(["EG_2"]);
     expect(f.deleted).toEqual([f.keys[1]]);
