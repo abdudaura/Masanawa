@@ -106,6 +106,8 @@ export interface TalkRepository {
   listComments(input: Readonly<{
     tenantId: string;
     talkId: string;
+    /** Verified session identity. Never take this from a query parameter. */
+    viewerUserId: string;
     limit: number;
   }>): Promise<readonly TalkCommentRecord[]>;
   addComment(input: Readonly<{
