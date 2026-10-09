@@ -1,24 +1,6 @@
 {
   "schema_version": 1,
-  "active": [
-    {
-      "claim_id": "gpt6-u01-approval-terms-fence-20261009-0434",
-      "owner": "GPT-6 U01 approval terms security continuation",
-      "scope": "U01 exact approval terms and capability authorization security",
-      "paths": [
-        "packages/operator-contract/src/index.js",
-        "packages/operator-contract/test/index.test.mjs",
-        "docs/workstreams/u01-operator-contract-20261009.md"
-      ],
-      "branch": "work/u01-operator-contract-20261009-gpt6",
-      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
-      "pr": "https://github.com/Baatiku/masanawa/pull/519",
-      "claimed_at": "2026-10-09T04:33:21.674Z",
-      "heartbeat_at": "2026-10-09T04:33:21.674Z",
-      "expires_at": "2026-10-09T04:38:21.674Z",
-      "notes": "Continuation of existing draft #519; no Gateway, router, native, Firebase, finance, CI, DB, or production edits."
-    }
-  ],
+  "active": [],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
@@ -148,6 +130,25 @@
       "notes": "Continue canonical draft #468 only; no Gateway composer/migration, Firebase, finance or Flutter root edits.",
       "released_at": "2026-10-09T04:34:04.232Z",
       "release_reason": "Draft PR #468 handoff, source/tests committed at 2a501e0e01c12e7996b33eaf89b0bc1e78332e8c; source readback verified, Flutter/runtime tests not run; C01 remains partial."
+    },
+    {
+      "claim_id": "gpt6-u01-approval-terms-fence-20261009-0434",
+      "owner": "GPT-6 U01 approval terms security continuation",
+      "scope": "U01 exact approval terms and capability authorization security",
+      "paths": [
+        "packages/operator-contract/src/index.js",
+        "packages/operator-contract/test/index.test.mjs",
+        "docs/workstreams/u01-operator-contract-20261009.md"
+      ],
+      "branch": "work/u01-operator-contract-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/519",
+      "claimed_at": "2026-10-09T04:33:21.674Z",
+      "heartbeat_at": "2026-10-09T04:33:21.674Z",
+      "expires_at": "2026-10-09T04:38:21.674Z",
+      "notes": "Continuation of existing draft #519; no Gateway, router, native, Firebase, finance, CI, DB, or production edits.",
+      "released_at": "2026-10-09T04:36:28.268Z",
+      "release_reason": "Source/tests pushed to existing draft PR #519, SHA-specific handoff commit 350e6ae1f6cab5ae61992a98bfbe31a7a3a4d2b7, PR body updated; U01 remains partial/unverified."
     }
   ]
 }
