@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/mobile_push.dart';
 import '../../core/providers.dart';
+import '../../localization/language_picker_button.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
@@ -215,6 +216,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ],
+          const SizedBox(height: 16),
+          // This is the same encrypted device preference exposed during
+          // onboarding, not a second per-account language or money locale.
+          // The picker saves before changing the root app's UI locale.
+          const _Card(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: LanguagePickerButton(),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           _Card(
             children: [
