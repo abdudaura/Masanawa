@@ -24,18 +24,41 @@ class TalkLiveSessionView {
   final DateTime? reconnectGraceEndsAt;
 
   factory TalkLiveSessionView.fromJson(Map<String, dynamic> json) {
+    // A partial or stale response must never upgrade a listener into a
+    // microphone publisher. The server owns the grant; this client can only
+    // narrow it while verifying that the response is a usable session.
+    final sessionId = json['sessionId'] is String
+        ? (json['sessionId'] as String).trim()
+        : '';
+    final talkId = json['talkId'] is String
+        ? (json['talkId'] as String).trim()
+        : '';
+    final role = switch (json['role']) {
+      'host' => TalkLiveRole.host,
+      'speaker' => TalkLiveRole.speaker,
+      _ => TalkLiveRole.listener,
+    };
+    final state = _lifecycle(json['state']);
+    final validSession = sessionId.startsWith('talk-live_') &&
+        sessionId.length > 'talk-live_'.length &&
+        talkId.isNotEmpty;
+    final canHearAudio =
+        validSession && state != TalkLiveLifecycle.ended &&
+        json['canHearAudio'] == true;
+    final canPublishAudio =
+        canHearAudio && state == TalkLiveLifecycle.live &&
+        role != TalkLiveRole.listener && json['canPublishAudio'] == true;
+
     return TalkLiveSessionView(
-      sessionId: json['sessionId'] as String? ?? '',
-      talkId: json['talkId'] as String? ?? '',
-      role: switch (json['role']) {
-        'host' => TalkLiveRole.host,
-        'speaker' => TalkLiveRole.speaker,
-        _ => TalkLiveRole.listener,
-      },
-      state: _lifecycle(json['state']),
-      canPublishAudio: json['canPublishAudio'] == true,
-      canHearAudio: json['canHearAudio'] != false,
-      aiGenerationAllowed: json['aiGenerationAllowed'] == true,
+      sessionId: sessionId,
+      talkId: talkId,
+      role: role,
+      state: state,
+      canPublishAudio: canPublishAudio,
+      canHearAudio: canHearAudio,
+      aiGenerationAllowed:
+          canHearAudio && state == TalkLiveLifecycle.live &&
+          role == TalkLiveRole.host && json['aiGenerationAllowed'] == true,
       reconnectGraceEndsAt: _date(json['reconnectGraceEndsAt']),
     );
   }
@@ -59,12 +82,20 @@ class TalkLiveStateView {
   final DateTime? reconnectGraceEndsAt;
 
   factory TalkLiveStateView.fromJson(Map<String, dynamic> json) {
+    final talkId = json['talkId'] is String
+        ? (json['talkId'] as String).trim()
+        : '';
+    final state = _lifecycle(json['state']);
+    final live = state == TalkLiveLifecycle.live && talkId.isNotEmpty;
+    final count = json['listenerCount'];
     return TalkLiveStateView(
-      talkId: json['talkId'] as String? ?? '',
-      state: _lifecycle(json['state']),
-      hostConnected: json['hostConnected'] == true,
-      listenerCount: (json['listenerCount'] as num?)?.toInt() ?? 0,
-      aiGenerationAllowed: json['aiGenerationAllowed'] == true,
+      talkId: talkId,
+      state: state,
+      hostConnected: live && json['hostConnected'] == true,
+      listenerCount: count is int && count >= 0 ? count : 0,
+      aiGenerationAllowed: live &&
+          json['hostConnected'] == true &&
+          json['aiGenerationAllowed'] == true,
       reconnectGraceEndsAt: _date(json['reconnectGraceEndsAt']),
     );
   }
@@ -122,7 +153,8 @@ abstract interface class TalkLiveTransport {
 TalkLiveLifecycle _lifecycle(Object? raw) => switch (raw) {
   'reconnecting' => TalkLiveLifecycle.reconnecting,
   'ended' => TalkLiveLifecycle.ended,
-  _ => TalkLiveLifecycle.live,
+  // Unknown/missing states must never be promoted to a live audio grant.
+  _ => TalkLiveLifecycle.ended,
 };
 
 DateTime? _date(Object? raw) {
