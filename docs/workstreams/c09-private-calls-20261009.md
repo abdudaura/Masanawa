@@ -85,3 +85,14 @@ Then run acceptance **K21–K27** A/B authenticated real Android devices: denied
 4. Real backend LiveKit credentials and two phones: confirm `DeleteRoom` ejects **already-joined** participants on hangup, timeout, decline, contact revoke, reciprocal block and account deletion, including provider outages and recovery. Verify notification idempotency, audio focus and media costs. Use explicit owner approval before production deployment.
 
 **Latest source/test checkpoint prior to documentation commit: `fa17843a944121e22224787f3412d4dd8e08879c`. PR metadata points at final handoff commit.**
+
+## 2026-10-09 09:04 UTC — terminal-only unlimited retry refinement
+
+**Safety correction to the preceding checkpoint:** the worker now retains indefinite, backoff-bounded retries **only for terminal events** (`declined`, `cancelled`, `missed`, `ended`) because those events must remove any still-connected LiveKit media. Ordinary non-terminal `ringing`/`active` push hints retain a maximum of 10 delivery attempts, preventing abandoned devices from receiving stale attempts indefinitely. A push hint remains a wakeup; a current authenticated call readback remains the only authority.
+
+- New source blob `services/gateway/src/human_calls/signal_worker.ts`: **`aeb46ca73849121abbb29913babe9d72849cca09`**. Source commit `faa962b619a69c6ff66f98c2529eb8296b5165e7`, test update `6d2a239461b7bf19df92611e22b02a45e94c9b04`.
+- The exact source blob was copied locally and verified with `git hash-object`; Node 22 TypeScript `transpileModule` plus **five PASS_SIMULATED** built-in runtime worker tests executed against the exact blob, 5/5. They use fake SQL/provider and **do not prove real PostgreSQL/LiveKit**, nor have the committed Vitest tests themselves been executed.
+- Existing JWT/DeleteRoom four simulated fake-HTTP tests remain 4/4 at unchanged source SHA `994c133a84cefe29e14f0edfd5228729cefbcc7c`.
+- Integration and release blockers remain unchanged: app composer, Postgres migration, real LiveKit room ejection, R14 incoming FCM, Flutter route/native permissions, two actual phones, CI and APK still unverified.
+
+**This refinement does not change the overall classification: PARTIAL_IMPLEMENTATION, draft, unmerged, not deployed.**
