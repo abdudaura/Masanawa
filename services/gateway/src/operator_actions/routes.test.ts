@@ -25,7 +25,7 @@ describe("U04 gated operator-read HTTP seam", () => {
     const app = Fastify();
     const principal = { tenantId: "tenant_one", userId: "user_one",
       accountId: "account_one", sessionId: "session_one", deviceId: "device_one" };
-    const authorized = { requestId: "request_0199abcdefab-7abc-8abc-abcdefabcdef",
+    const authorized = { requestId: "request_0199abcd-efab-7abc-8abc-abcdefabcdef",
       classification: "read", capability: {
         id: "accounts.me.read", version: 1, enabled: true,
         executionClass: "read", argumentKeys: [],
@@ -75,7 +75,7 @@ describe("U04 gated operator-read HTTP seam", () => {
     registerU04ReadRoutes(app, { authorizer: {
       authorize: async () => ({
         principal: { tenantId: "t", userId: "u", accountId: "a", sessionId: "s", deviceId: "d" },
-        authorized: { classification: "read", requestId: "request_0199abcdefab-7abc-8abc-abcdefabcdef",
+        authorized: { classification: "read", requestId: "request_0199abcd-efab-7abc-8abc-abcdefabcdef",
           capability: { id: "accounts.me.read", version: 1, enabled: true, executionClass: "read",
             argumentKeys: [] }, arguments: {}, contextRef: null },
       }),
