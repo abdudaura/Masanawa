@@ -67,6 +67,22 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
+    },
+    {
+      "claim_id": "masanawa-01-af05-live-voice-recovery-20261009",
+      "owner": "MASANAWA-01 / AF05",
+      "scope": "AF05 stage-specific microphone and transport failure recovery without shared routing or native edits",
+      "paths": [
+        "apps/mobile/lib/src/core/live_voice_session.dart",
+        "apps/mobile/test/audio_first/af05/live_voice_stage_recovery_test.dart",
+        "docs/workstreams/AF05-live-voice-recovery-20261009.md"
+      ],
+      "branch": "work/af05-live-voice-recovery-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-09T21:36:17.817Z",
+      "heartbeat_at": "2026-10-09T21:36:17.817Z",
+      "expires_at": "2026-10-09T21:41:17.817Z",
+      "notes": "AF00 composition awaits separate integrator; preserve Work #497, U09 #534 and R02 #456 without modifying their paths. No local owner APK available."
     }
   ],
   "history": [
