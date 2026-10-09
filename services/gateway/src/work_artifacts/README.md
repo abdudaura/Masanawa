@@ -122,8 +122,8 @@ Fastify 5.12.5 HTTP injection, exact SQL on PGlite 0.3.14 (embedded PostgreSQL
 WASM), and HTTP -> SQL -> filesystem -> two-account share/revoke -> erasure.
 All 37 pass. Embedded PostgreSQL is not a multi-process server/locking test;
 session/contact adapters remain test doubles. No live S3 or Android claim.
-Six core backend modules also pass TypeScript 5.9.3 with the repository's strict
-compiler options and Node 24 typings. Full workspace/routes/composer build is
+Seven backend modules (including composition with exact main contracts) also pass TypeScript 5.9.3 with the repository's strict
+compiler options and Node 24 typings. Full workspace/auth/routes build is
 still a separate gate. Runtime type erasure initially missed a Buffer generic
 inference incompatibility in S3 request bodies; the typed bounded byte copy fixes it.
 

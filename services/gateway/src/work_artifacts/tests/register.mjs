@@ -3,7 +3,8 @@
 import { registerHooks } from 'node:module';
 import { existsSync } from 'node:fs';
 registerHooks({resolve(specifier,context,next) {
-  if (specifier.startsWith('./') && specifier.endsWith('.js') && context.parentURL?.includes('/work_artifacts/')) {
+  if (specifier.startsWith('./') && specifier.endsWith('.js') &&
+      (context.parentURL?.includes('/work_artifacts/') || context.parentURL?.includes('/packages/contracts/src/'))) {
     const target=new URL(specifier.slice(0,-3)+'.ts',context.parentURL);
     if(existsSync(target)) return next(target.href,context);
   }

@@ -6,10 +6,9 @@ import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
 import Fastify from 'fastify';
 import {PGlite} from '@electric-sql/pglite';
-import {createArtifactService} from '../service.ts';
-import {createArtifactRepository,createArtifactCreationLimiter} from '../postgres.ts';
+import {composeWorkArtifacts} from '../composition.ts';
+import {createArtifactRepository} from '../postgres.ts';
 import {registerArtifactRoutes} from '../routes.ts';
-import {createArtifactAccountErasure} from '../account_erasure.ts';
 const id=(kind,n)=>`${kind}_019a0000-0000-7000-8000-${String(n).padStart(12,'0')}`;
 const owner={tenantId:id('tenant',1),userId:id('user',1)},recipient={...owner,userId:id('user',2)};
 test('HTTP -> exact SQL journal -> actual file -> two-account share/revoke -> fenced physical erasure',async t=>{
@@ -21,10 +20,10 @@ test('HTTP -> exact SQL journal -> actual file -> two-account share/revoke -> fe
   const objects={async put(key,bytes){const path=join(root,key);await mkdir(dirname(path),{recursive:true});await writeFile(path,bytes);},
     async get(key,max){const bytes=await readFile(join(root,key));assert.ok(bytes.length<=max);return bytes;},
     async delete(key){await rm(join(root,key),{force:true});}};
-  const repository=createArtifactRepository(db),limiter=createArtifactCreationLimiter(db);let sequence=0,contactAllowed=true,sessionActive=true;
-  const artifacts=createArtifactService({repository,objects,ticketSecret:Buffer.alloc(32,3),createId:()=>id('media-artifact',++sequence),
-    assertId:(kind,value)=>assert.match(value,new RegExp(`^${kind}_[a-f0-9-]{36}$`)),
-    canShare:async(o,user)=>contactAllowed&&o.userId===owner.userId&&user===recipient.userId,authorizeTask:async()=>false,admitCreation:limiter});
+  const repository=createArtifactRepository(db);let contactAllowed=true,sessionActive=true;
+  const domain=composeWorkArtifacts({db,objects,ticketSecret:Buffer.alloc(32,3),
+    canShare:async(o,user)=>contactAllowed&&o.userId===owner.userId&&user===recipient.userId,authorizeTask:async()=>false,admitCreation:async()=>true});
+  const artifacts=domain.artifacts;
   const app=Fastify({ajv:{customOptions:{removeAdditional:false}}});t.after(()=>app.close());
   registerArtifactRoutes(app,{artifacts,authorizer:{async authorize({authorizationHeader}) {
     if(!sessionActive)throw {statusCode:401};
@@ -47,8 +46,8 @@ test('HTTP -> exact SQL journal -> actual file -> two-account share/revoke -> fe
   const revoked=await call('owner','POST',path+'/revoke',{revision:file.revision});assert.equal(revoked.statusCode,200);
   assert.equal((await call('recipient','POST',path+'/download',{ticket:ticket.ticket})).statusCode,404);
   sessionActive=false;assert.equal((await call('owner','GET',path)).statusCode,401);
-  const erasure=createArtifactAccountErasure({repository,objects,isQuiesced:async()=>!sessionActive,
-    assertId:()=>{},verifyErasure:async key=>{try {await access(join(root,key));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}}});
+  const erasure=domain.accountErasure({isQuiesced:async()=>!sessionActive,
+    verifyErasure:async key=>{try {await access(join(root,key));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}}});
   assert.deepEqual(await erasure(owner),{verified:1,next:null});
   const persisted=await repository.find(owner.tenantId,file.id);assert.equal(persisted.state,'deleted');assert.deepEqual(persisted.grants,[]);
   await assert.rejects(readFile(join(root,persisted.objectKey)),e=>e.code==='ENOENT');
