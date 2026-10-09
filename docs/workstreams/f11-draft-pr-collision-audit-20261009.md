@@ -89,3 +89,28 @@ Rollback risk: no runtime effect. Source/test additions can be omitted if the Wo
 - **NOT RUN:** CI #457, full Gateway/Flutter build, DB/ledger migration apply, Android, Firebase, providers, external backups/restore, release signing or production verification. Continue preserving #497, #461 and all R/C/other U PR source.
 - **LIMIT:** PR list and file API are mutable; one post-file head re-read narrows but cannot completely eliminate race windows after that read. Treat all counts and heads as a recorded snapshot, not a transaction, and audit again immediately before actual release integration.
 - **Status:** audited helper LOCAL_TESTED on exact blobs; F11 overall **PARTIAL_IMPLEMENTATION**, CI/DB/APP/DEVICE/PROVIDER/DEPLOYED **UNVERIFIED**. Draft and unmerged; no automatic merging or production operations authorized.
+
+---
+
+## 2026-10-09 02:10 UTC — F11 scan-consistency recovery and exact-source tests
+
+**Scope/ownership:** Reclaimed the expired five-minute exact-path lease in PR #518 conversation [claim comment 6072789328](https://github.com/Baatiku/masanawa/pull/518#issuecomment-6072789328) after checking main, current draft HEAD, prior lease comments, and open draft collisions. This is a continuation of the existing F11 verifier, **not another F11 implementation**. Files owned/changed only:
+- `scripts/audit-draft-pr-collisions.mjs`
+- `scripts/audit-draft-pr-collisions.test.mjs`
+- `docs/workstreams/f11-draft-pr-collision-audit-20261009.md`
+
+**Base/review snapshot:** latest main `5e758673ae91082520b21b3153da53791ae2cbf3`, previous F11 draft head `2afb5f1b5012e6b746b7cb6fd6e9367c2662a2c8`. Source update commit `0a21a151f003cc5ec51a18b5ca17f4dfc113925a`; tests update commit `86f018911289fd9e666cea88660a889d7d3dc63a`. Final HEAD is the latest commit containing this handoff (resolve from PR #518 after update). No change to current main or original competing R/C/U branches.
+
+**Defect and fix:** a scan could previously return exit 0 / a clean collision report while a new PR opened, an existing PR closed, a head advanced after its detail check, or main advanced during the scan. After all per-PR file and detail GETs, live mode now re-reads the **complete paginated open PR inventory and default branch ref** (GET only); compares sorted `number:headSHA` fingerprints and main SHA; stores `inventoryIssues` with explicit machine-readable reasons; reports `summary.incompleteInventory`; CLI returns exit **3** when the observed inventory moves, rather than treating it as an authoritative clean snapshot. It also rejects a nonempty malformed main SHA. This narrows—but cannot eliminate—the race after the final reads; integration owner must re-run immediately before release.
+
+**Source/test verification (2026-10-09, local Node v22.16.0):**
+- `node --check scripts/audit-draft-pr-collisions.mjs`: PASS.
+- `node --check scripts/audit-draft-pr-collisions.test.mjs`: PASS.
+- `node --test scripts/audit-draft-pr-collisions.test.mjs`: **17 PASS / 0 FAIL**, existing 13 plus four focused new tests (explicitly incomplete inventory, newly opened PR, moving main SHA, malformed main SHA). Injected GitHub fetcher simulations are **not** a live REST/provider test.
+- `node scripts/audit-draft-pr-collisions.mjs --snapshot fixture.json --strict` with two colliding C02 `0017` migration filenames: **exit 2**, one migration collision, zero incomplete inventory issues; expected review-only behavior.
+- **Exact checked Git blob evidence:** locally reconstructed and tested script `e9f0d536ecc97adc8a5fedb50e4926b6541ae56a`; test `e0b46da9a980842d7b05a652c5eee7b014a9ddca`. Both equal GitHub's committed content blob SHAs. Tests thus ran on **byte-identical** production-tool source and test files from this PR despite lack of private git checkout. No full monorepo install/build executed.
+- `node --version`: `v22.16.0` (repository package.json expects Node >=24 <25); repeat on Node 24 before acceptance.
+
+**Status:** this bounded verifier change is locally tested, but **overall F11 remains PARTIAL_IMPLEMENTATION, draft, unmerged, NOT VERIFIED_E2E**. Live authenticated `GITHUB_TOKEN=... node scripts/audit-draft-pr-collisions.mjs --live --repo Baatiku/masanawa --strict --output /tmp/masanawa-pr-audit.json` is **NOT RUN** (no container GitHub DNS/repo-read shell token). Shared CI #457, full pnpm/Flutter builds, migrations, database restore, security-provider qualification, Firebase/Android devices, backup/rollback and production deployment remain **NOT RUN/UNVERIFIED**. The GitHub connector only inspected remote metadata and pushed source; it did not provide a real live run of the CLI. Release integrator must inspect actual C02 #472/#475, C05 #474/#476, C06 #487/#490 and Work #497 semantics, preserve Firebase #461, resolve ownership and migration registries, and execute qualified checks. Never automatically merge based on audit totals.
+
+**Rollback:** omit/revert only these isolated F11 verifier changes after review; no production/runtime effects, no auth/financial/Flutter contract changes or DB migration. Keep all other draft PRs intact.
