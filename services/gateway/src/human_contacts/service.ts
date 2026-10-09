@@ -39,6 +39,28 @@ function userId(raw: string): string {
   return value;
 }
 
+/** PostgreSQL does not normalize invalid calendar dates. Date.parse does, e.g.
+ * February 30 becomes March 2. Validate untrusted positional cursors before
+ * their timestamp is bound to a ::timestamptz SQL parameter. Preserve six
+ * decimal places: millisecond-only Date objects lose our keyset precision. */
+function validContactCursorTimestamp(value: string): boolean {
+  const groups = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{6})Z$/.exec(value);
+  if (!groups) return false;
+  const year = Number(groups[1]);
+  const month = Number(groups[2]);
+  const day = Number(groups[3]);
+  const hour = Number(groups[4]);
+  const minute = Number(groups[5]);
+  const second = Number(groups[6]);
+  // PostgreSQL has no year zero. Match UTC ISO year 0001..9999 emitted by
+  // our SQL formatter, not Date.UTC (which remaps years 00..99 to 1900s).
+  if (year < 1 || month < 1 || month > 12 ||
+      hour > 23 || minute > 59 || second > 59 || day < 1) return false;
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= (daysInMonth[month - 1] ?? 0);
+}
+
 /** Cursor content is a position only, never a permission grant. Actor and tenant are
  * checked against the freshly-authorized session on every page. */
 function contactCursor(tenantId: string, actorId: string, next: HumanContactPageAfter): string {
@@ -54,8 +76,7 @@ function parseContactCursor(token: string, tenantId: string, actorId: string): H
   if (!Array.isArray(parsed) || parsed.length !== 4 ||
       parsed[0] !== tenantId || parsed[1] !== actorId ||
       typeof parsed[2] !== "string" || typeof parsed[3] !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(parsed[2]) ||
-      !Number.isFinite(Date.parse(parsed[2])) ||
+      !validContactCursorTimestamp(parsed[2]) ||
       !/^[A-Za-z0-9][A-Za-z0-9_.:-]{2,255}$/.test(parsed[3])) throw invalid();
   return { updatedAt: parsed[2], userId: parsed[3] };
 }
