@@ -96,7 +96,7 @@ void main() {
       path = options.path;
       body = (options.data as Map).cast<String, dynamic>();
       return _json(
-        '{"server_url":"wss://live.example.test","participant_token":"token","room_name":"talk-1","participant_identity":"user:session","expires_at":"2030-01-01T00:00:00Z"}',
+        '{"server_url":"wss://live.example.test","participant_token":"token","room_name":"talk-1","participant_identity":"user:talk-live_test-session","expires_at":"2030-01-01T00:00:00Z"}',
       );
     });
 
@@ -111,4 +111,73 @@ void main() {
     expect(credentials.serverUrl, 'wss://live.example.test');
     expect(credentials.participantToken, 'token');
   });
+  test('media credential envelope rejects other Talk and session identities', () async {
+    for (final body in <String>[
+      '{"server_url":"wss://live.example.test","participant_token":"token","room_name":"other-talk","participant_identity":"user:talk-live_test-session","expires_at":"2030-01-01T00:00:00Z"}',
+      '{"server_url":"wss://live.example.test","participant_token":"token","room_name":"talk-1","participant_identity":"user:talk-live_someone-else","expires_at":"2030-01-01T00:00:00Z"}',
+      '{"server_url":"wss://live.example.test","participant_token":"token","room_name":"talk-1","participant_identity":"talk-live_test-session","expires_at":"2030-01-01T00:00:00Z"}',
+    ]) {
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+      dio.httpClientAdapter = _Adapter((_) async => _json(body));
+      final transport = GatewayTalkLiveTransport(api: ApiClient(dio: dio));
+      await expectLater(
+        transport.mediaToken(
+          talkId: 'talk-1',
+          sessionId: 'talk-live_test-session',
+        ),
+        throwsA(isA<FormatException>()),
+      );
+    }
+  });
+
+  test('media token rejects non-websocket, credentials in URL and expiry', () async {
+    for (final urlAndExpiry in <(String, String)>[
+      ('https://live.example.test', '2030-01-01T00:00:00Z'),
+      ('wss://user:pass@live.example.test', '2030-01-01T00:00:00Z'),
+      ('wss://live.example.test/#secret', '2030-01-01T00:00:00Z'),
+      ('wss://live.example.test', '2020-01-01T00:00:00Z'),
+    ]) {
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+      dio.httpClientAdapter = _Adapter((_) async => _json(
+        '{"server_url":"${urlAndExpiry.$1}","participant_token":"token","room_name":"talk-1","participant_identity":"user:talk-live_test-session","expires_at":"${urlAndExpiry.$2}"}',
+      ));
+      final transport = GatewayTalkLiveTransport(api: ApiClient(dio: dio));
+      await expectLater(
+        transport.mediaToken(
+          talkId: 'talk-1',
+          sessionId: 'talk-live_test-session',
+        ),
+        throwsA(isA<FormatException>()),
+      );
+    }
+  });
+
+  test('media token rejects empty token rather than entering LiveKit', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((_) async => _json(
+      '{"server_url":"wss://live.example.test","participant_token":"","room_name":"talk-1","participant_identity":"user:talk-live_test-session","expires_at":"2030-01-01T00:00:00Z"}',
+    ));
+    final transport = GatewayTalkLiveTransport(api: ApiClient(dio: dio));
+    await expectLater(
+      transport.mediaToken(
+        talkId: 'talk-1',
+        sessionId: 'talk-live_test-session',
+      ),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
+  test('malformed server live state is never interpreted as an active call', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((_) async => _json(
+      '{"sessionId":"talk-live_test-session","talkId":"talk-1","role":"host","state":"unexpected","canPublishAudio":true,"canHearAudio":true,"aiGenerationAllowed":true}',
+    ));
+    final transport = GatewayTalkLiveTransport(api: ApiClient(dio: dio));
+    final session = await transport.connect('talk-1');
+    expect(session.state, TalkLiveLifecycle.ended);
+    expect(session.canPublishAudio, isFalse);
+    expect(session.canHearAudio, isFalse);
+    expect(session.aiGenerationAllowed, isFalse);
+  });
+
 }
