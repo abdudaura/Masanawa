@@ -164,7 +164,6 @@ async function timeoutRead<T>(operation: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => reject(new U04ReadError("OPERATOR_SOURCE_TIMEOUT", 504)), ms);
-    timer.unref?.();
   });
   try { return await Promise.race([operation, deadline]); }
   finally { if (timer) clearTimeout(timer); }
@@ -199,7 +198,7 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
           action.capability.executionClass !== "read" ||
           !Array.isArray(action.capability.argumentKeys) ||
           typeof action.requestId !== "string" ||
-          !/^request_[0-9a-f-]{36}$/u.test(action.requestId)) {
+          !/^request_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(action.requestId)) {
         return unavailable();
       }
       const spec = specs[capabilityId];
