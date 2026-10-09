@@ -126,7 +126,7 @@ describe("U14 host-only preparation", () => {
   });
   it("requires auth, explicit confirmation and exact revision", async () => {
     const f = fixture(); const draft = await f.begin();
-    await expect(f.service.get({ prepId: draft.prepId })).rejects.toMatchObject({ statusCode: 401 });
+    await expect(f.service.get({ authorizationHeader: undefined, prepId: draft.prepId })).rejects.toMatchObject({ statusCode: 401 });
     await expect(f.service.goLive({ authorizationHeader: "Bearer a",
       prepId: draft.prepId, revision: 0, confirmGoLive: true }))
       .rejects.toMatchObject({ code: "host_prep.stale_or_published" });
