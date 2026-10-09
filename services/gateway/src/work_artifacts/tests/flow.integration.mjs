@@ -19,7 +19,7 @@ test('HTTP -> exact SQL journal -> actual file -> two-account share/revoke -> fe
   await db.exec(await readFile(new URL('../schema.sql',import.meta.url),'utf8'));
   const objects={async put(key,bytes){const path=join(root,key);await mkdir(dirname(path),{recursive:true});await writeFile(path,bytes);},
     async get(key,max){const bytes=await readFile(join(root,key));assert.ok(bytes.length<=max);return bytes;},
-    async delete(key){await rm(join(root,key),{force:true});}};
+    async delete(key){assert.equal(this,objects,'composition must preserve object-store receiver');await rm(join(root,key),{force:true});}};
   const repository=createArtifactRepository(db);let contactAllowed=true,sessionActive=true;
   const domain=composeWorkArtifacts({db,objects,ticketSecret:Buffer.alloc(32,3),
     canShare:async(o,user)=>contactAllowed&&o.userId===owner.userId&&user===recipient.userId,authorizeTask:async()=>false,admitCreation:async()=>true});
@@ -46,6 +46,10 @@ test('HTTP -> exact SQL journal -> actual file -> two-account share/revoke -> fe
   const revoked=await call('owner','POST',path+'/revoke',{revision:file.revision});assert.equal(revoked.statusCode,200);
   assert.equal((await call('recipient','POST',path+'/download',{ticket:ticket.ticket})).statusCode,404);
   sessionActive=false;assert.equal((await call('owner','GET',path)).statusCode,401);
+  assert.deepEqual(await domain.sweep(),{deleted:1,failed:0});
+  const late=await repository.find(owner.tenantId,file.id);
+  // Qualify a late object behind a worker-deleted tombstone without rerunning generation.
+  await objects.put(late.objectKey,Buffer.from(request.text));
   const erasure=domain.accountErasure({isQuiesced:async()=>!sessionActive,
     verifyErasure:async key=>{try {await access(join(root,key));return false;}catch(error){if(error.code==='ENOENT')return true;throw error;}}});
   assert.deepEqual(await erasure(owner),{verified:1,next:null});
