@@ -231,8 +231,22 @@ class AssistantWorkspaceController extends ChangeNotifier {
     // Support identity and the preferred assistant can change on another
     // device while history is loading. Never attribute old rows using a
     // newer directory mapping or leave revoked history on this screen.
-    final current = _validateRoster(await directory.loadDirectory());
+    final currentEntries = await directory.loadDirectory();
     if (_generation != generation || _dead || epoch != _historyEpoch) return;
+    Map<AssistantRole, AgentDirectoryEntry> current;
+    try {
+      current = _validateRoster(currentEntries);
+    } catch (_) {
+      // A successful read of an invalid/revoked roster is authoritative;
+      // clear now-inaccessible prior history. Transport/offline failures
+      // above retain previously loaded rows for safe later retry.
+      history = const [];
+      roster = const {};
+      activeRole = null;
+      _bindings.clear();
+      _emit(generation);
+      rethrow;
+    }
     final defaults = current.entries.where(
         (e) => e.value.defaultPlatformAgent).toList();
     if (defaults.length > 1 ||
