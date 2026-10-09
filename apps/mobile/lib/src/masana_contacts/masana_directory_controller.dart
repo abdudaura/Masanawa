@@ -163,7 +163,11 @@ class MasanaDirectoryController extends ChangeNotifier {
         return;
       }
       // The callback must not be invoked after an account change or cancellation.
-      onOpen(fresh);
+      try {
+        onOpen(fresh);
+      } catch (_) {
+        error = 'Could not open this Masana conversation. Try again.';
+      }
     } catch (_) {
       if (_authorized && generation == _generation &&
           selection == _selection) {
