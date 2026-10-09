@@ -39,7 +39,7 @@ function checkRecord(record,journey,sha){
     if(journey.boundaries.includes("database")&&!record.environment?.databaseRef)errors.push("database execution reference required");
     if(journey.boundaries.includes("provider")&&!record.environment?.providerRef)errors.push("external provider execution reference required");
     if(!Array.isArray(record.proofs)||record.proofs.length===0||record.proofs.some(p=>!p||!isHash(p.sha256)||typeof p.path!=="string"))errors.push("real evidence must include hashed local proof files");
-    if(journey.boundaries.includes("device")&&!record.proofs?.some(p=>p.kind==="apk"&&p.sha256===record.apkSha256))errors.push("APK must be a hashed proof artifact, not an unverified string");
+    if(journey.boundaries.includes("device")&&!(Array.isArray(record.proofs)&&record.proofs.some(p=>p?.kind==="apk"&&p.sha256===record.apkSha256)))errors.push("APK must be a hashed proof artifact, not an unverified string");
     if(!record.review||typeof record.review.reviewer!=="string"||record.review.reviewer.length<2||typeof record.review.reference!=="string"||record.review.reference.length<4)errors.push("independent review reference required");
   }
   const prose=[record.reason,record.observation,record.review?.reviewer,record.review?.reference].filter(x=>typeof x==="string").join(" ");
