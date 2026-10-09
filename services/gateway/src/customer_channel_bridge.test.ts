@@ -278,4 +278,115 @@ describe("Customer channel bridge", () => {
     expect(result.reply).toBe("Connected.");
   });
 
+
+  it("rejects a newly shared contact that resolves to a different account than the durable channel link", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const linkedUserId = createCanonicalId("user");
+    const otherUserId = createCanonicalId("user");
+    const link = {
+      tenantId,
+      userId: linkedUserId,
+      channel: "telegram" as const,
+      externalUserId: "123",
+      chatId: "123",
+      characterId: createCanonicalId("character"),
+      characterSessionId: null,
+      updatedAt: "2026-10-09T00:00:00Z",
+    };
+    const issueSession = vi.fn(async () => undefined);
+    const resolveProfile = vi.fn(async () => ({
+      tenantId,
+      userId: otherUserId,
+      name: "Other customer",
+      email: null,
+      phone: "+2348012345678",
+      locale: "ng",
+      createdAt: "2026-10-08T00:00:00Z",
+    }));
+    const failMessage = vi.fn(async () => undefined);
+    const conversationOpen = vi.fn();
+    const bridge = createCustomerChannelBridge({
+      tenantId,
+      sessions: {
+        resolveProfile,
+        issueSession,
+      } as unknown as PlatformSessionRepository,
+      channels: {
+        async claimMessage() { return { state: "claimed" as const }; },
+        async readLink() { return link; },
+        failMessage,
+      } as unknown as CustomerChannelRepository,
+      platformProfiles: {} as PlatformAgentProfileRepository,
+      conversation: { open: conversationOpen } as unknown as AgentConversationService,
+    });
+    await expect(bridge.handle({
+      channel: "telegram",
+      externalUserId: "123",
+      chatId: "123",
+      messageId: "contact-cross-link",
+      phone: "+2348012345678",
+      text: "hello",
+    })).rejects.toThrow("channels.link_identity_mismatch");
+    expect(resolveProfile).toHaveBeenCalledTimes(1);
+    expect(issueSession).not.toHaveBeenCalled();
+    expect(conversationOpen).not.toHaveBeenCalled();
+    expect(failMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reuse an earlier Telegram contact phone in later messages without phone evidence", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const link = {
+      tenantId,
+      userId,
+      channel: "telegram" as const,
+      externalUserId: "777",
+      chatId: "777",
+      characterId,
+      characterSessionId: null,
+      updatedAt: "2026-10-09T00:00:00Z",
+    };
+    const resolveProfile = vi.fn(async () => null);
+    const issueSession = vi.fn(async (_input: unknown) => undefined);
+    const bridge = createCustomerChannelBridge({
+      tenantId,
+      sessions: {
+        resolveProfile,
+        issueSession,
+        async revokeAccess() {},
+      } as unknown as PlatformSessionRepository,
+      channels: {
+        async claimMessage() { return { state: "claimed" as const }; },
+        async readLink() { return link; },
+        async setCharacterSession() {},
+        async completeMessage() {},
+        async failMessage() {},
+      } as unknown as CustomerChannelRepository,
+      platformProfiles: {
+        async readForCharacter() { return { supportAgent: true }; },
+      } as unknown as PlatformAgentProfileRepository,
+      conversation: {
+        async open() { return { characterSessionId: createCanonicalId("character-session") }; },
+        async turn() { return { reply: "Ready", parts: [], agentRunId: createCanonicalId("agent-run") }; },
+      } as unknown as AgentConversationService,
+    });
+    const base = {
+      channel: "telegram" as const,
+      externalUserId: "777",
+      chatId: "777",
+      text: "Hello",
+    };
+    const first = await bridge.handle({ ...base, messageId: "first", phone: "+2348012345678" });
+    expect(first.reply).toBe("Ready");
+    expect(resolveProfile).toHaveBeenCalledTimes(1);
+    const second = await bridge.handle({ ...base, messageId: "second" });
+    expect(second.reply).toBe("Ready");
+    expect(resolveProfile).toHaveBeenCalledTimes(1);
+    expect(issueSession).toHaveBeenCalledTimes(2);
+    expect(issueSession.mock.calls[1]![0]).toMatchObject({
+      identity: { tenantId, userId },
+    });
+  });
+
 });
