@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS talks.human_ai_assist_quota (
   user_id TEXT NOT NULL,
   window_start TIMESTAMPTZ NOT NULL,
   usage_count INTEGER NOT NULL CHECK (usage_count BETWEEN 1 AND 20),
-  PRIMARY KEY (tenant_id,user_id,window_start)
+  PRIMARY KEY (tenant_id,user_id,window_start),
+  FOREIGN KEY (tenant_id,user_id) REFERENCES identity.users(tenant_id,user_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS human_ai_assist_quota_expiry
   ON talks.human_ai_assist_quota(window_start);
