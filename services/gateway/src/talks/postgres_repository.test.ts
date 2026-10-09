@@ -341,3 +341,86 @@ describe("Postgres Talk repository", () => {
     expect(sql).toContain("host_block.blocked");
   });
 });
+
+
+describe("F08 tenant- and viewer-fenced Talk comment visibility", () => {
+  it("excludes restricted comment bodies and bidirectionally blocked or muted authors", async () => {
+    const calls: Array<{ sql: string; values?: unknown[] }> = [];
+    const pool: TalkSqlPool = {
+      async query<Row>(sql: string, values?: unknown[]) {
+        calls.push({ sql, values });
+        return {
+          rowCount: 1,
+          rows: [{
+            tenant_id: "tenant_a",
+            talk_id: "talk_a",
+            comment_id: "comment_allowed",
+            author_user_id: "user_author",
+            author_name: "Author",
+            body: "Safe public comment",
+            created_at: "2026-10-09T00:30:00.000Z",
+          }] as unknown as Row[],
+        };
+      },
+    };
+    const result = await createPostgresTalkRepository(pool).listComments({
+      tenantId: "tenant_a",
+      talkId: "talk_a",
+      viewerUserId: "viewer_authenticated",
+      limit: 200,
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.values).toEqual([
+      "tenant_a", "talk_a", "viewer_authenticated", 200,
+    ]);
+    const sql = calls[0]!.sql;
+    expect(sql).toContain("c.tenant_id = $1 AND c.talk_id = $2");
+    expect(sql).toContain("comment_safety.tenant_id = c.tenant_id");
+    expect(sql).toContain("comment_safety.target_kind = 'comment'");
+    expect(sql).toContain("comment_safety.target_id = c.comment_id");
+    expect(sql).toContain("comment_safety.visibility <> 'public'");
+    expect(sql).toContain("viewer_preference.viewer_user_id = $3");
+    expect(sql).toContain("viewer_preference.subject_user_id = c.author_user_id");
+    expect(sql).toContain("(viewer_preference.blocked OR viewer_preference.muted)");
+    expect(sql).toContain("author_block.viewer_user_id = c.author_user_id");
+    expect(sql).toContain("author_block.subject_user_id = $3");
+    expect(sql).toContain("author_block.blocked");
+    expect(sql).toContain("ORDER BY c.created_at ASC, c.comment_id ASC");
+    expect(sql).toContain("LIMIT $4");
+    expect(result.map((item) => item.commentId)).toEqual(["comment_allowed"]);
+  });
+
+  it("filters public feed and detail counts through the exact same safety predicate", async () => {
+    const sqlReads: Array<{ sql: string; values?: unknown[] }> = [];
+    const pool: TalkSqlPool = {
+      async query<Row>(sql: string, values?: unknown[]) {
+        sqlReads.push({ sql, values });
+        return {
+          rowCount: 1,
+          rows: [row({ comment_count: 1, reaction_count: 0, followed_host: false })] as unknown as Row[],
+        };
+      },
+    };
+    const repo = createPostgresTalkRepository(pool);
+    await repo.listTalks({
+      tenantId: "tenant_a", viewerUserId: "viewer_authenticated",
+      feed: "explore", limit: 50,
+    });
+    await repo.getTalk({
+      tenantId: "tenant_a", talkId: "talk_a",
+      viewerUserId: "viewer_authenticated",
+    });
+    expect(sqlReads).toHaveLength(2);
+    expect(sqlReads[0]?.values).toEqual(["tenant_a", "explore", "viewer_authenticated", 50]);
+    expect(sqlReads[1]?.values).toEqual(["tenant_a", "talk_a", "viewer_authenticated"]);
+    for (const { sql } of sqlReads) {
+      expect(sql).toContain("FROM talks.comments c");
+      expect(sql).toContain("c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id");
+      expect(sql).toContain("comment_safety.target_kind = 'comment'");
+      expect(sql).toContain("comment_safety.visibility <> 'public'");
+      expect(sql).toContain("viewer_preference.viewer_user_id = $3");
+      expect(sql).toContain("author_block.subject_user_id = $3");
+    }
+  });
+});
