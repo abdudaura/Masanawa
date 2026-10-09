@@ -92,5 +92,17 @@
   "statusOffline": "Sin conexión",
   "statusUnverified": "Estado sin verificar",
   "statusWorkingTasks": "{count, plural, =1{Trabajando · 1 tarea} other{Trabajando · {count} tareas}}",
-  "twinShareText": "Habla con {name} en Masanawa: {url}"
+  "twinShareText": "Habla con {name} en Masanawa: {url}",
+  "talksTab": "Charlas",
+  "@talksTab": {
+    "description": "Human-hosted public Talks root"
+  },
+  "chatsTab": "Chats",
+  "@chatsTab": {
+    "description": "Human-only private conversations root"
+  },
+  "assistantTab": "Asistente",
+  "@assistantTab": {
+    "description": "Private Gwani/Gwana Assistant root"
+  }
 }

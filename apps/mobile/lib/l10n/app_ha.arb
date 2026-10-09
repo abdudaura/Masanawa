@@ -92,5 +92,17 @@
   "statusOffline": "Ba ya kan layi",
   "statusUnverified": "Ba a tabbatar da halinsa ba",
   "statusWorkingTasks": "{count, plural, =1{Yana aiki · aiki 1} other{Yana aiki · ayyuka {count}}}",
-  "twinShareText": "Yi hira da {name} a Masanawa: {url}"
+  "twinShareText": "Yi hira da {name} a Masanawa: {url}",
+  "talksTab": "Tattaunawa",
+  "@talksTab": {
+    "description": "Human-hosted public Talks root"
+  },
+  "chatsTab": "Saƙonni",
+  "@chatsTab": {
+    "description": "Human-only private conversations root"
+  },
+  "assistantTab": "Mataimaki",
+  "@assistantTab": {
+    "description": "Private Gwani/Gwana Assistant root"
+  }
 }

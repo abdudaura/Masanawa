@@ -33,6 +33,25 @@ void main() {
     );
   });
 
+  test('human DM links remain opaque and require server-authorized membership', () {
+    const id = '104329db-0d8c-48a9-bc37-a9f56311e17d';
+    expect(shellDeepLinkRoute(Uri.parse('masanawa://messages/$id')),
+        '/messages/$id');
+    expect(shellDeepLinkRoute(Uri.parse('https://masanawa.com/messages/$id')),
+        '/messages/$id');
+    for (final raw in [
+      'masanawa://messages/not-an-id',
+      'masanawa://messages/$id/another',
+      'masanawa://messages/$id?user=another',
+      'https://evil.example/messages/$id',
+      'https://masanawa.com/messages/$id?token=bad',
+      'masanawa://messages/$id#secret',
+      'masanawa://chat/$id',
+    ]) {
+      expect(shellDeepLinkRoute(Uri.parse(raw)), isNull, reason: raw);
+    }
+  });
+
   test('owner request notification opens the Activity tab', () {
     expect(
       shellDeepLinkRoute(Uri.parse('masanawa://activity')),

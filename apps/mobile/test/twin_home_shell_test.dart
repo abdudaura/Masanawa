@@ -152,12 +152,20 @@ Widget _app({
       localizationsDelegates: MasanawaLocalization.delegates,
       theme: buildMasanawaTheme(brightness: Brightness.light),
       routerConfig: GoRouter(
-        initialLocation: '/home',
+        initialLocation: '/talks',
         routes: [
           GoRoute(
-            path: '/home',
+            path: '/talks',
             builder: (_, __) => TwinHomeShell(initialIndex: initialIndex),
           ),
+          GoRoute(path: '/agents',
+            builder: (_, __) => const TwinHomeShell(initialIndex: 4)),
+          GoRoute(path: '/wallet',
+            builder: (_, __) => const TwinHomeShell(initialIndex: 3)),
+          GoRoute(path: '/messages',
+            builder: (_, __) => const TwinHomeShell(initialIndex: 1)),
+          GoRoute(path: '/assistant',
+            builder: (_, __) => const TwinHomeShell(initialIndex: 2)),
           GoRoute(
             path: '/activity',
             builder: (_, __) => const ActivityScreen(),
@@ -204,15 +212,16 @@ void main() {
     expect(matchingAgentEntries(agents, '').length, 2);
   });
 
-  testWidgets('R17 root shell has the approved four destinations and header', (tester) async {
+  testWidgets('R17 root shell has the approved five destinations and header', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Agents'), findsOneWidget);
+    expect(find.text('Talks'), findsWidgets);
+    expect(find.text('Chats'), findsOneWidget);
+    expect(find.text('Assistant'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
-    expect(find.text('Talk'), findsOneWidget);
+    expect(find.text('Agents'), findsOneWidget);
     expect(find.text('Create'), findsNothing);
     expect(find.byTooltip('Start Talk'), findsOneWidget);
     expect(find.byTooltip('Activity'), findsOneWidget);
@@ -233,17 +242,17 @@ void main() {
     await tester.tap(find.byIcon(Icons.smart_toy_outlined));
     await tester.pumpAndSettle();
     var router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
-    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'agents');
+    expect(router.routeInformationProvider.value.uri.path, '/agents');
 
     await tester.tap(find.byIcon(Icons.account_balance_wallet_outlined));
     await tester.pumpAndSettle();
     router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
-    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'wallet');
+    expect(router.routeInformationProvider.value.uri.path, '/wallet');
 
-    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.tap(find.byIcon(Icons.record_voice_over_outlined));
     await tester.pumpAndSettle();
     router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
-    expect(router.routeInformationProvider.value.uri.path, '/home');
+    expect(router.routeInformationProvider.value.uri.path, '/talks');
     expect(router.routeInformationProvider.value.uri.queryParameters['tab'], isNull);
     expect(tester.takeException(), isNull);
   });
@@ -252,7 +261,7 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    expect(find.text('Masanawa'), findsOneWidget);
+    expect(find.text('Talks'), findsWidgets);
     expect(find.text('Explore'), findsOneWidget);
     expect(find.text('Live Talks'), findsOneWidget);
     expect(find.text('Is university still worth it?'), findsOneWidget);
@@ -269,7 +278,7 @@ void main() {
   });
 
   testWidgets('Agents tab presents public Twins from the Gateway directory', (tester) async {
-    await tester.pumpWidget(_app(initialIndex: 1));
+    await tester.pumpWidget(_app(initialIndex: 4));
     await tester.pumpAndSettle();
 
     expect(find.text('Masanawa Agents'), findsOneWidget);
@@ -289,7 +298,7 @@ void main() {
   });
 
   testWidgets('public Twin private Talk checks directory before navigation', (tester) async {
-    await tester.pumpWidget(_app(initialIndex: 1));
+    await tester.pumpWidget(_app(initialIndex: 4));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Twins'));
     await tester.pumpAndSettle();
@@ -332,23 +341,42 @@ void main() {
   testWidgets('private Talk does not start a microphone on tab entry', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Talk'));
+    await tester.tap(find.text('Assistant'));
     await tester.pumpAndSettle();
-    // Without a qualified server agent, the shell fails closed with Retry.
-    expect(find.text('Gwani is unavailable right now.'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    // Unauthenticated selection cannot silently turn on the microphone.
+    expect(find.text('Sign in to open your private Assistant.'), findsOneWidget);
     expect(find.byTooltip('Start Talk'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
 
+  testWidgets('Start Talk FAB is exclusive to public Talks and never present in private roots', (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+    expect(find.text('Sign in to view private messages.'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+    expect(find.text('Sign in to open your private Assistant.'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.account_balance_wallet_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+    await tester.tap(find.byIcon(Icons.smart_toy_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Start Talk'), findsNothing);
+  });
+
   testWidgets('Arabic locale translates shell navigation without changing route semantics', (tester) async {
     await tester.pumpWidget(_app(uiLocale: const Locale('ar')));
     await tester.pumpAndSettle();
-    expect(find.text('الرئيسية'), findsOneWidget);
+    expect(find.text('نقاشات'), findsWidgets);
     expect(find.text('الوكلاء'), findsOneWidget);
     expect(find.text('المحفظة'), findsOneWidget);
-    expect(find.text('تحدث'), findsOneWidget);
+    expect(find.text('المساعد'), findsOneWidget);
     expect(find.byTooltip('النشاط'), findsOneWidget);
     expect(find.byTooltip('الملف الشخصي'), findsOneWidget);
     expect(
@@ -360,11 +388,11 @@ void main() {
     expect(find.text('وكلاء Masanawa'), findsOneWidget);
     expect(find.text('التوائم'), findsOneWidget);
     final router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
-    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'agents');
+    expect(router.routeInformationProvider.value.uri.path, '/agents');
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('four destinations fit on compact Android width', (tester) async {
+  testWidgets('five destinations fit on compact Android width', (tester) async {
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -373,10 +401,11 @@ void main() {
     });
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Talks'), findsWidgets);
+    expect(find.text('Chats'), findsOneWidget);
     expect(find.text('Agents'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
-    expect(find.text('Talk'), findsOneWidget);
+    expect(find.text('Assistant'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

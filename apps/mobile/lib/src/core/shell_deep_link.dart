@@ -22,6 +22,10 @@ String? shellDeepLinkRoute(Uri uri) {
       if (!_validPublicTwinId(id)) return null;
       return '/twin/${Uri.encodeComponent(id)}';
     }
+    if (kind == 'messages') {
+      if (!_validDmConversationId(id)) return null;
+      return '/messages/${Uri.encodeComponent(id)}';
+    }
     if (kind == 'talk') {
       if (!_validTalkId(id)) return null;
       return '/talk/${Uri.encodeComponent(id)}';
@@ -39,6 +43,7 @@ String? shellDeepLinkRoute(Uri uri) {
         'talk',
         'activity',
         'owner-session',
+        'messages',
       }.contains(uri.host)) {
     return null;
   }
@@ -50,6 +55,17 @@ String? shellDeepLinkRoute(Uri uri) {
     final publicId = uri.pathSegments.single;
     if (!_validPublicTwinId(publicId)) return null;
     return '/twin/${Uri.encodeComponent(publicId)}';
+  }
+
+  if (uri.host == 'messages') {
+    if (uri.pathSegments.length != 1 || uri.queryParameters.isNotEmpty) {
+      return null;
+    }
+    final id = uri.pathSegments.single;
+    if (!_validDmConversationId(id)) return null;
+    // An opaque conversation ID is only a locator. Gateway authenticates
+    // membership on every read; the deep link grants no access itself.
+    return '/messages/${Uri.encodeComponent(id)}';
   }
 
   if (uri.host == 'talk') {
@@ -108,3 +124,7 @@ bool _validPublicTwinId(String value) =>
 
 bool _validTalkId(String value) =>
     RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,159}$').hasMatch(value);
+
+bool _validDmConversationId(String value) =>
+    RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+        .hasMatch(value);
