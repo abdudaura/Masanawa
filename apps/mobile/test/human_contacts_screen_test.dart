@@ -211,6 +211,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Contact unavailable'), findsOneWidget);
     expect(find.text('Contact request sent.'), findsNothing);
+    // The error is no longer 'loading', but the retry control must be usable.
+    expect(find.text('Retry'), findsOneWidget);
+    api.fail = false;
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text('Contact unavailable'), findsNothing);
+    expect(find.text('Retry'), findsNothing);
   });
 
   testWidgets('sign-out hides all user-specific contact UI', (tester) async {
