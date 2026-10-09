@@ -59,7 +59,14 @@ export function createPrivateOperatorVoiceService(input: {
       scope: admission.scope,
       characterSessionId,
     });
-    if (session.state !== "active") {
+    if (session.state !== "active" ||
+        session.tenantId !== admission.scope.tenantId ||
+        session.userId !== admission.scope.userId ||
+        session.characterId !== characterId ||
+        session.relationshipId !== admission.scope.relationshipId ||
+        session.characterSessionId !== characterSessionId ||
+        !Number.isFinite(Date.parse(session.expiresAt)) ||
+        Date.parse(session.expiresAt) <= Date.now()) {
       throw new PlatformError({
         code: "agents.voice_session_closed",
         category: "conflict",
