@@ -166,7 +166,10 @@ class PrivateVoiceOperator extends ChangeNotifier {
       throw ArgumentError('A current account, session and voice admission are required');
     }
     if (_opening) throw StateError('Voice is already connecting');
-    await stop(clearContext: true);
+    final sameContext = _accountId == accountId &&
+        _characterId == characterId &&
+        _characterSessionId == characterSessionId;
+    await stop(clearContext: !sameContext);
     final epoch = ++_epoch;
     _opening = true;
     _accountId = accountId;
@@ -248,6 +251,23 @@ class PrivateVoiceOperator extends ChangeNotifier {
         }
       }
     }
+  }
+
+  /// Bind normal typed/tap Assistant even if the microphone is never started.
+  Future<void> bindAssistantContext({
+    required String accountId,
+    required String characterId,
+    required String characterSessionId,
+  }) async {
+    if (_disposed) return;
+    if (_accountId == accountId && _characterId == characterId &&
+        _characterSessionId == characterSessionId) return;
+    await stop(clearContext: true);
+    if (_disposed) return;
+    _accountId = accountId;
+    _characterId = characterId;
+    _characterSessionId = characterSessionId;
+    _notify();
   }
 
   /// Text, tap, and a *separate opt-in ASR integration* use the same draft.
