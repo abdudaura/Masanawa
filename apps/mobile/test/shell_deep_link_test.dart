@@ -148,5 +148,27 @@ void main() {
     pending.clear();
     expect(pending.take(ready: true), isNull);
   });
+
+  test('C09 private-call push carries only a validated opaque call locator', () {
+    const id='104329db-0d8c-48a9-bc37-a9f56311e17d';
+    expect(shellDeepLinkRoute(Uri.parse('masanawa://calls/$id')),
+      '/messages/calls/$id');
+    for (final malicious in [
+      'masanawa://calls/another-name',
+      'masanawa://calls/$id?token=secret',
+      'masanawa://calls/$id/accept',
+      'masanawa://calls/$id#fragment',
+      'masanawa://calls/$id?user=someone',
+      'masanawa://calls/%2E%2E',
+    ]) {
+      expect(shellDeepLinkRoute(Uri.parse(malicious)),isNull,
+        reason:malicious);
+    }
+    final pending=PendingDeepLink();
+    pending.offer(Uri.parse('masanawa://calls/$id'));
+    expect(pending.take(ready:false),isNull);
+    expect(shellDeepLinkRoute(pending.take(ready:true)!),
+      '/messages/calls/$id');
+  });
 }
 
