@@ -109,6 +109,67 @@ describe("F09 unique private Egress attempt storage",()=>{
   });
 });
 
+describe("F09 uncertain Egress compensation is fail closed",()=>{
+  const request={
+    tenantId:"tenant_1",talkId:"talk_1",recordingId:"recording_1",
+    startedAt:"2026-10-07T10:00:00.000Z",
+  };
+  function scenario(mode:"stop-failed"|"delete-failed"|"clean"){
+    const calls:string[]=[];
+    const media:ReplayMediaRepository={
+      async current(){return null;},
+      async currentForTalk(){return null;},
+      async createStarted(){calls.push("db:reject");throw new Error("db unavailable");},
+      async markStopped(){},async markReady(){},async markAborted(){},
+      async playbackObject(){return null;},
+    };
+    let objectKey="";
+    const coordinator=createTalkReplayCoordinator({
+      replay:replayRepository([]),media,
+      egress:{
+        async start({objectKey:key}){objectKey=key;calls.push("egress:start");return {egressId:"EG_orphan"};},
+        async stop(egressId){
+          expect(egressId).toBe("EG_orphan");
+          calls.push("egress:stop");
+          if(mode==="stop-failed") throw new Error("LiveKit timeout");
+        },
+      },
+      objects:{
+        async deleteObject(key){
+          expect(key).toBe(objectKey);
+          calls.push("s3:delete");
+          if(mode==="delete-failed") throw new Error("S3 outage");
+        },
+        async checksumSha256(){throw new Error("unused");},
+        async presignGet(){throw new Error("unused");},
+      },
+      playbackTtlSeconds:300,
+    });
+    return {coordinator,calls};
+  }
+  it("does NOT delete an object when StopEgress is uncertain",async()=>{
+    const f=scenario("stop-failed");
+    const err=await f.coordinator.start(request).catch(e=>e);
+    expect(err).toBeInstanceOf(AggregateError);
+    expect((err as AggregateError).message).toBe("talks.replay.egress_compensation_stop_uncertain");
+    expect((err as AggregateError).errors.map((e:Error)=>e.message)).toEqual(["db unavailable","LiveKit timeout"]);
+    expect(f.calls).toEqual(["egress:start","db:reject","egress:stop"]);
+  });
+  it("reports failed cleanup only after confirmed Egress stop",async()=>{
+    const f=scenario("delete-failed");
+    const err=await f.coordinator.start(request).catch(e=>e);
+    expect(err).toBeInstanceOf(AggregateError);
+    expect((err as AggregateError).message).toBe("talks.replay.egress_compensation_delete_failed");
+    expect((err as AggregateError).errors.map((e:Error)=>e.message)).toEqual(["db unavailable","S3 outage"]);
+    expect(f.calls).toEqual(["egress:start","db:reject","egress:stop","s3:delete"]);
+  });
+  it("preserves the initial SQL error when both cleanup operations succeed",async()=>{
+    const f=scenario("clean");
+    await expect(f.coordinator.start(request)).rejects.toThrow("db unavailable");
+    expect(f.calls).toEqual(["egress:start","db:reject","egress:stop","s3:delete"]);
+  });
+});
+
 describe("Talk replay Egress coordinator",()=>{
   it("stops LiveKit if media-job persistence fails after egress starts",async()=>{
     const stopped:string[]=[];
