@@ -158,4 +158,36 @@ describe("C01 SQL contact admission", () => {
     expect(second.next).toBeNull();
     expect(observed[1]?.args).toEqual(["t", "user_al", 3, timestamp, "user_bb"]);
   });
+
+  it("blocks a moderated viewing profile in lookup, request and both list formats", async () => {
+    const captured: string[] = [];
+    const pool: HumanContactSqlPool = {
+      async query(query) {
+        captured.push(query);
+        return { rows: [] as never, rowCount: 0 };
+      },
+    };
+    const repository = createPostgresHumanContactRepository(pool);
+    expect(await repository.lookup({
+      tenantId: "t", viewerId: "restricted_user", handle: "bob",
+    })).toBeNull();
+    expect(await repository.request({
+      tenantId: "t", requesterId: "restricted_user", handle: "bob",
+    })).toBe("unavailable");
+    expect(await repository.list({
+      tenantId: "t", userId: "restricted_user", limit: 20,
+    })).toEqual([]);
+    expect(await repository.listPage!({
+      tenantId: "t", userId: "restricted_user", limit: 20, after: null,
+    })).toEqual({ contacts: [], next: null });
+    expect(captured).toHaveLength(4);
+    // The first two share visibleTarget; list and pages share queryContactRows.
+    for (const sql of captured) {
+      expect(sql).toContain("JOIN talks.safety_enforcement viewer_moderation");
+      expect(sql).toContain("viewer_moderation.visibility IN ('restricted','blocked')");
+      expect(sql).toMatch(/viewer_profile\.user_id\s*=\s*\$2/);
+      expect(sql).toContain("viewer_moderation.target_id");
+      expect(sql).toContain("viewer_profile.handle");
+    }
+  });
 });
