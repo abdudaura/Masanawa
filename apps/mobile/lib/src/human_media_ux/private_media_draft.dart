@@ -257,6 +257,18 @@ class PrivateMediaReviewController extends ChangeNotifier {
         if (_current(generation)) clear();
         return;
       }
+      // A file picked earlier can be replaced or removed before Send.
+      // Check the current file again; no backend call is made on mismatch.
+      final fresh = await inspectPrivateMediaFile(media.file);
+      if (!_current(generation)) return;
+      if (fresh.kind != media.kind ||
+          fresh.name != media.name ||
+          fresh.sizeBytes != media.sizeBytes) {
+        phase = PrivateMediaPhase.review;
+        message = 'Attachment changed. Discard it and choose again.';
+        _emit();
+        return;
+      }
       phase = PrivateMediaPhase.uploading;
       progress = 0;
       message = null;
