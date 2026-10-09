@@ -35,6 +35,9 @@ void main(){
       'ws://livekit.example/',
       'https://livekit.example/',
       'wss://user:pass@livekit.example/',
+      'wss://livekit.example/?access_token=secret',
+      'wss://livekit.example/#fragment',
+      'wss://livekit.example/custom-room-path',
     ]){
       expect(()=>HumanCallCredentials.fromJson(
         token()..['server_url']=endpoint,callId),throwsFormatException);
