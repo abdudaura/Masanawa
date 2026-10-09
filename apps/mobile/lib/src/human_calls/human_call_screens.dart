@@ -107,12 +107,32 @@ class HumanCallScreen extends StatelessWidget {
       animation:controller,
       builder:(context,_) {
         final call=controller.call;
-        return Scaffold(
+        return WillPopScope(
+          onWillPop:() async {
+            if(call!=null && !call.terminal) {
+              if(controller.isIncoming && call.state==HumanCallState.ringing) {
+                await controller.decline();
+              } else {
+                await controller.end();
+              }
+            }
+            return true;
+          },
+          child:Scaffold(
           appBar:AppBar(
             title:Text(call?.kind==HumanCallKind.video?'Private video call':'Private voice call'),
             leading:IconButton(
               tooltip:'Return to chat',
-              onPressed:()=>Navigator.of(context).maybePop(),
+              onPressed:() async {
+                if(call!=null && !call.terminal) {
+                  if(controller.isIncoming && call.state==HumanCallState.ringing) {
+                    await controller.decline();
+                  } else {
+                    await controller.end();
+                  }
+                }
+                if(context.mounted) Navigator.of(context).maybePop();
+              },
               icon:const Icon(Icons.arrow_back),
             ),
           ),
@@ -178,7 +198,7 @@ class HumanCallScreen extends StatelessWidget {
                     icon:const Icon(Icons.chat),label:const Text('Return to chat')),
                 ])),
           ])),
-        );
+        ));
       },
     );
   }
