@@ -81,9 +81,9 @@
       "branch": "work/af13-evidence-manifest-20261009-masanawa01",
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
       "claimed_at": "2026-10-09T21:45:04.740Z",
-      "heartbeat_at": "2026-10-09T21:45:04.740Z",
-      "expires_at": "2026-10-09T21:50:04.740Z",
-      "notes": "New paths only; PR #527/#518/#559/#561/#554/#567/#570 read; AF07 #593 and AF00/AF01/AF05/AF08/AF14 live branches excluded. No app/device/provider checks claimed."
+      "heartbeat_at": "2026-10-09T21:48:24.479Z",
+      "expires_at": "2026-10-09T21:53:24.479Z",
+      "notes": "Source and 12 isolated Node tests committed to PR #594; exact remote blobs checked against executed local test fixture, matrix 35 canonical IDs. Handoff and safe integration pending."
     }
   ],
   "history": [
