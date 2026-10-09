@@ -16,6 +16,22 @@
       "claimed_at": "2026-10-09T03:46:29Z",
       "heartbeat_at": "2026-10-09T03:46:29Z",
       "expires_at": "2026-10-09T03:51:29Z"
+    },
+    {
+      "claim_id": "gpt6-f11-gateway-readiness-evidence-20261009",
+      "owner": "GPT-6 F11 isolated readiness verifier",
+      "scope": "F11 DB-P03 guarded read-only Gateway readiness evidence",
+      "paths": [
+        "tools/readiness-evidence/verify-gateway-readiness.mjs",
+        "tools/readiness-evidence/verify-gateway-readiness.test.mjs",
+        "docs/workstreams/f11-gateway-readiness-evidence-20261009.md"
+      ],
+      "branch": "work/f11-gateway-readiness-evidence-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": null,
+      "claimed_at": "2026-10-09T03:47:37.777Z",
+      "heartbeat_at": "2026-10-09T03:47:37.777Z",
+      "expires_at": "2026-10-09T03:52:37.777Z"
     }
   ],
   "history": [
