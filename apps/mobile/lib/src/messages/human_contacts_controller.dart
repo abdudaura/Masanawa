@@ -46,6 +46,7 @@ class HumanContactsViewState {
     String? nextCursor,
     bool clearNextCursor = false,
     HumanContactPreferences? preferences,
+    bool clearPreferences = false,
     List<HumanContact>? contacts,
     HumanContact? lookup,
     String? lookupHandle,
@@ -60,7 +61,7 @@ class HumanContactsViewState {
     busy: busy ?? this.busy,
     loadingMore: loadingMore ?? this.loadingMore,
     nextCursor: clearNextCursor ? null : nextCursor ?? this.nextCursor,
-    preferences: preferences ?? this.preferences,
+    preferences: clearPreferences ? null : preferences ?? this.preferences,
     contacts: contacts ?? this.contacts,
     lookup: clearLookup ? null : lookup ?? this.lookup,
     lookupHandle: clearLookup ? null : lookupHandle ?? this.lookupHandle,
@@ -234,13 +235,28 @@ class HumanContactsController extends StateNotifier<HumanContactsViewState> {
     try {
       final outcome = await operation();
       if (!_authorized) return;
+      // The write is confirmed, but the prior list is no longer authoritative.
+      // Clear it before the readback; a failed refresh must not resurrect a
+      // removed contact or preserve an obsolete admission status.
       state = state.copyWith(
         busy: false, clearLookup: true, notice: notice(outcome),
+        contacts: updateList ? const <HumanContact>[] : null,
+        clearNextCursor: updateList,
       );
       if (updateList) await refresh();
     } catch (error) {
       if (!_authorized) return;
-      state = state.copyWith(busy: false, error: _errorText(error));
+      // HTTP failure is not proof that a write did not commit. In particular,
+      // a timeout may occur after the server accepted a revocation or consent
+      // change. Discard potentially stale rights until a fresh user-initiated
+      // read succeeds. The screen exposes Retry whenever an error is shown.
+      state = state.copyWith(
+        busy: false, loading: false, loadingMore: false,
+        clearLookup: true, clearNextCursor: updateList,
+        contacts: updateList ? const <HumanContact>[] : null,
+        clearPreferences: !updateList,
+        error: _errorText(error),
+      );
     }
   }
 
