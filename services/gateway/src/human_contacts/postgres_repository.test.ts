@@ -48,6 +48,11 @@ describe("C01 SQL contact admission", () => {
     expect(params).toEqual(["t", "user_al", "user_bo"]);
     expect(sql).toContain("revoked_by=$2");
     expect(sql).toContain("e.revoked_by IS NULL OR e.revoked_by=$2");
+    // Authorization is rechecked in SQL, even if a previously valid token
+    // outlives account disablement; disabled peers may still be revoked.
+    expect(sql).toContain("SELECT 1 FROM identity.users actor");
+    expect(sql).toContain("actor.tenant_id=e.tenant_id");
+    expect(sql).toContain("actor.user_id=$2 AND actor.state='active'");
   });
 
   it("updates one privacy field without resetting the other", async () => {
