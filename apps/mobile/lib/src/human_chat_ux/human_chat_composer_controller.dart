@@ -248,6 +248,29 @@ class HumanChatComposerController extends ChangeNotifier {
     _emit(); return true;
   }
 
+  /// Called by the session coordinator on logout, account erasure, or revoke.
+  /// Any request already admitted by C02 may still resolve server-side, but
+  /// its stale response cannot populate a different account's composer.
+  Future<void> revokeSessionAndPurge() async {
+    if (_disposed) return;
+    ++_generation;
+    allowed = false;
+    loading = true;
+    _emit();
+    try {
+      await _writes;
+      await drafts.remove(key);
+      text = ''; replyId = null; replyPreview = null;
+      pendingId = null; pendingBody = null; pendingReplyId = null;
+      phase = HumanChatPhase.ready;
+      notice = 'This private chat draft was cleared on sign-out.';
+    } catch (_) {
+      notice = 'Draft purge failed. Keep account locked until storage is cleared.';
+    } finally {
+      if (!_disposed) { loading = false; _emit(); }
+    }
+  }
+
   @override
   void dispose() {
     _generation++; _disposed = true;
