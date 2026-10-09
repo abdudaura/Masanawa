@@ -83,6 +83,24 @@
       "heartbeat_at": "2026-10-09T21:29:14.969Z",
       "expires_at": "2026-10-09T21:34:14.969Z",
       "notes": "Fresh main + #497/#539 + CAS and canonical AF08 ownership inspected. No migration, app router, finance, launch manifest or auth schema changes."
+    },
+    {
+      "claim_id": "masanawa-01-af00-fix-broken-dart-20261009",
+      "owner": "MASANAWA-01",
+      "scope": "AF00 urgent recovery of #586 exact-head malformed Dart deep-link validators; protect trusted route semantics; preserve original tests/changes and handoff",
+      "paths": [
+        "apps/mobile/lib/src/core/shell_deep_link.dart",
+        "apps/mobile/test/shell_deep_link_test.dart",
+        "docs/workstreams/AF00-deeplink-authority-20261009.md"
+      ],
+      "branch": "work/af00-deeplink-authority-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 586,
+      "source_head": "af10e2d0dfc3a42be740bac7a3c9465195f32771",
+      "claimed_at": "2026-10-09T21:29:35.017Z",
+      "heartbeat_at": "2026-10-09T21:29:35.017Z",
+      "expires_at": "2026-10-09T21:34:35.017Z",
+      "notes": "Original MASANAWA-01 previous scoped claim was released; same owner repairing invalid Dart compilation in exact scoped PR source. No shared shell edits, no local APK overwrite."
     }
   ],
   "history": [
