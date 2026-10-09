@@ -123,6 +123,43 @@ void main() {
     }
   });
 
+  test('bounded exact identity and query-key admission at the edges', () {
+    // The longest accepted character ID has exactly 256 decoded characters.
+    final acceptedCharacter = 'character_${List.filled(246, 'a').join()}';
+    final rejectedCharacter = '${acceptedCharacter}a';
+    expect(acceptedCharacter.length, 256);
+    expect(shellDeepLinkRoute(Uri.parse(
+        'masanawa://chat/$acceptedCharacter')), '/chat/$acceptedCharacter');
+    expect(shellDeepLinkRoute(Uri.parse(
+        'masanawa://chat/$rejectedCharacter')), isNull);
+
+    final maxResourceId = List.filled(256, 'a').join();
+    expect(
+      shellDeepLinkRoute(Uri.parse(
+          'masanawa://work/$maxResourceId?characterId=character_abc')),
+      '/chat/character_abc',
+    );
+    expect(
+      shellDeepLinkRoute(Uri.parse(
+          'masanawa://work/${maxResourceId}a?characterId=character_abc')),
+      isNull,
+    );
+
+    // Legacy resource fallbacks are allowed only without any query keys.
+    expect(shellDeepLinkRoute(Uri.parse('masanawa://work/work_123')),
+        '/chats');
+    for (final raw in [
+      'masanawa://work/work_123?other=1',
+      'masanawa://approval/approval_123?other=1',
+      'masanawa://artifact/artifact_123?characterId=',
+      'masanawa://work/work_123?characterId=character_abc&other=1',
+      'masanawa://work/work_123?characterId=character_abc&characterId=character_abc',
+      'masanawa://work/work%2F123?characterId=character_abc',
+    ]) {
+      expect(shellDeepLinkRoute(Uri.parse(raw)), isNull, reason: raw);
+    }
+  });
+
   test('resource link without a conversation opens the conversation list', () {
     expect(shellDeepLinkRoute(Uri.parse('masanawa://approval/approval_123')),
         '/chats');
