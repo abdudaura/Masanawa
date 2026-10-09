@@ -21,10 +21,10 @@
       ],
       "branch": "work/c09-calling-work-integration-20261009",
       "base_sha": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
-      "pr": "pending stacked draft PR",
+      "pr": "https://github.com/Baatiku/masanawa/pull/578",
       "claimed_at": "2026-10-09T09:13:07.942Z",
-      "heartbeat_at": "2026-10-09T09:23:44.692Z",
-      "expires_at": "2026-10-09T09:28:44.693Z",
+      "heartbeat_at": "2026-10-09T09:27:13.603Z",
+      "expires_at": "2026-10-09T09:32:13.604Z",
       "notes": "Base latest #497 Work, preserve existing C09 PR #575. C09 approved user; isolated claimed shared app/main/flutter only; no prod deploy/merge while unverified."
     },
     {
