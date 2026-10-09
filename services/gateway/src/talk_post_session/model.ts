@@ -6,6 +6,7 @@ export interface ReplayInsightSource {
   readonly recordingId: string;
   readonly checksumSha256: string;
   readonly replayRevision: number;
+  readonly hostUserId: string;
 }
 export interface ReplayInsightDraft {
   readonly summary: string;

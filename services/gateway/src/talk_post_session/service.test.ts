@@ -6,7 +6,7 @@ import type {
 
 const source: ReplayInsightSource = {
   tenantId: "tenant-a", talkId: "talk_1", recordingId: "recording_1",
-  checksumSha256: "a".repeat(64), replayRevision: 4,
+  checksumSha256: "a".repeat(64), replayRevision: 4,hostUserId:"host",
 };
 const ready: ReplayInsightView = {
   talkId: "talk_1", recordingId: "recording_1", status: "ready",

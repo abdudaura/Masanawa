@@ -25,7 +25,7 @@ describe("U16 Postgres privacy and compare-and-set", () => {
       rows: [] as Row[], rowCount: 1,
     }));
     const repo=createPostgresReplayInsightRepository({query});
-    const source = {tenantId:"tenant-a",talkId:"talk_1",recordingId:"recording_1",checksumSha256:"a".repeat(64),replayRevision:4};
+    const source = {tenantId:"tenant-a",talkId:"talk_1",recordingId:"recording_1",checksumSha256:"a".repeat(64),replayRevision:4,hostUserId:"host"};
     expect(await repo.claim(source,"host","lease-1")).toBe(true);
     expect(query.mock.calls[0]![0]).toContain("ON CONFLICT(tenant_id,talk_id)");
     expect(query.mock.calls[0]![0]).toContain("lease_until < now()");

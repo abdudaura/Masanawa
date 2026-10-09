@@ -10,7 +10,7 @@ export interface InsightSqlPool {
 }
 interface SourceRow extends Record<string, unknown> {
   tenant_id: string; talk_id: string; recording_id: string;
-  checksum_sha256: string; revision: number;
+  checksum_sha256: string; revision: number; host_user_id: string;
 }
 interface InsightRow extends Record<string, unknown> {
   talk_id: string; recording_id: string; status: "processing" | "ready" | "failed";
@@ -38,7 +38,7 @@ const ELIGIBLE = `
          AND se.visibility IN ('restricted','blocked')
    )`;
 const AVAILABLE = `SELECT r.tenant_id,r.talk_id,r.recording_id,
-  m.checksum_sha256,r.revision ${ELIGIBLE}`;
+  m.checksum_sha256,r.revision,t.host_user_id ${ELIGIBLE}`;
 function toView(row: InsightRow): ReplayInsightView {
   const highlights = Array.isArray(row.highlights)
     ? row.highlights.filter((value): value is string => typeof value === "string")
@@ -60,7 +60,7 @@ export function createPostgresReplayInsightRepository(pool: InsightSqlPool): Rep
       return source ? Object.freeze({
         tenantId: source.tenant_id, talkId: source.talk_id,
         recordingId: source.recording_id, checksumSha256: source.checksum_sha256,
-        replayRevision: Number(source.revision),
+        replayRevision: Number(source.revision),hostUserId:source.host_user_id,
       }) : null;
     },
     async read(tenantId, userId, talkId) {
