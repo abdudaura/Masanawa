@@ -10,6 +10,9 @@ class _Recorder extends Mock implements AudioRecorder {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() {
+    registerFallbackValue(const RecordConfig(encoder: AudioEncoder.pcm16bits));
+  });
 
   late _Recorder recorder;
   late LiveVoiceSession session;
@@ -33,7 +36,9 @@ void main() {
 
   tearDown(() async => session.close());
 
-  test('denied microphone has a typed permission stage and legacy error', () async {
+  test(
+    'denied microphone has a typed permission stage and legacy error',
+    () async {
     when(() => recorder.hasPermission()).thenAnswer((_) async => false);
 
     final failure = expectLater(
@@ -54,7 +59,8 @@ void main() {
     await Future.wait([failure, message, readiness]);
     verify(() => recorder.hasPermission()).called(1);
     verifyNever(() => recorder.startStream(any()));
-  });
+    },
+  );
 
   test('permission channel failure does not masquerade as network failure', () async {
     when(() => recorder.hasPermission()).thenThrow(StateError('plugin missing'));
