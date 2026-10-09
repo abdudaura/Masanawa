@@ -126,8 +126,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
         );
       }
       if (_closed) return;
-      final audioSession = await AudioSession.instance;
-      await audioSession.configure(
+      late final AudioSession audioSession;
+      try {
+        audioSession = await AudioSession.instance;
+        await audioSession.configure(
         AudioSessionConfiguration(
           avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
           avAudioSessionCategoryOptions:
@@ -149,9 +151,17 @@ class LiveVoiceSession with WidgetsBindingObserver {
           'Audio is in use. End the other call and try again.',
         );
       }
-      if (_closed) {
-        await audioSession.setActive(false);
-        return;
+        if (_closed) {
+          await audioSession.setActive(false);
+          return;
+        }
+      } on _LiveVoiceFault {
+        rethrow;
+      } catch (_) {
+        throw const _LiveVoiceFault(
+          LiveVoiceFailureStage.focus,
+          'Could not activate microphone audio. End another call and retry.',
+        );
       }
       _interruptions = audioSession.interruptionEventStream.listen((event) {
         if (event.begin && !_closed) {
