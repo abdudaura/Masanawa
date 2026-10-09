@@ -17,6 +17,23 @@
       "heartbeat_at": "2026-10-09T04:32:03.690Z",
       "expires_at": "2026-10-09T04:37:03.690Z",
       "notes": "Continue canonical draft #468 only; no Gateway composer/migration, Firebase, finance or Flutter root edits."
+    },
+    {
+      "claim_id": "gpt6-u01-approval-terms-fence-20261009-0434",
+      "owner": "GPT-6 U01 approval terms security continuation",
+      "scope": "U01 exact approval terms and capability authorization security",
+      "paths": [
+        "packages/operator-contract/src/index.js",
+        "packages/operator-contract/test/index.test.mjs",
+        "docs/workstreams/u01-operator-contract-20261009.md"
+      ],
+      "branch": "work/u01-operator-contract-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/519",
+      "claimed_at": "2026-10-09T04:33:21.674Z",
+      "heartbeat_at": "2026-10-09T04:33:21.674Z",
+      "expires_at": "2026-10-09T04:38:21.674Z",
+      "notes": "Continuation of existing draft #519; no Gateway, router, native, Firebase, finance, CI, DB, or production edits."
     }
   ],
   "history": [
