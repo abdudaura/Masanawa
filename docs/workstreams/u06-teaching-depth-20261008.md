@@ -8,6 +8,8 @@ Live U06 branch/PR search returned no existing work; U01–U05, U21–U30, F11 a
 - `packages/skills/src/teaching_extensions/**` (lesson engine/contract, tests)
 - `apps/mobile/lib/src/learning/**` (learning presentation/state)
 - `apps/mobile/test/learning/**` (bounded Flutter tests)
+- `services/gateway/src/operator_learning/**` (isolated authenticated route adapter and tests)
+- `packages/skills/src/index.ts` (single additive export only)
 - this claim/handoff file.
 
 No edits to shared `main.ts`, `app.ts`, router, Android/iOS native, Firebase, financial ledger, migration registry, canonical agents, legacy teaching assistant, or other claimed U/R/C roots. Existing `@masanawa/skills` and Gateway teacher are normative dependencies, not targets for replacement. **Integration will require designated Gateway/Flutter composer**; isolated work is PARTIAL_IMPLEMENTATION until composed and exercised end-to-end.
