@@ -64,7 +64,7 @@ export function createPostgresHumanDmSearch(pool: SearchPool, dialect: C02Dialec
     " ORDER BY m.created_at DESC,m.message_id DESC LIMIT $7",
   ].join("\n");
   return Object.freeze({
-    async search(input) {
+    async search(input: Parameters<SearchRepository["search"]>[0]) {
       const client = await pool.connect();
       try {
         await client.query("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED READ ONLY");
