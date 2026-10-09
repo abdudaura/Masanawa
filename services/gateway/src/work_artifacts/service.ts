@@ -37,9 +37,10 @@ export function createArtifactService(input: {
     return row;
   }
   function view(row: Artifact, actor: Owner): ArtifactView {
-    const {tenantId, userId, requestId, objectKey, grants, ...publicFields} = row;
-    return {...publicFields, provenance:userId === actor.userId ? row.provenance : {kind:row.provenance.kind}, owned: userId === actor.userId,
-      sharedWith: userId === actor.userId ? grants : []};
+    return {id:row.id,filename:row.filename,mimeType:row.mimeType,sizeBytes:row.sizeBytes,sha256:row.sha256,
+      state:row.state,revision:row.revision,createdAt:row.createdAt,expiresAt:row.expiresAt,
+      provenance:row.userId === actor.userId ? row.provenance : {kind:row.provenance.kind}, owned: row.userId === actor.userId,
+      sharedWith: row.userId === actor.userId ? row.grants : []};
   }
   async function readable(actor: Owner, id: string): Promise<Artifact> {
     identity(actor);
@@ -73,7 +74,7 @@ export function createArtifactService(input: {
     if (!await input.admitCreation(owner)) fail('rate_limited', 429);
     const id = input.createId(); input.assertId('media-artifact', id);
     const at = now();
-    const row = await repo.reserve({id, ...owner, requestId: request.requestId, filename: request.filename,
+    const row = await repo.reserve({id, tenantId:owner.tenantId,userId:owner.userId, requestId: request.requestId, filename: request.filename,
       mimeType: 'text/plain; charset=utf-8', sizeBytes: bytes.length, sha256: digest(bytes), provenance,
       objectKey: `work-artifacts/${digest(owner.tenantId + '\0' + owner.userId)}/${id}.txt`,
       state: 'generating', revision: 1, createdAt: at.toISOString(),
@@ -90,6 +91,9 @@ export function createArtifactService(input: {
     } catch {
       await repo.change(owner, row.id, row.revision, {state: 'failed', grants: []});
       return view((await owned(owner, row.id)), owner);
+    }
+    if (provenance.kind === 'operator' && !await input.authorizeTask(owner,provenance.taskId!,provenance.operationId!)) {
+      await change(row,'revoked',[]); return fail('task_not_admitted',403);
     }
     return view(await change(row, 'ready'), owner);
   }
@@ -112,9 +116,11 @@ export function createArtifactService(input: {
       const row = await owned(owner,id);
       if (row.state !== 'generating' && row.state !== 'failed') return view(row,owner);
       if (Date.parse(row.expiresAt) <= now().getTime()) fail('artifact_unavailable',410);
+      if (row.provenance.kind==='operator' && !await input.authorizeTask(owner,row.provenance.taskId!,row.provenance.operationId!)) fail('task_not_admitted',403);
       // Status-only recovery after a lost PUT response or process death; no second generator invocation.
       try { verify(await input.objects.get(row.objectKey, MAX_BYTES), row); }
       catch { return view(row,owner); }
+      if (row.provenance.kind==='operator' && !await input.authorizeTask(owner,row.provenance.taskId!,row.provenance.operationId!)) fail('task_not_admitted',403);
       return view(await change(row,'ready'),owner);
     },
     async share(owner: Owner, id: string, revision: number, recipient: string, ttlSeconds: number) {

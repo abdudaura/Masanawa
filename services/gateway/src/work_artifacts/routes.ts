@@ -21,6 +21,12 @@ export function registerArtifactRoutes(app: FastifyInstance, deps:{
         // Do not return bytes/metadata after a session was revoked during I/O.
         const current = await deps.authorizer.authorize({authorizationHeader:request.headers.authorization});
         if (actor.tenantId !== current.tenantId || actor.userId !== current.userId) throw new ArtifactError('unauthorized',401);
+        if (url === '/work-artifacts/:id/download') {
+          reply.type(result.mimeType)
+            .header('Content-Disposition',`attachment; filename="artifact.txt"; filename*=UTF-8''${encodeURIComponent(result.filename)}`)
+            .header('X-Artifact-SHA256',result.sha256);
+          return result.bytes;
+        }
         return result;
       } catch (error) {
         const status = error instanceof ArtifactError ? error.statusCode :
@@ -37,12 +43,8 @@ export function registerArtifactRoutes(app: FastifyInstance, deps:{
   route('GET','/work-artifacts/:id',{params},(a:any,r:any)=>deps.artifacts.get(a,r.params.id));
   route('POST','/work-artifacts/:id/recover',{params,body:object({})},(a:any,r:any)=>deps.artifacts.recover(a,r.params.id));
   route('POST','/work-artifacts/:id/ticket',{params,body:object({})},(a:any,r:any)=>deps.artifacts.ticket(a,r.params.id));
-  route('POST','/work-artifacts/:id/download',{params,body:object({ticket:{type:'string',minLength:1,maxLength:2048}})},async(a:any,r:any,reply:any)=>{
-    const file = await deps.artifacts.download(a,r.params.id,r.body.ticket);
-    reply.type(file.mimeType).header('Content-Disposition',`attachment; filename="artifact.txt"; filename*=UTF-8''${encodeURIComponent(file.filename)}`)
-      .header('X-Artifact-SHA256',file.sha256);
-    return file.bytes;
-  });
+  route('POST','/work-artifacts/:id/download',{params,body:object({ticket:{type:'string',minLength:1,maxLength:2048}})},
+    (a:any,r:any)=>deps.artifacts.download(a,r.params.id,r.body.ticket));
   route('POST','/work-artifacts/:id/share',{params,body:object({revision:{type:'integer',minimum:1},
     recipientUserId:string,ttlSeconds:{type:'integer',minimum:60,maximum:86400}})},
     (a:any,r:any)=>deps.artifacts.share(a,r.params.id,r.body.revision,r.body.recipientUserId,r.body.ttlSeconds));

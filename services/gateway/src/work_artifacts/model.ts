@@ -14,6 +14,7 @@ export type ArtifactView = Omit<Artifact, 'tenantId' | 'userId' | 'requestId' | 
 export interface ArtifactRepository {
   reserve(value: Artifact): Promise<Artifact>;
   find(tenantId: string, id: string): Promise<Artifact | null>;
+  findRequest(owner: Owner, requestId: string): Promise<Artifact | null>;
   change(owner: Owner, id: string, revision: number,
     patch: Pick<Artifact, 'state' | 'grants'>): Promise<Artifact | null>;
   list(owner: Owner, after: string | undefined, limit: number): Promise<readonly Artifact[]>;

@@ -7,6 +7,7 @@ import { join, dirname } from 'node:path';
 import { createArtifactService, textBytes } from '../service.ts';
 import { createArtifactS3 } from '../private_store.ts';
 import { createArtifactRepository, sweepArtifacts } from '../postgres.ts';
+import { createArtifactTaskAdapter } from '../task_adapter.ts';
 
 const uid=(kind,n)=>`${kind}_019a0000-0000-7000-8000-${String(n).padStart(12,'0')}`;
 const a={tenantId:uid('tenant',1),userId:uid('user',1)}, b={...a,userId:uid('user',2)}, c={...a,userId:uid('user',3)};
@@ -17,6 +18,7 @@ function repository() {
     async reserve(row) {const existing=[...rows.values()].find(x=>x.tenantId===row.tenantId&&x.userId===row.userId&&x.requestId===row.requestId);
       if(existing)return copy(existing); rows.set(row.id,copy(row));return copy(row);},
     async find(tenant,id) {const row=rows.get(id);return row?.tenantId===tenant?copy(row):null;},
+    async findRequest(owner,requestId) {const row=[...rows.values()].find(r=>r.tenantId===owner.tenantId&&r.userId===owner.userId&&r.requestId===requestId);return row?copy(row):null;},
     async change(owner,id,rev,patch) {const row=rows.get(id);if(!row||row.tenantId!==owner.tenantId||row.userId!==owner.userId||row.revision!==rev)return null;
       const updated={...row,...copy(patch),revision:rev+1};rows.set(id,updated);return copy(updated);},
     async list(owner,after,limit) {return [...rows.values()].filter(x=>x.tenantId===owner.tenantId&&x.userId===owner.userId&&(!after||x.id>after)).sort((x,y)=>x.id.localeCompare(y.id)).slice(0,limit).map(copy);},
@@ -89,12 +91,26 @@ test('explicit recipient grant permits only recipient; no transitive sharing',as
   await assert.rejects(f.service.download(c,row.id,ticket.ticket),errorCode('invalid_ticket'));
   await assert.rejects(f.service.share(b,row.id,view.revision,c.userId,600),errorCode('not_found'));
 });
-test('current contact block, expired grant and revoked artifact invalidate issued ticket',async t=>{
+test('current contact block and revoked artifact invalidate issued ticket',async t=>{
   const f=await fixture(t),row=await f.service.saveText(a,f.request);
   const shared=await f.service.share(a,row.id,row.revision,b.userId,60),ticket=await f.service.ticket(b,row.id);
   f.block();await assert.rejects(f.service.download(b,row.id,ticket.ticket),errorCode('not_found'));
   const ownTicket=await f.service.ticket(a,row.id);await f.service.revoke(a,row.id,shared.revision);
   await assert.rejects(f.service.download(a,row.id,ownTicket.ticket),errorCode('artifact_unavailable'));
+});
+test('expired grant and file cannot obtain fresh download authority',async t=>{
+  const f=await fixture(t),row=await f.service.saveText(a,f.request);
+  await f.service.share(a,row.id,row.revision,b.userId,60);f.advance(61000);
+  await assert.rejects(f.service.ticket(b,row.id),errorCode('not_found'));
+  f.advance(3600000);await assert.rejects(f.service.ticket(a,row.id),errorCode('artifact_unavailable'));
+});
+test('task cancellation during upload prevents ready state and later recovery',async t=>{
+  const f=await fixture(t);let admitted=true;const put=f.objects.put;
+  const service=createArtifactService({...f.deps,authorizeTask:async()=>admitted});
+  f.objects.put=async(...args)=>{await put(...args);admitted=false;};
+  await assert.rejects(service.generatedText(a,f.request,uid('task',1),uid('operation',1)),errorCode('task_not_admitted'));
+  const row=[...f.repo.rows.values()][0];assert.equal(row.state,'revoked');
+  assert.equal((await service.recover(a,row.id)).state,'revoked');
 });
 test('ticket expiry, tampering and changed sharing revision are rejected',async t=>{
   const f=await fixture(t),row=await f.service.saveText(a,f.request),ticket=await f.service.ticket(a,row.id);
@@ -163,4 +179,20 @@ test('Postgres reservation gets fresh snapshot after conflict; CAS carries tenan
   assert.equal(calls.length,2);assert.match(calls[0].sql,/DO NOTHING/);assert.match(calls[1].sql,/tenant_id=\$1 AND user_id=\$2/);
   assert.equal(await repo.change(a,'id',2,{state:'revoked',grants:[]}),null);
   assert.deepEqual(calls[2].values.slice(0,4),[a.tenantId,a.userId,'id',2]);
+});
+test('U02 task adapter persists once, confirms only file readback and rejects cancelled/forged scope',async t=>{
+  const f=await fixture(t),actor={...a,sessionDigest:'a'.repeat(64)};
+  let task={...a,taskId:uid('task',1),operationId:uid('operation',1),capabilityId:'files.create',capabilityVersion:1,scope:'private-assistant',phase:'running'};
+  const service=createArtifactService({...f.deps,authorizeTask:async()=>true});
+  const adapter=createArtifactTaskAdapter({service,repository:f.repo,readTask:async()=>task});
+  assert.deepEqual(await adapter.reconcile(actor,task.taskId),{status:'unknown'});
+  const doc={filename:f.request.filename,text:f.request.text,ttlSeconds:3600};
+  const file=await adapter.persist(actor,task.taskId,doc);
+  assert.equal('sessionDigest' in file,false);assert.equal('sessionDigest' in f.repo.rows.get(file.id),false);
+  assert.equal((await adapter.persist(actor,task.taskId,doc)).id,file.id);
+  assert.deepEqual(await adapter.reconcile(actor,task.taskId),{status:'confirmed',receiptRef:file.id});
+  await f.objects.delete(f.repo.rows.get(file.id).objectKey);
+  assert.deepEqual(await adapter.reconcile(actor,task.taskId),{status:'unknown'});
+  task={...task,phase:'cancelled'};await assert.rejects(adapter.persist(actor,task.taskId,doc),errorCode('task_not_admitted'));
+  task={...task,phase:'running',scope:'human-dm'};await assert.rejects(adapter.reconcile(actor,task.taskId),errorCode('task_not_admitted'));
 });

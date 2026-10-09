@@ -24,6 +24,7 @@ test('revoked session after storage I/O prevents returned download bytes',async(
     {download:async()=>({bytes:Buffer.from('secret'),mimeType:'text/plain',filename:'safe.txt',sha256:'hash'})});
   const result=await run('POST','/work-artifacts/:id/download',{ticket:'opaque'});
   assert.equal(result.status,401);assert.equal(Buffer.isBuffer(result.result),false);
+  assert.equal(result.headers['Content-Disposition'],undefined);assert.equal(result.headers['X-Artifact-SHA256'],undefined);
   assert.equal(result.headers['Cache-Control'],'no-store, private');
 });
 test('text create schema forbids forged provenance; server endpoint selects user text',async()=>{

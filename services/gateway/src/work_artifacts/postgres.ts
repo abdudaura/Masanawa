@@ -38,6 +38,11 @@ export function createArtifactRepository(db: QueryPort): ArtifactRepository {
       const result = await db.query('SELECT * FROM work_artifacts.files WHERE tenant_id=$1 AND id=$2',[tenantId,id]);
       return result.rows[0] ? row(result.rows[0]) : null;
     },
+    async findRequest(owner,requestId) {
+      const result=await db.query('SELECT * FROM work_artifacts.files WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3',
+        [owner.tenantId,owner.userId,requestId]);
+      return result.rows[0] ? row(result.rows[0]) : null;
+    },
     async change(owner,id,revision,patch) {
       const result = await db.query(`UPDATE work_artifacts.files SET state=$5,grants=$6::jsonb,revision=revision+1
         WHERE tenant_id=$1 AND user_id=$2 AND id=$3 AND revision=$4 RETURNING *`,
