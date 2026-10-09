@@ -172,6 +172,7 @@ class LearningProgressController extends ChangeNotifier {
   String _characterId;
   String _relationshipId;
   int _epoch = 0;
+  int _sessionRevision = 0;
   bool _disposed = false;
   bool _busy = false;
   LearningCheckpoint? _checkpoint;
@@ -179,6 +180,7 @@ class LearningProgressController extends ChangeNotifier {
   String? _lastActionState;
 
   bool get busy => _busy;
+  int get sessionRevision => _sessionRevision;
   LearningCheckpoint? get checkpoint => _checkpoint;
   String? get error => _error;
   String? get lastActionState => _lastActionState;
@@ -193,6 +195,7 @@ class LearningProgressController extends ChangeNotifier {
         _characterId == characterId &&
         _relationshipId == relationshipId) return;
     _epoch++;
+    _sessionRevision++;
     _accountKey = accountKey;
     _characterId = characterId;
     _relationshipId = relationshipId;
