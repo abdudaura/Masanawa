@@ -43,7 +43,8 @@ class _FakeContacts implements HumanContactsTransport {
   Future<String> request(String handle) async {
     requests++;
     if (deny) throw const FormatException('Request unavailable');
-    return pendingRequest == null ? 'pending' : pendingRequest!.future;
+    if (pendingRequest != null) return await pendingRequest!.future;
+    return 'pending';
   }
 
   @override
