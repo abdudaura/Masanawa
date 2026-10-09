@@ -18,6 +18,22 @@
       "claimed_at": "2026-10-09T09:03:36.239Z",
       "heartbeat_at": "2026-10-09T09:03:36.239Z",
       "expires_at": "2026-10-09T09:08:36.239Z"
+    },
+    {
+      "claim_id": "gpt6-c09-terminal-only-unbounded-revoke-20261009",
+      "owner": "GPT-6 C09 signal bounded delivery continuation",
+      "scope": "Never abandon terminal LiveKit revoke but cap nonterminal notification retries",
+      "paths": [
+        "services/gateway/src/human_calls/signal_worker.ts",
+        "services/gateway/src/human_calls/signal_worker.test.ts",
+        "docs/workstreams/c09-private-calls-20261009.md"
+      ],
+      "branch": "work/c09-private-calls-20261009-gpt6",
+      "pr": "https://github.com/Baatiku/masanawa/pull/575",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "claimed_at": "2026-10-09T09:04:15.640Z",
+      "heartbeat_at": "2026-10-09T09:04:15.640Z",
+      "expires_at": "2026-10-09T09:09:15.640Z"
     }
   ],
   "history": [
