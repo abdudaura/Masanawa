@@ -42,9 +42,9 @@
       "base_sha": "da324917d6387f1107348d43306294e589ca2d48",
       "pr": "https://github.com/Baatiku/masanawa/pull/525",
       "claimed_at": "2026-10-09T09:22:35.129Z",
-      "heartbeat_at": "2026-10-09T09:22:35.129Z",
-      "expires_at": "2026-10-09T09:27:35.129Z",
-      "notes": "Original #525 source preserved; #497 bb73b528 current inspected. No composer/router/migration/financial/native/manifest/CI changes. Next reproduce Vitest and strict TS, fix first action + DTO, publish immutable handoff."
+      "heartbeat_at": "2026-10-09T09:27:03.910Z",
+      "expires_at": "2026-10-09T09:32:03.910Z",
+      "notes": "Original #525 source preserved; #497 bb73b528 current inspected. No composer/router/migration/financial/native/manifest/CI changes. Next reproduce Vitest and strict TS, fix first action + DTO, publish immutable handoff. Tested source a0ba3c22c1f86336d0d2e46703c230ae1d372c65, 14 focused Vitest pass and strict typing pass."
     }
   ],
   "history": [
