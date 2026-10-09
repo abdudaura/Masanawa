@@ -128,6 +128,24 @@ describe("F04 AI Seat public error boundaries", () => {
     });
   });
 
+  it("maps canonical paid Seat expiration to an actionable conflict without raw error text", async () => {
+    await expect(perform("confirm", new Error("AI Seat quote has expired"))).rejects.toMatchObject({
+      code: "talks.ai_seat_quote_expired", statusCode: 409,
+    });
+    await expect(perform("decide", new Error("AI Seat authorization has expired"))).rejects.toMatchObject({
+      code: "talks.ai_seat_authorization_expired", statusCode: 409,
+    });
+  });
+
+  it("does not misclassify canonical Host and payer denials as transport outages", async () => {
+    await expect(perform("confirm", new Error("Only the quoted payer may confirm the AI Seat purchase"))).rejects.toMatchObject({
+      code: "talks.ai_seat_payer_forbidden", statusCode: 403,
+    });
+    await expect(perform("decide", new Error("Only the human Talk Host may admit an AI Seat"))).rejects.toMatchObject({
+      code: "talks.host_forbidden", statusCode: 403,
+    });
+  });
+
   it("retains service-owned canonical TalkAiSeatError without remapping", async () => {
     const trusted = new TalkAiSeatError("talks.ai_runtime_unavailable", 503);
     await expect(perform("confirm", trusted)).rejects.toBe(trusted);
