@@ -27,12 +27,12 @@ export async function verifyHumanDmRetentionTarget(input: {
   tenantId: string;
   expectedDatabase: string;
 }): Promise<{ database: string; role: string }> {
+  // An invalid or failed recheck must never leave an earlier run authorized.
+  authorizedRuns.delete(input.pool);
   if (!input.tenantId || input.tenantId.length > 256 ||
       !input.expectedDatabase || input.expectedDatabase.length > 128) {
     throw new Error("Incomplete C03 retention target");
   }
-  // Even a failed recheck revokes any earlier authorization on this pool.
-  authorizedRuns.delete(input.pool);
   const result = await input.pool.query(`
     SELECT current_database()::text AS database_name,
       current_user::text AS database_role,
