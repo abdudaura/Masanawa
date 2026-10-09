@@ -336,6 +336,32 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
           // A read may have completed but no irreversible effect was performed.
           throw new U04ReadError("OPERATOR_AUDIT_UNAVAILABLE", 503);
         }
+        // The audit sink is asynchronous too. Revocation during that write
+        // must suppress the already-computed return value before it escapes.
+        // Audit success records the domain read; a later fence rejection adds
+        // a failure event without including private output.
+        if (status === "succeeded") {
+          try {
+            const latest = await timeoutRead(input.sessions.authorize({
+              authorizationHeader: request.authorizationHeader,
+            }), timeoutMs);
+            if (latest.tenantId !== principal.tenantId || latest.userId !== principal.userId ||
+                !(await timeoutRead(input.bindSession({
+                  authorizationHeader: request.authorizationHeader, principal, identity: latest,
+                }), timeoutMs))) {
+              failure("OPERATOR_UNAUTHORIZED", 401);
+            }
+          } catch (error) {
+            const rejected = normalizeFailure(error);
+            try {
+              await timeoutRead(input.audit.append({ tenantId: identity.tenantId, userId: identity.userId,
+                capabilityId, requestId: action.requestId, status: "failed", code: rejected.code }), timeoutMs);
+            } catch {
+              throw new U04ReadError("OPERATOR_AUDIT_UNAVAILABLE", 503);
+            }
+            throw rejected;
+          }
+        }
       }
     },
   });
@@ -348,3 +374,4 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
 export function requireU04WriteQualification(_capabilityId: string): never {
   return unavailable();
 }
+

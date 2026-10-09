@@ -141,10 +141,39 @@ describe("U04 authoritative operator readers", () => {
   });
 
   it("never claims a missing domain is available", async () => {
-    const h = harness({ wallet: undefined, library: undefined });
-    expect(availableU04ReadCapabilities(h.deps)).not.toContain("wallet.balance.read");
-    await expect(run(h.service, action("wallet.balance.read")))
+    const h = harness();
+    const { wallet: _wallet, library: _library, ...deps } = h.deps;
+    expect(availableU04ReadCapabilities(deps)).not.toContain("wallet.balance.read");
+    await expect(run(createU04ReadService(deps), action("wallet.balance.read")))
       .rejects.toMatchObject({ code: "OPERATOR_NOT_QUALIFIED" });
+  });
+
+  it("suppresses private readback when the session is revoked during audit", async () => {
+    const h = harness();
+    h.append.mockImplementationOnce(async () => {
+      h.bindSession.mockResolvedValueOnce(false);
+    });
+    await expect(run(h.service, action("wallet.balance.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_UNAUTHORIZED" });
+    expect(h.wallet.balance).toHaveBeenCalledTimes(1);
+    expect(h.append).toHaveBeenLastCalledWith(expect.objectContaining({
+      status: "failed", code: "OPERATOR_UNAUTHORIZED",
+    }));
+  });
+
+  it("bounds the final authorization check after audit and hides a switched tenant", async () => {
+    const h = harness();
+    h.append.mockImplementationOnce(async () => {
+      h.sessions.authorize.mockResolvedValueOnce({ ...identity, tenantId: "tenant_B" } as PlatformSessionIdentity);
+    });
+    await expect(run(h.service, action("settings.profile.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_UNAUTHORIZED" });
+    const slow = harness({ timeoutMs: 50 });
+    slow.append.mockImplementationOnce(async () => {
+      slow.sessions.authorize.mockImplementationOnce(() => new Promise<never>(() => {}));
+    });
+    await expect(run(slow.service, action("accounts.me.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_SOURCE_TIMEOUT" });
   });
 
   it("enforces durable quota and suppresses sensitive output when audit fails", async () => {
@@ -211,3 +240,4 @@ describe("U04 authoritative operator readers", () => {
     }
   });
 });
+

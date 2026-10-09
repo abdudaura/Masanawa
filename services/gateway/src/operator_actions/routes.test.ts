@@ -43,6 +43,7 @@ describe("U04 gated operator-read HTTP seam", () => {
         payload: { proposal: { requestId: authorized.requestId } },
       });
       expect(reply.statusCode).toBe(200);
+      expect(reply.headers["cache-control"]).toBe("no-store");
       expect(reply.json().data).toEqual({ displayName: "Hauwa" });
       expect(authorizer.authorize).toHaveBeenCalledWith({
         authorizationHeader: "Bearer real-token", proposal: { requestId: authorized.requestId },
@@ -59,13 +60,35 @@ describe("U04 gated operator-read HTTP seam", () => {
     registerU04ReadRoutes(app, { authorizer: { authorize },
       reader: { read: vi.fn() } });
     try {
-      for (const hostileField of ["tenantId", "region", "role", "sessionId"]) {
+      for (const hostileField of ["tenantId", "userId", "accountId", "deviceId", "region", "role", "sessionId", "authorized", "principal", "__proto__", "constructor", "prototype"]) {
         const reply = await app.inject({ method: "POST", url: "/operator/v1/read",
           payload: { proposal: {}, [hostileField]: "admin" },
         });
         expect(reply.statusCode).toBe(400);
+        // Fastify's secure JSON parser rejects prototype keys even earlier.
+        if (hostileField !== "__proto__" && hostileField !== "constructor") {
+          expect(reply.json()).toEqual({ error: "OPERATOR_INVALID_PROPOSAL" });
+        }
+        expect(reply.headers["cache-control"]).toBe("no-store");
       }
       expect(authorize).not.toHaveBeenCalled();
+    } finally { await app.close(); }
+  });
+
+  it("rejects malformed envelopes before any authorizer or reader call", async () => {
+    const app = Fastify();
+    const authorize = vi.fn();
+    const read = vi.fn();
+    registerU04ReadRoutes(app, { authorizer: { authorize }, reader: { read } });
+    try {
+      for (const payload of ["null", "[]", '"text"', "{}", '{"proposal":{},"tenantId":"forged"}']) {
+        const reply = await app.inject({ method: "POST", url: "/operator/v1/read",
+          headers: { "content-type": "application/json" }, payload });
+        expect(reply.statusCode).toBe(400);
+        expect(reply.headers["cache-control"]).toBe("no-store");
+      }
+      expect(authorize).not.toHaveBeenCalled();
+      expect(read).not.toHaveBeenCalled();
     } finally { await app.close(); }
   });
 
@@ -109,3 +132,4 @@ describe("U04 gated operator-read HTTP seam", () => {
     } finally { await app.close(); }
   });
 });
+

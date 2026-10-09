@@ -39,6 +39,19 @@ export function registerU04ReadRoutes(
 ): void {
   app.post("/operator/v1/read", {
     bodyLimit: 12 * 1024,
+    onRequest: async (_request, reply) => {
+      reply.header("Cache-Control", "no-store");
+    },
+    // Fastify's default AJV configuration removes additional properties.
+    // Check the parsed body before schema validation can erase hostile fields.
+    preValidation: async (request, reply) => {
+      const body = request.body;
+      if (body === null || typeof body !== "object" || Array.isArray(body) ||
+          !Object.hasOwn(body, "proposal") ||
+          Object.keys(body).some(key => key !== "proposal")) {
+        return reply.code(400).send({ error: "OPERATOR_INVALID_PROPOSAL" });
+      }
+    },
     schema: {
       body: Type.Object({ proposal: Type.Unknown() }, { additionalProperties: false }),
     },
@@ -74,3 +87,4 @@ export function registerU04ReadRoutes(
     }
   });
 }
+
