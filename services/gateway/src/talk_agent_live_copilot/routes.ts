@@ -16,7 +16,14 @@ export function registerLiveStageCopilotRoutes(
   }, { additionalProperties: false });
   app.get(
     "/talks/:talkId/ai-stage/suggestions",
-    { schema: { params: talkParams } },
+    {
+      schema: { params: talkParams },
+      preValidation: async (request, reply) => {
+        if (request.query && Object.keys(request.query).length !== 0) {
+          return reply.code(400).send({ error: "talks.copilot_request_invalid" });
+        }
+      },
+    },
     async request => {
       const { talkId } = request.params as { talkId: string };
       return { suggestions: await service.suggestions({
@@ -27,6 +34,16 @@ export function registerLiveStageCopilotRoutes(
   app.post(
     "/talks/:talkId/ai-stage/seats/:seatId/turns",
     {
+      // Fastify's default Ajv removes additional properties. Inspect the
+      // original parsed body before validation can erase hostile fields.
+      preValidation: async (request, reply) => {
+        const body = request.body;
+        const allowed = new Set(["requestId", "hostApprovedTranscript"]);
+        if (!body || typeof body !== "object" || Array.isArray(body) ||
+            Object.keys(body).some(key => !allowed.has(key))) {
+          return reply.code(400).send({ error: "talks.copilot_request_invalid" });
+        }
+      },
       schema: {
         params: Type.Object({
           talkId: Type.String({ minLength: 1, maxLength: 160 }),

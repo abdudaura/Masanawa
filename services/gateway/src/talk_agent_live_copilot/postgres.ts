@@ -14,7 +14,7 @@ export function createPostgresStageHostAuthorizer(
     authorize(input: Readonly<{ authorizationHeader: string | undefined }>): Promise<PlatformSessionIdentity>;
   }>,
 ): LiveStageHostAuthorizer {
-  return Object.freeze({
+  return Object.freeze<LiveStageHostAuthorizer>({
     authorize: request => sessions.authorize(request),
     async isCurrentHost({ tenantId, talkId, userId }) {
       const row = await pool.query(
@@ -59,7 +59,7 @@ interface CountRow {
 export function createPostgresCopilotTurnStore(
   pool: Pick<Pool, "connect">,
 ): CopilotTurnStore {
-  return Object.freeze({
+  return Object.freeze<CopilotTurnStore>({
     async acquire(request) {
       const client: PoolClient = await pool.connect();
       const hash = transcriptHash(request);

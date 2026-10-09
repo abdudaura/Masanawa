@@ -4,6 +4,45 @@ import { registerLiveStageCopilotRoutes } from "./routes.js";
 import type { createLiveStageCopilot } from "./copilot.js";
 
 describe("U15 private Host copilot HTTP transport", () => {
+  it.each(["tenantId", "userId", "hostUserId", "payerUserId", "priceCredits", "outputText", "constructor"])(
+    "rejects extra %s before default Ajv can strip it", async key => {
+      const service = {
+        suggestions: vi.fn(async () => []),
+        approveTurn: vi.fn(async () => ({ status: "published", reason: "published" })),
+      };
+      const app = Fastify();
+      try {
+        registerLiveStageCopilotRoutes(app, service as unknown as ReturnType<typeof createLiveStageCopilot>);
+        const response = await app.inject({
+          method: "POST", url: "/talks/talk-1/ai-stage/seats/seat-1/turns",
+          payload: { requestId: "turn-1", hostApprovedTranscript: "Please answer", [key]: "forged" },
+        });
+        expect(response.statusCode).toBe(400);
+        expect(service.approveTurn).not.toHaveBeenCalled();
+      } finally { await app.close(); }
+    },
+  );
+
+  it("rejects forged suggestion query authority before reading public stage", async () => {
+    const service = { suggestions: vi.fn(async () => []), approveTurn: vi.fn() };
+    const app = Fastify();
+    try {
+      registerLiveStageCopilotRoutes(app, service as unknown as ReturnType<typeof createLiveStageCopilot>);
+      const response = await app.inject({
+        method: "GET", url: "/talks/talk-1/ai-stage/suggestions?tenantId=forged",
+      });
+      expect(response.statusCode).toBe(400);
+      expect(service.suggestions).not.toHaveBeenCalled();
+      const valid = await app.inject({
+        method: "GET", url: "/talks/talk-1/ai-stage/suggestions",
+        headers: { authorization: "Bearer genuine-session" },
+      });
+      expect(valid.statusCode).toBe(200);
+      expect(service.suggestions).toHaveBeenCalledWith({
+        authorizationHeader: "Bearer genuine-session", talkId: "talk-1",
+      });
+    } finally { await app.close(); }
+  });
   it("rejects fabricated tenant, payer and actor fields before touching authority", async () => {
     const service = {
       suggestions: vi.fn(),
