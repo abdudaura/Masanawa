@@ -30,6 +30,86 @@ function replayRepository(log:string[]):TalkReplayRepository{
   };
 }
 
+// Simulates two Gateway processes that have both observed an absent media
+// claim. PostgreSQL accepts one identity and rejects the other; cleanup must
+// never target the winner's object key.
+function startAttemptHarness(rejectClaims:ReadonlySet<number>){
+  const keys:string[]=[];
+  const stopped:string[]=[];
+  const deleted:string[]=[];
+  let claims=0;
+  const media:ReplayMediaRepository={
+    async current(){return null;},
+    async currentForTalk(){return null;},
+    async createStarted(request){
+      if(rejectClaims.has(++claims)){
+        throw new Error("talks.replay.media_identity_conflict");
+      }
+      return Object.freeze({
+        ...request,status:"recording" as const,completedAt:null,checksumSha256:null,
+      });
+    },
+    async markStopped(){},
+    async markReady(){},
+    async markAborted(){},
+    async playbackObject(){return null;},
+  };
+  const coordinator=createTalkReplayCoordinator({
+    replay:replayRepository([]),media,
+    egress:{
+      async start({objectKey}){
+        keys.push(objectKey);
+        return {egressId:`EG_${keys.length}`};
+      },
+      async stop(id){stopped.push(id);},
+    },
+    objects:{
+      async checksumSha256(){throw new Error("unused");},
+      async deleteObject(key){deleted.push(key);},
+      async presignGet(){throw new Error("unused");},
+    },
+    playbackTtlSeconds:300,
+  });
+  const request={
+    tenantId:"tenant_1",talkId:"talk_1",recordingId:"recording_1",
+    startedAt:"2026-10-07T10:00:00.000Z",
+  };
+  return {coordinator,keys,stopped,deleted,request};
+}
+
+describe("F09 unique private Egress attempt storage",()=>{
+  it("never deletes the winning recording when simultaneous starts race for one SQL identity",async()=>{
+    const f=startAttemptHarness(new Set([2]));
+    const results=await Promise.allSettled([
+      f.coordinator.start(f.request),
+      f.coordinator.start(f.request),
+    ]);
+    expect(results.map(result=>result.status)).toEqual(["fulfilled","rejected"]);
+    expect(f.keys).toHaveLength(2);
+    expect(f.keys[0]).not.toBe(f.keys[1]);
+    for(const key of f.keys){
+      expect(key).toMatch(
+        /^talk-replays\\/tenant_1\\/talk_1\\/recording_1_[0-9a-f-]{36}\\.ogg$/,
+      );
+    }
+    expect(f.stopped).toEqual(["EG_2"]);
+    expect(f.deleted).toEqual([f.keys[1]]);
+    expect(f.deleted).not.toContain(f.keys[0]);
+  });
+
+  it("creates a fresh object on retry after persistence failed and cleanup ran",async()=>{
+    const f=startAttemptHarness(new Set([1]));
+    await expect(f.coordinator.start(f.request))
+      .rejects.toThrow("talks.replay.media_identity_conflict");
+    await expect(f.coordinator.start(f.request)).resolves.toBeUndefined();
+    expect(f.keys).toHaveLength(2);
+    expect(f.keys[0]).not.toBe(f.keys[1]);
+    expect(f.stopped).toEqual(["EG_1"]);
+    expect(f.deleted).toEqual([f.keys[0]]);
+    expect(f.deleted).not.toContain(f.keys[1]);
+  });
+});
+
 describe("Talk replay Egress coordinator",()=>{
   it("stops LiveKit if media-job persistence fails after egress starts",async()=>{
     const stopped:string[]=[];
