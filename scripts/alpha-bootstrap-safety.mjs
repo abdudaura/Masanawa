@@ -58,7 +58,7 @@ export function assertAlphaBootstrapTarget(env = process.env) {
     deny("invalid PostgreSQL connection string");
   }
   if (!["postgres:", "postgresql:"].includes(url.protocol) || !url.hostname ||
-      url.hash || !url.pathname.startsWith("/")) {
+      url.hash || url.search || !url.pathname.startsWith("/")) {
     deny("an explicit PostgreSQL URL and database name are required");
   }
 
