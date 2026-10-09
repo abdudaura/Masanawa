@@ -64,16 +64,16 @@ function sameTalk(record: TalkRecord, prep: HostPrepRecord, talkId: string): boo
 }
 
 export interface HostPrepService {
-  create(input: { authorizationHeader?: string; title: string; topic: string; questions: readonly string[] }): Promise<HostPrepView>;
-  get(input: { authorizationHeader?: string; prepId: string }): Promise<HostPrepView>;
-  list(input: { authorizationHeader?: string }): Promise<readonly HostPrepView[]>;
-  edit(input: { authorizationHeader?: string; prepId: string; revision: number;
+  create(input: { authorizationHeader: string | undefined; title: string; topic: string; questions: readonly string[] }): Promise<HostPrepView>;
+  get(input: { authorizationHeader: string | undefined; prepId: string }): Promise<HostPrepView>;
+  list(input: { authorizationHeader: string | undefined }): Promise<readonly HostPrepView[]>;
+  edit(input: { authorizationHeader: string | undefined; prepId: string; revision: number;
     title: string; topic: string; questions: readonly string[] }): Promise<HostPrepView>;
-  goLive(input: { authorizationHeader?: string; prepId: string; revision: number;
+  goLive(input: { authorizationHeader: string | undefined; prepId: string; revision: number;
     confirmGoLive: true }): Promise<HostPrepView>;
-  verify(input: { authorizationHeader?: string; prepId: string }): Promise<HostPrepView>;
-  availableExperts(input: { authorizationHeader?: string; prepId: string }): Promise<readonly unknown[]>;
-  quoteExpert(input: { authorizationHeader?: string; prepId: string; personaId: string }): Promise<unknown>;
+  verify(input: { authorizationHeader: string | undefined; prepId: string }): Promise<HostPrepView>;
+  availableExperts(input: { authorizationHeader: string | undefined; prepId: string }): Promise<readonly unknown[]>;
+  quoteExpert(input: { authorizationHeader: string | undefined; prepId: string; personaId: string }): Promise<unknown>;
 }
 
 export function createHostPrepService(deps: {
