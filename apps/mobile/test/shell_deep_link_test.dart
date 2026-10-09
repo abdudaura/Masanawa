@@ -85,6 +85,44 @@ void main() {
     }
   });
 
+  test('resource links require one opaque ID and one character authority', () {
+    for (final kind in ['work', 'approval', 'artifact']) {
+      expect(
+        shellDeepLinkRoute(Uri.parse(
+          'masanawa://$kind/${kind}_123?characterId=character_abc',
+        )),
+        '/chat/character_abc',
+      );
+      for (final raw in [
+        'masanawa://$kind?characterId=character_abc',
+        'masanawa://$kind/',
+        'masanawa://$kind/${kind}_123/extra?characterId=character_abc',
+        'masanawa://$kind/${kind}%2F123?characterId=character_abc',
+        'masanawa://$kind/${kind}_123?characterId=character_abc&characterId=character_xyz',
+        'masanawa://$kind/${kind}_123?characterId=character_abc&characterId=character_abc',
+        'masanawa://$kind/${kind}_123?characterId=character_abc&other=1',
+      ]) {
+        expect(shellDeepLinkRoute(Uri.parse(raw)), isNull, reason: raw);
+      }
+    }
+  });
+
+  test('bounded, unambiguous chat links preserve private identity', () {
+    expect(shellDeepLinkRoute(Uri.parse('masanawa://chat/character_abc')),
+        '/chat/character_abc');
+    for (final raw in [
+      'masanawa://chat/character_abc?characterId=character_abc',
+      'masanawa://chat/character_abc?characterId=character_abc&characterId=character_xyz',
+      'masanawa://owner-session/character_abc/request_owner_123?x=1&x=2',
+      'masanawa://chat/character_${'a' * 247}',
+      'masanawa://work/work_123?characterId=character_${'a' * 247}',
+      'masanawa://work/${'a' * 257}?characterId=character_abc',
+      'masanawa://chat/${'character_abc' + 'a' * 2048}',
+    ]) {
+      expect(shellDeepLinkRoute(Uri.parse(raw)), isNull, reason: raw);
+    }
+  });
+
   test('resource link without a conversation opens the conversation list', () {
     expect(shellDeepLinkRoute(Uri.parse('masanawa://approval/approval_123')),
         '/chats');
