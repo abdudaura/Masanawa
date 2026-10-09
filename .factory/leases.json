@@ -96,9 +96,9 @@
       "branch": "work/af13-evidence-gate-20261009-masanawa01",
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
       "claimed_at": "2026-10-09T21:36:29.049Z",
-      "heartbeat_at": "2026-10-09T21:36:29.049Z",
-      "expires_at": "2026-10-09T21:41:29.049Z",
-      "notes": "AF00 source baseline available; isolated qualification utility/tests only, no shared runtime or CI, no competing AF claims."
+      "heartbeat_at": "2026-10-09T21:40:34.624Z",
+      "expires_at": "2026-10-09T21:45:34.624Z",
+      "notes": "Working tool/tests pushed and read back; 14/14 real local Node tests against exact Git blob bytes; preparing SHA-specific handoff."
     }
   ],
   "history": [
