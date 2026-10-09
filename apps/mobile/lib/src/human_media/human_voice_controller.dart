@@ -334,6 +334,10 @@ class HumanVoiceController extends ChangeNotifier {
   }
   Future<void> delete(HumanVoiceNote note) async {
     if(closed||note.senderUserId!=ownerUserId||note.conversationId!=conversationId)return;
+    // A user deleting their own message must not leave its private audio
+    // playing or cached on this device while the server deletion is pending.
+    if(playingMessageId==note.messageId)await stopPlayback();
+    if(closed)return;
     try{
       await transport.remove(note.messageId);
       if(closed)return;
