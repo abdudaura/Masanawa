@@ -63,3 +63,40 @@
 - **Exclusive exact files for this continuation:** `packages/operator-contract/src/index.js`, `packages/operator-contract/src/index.d.ts`, `packages/operator-contract/test/index.test.mjs`, and this handoff. No other package, Gateway composition, U02, C07, Flutter, Firebase, migrations, signing or financial files.
 - **Defect to address:** callback-based authorization currently accepts truthy values including rejected asynchronous Promise objects; strengthen fail-closed authorization and invalid/missing approval identity bindings, with regression tests. Preserve protocol V1 API and compatibility.
 - **Step/status:** claim before source edit; implementation pending; tests pending. No production access or release evidence claimed. Lease requires fresh repository-visible activity every five minutes.
+
+## 2026-10-09T02:55:50.125Z — U01 authorization/approval security recovery checkpoint (this continuation)
+
+**Status:** source repaired with focused verification only; U01 as a whole remains **PARTIAL_IMPLEMENTATION**, draft/unmerged, not release-qualified.
+
+### Scope, commits, exact changed files
+- Continued existing stale draft #519 on `work/u01-operator-contract-20261009-gpt6`; starting branch head `0555f9bfb4f41908860a9c6cd13923186d7f9109`, from `main` `5e758673ae91082520b21b3153da53791ae2cbf3`.
+- Ownership claim commit `757ab639a64c5987df17ad5be601dbb9b81f39d8` confirmed by immediate GitHub readback.
+- Source correction `ba37876468c2251dc5663fb57b7cd1ad2139e289`, regression tests `ea7c042fe785bf4950efcc8c45012101337d77e8`, preserve original not-qualified error `529b0b461ffc4375ac87e6466d4c78fd72a99327`.
+- **Files changed:** only `packages/operator-contract/src/index.js`, `packages/operator-contract/test/index.test.mjs`, and this workstream record. No source in other U/C/R/F areas; existing JS/TS public exported signatures unchanged. `index.d.ts` still correctly declares synchronous `boolean` authorizer callbacks.
+- Canonical contract: `docs/AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md`, sections 1–3 and 6. U02/03/04/C07 integration contracts unchanged; all executable domain integrations remain owner responsibilities.
+
+### Security defects and observable behavior
+1. Prior permission checks used `if(!authorizeCapability(...))` and `if(!authorizeContext(...))`. A Promise is truthy even if resolving to `false`, so passing an async callback accidentally granted unauthorized resource/capability admission. The gate now demands the exact synchronous boolean `true`, rejects all promises/truthy substitutes, catches policy exceptions and returns only sanitized `not_authorized`. Async policy evaluation must be resolved and committed by the Gateway before calling this synchronous contract; check again before domain execution.
+2. Old persisted-ticket comparisons could succeed with **both issued/principal or issued/expected identity fields missing** (undefined === undefined). Approval verification now requires actual present, nonblank user/tenant/account/session/device, operation/capability/revision, ticket ID and safe temporal/contract-version records. Expired, used, malformed and hollow tickets fail closed. This does not make caller-provided tickets trusted: only U02's authenticated DB lookup/transaction can supply `issued`.
+3. Duplicate same-ID/version capability registry entries now fail as `invalid_catalog` rather than silently selecting one. Missing/unknown capability still returns the existing `not_qualified` code. Blank principal strings reject at the common `str` guard.
+
+### Actual verification (not CI/Node)
+- Executed the **actual committed source and all nine authored Node test callback bodies** under a portable V8 adapter, substituting only `node:test` and `node:assert/strict` harness primitives because this connector environment cannot mount an authenticated repository checkout. **9/9 test groups PASS, 0 FAIL**, against source blob `14d2d270e1498e2ecbc46321d35ec8f1d4879cf7` and test blob `c3f59568f82c7b607164cb337b6be3e43454ffe8`.
+- Ran five additional property probes where both DB approval and principal omit each one of tenantId/userId/accountId/sessionId/deviceId: **5/5 rejected with `approval_invalid`**.
+- An earlier intermediate V8 run was 8/9 because unknown capability returned `invalid_catalog`; corrected in commit `529b0b4` and reran 9/9. Do not report the intermediate result as final.
+- **NOT RUN:** `node --test packages/operator-contract/test/index.test.mjs`, `pnpm --filter @masanawa/operator-contract test`, `pnpm --filter @masanawa/operator-contract typecheck`, root `pnpm test:ci`, `pnpm build`, Flutter analyze/test/APK, PostgreSQL integration, authenticated Gateway E2E, two-device replay, finance/providers and signed release. Container offers Node 22.16 but has no authenticated checkout/pnpm; repo requires Node >=24. GH Actions issue #457 reports zero-step failed jobs and remains a blocker; no CI success inferred.
+
+### Integration requirements and remaining risks
+- U02: issue random DB-persisted ticket IDs; bind and transactionally consume to exact user/session/device/account/operation, revision, canonical terms, nonce/idempotency; verify approval at execution under durable lock, not just in this pure function.
+- C07/Gateway/U04: resolve async authorization before contract admission or create a fully awaited adapter; **never pass a Promise**. Revalidate live tenant/DM membership/blocked/financial domain consent before execution. Domain-specific input schema, cost limits and immutable receipts are not introduced by this fix.
+- U03/Flutter: show exact terms and arm explicit accessible tap/text/voice confirmation; stale approval and post-logout card must remain inert; no new UI wired here.
+- No migrations, money movements, customer/provider traffic, secrets, production deployment, root router edits, Firebase changes, merges or branch deletion.
+- Final integrator should run Node 24+ focused tests and typecheck, inspect upstream async policy call sites, exercise real U02 + Gateway and Android provider/voice flows, and reconcile PR head before considering merge. Rollback: omit unmerged isolated U01 package from Gateway composition (currently not composed).
+
+| Gate | Current result |
+| --- | --- |
+| Source authored and committed | YES — narrow U01 fail-closed security recovery |
+| Focused logic | PASS — 9/9 actual-source V8 adapted test bodies; 5/5 missing-identity probes |
+| Actual Node/pnpm & CI | NOT RUN / BLOCKED |
+| Authenticated API/DB/provider/device/Flutter | NOT INTEGRATED / UNVERIFIED |
+| PR / release | DRAFT, UNMERGED, NOT DEPLOYED |
