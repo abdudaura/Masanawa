@@ -76,7 +76,8 @@ class GatewayHumanVoiceTransport implements HumanVoiceTransport {
     // headers, explicitly subscribe then cancel to close the upstream HTTP
     // response without waiting for any attacker-controlled body bytes.
     Future<void> cancelUnread() async {
-      final subscription=stream.stream.listen((_) {});
+      final subscription=stream.stream.listen((_) {},
+          onError:(Object _,StackTrace __) {});
       await subscription.cancel();
     }
     final type=response.headers.value(Headers.contentTypeHeader)
