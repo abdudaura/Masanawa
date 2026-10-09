@@ -298,10 +298,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       Text(_error ?? 'Your profile is unavailable.'),
                       const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: _load,
-                        child: const Text('Try again'),
-                      ),
+                      if (_accountId != null)
+                        FilledButton(
+                          onPressed: _load,
+                          child: const Text('Try again'),
+                        ),
                     ],
                   ),
                 )
