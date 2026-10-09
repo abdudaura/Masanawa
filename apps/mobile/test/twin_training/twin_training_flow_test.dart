@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/agents/clone_onboarding.dart';
-import 'package:masanawa_mobile/src/agents/creator_clone.dart';
-import 'package:masanawa_mobile/src/agents/twin_profile.dart';
-import 'package:masanawa_mobile/src/state/clone_onboarding_controller.dart';
-import 'package:masanawa_mobile/src/twin_training/twin_training_flow.dart';
+import 'package:masanawa/src/agents/clone_onboarding.dart';
+import 'package:masanawa/src/agents/creator_clone.dart';
+import 'package:masanawa/src/agents/twin_profile.dart';
+import 'package:masanawa/src/state/clone_onboarding_controller.dart';
+import 'package:masanawa/src/twin_training/twin_training_flow.dart';
 
 const _requestId = 'request_019a1b2c-1234-7abc-8abc-0123456789ab';
 const _char = 'character_019a1b2c-1234-7abc-8abc-0123456789ab';
