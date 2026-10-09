@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../agents/clone_onboarding.dart';
 import 'twin_training_flow.dart';
 
 /// Nested Agents/My Twin interview. F12 owns its navigation insertion.
@@ -67,6 +68,7 @@ class _TwinTrainingScreenState extends State<TwinTrainingScreen> {
     try {
       final reviewed = await widget.onPrivateTest!(id);
       if (!mounted) return;
+      setState(() => _publishConfirmed = false);
       widget.flow.setPrivateTestReviewed(reviewed);
       if (!reviewed) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -243,7 +245,7 @@ class _SavedLine extends StatelessWidget {
 
 class _SavedProfile extends StatelessWidget {
   const _SavedProfile(this.profile);
-  final dynamic profile;
+  final CloneSetupProfile profile;
 
   @override
   Widget build(BuildContext context) => Column(
