@@ -23,8 +23,8 @@
       "base_sha": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
       "pr": "pending stacked draft PR",
       "claimed_at": "2026-10-09T09:13:07.942Z",
-      "heartbeat_at": "2026-10-09T09:21:00.640Z",
-      "expires_at": "2026-10-09T09:26:00.640Z",
+      "heartbeat_at": "2026-10-09T09:23:44.692Z",
+      "expires_at": "2026-10-09T09:28:44.693Z",
       "notes": "Base latest #497 Work, preserve existing C09 PR #575. C09 approved user; isolated claimed shared app/main/flutter only; no prod deploy/merge while unverified."
     },
     {
