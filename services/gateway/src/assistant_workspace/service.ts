@@ -72,11 +72,22 @@ function roleOf(entry: MobileAgentDirectoryEntry): AssistantRole | null {
   if (!entry.supportAgent) return null;
   const name = entry.displayName.trim().toLowerCase();
   const voice = entry.voiceName?.trim().toLowerCase();
-  if (name === "gwani") return "gwani";
-  if (name === "gwana") return "gwana";
-  if (voice === "bodi") return "gwani";
-  if (voice === "sulafat") return "gwana";
-  return null;
+  const byName: AssistantRole | null =
+    name === "gwani" || name === "gwana" ? name : null;
+  const byVoice: AssistantRole | null =
+    voice === "bodi" ? "gwani" : voice === "sulafat" ? "gwana" : null;
+
+  // Both fields are authenticated directory metadata, but neither is a
+  // canonical immutable role ID. Never silently prefer one when they disagree:
+  // that could attribute a turn, pending status or private history to the
+  // wrong assistant. F03 must eventually provide stable server role codes.
+  if (byName && byVoice && byName !== byVoice) {
+    throw rejected(
+      "assistant.support_identity_conflict",
+      "Support assistant identity is inconsistent. Please retry later.",
+    );
+  }
+  return byName ?? byVoice;
 }
 
 function validateRoles(entries: readonly MobileAgentDirectoryEntry[]): {
@@ -86,7 +97,17 @@ function validateRoles(entries: readonly MobileAgentDirectoryEntry[]): {
   const byRole: Partial<Record<AssistantRole, MobileAgentDirectoryEntry>> = {};
   for (const entry of entries) {
     const role = roleOf(entry);
-    if (role === null) continue;
+    if (role === null) {
+      // A currently selected support identity that we cannot attribute to
+      // Gwani or Gwana must not be silently replaced by the Gwani fallback.
+      if (entry.supportAgent && entry.defaultPlatformAgent) {
+        throw rejected(
+          "assistant.selected_support_unrecognized",
+          "Selected support assistant is unavailable in this workspace.",
+        );
+      }
+      continue;
+    }
     if (byRole[role]) {
       throw rejected(
         "assistant.ambiguous_support_identity",
