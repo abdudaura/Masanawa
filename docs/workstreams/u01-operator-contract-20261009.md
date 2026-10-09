@@ -55,3 +55,11 @@
 | MERGED | **NO**, draft #519 |
 
 **Final handoff status remains PARTIAL_IMPLEMENTATION** because the full connected runtime and applicable integration verification are not present. The committed package is a substantive reusable protocol and a narrowly scoped continuation, not a completed Masanawa operator.
+
+## 2026-10-09T02:53:08.795Z — fresh five-minute U01 continuation claim
+
+- **Claimant:** GPT-6 U01 security/contract recovery window. Existing #519 activity from 2026-10-08T23:54:26Z was stale (>5 minutes); inspected existing PR diff, source, tests, original handoff and current main `5e758673ae91082520b21b3153da53791ae2cbf3`.
+- **Existing branch adopted:** `work/u01-operator-contract-20261009-gpt6`, initial head `0555f9bfb4f41908860a9c6cd13923186d7f9109`. Do not replace earlier commits or create a competing U01 protocol.
+- **Exclusive exact files for this continuation:** `packages/operator-contract/src/index.js`, `packages/operator-contract/src/index.d.ts`, `packages/operator-contract/test/index.test.mjs`, and this handoff. No other package, Gateway composition, U02, C07, Flutter, Firebase, migrations, signing or financial files.
+- **Defect to address:** callback-based authorization currently accepts truthy values including rejected asynchronous Promise objects; strengthen fail-closed authorization and invalid/missing approval identity bindings, with regression tests. Preserve protocol V1 API and compatibility.
+- **Step/status:** claim before source edit; implementation pending; tests pending. No production access or release evidence claimed. Lease requires fresh repository-visible activity every five minutes.
