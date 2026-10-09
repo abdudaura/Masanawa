@@ -224,7 +224,7 @@ void main() {
   });
 
   test('membership revoked during upload suppresses success', () async {
-    var authorized = true;
+    var checks = 0;
     final transport = _Upload((id, progress) async => PrivateMediaReceipt(
       messageId: 'm1',
       accountId: 'A',
@@ -235,25 +235,16 @@ void main() {
       accountId: 'A',
       conversationId: 'C',
       picker: _Picker(() async => png),
-      isAuthorized: () async => authorized,
+      // Two selection checks and pre-send are allowed; readback denied.
+      isAuthorized: () async => ++checks <= 3,
       uploadPort: transport,
     );
     await controller.choose();
-    // First auth check is true; second fails after backend call.
-    var checks = 0;
-    authorized = true;
-    final fenced = PrivateMediaReviewController(
-      accountId: 'A',
-      conversationId: 'C',
-      picker: _Picker(() async => png),
-      isAuthorized: () async => ++checks == 1 || checks == 2,
-      uploadPort: transport,
-    );
-    await fenced.choose();
-    await fenced.send();
-    expect(fenced.receipt, isNull);
-    expect(fenced.phase, PrivateMediaPhase.empty);
+    await controller.send();
+    expect(transport.requests, hasLength(1));
+    expect(checks, 4);
+    expect(controller.receipt, isNull);
+    expect(controller.phase, PrivateMediaPhase.empty);
     controller.dispose();
-    fenced.dispose();
   });
 }
