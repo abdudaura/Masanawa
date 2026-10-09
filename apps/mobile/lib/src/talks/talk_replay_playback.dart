@@ -142,9 +142,10 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   }
 
   void _deny() {
-    // Revoke locally as well as refusing future authenticated URL fetches.
-    unawaited(player.pause().catchError((Object _) {}));
+    // Fail first: pause may synchronously emit another native player event.
+    // Clear private credentials before the callback can observe any state.
     _fail();
+    unawaited(player.pause().catchError((Object _) {}));
   }
 
   final _snapshots = StreamController<TalkReplayPlaybackSnapshot>.broadcast(
@@ -170,24 +171,34 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     if (!_snapshots.isClosed) _snapshots.add(snapshot);
   }
 
+  // Native position/duration events may arrive after logout or while a
+  // signed URL expires. Never let callbacks keep stale private replay alive.
+  bool _allowActivePlayerEvent() {
+    if (_closed ||
+        _snapshot.status == TalkReplayPlaybackStatus.failed ||
+        _snapshot.status == TalkReplayPlaybackStatus.loading ||
+        _snapshot.status == TalkReplayPlaybackStatus.idle) {
+      return false;
+    }
+    if (!_authorized() || !(_credentials?.isFresh(_now()) ?? false)) {
+      _deny();
+      return false;
+    }
+    return true;
+  }
+
   void _positionChanged(Duration position) {
-    if (_snapshot.status == TalkReplayPlaybackStatus.failed ||
-        _snapshot.status == TalkReplayPlaybackStatus.loading) return;
+    if (!_allowActivePlayerEvent()) return;
     _emit(_snapshot.copyWith(position: position));
   }
 
   void _durationChanged(Duration? duration) {
-    if (duration == null ||
-        _snapshot.status == TalkReplayPlaybackStatus.failed ||
-        _snapshot.status == TalkReplayPlaybackStatus.loading) return;
+    if (duration == null || !_allowActivePlayerEvent()) return;
     _emit(_snapshot.copyWith(duration: duration));
   }
 
   void _playerStateChanged(TalkReplayPlayerState state) {
-    if (_closed ||
-        !_authorized() ||
-        _snapshot.status == TalkReplayPlaybackStatus.failed ||
-        _snapshot.status == TalkReplayPlaybackStatus.loading) return;
+    if (!_allowActivePlayerEvent()) return;
     switch (state) {
       case TalkReplayPlayerState.playing:
         _emit(
@@ -401,6 +412,13 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
     }
     try {
       await player.seek(position);
+      if (_closed) return;
+      // Cached-link seeks are asynchronous too. Permission or signature
+      // freshness can change while a native player seek is pending.
+      if (!_authorized() || !(_credentials?.isFresh(_now()) ?? false)) {
+        _deny();
+        return;
+      }
     } catch (_) {
       _fail();
     }
