@@ -53,4 +53,37 @@ describe("C09 private call signal processing",()=>{
     await expect(processHumanCallSignals({...x,maxBatch:51})).rejects.toThrow();
     expect(x.sql).toEqual([]);
   });
+  it("terminates ongoing call admission after block, contact revoke or inactive user",async()=>{
+    const x=setup("ringing");
+    await processHumanCallSignals(x);
+    const sql=x.sql.join("\n");
+    expect(sql).toContain("contact.status='accepted'");
+    expect(sql).toContain("contact.revoked_by IS NULL");
+    expect(sql).toContain("s.blocked=true");
+    expect(sql).toContain("s.visibility IN ('blocked','restricted')");
+    expect(sql).toContain("a.state='active'");
+    expect(sql).toContain("b.state='active'");
+    expect(sql).toContain("FOR UPDATE OF c SKIP LOCKED LIMIT $1");
+    expect(sql).toContain("WHEN c.state='ringing' THEN 'cancelled' ELSE 'ended'");
+    expect(sql).toContain("FROM revoked x");
+  });
+  it("never permanently abandons a failed room-revocation signal",async()=>{
+    const x=setup("ended");
+    let failures=1;
+    const revoker={async closeRoom(room:string) {
+      if(failures-->0)throw Error("temporary provider outage");
+      x.rooms.push(room);
+    }};
+    expect(await processHumanCallSignals({...x,revoker})).toEqual({
+      handled:0,failed:1,
+    });
+    expect(x.sql.join("\n")).not.toContain("attempt_count < 10");
+    expect(x.sql.join("\n")).toContain("interval '5 minutes'");
+    expect(await processHumanCallSignals({...x,revoker})).toEqual({
+      handled:1,failed:0,
+    });
+    expect(x.rooms).toEqual(["human-call_opaque-uuid"]);
+    expect(x.push).toEqual(["42"]);
+  });
+
 });
