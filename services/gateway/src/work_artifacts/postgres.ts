@@ -50,7 +50,7 @@ export function createArtifactRepository(db: QueryPort): ArtifactRepository {
       return result.rows[0] ? row(result.rows[0]) : null;
     },
     async list(owner,after,limit) {
-      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 31) throw new TypeError('Invalid page size');
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 51) throw new TypeError('Invalid page size');
       const result = await db.query(`SELECT * FROM work_artifacts.files
         WHERE tenant_id=$1 AND user_id=$2 AND ($3::text IS NULL OR id > $3) ORDER BY id LIMIT $4`,
         [owner.tenantId,owner.userId,after ?? null,limit]);

@@ -62,10 +62,20 @@ import { createArtifactTaskAdapter } from './work_artifacts/task_adapter.js';
    and failed deletion persist; `deleted` tombstones are swept until expiry plus
    one hour to remove late PUTs. Keep per-operation storage timeout at 15 seconds.
    Test actual provider consistency/retention and bucket private/SSE policy.
-6. F08 must deny new account operations, remove all owner files through the same
-   service, ensure physical erasure, then remove quota/metadata rows before the
-   profile FK is deleted. Do not cascade metadata before deleting private bytes.
-   This hook is not yet mounted in the account-deletion worker.
+6. F08 creates `accountErasure({isQuiesced,verifyErasure})` from the composed
+   domain and calls it from its trusted deletion worker. `isQuiesced` must prove
+   durable admission denial AND drainage of every admitted/uncertain provider
+   PUT; a signed-out UI alone is insufficient. `verifyErasure` must qualify all
+   retained versions/replicas under the actual provider policy. S3 `isAbsent`
+   is only a HEAD readability probe: 404 alone cannot erase old versions.
+   Start without a cursor, persist the returned `next` only on success, and
+   repeat bounded 50-file batches while preserving the same durable fence.
+   Never accept an HTTP/client cursor. On any exception retry the previous
+   batch; tombstones are re-deleted, absence is verified, grants are cleared,
+   and metadata is retained. `next:null` qualifies this fenced artifact scan,
+   not whole-account completion. F08 must then remove artifact metadata/quota
+   in its coordinated transaction before deleting the profile FK. This real
+   source hook is not yet mounted in the account-deletion worker.
 7. F12/C07 render `ArtifactCard` for real `media-artifact_*` result references;
    provide `GatewayArtifactTransport` the current canonical ApiClient and a
    synchronous signed-in tenant/user identity getter. Bind controller on every
@@ -106,13 +116,21 @@ Run exact TypeScript runtime sources with Node 24 (type erasure, **not tsc**):
 node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/*.test.mjs
 ```
 
-The 27 passing cases use real temporary file I/O and injected metadata/policy
-test doubles. They are not evidence of live S3, Postgres, Fastify or Android.
-Separate tests deliberately require dependencies/environment and are NOT part
-of that successful command:
+The 34 unit/handler cases use real temporary file I/O and injected metadata/
+policy test doubles. Three additional executed integration cases cover real
+Fastify 5.12.5 HTTP injection, exact SQL on PGlite 0.3.14 (embedded PostgreSQL
+WASM), and HTTP -> SQL -> filesystem -> two-account share/revoke -> erasure.
+All 37 pass. Embedded PostgreSQL is not a multi-process server/locking test;
+session/contact adapters remain test doubles. No live S3 or Android claim.
+Six core backend modules also pass TypeScript 5.9.3 with the repository's strict
+compiler options and Node 24 typings. Full workspace/routes/composer build is
+still a separate gate. Runtime type erasure initially missed a Buffer generic
+inference incompatibility in S3 request bodies; the typed bounded byte copy fixes it.
+
+Execute the additional dependency-backed harnesses explicitly:
 
 ```sh
-node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/fastify.integration.mjs
+node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/fastify.integration.mjs services/gateway/src/work_artifacts/tests/embedded_postgres.integration.mjs services/gateway/src/work_artifacts/tests/flow.integration.mjs
 MASANAWA_ARTIFACT_DISPOSABLE=yes MASANAWA_ARTIFACT_TEST_DATABASE_URL='<dedicated empty masanawa_test_* database>' node --import ./services/gateway/src/work_artifacts/tests/register.mjs --test services/gateway/src/work_artifacts/tests/postgres.integration.mjs
 pnpm --filter @masanawa/gateway-service typecheck
 cd apps/mobile

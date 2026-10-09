@@ -9,13 +9,13 @@ const mac = (k: Buffer | string, s: string) => createHmac('sha256',k).update(s).
 export function createArtifactS3(input: {
   endpoint:string; region:string; bucket:string; accessKey:string; secretKey:string;
   fetchImpl?:typeof fetch; now?:()=>Date;
-}): ArtifactObjectStore {
+}): ArtifactObjectStore & { isAbsent(key:string):Promise<boolean> } {
   const origin = new URL(input.endpoint);
   if (origin.protocol !== 'https:' || origin.pathname !== '/' || origin.username || origin.password || origin.search || origin.hash ||
     !/^[a-z0-9][a-z0-9.-]{2,62}$/.test(input.bucket) || input.bucket.includes('..') ||
     !/^[a-z0-9-]{2,48}$/.test(input.region) || !input.accessKey.trim() || input.secretKey.length < 16) throw new TypeError('Invalid private store config');
   const fetcher = input.fetchImpl ?? fetch;
-  async function request(method:'GET'|'PUT'|'DELETE',key:string,body=Buffer.alloc(0)) {
+  async function request(method:'GET'|'PUT'|'DELETE'|'HEAD',key:string,body:Buffer=Buffer.alloc(0)) {
     if (!/^work-artifacts\/[a-f0-9]{64}\/media-artifact_[a-f0-9-]{36}\.txt$/.test(key)) throw new TypeError('Invalid artifact object key');
     const url = new URL(origin); url.pathname = '/'+[input.bucket,...key.split('/')].map(encodeURIComponent).join('/');
     const stamp = (input.now?.() ?? new Date()).toISOString().replace(/[:-]|\.\d{3}/g,'');
@@ -27,9 +27,18 @@ export function createArtifactS3(input: {
     const signing=mac(mac(mac(mac('AWS4'+input.secretKey,day),input.region),'s3'),'aws4_request');
     const signature=createHmac('sha256',signing).update(['AWS4-HMAC-SHA256',stamp,scope,hash(canonical)].join('\n')).digest('hex');
     headers.authorization=`AWS4-HMAC-SHA256 Credential=${input.accessKey}/${scope}, SignedHeaders=${signed}, Signature=${signature}`;
-    return fetcher(url,{method,headers,...(method==='PUT'?{body}:{}),redirect:'error',signal:AbortSignal.timeout(15000)});
+    return fetcher(url,{method,headers,...(method==='PUT'?{body:new Uint8Array(body)}:{}),redirect:'error',signal:AbortSignal.timeout(15000)});
   }
   return {
+    async isAbsent(key) {
+      // Current-key readability probe only. Versioned/retained objects require a separate
+      // qualified erasure policy; HEAD 404 does not prove physical deletion of old versions.
+      const response=await request('HEAD',key); await response.body?.cancel();
+      // Access denied, server errors and timeouts never prove erasure.
+      if (response.status===404) return true;
+      if (response.ok) return false;
+      throw new Error('artifact_erasure_unverified');
+    },
     async put(key,bytes) {
       if (!Buffer.isBuffer(bytes) || bytes.length<1 || bytes.length>MAX_BYTES) throw new TypeError('Invalid artifact size');
       const response=await request('PUT',key,bytes);
