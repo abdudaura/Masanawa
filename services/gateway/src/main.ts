@@ -2474,7 +2474,7 @@ export async function startGatewayService(
               title: "Masanawa private call",
               body: signal.eventType === "ringing" ? "Incoming call. Open Chats to answer." :
                 "Your call status has changed.",
-              data: { type: "human_private_call", callId: signal.callId },
+              data: { type: "human_private_call", callId: signal.callId, eventType: signal.eventType },
             });
           },
         },
