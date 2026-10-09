@@ -33,7 +33,7 @@ class GatewayHumanCallTransport implements HumanCallTransport {
   }) async {
     _auth();
     final response=await api.dio.post<dynamic>(
-      '/messages/calls',
+      '/v1/messages/calls',
       data:{
         'conversationId':conversationId,
         'requestId':requestId,
@@ -46,7 +46,7 @@ class GatewayHumanCallTransport implements HumanCallTransport {
   @override
   Future<HumanCall> get(String callId) async {
     _auth();
-    final response=await api.dio.get<dynamic>('/messages/calls/${Uri.encodeComponent(callId)}');
+    final response=await api.dio.get<dynamic>('/v1/messages/calls/${Uri.encodeComponent(callId)}');
     return HumanCall.fromJson(response.data);
   }
 
@@ -57,7 +57,7 @@ class GatewayHumanCallTransport implements HumanCallTransport {
       throw ArgumentError.value(action,'action','Unknown call transition');
     }
     final response=await api.dio.post<dynamic>(
-      '/messages/calls/${Uri.encodeComponent(callId)}/$action',data:<String,dynamic>{},
+      '/v1/messages/calls/${Uri.encodeComponent(callId)}/$action',data:<String,dynamic>{},
     );
     return HumanCall.fromJson(response.data);
   }
@@ -66,7 +66,7 @@ class GatewayHumanCallTransport implements HumanCallTransport {
   Future<HumanCallCredentials> credentials(String callId) async {
     _auth();
     final response=await api.dio.post<dynamic>(
-      '/messages/calls/${Uri.encodeComponent(callId)}/media-token',
+      '/v1/messages/calls/${Uri.encodeComponent(callId)}/media-token',
       data:<String,dynamic>{},
     );
     return HumanCallCredentials.fromJson(response.data,callId);
@@ -76,7 +76,7 @@ class GatewayHumanCallTransport implements HumanCallTransport {
   Future<List<HumanCall>> recent() async {
     _auth();
     final response=await api.dio.get<dynamic>(
-      '/messages/calls',queryParameters:{'limit':30},
+      '/v1/messages/calls',queryParameters:{'limit':30},
     );
     if (response.data is! Map) throw const FormatException('Invalid private calls list');
     final map=Map<String,dynamic>.from(response.data as Map);
