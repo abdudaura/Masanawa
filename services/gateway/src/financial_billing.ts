@@ -115,7 +115,7 @@ function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): strin
 
   return resolve([
     payload.customer_reference, payload.tx_ref,
-    data?.customer_reference, data?.tx_ref,
+    data?.customer_reference,
   ]) ?? resolve([payload.reference, data?.reference]);
 }
 
