@@ -35,6 +35,46 @@ function harness() {
 }
 
 describe("C01 contact HTTP surface", () => {
+  it("keeps every private C01 response out of HTTP caches, even on rejection", async () => {
+    const app = harness();
+    const headers = { authorization: "Bearer valid" };
+    // Exercise all eight C01 routes (reads AND writes). This is a per-route
+    // onRequest guard, not a global mutation of other Gateway responses.
+    const cases = [
+      { method: "GET", url: "/messages/contacts/lookup/bob" },
+      { method: "GET", url: "/messages/contacts/preferences" },
+      { method: "PATCH", url: "/messages/contacts/preferences", payload: { policy: "requests" } },
+      { method: "POST", url: "/messages/contacts/requests", payload: { handle: "bob" } },
+      { method: "POST", url: "/messages/contacts/requests/user_al/response",
+        payload: { accept: true, requestRevision: "1" } },
+      { method: "DELETE", url: "/messages/contacts/user_bo" },
+      { method: "GET", url: "/messages/contacts/page?limit=2" },
+      { method: "GET", url: "/messages/contacts?limit=2" },
+    ] as const;
+    for (const options of cases) {
+      for (const authenticated of [true, false]) {
+        const response = await app.inject({
+          ...options, ...(authenticated ? { headers } : {}),
+        });
+        expect(response.statusCode, options.url).toBe(authenticated ? 200 : 401);
+        expect(response.headers["cache-control"], options.url).toBe("no-store");
+        expect(response.headers.pragma, options.url).toBe("no-cache");
+        expect(response.headers.expires, options.url).toBe("0");
+      }
+    }
+    // Fastify validates before the handler. Errors must be uncacheable too.
+    for (const options of [
+      { method: "GET" as const, url: "/messages/contacts/page?limit=200" },
+      { method: "POST" as const, url: "/messages/contacts/requests",
+        payload: { handle: "bob", forgedActorId: "user_else" } },
+    ]) {
+      const response = await app.inject({ ...options, headers });
+      expect(response.statusCode).toBe(400);
+      expect(response.headers["cache-control"]).toBe("no-store");
+    }
+    await app.close();
+  });
+
   it("never discovers a private contact without authentication", async () => {
     const app = harness();
     const response = await app.inject({ method: "GET", url: "/messages/contacts/lookup/bob" });
