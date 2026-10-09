@@ -366,4 +366,66 @@ describe("Talk replay Egress coordinator",()=>{
     expect(log).toEqual(["abort"]);
   });
 
+
+  it.each(["revoked","replaced","lookup_failed","stable"] as const)(
+    "rechecks private replay access after delayed signing (%s)",async(mode)=>{
+      const viewer={tenantId:"tenant_1",talkId:"talk_1",viewerUserId:"user_1"};
+      let reads=0;
+      const media:ReplayMediaRepository={
+        async current(){return null;},
+        async currentForTalk(){return null;},
+        async createStarted(){throw new Error("unused");},
+        async markStopped(){throw new Error("unused");},
+        async markReady(){throw new Error("unused");},
+        async markAborted(){throw new Error("unused");},
+        async playbackObject(request){
+          expect(request).toEqual(viewer);
+          reads++;
+          if(reads===1) return {objectKey:"private/recording.ogg"};
+          if(mode==="lookup_failed") throw new Error("database authorization unavailable");
+          if(mode==="revoked") return null;
+          return {objectKey:mode==="replaced"?"private/changed.ogg":"private/recording.ogg"};
+        },
+      };
+      let notifySigning=()=>{};
+      const signingStarted=new Promise<void>(resolve=>{notifySigning=resolve;});
+      let completeSigning:(value:{url:string;expiresAt:string})=>void=()=>{};
+      const coordinator=createTalkReplayCoordinator({
+        replay:replayRepository([]),media,
+        egress:{
+          async start(){throw new Error("unused");},
+          async stop(){throw new Error("unused");},
+        },
+        objects:{
+          async checksumSha256(){throw new Error("unused");},
+          async deleteObject(){throw new Error("unused");},
+          async presignGet(objectKey,ttl){
+            expect(objectKey).toBe("private/recording.ogg");
+            expect(ttl).toBe(300);
+            return new Promise<{url:string;expiresAt:string}>(resolve=>{
+              completeSigning=resolve;
+              notifySigning();
+            });
+          },
+        },
+        playbackTtlSeconds:300,
+      });
+      const pending=coordinator.playback(viewer);
+      await signingStarted; // S3 request is in flight; access may now be revoked.
+      completeSigning({url:"https://private.example/signed",expiresAt:"2026-10-09T03:00:00Z"});
+      if(mode==="lookup_failed"){
+        await expect(pending).rejects.toThrow("database authorization unavailable");
+      }else if(mode==="stable"){
+        await expect(pending).resolves.toEqual({
+          url:"https://private.example/signed",
+          expiresAt:"2026-10-09T03:00:00Z",
+          contentType:"audio/ogg",
+        });
+      }else{
+        await expect(pending).resolves.toBeNull();
+      }
+      expect(reads).toBe(2);
+    },
+  );
+
 });
