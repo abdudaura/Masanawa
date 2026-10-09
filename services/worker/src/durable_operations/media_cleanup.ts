@@ -1,0 +1,136 @@
+/** AF15: a fail-closed, restart-safe executor for an EXISTING durable media tombstone.
+ * This module does not create a media authority, database schema, scheduler, or S3 client.
+ * Repository adapters must atomically prevent new references to tombstoned objects.
+ */
+export type MediaKind = "avatar" | "voice_note" | "room_audio" | "audio_post" | "escrow_evidence";
+export type CleanupCandidate = Readonly<{
+  tenantId: string;
+  objectKey: string;
+  /** Immutable provider version or immutable, content-addressed object key. */
+  objectVersion: string | null;
+  kind: MediaKind;
+  leaseToken: string;
+  referenceRevision: number;
+}>;
+
+export type CleanupPreflight =
+  | Readonly<{ state: "ready"; referenceRevision: number; activeReferences: 0; activeHolds: 0; immutable: true }>
+  | Readonly<{ state: "blocked" | "lease-lost" }>;
+
+export interface MediaCleanupRepository {
+  /** Atomic DB tombstone + lease claim. Must exclude retention holds, open escrow,
+   * live references and too-new orphans. Must prevent new references while tombstoned. */
+  claim(input: Readonly<{ workerId: string; nowMs: number; max: number }>): Promise<readonly CleanupCandidate[]>;
+  /** Recheck canonical resource references, holds, tenant and lease immediately before deletion. */
+  preflight(candidate: CleanupCandidate): Promise<CleanupPreflight>;
+  /** Lease-fenced, idempotent durable completion; false means lease lost. */
+  complete(candidate: CleanupCandidate): Promise<boolean>;
+  /** Lease-fenced durable stop. Unknown outcome MUST stay quarantined for readback/review. */
+  stop(candidate: CleanupCandidate, reason: "blocked" | "invalid" | "uncertain" | "completed-but-unrecorded"): Promise<void>;
+}
+
+export interface ImmutableObjectDeleter {
+  /** DELETE only the exact tenant object and pinned version/content-addressed key.
+   * `absent` is idempotent success. Must not follow redirects or delete prefixes. */
+  deleteExact(candidate: CleanupCandidate): Promise<"deleted" | "absent">;
+}
+
+export interface CleanupBatchResult {
+  readonly claimed: number;
+  readonly deleted: number;
+  readonly absent: number;
+  readonly blocked: number;
+  readonly leaseLost: number;
+  readonly quarantined: number;
+}
+
+const TENANT = /^tenant_[A-Za-z0-9-]{12,100}$/u;
+const TOKEN = /^[A-Za-z0-9_-]{16,128}$/u;
+const VERSION = /^[A-Za-z0-9_+=./:-]{1,128}$/u;
+const KINDS: ReadonlySet<string> = new Set<MediaKind>([
+  "avatar", "voice_note", "room_audio", "audio_post", "escrow_evidence",
+]);
+
+/** Validate before using any storage credentials. Reject URLs, traversal, wildcard deletes,
+ * cross-tenant paths, mutable references, control characters and malformed lease fences. */
+export function validCleanupCandidate(value: CleanupCandidate): boolean {
+  if (!TENANT.test(value.tenantId) || !TOKEN.test(value.leaseToken) ||
+      !Number.isSafeInteger(value.referenceRevision) || value.referenceRevision < 1 ||
+      !KINDS.has(value.kind) || typeof value.objectKey !== "string" ||
+      value.objectKey.length > 512 || value.objectKey.length < 5 ||
+      value.objectKey.startsWith("/") || value.objectKey.endsWith("/") ||
+      value.objectKey.includes("\\") || /[\u0000-\u001f\u007f*?%#]/u.test(value.objectKey)) {
+    return false;
+  }
+  const segments = value.objectKey.split("/");
+  if (segments.some(s => s.length === 0 || s === "." || s === ".." || s.length > 180) ||
+      !segments.includes(value.tenantId)) return false;
+  // Prevent deleting a mutable key: require provider version OR a checksum-bearing key.
+  if (value.objectVersion === null) {
+    return /(?:^|\/)sha256-[0-9a-f]{64}(?:\.[A-Za-z0-9]{1,8})?$/u.test(value.objectKey);
+  }
+  return typeof value.objectVersion === "string" && VERSION.test(value.objectVersion) &&
+    !value.objectVersion.includes("..") && !value.objectVersion.includes("//");
+}
+
+/** One bounded batch; no internal automatic retries of uncertain provider writes. */
+export async function runMediaCleanupBatch(input: Readonly<{
+  workerId: string;
+  max: number;
+  nowMs: number;
+  repository: MediaCleanupRepository;
+  storage: ImmutableObjectDeleter;
+  shouldStop?: () => boolean;
+}>): Promise<CleanupBatchResult> {
+  if (!TOKEN.test(input.workerId) || !Number.isSafeInteger(input.nowMs) || input.nowMs < 0 ||
+      !Number.isSafeInteger(input.max) || input.max < 1 || input.max > 50) {
+    throw new TypeError("media_cleanup.invalid_batch_options");
+  }
+  // A real repository must claim/tombstone before this API can be called.
+  if (input.shouldStop?.()) return { claimed: 0, deleted: 0, absent: 0, blocked: 0, leaseLost: 0, quarantined: 0 };
+  const candidates = await input.repository.claim({ workerId: input.workerId, nowMs: input.nowMs, max: input.max });
+  if (!Array.isArray(candidates) || candidates.length > input.max) {
+    throw new Error("media_cleanup.invalid_claim_response");
+  }
+  const seen = new Set<string>();
+  let deleted = 0, absent = 0, blocked = 0, leaseLost = 0, quarantined = 0;
+  for (const candidate of candidates) {
+    if (input.shouldStop?.()) break; // remaining candidates retain durable leases for recovery
+    const identity = `${candidate.tenantId}\u0000${candidate.objectKey}\u0000${candidate.objectVersion ?? ""}`;
+    if (!validCleanupCandidate(candidate) || seen.has(identity)) {
+      quarantined++;
+      await input.repository.stop(candidate, "invalid");
+      continue;
+    }
+    seen.add(identity);
+    let preflight: CleanupPreflight;
+    try { preflight = await input.repository.preflight(candidate); }
+    catch { quarantined++; await input.repository.stop(candidate, "uncertain"); continue; }
+    if (preflight.state === "lease-lost") { leaseLost++; continue; }
+    if (preflight.state === "blocked") { blocked++; await input.repository.stop(candidate, "blocked"); continue; }
+    if (preflight.state !== "ready" || preflight.referenceRevision !== candidate.referenceRevision ||
+        preflight.activeReferences !== 0 || preflight.activeHolds !== 0 || preflight.immutable !== true) {
+      quarantined++;
+      await input.repository.stop(candidate, "invalid");
+      continue;
+    }
+    let outcome: "deleted" | "absent";
+    try {
+      outcome = await input.storage.deleteExact(candidate);
+      if (outcome !== "deleted" && outcome !== "absent") throw new Error("invalid storage outcome");
+    } catch {
+      quarantined++;
+      await input.repository.stop(candidate, "uncertain");
+      continue;
+    }
+    try {
+      const committed = await input.repository.complete(candidate);
+      if (!committed) { leaseLost++; continue; }
+      if (outcome === "deleted") deleted++; else absent++;
+    } catch {
+      quarantined++;
+      await input.repository.stop(candidate, "completed-but-unrecorded");
+    }
+  }
+  return { claimed: candidates.length, deleted, absent, blocked, leaseLost, quarantined };
+}
