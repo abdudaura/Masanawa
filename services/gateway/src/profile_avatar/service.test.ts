@@ -47,6 +47,9 @@ function setup(repo = new FakeRepository()) {
   const deletes: string[] = [];
   let failDelete = false;
   let failPut = false;
+  let authorizeCalls = 0;
+  let revokedAt = Infinity;
+  let changedAt = Infinity;
   const keyFor = (sha: string) =>
     "profiles/" + owner.tenantId + "/" + owner.userId + "/sha256-" + sha + ".webp";
   const objects: AvatarObjectStore = {
@@ -65,10 +68,11 @@ function setup(repo = new FakeRepository()) {
   const service = createProfileAvatarService({
     authorizer: {
       async authorize({ authorizationHeader }) {
-        if (authorizationHeader !== "Bearer owner") {
+        authorizeCalls++;
+        if (authorizationHeader !== "Bearer owner" || authorizeCalls >= revokedAt) {
           throw Object.assign(Error("unauthorized"), { statusCode: 401 });
         }
-        return owner as never;
+        return (authorizeCalls >= changedAt ? { ...owner, userId: "user_other12345678" } : owner) as never;
       },
     },
     repository: repo,
@@ -76,6 +80,8 @@ function setup(repo = new FakeRepository()) {
   });
   return {
     service, repo, writes, deletes,
+    revokeAt: (call: number) => { revokedAt = call; },
+    changeAt: (call: number) => { changedAt = call; },
     setFailDelete: (value: boolean) => { failDelete = value; },
     setFailPut: (value: boolean) => { failPut = value; },
   };
@@ -178,4 +184,39 @@ describe("authenticated avatar storage lifecycle", () => {
     expect(await h.service.collectGarbage()).toEqual({ deleted: 1, failed: 0 });
     expect(h.deletes).toEqual([digest]);
   });
+});
+
+
+describe("avatar current-session fences", () => {
+  for (const call of [2, 3, 4, 5, 6]) {
+    it(`denies revoked upload at authorization boundary ${call}`, async () => {
+      const h = setup();
+      h.revokeAt(call);
+      await expect(h.service.upload({ ...auth, png: validAvatarPng(), expectedUrl: null }))
+        .rejects.toMatchObject({ statusCode: 401 });
+      expect(h.writes).toHaveLength(call >= 5 ? 1 : 0);
+      expect(h.repo.mutations).toBe(call === 6 ? 1 : 0);
+      // Staged writes remain journaled; post-commit revocation is a lost receipt.
+      expect(h.repo.staged).toHaveLength(call >= 4 ? 1 : 0);
+    });
+    it(`denies switched account at authorization boundary ${call}`, async () => {
+      const h = setup();
+      h.changeAt(call);
+      await expect(h.service.upload({ ...auth, png: validAvatarPng(), expectedUrl: null }))
+        .rejects.toMatchObject({ code: "profiles.avatar.session_changed", statusCode: 401 });
+      expect(h.repo.mutations).toBe(call === 6 ? 1 : 0);
+    });
+  }
+  for (const call of [2, 3, 4]) {
+    it(`denies revoked removal at authorization boundary ${call}`, async () => {
+      const h = setup();
+      const previous = "https://cdn.example.test/old.webp";
+      h.repo.url = previous;
+      h.revokeAt(call);
+      await expect(h.service.remove({ ...auth, expectedUrl: previous }))
+        .rejects.toMatchObject({ statusCode: 401 });
+      expect(h.repo.url).toBe(call === 4 ? null : previous);
+      expect(h.repo.mutations).toBe(call === 4 ? 1 : 0);
+    });
+  }
 });

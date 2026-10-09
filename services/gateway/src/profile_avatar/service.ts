@@ -45,6 +45,12 @@ export function createProfileAvatarService(input: Readonly<{
     const identity = await input.authorizer.authorize({ authorizationHeader });
     return { tenantId: String(identity.tenantId), userId: String(identity.userId) };
   }
+  async function assertCurrent(authorizationHeader: string | undefined, expected: Readonly<{ tenantId: string; userId: string }>) {
+    const current = await owner(authorizationHeader);
+    if (current.tenantId !== expected.tenantId || current.userId !== expected.userId) {
+      throw new AvatarMutationError("profiles.avatar.session_changed", 401);
+    }
+  }
   return Object.freeze({
     async upload(request: Readonly<{
       authorizationHeader: string | undefined;
@@ -57,7 +63,9 @@ export function createProfileAvatarService(input: Readonly<{
         throw new AvatarMutationError('profiles.avatar.png_required', 415);
       }
       const normalized = await normalizeProfileAvatar(request.png);
+      await assertCurrent(request.authorizationHeader, who);
       const profile = await input.repository.current(who);
+      await assertCurrent(request.authorizationHeader, who);
       if (!profile.exists) throw new AvatarMutationError("profiles.not_found", 404);
       if (profile.url !== request.expectedUrl) {
         throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
@@ -78,7 +86,9 @@ export function createProfileAvatarService(input: Readonly<{
         // metadata is not a writable stage. Do not race S3 garbage collection.
         throw new AvatarMutationError("profiles.avatar.stage_conflict", 409);
       }
+      await assertCurrent(request.authorizationHeader, who);
       const stored = await input.objects.put(who, normalized);
+      await assertCurrent(request.authorizationHeader, who);
       if (stored.key !== key || stored.url !== url ||
           stored.sha256 !== normalized.sha256) {
         throw new AvatarMutationError("profiles.avatar.storage_mismatch", 503);
@@ -86,6 +96,8 @@ export function createProfileAvatarService(input: Readonly<{
       const accepted = await input.repository.attach({
         ...who, key, url, expectedUrl: profile.url,
       });
+      // A lost acknowledgement does not undo an already committed attachment.
+      await assertCurrent(request.authorizationHeader, who);
       if (!accepted) {
         throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
       }
@@ -96,7 +108,9 @@ export function createProfileAvatarService(input: Readonly<{
       expectedUrl: string | null;
     }>): Promise<{ avatarUrl: null }> {
       const who = await owner(request.authorizationHeader);
+      await assertCurrent(request.authorizationHeader, who);
       const profile = await input.repository.current(who);
+      await assertCurrent(request.authorizationHeader, who);
       if (!profile.exists) throw new AvatarMutationError("profiles.not_found", 404);
       if (profile.url !== request.expectedUrl) {
         throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
@@ -105,6 +119,7 @@ export function createProfileAvatarService(input: Readonly<{
         const removed = await input.repository.remove({
           ...who, expectedUrl: profile.url,
         });
+        await assertCurrent(request.authorizationHeader, who);
         if (!removed) {
           throw new AvatarMutationError("profiles.avatar.changed_elsewhere", 409);
         }

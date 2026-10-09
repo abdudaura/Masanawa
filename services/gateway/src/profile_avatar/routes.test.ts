@@ -32,6 +32,8 @@ describe("avatar binary HTTP boundary", () => {
       payload: validAvatarPng(),
     });
     expect(upload.statusCode).toBe(201);
+    expect(upload.headers["cache-control"]).toBe("private, no-store");
+    expect(upload.headers["x-content-type-options"]).toBe("nosniff");
     expect(upload.json()).toEqual({
       avatarUrl: "https://images.example/avatar.png",
     });
@@ -42,6 +44,7 @@ describe("avatar binary HTTP boundary", () => {
         "x-avatar-expected": "v1:" + Buffer.from("https://images.example/avatar.png").toString("base64url") },
     });
     expect(removed.statusCode).toBe(200);
+    expect(removed.headers["cache-control"]).toBe("private, no-store");
     expect(removed.json()).toEqual({ avatarUrl: null });
     await app.close();
   });
@@ -65,6 +68,7 @@ describe("avatar binary HTTP boundary", () => {
       payload: { avatarUrl: "https://attacker.example/tracker" },
     });
     expect(response.statusCode).toBe(415);
+    expect(response.headers["cache-control"]).toBe("private, no-store");
     await app.close();
   });
   it("requires a canonical photo version before touching owner storage", async () => {
@@ -89,6 +93,7 @@ describe("avatar binary HTTP boundary", () => {
       payload: validAvatarPng(),
     });
     expect(result.statusCode).toBe(400);
+    expect(result.headers["cache-control"]).toBe("private, no-store");
     expect(invoked).toBe(false);
     await app.close();
   });

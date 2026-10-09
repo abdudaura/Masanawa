@@ -29,6 +29,10 @@ export function registerProfileAvatarRoutes(
   );
   app.post("/profiles/me/avatar", {
     bodyLimit: 2 * 1024 * 1024,
+    onRequest: async (_request, reply) => {
+      reply.header("cache-control", "private, no-store");
+      reply.header("x-content-type-options", "nosniff");
+    },
   }, async (request, reply) => {
     if (!Buffer.isBuffer(request.body)) {
       reply.code(415);
@@ -42,7 +46,12 @@ export function registerProfileAvatarRoutes(
     reply.code(201);
     return saved;
   });
-  app.delete("/profiles/me/avatar", async (request) =>
+  app.delete("/profiles/me/avatar", {
+    onRequest: async (_request, reply) => {
+      reply.header("cache-control", "private, no-store");
+      reply.header("x-content-type-options", "nosniff");
+    },
+  }, async (request) =>
     service.remove({
       authorizationHeader: request.headers.authorization,
       expectedUrl: expectedAvatarUrl(request.headers['x-avatar-expected']),
