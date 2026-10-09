@@ -7,8 +7,8 @@ Updated UTC: 2026-10-09; owner: GPT-6 isolated F11 recovery
 - Baseline: `main@5e758673ae91082520b21b3153da53791ae2cbf3`.
 - Work branch: `work/f11-gateway-readiness-evidence-20261009-gpt6`.
 - Executed source/test checkpoint: `5c39d28a80a34e4d5d26729744a915c6ce36b9b2`.
-- Final handoff HEAD: read the PR's live `head.sha`; a commit cannot contain its own SHA.
-- PR: draft/unmerged, link held in PR body.
+- Handoff preparation SHA: `c42fbd439c9bfea34e19cd85a8069dcf7881ad56`; final HEAD is recorded in PR #570 after this checkpoint (a commit cannot contain its own SHA).
+- PR: [#570](https://github.com/Baatiku/masanawa/pull/570), draft/unmerged.
 - Requirements: F11 / R16 infrastructure security and readiness, database audit DB-P03; no separate UX journey satisfied.
 - Related open work intentionally preserved: #457 shared Actions quota, #460 shared CI, #479 schema migration runner, #497 Work integration, #567 zero-step CI verifier, #559 Android manifest verifier. No collision in exact owned paths.
 - Exact owned files:
