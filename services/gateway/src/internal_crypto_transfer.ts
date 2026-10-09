@@ -154,7 +154,12 @@ export function createInternalCryptoTransferService(input: {
       });
       if (!quote) deny("crypto.internal.quote_not_found", 404);
       const qualified = await requalify(request.authorizationHeader, quote);
-      if (String(qualified.authority.userId) !== String(authority.userId))
+      // A second authorization can observe a revoked or switched session after
+      // the initial principal was used to read the quote. Both identity
+      // dimensions must remain stable: user IDs are not globally tenant-unique.
+      // Never execute a tenant A quote with tenant B's fresh policy decision.
+      if (qualified.authority.userId !== authority.userId ||
+          qualified.authority.tenantId !== authority.tenantId)
         deny("crypto.internal.authorization_changed", 401);
       return input.store.execute({
         tenantId: authority.tenantId, senderUserId: authority.userId,
