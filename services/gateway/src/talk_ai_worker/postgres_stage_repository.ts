@@ -17,6 +17,7 @@ export interface TalkAiStageSqlPool {
 interface TalkRow extends Record<string, unknown> {
   topic: string;
   host_name: string;
+  host_user_id: string;
 }
 interface SeatRow extends Record<string, unknown> {
   participant_id: string;
@@ -102,14 +103,16 @@ export function createPostgresTalkAiStageEventRepository(
       const since = new Date(until - 10 * 60 * 1000).toISOString();
       const scope = [tenantId, talkId, before, since];
 
-      const talk = await pool.query<TalkRow>(
-        "SELECT topic, host_name FROM talks.talks " +
+      // A reusable authoritative predicate is queried before and after the
+      // parallel audience reads. A Talk may end or become restricted during
+      // those awaits; the early gate alone cannot authorize AI disclosure.
+      const talkAuthorizationSql =
+        "SELECT topic, host_name, host_user_id FROM talks.talks " +
         "WHERE tenant_id=$1 AND talk_id=$2 AND state IN ('live','reconnecting') " +
         "AND NOT EXISTS (SELECT 1 FROM talks.safety_enforcement se " +
         "WHERE se.tenant_id=$1 AND se.target_kind='talk' " +
-        "AND se.target_id=$2 AND se.visibility <> 'public') LIMIT 1",
-        [tenantId, talkId],
-      );
+        "AND se.target_id=$2 AND se.visibility <> 'public') LIMIT 1";
+      const talk = await pool.query<TalkRow>(talkAuthorizationSql, [tenantId, talkId]);
       if (!talk.rows[0]) return null;
 
       // All reads must remain scoped by tenant AND Talk. These queries return
@@ -217,6 +220,20 @@ export function createPostgresTalkAiStageEventRepository(
         ),
       ]);
 
+      // Fail closed when the live/visibility gate or Host identity changed
+      // while retrieving bounded events. Reads are only a current snapshot,
+      // not an immutable permission lease.
+      const currentTalk = await pool.query<TalkRow>(
+        talkAuthorizationSql, [tenantId, talkId],
+      );
+      const authorizedTalk = currentTalk.rows[0];
+      if (!authorizedTalk ||
+          typeof authorizedTalk.host_user_id !== "string" ||
+          !authorizedTalk.host_user_id ||
+          authorizedTalk.host_user_id !== talk.rows[0].host_user_id) {
+        return null;
+      }
+
       const common = { tenantId, talkId, visibility: "public" as const };
       const events: TalkStageEvent[] = [
         ...seats.rows.map((seat): TalkStageEvent => ({
@@ -290,8 +307,8 @@ export function createPostgresTalkAiStageEventRepository(
       return Object.freeze<TalkAuthorizedStage>({
         tenantId,
         talkId,
-        topic: talk.rows[0].topic,
-        hostName: talk.rows[0].host_name,
+        topic: authorizedTalk.topic,
+        hostName: authorizedTalk.host_name,
         participants: Object.freeze(seats.rows.map((seat) => Object.freeze({
           displayName: seat.display_name,
           kind: seat.kind,
