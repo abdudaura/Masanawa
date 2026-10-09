@@ -231,7 +231,7 @@ class _PrivateVoiceAssistantPanelState
               alignment: Alignment.centerRight,
               child: FilledButton(
                 key: const Key('u09_review_draft'),
-                onPressed: voice.needsReview && !_sending ? _review : null,
+                onPressed: voice.needsReview && !voice.outcomeUnknown && !voice.isSubmitting && !_sending ? _review : null,
                 child: Text(_sending ? 'Sending…' : 'Review and send'),
               ),
             ),
