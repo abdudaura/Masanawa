@@ -249,4 +249,83 @@ describe("R14 FCM delivery resilience", () => {
     expect(oauthCalls).toBe(1);
     expect(deviceCalls).toBe(2);
   });
+  it("only accepts the canonical Google OAuth URL before any signed JWT leaves the server", () => {
+    const fetchImpl = vi.fn(async () => oauth());
+    const account = JSON.parse(serviceAccountJson) as Record<string, unknown>;
+    const hostile = [
+      "http://oauth2.googleapis.com/token",
+      "https://oauth2.googleapis.com.evil.example/token",
+      "https://example.com/oauth/token",
+      "https://user@oauth2.googleapis.com/token",
+      "https://oauth2.googleapis.com:444/token",
+      "https://oauth2.googleapis.com/token?next=https://evil.example/",
+      "https://oauth2.googleapis.com/token#fragment",
+      "https://oauth2.googleapis.com/token/",
+      " https://oauth2.googleapis.com/token",
+      "",
+      null,
+      123,
+    ];
+    for (const token_uri of hostile) {
+      expect(() =>
+        createFcmPushSender({
+          repository: repository(["one"]),
+          serviceAccountJson: JSON.stringify({ ...account, token_uri }),
+          fetchImpl: fetchImpl as typeof fetch,
+        }),
+      ).toThrow("Invalid Firebase OAuth token URI");
+    }
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(() => createFcmPushSender({
+      repository: repository(["one"]),
+      serviceAccountJson: "not JSON",
+      fetchImpl: fetchImpl as typeof fetch,
+    })).toThrow("Invalid Firebase service account");
+    expect(() => createFcmPushSender({
+      repository: repository(["one"]),
+      serviceAccountJson: "null",
+      fetchImpl: fetchImpl as typeof fetch,
+    })).toThrow("Invalid Firebase service account");
+  });
+
+  it("keeps standard Google service accounts compatible, including the default token URI", async () => {
+    const account = JSON.parse(serviceAccountJson) as Record<string, unknown>;
+    delete account.token_uri;
+    const fetchImpl = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if (String(url).includes("oauth2.googleapis.com")) {
+        expect(url).toBe("https://oauth2.googleapis.com/token");
+        expect(init?.redirect).toBe("error");
+        const assertion = (init?.body as URLSearchParams).get("assertion");
+        expect(assertion).toBeTruthy();
+        const claims = JSON.parse(
+          Buffer.from(assertion!.split(".")[1]!, "base64url").toString("utf8"),
+        ) as { aud: string };
+        expect(claims.aud).toBe("https://oauth2.googleapis.com/token");
+        return oauth();
+      }
+      return Response.json({ name: "projects/masanawa-test/messages/ok" });
+    });
+    const sender = createFcmPushSender({
+      repository: repository(["one"]),
+      serviceAccountJson: JSON.stringify(account),
+      fetchImpl: fetchImpl as typeof fetch,
+      now: () => new Date("2026-10-08T06:00:00Z"),
+    });
+    await expect(sender.send(request)).resolves.toEqual({ attempted: 1, delivered: 1 });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuses OAuth redirects without following a signed service-account assertion", async () => {
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      expect(init?.redirect).toBe("error");
+      return new Response(null, {
+        status: 307,
+        headers: { location: "https://example.com/steal-assertion" },
+      });
+    });
+    const { sender } = senderWith(["one"], fetchImpl as typeof fetch);
+    await expect(sender.send(request)).rejects.toThrow("Firebase OAuth failed");
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
 });
