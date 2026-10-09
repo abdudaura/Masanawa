@@ -47,6 +47,9 @@ class _HumanPrivateMediaDockState extends State<HumanPrivateMediaDock> {
   void initState() {
     super.initState();
     widget.controller.addListener(_changed);
+    final initial = widget.controller.draft;
+    _cachedPreview = initial?.kind.isImage == true ? initial!.file : null;
+    _showImage = _cachedPreview != null && !widget.dataSaver;
   }
 
   void _changed() {
@@ -73,7 +76,9 @@ class _HumanPrivateMediaDockState extends State<HumanPrivateMediaDock> {
       _cachedPreview = null;
       _showImage = false;
       widget.controller.addListener(_changed);
-      _changed();
+      final initial = widget.controller.draft;
+      _cachedPreview = initial?.kind.isImage == true ? initial!.file : null;
+      _showImage = _cachedPreview != null && !widget.dataSaver;
     }
     if (oldWidget.dataSaver != widget.dataSaver && widget.dataSaver) {
       _showImage = false;
