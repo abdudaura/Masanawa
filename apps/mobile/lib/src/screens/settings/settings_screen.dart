@@ -9,6 +9,7 @@ import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
+import '../../state/talk_social_profile_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
 import 'account_deletion_dialog.dart';
@@ -43,7 +44,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final u = context.masanawa;
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
-    final name = user?.name ?? 'Citizen';
+    final publicProfile = user == null
+        ? null
+        : ref.watch(humanProfileByUserIdProvider(user.id)).asData?.value;
+    final savedName = publicProfile?.displayName.trim();
+    final name = savedName != null && savedName.isNotEmpty
+        ? savedName : user?.name ?? 'Citizen';
+    final avatar = publicProfile?.avatarUrl?.trim();
     final contact = user?.phone ?? user?.email ?? 'No contact saved';
     final directory = ref.watch(agentDirectoryProvider);
     final supportAgents = directory.agents
@@ -92,14 +99,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: u.brand.withValues(alpha: 0.15),
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                    style: TextStyle(
-                      color: u.brand,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  backgroundImage: avatar != null && avatar.isNotEmpty
+                      ? NetworkImage(avatar) : null,
+                  child: avatar == null || avatar.isEmpty
+                      ? Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                          style: TextStyle(
+                            color: u.brand,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 14),
                 Expanded(

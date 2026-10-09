@@ -26,7 +26,7 @@ describe("public profile edits SQL ownership", () => {
     const pool = {
       async query(text: string, values: readonly unknown[] = []) {
         calls.push({ text, values });
-        if (text.startsWith("UPDATE talks.public_profiles")) {
+        if (text.startsWith("WITH previous AS (") || text.startsWith("UPDATE talks.public_profiles")) {
           return { rows: [{ user_id: "user_owner" }], rowCount: 1 };
         }
         return { rows: [row], rowCount: 1 };
@@ -42,12 +42,13 @@ describe("public profile edits SQL ownership", () => {
     });
     expect(updated?.displayName).toBe("New name");
     expect(calls).toHaveLength(2);
-    expect(calls[0]!.text).toMatch(
-      /UPDATE talks\.public_profiles[\s\S]*WHERE tenant_id = \$1 AND user_id = \$2/u,
-    );
+    expect(calls[0]!.text).toContain("WHERE p.tenant_id=$1 AND p.user_id=$2");
     expect(calls[0]!.text).toContain("display_name = $3");
     expect(calls[0]!.text).toContain("bio = $4");
     expect(calls[0]!.text).toContain("avatar_url = NULL");
+    expect(calls[0]!.text).toContain("talks.profile_avatar_objects");
+    expect(calls[0]!.text).toContain("state='orphaned'");
+    expect(calls[0]!.text).toContain("SELECT user_id,avatar_url FROM talks.public_profiles");
     expect(calls[0]!.values).toEqual([
       "tenant_1", "user_owner", "New name", "About",
     ]);
