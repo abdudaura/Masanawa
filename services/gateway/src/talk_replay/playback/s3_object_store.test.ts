@@ -23,6 +23,7 @@ describe("Replay private object store",()=>{
     const headers=calls[0]?.init?.headers as Record<string,string>;
     expect(headers.authorization).toContain("AWS4-HMAC-SHA256 Credential=access/");
     expect(calls[0]?.url).toContain("/private/talk-replays/talk/replay.ogg");
+    expect(calls[0]?.init?.redirect).toBe("manual");
   });
 
   it("retries boundedly while a just-stopped egress object becomes visible",async()=>{
@@ -66,11 +67,70 @@ describe("Replay private object store",()=>{
 
   it("deletes discarded replay objects with signed DELETE",async()=>{
     let method:string|undefined;
+    let redirect:RequestRedirect|undefined;
     const store=createReplayObjectStore({
       endpoint:"https://s3.example.test",region:"test",bucket:"private",accessKey:"access",secret:"0123456789abcdef",
-      fetchImpl:async(_url,init)=>{method=init?.method;return new Response(null,{status:204});},
+      fetchImpl:async(_url,init)=>{method=init?.method;redirect=init?.redirect;return new Response(null,{status:204});},
     });
     await store.deleteObject("talk-replays/talk/replay.ogg");
     expect(method).toBe("DELETE");
+    expect(redirect).toBe("manual");
+  });
+
+  it("refuses S3 endpoints containing credentials, queries, fragments or paths",()=>{
+    for(const endpoint of [
+      "http://s3.example.test",
+      "https://user:password@s3.example.test",
+      "https://s3.example.test/?redirect=evil",
+      "https://s3.example.test/#redirect",
+      "https://s3.example.test/path",
+    ]){
+      expect(()=>createReplayObjectStore({
+        endpoint,region:"test",bucket:"private",
+        accessKey:"access",secret:"0123456789abcdef",
+      })).toThrow("Replay S3 endpoint must be an HTTPS origin");
+    }
+  });
+
+  it("does not follow a redirected signed S3 checksum GET",async()=>{
+    let calls=0;
+    const store=createReplayObjectStore({
+      endpoint:"https://s3.example.test",region:"test",bucket:"private",
+      accessKey:"access",secret:"0123456789abcdef",
+      availabilityAttempts:3,availabilityDelayMs:0,
+      fetchImpl:async(_url,init)=>{
+        calls+=1;
+        expect(init?.redirect).toBe("manual");
+        expect((init?.headers as Record<string,string>).authorization)
+          .toContain("AWS4-HMAC-SHA256");
+        return new Response(null,{
+          status:307,
+          headers:{location:"https://attacker.example.test/capture"},
+        });
+      },
+    });
+    await expect(store.checksumSha256("talk-replays/talk/replay.ogg"))
+      .rejects.toThrow("talks.replay.object_unavailable");
+    expect(calls).toBe(1);
+  });
+
+  it("does not follow redirected signed S3 deletion requests",async()=>{
+    let calls=0;
+    const store=createReplayObjectStore({
+      endpoint:"https://s3.example.test",region:"test",bucket:"private",
+      accessKey:"access",secret:"0123456789abcdef",
+      fetchImpl:async(_url,init)=>{
+        calls+=1;
+        expect(init?.method).toBe("DELETE");
+        expect(init?.redirect).toBe("manual");
+        return new Response(null,{
+          status:308,
+          headers:{location:"https://attacker.example.test/capture"},
+        });
+      },
+    });
+    await expect(store.deleteObject("talk-replays/talk/replay.ogg"))
+      .rejects.toThrow("talks.replay.object_delete_failed");
+    expect(calls).toBe(1);
   });
 });
