@@ -1,0 +1,9 @@
+# Final integration: profile and private-media repairs — 2026-10-09
+
+This slice preserves F13 #435 account/uncertain-write fencing and C04/F17 #478 private audio sources, fixes the short profile form retaining all validator fields with a SingleChildScrollView/Column, and uses a Dio CancelToken to cancel the actual upstream private audio response on header rejection, size overflow, session changes and completion. Cancelling only the transformed response stream failed three bound/cancellation tests under Dio 5.11.0.
+
+Widget tests now wait for the edited form frame before Save and run real temporary-file allocation/recording/preview under tester.runAsync. Focused command: `flutter test test/edit_profile_screen_test.dart test/human_media_playback_stop_test.dart test/human_media_transport_bounds_test.dart --reporter expanded` — **28 passed**. Combined local integration command: `flutter test --concurrency=2 --reporter expanded` — **874 passed, zero failures**. Local combined analysis had zero errors, 643 warnings/info. These wider results apply to the combined local integration source, not this bounded commit alone.
+
+Dependencies already declared in the Work baseline: dio 5.11.0, record, just_audio, path_provider, permission_handler. No provider keys or public voice URLs added. Voice panel must be mounted by canonical conversation integration only, with backend membership reauthorization and private storage; source/tests do not prove real microphone/device/S3 operation. Profile handles remain fixed while linked references lack safe alias migration.
+
+The execution service disconnected during the native Android build. Documentation and this tested source slice are preserved through the GitHub connector. Android build output and the larger local source integration still require recovery and publication. No APK success, physical-device acceptance, merge, production operation or financial execution is claimed.

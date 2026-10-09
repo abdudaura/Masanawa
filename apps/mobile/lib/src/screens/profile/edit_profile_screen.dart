@@ -29,16 +29,64 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _savingPhoto = false;
   bool _creatingProfile = false;
   bool _removeAvatar = false;
+  // A timed-out/uncertain write may already be committed on the server.
+  // Do not send another mutation until an authoritative GET reconciles it.
+  bool _requiresReload = false;
   String? _error;
+  String? _accountId;
+  int _accountEpoch = 0;
+  int _loadVersion = 0;
+  late final ProviderSubscription<SessionState> _sessionSubscription;
+
+  String? _signedInId(SessionState session) =>
+      session is SessionSignedIn ? session.user.id : null;
+
+  // A Future must never apply the old account's data to a new session.
+  bool _sameAccount(int epoch) {
+    if (!mounted || epoch != _accountEpoch || _accountId == null) return false;
+    return _signedInId(ref.read(sessionProvider)) == _accountId;
+  }
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _accountId = _signedInId(ref.read(sessionProvider));
+    _sessionSubscription = ref.listenManual<SessionState>(
+      sessionProvider,
+      (previous, next) {
+        final nextId = _signedInId(next);
+        // Refreshing the same user's token should not discard the draft.
+        if (nextId == _accountId) return;
+        _accountId = nextId;
+        _accountEpoch++;
+        _loadVersion++;
+        setState(() {
+          _profile = null;
+          _creatingProfile = false;
+          _removeAvatar = false;
+          _requiresReload = false;
+          _saving = false;
+          _savingPhoto = false;
+          _loading = nextId != null;
+          _error = nextId == null ? 'Sign in to edit your profile.' : null;
+          _name.clear();
+          _handle.clear();
+          _bio.clear();
+        });
+        if (nextId != null) _load();
+      },
+    );
+    if (_accountId != null) {
+      _load();
+    } else {
+      _loading = false;
+      _error = 'Sign in to edit your profile.';
+    }
   }
 
   @override
   void dispose() {
+    _sessionSubscription.close();
     _name.dispose();
     _handle.dispose();
     _bio.dispose();
@@ -46,15 +94,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _load() async {
-    if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-    }
+    final epoch = _accountEpoch;
+    if (!_sameAccount(epoch)) return;
+    final version = ++_loadVersion;
+    bool current() => _sameAccount(epoch) && version == _loadVersion;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final profile = await ref.read(ownProfileTransportProvider).loadSelf();
-      if (!mounted) return;
+      if (!current()) return;
       setState(() {
         _profile = profile;
         _creatingProfile = false;
@@ -62,9 +112,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _name.text = profile.displayName;
         _bio.text = profile.bio;
         _removeAvatar = false;
+        _requiresReload = false;
       });
     } on DioException catch (error) {
-      if (!mounted) return;
+      if (!current()) return;
       if (error.response?.statusCode == 404) {
         final session = ref.read(sessionProvider);
         setState(() {
@@ -74,17 +125,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           _name.text = session is SessionSignedIn ? session.user.name : '';
           _bio.clear();
           _removeAvatar = false;
+          _requiresReload = false;
         });
       } else {
-        setState(() => _error =
-            'Could not load your profile. Check your connection and retry.');
+        setState(() {
+          _requiresReload = true;
+          _error = 'Could not load your profile. Check your connection and retry.';
+        });
       }
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _error =
-          'Could not load your profile. Check your connection and retry.');
+      if (!current()) return;
+      setState(() {
+        _requiresReload = true;
+        _error = 'Could not load your profile. Check your connection and retry.';
+      });
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (current()) setState(() => _loading = false);
     }
   }
 
@@ -100,9 +156,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _save() async {
+    final epoch = _accountEpoch;
     final current = _profile;
-    if ((current == null && !_creatingProfile) ||
-        _saving || _savingPhoto || !_changed || !_form.currentState!.validate()) return;
+    if (!_sameAccount(epoch) || (current == null && !_creatingProfile) ||
+        _requiresReload || _saving || _savingPhoto || !_changed ||
+        !_form.currentState!.validate()) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -125,13 +183,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   bio: bio == current.bio ? null : bio,
                 )
               : current;
+      // A prior-account update may finish after logout or account switching.
+      // Never send its follow-up deletion on the new account.
+      if (!_sameAccount(epoch)) return;
       if (_removeAvatar && current?.avatarUrl?.isNotEmpty == true) {
         await ref.read(profileAvatarTransportProvider).remove(
           expectedUrl: current!.avatarUrl!,
         );
       }
+      if (!_sameAccount(epoch)) return;
       final updated = _removeAvatar ? await transport.loadSelf() : changedText;
-      if (!mounted) return;
+      if (!_sameAccount(epoch)) return;
       setState(() {
         _profile = updated;
         _creatingProfile = false;
@@ -150,9 +212,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         const SnackBar(content: Text('Profile saved.')),
       );
     } on DioException catch (error) {
-      if (!mounted) return;
+      if (!_sameAccount(epoch)) return;
       final status = error.response?.statusCode;
       setState(() {
+        _requiresReload = true;
         if (status == 409) {
           _error = _creatingProfile
               ? 'This handle may be taken, or your profile already exists. '
@@ -166,35 +229,43 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         }
       });
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _error =
-          'Could not confirm whether your changes saved. '
-          'Reload your profile before trying again.');
+      if (!_sameAccount(epoch)) return;
+      setState(() {
+        _requiresReload = true;
+        _error = 'Could not confirm whether your changes saved. '
+            'Reload your profile before trying again.';
+      });
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_sameAccount(epoch)) setState(() => _saving = false);
     }
   }
 
   Future<void> _pickPhoto() async {
+    final epoch = _accountEpoch;
     final profile = _profile;
-    if (profile == null || _saving || _savingPhoto) return;
+    if (!_sameAccount(epoch) || profile == null || _requiresReload ||
+        _saving || _savingPhoto) return;
     if (_changed) {
       setState(() => _error =
           'Save your other profile changes before changing your photo.');
       return;
     }
+    var uploadDispatched = false;
     try {
       final png = await pickAndCropAvatar(context);
-      if (png == null || !mounted) return;
+      if (png == null || !_sameAccount(epoch)) return;
       setState(() {
         _savingPhoto = true;
         _error = null;
       });
+      // Once a network mutation starts, even a timeout may represent success.
+      uploadDispatched = true;
       final url = await ref.read(profileAvatarTransportProvider).upload(
         png, expectedUrl: profile.avatarUrl,
       );
+      if (!_sameAccount(epoch)) return;
       final updated = await ref.read(ownProfileTransportProvider).loadSelf();
-      if (!mounted) return;
+      if (!_sameAccount(epoch)) return;
       if (updated.avatarUrl != url) {
         throw const FormatException('Profile photo update not confirmed');
       }
@@ -212,19 +283,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         const SnackBar(content: Text('Profile photo updated.')),
       );
     } on DioException catch (error) {
-      if (!mounted) return;
-      setState(() => _error = error.response?.statusCode == 404
+      if (!_sameAccount(epoch)) return;
+      setState(() {
+        if (uploadDispatched) _requiresReload = true;
+        _error = error.response?.statusCode == 404
           ? 'Profile photo storage is unavailable right now.'
           : error.response?.statusCode == 409
               ? 'Your photo changed on another device. Reload and try again.'
-              : 'Could not confirm the photo update. Reload before retrying.');
+              : 'Could not confirm the photo update. Reload before retrying.';
+      });
     } catch (_) {
-      if (mounted) {
-        setState(() => _error =
-            'Could not prepare or confirm the photo. Reload before retrying.');
+      if (_sameAccount(epoch)) {
+        setState(() {
+          if (uploadDispatched) _requiresReload = true;
+          _error = uploadDispatched
+              ? 'Could not confirm the photo update. Reload before retrying.'
+              : 'Could not prepare the photo. Choose another image.';
+        });
       }
     } finally {
-      if (mounted) setState(() => _savingPhoto = false);
+      if (_sameAccount(epoch)) setState(() => _savingPhoto = false);
     }
   }
 
@@ -245,19 +323,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     children: [
                       Text(_error ?? 'Your profile is unavailable.'),
                       const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: _load,
-                        child: const Text('Try again'),
-                      ),
+                      if (_accountId != null)
+                        FilledButton(
+                          onPressed: _load,
+                          child: const Text('Try again'),
+                        ),
                     ],
                   ),
                 )
               : SafeArea(
                   child: Form(
                     key: _form,
-                    child: ListView(
+                    child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
-                      children: [
+                      child: Column(children: [
                         Center(
                           child: CircleAvatar(
                             radius: 46,
@@ -275,8 +354,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           Center(
                             child: TextButton.icon(
                               key: const ValueKey('profile-change-photo'),
-                              onPressed: _saving || _savingPhoto || _removeAvatar
-                                  ? null : _pickPhoto,
+                              onPressed: _saving || _savingPhoto || _removeAvatar ||
+                                      _requiresReload ? null : _pickPhoto,
                               icon: _savingPhoto
                                   ? const SizedBox(
                                       width: 18, height: 18,
@@ -301,7 +380,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           Center(
                             child: TextButton.icon(
                               key: const ValueKey('profile-remove-photo'),
-                              onPressed: _saving || _savingPhoto
+                              onPressed: _saving || _savingPhoto || _requiresReload
                                   ? null : () => setState(() => _removeAvatar = true),
                               icon: const Icon(Icons.delete_outline_rounded),
                               label: const Text('Remove photo'),
@@ -390,7 +469,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         const SizedBox(height: 16),
                         FilledButton(
                           key: const ValueKey('profile-edit-save'),
-                          onPressed: _saving || _savingPhoto || !_changed ? null : _save,
+                          onPressed: _saving || _savingPhoto || _requiresReload ||
+                              !_changed ? null : _save,
                           child: _saving
                               ? const SizedBox(
                                   height: 20,
@@ -401,11 +481,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   _creatingProfile ? 'Create profile' : 'Save profile',
                                 ),
                         ),
-                      ],
+                      ]),
                     ),
                   ),
                 ),
     );
   }
 }
-
