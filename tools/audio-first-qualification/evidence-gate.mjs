@@ -120,7 +120,7 @@ export function validateManifest(manifest, acceptanceDocument, { requireAllReal 
     reviewRequired: true,
     verifiedE2E: false,
     releaseAuthorized: false,
-    gatePassed: valid && (!requireAllReal || allRealClaimed),
+    preflightPassed: valid && (!requireAllReal || allRealClaimed),
     warning: 'Structural checks only; claims and evidence references need independent, real-boundary readback.'
   };
 }
@@ -150,7 +150,7 @@ export function main(argv = process.argv.slice(2)) {
     const manifest = JSON.parse(readBounded(manifestPath));
     const report = validateManifest(manifest, readBounded(journeysPath), { requireAllReal });
     console.log(JSON.stringify(report, null, 2));
-    return report.valid ? (report.gatePassed ? 0 : 2) : 1;
+    return report.valid ? (report.preflightPassed ? 0 : 2) : 1;
   } catch {
     // Do not echo arbitrary file content or private local paths to public logs.
     console.error('Evidence manifest or acceptance file could not be read/parsed safely');
