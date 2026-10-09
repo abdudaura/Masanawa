@@ -20,7 +20,9 @@ const _bob = HumanContact(
 class _FakeContacts implements HumanContactsTransport {
   Completer<List<HumanContact>>? pendingList;
   Completer<HumanContact?>? pendingLookup;
+  Completer<String>? pendingRequest;
   int requests = 0;
+  int lookups = 0;
   bool deny = false;
   HumanContactPreferences nextPrefs = _prefs;
 
@@ -32,14 +34,16 @@ class _FakeContacts implements HumanContactsTransport {
       pendingList == null ? [_bob] : pendingList!.future;
 
   @override
-  Future<HumanContact?> lookup(String handle) async =>
-      pendingLookup == null ? _bob : pendingLookup!.future;
+  Future<HumanContact?> lookup(String handle) async {
+    lookups++;
+    return pendingLookup == null ? _bob : pendingLookup!.future;
+  }
 
   @override
   Future<String> request(String handle) async {
     requests++;
     if (deny) throw const FormatException('Request unavailable');
-    return 'pending';
+    return pendingRequest == null ? 'pending' : pendingRequest!.future;
   }
 
   @override
@@ -244,6 +248,106 @@ void main() {
     expect(controller.state.contacts.map((person) => person.userId), ['user_b']);
     expect(controller.state.nextCursor, 'next_page_1');
     expect(controller.state.loadingMore, isFalse);
+    controller.dispose();
+  });
+
+  test('stale initial refresh cannot undo a confirmed privacy preference', () async {
+    final fake = _FakeContacts();
+    final oldList = Completer<List<HumanContact>>();
+    fake.pendingList = oldList;
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    expect(controller.state.loading, isTrue);
+
+    // A refresh started with old preferences and an outstanding contacts list.
+    fake.pendingList = null; // The next server read can complete normally.
+    await controller.updateDiscoverable(false);
+    expect(controller.state.preferences?.discoverableByHandle, isFalse);
+    expect(controller.state.loading, isFalse);
+
+    oldList.complete([_bob]);
+    await _tick();
+    expect(controller.state.preferences?.discoverableByHandle, isFalse);
+    expect(controller.state.contacts, isEmpty);
+    expect(controller.state.notice, 'Handle visibility saved.');
+    controller.dispose();
+  });
+
+  test('mutation fences an older contact lookup before permission changes', () async {
+    final fake = _FakeContacts();
+    final oldLookup = Completer<HumanContact?>();
+    fake.pendingLookup = oldLookup;
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    final searching = controller.findByHandle('bob');
+    await _tick();
+    expect(controller.state.searching, isTrue);
+
+    fake.pendingLookup = null;
+    await controller.updatePolicy(HumanContactPolicy.nobody);
+    expect(controller.state.searching, isFalse);
+    expect(controller.state.lookup, isNull);
+
+    oldLookup.complete(_bob);
+    await searching;
+    expect(controller.state.lookup, isNull);
+    expect(controller.state.lookupHandle, isNull);
+    expect(controller.state.preferences?.policy, HumanContactPolicy.nobody);
+    controller.dispose();
+  });
+
+  test('reads are suspended during an uncertain contact write', () async {
+    final fake = _FakeContacts()..pendingRequest = Completer<String>();
+    final controller = HumanContactsController(
+      transport: fake, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    final initial = controller.state.contacts;
+    final sending = controller.request('bob');
+    await _tick();
+    expect(controller.state.busy, isTrue);
+    await controller.refresh();
+    await controller.findByHandle('bob');
+    expect(fake.lookups, 0);
+    expect(controller.state.contacts, initial);
+    expect(controller.state.lookup, isNull);
+
+    fake.pendingRequest!.complete('pending');
+    await sending;
+    expect(controller.state.busy, isFalse);
+    expect(controller.state.notice, 'Contact request sent.');
+    expect(controller.state.contacts.single.userId, 'user_b');
+    controller.dispose();
+  });
+
+  test('revocation invalidates pre-write paginated contact results', () async {
+    final source = _PagedContacts()
+      ..delayedSecond = Completer<HumanContactPage>();
+    final controller = HumanContactsController(
+      transport: source, ownerId: 'user_a', isStillOwner: () => true,
+    );
+    await _tick();
+    final oldPage = controller.loadMore();
+    await _tick();
+    expect(controller.state.loadingMore, isTrue);
+    await controller.revoke('user_b');
+    expect(controller.state.loadingMore, isFalse);
+
+    source.delayedSecond!.complete(const HumanContactPage(contacts: [
+      HumanContact(
+        userId: 'user_secret', handle: 'secret', displayName: 'Stale',
+        avatarUrl: null, status: HumanContactStatus.accepted,
+        canMessage: false, requestRevision: '1',
+      ),
+    ], nextCursor: null));
+    await oldPage;
+    expect(controller.state.contacts.map((c) => c.userId), ['user_b']);
+    expect(controller.state.nextCursor, 'next_page_1');
+    expect(source.calls, 3); // Initial, in-flight page, post-revoke readback.
     controller.dispose();
   });
 }
