@@ -78,7 +78,11 @@ class _SelectedMessageAssistSheetState extends State<SelectedMessageAssistSheet>
             readOnly:c.preview?.purpose != HumanAiAssistPurpose.reply ||
                 c.phase==HumanAiAssistPhase.uncertain,
             decoration:const InputDecoration(border:OutlineInputBorder(),labelText:'Review suggestion'),
-            onChanged:c.changeReviewedText),
+            onChanged:(value) {
+              // A changed draft needs a FRESH confirmation of its exact text.
+              if (reviewedRecipient) setState(() => reviewedRecipient=false);
+              c.changeReviewedText(value);
+            }),
           if (c.preview?.purpose==HumanAiAssistPurpose.reply) ...[
             Text('Recipient: ${widget.recipientLabel}'),
             CheckboxListTile(contentPadding:EdgeInsets.zero,
