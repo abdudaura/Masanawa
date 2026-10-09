@@ -1,6 +1,23 @@
 {
   "schema_version": 1,
-  "active": [],
+  "active": [
+    {
+      "claim_id": "gpt6-f07-bidi-controls-20261009-0448",
+      "owner": "GPT-6 F07 bidi identifier display recovery",
+      "scope": "F07/R11 source-level safe identifier rendering under RTL/LTR",
+      "paths": [
+        "apps/mobile/lib/src/localization/bidi_display.dart",
+        "apps/mobile/test/localization/bidi_display_test.dart",
+        "docs/workstreams/f07-bidi-identifier-controls-20261009.md"
+      ],
+      "branch": "work/f07-bidi-identifier-controls-20261009-gpt6",
+      "base_sha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+      "pr": "",
+      "claimed_at": "2026-10-09T04:44:32.712Z",
+      "heartbeat_at": "2026-10-09T04:44:32.712Z",
+      "expires_at": "2026-10-09T04:49:32.712Z"
+    }
+  ],
   "history": [
     {
       "claim_id": "f11-ci-evidence-gpt6-20261009",
