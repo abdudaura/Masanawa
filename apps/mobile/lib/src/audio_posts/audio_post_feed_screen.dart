@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'audio_post_transport.dart';
+import 'follow_button.dart';
+import 'following_transport.dart';
 
 /// AF09 published audio-post feed. Legacy live Talks remain separate resources.
 /// AF00 mounts this at the Talks destination; AF05 supplies authorized playback.
@@ -7,12 +9,15 @@ class AudioPostFeedScreen extends StatefulWidget {
   const AudioPostFeedScreen({
     super.key,
     required this.transport,
+    this.followingTransport,
     required this.accountId,
     required this.isCurrentAccount,
     this.onPlayAuthorized,
     this.onCreatePost,
   });
   final AudioPostTransport transport;
+  /// Optional until AF00 has registered the authenticated Following routes.
+  final CreatorFollowingTransport? followingTransport;
   final String accountId;
   final bool Function(String) isCurrentAccount;
   /// Must resolve a short-lived authorized asset URL and obey shared audio focus.
@@ -26,7 +31,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   List<AudioPost> _items = const [];
   String? _next;
   String? _message;
-  bool _loading = true, _loadingMore = false, _mine = false, _saved = false;
+  bool _loading = true, _loadingMore = false, _mine = false, _saved = false, _following = false;
   int _generation = 0;
   final Set<String> _reacting = {};
   final Set<String> _removing = {};
@@ -47,7 +52,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   @override
   void didUpdateWidget(covariant AudioPostFeedScreen old) {
     super.didUpdateWidget(old);
-    if (old.accountId != widget.accountId || old.transport != widget.transport) {
+    if (old.accountId != widget.accountId || old.transport != widget.transport ||
+        old.followingTransport != widget.followingTransport) {
+      if (widget.followingTransport == null) _following = false;
       ++_generation;
       _items = const [];
       _next = null;
@@ -75,9 +82,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     _commentText.dispose();
     super.dispose();
   }
-  void _selectFeed({bool mine = false, bool saved = false}) {
-    if (_mine == mine && _saved == saved) return;
-    setState(() { _mine = mine; _saved = saved; });
+  void _selectFeed({bool mine = false, bool saved = false, bool following = false}) {
+    if (following && widget.followingTransport == null) return;
+    if (_mine == mine && _saved == saved && _following == following) return;
+    setState(() { _mine = mine; _saved = saved; _following = following; });
     _load();
   }
   Future<void> _load({bool more = false}) async {
@@ -92,7 +100,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _message = null;
     });
     try {
-      final page = _mine
+      final page = _following
+          ? await widget.followingTransport!.following(cursor: more ? _next : null)
+          : _mine
           ? AudioPostPage(items: await widget.transport.mine(), nextCursor: null)
           : _saved
             ? AudioPostPage(items: await widget.transport.saved(), nextCursor: null)
@@ -367,8 +377,11 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 40),
                       children: [
                         Wrap(spacing: 8, children: [
-                          ChoiceChip(label: const Text('Discover'), selected: !_mine && !_saved,
+                          ChoiceChip(label: const Text('Discover'), selected: !_mine && !_saved && !_following,
                             onSelected: _authorized ? (_) => _selectFeed() : null),
+                          if (widget.followingTransport != null)
+                            ChoiceChip(label: const Text('Following'), selected: _following,
+                              onSelected: _authorized ? (_) => _selectFeed(following: true) : null),
                           ChoiceChip(label: const Text('Saved'), selected: _saved,
                             onSelected: _authorized ? (_) => _selectFeed(saved: true) : null),
                           ChoiceChip(label: const Text('My Talks'), selected: _mine,
@@ -391,7 +404,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                 const Icon(Icons.graphic_eq, size: 48),
                                 const SizedBox(height: 14),
                                 Text(_mine ? 'No Talks in your library yet.'
-                                  : _saved ? 'No saved Talks yet.' : 'No published audio Talks yet.'),
+                                  : _saved ? 'No saved Talks yet.'
+                                  : _following ? 'No Talks from followed creators yet.'
+                                  : 'No published audio Talks yet.'),
                                 const SizedBox(height: 6),
                                 const Text('New audio posts will appear here.'),
                               ],
@@ -413,6 +428,17 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                     if (post.authorKind == 'masana')
                                       const Text('AI', semanticsLabel: 'AI-created audio'),
                                   ]),
+                                  if (widget.followingTransport != null && !_mine &&
+                                      post.status == 'published')
+                                    CreatorFollowButton(
+                                      key: ValueKey('creator-follow-${post.postId}'),
+                                      transport: widget.followingTransport!,
+                                      postId: post.postId,
+                                      authorId: post.authorId,
+                                      authorKind: post.authorKind,
+                                      accountId: widget.accountId,
+                                      isCurrentAccount: widget.isCurrentAccount,
+                                    ),
                                   const SizedBox(height: 8),
                                   Text(post.title, style: Theme.of(context).textTheme.titleMedium),
                                   const SizedBox(height: 6),
