@@ -183,11 +183,12 @@
     {
       "claim_id": "af15-599-postgres-adapter-gpt6-20261010-0444",
       "owner": "AF15 existing PR #599 PostgreSQL adapter continuation (GPT-6 0444)",
-      "scope": "Implement persistent fail-closed PostgreSQL tombstone claims/preflight/lease completion against canonical media cleanup repository; no AF00 migrations/startup/worker registration",
+      "scope": "Implement persistent fail-closed PostgreSQL tombstone claims/preflight/lease completion against canonical media cleanup repository; no AF00 migrations/startup/worker registration; prepare unnumbered append-only schema for explicit AF00 migration transfer without altering migration registry",
       "paths": [
         "services/worker/src/durable_operations/media_cleanup_pg.ts",
         "services/worker/src/durable_operations/media_cleanup_pg.test.mjs",
-        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
+        "docs/workstreams/AF15-orphan-cleanup-20261010.md",
+        "services/worker/src/durable_operations/media_cleanup_pg_schema.sql"
       ],
       "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
