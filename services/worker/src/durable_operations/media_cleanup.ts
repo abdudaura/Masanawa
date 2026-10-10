@@ -64,7 +64,9 @@ export function validCleanupCandidate(value: CleanupCandidate): boolean {
   }
   const segments = value.objectKey.split("/");
   if (segments.some(s => s.length === 0 || s === "." || s === ".." || s.length > 180) ||
-      !segments.includes(value.tenantId)) return false;
+      !segments.includes(value.tenantId) ||
+      // A second tenant namespace would let a forged key cross a storage boundary.
+      segments.some(segment => TENANT.test(segment) && segment !== value.tenantId)) return false;
   // Prevent deleting a mutable key: require provider version OR a checksum-bearing key.
   if (value.objectVersion === null) {
     return /(?:^|\/)sha256-[0-9a-f]{64}(?:\.[A-Za-z0-9]{1,8})?$/u.test(value.objectKey);
@@ -89,7 +91,10 @@ export async function runMediaCleanupBatch(input: Readonly<{
   // A real repository must claim/tombstone before this API can be called.
   if (input.shouldStop?.()) return { claimed: 0, deleted: 0, absent: 0, blocked: 0, leaseLost: 0, quarantined: 0 };
   const candidates = await input.repository.claim({ workerId: input.workerId, nowMs: input.nowMs, max: input.max });
-  if (!Array.isArray(candidates) || candidates.length > input.max) {
+  // Reject structurally corrupt responses before touching *any* provider object.
+  // Per-object invalid keys are still quarantined by the normal loop.
+  if (!Array.isArray(candidates) || candidates.length > input.max ||
+      candidates.some(candidate => candidate === null || typeof candidate !== "object" || Array.isArray(candidate))) {
     throw new Error("media_cleanup.invalid_claim_response");
   }
   const seen = new Set<string>();
@@ -106,6 +111,11 @@ export async function runMediaCleanupBatch(input: Readonly<{
     let preflight: CleanupPreflight;
     try { preflight = await input.repository.preflight(candidate); }
     catch { quarantined++; await input.repository.stop(candidate, "uncertain"); continue; }
+    if (!preflight || typeof preflight !== "object") {
+      quarantined++;
+      await input.repository.stop(candidate, "invalid");
+      continue;
+    }
     if (preflight.state === "lease-lost") { leaseLost++; continue; }
     if (preflight.state === "blocked") { blocked++; await input.repository.stop(candidate, "blocked"); continue; }
     if (preflight.state !== "ready" || preflight.referenceRevision !== candidate.referenceRevision ||
@@ -114,6 +124,10 @@ export async function runMediaCleanupBatch(input: Readonly<{
       await input.repository.stop(candidate, "invalid");
       continue;
     }
+    // Preflight may await DB I/O. A drain/kill signal arriving while it was
+    // pending must not start a new irreversible object deletion. Retain the
+    // existing durable claim for lease-based recovery; do not mark it complete.
+    if (input.shouldStop?.()) break;
     let outcome: "deleted" | "absent";
     try {
       outcome = await input.storage.deleteExact(candidate);
