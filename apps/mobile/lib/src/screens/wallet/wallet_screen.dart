@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../commerce/wallet_models.dart';
+import '../../agents/masanawa_transport.dart';
+import '../../core/providers.dart';
+import '../../finance/msn_balance_card.dart';
+import '../../finance/msn_balance_transport.dart';
+import '../../state/session_state.dart';
 import '../../state/wallet_state.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -31,6 +36,19 @@ class WalletScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final wallet = ref.watch(walletProvider);
+    final sessionClient = ref.watch(apiClientProvider);
+    final session = ref.watch(sessionProvider);
+    final sessionIdentity = session is SessionSignedIn
+        ? session.tokens.accessToken
+        : null;
+    Widget msnReadback() => MsnBalanceCard(
+      sessionIdentity: sessionIdentity,
+      transport: GatewayMsnBalanceTransport(
+        dio: sessionClient.dio,
+        baseUrl: kAgentBaseUrl,
+        readAccessToken: () => ref.read(apiClientProvider).accessToken,
+      ),
+    );
 
     // Loading or a balance failure must not remove entry to separate,
     // independently qualified Billing/Crypto routes.
@@ -43,7 +61,9 @@ class WalletScreen extends ConsumerWidget {
           onBuyBills: onBuyBills,
           onOpenBillingService: onOpenBillingService,
         ),
-        const SizedBox(height: 80),
+        const SizedBox(height: 12),
+        msnReadback(),
+        const SizedBox(height: 40),
         if (loading)
           const Center(child: CircularProgressIndicator())
         else ...[
@@ -76,13 +96,15 @@ class WalletScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               children: [
-                _Balances(view: value),
-                const SizedBox(height: 12),
                 WalletServiceShortcuts(
                   onOpenCrypto: onOpenCrypto,
                   onBuyBills: onBuyBills,
                   onOpenBillingService: onOpenBillingService,
                 ),
+                const SizedBox(height: 12),
+                msnReadback(),
+                const SizedBox(height: 12),
+                _Balances(view: value),
                 if (onAddMoney != null || onSend != null || onWithdraw != null) ...[
                   const SizedBox(height: 12),
                   _Actions(
@@ -138,7 +160,8 @@ class _Balances extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Spendable Credits', style: TextStyle(color: u.textMuted)),
+          Text('Legacy Credits · separate from MSN',
+              style: TextStyle(color: u.textMuted)),
           const SizedBox(height: 4),
           Text(
             '${view.spendableCredits} Cr',
