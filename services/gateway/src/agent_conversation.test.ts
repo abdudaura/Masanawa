@@ -843,4 +843,125 @@ describe("Alpha conversation service", () => {
     expect(JSON.stringify({ completed, eventPayloads })).not.toContain("never publish");
   });
 
+  it("redacts an older completed-turn replay without running the model again", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const modelExecute = vi.fn();
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { throw new Error("replay must not start another run"); },
+        async read() { throw new Error("not used"); },
+        async finish() { throw new Error("replay must not mutate terminal run"); },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() {
+          return { state: "existing", command: {
+            state: "completed",
+            reply: 'Stale <masanawa_crypto_action>{"type":"crypto.withdraw"}</masanawa_crypto_action>',
+            agentRunId: createCanonicalId("agent-run"),
+            parts: [{ private: "do not expose" }],
+          } };
+        },
+      } as never,
+      strategy: { execute: modelExecute },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy crypto",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    expect(response.reply).toContain("Check your recent activity");
+    expect(response.reply).not.toContain("masanawa_crypto_action");
+    expect(response.parts).toEqual([]);
+    expect(modelExecute).not.toHaveBeenCalled();
+  });
+
+  it.each(["media", "media-set"] as const)(
+    "redacts unresolved directives from %s result and durable history",
+    async (kind) => {
+      const f = fixture();
+      const session = sessionFor(f);
+      const completed: Array<{ reply: string; parts: readonly unknown[] }> = [];
+      const events: Array<Readonly<Record<string, unknown>>> = [];
+      const service = createAgentConversationService({
+        sessions: {
+          async create() { return session; },
+          async read() { return session; },
+          async updateBindings() { throw new Error("not used"); },
+          async close() { return session; },
+          async reset() { throw new Error("not used"); },
+        },
+        runs: {
+          async create() { return {} as never; },
+          async read() { throw new Error("not used"); },
+          async finish() { return {} as never; },
+        },
+        authorizer: { async authorize() { return f.admission; } },
+        mobileShell: {
+          async claimTurn() { return { state: "created" }; },
+          async appendEvent(event: { payload: Readonly<Record<string, unknown>> }) {
+            events.push(event.payload);
+            return {};
+          },
+          async completeTurn(item: { reply: string; parts: readonly unknown[] }) {
+            completed.push({ reply: item.reply, parts: item.parts });
+            return {};
+          },
+          async failTurn() { throw new Error("completed run must not fail"); },
+        } as never,
+        strategy: {
+          async execute() {
+            return {
+              reply: 'Raw <masanawa_learning_state>{"private":true}</masanawa_learning_state>',
+              parts: [{ secret: true }],
+            };
+          },
+        },
+        sessionDurationMs: 60_000,
+      });
+      const common = {
+        authorizationHeader: "Bearer alpha",
+        characterSessionId: session.characterSessionId,
+        characterId: f.scope.characterId,
+        caption: "analyze this",
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      };
+      const response = kind === "media"
+        ? await service.mediaTurn({
+            ...common,
+            mimeType: "audio/mp4",
+            dataBase64: "YWJj",
+          })
+        : await service.mediaSetTurn({
+            ...common,
+            media: [
+              { mimeType: "image/jpeg", dataBase64: "YWJj" },
+              { mimeType: "image/jpeg", dataBase64: "ZGVm" },
+            ],
+          });
+      expect(response.reply).toContain("Check your recent activity");
+      expect(response.parts).toEqual([]);
+      expect(completed).toEqual([{ reply: response.reply, parts: [] }]);
+      expect(events[events.length - 1]).toMatchObject({
+        reply: response.reply,
+        parts: [],
+      });
+      expect(JSON.stringify({ response, completed, events })).not.toContain("masanawa_learning_state");
+      expect(JSON.stringify({ response, completed, events })).not.toContain("secret");
+    },
+  );
+
 });
