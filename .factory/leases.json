@@ -324,6 +324,23 @@
       "heartbeat_at": "2026-10-10T04:50:56.006Z",
       "expires_at": "2026-10-10T04:55:56.006Z",
       "notes": "Scope is only new feature-layer Flutter files; AF05 owns native recording infrastructure and AF15 owns canonical media authority. AF00 owns composer injection/shell."
+    },
+    {
+      "claim_id": "af09-609-social-schema-gpt6-0552",
+      "owner": "AF09 #609 GPT-6 social SQL source continuation",
+      "scope": "Implement missing append-only unnumbered executable social SQL schema required by AF09 PostgreSQL adapters, with disposable-DB negative integration test; AF00 retains numbered migration registry and deploy",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/schema.sql",
+        "adapters/storage/postgres/src/audio_posts/schema_integration.test.mjs",
+        "docs/workstreams/AF09-social-schema-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:51:41.624Z",
+      "heartbeat_at": "2026-10-10T04:51:41.624Z",
+      "expires_at": "2026-10-10T04:56:41.624Z",
+      "notes": "Independent new feature-owned SQL proposal; request AF00 transfer for exact numbered migration once source contract reviewed; no production writes"
     }
   ],
   "history": [
