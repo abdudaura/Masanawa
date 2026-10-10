@@ -1137,14 +1137,15 @@
         "services/worker/src/jobs/external_videos/**",
         "apps/mobile/lib/src/features/videos/**",
         "apps/admin_mobile/lib/src/features/external_videos/**",
-        "tests/e2e/J15/**"
+        "tests/e2e/J15/**",
+        "adapters/storage/postgres/src/external_videos/**"
       ],
       "branch": "lane/l-video-manual-admission-20261010-gpt6",
       "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
       "claimed_at": "2026-10-10T16:12:36.964Z",
-      "heartbeat_at": "2026-10-10T16:12:36.964Z",
-      "expires_at": "2026-10-10T16:17:36.964Z",
-      "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation."
+      "heartbeat_at": "2026-10-10T16:16:24.359Z",
+      "expires_at": "2026-10-10T16:21:24.359Z",
+      "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation. PG adapter exact directory included; source commit 78b123aa."
     },
     {
       "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
