@@ -1061,7 +1061,10 @@
       "claimed_at": "2026-10-10T15:51:39.052Z",
       "heartbeat_at": "2026-10-10T15:51:39.052Z",
       "expires_at": "2026-10-10T15:56:39.052Z",
-      "notes": "Read and commented on PR head before takeover of unclaimed paths. Fix verified denied-path gaps; keep replacement Masana and finance APIs open."
+      "notes": "Read and commented on PR head before takeover of unclaimed paths. Fix verified denied-path gaps; keep replacement Masana and finance APIs open.",
+      "released_at": "2026-10-10T15:54:32.145Z",
+      "release_reason": "Exact old route API denial patterns + tests committed on existing PR618 head b15f148; 46 static policy assertions PASS; integrated tests not run, AF00 merge conflict pending; source/financial data preserved.",
+      "integration_head_sha": null
     }
   ],
   "history": [
