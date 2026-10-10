@@ -6,6 +6,7 @@ import '../finance/crypto_wallet_screen.dart';
 import '../screens/activity/activity_screen.dart';
 import '../screens/billing/billing_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
+import '../screens/chat/masana_list_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
@@ -29,7 +30,7 @@ import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
 import '../talks/talk_models.dart';
 
-/// The approved four root destinations. These are navigation indices only,
+/// The confirmed five root destinations. These are navigation indices only,
 /// not a pricing, identity or task-authority contract.
 int shellRootTabIndex(String? tab) =>
     MasanawaRootTab.fromQuery(tab).index;
@@ -39,13 +40,14 @@ String? legacyShellDestination(String? tab) => switch (tab) {
       'create' => '/talk/create',
       'activity' => '/activity',
       'you' => '/you',
+      'agents' || 'masana' => '/agents',
       _ => null,
     };
 
 /// Production router for the human-hosted Talk product.
 ///
-/// Root shell: Home · Agents · Wallet · Talk; legacy entry points stay valid.
-/// Home contains Explore / Live Talks.
+/// Root shell: Chats · Rooms · Talks · Gwani · Wallet. Talks is default.
+/// Historical live Talk and AI routes remain separately typed resources.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -53,8 +55,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
 
       if (path == '/splash') return null;
-      if (path == '/chat' || path == '/chats') return '/home?tab=talk';
-      if (path == '/agents' || path == '/masana') return '/home?tab=agents';
+      if (path == '/chat') return '/home?tab=gwani';
+      if (path == '/chats' || path == '/messages') return '/home?tab=chats';
+      if (path == '/rooms') return '/home?tab=rooms';
+      if (path == '/talks') return '/home';
+      if (path == '/gwani' || path == '/assistant') return '/home?tab=gwani';
 
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
@@ -66,14 +71,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (isSignedIn && (path == '/phone-login' || path == '/otp')) {
-        final user = (session as SessionSignedIn).user;
+        final user = session.user;
         return user.isNewUser ? '/name' : '/home';
       }
 
       if (path == '/name') {
         if (session is SessionNameRequired) return null;
         if (isSignedIn) {
-          final user = (session as SessionSignedIn).user;
+          final user = session.user;
           return user.isNewUser ? null : '/home';
         }
         return '/phone-login';
@@ -231,7 +236,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           onOpenCrypto: () => context.push('/crypto'),
         ),
       ),
-      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=talk'),
+      // Register matching routes as well as the global aliases: go_router
+      // resolves a location before applying top-level redirect logic.
+      GoRoute(path: '/chat', redirect: (_, __) => '/home?tab=gwani'),
+      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=chats'),
+      GoRoute(path: '/messages', redirect: (_, __) => '/home?tab=chats'),
+      GoRoute(path: '/rooms', redirect: (_, __) => '/home?tab=rooms'),
+      GoRoute(path: '/talks', redirect: (_, __) => '/home'),
+      GoRoute(path: '/gwani', redirect: (_, __) => '/home?tab=gwani'),
+      GoRoute(path: '/assistant', redirect: (_, __) => '/home?tab=gwani'),
       GoRoute(
         path: '/chat/:id',
         builder: (context, state) {
@@ -269,8 +282,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
         ),
       ),
-      GoRoute(path: '/agents', redirect: (_, __) => '/home?tab=agents'),
-      GoRoute(path: '/masana', redirect: (_, __) => '/home?tab=agents'),
+      // Preserve the historical directory action independently of bottom tabs.
+      // A new-chat entry must not loop back to the Chats inbox.
+      GoRoute(path: '/agents', builder: (_, _) => const AgentListScreen()),
+      GoRoute(path: '/masana', builder: (_, _) => const AgentListScreen()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/billing',

@@ -97,7 +97,6 @@ final class LocalePreferenceController extends ChangeNotifier {
     }
   }
 
-  @override
   void dispose() {
     _disposed = true;
     super.dispose();

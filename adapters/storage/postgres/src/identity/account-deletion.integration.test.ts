@@ -35,6 +35,28 @@ describeDatabase("R12 durable PostgreSQL deletion request", () => {
   });
   afterAll(async () => { await pool?.end(); });
 
+  it("onboards multiple email-only customers without falsely colliding on NULL phone", async () => {
+    const profiles = createPostgresPlatformSessionRepository(pool);
+    const firstEmail = `first-${randomUUID()}@example.com`;
+    const secondEmail = `second-${randomUUID()}@example.com`;
+    const first = await profiles.createProfile({
+      tenantId, channel: "email", identifier: firstEmail,
+      name: "Email First", locale: "en", createdAt,
+    });
+    const second = await profiles.createProfile({
+      tenantId, channel: "email", identifier: secondEmail,
+      name: "Email Second", locale: "en", createdAt,
+    });
+    expect(second.userId).not.toBe(first.userId);
+    expect(first.phone).toBeNull();
+    expect(second.phone).toBeNull();
+    const duplicate = await profiles.createProfile({
+      tenantId, channel: "email", identifier: firstEmail,
+      name: "Different Name", locale: "en", createdAt,
+    });
+    expect(duplicate.userId).toBe(first.userId);
+  });
+
   it("creates once under concurrent requests and persists one audit event", async () => {
     const requests = createPostgresAccountDeletionRepository(pool);
     const [a, b] = await Promise.all([

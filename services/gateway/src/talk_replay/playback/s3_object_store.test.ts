@@ -14,7 +14,7 @@ describe("Replay private object store",()=>{
       secret:"0123456789abcdef",
       now:()=>new Date("2026-10-07T10:00:00.000Z"),
       fetchImpl:async(url,init)=>{
-        calls.push({url:String(url),init});
+        calls.push({url:String(url),...(init === undefined ? {} : {init})});
         return new Response(bytes,{status:200,headers:{"content-length":String(bytes.byteLength)}});
       },
     });

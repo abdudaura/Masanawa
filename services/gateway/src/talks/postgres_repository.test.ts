@@ -67,7 +67,7 @@ describe("Postgres Talk repository", () => {
     let call: { text: string; values?: unknown[] } | undefined;
     const pool: TalkSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        call = { text, values };
+        call = { text, ...(values === undefined ? {} : { values }) };
         return {
           rowCount: 1,
           rows: [row({

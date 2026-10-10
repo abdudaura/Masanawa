@@ -44,12 +44,18 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
       - name: Test
+        # Independent checks must run despite preceding failures; job stays red.
+        if: ${{ !cancelled() }}
         run: pnpm test:ci
       - name: Provider qualification tooling tests
+        # Independent checks must run despite preceding failures; job stays red.
+        if: ${{ !cancelled() }}
         run: >-
           node --test
           scripts/flutterwave-billing-qualification-gate.test.mjs
           scripts/flutterwave-billing-production-qualification.test.mjs
           scripts/nowpayments-production-qualification.test.mjs
       - name: Build
+        # Independent checks must run despite preceding failures; job stays red.
+        if: ${{ !cancelled() }}
         run: pnpm build

@@ -34,9 +34,9 @@ function repo(initiallyMissing = false): TalkProfileRepository {
       if (userId === "user_viewer" && !hasOwnProfile) return null;
       return {
         handle: "amina",
-        displayName: "Amina",
-        bio: "Host",
-        avatarUrl: null,
+        displayName,
+        bio: biography,
+        avatarUrl,
         followerCount: following ? 11 : 10,
         followingCount: 2,
         isFollowing: following,

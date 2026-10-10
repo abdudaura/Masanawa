@@ -11,7 +11,8 @@ import '../../tokens/masanawa_tokens.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../state/session_state.dart';
 
-/// Brand moment (≤1.5 s), then route to the chats or to login when signed out.
+/// Neutral brand moment (≤1.5 s), then route to the ordinary Talks root
+/// or authentication. Incoming calls/deep links are routed separately.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -49,7 +50,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _brandTimer?.cancel();
     _restoreDeadline?.cancel();
     if (session is SessionSignedIn) {
-      context.go('/chats');
+      context.go('/home');
     } else if (session is SessionNameRequired) {
       context.go('/name');
     } else if (session is SessionAwaitingOtp ||
@@ -73,29 +74,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     ref.listen(sessionProvider, (_, next) {
       if (_brandReady) _navigate(next);
     });
-    final u = context.masanawa;
+    // Match the Android launch window even if a dark appearance is active.
+    // Global brand/theme changes must not reintroduce a coloured launch flash.
+    final neutral = MasanawaColors.light();
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: neutral.surfaceCard,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [u.brandGradientFrom, u.brandGradientTo],
-          ),
-        ),
+        color: neutral.surfaceCard,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              MasanawaLogo(dark: true, height: 120, showWordmark: false),
+              MasanawaLogo(dark: false, height: 120, showWordmark: false),
               SizedBox(height: MasanawaTokens.spacing[4]),
-              const MasanawaWordmark(light: true, fontSize: 30),
+              const MasanawaWordmark(light: false, fontSize: 30),
               SizedBox(height: MasanawaTokens.spacing[2]),
               Text(
                 AppLocalizations.of(context).splashTagline,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: neutral.textMuted,
                   fontSize: MasanawaTokens.fontSize['md'],
                   fontWeight: FontWeight.w500,
                 ),

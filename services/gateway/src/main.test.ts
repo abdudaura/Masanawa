@@ -119,7 +119,7 @@ describe("gateway production lifecycle", () => {
       }),
       appFactory,
     })).rejects.toThrow(
-      "Billing is enabled but canonical customer auth or Flutterwave billing configuration is incomplete",
+      "Billing is enabled but canonical customer auth, NGN wallet, or Flutterwave configuration is incomplete",
     );
 
     expect(appFactory).not.toHaveBeenCalled();

@@ -12,6 +12,12 @@ function repository() {
     async participation() { return { handStatus: "idle" }; },
     async setReaction() { return { handStatus: "idle" }; },
     async setRaised() { return { handStatus: "idle" }; },
+    async leaveHumanSeat() { throw new Error("unexpected seat leave"); },
+    async submitQuestion() { throw new Error("unexpected question submission"); },
+    async listQuestions() { throw new Error("unexpected question listing"); },
+    async resolveQuestion() { throw new Error("unexpected question resolution"); },
+    async inviteHuman() { throw new Error("unexpected invitation"); },
+    async respondHumanInvitation() { throw new Error("unexpected invitation response"); },
     async hostControls() {
       return {
         requests: [],

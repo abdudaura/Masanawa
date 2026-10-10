@@ -274,11 +274,16 @@ describe("live Talk AI Seat worker", () => {
 
   it("stop aborts in-flight inference and suppresses publication", async () => {
     let resolveReply!: (value: { text: string; correlationId: string }) => void;
+    let signalInferenceStarted!: () => void;
+    const inferenceStarted = new Promise<void>((resolve) => {
+      signalInferenceStarted = resolve;
+    });
     const persona: TalkAiSeatPersonaRuntime = {
       respond: vi.fn(
         () =>
-          new Promise((resolve) => {
+          new Promise<{ text: string; correlationId: string }>((resolve) => {
             resolveReply = resolve;
+            signalInferenceStarted();
           }),
       ),
     };
@@ -290,7 +295,7 @@ describe("live Talk AI Seat worker", () => {
       seatId: "seat-ai-1",
       turn,
     });
-    await Promise.resolve();
+    await inferenceStarted;
     worker.stop();
     resolveReply({ text: "too late", correlationId: "corr-late" });
 

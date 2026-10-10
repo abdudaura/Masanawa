@@ -92,5 +92,13 @@
   "statusOffline": "Ba ya kan layi",
   "statusUnverified": "Ba a tabbatar da halinsa ba",
   "statusWorkingTasks": "{count, plural, =1{Yana aiki · aiki 1} other{Yana aiki · ayyuka {count}}}",
-  "twinShareText": "Yi hira da {name} a Masanawa: {url}"
+  "twinShareText": "Yi hira da {name} a Masanawa: {url}",
+  "navChats": "Hirarraki",
+  "navRooms": "Ɗakuna",
+  "navTalks": "Talks",
+  "navGwani": "Gwani",
+  "roomsPendingTitle": "Ba a fara amfani da ɗakuna ba tukuna",
+  "roomsPendingDetail": "Rukunin tattaunawar murya za su bayyana a nan idan an shirya sabis ɗin Ɗakuna.",
+  "talksPendingTitle": "Har yanzu babu saƙonnin murya na Talks",
+  "talksPendingDetail": "Saƙonnin murya da aka wallafa za su bayyana a nan idan an shirya sabis ɗin Talks."
 }

@@ -38,6 +38,8 @@ interface ApiLifecycle {
     readonly supportedMajors: readonly number[];
     readonly operationalUnversionedPaths: readonly string[];
     readonly compatibilityUnversionedPrefixes: readonly string[];
+    /** Exact, audited legacy URLs retained until callers migrate to /v1. */
+    readonly compatibilityUnversionedPaths: readonly string[];
   };
   readonly deprecations: readonly ApiDeprecation[];
 }
@@ -145,6 +147,16 @@ describe("public API lifecycle", () => {
       "/offers",
       "/quotes",
     ]);
+    const exactLegacy = lifecycle.http.compatibilityUnversionedPaths;
+    expect(exactLegacy.length).toBeGreaterThan(0);
+    expect([...new Set(exactLegacy)].sort()).toEqual(exactLegacy);
+    for (const route of exactLegacy) {
+      expect(route).toMatch(/^\/[a-z][\w/:-]*$/u);
+      expect(lifecycle.http.operationalUnversionedPaths).not.toContain(route);
+      expect(lifecycle.http.compatibilityUnversionedPrefixes.some(
+        (prefix) => route === prefix || route.startsWith(`${prefix}/`),
+      )).toBe(false);
+    }
   });
 
   it("uses SemVer metadata and root-only exports for reusable workspaces", () => {
@@ -198,7 +210,7 @@ describe("public API lifecycle", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("versions service contract routes while leaving only probes unversioned", () => {
+  it("versions service routes and audits every exact legacy unversioned exception", () => {
     const operational = new Set(
       lifecycle.http.operationalUnversionedPaths,
     );
@@ -206,6 +218,8 @@ describe("public API lifecycle", () => {
       lifecycle.http.supportedMajors.map((major) => `/v${major}`),
     );
     const compatibility = lifecycle.http.compatibilityUnversionedPrefixes;
+    const exactLegacy = new Set(lifecycle.http.compatibilityUnversionedPaths);
+    const observedLegacy = new Set<string>();
     const offenders: string[] = [];
 
     for (const file of sourceFiles(path.resolve("services"))) {
@@ -215,6 +229,10 @@ describe("public API lifecycle", () => {
       )) {
         const route = match[1]!;
         if (operational.has(route)) continue;
+        if (exactLegacy.has(route)) {
+          observedLegacy.add(route);
+          continue;
+        }
         if (compatibility.some(
           (prefix) => route === prefix || route.startsWith(`${prefix}/`),
         )) continue;
@@ -231,6 +249,8 @@ describe("public API lifecycle", () => {
     }
 
     expect(offenders).toEqual([]);
+    // Retire each compatibility entry after its last legacy route is removed.
+    expect([...observedLegacy].sort()).toEqual(lifecycle.http.compatibilityUnversionedPaths);
   });
 
   it("requires every source deprecation to be registered and auditable", () => {

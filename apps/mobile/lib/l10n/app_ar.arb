@@ -92,5 +92,13 @@
   "statusOffline": "غير متصل",
   "statusUnverified": "الحالة غير مؤكدة",
   "statusWorkingTasks": "{count, plural, =1{يعمل · مهمة واحدة} =2{يعمل · مهمتان} few{يعمل · {count} مهام} many{يعمل · {count} مهمة} other{يعمل · {count} مهمة}}",
-  "twinShareText": "تحدث مع {name} على Masanawa: {url}"
+  "twinShareText": "تحدث مع {name} على Masanawa: {url}",
+  "navChats": "الدردشات",
+  "navRooms": "الغرف",
+  "navTalks": "التسجيلات",
+  "navGwani": "Gwani",
+  "roomsPendingTitle": "الغرف غير متاحة بعد",
+  "roomsPendingDetail": "ستظهر المجموعات الصوتية هنا عند جاهزية خدمة الغرف.",
+  "talksPendingTitle": "المنشورات الصوتية غير متاحة بعد",
+  "talksPendingDetail": "ستظهر المنشورات الصوتية المنشورة هنا عند جاهزية خدمة التسجيلات."
 }

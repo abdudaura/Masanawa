@@ -53,12 +53,13 @@ function base() {
 describe("channel Twin routing",()=>{
   it("switches a WhatsApp user to a unique public Twin and persists the Character",async()=>{
     const x=base();
-    const twinDirectory = {
+    const twinDirectory: TwinDirectoryService = {
+      async resolve(){return null;},
       async search(){return [{
         characterId:x.twin,publicId:"aisha",displayName:"Aisha",headline:"",avatarUrl:null,
         representationLabel:"AI twin" as const,ownerPresence:"not-present" as const,textChatMode:"free" as const,
       }];},
-    } as unknown as TwinDirectoryService;
+    };
     const bridge=createCustomerChannelBridge({
       tenantId:x.tenantId,sessions:x.sessions,channels:x.channels,platformProfiles:x.platformProfiles,
       conversation:{} as AgentConversationService,twinDirectory,
@@ -70,6 +71,28 @@ describe("channel Twin routing",()=>{
     expect(result.reply).toContain("Aisha's AI Twin");
     expect(result.reply).toContain("Text chat here is free");
     expect(x.putLink).toHaveBeenCalledWith(expect.objectContaining({characterId:x.twin,characterSessionId:null}));
+  });
+
+  it("resolves a stable public Twin id before searching display names",async()=>{
+    const x=base();
+    const resolve=vi.fn(async()=>({
+      characterId:x.twin,publicId:"aisha",displayName:"Aisha",headline:"",avatarUrl:null,
+      representationLabel:"AI twin" as const,ownerPresence:"not-present" as const,textChatMode:"free" as const,
+    }));
+    const search=vi.fn(async()=>[]);
+    const twinDirectory: TwinDirectoryService={resolve,search};
+    const bridge=createCustomerChannelBridge({
+      tenantId:x.tenantId,sessions:x.sessions,channels:x.channels,platformProfiles:x.platformProfiles,
+      conversation:{} as AgentConversationService,twinDirectory,
+    });
+    const result=await bridge.handle({
+      channel:"whatsapp",messageId:"stable-id",externalUserId:"+2348012345678",
+      chatId:"2348012345678@s.whatsapp.net",text:"talk to Aisha's twin",
+    });
+    expect(result.reply).toContain("Aisha's AI Twin");
+    expect(resolve).toHaveBeenCalledWith(expect.objectContaining({publicId:"Aisha"}));
+    expect(search).not.toHaveBeenCalled();
+    expect(x.getLink().characterId).toBe(x.twin);
   });
 
   it("passes Telegram public-Twin surface context into the canonical conversation",async()=>{
@@ -112,12 +135,13 @@ describe("channel Twin routing",()=>{
   it("does not guess when multiple public Twins match",async()=>{
     const x=base();
     const other=createCanonicalId("character");
-    const twinDirectory={
+    const twinDirectory: TwinDirectoryService={
+      async resolve(){return null;},
       async search(){return [
         {characterId:x.twin,publicId:"aisha-one",displayName:"Aisha Bello",headline:"",avatarUrl:null,representationLabel:"AI twin" as const,ownerPresence:"not-present" as const,textChatMode:"free" as const},
         {characterId:other,publicId:"aisha-two",displayName:"Aisha Musa",headline:"",avatarUrl:null,representationLabel:"AI twin" as const,ownerPresence:"not-present" as const,textChatMode:"free" as const},
       ];},
-    } as unknown as TwinDirectoryService;
+    };
     const bridge=createCustomerChannelBridge({
       tenantId:x.tenantId,sessions:x.sessions,channels:x.channels,platformProfiles:x.platformProfiles,
       conversation:{} as AgentConversationService,twinDirectory,

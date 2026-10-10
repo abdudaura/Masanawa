@@ -133,7 +133,7 @@ class _FakeTwinDirectoryTransport implements TwinDirectoryTransport {
 
 Widget _app({
   TalkActivityTransport? activity,
-  int initialIndex = 0,
+  int initialIndex = 2,
   Locale uiLocale = const Locale('en'),
 }) {
   return ProviderScope(
@@ -204,43 +204,39 @@ void main() {
     expect(matchingAgentEntries(agents, '').length, 2);
   });
 
-  testWidgets('R17 root shell has the approved four destinations and header', (tester) async {
+  testWidgets('AF00 shell has the confirmed five destinations, Talks centre',
+      (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Agents'), findsOneWidget);
-    expect(find.text('Wallet'), findsOneWidget);
-    expect(find.text('Talk'), findsOneWidget);
-    expect(find.text('Create'), findsNothing);
-    expect(find.byTooltip('Start Talk'), findsOneWidget);
-    expect(find.byTooltip('Activity'), findsOneWidget);
-    expect(find.byTooltip('Profile'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byTooltip('Profile'),
-        matching: find.text('U'),
-      ),
-      findsOneWidget,
-    );
+    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(nav.selectedIndex, 2);
+    expect(nav.destinations.cast<NavigationDestination>().map((d) => d.label).toList(),
+      ['Chats', 'Rooms', 'Talks', 'Gwani', 'Wallet']);
+    expect(find.text('Audio posts are not available yet'), findsOneWidget);
+    // The historic live feed must not masquerade as new published audio posts.
+    expect(find.byKey(const ValueKey('talk-feed-explore')), findsNothing);
+    expect(find.byTooltip('Start Talk'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('bottom tab selection updates deep-linkable route', (tester) async {
+  testWidgets('AF00 room and wallet roots are semantic deep-link targets',
+      (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.smart_toy_outlined));
+
+    await tester.tap(find.byIcon(Icons.groups_outlined).last);
     await tester.pumpAndSettle();
     var router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
-    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'agents');
+    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'rooms');
+    expect(find.text('Rooms are not available yet'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.account_balance_wallet_outlined));
+    await tester.tap(find.byIcon(Icons.account_balance_wallet_outlined).last);
     await tester.pumpAndSettle();
     router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
     expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'wallet');
 
-    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.tap(find.byIcon(Icons.graphic_eq_outlined).last);
     await tester.pumpAndSettle();
     router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
     expect(router.routeInformationProvider.value.uri.path, '/home');
@@ -248,70 +244,24 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Home keeps a single visible title and vertical Talk tabs', (tester) async {
-    await tester.pumpWidget(_app());
+  testWidgets('AF00 private Gwani fails closed without opening microphone',
+      (tester) async {
+    await tester.pumpWidget(_app(initialIndex: 3));
     await tester.pumpAndSettle();
-
-    expect(find.text('Masanawa'), findsOneWidget);
-    expect(find.text('Explore'), findsOneWidget);
-    expect(find.text('Live Talks'), findsOneWidget);
-    expect(find.text('Is university still worth it?'), findsOneWidget);
-    expect(
-      tester.widget<ListView>(
-        find.byKey(const ValueKey('talk-feed-explore')),
-      ).padding,
-      const EdgeInsets.fromLTRB(10, 10, 10, 100),
-    );
-    await tester.tap(find.text('Live Talks'));
-    await tester.pumpAndSettle();
-    expect(find.text('Can AI create more jobs than it removes?'), findsOneWidget);
+    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(nav.selectedIndex, 3);
+    expect(find.text('Gwani is unavailable right now.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.byTooltip('Start Talk'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Agents tab presents public Twins from the Gateway directory', (tester) async {
-    await tester.pumpWidget(_app(initialIndex: 1));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Masanawa Agents'), findsOneWidget);
-    expect(find.text('Twins'), findsOneWidget);
-    await tester.tap(find.text('Twins'));
-    await tester.pumpAndSettle();
-    expect(find.text('Amina Twin'), findsOneWidget);
-    expect(find.text('Public storyteller'), findsOneWidget);
-    expect(find.text('My Twin'), findsOneWidget);
-    expect(
-      tester.widget<ListView>(
-        find.byKey(const ValueKey('public-twins-list')),
-      ).padding,
-      const EdgeInsets.only(bottom: 96),
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('public Twin private Talk checks directory before navigation', (tester) async {
-    await tester.pumpWidget(_app(initialIndex: 1));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Twins'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Talk'));
-    await tester.pumpAndSettle();
-    expect(
-      find.text('Private Talk with Amina Twin is not available yet.'),
-      findsOneWidget,
-    );
-    expect(find.text('View profile'), findsOneWidget);
-    await tester.tap(find.text('View profile'));
-    await tester.pumpAndSettle();
-    expect(find.text('Profile amina-twin'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Activity is opened from the header and not fetched on Home', (tester) async {
+  testWidgets('AF00 activity and profile stay nested, outside bottom tabs',
+      (tester) async {
     final activity = _CountingActivityTransport();
     await tester.pumpWidget(_app(activity: activity));
     await tester.pumpAndSettle();
     expect(activity.loads, 0);
-
     await tester.tap(find.byTooltip('Activity'));
     await tester.pumpAndSettle();
     expect(activity.loads, 1);
@@ -319,52 +269,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Profile header action opens the existing You hub route', (tester) async {
-    await tester.pumpWidget(_app());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Profile'));
-    await tester.pumpAndSettle();
-    expect(find.text('Your profile'), findsOneWidget);
-    expect(find.text('Settings & privacy'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('private Talk does not start a microphone on tab entry', (tester) async {
-    await tester.pumpWidget(_app());
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Talk'));
-    await tester.pumpAndSettle();
-    // Without a qualified server agent, the shell fails closed with Retry.
-    expect(find.text('Gwani is unavailable right now.'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
-    expect(find.byTooltip('Start Talk'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
-
-  testWidgets('Arabic locale translates shell navigation without changing route semantics', (tester) async {
+  testWidgets('AF00 Arabic root labels retain RTL and semantic destination',
+      (tester) async {
     await tester.pumpWidget(_app(uiLocale: const Locale('ar')));
     await tester.pumpAndSettle();
-    expect(find.text('الرئيسية'), findsOneWidget);
-    expect(find.text('الوكلاء'), findsOneWidget);
-    expect(find.text('المحفظة'), findsOneWidget);
-    expect(find.text('تحدث'), findsOneWidget);
-    expect(find.byTooltip('النشاط'), findsOneWidget);
-    expect(find.byTooltip('الملف الشخصي'), findsOneWidget);
-    expect(
-      Directionality.of(tester.element(find.byType(NavigationBar))),
-      TextDirection.rtl,
-    );
-    await tester.tap(find.byIcon(Icons.smart_toy_outlined));
+    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(nav.destinations.cast<NavigationDestination>().map((d) => d.label).toList(),
+      ['الدردشات', 'الغرف', 'التسجيلات', 'Gwani', 'المحفظة']);
+    expect(nav.selectedIndex, 2);
+    expect(Directionality.of(tester.element(find.byType(NavigationBar))),
+      TextDirection.rtl);
+    await tester.tap(find.byIcon(Icons.groups_outlined).last);
     await tester.pumpAndSettle();
-    expect(find.text('وكلاء Masanawa'), findsOneWidget);
-    expect(find.text('التوائم'), findsOneWidget);
     final router = GoRouter.of(tester.element(find.byType(TwinHomeShell)));
-    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'agents');
+    expect(router.routeInformationProvider.value.uri.queryParameters['tab'], 'rooms');
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('four destinations fit on compact Android width', (tester) async {
+  testWidgets('AF00 five roots fit compact 320dp without exceptions',
+      (tester) async {
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -373,10 +296,8 @@ void main() {
     });
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Agents'), findsOneWidget);
-    expect(find.text('Wallet'), findsOneWidget);
-    expect(find.text('Talk'), findsOneWidget);
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar))
+        .destinations.length, 5);
     expect(tester.takeException(), isNull);
   });
 }

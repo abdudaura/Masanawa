@@ -11,6 +11,16 @@ import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../ui/components/masanawa_wordmark.dart';
 
+/// Account fence for actions that finish after a modal or another async gap.
+/// A signed-in session may rotate tokens without changing its owner, but
+/// another owner's thread must never receive the delayed action.
+bool chatActionBelongsToSession(SessionState initial, SessionState current) {
+  if (initial is SessionSignedIn) {
+    return current is SessionSignedIn && current.user.id == initial.user.id;
+  }
+  return identical(initial, current);
+}
+
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
 
@@ -135,6 +145,9 @@ class ChatListScreen extends ConsumerWidget {
     WidgetRef ref,
     ChatThread thread,
   ) async {
+    // Capture the owner before opening a modal: account changes while the
+    // sheet is visible must not retarget a destructive action.
+    final openingSession = ref.read(sessionProvider);
     final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -166,9 +179,25 @@ class ChatListScreen extends ConsumerWidget {
       ),
     );
     if (action == null || !context.mounted) return;
-    final ctl = ref.read(aiChatProvider.notifier);
-    if (action == 'pin') ctl.togglePin(thread.characterId);
-    if (action == 'archive') ctl.toggleArchive(thread.characterId);
+    // A dialog can outlive logout or an account switch. Never apply a pending
+    // action to another account's thread with the same Character ID.
+    bool sameAccount() {
+      if (!context.mounted) return false;
+      return chatActionBelongsToSession(
+        openingSession,
+        ref.read(sessionProvider),
+      );
+    }
+
+    if (!sameAccount()) return;
+    if (action == 'pin') {
+      ref.read(aiChatProvider.notifier).togglePin(thread.characterId);
+      return;
+    }
+    if (action == 'archive') {
+      ref.read(aiChatProvider.notifier).toggleArchive(thread.characterId);
+      return;
+    }
     if (action == 'delete') {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -189,9 +218,13 @@ class ChatListScreen extends ConsumerWidget {
           ],
         ),
       );
-      if (confirmed == true) ctl.clearThread(thread.characterId);
+      if (confirmed == true && sameAccount()) {
+        ref.read(aiChatProvider.notifier).clearThread(thread.characterId);
+      }
+      return;
     }
     if (action == 'rename') {
+      if (!context.mounted || !sameAccount()) return;
       final editor = TextEditingController(text: thread.title ?? '');
       final value = await showDialog<String>(
         context: context,
@@ -211,7 +244,9 @@ class ChatListScreen extends ConsumerWidget {
         ),
       );
       editor.dispose();
-      if (value != null) ctl.renameThread(thread.characterId, value);
+      if (value != null && sameAccount()) {
+        ref.read(aiChatProvider.notifier).renameThread(thread.characterId, value);
+      }
     }
   }
 

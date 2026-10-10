@@ -9,7 +9,7 @@ describe("Postgres Talk gift repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkGiftSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
           rows: [{

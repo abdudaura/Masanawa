@@ -1,6 +1,7 @@
 import { describe,expect,it } from "vitest";
 import {
   createTalkReplaySession,
+  transitionTalkReplaySession,
   type TalkReplaySession,
 } from "@masanawa/agents";
 import { toInstant } from "@masanawa/contracts";
@@ -12,7 +13,7 @@ import {
 import type { TalkSafetyService } from "./service.js";
 
 function replay():TalkReplaySession{
-  return createTalkReplaySession({
+  const recording=createTalkReplaySession({
     tenantId:"tenant_1" as never,
     talkId:"talk_1" as never,
     recordingId:"recording_1" as never,
@@ -21,11 +22,26 @@ function replay():TalkReplaySession{
     publicationPreference:"publish",
     startedAt:toInstant("2026-10-07T10:00:00.000Z"),
   });
+  const segmented=transitionTalkReplaySession(recording,{
+    type:"segment_finalized",
+    expectedRevision:recording.revision,
+    segmentId:"segment_1" as never,
+    startedAt:recording.startedAt,
+    endedAt:toInstant("2026-10-07T10:00:20.000Z"),
+    mediaRef:"media/internal/segment-1",
+    checksumSha256:"a".repeat(64),
+  },toInstant("2026-10-07T10:00:21.000Z")).session;
+  return transitionTalkReplaySession(segmented,{
+    type:"live_finalized",
+    expectedRevision:segmented.revision,
+    reason:"host_ended",
+  },toInstant("2026-10-07T10:01:00.000Z")).session;
 }
 
 describe("Talk safety replay bridge",()=>{
   it("maps recording id enforcement into canonical replay platform_block",async()=>{
     let current=replay();
+    const initialRevision=current.revision;
     const pool:TalkSafetyReplaySqlPool={
       async query<Row>(text:string,values?:unknown[]){
         if(text.includes("SELECT talk_id,session_json")){
@@ -35,7 +51,7 @@ describe("Talk safety replay bridge",()=>{
           };
         }
         if(text.includes("UPDATE talks.replay_sessions")){
-          expect(values?.[2]).toBe(1);
+          expect(values?.[2]).toBe(initialRevision);
           const next=JSON.parse(String(values?.[7])) as TalkReplaySession;
           expect(next.publicationState).toBe("blocked");
           current=next;
@@ -51,7 +67,7 @@ describe("Talk safety replay bridge",()=>{
       now:"2026-10-07T11:00:00.000Z",
     })).resolves.toBe(true);
     expect(current.publicationState).toBe("blocked");
-    expect(current.revision).toBe(2);
+    expect(current.revision).toBe(initialRevision+1);
   });
 
   it("is idempotent when canonical replay is already blocked",async()=>{
@@ -106,7 +122,11 @@ describe("Talk safety replay bridge",()=>{
         if(text.includes("UPDATE talks.replay_sessions")){
           updateAttempts+=1;
           if(updateAttempts===1){
-            current={...current,revision:2} as TalkReplaySession;
+            current=transitionTalkReplaySession(current,{
+              type:"unpublish",
+              expectedRevision:current.revision,
+              requesterUserId:current.hostUserId,
+            },toInstant("2026-10-07T10:02:00.000Z")).session;
             return {rowCount:0,rows:[] as unknown as Row[]};
           }
           current=JSON.parse(String(values?.[7])) as TalkReplaySession;

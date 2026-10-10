@@ -1,4 +1,4 @@
-import { generateKeyPairSync } from "node:crypto";
+import { generateKeyPairSync, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import {
   createCanonicalId,
@@ -153,10 +153,22 @@ function testCharacterConstitution() {
 
 describePostgres("PostgreSQL 18 foundation integration", () => {
   let pool: Pool;
+  let adminPool: Pool | undefined;
+  // This suite resets entire migration registries per test. Never share its
+  // database with the other concurrently running PostgreSQL acceptance suites.
+  const isolatedDatabaseName = `masanawa_foundation_${randomUUID().replace(/-/gu, "")}`;
 
   beforeAll(async () => {
-    pool = createPostgresPool({
+    adminPool = createPostgresPool({
       connectionString: connectionString!,
+      applicationName: "masanawa-foundation-database-setup",
+      max: 1,
+    });
+    await adminPool.query(`CREATE DATABASE "${isolatedDatabaseName}"`);
+    const isolatedUrl = new URL(connectionString!);
+    isolatedUrl.pathname = `/${isolatedDatabaseName}`;
+    pool = createPostgresPool({
+      connectionString: isolatedUrl.toString(),
       applicationName: "masanawa-foundation-integration",
       max: 4,
     });
@@ -192,6 +204,11 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "events/0003_receipt_reconciliation_integrity.sql",
       "events/0004_outbox_recovery.sql",
       "identity/0001_identity_foundation.sql",
+      "identity/0002_character_ownership.sql",
+      "identity/0003_clone_setup.sql",
+      "identity/0004_twin_profiles.sql",
+      "identity/0005_account_deletion_requests.sql",
+      "identity/0006_account_deletion_access_revocation.sql",
       "memory/0001_memory_foundation.sql",
       "memory/0002_memory_lifecycle.sql",
       "memory/0003_memory_extraction_liveness.sql",
@@ -203,6 +220,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
       "security/0004_provider_credentials.sql",
+      "security/0100_platform_sessions.sql",
+      "security/0101_customer_channels.sql",
+      "security/0102_customer_channel_delivery.sql",
+      "security/0103_platform_profile_contact_uniqueness.sql",
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
       "world/0003_world_routines_story_arcs.sql",
@@ -213,7 +234,14 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   });
 
   afterAll(async () => {
-    await pool.end();
+    await pool?.end();
+    if (adminPool) {
+      try {
+        await adminPool.query(`DROP DATABASE IF EXISTS "${isolatedDatabaseName}" WITH (FORCE)`);
+      } finally {
+        await adminPool.end();
+      }
+    }
   });
 
   it("resolves explicitly linked external identity only inside its tenant", async () => {
