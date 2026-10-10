@@ -39,6 +39,28 @@ class ControlledChatApi extends MasanaChatApi {
   @override
   Future<void> close(String characterId,String sessionId) async {}
 }
+
+class DelayedReadDrafts extends TestDrafts {
+  final release=Completer<void>();
+  int readCalls=0;
+  @override
+  Future<Map<String,dynamic>?> read(String a,String c) async {
+    readCalls++;
+    await release.future;
+    return super.read(a,c);
+  }
+}
+class DelayedFirstWriteDrafts extends TestDrafts {
+  final release=Completer<void>();
+  int writeCalls=0;
+  @override
+  Future<void> write(String a,String c,Map<String,dynamic> value) async {
+    writeCalls++;
+    if (writeCalls==1) await release.future;
+    await super.write(a,c,value);
+  }
+}
+
 void main(){
   test('J03 no turn can reach gateway when secure outbox write fails',() async{
     final store=TestDrafts()..rejectWrites=true;
@@ -67,4 +89,40 @@ void main(){
     expect(store.current,isNull);
     controller.dispose();
   });
+  test('J03 simultaneous restores coalesce and cannot overwrite new send',() async{
+    final store=DelayedReadDrafts();
+    final api=ControlledChatApi();
+    final controller=MasanaChatController(
+      api:api,drafts:store,accountId:'fan-a',characterId:'teacher');
+    final readOne=controller.restore();
+    final readTwo=controller.restore();
+    final send=controller.send('First question');
+    expect(store.readCalls,1);
+    store.release.complete();
+    await Future.wait([readOne,readTwo,send]);
+    await api.started.future;
+    expect(controller.turns.length,1);
+    expect(store.current?['turns'],hasLength(1));
+    api.settled.complete('Teacher replied');
+    await Future<void>.delayed(Duration.zero);
+    controller.dispose();
+  });
+  test('J03 queued saves remain in order under slow secure storage',() async{
+    final store=DelayedFirstWriteDrafts();
+    final api=ControlledChatApi();
+    final controller=MasanaChatController(
+      api:api,drafts:store,accountId:'fan-a',characterId:'teacher');
+    await controller.restore();
+    final first=controller.send('one');
+    final second=controller.send('two');
+    store.release.complete();
+    await Future.wait([first,second]);
+    await api.started.future;
+    expect(store.current?['turns'],hasLength(2));
+    expect(controller.turns.map((v)=>v.text),['one','two']);
+    api.settled.complete('Ready');
+    await Future<void>.delayed(Duration.zero);
+    controller.dispose();
+  });
+
 }
