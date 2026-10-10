@@ -594,6 +594,23 @@
       "source_head_sha": "512fa4b9613fad9b5de8feebca49be562f2464e8",
       "integration_head_sha": null,
       "test_state": "SCOPED_NODE24_TYPECHECK_PASS_AND_POSTGRES18_TESTS_PASS; GLOBAL_VITEST_FAIL_23; PROVIDER_BUILD_SKIPPED"
+    },
+    {
+      "claim_id": "af01-607-live-pg18-crypto-normalization-gpt6-20261010-0951",
+      "owner": "GPT-6 (owner-directed AF01 #607 existing PR continuation)",
+      "scope": "Repair real PostgreSQL18 canonical crypto balance/liability decimal representation failure and execute source tests; no AF00/ledger/posting/schema/provider changes",
+      "paths": [
+        "adapters/storage/postgres/src/commerce/crypto-repository.ts",
+        "adapters/storage/postgres/src/commerce/crypto-repository.integration.test.ts"
+      ],
+      "branch": "work/af01-crypto-ledger-reason-20261010-masanawa01-g",
+      "source_pr": 607,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_head": "ed8dc29f25b6d116c2194b7ee8491511fc60144c",
+      "claimed_at": "2026-10-10T08:50:37.823Z",
+      "heartbeat_at": "2026-10-10T08:50:37.823Z",
+      "expires_at": "2026-10-10T08:55:37.823Z",
+      "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR"
     }
   ],
   "history": [
