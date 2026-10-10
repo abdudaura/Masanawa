@@ -417,6 +417,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                   Text(post.title, style: Theme.of(context).textTheme.titleMedium),
                                   const SizedBox(height: 6),
                                   Text('${(post.durationMs / 1000).round()} seconds'),
+                                  if (post.status == 'published')
+                                    Text('${post.likeCount} likes · ${post.commentCount} comments',
+                                      semanticsLabel: '${post.likeCount} likes and ${post.commentCount} comments'),
                                   if (_mine) Text('Status: ${post.status}'),
                                   const SizedBox(height: 10),
                                   Wrap(spacing: 8, children: [
