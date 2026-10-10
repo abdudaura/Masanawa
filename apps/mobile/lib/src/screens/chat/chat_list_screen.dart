@@ -135,6 +135,9 @@ class ChatListScreen extends ConsumerWidget {
     WidgetRef ref,
     ChatThread thread,
   ) async {
+    // Capture the owner before opening a modal: account changes while the
+    // sheet is visible must not retarget a destructive action.
+    final openingSession = ref.read(sessionProvider);
     final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -168,7 +171,6 @@ class ChatListScreen extends ConsumerWidget {
     if (action == null || !context.mounted) return;
     // A dialog can outlive logout or an account switch. Never apply a pending
     // action to another account's thread with the same Character ID.
-    final openingSession = ref.read(sessionProvider);
     bool sameAccount() {
       if (!context.mounted) return false;
       final currentSession = ref.read(sessionProvider);
