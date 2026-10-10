@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'audio_post_transport.dart';
+import 'audio_post_playback.dart';
 import 'follow_button.dart';
 import 'following_transport.dart';
 
@@ -13,6 +15,7 @@ class AudioPostFeedScreen extends StatefulWidget {
     required this.accountId,
     required this.isCurrentAccount,
     this.onPlayAuthorized,
+    this.playback,
     this.onCreatePost,
   });
   final AudioPostTransport transport;
@@ -22,6 +25,8 @@ class AudioPostFeedScreen extends StatefulWidget {
   final bool Function(String) isCurrentAccount;
   /// Must resolve a short-lived authorized asset URL and obey shared audio focus.
   final Future<void> Function(AudioPost)? onPlayAuthorized;
+  /// AF09 ticket-backed player; AF00 provides it with AF05 focus and AF15 host.
+  final AudioPostPlaybackController? playback;
   final VoidCallback? onCreatePost;
 
   @override
@@ -55,6 +60,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     if (old.accountId != widget.accountId || old.transport != widget.transport ||
         old.followingTransport != widget.followingTransport) {
       if (widget.followingTransport == null) _following = false;
+      if (old.playback != null) unawaited(old.playback!.stop());
       ++_generation;
       _items = const [];
       _next = null;
@@ -79,6 +85,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   void dispose() {
     ++_generation;
     ++_commentsGeneration;
+    if (widget.playback != null) unawaited(widget.playback!.stop());
     _commentText.dispose();
     super.dispose();
   }
@@ -346,6 +353,46 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       ],
     );
   }
+  Widget _listenButton(AudioPost post) {
+    final playback = widget.playback;
+    if (playback != null) {
+      return AnimatedBuilder(
+        animation: playback,
+        builder: (context, _) {
+          final active = playback.activePostId == post.postId;
+          final busy = active && playback.loading;
+          final playing = active && playback.playing;
+          final enabled = _authorized && playback.accountId == widget.accountId &&
+              playback.isAuthorized && post.status == 'published';
+          return Column(mainAxisSize: MainAxisSize.min, children: [
+            OutlinedButton.icon(
+              key: ValueKey('talk-listen-' + post.postId),
+              onPressed: enabled ? () => playback.play(post) : null,
+              icon: busy
+                  ? const SizedBox(width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(playing ? Icons.pause : Icons.play_arrow),
+              label: Text(busy ? 'Loading…' : playing ? 'Stop' : 'Listen'),
+            ),
+            if (active && playback.error != null)
+              Text(playback.error!, key: const ValueKey('talk-playback-error')),
+          ]);
+        },
+      );
+    }
+    return OutlinedButton.icon(
+      onPressed: !_authorized || widget.onPlayAuthorized == null ||
+          post.status != 'published' ? null : () async {
+        try { await widget.onPlayAuthorized!(post); }
+        catch (_) {
+          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Audio unavailable. Try again.')));
+        }
+      },
+      icon: const Icon(Icons.play_arrow),
+      label: const Text('Listen'),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -455,19 +502,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                         icon: const Icon(Icons.delete_outline),
                                         label: Text(_removing.contains(post.postId) ? 'Removing…' : 'Remove Talk'),
                                       ),
-                                    OutlinedButton.icon(
-                                      onPressed: widget.onPlayAuthorized == null || post.status != 'published'
-                                        ? null : () async {
-                                        try { await widget.onPlayAuthorized!(post); }
-                                        catch (_) {
-                                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Audio unavailable. Try again.')),
-                                          );
-                                        }
-                                      },
-                                      icon: const Icon(Icons.play_arrow),
-                                      label: const Text('Listen'),
-                                    ),
+                                    _listenButton(post),
                                     if (post.status == 'published')
                                       TextButton.icon(
                                         onPressed: () => _toggleComments(post.postId),
@@ -489,7 +524,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                   ]),
                                   if (_openCommentsPostId == post.postId)
                                     _commentPanel(post.postId),
-                                  if (widget.onPlayAuthorized == null)
+                                  if (widget.onPlayAuthorized == null && widget.playback == null)
                                     const Text('Audio playback is not configured in this build.'),
                                 ],
                               ),
