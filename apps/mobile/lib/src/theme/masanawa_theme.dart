@@ -141,7 +141,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     secondary: masanawa.brandStrong,
     onSecondary: isDark ? Colors.black87 : Colors.white,
     error: masanawa.emergency,
-    onError: Colors.white,
+    // White on the dark-theme emergency red is below 4.5:1. Keep\n    // this semantic foreground dark for readable error text.\n    onError: isDark ? masanawa.surfaceBg : Colors.white,
     surface: masanawa.surfaceCard,
     onSurface: masanawa.textPrimary,
     surfaceContainerHighest: masanawa.surfaceMuted,
@@ -325,7 +325,7 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     snackBarTheme: SnackBarThemeData(
       backgroundColor: masanawa.textPrimary,
       contentTextStyle: TextStyle(
-        color: Colors.white,
+        // In dark mode the Snackbar background is light textPrimary.\n        // White-on-light was unreadable; use the dark surface foreground.\n        color: isDark ? masanawa.surfaceCard : Colors.white,
       ),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
