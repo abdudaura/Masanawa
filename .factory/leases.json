@@ -1344,7 +1344,9 @@
       "expires_at": "2026-10-10T17:02:00.414Z",
       "notes": "No parallel chat journal, no human DM, no clone contact; same @masanawa/agents sessions. Feature code only. AF00 retains shared composition and deployment.",
       "source_pr": 635,
-      "source_head": "29a0ce23cdb07ccf2097d929e5b3137a1a88199e"
+      "source_head": "006fc0d7f3884d07e9f14cec7a663028d9022629",
+      "released_at": "2026-10-10T17:00:36.787Z",
+      "release_reason": "J03 feature-local source and negatives committed; exact PR #635 head documented; source NOT runtime activated pending AF00 router/worker PG #630 composition and lockfile recovery; latest CI queued; no release."
     },
     {
       "claim_id": "l-missions-j12-auth-negative-followup-20261010-gpt6",
