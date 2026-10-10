@@ -63,6 +63,21 @@ Widget composer(PostsFake posts, String account, {
   attemptStore: store ?? FakeAttempts(),
 ));
 
+/// Supports the same optional receipt contract as the production Gateway
+/// transport without changing legacy fake transports in these widget tests.
+class ReceiptPostsFake extends PostsFake implements AudioPostReceiptLookup {
+  int lookups = 0;
+  AudioPost? serverReceipt;
+  bool lookupOffline = false;
+  @override
+  Future<AudioPost?> receiptByRequest({required String requestId}) async {
+    lookups++;
+    if (lookupOffline) throw StateError('receipt lookup offline');
+    if (requestId != 'stable-attempt-1') throw StateError('unexpected key');
+    return serverReceipt;
+  }
+}
+
 void main() {
   testWidgets('does not permit publication when verified recording is unavailable', (tester) async {
     final posts = PostsFake();
@@ -291,20 +306,6 @@ void main() {
 
 
 
-/// Supports the same optional receipt contract as the production Gateway
-/// transport without changing legacy fake transports in these widget tests.
-class ReceiptPostsFake extends PostsFake implements AudioPostReceiptLookup {
-  int lookups = 0;
-  AudioPost? serverReceipt;
-  bool lookupOffline = false;
-  @override
-  Future<AudioPost?> receiptByRequest({required String requestId}) async {
-    lookups++;
-    if (lookupOffline) throw StateError('receipt lookup offline');
-    if (requestId != 'stable-attempt-1') throw StateError('unexpected key');
-    return serverReceipt;
-  }
-}
 
 testWidgets('uncertain publish retry reads server receipt without posting twice', (tester) async {
   final posts = ReceiptPostsFake()..onSend = () async => throw StateError('lost response');
