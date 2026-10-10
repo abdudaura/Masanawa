@@ -1027,6 +1027,25 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
+    },
+    {
+      "claim_id": "masanawa-rebuild-source-cleanup-audit-20261010",
+      "owner": "SOURCE-CLEAN-01 / owner requested repo code reduction",
+      "scope": "Analyze full main source tree, commit exact removal manifest and delete only confirmed empty unreferenced placeholder package directories on existing PR615; no runtime routes/live DB altered",
+      "paths": [
+        "docs/rebuild/SOURCE-CLEANUP.md",
+        "docs/rebuild/SOURCE-CLEANUP-MANIFEST.json",
+        "packages/decisions/.gitkeep",
+        "packages/perception/.gitkeep",
+        "packages/proactivity/.gitkeep",
+        "packages/testing/.gitkeep",
+        "docs/provenance/.gitkeep"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "claimed_at": "2026-10-10T13:58:04.803Z",
+      "heartbeat_at": "2026-10-10T13:58:04.803Z",
+      "expires_at": "2026-10-10T14:13:04.803Z",
+      "notes": "Temporary source audit. Do not delete wired-in Twin/LiveTalk/financial code until new v2 bindings and execution tests verify safe removal."
     }
   ],
   "history": [
