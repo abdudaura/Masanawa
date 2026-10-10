@@ -47,7 +47,7 @@ class _AudioPostDetailScreenState extends State<AudioPostDetailScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.accountId != widget.accountId ||
         oldWidget.playback != widget.playback ||
-        oldWidget.post.postId != widget.post.postId) {
+        oldWidget.post.postId != widget.post.postId || !_authorized) {
       unawaited(_stopOwnPlayback(oldWidget.playback, oldWidget.post.postId));
     }
   }
