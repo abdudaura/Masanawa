@@ -1164,6 +1164,28 @@
       "heartbeat_at": "2026-10-10T16:15:54.922Z",
       "expires_at": "2026-10-10T16:20:54.922Z",
       "notes": "Started from integration/rebuild@2834c9a6; AF00 notified #616. Source-only, never production or billing activation."
+    },
+    {
+      "claim_id": "l-social-verified-links-20261010-gpt6-1718",
+      "owner": "GPT-6 L-SOCIAL J21/J22",
+      "scope": "Verified Masana public social identities; role-gated staff link-only registration, publish, pause/revoke; no automated personal WhatsApp",
+      "paths": [
+        "packages/masana_social/**",
+        "services/gateway/src/modules/masana_social/**",
+        "services/worker/src/jobs/masana_social/**",
+        "adapters/storage/postgres/src/masana_social/**",
+        "apps/mobile/lib/src/features/masana_social/**",
+        "apps/admin_mobile/lib/src/features/masana_social/**",
+        "tests/e2e/J21/**",
+        "tests/e2e/J22/**",
+        "docs/workstreams/l-social-verified-links-20261010-gpt6.md"
+      ],
+      "branch": "lane/l-social-verified-links-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "claimed_at": "2026-10-10T17:18:00+01:00",
+      "heartbeat_at": "2026-10-10T17:18:00+01:00",
+      "expires_at": "2026-10-10T17:23:00+01:00",
+      "notes": "Exact file families only; AF00 retains app composition, central migration registry, shared routes and protected CI. No external automation or live provider changes."
     }
   ],
   "history": [
