@@ -41,8 +41,8 @@ CREATE TABLE external_videos.youtube_subscriptions (
   FOREIGN KEY (tenant_id, source_id, channel_id)
     REFERENCES external_videos.sources(tenant_id, source_id, provider_channel_id)
     ON DELETE RESTRICT,
-  CHECK (NOT authorized_api OR permission_expires_at IS NOT NULL),
-  CHECK (lease_expires_at IS NULL OR lease_requested_at IS NULL)
+  CHECK (NOT authorized_api OR permission_expires_at IS NOT NULL)
+  -- Renewal may be pending while the previous verified lease is still valid.
 );
 CREATE INDEX youtube_subscriptions_renewal
   ON external_videos.youtube_subscriptions(lease_expires_at,tenant_id,source_id)
