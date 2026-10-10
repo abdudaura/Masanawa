@@ -9,7 +9,7 @@ const immutable: CleanupCandidate = {
   referenceRevision: 7, createdAtMs: 1_700_000_000_000, retainUntilMs: 1_700_100_000_000,
 };
 function fixture(status = 204, code?: string) {
-  const fetchImpl = vi.fn(async () => new Response(null, {
+  const fetchImpl = vi.fn(async (_url: Parameters<typeof fetch>[0], _init?: Parameters<typeof fetch>[1]) => new Response(null, {
     status, headers: code ? { "x-amz-error-code": code } : {},
   }));
   const store = createS3MediaCleanupDeleter({
