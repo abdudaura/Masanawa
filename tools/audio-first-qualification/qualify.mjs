@@ -2,9 +2,9 @@
 // Usage: node tools/audio-first-qualification/qualify.mjs --matrix tools/audio-first-qualification/journeys.json --evidence <redacted-json> --sha <exact-40-char-SHA> --proof-root <directory>
 import fs from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { verifyEvidenceFile } from '../../tests/security/audio_first/evidence_path_guard.mjs';
 const kinds=new Set(["NOT_RUN","BLOCKED","FAIL","PASS_SIMULATED","PASS_REAL"]);
 function checkMatrix(matrix){
   const faults=[];
@@ -67,27 +67,29 @@ function assess(matrix,records,sha,verifiedProofs=new Set()){
   const count=Object.fromEntries([...kinds].map(s=>[s,journeys.filter(j=>j.result===s).length]));
   const required=journeys.filter(j=>j.tier==="release");
   const readiness=failures.length?"INVALID":required.some(j=>j.result==="FAIL")?"FAIL":required.some(j=>j.result!=="PASS_REAL")?"BLOCKED":"REVIEW_REQUIRED";
-  return {valid:failures.length===0,readiness,errors:failures,summary:{total:journeys.length,release:required.length,counts:count},journeys};
-}
-export {checkMatrix,checkRecord,assess};
-export async function verifyProofs(records,root){
+  return {valid:failures.length===0,readiness,errors:failures,summary:{total:journeys.length,release:required.length,counts:count},jexport async function verifyProofs(records,root){
   const verified=new Set(), errors=[];
+  // The proof root is operator-selected, not derived from evidence JSON.
   const base=await fs.realpath(root);
   for(const r of records){
     if(r?.result!=='PASS_REAL'||!Array.isArray(r.proofs))continue;
     for(const p of r.proofs){
-      if(!p||typeof p.path!=='string'||!(/^[a-f0-9]{64}$/i).test(p.sha256||'')){errors.push('invalid proof descriptor');continue;}
-      const bits=p.path.split(/[\\/]/);
-      if(path.isAbsolute(p.path)||bits.some(b=>b===''||b==='.'||b==='..')||p.path.includes('\\0')){errors.push('unsafe proof path');continue;}
+      if(!p||typeof p.path!=='string'||!(/^[a-f0-9]{64}$/i).test(p.sha256||'')){
+        errors.push('invalid proof descriptor');continue;
+      }
       try{
-        const candidate=path.resolve(base,p.path), real=await fs.realpath(candidate);
-        if(!(real.startsWith(base+path.sep))){errors.push('proof escaped root');continue;}
-        const stat=await fs.stat(real);
-        if(!stat.isFile()||stat.size>16777216||stat.size<1){errors.push('proof not regular bounded file');continue;}
-        const digest=createHash('sha256').update(await fs.readFile(real)).digest('hex');
-        if(digest!==p.sha256.toLowerCase()){errors.push('proof digest mismatch');continue;}
+        // Reuse the released, bounded, no-symlink guard. Do not build a
+        // second artifact verifier with weaker path or size semantics.
+        await verifyEvidenceFile(base,p.path,p.sha256.toLowerCase());
         verified.add(`${r.journeyId}|${p.path}|${p.sha256}`);
-      }catch{errors.push('missing/unreadable proof');}
+      }catch{
+        // Never echo arbitrary evidence paths or attacker-supplied text.
+        errors.push('missing, unsafe, changed or mismatched proof');
+      }
+    }
+  }
+  return {verified,errors};
+}ble proof');}
     }
   }
   return {verified,errors};
