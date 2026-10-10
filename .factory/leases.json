@@ -199,27 +199,6 @@
       "test_state": "GitHub CI zero-step BLOCKED; exact blob structural readbacks only. Node/Vitest/PG/S3 NOT_RUN."
     },
     {
-      "claim_id": "af09-609-creator-navigation-20261010-gpt6-0517",
-      "owner": "AF09 PR #609 / GPT-6 creator-navigation continuation",
-      "scope": "Connect Published Talks feed creator identity to existing authenticated creator profile and feature-level composer navigation; preserve AF00 root auth/Gateway/media composition.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
-        "apps/mobile/test/audio_first/af09/destination_test.dart",
-        "docs/workstreams/AF09-destination-20261010.md",
-        "apps/mobile/lib/src/audio_posts/audio_post_detail_screen.dart",
-        "apps/mobile/test/audio_first/af09/detail_test.dart"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "source_head": "446594187be5525b1e2703af8fc29960785b8190",
-      "claimed_at": "2026-10-10T04:21:01.879Z",
-      "heartbeat_at": "2026-10-10T04:23:37.908Z",
-      "expires_at": "2026-10-10T04:28:37.908Z",
-      "notes": "AF09 feature-local UI wiring only; AF00 root/router/migrations and AF05/AF15 media untouched. New paths do not overlap active paths; prior feed claims are in history."
-    },
-    {
       "claim_id": "af09-609-comments-backend-paging-gpt6-0519",
       "owner": "AF09 #609 continuation — comments pagination / GPT-6",
       "scope": "Source: bounded older-comments pagination using existing PG visibility, authenticated Gateway and Flutter transport; UI feed screen owned by separate 0517 claimant and will receive bounded integration request, no protected composition",
@@ -277,6 +256,47 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "af09-609-creator-navigation-20261010-gpt6-0517",
+      "owner": "AF09 PR #609 / GPT-6 creator-navigation continuation",
+      "scope": "Connect Published Talks feed creator identity to existing authenticated creator profile and feature-level composer navigation; preserve AF00 root auth/Gateway/media composition.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
+        "apps/mobile/test/audio_first/af09/destination_test.dart",
+        "docs/workstreams/AF09-destination-20261010.md",
+        "apps/mobile/lib/src/audio_posts/audio_post_detail_screen.dart",
+        "apps/mobile/test/audio_first/af09/detail_test.dart"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "446594187be5525b1e2703af8fc29960785b8190",
+      "claimed_at": "2026-10-10T04:21:01.879Z",
+      "heartbeat_at": "2026-10-10T04:23:37.908Z",
+      "expires_at": "2026-10-10T04:28:37.908Z",
+      "notes": "AF09 feature-local UI wiring only; AF00 root/router/migrations and AF05/AF15 media untouched. New paths do not overlap active paths; prior feed claims are in history.",
+      "released_at": "2026-10-10T04:29:26.879Z",
+      "source_head_sha": "c0a0df26acdf8cfd533d3ab76a70bf9a609a12f8",
+      "integration_head_sha": null,
+      "source_commits": [
+        "0cdc3e1b5d32142177837c5341d70ccbca510e10",
+        "9a9858235af8c540e8f83cbdeb456abc2a2795cf",
+        "27c55609bbf71f24cfbb399db48bc92a645fec32",
+        "c889bfa9892c8e3eb58245c6e86bafd45ebf60ee",
+        "00e34ccd8faf43a2bb3fed6b58e50400436b780f",
+        "7b434361e0677596c68acd902becf6d4e7f2a4ac",
+        "c1da60a937b61ede364d15c7e1c9963c8e8b091a",
+        "6b817d12da8495c8045d714aea5787c495fb147e",
+        "210948d74e43ec6788961eaf4cca6058b2d11027",
+        "a30d9b13c4e8b44abc77e1452ce56001b0606ebd",
+        "48510677b989cec195ee69bf0584ab844d722172",
+        "da2f3ad5264b67951cc4530e1a636600a920e1ce",
+        "b8d9694ea87b873cf28755f1c5b264a02c5f6b82"
+      ],
+      "test_state": "13/13 connector-source structural assertions. flutter/dart/pnpm/psql unavailable; no checkout (git DNS). Authored widgets NOT_RUN; no false PASS.",
+      "release_reason": "Feature-local creator->Talk detail->authorized playback and Talks composer receipt refresh implemented on same PR #609, no AF00 owned files touched. Finite source checklist docs/workstreams/AF09-destination-20261010.md. AF00 #600 bounded transfer comment 6093774050; AF05/AF15 media and AF13 executable runners remain. Parent milestone PARTIAL_IMPLEMENTATION and NOT INTEGRATED; no local pull."
+    },
     {
       "claim_id": "af09-609-report-feed-mount-gpt6-20261010",
       "owner": "AF09 existing PR #609 report UI composition / GPT-6",
