@@ -1325,27 +1325,6 @@
       "source_head": "0104d8ee5527af9c54d69031e85e3b282d90b55e"
     },
     {
-      "claim_id": "l-shell-c08-inbox-20261010-gpt6-1738",
-      "owner": "GPT-6 / L-SHELL C08",
-      "scope": "C08 notification inbox, fan-private read/ack, canonical outbox-source adapter, consumer UI and negative tests; AF00 owns all shared composition",
-      "paths": [
-        "services/gateway/src/modules/notifications/**",
-        "services/worker/src/jobs/notifications/**",
-        "adapters/storage/postgres/src/notifications/**",
-        "apps/mobile/lib/src/features/notifications/**",
-        "apps/mobile/test/features/notifications/**",
-        "tests/e2e/J02/notifications/**",
-        "packages/notifications/migrations/**"
-      ],
-      "branch": "lane/l-shell-c08-notifications-20261010-gpt6",
-      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
-      "claimed_at": "2026-10-10T16:36:24.615Z",
-      "heartbeat_at": "2026-10-10T16:50:39.187Z",
-      "expires_at": "2026-10-10T16:55:39.187Z",
-      "notes": "Do not create a second push system; use existing events outbox; no production migration or main; AF00 register routes/migration/router.",
-      "source_head": "692a0237128e3cb467b6a7b20d3996db42f80f8f"
-    },
-    {
       "claim_id": "l-missions-fan-memory-j11-20261010-gpt6",
       "owner": "GPT-6 / L-MISSIONS J11 fan consent, review and deletion",
       "scope": "J11 per-Masana fan-memory consent+repository+API+Flutter/Admin+worker source; AF00 owns composition, existing memory records/tombstone authority reused",
@@ -4072,6 +4051,31 @@
       "source_pr": 625,
       "source_head": "d3e2fcda445565c83363f2b57822bc08e985a7a4",
       "release_reason": "Source PR #625 committed a free Room vertical in exclusive paths. Real Flutter Admin widget step PASS, newer consumer test pending at handoff, Foundation install FAIL new packages/rooms lock importer; PG/TypeScript/Android E2E unverified. AF00 composition/lockfile required, paid J08 excluded. Not released/deployed/merged."
+    },
+    {
+      "claim_id": "l-shell-c08-inbox-20261010-gpt6-1738",
+      "owner": "GPT-6 / L-SHELL C08",
+      "scope": "C08 notification inbox, fan-private read/ack, canonical outbox-source adapter, consumer UI and negative tests; AF00 owns all shared composition",
+      "paths": [
+        "services/gateway/src/modules/notifications/**",
+        "services/worker/src/jobs/notifications/**",
+        "adapters/storage/postgres/src/notifications/**",
+        "apps/mobile/lib/src/features/notifications/**",
+        "apps/mobile/test/features/notifications/**",
+        "tests/e2e/J02/notifications/**",
+        "packages/notifications/migrations/**"
+      ],
+      "branch": "lane/l-shell-c08-notifications-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "claimed_at": "2026-10-10T16:36:24.615Z",
+      "heartbeat_at": "2026-10-10T16:50:39.187Z",
+      "expires_at": "2026-10-10T16:55:39.187Z",
+      "notes": "Do not create a second push system; use existing events outbox; no production migration or main; AF00 register routes/migration/router.",
+      "source_head": "692a0237128e3cb467b6a7b20d3996db42f80f8f",
+      "released_at": "2026-10-10T16:54:35.464Z",
+      "release_reason": "Merged source PR #632 head 692a0237128e3cb467b6a7b20d3996db42f80f8f into nondeploying integration/rebuild via squash SHA 8a1899575e0c0aa1b3a34c66fea0e8e09bffb59e. Real 13 notification backend/PG tests and 7 Flutter tests PASSED at prior a52b892; strict TS test fix committed at latest head but exact-head run blocked by independent packages/masana_missions lockfile mismatch. Feature source integrated, AF00 composition/migrations/router/outbox and release checks still not run; no production changes.",
+      "integration_head_sha": "8a1899575e0c0aa1b3a34c66fea0e8e09bffb59e",
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/632"
     }
   ]
 }
