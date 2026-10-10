@@ -108,23 +108,6 @@
       "notes": "Continued existing #609 to b62119bc331292712b0d77ce86d5a2cceeb39d09: playback client+feed+6 tests+handoff, exact-path source readback PASS structural; Flutter NOT_RUN. Finishing QA and handoff."
     },
     {
-      "claim_id": "af09-609-processing-recovery-20261010-gpt6-f",
-      "owner": "AF09 existing PR #609 processing-recovery continuation / GPT-6",
-      "scope": "Improve canonical audio-post processor stale-conflict/race classification and actual authored negative tests; avoid other active processing queue/test owners; same PR, no new helper/branch.",
-      "paths": [
-        "services/gateway/src/audio_posts/processing_worker.ts",
-        "services/gateway/src/audio_posts/processing_recovery.test.mjs",
-        "docs/workstreams/AF09-processing-recovery-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:48:46.298Z",
-      "heartbeat_at": "2026-10-10T02:48:46.298Z",
-      "expires_at": "2026-10-10T02:53:46.298Z",
-      "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
-    },
-    {
       "claim_id": "af09-609-feed-pagination-20261010-gpt6-0252",
       "owner": "AF09 PR #609 feed correctness continuation GPT-6",
       "scope": "Repair published Talks Discover keyset microsecond precision so two posts in one millisecond are not skipped. Continue current PR, no second branch; no AF00 composition/AF05 media files.",
@@ -143,6 +126,32 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "af09-609-processing-recovery-20261010-gpt6-f",
+      "owner": "AF09 existing PR #609 processing-recovery continuation / GPT-6",
+      "scope": "Improve canonical audio-post processor stale-conflict/race classification and actual authored negative tests; avoid other active processing queue/test owners; same PR, no new helper/branch.",
+      "paths": [
+        "services/gateway/src/audio_posts/processing_worker.ts",
+        "services/gateway/src/audio_posts/processing_recovery.test.mjs",
+        "docs/workstreams/AF09-processing-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:48:46.298Z",
+      "heartbeat_at": "2026-10-10T02:48:46.298Z",
+      "expires_at": "2026-10-10T02:53:46.298Z",
+      "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs.",
+      "released_at": "2026-10-10T02:53:24.560Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "source_commits": [
+        "06371853a8c4b62787cf81b93e6d98a700f09186",
+        "c6d446a6c208e4d8b65cba5a8f59da00c6bc9936",
+        "c32e3f9f46916ef8a5cd2bbea14c9fac126239c7"
+      ],
+      "test_state": "5/5 real focused Node 22 tests on exact GitHub blobs; isolated strict TypeScript 5.8.3 PASS; full workspace/PG/Flutter BLOCKED; not integrated",
+      "release_reason": "Processing conflict correction source-tested and handed off on same PR #609. Remaining parent Published Audio Talks source-composition checklist in docs/workstreams/AF09-processing-recovery-20261010.md; AF00/AF05/AF15/AF13 exact next owners. Do not infer milestone complete or local APK-ready."
+    },
     {
       "claim_id": "af09-609-processing-pagination-gpt6-0342",
       "owner": "AF09 existing PR #609 processing queue continuation (GPT-6 window 0342)",
