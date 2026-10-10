@@ -11,48 +11,16 @@
 - `audio_post_detail_screen.dart` shows live count after authorized listen; `creator_profile_screen.dart` displays durable readback count; commits `acfce1cf` and `3d8334d2`. **Feed display not modified** because another continuing AF09 owner holds `audio_post_feed_screen.dart` and its tests.
 - Authored (NOT RUN) `services/gateway/src/audio_posts/listen_count.test.mjs`, `adapters/storage/postgres/src/audio_posts/listen_repository.test.mjs`, `apps/mobile/test/audio_first/af09/listen_count_test.dart`. Scope includes authorized ticket, forged actor/body, delayed server clock, optimistic spoofed seeks, replay and daily dedupe, denied/removed/revised posts, output progression, stable retries and account switch.
 
-## SQL proposal — exclusively AF00 migration authority, NOT installed
+## SQL source proposal — AF00 owns migration integration
 
-Use next uniquely allocated append-only migration after reviewing all current registered schema files and current branch owners. Do not apply to production before review, backup/restore and explicit deploy gate. Need PostgreSQL with `gen_random_uuid()` support and an existing `social.audio_posts(tenant_id,post_id)` primary key.
-
-```sql
-CREATE TABLE social.audio_post_listen_sessions (
-  tenant_id text NOT NULL,
-  listen_id uuid NOT NULL DEFAULT gen_random_uuid(),
-  post_id text NOT NULL,
-  viewer_account_id text NOT NULL,
-  post_revision integer NOT NULL CHECK (post_revision >= 0),
-  duration_ms integer NOT NULL CHECK (duration_ms BETWEEN 1000 AND 180000),
-  issued_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  expires_at timestamptz NOT NULL DEFAULT (clock_timestamp() + interval '10 minutes'),
-  accepted boolean NOT NULL DEFAULT false,
-  counted boolean NOT NULL DEFAULT false,
-  PRIMARY KEY (tenant_id, listen_id),
-  FOREIGN KEY (tenant_id,post_id) REFERENCES social.audio_posts(tenant_id,post_id),
-  CHECK (expires_at > issued_at)
-);
-CREATE INDEX audio_post_listen_expiry ON social.audio_post_listen_sessions(expires_at);
-CREATE INDEX audio_post_listen_actor ON social.audio_post_listen_sessions
-  (tenant_id,post_id,viewer_account_id);
-CREATE TABLE social.audio_post_listen_days (
-  tenant_id text NOT NULL,
-  post_id text NOT NULL,
-  viewer_account_id text NOT NULL,
-  listen_day date NOT NULL,
-  PRIMARY KEY (tenant_id,post_id,viewer_account_id,listen_day),
-  FOREIGN KEY (tenant_id,post_id) REFERENCES social.audio_posts(tenant_id,post_id)
-);
-CREATE INDEX audio_post_listen_days_by_post ON social.audio_post_listen_days(tenant_id,post_id);
-```
-
-**Important:** AF00/AF15 must implement retention for expired listen sessions and policy-limited per-viewer daily rows; protect by existing account deletion and tenant isolation. Never expose per-viewer playback metadata publicly. PostgreSQL row-level access, migration sequence and environment/retention checks must be reviewed against canonical security/operations policy before activation. The day-based count is one *qualified viewer-day listen*, not a raw media GET, and must be labelled and documented consistently.
+Additive feature-local SQL code was authored at `adapters/storage/postgres/src/audio_posts/listen_tables.proposal.sql` (commit `51c620ebce2b255b7172dfab6565c1c8cf8b0dc5`). It contains the server-minted session and daily count tables, UUID default, UTC viewer/post/day uniqueness, composite publication keys, deletion cascades, retention indexes and accepted/count integrity. **NOT an installed migration.** AF00 must review the canonical social schema, assign the unique append-only sequence, audit automatic migration/deploy triggers, and execute disposable PostgreSQL visibility/concurrency/restore checks. AF15/account-deletion must implement cleanup of identifying viewer/day rows. Do not activate it without tests.
 
 ## Finite source and qualification checklist
 
 | Requirement | Source & owner | State | Execution / integration |
 | --- | --- | --- | --- |
 | AF09-COUNT-1 minted account-scoped listen grant after signed private media authorization | `playback.ts`; AF09 | IMPLEMENTED_UNVERIFIED | Node test authored; route not registered |
-| AF09-COUNT-2 durable listener session and once-per-day accepted count | `listen_repository.ts`; AF09 + AF00 schema | PARTIAL_IMPLEMENTATION (code exists; SQL not registered) | PostgreSQL tests NOT_RUN |
+| AF09-COUNT-2 durable listener session and once-per-day accepted count | `listen_repository.ts`, `listen_tables.proposal.sql`; AF09 + AF00 | IMPLEMENTED_UNVERIFIED module/proposal; **MISSING installed migration** | PostgreSQL tests NOT_RUN |
 | AF09-COUNT-3 public count projection to Discover/Saved/Following/Creator | `contract.ts`, `repository.ts`, `following_repository.ts`; AF09 | IMPLEMENTED_UNVERIFIED; depends SQL | No actual database |
 | AF09-COUNT-4 listen progress from real native output to durable receipt | `audio_post_playback.dart`; AF09/05 | IMPLEMENTED_UNVERIFIED | Flutter/device tests NOT_RUN |
 | AF09-COUNT-5 readable counts on creator/detail views | `creator_profile_screen.dart`, `audio_post_detail_screen.dart`; AF09 | IMPLEMENTED_UNVERIFIED | Flutter tests NOT_RUN |
@@ -78,3 +46,7 @@ AF13/AF00 runs disposable SQL migration+concurrency/account-denial tests and `no
 ## Continuation/ownership
 
 Keep this code on **existing PR #609**; re-read live claims and head before editing any shared file. Bounded request: current AF09 feed owner, after finishing deletion recovery, show `post.listenCount` on published Discover/Following/Saved feed and optionally prefer `widget.playback?.listenCountFor(post.postId)` via its existing `AnimatedBuilder`; preserve current feed and account state. AF00 owns SQL migration, Gateway playback route registration and five-tab mounting into the **one reviewed nondeploying integration SHA**. Do not ask for local pull until all required remote source and composition is closed; owner's unseen APK changes remain to reconcile. Parent milestone still PARTIAL.
+
+## Compatibility and source readback checkpoint
+
+20/20 exact-file readback structural checks passed on the initial feature-source checkpoint (NOT runtime execution). Corrected the existing exact-key projection regression `services/gateway/src/audio_posts/routes_projection.test.mjs` at `24d0f9b5bd3998b25720e2fb37146e8b2d601c66`, and the creator count widget assertion at `d65dab6f4b98517ef488dfc553969cca3a14fbd2`. Live PR #609 head is concurrently moving; reread it and path ownership before any further source change. Feature remains PARTIAL until AF00 installs SQL/Gateway/shell/media composition and AF13 runs executable tests; no unified integration SHA or local pull.
