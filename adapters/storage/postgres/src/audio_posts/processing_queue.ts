@@ -7,10 +7,21 @@ type PendingRow = {
   tenant_id: string; post_id: string; revision: number;
   created_at: Date | string;
 };
+// PostgreSQL TIMESTAMPTZ has microsecond precision. pg's default Date parser
+// truncates it to milliseconds; that loses keyset rows sharing a millisecond.
+const microsecondUtc = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$/;
 function asDate(raw: Date | string): string {
-  const value = raw instanceof Date ? raw : new Date(raw);
-  if (!Number.isFinite(value.getTime())) throw new Error("audio_posts.invalid_pending_time");
-  return value.toISOString();
+  if (typeof raw === "string") {
+    if (!microsecondUtc.test(raw) || !Number.isFinite(Date.parse(raw))) {
+      throw new Error("audio_posts.invalid_pending_time");
+    }
+    return raw; // Keep all six digits in SQL cursors, never Date-round them.
+  }
+  if (!(raw instanceof Date) || !Number.isFinite(raw.getTime())) {
+    throw new Error("audio_posts.invalid_pending_time");
+  }
+  // Compatibility for mocked/legacy Date rows; SQL below always returns text.
+  return raw.toISOString().replace(/Z$/, "000Z");
 }
 function cursorEncode(row: PendingRow): string {
   return Buffer.from(JSON.stringify([asDate(row.created_at), row.post_id])).toString("base64url");
@@ -24,7 +35,8 @@ function cursorDecode(raw: string | null): [string, string] | null {
   try { parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")); }
   catch { throw new Error("audio_posts.invalid_processing_cursor"); }
   if (!Array.isArray(parsed) || parsed.length !== 2 ||
-      typeof parsed[0] !== "string" || !Number.isFinite(Date.parse(parsed[0])) ||
+      typeof parsed[0] !== "string" || !microsecondUtc.test(parsed[0]) ||
+      !Number.isFinite(Date.parse(parsed[0])) ||
       typeof parsed[1] !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(parsed[1])) {
     throw new Error("audio_posts.invalid_processing_cursor");
   }
@@ -43,7 +55,10 @@ export function createPostgresAudioPostProcessingQueue(pool: Pool): AudioPostPro
       }
       const after = cursorDecode(cursor);
       const response = await pool.query<PendingRow>(
-        `SELECT tenant_id,post_id,revision,created_at FROM social.audio_posts
+        `SELECT tenant_id,post_id,revision,
+                to_char(created_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS created_at
+         FROM social.audio_posts
          WHERE tenant_id=$1 AND status='processing'
            AND ($2::timestamptz IS NULL OR (created_at,post_id) < ($2::timestamptz,$3))
          ORDER BY created_at DESC,post_id DESC LIMIT $4`,
