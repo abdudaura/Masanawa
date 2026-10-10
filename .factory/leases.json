@@ -103,9 +103,9 @@
       "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "claimed_at": "2026-10-10T02:42:45.541Z",
-      "heartbeat_at": "2026-10-10T02:42:45.541Z",
-      "expires_at": "2026-10-10T02:47:45.541Z",
-      "notes": "Continuing existing PR #609 only; no migration/router/auth/root/production edits. AF05 shared audio focus still integration dependency. Selected from cleared AF09 path scopes."
+      "heartbeat_at": "2026-10-10T02:45:59.246Z",
+      "expires_at": "2026-10-10T02:50:59.246Z",
+      "notes": "Published AF09 ticket/mobile feed source on existing PR #609: 52877e9, 1c5eb35, 46f1232. Widget+contract regression tests in progress, AF05/AF00 boundaries unchanged."
     },
     {
       "claim_id": "af09-609-following-projection-20261010-gpt6",
