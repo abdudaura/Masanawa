@@ -932,6 +932,22 @@
       "heartbeat_at": "2026-10-10T09:20:26.617Z",
       "expires_at": "2026-10-10T09:25:26.617Z",
       "notes": "Run 38040798427 Typecheck PASS, 253 files/1358 tests pass, only test-topology fails since mobile workflow changed command; exact source file last c8efac8. Fix narrow test to expect --no-fatal-infos while keeping errors/warnings fatal, run real Foundation."
+    },
+    {
+      "claim_id": "af13-460-profile-widget-frame-gpt6-20261010",
+      "owner": "GPT-6 AF13 continuing existing CI PR #460",
+      "scope": "Repair real Flutter edit-profile widget test frame scheduling after text edit; no production UI/API change",
+      "paths": [
+        "apps/mobile/test/edit_profile_screen_test.dart"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "source_pr": 460,
+      "source_head": "7930b0ebd2440d1f93534d425faa283748fcae08",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T09:22:21.205Z",
+      "heartbeat_at": "2026-10-10T09:22:21.205Z",
+      "expires_at": "2026-10-10T09:27:21.205Z",
+      "notes": "Reproduced real flutter tests failed in #38040798435; PR comment #6096078619; no protected UI source edits"
     }
   ],
   "history": [
