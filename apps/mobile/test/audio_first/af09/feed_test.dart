@@ -597,5 +597,70 @@ void main() {
     expect(parsed.likeCount, 2);
     expect(parsed.commentCount, 3);
   });
+
+  testWidgets('returning to Discover retains the viewed page while refreshing',
+      (tester) async {
+    final source = FakePosts()
+      ..discoverHandler = (_) async => AudioPostPage(
+          items: [post('warm')], nextCursor: null)
+      ..savedHandler = () async => [post('saved')];
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio warm'), findsOneWidget);
+
+    await tester.tap(find.text('Saved').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio saved'), findsOneWidget);
+
+    final refresh = Completer<AudioPostPage>();
+    source.discoverHandler = (_) => refresh.future;
+    await tester.tap(find.text('Discover'));
+    await tester.pump();
+    expect(find.text('Published audio warm'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(find.text('Published audio saved'), findsNothing);
+
+    refresh.complete(AudioPostPage(items: [post('fresh')], nextCursor: null));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio fresh'), findsOneWidget);
+    expect(find.text('Published audio warm'), findsNothing);
+  });
+
+  testWidgets('account switch clears remembered Talks tabs and late responses',
+      (tester) async {
+    final source = FakePosts()
+      ..discoverHandler = (_) async => AudioPostPage(
+          items: [post('private-alice')], nextCursor: null)
+      ..savedHandler = () async => [post('saved-alice')];
+    await tester.pumpWidget(screen(source, 'alice'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio saved-alice'), findsOneWidget);
+
+    final pending = Completer<AudioPostPage>();
+    source.discoverHandler = (_) => pending.future;
+    await tester.tap(find.text('Discover'));
+    await tester.pump();
+    expect(find.text('Published audio private-alice'), findsOneWidget);
+
+    source.discoverHandler = (_) async => AudioPostPage(
+        items: [post('public-bob')], nextCursor: null);
+    source.savedHandler = () async => [];
+    await tester.pumpWidget(screen(source, 'bob'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio private-alice'), findsNothing);
+    expect(find.text('Published audio saved-alice'), findsNothing);
+    expect(find.text('Published audio public-bob'), findsOneWidget);
+    pending.complete(AudioPostPage(
+        items: [post('late-alice')], nextCursor: null));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio late-alice'), findsNothing);
+
+    await tester.tap(find.text('Saved').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio saved-alice'), findsNothing);
+  });
+
 }
 String sourceAccount = 'old';
