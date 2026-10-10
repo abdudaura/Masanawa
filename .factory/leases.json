@@ -164,6 +164,7 @@
       "scope": "AF13 existing PR #596 canonical acceptance integrity and connected test",
       "paths": [
         "docs/workstreams/AF13-evidence-ledger-20261009.md",
+        "tools/audio-first-qualification/journeys.json",
         "tools/audio-first-qualification/qualify.mjs",
         "tools/audio-first-qualification/qualify.test.mjs"
       ],
@@ -171,8 +172,8 @@
       "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
       "pr": "https://github.com/Baatiku/masanawa/pull/596",
       "claimed_at": "2026-10-10T02:53:59Z",
-      "heartbeat_at": "2026-10-10T02:53:59Z",
-      "expires_at": "2026-10-10T02:58:59Z"
+      "heartbeat_at": "2026-10-10T02:56:26Z",
+      "expires_at": "2026-10-10T03:01:26Z"
     },
     {
       "claim_id": "af09-609-service-errors-20261010-gpt6",
