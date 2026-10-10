@@ -171,26 +171,6 @@
       "notes": "Continuing existing #604; Activity 404/malformed response source and 6 transport tests committed; handoff documentation and finite parent-milestone checklist."
     },
     {
-      "claim_id": "gpt6-u02-post-auth-expiry-20261010-0415",
-      "owner": "GPT-6 U02 Gwani task approval continuation",
-      "scope": "Same #580: revalidate approval after async domain authorization and atomically fence admitted PostgreSQL change using database clock; tests and milestone handoff",
-      "paths": [
-        "packages/operator-tasks/src/index.ts",
-        "packages/operator-tasks/src/index.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md",
-        "packages/operator-tasks/src/postgres.ts",
-        "packages/operator-tasks/src/postgres.approval_expiry.test.ts"
-      ],
-      "branch": "work/recovery-02-u02-task-journal-20261009",
-      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
-      "source_pr": 580,
-      "source_head": "74c6c3ce8f767daa6a9a0df18f11e630be0c15e2",
-      "claimed_at": "2026-10-10T03:15:06.838Z",
-      "heartbeat_at": "2026-10-10T03:16:53.958Z",
-      "expires_at": "2026-10-10T03:21:53.958Z",
-      "notes": "Do not touch shared task worker/route/financial/migration/integration files; source + unit regressions + finite parent handoff."
-    },
-    {
       "claim_id": "masanawa-msn576-wallet-readback-20261010-0320",
       "owner": "GPT-6 continuing #576 / AF03 client, bounded handoff to AF00/AF01",
       "scope": "MSN balance exact authenticated readback into existing crypto-first Wallet screen; no balance mutation, shared root, Gateway composer, migrations or payout enablement",
@@ -213,6 +193,31 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "gpt6-u02-post-auth-expiry-20261010-0415",
+      "owner": "GPT-6 U02 Gwani task approval continuation",
+      "scope": "Same #580: revalidate approval after async domain authorization and atomically fence admitted PostgreSQL change using database clock; tests and milestone handoff",
+      "paths": [
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "packages/operator-tasks/src/postgres.ts",
+        "packages/operator-tasks/src/postgres.approval_expiry.test.ts"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 580,
+      "source_head": "74c6c3ce8f767daa6a9a0df18f11e630be0c15e2",
+      "claimed_at": "2026-10-10T03:15:06.838Z",
+      "heartbeat_at": "2026-10-10T03:16:53.958Z",
+      "expires_at": "2026-10-10T03:21:53.958Z",
+      "notes": "Do not touch shared task worker/route/financial/migration/integration files; source + unit regressions + finite parent handoff.",
+      "released_at": "2026-10-10T03:21:08.416Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/580",
+      "integration_head_sha": "027225d9939f0e482b10e41b08493b99358147be",
+      "test_state": "4 authored unit regressions NOT_RUN; 9/9 source structural invariants, no real suite/PG",
+      "release_reason": "same-PR U02 approval expiry closed at async and SQL admission; finite parent checklist, SHA handoff and exact owners on PR #580; milestone partial and missing integration"
+    },
     {
       "claim_id": "af09-609-durable-publish-20261010-gpt6-0406",
       "owner": "AF09 existing PR #609 durable publish continuation GPT-6",
