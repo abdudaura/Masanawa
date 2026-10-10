@@ -139,7 +139,8 @@ export function createPostgresTalkActivityRepository(
               amount_label = EXCLUDED.amount_label,
               requires_action = EXCLUDED.requires_action,
               action_label = EXCLUDED.action_label,
-              unread = EXCLUDED.unread
+              -- Replayed delivery must not resurrect an acknowledged read.
+              unread = talks.activity.unread AND EXCLUDED.unread
         WHERE talks.activity.user_id = EXCLUDED.user_id
           AND talks.activity.kind = EXCLUDED.kind
         RETURNING ${columns}`,
