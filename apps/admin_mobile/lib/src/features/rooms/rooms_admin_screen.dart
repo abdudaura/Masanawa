@@ -76,8 +76,8 @@ class _RoomsAdminScreenState extends State<RoomsAdminScreen>{
     const Divider(),Text('Question review',style:Theme.of(context).textTheme.titleLarge),
     if(questions.isEmpty)const ListTile(title:Text('No pending questions')),
     for(final q in questions)Card(child:Column(children:[
-     ListTile(title:Text(q.body),subtitle:Text(q.roomId+' · '+q.state+
-      (q.draft==null?'':'\nDraft: '+q.draft!))),
+     ListTile(title:Text(q.body),subtitle:Text('${q.roomId} · ${q.state}'+
+      (q.draft==null?'':'\nDraft: ${q.draft!}'))),
      Row(children:[TextButton(onPressed:busy?null:()=>review(q,true),child:const Text('Approve')),
       TextButton(onPressed:busy?null:()=>review(q,false),child:const Text('Reject'))]),
     ])),

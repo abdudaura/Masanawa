@@ -53,7 +53,7 @@ class _RoomsScreenState extends State<RoomsScreen>{
     RefreshIndicator(onRefresh:load,child:ListView.builder(itemCount:rows.length,itemBuilder:(context,i){
      final r=rows[i];return ListTile(
       leading:const CircleAvatar(child:Icon(Icons.school_outlined)),
-      title:Text(r.title),subtitle:Text(r.language+' · '+r.members.toString()+' members · '+(r.paid?'Paid':'Free')),
+      title:Text(r.title),subtitle:Text("${r.language} · ${r.members} members · ${r.paid ? 'Paid' : 'Free'}"),
       trailing:Icon(r.joined?Icons.check_circle_outline:Icons.chevron_right,color:masanaBlue),
       onTap:()async{
        await Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>RoomHomeScreen(client:widget.client,id:r.id)));
@@ -108,7 +108,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
    Column(children:[
     Padding(padding:const EdgeInsets.all(16),child:Column(children:[
      Text(info!.title,style:Theme.of(context).textTheme.titleLarge),
-     Text('Teacher: '+info!.teacher+' · '+info!.members.toString()+' members'),
+     Text('Teacher: ${info!.teacher} · ${info!.members} members'),
      if(info!.paid)const Text('Subscriptions require verified Google Play checkout. Not available yet.'),
      FilledButton(onPressed:busy||info!.paid?null:membership,
       child:Text(info!.paid?'Subscribe (unavailable)':info!.joined?'Leave Room':'Join free Room'))])),
@@ -123,7 +123,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
        RefreshIndicator(onRefresh:load,child:ListView(children:[
         if(items.isEmpty)const ListTile(title:Text('Ask the first question.')),
         for(final q in items)ListTile(title:Text(q.body),
-         subtitle:Text(q.answer??'Teacher reply pending · '+q.status)),
+         subtitle:Text(q.answer??'Teacher reply pending · ${q.status}')),
        ]))),
      if(tab==1)SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
        Expanded(child:TextField(controller:question,maxLength:2000,maxLines:2,

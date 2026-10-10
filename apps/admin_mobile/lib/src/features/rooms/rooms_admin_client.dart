@@ -25,7 +25,7 @@ class HttpRoomsAdminClient implements RoomsAdminClient {
   return (r.data?['items'] as List<dynamic>? ?? []).cast<Map<String,dynamic>>();
  }
  @override Future<void> review(String id,String body,{required bool approve})async{
-  await dio.post<void>('/v1/admin/rooms/questions/'+Uri.encodeComponent(id)+'/review',
+  await dio.post<void>('/v1/admin/rooms/questions/${Uri.encodeComponent(id)}/review',
    data:{'decision':approve?'approve':'reject','answer':body});
  }
  @override Future<void> create({required String slug,required String title,required String teacherId})async{
@@ -33,6 +33,6 @@ class HttpRoomsAdminClient implements RoomsAdminClient {
     'teacherCharacterId':teacherId,'language':'en'});
  }
  @override Future<void> publish(String roomId)async{
-  await dio.post<void>('/v1/admin/rooms/'+Uri.encodeComponent(roomId)+'/publish');
+  await dio.post<void>('/v1/admin/rooms/${Uri.encodeComponent(roomId)}/publish');
  }
 }
