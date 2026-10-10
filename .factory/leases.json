@@ -301,34 +301,6 @@
       "released_at": "2026-10-10T05:27:16.875Z"
     },
     {
-      "claim_id": "af09-609-ci-analyzer-recovery-20261010-0730-gpt6",
-      "owner": "GPT-6 / AF09 existing PR #609 executable CI recovery",
-      "scope": "Repair actual GitHub Actions TypeScript/Flutter analyzer failures on the existing source branch; retain financial logic, AF00 composition untouched.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "packages/agents/src/talk-replay.test.ts",
-        "apps/mobile/lib/src/localization/locale_preference.dart",
-        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
-        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
-        "services/gateway/src/audio_posts/following.ts",
-        "adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts",
-        ".github/workflows/foundation-ci.yml",
-        ".github/workflows/mobile-build.yml",
-        "services/gateway/src/audio_posts/routes.ts",
-        "services/gateway/src/audio_posts/processing_scheduler.ts",
-        "services/gateway/src/audio_posts/processing_checkpoint.ts"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T07:31:14.901Z",
-      "heartbeat_at": "2026-10-10T07:41:40.354Z",
-      "expires_at": "2026-10-10T07:46:40.354Z",
-      "notes": "Visible reviewed stale transfer in PR #609 comment 6095139105; GitHub Actions real compiler output at exact old head; no main change. Actual follow-up TypeScript failures from 38034756975: AF09 author narrowing and identity test UUID annotation; compiler-only fixes. Owner-mandated execute-all-independent-checks: existing CI steps currently skip tests after analyzer/typecheck fail; preserve red workflow conclusion and execute tests/build independently via !cancelled(). CI after independent steps confirms real typecheck, Vitest and qualification failures; collecting exact per-job diagnostics before any further source patch. Also fixing AF09 optional feed cursor compile contract diagnosed from actual TypeScript job #114163662635. AF09 worker source import Pool from existing @masanawa/postgres re-export instead of undeclared transitive pg in Gateway; actual typecheck TS2307 evidence."
-    },
-    {
       "claim_id": "af13-existing-pr460-sql-fixtures-20261010-gpt6-0735",
       "owner": "AF13 / CI recovery current GPT-6 window",
       "scope": "Continue original PR #460: repair actually failing strict TS exactOptionalPropertyTypes test fixtures without production API/financial/migration/CI/AF00 changes. GitHub Actions executed and failed at exact head.",
@@ -2655,6 +2627,39 @@
       "notes": "Reviewed existing #609 source and explicit stale transfer in PR comment 6094811024; AF00 protected paths excluded",
       "recovered_at": "2026-10-10T07:31:14.901Z",
       "recovery_reason": "Reviewed expired overlap for exact-path CI compiler recovery in continuing PR #609; source preserved, coordination comment 6095139105; not an owner-completed milestone."
+    },
+    {
+      "claim_id": "af09-609-ci-analyzer-recovery-20261010-0730-gpt6",
+      "owner": "GPT-6 / AF09 existing PR #609 executable CI recovery",
+      "scope": "Repair actual GitHub Actions TypeScript/Flutter analyzer failures on the existing source branch; retain financial logic, AF00 composition untouched.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "packages/agents/src/talk-replay.test.ts",
+        "apps/mobile/lib/src/localization/locale_preference.dart",
+        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
+        "services/gateway/src/audio_posts/following.ts",
+        "adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts",
+        ".github/workflows/foundation-ci.yml",
+        ".github/workflows/mobile-build.yml",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/processing_scheduler.ts",
+        "services/gateway/src/audio_posts/processing_checkpoint.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T07:31:14.901Z",
+      "heartbeat_at": "2026-10-10T07:41:40.354Z",
+      "expires_at": "2026-10-10T07:46:40.354Z",
+      "notes": "Visible reviewed stale transfer in PR #609 comment 6095139105; GitHub Actions real compiler output at exact old head; no main change. Actual follow-up TypeScript failures from 38034756975: AF09 author narrowing and identity test UUID annotation; compiler-only fixes. Owner-mandated execute-all-independent-checks: existing CI steps currently skip tests after analyzer/typecheck fail; preserve red workflow conclusion and execute tests/build independently via !cancelled(). CI after independent steps confirms real typecheck, Vitest and qualification failures; collecting exact per-job diagnostics before any further source patch. Also fixing AF09 optional feed cursor compile contract diagnosed from actual TypeScript job #114163662635. AF09 worker source import Pool from existing @masanawa/postgres re-export instead of undeclared transitive pg in Gateway; actual typecheck TS2307 evidence.",
+      "released_at": "2026-10-10T07:46:39.138Z",
+      "release_reason": "Preserved source on existing PR #609 at exact SHA 1a8cc57921db9bafeaba1922fe7637e8c14ac14e. Real CI Foundation 38035314628: 74 TS typecheck errors, 85 Vitest failures/1244 passing/22 skipped, provider qualification missing authorized production targets, 4 cross-package rootDir errors; mobile 38035314577 still in progress with analyzer errors. Exact finite handoffs published #609 comments 6095242307 and 6095257934; AF00 #600 comment 6095244371. Parent AF09 still PARTIAL_IMPLEMENTATION, tests FAIL, no safe merge. Next: AF00 canonical cross-package contracts/routes/migration, AF09 unit integration on continuing PR, AF13 root test isolation, AF05/15 private audio media qualification; no local pull.",
+      "source_head_sha": "1a8cc57921db9bafeaba1922fe7637e8c14ac14e",
+      "integration_head_sha": null,
+      "test_state": "GitHub Actions real Foundation FAIL (74 TS errors; Vitest 85 fail/1244 pass/22 skip; 4 TS6059 build). Mobile analyzer FAIL and Flutter test FAIL, APK/web ongoing. NOT_VERIFIED."
     }
   ]
 }
