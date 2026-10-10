@@ -332,6 +332,29 @@
       "heartbeat_at": "2026-10-10T04:57:13.869Z",
       "expires_at": "2026-10-10T05:02:13.869Z",
       "notes": "No root / shared Gateway / native / financial or migration path edits."
+    },
+    {
+      "claim_id": "af09-609-library-pagination-gpt6-0600",
+      "owner": "AF09 #609 / GPT-6 continuing window 0600",
+      "scope": "Close unbounded/50-item My Talks and Saved history with account-scoped cursor pages, keeping legacy endpoints and preserving AF00/media ownership",
+      "paths": [
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/service.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-library-pagination-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:59:05.236Z",
+      "heartbeat_at": "2026-10-10T04:59:05.236Z",
+      "expires_at": "2026-10-10T05:04:05.236Z",
+      "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff."
     }
   ],
   "history": [
