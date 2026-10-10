@@ -11,7 +11,9 @@ AudioPost post(String id) => AudioPost(
 );
 class FakePosts implements AudioPostTransport {
   Future<AudioPostPage> Function(String?)? discoverHandler;
-  int requests = 0, likes = 0, saves = 0;
+  int requests = 0, likes = 0, saves = 0, removals = 0;
+  Future<List<AudioPost>> Function()? mineHandler;
+  Future<AudioPost> Function(String)? removeHandler;
   @override
   Future<AudioPostPage> discover({String? cursor}) {
     requests++;
@@ -19,11 +21,19 @@ class FakePosts implements AudioPostTransport {
       Future.value(AudioPostPage(items: [post('one')], nextCursor: null));
   }
   @override
-  Future<List<AudioPost>> mine() async => [];
+  Future<List<AudioPost>> mine() => mineHandler?.call() ?? Future.value([]);
   @override
   Future<AudioPost> publish({
     required String requestId, required String assetId, required String title,
   }) async => post('new');
+  @override
+  Future<AudioPost> removeMine({required String postId}) async {
+    removals++;
+    if (removeHandler != null) return removeHandler!(postId);
+    return AudioPost(postId: postId, authorId: 'author-a', authorKind: 'human',
+      title: 'Published audio ' + postId, durationMs: 22000,
+      status: 'removed', revision: 2, createdAt: DateTime.utc(2026, 10, 10));
+  }
   @override
   Future<void> react({
     required String postId, required String kind, required bool enabled,
@@ -61,6 +71,45 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     expect(source.requests, 2);
+  });
+
+  testWidgets('My Talks removal requires confirmation and retains server status', (tester) async {
+    final source = FakePosts()..mineHandler = () async => [post('mine')];
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio mine'), findsOneWidget);
+    await tester.tap(find.text('Remove Talk'));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove this Talk?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(source.removals, 0);
+    await tester.tap(find.text('Remove Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove').last);
+    await tester.pumpAndSettle();
+    expect(source.removals, 1);
+    expect(find.text('Status: removed'), findsOneWidget);
+    expect(find.text('Remove Talk'), findsNothing);
+  });
+
+  testWidgets('failed deletion stays available to retry', (tester) async {
+    final source = FakePosts()
+      ..mineHandler = (() async => [post('mine')])
+      ..removeHandler = ((_) async => throw StateError('offline'));
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove').last);
+    await tester.pumpAndSettle();
+    expect(source.removals, 1);
+    expect(find.text('Remove Talk'), findsOneWidget);
+    expect(find.textContaining('Could not remove Talk'), findsOneWidget);
   });
 
   testWidgets('late previous-account page is not shown after account switch',
