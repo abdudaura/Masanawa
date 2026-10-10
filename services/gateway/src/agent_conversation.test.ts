@@ -342,6 +342,7 @@ describe("Alpha conversation service", () => {
     const f = fixture();
     const session = sessionFor(f);
     const trace: string[] = [];
+    const timings: Array<{ readonly event: string; readonly outcome: string; readonly totalMs: number; readonly firstTextMs?: number; readonly stagesMs: Readonly<Record<string, number>> }> = [];
     let releaseAudio!: () => void;
     const audioPending = new Promise<void>((resolve) => { releaseAudio = resolve; });
     const sessions: CharacterSessionRepository = {
@@ -387,6 +388,7 @@ describe("Alpha conversation service", () => {
         },
       },
       sessionDurationMs: 60_000,
+      onTurnTiming: (record) => { timings.push(record); },
     });
     const request = {
       authorizationHeader: "Bearer alpha",
@@ -428,6 +430,22 @@ describe("Alpha conversation service", () => {
     });
     expect(disconnected.reply).toBe(settledText);
     expect(trace.filter((entry) => entry === "run:failed")).toHaveLength(0);
+    expect(timings).toHaveLength(2);
+    for (const timing of timings) {
+      expect(timing).toMatchObject({ event: "agent.turn.latency", outcome: "completed" });
+      expect(timing.totalMs).toBeGreaterThanOrEqual(0);
+      expect(timing.firstTextMs).toBeGreaterThanOrEqual(0);
+      expect(timing.stagesMs).toHaveProperty("authorization");
+      expect(timing.stagesMs).toHaveProperty("sessionRead");
+      expect(timing.stagesMs).toHaveProperty("model");
+      expect(timing.stagesMs).toHaveProperty("preInference");
+      expect(timing.stagesMs).toHaveProperty("postInference");
+      expect(timing.stagesMs).toHaveProperty("settlement");
+      expect(timing.stagesMs).toHaveProperty("audio");
+    }
+    expect(JSON.stringify(timings)).not.toContain("model-private");
+    expect(JSON.stringify(timings)).not.toContain("masanawa_action");
+    expect(JSON.stringify(timings)).not.toContain("buy airtime");
   });
 
 
