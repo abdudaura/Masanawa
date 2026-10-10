@@ -1103,7 +1103,10 @@
       "claimed_at": "2026-10-10T16:08:43.202Z",
       "heartbeat_at": "2026-10-10T16:08:43.202Z",
       "expires_at": "2026-10-10T16:23:43.202Z",
-      "notes": "Review and preserve latest canonical instructions; single owner AF00 retains shared code, production deploy/financial/migration writes. Do not block implementation on R0/R1 or existing red baseline checks."
+      "notes": "Review and preserve latest canonical instructions; single owner AF00 retains shared code, production deploy/financial/migration writes. Do not block implementation on R0/R1 or existing red baseline checks.",
+      "released_at": "2026-10-10T16:14:59.252Z",
+      "release_reason": "Canonical PR #615 current head 3a8e735b7e911ca6ba4bcf78210c0453a47f136d; DELIVERY §1A + AGENTS + CONTINUE-HERE + WINDOW-PROMPT verified by four-file source readback and 6 policy assertions. No app/DB/CI/production changes; AF00 and four lane PRs notified. New owner rule authorizes work now, only production safety blocked.",
+      "integration_head_sha": "3a8e735b7e911ca6ba4bcf78210c0453a47f136d"
     },
     {
       "claim_id": "r0-test-storm-source-first-ci-20261010-gpt6",
@@ -1119,7 +1122,10 @@
       "claimed_at": "2026-10-10T16:12:32.194Z",
       "heartbeat_at": "2026-10-10T16:12:32.194Z",
       "expires_at": "2026-10-10T16:27:32.194Z",
-      "notes": "AF00 informed before edits, workflow only; preserve branch head CAS, no production or migrations."
+      "notes": "AF00 informed before edits, workflow only; preserve branch head CAS, no production or migrations.",
+      "released_at": "2026-10-10T16:14:59.252Z",
+      "release_reason": "AF00 independently updated both claimed workflows on integration/rebuild at 2834c9a6c49c756d0e2f98f9bf0500ace24a4791 to make integration-targeted failures advisory; my conflicting update was rejected with HTTP409, and I intentionally made NO workflow changes to avoid overwriting AF00. Preserved full tests and main strict gate. Source-first docs are separately committed on #615.",
+      "integration_head_sha": "2834c9a6c49c756d0e2f98f9bf0500ace24a4791"
     },
     {
       "claim_id": "l-video-manual-admission-20261010-gpt6-1709",
