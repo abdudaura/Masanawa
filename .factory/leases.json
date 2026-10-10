@@ -1288,6 +1288,27 @@
       "heartbeat_at": "2026-10-10T16:31:05.547Z",
       "expires_at": "2026-10-10T16:36:05.547Z",
       "notes": "Feature-owned paths only, AF00 owns shared migration/route/worker composition; no live run/financial access."
+    },
+    {
+      "claim_id": "l-feed-j06-core-20261010-gpt6-1734",
+      "owner": "L-FEED J06 / GPT-6 window 1734",
+      "scope": "Platform-only Feed posts, immutable text/image/audio contracts, fan reaction/comment/save with tenant-safe PostgreSQL and feature-local Flutter/Admin/worker/test source. Reuse AF09 audio. AF00 owns shared routing, migration registry, live flags.",
+      "paths": [
+        "packages/feed/**",
+        "services/gateway/src/modules/home_feed/**",
+        "services/worker/src/jobs/home_feed/**",
+        "adapters/storage/postgres/src/home_feed/**",
+        "apps/mobile/lib/src/features/home_feed/**",
+        "apps/admin_mobile/lib/src/features/content_studio/**",
+        "tests/e2e/J06/**"
+      ],
+      "branch": "lane/l-feed-j06-core-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "source_pr": null,
+      "claimed_at": "2026-10-10T16:34:00Z",
+      "heartbeat_at": "2026-10-10T16:34:00Z",
+      "expires_at": "2026-10-10T16:39:00Z",
+      "notes": "Claimed after reading #615 planning blueprint and active lanes; no main, Railway, finance, shared composition edits."
     }
   ],
   "history": [
