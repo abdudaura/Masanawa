@@ -63,6 +63,7 @@ function fixture() {
   let readback: OperatorDomainOutcome={status:"unknown"};
   let executed: OperatorDomainOutcome={status:"confirmed",receiptRef:"fabricated_not_evidence"};
   let admissionDenied=false;
+  let authorizationHook: (() => void | Promise<void>) | null = null;
   const service=createOperatorTaskService({
     repository:store.repository,
     domain: {
@@ -71,6 +72,7 @@ function fixture() {
       },
       async authorizeConfirmation() {
         if(admissionDenied) throw new OperatorTaskError("CAPABILITY_REVOKED",403);
+        if (authorizationHook) await authorizationHook();
       },
       async execute() { executes++; return executed; },
       async reconcile() { return readback; },
@@ -92,6 +94,7 @@ function fixture() {
     setReadback(v:OperatorDomainOutcome) {readback=v;},
     setExecuted(v:OperatorDomainOutcome) {executed=v;},
     denyAdmission() {admissionDenied=true;},
+    onAuthorize(hook: () => void | Promise<void>) {authorizationHook=hook;},
     executions() {return executes;},
   };
 }
@@ -150,6 +153,34 @@ describe("U02 durable operator task state/security contract", () => {
     await expect(f.service.confirm({actor:f.account,taskId:task.taskId,
       expectedVersion:p.task.version,approvalToken:p.approvalToken})).rejects.toMatchObject({statusCode:403});
     expect(f.executions()).toBe(0);
+  });
+
+  it("rejects approval that expires while the trusted authorization call is pending", async () => {
+    const f=fixture(), proposed=await f.propose();
+    const prepared=await f.prepare(proposed.taskId,proposed.version);
+    f.onAuthorize(async () => { f.setNow("2026-10-09T00:05:00.000Z"); });
+    await expect(f.service.confirm({
+      actor:f.account,taskId:proposed.taskId,expectedVersion:prepared.task.version,
+      approvalToken:prepared.approvalToken,
+    })).rejects.toMatchObject({code:"TASK_APPROVAL_INVALID",statusCode:403});
+    expect(f.executions()).toBe(0);
+    const persisted=await f.service.read({actor:f.account,taskId:proposed.taskId});
+    expect(persisted.phase).toBe("awaiting_approval");
+    expect(persisted.version).toBe(prepared.task.version);
+    expect((await f.service.events({actor:f.account,taskId:proposed.taskId})).map(e=>e.phase))
+      .toEqual(["proposed","awaiting_approval"]);
+  });
+
+  it("allows a checked authorization completed just before expiry", async () => {
+    const f=fixture(), proposed=await f.propose();
+    const prepared=await f.prepare(proposed.taskId,proposed.version);
+    f.onAuthorize(async () => { f.setNow("2026-10-09T00:04:59.999Z"); });
+    const result=await f.service.confirm({
+      actor:f.account,taskId:proposed.taskId,expectedVersion:prepared.task.version,
+      approvalToken:prepared.approvalToken,
+    });
+    expect(result.phase).toBe("reconciling");
+    expect(f.executions()).toBe(1);
   });
 
   it("does not promote an execution acknowledgement to verified success", async () => {
