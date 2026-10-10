@@ -790,6 +790,23 @@
       "heartbeat_at": "2026-10-10T09:03:11.009Z",
       "expires_at": "2026-10-10T09:08:11.009Z",
       "notes": "Exact run 38039747623 Provider qualification tooling tests failure because importing validator executes main() and requires live targets. Guard CLI invocation by import.meta.url and test no side effects during library import."
+    },
+    {
+      "claim_id": "af01-590-billing-failing-journey-tests-gpt6-20261010",
+      "owner": "GPT-6 AF01 existing billing PR #590 real CI repair",
+      "scope": "Repair real billing test expectations against canonical wallet-first and confirmed quote API without changing provider/financial authority",
+      "paths": [
+        "services/gateway/src/billing_checkout.test.ts",
+        "services/gateway/src/financial_billing.test.ts"
+      ],
+      "branch": "work/af01-billing-settlement-readback-20261009-masanawa01",
+      "source_pr": 590,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_head": "d471920fafb979c06b76414c31e508cf485240d4",
+      "claimed_at": "2026-10-10T09:04:43.930Z",
+      "heartbeat_at": "2026-10-10T09:04:43.930Z",
+      "expires_at": "2026-10-10T09:09:43.930Z",
+      "notes": "Fresh live claim, PR comment #6095944848; actual Foundation CI PG18 test run #38037792873"
     }
   ],
   "history": [
