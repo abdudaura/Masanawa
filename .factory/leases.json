@@ -90,23 +90,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "af09-playback-access-20261010-gpt6e",
-      "owner": "MASANAWA-AF09-PLAYBACK-20261010 / existing PR #609",
-      "scope": "Connected authenticated published Talk playback-ticket API using canonical AF15 media grant, tenant visibility and publication-revision fencing; no new media signer/player/route composition",
-      "paths": [
-        "services/gateway/src/audio_posts/playback.ts",
-        "services/gateway/src/audio_posts/playback.test.mjs",
-        "docs/workstreams/AF09-playback-access-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:29:39.354Z",
-      "heartbeat_at": "2026-10-10T02:33:19.008Z",
-      "expires_at": "2026-10-10T02:38:19.008Z",
-      "notes": "No existing claimed AF09 service/feed/repository paths, AF05/AF15 signer, AF00 router/migrations or app native code touched; new separated paths in same PR."
-    },
-    {
       "claim_id": "masanawa01-af08-phone-password-20261010-pr588-continuation",
       "owner": "MASANAWA-01 / AF08 continuation PR #588",
       "scope": "Canonical phone numeric-password registration/login service, bounded password policy and PostgreSQL adapter preserving OTP/email identity; AF00 owns shared routes/migration/mobile integration",
@@ -1270,6 +1253,27 @@
       "release_reason": "Same existing #609 received public DTO/counts source and SHA-specific handoff; PR comment 6092824868 records exact runner/composition blockers. No source test PASS or merge. Released handoff path for other AF09 owners.",
       "source_head": "c6d8b8def9d31caef5f46deb53571bd12be212b2",
       "pr": "https://github.com/Baatiku/masanawa/pull/609"
+    },
+    {
+      "claim_id": "af09-playback-access-20261010-gpt6e",
+      "owner": "MASANAWA-AF09-PLAYBACK-20261010 / existing PR #609",
+      "scope": "Connected authenticated published Talk playback-ticket API using canonical AF15 media grant, tenant visibility and publication-revision fencing; no new media signer/player/route composition",
+      "paths": [
+        "services/gateway/src/audio_posts/playback.ts",
+        "services/gateway/src/audio_posts/playback.test.mjs",
+        "docs/workstreams/AF09-playback-access-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:29:39.354Z",
+      "heartbeat_at": "2026-10-10T02:33:19.008Z",
+      "expires_at": "2026-10-10T02:38:19.008Z",
+      "notes": "No existing claimed AF09 service/feed/repository paths, AF05/AF15 signer, AF00 router/migrations or app native code touched; new separated paths in same PR.",
+      "released_at": "2026-10-10T02:36:20.714Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "head_sha": "6cdec285be2ed2f3c7e0994029925bce13d0104b",
+      "release_reason": "Same PR #609 connected playback grant/auth route at tested source SHA ac4f676; exact remote blobs matched executed Node22 10/10 tests, syntax and isolated strict TS PASS. SHA-specific docs/comment handoff. Full repo/Flutter/PG/media E2E NOT_RUN; AF00 safe baseline not elected; no merge/production. AF00+AF08+AF15 route/media composition and AF05 player/recorder required."
     }
   ]
 }
