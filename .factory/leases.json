@@ -90,23 +90,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "af09-processing-recovery-20261010-gpt6b",
-      "owner": "AF09 independent processing continuation, new non-overlapping paths for PR #609",
-      "scope": "Process pending published-audio submissions with canonical settle revision CAS, PostgreSQL per-post worker locking, bounded recovery batches and executed native tests. Do not edit live AF09 owned files, migrations, router or AF05 media.",
-      "paths": [
-        "services/gateway/src/audio_posts/processing_worker.ts",
-        "services/gateway/src/audio_posts/processing_worker.test.mjs",
-        "adapters/storage/postgres/src/audio_posts/processing_queue.ts"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:13:58.204Z",
-      "heartbeat_at": "2026-10-10T02:15:54.798Z",
-      "expires_at": "2026-10-10T02:20:54.798Z",
-      "notes": "Created and executed new processing worker and Postgres adapter locally: Node22.16 node --experimental-strip-types --test 10/10 PASS; preparing SHA-matched existing PR source commit"
-    },
-    {
       "claim_id": "af09-comment-thread-20261010-gpt6c",
       "owner": "AF09 continuation existing PR #609",
       "scope": "Connected Published Talks comments API/DB/Flutter with bounded account fencing, and fix feed compile errors. Continue prior released AF09 paths; independent worker remains owned by another claim.",
@@ -1095,6 +1078,25 @@
       "released_at": "2026-10-10T02:18:51.588Z",
       "integration_head_sha": "e13cbeb1cf34699d239ac77be3a14e62b616339f",
       "release_reason": "Same PR #580 recovery source/tests/handoff updated, source SHA 6929c5e64422dff0e77a89eefadaa14a71957ebe; 13/13 type-erased exact-function V8 checks PASS_SIMULATED, full TypeScript/Vitest/PG18/Flutter NOT_RUN; U02 customer journey remains PARTIAL and not merged; execution owner AF13/AF00."
+    },
+    {
+      "claim_id": "af09-processing-recovery-20261010-gpt6b",
+      "owner": "AF09 independent processing continuation, new non-overlapping paths for PR #609",
+      "scope": "Process pending published-audio submissions with canonical settle revision CAS, PostgreSQL per-post worker locking, bounded recovery batches and executed native tests. Do not edit live AF09 owned files, migrations, router or AF05 media.",
+      "paths": [
+        "services/gateway/src/audio_posts/processing_worker.ts",
+        "services/gateway/src/audio_posts/processing_worker.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/processing_queue.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:13:58.204Z",
+      "heartbeat_at": "2026-10-10T02:15:54.798Z",
+      "expires_at": "2026-10-10T02:20:54.798Z",
+      "notes": "Created and executed new processing worker and Postgres adapter locally: Node22.16 node --experimental-strip-types --test 10/10 PASS; preparing SHA-matched existing PR source commit",
+      "released_at": "2026-10-10T02:19:40.057Z",
+      "release_reason": "Same PR #609, exact source head 931f5efbb7e94162be3d76a613a7608078f0dacf; three new files source/10 native Node simulated-PG tests PASS, exact GitHub SHA matches; isolated worker strict tsc PASS. PR handoff comment 6092645150. No app/worker runtime integration, no safe target or production merge; AF00/AF05/AF09/AF13 assigned."
     }
   ]
 }
