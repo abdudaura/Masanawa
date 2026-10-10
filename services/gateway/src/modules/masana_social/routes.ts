@@ -15,6 +15,14 @@ export function registerMasanaSocialRoutes(app:FastifyInstance,
         return {error:{code:error.code,message:error.message}};
       }
       const pgCode=(error as {code?:unknown})?.code;
+      const socialStatus: Record<string,403|404|409|422>={
+        SOCIAL_NOT_FOUND:404,SOCIAL_REVISION_CONFLICT:409,
+        SOCIAL_NOT_VERIFIED:409,SOCIAL_REVOKED:409,
+      };
+      if(typeof pgCode==="string" && pgCode in socialStatus){
+        reply.code(socialStatus[pgCode]!);
+        return {error:{code:pgCode.toLowerCase(),message:"Social identity state changed; reload and retry"}};
+      }
       if(pgCode==="23505"){reply.code(409);return {error:{code:"social_identity_conflict",message:"Account already linked"}};}
       if(pgCode==="23503"){reply.code(404);return {error:{code:"masana_not_found",message:"Masana not found"}};}
       throw error;
