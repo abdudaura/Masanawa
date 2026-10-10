@@ -250,14 +250,15 @@
         "apps/mobile/test/audio_first/af09/creator_profile_test.dart",
         "services/gateway/src/audio_posts/routes_projection.test.mjs",
         "services/gateway/src/audio_posts/service.test.mjs",
-        "apps/mobile/test/audio_first/af09/creator_profile_test.dart"
+        "apps/mobile/test/audio_first/af09/creator_profile_test.dart",
+        "adapters/storage/postgres/src/audio_posts/listen_tables.proposal.sql"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T04:43:27.388Z",
-      "heartbeat_at": "2026-10-10T04:51:51.727Z",
-      "expires_at": "2026-10-10T04:56:51.727Z",
+      "heartbeat_at": "2026-10-10T04:52:32.045Z",
+      "expires_at": "2026-10-10T04:57:32.045Z",
       "notes": "AF09 feed remains owned by removal-recovery owner; requested bounded count display handoff, no contested edit. Tests + SQL proposal committed, awaiting readback and bounded feed ownership transfer, no shared edit."
     },
     {
