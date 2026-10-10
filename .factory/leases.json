@@ -197,7 +197,9 @@
       "integration_head_sha": null,
       "source_head_sha": "d85c911b30859ddbe1168c7eeea27cb4348612ef",
       "test_state": "GitHub CI zero-step BLOCKED; exact blob structural readbacks only. Node/Vitest/PG/S3 NOT_RUN."
-    },
+    }
+  ],
+  "history": [
     {
       "claim_id": "af09-609-report-feed-mount-gpt6-20261010",
       "owner": "AF09 existing PR #609 report UI composition / GPT-6",
@@ -215,14 +217,25 @@
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
       "source_pr": 609,
-      "source_head": "951978f959a3b23caabaca9824ce596578d9bb57",
+      "source_head": "446594187be5525b1e2703af8fc29960785b8190",
       "claimed_at": "2026-10-10T03:50:35.774Z",
       "heartbeat_at": "2026-10-10T03:55:33.791Z",
       "expires_at": "2026-10-10T04:00:33.791Z",
-      "notes": "Stale file claim reviewed and moved to history; preserve all newer feed cache/playback/reaction/comment source. Scope is one customer-visible report UI path. Also guard reporting dialog against account switching; add focused existing widget tests. Runtime source regex validated with valid sample against corrected pattern; existing pagination tests cover accept/reject/precision."
-    }
-  ],
-  "history": [
+      "notes": "Stale file claim reviewed and moved to history; preserve all newer feed cache/playback/reaction/comment source. Scope is one customer-visible report UI path. Also guard reporting dialog against account switching; add focused existing widget tests. Runtime source regex validated with valid sample against corrected pattern; existing pagination tests cover accept/reject/precision.",
+      "released_at": "2026-10-10T03:57:07.367Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "source_commits": [
+        "d593327cd6fc3db00db7458c1484ade165a2362d",
+        "e03f56a7abe600926bd26751dd135e3126593da5",
+        "da1c116954997c0551421fef33db0558b1499de2",
+        "18c7785fbe64fc94b6022b5f8c4385df273552c2",
+        "e80da36fb4592f6a83fceca037d32932a2159b9d",
+        "446594187be5525b1e2703af8fc29960785b8190"
+      ],
+      "test_state": "14/14 structural source predicates; 10/10 JS regexp cases source-derived; Flutter, pnpm, PG, device NOT_RUN/BLOCKED",
+      "release_reason": "Existing PR #609 connected report control in feed, session-fenced dialog, widget tests authored; corrected demonstrated valid Following microsecond regex rejection. Exact-source readback. Whole Published Audio Talks milestone remains PARTIAL, missing AF00/AF05/AF15 composition, actual runner, audited nondeploying integration and device qualification. Handoff docs/workstreams/AF09-report-feed-wiring-20261010.md; PR #609 comment 6093517416; bounded AF00 request #600 comment 6093500699.",
+      "integration_head_sha": null
+    },
     {
       "claim_id": "af09-609-playback-journey-20261010-gpt6-0338",
       "owner": "AF09 existing PR #609 playback-client continuation",
