@@ -92,5 +92,13 @@
   "statusOffline": "Desconectado",
   "statusUnverified": "Status não verificado",
   "statusWorkingTasks": "{count, plural, =1{Trabalhando · 1 tarefa} other{Trabalhando · {count} tarefas}}",
-  "twinShareText": "Converse com {name} no Masanawa: {url}"
+  "twinShareText": "Converse com {name} no Masanawa: {url}",
+  "navChats": "Conversas",
+  "navRooms": "Salas",
+  "navTalks": "Talks",
+  "navGwani": "Gwani",
+  "roomsPendingTitle": "As salas ainda não estão disponíveis",
+  "roomsPendingDetail": "Os grupos de áudio aparecerão aqui quando o serviço estiver pronto.",
+  "talksPendingTitle": "As publicações de áudio ainda não estão disponíveis",
+  "talksPendingDetail": "As publicações de voz aparecerão aqui quando o serviço estiver pronto."
 }
