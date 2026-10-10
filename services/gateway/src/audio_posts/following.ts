@@ -47,6 +47,21 @@ function requireActor(actor: PostActor): void {
   }
 }
 
+// The repository owns cursor decoding and row validation. Translate only its
+// stable page errors; unexpected PostgreSQL/visibility failures remain failures.
+async function readFollowingPage<T>(read: () => Promise<T>): Promise<T> {
+  try { return await read(); }
+  catch (error) {
+    if (error instanceof Error && error.message === "audio_posts.invalid_following_cursor") {
+      throw new FollowingError("VALIDATION", "Invalid page cursor");
+    }
+    if (error instanceof Error && error.message === "audio_posts.invalid_following_row") {
+      throw new FollowingError("CAPABILITY_UNAVAILABLE", "Creator page unavailable");
+    }
+    throw error;
+  }
+}
+
 export function createFollowingService(repository: FollowingRepository) {
   return Object.freeze({
     async set(actor: PostActor, input: { postId: unknown; enabled: unknown }) {
@@ -96,11 +111,11 @@ export function createFollowingService(repository: FollowingRepository) {
             !/^[A-Za-z0-9_-]{12,256}$/.test(input.cursor)))) {
         throw new FollowingError("VALIDATION", "Invalid creator page");
       }
-      const page = await repository.creatorFeed({
+      const page = await readFollowingPage(() => repository.creatorFeed({
         tenantId: actor.tenantId, viewerId: actor.accountId,
         authorId: input.authorId, authorKind: input.authorKind,
         limit: limit as number, cursor: (input.cursor as string | null | undefined) ?? null,
-      });
+      }));
       if (!page || !Array.isArray(page.items) ||
           (page.nextCursor !== null && typeof page.nextCursor !== "string") ||
           page.items.some(post => post.authorKind !== input.authorKind ||
@@ -120,10 +135,10 @@ export function createFollowingService(repository: FollowingRepository) {
             !/^[A-Za-z0-9_-]{12,256}$/.test(input.cursor)))) {
         throw new FollowingError("VALIDATION", "Invalid following page");
       }
-      const page = await repository.feed({
+      const page = await readFollowingPage(() => repository.feed({
         tenantId: actor.tenantId, viewerId: actor.accountId,
         limit: limit as number, cursor: (input.cursor as string | null | undefined) ?? null,
-      });
+      }));
       if (!page || !Array.isArray(page.items) ||
           (page.nextCursor !== null && typeof page.nextCursor !== "string")) {
         throw new FollowingError("CAPABILITY_UNAVAILABLE", "Following feed unavailable");
