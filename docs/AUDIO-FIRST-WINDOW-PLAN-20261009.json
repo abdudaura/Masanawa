@@ -1,0 +1,467 @@
+{
+  "version": 3,
+  "updated": "2026-10-09",
+  "snapshotBaseSha": "5e758673ae91082520b21b3153da53791ae2cbf3",
+  "status": "PLANNED",
+  "navigationPlacement": "OWNER_CONFIRMED",
+  "lanes": [
+    {
+      "id": "AF00",
+      "name": "Recovery and integration",
+      "wave": 0,
+      "deps": [],
+      "paths": [
+        "apps/mobile/lib/src/router/**",
+        "apps/mobile/lib/src/screens/twin/shell_tab.dart",
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/core/mobile_push.dart",
+        "apps/mobile/lib/src/core/shell_deep_link.dart",
+        "apps/mobile/lib/l10n/**",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/migrate.ts",
+        "services/worker/src/main.ts",
+        "services/ops/src/app.ts",
+        "services/ops/src/main.ts",
+        "adapters/storage/postgres/src/schema_admin/**",
+        "database/migrations/**"
+      ],
+      "recover": [
+        497,
+        461,
+        552
+      ],
+      "scope": "Preserve and reconcile local fixes/APK with main and every relevant draft. Publish unique-change/old-lane disposition, canonical imports/migrations, route aliases, dependency integration and final APK/rollback evidence. Update stale shell guards for current decisions; do not drop their security assertions. Confirm Chats/Rooms/Talks/Gwani/Wallet order, Talks ordinary-launch default, semantic saved-tab migration and explicit-destination precedence.",
+      "tests": "Combined Flutter analyze/test/build, TypeScript build/unit/contract/DB suites, deep links, account switching, migration rehearsal and qualified final two-device/provider paths. Confirm exact order/labels, centre/default after auth, resume/deep-link/call behavior and old-route compatibility.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF01",
+      "name": "MSN financial authority",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "packages/commerce/src/**",
+        "adapters/storage/postgres/src/commerce/**",
+        "adapters/crypto/**",
+        "services/gateway/src/msn_wallet/**",
+        "services/gateway/src/financial_audio_first/**",
+        "services/gateway/src/financial_service.ts",
+        "services/gateway/src/financial_billing.ts",
+        "services/gateway/src/billing_wallet.ts",
+        "services/gateway/src/internal_crypto_transfer.ts",
+        "services/gateway/src/internal_crypto_transfer_routes.ts",
+        "apps/mobile/test/audio_first/af01/**"
+      ],
+      "recover": [
+        576,
+        454,
+        444,
+        438
+      ],
+      "scope": "Elect existing ledger authority, reconcile #576 and internal crypto transfers, define exact MSN/backing/liquidity rules, implement fiat purchase of MSN, supported crypto deposit/hold/convert/withdraw, transfer/escrow primitives and one receipt/status authority. No spendable fiat/direct fiat cashout or silent Cr migration.",
+      "tests": "Balanced postings; real DB concurrency; duplicate callbacks/keys; forged events; quote/consent replay; pending funding failure; treasury/liquidity guards and provider reconciliation.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF02",
+      "name": "MSN P2P escrow",
+      "wave": 2,
+      "deps": [
+        "AF01",
+        "AF08"
+      ],
+      "paths": [
+        "services/gateway/src/msn_p2p/**",
+        "apps/mobile/lib/src/msn_p2p/**",
+        "services/ops/src/msn_p2p/**",
+        "apps/mobile/test/audio_first/af02/**"
+      ],
+      "recover": [],
+      "scope": "MSN-only offers/order/escrow orchestration and themed Buy/Sell/My orders UI, role-checked dispute console, verified receipt or seller confirmation, frozen paid/disputed orders, reminders and reconciliation. Use AF01 transaction/escrow primitives, never a second ledger.",
+      "tests": "Reserve/create atomicity; oversell; paid/expiry races; forged screenshot; buyer/seller/operator IDOR; double-release/refund; restart/offline; qualification per payment method.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF03",
+      "name": "Wallet surfaces and receipts",
+      "wave": 2,
+      "deps": [
+        "AF01"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/screens/wallet/**",
+        "apps/mobile/lib/src/finance/**",
+        "apps/mobile/lib/src/commerce/**",
+        "apps/mobile/lib/src/state/wallet_state.dart",
+        "apps/mobile/test/audio_first/af03/**"
+      ],
+      "recover": [
+        576,
+        445,
+        444
+      ],
+      "scope": "MSN-first home, crypto holdings, Add/Send/Convert/P2P handoff, funding/withdraw/conversion reviews, durable status and tappable receipts. Preserve #576 panel and real crypto code, remove consumer Cr/spendable fiat with compatible server contracts.",
+      "tests": "Exact formatting, stale cache/offline, restrictions, recipient/quote reviews, failed/uncertain recovery and account isolation; no null-swallowed failure or inert actions.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF04",
+      "name": "Gwani service menus",
+      "wave": 2,
+      "deps": [
+        "AF01"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/assistant_workspace/**",
+        "apps/mobile/lib/src/assistant_services/**",
+        "services/gateway/src/assistant_workspace/**",
+        "services/gateway/src/assistant_services/**",
+        "services/gateway/src/agent_billing_assistant.ts",
+        "services/gateway/src/agent_crypto_assistant.ts",
+        "apps/mobile/lib/src/screens/billing/**",
+        "apps/mobile/test/audio_first/af04/**"
+      ],
+      "recover": [
+        497,
+        447,
+        520,
+        521,
+        580
+      ],
+      "scope": "Progressive vertical floating billing choices above composer; same durable draft for menu/text/voice, Back/Change, actual catalog/recipient validation, MSN quote/explicit authorization/receipt/status recovery. Integrate existing tasks rather than duplicate. ai_chat_screen shared hook belongs to AF00 until transfer.",
+      "tests": "Menu→text→voice parity; conversation-only purchase; changed terms invalidate consent; no model approval; uncertain provider lookup before retry; localization and low-literacy tap paths.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF05",
+      "name": "Audio reliability",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/core/app_permissions.dart",
+        "apps/mobile/lib/src/core/live_pcm_audio.dart",
+        "apps/mobile/lib/src/core/live_voice_session.dart",
+        "apps/mobile/lib/src/audio_focus/**",
+        "apps/mobile/lib/src/human_media/**",
+        "apps/mobile/android/app/src/main/kotlin/com/masanawa/app/MainActivity.kt",
+        "apps/mobile/test/audio_first/af05/**"
+      ],
+      "recover": [
+        534,
+        456,
+        497
+      ],
+      "scope": "Diagnose recorder vs transport/provider/output stages, capture/preview/upload/readback independent of Gemini Live, shared audio focus, lifecycle release, Bluetooth/headphones, explicit permission flow and useful errors. Give AF00 manifest/session/screen hooks; native permission edits require a visible transfer.",
+      "tests": "Actual handset local recording first, two-device notes, denied/revoked permission, contention, interrupted lifecycle, route switch, live send/receive, Bluetooth and subsequent recording after call.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF06",
+      "name": "Messaging and chat transfers",
+      "wave": 2,
+      "deps": [
+        "AF01",
+        "AF05"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/messages/human_dm_controller.dart",
+        "apps/mobile/lib/src/messages/human_dm_outbox.dart",
+        "apps/mobile/lib/src/messages/human_dm_screen.dart",
+        "apps/mobile/lib/src/messages/human_dm_transport.dart",
+        "apps/mobile/lib/src/messages/realtime/**",
+        "apps/mobile/lib/src/human_messages/**",
+        "apps/mobile/lib/src/chat_transfers/**",
+        "services/gateway/src/human_messages/**",
+        "services/gateway/src/human_dm_realtime/**",
+        "services/gateway/src/chat_transfers/**",
+        "apps/mobile/test/audio_first/af06/**"
+      ],
+      "recover": [
+        529,
+        530,
+        533,
+        531,
+        537,
+        472,
+        475
+      ],
+      "scope": "Recover canonical DM implementation rather than maintain competing messages/human_messages stacks. WhatsApp-like compact composer, recorder preview/retry, durable outbox/realtime/history and MSN/crypto transfer sheet/card using AF01/AF03 contracts. No private money in public content.",
+      "tests": "Two-device send/readback; restart/idempotent outbox; blocked users; account switch; media retries; chat failure after successful transfer; receipt parity and no duplicate charge.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF07",
+      "name": "Masana and Contacts directory",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/contact_hub/**",
+        "apps/mobile/lib/src/masana_contacts/**",
+        "apps/mobile/lib/src/messages/human_contacts_controller.dart",
+        "apps/mobile/lib/src/messages/human_contacts_screen.dart",
+        "apps/mobile/lib/src/messages/human_contacts_transport.dart",
+        "apps/mobile/lib/src/messages/human_new_message_screen.dart",
+        "services/gateway/src/human_contacts/**",
+        "apps/mobile/test/audio_first/af07/**"
+      ],
+      "recover": [
+        468,
+        508,
+        509,
+        510,
+        511
+      ],
+      "scope": "New chat opens Masana & Contacts with typed AI/person entries, roles/search/recents/favorites and real accepted people/request lifecycle. Reuse C01/U21; voluntary local phonebook without silent upload or treating an unverified number as identity.",
+      "tests": "Correct human/AI route, stable IDs, denied contacts permission, privacy/block/request rules, offline directory, favorite account fencing and return to draft.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF08",
+      "name": "Authentication and launch polish",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/screens/onboarding/**",
+        "apps/mobile/lib/src/screens/splash/**",
+        "apps/mobile/lib/src/state/session_state.dart",
+        "apps/mobile/lib/src/auth_audio_first/**",
+        "services/gateway/src/customer_auth.ts",
+        "services/gateway/src/customer_auth.test.ts",
+        "services/gateway/src/auth_audio_first/**",
+        "packages/identity/src/auth_audio_first/**",
+        "apps/mobile/android/app/src/main/res/drawable/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-night/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-night-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/values/styles.xml",
+        "apps/mobile/android/app/src/main/res/values-night/styles.xml",
+        "apps/mobile/android/app/src/main/res/values-v31/styles.xml",
+        "apps/mobile/android/app/src/main/res/values-night-v31/styles.xml",
+        "apps/mobile/test/audio_first/af08/**"
+      ],
+      "recover": [
+        497,
+        539
+      ],
+      "scope": "Email/phone signup/login selectors preserving working email, numeric-password request with server security and unverified phone status, qualified recovery and wallet step-up; centered accessible icon-only language selector and neutral native/Flutter launch variants. Reconcile authoritative auth, do not bolt on parallel identity.",
+      "tests": "Guessing/rate limits, secure credential storage, no enumeration, recovery/session revocation, linked accounts, unverified-number impersonation, launch Android12+/night, small screens/keyboard.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF09",
+      "name": "Published audio Talks",
+      "wave": 2,
+      "deps": [
+        "AF05"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/**",
+        "apps/mobile/lib/src/screens/talks/talk_home_screen.dart",
+        "apps/mobile/lib/src/screens/talks/create_audio_post_screen.dart",
+        "services/gateway/src/audio_posts/**",
+        "packages/talks/audio_posts/**",
+        "adapters/storage/postgres/src/audio_posts/**",
+        "apps/mobile/test/audio_first/af09/**",
+        "apps/mobile/lib/src/screens/you/my_talks_screen.dart",
+        "apps/mobile/lib/src/screens/you/saved_talks_screen.dart"
+      ],
+      "recover": [
+        497,
+        548,
+        503
+      ],
+      "scope": "Audio-post feed, recording/trim/preview/upload/processing/publish, following/discover, engaging waveform cards, likes/comments/play counts/save/share/report. Reuse media/social/replay assets safely; old live IDs remain typed legacy resources, never coerced into new posts. Own audio-post libraries and connect draft resume; shared search/explore files need exact-path transfer from AF00 with AF07 review.",
+      "tests": "Two-account publication/playback/follow/comment; publish retry dedup; codec/size limits; one player; played-time counts/dedup; moderation/delete/privacy; low data/offline drafts.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF10",
+      "name": "Audio-focused Rooms",
+      "wave": 2,
+      "deps": [
+        "AF05",
+        "AF06"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/audio_rooms/**",
+        "services/gateway/src/audio_rooms/**",
+        "packages/talks/audio_rooms/**",
+        "adapters/storage/postgres/src/audio_rooms/**",
+        "apps/mobile/test/audio_first/af10/**"
+      ],
+      "recover": [
+        439,
+        450,
+        456
+      ],
+      "scope": "Persistent groups, membership, roles, invite/join/leave, audio history, moderation and notifications through adapters. Optional live room integration only after qualified session authority; reuse existing live infrastructure without restarting public Talk feed.",
+      "tests": "Outsider read/media/join denial, kick/revoke, private invite/block/limits, durable notes, offline/reconnect and independently qualified two-device live audio.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF11",
+      "name": "Calls recovery",
+      "wave": 2,
+      "deps": [
+        "AF05",
+        "AF07"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/human_calls/**",
+        "services/gateway/src/human_calls/**",
+        "apps/mobile/test/audio_first/af11/**"
+      ],
+      "recover": [
+        575,
+        578
+      ],
+      "scope": "Reconcile existing C09 calling, recent/missed calls, typed directory selection, ringing/connect/mute/output/end/reconnect; Chats Calls filter. AF00 integrates push/deep links/composition; do not duplicate those files from old call branches.",
+      "tests": "Two physical devices, caller/callee authorization, answer/end races, missed call readback, notification/deep link, microphone release and new voice note afterwards; video retained only if already qualified.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF12",
+      "name": "Masana creators and scheduled publishing",
+      "wave": 3,
+      "deps": [
+        "AF09"
+      ],
+      "paths": [
+        "services/gateway/src/masana_creators/**",
+        "services/worker/src/masana_publishing/**",
+        "services/ops/src/masana_creators/**",
+        "packages/agents/masana_creators/**",
+        "apps/mobile/lib/src/masana_creators/**",
+        "apps/mobile/lib/src/screens/profile/persona_profile_screen.dart",
+        "apps/mobile/test/audio_first/af12/**"
+      ],
+      "recover": [
+        545,
+        514,
+        517
+      ],
+      "scope": "Retain seventeen persona identities, extend distinct editorial profiles, follow/public posts, scripts/sources/AI labels/Gemini delivery, publication scheduler/budget/lease/retry/admin pause and a reviewed sample slate. Reuse scheduler/research workers; no autonomous financial actions or fake personal experiences.",
+      "tests": "Listening tests per language/voice/emotion; facts/source attribution; duplicate occurrence/publish, failed/empty audio, budgets/retry/admin pause, block/follow visibility and real generated sample artifacts.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF13",
+      "name": "Acceptance, privacy and operations evidence",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "tests/e2e/audio_first/**",
+        "tests/security/audio_first/**",
+        "tests/recovery/audio_first/**",
+        "tools/audio-first-qualification/**",
+        "apps/mobile/test/audio_first/af13/**"
+      ],
+      "recover": [
+        527,
+        518,
+        559,
+        561,
+        554,
+        567,
+        570
+      ],
+      "scope": "Build executable cross-feature/device/provider/restore qualification, threat/privacy/accessibility/performance matrix and redacted evidence. Inspect every old F gate; update expected semantics while preserving security proof. No runtime/CI/deployment mutation or mock-as-real completion.",
+      "tests": "AF acceptance matrix, negative authority, escrow/concurrency/restore, real configured providers/physical devices, low-end/offline, artifact identity/rollback. Run only available dependencies; record precise unavailable checks.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF14",
+      "name": "Settings, account and activity surfaces",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/lib/src/screens/settings/account_deletion_dialog.dart",
+        "apps/mobile/lib/src/screens/profile/edit_profile_screen.dart",
+        "apps/mobile/lib/src/screens/you/you_screen.dart",
+        "apps/mobile/lib/src/screens/activity/**",
+        "apps/mobile/lib/src/account_preferences/**",
+        "services/gateway/src/account_preferences/**",
+        "adapters/storage/postgres/src/account_preferences/**",
+        "apps/mobile/test/audio_first/af14/**"
+      ],
+      "recover": [
+        497,
+        435,
+        430
+      ],
+      "scope": "Recover Settings/profile improvements. Implement concise Settings, account-fenced preferences, avatar/profile, notification and audio/data controls, correct app metadata/support, activity and lifecycle status. Consume AF08 credential/session APIs and AF01 financial obligations; preserve real deletion workflow. No auth/ledger replacement; AF00 integrates push, router and locale hooks.",
+      "tests": "SA-A01..08: restart/failed saves/account-switch, profile/avatar readback, blocked-user denial, OS/token notification states, safe scope-confirmed cache clearing, installed metadata/support, server deletion/export with unsettled funds. Never claim request==deletion.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    },
+    {
+      "id": "AF15",
+      "name": "Storage and durable operations",
+      "wave": 1,
+      "deps": [
+        "AF00"
+      ],
+      "paths": [
+        "services/gateway/src/media_lifecycle/**",
+        "services/worker/src/durable_operations/**",
+        "adapters/storage/postgres/src/media_lifecycle/**",
+        "adapters/storage/object_lifecycle/**",
+        "tests/integration/audio_first_operations/**",
+        "apps/mobile/test/audio_first/af15/**"
+      ],
+      "recover": [
+        497,
+        430,
+        518,
+        561,
+        570
+      ],
+      "scope": "Inventory/reuse existing stores/jobs and publish DB/storage/job closure contracts. Implement reusable private media lifecycle, retention/orphan cleanup and durable operational adapters; qualify schema roots, backups/restore/capacity and restart. Domain jobs stay feature-owned, AF13 owns independent evidence, AF00 owns roots/migration registry/deploy config, AF01 money. Existing adapter changes require explicit exact-path transfer, not parallel replacement.",
+      "tests": "DB-A01..08: actual PG migration/upgrade/concurrency, signed-media access/revocation, coupled DB/object restore, measured capacity, restart/lease/idempotency, settlement-aware deletion. Record unavailable live credentials/devices/providers as NOT_RUN or BLOCKED.",
+      "status": "PLANNED_UNCLAIMED",
+      "headSha": null
+    }
+  ],
+  "bottomTabs": [
+    "chats",
+    "rooms",
+    "talks",
+    "gwani",
+    "wallet"
+  ],
+  "defaultTab": "talks",
+  "centerTab": "talks",
+  "auditBaseSha": "44d75253cd9196db395662187a10aaaf39cc31c1",
+  "dispatchPolicy": "docs/NEXT-WAVE-DELIVERY-20261010.md",
+  "reusablePrompt": "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
+  "statusSemantics": "Allocation template only. Actual active ownership and completion require refreshed factory/claims, PR heads/files/handoffs and executed evidence; partial patches do not exhaust AF lanes.",
+  "taskSelection": "Complete existing substantive customer milestone before new helper/hardening work; dependencies block exact contracts only."
+}
