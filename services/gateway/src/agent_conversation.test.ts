@@ -1074,4 +1074,50 @@ describe("Alpha conversation service", () => {
     expect(completed).toEqual([response.reply]);
   });
 
+  it("never issues a contradicting failed run after a timed-out terminal completion", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const finishStates: string[] = [];
+    let shellMarkedFailed = false;
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(value) {
+          finishStates.push(value.outcome.state);
+          throw new Error("lost database acknowledgement after commit");
+        },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() { return { state: "created" }; },
+        async appendEvent() { return {}; },
+        async completeTurn() { throw new Error("should not complete before run"); },
+        async failTurn() { shellMarkedFailed = true; return {}; },
+      } as never,
+      strategy: { async execute() { return { reply: "A financial status might exist.", parts: [] }; } },
+      sessionDurationMs: 60_000,
+    });
+    await expect(service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "what is my purchase status",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    })).rejects.toMatchObject({
+      code: "agents.turn_settlement_uncertain",
+      retryable: false,
+    });
+    expect(finishStates).toEqual(["completed"]);
+    expect(shellMarkedFailed).toBe(false);
+  });
+
 });
