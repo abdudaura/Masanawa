@@ -812,6 +812,21 @@
       "heartbeat_at": "2026-10-10T09:04:43.930Z",
       "expires_at": "2026-10-10T09:09:43.930Z",
       "notes": "Fresh live claim, PR comment #6095944848; actual Foundation CI PG18 test run #38037792873"
+    },
+    {
+      "claim_id": "af13-460-ai-seat-id-random-test-20261010-gpt6-1006",
+      "owner": "GPT-6 / existing CI recovery #460",
+      "scope": "Fix proven stochastic AI Seat mock status tied to random quote ID suffix, preserve canonical pending_host response fixture",
+      "paths": [
+        "services/gateway/src/talk_ai_seat_routes.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "9f55ecdce06fab5118eb58541810cb34ef60ac94",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:06:50.277Z",
+      "heartbeat_at": "2026-10-10T09:06:50.277Z",
+      "expires_at": "2026-10-10T09:11:50.277Z",
+      "notes": "Real run 38040059676, 1 Talk AI Seat test fails on quoteId.endsWith('0') stochastic branch. Update only mock to deterministic pending_host; no production or provider behavior changed."
     }
   ],
   "history": [
