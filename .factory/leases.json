@@ -371,6 +371,24 @@
       "heartbeat_at": "2026-10-10T06:49:04.769Z",
       "expires_at": "2026-10-10T06:54:04.769Z",
       "notes": "Reviewed existing #609 source and explicit stale transfer in PR comment 6094811024; AF00 protected paths excluded"
+    },
+    {
+      "claim_id": "shared-ci-460-full-closure-20261010-gpt6",
+      "owner": "GPT-6 / owner-requested CI and complete-window delivery",
+      "scope": "Continue shared CI PR #460 with transferred-repo mandatory end-to-end window/merge rules; no overlapping feature or production paths",
+      "paths": [
+        "AGENTS.md",
+        "CONTINUE-HERE.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
+        "docs/MULTI-WINDOW-WORK.md"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T07:01:59.921Z",
+      "heartbeat_at": "2026-10-10T07:01:59.921Z",
+      "expires_at": "2026-10-10T07:06:59.921Z",
+      "notes": "Policy docs only. Existing #460 source fixes preserved. No AF00 root, financial/auth/native or CI workflow source edits."
     }
   ],
   "history": [
