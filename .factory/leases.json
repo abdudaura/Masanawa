@@ -1272,8 +1272,11 @@
       "heartbeat_at": "2026-10-10T16:50:09.380Z",
       "expires_at": "2026-10-10T16:55:09.380Z",
       "notes": "J15 #624 merged and released claim. Extend J14 to additive 0002 migration only; retain immutable 0001. No live activation.",
-      "source_head": "667aa446f0c1975b838f6b0f5fcc56c046a754d0",
-      "source_pr": 627
+      "source_head": "cfb9ce1842d6e9b6c1efbb132344830584195e1a",
+      "source_pr": 627,
+      "released_at": "2026-10-10T16:57:12.918Z",
+      "release_reason": "Reviewed source merged to non-deploying integration/rebuild at 2ba69aac76b022fa4c19de907759eae89d65b27e; J14 qualified release still requires AF00 shared route/worker/migration composition, PG18/YouTube/provider tests and main deploy review. No prod operation.",
+      "integration_head_sha": "2ba69aac76b022fa4c19de907759eae89d65b27e"
     },
     {
       "claim_id": "l-missions-j12-publish-once-20261010-gpt6-1730",
