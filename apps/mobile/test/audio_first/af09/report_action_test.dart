@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/audio_posts/audio_post_report_action.dart';
+import 'package:masanawa/src/audio_posts/audio_post_report_action.dart';
 
 class FakeReports implements PublishedAudioReportTransport {
   final requests = <({String postId, String reason, String key, String? detail})>[];
