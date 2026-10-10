@@ -94,6 +94,17 @@ export function createPostgresCaseRepository(pool:Pool){
     await c.query(`INSERT INTO moderation.case_events(tenant_id,event_id,case_id,actor_id,kind,detail)
       VALUES($1,$2,$3,$4,$5,$6)`,[tenantId,`evt_${actionId}_${expectedVersion+1}`,caseId,reviewerId,
        approve?"action_approved":"action_rejected",nextState]);
+    if(!approve){
+      const others=await c.query(
+       "SELECT 1 FROM moderation.actions WHERE tenant_id=$1 AND case_id=$2 "+
+       "AND action_id<>$3 AND state IN ('proposed','approved','applied') LIMIT 1",
+       [tenantId,caseId,actionId]);
+      if(!others.rowCount){
+       await c.query(
+        "UPDATE moderation.cases SET state='investigating',version=version+1,updated_at=now() "+
+        "WHERE tenant_id=$1 AND case_id=$2",[tenantId,caseId]);
+      }
+    }
     if(finalApproval){
      await c.query(
       "INSERT INTO events.outbox(outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload) "+
