@@ -58,7 +58,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   void didUpdateWidget(covariant AudioPostFeedScreen old) {
     super.didUpdateWidget(old);
     if (old.accountId != widget.accountId || old.transport != widget.transport ||
-        old.followingTransport != widget.followingTransport) {
+        old.followingTransport != widget.followingTransport ||
+        old.playback != widget.playback) {
       if (widget.followingTransport == null) _following = false;
       if (old.playback != null) unawaited(old.playback!.stop());
       ++_generation;
@@ -92,10 +93,12 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   void _selectFeed({bool mine = false, bool saved = false, bool following = false}) {
     if (following && widget.followingTransport == null) return;
     if (_mine == mine && _saved == saved && _following == following) return;
+    if (widget.playback != null) unawaited(widget.playback!.stop());
     setState(() { _mine = mine; _saved = saved; _following = following; });
     _load();
   }
   Future<void> _load({bool more = false}) async {
+    if (!more && widget.playback != null) unawaited(widget.playback!.stop());
     if (!_authorized || (more && (_mine || _saved || _next == null || _loadingMore))) {
       if (mounted) setState(() => _loading = false);
       return;
