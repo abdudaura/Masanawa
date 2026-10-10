@@ -153,6 +153,23 @@
       "heartbeat_at": "2026-10-10T02:28:00.109Z",
       "expires_at": "2026-10-10T02:33:00.109Z",
       "notes": "Existing PR #604 head 39c77b643d653d3787b7e3ef512efa1206a2f4df; source + seven widget regressions (3 existing, 4 new) now committed/read back. Preparing immutable handoff and cross-PR reconciliation; Flutter toolchain absent."
+    },
+    {
+      "claim_id": "af09-playback-access-20261010-gpt6e",
+      "owner": "MASANAWA-AF09-PLAYBACK-20261010 / existing PR #609",
+      "scope": "Connected authenticated published Talk playback-ticket API using canonical AF15 media grant, tenant visibility and publication-revision fencing; no new media signer/player/route composition",
+      "paths": [
+        "services/gateway/src/audio_posts/playback.ts",
+        "services/gateway/src/audio_posts/playback.test.mjs",
+        "docs/workstreams/AF09-playback-access-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:29:39.354Z",
+      "heartbeat_at": "2026-10-10T02:29:39.354Z",
+      "expires_at": "2026-10-10T02:34:39.354Z",
+      "notes": "No existing claimed AF09 service/feed/repository paths, AF05/AF15 signer, AF00 router/migrations or app native code touched; new separated paths in same PR."
     }
   ],
   "history": [
