@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 
 /// Distinct from legacy live Talk IDs and private voice-note media.
