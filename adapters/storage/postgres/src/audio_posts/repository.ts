@@ -34,7 +34,6 @@ async function transaction<T>(pool: Pool, fn: (db: PoolClient) => Promise<T>): P
  finally { db.release(); }
 }
 const columns = "tenant_id,post_id,author_id,author_account_id,author_kind,asset_id,request_id,title,duration_ms,status,revision,created_at,published_at";
-const cursor = (post: AudioPostRecord) => Date.parse(post.createdAt) + ":" + post.postId;
 function parseCursor(raw: string | null): { stamp: number; id: string } | null {
  if (raw === null) return null;
  const at = raw.indexOf(":");
