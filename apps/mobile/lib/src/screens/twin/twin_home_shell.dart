@@ -14,6 +14,7 @@ import '../../social/profile_header.dart';
 import '../../state/twin_directory_state.dart';
 import '../../talks/talk_models.dart';
 import '../chat/ai_chat_screen.dart';
+import '../chat/chat_list_screen.dart';
 import '../talks/talk_home_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'my_twin_screen.dart';
@@ -58,10 +59,10 @@ String localizedAgentPresence(
 
 /// Compatibility class name retained while the consumer shell is migrated.
 ///
-/// Approved root shell: Home · Agents · Wallet · Talk.
-/// Home owns the Explore / Live Talks tabs.
+/// Approved root shell: Chats · Rooms · Talks · Gwani · Wallet.
+/// Audio posts/Rooms have separate authorities; old live Talks are not posts.
 class TwinHomeShell extends ConsumerStatefulWidget {
-  const TwinHomeShell({super.key, this.initialIndex = 0});
+  const TwinHomeShell({super.key, this.initialIndex = 2});
   final int initialIndex;
 
   @override
@@ -77,7 +78,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   @override
   void initState() {
     super.initState();
-    _index = widget.initialIndex.clamp(0, 3).toInt();
+    _index = widget.initialIndex.clamp(0, 4).toInt();
     _visitedTabs = <int>{_index};
   }
 
@@ -91,7 +92,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   void didUpdateWidget(covariant TwinHomeShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialIndex != widget.initialIndex) {
-      _index = widget.initialIndex.clamp(0, 3).toInt();
+      _index = widget.initialIndex.clamp(0, 4).toInt();
       _visitedTabs.add(_index);
     }
   }
@@ -290,13 +291,13 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         key: ValueKey('private-talk-' + agent.characterId),
         characterId: agent.characterId,
         embeddedInShell: true,
-        onOpenAgents: () => _selectTab(MasanawaRootTab.agents.index),
+        onOpenAgents: () => context.push('/agents'),
         onOpenActivity: _openActivity,
         onOpenProfile: _openYou,
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(strings.talk)),
+      appBar: AppBar(title: const Text('Gwani')),
       body: Center(
         child: directory.loading
             ? const CircularProgressIndicator()
@@ -319,11 +320,44 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   void _openYou() => context.push('/you');
 
+  // AF09/AF10 own durable audio posts and rooms. Neither API exists in
+  // current main. Do not repackage the historic live-session feed as posts.
+  Widget _unavailableAudioDestination({
+    required IconData icon,
+    required String title,
+    required String explanation,
+  }) =>
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 44, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 16),
+              Text(title, style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text(explanation, textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      );
+
   Widget _page(int index) => switch (index) {
-        0 => _home(),
-        1 => _agents(),
-        2 => _wallet(),
+        0 => const ChatListScreen(),
+        1 => _unavailableAudioDestination(
+          icon: Icons.groups_outlined,
+          title: 'Rooms are not available yet',
+          explanation: 'Audio groups will appear here when the Rooms service is ready.',
+        ),
+        2 => _unavailableAudioDestination(
+          icon: Icons.graphic_eq_rounded,
+          title: 'Audio posts are not available yet',
+          explanation: 'Published voice posts will appear here when the Talks service is ready.',
+        ),
         3 => _privateTalk(),
+        4 => _wallet(),
         _ => const SizedBox.shrink(),
       };
 
@@ -349,22 +383,12 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       publicAvatarUrl: publicProfile?.avatarUrl,
     );
     return Scaffold(
-      appBar: _index == 3 ? null : AppBar(
+      appBar: (_index == 0 || _index == 3) ? null : AppBar(
         toolbarHeight: 48,
         title: Text(
-          _index == 0
-              ? strings.appTitle
-              : _index == 1
-                  ? strings.agents
-                  : strings.wallet,
+          _index == 1 ? 'Rooms' : _index == 2 ? 'Talks' : strings.wallet,
         ),
         actions: [
-          if (_index == 0)
-            IconButton(
-              tooltip: strings.searchTalks,
-              icon: const Icon(Icons.search_rounded),
-              onPressed: () => context.push('/search'),
-            ),
           IconButton(
             tooltip: strings.activity,
             icon: const Icon(Icons.notifications_none_rounded),
@@ -397,42 +421,39 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         index: _index,
         // Unmount private voice/chat when the user leaves Talk, rather than
         // retaining a potentially active microphone behind another tab.
-        children: List.generate(4, (index) =>
+        children: List.generate(5, (index) =>
           _visitedTabs.contains(index) && (index != 3 || _index == 3)
               ? _page(index)
               : const SizedBox.shrink()),
       ),
-      floatingActionButton: (_index == 0 || _index == 1) &&
-              MediaQuery.viewInsetsOf(context).bottom == 0
-          ? FloatingActionButton(
-              tooltip: strings.startTalk,
-              onPressed: () => context.push('/talk/create'),
-              child: const Icon(Icons.add_rounded),
-            )
-          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _selectTab,
-        destinations: [
+        destinations: const [
           NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: strings.home,
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble_rounded),
+            label: 'Chats',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.smart_toy_outlined),
-            selectedIcon: const Icon(Icons.smart_toy_rounded),
-            label: strings.agents,
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups_rounded),
+            label: 'Rooms',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: const Icon(Icons.account_balance_wallet_rounded),
-            label: strings.wallet,
+            icon: Icon(Icons.graphic_eq_outlined),
+            selectedIcon: Icon(Icons.graphic_eq_rounded),
+            label: 'Talks',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.graphic_eq_outlined),
-            selectedIcon: const Icon(Icons.graphic_eq_rounded),
-            label: strings.talk,
+            icon: Icon(Icons.smart_toy_outlined),
+            selectedIcon: Icon(Icons.smart_toy_rounded),
+            label: 'Gwani',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+            label: 'Wallet',
           ),
         ],
       ),
