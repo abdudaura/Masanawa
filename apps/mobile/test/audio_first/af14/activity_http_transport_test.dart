@@ -101,6 +101,35 @@ void main() {
     expect(items.single.unread, isTrue);
   });
 
+  test('mark as read uses canonical authenticated Activity endpoint', () async {
+    final requests = <RequestOptions>[];
+    final transport = _transport((options) async {
+      requests.add(options);
+      return _json('{"id":"activity-1","unread":false}');
+    });
+
+    await transport.markRead(activityId: 'activity-1');
+
+    expect(requests, hasLength(1));
+    expect(requests.single.method, 'POST');
+    expect(requests.single.path, '/activity/activity-1/read');
+  });
+
+  test('mark as read propagates missing or unauthorized activity', () async {
+    final transport = _transport((_) async => _json(
+      '{"error":"ACTIVITY_NOT_FOUND"}',
+      status: 404,
+    ));
+    await expectLater(
+      transport.markRead(activityId: 'someone-else'),
+      throwsA(isA<DioException>().having(
+        (error) => error.response?.statusCode,
+        'statusCode',
+        404,
+      )),
+    );
+  });
+
   test('invitation decision calls existing canonical response endpoint', () async {
     final requests = <RequestOptions>[];
     final transport = _transport((options) async {
