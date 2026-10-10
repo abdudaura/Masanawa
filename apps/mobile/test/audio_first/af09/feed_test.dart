@@ -11,7 +11,9 @@ AudioPost post(String id) => AudioPost(
 );
 class FakePosts implements AudioPostTransport {
   Future<AudioPostPage> Function(String?)? discoverHandler;
-  int requests = 0, likes = 0, saves = 0, removals = 0;
+  int requests = 0, likes = 0, saves = 0, removals = 0, commentWrites = 0;
+  final List<AudioPostComment> storedComments = [];
+  Future<List<AudioPostComment>> Function(String)? commentsHandler;
   Future<List<AudioPost>> Function()? mineHandler;
   Future<List<AudioPost>> Function()? savedHandler;
   bool? lastReactionEnabled;
@@ -38,6 +40,31 @@ class FakePosts implements AudioPostTransport {
       title: 'Published audio ' + postId, durationMs: 22000,
       status: 'removed', revision: 2, createdAt: DateTime.utc(2026, 10, 10));
   }
+  @override
+  Future<List<AudioPostComment>> comments({required String postId}) =>
+    commentsHandler?.call(postId) ??
+      Future.value(storedComments.where((c) => c.postId == postId).toList());
+
+  @override
+  Future<AudioPostComment> comment({
+    required String postId, required String requestId, required String body,
+  }) async {
+    commentWrites++;
+    final record = AudioPostComment(
+      postId: postId, commentId: 'comment-$commentWrites',
+      authorAccountId: 'user-a', body: body,
+      createdAt: DateTime.utc(2026, 10, 10), removed: false);
+    storedComments.insert(0, record);
+    return record;
+  }
+
+  @override
+  Future<void> removeComment({
+    required String postId, required String commentId,
+  }) async {
+    storedComments.removeWhere((c) => c.postId == postId && c.commentId == commentId);
+  }
+
   @override
   Future<void> react({
     required String postId, required String kind, required bool enabled,
@@ -149,6 +176,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Published audio new'), findsOneWidget);
     expect(find.text('Published audio leaked'), findsNothing);
+  });
+  testWidgets('comments load, publish, read back and author removal updates UI',
+      (tester) async {
+    final source = FakePosts();
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comments'));
+    await tester.pumpAndSettle();
+    expect(find.text('No comments yet. Start the conversation.'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'Hello from my Talk');
+    await tester.tap(find.text('Send comment'));
+    await tester.pumpAndSettle();
+    expect(source.commentWrites, 1);
+    expect(find.text('Hello from my Talk'), findsOneWidget);
+    await tester.tap(find.byTooltip('Remove your comment'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hello from my Talk'), findsNothing);
+    expect(source.storedComments, isEmpty);
+  });
+
+  testWidgets('comment read errors expose retry without invented content',
+      (tester) async {
+    final source = FakePosts()
+      ..commentsHandler = (_) async => throw StateError('offline');
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comments'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Could not load comments'), findsOneWidget);
+    source.commentsHandler = (_) async => [];
+    await tester.tap(find.text('Refresh'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Could not load comments'), findsNothing);
   });
 }
 String sourceAccount = 'old';
