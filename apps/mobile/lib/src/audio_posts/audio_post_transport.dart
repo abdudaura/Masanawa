@@ -60,6 +60,7 @@ class AudioPostPage {
 abstract class AudioPostTransport {
   Future<AudioPostPage> discover({String? cursor});
   Future<List<AudioPost>> mine();
+  Future<List<AudioPost>> saved();
   Future<AudioPost> publish({
     required String requestId, required String assetId, required String title,
   });
@@ -99,6 +100,17 @@ class GatewayAudioPostTransport implements AudioPostTransport {
     if (data is! List) throw const FormatException('Invalid post history');
     return List.unmodifiable(data.map((item) {
       if (item is! Map) throw const FormatException('Invalid post');
+      return AudioPost.fromJson(item.cast<String, dynamic>());
+    }));
+  }
+
+  @override
+  Future<List<AudioPost>> saved() async {
+    final response = await api.dio.get<dynamic>('/audio-posts/saved');
+    final data = response.data;
+    if (data is! List) throw const FormatException('Invalid saved Talks');
+    return List.unmodifiable(data.map((item) {
+      if (item is! Map) throw const FormatException('Invalid saved Talk');
       return AudioPost.fromJson(item.cast<String, dynamic>());
     }));
   }
