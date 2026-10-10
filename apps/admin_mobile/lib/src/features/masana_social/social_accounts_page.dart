@@ -24,7 +24,7 @@ class MasanaSocialAdminApi {
   Future<void> action(String characterId,MasanaSocialAccount item,
       String action,{String? evidenceRef})async{
     await dio.post<void>('${_base(characterId)}/${Uri.encodeComponent(item.identityId)}/$action',
-      data:{'revision':item.revision, if(evidenceRef case final evidenceRef?) 'evidenceRef':evidenceRef});
+      data:{'revision':item.revision, if(evidenceRef!=null) 'evidenceRef':evidenceRef});
   }
 }
 class MasanaSocialAccount {
