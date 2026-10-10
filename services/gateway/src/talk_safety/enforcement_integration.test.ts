@@ -10,7 +10,7 @@ function recordingPool() {
     calls,
     pool: {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 0, rows: [] as Row[] };
       },
     },

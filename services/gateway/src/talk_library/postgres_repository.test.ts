@@ -9,7 +9,7 @@ describe("Postgres Talk library repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkLibrarySqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 0, rows: [] as Row[] };
       },
     };
@@ -31,7 +31,7 @@ describe("Postgres Talk library repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkLibrarySqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 0, rows: [] as Row[] };
       },
     };
@@ -56,7 +56,7 @@ describe("Postgres Talk library repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkLibrarySqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("SELECT EXISTS") && text.includes("FROM talks.talks")) {
           return {
             rowCount: 1,
