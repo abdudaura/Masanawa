@@ -193,9 +193,9 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 599,
       "claimed_at": "2026-10-10T03:43:56.801Z",
-      "heartbeat_at": "2026-10-10T03:43:56.801Z",
-      "expires_at": "2026-10-10T03:48:56.801Z",
-      "notes": "Existing AF15 PR #599. No duplicate executor, worker composition or deployed schema. Preserve cleanup source."
+      "heartbeat_at": "2026-10-10T03:47:21.887Z",
+      "expires_at": "2026-10-10T03:52:21.887Z",
+      "notes": "PostgreSQL adapter and 10 regression tests committed to existing PR #599; reviewing exact source and finite handoff. No migration/startup/provider enabled."
     }
   ],
   "history": [
