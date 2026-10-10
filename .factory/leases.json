@@ -140,6 +140,23 @@
       "heartbeat_at": "2026-10-10T02:48:46.298Z",
       "expires_at": "2026-10-10T02:53:46.298Z",
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
+    },
+    {
+      "claim_id": "af09-609-account-isolated-drafts-20261010-gpt6-0428",
+      "owner": "AF09 PR #609 account-isolated durable publication / GPT-6",
+      "scope": "Preserve pending idempotent audio-post publish attempts across account switches and process restart; migrate legacy secure slot without changing composer/root authority",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_draft_store.dart",
+        "apps/mobile/test/audio_first/af09/draft_store_test.dart",
+        "docs/workstreams/AF09-publish-account-isolation-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "claimed_at": "2026-10-10T03:31:51.051Z",
+      "heartbeat_at": "2026-10-10T03:31:51.051Z",
+      "expires_at": "2026-10-10T03:36:51.051Z",
+      "notes": "Account-isolated encrypted storage only; existing composer uses TalkPublishAttemptStore unchanged."
     }
   ],
   "history": [
