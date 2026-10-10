@@ -36,7 +36,16 @@ function fixture() {
     async feed({ tenantId, viewerId, limit, cursor }) {
       const ids = [...followed].filter(key => key.startsWith(tenantId + "/" + viewerId + "/"));
       return {
-        items: ids.slice(0, limit).map((key, i) => ({ postId: "visible" + i, creator: key })),
+        items: ids.slice(0, limit).map((key, i) => ({
+          tenantId, postId: "visible" + i, authorId: key.split("/").at(-1),
+          authorAccountId: "hiddenAccount", authorKind: "human",
+          assetId: "privateStorageKey", requestId: "privateRequest",
+          title: "Audio from followed creator", durationMs: 15000,
+          status: "published", revision: 1,
+          createdAt: "2026-10-10T01:00:00.000Z",
+          publishedAt: "2026-10-10T01:01:00.000Z",
+          likeCount: 12, commentCount: 3,
+        })),
         nextCursor: cursor ?? null,
       };
     },
@@ -125,4 +134,24 @@ test("persisted follow status is account-scoped, permits unfollow after remount"
   await f.service.set(bob, { postId: "talk1", enabled: false });
   assert.equal((await f.service.status(bob, "talk1")).following, false);
   await assert.rejects(f.service.status(bob, "talk4"), e => e.code === "NOT_FOUND");
+});
+
+test("Following applies shared safe public projection with persisted engagement counts", async () => {
+  const f = fixture();
+  await f.service.set(bob, { postId: "talk1", enabled: true });
+  const page = await f.service.feed(bob);
+  assert.equal(page.items.length, 1);
+  const post = page.items[0];
+  assert.equal(post.postId, "visible0");
+  assert.equal(post.likeCount, 12);
+  assert.equal(post.commentCount, 3);
+  assert.equal(post.status, "published");
+  assert.equal(post.authorId, "alice");
+  assert.equal(post.tenantId, undefined);
+  assert.equal(post.assetId, undefined);
+  assert.equal(post.authorAccountId, undefined);
+  assert.equal(post.requestId, undefined);
+  assert.equal(JSON.stringify(page).includes("privateStorageKey"), false);
+  assert.equal(JSON.stringify(page).includes("hiddenAccount"), false);
+  assert.equal(JSON.stringify(page).includes("privateRequest"), false);
 });
