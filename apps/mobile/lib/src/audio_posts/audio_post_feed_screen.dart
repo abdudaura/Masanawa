@@ -30,6 +30,12 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   int _generation = 0;
   final Set<String> _reacting = {};
   final Set<String> _removing = {};
+  final Set<String> _removingComments = {};
+  final TextEditingController _commentText = TextEditingController();
+  List<AudioPostComment> _comments = const [];
+  String? _openCommentsPostId, _commentError, _pendingCommentRequest, _pendingCommentBody;
+  int _commentsGeneration = 0, _commentNonce = 0;
+  bool _loadingComments = false, _sendingComment = false;
   bool get _authorized =>
     widget.accountId.trim().isNotEmpty && widget.isCurrentAccount(widget.accountId);
 
@@ -47,6 +53,14 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _next = null;
       _message = null;
       _reacting.clear();
+      ++_commentsGeneration;
+      _openCommentsPostId = null;
+      _comments = const [];
+      _commentError = null;
+      _pendingCommentRequest = null;
+      _pendingCommentBody = null;
+      _commentText.clear();
+      _removingComments.clear();
       _removing.clear();
       _loading = true;
       _load();
@@ -55,6 +69,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   @override
   void dispose() {
     ++_generation;
+    ++_commentsGeneration;
+    _commentText.dispose();
     super.dispose();
   }
   void _selectFeed({bool mine = false, bool saved = false}) {
@@ -160,6 +176,159 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       if (mounted) setState(() => _reacting.remove(post.postId + kind));
     }
   }
+
+  Future<void> _toggleComments(String postId) async {
+    if (!_authorized) return;
+    if (_openCommentsPostId == postId) {
+      setState(() { _openCommentsPostId = null; ++_commentsGeneration; });
+      return;
+    }
+    setState(() {
+      _openCommentsPostId = postId;
+      _comments = const [];
+      _commentError = null;
+      _commentText.clear();
+      _pendingCommentRequest = null;
+      _pendingCommentBody = null;
+    });
+    await _loadComments(postId);
+  }
+  Future<void> _loadComments(String postId) async {
+    if (!_authorized || _openCommentsPostId != postId) return;
+    final generation = ++_commentsGeneration;
+    setState(() { _loadingComments = true; _commentError = null; });
+    try {
+      final comments = await widget.transport.comments(postId: postId);
+      if (!mounted || !_authorized || _openCommentsPostId != postId ||
+          generation != _commentsGeneration) return;
+      setState(() { _comments = comments; _loadingComments = false; });
+    } catch (_) {
+      if (!mounted || !_authorized || _openCommentsPostId != postId ||
+          generation != _commentsGeneration) return;
+      setState(() {
+        _loadingComments = false;
+        _commentError = 'Could not load comments. Retry.';
+      });
+    }
+  }
+  Future<void> _submitComment(String postId) async {
+    final body = _commentText.text.trim();
+    if (!_authorized || _openCommentsPostId != postId || _sendingComment) return;
+    if (body.isEmpty || body.length > 400) {
+      setState(() => _commentError = 'Enter a comment of up to 400 characters.');
+      return;
+    }
+    if (_pendingCommentBody != body) {
+      _pendingCommentBody = body;
+      _pendingCommentRequest =
+          'comment-${DateTime.now().microsecondsSinceEpoch}-${_commentNonce++}';
+    }
+    final requestId = _pendingCommentRequest!;
+    final generation = _commentsGeneration;
+    setState(() { _sendingComment = true; _commentError = null; });
+    try {
+      final comment = await widget.transport.comment(
+        postId: postId, requestId: requestId, body: body);
+      if (!mounted || !_authorized || _openCommentsPostId != postId ||
+          generation != _commentsGeneration) return;
+      setState(() {
+        _comments = List.unmodifiable([
+          comment, ..._comments.where((c) => c.commentId != comment.commentId),
+        ]);
+        _sendingComment = false;
+        _pendingCommentRequest = null;
+        _pendingCommentBody = null;
+        _commentText.clear();
+      });
+    } catch (_) {
+      if (!mounted || !_authorized || _openCommentsPostId != postId ||
+          generation != _commentsGeneration) return;
+      setState(() {
+        _sendingComment = false;
+        _commentError = 'Could not publish comment. Retry to send safely.';
+      });
+    }
+  }
+  Future<void> _removeComment(String postId, String commentId) async {
+    if (!_authorized || _openCommentsPostId != postId ||
+        !_removingComments.add(commentId)) return;
+    final generation = _commentsGeneration;
+    setState(() {});
+    try {
+      await widget.transport.removeComment(postId: postId, commentId: commentId);
+      if (!mounted || !_authorized || _openCommentsPostId != postId ||
+          generation != _commentsGeneration) return;
+      setState(() => _comments = List.unmodifiable(
+        _comments.where((comment) => comment.commentId != commentId)));
+    } catch (_) {
+      if (!mounted || !_authorized || _openCommentsPostId != postId ||
+          generation != _commentsGeneration) return;
+      setState(() => _commentError = 'Could not remove comment. Retry.');
+    } finally {
+      if (mounted) setState(() => _removingComments.remove(commentId));
+    }
+  }
+  Widget _commentPanel(String postId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(),
+        const Text('Comments', style: TextStyle(fontWeight: FontWeight.bold)),
+        if (_loadingComments) const LinearProgressIndicator(),
+        if (_commentError != null)
+          Row(children: [
+            Expanded(child: Text(_commentError!)),
+            TextButton(onPressed: _loadingComments
+                ? null : () => _loadComments(postId), child: const Text('Refresh')),
+          ]),
+        if (!_loadingComments && _comments.isEmpty)
+          const Padding(padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('No comments yet. Start the conversation.')),
+        for (final comment in _comments)
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: Text(comment.authorAccountId == widget.accountId
+                ? 'You' : 'Member'),
+            subtitle: Text(comment.body),
+            trailing: comment.authorAccountId == widget.accountId
+                ? IconButton(
+                    tooltip: 'Remove your comment',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: _removingComments.contains(comment.commentId)
+                        ? null : () => _removeComment(postId, comment.commentId),
+                  )
+                : null,
+          ),
+        TextField(
+          controller: _commentText,
+          maxLength: 400,
+          maxLines: 3,
+          minLines: 1,
+          enabled: _authorized && !_sendingComment,
+          decoration: const InputDecoration(
+            hintText: 'Write a comment',
+            labelText: 'Comment',
+          ),
+          onChanged: (value) {
+            if (value.trim() != _pendingCommentBody) {
+              _pendingCommentRequest = null;
+              _pendingCommentBody = null;
+            }
+          },
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _authorized && !_sendingComment
+                ? () => _submitComment(postId) : null,
+            icon: const Icon(Icons.send_outlined),
+            label: Text(_sendingComment ? 'Sending…' : 'Send comment'),
+          ),
+        ),
+      ],
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -208,16 +377,16 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                             ),
                           ),
                         if (_items.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 70),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 70),
                             child: Column(
                               children: [
-                                Icon(Icons.graphic_eq, size: 48),
-                                SizedBox(height: 14),
+                                const Icon(Icons.graphic_eq, size: 48),
+                                const SizedBox(height: 14),
                                 Text(_mine ? 'No Talks in your library yet.'
                                   : _saved ? 'No saved Talks yet.' : 'No published audio Talks yet.'),
-                                SizedBox(height: 6),
-                                Text('New audio posts will appear here.'),
+                                const SizedBox(height: 6),
+                                const Text('New audio posts will appear here.'),
                               ],
                             ),
                           ),
@@ -263,6 +432,12 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                       icon: const Icon(Icons.play_arrow),
                                       label: const Text('Listen'),
                                     ),
+                                    if (post.status == 'published')
+                                      TextButton.icon(
+                                        onPressed: () => _toggleComments(post.postId),
+                                        icon: const Icon(Icons.chat_bubble_outline),
+                                        label: const Text('Comments'),
+                                      ),
                                     TextButton.icon(
                                       onPressed: post.status != 'published' || _reacting.contains(post.postId + 'like')
                                           ? null : () => _react(post, 'like'),
@@ -276,6 +451,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                       label: Text(_saved ? 'Unsave' : 'Save'),
                                     ),
                                   ]),
+                                  if (_openCommentsPostId == post.postId)
+                                    _commentPanel(post.postId),
                                   if (widget.onPlayAuthorized == null)
                                     const Text('Audio playback is not configured in this build.'),
                                 ],
