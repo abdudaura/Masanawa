@@ -348,6 +348,23 @@
       "heartbeat_at": "2026-10-10T07:35:23.959Z",
       "expires_at": "2026-10-10T07:40:23.959Z",
       "notes": "Run actual Foundation CI; source edits limited to optional query/fetch fixture omission. AF00 retains shared composition and deployment. Do not touch AF09 active files."
+    },
+    {
+      "claim_id": "chat-p04-612-final-directive-fence-20261010-gpt6-0837",
+      "owner": "GPT-6 / existing CHAT-P04 PR #612 continuation",
+      "scope": "Complete fail-closed settled-reply privacy boundary and real GitHub Actions verification on existing CHAT-P04 branch, no shared Gateway composition or financial authority change.",
+      "paths": [
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/agent_conversation.test.ts",
+        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
+      ],
+      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 612,
+      "claimed_at": "2026-10-10T07:36:47.542Z",
+      "heartbeat_at": "2026-10-10T07:36:47.542Z",
+      "expires_at": "2026-10-10T07:41:47.542Z",
+      "notes": "Specific path claim, reuse existing PR #612, enforce no raw machine directives in done/persisted reply, add negative regression, execute hosted Foundation CI. AF00 root integration unchanged."
     }
   ],
   "history": [
