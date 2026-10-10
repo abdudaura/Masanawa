@@ -322,7 +322,11 @@
       "claimed_at": "2026-10-10T04:59:05.236Z",
       "heartbeat_at": "2026-10-10T05:02:30.178Z",
       "expires_at": "2026-10-10T05:07:30.178Z",
-      "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff.; route-pack assertions must be adjusted from 18 to 20 for new additive routes; prior route owner released."
+      "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff.; route-pack assertions must be adjusted from 18 to 20 for new additive routes; prior route owner released.",
+      "source_head": "8fa36c5c84b5712ae35abddf148ac6c0652892e9",
+      "integration_head_sha": null,
+      "released_at": "2026-10-10T05:05:28.242Z",
+      "release_reason": "Account-fenced cursor My Talks/Saved committed on PR #609, source blobs read back, all authored tests NOT_RUN due to checkout DNS/Node24/pnpm12/Flutter/PG absent. Source still missing AF05/15 media, AF00 migration+authenticated Gateway+worker+Talks shell+one nondeploying baseline. AF13 exact-head tests. PR comment 6094039719 and docs/workstreams/AF09-library-pagination-20261010.md. No main merge or local pull."
     },
     {
       "claim_id": "af09-609-playback-compile-recovery-gpt6-0600",
