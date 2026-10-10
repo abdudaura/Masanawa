@@ -22,7 +22,7 @@ const appeal:AppealRecord={tenantId:"tenant_demo",caseId:record.caseId,appealId:
 function harness(){
  const create=vi.fn<CaseRepository["create"]>().mockImplementation(async c=>c);
  const find=vi.fn<CaseRepository["find"]>().mockImplementation(async(tenant,id)=>
-  tenant===record.tenantId&&id===record.caseId?{...record,events:[],actions:[action],appeals:[appeal]}:null);
+  tenant===record.tenantId&&id===record.caseId?{...record,events:[],actions:[action],appeals:[appeal],evidence:[]}:null);
  const list=vi.fn<CaseRepository["list"]>().mockResolvedValue([record]);
  const propose=vi.fn<CaseRepository["propose"]>().mockResolvedValue(action);
  const review=vi.fn<CaseRepository["review"]>().mockResolvedValue(action);
