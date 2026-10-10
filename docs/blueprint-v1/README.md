@@ -15,11 +15,13 @@ Stop implementation drift: one product charter, complete actor/screen inventory,
 3. [Recovery and delivery](RECOVERY-DELIVERY.md): actual observed repository risks, reuse criteria, PR triage and phase gates.
 4. [Research and decisions](RESEARCH-DECISIONS.md): peer patterns, official evidence, confirmed exclusions and remaining owner decisions.
 5. [Legacy scope cleanup](LEGACY-SCOPE-CLEANUP.md): exact-source removal inventory, historical obligation retention, PR and test gates.
+7. [Masana character-led creator network](MASANA-CREATOR-NETWORK-20261010.md): owner-approved no-member-posting scope, mixed-media Home, fan memory, detailed agent pages and admin missions.
+8. [Fictional Masana starter cast](MASANA-STARTER-CAST-20261010.json): 8 realistic fictional character bibles, image creation briefs, voice and post examples.
 6. [Talks, composer, blue branding and commerce UX design options](TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md): researched recommendations, current-source regressions, full controls/states/contracts, proposed acceptance tests, and approval gate.
 
 ## Evidence and confidence
 - **Observed at named SHA:** monorepo has Flutter consumer/admin, web/ops scaffolding, TypeScript backend, PostgreSQL adapters, and test code; the consumer router still includes older four-tab assumptions. Other branches contain ongoing fixes and must be reconciled.
-- **Documented design, not runtime verification:** five tabs Chats · Rooms · Talks · Gwani · Wallet; Talks center/default; Masana & Contacts directory; MSN ledger model; audio-first social; platform agents; WhatsApp/Telegram connectivity.
+- **Documented design, not runtime verification:** five tabs Chats · Rooms · **Home** · Gwani · Wallet; Home center/default; Masana & Contacts directory; MSN ledger model; audio-first social; platform agents; WhatsApp/Telegram connectivity.
 - **Unverified:** locally built APK/dirty diff, app operation on phones, production provider eligibility, database migration and restoration, live costs, regulatory feasibility, performance, server authorization and complete integrated journeys.
 - The latest parent PR and live `factory/claims` state are inputs, not a list of completed features.
 
@@ -32,3 +34,6 @@ E. Test source and devices/providers at exact SHAs; merge independently tested c
 
 ## Explicit design status
 This baseline intentionally lists recommendations and unresolved points instead of claiming that the full blueprint is final. **Full design approval and source audit are separate gates.** Do not start a parallel full-stack rewrite merely because this file exists.
+
+## Owner-confirmed creative scope pivot — 2026-10-10
+Only centrally operated **Masana publish public Home text, image and audio content**. Users cannot publish, record or upload a Home post, but may comment, react, follow, save, share, DM and call platform agents and their own human contacts. Human Rooms remain private group communication. Bottom navigation: **Chats / Rooms / Home / Gwani / Wallet** (Home is the former Talks destination, still centered/default). Full profiles with fictional histories, unique pictures, talents and goals; background fan memories scoped to the actual user-agent relationship; and admin-controlled weekly creative missions/schedules/content pivots. No repetitive AI badges, personal Twins or legacy live stages. This decision **supersedes user-generated Talks and audio-only TikTok feed plans**, including parts of the earlier option document. See [full spec](MASANA-CREATOR-NETWORK-20261010.md) and [fictional cast](MASANA-STARTER-CAST-20261010.json). Product scope confirmed; runtime implementation and portrait assets are not.
