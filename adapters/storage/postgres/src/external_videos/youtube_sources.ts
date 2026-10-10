@@ -1,6 +1,16 @@
 import type { Pool, PoolClient } from "@masanawa/postgres";
 import { withTransaction } from "@masanawa/postgres";
-import type { AdminYouTubeSourceStore, AdminYouTubeSource } from "../../../services/gateway/src/modules/youtube_websub/source_admin.js";
+/** Storage-only structural contract; gateway owns the public API DTO. */
+interface AdminYouTubeSource {
+  readonly id:string;readonly channelId:string;readonly channelName:string;
+  readonly targetRegion:string;readonly enabled:boolean;
+  readonly syncMode:"manual"|"authorized_api";
+}
+interface AdminYouTubeSourceStore {
+  list(tenantId:string):Promise<readonly AdminYouTubeSource[]>;
+  create(input:{tenantId:string;id:string;channelId:string;channelName:string;targetRegion:string;actorId:string}):Promise<AdminYouTubeSource>;
+  pause(input:{tenantId:string;id:string;actorId:string}):Promise<boolean>;
+}
 
 /** AF00 injects the existing canonical events.audit_events writer. Audit
  * failure aborts the transaction; no separate audit log is introduced.
