@@ -774,6 +774,22 @@
       "heartbeat_at": "2026-10-10T09:02:06.775Z",
       "expires_at": "2026-10-10T09:07:06.775Z",
       "notes": "Real PG18 CI 38039668485 unique ledger entry violation. Coordination published to active AF01 PR #607 comment 6095925134. No crypto, migrations, ledger postings or provider writes."
+    },
+    {
+      "claim_id": "af13-460-production-qualification-import-safety-gpt6-1002",
+      "owner": "GPT-6 / AF13 existing CI-recovery PR #460",
+      "scope": "Correct side-effectful ESM import of real Flutterwave production qualification runner; keep explicit CLI production gate unchanged and fail closed, add child-process test",
+      "paths": [
+        "scripts/flutterwave-billing-production-qualification.mjs",
+        "scripts/flutterwave-billing-production-qualification.test.mjs"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "c8efac8c5409ce48d10e1945b992f97112759732",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:03:11.009Z",
+      "heartbeat_at": "2026-10-10T09:03:11.009Z",
+      "expires_at": "2026-10-10T09:08:11.009Z",
+      "notes": "Exact run 38039747623 Provider qualification tooling tests failure because importing validator executes main() and requires live targets. Guard CLI invocation by import.meta.url and test no side effects during library import."
     }
   ],
   "history": [
