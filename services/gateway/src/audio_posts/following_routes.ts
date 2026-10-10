@@ -19,7 +19,7 @@ export function registerAudioFollowingRoutes(app: FastifyInstance, deps: {
     }
     throw error;
   };
-  app.put("/audio-posts/:postId/follow", async (request, reply) => {
+  app.put("/v1/audio-posts/:postId/follow", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
       const body = request.body;
@@ -34,7 +34,7 @@ export function registerAudioFollowingRoutes(app: FastifyInstance, deps: {
       });
     } catch (error) { return fail(reply, error); }
   });
-  app.get("/audio-posts/:postId/follow", async (request, reply) => {
+  app.get("/v1/audio-posts/:postId/follow", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
       return await deps.service.status(
@@ -42,7 +42,7 @@ export function registerAudioFollowingRoutes(app: FastifyInstance, deps: {
       );
     } catch (error) { return fail(reply, error); }
   });
-  app.get("/audio-posts/creators/:authorKind/:authorId", async (request, reply) => {
+  app.get("/v1/audio-posts/creators/:authorKind/:authorId", async (request, reply) => {
     try {
       const params = request.params as { authorKind?: unknown; authorId?: unknown };
       const query = request.query;
@@ -58,7 +58,7 @@ export function registerAudioFollowingRoutes(app: FastifyInstance, deps: {
       );
     } catch (error) { return fail(reply, error); }
   });
-  app.get("/audio-posts/following", async (request, reply) => {
+  app.get("/v1/audio-posts/following", async (request, reply) => {
     try {
       const query = request.query;
       if (!query || typeof query !== "object" || Array.isArray(query) ||

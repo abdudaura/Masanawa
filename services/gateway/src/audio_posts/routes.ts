@@ -24,7 +24,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
     }
     throw error;
   };
-  app.post("/audio-posts", async (request, reply) => {
+  app.post("/v1/audio-posts", async (request, reply) => {
     try {
       const current = await actor(request.headers.authorization);
       const post = await deps.service.publish(current, request.body);
@@ -32,7 +32,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       return toPublicAudioPost(post);
     } catch (error) { return fail(reply, error); }
   });
-  app.get("/audio-posts", async (request, reply) => {
+  app.get("/v1/audio-posts", async (request, reply) => {
     try {
       const current = await actor(request.headers.authorization);
       const query = (request.query ?? {}) as Record<string, unknown>;
@@ -51,7 +51,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
   });
   // Read-only recovery for a request that may have succeeded before timeout.
   // Never accept account/tenant from a query or client-controlled body.
-  app.get("/audio-posts/requests/:requestId", async (request, reply) => {
+  app.get("/v1/audio-posts/requests/:requestId", async (request, reply) => {
     try {
       const params = request.params as { requestId?: unknown };
       if (typeof params.requestId !== "string") {
@@ -63,7 +63,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
   });
   // Versioned pages retain older list endpoints; actor is always server-derived.
   for (const kind of ["mine","saved"] as const) {
-    app.get(`/audio-posts/${kind}/page`, async (request, reply) => {
+    app.get(`/v1/audio-posts/${kind}/page`, async (request, reply) => {
       try {
         const q = (request.query ?? {}) as Record<string,unknown>;
         if (Object.keys(q).some(key => key !== "cursor" && key !== "limit") ||
@@ -76,15 +76,15 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       } catch (error) { return fail(reply,error); }
     });
   }
-  app.get("/audio-posts/mine", async (request, reply) => {
+  app.get("/v1/audio-posts/mine", async (request, reply) => {
     try { return await deps.service.mine(await actor(request.headers.authorization)); }
     catch (error) { return fail(reply, error); }
   });
-  app.get("/audio-posts/saved", async (request, reply) => {
+  app.get("/v1/audio-posts/saved", async (request, reply) => {
     try { return await deps.service.saved(await actor(request.headers.authorization)); }
     catch (error) { return fail(reply, error); }
   });
-  app.get("/audio-posts/:postId/comments", async (request, reply) => {
+  app.get("/v1/audio-posts/:postId/comments", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
       if (typeof params.postId !== "string") throw new AudioPostError("VALIDATION", "Invalid post");
@@ -93,7 +93,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
   });
   // Additive versioned cursor endpoint: old GET /comments keeps returning a list.
   // Never admit client tenant/account fields or reveal deleted/blocked posts.
-  app.get("/audio-posts/:postId/comments/page", async (request, reply) => {
+  app.get("/v1/audio-posts/:postId/comments/page", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
       const query = (request.query ?? {}) as Record<string, unknown>;
@@ -107,7 +107,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
         query.cursor as string | undefined);
     } catch (error) { return fail(reply, error); }
   });
-  app.post("/audio-posts/:postId/comments", async (request, reply) => {
+  app.post("/v1/audio-posts/:postId/comments", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
       if (typeof params.postId !== "string") throw new AudioPostError("VALIDATION", "Invalid post");
@@ -116,7 +116,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       return result;
     } catch (error) { return fail(reply, error); }
   });
-  app.delete("/audio-posts/:postId/comments/:commentId", async (request, reply) => {
+  app.delete("/v1/audio-posts/:postId/comments/:commentId", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown; commentId?: unknown };
       if (typeof params.postId !== "string" || typeof params.commentId !== "string") {
@@ -125,7 +125,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       return await deps.service.removeOwnComment(await actor(request.headers.authorization), params.postId, params.commentId);
     } catch (error) { return fail(reply, error); }
   });
-  app.delete("/audio-posts/:postId", async (request, reply) => {
+  app.delete("/v1/audio-posts/:postId", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
       if (typeof params.postId !== "string") {
@@ -135,7 +135,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       return toPublicAudioPost(removed);
     } catch (error) { return fail(reply, error); }
   });
-  app.put("/audio-posts/:postId/reaction", async (request, reply) => {
+  app.put("/v1/audio-posts/:postId/reaction", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
       const body = request.body as { kind?: unknown; enabled?: unknown } | null;

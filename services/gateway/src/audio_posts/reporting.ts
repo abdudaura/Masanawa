@@ -94,7 +94,7 @@ export function registerPublishedAudioReportRoutes(
   app: FastifyInstance, deps: PublishedAudioReportDeps,
 ): void {
   const service = createPublishedAudioReportService(deps);
-  app.post("/audio-posts/:postId/report", async (request, reply: FastifyReply) => {
+  app.post("/v1/audio-posts/:postId/report", async (request, reply: FastifyReply) => {
     reply.header("Cache-Control", "private, no-store");
     try {
       const params = request.params as {postId?: unknown};

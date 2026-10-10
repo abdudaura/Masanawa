@@ -21,7 +21,7 @@ class GatewayCreatorProfileTransport implements CreatorProfileTransport {
       throw const FormatException('Invalid creator');
     }
     final response = await api.dio.get<dynamic>(
-      '/audio-posts/creators/' + Uri.encodeComponent(authorKind) +
+      '/v1/audio-posts/creators/' + Uri.encodeComponent(authorKind) +
         '/' + Uri.encodeComponent(authorId),
       queryParameters: {'limit': 20, if (cursor != null) 'cursor': cursor},
     );

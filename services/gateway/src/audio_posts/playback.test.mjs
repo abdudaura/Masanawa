@@ -87,7 +87,7 @@ test('provider errors are redacted and typed; missing authority is fail closed',
 });
 test('HTTP route authenticates, rechecks, sets no-store and returns typed denials', async () => {
   const f = fixture(); let handler;
-  const app = { get: (path, fn) => { assert.equal(path, '/audio-posts/:postId/playback'); handler = fn; } };
+  const app = { get: (path, fn) => { assert.equal(path, '/v1/audio-posts/:postId/playback'); handler = fn; } };
   registerAudioPostPlaybackRoutes(app, { service: f.service, requireActor: async () => bob });
   const result = { headers: {}, codeValue: null, body: null,
     header(k,v){this.headers[k]=v;return this;},code(v){this.codeValue=v;return this;},send(v){this.body=v;return v;} };

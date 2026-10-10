@@ -59,21 +59,21 @@ test('registers all 20 canonical post/social/private playback/report routes once
   registerPublishedAudioFeatureRoutes(f.app, f);
   assert.equal(f.routes.size, 20);
   for (const key of [
-    'POST /audio-posts',
-    'GET /audio-posts',
-    'GET /audio-posts/requests/:requestId',
-    'GET /audio-posts/mine',
-    'GET /audio-posts/mine/page',
-    'GET /audio-posts/saved',
-    'GET /audio-posts/saved/page',
-    'GET /audio-posts/:postId/comments/page',
-    'DELETE /audio-posts/:postId/comments/:commentId',
-    'PUT /audio-posts/:postId/follow',
-    'GET /audio-posts/creators/:authorKind/:authorId',
-    'GET /audio-posts/following',
-    'POST /audio-posts/:postId/listen',
-    'GET /audio-posts/:postId/playback',
-    'POST /audio-posts/:postId/report',
+    'POST /v1/audio-posts',
+    'GET /v1/audio-posts',
+    'GET /v1/audio-posts/requests/:requestId',
+    'GET /v1/audio-posts/mine',
+    'GET /v1/audio-posts/mine/page',
+    'GET /v1/audio-posts/saved',
+    'GET /v1/audio-posts/saved/page',
+    'GET /v1/audio-posts/:postId/comments/page',
+    'DELETE /v1/audio-posts/:postId/comments/:commentId',
+    'PUT /v1/audio-posts/:postId/follow',
+    'GET /v1/audio-posts/creators/:authorKind/:authorId',
+    'GET /v1/audio-posts/following',
+    'POST /v1/audio-posts/:postId/listen',
+    'GET /v1/audio-posts/:postId/playback',
+    'POST /v1/audio-posts/:postId/report',
   ]) assert.ok(f.routes.has(key),key);
 });
 test('absent canonical auth, moderation or playback refuses partial registration', () => {
@@ -94,19 +94,19 @@ test('absent canonical auth, moderation or playback refuses partial registration
 test('published feed, following, playback and report all use the same server session resolver', async () => {
   const f=fixture();registerPublishedAudioFeatureRoutes(f.app,f);
   const auth={authorization:'Bearer verified'};
-  const feed=await f.routes.get('GET /audio-posts')(
+  const feed=await f.routes.get('GET /v1/audio-posts')(
     {headers:auth,query:{}},reply());
   assert.equal(feed.items[0].postId,'post1');
-  const following=await f.routes.get('GET /audio-posts/following')(
+  const following=await f.routes.get('GET /v1/audio-posts/following')(
     {headers:auth,query:{}},reply());
   assert.equal(following.items[0].postId,'post1');
   const playbackReply=reply();
-  const playback=await f.routes.get('GET /audio-posts/:postId/playback')(
+  const playback=await f.routes.get('GET /v1/audio-posts/:postId/playback')(
     {headers:auth,params:{postId:'post1'}},playbackReply);
   assert.equal(playback.url,'https://media.example/test');
   assert.equal(playbackReply.headers['Cache-Control'],'private, no-store');
   const reported=reply();
-  const receipt=await f.routes.get('POST /audio-posts/:postId/report')(
+  const receipt=await f.routes.get('POST /v1/audio-posts/:postId/report')(
     {headers:auth,params:{postId:'post1'},body:{
       reason:'spam',clientRequestId:'request1',
     }},reported);
@@ -124,9 +124,9 @@ test('new My Talks and Saved routes use the active server account and reject for
  };
  registerPublishedAudioFeatureRoutes(f.app,f);
  const auth={authorization:'Bearer verified'};
- const mine=await f.routes.get('GET /audio-posts/mine/page')(
+ const mine=await f.routes.get('GET /v1/audio-posts/mine/page')(
    {headers:auth,query:{limit:'20'}},reply());
- const saved=await f.routes.get('GET /audio-posts/saved/page')(
+ const saved=await f.routes.get('GET /v1/audio-posts/saved/page')(
    {headers:auth,query:{}},reply());
  assert.deepEqual(mine,{items:[],nextCursor:null});
  assert.deepEqual(saved,{items:[],nextCursor:null});
@@ -134,7 +134,7 @@ test('new My Talks and Saved routes use the active server account and reject for
  assert.ok(calls.every(v=>v.who.accountId==='alice' && v.who.tenantId==='tenant1'));
  assert.equal(f.sessions,2);
  const response=reply();
- await f.routes.get('GET /audio-posts/saved/page')(
+ await f.routes.get('GET /v1/audio-posts/saved/page')(
    {headers:auth,query:{accountId:'bob'}},response);
  assert.equal(response.status,400);
  assert.equal(response.body.code,'VALIDATION');

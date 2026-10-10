@@ -108,7 +108,7 @@ test("authenticated HTTP listen route maps errors and never trusts account body"
   },{service:f.service,requireActor:async auth=>{
     assert.equal(auth,"Bearer granted");return actor;
   }});
-  const handler=routes.get("POST /audio-posts/:postId/listen");
+  const handler=routes.get("POST /v1/audio-posts/:postId/listen");
   assert.equal(typeof handler,"function");
   const reply={status:200,headers:{},header(k,v){this.headers[k]=v;return this;},
     code(n){this.status=n;return this;},send(v){return v;}};

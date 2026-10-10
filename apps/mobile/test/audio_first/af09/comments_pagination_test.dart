@@ -51,7 +51,7 @@ void main() {
     expect(older.items.map((item) => item.commentId), ['c50', 'c51']);
     expect(older.nextCursor, isNull);
     expect(requests.length, 2);
-    expect(requests[0].path, '/audio-posts/talk1/comments/page');
+    expect(requests[0].path, '/v1/audio-posts/talk1/comments/page');
     expect(requests[1].queryParameters['cursor'], 'c49');
     expect(requests.every((request) => !request.queryParameters.containsKey('accountId')),
       isTrue);

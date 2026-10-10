@@ -40,7 +40,7 @@ class GatewayCreatorFollowingTransport implements CreatorFollowingTransport {
   @override
   Future<CreatorFollowReceipt> status({required String postId}) async {
     final response = await api.dio.get<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/follow',
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/follow',
     );
     return CreatorFollowReceipt.fromJson(response.data);
   }
@@ -50,7 +50,7 @@ class GatewayCreatorFollowingTransport implements CreatorFollowingTransport {
     required String postId, required bool enabled,
   }) async {
     final response = await api.dio.put<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/follow',
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/follow',
       data: {'enabled': enabled},
     );
     final receipt = CreatorFollowReceipt.fromJson(response.data);
@@ -63,7 +63,7 @@ class GatewayCreatorFollowingTransport implements CreatorFollowingTransport {
   @override
   Future<AudioPostPage> following({String? cursor}) async {
     final response = await api.dio.get<dynamic>(
-      '/audio-posts/following',
+      '/v1/audio-posts/following',
       queryParameters: {'limit': 20, if (cursor != null) 'cursor': cursor},
     );
     final body = response.data;

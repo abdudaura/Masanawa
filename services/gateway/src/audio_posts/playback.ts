@@ -192,7 +192,7 @@ export function registerAudioPostPlaybackRoutes(app: FastifyInstance, deps: {
     }
     throw error;
   };
-  app.post("/audio-posts/:postId/listen", async (request, reply: FastifyReply) => {
+  app.post("/v1/audio-posts/:postId/listen", async (request, reply: FastifyReply) => {
     reply.header("Cache-Control", "private, no-store");
     try {
       const auth = request.headers.authorization;
@@ -203,7 +203,7 @@ export function registerAudioPostPlaybackRoutes(app: FastifyInstance, deps: {
         body:request.body,currentActor:()=>deps.requireActor(auth)});
     } catch (error) { return respond(reply,error); }
   });
-  app.get("/audio-posts/:postId/playback", async (request, reply: FastifyReply) => {
+  app.get("/v1/audio-posts/:postId/playback", async (request, reply: FastifyReply) => {
     reply.header("Cache-Control", "private, no-store");
     try {
       const current = await deps.requireActor(request.headers.authorization);

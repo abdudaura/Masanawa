@@ -145,7 +145,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
   @override
   Future<AudioPost?> receiptByRequest({required String requestId}) async {
     final response = await api.dio.get<dynamic>(
-      '/audio-posts/requests/${Uri.encodeComponent(requestId)}');
+      '/v1/audio-posts/requests/${Uri.encodeComponent(requestId)}');
     final data = response.data;
     if (data is! Map || !data.containsKey('receipt')) {
       throw const FormatException('Invalid publish lookup response');
@@ -159,7 +159,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
   @override
   Future<AudioPostPage> discover({String? cursor}) async {
     final response = await api.dio.get<dynamic>(
-      '/audio-posts', queryParameters: {'limit': 20, if (cursor != null) 'cursor': cursor});
+      '/v1/audio-posts', queryParameters: {'limit': 20, if (cursor != null) 'cursor': cursor});
     final raw = response.data;
     if (raw is! Map) throw const FormatException('Invalid feed');
     final data = raw.cast<String, dynamic>();
@@ -178,7 +178,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
   }
 
   Future<AudioPostPage> _libraryPage(String kind, String? cursor) async {
-    final response = await api.dio.get<dynamic>('/audio-posts/$kind/page',
+    final response = await api.dio.get<dynamic>('/v1/audio-posts/$kind/page',
         queryParameters: {'limit': 20, if (cursor != null) 'cursor': cursor});
     final raw = response.data;
     if (raw is! Map || raw['items'] is! List ||
@@ -201,7 +201,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
 
   @override
   Future<List<AudioPost>> mine() async {
-    final response = await api.dio.get<dynamic>('/audio-posts/mine');
+    final response = await api.dio.get<dynamic>('/v1/audio-posts/mine');
     final data = response.data;
     if (data is! List) throw const FormatException('Invalid post history');
     return List.unmodifiable(data.map((item) {
@@ -212,7 +212,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
 
   @override
   Future<List<AudioPost>> saved() async {
-    final response = await api.dio.get<dynamic>('/audio-posts/saved');
+    final response = await api.dio.get<dynamic>('/v1/audio-posts/saved');
     final data = response.data;
     if (data is! List) throw const FormatException('Invalid saved Talks');
     return List.unmodifiable(data.map((item) {
@@ -226,7 +226,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
     required String requestId, required String assetId, required String title,
   }) async {
     final response = await api.dio.post<dynamic>(
-      '/audio-posts',
+      '/v1/audio-posts',
       data: {'requestId': requestId, 'assetId': assetId, 'title': title},
     );
     if (response.data is! Map) throw const FormatException('Invalid publish result');
@@ -236,7 +236,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
   @override
   Future<AudioPost> removeMine({required String postId}) async {
     final response = await api.dio.delete<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}',
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}',
     );
     if (response.data is! Map) throw const FormatException('Invalid deletion receipt');
     final removed = AudioPost.fromJson((response.data as Map).cast<String, dynamic>());
@@ -249,7 +249,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
   @override
   Future<List<AudioPostComment>> comments({required String postId}) async {
     final response = await api.dio.get<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/comments');
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/comments');
     final data = response.data;
     if (data is! List) throw const FormatException('Invalid comments');
     return List.unmodifiable(data.map((item) {
@@ -266,7 +266,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
     required String postId, String? cursor,
   }) async {
     final response = await api.dio.get<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/comments/page',
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/comments/page',
       queryParameters: {if (cursor != null) 'cursor': cursor},
     );
     final raw = response.data;
@@ -300,7 +300,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
     required String postId, required String requestId, required String body,
   }) async {
     final response = await api.dio.post<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/comments',
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/comments',
       data: {'requestId': requestId, 'body': body});
     if (response.data is! Map) throw const FormatException('Invalid comment result');
     final comment = AudioPostComment.fromJson((response.data as Map).cast<String, dynamic>());
@@ -312,7 +312,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
   @override
   Future<void> removeComment({required String postId, required String commentId}) async {
     final response = await api.dio.delete<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/comments/${Uri.encodeComponent(commentId)}');
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/comments/${Uri.encodeComponent(commentId)}');
     if (response.data is! Map || response.data['removed'] != true) {
       throw const FormatException('Comment removal not confirmed');
     }
@@ -323,7 +323,7 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
     required String postId, required String kind, required bool enabled,
   }) async {
     await api.dio.put<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/reaction',
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/reaction',
       data: {'kind': kind, 'enabled': enabled},
     );
   }

@@ -55,7 +55,7 @@ test("authenticated route cannot accept spoofed tenant, preserves scoped paginat
   },{
     service:f.service,requireActor:async h=>{assert.equal(h,"Bearer active");return actor;},
   });
-  const route=routes.get("/audio-posts/:postId/comments/page");
+  const route=routes.get("/v1/audio-posts/:postId/comments/page");
   assert.equal(typeof route,"function");
   const reply={code(n){this.status=n;return this;},send(result){return result;}};
   const p1=await route({headers:{authorization:"Bearer active"},params:{postId:"post1"},query:{}},reply);

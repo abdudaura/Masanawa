@@ -246,7 +246,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
       final response = _listenRequest != null
           ? await _listenRequest(postId,sessionId,playedMs)
           : (await api.dio.post<dynamic>(
-              '/audio-posts/' + Uri.encodeComponent(postId) + '/listen',
+              '/v1/audio-posts/' + Uri.encodeComponent(postId) + '/listen',
               data: {'listenSessionId':sessionId,'playedMs':playedMs},
             )).data;
       if (!isAuthorized || generation != _generation ||
@@ -330,7 +330,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
       final payload = _ticketRequest != null
           ? await _ticketRequest(post.postId)
           : (await api.dio.get<dynamic>(
-              '/audio-posts/' + Uri.encodeComponent(post.postId) + '/playback',
+              '/v1/audio-posts/' + Uri.encodeComponent(post.postId) + '/playback',
             )).data;
       if (!isAuthorized || requestGeneration != _generation ||
           api.accessToken != authorizationAtStart) {

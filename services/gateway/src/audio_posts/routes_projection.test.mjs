@@ -73,7 +73,7 @@ function assertPublicReceipt(value) {
 test("POST returns the canonical public receipt, never the private source record",async()=>{
   const f=fixture();
   const body={assetId:privateRecord.assetId,requestId:privateRecord.requestId,title:privateRecord.title};
-  const {status,response}=await f.request("POST","/audio-posts",{},body);
+  const {status,response}=await f.request("POST","/v1/audio-posts",{},body);
   assert.equal(status,202);
   assertPublicReceipt(response);
   assert.equal(response.status,"processing");
@@ -82,7 +82,7 @@ test("POST returns the canonical public receipt, never the private source record
 
 test("DELETE returns a redacted removed receipt and passes through only authenticated actor",async()=>{
   const f=fixture();
-  const {status,response}=await f.request("DELETE","/audio-posts/:postId",{postId:"post-1"});
+  const {status,response}=await f.request("DELETE","/v1/audio-posts/:postId",{postId:"post-1"});
   assert.equal(status,200);
   assertPublicReceipt(response);
   assert.equal(response.status,"removed");
@@ -93,7 +93,7 @@ test("DELETE returns a redacted removed receipt and passes through only authenti
 
 test("failed owner delete is a typed 404 without leaking a hidden post",async()=>{
   const f=fixture({async removeOwn(){throw new AudioPostError("NOT_FOUND","Audio post not found")}});
-  const {status,response}=await f.request("DELETE","/audio-posts/:postId",{postId:"post-2"});
+  const {status,response}=await f.request("DELETE","/v1/audio-posts/:postId",{postId:"post-2"});
   assert.equal(status,404);
   assert.deepEqual(response,{code:"NOT_FOUND",message:"Audio post not found"});
   assert.equal(JSON.stringify(response).includes("private-tenant"),false);
@@ -101,7 +101,7 @@ test("failed owner delete is a typed 404 without leaking a hidden post",async()=
 
 test("conflicting publish is a typed 409 and does not leak a record",async()=>{
   const f=fixture({async publish(){throw new AudioPostError("CONFLICT","Publish key was used with different content")}});
-  const {status,response}=await f.request("POST","/audio-posts",{},{});
+  const {status,response}=await f.request("POST","/v1/audio-posts",{},{});
   assert.equal(status,409);
   assert.deepEqual(response,{code:"CONFLICT",message:"Publish key was used with different content"});
 });

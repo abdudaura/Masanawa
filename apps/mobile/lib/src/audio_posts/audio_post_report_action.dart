@@ -24,7 +24,7 @@ class GatewayPublishedAudioReportTransport implements PublishedAudioReportTransp
     String? detail,
   }) async {
     final response = await api.dio.post<dynamic>(
-      '/audio-posts/${Uri.encodeComponent(postId)}/report',
+      '/v1/audio-posts/${Uri.encodeComponent(postId)}/report',
       data: {
         'reason': reason,
         'clientRequestId': clientRequestId,
