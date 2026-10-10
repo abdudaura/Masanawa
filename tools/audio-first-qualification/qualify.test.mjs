@@ -4,7 +4,8 @@ import {mkdtemp,writeFile,rm,symlink,mkdir} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {checkMatrix,checkRecord,assess,verifyProofs} from './qualify.mjs';
+import {readFileSync} from 'node:fs';
+import {checkMatrix,checkCanonicalMatrix,checkRecord,assess,verifyProofs} from './qualify.mjs';
 const sha='f381f077c485c04261459b77a42c215d3ce3a14b';
 const mat={schemaVersion:1,contract:'AF-v1',journeys:[{id:'WF-A01',boundaries:['auth','database','provider'],tier:'release'}]};
 const rec=(patch={})=>({journeyId:'WF-A01',result:'NOT_RUN',codeSha:sha,executedAt:new Date().toISOString(),boundaries:[],environment:{mode:'not_run'},...patch});
@@ -94,4 +95,28 @@ test('uppercase digest compatibility and empty proof fail-closed',async()=>{
   const empty=await verifyProofs([fixture('empty.txt',createHash('sha256').update('').digest('hex'))],dir);
   assert.equal(empty.verified.size,0);assert.ok(empty.errors.length>0);
  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+// Regression: a 43-ID matrix is not authoritative merely because IDs match.
+// Release tiers and all mandatory real-world boundaries must be pinned too.
+test('canonical matrix is immutable across CLI-supplied acceptance input',()=>{
+ const canonical=JSON.parse(readFileSync(new URL('./journeys.json',import.meta.url),'utf8'));
+ const copy=()=>JSON.parse(JSON.stringify(canonical));
+ assert.deepEqual(checkCanonicalMatrix(copy(),canonical),[]);
+ const downgraded=copy();
+ const release=downgraded.journeys.find(j=>j.tier==='release');
+ assert.ok(release,'canonical release-tier journey exists');
+ release.tier='feature';
+ assert.ok(checkCanonicalMatrix(downgraded,canonical).length>0,'cannot bypass a release requirement');
+ const weakened=copy();
+ const multi=weakened.journeys.find(j=>j.boundaries.length>1);
+ assert.ok(multi,'canonical multi-boundary journey exists');
+ multi.boundaries.pop();
+ assert.ok(checkCanonicalMatrix(weakened,canonical).length>0,'cannot remove a real provider/DB/device boundary');
+ const renamed=copy();
+ renamed.journeys[0].id='UX-A99';
+ assert.ok(checkCanonicalMatrix(renamed,canonical).length>0);
+ assert.ok(checkCanonicalMatrix([],canonical).length>0);
+ const badCanonical=copy();badCanonical.schemaVersion=2;
+ assert.ok(checkCanonicalMatrix(copy(),badCanonical).length>0);
 });
