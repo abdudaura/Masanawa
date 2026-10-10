@@ -11,6 +11,8 @@ class AudioPost {
     required this.status,
     required this.revision,
     required this.createdAt,
+    this.likeCount = 0,
+    this.commentCount = 0,
   });
   final String postId;
   final String authorId;
@@ -20,6 +22,8 @@ class AudioPost {
   final String status;
   final int revision;
   final DateTime createdAt;
+  final int likeCount;
+  final int commentCount;
 
   factory AudioPost.fromJson(Map<String, dynamic> json) {
     final id = json['postId'];
@@ -30,6 +34,8 @@ class AudioPost {
     final status = json['status'];
     final revision = json['revision'];
     final created = json['createdAt'];
+    final likes = json['likeCount'] ?? 0;
+    final comments = json['commentCount'] ?? 0;
     if (id is! String || id.isEmpty ||
         author is! String || author.isEmpty ||
         (kind != 'human' && kind != 'masana') ||
@@ -39,6 +45,8 @@ class AudioPost {
         (status != 'processing' && status != 'published' &&
          status != 'failed' && status != 'removed') ||
         revision is! num || revision.toInt() != revision ||
+        likes is! int || likes < 0 ||
+        comments is! int || comments < 0 ||
         created is! String) {
       throw const FormatException('Invalid audio-post response');
     }
@@ -48,6 +56,7 @@ class AudioPost {
       postId: id, authorId: author, authorKind: kind, title: title,
       durationMs: duration.toInt(), status: status,
       revision: revision.toInt(), createdAt: date,
+      likeCount: likes, commentCount: comments,
     );
   }
 }
