@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { vi } from "vitest";
 import { describe, it, expect, afterEach } from "vitest";
 import { OperationsError, type OperationsService } from "./service.js";
 import { registerAdminOperationsRoutes } from "./routes.js";
@@ -23,6 +24,20 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
  it("rejects malformed flag names before auth mutation",async()=>{
   const app=create();const reply=await app.inject({method:"PUT",url:"/v1/admin/ops/flags/finance",payload:{enabled:true,reason:"fake release reason",idempotencyKey:"request-01",expectedRevision:0}});
   expect(reply.statusCode).toBe(400);expect(reply.json()).toEqual({code:"admin_ops.invalid"});
+ });
+ it("does not let request body replace path-owned flag identity",async()=>{
+  const app=Fastify();apps.push(app);
+  const call=vi.fn(async()=>({name:"calls" as const,enabled:false,revision:1,updatedAt:null}));
+  registerAdminOperationsRoutes(app,{
+    flags:async()=>[],preview:async()=>{throw new OperationsError("forbidden",403)},
+    setFlag:async(_auth,mutation)=>call(mutation),audit:async()=>[],staff:async()=>[]
+  });
+  const response=await app.inject({method:"PUT",url:"/v1/admin/ops/flags/calls",
+    payload:{name:"paid_joins",tenantId:"victim",actorId:"attacker",enabled:false,
+      expectedRevision:0,idempotencyKey:"request-xyz",reason:"Emergency service shutdown"}});
+  expect(response.statusCode).toBe(200);
+  expect(call).toHaveBeenCalledWith({name:"calls",enabled:false,
+    expectedRevision:0,idempotencyKey:"request-xyz",reason:"Emergency service shutdown"});
  });
  it("denies unknown staff roles through live HTTP",async()=>{
   const app=create();const reply=await app.inject({method:"GET",url:"/v1/admin/staff"});

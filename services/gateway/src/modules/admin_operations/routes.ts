@@ -22,7 +22,12 @@ export function registerAdminOperationsRoutes(app: FastifyInstance, operations: 
     const {name}=request.params;
     if (!FLAG_NAMES.some(n=>n===name)) throw new OperationsError("invalid",400);
     if (!request.body || typeof request.body !== "object") throw new OperationsError("invalid",400);
-    return operations.setFlag(request.headers.authorization,{name:name as OperationsFlag,...request.body});
+    const { enabled,expectedRevision,idempotencyKey,reason }=request.body;
+    // Whitelist exact command members. Untrusted request body cannot override the
+    // bound path flag, authenticated actor or canonical tenant.
+    return operations.setFlag(request.headers.authorization,{
+      name:name as OperationsFlag,enabled,expectedRevision,idempotencyKey,reason
+    });
   });
   app.get<{Querystring:{limit?:string}}>("/v1/admin/staff/audit", async request => {
     const limit=request.query.limit===undefined?30:Number(request.query.limit);
