@@ -1143,9 +1143,9 @@
       "source_pr": 460,
       "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
       "claimed_at": "2026-10-10T16:12:51.215Z",
-      "heartbeat_at": "2026-10-10T16:24:05.018Z",
-      "expires_at": "2026-10-10T16:29:05.018Z",
-      "notes": "PR #623 five exact Dart source paths, current head 6efb9cca3219af81200d562a98cc269a1d05cf26, automatic Foundation/Mobile Android/Admin CI queued. Protected composition, data, finance unchanged."
+      "heartbeat_at": "2026-10-10T16:25:23.825Z",
+      "expires_at": "2026-10-10T16:30:23.825Z",
+      "notes": "PR #623 head 6efb9cca3219af81200d562a98cc269a1d05cf26: Admin analyze PASS in run 38067461575; Admin widget tests FAIL inherited or scope pending logs; Admin APK compiling, consumer in progress."
     },
     {
       "claim_id": "l-rooms-free-question-lifecycle-20261010-gpt6",
