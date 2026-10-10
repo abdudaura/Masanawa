@@ -65,13 +65,13 @@ Use current [integration contracts](../AUDIO-FIRST-INTEGRATION-CONTRACTS.md) and
 | P2P | order offers, atomic reserve, claim, verified release, disputes and staffed resolution | screenshot-only release, freeing reserved funds after paid claim | paid vs expire race, freeze on dispute |
 | Crypto | asset/network allowlists, custody addresses, deposit confirmations, conversion and withdrawals | unsupported network or unverified payout claims | invalid memo/network, reorg, payout reconciliation |
 | Channels | account linking, approved WhatsApp + Telegram webhook, media, consent, normalized chat/task state | shadow personal-account automation or untrusted inbound instructions | signature, dedupe, opt-out, cross-account ID |
-| Twin/creator | one twin/account, clone configuration, budget and commission event linkage | commissions without completed attributable transactions | refund reversal, insufficient credit fallback |
+| Platform agents | centrally configured Gwani/Gwana/Masana; skills, capabilities and budgets, service tasks | user-owned cloned agents, resale commissions or paid owner-access | access permissions, availability and task continuity |
 | Ops/admin | RBAC, approval, case/ticket management, incident controls, quotas, audit and backoffice | showing provider keys, raw transcripts or unrestricted ledger edits | role spoof, operator action audit, rollback |
 
-## Authentication, privacy, AI safety
+## Authentication, privacy, Integration safety
 - Authenticated identity is server-derived; verify caller permissions **per resource** and media fetch. Multi-account switching cancels subscriptions/outbox ownership and locally encrypted private projections.
-- Separate human and AI identity UI; disclose generated audio and synthetic voice. Do not promise end-to-end encryption unless actually designed and verified.
-- Trusted tool boundaries: incoming messages, agent prompts, documents and retrieved pages are untrusted. Tool ACLs, typed argument validation, service catalog allowlists, task budgets and consent challenge enforce every side effect.
+- Preserve distinct internal account and character identifiers for routing and permissions. Use standard names and profiles in the product without repeated AI labels. Do not promise end-to-end encryption unless actually implemented and verified.
+- Trusted tool boundaries: incoming messages, instructions, documents and retrieved pages are untrusted input. Tool ACLs, typed argument validation, service catalog allowlists, task budgets and consent challenge enforce every side effect.
 - Validate webhook signatures on raw payload and fetch authoritative provider transaction status; record dedupe, retry limits and reconciliation.
 - Least privilege service accounts and runtime DB roles; secret store not Flutter/PR/log; private object URLs short-lived, revocable according to expiry/access; malware/size/codec validation.
 - Retention schedule: public Talks, DM audio, drafts, deleted/replaced media, blocked content, account deletion, dispute/financial evidence, system logs; balance legal needs against minimization.
@@ -87,7 +87,7 @@ Use current [integration contracts](../AUDIO-FIRST-INTEGRATION-CONTRACTS.md) and
 
 **P2P:** reserve seller MSN atomically -> awaiting fiat -> claimed -> authorized verified release OR dispute -> resolution/return. No automatic release on screenshot or unchecked timer.
 
-**Agent commission:** eligible paid operation -> settle in canonical ledger -> attributable commission pending -> available subject to policy; refund/chargeback triggers linked compensating event.
+**Removed personal-agent economy:** do not issue new Twin commissions, prices, credit reservations, owner-session purchases or Twin referral payments. Existing posted credits, liabilities, disputes and receipts must remain auditable and be reconciled before retirement.
 
 **Workers:** persisted queue, occurrence key, atomic lease, heartbeat, bounded retry/dead-letter, operator pause, restart recovery, idempotent output and error telemetry. Avoid a second scheduler.
 
@@ -131,3 +131,6 @@ Sources retrieved 2026-10-10:
 [4] https://ai.google.dev/gemini-api/docs/pricing
 [5] https://developer.flutterwave.com/docs/bill-payment
 Source/current agreements: ../AUDIO-FIRST-INTEGRATION-CONTRACTS.md, ../MSN-WALLET-P2P-CONTRACT.md, ../BACKEND-STORAGE-OPERATIONS-20261009.md, ../FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md.
+
+## Confirmed scope subtraction (2026-10-10)
+Do not develop or expose personal Twins, user clone training/onboarding, Twin directories, Twin owner-access sessions/offerings, paid Twin seats, gift-based Twin payouts, credit plans, attribution or commissions. Platform-operated Gwani/Gwana/Masana configuration and ordinary human creator Talks remain. Previous APIs/tables may exist in the inherited codebase; deprecate them without deleting applied SQL or forfeiting existing ledger obligations. See [legacy cleanup](LEGACY-SCOPE-CLEANUP.md). Presentation uses name/avatar and role if useful, without repetitive AI disclosures or trust-oriented copy.
