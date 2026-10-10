@@ -13,6 +13,7 @@ class PublishedTalkCommentsSheet extends StatefulWidget {
     required this.isCurrentAccount,
     required this.transport,
     this.newRequestId,
+    this.sessionChanges,
   });
 
   final String postId;
@@ -21,6 +22,8 @@ class PublishedTalkCommentsSheet extends StatefulWidget {
   final AudioPostTransport transport;
   /// Injectable for deterministic idempotency/retry tests; must be unique per draft.
   final String Function()? newRequestId;
+  /// Feed-owned revocation event: a mounted modal must hide an old account's data.
+  final Listenable? sessionChanges;
 
   @override
   State<PublishedTalkCommentsSheet> createState() => _PublishedTalkCommentsSheetState();
@@ -40,12 +43,18 @@ class _PublishedTalkCommentsSheetState extends State<PublishedTalkCommentsSheet>
   @override
   void initState() {
     super.initState();
+    widget.sessionChanges?.addListener(_onSessionChanged);
     _fetch();
   }
 
   @override
   void didUpdateWidget(covariant PublishedTalkCommentsSheet old) {
     super.didUpdateWidget(old);
+    if (old.sessionChanges != widget.sessionChanges) {
+      old.sessionChanges?.removeListener(_onSessionChanged);
+      widget.sessionChanges?.addListener(_onSessionChanged);
+      _onSessionChanged();
+    }
     if (old.accountId != widget.accountId ||
         old.postId != widget.postId ||
         old.transport != widget.transport ||
@@ -65,8 +74,26 @@ class _PublishedTalkCommentsSheetState extends State<PublishedTalkCommentsSheet>
     }
   }
 
+  void _onSessionChanged() {
+    if (!mounted || _authorized) return;
+    ++_generation;
+    setState(() {
+      _comments = const [];
+      _next = null;
+      _error = null;
+      _pendingRequestId = null;
+      _pendingBody = null;
+      _text.clear();
+      _sending = false;
+      _deleting.clear();
+      _loading = false;
+      _loadingMore = false;
+    });
+  }
+
   @override
   void dispose() {
+    widget.sessionChanges?.removeListener(_onSessionChanged);
     ++_generation;
     _text.dispose();
     super.dispose();
