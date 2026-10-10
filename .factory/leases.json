@@ -1027,6 +1027,26 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
+    },
+    {
+      "claim_id": "masanawa-masana-first-creator-network-20261010",
+      "owner": "BLUEPRINT-01 / owner-mandated Masana creator network redesign",
+      "scope": "Only proposal docs in existing PR #615: platform-only mixed media creation, Home, profiles/followers/memory, chats/calls, admin missions/schedules, seed catalog",
+      "paths": [
+        "docs/blueprint-v1/README.md",
+        "docs/blueprint-v1/PRODUCT-UX.md",
+        "docs/blueprint-v1/RESEARCH-DECISIONS.md",
+        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
+        "docs/blueprint-v1/RECOVERY-DELIVERY.md",
+        "docs/blueprint-v1/TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md",
+        "docs/blueprint-v1/MASANA-CREATOR-NETWORK-20261010.md",
+        "docs/blueprint-v1/MASANA-STARTER-CAST-20261010.json"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "claimed_at": "2026-10-10T12:29:43.734Z",
+      "heartbeat_at": "2026-10-10T12:29:43.734Z",
+      "expires_at": "2026-10-10T12:34:43.734Z",
+      "notes": "Existing runtime paths PR #609/#600 and actual financial/voice work untouched. Historical source preserved. Full adoption requires AF00 and owners. Seed identities fictional."
     }
   ],
   "history": [
