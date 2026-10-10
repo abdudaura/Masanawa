@@ -264,9 +264,9 @@ class _GiftTransport implements TalkGiftTransport {
 }
 
 class _LibraryTransport implements TalkLibraryTransport {
-  bool saved;
+  bool saved = false;
 
-  _LibraryTransport({this.saved = false});
+  _LibraryTransport();
 
   @override
   Future<MyTalksView> loadMyTalks() async => const MyTalksView();
