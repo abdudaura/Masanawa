@@ -165,6 +165,7 @@ export function createTalkService(input: Readonly<{
       const comments = await input.repository.listComments({
         tenantId: viewer.tenantId,
         talkId: request.talkId,
+        viewerUserId: viewer.userId,
         limit: 200,
       });
       return Object.freeze({

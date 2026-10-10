@@ -127,6 +127,40 @@ function mapComment(row: CommentRow): TalkCommentRecord {
   });
 }
 
+// One canonical customer-visible comment predicate for feed counts, detail
+// counts and paged detail bodies. $3 is always the VERIFIED session viewer.
+// Never expose platform-restricted comments or comments from a blocked/muted
+// author, including where that author has blocked the viewer reciprocally.
+const visibleCommentPredicateSql = `
+  AND NOT EXISTS (
+    SELECT 1 FROM talks.safety_enforcement comment_safety
+     WHERE comment_safety.tenant_id = c.tenant_id
+       AND comment_safety.target_kind = 'comment'
+       AND comment_safety.target_id = c.comment_id
+       AND comment_safety.visibility <> 'public'
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM talks.safety_preferences viewer_preference
+     WHERE viewer_preference.tenant_id = c.tenant_id
+       AND viewer_preference.viewer_user_id = $3
+       AND viewer_preference.subject_user_id = c.author_user_id
+       AND (viewer_preference.blocked OR viewer_preference.muted)
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM talks.safety_preferences author_block
+     WHERE author_block.tenant_id = c.tenant_id
+       AND author_block.viewer_user_id = c.author_user_id
+       AND author_block.subject_user_id = $3
+       AND author_block.blocked
+  )
+`;
+
+const visibleCommentCountSql = `(
+  SELECT count(*)::int FROM talks.comments c
+   WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id
+   ${visibleCommentPredicateSql}
+)`;
+
 const talkColumns = `
   tenant_id, talk_id, host_user_id, host_name, title, topic, summary,
   state, listener_count, duration_seconds, created_at, updated_at
@@ -158,8 +192,7 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
       const result = await pool.query<TalkRow>(
         `SELECT ${talkColumns},
                 ${participantProjectionSql},
-                (SELECT count(*)::int FROM talks.comments c
-                  WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count,
+                ${visibleCommentCountSql} AS comment_count,
                 (SELECT count(*)::int FROM talks.participation p
                   WHERE p.tenant_id = t.tenant_id
                     AND p.talk_id = t.talk_id
@@ -220,8 +253,7 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
       const result = await pool.query<TalkRow>(
         `SELECT ${talkColumns},
                 ${participantProjectionSql},
-                (SELECT count(*)::int FROM talks.comments c
-                  WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count
+                ${visibleCommentCountSql} AS comment_count
            FROM talks.talks t
           WHERE t.tenant_id = $1 AND t.talk_id = $2
             AND (
@@ -293,12 +325,14 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
 
     async listComments(input) {
       const result = await pool.query<CommentRow>(
-        `SELECT tenant_id, talk_id, comment_id, author_user_id, author_name, body, created_at
-           FROM talks.comments
-          WHERE tenant_id = $1 AND talk_id = $2
-          ORDER BY created_at ASC, comment_id ASC
-          LIMIT $3`,
-        [input.tenantId, input.talkId, input.limit],
+        `SELECT c.tenant_id, c.talk_id, c.comment_id, c.author_user_id,
+                c.author_name, c.body, c.created_at
+           FROM talks.comments c
+          WHERE c.tenant_id = $1 AND c.talk_id = $2
+            ${visibleCommentPredicateSql}
+          ORDER BY c.created_at ASC, c.comment_id ASC
+          LIMIT $4`,
+        [input.tenantId, input.talkId, input.viewerUserId, input.limit],
       );
       return Object.freeze(result.rows.map(mapComment));
     },
