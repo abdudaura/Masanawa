@@ -1022,11 +1022,11 @@
       "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
       "base_sha": "963074d4f798868ecefe54d722f116d69415e5d9",
       "source_pr": 612,
-      "source_head": "e455a12638d3791e166f26ee3cc54d159a982ac6",
+      "source_head": "46af99e50dedd5a1596ffb5795086410ef4ff859",
       "claimed_at": "2026-10-10T09:46:40.804Z",
-      "heartbeat_at": "2026-10-10T09:46:40.804Z",
-      "expires_at": "2026-10-10T09:51:40.804Z",
-      "notes": "No shared composition/router/native/finance/migration edits; #612 retargeted to one AF00 branch after nonoverlap review and bounded PR #600 comment 6096246160. Exact raw+settled callback timeout source/tests, combined GitHub Actions verification before merge."
+      "heartbeat_at": "2026-10-10T09:51:14.918Z",
+      "expires_at": "2026-10-10T09:56:14.918Z",
+      "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
     }
   ],
   "history": [
