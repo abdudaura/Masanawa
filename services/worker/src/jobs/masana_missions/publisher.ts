@@ -35,6 +35,27 @@ export class PostgresMissionPublishQueue implements MissionPublishQueue {
   constructor(private readonly pool:MissionSqlPool) {}
   async lease():Promise<LeasedMissionPost|null>{
     return transaction(this.pool,async db=>{
+      // A worker can crash on its sixth lease. Without terminal recovery the row
+      // remains "publishing" forever, invisible to both the queue and staff retry.
+      // Preserve its publication_key: a reviewed retry must deduplicate any
+      // Feed write that succeeded just before the original worker died.
+      const exhausted = await db.query(`
+        WITH expired AS (
+          SELECT tenant_id,slot_id FROM masana.posting_slots
+          WHERE state='publishing' AND lease_until<now() AND attempt_count>=6
+          ORDER BY lease_until,slot_id LIMIT 32 FOR UPDATE SKIP LOCKED
+        )
+        UPDATE masana.posting_slots s
+        SET state='failed',last_error='lease_expired_exhausted',
+          lease_token=NULL,lease_until=NULL,revision=revision+1,updated_at=now()
+        FROM expired e WHERE s.tenant_id=e.tenant_id AND s.slot_id=e.slot_id
+        RETURNING s.tenant_id,s.slot_id,s.attempt_count`);
+      for (const row of exhausted.rows) {
+        await db.query(`UPDATE masana.mission_runs
+          SET status='exhausted',finished_at=now(),failure_code='lease_expired'
+          WHERE tenant_id=$1 AND slot_id=$2 AND attempt=$3 AND status='leased'`,
+          [row.tenant_id,row.slot_id,row.attempt_count]);
+      }
       // Locks a slot, then its single parent budget row. Concurrent workers SKIP LOCKED.
       await db.query("UPDATE masana.posting_slots SET state='failed',last_error='attempts_exhausted',"+ 
   " lease_token=NULL,lease_until=NULL,revision=revision+1,updated_at=now()"+
