@@ -1335,8 +1335,8 @@
       "branch": "lane/l-shell-c08-notifications-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:36:24.615Z",
-      "heartbeat_at": "2026-10-10T16:45:40.279Z",
-      "expires_at": "2026-10-10T16:50:40.279Z",
+      "heartbeat_at": "2026-10-10T16:48:53.292Z",
+      "expires_at": "2026-10-10T16:53:53.292Z",
       "notes": "Do not create a second push system; use existing events outbox; no production migration or main; AF00 register routes/migration/router.",
       "source_head": "a52b89299063447ec2f7439b2424d86320079724"
     },
