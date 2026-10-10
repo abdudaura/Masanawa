@@ -249,7 +249,7 @@ async function loadRun(
         AND user_id = $3
         AND character_id = $4
         AND relationship_id = $5
-      ${write ? "FOR UPDATE" : "FOR SHARE"}`,
+      ${write ? "FOR UPDATE" : ""}`,
     [
       scope.tenantId,
       request.agentRunId,
