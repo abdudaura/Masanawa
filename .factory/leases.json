@@ -201,23 +201,25 @@
     {
       "claim_id": "af09-609-report-feed-mount-gpt6-20261010",
       "owner": "AF09 existing PR #609 report UI composition / GPT-6",
-      "scope": "Mount existing canonical published-audio report action on visible published Talk cards, account-session fenced and without changing playback/cache. Do not touch AF00 shared shell/routes.",
+      "scope": "Mount existing canonical published-audio report action on visible published Talk cards, account-session fenced and without changing playback/cache. Do not touch AF00 shared shell/routes. Also repair demonstrated double-escaped PostgreSQL following cursor regex which rejects genuine microsecond timestamps; preserve existing tests and adapter.",
       "paths": [
         "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
         "apps/mobile/test/audio_first/af09/report_feed_test.dart",
         "docs/workstreams/AF09-report-feed-wiring-20261010.md",
         "apps/mobile/lib/src/audio_posts/audio_post_report_action.dart",
         "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "apps/mobile/test/audio_first/af09/report_action_test.dart"
+        "apps/mobile/test/audio_first/af09/report_action_test.dart",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository_pagination.test.mjs"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
       "source_pr": 609,
       "source_head": "951978f959a3b23caabaca9824ce596578d9bb57",
       "claimed_at": "2026-10-10T03:50:35.774Z",
-      "heartbeat_at": "2026-10-10T03:51:07.969Z",
-      "expires_at": "2026-10-10T03:56:07.969Z",
-      "notes": "Stale file claim reviewed and moved to history; preserve all newer feed cache/playback/reaction/comment source. Scope is one customer-visible report UI path. Also guard reporting dialog against account switching; add focused existing widget tests."
+      "heartbeat_at": "2026-10-10T03:55:33.791Z",
+      "expires_at": "2026-10-10T04:00:33.791Z",
+      "notes": "Stale file claim reviewed and moved to history; preserve all newer feed cache/playback/reaction/comment source. Scope is one customer-visible report UI path. Also guard reporting dialog against account switching; add focused existing widget tests. Runtime source regex validated with valid sample against corrected pattern; existing pagination tests cover accept/reject/precision."
     }
   ],
   "history": [
