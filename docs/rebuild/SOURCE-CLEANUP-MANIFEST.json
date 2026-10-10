@@ -1438,5 +1438,6 @@
     "active open PR unique unmerged source",
     "local Windows uncommitted fixes/APK artifacts",
     "agent memory/voice/tools reused by new platform"
-  ]
+  ],
+  "todoOrderSupersededBy": "DELIVERY.md §2 (R0 → R1 → lanes → R-CLEAN → R-RELEASE)"
 }

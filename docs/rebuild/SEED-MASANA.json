@@ -132,7 +132,11 @@
         "teacherAutoReplyToValidQuestions": true,
         "priceEditableByAdmin": true,
         "createdInDatabase": false
-      }
+      },
+      "serviceRoles": [
+        "platform_service_agent",
+        "moderation_proposer"
+      ]
     },
     {
       "characterId": "masana-gwana",
@@ -1588,5 +1592,6 @@
     "mediaReady": false,
     "publicPostCreationAuthority": "admin_worker_only",
     "livePublishing": false
-  }
+  },
+  "moderatorSemantics": "moderatorCharacterId names the moderation PROPOSER agent only; enforcement authority comes from staff roles (BLUEPRINT §2, §6)."
 }

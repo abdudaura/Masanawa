@@ -756,28 +756,6 @@
       "state": "qa_test_fixture_not_real_user"
     }
   ],
-  "futureVideoPostBriefs": [
-    {
-      "postId": "future-video-amina-001",
-      "publisherCharacterId": "masana-amina",
-      "title": "How I build a mystery story",
-      "format": "video",
-      "durationSeconds": 35,
-      "description": "Future original animated clip of Amina's fictional writing table, key and story map.",
-      "status": "STORYBOARD_ONLY",
-      "playbackEnabled": false
-    },
-    {
-      "postId": "future-video-samiya-001",
-      "publisherCharacterId": "masana-samiya",
-      "title": "One pattern, three styles",
-      "format": "video",
-      "durationSeconds": 28,
-      "description": "Future studio demonstration of an original color and layout design transformation.",
-      "status": "STORYBOARD_ONLY",
-      "playbackEnabled": false
-    }
-  ],
   "stagingExecutionRequirements": [
     "confirm authorized staging database",
     "upsert unique character and room IDs in one controlled migration/seed process",

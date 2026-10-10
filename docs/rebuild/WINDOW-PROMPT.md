@@ -1,20 +1,44 @@
-# One Masanawa rebuild prompt (paste into every new window)
+# Masanawa rebuild — window prompt (paste into every new window)
 
 ```text
-Continue rebuilding Masanawa: https://github.com/abdudaura/Masanawa
-Until PR #615 merges, read AGENTS.md, CONTINUE-HERE.md and docs/rebuild/{BLUEPRINT,SCREENS,ARCHITECTURE,DELIVERY,SOURCE-CLEANUP}.md from branch planning/masanawa-blueprint-v1-20261010, NOT main's old guides. After merge read those same files on fresh main.
+You are a Masanawa rebuild window. Repo: https://github.com/weavewellindustrieslimited/masanawa
 
-This is a Masana-only fan platform: Chats (fan↔Masana only), global Masana-led Rooms (free/paid), Home Feed|Videos, Gwani support/moderation, Wallet/Bills/Crypto. No human chats/calls, user posts/Rooms, Twins or old Talks stages. Preserve and reuse old code; old product guides are deleted.
+AUTHORITY: Read docs/rebuild/{BLUEPRINT,ARCHITECTURE,SCREENS,DELIVERY,SOURCE-CLEANUP}.md. Until PR #615 is merged, read them from branch planning/masanawa-blueprint-v1-20261010; after that, read them from fresh main. Nothing else is product authority: not old guides, PR descriptions or legacy code behavior.
 
-FIRST inspect docs/rebuild/SOURCE-CLEANUP-MANIFEST.json; verify obsolete code inbound imports, public routes, schemas, local Windows changes and open PR ownership. Clean the actual application by retiring replaced features, tests and dependencies safely, not just hiding their UI; preserve applied SQL and financial history.
+PRODUCT: A Masana-only fan platform. Tabs: Chats (fan↔Masana only) | Rooms (staff-created, profession-named, Masana-taught, free/paid) | Home (Feed of Masana text/image/audio posts | Videos of official embeds of external YouTube/TikTok/Facebook) | Gwani (support + moderation) | Wallet (Bills, Crypto). There are no human DMs or calls, no fan posts or Rooms, no Twins, no Talk stages, no video hosting and no WhatsApp/Telegram bridging.
 
-Refresh main, active PRs/claims, local/APK recovery and CI; coordinate with AF00. Continue the highest-priority unclosed complete milestone and existing PR rather than creating duplicate branches. Implement Flutter UI + backend/API + Postgres/migrations + workers + integrations + negative tests end to end.
+STEP 1 — ORIENT
+- Fetch main, integration/rebuild, open PRs, factory/claims and CI.
+- Pick ONE unclaimed milestone in dependency order from DELIVERY §2: R0, then R1, then a lane, then R-CLEAN, then R-RELEASE. If R0 or R1 is open, only the AF00 window works on it.
+- Claim the lane or sub-scope in factory/claims (DELIVERY §3) and renew the claim every 5 minutes.
+- Read the lane's existing PRs (DELIVERY §7) and reuse map (SOURCE-CLEANUP §3) before writing code.
 
-Run and fix applicable TypeScript, Vitest, PostgreSQL18, Flutter and Android build checks. Merge tested compatible work promptly into the safe integration baseline/main after deployment-trigger review. Never call skipped tests passed or make unsafe real-money/database changes.
+STEP 2 — BUILD the whole vertical slice for your lane's screens and journeys:
+- Flutter consumer and admin screens, with all states from SCREENS §1
+- contracts and APIs
+- package-owned migrations, following ARCHITECTURE §3/§4
+- worker jobs
+- server-side authorization with negative tests
+- retirement of your lane's legacy family (SOURCE-CLEANUP §2)
+Edit only your lane's paths. Shared files are AF00-only, apart from append-only registries.
 
-Before ending, report closed items, exact PR/head/merge SHA, test commands/results, remaining blockers and next owner/action. Do not stop at a patch or leave fixable failures.
+STEP 3 — VERIFY on your head SHA:
+- pnpm install --frozen-lockfile && pnpm typecheck && pnpm test:ci && pnpm build
+- PG18 fresh + upgrade + checksum
+- flutter analyze && flutter test for both apps
+- your journey tests J##
+- an APK build when you touched UI
+Fix every failure in your scope. Never report skipped, zero-step or mocked runs as real passes. Never run scripts against real financial data or production.
+
+STEP 4 — INTEGRATE: open a PR against integration/rebuild with the DELIVERY §5 checklist and §6 evidence records. Merge once it is green. Promote to main only at gates, after reviewing the Railway auto-deploy.
+
+STEP 5 — REPORT:
+- milestone and journeys closed
+- PR number, head SHA and merge SHA
+- commands with PASS/FAIL/NOT_RUN/BLOCKED
+- legacy files removed
+- remaining blockers, each with an owner and next action
+Release the claim, or hand it off in a PR comment.
 ```
 
-**Until PR #615 is safely merged to main, copy the prompt above INCLUDING the explicit planning branch instruction.** This avoids reopening obsolete instructions from main. Do not merge if current source CI has unsolved errors or main push would trigger an unreviewed data-bearing Railway deployment.
-
-Window IDs: use a unique automatic identifier; claim exact paths in `factory/claims`. One AF00 source integrator, approximately 4–6 real independent implementers; share existing tests/CI rather than creating new evidence-only branches. Product-specific research and quality guidance is in the four documents above. No other window prompt is authoritative.
+Run one AF00 integrator window plus four to six lane windows. A second window on a lane must claim a disjoint sub-scope. Do not create evidence-only or doc-only branches. Product scope changes need owner approval and must be edited into BLUEPRINT first.

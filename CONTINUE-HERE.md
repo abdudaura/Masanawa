@@ -1,6 +1,6 @@
 # Masanawa — start here (current rebuild)
 
-**Product direction locked 2026-10-10.** Rebuild inside the existing [abdudaura/Masanawa](https://github.com/abdudaura/Masanawa) monorepo using tested reusable code and a clean feature-first design. Do not follow old branch planning, readme history, deleted plans or stale PR descriptions as product instructions.
+**Product direction locked 2026-10-10.** Rebuild inside the existing [weavewellindustrieslimited/masanawa](https://github.com/weavewellindustrieslimited/masanawa) monorepo (formerly abdudaura/Masanawa), executing docs/rebuild/DELIVERY.md R0 → R1 → lanes → R-CLEAN → R-RELEASE, using tested reusable code and a clean feature-first design. Do not follow old branch planning, readme history, deleted plans or stale PR descriptions as product instructions.
 
 ## Reading order (only)
 1. [AGENTS.md](AGENTS.md) — product constraints, safety, claims and testing.

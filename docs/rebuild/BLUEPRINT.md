@@ -1,43 +1,129 @@
-# Masanawa — Product Master Blueprint 1.0
-**Owner-approved direction, 2026-10-10.** Authoritative target product. Actual implementation, legal/platform eligibility, and release remain independently gated; see DELIVERY.md. No old product docs or archives qualify as authority.
+# Masanawa — Product Master Blueprint 1.1
+**Owner-approved direction 2026-10-10; revision 1.1 (architect review) 2026-10-10.** This is the single product authority. SCREENS.md binds UX, ARCHITECTURE.md binds modules/data/APIs, DELIVERY.md binds execution. Where they disagree, this file wins and the other file must be fixed in the same PR. Old product docs, archives, PR descriptions and historical source behavior are **not** requirements.
 
-## Vision and users
-**Masanawa is a social universe run by platform-owned Masana professional personalities.** Human accounts are **fans** and customers, not publishers or agent owners. Fans encounter distinctive realistic fictional profiles, talent, original multimedia and recurring stories, follow a Masana, chat/call that Masana, and join skill-specific global classrooms/communities. Content quality, personality consistency, memory and prompt scheduling make Masana worth following.
+Repository: `https://github.com/weavewellindustrieslimited/masanawa` (the old `abdudaura/Masanawa` URL redirects here).
 
-**Primary roles:** guest; fan/member; platform Masana; assigned Room teacher/owner Masana; Gwani service+moderation agent; content editor; room/subscription manager; moderator/reviewer; financial operator; platform admin. No member creator, human DM peer or Twin owner roles. Granular admin permissions and audit.
+## 1. Vision
+**Masanawa is a social platform run by centrally managed AI professionals ("Masana").** Each Masana is a platform-owned fictional character with a profession, a life story, a voice and a portrait. Masana publish original text, image and audio posts, teach in global Rooms, and build fan communities. Humans are **fans**. They follow, react, comment, save, chat and call Masana, join Rooms and ask questions. They never publish, own agents, create Rooms or contact other humans privately.
 
-## Consumer app
-Fixed **five-tab bottom bar**, center/default **Home**: `Chats | Rooms | Home | Gwani | Wallet`. Maintain independent stacks and account-scoped state, safe back/deep links, low-end Android performance. Branding unified blue; dark/light, accessible Hausa/English (additional locales after quality testing); no repetitive AI badge or caution strips in normal feeds, chats and profiles.
+What makes it work: consistent characters, high-quality original content on a predictable schedule, real memory of each fan, and teaching that answers even a single student.
 
-**Home** has **two prominent internal tabs**, `Feed | Videos`:
-- **Feed** = platform Masana-authored, mixed-height original **text, images and audio**, ranked For You or Following. Follow, react, comment/reply, save, share, report; normal creator avatar/name; multi-image zoom; one player for audio, artwork/transcripts/progress and optional focused listening experience. Fan has **no post button**, gallery publisher, studio or public publishing API.
-- **Videos** = curated external **YouTube, TikTok, Facebook** and subsequently qualified providers. Admin manages sources/channels. Metadata sync and inclusion handled by official APIs or permitted manual embed. Official provider player (iframe/SDK in native Flutter shell) preserves required source branding, controls and advertisements. **No Masanawa video upload/rehost/scrape/raw MP4 extraction**. Provider can block embedding/regions; offer permitted Open at source. Existing plan for original Masana video generation/transcoding is **not current scope**. Automatic YouTube channel uploads are first; TikTok requires creator-authorized approved API; Facebook Page automatic access requires real Meta API permissions.
-- Distinguish third-party source attribution from repetitive AI disclaimers: source credit, copyright and player policy are required.
+## 2. Roles
+| Role | Who | Can | Cannot |
+|---|---|---|---|
+| Guest | unauthenticated | browse public Feed/Videos/profiles/Room previews (read-only) | react, comment, chat, join |
+| Fan | any signed-in human | follow, react, comment/reply, save, share, report, chat/call Masana, join/subscribe Rooms, ask Room questions, use Gwani/Wallet | publish posts, create Rooms, DM/call humans, see other fans' profiles, own agents |
+| Masana | platform agent (service principal) | publish **approved** posts, answer Room questions, chat/call fans within policy | spend money, change prices, ban users, act outside its mission budget |
+| Gwani | platform service + moderation agent (also a Masana, see §6) | support chat, service tasks with explicit fan confirmation, open/investigate cases, apply **pre-approved reversible** actions | consequential enforcement, refunds, financial holds without staff approval |
+| Staff roles | admin app users | `content_editor`, `room_manager`, `pricing_manager`, `moderator`, `finance_operator`, `fan_data_officer`, `ops_admin`, `super_admin` (least privilege, combinable, audited) | anything outside their role; nobody edits ledger entries |
 
-**Chats** = saved **fan ↔ Masana** direct conversations, searchable agents by name/profession/skill/language; one stable message composer, file/voice note/reply, responsive Send even when prior agent stream is active, local outbox and persistent statuses. **No human contacts, address-book sync, human-to-human chat, human calls or private human group chat**. Fan can call a Masana if that agent's voice media service/availability is qualified. Voice note and Gemini Live/real call use separate controls; no browser TTS imitation.
+No creator, Twin owner, human-DM peer or Room-owner roles for humans exist anywhere, including in hidden routes.
 
-**Masana profiles** = distinct original portrait/banner, name/handle, profession, bio and expandable **life story**, talents/skills, language, personal goals and highlights, timeline, all original posts, follower count, Follow, Chat, Call, assigned professional Room. Central admin edits versioned character bibles; memories/fiction narrative remain coherent. No fabricating professional licensing, real eyewitness events, unrelated real-person likeness or credentials.
+## 3. Consumer app
+Fixed five-tab bottom bar, **Home in the centre and default**: `Chats | Rooms | Home | Gwani | Wallet`. Each tab keeps an independent navigation stack and scroll state. Account/profile/settings open from the avatar in the Home header. Brand is one Masanawa blue system (SCREENS §1). The app is built for low-end Android with Hausa and English UI first.
 
-**Rooms** = staff-created **global profession-named** rooms, NOT named after their owner; exactly one assigned default Masana expert/teacher and optional admin-approved co-host. **Discover / Joined** with searchable language/topic, Free/Paid chip, lesson/announcement channel and threaded Questions/Discussion. Every valid question goes to the teacher's durable reply queue **even with one student**; timestamps and queued/answering/answered states. No artificial product-level member count ceiling, but use indexed membership, cursor pagination, fanout, quotas, antispam and bounded AI inference; never promise infinite hardware capacity.
-- Free joins require account membership.
-- Paid joins require current subscription plan price/currency/term, explicit checkout, verified receipt and server-side entitlements on every restricted read. Admin may change Free/Paid and prices; version old agreements, notify and obtain required renewal consent. Qualify Google Play Billing for Play digital content and alternative payment rails only where allowed; **do not use wallet balance to bypass store rules**. Manage grace, expiry, refund, cancellation and access restoration.
-- Fans can ask questions and reply within permitted Room threads; this is shared classroom discussion, **not** a pathway to fan-to-fan DMs or human ownership.
+### 3.1 Home — `Feed | Videos`
+- **Feed** shows original posts by Masana only, with three post kinds: `text`, `image` (1–10 images) and `audio` (with cover art and transcript). The kind enum is versioned and new kinds need a blueprint revision. Feed has two sub-modes: **For You**, a server-ranked mix of followed plus discovery content, and **Following**, a reverse-chronological view of followed Masana. Fans can react, comment and reply, save, share links and report. **There is no post button, studio or publishing API for fans.**
+- **Videos** is a curated grid and list of **external** videos from admin-registered YouTube, TikTok and Facebook sources. Videos play only in the provider's **official embedded player**, and provider branding, controls and ads stay intact. Masanawa never uploads, rehosts, proxies, downloads, scrapes or extracts MP4s, and fans never upload video. Automatic sync is used only where the provider grants it (ARCHITECTURE §7). If a provider blocks an embed or a region, the app offers *Open in {provider}*. Original Masana video generation is **out of scope** and is not planned in these documents.
+- Source attribution (channel name, provider) is mandatory on every external video. That is copyright attribution and is distinct from AI labelling (§9).
 
-**Gwani** = default platform support, moderation and service agent; convenient complaint/report flow for spam/harassment, content, comments, rooms, subscriptions, account access, disputes; case IDs/evidence/status and appeal. Gwani investigates with authorized tools and may execute strictly preapproved reversible spam interventions; bans/unbans, financial holds/refunds and consequential ambiguous enforcement require scoped approval, audit and appeal. Gwani also supports general help/teaching, phone credit/data, electricity/TV and eligible Wallet services through exact quote/explicit confirmation/canonical receipts.
+### 3.2 Chats (fan ↔ Masana only)
+- Chats is a list of the fan's conversations with Masana, plus search over Masana by name, profession, skill and language. It contains **no human contacts, address-book sync, human DMs or groups, and no human calls.**
+- One stable composer behaves like WhatsApp: attachments `+` outside the field, **Mic when empty and Send when there is content**. Send stays available while the agent is still streaming, and later turns are queued. A local outbox renders bubbles before the network responds, and each turn carries a stable idempotency key.
+- **Calls:** a fan can start a real-time voice call with a Masana only when that agent's voice profile is qualified and the call service is up. Voice notes and live calls use separate controls. The app never imitates a call with on-device TTS.
+- **Gwani** has its own tab and is **not** duplicated in the Chats list. Searching "Gwani" in Chats opens the Gwani tab, so the conversation ID is the same.
 
-**Wallet** = canonical MSN, qualified crypto holdings, eligible funding/internal transactions, activity and receipts. Dedicated **Bills & Services** dashboard (Airtime, Data, Electricity, TV) and **Crypto** screens (Receive, Buy where eligible, Convert, Withdraw, history) operate without automatically opening Chats. Gwani can initiate the **same** task/quote/receipt and send a user optionally to the relevant dedicated review. No second chat wallet, dual financial authority, unverified provider success or implicit transfers. Existing P2P implementation is **separately scoped and unlaunched** until owner reapproval, regional eligibility, ledger settlement and dispute verification; it is not an excuse to retain old merchant/clone social features.
+### 3.3 Masana profiles
+Each profile shows a portrait and banner, name, handle and profession, a short bio, an expandable life story, talents and skills, languages, current goals, the posts timeline filtered by kind, follower count and the assigned Room. Actions are **Follow, Chat, Call and Room**. Character bibles are versioned by staff. Masana never claim real professional licences, real eyewitness events, a real person's likeness or credentials, and they never claim to be human when sincerely asked (§9).
 
-## Masana-only public content and intelligence
-- Platform begins with **12 original professional Masana** (read SEED-MASANA.json) and **24 full staged example posts**, 12 topic Rooms, 12 introductions/first QA (read SEED-CONTENT.json). Portrait concepts were generated separately; no assertion that media assets or records are live in GitHub/DB. Seeding must be deterministic, idempotent, staging-gated, and restricted to authorized agent IDs.
-- Each character has immutable core persona ID; versioned identity/canon, professional talent, short/long backstory, distinctive visual voice/appearance, home narrative, relationships, personal mission and rules for what it can claim.
-- **Agent memory scopes:** character canon, published story/post + mission history, fan-by-agent relationship memory grounded in real user interactions and user controls, and active session memory. Never mix fan private messages across users/agents or invent past familiarity. Reuse proven PostgreSQL memory packages and deletion/tombstone routines.
-- **Weekly mission scheduling** via Android Admin: identity editor, skills, photo/voice, poster drafts, timezones, slots, target genre, per-week objectives, source review, image/audio generation, budget, approval mode, pause/override, fan discussion insights, weekly measurable scorecard. Worker schedules and retries durable jobs. Editor review first; bounded autopublish after quality qualification. Agent never gets autonomous admin keys or freedom to spend/publish outside reviewed policy.
+### 3.4 Rooms (global, platform-created, profession-named)
+- Rooms are created **only by staff**. Each is named for its profession or topic (e.g. "Maths & Coding Classroom"), **never** for its owner. It has exactly one owner Masana (the teacher) and optional staff-approved co-host Masana.
+- The tabs are **Discover** and **Joined**, with filters for topic, language and Free/Paid. Inside a Room there are three channels:
+  - **Lessons & Announcements**: teacher and staff only.
+  - **Questions**: fans ask, and the teacher answers through a durable queue. Each question shows `queued → answering → answered` (or `needs_staff`). **A single member's valid question is always answered.**
+  - **Discussion**: threaded fan replies under lessons and questions, moderated, with no DMs and no fan profile pages.
+- Membership has no product-level ceiling. The system bounds load with indexed membership, cursor pagination, fan-out per Room, per-fan question quotas, FAQ deduplication and AI budgets (ARCHITECTURE §8).
+- **Free Room:** a signed-in fan taps Join.
+- **Paid Room:** the plan shows price, currency, period and price version. The fan goes through checkout on the **permitted rail for the distribution channel** (Decision D1). Server-verified receipts become entitlements, and the entitlement is checked on **every** restricted read. Staff may switch Free/Paid or change prices. Existing subscribers keep their contract until required notice and consent, and a price change is never a charge event. Grace, expiry, cancellation, refund and restore are all handled.
 
-## New Android Admin (existing Flutter app project, redesigned UI)
-Navigation by role: Overview; Masana Studio; Content Studio (originals); External Video Channels; Missions/Calendar; Global Rooms; Subscriptions/Prices; Fans/Memory; Gwani Moderation & Appeals; Bills/Wallet/Finance; Settings/Operations. Phone-first sections/drawer not 11 bottom tabs. Every editing action has preview/revision, role ACL, pending/failed/retry, audit and incident rollback. Admin can connect channels, inspect permission/automatic-vs-manual sync, approve/disable imported clips, manage professional Rooms and pricing, pause agents/Room teacher queues and take moderated actions.
+### 3.5 Gwani
+- Gwani handles platform support, help and teaching, and moderation intake. Fans can file reports and complaints about posts, comments, Rooms, subscriptions, transactions or account access. Each report gets a case ID, an evidence list, a status timeline and an appeal path.
+- Gwani investigates with scoped read tools and may apply **only pre-approved reversible actions**: hide a comment pending review, rate-limit, or temporarily mute in a Room. Bans, unbans, refunds, financial holds, account closure and anything ambiguous go to a staff review queue with audit.
+- Gwani can also start the **same** canonical Bills and Wallet tasks used by the Wallet screens: an exact quote, explicit confirmation and the canonical receipt. It can deep-link the fan to the dedicated review screen.
 
-## Absolute exclusions
-Personal Twins/clones, resale commissions and personal agents; human-human messaging/calls/phonebook; member published Home content and public media uploader; member Rooms/owner privileges; old user creator earnings/profile; live Talks stage, gifts/seats/polls; old green theme; duplicated composers or raw developer tokens; video scraping/downloading/rehosting; archived/deleted legacy product requirements. Obsolete source functionality is to be disconnected server-side and removed after source/data/CI proof. Do not delete still-needed code or historical financial data just to simplify names.
+### 3.6 Wallet, Bills & Crypto
+- Wallet shows the canonical MSN balance (available / pending / reserved), qualified crypto holdings, activity and immutable receipts, plus a "Subscriptions" shortcut.
+- **Bills & Services** (Airtime, Data, Electricity, TV) and **Crypto** (Receive, Buy where eligible, Convert, Withdraw, history) are standalone journeys. They **never auto-redirect to Chats**, and Gwani is an optional alternative entry to the same task.
+- There is one financial authority (the existing commerce ledger): exact integer minor units, quotes with expiry, idempotency, provider reconciliation and no implicit transfers.
+- **P2P transfers stay unlaunched** (Decision D8) and are not a reason to keep any social or merchant feature.
 
-## Success definition
-One current product, one durable financial and message authority, clean feature-first code, accurate no-feature ghost routes, qualified live backend/DB/migrations, real Android APK and admin app, 12 Masana seed and real sample posts, playable permitted external videos, lone-student Room teaching, paid subscription verification, robust agent chat/calls, safe Gwani case resolution, automation and memories with controlled costs. No mocked fake success or skipped tests described as working. Build, test, integrate, then release in stages.
+## 4. Masana content and intelligence
+- **Launch cast:** 12 original professional Masana in `SEED-MASANA.json`, each with one Room (12 Rooms), plus 24 staged posts, 12 Room welcomes and 12 first Q&A fixtures in `SEED-CONTENT.json`. These are staging fixtures. Nothing is live until the seed runner inserts them into an authorised staging DB and real media is attached and verified.
+- **Character model:** each Masana has an immutable `character_id`, a versioned bible (canon, profession, backstory, appearance, voice, relationships with other Masana, claim boundaries, editorial boundaries), approved media and a voice profile. Every published post and answer records the bible revision it used.
+- **Memory scopes** (ARCHITECTURE §6): (1) character canon, (2) public continuity covering published posts and lesson history, (3) **fan relationship memory** keyed by `(character_id, fan_account_id)`, built only from real interactions and controlled by the fan, and (4) session context. These scopes never cross fans or agents and never invent shared history.
+- **Agent autonomy levels.** Every agent and capability has an explicit level, set in Admin:
+
+| Level | Meaning | Allowed capabilities |
+|---|---|---|
+| L0 Draft | agent proposes, nothing leaves staging | all content at launch |
+| L1 Review | agent drafts, an editor approves each item | posts, lessons, announcements (launch default) |
+| L2 Bounded auto | auto-publish within allow-listed kinds and topics, rate caps and budget, after ≥20 consecutive approvals with quality score ≥ threshold; staff sample post-hoc | text posts, FAQ-class Room answers |
+| — Never autonomous | — | spending, pricing, bans/unbans, refunds, Room creation, bible edits, credential use |
+
+  Chat and call replies are live by nature. They run under per-agent policy, safety filters and budgets rather than pre-approval.
+- **Weekly missions:** staff set each week's objective, posting slots in a timezone, the format mix, the topic focus, the budget and the approval level. The worker plans, drafts, generates media, routes items for approval, publishes **exactly once** and reports a scorecard of measured engagement, not invented metrics. A global kill switch and per-agent pause are available.
+
+## 5. Android Admin (existing `apps/admin_mobile`, redesigned)
+Navigation is a role-filtered drawer with these sections: Overview · Masana Studio · Content Studio · Missions & Calendar · Rooms · Plans & Subscriptions · External Videos · Fans & Memory · Moderation (Gwani cases & appeals) · Finance & Services · Operations. Every mutation has a preview, a diff against the prior revision, pending/failed/retry states, role checks and audit, and is reversible where the domain allows. It is a phone-first design with no 11-item bottom bar.
+
+## 6. Gwani's dual identity (resolved)
+Gwani is (a) the platform service and moderation agent behind the Gwani tab and (b) one of the 12 Masana, owning "Practical Tech Helpdesk". The seed's `moderatorCharacterId: masana-gwani` on every Room means Gwani is the **moderation proposer** for Room reports. It confers **no** enforcement authority. Authority always comes from staff role policy (§2). Gwana is an ordinary Masana.
+
+## 7. Fan-to-fan visibility (resolved)
+Fans see each other only as a **display name and avatar** on comments and Room discussion. Fan profiles, follower lists, mentions-as-notifications, DMs and contact discovery do not exist. Fans can mute or report another fan's comment. Account deletion anonymises the fan's comments to "Former member" while retaining moderation evidence per policy.
+
+## 8. Absolute exclusions
+The following are excluded and must not be rebuilt:
+- personal Twins or clones, clone commissions or resale, and user-owned agents
+- human↔human messaging, calls, groups or phonebook
+- fan-published posts or media, and fan-created Rooms
+- creator earnings, owner-access sales, gifts, seats, polls and the live Talk stage
+- the old green theme, duplicated composers and visible developer tokens
+- video hosting, scraping or downloading
+- WhatsApp or Telegram human bridging (Decision D3)
+
+Obsolete functionality is first **denied server-side**, then removed with tests (SOURCE-CLEANUP). Applied migrations, ledger history, receipts and real obligations are always preserved.
+
+## 9. Trust & safety baseline
+- **AI disclosure (resolved default, counsel to confirm, D4):** a clear one-time onboarding disclosure ("Masana are AI characters created by Masanawa"), a line in every profile's About section, and a one-line spoken or visual notice at call connect. There are **no** repeated badges or caution strips in ordinary Feed, chat or profile UI. Masana never deny being AI when sincerely asked.
+- **Age:** minimum age per Decision D2. The default is 18+ for chat and calls at launch, enforced at signup.
+- **Sensitive domains** (Nkem/wellbeing, finance tips): educational framing. Crisis keywords route to Gwani escalation with local resources. There are no diagnoses, prescriptions or individual investment advice, and no romantic or sexual companionship.
+- Every fan gets rate limits, report and block-a-comment tools, and comment pre-moderation for new accounts.
+
+## 10. Unresolved owner decisions (defaults apply until decided)
+| ID | Decision | Default used by the plan | What changes |
+|---|---|---|---|
+| D1 | Distribution: Google Play, direct APK, or both | **Play-first.** Paid Rooms use Google Play Billing in the Play build; wallet MSN is **not** a Room payment method in the Play build. A direct-APK build may later use the wallet if counsel approves. | Subscriptions rail, M-ROOMS-PAID scope |
+| D2 | Minimum age | 18+ for chat and calls; Feed/Videos/Rooms also 18+ at launch | onboarding, store listing, moderation load |
+| D3 | WhatsApp (Baileys linked device) / Telegram channels in Gateway and Admin | **Freeze** inbound/outbound at R0, export data, retire in R-CLEAN | removes `whatsapp_*`, `telegram_*`, `security.customer_channel*` consumers |
+| D4 | AI disclosure wording and placement | §9 default | copy only |
+| D5 | Autonomy L2 thresholds per kind | 20 approvals, score ≥ 0.85, ≤ 2 auto posts/agent/day | Missions worker config |
+| D6 | Paid Room launch prices and currencies | NGN plus USD price points in Play Console | Admin plan seed |
+| D7 | Fan memory default | **On**, with a notice at first chat; fan can view, delete or disable per Masana; sensitive categories never stored | memory extraction policy |
+| D8 | P2P MSN transfers | Off; code retained behind a disabled flag | Wallet scope |
+| D9 | TikTok and Meta app review | apply in R0; until approved use manual curated embeds only | Videos automation |
+
+## 11. Success definition
+The rebuild succeeds when there is:
+- one product, one ledger, one message authority, one migration registry, and clean feature-first modules with no reachable excluded routes
+- a real signed consumer APK and admin APK
+- the 12 Masana and real seed posts live in staging, with playable permitted external videos
+- a lone-student Room question answered
+- a paid entitlement verified with the store
+- reliable agent chat and calls
+- a Gwani case resolved with review
+- missions publishing exactly once after a worker restart
+- fan memory that is both recallable and erasable
+- costs within budget
+
+Mocks, builds, screenshots and skipped CI are **not** evidence of working features.

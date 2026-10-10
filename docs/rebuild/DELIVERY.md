@@ -1,79 +1,116 @@
-# Masanawa — Rebuild delivery, ownership, test and integration gates
-**The next window executes this plan; plans alone are not implemented work.** Baseline at planning date `main=7c443966be97e9092cbc1fb98562c75253434326`, refresh before coding. The existing blueprint PR #615 contains the reset; PR and open-branch metadata require latest inspection before merge. Source, deployed DB, signed APK and open PR work must not be lost.
+# Masanawa — Delivery plan, lanes, gates and merge discipline 1.1
+**This file is the only execution plan.** It replaces the earlier M0–M7 list, the manifest `todoOrder`, and all AF/U/F/C/RECOVERY numbering in active work. Old IDs survive only in the PR disposition table (§7). Planning is not implementation. Nothing is "done" without the evidence in §6.
 
-## Operating rules
-- **Preserve old app as donor, but not old focus.** Old guiding files/archives are deleted in the new baseline. Code and applied database migrations stay until a feature-first replacement passes tests and data reconciliation. No parallel greenfield source repository, premature monorepo-wide rename or bulk deletion.
-- **Exactly one integration baseline** and one AF00 owner for router/composition/migration registry/deploy triggers; independent feature paths require 5-min renewable exact-path claims through `factory/claims` and explicit transfers. A stale claim isn't unowned source until checked/reconciled.
-- **Prefer continuing existing substantive PRs.** New blueprint changes supersede old feature requirements: salvage generic transport, auth, memory, storage, safe finance, reliable composer, admin skeleton and audio; **do not merge old human-to-human chat/call, Twins, user-published Talks, paid owner access, live stages or green-theme UX**. Record unique useful code per PR then close obsolete PRs after verified cherry-pick, not by title.
-- Each window finishes one **end-to-end vertical milestone** with screens, contracts, API, DB/migrations, workers/retry, auth/security and tests together; fix relevant TypeScript/Vitest/Postgres/Flutter/Android failures and run real checks before merging. An isolated fix cannot be reported as milestone completion.
+Baseline at planning: `main = 7c443966be97e9092cbc1fb98562c75253434326`. Refresh before coding.
 
-## M0 — Source recovery / clean baseline / migration inventory (FIRST, not optional)
-[ ] Refresh repository main and existing open PRs, live claim ownership and latest run results.
-[ ] Copy/describe local Windows dirty/staged/untracked source and previously built APK signature/hash; reconcile unique user fixes before replacing overlapping source.
-[ ] Check Railway Git deploy triggers/startup migration hooks, existing database PG version/schema/history and object media storage, secret names (never secret values), backups; exercise staging restore first.
-[ ] Map old code modules to `REUSE | REPAIR | REPLACE | REMOVE` with exact owners and PR head SHAs. Explicitly reject obsolete product operations server-side; historical data retained.
-[ ] Merge the new canonical guidance after verifying docs-only change does not trigger unsafe deployment or violate branch checks. Mark deleted guidance paths absent in resulting tree.
-[ ] Establish **one non-deploying integration branch** and CI baseline; run available TypeScript, Vitest, PG18, Flutter and Android checks. Failed tests repaired/recorded; skipped/zero-step never PASS.
-**Gate M0:** no local loss, no stale guide as authority, migration/deploy risk known, runnable tests and owner map established.
+## 1. Principles
+1. **One vertical milestone per window.** A milestone ships the Flutter UI, admin screens, contracts, API, migrations, worker, authorization and tests for its journeys together. An isolated fix is not a milestone.
+2. **Freeze before build.** Excluded features are denied server-side in R0, before any new feature work, so they stop accumulating data and PR churn.
+3. **Lanes own paths, not themes.** Each lane owns exact directories (§3). Shared files belong to the integrator (AF00). This removes the main source of duplicate and conflicting work.
+4. **Reuse first.** Before writing new code, a lane checks the reuse map (SOURCE-CLEANUP §3) and open PRs (§7) for its domain.
+5. **Integrate continuously** into `integration/rebuild` (non-deploying). Promote to `main` only at gates, after reviewing the Railway deploy.
 
-## M1 — Canonical core and migration foundations
-[ ] Version schema/API for character IDs, fan accounts, role ACL, posts, Room membership/question/teacher replies, subscription plans/entitlements, agent-only messages/calls, original media, external video metadata, missions/fan memory/Gwani cases.
-[ ] Reuse authenticated PG18 adapter and migration registry, ledger and durable worker. Implement server denies for fan-created posts/Rooms/human chat or calls/clone actions at route and socket layers; remove obsolete UI routes and imports only after compatibility checks.
-[ ] Test fresh/upgrade PG migrations and historical balance invariants, role spoof, ID collisions, duplicate webhook/jobs, restart and restored database.
-**Gate M1:** one DB/service authority and both Flutter apps can use versioned published contracts.
+## 2. Milestone graph
+```text
+R0 Baseline & freeze ──▶ R1 Platform foundation ──┬─▶ L-SHELL ─┬─▶ L-CHAT ──────────────┐
+   (AF00, single)          (AF00 + L-PLATFORM)     │           ├─▶ L-FEED ──▶ L-MISSIONS ├─▶ R-CLEAN ─▶ R-RELEASE
+                                                   ├─▶ L-MASANA (seed, studio) ──┘        │
+                                                   ├─▶ L-VIDEO                            │
+                                                   ├─▶ L-ROOMS (free ▶ paid)              │
+                                                   ├─▶ L-GWANI                            │
+                                                   ├─▶ L-FIN                              │
+                                                   └─▶ L-ADMIN (shell, RBAC, ops) ────────┘
+```
+After R1, up to **six lanes run in parallel**. L-SHELL must land the shell and design tokens before other lanes merge UI into the router. Until it does, those lanes build screens behind their feature directory and run widget tests. L-MISSIONS starts once L-FEED's post model has merged.
 
-## M2 — Consumer shell, profiles and reliable Masana communication
-[ ] Implement clean 5-tab Flutter shell, blue semantic design tokens, light/dark, low-end Android, Hausa/English, typed nested navigation.
-[ ] Agent directory, 12-character display and full profile, follow/chat/call/Room buttons; no phonebook or human discovery.
-[ ] Fix chat composer Send/Mic/Stop separation, immediate local outbox, queue while streaming, debounced draft saves, voice note, media focus; only fan-to-Masana messages.
-[ ] Real supported Masana calls (not fake dialing) via qualified audio session and provider; test microphone/reconnect/unauthorized peer.
-**Gate M2:** J01-J04/J10 with Flutter UI+backend+device, no ghost human recipient.
+### R0 — Baseline & freeze (AF00 alone; blocks everything)
+- [ ] Refresh `main`, the open PRs (§7), `factory/claims`, CI state (Actions quota, PR #460) and local Windows dirty source. Record the APK hash and signer of the last built APK.
+- [ ] Inspect Railway: the Git source branch, the start command, whether `migrate.ts` runs on boot, the PG version and the applied `masanawa_schema_migrations` rows (owner, name, sha256). Verify the backup, then **restore into a disposable staging DB** and record the result.
+- [ ] Create `integration/rebuild` from `main`. Its CI runs typecheck, Vitest, the PG18 fresh+upgrade migration check, Flutter analyze/test for both apps and an APK build. Zero-step or skipped is **not** pass.
+- [ ] **Freeze:** a server-side feature-flag gate returns `410 feature_retired` for Twin/clone, human DM/contacts/calls, Talk stage/seats/gifts/polls, member Room or post creation, owner access and WhatsApp/Telegram bridging (D3). This covers REST, WS and job enqueue. Read-only access to the user's own historical receipts stays.
+- [ ] Apply the PR disposition (§7): close the excluded PRs with a salvage note, and rebase or re-target the keepers onto `integration/rebuild`.
+- [ ] Merge this blueprint PR (#615) after confirming that a docs-only merge to `main` triggers no unsafe deploy.
+- [ ] File the provider applications: TikTok Display API, Meta Page permissions, Play Console subscriptions (D1, D9).
 
-## M3 — Home Feed, external Videos, seeded agent media
-[ ] Extend existing published audio authority into platform-only original **text/image/audio** posts. Admin/worker publisher ACL, media artwork, character canon, follow/comment/react/save/readback and moderation.
-[ ] Home `Feed | Videos` with For You/Following feed state and one shared media focus.
-[ ] Admin video source CRUD and official YouTube WebSub + playlist reconciliation, safe Postgres metadata, review/moderation and official iframe within Flutter. TikTok account-authorized approval and Facebook Page capability are separately gated; manual permitted embed fallback if eligible, never false auto-sync.
-[ ] Deterministic **staging seed runner** for 12 Masana + 12 profession Rooms + 24 full original post fixtures, 12 Room intros, 12 QA demo questions; generate/license/attach real portrait/banner/cover/audio assets, check actual accessible URLs, no invented views/metrics. Sample JSON remains NOT_LIVE until actual DB insertion and media verification.
-**Gate M3:** real Android scroll/play/search/agent profiles; genuine YouTube channel import→embeddable clip works, duplicate/deleted/region-blocked event negative tests.
+**Gate R0:** restore proven, CI green or failures listed with owners, freeze tests J10 (partial) pass, PRs dispositioned, blueprint on `main`.
 
-## M4 — Global Masana-led Rooms and subscriptions
-[ ] Staff-admin professional Room CRUD and topic search; owner agent authoritative, global membership paginated, lesson announcements + threaded question/discussion.
-[ ] Teacher durable queued answers for one member and high volume; stable ID/retry, curriculum/memory retrieval, bounded spend, anti-spam, notifications and graceful failure.
-[ ] Room Free/Paid plans, per-currency price version, eligible Google Play Billing/payment rail, provider confirmation → entitlement, cancel/restore/price increase notice and moderation. Missing checkout eligibility blocks **paid activation**, not free Room teaching.
-**Gate M4:** real one-member lesson works; unauthorized content/expired paid access denied; meaningful simulated+permitted real provider tests.
+### R1 — Platform foundation (AF00 + L-PLATFORM)
+- [ ] Scaffold the packages `masana`, `feed`, `external-videos`, `rooms` and `moderation`, each with `migrations/0001_*.sql` following ARCHITECTURE §3/§4, and register them in `platformProductMigrationRoots()`. Add the duplicate-prefix CI check and the checksum-immutability check.
+- [ ] Add the `modules/index.ts` and `jobs/index.ts` append-only registries, the staff roles table plus a role middleware, and the agent autonomy table. Add `contracts` v1 DTO skeletons and Dart model generation.
+- [ ] Ship a `feature_flags` and kill-switch service (reusing an existing flags store if present) and an outbox job helper with lease, retry and dead-letter (built on `events.outbox`).
+- [ ] Write the seed runner skeleton (staging-gated with `MASANAWA_SEED_ALLOWED=staging`) and the e2e harness `tests/e2e/` with a PG18 fixture.
 
-## M5 — Rebuilt Android admin, missions, memory and Gwani moderation
-[ ] New phone-first Admin sections for agent identities/skills/photos/voice, original Post Studio, video channels, missions/calendar, Rooms/prices/renewals, fans/memory, moderation, finance and operations.
-[ ] Weekly goals/creative pivot/scheduling with durable queue, preview/review/publish once, per-agent/global budget/stop, cost and quality scorecard.
-[ ] Fan-specific long-term memory evidence/consent/erase, character canon, session and story continuity, no cross-fan leakage.
-[ ] Gwani case investigation spam/block/unblock/appeal with scoped reversible rules, human review for serious actions and audit.
-**Gate M5:** admin RBAC, mission persistence/recovery, memory cross-user negative tests, case appeal and role-restricted action verification.
+**Gate R1:** fresh and upgrade migrations pass on the restored snapshot, J10 complete, J19 skeleton passes, and lanes can start.
 
-## M6 — Wallet/Bills/Crypto/ops qualification
-[ ] Keep ONE canonical MSN/crypto/fiat/billing execution; direct dedicated Bills/Crypto screens without auto Chats redirect and Gwani as alternative same task.
-[ ] Current provider eligibility, quote/consent/confirmed receipt/uncertain transaction state, reconciliation and safe disabled feature flags.
-[ ] Deploy/load/backup/media restore and operational alerts, Android admin incident response and rollback.
-**Gate M6:** eligible financial provider tests with approved limits and zero double debit; no P2P/paid/crypto capability declared live without legal/provider approval.
+### Lanes (each = one or more windows; scope = the screens and journeys listed)
+| Lane | Screens | Journeys | Key work | Depends |
+|---|---|---|---|---|
+| L-SHELL | C01–C08, C20 shell, design system | J01 J02 J16 | five-tab router rewrite, blue tokens and assets, l10n, onboarding, disclosure, notifications centre, FCM | R1 |
+| L-MASANA | C24, A02–A04 | J18 | character revisions, media, voice profiles, follows, profile API, seed runner with real media | R1 |
+| L-CHAT | C10–C15 | J03 J04 | Masana-only chat on existing agent sessions, shared composer (salvage U10 #529/#530, CHAT-P04 #612), calls through presence and LiveKit (salvage AF05) | L-SHELL, L-MASANA |
+| L-FEED | C20–C26, A05–A06 | J06 | posts (extend AF09 #609 published-audio), comments, reactions, saves, counters, ranking, search | L-SHELL, L-MASANA |
+| L-VIDEO | C27–C29, A13–A14 | J14 J15 | sources and items, YouTube WebSub and reconcile, manual admission, official player WebView | L-SHELL |
+| L-ROOMS | C30–C36, A09–A12 | J07 J08 | rooms, membership, lessons, questions and teacher queue (salvage talk_questions, U06 #579), Play Billing and entitlements | L-SHELL, L-MASANA |
+| L-GWANI | C40–C43, A15 | J13 | cases, evidence, actions, appeals, Gwani tools, comment and discussion moderation hooks (salvage F08 #548) | R1 |
+| L-MISSIONS | A07, A08, A16 | J11 J12 | missions, slots, publish-once, budgets, autonomy L0–L2, fan memory extraction and controls | L-FEED |
+| L-FIN | C50–C54, A17 | J05 J09 | standalone Bills and Crypto screens on the existing commerce ledger (AF01 #607/#590, #576 gated), Gwani task parity | L-SHELL |
+| L-ADMIN | A01, A18, A19, admin shell | J19 | drawer shell, RBAC, overview, ops and kill switches, staff management | R1 |
+| L-PLATFORM | — | J10 J17 J20 | security negatives, restore and APK qualification (salvage the F11 and R16 gates), load and cost tests | R0 |
 
-## M7 — Integrated release
-[ ] Pin integrated source SHA, CI actual executed job steps and complete Flutter and backend tests; PG18 clean upgrade and exact operating production-safe migration.
-[ ] Build consumer+admin qualified APK, report hash/signature, real low-end Tecno-class device app smoke, voice/media, Home video embeds, free/paid Room, first-answer from lone fan, admin schedule, billing/cases/account switching.
-[ ] Restore full DB+media and rehearse rollback/upgrade, inspect Git-triggered Railway deploy, valid secrets, DNS, provider webhook keys, quotas, alerting, moderation queue.
-[ ] Stage deployment only when tests, provider permissions, billing compliance and owner-approved real financial operations are qualified. Claim `DEPLOYED_VERIFIED` only with real execution evidence.
-**Gate M7:** launch acceptance signed with exact SHA, real API/device/DB/operator proof; no skipped CI as PASS.
+**Lane gate:** every journey for the lane passes with recorded evidence (§6). The lane's legacy family is retired (SOURCE-CLEANUP §2), or a precise blocker and owner are recorded. Admin screens for the lane are included, so no separate admin backlog is left behind.
 
-## Actual test commands and evidence
-**Root** on required Node 24 / pnpm12: `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm test:ci`, `pnpm build`; inspect `package.json` and use scoped package scripts where necessary. PG18 clean+populated upgrade, queue/ledger/security/room subscription integration. **Flutter:** `cd apps/mobile && flutter pub get && flutter analyze && flutter test`, repeat `apps/admin_mobile`; perform Android Gradle/Flutter APK build with existing safe script/real device toolchain. GitHub Actions can run jobs, but review actual steps; 0 steps ≠ test pass. All commands against a pinned source SHA; don't deploy on partial PR merely to test a declaration.
+### R-CLEAN — Retirement sweep (AF00 + lane owners)
+For each legacy family, the lane that replaced it deletes the old routes, workers, Dart screens, tests, l10n keys and dependencies (SOURCE-CLEANUP §2). AF00 removes them from `app.ts`, `main.ts` and the router. A dependency-graph check (`pnpm -r why`, a Dart import scan) proves there are no consumers. Migrations stay. **Gate:** zero reachable excluded routes (J10 against the full route table), and the manifest shows every entry `done` or `retained-migration`.
 
-Record each check as `{sourceSHA, command, environment, result PASS|FAIL|NOT_RUN|BLOCKED, summary, logRef, owner}`. Source tests mocked/simulated vs genuine provider/device separately. Fix source errors fully and rerun before merge when possible. If runner unavailable, assign exact local/CI execution owner with command and do all implementable source; no false completion.
+### R-RELEASE — Integrated release (AF00 + L-PLATFORM)
+Pin the integrated SHA, then:
+- run full CI on that SHA and the PG18 fresh and upgrade migrations on a staging restore
+- build signed consumer and admin APKs and record their hashes and signers
+- smoke-test on a low-end Tecno-class device, covering J01–J20
+- rehearse the provider webhooks, quotas, alerts, a backup restore and a rollback
 
-## PR and merge discipline
-1. Audit current source/PR heads, conflicts, claim, unique working fixes. 2. Continue one feature PR or small noncompeting feature branch; do not duplicate AF00 root or provider authoritites. 3. Review exact head tests, security/data migration, main deploy triggers. 4. Merge compatible qualified work quickly into one **non-deploying shared integration baseline** (and main when safe). 5. Verify integrated tests and migration/Android on merged SHA. 6. Preserve recovery of any blocked work with precise next owner/action; never silently leave incomplete UI/API/migration/tests behind.
+Promote to `main` and to staging, then production, only after owner sign-off on D1–D9 and approval of financial operations. Claim `DEPLOYED_VERIFIED` only with real execution evidence.
 
-Only user-approved scope changes enter this blueprint; do not copy history into active docs as 'future ideas' just to keep them. Old plans are deleted; Git retains history for normal source provenance.
+## 3. Path ownership (the anti-duplication contract)
+| Owner | Exclusive paths |
+|---|---|
+| **AF00 integrator** | `apps/*/lib/src/app/**`, `apps/mobile/lib/src/router/**`, `services/gateway/src/{app,main,migrate}.ts`, `services/worker/src/{app,main}.ts`, `adapters/storage/postgres/src/{readiness,migrations}.ts`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.github/**`, `docs/rebuild/**` (product edits need owner approval) |
+| **Lane `X`** | `apps/mobile/lib/src/features/<x>/**`, `apps/admin_mobile/lib/src/features/<x>/**`, `services/gateway/src/modules/<x>/**`, `services/worker/src/jobs/<x>/**`, `packages/<x-package>/**`, `adapters/storage/postgres/src/<x>/**`, `tests/e2e/J##/**` for its journeys |
+| **Append-only shared** | `services/gateway/src/modules/index.ts`, `services/worker/src/jobs/index.ts`, `apps/*/lib/l10n/*.arb` (own key prefix `<lane>_`), `packages/contracts/src/index.ts` (one export line). Lanes add lines and never edit others' lines. |
+| **L-SHELL** | `apps/*/lib/src/shared/design/**`, Android launcher and splash assets |
+| **L-CHAT** | `apps/mobile/lib/src/shared/{media,transport}/**` (audio focus, composer) |
 
-## Initial CI baseline observation (actual GitHub run, not a pass)
-Documentation reset PR #615 triggered Foundation CI run [38056564479](https://github.com/abdudaura/Masanawa/actions/runs/38056564479) on 2026-10-10. Checkout, Node24/pnpm12 install and PostgreSQL18 service started, but TypeScript failed `packages/agents/src/talk-replay.test.ts(6,8) TS2459: TalkId declared locally in talk-replay.js but not exported`; Vitest, provider qualification checks and build were **SKIPPED**. Existing shared CI recovery PR #460 already changes the test import to `./talk-live.js` at its inspected head, and the fix must be integrated/tested by the active CI owners rather than copied into a competing source patch. Do not count this as a green source suite or deploy. Railway `masanawa-gateway` has Git source `abdudaura/masanawa` branch `main`, so **verify source/deploy behavior before merging the doc-only guidance reset into main**.
+Lane-to-directory names: shell→`account,notifications`, masana→`masana`, chat→`chats,calls`, feed→`home_feed`, video→`videos`/`external_videos`, rooms→`rooms,subscriptions,plans`, gwani→`gwani,moderation`, missions→`missions,fans_memory`, fin→`wallet,bills,crypto,finance`, admin→`overview,operations`.
 
-## Source-code decommission requirement (owner-requested)
-The guide cleanup alone does NOT clean the application. Mandatory source/route/import/test migration + exact path candidates are recorded in [SOURCE-CLEANUP.md](SOURCE-CLEANUP.md) and [SOURCE-CLEANUP-MANIFEST.json](SOURCE-CLEANUP-MANIFEST.json). M0 must assign owners and source evidence, M1 first disables forbidden legacy writes, M2–M5 replace UI/API/DB/services then remove old files and dependencies. No source feature may be called removed while its API remains callable. Applied financial migrations and historical records are not garbage. Do not misreport four deleted empty placeholder folders as full source cleanup.
+**Claims:** a window claims a whole lane (or one named milestone inside it) in `factory/claims` as `lane=<L-…> window=<id> branch=<…> head=<sha> expires=<UTC+5min>` and renews it. A claim older than 5 minutes may be taken over **only after** reading its PR head and posting a handoff comment. A second window on the same lane must take a disjoint sub-scope written in the claim (e.g. `L-ROOMS/paid`).
+
+## 4. Branching and merge
+- Branch names follow `lane/<lane>-<scope>-<yyyymmdd>-<window>`. Open one draft PR per lane milestone **against `integration/rebuild`**.
+- Before merge, the head SHA passes CI, the lane's journeys pass, migrations pass the checksum, fresh and upgrade checks, and a security review has covered the §5 checklist. AF00 merges with a squash or merge commit and re-runs CI on the integrated SHA.
+- Rebase daily on `integration/rebuild`. Conflicts in append-only files are resolved by keeping both lines.
+- `integration/rebuild` → `main` happens only at R0, R1, the lane gates and release. Each promotion requires reviewing the Railway auto-deploy, a backup and a migration dry-run on the restored snapshot.
+
+## 5. Per-PR checklist
+- [ ] UI states (SCREENS §1), l10n ha/en, dark mode, accessibility goldens
+- [ ] contracts versioned, API authz negatives (403 and 410), idempotency on writes
+- [ ] migrations follow tenant and composite keys, are forward-only and pass the three checks
+- [ ] worker jobs are lease-safe, retry with backoff, dead-letter and respect budgets and kill switches
+- [ ] admin screens for the domain are included, with RBAC and audit
+- [ ] reuse noted; legacy files for the family removed or listed with blocker
+- [ ] evidence records (§6) attached to the PR
+
+## 6. Commands and evidence
+- **Root** (Node 24, pnpm 12): `pnpm install --frozen-lockfile && pnpm typecheck && pnpm test:ci && pnpm build`. Run PG18 migrations with `pnpm --filter @masanawa/postgres test` plus the fresh and upgrade scripts (add in R1 if missing).
+- **Flutter:** `cd apps/mobile && flutter pub get && flutter analyze && flutter test`, then the same for `apps/admin_mobile`. APK: `flutter build apk --release` with the existing signing setup. Integration tests use `flutter test integration_test` on a device or emulator.
+- Record every check as `{sourceSHA, command, environment, result: PASS|FAIL|NOT_RUN|BLOCKED, summary, logRef, owner}`. Mocked or simulated provider tests are labelled separately from real provider or device tests.
+
+**Known CI state at planning:** Foundation CI run 38056564479 on #615 failed typecheck at `packages/agents/src/talk-replay.test.ts(6,8) TS2459`. Vitest and build were SKIPPED. #460 (shared CI recovery and Actions quota) carries the fix and is owned by AF00 in R0. Do not duplicate it.
+
+## 7. Open PR disposition (from titles and branches on 2026-10-10; verify the touched paths before acting)
+| Action | PRs |
+|---|---|
+| **Keep → retarget to `integration/rebuild`** | #460 CI recovery (R0) · #613 factory/claims · #600 five-tab nav and #552 five-tab guard (L-SHELL: update to the new tab set) · #586 deep-link authority · #597 neutral launch · #588 auth revocation · #547 contrast guards (re-token to blue) · #542 l10n integrity · #574 bidi · #565 profile text guard · #539 onboarding low-end (L-SHELL) · #612 Gwani text-before-audio · #534 Gwani voice continuity · #580 durable task journal (L-GWANI/L-FIN) · #602 #591 #589 PCM/live voice recovery (L-CHAT calls) · #587 local chat clear (L-CHAT) · #609 published-audio posts (L-FEED) · #606 #604 notification state and activity recovery (L-SHELL) · #607 #590 ledger and billing settlement (L-FIN) · #576 MSN crypto wallet (L-FIN, flag-gated) · #599 orphan cleanup and S3 delete (L-PLATFORM) · #596 evidence gate (L-PLATFORM: rewrite to J01–J20) · #527 #570 #569 #567 #566 #563 #561 #559 #557 #555 #554 release, restore, APK and secret gates (L-PLATFORM: consolidate into one qualification suite) |
+| **Salvage the named parts, then close** | #593 Masana directory (keep the directory, drop Contacts) · #545 persona provisioning (adapt to the 12 seed Masana) · #579 U06 teaching checkpoints → Rooms · #548 comment visibility filtering → Feed/Gwani · #530 #529 composer idempotent send → shared composer · #582 #543 replay SQL and consent patterns → Feed audio · #581 #536 #535 #577 copilot authority and HTTP authz patterns → agent tools · #549 live-session grant validation → calls · #571 cache isolation → account switch · #614 window-closure rules (folded into this file) |
+| **Close without merge (excluded scope)** | #578 #575 human calls · #537 human DM notifications · #533 human media · #531 human DM search · #546 Twin economics · #538 Twin training |
+
+Each closure gets a comment covering the reason, the salvaged commit SHAs and where they landed.

@@ -1,98 +1,135 @@
-# Masanawa — Complete screen and interaction register
-**Binding UX target as of 2026-10-10.** End-to-end interaction states are mandatory, even when a UI is visually simple. This register replaces all older Talks/Contacts/Twin/creator screen plans.
+# Masanawa — Screen, interaction and journey register 1.1
+**Binding UX target, revised 2026-10-10.** This replaces all Talks, Contacts, Twin and creator screens. Every screen lists its owner lane (DELIVERY §3) and its API (ARCHITECTURE §11). A screen is done only when its UI, API, DB, worker and tests all exist and its journey passes.
 
-## Design system and shared patterns
-- **Brand:** one semantic Masanawa blue family plus navy/neutral white; green reserved for confirmed success, orange warning/red error. Replace legacy WhatsApp greens centrally in mobile/admin token packages, app launch and artwork. One logo, consistent typography, modest elevation/radii, dark theme, min accessible touch targets. Test color contrast and Hausa/English text wrapping on low-end Android.
-- **Shell:** five bottom items Chats, Rooms, **Home center/default**, Gwani, Wallet. Home has two clearly visible inner tabs **Feed | Videos**. Do not add Billing/Crypto or Calls as sixth root item. Account profile/settings from header or avatar.
-- **Chat composer:** one TextField with attachment `+` outside field; action Mic when truly empty, Send when text/file staged, **even during agent response**; Stop response is a bubble/header action, not a replacement for Send. Focus/keyboard stable; recording preview/lock/cancel; persist debounced drafts, instant local bubble before network; queue subsequent turns, stable idempotency. One audio-focus owner shared with playback/voice calls.
-- **Every screen** has actual loading, empty, error, permission-denied, offline, retry, stale/conflict, account switch, long text, low-memory and accessibility states. All rights checked server-side, not merely disabled buttons.
+## 1. Design system (`apps/*/lib/src/shared/design`, owner L-SHELL)
+- **Colour tokens:**
 
-### Entry/account (C01–C07)
-| ID | Screen | Controls / follow-on | Gate |
-|---|---|---|---|
-| C01 | Splash and session | neutral blue/white logo, restore signed-in session, deep link | expired/revoked session; no debug token |
-| C02 | Welcome/register/login | language, email/phone eligible login, show/hide credential, Submit/recovery | phone ownership not implied by numeric password |
-| C03 | Recovery and verification | permitted methods, resend countdown, new credential and session revoke | account-scoped, rate-limited |
-| C04 | Fan setup | display name, avatar optional, interests/languages, Skip/Save | no phonebook permission |
-| C05 | My account/profile | following Masana, joined Rooms, saved posts, transactions/subscriptions, Settings | never an external user creator profile |
-| C06 | Settings & privacy | language/theme, mic/notification, follower-memory disable/view/delete, muted/blocked Room/agents | per-user/account authorization |
-| C07 | Support/account lifecycle | Gwani support case, appeal, export/delete, logout all devices | preserve transaction retention & audit |
+| Token | Value | Use |
+|---|---|---|
+| `primary` | `#1E63D6` (Masanawa blue) | main actions, active tab |
+| `primary-strong` | `#174EA8` | pressed/headers |
+| `navy` | `#0E1B33` | dark surfaces, text on light |
+| `neutral` | `#FFFFFF` / `#F4F6FA` / `#5B6578` | surfaces, secondary text |
+| `success` | green | **only** for confirmed success |
+| `warning` | orange | warnings |
+| `error` | red | errors |
 
-### Chats and calls (C08–C14)
-| ID | Screen | Controls / follow-on | Gate |
-|---|---|---|---|
-| C08 | Masana Chats | agent list, unread, search, favorite, start chat, recent agent call | **no human result** |
-| C09 | Masana discovery | profession/skill/language/topic/name search, profile, Chat/Call | platform agents only |
-| C10 | Agent DM | avatar/role, messages, reply, share media, normal composer, voice note, quote/receipt | fan↔Masana only, immediate ACK/queue |
-| C11 | Attachment/voice composer | gallery/document/record, preview/trim/cancel/retry/send | no public user-post upload |
-| C12 | Message actions | reply, copy, delete own, report, receipt link | no forward-to-human chat |
-| C13 | Call initiating | agent profile/button, mic permission, availability, connect, cancel | live agent voice service required |
-| C14 | Call active | mute, speaker, end, reconnect, elapsed, failure | no human peer, no fake media connection |
+  The Masana seed `primaryAccent` (e.g. `#356FBD`) tints only that agent's profile banner and room cover. Old green tokens, the green launcher icon and the green splash are removed.
+- **Type and layout:** one sans family (current app font if licensed, otherwise Noto Sans for Hausa coverage). Use a 4-pt spacing scale, radius 12/16, 48 dp minimum touch targets, WCAG AA contrast enforced by golden tests, dark mode, and text scaling to 200% without clipping. Hausa and English strings come from ARB files with no hard-coded copy.
+- **Shell:** five tabs `Chats · Rooms · Home(centre, default) · Gwani · Wallet`, with Home's inner `Feed | Videos` segmented tabs and a remembered selection. There is never a sixth root. The avatar in the Home header opens Account.
+- **Composer** (shared widget, owner L-CHAT): attach `+` sits outside the field. The trailing button is **Mic** when empty and **Send** when there is text or an attachment, including while the agent streams. **Stop** is a chip on the streaming bubble. Hold-to-record supports lock, cancel and preview. Drafts persist per conversation (debounced 500 ms). Local bubbles appear instantly with `sending → sent → failed(retry)`. One audio-focus owner is shared by voice notes, posts, videos and calls.
+- **Mandatory states on every data screen:** loading skeleton, empty with CTA, error with retry, offline (cached read plus queued writes), permission denied, feature disabled by flag, stale or conflict, account switched (cancel in-flight and clear the projection), long text, and RTL-safe identifiers.
 
-### Home (C15–C24)
-| ID | Screen | Controls / follow-on | Gate |
-|---|---|---|---|
-| C15 | Home shell | **Feed / Videos** tabs, search/notifications; selected tab preserved | Feed default, root Home default |
-| C16 | Feed For You | mixed-height Masana text/image/audio; follows, comments, reactions, save, share | original platform publisher only |
-| C17 | Feed Following | only followed agent updates with empty CTA | no human public content |
-| C18 | Post detail/comments | media display, human comments/replies, report, author profile | fan can comment but cannot publish post |
-| C19 | Masana profile | distinctive portrait/banner/story, talents, skills, goals, posts by type, **Follow Chat Call Room** | versioned canon; one agent ID |
-| C20 | Saved posts | list, search, re-open, unsave, resume audio | account fenced |
-| C21 | Media viewer | image zoom; audio cover/seek/transcript and focused listen | single audio focus |
-| C22 | **Videos** | externally hosted clips, provider/category filters, poster, creator attribution, Save Share Report | no video file hosting |
-| C23 | Official embed player | inline/fullscreen, one player, provider controls, source link, pause on exit | YouTube/TikTok/Facebook qualified player; fallback |
-| C24 | Explore search | Masana, Rooms, topics, public Home posts, permitted external videos | no human contact directory |
+## 2. Consumer screens
+### Entry and account — L-SHELL
+| ID | Screen | Controls | API | Gate |
+|---|---|---|---|---|
+| C01 | Splash | blue logo, session restore, deep-link resume | `GET /v1/me` | revoked session → C02; no debug tokens |
+| C02 | Welcome / sign-in / sign-up | language, phone or email OTP, age confirmation (D2) | existing auth | rate-limited; age gate |
+| C03 | Recovery | resend countdown, re-verify, revoke other sessions | existing auth | account-scoped |
+| C04 | Fan setup + AI disclosure | display name, optional avatar, interests, languages, **one-time Masana disclosure** (BLUEPRINT §9), suggested Masana to follow | `PATCH /v1/me`, follow | no contacts permission ever requested |
+| C05 | Account | following, joined Rooms, saved, subscriptions, Wallet link, Settings | `GET /v1/me` | no public fan profile |
+| C06 | Settings & privacy | language, theme, notifications per category, **memory per Masana (view/delete/disable)**, muted comments | `/v1/me/memory` | own data only |
+| C07 | Account lifecycle | export, delete (anonymises comments), sign out all devices, open Gwani support | existing deletion | ledger retention kept |
+| C08 | Notifications | replies to my comments, Room answers, new posts from followed (digest), subscription and wallet events, case updates | `GET /v1/notifications` | deduped; no human-to-human events |
 
-### Professional Rooms (C25–C31)
-| ID | Screen | Controls / follow-on | Gate |
-|---|---|---|---|
-| C25 | Rooms directory | Explore/Joined, topic/language/Free/Paid filters, search, owner + Join | no New Room button |
-| C26 | Room preview | profession cover, lessons and rules, owner profile, member count, free/price term | restricted message history hidden |
-| C27 | Room detail | Lessons/Announcements, Questions, moderated Discussion, pinned FAQ and ask | fan membership required |
-| C28 | Question and answer | one member's question, Masana teacher answer, follow-up, report, queued states | even lone member triggers durable answer |
-| C29 | Free join/leave | Join, mute, Leave, Rejoin | server membership ACL |
-| C30 | Paid join | plan, amount, currency, term, price version, Play-compliant checkout, success/pending | verified external receipt entitles reads |
-| C31 | My subscriptions | renewal date, cancellation, price notice/consent, grace/refund support | price change not retroactive |
+### Chats and calls — L-CHAT
+| ID | Screen | Controls | API | Gate |
+|---|---|---|---|---|
+| C10 | Chats list | Masana conversations, unread, pin, search; empty state suggests Masana | `GET /v1/chats` | Masana only; Gwani → Gwani tab |
+| C11 | Find Masana | search by name, profession, skill, language; profile; Chat; Call | `GET /v1/masana` | platform agents only |
+| C12 | Conversation | messages, reply, image/doc/voice note, shared composer, Stop, retry | `POST …/messages`, WS | fan↔Masana; idempotent |
+| C13 | Message actions | reply, copy, delete own (local and server), report | `POST /v1/cases` | no forward |
+| C14 | Call connecting | mic permission, availability, cancel, disclosure line | `POST /v1/calls` | qualified voice only; quota |
+| C15 | Call active | mute, speaker, end, reconnecting, elapsed, budget warning | LiveKit | real media only |
 
-### Gwani, Wallet and Billing/Crypto (C32–C43)
-| ID | Screen | Controls / follow-on | Gate |
-|---|---|---|---|
-| C32 | Gwani | chat + quick actions Support, Spam, Complaint, Appeal, Bills, Learning, Wallet | case and task are durable |
-| C33 | Report / complaint | select post/comment/Room/transaction, evidence, submit | authorized evidence only |
-| C34 | Case status / appeal | reference, investigation events, action and appeal request | sensitive enforcement gated |
-| C35 | Wallet overview | MSN available/pending/reserved, eligible crypto assets, transactions, Subscriptions/Bills/Crypto | canonical ledger |
-| C36 | Bills home | Airtime/Data/Electricity/TV tiles, repeat purchase, history | independent page; never auto Chat |
-| C37 | Bill product | provider catalog, recipient/meter/plan/amount, validation, draft | server capabilities, task revision |
-| C38 | Bill review/status | exact amount/fees, authorize, pending/failure/receipt/recovery | dedupe and reconciliation |
-| C39 | Crypto overview/asset | eligible assets/networks, Receive/Send/Convert/Buy, holdings | not a chat redirect |
-| C40 | Crypto deposit/receive | address/network/memo/QR, confirmations and credit status | provider truth |
-| C41 | Crypto convert | quote, expiry, review, processing and receipt | atomic amounts |
-| C42 | Crypto transfer/withdraw | recipient/address/network, fees, step-up, status | denied unsupported chains, no duplicate payout |
-| C43 | Wallet activity/detail | immutable time, asset, quote/operation, provider, final status, help | user-private receipt |
+### Home — L-FEED (C20–C26), L-VIDEO (C27–C29)
+| ID | Screen | Controls | API | Gate |
+|---|---|---|---|---|
+| C20 | Home shell | Feed/Videos tabs, search, notifications bell | — | Feed default |
+| C21 | Feed (For You / Following) | mixed-height text, image and audio cards; react, comment, save, share, report; author tap → profile | `GET /v1/feed` | Masana posts only; no post button |
+| C22 | Post detail | full media, comment thread with replies, sort, report, author | `/v1/posts/:id`, comments | new-account comments pre-moderated |
+| C23 | Media viewer | image carousel and zoom; audio player with seek, speed, transcript, background play | signed media | single audio focus |
+| C24 | Masana profile | banner, portrait, name, profession, bio, life story, talents, languages, goals, posts by kind, Room card, **Follow · Chat · Call · Room** | `/v1/masana/:id` | approved revision only |
+| C25 | Saved | saved posts and saved videos, unsave, resume audio | `/v1/saved` | account-fenced |
+| C26 | Search | tabs Masana · Rooms · Posts · Videos | `/v1/search` | no human results |
+| C27 | Videos | provider filter chips, grid/list, channel attribution, save, share, report | `GET /v1/videos` | approved, embeddable items only |
+| C28 | Video player | official embed inline or fullscreen, provider controls, *Open in {provider}*, next | — | one player; pause on exit, call or background |
+| C29 | Video unavailable | removed, region-blocked or not embeddable → open at source or back | — | never a broken player |
 
-### Android Admin (A01–A18)
+### Rooms — L-ROOMS
+| ID | Screen | Controls | API | Gate |
+|---|---|---|---|---|
+| C30 | Rooms | Discover/Joined, filters (topic, language, Free/Paid), search | `GET /v1/rooms` | **no Create button** |
+| C31 | Room preview | cover, profession title, teacher card, rules, sample lesson, member count, Free/price chip, Join/Subscribe | `GET /v1/rooms/:id` | paid content hidden |
+| C32 | Room home | tabs Lessons · Questions · Discussion, pinned FAQ, Ask button, mute, leave | lessons, questions, discussion | membership or entitlement |
+| C33 | Ask question | text (with optional image), duplicate suggestions before submit, quota remaining | `POST …/questions` | rate-limited; idempotent |
+| C34 | Question thread | status chip queued/answering/answered/needs staff, teacher answer, follow-up, helpful, report | — | lone member still answered |
+| C35 | Subscribe (paid) | plan, price, currency, period, price version, terms, Play Billing sheet, pending, success | `…/subscription/verify` | server-verified only |
+| C36 | My subscriptions | status, renewal date, manage in Play, price-change notice and consent, grace banner | `GET /v1/subscriptions` | not retroactive |
+
+### Gwani — L-GWANI
+| ID | Screen | Controls | API | Gate |
+|---|---|---|---|---|
+| C40 | Gwani home | chat plus quick actions: Help · Report · My cases · Bills · Wallet · Learn | `/v1/gwani/messages` | durable tasks |
+| C41 | Report | pick target (post, comment, Room reply, video, transaction, account), category, details, attach | `POST /v1/cases` | evidence limited to reporter's access |
+| C42 | Case detail | ID, timeline, outcome, Appeal | `/v1/cases/:id` | owner only |
+| C43 | Service task card (in chat) | exact quote, confirm, open dedicated review screen, receipt | commerce | same task as C51/C53 |
+
+### Wallet, Bills and Crypto — L-FIN
 | ID | Screen | Controls | Gate |
 |---|---|---|---|
-| A01 | Overview | agent/worker/room/content/case/budget/financial health | scoped admin metrics |
-| A02 | Masana directory | search/add/edit/pause, profession, count | admin |
-| A03 | Character editor | name, portrait/banner, bio/life story, voice, skills, character relationships | versioned canon |
-| A04 | Agent preview/test | profile/feed/voice/call rehearsal without public publish | staging/preview |
-| A05 | Original post studio | text/image/audio drafts, covers, playback, schedule, approve/revise | admin or worker, no fan post |
-| A06 | Editorial queue | incoming, due, review, published, failed, takedown | idempotent post ID |
-| A07 | Weekly missions | goals, focus pivot, timezone, quotas/approval/budget | versioned/authorized |
-| A08 | Calendar/results | scheduled slots, mission completion, spend, retries, audience feedback | actual metrics |
-| A09 | Global Rooms | create/edit/assign Masana, name by profession, language, curriculum, pause | staff only |
-| A10 | Room teacher console | questions, queued teacher replies, announcements, pin/approve/moderate | room-specific ACL |
-| A11 | Room plans/prices | Free/Paid, currency/amount/period, effective future date, preview | version/notice |
-| A12 | Subscriptions/entitlements | active/grace/cancel/refund, provider status and issue | store/ledger truth |
-| A13 | External video sources | platform, channel ID/URL, authorized sync method, connect/enable/pause | no arbitrary script |
-| A14 | Imported videos | latest, approved/hidden/deleted, errors/quota, sync now, source detail | no forbidden scraping |
-| A15 | Gwani moderation cases | evidence, spam rules, reversible action, review, ban/unban and appeal | auditable sign-off |
-| A16 | Fans/memory | per-agent follower insights, limited fan memory inspector, edit/erase policy | no cross-fan leakage |
-| A17 | Finance/Services | provider states, pending orders, ledger reconciliation, Room payments | segregated finance roles |
-| A18 | Operations/settings | worker leases, providers, alerts, flags, backups, build/version, rollback | restricted credentials |
+| C50 | Wallet | MSN available/pending/reserved, crypto assets, activity, shortcuts Bills · Crypto · Subscriptions | canonical ledger |
+| C51 | Bills home → product → review → status | Airtime, Data, Electricity, TV; recipient or meter validation; quote with expiry; authorize; pending, receipt, recovery | never auto-opens Chats |
+| C52 | Crypto overview / asset | eligible assets and networks, Receive, Buy (eligible), Convert, Withdraw | flags per eligibility |
+| C53 | Receive / Convert / Withdraw | address + network + memo + QR; quote, expiry, review; step-up, fees, status | provider truth; no duplicate payout |
+| C54 | Activity detail | immutable receipt, provider reference, help → Gwani case prefilled | user-private |
 
-## Real journeys (17 executable assertions)
-J01 auth/signup/session recovery; J02 five-tab/Home Feed and Videos deep-link/resume; J03 Masana DM offline+concurrent agent reply+Send available; J04 voice note and optional agent real call; J05 Gwani bill via menu/voice or direct Bills with same quote/receipt; J06 admin-approved Masana text/image/audio post -> fan follow/react/comment readback; J07 staff Room + lone fan question -> owner response; J08 free/paid Room plan and store/eligibility price-change/renewal/revoke; J09 crypto fund/convert/withdraw eligible service with retry/receipts; J10 member forged human chat/call/post/Room creation all rejected at server; J11 fan-specific agent recall and opt-out/deletion; J12 agent missions/publish once after worker restart; J13 Gwani spam case investigation/action/review/appeal; J14 YouTube upload -> verified provider ingest -> Videos screen official playback; J15 TikTok/Meta permission denied -> explained manual qualified embed or not listed; J16 account switch cancels old media/drafts/subscription projection; J17 restored PostgreSQL+objects/outbox/media+APK on low-end real phone, Railway staging/rollback and cost bounds.
+## 3. Admin screens (role in brackets)
+| ID | Screen | Controls | Lane |
+|---|---|---|---|
+| A01 | Overview [any] | health tiles: workers, queues, Room answer age, sync lag, cases SLA, budgets, entitlement errors, financial alerts | L-ADMIN |
+| A02 | Masana list [content_editor] | search, status, pause, autonomy level | L-MASANA |
+| A03 | Character editor | bible sections, revision diff, media (rights note), voice preview, relationships, approve | L-MASANA |
+| A04 | Agent sandbox | chat, call and post rehearsal against a draft revision, never public | L-MASANA |
+| A05 | Post studio | text, image or audio draft, generate or upload approved media, preview as card, schedule | L-FEED |
+| A06 | Review queue | due, in review, scheduled, published, failed, taken down; approve, revise, take down | L-FEED |
+| A07 | Missions | weekly objective, slots, format mix, budget, autonomy level, pause | L-MISSIONS |
+| A08 | Calendar & scorecard | slot timeline, run states, retries, spend, measured engagement | L-MISSIONS |
+| A09 | Rooms [room_manager] | create, edit, assign teacher or co-host, languages, curriculum (skills), pause, archive | L-ROOMS |
+| A10 | Room console | question queue (state, age), staff answer or approve, announcements, pin FAQ, moderation | L-ROOMS |
+| A11 | Plans & prices [pricing_manager] | Free/Paid, price versions mapped to Play products, effective date, subscriber impact preview | L-ROOMS |
+| A12 | Entitlements | search by fan or Room, provider status, re-verify, history | L-ROOMS |
+| A13 | Video sources | provider, channel ID or URL, mode auto/manual, authorization status, enable/pause, sync now | L-VIDEO |
+| A14 | Video items | pending, approved, hidden, unavailable; approve or hide; errors; quota | L-VIDEO |
+| A15 | Moderation [moderator] | case queue by SLA, evidence, Gwani proposal, approve/reject action, ban/unban (dual approval), appeals | L-GWANI |
+| A16 | Fans & Memory [fan_data_officer] | per-Masana aggregates; individual memory only with purpose and audit; erase | L-MISSIONS |
+| A17 | Finance & Services [finance_operator] | provider states, pending orders, reconciliation, refunds (approval), subscription revenue | L-FIN |
+| A18 | Operations [ops_admin] | flags, kill switches (posting, teaching, imports, calls, paid joins), job leases, dead letters, budgets, version, backups | L-ADMIN |
+| A19 | Staff & roles [super_admin] | invite staff, assign roles, 2FA status, audit log | L-ADMIN |
 
-Complete implementation of a journey means full Flutter/admin -> typed authenticated API -> canonical Postgres/worker/provider -> durable readback and negative/operational evidence, not a static screen screenshot.
+## 4. Journeys (executable acceptance, J01–J20)
+Each journey is a test under `tests/e2e/J##/`. A journey is either backend-integration against PG18 or a Flutter integration test on device or emulator. Evidence is recorded as DELIVERY §6.
+
+| ID | Journey | Lane |
+|---|---|---|
+| J01 | sign-up with age gate, disclosure, follow suggestions, session restore after kill | L-SHELL |
+| J02 | five tabs, Home Feed/Videos switching, deep link to post, Room and video, back-stack integrity | L-SHELL |
+| J03 | Masana chat offline → reconnect, Send while streaming, queued turns, idempotent retry | L-CHAT |
+| J04 | voice note round-trip; real Masana call connect/mute/end; quota stop | L-CHAT |
+| J05 | Bills purchase directly **and** via Gwani yields the same quote, task and receipt; no Chats redirect | L-FIN |
+| J06 | admin drafts → approves text, image and audio posts → fan sees them, reacts, comments, saves; counters update | L-FEED |
+| J07 | staff creates Room → single fan joins → asks → teacher answer delivered and notified | L-ROOMS |
+| J08 | paid Room: Play test purchase → verify → access; cancel → grace → expire → denied; price change with notice | L-ROOMS |
+| J09 | crypto receive, convert and withdraw on the eligible sandbox with retry and receipts; no double debit | L-FIN |
+| J10 | forged requests (human DM or call, post create, Room create, Twin, gift, paid read, role spoof) all 403/410 at REST, WS and job layers | L-PLATFORM |
+| J11 | fan memory: recall in a later session; view; delete one or all; disable; no cross-fan recall | L-MISSIONS |
+| J12 | mission publishes exactly once across a worker kill and restart; over-budget refusal | L-MISSIONS |
+| J13 | spam report → Gwani proposes → reversible auto action → staff approves ban → appeal → reverse | L-GWANI |
+| J14 | YouTube upload → WebSub → ingest → approve → official player plays; deleted video → unavailable | L-VIDEO |
+| J15 | TikTok/Meta without permission → manual admission or rejection; never auto-scraped | L-VIDEO |
+| J16 | account switch cancels audio, video, calls and drafts and clears projections | L-SHELL |
+| J17 | restore PG and objects into staging; migrations upgrade; APK on a low-end device; rollback | L-PLATFORM |
+| J18 | 12 Masana, 12 Rooms, 24 posts seeded idempotently twice on staging; media verified | L-MASANA |
+| J19 | admin RBAC: each role denied outside scope; audit entries written | L-ADMIN |
+| J20 | load profile (ARCHITECTURE §8) within latency and cost budgets | L-PLATFORM |
