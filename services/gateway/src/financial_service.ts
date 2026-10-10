@@ -1,5 +1,6 @@
 import { assertPayoutEvidence, parseVerifiedPayoutIpn } from "./financial_payout_evidence.js";
 import { admitFiatOnRampEvidence } from "./financial_onramp_evidence.js";
+import { assertFiatOnRampFinishedFunded } from "./financial_audio_first/onramp_paid_guard.js";
 import { admitPaymentEvidence } from "./financial_payment_evidence.js";
 import { assertFinancialReplay, type FinancialReplayTerms } from "./financial_replay.js";
 import {
@@ -1111,6 +1112,7 @@ export function createFinancialService(input: {
         fiatCurrency: intent.asset,
         settlementAsset: intent.targetAsset,
       });
+      assertFiatOnRampFinishedFunded(evidence);
       if (
         intent.providerPaymentId !== null &&
         evidence.paymentId !== intent.providerPaymentId
@@ -1492,6 +1494,7 @@ export function createFinancialService(input: {
           fiatCurrency: intent.asset,
           settlementAsset: intent.targetAsset,
         });
+        assertFiatOnRampFinishedFunded(evidence);
         return input.crypto.applyProviderPaymentEvent({
           tenantId: auth.tenantId,
           userId: auth.userId,
@@ -1602,6 +1605,7 @@ export function createFinancialService(input: {
           fiatCurrency: intent.asset,
           settlementAsset: intent.targetAsset,
         });
+        assertFiatOnRampFinishedFunded(admitted);
         const event: CryptoProviderPaymentEvent = {
           paymentId: admitted.paymentId,
           invoiceId: admitted.invoiceId,
