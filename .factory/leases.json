@@ -340,7 +340,12 @@
       "claimed_at": "2026-10-10T05:00:00.000Z",
       "heartbeat_at": "2026-10-10T05:02:25.045Z",
       "expires_at": "2026-10-10T05:07:25.049Z",
-      "notes": "No composer/feed/library/social SQL/AF00 root/native/provider changes; existing PR only."
+      "notes": "No composer/feed/library/social SQL/AF00 root/native/provider changes; existing PR only.",
+      "released_at": "2026-10-10T05:05:09.316Z",
+      "release_reason": "Same existing PR #609 playback Dart compile corruption repaired at 9858560b; validated UUID regression source at e1c032ed; finite 14-row closure d9e87a3d; readback structural only, Node/Flutter/PG actual suites NOT_RUN. No central main document add/add edit. AF00 #600 bounded transfer comment 6094037572; AF09 #609 checkpoint comment 6094036160. Remaining source and integration not complete; do not request local pull.",
+      "source_head_sha": "d9e87a3d193c96c3d2bbe2bc67e1683da9305127",
+      "integration_head_sha": null,
+      "test_state": "Source blob readback and structural one-class assertions only; pnpm/flutter/psql unavailable (127), Git clone DNS failure (128); actual repo tests NOT_RUN."
     },
     {
       "claim_id": "af09-609-processing-checkpoint-gpt6-0603",
