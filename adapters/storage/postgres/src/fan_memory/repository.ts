@@ -45,7 +45,7 @@ export function createPostgresFanMemoryStore(pool:Pool){
    await c.query("BEGIN");const o=await owner(c,p,ch,true);
    if(!o||Number(o.revision)!==expectedRevision){await c.query("ROLLBACK");return null;}
    const r=await c.query<{revision:string}>(`INSERT INTO memory.fan_controls(tenant_id,relationship_id,enabled,revision)
-     SELECT $1,$2,$3,1 WHERE $4=0
+     VALUES($1,$2,$3,1)
      ON CONFLICT(tenant_id,relationship_id) DO UPDATE SET
       enabled=EXCLUDED.enabled,revision=memory.fan_controls.revision+1,changed_at=clock_timestamp()
      WHERE memory.fan_controls.revision=$4 RETURNING revision::text`,
