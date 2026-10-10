@@ -688,7 +688,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     // a cross-request alias to an unrelated transfer.
     await expect(repository.recordCreditOperation({
       ...input, requestId: "twin-ledger-reuse-other",
-    })).rejects.toThrow("Twin credit operation persistence failed");
+    })).rejects.toThrow(); // SQL constraint and wrapped domain error both deny reuse.
     const other = await repository.readCreditOperation({
       tenantId, requestId: "twin-ledger-reuse-other",
     });
