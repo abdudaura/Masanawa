@@ -480,6 +480,25 @@
       "heartbeat_at": "2026-10-10T07:59:47.530Z",
       "expires_at": "2026-10-10T08:04:47.530Z",
       "notes": "AF09 claim from #609 released earlier. Copy only exact proven canonical type import from existing #609/#460 onto #580 for repo typecheck and test execution. AF00 root protected.; additionally adopt already-authored AF09/#460 strict type fix for account deletion integration test `requestId: string` to allow U02 focused tests; previous AF09 claim released."
+    },
+    {
+      "claim_id": "af13-pr460-flutter-analyzer-standalone-20261010-gpt6",
+      "owner": "GPT-6 AF13 CI qualification / existing PR #460",
+      "scope": "Remove five executable Flutter analyzer warnings in independent transport/widget-test files; preserve AF00 router/chat authority.",
+      "paths": [
+        "apps/mobile/lib/src/social/own_profile_transport.dart",
+        "apps/mobile/test/owner_access_http_transport_test.dart",
+        "apps/mobile/test/talk_direct_twin_http_transport_test.dart",
+        "apps/mobile/test/twin_directory_http_transport_test.dart",
+        "apps/mobile/test/talk_screen_test.dart"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T08:00:41.580Z",
+      "heartbeat_at": "2026-10-10T08:00:41.580Z",
+      "expires_at": "2026-10-10T08:05:41.580Z",
+      "notes": "Real Actions 38035943605 analyzer failed with 8 warning issues. Other three protected AF00 paths require a bounded transfer."
     }
   ],
   "history": [
