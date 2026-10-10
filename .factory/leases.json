@@ -1046,6 +1046,22 @@
       "release_reason": "Closed duplicate PR #617 without merge after readback proved identical correction already integrated in AF00-owned integration/rebuild at f6716991557370606217aa138d99ff96b99565ad, matching file blob 5424c2d6. Remaining CI and R0 integration belong to AF00.",
       "integration_head_sha": "f6716991557370606217aa138d99ff96b99565ad",
       "source_head_sha": "2d21b66f6d7cdab95294ef8b73f40b9f7ecbd51e"
+    },
+    {
+      "claim_id": "r0-retired-surface-exact-routes-20261010-gpt6",
+      "owner": "R0 Gateway legacy route completeness review GPT-6",
+      "scope": "Continue existing PR #618 only: exact registered obsolete legacy route coverage, negative and allowed regression tests in retirement predicate. No app.ts, Flutter, migration, finance, worker or main changes.",
+      "paths": [
+        "services/gateway/src/rebuild/retired_surface.ts",
+        "services/gateway/src/rebuild/retired_surface.test.ts"
+      ],
+      "branch": "lane/r0-feature-freeze-20261010-gpt6",
+      "source_pr": 618,
+      "source_head": "c0af025d550e58fa98595abd18df54fe64210772",
+      "claimed_at": "2026-10-10T15:51:39.052Z",
+      "heartbeat_at": "2026-10-10T15:51:39.052Z",
+      "expires_at": "2026-10-10T15:56:39.052Z",
+      "notes": "Read and commented on PR head before takeover of unclaimed paths. Fix verified denied-path gaps; keep replacement Masana and finance APIs open."
     }
   ],
   "history": [
