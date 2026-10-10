@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
-import type { Pool, PoolClient } from "pg";
+/** Structural SQL ports avoid undeclared dependencies on the worker package. */
+export interface MissionSqlResult { rows: any[]; rowCount: number | null; }
+export interface MissionSqlClient { query(sql:string,parameters?:unknown[]):Promise<MissionSqlResult>; release():void; }
+export interface MissionSqlPool { query(sql:string,parameters?:unknown[]):Promise<MissionSqlResult>; connect():Promise<MissionSqlClient>; }
 /** J12 publisher. Requires durable Postgres and the canonical Feed publish(idempotencyKey)
  * implementation; does not itself create a second Feed/post table. */
 export interface LeasedMissionPost {
@@ -22,17 +25,20 @@ export interface MissionPublishQueue {
   complete(post:LeasedMissionPost,postId:string):Promise<boolean>;
   failure(post:LeasedMissionPost,reason:"feed_unavailable"|"not_eligible"|"unsupported_media"):Promise<void>;
 }
-async function transaction<T>(pool:Pool, fn:(client:PoolClient)=>Promise<T>):Promise<T>{
+async function transaction<T>(pool:MissionSqlPool, fn:(client:MissionSqlClient)=>Promise<T>):Promise<T>{
   const client=await pool.connect();
   try { await client.query("BEGIN"); const r=await fn(client); await client.query("COMMIT"); return r; }
   catch(e){await client.query("ROLLBACK");throw e;}
   finally{client.release();}
 }
 export class PostgresMissionPublishQueue implements MissionPublishQueue {
-  constructor(private readonly pool:Pool) {}
+  constructor(private readonly pool:MissionSqlPool) {}
   async lease():Promise<LeasedMissionPost|null>{
     return transaction(this.pool,async db=>{
       // Locks a slot, then its single parent budget row. Concurrent workers SKIP LOCKED.
+      await db.query("UPDATE masana.posting_slots SET state='failed',last_error='attempts_exhausted',"+ 
+  " lease_token=NULL,lease_until=NULL,revision=revision+1,updated_at=now()"+
+  " WHERE state='publishing' AND lease_until<now() AND attempt_count>=6");
       const a=await db.query(`
         SELECT s.*,m.autonomy_level FROM masana.posting_slots s
         JOIN masana.missions m ON m.tenant_id=s.tenant_id AND m.mission_id=s.mission_id

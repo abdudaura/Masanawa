@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:admin_mobile/src/features/missions/missions_admin_client.dart';
-import 'package:admin_mobile/src/features/missions/missions_admin_screen.dart';
+import 'package:masanawa_admin/src/features/missions/missions_admin_client.dart';
+import 'package:masanawa_admin/src/features/missions/missions_admin_screen.dart';
 class _Fake implements MissionsAdminClient {
   @override Future<List<MissionView>> missions()async=>[];
   @override Future<MissionView> create({required String characterId,required String weekStart,
