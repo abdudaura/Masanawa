@@ -153,11 +153,11 @@
       "branch": "work/af13-evidence-ledger-20261009-masanawa01",
       "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
       "source_pr": 596,
-      "source_head": "c9da52c9bbd5da1a3313cc18d8b734b97624f919",
+      "source_head": "5962ab196b4613fe60102384ee9a655b359ae56d",
       "claimed_at": "2026-10-10T03:02:08.833Z",
-      "heartbeat_at": "2026-10-10T03:02:08.833Z",
-      "expires_at": "2026-10-10T03:07:08.833Z",
-      "notes": "Previous exact #596 claim released at 03:00:49Z; refresh source at HEAD before writing; AF13 canonical only; ownership excludes guarded file, AF00 integrations and provider runtime."
+      "heartbeat_at": "2026-10-10T03:06:38.143Z",
+      "expires_at": "2026-10-10T03:11:38.143Z",
+      "notes": "Existing #596 source/test changed, 12 focused native local mirror probes PASS_SIMULATED; exact-head suite still NOT_RUN. Handoff checklist updated; finishing final source review and safe-target audit."
     },
     {
       "claim_id": "af09-609-durable-publish-20261010-gpt6-0406",
