@@ -97,7 +97,7 @@ void main() {
       (tester) async {
     final rec = _Recorder(permission: false), player = _Player();
     await mount(tester, rec, player,
-      uploader: ({required localPath, required startMs, required endMs}) async =>
+      uploader: ({required localPath, required uploadRequestId, required startMs, required endMs}) async =>
         const VerifiedPostAudio(assetId: 'should-not-exist', durationMs: 1200));
     await tester.tap(find.text('Record'));
     await tester.pumpAndSettle();
@@ -140,10 +140,12 @@ void main() {
     final rec = _Recorder(), player = _Player();
     final received = <VerifiedPostAudio?>[];
     final attemptedPaths = <String>[];
+    final attemptedRequestIds = <String>[];
     int attempts = 0;
     await mount(tester, rec, player, onResult: received.add,
-      uploader: ({required localPath, required startMs, required endMs}) async {
+      uploader: ({required localPath, required uploadRequestId, required startMs, required endMs}) async {
         attemptedPaths.add(localPath);
+        attemptedRequestIds.add(uploadRequestId);
         expect(await File(localPath).exists(), true);
         attempts++;
         if (attempts == 1) throw StateError('network timeout');
@@ -158,6 +160,8 @@ void main() {
     await tester.tap(find.text('Use recording'));
     await tester.pumpAndSettle();
     expect(attemptedPaths, [rec.path, rec.path]);
+    expect(attemptedRequestIds[0], startsWith('talk-media-'));
+    expect(attemptedRequestIds[1], attemptedRequestIds[0]);
     expect(rec.starts, 1);
     expect(received.single?.assetId, 'server-verified-owned-asset');
     expect(await File(rec.path!).exists(), false);
@@ -169,7 +173,7 @@ void main() {
     bool active = true;
     int uploaded = 0;
     await mount(tester, rec, player, active: (_) => active,
-      uploader: ({required localPath, required startMs, required endMs}) async {
+      uploader: ({required localPath, required uploadRequestId, required startMs, required endMs}) async {
         uploaded++;
         return VerifiedPostAudio(assetId: 'asset', durationMs: endMs - startMs);
       });
