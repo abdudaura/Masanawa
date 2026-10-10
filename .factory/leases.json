@@ -5,7 +5,26 @@
     {},
     {},
     {},
-    {}
+    {},
+    {
+      "claim_id": "masanawa-af15-canonical-source-20261010-0351",
+      "owner": "MASANAWA-01 AF15 canonical reconciliation, continuing PR #599",
+      "scope": "Transfer unique orphan age/retention and explicit opt-in into existing canonical AF15 worker executor; remove standalone duplicate and keep one execution authority",
+      "paths": [
+        "services/worker/src/durable_operations/media_cleanup.ts",
+        "services/worker/src/durable_operations/media_cleanup.test.ts",
+        "adapters/storage/object_lifecycle/orphan_cleanup.ts",
+        "adapters/storage/object_lifecycle/orphan_cleanup.test.mjs",
+        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
+      ],
+      "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 599,
+      "claimed_at": "2026-10-10T02:54:09.770Z",
+      "heartbeat_at": "2026-10-10T02:54:09.770Z",
+      "expires_at": "2026-10-10T02:59:09.770Z",
+      "notes": "No AF00 migration or worker composition, no DB/S3 production or implicit activation. Preserve #595/#598 existing canonical fixes; merge branch against AF15 integration head."
+    }
   ],
   "history": [
     {},
