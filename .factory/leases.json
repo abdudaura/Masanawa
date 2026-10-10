@@ -374,7 +374,7 @@
     {
       "claim_id": "af00-600-source-migration-20261010-gpt6-0520",
       "owner": "AF00 owner-directed root integration / GPT-6 continued",
-      "scope": "Reclaim after prior AF00 claim expired without live collisions; finish additive numbered source migration, root Flutter route, single integration record and central CI blocker, preserve other PR work and no production deploy",
+      "scope": "Reclaim after prior AF00 claim expired without live collisions; finish additive numbered source migration, root Flutter route, single integration record and central CI blocker, preserve other PR work and no production deploy; adopt reviewed read-only AF13 #596 qualification authority with pinned source (no release permission)",
       "paths": [
         "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
         "apps/mobile/lib/src/router/app_router.dart",
@@ -383,14 +383,20 @@
         "services/worker/src/main.ts",
         "docs/workstreams/AF00-integration-20261010.md",
         "packages/talks/migrations/0015_published_audio_posts.sql",
-        "apps/mobile/test/twin_home_shell_test.dart"
+        "apps/mobile/test/twin_home_shell_test.dart",
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "tools/audio-first-qualification/journeys.json",
+        "tests/security/audio_first/evidence_path_guard.mjs",
+        "tests/security/audio_first/evidence_path_guard.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 600,
       "claimed_at": "2026-10-10T05:19:01.295Z",
-      "heartbeat_at": "2026-10-10T05:19:01.295Z",
-      "expires_at": "2026-10-10T05:24:01.295Z",
+      "heartbeat_at": "2026-10-10T05:22:50.815Z",
+      "expires_at": "2026-10-10T05:27:50.815Z",
       "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files."
     }
   ],
