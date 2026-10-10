@@ -187,7 +187,7 @@ async function accountBalance(
         AND network IS NOT DISTINCT FROM $4`,
     [input.tenantId, input.userId, input.asset, input.network],
   );
-  return result.rows[0]?.balance ?? "0";
+  return nonNegativeDecimal(result.rows[0]?.balance ?? "0");
 }
 
 async function aggregateLiability(
@@ -208,7 +208,7 @@ async function aggregateLiability(
        ) AS user_balances`,
     [input.tenantId, input.asset, input.network],
   );
-  return result.rows[0]?.liability ?? "0";
+  return nonNegativeDecimal(result.rows[0]?.liability ?? "0");
 }
 
 async function platformAggregateLiability(
@@ -229,7 +229,7 @@ async function platformAggregateLiability(
        ) AS user_balances`,
     [input.asset, input.network],
   );
-  return result.rows[0]?.liability ?? "0";
+  return nonNegativeDecimal(result.rows[0]?.liability ?? "0");
 }
 
 async function lockBalance(
