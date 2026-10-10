@@ -14,6 +14,12 @@ describe("J06 HTTP cannot publish as fan or leak across tenant",()=>{
   const res=await app.inject({method:"GET",url:"/v1/feed"});
   expect(res.statusCode).toBe(403);expect(list).not.toHaveBeenCalled();await app.close();
  });
+ it("rejects invalid discovery modes instead of expanding user visibility",async()=>{
+  const app=Fastify();const list=vi.fn();
+  await registerHomeFeedRoutes(app,{service:{list} as never,principal:async()=>null,tenant:()=>"tenant",isNewAccount:async()=>true,enabled:()=>true});
+  const res=await app.inject({method:"GET",url:"/v1/feed?mode=administration"});
+  expect(res.statusCode).toBe(422);expect(list).not.toHaveBeenCalled();await app.close();
+ });
  it("requires authenticated identity for writes",async()=>{
   const app=Fastify();const publish=vi.fn();
   await registerHomeFeedRoutes(app,{service:{publish} as never,principal:async()=>null,tenant:()=>"tenant",isNewAccount:async()=>true,enabled:()=>true});
