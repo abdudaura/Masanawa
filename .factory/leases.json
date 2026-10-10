@@ -602,16 +602,17 @@
       "paths": [
         "adapters/storage/postgres/src/commerce/crypto-repository.ts",
         "adapters/storage/postgres/src/commerce/crypto-repository.integration.test.ts",
-        "packages/agents/src/talk-replay.test.ts"
+        "packages/agents/src/talk-replay.test.ts",
+        "adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts"
       ],
       "branch": "work/af01-crypto-ledger-reason-20261010-masanawa01-g",
       "source_pr": 607,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_head": "ed8dc29f25b6d116c2194b7ee8491511fc60144c",
       "claimed_at": "2026-10-10T08:50:37.823Z",
-      "heartbeat_at": "2026-10-10T08:53:05.560Z",
-      "expires_at": "2026-10-10T08:58:05.560Z",
-      "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR; actual CI 38039308614 typecheck blocker: wrong TalkId import; using pre-existing correct #580 source readback, no production code change"
+      "heartbeat_at": "2026-10-10T08:54:50.546Z",
+      "expires_at": "2026-10-10T08:59:50.546Z",
+      "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR; actual CI 38039308614 typecheck blocker: wrong TalkId import; using pre-existing correct #580 source readback, no production code change; actual runner typecheck at 7d00ecd: typed UUID test fixture mismatch; copying established existing #460/#580 repair"
     },
     {
       "claim_id": "af13-460-financial-tests-gpt6-20261010-0954",
