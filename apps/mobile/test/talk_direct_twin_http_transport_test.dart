@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
-import 'package:masanawa/src/talks/talk_direct_twin.dart';
 import 'package:masanawa/src/talks/talk_direct_twin_http_transport.dart';
 
 class _Adapter implements HttpClientAdapter {
