@@ -9,12 +9,8 @@
 -- runMigrations supplies one serializable transaction and advisory migration lock;
 -- feature-local BEGIN/COMMIT delimiters are removed here.
 
--- AF09 Published Audio Talks: feature-owned append-only schema SOURCE.
--- AF00 must audit, assign a numbered migration, verify existing social schema,
--- identity/media FKs, deploy/migration triggers and tenant grants BEFORE install.
--- This unnumbered file is deliberately NOT registered for production migration.
--- PostgreSQL 18 target; requires gen_random_uuid() (native in modern PG).
--- No cascade deletion: ownership, moderation and media retention are explicit.
+-- Single canonical six-table social model. No alternate listen tables are loaded.
+-- Only the application service role can access these restricted tables.
 
 CREATE SCHEMA IF NOT EXISTS social;
 
@@ -132,11 +128,6 @@ CREATE TABLE social.audio_post_listen_days (
 
 -- Processing progress uses an isolated lease checkpoint, not a second
 -- publication authority. No table is reachable directly through client APIs.
--- AF09 feature-owned SOURCE PROPOSAL. NOT an allocated migration.
--- AF00 must review permissions, social schema ordering and deployment triggers,
--- include this append-only DDL in the ONE canonical numbered migration sequence,
--- then bind the trusted existing worker. No client-facing tables or grants.
-
 CREATE TABLE social.audio_post_processing_checkpoint (
   job_key text PRIMARY KEY
     CHECK (job_key = 'published-audio'),
