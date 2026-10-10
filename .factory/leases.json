@@ -410,6 +410,22 @@
       "expires_at": "2026-10-10T05:29:45.184Z",
       "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files. Source integrated to pinned root 28386c3617dc6d89ea14994d3e5aae397e95eab5; GitHub PR 600 comment 6094203574; central Actions runner-zero-steps incident remains. Remaining source AF00 AF05 AF15 AF10.",
       "released_at": "2026-10-10T05:27:16.875Z"
+    },
+    {
+      "claim_id": "chat-p04-continuation-directive-fence-20261010-gpt6",
+      "owner": "GPT-6 / CHAT-P04 PR #612 continuation",
+      "scope": "Fail-closed early stream of unhandled machine directives on existing turn processor, regression and same-PR handoff; preserve other owners",
+      "paths": [
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/agent_conversation.test.ts",
+        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
+      ],
+      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
+      "base_sha": "04d8ceb5ed1b5e7fcfd67d3f5b90b1d0380be86b",
+      "source_pr": 612,
+      "claimed_at": "2026-10-10T05:59:39.787Z",
+      "heartbeat_at": "2026-10-10T05:59:39.787Z",
+      "expires_at": "2026-10-10T06:04:39.787Z"
     }
   ],
   "history": [
