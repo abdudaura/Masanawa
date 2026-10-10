@@ -297,6 +297,97 @@ void main() {
     expect(find.text('Remove Talk'), findsNothing);
   });
 
+  testWidgets('lost deletion acknowledgment reads removed receipt without false failure',
+      (tester) async {
+    var reads = 0;
+    final source = FakePosts()
+      ..removeHandler = (_) async => throw StateError('response lost')
+      ..mineHandler = (() async {
+        reads++;
+        return [reads == 1 ? post('mine') : AudioPost(
+          postId: 'mine', authorId: 'author-a', authorKind: 'human',
+          title: 'Published audio mine', durationMs: 22000,
+          status: 'removed', revision: 2, createdAt: DateTime.utc(2026, 10, 10),
+        )];
+      });
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove').last);
+    await tester.pumpAndSettle();
+    expect(source.removals, 1);
+    expect(reads, 2);
+    expect(find.text('Status: removed'), findsOneWidget);
+    expect(find.textContaining('Could not remove Talk'), findsNothing);
+    expect(find.text('Remove Talk'), findsNothing);
+  });
+
+  testWidgets('unverified deletion blocks repeated writes until explicit readback',
+      (tester) async {
+    var reads = 0;
+    final source = FakePosts()
+      ..removeHandler = (_) async => throw StateError('network timeout')
+      ..mineHandler = (() async {
+        reads++;
+        if (reads == 1) return [post('mine')];
+        if (reads == 2) throw StateError('offline');
+        return [AudioPost(
+          postId: 'mine', authorId: 'author-a', authorKind: 'human',
+          title: 'Published audio mine', durationMs: 22000,
+          status: 'removed', revision: 2, createdAt: DateTime.utc(2026, 10, 10),
+        )];
+      });
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove').last);
+    await tester.pumpAndSettle();
+    expect(source.removals, 1);
+    expect(find.text('Check removal status'), findsOneWidget);
+    expect(find.text('Remove Talk'), findsNothing);
+    await tester.tap(find.text('Check removal status'));
+    await tester.pumpAndSettle();
+    expect(reads, 3);
+    expect(source.removals, 1);
+    expect(find.text('Status: removed'), findsOneWidget);
+  });
+
+  testWidgets('old account late deletion readback cannot change replacement account',
+      (tester) async {
+    final oldReadback = Completer<List<AudioPost>>();
+    var reads = 0;
+    final source = FakePosts()
+      ..removeHandler = (_) async => throw StateError('timeout')
+      ..mineHandler = (() {
+        reads++;
+        return reads == 1 ? Future.value([post('mine')]) : oldReadback.future;
+      });
+    await tester.pumpWidget(screen(source, 'old'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove').last);
+    await tester.pump();
+    await tester.pumpWidget(screen(FakePosts(), 'new'));
+    await tester.pumpAndSettle();
+    oldReadback.complete([AudioPost(
+      postId: 'mine', authorId: 'author-a', authorKind: 'human',
+      title: 'Published audio mine', durationMs: 22000,
+      status: 'removed', revision: 2, createdAt: DateTime.utc(2026, 10, 10),
+    )]);
+    await tester.pumpAndSettle();
+    expect(find.text('Status: removed'), findsNothing);
+    expect(find.text('Published audio mine'), findsNothing);
+  });
+
   testWidgets('failed deletion stays available to retry', (tester) async {
     final source = FakePosts()
       ..mineHandler = (() async => [post('mine')])
