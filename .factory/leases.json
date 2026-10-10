@@ -2,30 +2,6 @@
   "schema_version": 1,
   "active": [
     {
-      "claim_id": "recovery-02-u02-journal-20261009",
-      "owner": "RECOVERY-02",
-      "scope": "U02 continuation #520 approval expiry and concurrent persisted reconciliation; execute real isolated tests and PostgreSQL adapter checks; implement original U02 missing durable status-only recovery scanner using journal revisions as leases, no new schema",
-      "paths": [
-        "packages/operator-tasks/src/index.ts",
-        "packages/operator-tasks/src/index.test.ts",
-        "packages/operator-tasks/src/postgres.ts",
-        "packages/operator-tasks/src/postgres.execution.test.mjs",
-        "services/gateway/src/operator_tasks/routes.ts",
-        "services/gateway/src/operator_tasks/routes.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md",
-        "packages/operator-tasks/src/recovery.ts",
-        "packages/operator-tasks/src/recovery.test.ts"
-      ],
-      "branch": "work/recovery-02-u02-task-journal-20261009",
-      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
-      "source_pr": 520,
-      "source_head": "36e412b59f080048a034aa0cffd697276e19f9ba",
-      "claimed_at": "2026-10-09T10:21:59.304Z",
-      "heartbeat_at": "2026-10-09T10:32:06.736Z",
-      "expires_at": "2026-10-09T10:37:06.736Z",
-      "notes": "No active CAS claims; #520 last updated 2026-10-08T23:59:41Z. Preserve authentic branch lineage; no shared Gateway composer, root router, native, finance, migration or dependency changes."
-    },
-    {
       "claim_id": "recovery-03-u05-memory-20261009",
       "owner": "RECOVERY-03",
       "scope": "U05 #522 actual backend tests/typing, consent-revocation read fence, strict HTTP authority boundary and expiry validation",
@@ -134,6 +110,31 @@
       "claimed_at": "2026-10-10T01:48:31Z",
       "heartbeat_at": "2026-10-10T01:48:31Z",
       "expires_at": "2026-10-10T01:53:31Z"
+    },
+    {
+      "claim_id": "masanawa-u02-milestone-20261010",
+      "owner": "MASANAWA-U02-CONTINUATION-20261010",
+      "scope": "Existing U02/RECOVERY-02 connected durable status-only recovery source and real tests; preserve original #520/#580 and AF00 composition ownership",
+      "paths": [
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "packages/operator-tasks/src/postgres.ts",
+        "packages/operator-tasks/src/postgres.execution.test.mjs",
+        "services/gateway/src/operator_tasks/routes.ts",
+        "services/gateway/src/operator_tasks/routes.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/recovery.test.ts"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 580,
+      "source_head": "bed641dd2caf357f9d2bba644d5143a60e899658",
+      "claimed_at": "2026-10-10T01:51:35.780Z",
+      "heartbeat_at": "2026-10-10T01:51:35.780Z",
+      "expires_at": "2026-10-10T01:56:35.780Z",
+      "notes": "Reviewed stale transfer recorded in PR comment 6092382298; prior source never removed.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/580"
     }
   ],
   "history": [
@@ -953,6 +954,32 @@
       "released_at": "2026-10-10T01:49:38.377Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/596",
       "release_reason": "Connected existing AF13 qualifier #596 to released #603 evidence path guard; source/test changes and SHA-specific handoff at 097ffaee159c734b5200674ff07abe41735aab4a. 5/5 native harness tests on reconstructed logic only, exact-head 17 Node tests NOT_RUN; PARTIAL_IMPLEMENTATION, AF00 common baseline review assigned."
+    },
+    {
+      "claim_id": "recovery-02-u02-journal-20261009",
+      "owner": "RECOVERY-02",
+      "scope": "U02 continuation #520 approval expiry and concurrent persisted reconciliation; execute real isolated tests and PostgreSQL adapter checks; implement original U02 missing durable status-only recovery scanner using journal revisions as leases, no new schema",
+      "paths": [
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "packages/operator-tasks/src/postgres.ts",
+        "packages/operator-tasks/src/postgres.execution.test.mjs",
+        "services/gateway/src/operator_tasks/routes.ts",
+        "services/gateway/src/operator_tasks/routes.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/recovery.test.ts"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 520,
+      "source_head": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "claimed_at": "2026-10-09T10:21:59.304Z",
+      "heartbeat_at": "2026-10-09T10:32:06.736Z",
+      "expires_at": "2026-10-09T10:37:06.736Z",
+      "notes": "No active CAS claims; #520 last updated 2026-10-08T23:59:41Z. Preserve authentic branch lineage; no shared Gateway composer, root router, native, finance, migration or dependency changes.",
+      "released_at": "2026-10-10T01:51:35.780Z",
+      "release_reason": "Reviewed stale continuation by owner direction; original PR and SHA preserved, scope transferred on same PR #580 after branch/claim inspection."
     }
   ]
 }
