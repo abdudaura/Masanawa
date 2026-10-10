@@ -1,4 +1,4 @@
-import type { AudioPostRecord, PostActor, PublicFeedPage } from "./contract.js";
+import type { PostActor, PublicFeedPage } from "./contract.js";
 
 /** AF09 following is a relation to the existing canonical creator, not a second identity store. */
 export class FollowingError extends Error {
@@ -79,7 +79,7 @@ export function createFollowingService(repository: FollowingRepository) {
       if (!Number.isSafeInteger(limit) || (limit as number) < 1 || (limit as number) > 30 ||
           (input.cursor != null &&
            (typeof input.cursor !== "string" || input.cursor.length > 256 ||
-            !/^\\d{13}:[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(input.cursor)))) {
+            !/^\d{13}:[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(input.cursor)))) {
         throw new FollowingError("VALIDATION", "Invalid following page");
       }
       const page = await repository.feed({
