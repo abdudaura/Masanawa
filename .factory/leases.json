@@ -1277,7 +1277,10 @@
       "heartbeat_at": "2026-10-10T16:52:15Z",
       "expires_at": "2026-10-10T16:57:15Z",
       "notes": "Claimed after reading #615 planning blueprint and active lanes; no main, Railway, finance, shared composition edits.",
-      "source_head": "0104d8ee5527af9c54d69031e85e3b282d90b55e"
+      "source_head": "74314726bab50b67d10b9ac04bea7eef5e068434",
+      "integration_head_sha": "0a5481008a9b6b5e975fd54dd4a185ddcda705bd",
+      "released_at": "2026-10-10T17:00:00Z",
+      "release_reason": "J06 source-only PR #631 merged to nondeploying integration. Frozen PNPM install FAIL missing importer; TypeScript/PG/Vitest/Flutter/Android full checks not verified. AF00 owns shared composition. No production change."
     },
     {
       "claim_id": "l-missions-fan-memory-j11-20261010-gpt6",
