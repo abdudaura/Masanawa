@@ -17,7 +17,7 @@ class MasanaProfile {
   following:json['following']==true,followers:(json['followerCount'] as num? ?? 0).toInt());
  MasanaProfile followState(bool follow)=>MasanaProfile(
   characterId:characterId,revision:revision,profile:profile,following:follow,
-  followers:(followers+(follow&&!following?1:!follow&&following?-1:0)).clamp(0,2147483647));
+  followers:(followers+(follow&&!following?1:!follow&&following?-1:0)).clamp(0,2147483647).toInt());
 }
 abstract class MasanaRepository {
  Future<List<MasanaProfile>> search(String query);
