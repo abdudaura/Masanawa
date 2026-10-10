@@ -1127,7 +1127,11 @@
       "heartbeat_at": "2026-10-10T16:33:32.691Z",
       "expires_at": "2026-10-10T16:38:32.691Z",
       "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation. PG adapter exact directory included; source commit 78b123aa. PR #624 pending CI and AF00 composition. CI runner found scoped TS2322 review transition narrowing; fix and rerun.",
-      "source_head": "068acb4ff84fb3a819e3a36ddb449806a6751b41"
+      "source_head": "068acb4ff84fb3a819e3a36ddb449806a6751b41",
+      "released_at": "2026-10-10T16:38:59.267Z",
+      "release_reason": "Source reviewed, scoped Node/Vitest+PG18 tests passed, nondeploying integration merged PR #624; Flutter legacy build blockers and AF00 app/migration composition outstanding. No release.",
+      "integration_head_sha": "37d2a1b98cfb4a663da8c49408d7588277192ecf",
+      "test_state": "8/8 new Gateway/worker/PG18 tests PASS; overall legacy suite 42 FAIL 1375 PASS; Node install/typecheck/build PASS. Flutter admin new test PASS, legacy analyze/APK FAIL; consumer final pending. NOT RELEASED."
     },
     {
       "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
