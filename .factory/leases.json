@@ -123,6 +123,23 @@
       "heartbeat_at": "2026-10-10T02:47:39.921Z",
       "expires_at": "2026-10-10T02:52:39.921Z",
       "notes": "Prior processing source claim released in registry; inspect exact worker head; PG cursor source/test only; no changes to current AF09 playback/following owners."
+    },
+    {
+      "claim_id": "af09-609-processing-recovery-20261010-gpt6-f",
+      "owner": "AF09 existing PR #609 processing-recovery continuation / GPT-6",
+      "scope": "Improve canonical audio-post processor stale-conflict/race classification and actual authored negative tests; avoid other active processing queue/test owners; same PR, no new helper/branch.",
+      "paths": [
+        "services/gateway/src/audio_posts/processing_worker.ts",
+        "services/gateway/src/audio_posts/processing_recovery.test.mjs",
+        "docs/workstreams/AF09-processing-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:48:46.298Z",
+      "heartbeat_at": "2026-10-10T02:48:46.298Z",
+      "expires_at": "2026-10-10T02:53:46.298Z",
+      "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     }
   ],
   "history": [
