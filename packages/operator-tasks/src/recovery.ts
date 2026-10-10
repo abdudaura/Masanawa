@@ -121,7 +121,7 @@ type VersionRow = { phase: OperatorTaskPhase; version: number };
  */
 export function createPostgresRecoveryJournal(pool: Pool): RecoveryJournal {
   return Object.freeze({
-    async claim({ before, now, limit }) {
+    async claim({ before, now, limit }: Parameters<RecoveryJournal["claim"]>[0]) {
       positiveInt(limit, 25);
       const cutoff = iso(before), at = iso(now);
       if (Date.parse(cutoff) > Date.parse(at)) throw new Error("RECOVERY_INVALID_CLOCK");
@@ -164,7 +164,7 @@ export function createPostgresRecoveryJournal(pool: Pool): RecoveryJournal {
         })));
       });
     },
-    async settle({ operation, outcome, now }) {
+    async settle({ operation, outcome, now }: Parameters<RecoveryJournal["settle"]>[0]) {
       const at = iso(now);
       if (outcome.status === "unknown") return "unknown";
       // Invalid receipts are NEVER promoted to success. A bad domain code
