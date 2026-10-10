@@ -107,10 +107,18 @@ test('bounded destructive sweep does not lease more than maxDeletes', async () =
 test('invalid configuration fails before reading repository', async () => {
   for (const changes of [
     { allowedPrefixes: ['*'] }, { allowedPrefixes: [] }, { allowedPrefixes: ['private/../'] },
+    { allowedPrefixes: ['private/'] },
     { maxDeletes: 100 }, { maxCandidates: 0 }, { minAgeMs: 10 }, { nowMs: Number.NaN },
   ]) {
     const f = fixture([candidate('a')]);
     await assert.rejects(runOrphanCleanup({ ...f.opts, ...changes, allowDelete: true }), TypeError);
     assert.equal(f.events.length, 0);
   }
+});
+
+test('nonboolean truthy delete flag never authorizes deletion', async () => {
+  const f = fixture([candidate('a')]);
+  const r = await runOrphanCleanup({ ...f.opts, allowDelete: 1 });
+  assert.equal(r.dryRun, true); assert.equal(r.deleted, 0);
+  assert.deepEqual(f.events.map(e=>e[0]), ['list']);
 });
