@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { isRetiredLegacyRequest } from "./modules/retired/policy.js";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
@@ -341,6 +342,11 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   });
 
   app.addHook("onRequest", async (request, reply) => {
+    if (isRetiredLegacyRequest(request.method, request.url)) {
+      return reply.code(410).send({
+        error: { code: "feature_retired", message: "This feature is no longer available" },
+      });
+    }
     const correlation = admitTelemetryCorrelation({
       carrier: {
         ...(request.headers.traceparent !== undefined
