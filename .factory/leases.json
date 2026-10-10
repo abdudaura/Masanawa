@@ -158,6 +158,24 @@
       "heartbeat_at": "2026-10-10T02:59:18.620Z",
       "expires_at": "2026-10-10T03:04:18.620Z",
       "notes": "Prior claim was published/read back but lost from the shared registry following concurrent updates; no conflicting exact-path owners found on refresh. This new bounded claim does not authorize AF00 composition, migration, or production delete."
+    },
+    {
+      "claim_id": "af13-596-unique-proof-reconciliation-20261010",
+      "owner": "AF13 #596 continuing qualification reconciliation",
+      "scope": "Adopt unique PASS_REAL executed-step/command/recency and bounded-input controls from merged alternatives #592/#594 into elected canonical #596 qualifier; actual connected tests; no duplicate tool or runtime modifications.",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 596,
+      "source_head": "c9da52c9bbd5da1a3313cc18d8b734b97624f919",
+      "claimed_at": "2026-10-10T03:02:08.833Z",
+      "heartbeat_at": "2026-10-10T03:02:08.833Z",
+      "expires_at": "2026-10-10T03:07:08.833Z",
+      "notes": "Previous exact #596 claim released at 03:00:49Z; refresh source at HEAD before writing; AF13 canonical only; ownership excludes guarded file, AF00 integrations and provider runtime."
     }
   ],
   "history": [
