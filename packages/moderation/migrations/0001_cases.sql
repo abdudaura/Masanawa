@@ -41,7 +41,8 @@ CREATE INDEX IF NOT EXISTS moderation_actions_expiry ON moderation.actions(expir
 CREATE TABLE IF NOT EXISTS moderation.appeals (
  tenant_id text NOT NULL, appeal_id text NOT NULL, case_id text NOT NULL, appellant_user_id text NOT NULL,
  reason text NOT NULL, state text NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','under_review','upheld','rejected')),
- reviewed_by text, created_at timestamptz NOT NULL DEFAULT now(), reviewed_at timestamptz,
+ reviewed_by text, second_reviewed_by text, version int NOT NULL DEFAULT 1 CHECK(version>0),
+ created_at timestamptz NOT NULL DEFAULT now(), reviewed_at timestamptz,
  PRIMARY KEY(tenant_id,appeal_id), FOREIGN KEY(tenant_id,case_id) REFERENCES moderation.cases(tenant_id,case_id) ON DELETE RESTRICT
 );
 CREATE INDEX IF NOT EXISTS moderation_appeals_queue ON moderation.appeals(tenant_id,state,created_at);
