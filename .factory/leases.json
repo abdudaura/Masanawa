@@ -791,7 +791,9 @@
       "claimed_at": "2026-10-10T09:01:20.854Z",
       "heartbeat_at": "2026-10-10T09:01:20.854Z",
       "expires_at": "2026-10-10T09:06:20.854Z",
-      "notes": "Observed real GitHub Actions run 38039685306: test-topology.test.ts expects exact old YAML and fails after legitimate if: !cancelled. Update test to require independent steps with correct run and guards."
+      "notes": "Observed real GitHub Actions run 38039685306: test-topology.test.ts expects exact old YAML and fails after legitimate if: !cancelled. Update test to require independent steps with correct run and guards.",
+      "released_at": "2026-10-10T09:20:26.617Z",
+      "release_reason": "Bounded test-topology fix completed at c8efac8; lease expired. Resuming same ownership after mobile workflow policy transition, preserve prior source."
     },
     {
       "claim_id": "af01-460-twin-credit-replay-race-gpt6-20261010",
@@ -911,6 +913,21 @@
       "heartbeat_at": "2026-10-10T09:15:59.907Z",
       "expires_at": "2026-10-10T09:20:59.907Z",
       "notes": "Reviewed old AF13 claim expiration 09:14:35Z and 09:09:35Z last heartbeat; real Flutter analyzer 0 error/0 warning with 457 info-only. Switch only Analyze to flutter analyze --no-fatal-infos, keep all warnings fatal; run actual workflow at exact head."
+    },
+    {
+      "claim_id": "af13-460-topology-analyzer-policy-recovery-gpt6-1020",
+      "owner": "GPT-6 AF13 continuing existing CI recovery PR #460",
+      "scope": "Repair verified TestTopology Vitest regression from independently committed Flutter analyze --no-fatal-infos; preserve strict errors/warnings and test all checks",
+      "paths": [
+        "test/architecture/test-topology.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7930b0ebd2440d1f93534d425faa283748fcae08",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:20:26.617Z",
+      "heartbeat_at": "2026-10-10T09:20:26.617Z",
+      "expires_at": "2026-10-10T09:25:26.617Z",
+      "notes": "Run 38040798427 Typecheck PASS, 253 files/1358 tests pass, only test-topology fails since mobile workflow changed command; exact source file last c8efac8. Fix narrow test to expect --no-fatal-infos while keeping errors/warnings fatal, run real Foundation."
     }
   ],
   "history": [
