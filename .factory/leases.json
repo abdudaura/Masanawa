@@ -1382,6 +1382,22 @@
       "notes": "No parallel chat journal, no human DM, no clone contact; same @masanawa/agents sessions. Feature code only. AF00 retains shared composition and deployment.",
       "source_pr": 635,
       "source_head": "0769394ee6256846e8169686967b0f30ee1bcb0f"
+    },
+    {
+      "claim_id": "l-missions-j12-auth-negative-followup-20261010-gpt6",
+      "owner": "GPT-6 L-MISSIONS security regression continuation after PR633 merge",
+      "scope": "Preserve authenticated 401/403 responses from canonical auth port; exact gateway feature paths only",
+      "paths": [
+        "services/gateway/src/modules/masana_missions/routes.ts",
+        "services/gateway/src/modules/masana_missions/routes.test.ts"
+      ],
+      "branch": "lane/l-missions-j12-auth-recovery-20261010-gpt6",
+      "base_sha": "f7f8ae38ab65cb9ba2ff46103f27185ce8a3f2b8",
+      "claimed_at": "2026-10-10T16:51:45.878Z",
+      "heartbeat_at": "2026-10-10T16:51:45.878Z",
+      "expires_at": "2026-10-10T16:56:45.878Z",
+      "source_pr": 633,
+      "notes": "Fix fail-closed HTTP status/error mapping and add negative test. No shared app.ts or auth authority changes."
     }
   ],
   "history": [
