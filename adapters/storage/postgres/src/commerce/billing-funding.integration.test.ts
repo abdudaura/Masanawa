@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createIsolatedPostgresTestDatabase } from "./isolated-test-database.js";
 import { createCanonicalId } from "@masanawa/contracts";
 import { createBillingQuote, formatNgnKobo } from "@masanawa/commerce";
 import { runMigrations } from "../migrations.js";
@@ -11,9 +12,11 @@ const describeDatabase = connectionString ? describe : describe.skip;
 
 describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
   let pool: Pool;
+  let isolated: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>> | undefined;
 
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    isolated = await createIsolatedPostgresTestDatabase(connectionString!);
+    pool = isolated.pool;
     await runMigrations(pool, [{
       owner: "commerce",
       directory: fileURLToPath(
@@ -23,7 +26,7 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
   });
 
   afterAll(async () => {
-    await pool?.end();
+    await isolated?.close();
   });
 
   function fixture() {
