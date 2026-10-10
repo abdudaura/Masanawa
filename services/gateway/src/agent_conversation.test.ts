@@ -490,6 +490,57 @@ describe("Alpha conversation service", () => {
   });
 
 
+  it.each([false, true])(
+    "does not let stalled %s text-stream acknowledgement block a settled turn",
+    async (postProcessed) => {
+      const f = fixture();
+      const session = sessionFor(f);
+      let completed = 0;
+      let textAttempts = 0;
+      const service = createAgentConversationService({
+        sessions: {
+          async create() { return session; },
+          async read() { return session; },
+          async updateBindings() { throw new Error("not used"); },
+          async close() { return session; },
+          async reset() { throw new Error("not used"); },
+        },
+        runs: {
+          async create() { return {} as never; },
+          async read() { throw new Error("not used"); },
+          async finish() { completed += 1; return {} as never; },
+        },
+        authorizer: { async authorize() { return f.admission; } },
+        ...(postProcessed ? { billingAssistant: {
+          async beforeInference() { return null; },
+          async afterInference() { return null; },
+        } as never } : {}),
+        strategy: {
+          async execute(command) {
+            if (!postProcessed) await command.onTextDelta?.("Hello");
+            return { reply: "Hello", parts: [] };
+          },
+        },
+        sessionDurationMs: 60_000,
+      });
+      const response = await service.turn({
+        authorizationHeader: "Bearer alpha",
+        characterSessionId: session.characterSessionId,
+        characterId: f.scope.characterId,
+        text: "hello",
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        onTextDelta: async () => {
+          textAttempts += 1;
+          await new Promise<void>(() => {}); // Simulated client that never ACKs.
+        },
+      });
+      expect(response.reply).toBe("Hello");
+      expect(completed).toBe(1);
+      expect(textAttempts).toBe(1);
+    },
+  );
+
   it("never early-streams unhandled billing or crypto machine markup", async () => {
     const f = fixture();
     const session = sessionFor(f);
