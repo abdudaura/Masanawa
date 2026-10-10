@@ -1,4 +1,6 @@
-import type { PostActor, PublicFeedPage, PublicAudioFeedPage } from "./contract.js";
+import type { FollowingRepository } from "@masanawa/contracts";
+export type { FollowingRepository } from "@masanawa/contracts";
+import type { PostActor, PublicAudioFeedPage } from "./contract.js";
 import { toPublicAudioPost } from "./contract.js";
 
 /** AF09 following is a relation to the existing canonical creator, not a second identity store. */
@@ -11,30 +13,7 @@ export class FollowingError extends Error {
   }
 }
 
-export interface FollowingRepository {
-  /** Resolve a published Talk and canonical block/privacy policy BEFORE writing. */
-  setFromVisiblePost(input: {
-    tenantId: string;
-    accountId: string;
-    postId: string;
-    enabled: boolean;
-  }): Promise<{ authorId: string; authorKind: "human" | "masana"; following: boolean } | null>;
-  statusFromVisiblePost(input: {
-    tenantId: string; accountId: string; postId: string;
-  }): Promise<{ authorId: string; authorKind: "human" | "masana"; following: boolean } | null>;
-  /** A creator profile resolves against canonical author IDs and shared visibility. */
-  creatorFeed(input: {
-    tenantId: string; viewerId: string; authorId: string;
-    authorKind: "human" | "masana"; limit: number; cursor: string | null;
-  }): Promise<PublicFeedPage>;
-  /** Read only published Talks by followed creators, with visibility checked per viewer. */
-  feed(input: {
-    tenantId: string;
-    viewerId: string;
-    limit: number;
-    cursor: string | null;
-  }): Promise<PublicFeedPage>;
-}
+
 
 const safeId = (id: unknown): id is string =>
   typeof id === "string" && id.length > 0 && id.length <= 128 &&
