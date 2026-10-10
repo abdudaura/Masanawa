@@ -2,6 +2,16 @@
 
 Updated 2026-10-09. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
 
+## Current repository and finish-to-merge execution (2026-10-10)
+
+**Canonical GitHub:** https://github.com/abdudaura/Masanawa (transferred repository, original PRs and IDs preserved). Older `Baatiku/masanawa` links may redirect; create claims, commits, workflows and PRs using the new owner.
+
+**Mandatory window loop:** read current main and pending PRs → claim exact paths → complete the entire accepted customer journey (not a helper) → run actual targeted and workspace tests against the exact head → fix failing code and repeat → resolve shared source imports/routes/migrations through bounded AF00 transfer → merge immediately into the ONE reviewed non-deploying integration baseline whenever qualified → retest merged SHA → report production qualification separately. Do not say DONE when any required code, integration or runnable test is left behind. A short handoff is a checkpoint, never completion.
+
+**Runner update:** GitHub Actions job #114156575492 (Foundation #38030952732, attempt 2) actually installed pnpm/Node and ran typecheck; it failed on `packages/agents/src/talk-replay.test.ts` importing non-exported `TalkId`. Flutter job #114156809568 (Mobile #38032335846, attempt 2) actually ran `flutter analyze` and found source errors including audio-post, gifting and locale. These are **dated failing source evidence, not permanent diagnoses**. Refresh GitHub jobs/logs before dispatch and repair the actual latest failures in their owned PRs. Existing CI repair source in #460 is a recovery input. Never mark skipped Test/APK steps PASS. Issue #457 is the continuing cross-workstream execution queue.
+
+**Primary rules:** [AGENTS.md](AGENTS.md), [multi-window execution](docs/MULTI-WINDOW-WORK.md), [current delivery contract](docs/NEXT-WAVE-DELIVERY-20261010.md) and [copyable complete-milestone prompt](docs/REUSABLE-IMPLEMENTATION-PROMPT.md). Keep one current AF00 safe integration target; user local pull only after remote source/composition complete, with local-only hardware/provider checks explicitly assigned.
+
 ## Immediate delivery correction — 2026-10-10
 
 Read [outcome-first dispatch](docs/NEXT-WAVE-DELIVERY-20261010.md) FIRST and use [the replacement reusable prompt](docs/REUSABLE-IMPLEMENTATION-PROMPT.md). Stop unrestricted micro-fix selection and duplicate evidence/cleanup tools. Complete substantive customer milestones, continue existing PRs and integrate tested code on one reviewed safe baseline. The AF JSON is an allocation template, not live completion status; inspect current claims/PRs/handoffs. Read only relevant feature references after this short dispatch.
