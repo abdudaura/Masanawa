@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "contract": "AF-v1",
+  "source": "docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md + docs/AUDIO-FIRST-SCREEN-SPECS.md + docs/BACKEND-STORAGE-OPERATIONS-20261009.md",
+  "journeys": [
+    {
+      "id": "UX-A01",
+      "boundaries": [
+        "device",
+        "accessibility",
+        "auth"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A02",
+      "boundaries": [
+        "device",
+        "auth",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A03",
+      "boundaries": [
+        "device",
+        "auth",
+        "offline"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A04",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "database"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A05",
+      "boundaries": [
+        "device",
+        "provider",
+        "object",
+        "offline"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A06",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "database",
+        "provider"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A07",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "database",
+        "provider"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A08",
+      "boundaries": [
+        "device",
+        "gateway",
+        "object",
+        "database"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A09",
+      "boundaries": [
+        "device",
+        "gateway",
+        "database",
+        "object"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A10",
+      "boundaries": [
+        "device",
+        "gateway",
+        "database",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A11",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "provider"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "UX-A12",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "database",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A01",
+      "boundaries": [
+        "auth",
+        "gateway",
+        "database",
+        "provider",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A02",
+      "boundaries": [
+        "auth",
+        "gateway",
+        "database",
+        "provider"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A03",
+      "boundaries": [
+        "auth",
+        "gateway",
+        "database",
+        "provider",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A04",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "database",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A05",
+      "boundaries": [
+        "auth",
+        "gateway",
+        "database",
+        "provider",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A06",
+      "boundaries": [
+        "auth",
+        "gateway",
+        "database",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A07",
+      "boundaries": [
+        "auth",
+        "gateway",
+        "database",
+        "provider",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A08",
+      "boundaries": [
+        "device",
+        "auth",
+        "database",
+        "offline"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A09",
+      "boundaries": [
+        "device",
+        "auth",
+        "security",
+        "gateway"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "WF-A10",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security",
+        "provider"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "CR-A01",
+      "boundaries": [
+        "device",
+        "gateway",
+        "provider",
+        "object",
+        "database"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "PF-A01",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "database",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "PF-A02",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "database",
+        "security",
+        "object"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "PF-A03",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "provider",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "PF-A04",
+      "boundaries": [
+        "device",
+        "accessibility",
+        "offline"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "SA-A01",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "SA-A02",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "SA-A03",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "SA-A04",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "SA-A05",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "SA-A06",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "SA-A07",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "SA-A08",
+      "boundaries": [
+        "device",
+        "auth",
+        "gateway",
+        "security"
+      ],
+      "tier": "feature"
+    },
+    {
+      "id": "DB-A01",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "DB-A02",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "DB-A03",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "DB-A04",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "DB-A05",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "DB-A06",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "DB-A07",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    },
+    {
+      "id": "DB-A08",
+      "boundaries": [
+        "database",
+        "recovery",
+        "security"
+      ],
+      "tier": "release"
+    }
+  ]
+}
