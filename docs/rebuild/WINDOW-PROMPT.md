@@ -9,7 +9,7 @@ PRODUCT: A Masana-only fan platform. Tabs: Chats (fan↔Masana only) | Rooms (st
 
 STEP 1 — ORIENT
 - Fetch main, integration/rebuild, open PRs, factory/claims and CI.
-- Pick ONE unclaimed milestone in dependency order from DELIVERY §2: R0, then R1, then a lane, then R-CLEAN, then R-RELEASE. If R0 or R1 is open, only the AF00 window works on it.
+- Pick ONE unclaimed source-complete vertical milestone from DELIVERY §2 and **start feature-local implementation now even if R0/R1 or other tests remain incomplete**. Only AF00 works on shared R0/R1, router, gateway/worker root composition and main/release; other claimed lane windows work in parallel immediately. Dependencies delay only canonical contract composition or activation, never independent code.
 - Claim the lane or sub-scope in factory/claims (DELIVERY §3) and renew the claim every 5 minutes.
 - Read the lane's existing PRs (DELIVERY §7) and reuse map (SOURCE-CLEANUP §3) before writing code.
 
@@ -28,9 +28,9 @@ STEP 3 — VERIFY on your head SHA:
 - flutter analyze && flutter test for both apps
 - your journey tests J##
 - an APK build when you touched UI
-Fix every failure in your scope. Never report skipped, zero-step or mocked runs as real passes. Never run scripts against real financial data or production.
+Fix demonstrable issues in changed code when practical, but do NOT hold missing Flutter/backend/PG/worker source hostage to old failing suites, unavailable runners, missing live-provider credentials or unfinished Android qualification. Record each failure/deferred check and move to the next unblocked source path. Never report skipped, zero-step or mocked runs as real passes. Never run scripts against real financial data or production. Full checks are mandatory before **release**, not before starting or safe non-deploying source integration.
 
-STEP 4 — INTEGRATE: open a PR against integration/rebuild with the DELIVERY §5 checklist and §6 evidence records. Merge once it is green. Promote to main only at gates, after reviewing the Railway auto-deploy.
+STEP 4 — INTEGRATE: open a PR against **non-deploying** integration/rebuild with DELIVERY §5 source checklist and §6 truthful check records. Ask AF00 to merge **source-complete, reviewed, compatible, fail-closed changes promptly**, even when old/global tests are red or unavailable. Carry exact-SHA test debt with owner; fix security/financial/data-loss regressions or isolate them behind disabled gates before integration. Never treat a failed or skipped test as PASS. Promote to main only at the separate fully qualified release gate, reviewing Railway auto-deploy and restored data.
 
 STEP 5 — REPORT:
 - milestone and journeys closed
