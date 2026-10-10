@@ -184,11 +184,20 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       await _store.write(attempt);
       if (!mounted || !_authorized || generation != _generation) return;
       setState(() { _saving = false; _sending = true; _attempted = true; });
-      final post = await widget.transport.publish(
+      // On an uncertain retry, check persisted server state before another POST.
+      // Lookup is read-only, scoped by the authenticated Gateway session. A
+      // failed lookup never causes an unsafe second request.
+      AudioPost? recovered;
+      if (wasAttempted && widget.transport is AudioPostReceiptLookup) {
+        recovered = await (widget.transport as AudioPostReceiptLookup)
+            .receiptByRequest(requestId: requestId);
+        if (!mounted || !_authorized || generation != _generation) return;
+      }
+      final post = recovered ?? await widget.transport.publish(
         requestId: requestId, assetId: assetId, title: title,
       );
       if (!mounted || !_authorized || generation != _generation) return;
-      if (post.title != title ||
+      if (post.title != title || post.durationMs != attempt.durationMs ||
           (post.status != 'processing' && post.status != 'published' &&
            post.status != 'failed' && post.status != 'removed')) {
         throw const FormatException('Invalid publish receipt');
