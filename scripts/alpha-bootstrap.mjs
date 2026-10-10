@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { assertAlphaBootstrapTarget } from "./alpha-bootstrap-safety.mjs";
 import {
   createCanonicalId,
   normalizeCapabilityKey,
@@ -20,6 +21,10 @@ import {
   setPolicyRevision,
   withTransaction,
 } from "@masanawa/postgres";
+
+// This entry point creates DEMO identities; reject production or ambiguous DBs
+// before opening a Pool or running any schema/data mutation.
+assertAlphaBootstrapTarget(process.env);
 
 const connectionString =
   process.env.MASANAWA_DATABASE_URL ?? process.env.DATABASE_URL;
