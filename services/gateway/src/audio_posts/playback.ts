@@ -3,6 +3,8 @@
  * session resolver, post repository, visibility policy and issuePrivateMediaUrl.
  */
 import type { FastifyInstance, FastifyReply } from "fastify";
+import type { TalkListenStore } from "@masanawa/contracts";
+export type { TalkListenStore } from "@masanawa/contracts";
 import type { AudioPostRecord, PostActor } from "./contract.js";
 
 export class TalkPlaybackError extends Error {
@@ -26,12 +28,6 @@ export interface PublishedTalkPlaybackDeps {
    * Absence disables counting, not authenticated audio playback.
    */
   listens?: TalkListenStore;
-}
-
-export interface TalkListenStore {
-  open(input: { tenantId: string; postId: string; viewerId: string; revision: number; durationMs: number }): Promise<string>;
-  complete(input: { tenantId: string; postId: string; viewerId: string; listenId: string; playedMs: number;
-    canView: (authorAccountId: string) => Promise<boolean> }): Promise<{ counted: boolean; listenCount: number }>;
 }
 
 const safeId = (value: unknown): value is string =>

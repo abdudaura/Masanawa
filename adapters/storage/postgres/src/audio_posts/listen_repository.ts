@@ -1,6 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 
-import type { TalkListenStore } from "../../../../../services/gateway/src/audio_posts/playback.js";
+import type { TalkListenStore } from "@masanawa/contracts";
 
 /** AF09 durable qualified-listen adapter. AF00 allocates append-only SQL.
  * A ticket request or card impression never increments a counter.

@@ -55,3 +55,10 @@ export interface FollowingRepository {
     cursor: string | null;
   }): Promise<PublicFeedPage>;
 }
+
+/** Canonical persistence contract for verified listening, shared without adapter-to-Gateway imports. */
+export interface TalkListenStore {
+  open(input: { tenantId: string; postId: string; viewerId: string; revision: number; durationMs: number }): Promise<string>;
+  complete(input: { tenantId: string; postId: string; viewerId: string; listenId: string; playedMs: number;
+    canView: (authorAccountId: string) => Promise<boolean> }): Promise<{ counted: boolean; listenCount: number }>;
+}
