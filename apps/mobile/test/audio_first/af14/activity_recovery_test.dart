@@ -174,6 +174,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('uncertain invitation cannot be sent again until a successful refresh',
+      (tester) async {
+    final transport = _RecoveryTransport()..failDecision = true;
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+
+    const acceptKey = ValueKey('activity-invite-accept-invitation-1');
+    const refreshKey = ValueKey('activity-invite-refresh-invitation-1');
+    await tester.tap(find.byKey(acceptKey));
+    await tester.pumpAndSettle();
+
+    expect(transport.decisionCalls, 1);
+    expect(tester.widget<FilledButton>(find.byKey(acceptKey)).onPressed, isNull);
+    expect(find.byKey(refreshKey), findsOneWidget);
+    // Even an unrelated list error cannot accidentally authorize resubmission.
+    transport.failLoad = true;
+    await tester.tap(find.byKey(refreshKey));
+    await tester.pumpAndSettle();
+    expect(transport.decisionCalls, 1);
+    expect(find.text('Couldn’t refresh Activity.'), findsOneWidget);
+
+    transport.failLoad = false;
+    await tester.tap(find.byKey(const ValueKey('activity-retry')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(find.byKey(acceptKey)).onPressed, isNotNull);
+    expect(find.byKey(refreshKey), findsNothing);
+    // A read-only refresh must never resubmit the original decision.
+    expect(transport.decisionCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('uncertain invitation fence is cleared across account switch',
+      (tester) async {
+    final transport = _RecoveryTransport()..failDecision = true;
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    const acceptKey = ValueKey('activity-invite-accept-invitation-1');
+    await tester.tap(find.byKey(acceptKey));
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(find.byKey(acceptKey)).onPressed, isNull);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ActivityScreen)),
+    );
+    transport.currentTitle = 'Activity for B';
+    (container.read(sessionProvider.notifier) as _RecoverySession)
+        .switchTo('user-b');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Activity for B'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byKey(acceptKey)).onPressed, isNotNull);
+    expect(transport.decisionCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('account switch replaces cached Activity with new principal data',
       (tester) async {
     final transport = _RecoveryTransport()
