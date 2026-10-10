@@ -7,20 +7,18 @@ async function transact<T>(pool:Pool,fn:(c:PoolClient)=>Promise<T>):Promise<T>{
  finally{c.release();}
 }
 type DeliveryInput={tenantId:string;actionId:string;operationId:string;fence:number;evidenceId:string};
-async function acquire(c:Pool,input:DeliveryInput,expectedDestination:string) {
- return c;
-}
 export function createPostgresModerationDeliveryRepository(pool:Pool){
  async function finish(input:DeliveryInput,reverse:boolean):Promise<boolean> {
   if(!Number.isSafeInteger(input.fence)||input.fence<1)return false;
   const destination=reverse?"moderation.action.reverse":"moderation.action.apply";
   return transact(pool,async c=>{
-   const job=await c.query<{fence:string;state:string;payload:{actionId:string};destination:string}>(`SELECT fence::text,state,payload,destination
+   const job=await c.query<{fence:string;state:string;payload:{actionId:string};destination:string;lease_expires_at:Date|null}>(`SELECT fence::text,state,payload,destination,lease_expires_at
      FROM events.outbox WHERE tenant_id=$1 AND outbox_event_id=$2 FOR UPDATE`,
      [input.tenantId,input.operationId]);
    const row=job.rows[0];
    if(!row||row.state!=="claimed"||row.fence!==String(input.fence)||
-       row.destination!==destination||row.payload?.actionId!==input.actionId)return false;
+       row.destination!==destination||row.payload?.actionId!==input.actionId||
+       !row.lease_expires_at||row.lease_expires_at.getTime()<=Date.now())return false;
    const state=reverse?"applied":"approved",next=reverse?"reversed":"applied";
    const result=await c.query<{case_id:string;expires_at:Date|null}>(`UPDATE moderation.actions
      SET state=$3,version=version+1,updated_at=now()
