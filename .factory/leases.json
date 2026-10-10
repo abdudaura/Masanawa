@@ -206,15 +206,17 @@
         "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
         "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
         "apps/mobile/test/audio_first/af09/destination_test.dart",
-        "docs/workstreams/AF09-destination-20261010.md"
+        "docs/workstreams/AF09-destination-20261010.md",
+        "apps/mobile/lib/src/audio_posts/audio_post_detail_screen.dart",
+        "apps/mobile/test/audio_first/af09/detail_test.dart"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "source_head": "446594187be5525b1e2703af8fc29960785b8190",
       "claimed_at": "2026-10-10T04:21:01.879Z",
-      "heartbeat_at": "2026-10-10T04:21:01.884Z",
-      "expires_at": "2026-10-10T04:26:01.884Z",
+      "heartbeat_at": "2026-10-10T04:23:37.908Z",
+      "expires_at": "2026-10-10T04:28:37.908Z",
       "notes": "AF09 feature-local UI wiring only; AF00 root/router/migrations and AF05/AF15 media untouched. New paths do not overlap active paths; prior feed claims are in history."
     },
     {
