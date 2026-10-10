@@ -374,6 +374,11 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
               onPressed: disabled || !_validTrim ? null : _preview,
               icon: const Icon(Icons.play_arrow),
               label: const Text('Preview selection')),
+            OutlinedButton.icon(
+              onPressed: disabled ? null : _discard,
+              icon: const Icon(Icons.replay),
+              label: const Text('Delete and re-record')),
+
             if (widget.upload == null)
               const Text('Private upload unavailable; this recording cannot be published.'),
             FilledButton(
