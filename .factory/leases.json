@@ -157,7 +157,9 @@
       "claimed_at": "2026-10-10T02:53:59Z",
       "heartbeat_at": "2026-10-10T02:56:26Z",
       "expires_at": "2026-10-10T03:01:26Z"
-    },
+    }
+  ],
+  "history": [
     {
       "claim_id": "af09-609-service-errors-20261010-gpt6",
       "owner": "AF09 continuing PR 609 / GPT-6 service readback",
@@ -172,10 +174,17 @@
       "source_pr": 609,
       "claimed_at": "2026-10-10T02:54:59.712Z",
       "heartbeat_at": "2026-10-10T02:54:59.712Z",
-      "expires_at": "2026-10-10T02:59:59.712Z"
-    }
-  ],
-  "history": [
+      "expires_at": "2026-10-10T02:59:59.712Z",
+      "released_at": "2026-10-10T02:59:07.311Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "source_commits": [
+        "8fdd47336a1b380c72f40d751f28ffe7c85e8abe",
+        "43f75c7f613a59e6453ca618c14fdf5e2dd411d7",
+        "cc229a48c3b00ebaed3c23c30968946d0e89ac45"
+      ],
+      "test_state": "6/6 real isolated Node tests on exact Git blob compiled with TS5.8.3; whole service suite 22 cases authored NOT_RUN; PG/Flutter/Gateway NOT_RUN",
+      "release_reason": "Service failures source-checked, detailed handoff in same PR; Published Talks missing AF00 migration+authenticated composition, AF05/15 media, AF13 full tests. No merge or deployment; keep milestone open."
+    },
     {
       "claim_id": "af09-609-feed-pagination-20261010-gpt6-0252",
       "owner": "AF09 PR #609 feed correctness continuation GPT-6",
