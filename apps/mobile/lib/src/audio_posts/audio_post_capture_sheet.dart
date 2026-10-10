@@ -7,7 +7,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-import 'audio_post_composer_screen.dart';
+import 'audio_post_media_contract.dart';
 
 /// The AF05/AF15 binding must upload privately, trim server-side and return
 /// only a verified owned-ready media receipt. This screen cannot mint asset IDs.
