@@ -4,7 +4,7 @@ type Row=Record<string,unknown>;
 type Cursor={at:string;id:string}|null;
 function item(r:Row){
  return {id:String(r.id),tenantId:String(r.tenant_id),authorMasanaId:String(r.author_masana_id),
-  kind:String(r.kind),body:String(r.body),media:r.media_ids as string[],transcript:r.transcript===null?null:String(r.transcript),
+  kind:String(r.kind) as "text"|"image"|"audio",body:String(r.body),media:r.media_ids as string[],transcript:r.transcript===null?null:String(r.transcript),
   publishedAt:new Date(String(r.published_at)).toISOString(),likeCount:Number(r.like_count??0),commentCount:Number(r.comment_count??0),
   viewerLiked:Boolean(r.viewer_liked),viewerSaved:Boolean(r.viewer_saved)};
 }
@@ -62,12 +62,28 @@ export class PgHomeFeedRepository {
   return enabled;
  }
  async comment(tenant:string,fan:string,post:string,body:string,key:string,pending:boolean){
-  const rows=await this.pool.query(`INSERT INTO feed.comments(tenant_id,post_id,fan_id,body,state,idempotency_key)
+  const rows=await this.pool.query(`WITH inserted AS (
+   INSERT INTO feed.comments(tenant_id,post_id,fan_id,body,state,idempotency_key)
    SELECT $1,p.id,$2,$4,$5,$6 FROM feed.posts p WHERE p.tenant_id=$1 AND p.id=$3::uuid AND p.state='published'
-   ON CONFLICT(tenant_id,fan_id,idempotency_key) DO UPDATE SET idempotency_key=feed.comments.idempotency_key
-   RETURNING id,post_id,body,state,created_at`,[tenant,fan,post,body,pending?"pending":"visible",key]);
+   ON CONFLICT(tenant_id,fan_id,idempotency_key) DO UPDATE
+   SET idempotency_key=EXCLUDED.idempotency_key
+   WHERE feed.comments.post_id=EXCLUDED.post_id AND feed.comments.body=EXCLUDED.body
+   RETURNING id,post_id,body,state,created_at
+  ), queued AS (
+   INSERT INTO events.outbox(outbox_event_id,tenant_id,event_id,event_type,schema_version,
+     aggregate_type,aggregate_id,correlation_id,destination,payload)
+   SELECT 'outbox-event_feed-comment_'||replace(i.id::text,'-',''),$1,
+     'event_feed-comment_'||replace(i.id::text,'-',''),'feed.comment.pending',1,
+     'feed_comment',i.id::text,'correlation_feed-comment_'||replace(i.id::text,'-',''),
+     'feed.comment_review',
+     jsonb_build_object('tenantId',$1::text,'postId',$3::text,'commentId',i.id::text,'fanId',$2::text,
+       'outboxEventId','outbox-event_feed-comment_'||replace(i.id::text,'-',''))
+   FROM inserted i WHERE i.state='pending'
+   ON CONFLICT DO NOTHING RETURNING outbox_event_id
+  )
+  SELECT * FROM inserted`,[tenant,fan,post,body,pending?"pending":"visible",key]);
   const row=rows.rows[0] as Row|undefined;
-  if(!row)throw Object.assign(new Error("post_not_found"),{status:404,code:"post_not_found"});
+  if(!row)throw Object.assign(new Error("idempotency_conflict_or_post_unavailable"),{status:409,code:"idempotency_conflict"});
   if(row.post_id!==post||row.body!==body)throw Object.assign(new Error("idempotency_conflict"),{status:409,code:"idempotency_conflict"});
   return comment(row) as {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string};
  }
