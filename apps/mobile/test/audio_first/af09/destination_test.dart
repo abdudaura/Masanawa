@@ -1,7 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_composer_screen.dart';
 import 'package:masanawa/src/audio_posts/audio_post_destination.dart';
+import 'package:masanawa/src/audio_posts/audio_post_playback.dart';
+import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/audio_posts/audio_post_draft_store.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
 import 'package:masanawa/src/audio_posts/creator_profile_transport.dart';
@@ -85,7 +88,55 @@ class _MemoryAttemptStore implements TalkPublishAttemptStore {
   }
 }
 
+class _FakeAudioOutput implements PublishedTalkAudioOutput {
+  int starts = 0;
+  @override
+  Future<void> start(Uri signedUrl) async { starts++; }
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> dispose() async {}
+}
+
 void main() {
+  testWidgets('creator Talk opens controllable playback with same AF09 ticket',
+      (tester) async {
+    final output = _FakeAudioOutput();
+    final playback = AudioPostPlaybackController(
+      api: ApiClient(dio: Dio()), accountId: 'alice',
+      isCurrentAccount: (id) => id == 'alice',
+      expectedMediaHost: 'storage.example.com',
+      output: output, nowMs: () => 2000000000000,
+      ticketRequest: (id) async => {
+        'url': 'https://storage.example.com/audio/$id?sig=ok',
+        'expiresAtMs': 2000000030000,
+      },
+    );
+    addTearDown(playback.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: PublishedTalksDestination(
+        accountId: 'alice', isCurrentAccount: (id) => id == 'alice',
+        transport: _AudioPosts(), creatorTransport: _Creators(),
+        playback: playback, attemptStore: _MemoryAttemptStore(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final creator = find.byKey(const ValueKey('talk-creator-post1'));
+    await tester.ensureVisible(creator);
+    await tester.tap(creator);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('creator-post-post1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('creator-talk-listen')), findsOneWidget);
+    expect(output.starts, 0);
+    await tester.tap(find.byKey(const ValueKey('creator-talk-listen')));
+    await tester.pumpAndSettle();
+    expect(output.starts, 1);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(playback.playing, isFalse);
+  });
+
   testWidgets('published creator opens canonical profile without replacing feed',
       (tester) async {
     final posts = _AudioPosts();
