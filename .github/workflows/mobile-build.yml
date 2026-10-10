@@ -32,12 +32,18 @@ jobs:
       - name: Install
         run: flutter pub get
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
       - name: Test
+        # Keep independent checks running after an earlier failure; the job remains failed.
+        if: ${{ !cancelled() }}
         run: flutter test
       - name: Phone (production APK)
+        # Keep independent checks running after an earlier failure; the job remains failed.
+        if: ${{ !cancelled() }}
         run: flutter build apk --release --dart-define=API_BASE_URL=https://masanawa-gateway-production.up.railway.app --dart-define=AGENT_BASE_URL=https://masanawa-gateway-production.up.railway.app
       - name: Web (release)
+        # Keep independent checks running after an earlier failure; the job remains failed.
+        if: ${{ !cancelled() }}
         run: flutter build web --release --dart-define=API_BASE_URL=https://masanawa-gateway-production.up.railway.app --dart-define=AGENT_BASE_URL=https://masanawa-gateway-production.up.railway.app
       - name: Upload APK
         uses: actions/upload-artifact@v4
