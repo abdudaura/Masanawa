@@ -383,6 +383,14 @@ class CryptoWalletScreen extends ConsumerWidget {
     final sessionIdentity = authState is SessionSignedIn
         ? authState.tokens.accessToken
         : null;
+    Widget msnReadback() => MsnBalanceCard(
+      sessionIdentity: sessionIdentity,
+      transport: GatewayMsnBalanceTransport(
+        dio: sessionClient.dio,
+        baseUrl: kAgentBaseUrl,
+        readAccessToken: () => ref.read(apiClientProvider).accessToken,
+      ),
+    );
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
@@ -397,10 +405,25 @@ class CryptoWalletScreen extends ConsumerWidget {
         ],
       ),
       body: wallet.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _WalletError(
-          error: error,
-          onRetry: () => ref.read(cryptoWalletProvider.notifier).refresh(),
+        // MSN readback is independent of the crypto API. A crypto outage must
+        // not hide a separately available, authenticated MSN balance.
+        loading: () => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            msnReadback(),
+            const SizedBox(height: 20),
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+        error: (error, _) => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            msnReadback(),
+            _WalletError(
+              error: error,
+              onRetry: () => ref.read(cryptoWalletProvider.notifier).refresh(),
+            ),
+          ],
         ),
         data: (data) => RefreshIndicator(
           onRefresh: () => ref.read(cryptoWalletProvider.notifier).refresh(),
@@ -423,14 +446,7 @@ class CryptoWalletScreen extends ConsumerWidget {
                         ref.read(cryptoWalletProvider.notifier).refreshBalance(),
               ),
               const SizedBox(height: 10),
-              MsnBalanceCard(
-                sessionIdentity: sessionIdentity,
-                transport: GatewayMsnBalanceTransport(
-                  dio: sessionClient.dio,
-                  baseUrl: kAgentBaseUrl,
-                  readAccessToken: () => ref.read(apiClientProvider).accessToken,
-                ),
-              ),
+              msnReadback(),
               const SizedBox(height: 14),
               Row(
                 children: [
