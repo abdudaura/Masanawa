@@ -130,6 +130,23 @@
       "heartbeat_at": "2026-10-10T02:42:45.541Z",
       "expires_at": "2026-10-10T02:47:45.541Z",
       "notes": "Continuing existing PR #609 only; no migration/router/auth/root/production edits. AF05 shared audio focus still integration dependency. Selected from cleared AF09 path scopes."
+    },
+    {
+      "claim_id": "af09-609-following-projection-20261010-gpt6",
+      "owner": "AF09 continued PR #609; fresh window, no AF00 ownership",
+      "scope": "Complete existing Published Talks Following feed readback: canonical public projection and persisted counts, negative privacy regression. Same PR, no router/migrations/native/media.",
+      "paths": [
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/following.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "docs/workstreams/AF09-following-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:43:12.070Z",
+      "heartbeat_at": "2026-10-10T02:43:12.070Z",
+      "expires_at": "2026-10-10T02:48:12.070Z"
     }
   ],
   "history": [
