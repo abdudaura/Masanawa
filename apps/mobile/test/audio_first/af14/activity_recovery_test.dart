@@ -1,15 +1,45 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/activity/talk_activity.dart';
+import 'package:masanawa/src/core/api/models.dart';
+import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/screens/activity/activity_screen.dart';
 import 'package:masanawa/src/state/talk_activity_state.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+SessionState signedIn(String id) {
+  final user = AuthUser(
+    id: id, name: 'Activity viewer', locale: 'en-NG',
+    status: 'ACTIVE', role: 'CITIZEN', isNewUser: false,
+    createdAt: '2026-10-09T00:00:00Z',
+  );
+  return SessionSignedIn(
+    user,
+    AuthTokens(
+      accessToken: 'fixture',
+      refreshToken: 'fixture',
+      accessExpiresIn: 900,
+      user: user,
+    ),
+  );
+}
+
+class _RecoverySession extends SessionController {
+  @override
+  SessionState build() => signedIn('user-a');
+
+  void switchTo(String id) => state = signedIn(id);
+  void signOut() => state = const SessionSignedOut();
+}
 
 class _RecoveryTransport implements TalkActivityTransport {
   bool failLoad = false;
   bool failDecision = false;
   bool failReadbackAfterDecision = false;
+  String currentTitle = 'A Talk invitation';
+  Completer<void>? decisionGate;
   int loadCalls = 0;
   int decisionCalls = 0;
 
@@ -24,7 +54,7 @@ class _RecoveryTransport implements TalkActivityTransport {
       TalkActivityItem(
         id: 'invitation-1',
         kind: TalkActivityKind.talkInvitation,
-        title: 'A Talk invitation',
+        title: currentTitle,
         detail: 'Invitation details',
         createdAt: DateTime(2026, 10, 9),
         talkId: 'talk-123',
@@ -39,6 +69,7 @@ class _RecoveryTransport implements TalkActivityTransport {
     required bool accept,
   }) async {
     decisionCalls += 1;
+    if (decisionGate != null) await decisionGate!.future;
     if (failDecision) throw StateError('SECRET_SUBMIT_DIAGNOSTIC');
     if (failReadbackAfterDecision) failLoad = true;
   }
@@ -46,6 +77,7 @@ class _RecoveryTransport implements TalkActivityTransport {
 
 Widget _app(_RecoveryTransport transport) => ProviderScope(
   overrides: [
+    sessionProvider.overrideWith(_RecoverySession.new),
     talkActivityTransportProvider.overrideWithValue(transport),
   ],
   child: MaterialApp(
@@ -122,4 +154,72 @@ void main() {
     expect(find.textContaining('SECRET_SUBMIT_DIAGNOSTIC'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('account switch replaces cached Activity with new principal data',
+      (tester) async {
+    final transport = _RecoveryTransport()
+      ..currentTitle = 'Private activity for A';
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Private activity for A'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ActivityScreen)),
+    );
+    transport.currentTitle = 'Private activity for B';
+    (container.read(sessionProvider.notifier) as _RecoverySession)
+        .switchTo('user-b');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Private activity for B'), findsOneWidget);
+    expect(find.text('Private activity for A'), findsNothing);
+    expect(transport.loadCalls, greaterThanOrEqualTo(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('old-account invitation completion never appears under new user',
+      (tester) async {
+    final transport = _RecoveryTransport()
+      ..decisionGate = Completer<void>()
+      ..currentTitle = 'Private activity for A';
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ActivityScreen)),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('activity-invite-accept-invitation-1')),
+    );
+    await tester.pump();
+    transport.currentTitle = 'Private activity for B';
+    (container.read(sessionProvider.notifier) as _RecoverySession)
+        .switchTo('user-b');
+    await tester.pump();
+    transport.decisionGate!.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Private activity for B'), findsOneWidget);
+    expect(find.text('Private activity for A'), findsNothing);
+    expect(find.text('Invitation accepted.'), findsNothing);
+    expect(transport.decisionCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('signed-out Activity never fetches or displays private results',
+      (tester) async {
+    final transport = _RecoveryTransport();
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ActivityScreen)),
+    );
+    (container.read(sessionProvider.notifier) as _RecoverySession).signOut();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in to view Activity.'), findsOneWidget);
+    expect(find.text('A Talk invitation'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
 }
