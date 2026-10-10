@@ -58,6 +58,21 @@ export function createAudioPostService(deps: {
   now: () => string;
 }) {
   const { repository, assets, moderation, newId, now } = deps;
+  // Normalize only canonical repository denial/cursor failures. In particular,
+  // hidden/removed posts must not become HTTP 500 or reveal their existence.
+  // Unexpected PostgreSQL/provider errors stay visible to the server error path.
+  const mapRepositoryError = (error: unknown): never => {
+    if (error instanceof Error && error.message === "audio_posts.not_visible") {
+      throw new AudioPostError("NOT_FOUND", "Audio post not found");
+    }
+    if (error instanceof Error && error.message === "audio_posts.invalid_cursor") {
+      throw new AudioPostError("VALIDATION", "Invalid feed cursor");
+    }
+    if (error instanceof Error && error.message === "audio_posts.comment_conflict") {
+      throw new AudioPostError("CONFLICT", "Comment request key already used");
+    }
+    throw error;
+  };
   const publish = async (actor: PostActor, body: unknown): Promise<AudioPostRecord> => {
     assertActor(actor);
     if (!body || typeof body !== "object" || Array.isArray(body)) {
@@ -127,7 +142,7 @@ export function createAudioPostService(deps: {
     if (input.cursor !== undefined && input.cursor !== null) safeId(input.cursor, "cursor", 256);
     const page = await repository.publicFeed({
       tenantId: input.tenantId, viewerId: input.viewerId, limit, cursor: input.cursor ?? null,
-    });
+    }).catch(mapRepositoryError);
     return { items: page.items.map(toPublicAudioPost), nextCursor: page.nextCursor };
   };
 
@@ -166,7 +181,7 @@ export function createAudioPostService(deps: {
     return repository.setReaction({
       tenantId: actor.tenantId, viewerId: actor.accountId,
       postId: input.postId, kind: input.kind, enabled: input.enabled,
-    });
+    }).catch(mapRepositoryError);
   };
 
   const commentText = (value: unknown): string => {
@@ -177,15 +192,6 @@ export function createAudioPostService(deps: {
       throw new AudioPostError("VALIDATION", "Comment must be 1–400 plain-text characters");
     }
     return trimmed;
-  };
-  const commentError = (error: unknown): never => {
-    if (error instanceof Error && error.message === "audio_posts.not_visible") {
-      throw new AudioPostError("NOT_FOUND", "Audio post not found");
-    }
-    if (error instanceof Error && error.message === "audio_posts.comment_conflict") {
-      throw new AudioPostError("CONFLICT", "Comment request key already used");
-    }
-    throw error;
   };
   const commentView = (item: AudioPostComment, viewerId: string): PublicAudioPostComment => ({
     postId: item.postId, commentId: item.commentId, body: item.body,
@@ -200,7 +206,7 @@ export function createAudioPostService(deps: {
         tenantId: actor.tenantId, viewerId: actor.accountId, postId, limit: 50,
       });
       return items.map(item => commentView(item, actor.accountId));
-    } catch (error) { return commentError(error); }
+    } catch (error) { return mapRepositoryError(error); }
   };
   const comment = async (actor: PostActor, postId: string, body: unknown) => {
     assertActor(actor);
@@ -220,7 +226,7 @@ export function createAudioPostService(deps: {
         commentId: safeId(newId(), "comment"), requestId, body: text, createdAt: now(),
       });
       return commentView(record, actor.accountId);
-    } catch (error) { return commentError(error); }
+    } catch (error) { return mapRepositoryError(error); }
   };
   const removeOwnComment = async (actor: PostActor, postId: string, commentId: string) => {
     assertActor(actor);
