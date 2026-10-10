@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   parseExternalVideoUrl, strictManualVideoInput, type ExternalVideo,
-  type VideoPrincipal, type VideoProvider, type VideoReviewState,
+  type VideoPrincipal, type VideoProvider,
 } from "./contract.js";
 
 export interface VideoStore {
@@ -55,7 +55,7 @@ export function createVideoAdmissionService(store: VideoStore) {
       if (Object.keys(x).sort().join(",") !== "state,verificationReference") {
         throw new VideoAdmissionError(400,"video_invalid_review","Unexpected review fields");
       }
-      const state = x.state as VideoReviewState;
+      const state = x.state as "approved" | "hidden" | "unavailable";
       if (!["approved","hidden","unavailable"].includes(state)) throw new VideoAdmissionError(400,"video_invalid_review","Invalid review state");
       // A staff verification record is mandatory before an item can be public.
       const verificationReference = typeof x.verificationReference === "string" ? x.verificationReference.trim() : null;
