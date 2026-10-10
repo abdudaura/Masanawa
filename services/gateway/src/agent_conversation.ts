@@ -235,6 +235,11 @@ export function createAgentConversationService(input: {
             });
         const direct = billingDirect ?? cryptoDirect;
         const inferenceText = teachingPreparation?.text ?? text;
+        // Raw model deltas may include machine directives. Stream them only
+        // when no billing/crypto/teaching post-processing can change the reply.
+        const rawTextDelta =
+          !input.billingAssistant && !input.cryptoAssistant &&
+          !teachingPreparation && !direct ? request.onTextDelta : undefined;
         const generated = direct ?? await input.strategy.execute({
           agentRunId,
           characterSessionId,
@@ -246,12 +251,7 @@ export function createAgentConversationService(input: {
           ...(request.signal ? { signal: request.signal } : {}),
           // Machine directives are stripped after inference. Do not stream
           // them into the user-visible chat before server consumption.
-          ...(!input.billingAssistant &&
-              !input.cryptoAssistant &&
-              !teachingPreparation &&
-              request.onTextDelta
-            ? { onTextDelta: request.onTextDelta }
-            : {}),
+          ...(rawTextDelta ? { onTextDelta: rawTextDelta } : {}),
           input: Object.freeze({ kind: "text" as const, text: inferenceText }),
         });
         const cryptoResult = direct || teachingPreparation
@@ -305,6 +305,18 @@ export function createAgentConversationService(input: {
               parts: [...result.parts],
             },
           });
+        }
+
+        // The existing NDJSON route delivers these deltas immediately.
+        // Billing/crypto/teaching turns cannot stream untrusted raw model
+        // directives; instead emit only the settled server-authorized reply.
+        // A disconnected stream must not retroactively fail a durable turn.
+        if (request.onTextDelta && !rawTextDelta && !request.signal?.aborted) {
+          try {
+            await request.onTextDelta(reply);
+          } catch {
+            // Delivery is recoverable from canonical turn history.
+          }
         }
 
         await input.twinObserver?.completed({
