@@ -17,18 +17,28 @@ export function createPostgresFanMemoryStore(pool:Pool){
  async read(p:Fan,ch:string){
   const c=await pool.connect();
   try{
-   const o=await owner(c,p,ch);if(!o)return null;
-   const q=o.enabled?await c.query<{memory_record_id:string;content:string;updated_at:Date;expires_at:Date|null}>(`
+   await c.query("BEGIN READ ONLY");
+   const o=await owner(c,p,ch);
+   if(!o){await c.query("COMMIT");return null;}
+   // Hold a row-share lock on live consent until the read completes.
+   const approved=await c.query<{enabled:boolean;revision:string}>(`
+     SELECT enabled,revision::text FROM memory.fan_controls
+     WHERE tenant_id=$1 AND relationship_id=$2 FOR SHARE`,
+     [p.tenantId,o.relationship_id]);
+   const enabled=approved.rows[0]?.enabled===true;
+   const revision=approved.rows[0]?.revision??"0";
+   const q=enabled?await c.query<{memory_record_id:string;content:string;updated_at:Date;expires_at:Date|null}>(`
      SELECT m.memory_record_id,v.content,m.updated_at,v.expires_at
      FROM memory.records m JOIN memory.revisions v ON v.tenant_id=m.tenant_id
       AND v.memory_record_id=m.memory_record_id AND v.revision_number=m.revision
      WHERE m.tenant_id=$1 AND m.scope_kind='relationship' AND m.scope_ref_id=$2
       AND m.lifecycle_state='active' AND (v.expires_at IS NULL OR v.expires_at>clock_timestamp())
      ORDER BY m.updated_at DESC,m.memory_record_id LIMIT 50`,[p.tenantId,o.relationship_id]):{rows:[]};
-   return {characterId:ch,enabled:o.enabled,revision:Number(o.revision),
+   await c.query("COMMIT");
+   return {characterId:ch,enabled,revision:Number(revision),
      items:q.rows.map(x=>({id:x.memory_record_id,content:x.content,
        updatedAt:x.updated_at.toISOString(),expiresAt:x.expires_at?.toISOString()??null}))};
-  }finally{c.release();}
+  }catch(e){await c.query("ROLLBACK");throw e;}finally{c.release();}
  },
  async setEnabled(p:Fan,ch:string,enabled:boolean,expectedRevision:number){
   const c=await pool.connect();try{
