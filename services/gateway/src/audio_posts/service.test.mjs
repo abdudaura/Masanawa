@@ -7,7 +7,7 @@ const second = Object.freeze({ tenantId:"tenant1", accountId:"user2", authorId:"
 const accepted = {assetId:"asset1",ownerAccountId:"user1",durationMs:25000,bytes:50000,mime:"audio/ogg",state:"ready"};
 
 function fixture() {
- const rows = new Map(), keys = new Map();
+ const rows = new Map(), keys = new Map(), saves = new Set();
  let lookups=0, verifications=0, decisions=0, id=0;
  const repo = {
   async byRequest(t,a,k) {return rows.get(keys.get([t,a,k].join("/"))) ?? null},
@@ -21,6 +21,10 @@ function fixture() {
     requestId:intent.requestId,title:intent.title,durationMs:intent.asset.durationMs,
     status:"processing",revision:0,createdAt:intent.createdAt,publishedAt:null};
    rows.set(record.postId,record);keys.set(key,record.postId);return record;
+  },
+  async saved({tenantId,viewerId,limit}) {
+   return [...rows.values()].filter(r => r.tenantId===tenantId && r.status==='published' &&
+      viewerId!=='blocked' && saves.has([tenantId,viewerId,r.postId].join('/'))).slice(0,limit);
   },
   async removeOwn({tenantId,accountId,postId}) {
    const r=rows.get(postId);
@@ -44,6 +48,10 @@ function fixture() {
   async setReaction({tenantId,viewerId,postId,kind,enabled}) {
    const r=rows.get(postId);
    if(!r||r.tenantId!==tenantId||r.status!=="published"||viewerId==="blocked")throw Error("not_visible");
+   if(kind==='save'){
+    const key=[tenantId,viewerId,postId].join('/');
+    if(enabled) saves.add(key); else saves.delete(key);
+   }
    return {enabled};
   },
  };
@@ -97,7 +105,7 @@ test("cross-account object and unsupported formats reject before persistence",as
   repository:{
    byRequest:async()=>null, createOnce:async()=>{throw Error("should not persist");},
    byId:async()=>null,publicFeed:async()=>({items:[],nextCursor:null}),
-   mine:async()=>[],removeOwn:async()=>null,settle:async()=>{throw Error("should not settle");},
+   mine:async()=>[],saved:async()=>[],removeOwn:async()=>null,settle:async()=>{throw Error("should not settle");},
    setReaction:async()=>({enabled:false}),
   },
   assets:{verifyOwnedReady:async()=>({...accepted,ownerAccountId:"user2"})},
@@ -146,6 +154,25 @@ test("removed pending post cannot later be published by an old moderation revisi
  await f.service.removeOwn(actor,post.postId);
  await assert.rejects(f.service.settle({tenantId:'tenant1',postId:post.postId,expectedRevision:0}),e=>e.code==='CONFLICT');
  assert.equal(f.counters.decisions,0);
+});
+test("saved library uses the same stored reaction and hides deleted posts",async()=>{
+ const f=fixture();const post=await f.service.publish(actor,input);
+ await f.service.settle({tenantId:'tenant1',postId:post.postId,expectedRevision:0});
+ assert.equal((await f.service.saved(second)).length,0);
+ await f.service.reaction(second,{postId:post.postId,kind:'save',enabled:true});
+ await f.service.reaction(second,{postId:post.postId,kind:'save',enabled:true});
+ assert.equal((await f.service.saved(second)).length,1);
+ assert.equal((await f.service.saved(actor)).length,0);
+ await f.service.removeOwn(actor,post.postId);
+ assert.equal((await f.service.saved(second)).length,0);
+});
+test("saved preference can be removed and reads stay account-scoped",async()=>{
+ const f=fixture();const post=await f.service.publish(actor,input);
+ await f.service.settle({tenantId:'tenant1',postId:post.postId,expectedRevision:0});
+ await f.service.reaction(second,{postId:post.postId,kind:'save',enabled:true});
+ await f.service.reaction(second,{postId:post.postId,kind:'save',enabled:false});
+ assert.equal((await f.service.saved(second)).length,0);
+ assert.equal((await f.service.saved({...second,tenantId:'tenant2'})).length,0);
 });
 test("reaction accepts only a boolean and explicit like/save",async()=>{
  const f=fixture();
