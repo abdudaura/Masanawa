@@ -1,3 +1,5 @@
+import type { TalkListenStore } from "@masanawa/contracts";
+export type { TalkListenStore } from "@masanawa/contracts";
 /** AF09 Published Talks: authenticated post visibility -> canonical AF15 private-media ticket.
  * This module does not sign objects or replace AF15. AF00 must inject the real
  * session resolver, post repository, visibility policy and issuePrivateMediaUrl.
@@ -28,11 +30,7 @@ export interface PublishedTalkPlaybackDeps {
   listens?: TalkListenStore;
 }
 
-export interface TalkListenStore {
-  open(input: { tenantId: string; postId: string; viewerId: string; revision: number; durationMs: number }): Promise<string>;
-  complete(input: { tenantId: string; postId: string; viewerId: string; listenId: string; playedMs: number;
-    canView: (authorAccountId: string) => Promise<boolean> }): Promise<{ counted: boolean; listenCount: number }>;
-}
+
 
 const safeId = (value: unknown): value is string =>
   typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/.test(value);
