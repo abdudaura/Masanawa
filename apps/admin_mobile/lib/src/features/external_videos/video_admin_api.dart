@@ -21,7 +21,7 @@ class VideoAdminApi {
     await dio.post<void>('/v1/admin/video-items', data:{'url':url.trim(),'title':title.trim(),'channelName':channelName.trim()});
   }
   Future<void> review(String id,String state,String? evidence) async {
-    await dio.patch<void>('/v1/admin/video-items/' + id + '/review',
+    await dio.patch<void>('/v1/admin/video-items/$id/review',
       data:{'state':state,'verificationReference':evidence});
   }
 }
