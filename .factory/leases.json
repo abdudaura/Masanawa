@@ -1104,6 +1104,22 @@
       "heartbeat_at": "2026-10-10T16:08:43.202Z",
       "expires_at": "2026-10-10T16:23:43.202Z",
       "notes": "Review and preserve latest canonical instructions; single owner AF00 retains shared code, production deploy/financial/migration writes. Do not block implementation on R0/R1 or existing red baseline checks."
+    },
+    {
+      "claim_id": "r0-test-storm-source-first-ci-20261010-gpt6",
+      "owner": "GPT-6 owner-directed CI test storm mitigation; AF00 notified #600",
+      "scope": "Stop expensive full Foundation PG/provider and Mobile APK suites from firing on source PRs targeting non-deploying integration/rebuild; keep them on main PR/push and allow manual trigger; no tests deleted or faked as passing.",
+      "paths": [
+        ".github/workflows/foundation-ci.yml",
+        ".github/workflows/mobile-build.yml"
+      ],
+      "branch": "integration/rebuild",
+      "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
+      "source_pr": 616,
+      "claimed_at": "2026-10-10T16:12:32.194Z",
+      "heartbeat_at": "2026-10-10T16:12:32.194Z",
+      "expires_at": "2026-10-10T16:27:32.194Z",
+      "notes": "AF00 informed before edits, workflow only; preserve branch head CAS, no production or migrations."
     }
   ],
   "history": [
