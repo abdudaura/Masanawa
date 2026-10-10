@@ -59,13 +59,13 @@ Use current [integration contracts](../AUDIO-FIRST-INTEGRATION-CONTRACTS.md) and
 | Identity | email/phone paths, verified ownership evidence, recovery, session and device revocation, scoped access | numeric PIN treated as SMS verification or sole payment approval | account switch, guessed PIN, revoked token |
 | Chat | messages, receipts, attachments, reaction/reply, durable outbox, sent/read semantics | waiting for AI generation to acknowledge accepted user message | lost ACK, offline retry, second-device message readback |
 | Agent tasks | persona/skill configuration, quotas, budgets, quote drafts, gateway model invocation | model text becoming provider payment instructions/financial completion | repeated fields, approval replay, delayed model/audio |
-| Audio/Talks | single audio-focus owner, media upload/process/publish, counters/follows/comments/moderation | treating card fetch as listened playback, automatic publishing empty generated audio | recording permission, output route, duplicate publish, blocked fetch |
-| Rooms | member roles, invites, persistent audio notes, role revocation | media URL reusable after removal, live Room capability claimed without test | outsider deny, owner transfer, room recovery |
+| Masana Home | one text/image/audio post authority, media processing/approval, follows/comments/reactions/moderation | forged member public posts, duplicate media pipelines, false playback | publisher ACL, post once, media cleanup, audio focus |
+| Rooms | private member group messaging, audio notes, roles, invites and revocation | group messages automatically appearing in public Home | outsider deny, owner transfer, group recovery |
 | Money | exact-amount double-entry ledger, funding, quote, authorization, MSN issuance/redemption, internal transfers, settlement receipts | extra chat wallet, float amounts, provider redirect = confirmed payment | double credit/debit, replay, failed provider, rollback |
 | P2P | order offers, atomic reserve, claim, verified release, disputes and staffed resolution | screenshot-only release, freeing reserved funds after paid claim | paid vs expire race, freeze on dispute |
 | Crypto | asset/network allowlists, custody addresses, deposit confirmations, conversion and withdrawals | unsupported network or unverified payout claims | invalid memo/network, reorg, payout reconciliation |
 | Channels | account linking, approved WhatsApp + Telegram webhook, media, consent, normalized chat/task state | shadow personal-account automation or untrusted inbound instructions | signature, dedupe, opt-out, cross-account ID |
-| Platform agents | centrally configured Gwani/Gwana/Masana; skills, capabilities and budgets, service tasks | user-owned cloned agents, resale commissions or paid owner-access | access permissions, availability and task continuity |
+| Platform agents | central Gwani/Gwana/Masana character bible, portraits, skills, full biographies, fan memory, missions, creative worker and service tasks | user-owned agents, fake fan history, unauthorized publishing | character versioning, memory isolation, mission state, admin approvals |
 | Ops/admin | RBAC, approval, case/ticket management, incident controls, quotas, audit and backoffice | showing provider keys, raw transcripts or unrestricted ledger edits | role spoof, operator action audit, rollback |
 
 ## Authentication, privacy, Integration safety
@@ -83,13 +83,13 @@ Use current [integration contracts](../AUDIO-FIRST-INTEGRATION-CONTRACTS.md) and
 
 **Purchase:** DRAFT -> NEEDS_INPUT -> QUOTED -> AWAITING_AUTHORIZATION -> EXECUTING -> CHECKING_STATUS -> COMPLETED | FAILED | CANCELLED. A temporary unknown result remains uncertain with same operation ID.
 
-**Talk post:** LOCAL_DRAFT -> UPLOADING -> PROCESSING -> PUBLISHED | FAILED | REMOVED; retry with canonical publication ID and outbox lease.
+**Masana Home post:** ADMIN_MISSION -> WORKER_DRAFT -> MEDIA_PREPARING -> REVIEW -> SCHEDULED -> PUBLISHED | FAILED | REMOVED. Server-enforced publisher role is admin/worker only; member reactions/comments are separate resources. Retry with original post ID and dedupe key.
 
 **P2P:** reserve seller MSN atomically -> awaiting fiat -> claimed -> authorized verified release OR dispute -> resolution/return. No automatic release on screenshot or unchecked timer.
 
 **Removed personal-agent economy:** do not issue new Twin commissions, prices, credit reservations, owner-session purchases or Twin referral payments. Existing posted credits, liabilities, disputes and receipts must remain auditable and be reconciled before retirement.
 
-**Workers:** persisted queue, occurrence key, atomic lease, heartbeat, bounded retry/dead-letter, operator pause, restart recovery, idempotent output and error telemetry. Avoid a second scheduler.
+**Workers:** persistent mission and publication queue with scheduled occurrence IDs, atomic lease, bounded retries/dead-letter, heartbeat, admin pause, revision pinning, costs and scorecard, idempotent post write; reuse worker/scheduler, never add another personal-agent economy or fictional world simulator.
 
 ## Platform and stack evaluation (provisional)
 - **Keep Flutter**: current code/assets/test investment; dual Android apps; one UI/contract repository abstraction. Evaluate native voice/mic isolation and Shorebird/release policy before changing.
@@ -134,3 +134,6 @@ Source/current agreements: ../AUDIO-FIRST-INTEGRATION-CONTRACTS.md, ../MSN-WALLE
 
 ## Confirmed scope subtraction (2026-10-10)
 Do not develop or expose personal Twins, user clone training/onboarding, Twin directories, Twin owner-access sessions/offerings, paid Twin seats, gift-based Twin payouts, credit plans, attribution or commissions. Platform-operated Gwani/Gwana/Masana configuration and ordinary human creator Talks remain. Previous APIs/tables may exist in the inherited codebase; deprecate them without deleting applied SQL or forfeiting existing ledger obligations. See [legacy cleanup](LEGACY-SCOPE-CLEANUP.md). Presentation uses name/avatar and role if useful, without repetitive AI disclosures or trust-oriented copy.
+
+## Owner-confirmed new character platform / 2026-10-10
+[Masana-only Home and character-mission architecture](MASANA-CREATOR-NETWORK-20261010.md) supersedes member-created audio/Talk content and old audio-only Home UX. One typed `PublicPost` accepts text/images/audio from server-authorized platform agents; user `Comment`, `Reaction`, `Follow` and Chat/Call remain available under member authorization. 1) agent bibles versioned and curated by Admin; 2) weekly missions and editable local-time posting slots via durable worker; 3) content generation, media review and idempotent publication with global per-agent budgets; 4) scoped fan memories stored in existing PostgreSQL memory package (character + user IDs), evidence/consent/expiry/deletion; 5) full agent profiles, directory, conversation and eligible call capabilities. No clone or user-uploaded public posts. Human group Chats/Rooms are private messages, not public Home content. Avoid a new independent memory package or duplicate feed DB. [Eight fictional profiles with **unproduced** profile-photo assets](MASANA-STARTER-CAST-20261010.json) are proposals; no assets or live account seeding is claimed. Budget for periodic content job, image/audio generation, image storage, media egress, fan memory writes/retrieval and optional live voice separately; enforce a stop switch. Source financial authority/Gwani remain unchanged pending tests.
