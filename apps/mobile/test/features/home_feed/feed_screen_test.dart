@@ -15,6 +15,7 @@ class StubFeed implements FeedApi {
   @override Future<void> like(String id,bool enabled) async {likes++;}
   @override Future<void> save(String id,bool enabled) async {}
   @override Future<void> comment(String id,String body,String key) async {}
+  @override Future<List<FeedComment>> comments(String id) async => [];
 }
 void main(){
  testWidgets('C21 renders Masana-only posts and reacts without a publish button',(tester)async{
