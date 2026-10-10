@@ -62,6 +62,15 @@ function authorizedPresentation(reply: string, parts: readonly unknown[]) {
   });
 }
 
+function uncertainSettlement(): PlatformError {
+  return new PlatformError({
+    code: "agents.turn_settlement_uncertain",
+    category: "conflict",
+    message: "The operation's final status is uncertain. Check your recent activity before taking any new action.",
+    retryable: false,
+  });
+}
+
 function replayTurn(command: MobileTurnCommand) {
   if (
     command.state === "completed" &&
@@ -96,7 +105,7 @@ export interface AgentTurnTimingRecord {
   readonly event: "agent.turn.latency";
   readonly requestId: string;
   readonly correlationId: string;
-  readonly outcome: "completed" | "failed";
+  readonly outcome: "completed" | "failed" | "uncertain";
   readonly totalMs: number;
   readonly firstTextMs?: number;
   readonly stagesMs: Readonly<Record<string, number>>;
@@ -237,7 +246,7 @@ export function createAgentConversationService(input: {
       let firstTextMs: number | undefined;
       const elapsed = (start: number) =>
         Math.max(0, Math.round(performance.now() - start));
-      const emitTiming = (outcome: "completed" | "failed") => {
+      const emitTiming = (outcome: "completed" | "failed" | "uncertain") => {
         const record: AgentTurnTimingRecord = Object.freeze({
           event: "agent.turn.latency",
           requestId: request.requestId,
@@ -325,6 +334,7 @@ export function createAgentConversationService(input: {
       });
       stagesMs.runCreate = elapsed(createStart);
 
+      let terminalSettlementAttempted = false;
       try {
         const prepStart = performance.now();
         const teachingPreparation = await input.teachingAssistant?.prepare({
@@ -424,6 +434,9 @@ export function createAgentConversationService(input: {
           authorizedPresentation(result.reply, result.parts);
 
         const persistStart = performance.now();
+        // A transport/db error during terminal settlement may have committed.
+        // Never write a second, contradictory failed terminal state.
+        terminalSettlementAttempted = true;
         await input.runs.finish({
           authority: admission.authority,
           scope: admission.scope,
@@ -449,7 +462,7 @@ export function createAgentConversationService(input: {
               reply,
               parts: [...parts],
             },
-          });
+          }).catch(() => undefined);
         }
 
         stagesMs.settlement = elapsed(persistStart);
@@ -501,6 +514,10 @@ export function createAgentConversationService(input: {
             : {}),
         });
       } catch (error) {
+        if (terminalSettlementAttempted) {
+          emitTiming("uncertain");
+          throw uncertainSettlement();
+        }
         emitTiming("failed");
         await input.runs
           .finish({
@@ -607,6 +624,7 @@ export function createAgentConversationService(input: {
         },
       });
 
+      let terminalSettlementAttempted = false;
       try {
         const generated = await input.strategy.execute({
           agentRunId,
@@ -633,6 +651,9 @@ export function createAgentConversationService(input: {
         const { reply, parts } =
           authorizedPresentation(result.reply, result.parts);
 
+        // A transport/db error during terminal settlement may have committed.
+        // Never write a second, contradictory failed terminal state.
+        terminalSettlementAttempted = true;
         await input.runs.finish({
           authority: admission.authority,
           scope: admission.scope,
@@ -658,7 +679,7 @@ export function createAgentConversationService(input: {
               reply,
               parts: [...parts],
             },
-          });
+          }).catch(() => undefined);
         }
 
         await input.twinObserver?.completed({
@@ -682,6 +703,7 @@ export function createAgentConversationService(input: {
             : {}),
         });
       } catch (error) {
+        if (terminalSettlementAttempted) throw uncertainSettlement();
         await input.runs
           .finish({
             authority: admission.authority,
@@ -800,6 +822,7 @@ export function createAgentConversationService(input: {
         },
       });
 
+      let terminalSettlementAttempted = false;
       try {
         const generated = await input.strategy.execute({
           agentRunId,
@@ -825,6 +848,9 @@ export function createAgentConversationService(input: {
         const { reply, parts } =
           authorizedPresentation(result.reply, result.parts);
 
+        // A transport/db error during terminal settlement may have committed.
+        // Never write a second, contradictory failed terminal state.
+        terminalSettlementAttempted = true;
         await input.runs.finish({
           authority: admission.authority,
           scope: admission.scope,
@@ -849,7 +875,7 @@ export function createAgentConversationService(input: {
               reply,
               parts: [...parts],
             },
-          });
+          }).catch(() => undefined);
         }
 
         const audio = await renderAudio(reply, request.signal);
@@ -866,6 +892,7 @@ export function createAgentConversationService(input: {
             : {}),
         });
       } catch (error) {
+        if (terminalSettlementAttempted) throw uncertainSettlement();
         await input.runs
           .finish({
             authority: admission.authority,
