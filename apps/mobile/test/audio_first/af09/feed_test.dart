@@ -12,7 +12,7 @@ AudioPost post(String id, {int likes = 0, int comments = 0}) => AudioPost(
   status: 'published', revision: 1, createdAt: DateTime.utc(2026, 10, 10),
   likeCount: likes, commentCount: comments,
 );
-class FakePosts implements AudioPostTransport {
+class FakePosts implements AudioPostTransport, AudioPostCommentPager {
   Future<AudioPostPage> Function(String?)? discoverHandler;
   int requests = 0, likes = 0, saves = 0, removals = 0, commentWrites = 0;
   final List<AudioPostComment> storedComments = [];
@@ -47,6 +47,12 @@ class FakePosts implements AudioPostTransport {
   Future<List<AudioPostComment>> comments({required String postId}) =>
     commentsHandler?.call(postId) ??
       Future.value(storedComments.where((c) => c.postId == postId).toList());
+  @override
+  Future<AudioPostCommentPage> commentsPage({
+    required String postId, String? cursor,
+  }) async => AudioPostCommentPage(
+    items: await comments(postId: postId), nextCursor: null,
+  );
 
   @override
   Future<AudioPostComment> comment({
@@ -326,26 +332,31 @@ void main() {
     expect(find.text('Published audio new'), findsOneWidget);
     expect(find.text('Published audio leaked'), findsNothing);
   });
-  testWidgets('comments load, publish, read back and author removal updates UI',
+  testWidgets('paginated comments sheet sends and confirms own removal',
       (tester) async {
     final source = FakePosts();
     await tester.pumpWidget(screen(source, 'user-a'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Comments'));
     await tester.pumpAndSettle();
-    expect(find.text('No comments yet. Start the conversation.'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'Hello from my Talk');
-    await tester.tap(find.text('Send comment'));
+    expect(find.byKey(const ValueKey('talk-comments-list')), findsOneWidget);
+    expect(find.text('No comments yet.'), findsOneWidget);
+    await tester.enterText(
+        find.byKey(const ValueKey('talk-comment-input')), 'Hello from my Talk');
+    await tester.tap(find.byKey(const ValueKey('talk-comment-send')));
     await tester.pumpAndSettle();
     expect(source.commentWrites, 1);
     expect(find.text('Hello from my Talk'), findsOneWidget);
     await tester.tap(find.byTooltip('Remove your comment'));
     await tester.pumpAndSettle();
+    expect(find.text('Remove your comment?'), findsOneWidget);
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
     expect(find.text('Hello from my Talk'), findsNothing);
     expect(source.storedComments, isEmpty);
   });
 
-  testWidgets('late comments from previous account are never displayed',
+  testWidgets('mounted comments sheet revokes old account and ignores late rows',
       (tester) async {
     final previous = Completer<List<AudioPostComment>>();
     final source = FakePosts()..commentsHandler = (_) => previous.future;
@@ -354,7 +365,7 @@ void main() {
     await tester.tap(find.text('Comments'));
     await tester.pump();
     await tester.pumpWidget(screen(source, 'user-b'));
-    await tester.pumpAndSettle();
+    await tester.pump();
     previous.complete([
       AudioPostComment(postId: 'one', commentId: 'private-1',
         isMine: false, body: 'Private prior-account content',
@@ -362,13 +373,17 @@ void main() {
     ]);
     await tester.pumpAndSettle();
     expect(find.text('Private prior-account content'), findsNothing);
+    expect(find.text('Sign in to read and write Talk comments.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     source.commentsHandler = (_) async => [];
     await tester.tap(find.text('Comments'));
     await tester.pumpAndSettle();
     expect(find.text('Private prior-account content'), findsNothing);
+    expect(find.text('No comments yet.'), findsOneWidget);
   });
 
-  testWidgets('comment read errors expose retry without invented content',
+  testWidgets('comment page offline error has a safe refresh action',
       (tester) async {
     final source = FakePosts()
       ..commentsHandler = (_) async => throw StateError('offline');
@@ -378,10 +393,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Could not load comments'), findsOneWidget);
     source.commentsHandler = (_) async => [];
-    await tester.tap(find.text('Refresh'));
+    await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Could not load comments'), findsNothing);
+    expect(find.text('No comments yet.'), findsOneWidget);
   });
+
   testWidgets('persisted server engagement counts are visible to listeners', (tester) async {
     final source = FakePosts()
       ..discoverHandler = (_) async => AudioPostPage(
