@@ -87,3 +87,27 @@ Record actual output; repair any compiler or fixture issues in this PR before me
 **Remaining milestones:** CHAT-P04 C2/C3 still needs instrumented upstream queue/provider/model timeouts, recovery and measured p50/p95, plus real authenticated Flutter/NDJSON user-visible status and low-end Android measurements under AF00/AF06. CHAT-P02 durable server-accepted receipt/outbox and GWANI-P01 persisted multi-turn purchase draft are separate still-missing customer source. AF00 must publish the single tested non-deploying integration SHA; no main merge while Railway main can auto-deploy/migrate. This is a verified *source edit*, not a completed, tested or integrated customer milestone.
 
 **Executable next action:** AF13 complete original #460 source repair and run `pnpm typecheck && pnpm test:ci && pnpm build` at its own SHA; AF00 compose the confirmed CI fixes on the reviewed baseline and run `pnpm exec vitest run services/gateway/src/agent_conversation.test.ts`, full typecheck and authenticated streaming tests at the unified SHA. The active PR #612 should remain draft until a real qualified run is available; no local pull or release claim.
+
+## 2026-10-10 continuation — replay/media coverage and truthful terminal recovery
+
+**Same existing PR #612 and branch.** Bounded source commits:
+- `24fc7ebb5d69a1a345a5c3c26f04555cf56dac1e`: one presentation-only directive fence now handles persisted completed-turn replay, text, media and media-set; unsafe parts are not shown and potentially consequential operations are **never** retried by this sanitizer.
+- `8e5fe31fdabf4b1f53683ba4e6e262fbd1da44d9`: real service Vitest cases authored for replay, media, media-set and durable redacted history.
+- `f9ebf37bb7c8d6eecd5cc486260f96009558ae79`: after a terminal completed-run write was attempted, unknown acknowledgments on run finish or client receipt cannot cause a contradictory `failed` terminal write or misrepresent a paid outcome. A typed non-retryable `agents.turn_settlement_uncertain` reports the uncertainty; successful authoritative `completeTurn` is no longer invalidated by an optional completed-event append failure. Text timing records include `uncertain`.
+- `3974cd7c9947e39f1c353c2de231652dfa8af03e` and `4e728ae30978f203371b86911151f16c4ff05091`: authored executed-path negative tests for receipt/terminal timeout across all three turn kinds, auxiliary-event outage, and lost terminal database acknowledgment. **Authored tests are NOT execution proof.**
+
+**Real GitHub Actions source run:** #612 commit `3974cd7c9947e39f1c353c2de231652dfa8af03e` triggered Foundation CI **38036452773**, checked out and installed real Node24/pnpm12, then `pnpm typecheck` **FAILED** at unrelated `packages/agents/src/talk-replay.test.ts:6` (TS2459). `pnpm test:ci`, provider checks and `pnpm build` **SKIPPED/NOT_RUN**, including newly authored Vitest. The exact latest source/test run `4e728ae30978f203371b86911151f16c4ff05091` was queued when authored; inspect final run before upgrading state. AF13 existing PR #460 owns shared `TalkId` test import and full-suite fixture failures; it already obtained typecheck PASS on one earlier head, but Vitest/PG FAILED, so no unified qualified SHA yet.
+
+**Acceptance state (no lane-wide DONE claim):**
+- CHAT-P04-A: early settled text, final/durable/replay/media directive fence **IMPLEMENTED_UNVERIFIED** at this PR head.
+- CHAT-P04-C1: optional audio deadline, disconnect and late-PCM fence **IMPLEMENTED_UNVERIFIED** from earlier commits.
+- CHAT-P04-C2: request-correlated service timing **IMPLEMENTED_UNVERIFIED**; upstream queue/provider/catalog spans, measured p50/p95 and device timings **MISSING**.
+- CHAT-P04-C3: safe bounded *model/tool* cancellation and side-effect reconciliation **MISSING**; never retry or time out spending speculatively.
+- CHAT-P04-B/E: authenticated NDJSON on Gateway and Flutter receipt/progress/reconnect integration, real two-device tests **MISSING / NOT_RUN**; AF00 + AF06 own shared paths.
+- CHAT-P02: server-accepted independent receipt and durable offline outbox **MISSING**; AF06/AF00.
+- GWANI-P01: canonical persisted multistep purchase draft **MISSING**; AF04/AF01/AF00.
+- Combined non-deploying **integration SHA: NONE** for this source; AF00 root #600 remains separate. No Railway/main merge due verified main-linked auto-deploy/migration hazard. Owner's unseen local APK is not reconciled.
+
+**Exact runnable qualification once common CI source fix is integrated**: `pnpm install --frozen-lockfile && pnpm exec vitest run services/gateway/src/agent_conversation.test.ts && pnpm typecheck && pnpm test:ci && pnpm build`; Flutter: `cd apps/mobile && flutter pub get && flutter analyze && flutter test`; PG18 and Android/device checks on the pinned unified SHA. These commands require an executable checkout with the latest two PRs; static blob checks and skipped jobs cannot substitute.
+
+**Next owner/action:** AF13 complete/re-run source-safe common CI fixes on PR #460, preserving AF09 overlapping files; AF00 adopt exact source from #612 into the one reviewed nondeploying #600 baseline, reconcile with #460 and execute named checks. AF06 and AF04 continue missing CHAT-P02/GWANI-P01 source, not another evidence helper. Retain #612 draft and these files without handoff deletion until independently validated.
