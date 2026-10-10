@@ -198,7 +198,7 @@ describe("Postgres Talk repository", () => {
       limit: 50,
     });
 
-    expect(result?.talk.participants).toEqual([
+    expect(result?.participants).toEqual([
       {
         id: "user_speaker",
         name: "Amina",
