@@ -142,24 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "af13-596-unique-proof-reconciliation-20261010",
-      "owner": "AF13 #596 continuing qualification reconciliation",
-      "scope": "Adopt unique PASS_REAL executed-step/command/recency and bounded-input controls from merged alternatives #592/#594 into elected canonical #596 qualifier; actual connected tests; no duplicate tool or runtime modifications.",
-      "paths": [
-        "tools/audio-first-qualification/qualify.mjs",
-        "tools/audio-first-qualification/qualify.test.mjs",
-        "docs/workstreams/AF13-evidence-ledger-20261009.md"
-      ],
-      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
-      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
-      "source_pr": 596,
-      "source_head": "5962ab196b4613fe60102384ee9a655b359ae56d",
-      "claimed_at": "2026-10-10T03:02:08.833Z",
-      "heartbeat_at": "2026-10-10T03:06:38.143Z",
-      "expires_at": "2026-10-10T03:11:38.143Z",
-      "notes": "Existing #596 source/test changed, 12 focused native local mirror probes PASS_SIMULATED; exact-head suite still NOT_RUN. Handoff checklist updated; finishing final source review and safe-target audit."
-    },
-    {
       "claim_id": "af09-609-durable-publish-20261010-gpt6-0406",
       "owner": "AF09 existing PR #609 durable publish continuation GPT-6",
       "scope": "Persist replay-safe audio publish attempts encrypted, allow deliberate account-fenced recovery after app restart and block network send on persistence failure. No AF05 media or AF00 composition paths.",
@@ -1518,6 +1500,27 @@
       "released_at": "2026-10-10T03:03:11.571Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/599",
       "release_reason": "Same PR canonical runner/S3 adapter and tests committed; exact remote readback; ten V8 transformed-source runtime probes PASSED on canonical runner; workspace Vitest/TS/full PostgreSQL/S3 NOT_RUN due inaccessible private repo and missing pnpm; Foundation CI zero steps. Migration+PG adapter+worker composition+domain references MISSING. AF00 bounded transfer required before safe integration; deletion remains disabled."
+    },
+    {
+      "claim_id": "af13-596-unique-proof-reconciliation-20261010",
+      "owner": "AF13 #596 continuing qualification reconciliation",
+      "scope": "Adopt unique PASS_REAL executed-step/command/recency and bounded-input controls from merged alternatives #592/#594 into elected canonical #596 qualifier; actual connected tests; no duplicate tool or runtime modifications.",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 596,
+      "source_head": "5962ab196b4613fe60102384ee9a655b359ae56d",
+      "claimed_at": "2026-10-10T03:02:08.833Z",
+      "heartbeat_at": "2026-10-10T03:06:38.143Z",
+      "expires_at": "2026-10-10T03:11:38.143Z",
+      "notes": "Existing #596 source/test changed, 12 focused native local mirror probes PASS_SIMULATED; exact-head suite still NOT_RUN. Handoff checklist updated; finishing final source review and safe-target audit.",
+      "released_at": "2026-10-10T03:10:02.945Z",
+      "integration_head_sha": "f73f87d2ca22d4ed04c62e953f9edba354e118f4",
+      "release_reason": "Existing #596 reconciles #592/#594 unique real-evidence command/steps/fresh UTC and bounded nonblocking JSON; code/test head 4a22f25, docs final head f73f87d. Node local mirror 13/13 PASS_SIMULATED, GitHub structural 12/12; exact head tests NOT_RUN (container cannot git clone). AF00 must publish audited unified nondeploying baseline, execute exact checkout tests and merge; AF15/AF00/domain source and DB/SA qualification remain unfinished. No runtime deployment/local pull."
     }
   ]
 }
