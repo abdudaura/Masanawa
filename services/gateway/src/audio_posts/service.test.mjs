@@ -7,7 +7,7 @@ const second = Object.freeze({ tenantId:"tenant1", accountId:"user2", authorId:"
 const accepted = {assetId:"asset1",ownerAccountId:"user1",durationMs:25000,bytes:50000,mime:"audio/ogg",state:"ready"};
 
 function fixture() {
- const rows = new Map(), keys = new Map(), saves = new Set();
+ const rows = new Map(), keys = new Map(), saves = new Set(), comments = new Map();
  let lookups=0, verifications=0, decisions=0, id=0;
  const repo = {
   async byRequest(t,a,k) {return rows.get(keys.get([t,a,k].join("/"))) ?? null},
@@ -44,6 +44,35 @@ function fixture() {
   },
   async mine({tenantId,accountId}) {
    return [...rows.values()].filter(r=>r.tenantId===tenantId&&r.authorAccountId===accountId);
+  },
+  async listComments({tenantId,viewerId,postId,limit}) {
+   const post=rows.get(postId);
+   if(!post || post.tenantId!==tenantId || post.status!=='published' || viewerId==='blocked'){
+    throw Error('audio_posts.not_visible');
+   }
+   return [...comments.values()].filter(c=>c.tenantId===tenantId&&c.postId===postId&&!c.removed).slice(0,limit);
+  },
+  async addComment({tenantId,viewerId,postId,commentId,requestId,body,createdAt}) {
+   const post=rows.get(postId);
+   if(!post || post.tenantId!==tenantId || post.status!=='published' || viewerId==='blocked'){
+    throw Error('audio_posts.not_visible');
+   }
+   const key=[tenantId,postId,viewerId,requestId].join('/');
+   const existing=comments.get(key);
+   if(existing){
+    if(existing.body!==body || existing.removed)throw Error('audio_posts.comment_conflict');
+    return existing;
+   }
+   const record={tenantId,postId,commentId,authorAccountId:viewerId,requestId,body,createdAt,removed:false};
+   comments.set(key,record);
+   return record;
+  },
+  async removeOwnComment({tenantId,viewerId,postId,commentId}) {
+   const entry=[...comments.entries()].find(([,c])=>
+     c.tenantId===tenantId && c.postId===postId && c.commentId===commentId && c.authorAccountId===viewerId);
+   if(!entry)return false;
+   comments.set(entry[0],{...entry[1],body:'',removed:true});
+   return true;
   },
   async setReaction({tenantId,viewerId,postId,kind,enabled}) {
    const r=rows.get(postId);
@@ -181,4 +210,43 @@ test("reaction accepts only a boolean and explicit like/save",async()=>{
  const post=await f.service.publish(actor,input);
  await f.service.settle({tenantId:"tenant1",postId:post.postId,expectedRevision:0});
  assert.deepEqual(await f.service.reaction(second,{postId:post.postId,kind:"save",enabled:true}),{enabled:true});
+});
+
+test("comments persist under the published post, replay once, and remain author-scoped",async()=>{
+ const f=fixture(),post=await f.service.publish(actor,input);
+ await f.service.settle({tenantId:'tenant1',postId:post.postId,expectedRevision:0});
+ const first=await f.service.comment(second,post.postId,{requestId:'req1',body:' Welcome! '});
+ assert.equal(first.body,'Welcome!');
+ const again=await f.service.comment(second,post.postId,{requestId:'req1',body:'Welcome!'});
+ assert.equal(first.commentId,again.commentId);
+ const read=await f.service.comments(second,post.postId);
+ assert.equal(read.length,1);
+ assert.equal(read[0].authorAccountId,'user2');
+ await assert.rejects(f.service.comment(second,post.postId,{requestId:'req1',body:'Edited'}),e=>e.code==='CONFLICT');
+ await assert.rejects(f.service.removeOwnComment(actor,post.postId,first.commentId),e=>e.code==='NOT_FOUND');
+ assert.deepEqual(await f.service.removeOwnComment(second,post.postId,first.commentId),{removed:true});
+ assert.deepEqual(await f.service.removeOwnComment(second,post.postId,first.commentId),{removed:true});
+ assert.equal((await f.service.comments(actor,post.postId)).length,0);
+ await assert.rejects(f.service.comment(second,post.postId,{requestId:'req1',body:'Welcome!'}),e=>e.code==='CONFLICT');
+});
+test("cannot comment on processing/removed or another tenant post",async()=>{
+ const f=fixture(),post=await f.service.publish(actor,input);
+ await assert.rejects(f.service.comment(second,post.postId,{requestId:'one',body:'text'}),e=>e.code==='NOT_FOUND');
+ await f.service.settle({tenantId:'tenant1',postId:post.postId,expectedRevision:0});
+ await assert.rejects(f.service.comments({...second,tenantId:'tenant2'},post.postId),e=>e.code==='NOT_FOUND');
+ await f.service.removeOwn(actor,post.postId);
+ await assert.rejects(f.service.comments(second,post.postId),e=>e.code==='NOT_FOUND');
+ await assert.rejects(f.service.comment(second,post.postId,{requestId:'two',body:'text'}),e=>e.code==='NOT_FOUND');
+});
+test("rejects malformed comments and attempts to impersonate authors",async()=>{
+ const f=fixture(),post=await f.service.publish(actor,input);
+ const invalid=[
+  {requestId:'new',body:''},{requestId:'new',body:'x'.repeat(401)},
+  {requestId:'new',body:'h\u202eex'},{requestId:'new',body:'hello',authorAccountId:'user1'},
+  {requestId:'bad/path',body:'valid'},{requestId:'new',body:42},
+ ];
+ for(const body of invalid) {
+  await assert.rejects(f.service.comment(second,post.postId,body),e=>e.code==='VALIDATION');
+ }
+ assert.equal(f.rows.size,1);
 });
