@@ -369,9 +369,6 @@ test("private My Talks pages are account-fenced, mapped to public projection and
  for(const secret of ["assetId","requestId","authorAccountId","tenantId"]){
    assert.equal(Object.hasOwn(page.items[0],secret),false);
  }
- await assert.rejects(()=>f.service.libraryPage(second,{kind:"mine"}),/account-fenced/).catch(()=>{
-   // The repository is meant to receive the different authenticated account.
- });
  f.repo.minePage=async q=>{
    assert.equal(q.accountId,"user2");return {items:[],nextCursor:null};
  };
