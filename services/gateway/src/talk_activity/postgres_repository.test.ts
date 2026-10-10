@@ -124,6 +124,28 @@ describe("Postgres Talk Activity repository", () => {
     })).toBe(false);
   });
 
+  it("does not make acknowledged activity unread again on duplicate delivery", async () => {
+    let insertSql = "";
+    const pool: TalkActivitySqlPool = {
+      async query<Row>(text: string) {
+        insertSql = text;
+        return { rowCount: 1, rows: [row({ unread: false })] as unknown as Row[] };
+      },
+    };
+    const saved = await createPostgresTalkActivityRepository(pool).append({
+      tenantId: "tenant_a",
+      userId: "user_a",
+      activityId: "activity_a",
+      kind: "talk_invitation",
+      title: "Invitation",
+      detail: "Join this Talk",
+      createdAt: "2026-10-07T09:00:00.000Z",
+      unread: true,
+    });
+    expect(saved.unread).toBe(false);
+    expect(insertSql).toContain("talks.activity.unread AND EXCLUDED.unread");
+  });
+
   it("rejects idempotency-key reuse across another user or kind", async () => {
     const pool: TalkActivitySqlPool = {
       async query<Row>() {
