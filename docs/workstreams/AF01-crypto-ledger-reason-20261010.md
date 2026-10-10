@@ -34,6 +34,7 @@ The `CryptoLedgerEntry.reason` union already enumerated 12 types but runtime nor
 | Source and test commit/readback | PASS (real repository write/read) | Source blob `46c70070c0c1190b0b807bf52c2539d514a256d0`; test blob `2744c486eaa49663ef2969314cfa4cfa364064ff` |
 | Isolated V8 execution of the **exact guard extracted from fetched source blob** | **PASS_SIMULATED 35/35** | 13 allowed postings, 11 inverted postings, 7 invalid reasons, 3 malformed directions and 1 exhaustiveness count; tests only the extracted admission guard, not the full source module |
 | Static source + regression presence readback | PASS source predicates 6/6 | Presence and consistency only |
+| Cross-adapter static source contract check | PASS_STATIC (not runtime) | Exact source blob against main Postgres adapter: all 12 union reasons matched the table and adapter type; 12 literal adapter posting callsites used permitted directions |
 | `pnpm exec vitest run packages/commerce/src/crypto.test.ts` | NOT_RUN | Full checkout and pnpm workspace packages unavailable in connected GitHub file-write environment |
 | Package TypeScript `tsc`, full monorepo unit/integration, real PostgreSQL | NOT_RUN | Full checkout/DB unavailable |
 | NOWPayments / Flutterwave, real mobile/APK and provider settlement | NOT_RUN | No provider payments, device or deploy initiated |
