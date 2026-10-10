@@ -1,19 +1,10 @@
 import { randomUUID } from "node:crypto";
-import {approvedPublicUrl, isSocialProvider, publicLink, type SocialIdentity, type SocialProvider} from "@masanawa/masana-social";
+import {approvedPublicUrl, isSocialProvider, publicLink, type SocialStore} from "@masanawa/masana-social";
 
 export type StaffRole = "content_editor"|"ops_admin"|"moderator"|"super_admin";
 export interface TrustedStaffActor {
   readonly tenantId: string; readonly userId: string; readonly roles: readonly StaffRole[];
   readonly principalType: "staff";
-}
-export interface SocialStore {
-  publicForCharacter(tenantId:string, characterId:string):Promise<readonly SocialIdentity[]>;
-  adminForCharacter(tenantId:string, characterId:string):Promise<readonly SocialIdentity[]>;
-  create(input: Readonly<{identityId:string;tenantId:string;characterId:string;actorId:string;
-    provider:SocialProvider;providerAccountId:string;handle:string;publicUrl:string}>):Promise<SocialIdentity>;
-  transition(input: Readonly<{tenantId:string;characterId:string;identityId:string;actorId:string;
-    revision:number;action:"verify"|"publish"|"pause"|"resume"|"revoke"|"edit";
-    evidenceRef?:string;providerAccountId?:string;handle?:string;publicUrl?:string}>):Promise<SocialIdentity>;
 }
 export class SocialHttpError extends Error {
   constructor(readonly statusCode:403|404|409|422,readonly code:string,message=code){super(message);}
