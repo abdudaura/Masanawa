@@ -219,21 +219,39 @@ export function createOperatorTaskService(input: Readonly<{
   }
   async function settle(actor: OperatorActor, task: OperatorTaskRecord,
     outcome: OperatorDomainOutcome): Promise<OperatorTaskRecord> {
-    if (outcome.status === "unknown") {
-      if (task.phase === "reconciling") return task;
-      return transition(actor, task, ["running"], { phase: "reconciling", errorCode: "DOMAIN_OUTCOME_UNKNOWN" });
-    }
-    if (outcome.status === "confirmed") {
-      if (!outcome.receiptRef || outcome.receiptRef.length > 200 ||
-          !/^[a-zA-Z0-9:_./-]+$/u.test(outcome.receiptRef)) {
-        return transition(actor, task, ["running", "reconciling"],
-          { phase: "reconciling", errorCode: "DOMAIN_RECEIPT_UNVERIFIED" });
+    try {
+      if (outcome.status === "unknown") {
+        if (task.phase === "reconciling") return task;
+        return await transition(actor, task, ["running"], {
+          phase: "reconciling", errorCode: "DOMAIN_OUTCOME_UNKNOWN",
+        });
       }
-      return transition(actor, task, ["running", "reconciling"],
-        { phase: "succeeded", receiptRef: outcome.receiptRef, errorCode: null });
+      if (outcome.status === "confirmed") {
+        if (!outcome.receiptRef || outcome.receiptRef.length > 200 ||
+            !/^[a-zA-Z0-9:_./-]+$/u.test(outcome.receiptRef)) {
+          return await transition(actor, task, ["running", "reconciling"],
+            { phase: "reconciling", errorCode: "DOMAIN_RECEIPT_UNVERIFIED" });
+        }
+        return await transition(actor, task, ["running", "reconciling"],
+          { phase: "succeeded", receiptRef: outcome.receiptRef, errorCode: null });
+      }
+      return await transition(actor, task, ["running", "reconciling"],
+        { phase: "failed", errorCode: safeCode(outcome.code) });
+    } catch (error) {
+      // A recovery worker may have settled the same durable operation while
+      // the request was performing its status read. Return the DB truth, never
+      // an uncommitted result, and NEVER re-execute the external effect.
+      if (!(error instanceof OperatorTaskError) ||
+          error.code !== "TASK_REVISION_CONFLICT") throw error;
+      const latest = await input.repository.read({ actor, taskId: task.taskId });
+      if (!latest || latest.operationId !== task.operationId ||
+          latest.capabilityId !== task.capabilityId ||
+          latest.version <= task.version ||
+          !["running", "reconciling", "succeeded", "failed"].includes(latest.phase)) {
+        throw error;
+      }
+      return latest;
     }
-    return transition(actor, task, ["running", "reconciling"],
-      { phase: "failed", errorCode: safeCode(outcome.code) });
   }
 
   return Object.freeze<OperatorTaskService>({
