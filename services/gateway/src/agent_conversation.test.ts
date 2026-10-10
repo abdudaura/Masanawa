@@ -964,4 +964,114 @@ describe("Alpha conversation service", () => {
     },
   );
 
+  it.each(["text", "media", "media-set"] as const)(
+    "does not falsely fail a completed %s run when the receipt write is uncertain",
+    async (kind) => {
+      const f = fixture();
+      const session = sessionFor(f);
+      const states: string[] = [];
+      const shellFailures: string[] = [];
+      const service = createAgentConversationService({
+        sessions: {
+          async create() { return session; },
+          async read() { return session; },
+          async updateBindings() { throw new Error("not used"); },
+          async close() { return session; },
+          async reset() { throw new Error("not used"); },
+        },
+        runs: {
+          async create() { return {} as never; },
+          async read() { throw new Error("not used"); },
+          async finish(input) { states.push(input.outcome.state); return {} as never; },
+        },
+        authorizer: { async authorize() { return f.admission; } },
+        mobileShell: {
+          async claimTurn() { return { state: "created" }; },
+          async appendEvent() { return {}; },
+          async completeTurn() { throw new Error("database timeout after commit"); },
+          async failTurn() { shellFailures.push("failed"); return {}; },
+        } as never,
+        strategy: { async execute() { return { reply: "Prepared reply", parts: [] }; } },
+        sessionDurationMs: 60_000,
+      });
+      const common = {
+        authorizationHeader: "Bearer alpha",
+        characterSessionId: session.characterSessionId,
+        characterId: f.scope.characterId,
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      };
+      const pending = kind === "text"
+        ? service.turn({ ...common, text: "hello" })
+        : kind === "media"
+          ? service.mediaTurn({
+              ...common,
+              caption: "hello",
+              mimeType: "audio/mp4",
+              dataBase64: "YWJj",
+            })
+          : service.mediaSetTurn({
+              ...common,
+              caption: "hello",
+              media: [
+                { mimeType: "image/jpeg", dataBase64: "YWJj" },
+                { mimeType: "image/jpeg", dataBase64: "ZGVm" },
+              ],
+            });
+      await expect(pending).rejects.toMatchObject({
+        code: "agents.turn_settlement_uncertain",
+        retryable: false,
+      });
+      expect(states).toEqual(["completed"]);
+      expect(shellFailures).toEqual([]);
+    },
+  );
+
+  it("keeps a durably completed text turn successful when an auxiliary event write fails", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const states: string[] = [];
+    const completed: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(value) { states.push(value.outcome.state); return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() { return { state: "created" }; },
+        async appendEvent(value: { type: string }) {
+          if (value.type === "turn.completed") throw new Error("event write outage");
+          return {};
+        },
+        async completeTurn(value: { reply: string }) {
+          completed.push(value.reply);
+          return {};
+        },
+        async failTurn() { throw new Error("must not fail settled command"); },
+      } as never,
+      strategy: { async execute() { return { reply: "Confirmed in canonical receipt.", parts: [] }; } },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    expect(response.reply).toBe("Confirmed in canonical receipt.");
+    expect(states).toEqual(["completed"]);
+    expect(completed).toEqual([response.reply]);
+  });
+
 });
