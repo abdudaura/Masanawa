@@ -131,3 +131,15 @@ test("public qualified-listen projection never reveals viewer or signed grant",(
     assert.equal(Object.hasOwn(dto,privateKey),false);
   }
 });
+
+test("optional listening analytics outage never blocks otherwise authorized private playback",async()=>{
+  const f=fixture();
+  f.store.open=async()=>{throw Error("database temporarily unavailable")};
+  const ticket=await f.service.ticket({
+    actor,postId:"post-a",currentActor:f.currentActor,
+  });
+  assert.equal(ticket.listenSessionId,undefined);
+  assert.equal(ticket.url,signed.url);
+  assert.equal(f.calls.media,1);
+  assert.equal(f.calls.completions.length,0);
+});
