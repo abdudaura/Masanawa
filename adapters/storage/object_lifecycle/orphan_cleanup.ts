@@ -91,7 +91,7 @@ export async function runOrphanCleanup(input: OrphanCleanupOptions): Promise<Orp
   if (beforeMs <= 0) throw new TypeError('Cleanup clock precedes grace period');
   if (!input.repository || !input.objects || !Array.isArray(input.allowedPrefixes) ||
       input.allowedPrefixes.length === 0 || input.allowedPrefixes.length > 16 ||
-      input.allowedPrefixes.some(p => !p.endsWith('/') || !safeKey(p.slice(0, -1)))) {
+      input.allowedPrefixes.some(p => !p.endsWith('/') || !safeKey(p.slice(0, -1)) || p.split('/').length < 3)) {
     throw new TypeError('Valid scoped object prefixes and adapters are required');
   }
   const candidates = await input.repository.listCandidates({ beforeMs, limit });
@@ -120,7 +120,7 @@ export async function runOrphanCleanup(input: OrphanCleanupOptions): Promise<Orp
       continue;
     }
     eligible++;
-    if (!input.allowDelete || leased >= maxDeletes) continue;
+    if (input.allowDelete !== true || leased >= maxDeletes) continue;
     const lease = await input.repository.claimForPurge({
       id: c.id, expectedRevision: c.revision, objectKey: c.objectKey,
       beforeMs, nowMs, leaseMs,
