@@ -3,6 +3,7 @@
 ## Verified coordination
 - UTC claim: original CAS claim `masanawa01-af15-orphan-20261010-0119` committed at `96b852b41bba719984b0ffef68bf00df83f114c2`, read back from that exact SHA before source writes. Same-path continuation was registered on the coordination branch during work.
 - Main base: `f381f077c485c04261459b77a42c215d3ce3a14b`.
+- PR: https://github.com/Baatiku/masanawa/pull/599 (DRAFT, targets non-production AF15 integration; **do not merge without canonical reconciliation**).
 - Source/tests branch: `work/af15-orphan-cleanup-20261010-masanawa01`. Source/test checkpoint: `078c38a83551b1fb2473bab63e06512fc3b6729f`.
 - Exact paths: `adapters/storage/object_lifecycle/orphan_cleanup.ts`, `adapters/storage/object_lifecycle/orphan_cleanup.test.mjs`, this handoff.
 - Contract inputs: `docs/BACKEND-STORAGE-OPERATIONS-20261009.md`, `docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md`, AF15 lane. No Gateway, worker startup, database migration/manifest, object-provider config, keys or deployment change.
