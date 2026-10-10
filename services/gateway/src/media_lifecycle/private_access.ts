@@ -74,16 +74,24 @@ export async function issuePrivateMediaUrl(
   if (!ID.test(principal.userId) || !ID.test(principal.tenantId)) {
     throw new MediaAccessError('unauthenticated');
   }
+  // Copy session scalars before any async callback can mutate a cached object.
+  const session: MediaPrincipal = { userId: principal.userId, tenantId: principal.tenantId };
   let first: MediaDecision;
-  try { first = await authority.authorize(principal, mediaId); }
+  try { first = await authority.authorize(session, mediaId); }
   catch { throw new MediaAccessError('temporarily_unavailable'); }
-  if (!first || first.allowed !== true || !matching(first, first, mediaId, principal.tenantId) ||
+  if (!first || first.allowed !== true || !matching(first, first, mediaId, session.tenantId) ||
       !safeKey(first.objectKey, objectPrefix) ||
       typeof first.accessRevision !== 'string' || first.accessRevision.length < 1) {
     throw new MediaAccessError('not_found');
   }
+  // An authority may return a mutable cached object. Freeze the decision scalars
+  // by copying, rather than relying on its reference after an awaited signer.
+  const granted: AuthorizedMedia = {
+    allowed: true, tenantId: first.tenantId, mediaId: first.mediaId,
+    objectKey: first.objectKey, accessRevision: first.accessRevision,
+  };
   let signed: string;
-  try { signed = await authority.sign(first.objectKey, ttl); }
+  try { signed = await authority.sign(granted.objectKey, ttl); }
   catch { throw new MediaAccessError('temporarily_unavailable'); }
   try {
     const parsed = new URL(signed);
@@ -92,10 +100,17 @@ export async function issuePrivateMediaUrl(
       throw new Error('Invalid signed URL');
     }
   } catch { throw new MediaAccessError('temporarily_unavailable'); }
-  let latest: MediaDecision;
-  try { latest = await authority.authorize(principal, mediaId); }
+  // Prevent returning a link for the old account after logout/account switch.
+  let active: MediaPrincipal | null;
+  try { active = await authority.principal(); }
   catch { throw new MediaAccessError('temporarily_unavailable'); }
-  if (!latest || !matching(first, latest, mediaId, principal.tenantId)) {
+  if (!active || active.userId !== session.userId || active.tenantId !== session.tenantId) {
+    throw new MediaAccessError('unauthenticated');
+  }
+  let latest: MediaDecision;
+  try { latest = await authority.authorize(session, mediaId); }
+  catch { throw new MediaAccessError('temporarily_unavailable'); }
+  if (!latest || !matching(granted, latest, mediaId, session.tenantId)) {
     throw new MediaAccessError('not_found');
   }
   return { url: signed, expiresAtMs: now + ttl * 1000, cacheControl: 'private, no-store' };
