@@ -1,24 +1,25 @@
 import 'package:dio/dio.dart';
 
 class FeedPost {
-  const FeedPost({required this.id, required this.authorMasanaId, required this.kind,
+  const FeedPost({required this.id, required this.authorMasanaId, required this.kind, this.authorName,
     required this.body, required this.mediaIds, required this.publishedAt,
     required this.likeCount, required this.commentCount, required this.liked, required this.saved});
   final String id,authorMasanaId,kind,body;
+  final String? authorName;
   final List<String> mediaIds;
   final DateTime publishedAt;
   final int likeCount,commentCount;
   final bool liked,saved;
   factory FeedPost.fromJson(Map<String,dynamic> json) => FeedPost(
     id:json['id'] as String,authorMasanaId:json['authorMasanaId'] as String,
-    kind:json['kind'] as String,body:json['body'] as String,
+    kind:json['kind'] as String,authorName:json['authorName'] as String?,body:json['body'] as String,
     mediaIds:List<String>.from(json['media'] as List<dynamic>? ?? const []),
     publishedAt:DateTime.parse(json['publishedAt'] as String),
     likeCount:json['likeCount'] as int? ?? 0,
     commentCount:json['commentCount'] as int? ?? 0,
     liked:json['viewerLiked'] as bool? ?? false,saved:json['viewerSaved'] as bool? ?? false);
   FeedPost withAction({bool? liked,bool? saved})=>FeedPost(
-    id:id,authorMasanaId:authorMasanaId,kind:kind,body:body,
+    id:id,authorMasanaId:authorMasanaId,kind:kind,authorName:authorName,body:body,
     mediaIds:mediaIds,publishedAt:publishedAt,likeCount:likeCount+(liked==null||liked==this.liked?0:liked?1:-1),
     commentCount:commentCount,liked:liked??this.liked,saved:saved??this.saved);
 }
