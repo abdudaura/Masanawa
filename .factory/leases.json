@@ -279,23 +279,6 @@
       "integration_head_sha": null
     },
     {
-      "claim_id": "af09-609-capture-handoff-gpt6-0551",
-      "owner": "AF09 PR #609 / GPT-6 capture-to-verified-private-upload handoff 0551",
-      "scope": "Implement real record/pause/preview/trim UI and an explicit AF05/AF15 verified private upload callback. No native bridge, permanent storage, migration, Gateway, routing, or fake asset on offline/failure.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_capture_sheet.dart",
-        "apps/mobile/test/audio_first/af09/capture_sheet_test.dart",
-        "docs/workstreams/AF09-capture-handoff-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T04:50:56.006Z",
-      "heartbeat_at": "2026-10-10T04:57:13.869Z",
-      "expires_at": "2026-10-10T05:02:13.869Z",
-      "notes": "Scope is only new feature-layer Flutter files; AF05 owns native recording infrastructure and AF15 owns canonical media authority. AF00 owns composer injection/shell."
-    },
-    {
       "claim_id": "af09-609-social-schema-gpt6-0552",
       "owner": "AF09 #609 GPT-6 social SQL source continuation",
       "scope": "Implement missing append-only unnumbered executable social SQL schema required by AF09 PostgreSQL adapters, with disposable-DB negative integration test; AF00 retains numbered migration registry and deploy",
@@ -315,23 +298,6 @@
       "release_reason": "Six-table feature-owned executable SQL + disposable PostgreSQL negative test authored, blob-readback and V8 stripped-module syntax only; AF00 numbered migration and real Gateway/worker/shell composition MISSING, AF05/15 media MISSING; no runtime Node/PG/Flutter execution; PR #609 comment 6093966267, AF00 #600 comment 6093963040. Milestone incomplete, not integrated, no local pull.",
       "source_head": "c91d9c1d39abcb4342dfac06ab5e8c98b6a59bea",
       "integration_head_sha": null
-    },
-    {
-      "claim_id": "af09-609-capture-composer-bridge-gpt6-0554",
-      "owner": "AF09 PR #609 / GPT-6 existing composer binding continuation",
-      "scope": "Mount exact capture sheet behind canonical AF05/AF15 verified private uploader optional composer dependency; split shared DTO; preserve existing test and older callback.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_media_contract.dart",
-        "apps/mobile/test/audio_first/af09/composer_test.dart"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T04:54:09.473Z",
-      "heartbeat_at": "2026-10-10T04:57:13.869Z",
-      "expires_at": "2026-10-10T05:02:13.869Z",
-      "notes": "No root / shared Gateway / native / financial or migration path edits."
     },
     {
       "claim_id": "af09-609-library-pagination-gpt6-0600",
@@ -355,21 +321,6 @@
       "heartbeat_at": "2026-10-10T04:59:05.236Z",
       "expires_at": "2026-10-10T05:04:05.236Z",
       "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff."
-    },
-    {
-      "claim_id": "af09-609-capture-destination-gpt6-0559",
-      "owner": "AF09 PR #609 / GPT-6 capture destination contract continuation",
-      "scope": "Route optional canonical verified uploader from feature-local PublishedTalksDestination into already updated composer; tests must confirm no fake publish. No AF00 shared shell edit.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
-        "apps/mobile/test/audio_first/af09/destination_test.dart"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T04:59:47.587Z",
-      "heartbeat_at": "2026-10-10T04:59:47.587Z",
-      "expires_at": "2026-10-10T05:04:47.587Z"
     },
     {
       "claim_id": "af09-609-playback-compile-recovery-gpt6-0600",
@@ -2255,6 +2206,67 @@
       "released_at": "2026-10-10T04:56:45.583Z",
       "release_reason": "AF09 #609 qualified-listen source committed with SQL proposal, public DTO, PG store/qualified progress native UI and authored backend/Flutter tests; 20/20 initial + 13/13 final source readback checks only, tests NOT_RUN. AF00 migration/Gateway/shell/media composition and AF09 feed count text STILL MISSING; AF13 executable runners unavailable. PR #609 comment 6093973197, AF00 #600 comment 6093956100, finite checklist docs/workstreams/AF09-listen-counts-20261010.md. No local pull/deploy/merge.",
       "source_head": "83345135c35060df45f0b4f7ed68a4324091262b",
+      "integration_head_sha": null
+    },
+    {
+      "claim_id": "af09-609-capture-handoff-gpt6-0551",
+      "owner": "AF09 PR #609 / GPT-6 capture-to-verified-private-upload handoff 0551",
+      "scope": "Implement real record/pause/preview/trim UI and an explicit AF05/AF15 verified private upload callback. No native bridge, permanent storage, migration, Gateway, routing, or fake asset on offline/failure.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_capture_sheet.dart",
+        "apps/mobile/test/audio_first/af09/capture_sheet_test.dart",
+        "docs/workstreams/AF09-capture-handoff-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:50:56.006Z",
+      "heartbeat_at": "2026-10-10T04:57:13.869Z",
+      "expires_at": "2026-10-10T05:02:13.869Z",
+      "notes": "Scope is only new feature-layer Flutter files; AF05 owns native recording infrastructure and AF15 owns canonical media authority. AF00 owns composer injection/shell.",
+      "released_at": "2026-10-10T05:01:07.664Z",
+      "release_reason": "Same-PR AF09 Talk capture/preview/trim + private upload stable ID + composer/destination binding + six authored widget regressions; 27/27 exact blob source-structure checks; Flutter full suite blocked, all AF00/05/15 source and integration open.",
+      "source_head_sha": "ef9ed8e240bbea4d67053c87c064d496863fccff",
+      "integration_head_sha": null
+    },
+    {
+      "claim_id": "af09-609-capture-composer-bridge-gpt6-0554",
+      "owner": "AF09 PR #609 / GPT-6 existing composer binding continuation",
+      "scope": "Mount exact capture sheet behind canonical AF05/AF15 verified private uploader optional composer dependency; split shared DTO; preserve existing test and older callback.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_media_contract.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:54:09.473Z",
+      "heartbeat_at": "2026-10-10T04:57:13.869Z",
+      "expires_at": "2026-10-10T05:02:13.869Z",
+      "notes": "No root / shared Gateway / native / financial or migration path edits.",
+      "released_at": "2026-10-10T05:01:07.664Z",
+      "release_reason": "Same-PR AF09 Talk capture/preview/trim + private upload stable ID + composer/destination binding + six authored widget regressions; 27/27 exact blob source-structure checks; Flutter full suite blocked, all AF00/05/15 source and integration open.",
+      "source_head_sha": "ef9ed8e240bbea4d67053c87c064d496863fccff",
+      "integration_head_sha": null
+    },
+    {
+      "claim_id": "af09-609-capture-destination-gpt6-0559",
+      "owner": "AF09 PR #609 / GPT-6 capture destination contract continuation",
+      "scope": "Route optional canonical verified uploader from feature-local PublishedTalksDestination into already updated composer; tests must confirm no fake publish. No AF00 shared shell edit.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
+        "apps/mobile/test/audio_first/af09/destination_test.dart"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:59:47.587Z",
+      "heartbeat_at": "2026-10-10T04:59:47.587Z",
+      "expires_at": "2026-10-10T05:04:47.587Z",
+      "released_at": "2026-10-10T05:01:07.664Z",
+      "release_reason": "Same-PR AF09 Talk capture/preview/trim + private upload stable ID + composer/destination binding + six authored widget regressions; 27/27 exact blob source-structure checks; Flutter full suite blocked, all AF00/05/15 source and integration open.",
+      "source_head_sha": "ef9ed8e240bbea4d67053c87c064d496863fccff",
       "integration_head_sha": null
     }
   ]
