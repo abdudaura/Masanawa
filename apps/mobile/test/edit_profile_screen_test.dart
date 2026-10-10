@@ -173,6 +173,8 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-edit-name')), ' ',
     );
+    // Allow onChanged/setState to rebuild the action before tapping it.
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
     await tester.pumpAndSettle();
     expect(transport.updates, 0);
@@ -186,6 +188,8 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
     );
+    // Rebuild the enabled Save action after editing the field.
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
     await tester.pumpAndSettle();
     expect(transport.savedName, 'Amina Bello');
@@ -209,6 +213,8 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-edit-name')), 'Amina Bello',
     );
+    // Rebuild the enabled Save action after editing the field.
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
     await tester.pumpAndSettle();
     expect(transport.savedName, 'Amina');
