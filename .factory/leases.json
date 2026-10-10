@@ -228,36 +228,6 @@
       "test_state": "Github exact blob readback and 9/9 source predicates only; 6 Flutter cases AUTHORED NOT_RUN; required Node24/pnpm12/Flutter/Dart/PG/Android unavailable."
     },
     {
-      "claim_id": "af09-609-removal-recovery-gpt6-0549",
-      "owner": "AF09 existing PR #609 / GPT-6 deletion recovery continuation",
-      "scope": "Close My Talks delete outcome uncertainty using canonical authenticated history readback; prevent false failure and stale account feedback. No backend/migration/AF00 authority.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "docs/workstreams/AF09-removal-recovery-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "source_head": "6b1160f0130ddaf045f5ab7b23e5cf73a60d4a25",
-      "claimed_at": "2026-10-10T04:44:58.732Z",
-      "heartbeat_at": "2026-10-10T04:44:58.732Z",
-      "expires_at": "2026-10-10T04:49:58.732Z",
-      "notes": "Shared AF09 PR; independent feed paths currently unclaimed in CAS; connect real My Talks delete readback and Dart widgets. Guard old account/session. No protected root/API source.",
-      "released_at": "2026-10-10T04:49:15.847Z",
-      "release_reason": "Same existing #609: My Talks uncertain delete readback + explicit status recovery and four authored Flutter regressions. Source blobs read back; 10/10 structural checks only. Dart/Flutter, pnpm/PG, device/provider tests not run. AF00 root integration remains missing; no local pull.",
-      "source_commits": [
-        "353feab8b9b71c185b23f1c537a562b259790a68",
-        "f39db8ed08d2dd0099c24dee7f75e2899cefc092",
-        "03849addd8c1948d64cd23af2fefd796aa03fe2e",
-        "97a706f77999bafadf5f8279510d86d7d5e43c5c",
-        "3d34f38a636323b5f8fe54f990e76999cb9d5fef"
-      ],
-      "source_head_sha": "3d34f38a636323b5f8fe54f990e76999cb9d5fef",
-      "integration_head_sha": null,
-      "test_state": "10/10 source-structure predicates only; 4 widget tests authored NOT_RUN. No Flutter/Dart/Node24/pnpm/PG/Android/provider E2E."
-    },
-    {
       "claim_id": "af09-609-route-composition-gpt6-0544",
       "owner": "AF09 #609 existing feature PR / GPT-6 continuing window 0544",
       "scope": "Close disconnected AF09 route composition by one feature-owned registration boundary for post, follows, playback and canonical report; AF00 retains app/main and actor/media/DB composition",
@@ -298,35 +268,6 @@
       "release_reason": "Six-table feature-owned executable SQL + disposable PostgreSQL negative test authored, blob-readback and V8 stripped-module syntax only; AF00 numbered migration and real Gateway/worker/shell composition MISSING, AF05/15 media MISSING; no runtime Node/PG/Flutter execution; PR #609 comment 6093966267, AF00 #600 comment 6093963040. Milestone incomplete, not integrated, no local pull.",
       "source_head": "c91d9c1d39abcb4342dfac06ab5e8c98b6a59bea",
       "integration_head_sha": null
-    },
-    {
-      "claim_id": "af09-609-library-pagination-gpt6-0600",
-      "owner": "AF09 #609 / GPT-6 continuing window 0600",
-      "scope": "Close unbounded/50-item My Talks and Saved history with account-scoped cursor pages, keeping legacy endpoints and preserving AF00/media ownership",
-      "paths": [
-        "services/gateway/src/audio_posts/contract.ts",
-        "services/gateway/src/audio_posts/service.ts",
-        "services/gateway/src/audio_posts/routes.ts",
-        "services/gateway/src/audio_posts/service.test.mjs",
-        "adapters/storage/postgres/src/audio_posts/repository.ts",
-        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "docs/workstreams/AF09-library-pagination-20261010.md",
-        "services/gateway/src/audio_posts/register_feature.test.mjs",
-        "adapters/storage/postgres/src/audio_posts/repository_pagination.test.mjs"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T04:59:05.236Z",
-      "heartbeat_at": "2026-10-10T05:02:30.178Z",
-      "expires_at": "2026-10-10T05:07:30.178Z",
-      "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff.; route-pack assertions must be adjusted from 18 to 20 for new additive routes; prior route owner released.",
-      "source_head": "8fa36c5c84b5712ae35abddf148ac6c0652892e9",
-      "integration_head_sha": null,
-      "released_at": "2026-10-10T05:05:28.242Z",
-      "release_reason": "Account-fenced cursor My Talks/Saved committed on PR #609, source blobs read back, all authored tests NOT_RUN due to checkout DNS/Node24/pnpm12/Flutter/PG absent. Source still missing AF05/15 media, AF00 migration+authenticated Gateway+worker+Talks shell+one nondeploying baseline. AF13 exact-head tests. PR comment 6094039719 and docs/workstreams/AF09-library-pagination-20261010.md. No main merge or local pull."
     },
     {
       "claim_id": "af09-609-playback-compile-recovery-gpt6-0600",
@@ -412,26 +353,24 @@
       "released_at": "2026-10-10T05:27:16.875Z"
     },
     {
-      "claim_id": "af09-609-talks-tab-cache-20261010-gpt6-0624",
-      "owner": "AF09 existing PR #609 / GPT-6 Talks cached-navigation continuation",
-      "scope": "CHAT-P01 retain per-tab in-memory published Talks pages, tab/scroll position, background refresh and account-fenced invalidation; no Gateway/root/native or media changes",
+      "claim_id": "af09-609-multitab-persistence-20261010-gpt6-0648",
+      "owner": "AF09 existing PR #609 / GPT-6 source-completion continuation",
+      "scope": "CHAT-P01 persistent account-fenced Following/Saved/My Talks cache; preserve previous feed edits",
       "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_cache.dart",
         "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_cache_test.dart",
         "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "docs/workstreams/AF09-tab-cache-20261010.md"
+        "docs/workstreams/AF09-multitab-cache-20261010.md"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
       "source_pr": 609,
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "claimed_at": "2026-10-10T06:24:30.815Z",
-      "heartbeat_at": "2026-10-10T06:29:22.290Z",
-      "expires_at": "2026-10-10T06:34:22.290Z",
-      "notes": "Source/tab tests and finite checklist committed to same #609; final source readback and PR handoff pending.",
-      "released_at": "2026-10-10T06:32:06.313Z",
-      "release_reason": "Feature source, two authored Flutter tests and 14-row source/verification handoff committed to continuing PR #609 at 86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1; 11/11 PASS_STATIC readback only; Dart/Flutter/Node24 workspace/PG/device NOT_RUN; AF00 #600 bounded integration request, no integration SHA update or local pull. Milestone remains PARTIAL.",
-      "source_head_sha": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
-      "integration_head_sha": null,
-      "test_state": "11/11 GitHub static blob predicates; Flutter and whole-repository checks NOT_RUN/BLOCKED environment; actual external runner assigned AF13."
+      "source_head": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
+      "claimed_at": "2026-10-10T06:49:04.769Z",
+      "heartbeat_at": "2026-10-10T06:49:04.769Z",
+      "expires_at": "2026-10-10T06:54:04.769Z",
+      "notes": "Reviewed existing #609 source and explicit stale transfer in PR comment 6094811024; AF00 protected paths excluded"
     }
   ],
   "history": [
@@ -2469,6 +2408,93 @@
       "source_head_sha": "ffebf082052dcf570cc031c11a5ac16d7b369ee3",
       "integration_head_sha": null,
       "test_state": "NOT_RUN repository Vitest/TS/Flutter/PG; structural source readback only; CI #457 quota exhausted"
+    },
+    {
+      "claim_id": "af09-609-talks-tab-cache-20261010-gpt6-0624",
+      "owner": "AF09 existing PR #609 / GPT-6 Talks cached-navigation continuation",
+      "scope": "CHAT-P01 retain per-tab in-memory published Talks pages, tab/scroll position, background refresh and account-fenced invalidation; no Gateway/root/native or media changes",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-tab-cache-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "source_pr": 609,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T06:24:30.815Z",
+      "heartbeat_at": "2026-10-10T06:29:22.290Z",
+      "expires_at": "2026-10-10T06:34:22.290Z",
+      "notes": "Source/tab tests and finite checklist committed to same #609; final source readback and PR handoff pending.",
+      "released_at": "2026-10-10T06:49:04.769Z",
+      "release_reason": "Visible source-preserving stale-claim transfer under existing PR #609, reviewed in PR comment 6094811024; owner-directed continuation, not source deletion or a new integration baseline",
+      "source_head_sha": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
+      "integration_head_sha": null,
+      "test_state": "11/11 GitHub static blob predicates; Flutter and whole-repository checks NOT_RUN/BLOCKED environment; actual external runner assigned AF13.",
+      "recovered_by": "af09-609-multitab-persistence-20261010-gpt6-0648",
+      "recovery_source_head": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1"
+    },
+    {
+      "claim_id": "af09-609-library-pagination-gpt6-0600",
+      "owner": "AF09 #609 / GPT-6 continuing window 0600",
+      "scope": "Close unbounded/50-item My Talks and Saved history with account-scoped cursor pages, keeping legacy endpoints and preserving AF00/media ownership",
+      "paths": [
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/service.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-library-pagination-20261010.md",
+        "services/gateway/src/audio_posts/register_feature.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/repository_pagination.test.mjs"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:59:05.236Z",
+      "heartbeat_at": "2026-10-10T05:02:30.178Z",
+      "expires_at": "2026-10-10T05:07:30.178Z",
+      "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff.; route-pack assertions must be adjusted from 18 to 20 for new additive routes; prior route owner released.",
+      "source_head": "8fa36c5c84b5712ae35abddf148ac6c0652892e9",
+      "integration_head_sha": null,
+      "released_at": "2026-10-10T06:49:04.769Z",
+      "release_reason": "Visible source-preserving stale-claim transfer under existing PR #609, reviewed in PR comment 6094811024; owner-directed continuation, not source deletion or a new integration baseline",
+      "recovered_by": "af09-609-multitab-persistence-20261010-gpt6-0648",
+      "recovery_source_head": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1"
+    },
+    {
+      "claim_id": "af09-609-removal-recovery-gpt6-0549",
+      "owner": "AF09 existing PR #609 / GPT-6 deletion recovery continuation",
+      "scope": "Close My Talks delete outcome uncertainty using canonical authenticated history readback; prevent false failure and stale account feedback. No backend/migration/AF00 authority.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-removal-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "6b1160f0130ddaf045f5ab7b23e5cf73a60d4a25",
+      "claimed_at": "2026-10-10T04:44:58.732Z",
+      "heartbeat_at": "2026-10-10T04:44:58.732Z",
+      "expires_at": "2026-10-10T04:49:58.732Z",
+      "notes": "Shared AF09 PR; independent feed paths currently unclaimed in CAS; connect real My Talks delete readback and Dart widgets. Guard old account/session. No protected root/API source.",
+      "released_at": "2026-10-10T06:49:04.769Z",
+      "release_reason": "Visible source-preserving stale-claim transfer under existing PR #609, reviewed in PR comment 6094811024; owner-directed continuation, not source deletion or a new integration baseline",
+      "source_commits": [
+        "353feab8b9b71c185b23f1c537a562b259790a68",
+        "f39db8ed08d2dd0099c24dee7f75e2899cefc092",
+        "03849addd8c1948d64cd23af2fefd796aa03fe2e",
+        "97a706f77999bafadf5f8279510d86d7d5e43c5c",
+        "3d34f38a636323b5f8fe54f990e76999cb9d5fef"
+      ],
+      "source_head_sha": "3d34f38a636323b5f8fe54f990e76999cb9d5fef",
+      "integration_head_sha": null,
+      "test_state": "10/10 source-structure predicates only; 4 widget tests authored NOT_RUN. No Flutter/Dart/Node24/pnpm/PG/Android/provider E2E.",
+      "recovered_by": "af09-609-multitab-persistence-20261010-gpt6-0648",
+      "recovery_source_head": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1"
     }
   ]
 }
