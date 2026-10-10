@@ -367,6 +367,31 @@
       "heartbeat_at": "2026-10-10T07:36:47.542Z",
       "expires_at": "2026-10-10T07:41:47.542Z",
       "notes": "Specific path claim, reuse existing PR #612, enforce no raw machine directives in done/persisted reply, add negative regression, execute hosted Foundation CI. AF00 root integration unchanged."
+    },
+    {
+      "claim_id": "af13-pr460-gateway-mocks-20261010-gpt6-0740",
+      "owner": "AF13 CI recovery, current GPT-6 window",
+      "scope": "Continue existing PR #460 on executed TS failures: fix typed Gateway test doubles, account-safe routes/participant getTalk contract; no main/shared composition/financial SQL/deployment writes.",
+      "paths": [
+        "services/gateway/src/customer_channel_routes.test.ts",
+        "services/gateway/src/profile_avatar/s3_store.test.ts",
+        "services/gateway/src/talk_ai_seats/moderation_bridge.test.ts",
+        "services/gateway/src/talk_ai_worker/worker.test.ts",
+        "services/gateway/src/talk_ranking/ranking.test.ts",
+        "services/gateway/src/talk_replay/host_end_integration.test.ts",
+        "services/gateway/src/talk_gift_routes.test.ts",
+        "services/gateway/src/talks/replay_visibility.test.ts",
+        "services/gateway/src/talks/service.test.ts",
+        "services/gateway/src/talks/model.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "source_head": "90c82586ca54bec7b234fa2335fc00b6d16122f0",
+      "claimed_at": "2026-10-10T07:37:56.513Z",
+      "heartbeat_at": "2026-10-10T07:37:56.513Z",
+      "expires_at": "2026-10-10T07:42:56.513Z",
+      "notes": "Existing registry claims for AF09 locale/talk replay test not touched. Execute CI exact head after commit; preserve customer semantics and typed negative controls."
     }
   ],
   "history": [
