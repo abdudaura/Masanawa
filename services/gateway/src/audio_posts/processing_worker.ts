@@ -32,8 +32,14 @@ export interface ProcessingSweep {
 }
 const safeId = (value: string): boolean =>
   typeof value === "string" && /^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(value);
+/** Service-level CAS conflicts use a typed code; the canonical PostgreSQL
+ * settle adapter currently throws its stable SQL-row-miss error instead.
+ * Both mean the post was already edited/removed/published, not a media outage.
+ * Do not broadly swallow SQL errors or treat arbitrary 'conflict' text as stale.
+ */
 const isChanged = (e: unknown): boolean =>
-  typeof e === "object" && e !== null && "code" in e && e.code === "CONFLICT";
+  (typeof e === "object" && e !== null && "code" in e && e.code === "CONFLICT") ||
+  (e instanceof Error && e.message === "audio_posts.settle_conflict");
 
 /**
  * One finite sweep. An external trusted scheduler supplies tenant IDs, an interval,
