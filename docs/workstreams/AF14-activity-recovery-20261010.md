@@ -93,3 +93,51 @@ flutter analyze lib/src/screens/activity/activity_screen.dart lib/src/state/talk
 ```
 
 Review the #497 Activity screen unique diff (currently same legacy mutation outcome issue; distinct background token), #587/#606 Settings changes and #600 root nav, preserve owner's unreconciled local APK. AF00 must identify one non-deploying baseline after reviewing deploy triggers. The next integration action is a source-tested merge of #604 into that single baseline, **not main or production by assumption**. Status remains `PARTIAL_IMPLEMENTATION`; device/session/real two-account tests, combined Flutter tests and production are **NOT_RUN/BLOCKED**. The broader Phone/email and Settings milestone remains open until AF08 auth/recovery, AF14 profile/preferences/Settings composition and account/device journeys pass.
+
+
+## Continuation — connected Activity read acknowledgment and truthful HTTP responses (2026-10-10)
+
+**Parent customer milestone:** Phone/email and Settings, AF08 + AF14. Current main at latest source inspection: `6bbb689fd65d977984be2487e6a6bd56aaf83001`. This is further implementation on existing **PR #604** and `work/af14-activity-recovery-20261010-masanawa01-d`, not a helper branch or another integration baseline.
+
+**Live exact-path ownership:** CAS claim `masanawa01-af14-activity-http-truth-20261010` on `factory/claims`, original registry write `b8eb6124e3a6c280c42f5fa94d5e19c8f32d23e2`, expanded to seven canonical backend read-ack paths at registry commit `7184ec96c80e9e922780ae43b6f9dedf9b6b0946`. The claim was read back before source changes. Existing #604 Activity/account-fence commits preserved; no shared `app.ts`, `main.ts`, router, migration registry, identity provider, finance, CI, native or production source changed.
+
+### Implementation and evidence
+
+1. The existing `GET /activity` transport no longer converts a 404 into a fabricated successful empty list, and no longer silently discards malformed entries. Six original/new HTTP transport regressions plus two read-ack regressions now cover route unavailable versus true 200 empty, malformed envelope/entry, authorized invitation shape, canonical Accept/Decline URL and authenticated read acknowledgment/404.
+2. New `POST /activity/:activityId/read` uses **the existing registered Talk Activity Gateway service** and its platform customer session authorizer. The repository executes one atomic PostgreSQL `UPDATE talks.activity SET unread = false WHERE tenant_id=$1 AND user_id=$2 AND activity_id=$3 RETURNING activity_id`. No parallel Activity store or migration; the `unread` column already exists.
+3. Missing/foreign activity ID is a uniform `ACTIVITY_NOT_FOUND` HTTP 404. Repeat mark-read is idempotent for the same signed-in user. Event upsert uses `unread = talks.activity.unread AND EXCLUDED.unread` to prevent duplicate delivery from reintroducing unread after an acknowledgment.
+4. Flutter `TalkActivityTransport.markRead`, `GatewayTalkActivityTransport`, Activity UI and existing fake transports are updated together. An accessible “Mark as read” button appears only for unread entries, disables while saving, keeps unread on errors and re-reads the authoritative four projections after successful POST. Late responses are fenced by signed-in principal/session epoch.
+5. Backend route tests include unauthorized, scoped successful read and foreign/missing activity; PostgreSQL tests check exact tenant+user+item predicate, denied update, and read-state preservation on event replay. Flutter tests cover actual transport requests, 404/malformed data and success/failed mark-read UI.
+
+**Source checkpoint (pre-handoff document):** `a5c8f800ee9b41c35525a7a7a8a4889f48253cf4`. The post-document head must be fetched from PR #604 at handoff. Source/readback structural assertions checked **13/13** explicit cross-file conditions; this is TEXT/SOURCE INSPECTION ONLY, not a compiler run or unit test. The original seven account/Activity widget tests remain authored, with two additional read-control widgets. The test code is committed but **NOT_RUN**.
+
+### Finite milestone closure checklist — source distinct from execution
+
+| Required source item and owner | Relevant exact path / PR | Source state | Execution / integration |
+| --- | --- | --- | --- |
+| Activity invitation response + authenticated source | Merged #389; `services/gateway/src/talk_moderation_routes.ts` | EXISTING | Real two-account/device journey NOT_RUN |
+| Activity account-fenced list, pending invite action and retry | #604 `apps/mobile/lib/src/screens/activity/activity_screen.dart`, `apps/mobile/lib/src/state/talk_activity_state.dart` | IMPLEMENTED_UNVERIFIED | Authenticated Flutter widget tests NOT_RUN; integration SHA not elected |
+| Activity reliable transport and account-scoped read acknowledgment | #604 `services/gateway/src/talk_activity/{model,service,postgres_repository}.ts`, `services/gateway/src/talk_activity_routes.ts`, `apps/mobile/lib/src/activity/{talk_activity,talk_activity_http_transport}.dart`, tests | IMPLEMENTED_UNVERIFIED | PG, Fastify, Flutter and device checks NOT_RUN; no new migration required |
+| Email/phone authentication, owner-requested numeric-password signup and safe recovery | AF08, existing #588/#597 and auth/onboarding canonical source | IN_PROGRESS / REMAINING SOURCE | AF08 must finish password/recovery, no ownership inference from phone; run security/session flows |
+| Settings safe AI-cache clearing | AF14 #587 `settings_screen.dart` | IMPLEMENTED_UNVERIFIED (independent) | AF00/AF14 reconcile overlapping #497/#606 Settings, verify Flutter exact combined SHA |
+| Settings device notification controls | AF14 #606 `settings_screen.dart` and notification controller | IMPLEMENTED_UNVERIFIED (independent) | AF00/AF14 reconcile with #587/#497, verify OS/app pending/rollback/account state |
+| Account profile/avatar, support persona, Settings/security entry and installed app metadata | AF14 + AF08 + AF00; #497, #435, `screens/profile/edit_profile_screen.dart`, `screens/settings/settings_screen.dart` | PARTIAL / REMAINING SOURCE | Adopt existing avatar/security source; complete settings navigation/control bindings and semantic conflict resolution |
+| Account/session revoke, deletion/export and unsettled financial obligations | AF08 + AF14 + AF01; existing deletion/profile work | PARTIAL / REMAINING SOURCE | Require authenticated server outcomes, obligations, readback and privacy/security tests |
+| One reviewed non-deploying combined source baseline | AF00; #497/#600/#604/#587/#606/#588 + relevant dependencies | NOT_INTEGRATED | AF00 must choose, audit production hooks, reconcile exact paths and publish one pinned SHA |
+| Qualified user journey and release | AF13 + AF00 + AF08/AF14 | NOT_RUN | Flutter/Gateway/Postgres authentic users and device, APK/signature/rollback proof; no local pull until remote source is complete and integrated |
+
+### Executable verification and precise blockers
+
+Environment in this window: Node `v22.16.0` (repository requires Node 24); `pnpm`, `flutter`, `dart` and `vitest` unavailable. No actual Masanawa Git checkout in the container. `git ls-remote https://github.com/Baatiku/masanawa.git HEAD` returned `Could not resolve host: github.com`. GitHub connector source readback succeeded; no alternate executable whole-repository runner is available.
+
+**Next AF14/AF00 execution owner**, on the exact current #604 head and again on the elected unified safe SHA:
+
+```sh
+corepack pnpm@12.8.2 exec vitest run services/gateway/src/talk_activity_routes.test.ts services/gateway/src/talk_activity/postgres_repository.test.ts
+corepack pnpm@12.8.2 --filter @masanawa/gateway-service typecheck
+cd apps/mobile
+flutter test test/activity_screen_test.dart test/audio_first/af14/activity_recovery_test.dart test/audio_first/af14/activity_http_transport_test.dart
+flutter analyze lib/src/activity/talk_activity.dart lib/src/activity/talk_activity_http_transport.dart lib/src/screens/activity/activity_screen.dart lib/src/state/talk_activity_state.dart test/activity_screen_test.dart test/audio_first/af14/activity_recovery_test.dart test/audio_first/af14/activity_http_transport_test.dart
+```
+
+**Integration warning:** #497 contains overlapping older Activity source, #587/#606 both change Settings. Resolve semantic conflicts before merge; don't replace working profile/security/avatar features, don't create competing integration branches, and don't activate financial/provider features or request a local pull. AF00 owns reviewed non-deploying baseline election and any shared-file transfers. Status: **PARTIAL_IMPLEMENTATION / AUTHORED TESTS NOT EXECUTED / UNMERGED / NOT DEPLOYED**.
