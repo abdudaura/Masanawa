@@ -82,8 +82,8 @@ class _AudioPostDetailScreenState extends State<AudioPostDetailScreen> {
                       animation: widget.playback,
                       builder: (_, __) => Text(
                         '${widget.post.likeCount} likes · '
-                        '${widget.post.commentCount} comments · '
-                        '${widget.playback.listenCountFor(widget.post.postId) ?? widget.post.listenCount} listens',
+                        '${widget.post.commentCount} comments'
+                        '${(widget.playback.listenCountFor(widget.post.postId) ?? widget.post.listenCount) == null ? "" : " · ${widget.playback.listenCountFor(widget.post.postId) ?? widget.post.listenCount} listens"}',
                       ),
                     ),
                     const SizedBox(height: 20),
