@@ -30,6 +30,13 @@ describe("Talk push delivery", () => {
 
     expect(claim).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      title: "A Host you follow is live",
+      body: "A new Talk has started.",
+      data: { kind: "followed_host_live", eventId: "event-1", talkId: "talk-1" },
+      scope: { tenantId: "tenant-1", userId: "user-1" },
+    }));
+    expect(JSON.stringify(send.mock.calls)).not.toContain("Amina");
     expect(result).toEqual({ disposition: "sent", attempted: 1, delivered: 1 });
   });
 
