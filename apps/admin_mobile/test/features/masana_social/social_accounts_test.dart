@@ -6,12 +6,12 @@ void main(){
  testWidgets('draft and verification lifecycle offers no bot pairing', (tester)async{
    final dio=Dio(BaseOptions(baseUrl:'https://example.test'));
    dio.interceptors.add(InterceptorsWrapper(onRequest:(options,handler){
-     if(options.method=='GET')return handler.resolve(Response(
+     if(options.method=='GET'){return handler.resolve(Response(
        requestOptions:options,statusCode:200,data:{'identities':[
        {'identityId':'soc-1','provider':'whatsapp','handle':'+2348012345678',
        'publicUrl':'https://wa.me/2348012345678','publishState':'draft',
        'verifiedAt':null,'revision':1,'paused':false}
-       ]}));
+       ]}));}
      return handler.resolve(Response(requestOptions:options,statusCode:200,data:{}));
    }));
    await tester.pumpWidget(MaterialApp(home:MasanaSocialAccountsPage(
@@ -20,6 +20,7 @@ void main(){
    expect(find.text('Verify'),findsOneWidget);
    expect(find.text('Publish'),findsNothing);
    expect(find.textContaining('no WhatsApp bot'),findsOneWidget);
+   await tester.scrollUntilVisible(find.text('Save draft'),200);
    expect(find.text('Save draft'),findsOneWidget);
  });
 }
