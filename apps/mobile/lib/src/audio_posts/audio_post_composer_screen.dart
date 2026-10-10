@@ -386,3 +386,4 @@ class _ComposerState extends State<AudioPostComposerScreen> {
         ],
       )),
   );
+}
