@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createIsolatedPostgresTestDatabase } from "../../../../../test/support/isolated-postgres.js";
+import { createIsolatedPostgresTestDatabase } from "./isolated-test-database.js";
 import { createCanonicalId } from "@masanawa/contracts";
 import { runMigrations } from "../migrations.js";
 import { createPostgresNgnWalletRepository } from "./ngn-wallet.js";
