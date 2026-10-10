@@ -369,7 +369,15 @@ void main() {
         const ApiException('hidden', statusCode: 503),
       );
       await retry;
-      expect(c.read(agentDirectoryProvider).agents, [agent]);
+      // A transient failure keeps the account-scoped roster, but historical
+      // online/working presence must not be presented as current availability.
+      final cached = c.read(agentDirectoryProvider).agents;
+      expect(cached, hasLength(1));
+      expect(cached.single.characterId, agent.characterId);
+      expect(cached.single.characterVersionId, agent.characterVersionId);
+      expect(cached.single.displayName, agent.displayName);
+      expect(cached.single.presence, AgentPresence.unknown);
+      expect(cached.single.activeWorkCount, 0);
       final denied = c.read(agentDirectoryProvider.notifier).refresh();
       transport.requests[2].completeError(
         const ApiException('hidden', statusCode: 401),
