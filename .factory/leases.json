@@ -459,6 +459,26 @@
       "heartbeat_at": "2026-10-10T07:57:36.832Z",
       "expires_at": "2026-10-10T08:02:36.832Z",
       "notes": "Same PR, no competing branch. Run GitHub Actions and report actual full-test blockers."
+    },
+    {
+      "claim_id": "u02-580-suite-recovery-20261010-gpt6",
+      "owner": "GPT-6 U02 PR580 executable suite continuation",
+      "scope": "Adopt AF09/#460 tested TalkId test-only import to unblock global TypeScript on stacked PR580 then execute focused U02 Vitest/PG and fix actual failures",
+      "paths": [
+        "packages/agents/src/talk-replay.test.ts",
+        "packages/operator-tasks/src/recovery.test.ts",
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 580,
+      "source_head": "61724ca50a634452eda6bd7f5cd30e6f37caf8ff",
+      "claimed_at": "2026-10-10T07:57:52.556Z",
+      "heartbeat_at": "2026-10-10T07:57:52.556Z",
+      "expires_at": "2026-10-10T08:02:52.556Z",
+      "notes": "AF09 claim from #609 released earlier. Copy only exact proven canonical type import from existing #609/#460 onto #580 for repo typecheck and test execution. AF00 root protected."
     }
   ],
   "history": [
