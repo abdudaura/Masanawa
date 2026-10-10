@@ -1027,6 +1027,26 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
+    },
+    {
+      "claim_id": "masanawa-blueprint-remove-twins-20261010",
+      "owner": "BLUEPRINT-01 owner-directed product subtraction",
+      "scope": "Amend existing blueprint PR #615: remove all Twin and redundant AI-label product requirements; inventory legacy modules for verified retirement",
+      "paths": [
+        "docs/blueprint-v1/README.md",
+        "docs/blueprint-v1/PRODUCT-UX.md",
+        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
+        "docs/blueprint-v1/RECOVERY-DELIVERY.md",
+        "docs/blueprint-v1/RESEARCH-DECISIONS.md",
+        "docs/blueprint-v1/LEGACY-SCOPE-CLEANUP.md"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "base_sha": "4b37ca96b75b61b664c2fe0ace4a1dbebeed87b1",
+      "source_pr": 615,
+      "claimed_at": "2026-10-10T11:42:01.204Z",
+      "heartbeat_at": "2026-10-10T11:42:01.204Z",
+      "expires_at": "2026-10-10T11:47:01.204Z",
+      "notes": "Additive planning docs only; source and migrations require separate AF00/integrator ownership to prevent data loss."
     }
   ],
   "history": [
