@@ -132,6 +132,28 @@
       "heartbeat_at": "2026-10-10T01:46:46.711Z",
       "expires_at": "2026-10-10T01:51:46.711Z",
       "notes": "Source integration commits e24534c4,3c9cc601,9577e38b,ee83f79e committed and fetched; 5/5 native Node tests on separately reconstructed mirror, exact PR bytes not yet run. Preparing SHA-specific handoff."
+    },
+    {
+      "claim_id": "af09-20261010-audio-posts-gpt6",
+      "owner": "AF09-20261010-0150-gpt6",
+      "scope": "AF09 publish-once persistent audio-post service, authenticated routes and client feed transport; no shared root or media recorder paths",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-published-audio-core-20261010.md",
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "services/gateway/src/audio_posts/service.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "",
+      "claimed_at": "2026-10-10T01:48:31Z",
+      "heartbeat_at": "2026-10-10T01:48:31Z",
+      "expires_at": "2026-10-10T01:53:31Z"
     }
   ],
   "history": [
