@@ -4,6 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/network/api_client.dart';
+import '../core/providers.dart';
+import '../state/session_state.dart';
+import '../agents/masanawa_transport.dart';
+import 'msn_balance_card.dart';
+import 'msn_balance_transport.dart';
 import '../core/request_id.dart';
 import '../theme/masanawa_theme.dart';
 import '../tokens/masanawa_tokens.dart';
@@ -373,6 +378,19 @@ class CryptoWalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(cryptoWalletProvider);
+    final sessionClient = ref.watch(apiClientProvider);
+    final authState = ref.watch(sessionProvider);
+    final sessionIdentity = authState is SessionSignedIn
+        ? authState.tokens.accessToken
+        : null;
+    Widget msnReadback() => MsnBalanceCard(
+      sessionIdentity: sessionIdentity,
+      transport: GatewayMsnBalanceTransport(
+        dio: sessionClient.dio,
+        baseUrl: kAgentBaseUrl,
+        readAccessToken: () => ref.read(apiClientProvider).accessToken,
+      ),
+    );
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
@@ -387,10 +405,25 @@ class CryptoWalletScreen extends ConsumerWidget {
         ],
       ),
       body: wallet.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _WalletError(
-          error: error,
-          onRetry: () => ref.read(cryptoWalletProvider.notifier).refresh(),
+        // MSN readback is independent of the crypto API. A crypto outage must
+        // not hide a separately available, authenticated MSN balance.
+        loading: () => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            msnReadback(),
+            const SizedBox(height: 20),
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+        error: (error, _) => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            msnReadback(),
+            _WalletError(
+              error: error,
+              onRetry: () => ref.read(cryptoWalletProvider.notifier).refresh(),
+            ),
+          ],
         ),
         data: (data) => RefreshIndicator(
           onRefresh: () => ref.read(cryptoWalletProvider.notifier).refresh(),
@@ -412,6 +445,8 @@ class CryptoWalletScreen extends ConsumerWidget {
                     : () =>
                         ref.read(cryptoWalletProvider.notifier).refreshBalance(),
               ),
+              const SizedBox(height: 10),
+              msnReadback(),
               const SizedBox(height: 14),
               Row(
                 children: [
