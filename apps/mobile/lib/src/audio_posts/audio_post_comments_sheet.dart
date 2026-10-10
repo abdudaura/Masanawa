@@ -76,18 +76,22 @@ class _PublishedTalkCommentsSheetState extends State<PublishedTalkCommentsSheet>
 
   void _onSessionChanged() {
     if (!mounted || _authorized) return;
+    // Clear sensitive data synchronously, even if the feed changes accounts
+    // while Flutter is rebuilding the underlying route. Request the modal's
+    // repaint in a microtask to avoid setState across routes during build.
     ++_generation;
-    setState(() {
-      _comments = const [];
-      _next = null;
-      _error = null;
-      _pendingRequestId = null;
-      _pendingBody = null;
-      _text.clear();
-      _sending = false;
-      _deleting.clear();
-      _loading = false;
-      _loadingMore = false;
+    _comments = const [];
+    _next = null;
+    _error = null;
+    _pendingRequestId = null;
+    _pendingBody = null;
+    _text.clear();
+    _sending = false;
+    _deleting.clear();
+    _loading = false;
+    _loadingMore = false;
+    Future<void>.microtask(() {
+      if (mounted) setState(() {});
     });
   }
 
