@@ -55,6 +55,13 @@ function nonNegativeDecimal(value: string): string {
   return normalizeCryptoNonNegativeAmount(value);
 }
 
+/** Preserve legitimate signed ledger projections without losing NUMERIC precision. */
+function signedBalanceDecimal(value: string): string {
+  if (!value.startsWith("-")) return nonNegativeDecimal(value);
+  const magnitude = nonNegativeDecimal(value.slice(1));
+  return magnitude === "0" ? "0" : `-${magnitude}`;
+}
+
 function sameWithdrawalTerms(left: CryptoIntent, right: CryptoIntent): boolean {
   return (
     left.operation === "withdraw" &&
@@ -187,7 +194,7 @@ async function accountBalance(
         AND network IS NOT DISTINCT FROM $4`,
     [input.tenantId, input.userId, input.asset, input.network],
   );
-  return nonNegativeDecimal(result.rows[0]?.balance ?? "0");
+  return signedBalanceDecimal(result.rows[0]?.balance ?? "0");
 }
 
 async function aggregateLiability(
