@@ -361,7 +361,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
       }
       _loading = false;
       _listenSessionId = ticket.listenSessionId;
-      _listenTargetMs = (post.durationMs * 0.75).ceil().clamp(0, 3000);
+      _listenTargetMs = (post.durationMs * 0.75).ceil().clamp(0, 3000).toInt();
       _listenAuthToken = authorizationAtStart;
       _lastPositionAtMs = _nowMs();
       _playing = true;
