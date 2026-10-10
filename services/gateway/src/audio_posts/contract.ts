@@ -113,10 +113,13 @@ export interface AudioPostRepository {
   /** Only published, unblocked, unremoved posts visible to viewer. */
   publicFeed(input: { tenantId: string; viewerId: string | null; cursor: string | null; limit: number }): Promise<PublicFeedPage>;
   mine(input: { tenantId: string; accountId: string; limit: number }): Promise<AudioPostRecord[]>;
+  /** Additive cursor pages; legacy list reads remain available for existing clients. */
+  minePage?(input: { tenantId: string; accountId: string; cursor: string | null; limit: number }): Promise<PublicFeedPage>;
   /** Hide an owned post from public feeds atomically; repeated owner deletion is safe. */
   removeOwn(input: { tenantId: string; accountId: string; postId: string }): Promise<AudioPostRecord | null>;
   /** Only the viewer's persisted saves, filtered through public visibility. */
   saved(input: { tenantId: string; viewerId: string; limit: number }): Promise<AudioPostRecord[]>;
+  savedPage?(input: { tenantId: string; viewerId: string; cursor: string | null; limit: number }): Promise<PublicFeedPage>;
   /** Only comments on visible published posts; removal tombstones are hidden. */
   listComments(input: { tenantId: string; viewerId: string; postId: string; limit: number; beforeCommentId?: string | null }): Promise<AudioPostComment[]>;
   /** Atomic published-post + visibility check, replay-safe request key. */
