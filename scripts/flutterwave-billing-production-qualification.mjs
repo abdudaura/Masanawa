@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 function fail(message, code = 1) {
   const error = new Error(message);
@@ -108,13 +109,21 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  const code =
-    error && typeof error === "object" && Number.isInteger(error.exitCode)
-      ? error.exitCode
-      : 1;
-  process.stderr.write(
-    `billing production qualification failed: ${error instanceof Error ? error.message : String(error)}\n`,
-  );
-  process.exitCode = code;
-});
+const isDirectExecution = Boolean(
+  process.argv[1] &&
+    (import.meta.url === `file://${process.argv[1]}` ||
+      import.meta.url === pathToFileURL(process.argv[1]).href),
+);
+
+if (isDirectExecution) {
+  main().catch((error) => {
+    const code =
+      error && typeof error === "object" && Number.isInteger(error.exitCode)
+        ? error.exitCode
+        : 1;
+    process.stderr.write(
+      `billing production qualification failed: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    process.exitCode = code;
+  });
+}
