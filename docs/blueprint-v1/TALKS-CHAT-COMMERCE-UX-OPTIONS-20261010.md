@@ -1,5 +1,5 @@
 # Masanawa v1 — Talks, branded art, chat composer and commerce UX design review
-Status: **RESEARCHED PROPOSAL, NOT OWNER-APPROVED / NOT CODED** · 2026-10-10. The owner requested research and discussion. This file is an option/acceptance contract only, not permission for AF00/AF01/AF06/AF09 to overwrite their active paths. Existing five-tab navigation and NO TWINS are confirmed requirements.
+Status: **HISTORICAL DESIGN OPTIONS — TALK/USER-PUBLISHING PARTS SUPERSEDED**, 2026-10-10. Retained only for composer/blue brand/independent Billing/Crypto source findings. Current **confirmed** authority: [Masana-only mixed-media Home](MASANA-CREATOR-NETWORK-20261010.md). NO member posting, NO public Talk composer, NO audio-only full-screen default, NO Twins. Home replaces root Talks. Old draft options in this file MUST NOT be dispatched into code.
 
 ## Executive recommendation
 **Talks Explore:** vertical snap-scroll with **one immersive audio post per viewport** (not a video-only TikTok clone). **Following:** compact multi-card list for scanning subscriptions. Shared playback state means swiping, comments, tab changes and deep links preserve progress predictably.
@@ -29,23 +29,10 @@ Status: **RESEARCHED PROPOSAL, NOT OWNER-APPROVED / NOT CODED** · 2026-10-10. T
 - `apps/mobile/lib/src/screens/billing/billing_screen.dart`: authenticated catalog, provider/item selectors, direct create quote / wallet confirmation and history exist, but the form is one long generic dropdown flow with no dedicated service dashboard.
 - `apps/mobile/lib/src/finance/crypto_wallet_screen.dart`: own real screen and capability-gated Buy/Receive/Convert/Withdraw, but most operations are modal sheets with limited contextual guidance and no obvious in-screen asset/detail route contract. Keep its transport and authoritative receipts; redesign the shell.
 
-## TALK-UX-01 — navigation and visual architecture
-`/home?tab=talks` -> top **Explore | Following**, active filter per-tab persisted -> one snap card in Explore, scroll list in Following. The existing five-tab bottom bar remains; no extra root "Billing" or "Crypto" tabs. A plus/record icon in Talks header opens **new audio Talk**. Search icon opens typed Discover results, returns to previous index. Following empty: prompt to explore / follow people. Reopening cached feed should show previous post and progress; account switch clears private Following/download states.
+## HOME-UX — supersedes former TALK-UX-01/02
+**Confirmed owner requirement:** only Masana agents originate text, image and audio public posts. Root is **Home**, not Talks. Mixed variable-height For You / Following feed cards, single audio player, optional immersive audio listening view, reaction/comment/follow/save/share, no user plus/record/post entry. Masana profile opens portrait/banner/story/skills/unique personality/post library, Chat and Call.
 
-**Explore full card composition, top-to-bottom:** (1) compact Talks header, Explore/Following selector and search/record buttons; (2) edge-padded dominant 4:5 cover image or branded generated fallback with readable small corner Masanawa wave-ribbon; (3) creator avatar/name and Follow; (4) max-two-line Talk title, optional 1-line topic; (5) expressive **audio waveform scrubbing**, elapsed/total time and large play/pause; (6) Like, Comments, Save and Share; (7) bottom safe padding above fixed 5-tab bar. Use image+text contrast scrim if overlaid, but DO NOT hide controls on busy artwork. Do not put repetitive AI labels or irrelevant production metadata. Fullscreen aspect and image bounds adapt to phones with small height.
-
-**Following compact row:** 1:1 cover thumb, title (two lines max), creator, duration, progress/Play, optional unread marker. Tapping opens shared player/card at same post. 3–5 rows visible on normal phone, no auto-playing every row.
-
-**Gesture model:** vertical swipe Explore changes card; horizontal swipe only changes Explore/Following via top tab gesture if enabled and not stealing waveform scrub; tap cover toggles Play if no collision; long press or More opens options. Safe back handling and screen reader Next/Previous/Play actions. `PageView.builder(scrollDirection: Axis.vertical)` with stable `postId` keys. Prefetch only adjacent metadata/cover. Audio payload: start on explicit Play; after it starts, optional `Continuous play` advances on swipe (user choice), disabled under low-data/autoplay-off. Single active audio session, proper focus interruptions. Don't automatically count impressions as listens; use listened-duration server contract.
-
-**Card branding:** one recognizable thin curved waveform stripe / small Masanawa logo, consistent typographic scale, lightly rounded art corners, blue transport button and neutral surfaces. No full-screen logo wallpaper, duplicate play circles, bright green splashes, fake waveforms claiming analysis when not available.
-
-## TALK-UX-02 — custom image composer and media contract
-`/talks/create`: record -> preview/trim -> **Add cover (optional)** / Replace / Remove -> title -> Publish / Save draft. Image picker: camera/gallery only on explicit permission. Crop to a proposed **4:5 portrait with center square safe zone**, allow pinch/drag and crop preview; retain JPG/PNG/WebP originals up to a validated file budget (proposal 5MB), generate <= ~200KB feed variant and <=~50KB list thumbnail after upload, confirm actual sizes via telemetry. Use real variants+dimensions, not giant originals in scroll feed. Default poster is deterministic vector/gradient/wave-ribbon from title + avatar + brand tokens; no AI generation or extra model cost.
-
-Proposed **versioned additions**, reconciled with actual AF09 records: `coverMediaId?: MediaId`, `coverVariants?: {posterUrl, thumbnailUrl, placeholderColor}` with authorized/public access rules and known mime/size/dimensions; `creatorSelectedCover` optional; error states choose retry cover upload / publish without cover / cancel while keeping saved audio. Backend must validate image magic bytes, orientation and pixel dimensions; strip EXIF; prevent untrusted remote URLs/SSRF; clean abandoned draft variants according to retention. Do not modify applied migrations: only a new forward compatible `cover_media_id` nullable field and media reference authority if AF00 allocates it, with migration/readback tests. Default artwork can be implemented client-side until real media contract is qualified.
-
-**States:** no image (good default), picker denied, image too large/unsupported, cropped, uploading progress, server processing, upload failed retry, old cover visible while update pending, deleted/replaced cover, offline deferred draft and account switch fence. Test 720p low-end scroll without decoded oversized images and interrupted image upload.
+**Cover/imagery:** the platform/admin or Masana worker selects/uploads optional authored image for audio covers and original image posts, or renders a deterministic blue branded default. The image crop, thumbnail optimization, EXIF stripping, background processing, safety and MIME validation research remains useful; it belongs in **admin/worker** media tools only. User image uploads remain possible in **private chats** if authorized but not to public Home. Persist nullable media IDs in AF09's published-audio extension after shared contract review and account-role tests. See [current design, data contracts, canonical ACL and acceptance tests](MASANA-CREATOR-NETWORK-20261010.md).
 
 ## BRAND-UX-01 — unify blue
 The mixed greens are *intentional in old code* but **no longer fit the chosen blue direction**. Define one semantic palette, not ad-hoc per-screen fixes; proposal:
@@ -94,15 +81,14 @@ Do NOT default-navigate to chat after selecting crypto asset, bill service, quot
 ## Proposed implementation order and source owners
 A. **Fix composer behavior FIRST** (AF06 + AF00 scoped composition): break send/stop coupling, put bubble before network check, remove per-character disk write / broad rebuild; run real Flutter + Gateway ACK tests.
 B. **Brand token parity** (one UI/design owner, AF00/native agreement): approve blue palette, change once across tokens/themes/assets and parity tests.
-C. **Talks new published-audio feed** (AF09 + AF05/15): make single-player Explore and list Following; add optional covers and server media contract. Legacy live-Talk screens excluded from new route.
+C. **Masana-only mixed-media Home** (AF09 + AF05/AF12/AF15/AF00): extend published audio into typed text/image/audio posts, with admin+worker publishing only, full profiles, follow/comment/reaction and optional image covers. User publisher + old live-stage screens excluded.
 D. **Independent Billing/Crypto** (AF04/AF01/AF03 + AF00 routes): leave existing finance authority, design service/asset details and receipts; Gwani is OPTIONAL invocation into same typed task.
 E. Qualify Android low-end, data usage, capture/playback, account switching, all quote/provider failure cases and safe integration baseline; preserve old APK/local fixes before any UI overwrite.
 
-## Decision gate — respond to design, not technical implementation minutiae
-- **OPT-01** Accept Explore one snap Talk per screen + Following compact list? RECOMMENDED YES.
-- **OPT-02** Accept optional cover with 4:5 portrait crop + default poster? RECOMMENDED YES.
-- **OPT-03** Accept blue palette and gradient restraint? RECOMMENDED YES; exact shade requires an actual visual preview/contrast check.
-- **OPT-04** Accept chat microphone as ordinary voice note, separate header action for live Gwani? RECOMMENDED YES.
-- **OPT-05** Accept Services home under Gwani/Wallet and Crypto under Wallet, without bottom-tab additions or automatic chat routing? RECOMMENDED YES.
-
-**Status check:** This document is an approved-to-discuss *proposal*, not an implemented repair, no GitHub code merge, and no actual app/device tests.
+## Updated decision status
+- **HOME-01 Confirmed:** Center tab now Home, only platform Masana posts; mixed text/image/audio feed in variable-height cards. Old OPT-01 one-Talk-per-screen audio-only Explore is **REJECTED/SUPERSEDED** for default Home; optional immersive Listen can snap vertically.
+- **HOME-02 Confirmed:** Agent/admin image-post and optional audio cover support, with brand default. Former OPT-02 **user** cover uploader is **REMOVED**.
+- **OPT-03 Blue branding:** still recommended; exact color palette requires approved visual and contrast qualification.
+- **OPT-04 Chat composer:** retain fix recommendation, recorded voice note in composer; Live voice separate. Supports human and Masana DM/calls.
+- **OPT-05 Independent Billing/Crypto:** unchanged, no automatic chat redirect; Gwani remains optional task entry.
+No code in this file is claimed implemented.
