@@ -48,6 +48,18 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       });
     } catch (error) { return fail(reply, error); }
   });
+  // Read-only recovery for a request that may have succeeded before timeout.
+  // Never accept account/tenant from a query or client-controlled body.
+  app.get("/audio-posts/requests/:requestId", async (request, reply) => {
+    try {
+      const params = request.params as { requestId?: unknown };
+      if (typeof params.requestId !== "string") {
+        throw new AudioPostError("VALIDATION", "Invalid publish request ID");
+      }
+      return await deps.service.receiptByRequest(
+        await actor(request.headers.authorization), params.requestId);
+    } catch (error) { return fail(reply, error); }
+  });
   app.get("/audio-posts/mine", async (request, reply) => {
     try { return await deps.service.mine(await actor(request.headers.authorization)); }
     catch (error) { return fail(reply, error); }
