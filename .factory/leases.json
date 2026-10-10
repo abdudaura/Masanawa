@@ -149,6 +149,26 @@
       "heartbeat_at": "2026-10-10T02:20:39.453Z",
       "expires_at": "2026-10-10T02:25:39.456Z",
       "notes": "First source action: new independent Flutter composer and tests, same PR #609; AF05 verified recording callback dependency."
+    },
+    {
+      "claim_id": "masanawa01-af14-activity-account-fence-20261010",
+      "owner": "MASANAWA-01 / AF14 continuing existing PR #604",
+      "scope": "Connect customer Activity projection and invitation actions to signed-in account boundary; prevent stale Activity rows and old-account mutation outcomes after switch; extend real widget contracts, not new backend authority",
+      "paths": [
+        "apps/mobile/lib/src/state/talk_activity_state.dart",
+        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
+        "apps/mobile/test/activity_screen_test.dart",
+        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
+        "docs/workstreams/AF14-activity-recovery-20261010.md"
+      ],
+      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
+      "source_pr": 604,
+      "source_head": "88ec3f0e27692f1d4967d286f4b848508ff87d55",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T02:24:51.404Z",
+      "heartbeat_at": "2026-10-10T02:24:51.404Z",
+      "expires_at": "2026-10-10T02:29:51.404Z",
+      "notes": "Extension of existing AF14 #604; exact-path tests and state provider added. Cross-feature identity authority remains sessionProvider; no alternative identity, API, migrations, root router or production files. Existing #389 invitation API reused; Account/session ownership AF08 unchanged."
     }
   ],
   "history": [
