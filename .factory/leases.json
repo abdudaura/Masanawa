@@ -1086,6 +1086,24 @@
       "heartbeat_at": "2026-10-10T16:07:22.932Z",
       "expires_at": "2026-10-10T16:12:22.932Z",
       "notes": "Head 77fc802456d016f5a81a5ac498184943a3fb8046 in #620; real Foundation CI run 38066326638 in progress; test-only 7 paths, AF00 coordinated via #616, no live DB."
+    },
+    {
+      "claim_id": "r0-owner-source-first-unblock-20261010-gpt6",
+      "owner": "GPT-6 / owner-directed source-first instruction on canonical PR #615; AF00 informed on #600",
+      "scope": "Owner explicitly permits independent implementation and non-deploying source integration despite unavailable/unrelated tests; preserve production, security and finance release gates. Documentation only, no code or CI changes.",
+      "paths": [
+        "AGENTS.md",
+        "CONTINUE-HERE.md",
+        "docs/rebuild/DELIVERY.md",
+        "docs/rebuild/WINDOW-PROMPT.md"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "base_sha": "264f143f961247053f4390187453c45195f3535d",
+      "source_pr": 615,
+      "claimed_at": "2026-10-10T16:08:43.202Z",
+      "heartbeat_at": "2026-10-10T16:08:43.202Z",
+      "expires_at": "2026-10-10T16:23:43.202Z",
+      "notes": "Review and preserve latest canonical instructions; single owner AF00 retains shared code, production deploy/financial/migration writes. Do not block implementation on R0/R1 or existing red baseline checks."
     }
   ],
   "history": [
