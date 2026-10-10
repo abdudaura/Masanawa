@@ -302,7 +302,11 @@
       "claimed_at": "2026-10-10T04:46:55.813Z",
       "heartbeat_at": "2026-10-10T04:46:55.813Z",
       "expires_at": "2026-10-10T04:51:55.813Z",
-      "notes": "New feature-owned route pack, not shared Gateway app/main, DB registry, media authority or worker. No competing integration branch."
+      "notes": "New feature-owned route pack, not shared Gateway app/main, DB registry, media authority or worker. No competing integration branch.",
+      "released_at": "2026-10-10T04:50:31.194Z",
+      "release_reason": "Feature-owned complete 18-route registration source, three authored Node regressions, blob readback and stripped-import V8 syntax parse; parent milestone source still missing AF00 Gateway/migration/worker/shell and AF05/AF15 media; tests blocked by Node24/pnpm12/checkout/PG/Flutter; exact handoff #609 comment 6093929958, AF00 request #600 comment 6093927801. No integration SHA, no local pull.",
+      "source_head": "636abf8939b16e8aa214527584062a7544b9257b",
+      "integration_head_sha": null
     }
   ],
   "history": [
