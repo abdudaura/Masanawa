@@ -1249,9 +1249,10 @@
       "branch": "lane/l-admin-j19-ops-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:29:51.835Z",
-      "heartbeat_at": "2026-10-10T16:29:51.835Z",
-      "expires_at": "2026-10-10T16:34:51.835Z",
-      "notes": "No production activation; source implementation on nondeploying integration; await AF00 composition and R1 authorized identity."
+      "heartbeat_at": "2026-10-10T16:34:14.662Z",
+      "expires_at": "2026-10-10T16:39:14.662Z",
+      "notes": "No production activation; source implementation on nondeploying integration; await AF00 composition and R1 authorized identity.",
+      "source_head": "b8bdd3b1fd4598b46348cf11157ced9bb2d213c2"
     },
     {
       "claim_id": "l-video-youtube-websub-j14-20261010-gpt6-1730",
