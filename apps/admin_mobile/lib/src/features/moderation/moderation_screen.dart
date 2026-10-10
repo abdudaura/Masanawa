@@ -91,6 +91,32 @@ class _StaffCaseDetailState extends State<_StaffCaseDetail> {
           Text('${item['targetKind']} · ${item['targetId']}'),
           Text(item['details']?.toString() ?? ''),
           const SizedBox(height: 20),
+          if (item['state'] == 'open' || item['state'] == 'investigating')
+            OutlinedButton.icon(
+              onPressed: _saving ? null : () async {
+                final reason = await showDialog<String>(
+                  context: context,
+                  builder: (dialogContext) => _DismissReasonDialog(),
+                );
+                if (!mounted || reason == null || reason.isEmpty) return;
+                await _do(() => widget.api.dismiss(
+                  caseId: widget.id,
+                  reason: reason,
+                  version: item['version'] as int,
+                ));
+              },
+              icon: const Icon(Icons.close),
+              label: const Text('Dismiss as no violation'),
+            ),
+
+          Text('Evidence', style: Theme.of(context).textTheme.titleMedium),
+          for (final raw in item['evidence'] as List<dynamic>? ?? const [])
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file_outlined),
+              title: Text((raw as Map)['sourceKind']?.toString() ?? 'Evidence'),
+              subtitle: Text(raw['sourceId']?.toString() ?? ''),
+            ),
+          const SizedBox(height: 12),
           Text('Proposals', style: Theme.of(context).textTheme.titleMedium),
           for (final a in actions)
             Card(child: Column(children: [
@@ -177,5 +203,31 @@ class _StaffCaseDetailState extends State<_StaffCaseDetail> {
         ]);
       },
     ),
+  );
+}
+
+class _DismissReasonDialog extends StatefulWidget {
+  @override State<_DismissReasonDialog> createState() => _DismissReasonDialogState();
+}
+class _DismissReasonDialogState extends State<_DismissReasonDialog> {
+  final controller = TextEditingController();
+  @override void dispose() { controller.dispose(); super.dispose(); }
+  @override Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Dismiss this report?'),
+    content: TextField(
+      controller: controller,
+      autofocus: true,
+      maxLength: 1000,
+      onChanged: (_) => setState(() {}),
+      decoration: const InputDecoration(labelText: 'Reason (required)'),
+    ),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+      FilledButton(
+        onPressed: controller.text.trim().isEmpty
+            ? null : () => Navigator.pop(context, controller.text.trim()),
+        child: const Text('Dismiss'),
+      ),
+    ],
   );
 }
