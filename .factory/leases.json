@@ -442,6 +442,23 @@
       "heartbeat_at": "2026-10-10T07:52:27.786Z",
       "expires_at": "2026-10-10T07:57:27.786Z",
       "notes": "Executed Vitest showed runtime includes creditGift and providerValuationAdmin in frozen surface; test stale. Preserve exhaustive equality."
+    },
+    {
+      "claim_id": "chat-p04-612-replay-media-closure-20261010-gpt6",
+      "owner": "GPT-6, continuing existing CHAT-P04 PR #612",
+      "scope": "Close unresolved directive disclosure via existing completed turn replay, media and media-set responses; regressions in current service tests, no shared route/auth/financial/migration/CI edits",
+      "paths": [
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/agent_conversation.test.ts",
+        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
+      ],
+      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 612,
+      "claimed_at": "2026-10-10T07:57:36.832Z",
+      "heartbeat_at": "2026-10-10T07:57:36.832Z",
+      "expires_at": "2026-10-10T08:02:36.832Z",
+      "notes": "Same PR, no competing branch. Run GitHub Actions and report actual full-test blockers."
     }
   ],
   "history": [
