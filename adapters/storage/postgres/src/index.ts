@@ -18,6 +18,7 @@ export * from "./agents/runs.js";
 
 export * from "./commerce/repository.js";
 export * from "./commerce/crypto-repository.js";
+export * from "./commerce/internal-crypto-transfer.js";
 export * from "./commerce/crypto-chat.js";
 export * from "./skills/guides.js";
 export * from "./skills/teaching.js";

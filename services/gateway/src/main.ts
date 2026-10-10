@@ -68,6 +68,8 @@ import {
   createPostgresIdentityRepository,
   createPostgresCommerceRepository,
   createPostgresCryptoRepository,
+  createPostgresInternalCryptoTransferStore,
+  type InternalCryptoTransferStore,
   createPostgresCryptoChatActionRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
@@ -149,6 +151,7 @@ import {
   createFinancialService,
   type FinancialAuthorizer,
 } from "./financial_service.js";
+import { createInternalCryptoTransferService, type TransferRiskPolicy } from "./internal_crypto_transfer.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createAgentShellService } from "./agent_shell.js";
 import type {
@@ -313,6 +316,7 @@ export interface ServiceDatabaseDependency {
   readonly customerChannels?: CustomerChannelRepository;
   readonly commerce?: CommerceRepository;
   readonly crypto?: CryptoRepository;
+  readonly internalCryptoTransfers?: InternalCryptoTransferStore;
   readonly cryptoChatActions?: CryptoChatActionRepository;
   readonly ownerships?: CharacterOwnershipReader;
   readonly mobileShell?: MobileShellRepository;
@@ -364,6 +368,7 @@ export interface StartGatewayServiceOptions {
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
   readonly commerceAuthorizer?: CommerceUserAuthorizer;
   readonly financialAuthorizer?: FinancialAuthorizer;
+  readonly internalCryptoPolicy?: TransferRiskPolicy;
   readonly agentStrategy?: AgentStrategy;
   readonly agentShellActionExecutor?: AgentShellActionExecutor;
 }
@@ -478,6 +483,7 @@ function createDefaultDatabaseDependency(
     customerChannels: createPostgresCustomerChannelRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
+    internalCryptoTransfers: createPostgresInternalCryptoTransferStore(database.pool),
     cryptoChatActions: createPostgresCryptoChatActionRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
     mobileShell: createPostgresMobileShellRepository(database.pool),
@@ -2230,6 +2236,17 @@ export async function startGatewayService(
     });
   }
 
+  const composedInternalCryptoTransfers =
+    options.appOptions?.internalCryptoTransfers ??
+    (financialAuthorizer && composedFinancial && database.internalCryptoTransfers
+      ? createInternalCryptoTransferService({
+          authorizer: financialAuthorizer,
+          financial: composedFinancial,
+          store: database.internalCryptoTransfers,
+          ...(options.internalCryptoPolicy ? { policy: options.internalCryptoPolicy } : {}),
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
@@ -2253,6 +2270,7 @@ export async function startGatewayService(
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedInternalCryptoTransfers ? { internalCryptoTransfers: composedInternalCryptoTransfers } : {}),
       ...(composedCustomerChannels
         ? { customerChannels: composedCustomerChannels }
         : {}),

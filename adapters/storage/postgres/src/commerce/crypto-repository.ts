@@ -182,7 +182,7 @@ async function accountBalance(
     `SELECT COALESCE(SUM(
          CASE direction WHEN 'credit' THEN amount ELSE -amount END
        ),0)::text AS balance
-       FROM commerce.crypto_ledger_entries
+       FROM commerce.crypto_all_ledger_entries
       WHERE tenant_id=$1 AND user_id=$2 AND asset=$3
         AND network IS NOT DISTINCT FROM $4`,
     [input.tenantId, input.userId, input.asset, input.network],
@@ -201,7 +201,7 @@ async function aggregateLiability(
                 COALESCE(SUM(
                   CASE direction WHEN 'credit' THEN amount ELSE -amount END
                 ), 0) AS user_balance
-           FROM commerce.crypto_ledger_entries
+           FROM commerce.crypto_all_ledger_entries
           WHERE tenant_id=$1 AND asset=$2
             AND network IS NOT DISTINCT FROM $3
           GROUP BY user_id
@@ -222,7 +222,7 @@ async function platformAggregateLiability(
                 COALESCE(SUM(
                   CASE direction WHEN 'credit' THEN amount ELSE -amount END
                 ), 0) AS user_balance
-           FROM commerce.crypto_ledger_entries
+           FROM commerce.crypto_all_ledger_entries
           WHERE asset=$1
             AND network IS NOT DISTINCT FROM $2
           GROUP BY tenant_id, user_id
