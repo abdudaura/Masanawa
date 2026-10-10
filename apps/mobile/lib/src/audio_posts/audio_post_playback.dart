@@ -180,6 +180,9 @@ class AudioPostPlaybackController extends ChangeNotifier {
       return;
     }
     final requestGeneration = ++_generation;
+    // Drop a media ticket if the auth session rotates while it is in flight,
+    // even when the new session belongs to the same account.
+    final authorizationAtStart = api.accessToken;
     _activePostId = post.postId;
     _loading = true;
     _playing = false;
@@ -193,12 +196,14 @@ class AudioPostPlaybackController extends ChangeNotifier {
           : (await api.dio.get<dynamic>(
               '/audio-posts/' + Uri.encodeComponent(post.postId) + '/playback',
             )).data;
-      if (!isAuthorized || requestGeneration != _generation) return;
+      if (!isAuthorized || requestGeneration != _generation ||
+          api.accessToken != authorizationAtStart) return;
       final ticket = PublishedTalkTicket.parse(
         payload, expectedHost: expectedMediaHost, nowMs: _nowMs());
       if (!isAuthorized || requestGeneration != _generation) return;
       await _output.start(ticket.url);
-      if (!isAuthorized || requestGeneration != _generation) {
+      if (!isAuthorized || requestGeneration != _generation ||
+          api.accessToken != authorizationAtStart) {
         await _output.stop();
         return;
       }
