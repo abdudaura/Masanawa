@@ -57,6 +57,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   int _generation = 0;
   final Set<String> _reacting = {};
   final Set<String> _removing = {};
+  // A lost DELETE acknowledgment is not proof of failure; block resubmission
+  // until canonical My Talks readback distinguishes removed from still active.
+  final Set<String> _uncertainRemovals = {};
   // Closing/replacing a session revokes mounted comment-sheet state immediately.
   final ValueNotifier<int> _commentsSession = ValueNotifier<int>(0);
   bool get _authorized =>
@@ -110,6 +113,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _reacting.clear();
       _commentsSession.value++;
       _removing.clear();
+      _uncertainRemovals.clear();
       _loading = true;
       _load();
     }
@@ -188,9 +192,57 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       });
     }
   }
+  bool _sameRemovalSession(String account, AudioPostTransport transport, int version) =>
+      mounted && _authorized && _mine && _generation == version &&
+      widget.accountId == account && identical(widget.transport, transport);
+
+  void _markRemoved(AudioPost value) {
+    setState(() {
+      _items = List.unmodifiable(_items.map((p) =>
+        p.postId == value.postId ? value : p));
+      _uncertainRemovals.remove(value.postId);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Talk removed from public feeds.')),
+    );
+  }
+
+  Future<void> _checkRemovalStatus(AudioPost post) async {
+    if (!_authorized || !_mine || _removing.contains(post.postId) ||
+        !_uncertainRemovals.contains(post.postId)) return;
+    final account = widget.accountId, transport = widget.transport, version = _generation;
+    setState(() => _removing.add(post.postId));
+    try {
+      final history = await transport.mine();
+      if (!_sameRemovalSession(account, transport, version)) return;
+      final matches = history.where((p) => p.postId == post.postId);
+      final value = matches.isEmpty ? null : matches.first;
+      if (value?.status == 'removed') {
+        _markRemoved(value!);
+      } else if (value != null) {
+        setState(() => _uncertainRemovals.remove(post.postId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Talk is still present. You can retry removal.')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Removal status is still unknown. Check again later.')));
+      }
+    } catch (_) {
+      if (_sameRemovalSession(account, transport, version)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not check removal status. Retry when online.')));
+      }
+    } finally {
+      if (_sameRemovalSession(account, transport, version)) {
+        setState(() => _removing.remove(post.postId));
+      }
+    }
+  }
+
   Future<void> _remove(AudioPost post) async {
     if (!_authorized || !_mine || _removing.contains(post.postId) ||
-        post.status == 'removed') return;
+        _uncertainRemovals.contains(post.postId) || post.status == 'removed') return;
+    final account = widget.accountId, transport = widget.transport;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -204,26 +256,46 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted || !_authorized || !_mine) return;
+    if (confirmed != true || !mounted || !_authorized || !_mine ||
+        widget.accountId != account || !identical(widget.transport, transport)) return;
+    final version = _generation;
     setState(() => _removing.add(post.postId));
     try {
-      final removed = await widget.transport.removeMine(postId: post.postId);
-      if (!mounted || !_authorized || !_mine) return;
-      setState(() => _items = List.unmodifiable(_items.map(
-        (p) => p.postId == removed.postId ? removed : p,
-      )));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Talk removed from public feeds.')),
-      );
+      final removed = await transport.removeMine(postId: post.postId);
+      if (_sameRemovalSession(account, transport, version)) _markRemoved(removed);
     } catch (_) {
-      if (!mounted || !_authorized || !_mine) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not remove Talk. Please retry.')),
-      );
+      if (!_sameRemovalSession(account, transport, version)) return;
+      setState(() => _uncertainRemovals.add(post.postId));
+      try {
+        // No second DELETE: a timeout after commit must not be called failed.
+        final history = await transport.mine();
+        if (!_sameRemovalSession(account, transport, version)) return;
+        final matches = history.where((p) => p.postId == post.postId);
+        final value = matches.isEmpty ? null : matches.first;
+        if (value?.status == 'removed') {
+          _markRemoved(value!);
+          return;
+        }
+        if (value != null) {
+          setState(() => _uncertainRemovals.remove(post.postId));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not remove Talk. Please retry.')));
+          return;
+        }
+      } catch (_) {
+        // An unavailable readback cannot establish the server outcome.
+      }
+      if (_sameRemovalSession(account, transport, version)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Removal status unknown. Check status before retrying.')));
+      }
     } finally {
-      if (mounted) setState(() => _removing.remove(post.postId));
+      if (_sameRemovalSession(account, transport, version)) {
+        setState(() => _removing.remove(post.postId));
+      }
     }
   }
+
   Future<void> _react(AudioPost post, String kind, {bool enabled = true}) async {
     if (!_authorized || !_reacting.add(post.postId + kind)) return;
     setState(() {});
@@ -453,9 +525,14 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                   Wrap(spacing: 8, children: [
                                     if (_mine && post.status != 'removed')
                                       TextButton.icon(
-                                        onPressed: _removing.contains(post.postId) ? null : () => _remove(post),
-                                        icon: const Icon(Icons.delete_outline),
-                                        label: Text(_removing.contains(post.postId) ? 'Removing…' : 'Remove Talk'),
+                                        onPressed: _removing.contains(post.postId) ? null :
+                                            _uncertainRemovals.contains(post.postId)
+                                              ? () => _checkRemovalStatus(post) : () => _remove(post),
+                                        icon: Icon(_uncertainRemovals.contains(post.postId)
+                                            ? Icons.refresh : Icons.delete_outline),
+                                        label: Text(_removing.contains(post.postId)
+                                            ? 'Checking…' : _uncertainRemovals.contains(post.postId)
+                                            ? 'Check removal status' : 'Remove Talk'),
                                       ),
                                     _listenButton(post),
                                     if (!_mine && post.status == 'published' &&
