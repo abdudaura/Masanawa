@@ -37,7 +37,7 @@ class SecurePublishedTalkFeedCache implements PublishedTalkFeedCache {
     await _pending; // Observe a pending write/clear for this cache instance.
     final raw = await _storage.read(key: key);
     if (raw == null) return null;
-    if (raw.length > _maxBytes) throw const FormatException('Oversized Talks cache');
+    if (utf8.encode(raw).length > _maxBytes) throw const FormatException('Oversized Talks cache');
     final value = jsonDecode(raw);
     if (value is! Map<String, dynamic> ||
         value['version'] != 1 || value['accountId'] != accountId ||
@@ -49,7 +49,7 @@ class SecurePublishedTalkFeedCache implements PublishedTalkFeedCache {
     if (age == null || age.isNegative || age > _maxAge) return null;
     final items = value['items'] as List;
     if (items.length > _maxItems) throw const FormatException('Oversized Talks list');
-    return List.unmodifiable(items.map((item) {
+    return List<AudioPost>.unmodifiable(items.map((item) {
       if (item is! Map) throw const FormatException('Invalid cached Talk');
       final post = AudioPost.fromJson(item.cast<String, dynamic>());
       if (post.status != 'published') {
@@ -92,7 +92,7 @@ class SecurePublishedTalkFeedCache implements PublishedTalkFeedCache {
           }
       ]
     });
-    if (encoded.length > _maxBytes) {
+    if (utf8.encode(encoded).length > _maxBytes) {
       throw const FormatException('Oversized Talks snapshot');
     }
     return _enqueue(() => _storage.write(key: key, value: encoded));
