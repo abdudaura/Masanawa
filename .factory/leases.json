@@ -158,6 +158,25 @@
       "heartbeat_at": "2026-10-10T03:02:08.833Z",
       "expires_at": "2026-10-10T03:07:08.833Z",
       "notes": "Previous exact #596 claim released at 03:00:49Z; refresh source at HEAD before writing; AF13 canonical only; ownership excludes guarded file, AF00 integrations and provider runtime."
+    },
+    {
+      "claim_id": "af09-609-durable-publish-20261010-gpt6-0406",
+      "owner": "AF09 existing PR #609 durable publish continuation GPT-6",
+      "scope": "Persist replay-safe audio publish attempts encrypted, allow deliberate account-fenced recovery after app restart and block network send on persistence failure. No AF05 media or AF00 composition paths.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_draft_store.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-durable-publish-attempt-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 609,
+      "source_head": "cc229a48c3b00ebaed3c23c30968946d0e89ac45",
+      "claimed_at": "2026-10-10T03:06:12.498Z",
+      "heartbeat_at": "2026-10-10T03:06:12.498Z",
+      "expires_at": "2026-10-10T03:11:12.498Z",
+      "notes": "Same PR, own only listed paths. Requires current-blob recheck before each write; AF00/AF05/AF15 untouched."
     }
   ],
   "history": [
