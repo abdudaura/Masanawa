@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'audio_post_transport.dart';
 import 'audio_post_playback.dart';
+import 'audio_post_feed_cache.dart';
 import 'follow_button.dart';
 import 'following_transport.dart';
 
@@ -16,6 +17,7 @@ class AudioPostFeedScreen extends StatefulWidget {
     required this.isCurrentAccount,
     this.onPlayAuthorized,
     this.playback,
+    this.cache,
     this.onCreatePost,
   });
   final AudioPostTransport transport;
@@ -27,6 +29,8 @@ class AudioPostFeedScreen extends StatefulWidget {
   final Future<void> Function(AudioPost)? onPlayAuthorized;
   /// AF09 ticket-backed player; AF00 provides it with AF05 focus and AF15 host.
   final AudioPostPlaybackController? playback;
+  /// Encrypted account-fenced snapshots are best-effort, never authorizing API writes.
+  final PublishedTalkFeedCache? cache;
   final VoidCallback? onCreatePost;
 
   @override
@@ -34,6 +38,8 @@ class AudioPostFeedScreen extends StatefulWidget {
 }
 class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   List<AudioPost> _items = const [];
+  late PublishedTalkFeedCache _cache;
+  bool _fromSnapshot = false, _freshDiscoverRead = false;
   String? _next;
   String? _message;
   bool _loading = true, _loadingMore = false, _mine = false, _saved = false, _following = false;
@@ -52,19 +58,42 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   @override
   void initState() {
     super.initState();
+    _cache = widget.cache ?? SecurePublishedTalkFeedCache();
     _load();
+  }
+
+  Future<void> _restoreSnapshot(int sequence) async {
+    try {
+      final items = await _cache.read(widget.accountId);
+      if (items == null || items.isEmpty || !mounted || !_authorized ||
+          sequence != _generation || _freshDiscoverRead || _items.isNotEmpty ||
+          _mine || _saved || _following) return;
+      setState(() { _items = items; _fromSnapshot = true; });
+    } catch (_) {
+      // Secure-store denial/corruption must not leak or fabricate feed data.
+      // The authoritative request can still proceed and show an honest error.
+    }
   }
   @override
   void didUpdateWidget(covariant AudioPostFeedScreen old) {
     super.didUpdateWidget(old);
     if (old.accountId != widget.accountId || old.transport != widget.transport ||
         old.followingTransport != widget.followingTransport ||
-        old.playback != widget.playback) {
+        old.playback != widget.playback || old.cache != widget.cache) {
+      final previousCache = _cache;
+      if (old.accountId != widget.accountId && old.accountId.isNotEmpty) {
+        unawaited(previousCache.clear(old.accountId).catchError((Object _) {}));
+      }
+      if (old.cache != widget.cache) {
+        _cache = widget.cache ?? SecurePublishedTalkFeedCache();
+      }
       if (widget.followingTransport == null) _following = false;
       if (old.playback != null) unawaited(old.playback!.stop());
       ++_generation;
       _items = const [];
       _next = null;
+      _fromSnapshot = false;
+      _freshDiscoverRead = false;
       _message = null;
       _reacting.clear();
       ++_commentsGeneration;
@@ -94,7 +123,11 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     if (following && widget.followingTransport == null) return;
     if (_mine == mine && _saved == saved && _following == following) return;
     if (widget.playback != null) unawaited(widget.playback!.stop());
-    setState(() { _mine = mine; _saved = saved; _following = following; });
+    setState(() {
+      _mine = mine; _saved = saved; _following = following;
+      _items = const []; _next = null;
+      _fromSnapshot = false; _freshDiscoverRead = false;
+    });
     _load();
   }
   Future<void> _load({bool more = false}) async {
@@ -104,9 +137,14 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       return;
     }
     final sequence = ++_generation;
+    // Never block a cached warm screen on a slow network or disk read.
+    if (!more && !_mine && !_saved && !_following && _items.isEmpty) {
+      _freshDiscoverRead = false;
+      unawaited(_restoreSnapshot(sequence));
+    }
     setState(() {
       if (more) _loadingMore = true;
-      else {_loading = true; _next = null; _items = const [];}
+      else { _loading = true; _next = null; }
       _message = null;
     });
     try {
@@ -125,9 +163,15 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
           ...page.items.where((e) => (_mine || e.status == 'published') && seen.add(e.postId)),
         ]);
         _next = page.nextCursor;
+        _fromSnapshot = false;
+        if (!_mine && !_saved && !_following) _freshDiscoverRead = true;
         _loading = false;
         _loadingMore = false;
       });
+      if (!_mine && !_saved && !_following && _authorized) {
+        // Best-effort presentation cache; failures never suppress live results.
+        unawaited(_cache.write(widget.accountId, _items).catchError((Object _) {}));
+      }
     } catch (_) {
       if (!mounted || sequence != _generation || !_authorized) return;
       setState(() {
@@ -419,7 +463,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
           ? const Center(child: Text('Sign in to listen to Talks.'))
           : RefreshIndicator(
               onRefresh: _load,
-              child: _loading
+              child: _loading && _items.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : ListView(
                       key: const ValueKey('audio-post-discover'),
@@ -438,11 +482,17 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                             onSelected: _authorized ? (_) => _selectFeed(mine: true) : null),
                         ]),
                         const SizedBox(height: 8),
+                        if (_loading) const LinearProgressIndicator(),
+                        if (_fromSnapshot)
+                          const ListTile(
+                            key: ValueKey('talks-offline-snapshot'),
+                            title: Text('Previously viewed Talks · Updating when connected'),
+                          ),
                         if (_message != null)
                           ListTile(
                             title: Text(_message!),
                             trailing: TextButton(
-                              onPressed: () => _load(more: _items.isNotEmpty),
+                              onPressed: () => _load(),
                               child: const Text('Retry'),
                             ),
                           ),
