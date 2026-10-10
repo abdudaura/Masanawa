@@ -1180,30 +1180,6 @@
       "test_state": "GitHub Foundation FAIL at frozen lockfile import; Mobile initial direct feature source failures fixed, later run queued; Node/Vitest/PG on source NOT_RUN"
     },
     {
-      "claim_id": "l-masana-profiles-20261010-gpt6-1723",
-      "owner": "GPT-6 L-MASANA profiles",
-      "scope": "L-MASANA fan profile discovery/follow, approved revision staff editing, staging seeding, PG, Gateway, Flutter UI, Admin and verification; AF00 shared composition reserved",
-      "paths": [
-        "packages/masana/**",
-        "services/gateway/src/modules/masana/**",
-        "services/worker/src/jobs/masana/**",
-        "adapters/storage/postgres/src/masana/**",
-        "apps/mobile/lib/src/features/masana/**",
-        "apps/admin_mobile/lib/src/features/masana/**",
-        "apps/mobile/test/features/masana/**",
-        "apps/admin_mobile/test/features/masana/**",
-        "tests/e2e/J18/**",
-        "docs/workstreams/l-masana-profiles-20261010-gpt6.md"
-      ],
-      "branch": "lane/l-masana-profiles-20261010-gpt6",
-      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
-      "claimed_at": "2026-10-10T16:23:42Z",
-      "heartbeat_at": "2026-10-10T16:58:45Z",
-      "expires_at": "2026-10-10T17:03:45Z",
-      "notes": "No overlapping active lane; preserve existing identity.characters and AF00 app/router/migration roots; use new masana namespace only.",
-      "source_head": "8f112555fa40df24093f276688a89b101a19cdc2"
-    },
-    {
       "claim_id": "l-admin-j19-ops-20261010-gpt6-1629",
       "owner": "GPT-6 L-ADMIN J19",
       "scope": "Admin role-safe operations and staff, flags and audited actions, complete feature-local PG/Gateway/Admin screens/worker/test source; AF00 retains shared router, auth/session, main bootstrap, migrations registry and release",
@@ -4125,6 +4101,34 @@
       "released_at": "2026-10-10T16:57:27.630Z",
       "integration_head_sha": null,
       "release_reason": "Source J13 draft PR #628 at e735bdd3df929da1b646ae9913465e367f06aa47 (28 files) is not deployed/merged. Foundation install failed ERR_PNPM_PACKAGE_MANAGER_NO_IMPORTER, TypeScript/Vitest/PG not run, Flutter analyze failed/cancelled; AF00 owns pnpm-lock, PG migration registry, routes, roles, worker adapter and navigation. Shared source nondeployed, existing financial tables untouched. AF00 coordinated in PR #616."
+    },
+    {
+      "claim_id": "l-masana-profiles-20261010-gpt6-1723",
+      "owner": "GPT-6 L-MASANA profiles",
+      "scope": "L-MASANA fan profile discovery/follow, approved revision staff editing, staging seeding, PG, Gateway, Flutter UI, Admin and verification; AF00 shared composition reserved",
+      "paths": [
+        "packages/masana/**",
+        "services/gateway/src/modules/masana/**",
+        "services/worker/src/jobs/masana/**",
+        "adapters/storage/postgres/src/masana/**",
+        "apps/mobile/lib/src/features/masana/**",
+        "apps/admin_mobile/lib/src/features/masana/**",
+        "apps/mobile/test/features/masana/**",
+        "apps/admin_mobile/test/features/masana/**",
+        "tests/e2e/J18/**",
+        "docs/workstreams/l-masana-profiles-20261010-gpt6.md"
+      ],
+      "branch": "lane/l-masana-profiles-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "claimed_at": "2026-10-10T16:23:42Z",
+      "heartbeat_at": "2026-10-10T16:58:45Z",
+      "expires_at": "2026-10-10T17:03:45Z",
+      "notes": "No overlapping active lane; preserve existing identity.characters and AF00 app/router/migration roots; use new masana namespace only.",
+      "source_head": "8f112555fa40df24093f276688a89b101a19cdc2",
+      "released_at": "2026-10-10T17:00:48Z",
+      "integration_head_sha": "ff1649da5e13b8a25db7dae4fc95c7b657312cac",
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/630",
+      "release_reason": "L-MASANA PR #630 source-only squash merged safely into NONdeploying integration/rebuild at ff1649da5e13b8a25db7dae4fc95c7b657312cac; source head 8f112555fa40df24093f276688a89b101a19cdc2. 23 claimed files, no runtime root/migration/pnpm lock/main/production/financial data changed. Source testing NOT PASS: GitHub workflow reported advisory success but pnpm frozen install FAIL packages/masana importer, TS SKIPPED, Vitest/PG NOT_RUN; Flutter/Admin/Android exact-head unverified. AF00 sole owner of shared composition and tests; 12 licensed Masana/Rooms/24 posts missing for J18. Released exact-file claim after source merge."
     }
   ]
 }
