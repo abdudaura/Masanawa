@@ -54,16 +54,18 @@ function reply() {
     code(value){this.status=value;return this;},
     send(value){this.body=value;return value;} };
 }
-test('registers all 18 canonical post/social/private playback/report routes once', () => {
+test('registers all 20 canonical post/social/private playback/report routes once', () => {
   const f=fixture();
   registerPublishedAudioFeatureRoutes(f.app, f);
-  assert.equal(f.routes.size, 18);
+  assert.equal(f.routes.size, 20);
   for (const key of [
     'POST /audio-posts',
     'GET /audio-posts',
     'GET /audio-posts/requests/:requestId',
     'GET /audio-posts/mine',
+    'GET /audio-posts/mine/page',
     'GET /audio-posts/saved',
+    'GET /audio-posts/saved/page',
     'GET /audio-posts/:postId/comments/page',
     'DELETE /audio-posts/:postId/comments/:commentId',
     'PUT /audio-posts/:postId/follow',
