@@ -32,7 +32,8 @@ export function createPostgresFanMemoryStore(pool:Pool){
      FROM memory.records m JOIN memory.revisions v ON v.tenant_id=m.tenant_id
       AND v.memory_record_id=m.memory_record_id AND v.revision_number=m.revision
      WHERE m.tenant_id=$1 AND m.scope_kind='relationship' AND m.scope_ref_id=$2
-      AND m.lifecycle_state='active' AND (v.expires_at IS NULL OR v.expires_at>clock_timestamp())
+      AND m.lifecycle_state='active' AND v.payload->>'fanMemoryV1'='true'
+      AND (v.expires_at IS NULL OR v.expires_at>clock_timestamp())
      ORDER BY m.updated_at DESC,m.memory_record_id LIMIT 50`,[p.tenantId,o.relationship_id]):{rows:[]};
    await c.query("COMMIT");
    return {characterId:ch,enabled,revision:Number(revision),
