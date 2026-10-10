@@ -13,6 +13,11 @@ export type CaseRecord = Readonly<{
   category:CaseCategory;details:string;state:CaseState;version:number;
   slaDueAt:string;createdAt:string;updatedAt:string;
 }>;
+export type AppealRecord = Readonly<{
+ tenantId:string;appealId:string;caseId:string;appellantUserId:string;reason:string;
+ state:"pending"|"under_review"|"upheld"|"rejected";reviewedBy:string|null;
+ secondReviewedBy:string|null;version:number;createdAt:string;
+}>;
 export type CaseEvent = Readonly<{eventId:string;caseId:string;type:string;actorId:string;createdAt:string;details:string}>;
 export type ActionRecord = Readonly<{
   tenantId:string;actionId:string;caseId:string;targetKind:CaseTarget;targetId:string;
