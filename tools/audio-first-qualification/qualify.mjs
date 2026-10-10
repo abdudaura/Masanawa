@@ -52,7 +52,7 @@ function checkRecord(record,journey,sha){
        typeof execution.command!=='string'||!execution.command.trim()||execution.command.length>1500||
        !Array.isArray(execution.assertions)||execution.assertions.length<1||execution.assertions.length>100||
        execution.assertions.some(a=>typeof a!=='string'||!a.trim()||a.length>200))errors.push('real evidence requires executed command, steps and assertions');
-    if(typeof record.executedAt!=='string'||!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$/.test(record.executedAt)||
+    if(typeof record.executedAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(record.executedAt)||
        Date.now()-Date.parse(record.executedAt)>MAX_REAL_EVIDENCE_AGE_MS)errors.push('real evidence needs recent UTC execution time');
     if(record.environment?.mode!=="real")errors.push("real status requires real environment");
     if(journey.boundaries.some(b=>!observed.includes(b)))errors.push("missing full-boundary observation");
