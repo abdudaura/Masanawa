@@ -40,18 +40,18 @@ WITH eligible AS (
     AND o.link_guard_installed IS TRUE
     AND o.domain_refs_reconciled IS TRUE
     AND o.immutable IS TRUE
-    AND o.created_at <= to_timestamp($1::double precision / 1000.0) - interval '24 hours'
-    AND o.retain_until <= to_timestamp($1::double precision / 1000.0)
+    AND o.created_at <= clock_timestamp() - interval '24 hours'
+    AND o.retain_until <= clock_timestamp()
     AND (o.object_version IS NOT NULL OR o.object_key ~ '/sha256-[0-9a-f]{64}(\\.[A-Za-z0-9]{1,8})?
   ORDER BY o.retain_until ASC, o.tenant_id ASC, o.object_key ASC
-  LIMIT $2
+  LIMIT $1
   FOR UPDATE OF o SKIP LOCKED
 )
 UPDATE ops.media_cleanup_objects AS o
 SET status = 'deleting', lease_token = replace(gen_random_uuid()::text, '-', ''),
-    lease_owner = $3, lease_expires_at = to_timestamp($1::double precision / 1000.0) + interval '10 minutes',
+    lease_owner = $2, lease_expires_at = clock_timestamp() + interval '10 minutes',
     reference_revision = o.reference_revision + 1,
-    updated_at = to_timestamp($1::double precision / 1000.0)
+    updated_at = clock_timestamp()
 FROM eligible AS e
 WHERE o.tenant_id = e.tenant_id AND o.object_key = e.object_key
   AND NOT EXISTS (
@@ -134,7 +134,7 @@ export function createPgMediaCleanupRepository(pool: CleanupPgPool): MediaCleanu
         throw new TypeError("media_cleanup.invalid_claim");
       }
       return withClient(async db => {
-        const result = await db.query<ClaimedRow>(CLAIM_SQL, [nowMs, max, workerId]);
+        const result = await db.query<ClaimedRow>(CLAIM_SQL, [max, workerId]);
         const candidates = result.rows.map((row): CleanupCandidate => ({
           tenantId: row.tenant_id, objectKey: row.object_key,
           objectVersion: row.object_version, kind: row.kind, leaseToken: row.lease_token,
@@ -159,7 +159,7 @@ export function createPgMediaCleanupRepository(pool: CleanupPgPool): MediaCleanu
           row.immutable === true && Number(row.reference_revision) === candidate.referenceRevision &&
           ms(row.created_at_ms) === candidate.createdAtMs && ms(row.retain_until_ms) === candidate.retainUntilMs &&
           candidate.createdAtMs <= Date.now() - 86_400_000 && candidate.retainUntilMs <= Date.now() &&
-          Number(row.active_references) === 0 && Number(row.active_holds) === 0;
+          row.active_references === 0 && row.active_holds === 0;
         return safe ? { state: "ready", referenceRevision: candidate.referenceRevision,
           activeReferences: 0, activeHolds: 0, immutable: true } : { state: "blocked" };
       });
@@ -187,9 +187,9 @@ export function createPgMediaCleanupRepository(pool: CleanupPgPool): MediaCleanu
 )
 UPDATE ops.media_cleanup_objects AS o
 SET status = 'deleting', lease_token = replace(gen_random_uuid()::text, '-', ''),
-    lease_owner = $3, lease_expires_at = to_timestamp($1::double precision / 1000.0) + interval '10 minutes',
+    lease_owner = $3, lease_expires_at = clock_timestamp() + interval '10 minutes',
     reference_revision = o.reference_revision + 1,
-    updated_at = to_timestamp($1::double precision / 1000.0)
+    updated_at = clock_timestamp()
 FROM eligible AS e
 WHERE o.tenant_id = e.tenant_id AND o.object_key = e.object_key
   AND NOT EXISTS (
