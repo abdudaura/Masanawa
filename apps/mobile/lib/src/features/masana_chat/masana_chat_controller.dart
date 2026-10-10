@@ -68,6 +68,7 @@ class MasanaChatController extends ChangeNotifier {
   final List<MasanaChatTurn> _turns = [];
   String? _sessionId;
   bool _busy = false, _disposed = false, _restored = false;
+  int _generation = 0;
   String? error;
   bool get busy => _busy;
   List<MasanaChatTurn> get turns => List.unmodifiable(_turns);
@@ -108,7 +109,7 @@ class MasanaChatController extends ChangeNotifier {
       text: text, state: ChatSendState.queued,
     ));
     _notify();
-    await _persist();
+    if (!await _persist()) return;
     unawaited(_drain());
   }
   Future<void> retry(String requestId) async {
@@ -121,39 +122,47 @@ class MasanaChatController extends ChangeNotifier {
     await _persist();
     unawaited(_drain());
   }
-  Future<void> _persist() async {
+  Future<bool> _persist() async {
     try {
       await drafts.write(accountId, characterId, {
         'sessionId': _sessionId,
         'turns': _turns.map((v) => v.toJson()).toList(growable:false),
       });
+      return true;
     } catch (_) {
       error = 'Offline messages cannot be saved on this device.';
       _notify();
+      return false;
     }
   }
   Future<void> _drain() async {
     if (_busy || _disposed || !_restored) return;
+    final generation = _generation;
     _busy = true;
     _notify();
     try {
       for (var i = 0; i < _turns.length; i++) {
-        if (_disposed || _turns[i].state == ChatSendState.failed) break;
+        if (_disposed || generation != _generation ||
+            _turns[i].state == ChatSendState.failed) break;
         if (_turns[i].state != ChatSendState.queued) continue;
         try {
           _sessionId ??= await api.open(characterId);
-          await _persist();
+          if (_disposed || generation != _generation) return;
+          if (!await _persist()) break;
+          if (_disposed || generation != _generation) return;
           _turns[i] = _turns[i].copy(state: ChatSendState.sending);
           _notify();
           final reply = await api.turn(
             characterId:characterId,sessionId:_sessionId!,
             text:_turns[i].text,requestId:_turns[i].requestId,
           );
+          if (_disposed || generation != _generation) return;
           _turns[i] = _turns[i].copy(state:ChatSendState.sent,reply:reply);
           error = null;
-          await _persist();
+          if (!await _persist()) break;
           _notify();
         } catch (_) {
+          if (_disposed || generation != _generation) return;
           _turns[i] = _turns[i].copy(state: ChatSendState.failed);
           error = 'Message not delivered. Check your connection and retry.';
           await _persist();
@@ -166,6 +175,7 @@ class MasanaChatController extends ChangeNotifier {
     }
   }
   Future<void> clearForAccountSwitch() async {
+    _generation++;
     final session = _sessionId;
     _turns.clear(); _sessionId = null;
     await drafts.clear(accountId, characterId);
