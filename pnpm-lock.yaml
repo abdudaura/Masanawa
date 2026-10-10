@@ -386,6 +386,23 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
+
+  packages/operator-tasks:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      pg:
+        specifier: 8.23.0
+        version: 8.23.0
+    devDependencies:
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
   packages/providers:
     dependencies:
       '@masanawa/contracts':
@@ -502,6 +519,9 @@ importers:
       '@masanawa/nowpayments':
         specifier: workspace:*
         version: link:../../adapters/crypto/nowpayments
+      '@masanawa/operator-tasks':
+        specifier: workspace:*
+        version: link:../../packages/operator-tasks
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres

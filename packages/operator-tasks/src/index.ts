@@ -80,6 +80,8 @@ export interface OperatorTaskRepository {
       "phase" | "operationClass" | "operationId" | "termsDigest" | "approvalDigest" |
       "approvalSessionDigest" | "approvalExpiresAt" | "receiptRef" | "errorCode">>>;
     at: string;
+    /** Require the server database clock to be before the stored approval expiry at the actual CAS write. */
+    requireUnexpiredApproval?: boolean;
   }>): Promise<OperatorTaskRecord>;
 }
 
@@ -206,11 +208,12 @@ export function createOperatorTaskService(input: Readonly<{
   async function transition(
     actor: OperatorActor, task: OperatorTaskRecord, allowedFrom: readonly OperatorTaskPhase[],
     patch: Parameters<OperatorTaskRepository["change"]>[0]["patch"],
+    requireUnexpiredApproval = false,
   ): Promise<OperatorTaskRecord> {
     try {
       return await input.repository.change({
         actor, taskId: task.taskId, expectedVersion: task.version,
-        allowedFrom, patch, at: clock(),
+        allowedFrom, patch, at: clock(), requireUnexpiredApproval,
       });
     } catch (error) {
       if (error instanceof OperatorTaskError) throw error;
@@ -219,21 +222,39 @@ export function createOperatorTaskService(input: Readonly<{
   }
   async function settle(actor: OperatorActor, task: OperatorTaskRecord,
     outcome: OperatorDomainOutcome): Promise<OperatorTaskRecord> {
-    if (outcome.status === "unknown") {
-      if (task.phase === "reconciling") return task;
-      return transition(actor, task, ["running"], { phase: "reconciling", errorCode: "DOMAIN_OUTCOME_UNKNOWN" });
-    }
-    if (outcome.status === "confirmed") {
-      if (!outcome.receiptRef || outcome.receiptRef.length > 200 ||
-          !/^[a-zA-Z0-9:_./-]+$/u.test(outcome.receiptRef)) {
-        return transition(actor, task, ["running", "reconciling"],
-          { phase: "reconciling", errorCode: "DOMAIN_RECEIPT_UNVERIFIED" });
+    try {
+      if (outcome.status === "unknown") {
+        if (task.phase === "reconciling") return task;
+        return await transition(actor, task, ["running"], {
+          phase: "reconciling", errorCode: "DOMAIN_OUTCOME_UNKNOWN",
+        });
       }
-      return transition(actor, task, ["running", "reconciling"],
-        { phase: "succeeded", receiptRef: outcome.receiptRef, errorCode: null });
+      if (outcome.status === "confirmed") {
+        if (!outcome.receiptRef || outcome.receiptRef.length > 200 ||
+            !/^[a-zA-Z0-9:_./-]+$/u.test(outcome.receiptRef)) {
+          return await transition(actor, task, ["running", "reconciling"],
+            { phase: "reconciling", errorCode: "DOMAIN_RECEIPT_UNVERIFIED" });
+        }
+        return await transition(actor, task, ["running", "reconciling"],
+          { phase: "succeeded", receiptRef: outcome.receiptRef, errorCode: null });
+      }
+      return await transition(actor, task, ["running", "reconciling"],
+        { phase: "failed", errorCode: safeCode(outcome.code) });
+    } catch (error) {
+      // A recovery worker may have settled the same durable operation while
+      // the request was performing its status read. Return the DB truth, never
+      // an uncommitted result, and NEVER re-execute the external effect.
+      if (!(error instanceof OperatorTaskError) ||
+          error.code !== "TASK_REVISION_CONFLICT") throw error;
+      const latest = await input.repository.read({ actor, taskId: task.taskId });
+      if (!latest || latest.operationId !== task.operationId ||
+          latest.capabilityId !== task.capabilityId ||
+          latest.version <= task.version ||
+          !["running", "reconciling", "succeeded", "failed"].includes(latest.phase)) {
+        throw error;
+      }
+      return latest;
     }
-    return transition(actor, task, ["running", "reconciling"],
-      { phase: "failed", errorCode: safeCode(outcome.code) });
   }
 
   return Object.freeze<OperatorTaskService>({
@@ -316,11 +337,16 @@ export function createOperatorTaskService(input: Readonly<{
       }
       // Recheck permissions and terms at confirmation; adapters also recheck at the effect.
       await input.domain.authorizeConfirmation({ actor: request.actor, task: current });
+      // The authority check may wait for remote policy, consent or quote readback.
+      // Never admit an execution after the one-use approval expired during that wait.
+      if (Date.parse(current.approvalExpiresAt) <= Date.parse(clock())) {
+        throw new OperatorTaskError("TASK_APPROVAL_INVALID", 403);
+      }
       // Persist the irrevocable execution admission BEFORE contacting the domain.
       // No API retry may call execute() again once this CAS has succeeded.
       const running = await transition(request.actor, current, ["awaiting_approval"], {
         phase: "running", approvalDigest: null, approvalSessionDigest: null,
-      });
+      }, true);
       // Execution acknowledgment alone is not proof of success. The domain's
       // separate readback MUST confirm the exact idempotent operation outcome.
       let outcome: OperatorDomainOutcome = { status: "unknown" };
@@ -352,3 +378,15 @@ export function createOperatorTaskService(input: Readonly<{
     },
   });
 }
+
+// One public package entry point; internal persistence/recovery modules remain
+// behind server-only interfaces and are never exposed as separate HTTP routes.
+export { createPostgresOperatorTaskRepository } from "./postgres.js";
+export { createPostgresRecoveryJournal, createStatusOnlyRecovery } from "./recovery.js";
+export type {
+  RecoveryOperation,
+  RecoveryVerifiedReadback,
+  RecoveryStatusSource,
+  RecoveryJournal,
+  RecoveryBatchResult,
+} from "./recovery.js";

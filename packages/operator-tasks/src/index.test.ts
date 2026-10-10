@@ -63,6 +63,7 @@ function fixture() {
   let readback: OperatorDomainOutcome={status:"unknown"};
   let executed: OperatorDomainOutcome={status:"confirmed",receiptRef:"fabricated_not_evidence"};
   let admissionDenied=false;
+  let authorizationHook: (() => void | Promise<void>) | null = null;
   const service=createOperatorTaskService({
     repository:store.repository,
     domain: {
@@ -71,13 +72,14 @@ function fixture() {
       },
       async authorizeConfirmation() {
         if(admissionDenied) throw new OperatorTaskError("CAPABILITY_REVOKED",403);
+        if (authorizationHook) await authorizationHook();
       },
       async execute() { executes++; return executed; },
       async reconcile() { return readback; },
     },
     now:()=>time,
   });
-  const propose=(requestId="retry-key", arguments_={target:"safe"})=>service.propose({
+  const propose=(requestId="retry-key", arguments_: Readonly<Record<string, unknown>>={target:"safe"})=>service.propose({
     actor:account,requestId,scope:"private-assistant",capabilityId:"talks.create",
     capabilityVersion:1,arguments:arguments_,
   });
@@ -92,6 +94,7 @@ function fixture() {
     setReadback(v:OperatorDomainOutcome) {readback=v;},
     setExecuted(v:OperatorDomainOutcome) {executed=v;},
     denyAdmission() {admissionDenied=true;},
+    onAuthorize(hook: () => void | Promise<void>) {authorizationHook=hook;},
     executions() {return executes;},
   };
 }
@@ -150,6 +153,34 @@ describe("U02 durable operator task state/security contract", () => {
     await expect(f.service.confirm({actor:f.account,taskId:task.taskId,
       expectedVersion:p.task.version,approvalToken:p.approvalToken})).rejects.toMatchObject({statusCode:403});
     expect(f.executions()).toBe(0);
+  });
+
+  it("rejects approval that expires while the trusted authorization call is pending", async () => {
+    const f=fixture(), proposed=await f.propose();
+    const prepared=await f.prepare(proposed.taskId,proposed.version);
+    f.onAuthorize(async () => { f.setNow("2026-10-09T00:05:00.000Z"); });
+    await expect(f.service.confirm({
+      actor:f.account,taskId:proposed.taskId,expectedVersion:prepared.task.version,
+      approvalToken:prepared.approvalToken,
+    })).rejects.toMatchObject({code:"TASK_APPROVAL_INVALID",statusCode:403});
+    expect(f.executions()).toBe(0);
+    const persisted=await f.service.read({actor:f.account,taskId:proposed.taskId});
+    expect(persisted.phase).toBe("awaiting_approval");
+    expect(persisted.version).toBe(prepared.task.version);
+    expect((await f.service.events({actor:f.account,taskId:proposed.taskId})).map(e=>e.phase))
+      .toEqual(["proposed","awaiting_approval"]);
+  });
+
+  it("allows a checked authorization completed just before expiry", async () => {
+    const f=fixture(), proposed=await f.propose();
+    const prepared=await f.prepare(proposed.taskId,proposed.version);
+    f.onAuthorize(async () => { f.setNow("2026-10-09T00:04:59.999Z"); });
+    const result=await f.service.confirm({
+      actor:f.account,taskId:proposed.taskId,expectedVersion:prepared.task.version,
+      approvalToken:prepared.approvalToken,
+    });
+    expect(result.phase).toBe("reconciling");
+    expect(f.executions()).toBe(1);
   });
 
   it("does not promote an execution acknowledgement to verified success", async () => {
@@ -216,4 +247,77 @@ describe("U02 durable operator task state/security contract", () => {
     await expect(f.service.events({actor:f.account,taskId:task.taskId,afterVersion:-1}))
       .rejects.toMatchObject({statusCode:400});
   });
+
+  it("returns committed worker receipt after a same-operation settlement race", async () => {
+    const f = fixture(), proposed = await f.propose();
+    const prepared = await f.prepare(proposed.taskId, proposed.version);
+    f.setReadback({ status: "confirmed", receiptRef: "talk:late-request" });
+    const change = f.store.repository.change;
+    let concurrent = 0;
+    f.store.repository.change = async input => {
+      if (input.patch.phase === "succeeded" && concurrent++ === 0) {
+        const key = [...f.store.tasks.keys()][0]!;
+        const current = f.store.tasks.get(key)!;
+        // Simulate the canonical PostgreSQL CAS winning on another worker.
+        f.store.tasks.set(key, {
+          ...current, phase: "succeeded", receiptRef: "talk:durable-worker",
+          version: current.version + 1,
+        });
+        throw new OperatorTaskError("TASK_REVISION_CONFLICT", 409);
+      }
+      return change(input);
+    };
+    const result = await f.service.confirm({
+      actor: f.account, taskId: proposed.taskId,
+      expectedVersion: prepared.task.version, approvalToken: prepared.approvalToken,
+    });
+    expect(result.phase).toBe("succeeded");
+    expect(result.receiptRef).toBe("talk:durable-worker");
+    expect(result.receiptRef).not.toBe("talk:late-request");
+    expect(f.executions()).toBe(1);
+  });
+
+  it("refuses a status race from a different operation and never reruns execution", async () => {
+    const f = fixture(), proposed = await f.propose();
+    const prepared = await f.prepare(proposed.taskId, proposed.version);
+    const running = await f.service.confirm({
+      actor: f.account, taskId: proposed.taskId,
+      expectedVersion: prepared.task.version, approvalToken: prepared.approvalToken,
+    });
+    f.setReadback({ status: "confirmed", receiptRef: "talk:untrusted-response" });
+    const change = f.store.repository.change;
+    f.store.repository.change = async input => {
+      if (input.patch.phase === "succeeded") {
+        const key = [...f.store.tasks.keys()][0]!;
+        const previous = f.store.tasks.get(key)!;
+        f.store.tasks.set(key, {
+          ...previous, operationId: "operation_different", version: previous.version + 1,
+        });
+        throw new OperatorTaskError("TASK_REVISION_CONFLICT", 409);
+      }
+      return change(input);
+    };
+    await expect(f.service.reconcile({ actor: f.account, taskId: running.taskId }))
+      .rejects.toMatchObject({ code: "TASK_REVISION_CONFLICT", statusCode: 409 });
+    expect(f.executions()).toBe(1);
+    expect((await f.service.read({ actor: f.account, taskId: running.taskId })).receiptRef).toBeNull();
+  });
+
+  it("does not conceal real persistence failures as successful status readbacks", async () => {
+    const f = fixture(), proposed = await f.propose();
+    const prepared = await f.prepare(proposed.taskId, proposed.version);
+    const change = f.store.repository.change;
+    f.store.repository.change = async input => {
+      if (input.patch.phase === "reconciling") {
+        throw new OperatorTaskError("TASK_PERSISTENCE_UNAVAILABLE", 503);
+      }
+      return change(input);
+    };
+    await expect(f.service.confirm({
+      actor: f.account, taskId: proposed.taskId,
+      expectedVersion: prepared.task.version, approvalToken: prepared.approvalToken,
+    })).rejects.toMatchObject({ code: "TASK_PERSISTENCE_UNAVAILABLE", statusCode: 503 });
+    expect(f.executions()).toBe(1);
+  });
+
 });

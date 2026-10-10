@@ -8,11 +8,6 @@
       "types": "./src/index.ts",
       "production": "./dist/index.js",
       "default": "./src/index.ts"
-    },
-    "./postgres": {
-      "types": "./src/postgres.ts",
-      "production": "./dist/postgres.js",
-      "default": "./src/postgres.ts"
     }
   },
   "scripts": {
