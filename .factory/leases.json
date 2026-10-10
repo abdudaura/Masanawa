@@ -1363,7 +1363,12 @@
       "claimed_at": "2026-10-10T16:58:13.535Z",
       "heartbeat_at": "2026-10-10T16:58:13.535Z",
       "expires_at": "2026-10-10T17:03:13.535Z",
-      "notes": "J14 PR #627 merged as source; avoid edit to existing migrations/worker source and root composition; authorization must be server derived."
+      "notes": "J14 PR #627 merged as source; avoid edit to existing migrations/worker source and root composition; authorization must be server derived.",
+      "released_at": "2026-10-10T17:03:43.666Z",
+      "release_reason": "PR #637 canonical A13 tenant-aware source UI/API/DB audit merged non-deploying; our alternate worktree was not pushed, avoiding duplicate source. Source merged eb d3b815 (full SHA ebd3b81599866aee488ed6ef9d2e791f73a8d798). AF00 compose before release; tests deferred due lockfile.",
+      "source_pr": 637,
+      "source_head": "d4508d00bd81be0f22f84d0f4949e11ae2f18b31",
+      "integration_head_sha": "ebd3b81599866aee488ed6ef9d2e791f73a8d798"
     },
     {
       "claim_id": "l-video-admin-youtube-sources-a13-20261010-gpt6",
