@@ -567,6 +567,25 @@
       "heartbeat_at": "2026-10-10T08:07:35.479Z",
       "expires_at": "2026-10-10T08:12:35.479Z",
       "notes": "Real Foundation CI 38036434565: agent-run-acceptance.test.ts read fails `cannot execute SELECT FOR SHARE in a read-only transaction`. Test exercises canonical read after create/finish."
+    },
+    {
+      "claim_id": "af13-pr460-commerce-integration-db-isolation-20261010-gpt6",
+      "owner": "GPT-6 / AF13 existing CI PR #460",
+      "scope": "Isolate four real PostgreSQL 18 commerce integration test suites from the common test DB to prevent migration-ledger interference and relation already exists failures; strict copy of real migration execution; no financial production changes.",
+      "paths": [
+        "test/support/isolated-postgres.ts",
+        "adapters/storage/postgres/src/commerce/billing-funding.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/billing-runtime.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/ngn-wallet.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/settlement.integration.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T08:08:50.364Z",
+      "heartbeat_at": "2026-10-10T08:08:50.364Z",
+      "expires_at": "2026-10-10T08:13:50.364Z",
+      "notes": "Real Foundation 38036434565: four commerce suites setup FAIL relation offers already exists on common database. Independent DB per file via admin URL and disposable PG18 CREATE DATABASE; cleanup mandatory."
     }
   ],
   "history": [
