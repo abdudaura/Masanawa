@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_report_action.dart';
@@ -5,6 +6,7 @@ import 'package:masanawa/src/audio_posts/audio_post_report_action.dart';
 class FakeReports implements PublishedAudioReportTransport {
   final requests = <({String postId, String reason, String key, String? detail})>[];
   bool fail = false;
+  Future<String>? pending;
   @override
   Future<String> submit({
     required String postId,
@@ -15,17 +17,19 @@ class FakeReports implements PublishedAudioReportTransport {
     requests.add((postId: postId, reason: reason, key: clientRequestId,
       detail: detail));
     if (fail) throw Exception('network uncertain');
-    return 'accepted-1';
+    return pending ?? 'accepted-1';
   }
 }
 
 void main() {
   Future<void> mount(WidgetTester tester, FakeReports reports, {
     bool enabled = true,
+    bool Function()? isAuthorized,
   }) async {
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(body: AudioPostReportAction(
         postId: 'post-1', transport: reports, enabled: enabled,
+        isAuthorized: isAuthorized,
       )),
     ));
   }
@@ -61,6 +65,40 @@ void main() {
     expect(reports.requests, hasLength(2));
     expect(reports.requests[1].key, original);
     expect(find.text('Report received for review.'), findsOneWidget);
+  });
+
+
+  testWidgets('session rotation before submit denies request and after submit denies stale success',
+      (tester) async {
+    final reports = FakeReports();
+    var authorized = true;
+    await mount(tester, reports, isAuthorized: () => authorized);
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+    authorized = false;
+    await tester.tap(find.text('Submit report'));
+    await tester.pumpAndSettle();
+    expect(reports.requests, isEmpty);
+    expect(find.textContaining('Account changed.'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    authorized = true;
+    final pending = Completer<String>();
+    reports.pending = pending.future;
+    await mount(tester, reports, isAuthorized: () => authorized);
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Submit report'));
+    await tester.pump();
+    expect(reports.requests, hasLength(1));
+    authorized = false;
+    pending.complete('accepted-1');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Account changed.'), findsOneWidget);
+    expect(find.text('Report received for review.'), findsNothing);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('cancel and disabled action never submit a report',
