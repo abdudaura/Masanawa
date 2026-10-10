@@ -88,4 +88,30 @@ void main() {
     await expectLater(store.read('account-a'), throwsFormatException);
     await expectLater(store.write(attempt('', 'key')), throwsFormatException);
   });
+  test('new same-account request cannot replace an uncertain earlier attempt', () async {
+    final store = SecureTalkPublishAttemptStore();
+    await store.write(attempt('account-a', 'first-key'));
+    await expectLater(store.write(attempt('account-a', 'second-key')),
+        throwsFormatException);
+    expect((await store.read('account-a'))?.requestId, 'first-key');
+    // Idempotent retries with the identical operation remain possible.
+    await store.write(attempt('account-a', 'first-key'));
+    expect((await store.read('account-a'))?.requestId, 'first-key');
+  });
+
+  test('reusing a key with changed audio is rejected as a conflicting retry', () async {
+    final store = SecureTalkPublishAttemptStore();
+    await store.write(attempt('account-a', 'fixed-key'));
+    await expectLater(
+      store.write(const PendingTalkPublish(
+        accountId: 'account-a', requestId: 'fixed-key',
+        assetId: 'different-audio', durationMs: 45000,
+        title: 'Recovered spoken story',
+      )),
+      throwsFormatException,
+    );
+    expect((await store.read('account-a'))?.assetId, 'verified-asset');
+  });
+
+
 }
