@@ -48,7 +48,11 @@ class GatewayTalkActivityTransport implements TalkActivityTransport {
       if (item is! Map) {
         throw const FormatException('Invalid Activity entry');
       }
-      result.add(TalkActivityItem.fromJson(item.cast<String, dynamic>()));
+      final parsed = TalkActivityItem.fromJson(item.cast<String, dynamic>());
+      if (parsed.id.trim().isEmpty) {
+        throw const FormatException('Invalid Activity entry identity');
+      }
+      result.add(parsed);
     }
     return List<TalkActivityItem>.unmodifiable(result);
   }
