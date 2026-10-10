@@ -14,7 +14,7 @@ const privateRecord = Object.freeze({
   title: "A published audio Talk", durationMs: 45000,
   status: "processing", revision: 0,
   createdAt: "2026-10-10T01:00:00.000Z", publishedAt: null,
-  likeCount: 2, commentCount: 3,
+  likeCount: 2, commentCount: 3, listenCount: 4,
 });
 
 function fixture(overrides = {}) {
@@ -58,12 +58,13 @@ function fixture(overrides = {}) {
 function assertPublicReceipt(value) {
   assert.deepEqual(Object.keys(value).sort(), [
     "authorId","authorKind","commentCount","createdAt","durationMs",
-    "likeCount","postId","publishedAt","revision","status","title",
+    "likeCount","listenCount","postId","publishedAt","revision","status","title",
   ].sort());
   assert.equal(value.authorId, session.authorId);
   assert.equal(value.postId, privateRecord.postId);
   assert.equal(value.likeCount, 2);
   assert.equal(value.commentCount, 3);
+  assert.equal(value.listenCount, 4);
   for (const secret of ["tenantId","authorAccountId","assetId","requestId"]) {
     assert.equal(Object.hasOwn(value,secret),false,secret+" must not cross HTTP");
   }
