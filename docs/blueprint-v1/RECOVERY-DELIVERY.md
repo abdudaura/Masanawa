@@ -32,12 +32,12 @@ Exact checked main: `7c443966be97e9092cbc1fb98562c75253434326`. Existing PR head
 | Media cleanup and infra | #599 and other AF15 work | one canonical sweeper; keep unique retention tests, single migration registry |
 | Authentication/settings | #588, #597, #606/#604 | unify auth/session/notification safety; preserve source and app navigation |
 | Tests/evidence scripts | #596, #614 and previous checker PRs | one acceptance framework with real executed suites; reject duplicate zero-step-green validators |
-| Twins/teaching/other advanced | #538/#546/#525 and related | inventory contractual obligations; phase after core dependencies rather than erase |
+| Former Twins / creator economy / paid owner access | #538/#546 and related | REMOVE feature from product, stop new implementations, preserve historical balances/obligations, reconcile before route/schema retirement; ordinary Gwani/teaching may remain |
 
 Open PR metadata alone cannot establish mergeability, source completeness, overlap or test pass. AF00/assigned reviewer must fetch exact per-file patch/head SHA, applied database migration status, CI run steps and actual latest claims before dispositions.
 
 ## Dependency-order delivery: complete vertical slices, not isolated helpers
-**M0 — Preservation & accepted blueprint.** Record local APK and dirty source SHA, deployment links/triggers, DB/object backup and applied migration checksums; approve product DEC-01..15 and control-level UX. Acceptance: no unexplained/overwritten local changes; clear reusable/repair/retire map.
+**M0 — Preservation & accepted blueprint with owner-ordered removal of personal Twins, AI badge clutter and legacy stage features.** Record local APK and dirty source SHA, deployment links/triggers, DB/object backup and applied migration checksums; approve product DEC-01..15 and control-level UX. Acceptance: no unexplained/overwritten local changes; clear reusable/repair/retire map.
 
 **M1 — Unified reliable core.** Merge compatible original fixes onto one safe integration SHA. Deliver auth/session, five-tab navigation, directory, reliable text/outbox, locally recorded/playable voice notes and account-fenced cached data on real Android. Acceptance: J-01..04 end-to-end, no human/AI identity confusion or duplicate/out-of-order messages.
 
@@ -47,9 +47,9 @@ Open PR metadata alone cannot establish mergeability, source completeness, overl
 
 **M4 — Wallet foundations and controlled activation.** Reconcile legacy Cr/fiat/crypto without silent rename; settle MSN denomination/backing/liquidity/fees; implement deposits/internal sends/conversion, receipts, reconciliation. Separate risk/legal/provider approval gate before real-money enable. Acceptance: J-08/J-09, DB/ledger invariant proof and provider qualification. Money-enabled UI is feature-flagged until gates pass.
 
-**M5 — P2P, twins, channels, AI creators.** Approved merchant P2P with staffed disputes and escrow, personal twin guided setup/commission/budgets, official Telegram and approved WhatsApp adapters, disclosed AI audio publishing with editorial QA. May implement mutually independent parts earlier once canonical contracts exist, but activate risky features independently. Acceptance: J-10..13 and negative authorization tests.
+**M5 — P2P, channels, Masana publishing.** Approved merchant P2P with staffed disputes and escrow, official Telegram and approved WhatsApp adapters, platform Masana audio publication with editorial QA. Personal Twins, owner access, tips, gifts, commissions and old public live-Talk stage controls are excluded. Acceptance: J-10..12 and negative authorization tests.
 
-**M6 — Admin operations, qualification and release.** Android admin roles, support, flags, moderation, money reconciliation, incident response, monitoring, cost caps; qualify Android APK, providers, low-end device, backup+object recovery and rollback. Acceptance: J-14/J-15, security, accessibility and live signed APK hashes; staged audience release.
+**M6 — Admin operations, qualification and release.** Android admin roles, support, flags, moderation, money reconciliation, incident response, monitoring, cost caps; qualify Android APK, providers, low-end device, backup+object recovery and rollback. Acceptance: J-13/J-14, security, accessibility and live signed APK hashes; staged audience release.
 
 These are **dependency gates**, not promises of delivery dates, and do not allow source omissions to be called local-only.
 
@@ -60,6 +60,16 @@ These are **dependency gates**, not promises of delivery dates, and do not allow
 - Use the existing `factory/claims` protocol, 5-minute claims and branch protection. Review expired claims; no silent override. No new helper branch if a related substantive PR already exists.
 - **Merge-first:** finished, code-reviewed, genuinely tested and non-conflicting feature source goes promptly into one audited non-deploying integration target. Production activation separate. If tests actually fail, fix them; if CI has zero steps, report BLOCKED and use an eligible alternate runner, not PASS.
 - Final system owner signs a single pinned unified SHA and APK provenance; source closure means no disconnected required UI/API/migrations, not that production/provider/device tests passed.
+
+## Confirmed retirement sequence
+1. Cease implementing new Twin/clone/commission/owner-access and legacy public stage features on all related draft branches; place the changed owner scope in the canonical implementation instructions after reviewed merge.
+2. Route inventory: replace `/my-twin`, `/clone`, `/twin/:id`, `/owner-session/:...` with explicit unavailable/retired destinations without leaking private historical objects; strip entry buttons and menus. Rename `TwinHomeShell` only as a controlled compatibility refactor, because the shell itself is still essential.
+3. Reject new retired-feature operations server-side; retain read-only historical reconciliation for orders, settlements, disputes and receipts. No accidental unqualified endpoints or orphan callbacks.
+4. Remove dependent imports, state, tests and unfinished PR source after accounting for unique, still-required capabilities and successful TypeScript/Flutter/PostgreSQL suites on the same SHA.
+5. Archive applied migrations; use forward-only audited deprecation later, never delete migration files or drop ledger tables simply to clean filenames.
+6. Re-run complete auth, Gwani/chat, Talks, Wallet and app-shell end-to-end journeys on target device/provider. Mark actual results.
+
+See [legacy scope cleanup](LEGACY-SCOPE-CLEANUP.md) for the source and PR inventory.
 
 ## Recovery inventory to capture before any destructive operation
 1. **Local Windows source**: current git branch/status, untracked and staged changes, all diff patches, generated source, relevant independent commits, lockfiles, signing configuration names, Android build output SHA256 and file provenance. Do not demand raw signing keys.
