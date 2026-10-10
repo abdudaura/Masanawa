@@ -514,35 +514,6 @@
       "notes": "Real Actions 38035943605 analyzer failed with 8 warning issues. Other three protected AF00 paths require a bounded transfer."
     },
     {
-      "claim_id": "af09-609-canonical-contract-build-20261010-0802-gpt6",
-      "owner": "GPT-6 AF09 continuing existing PR #609 after AF00 bounded stale-path recovery",
-      "scope": "Fix real four cross-package TypeScript rootDir build failures by canonical shared contract extraction, without routes/migrations",
-      "paths": [
-        "packages/contracts/src/index.ts",
-        "packages/contracts/src/audio-posts.ts",
-        "packages/contracts/src/audio-posts.test.ts",
-        "services/gateway/src/audio_posts/contract.ts",
-        "services/gateway/src/audio_posts/following.ts",
-        "services/gateway/src/audio_posts/playback.ts",
-        "services/gateway/src/audio_posts/processing_worker.ts",
-        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
-        "adapters/storage/postgres/src/audio_posts/listen_repository.ts",
-        "adapters/storage/postgres/src/audio_posts/processing_queue.ts",
-        "adapters/storage/postgres/src/audio_posts/repository.ts",
-        "scripts/flutterwave-billing-production-qualification.mjs",
-        "scripts/flutterwave-billing-production-qualification.test.mjs",
-        "vitest.config.ts"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "source_pr": 609,
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "claimed_at": "2026-10-10T08:01:28.377Z",
-      "heartbeat_at": "2026-10-10T08:15:02.391Z",
-      "expires_at": "2026-10-10T08:20:02.391Z",
-      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit. Executed Foundation run 38036528676 reduced TS6059 build errors 4→1; repository.ts is the sole remaining AF09 import; 3 new canonical contract tests pass (overall Vitest 1247 pass/85 fail/22 skip). Safe no-provider-work test import fix explicitly coordinated AF01 PR590 comment 6095528568, AF13 PR460 comment 6095528951 and AF09 PR609 comment 6095529270. Postgres Vitest shared schema race; exact bounded `vitest.config.ts` transfer AF13 #460 6095558419, AF00 #600 6095558791 and AF09 #609 6095559090; trial fileParallelism false, no skipped tests. Hosted build PASS and provider tooling PASS run 38036869594. Root typecheck/test still FAIL; Vitest fileParallelism:false exact-head run 38037083541 queued, mobile independent job 38037083542 running. No merge.",
-      "source_head_sha": "1374149bd7378227b7a77138e0fa2a6fb6eb1991"
-    },
-    {
       "claim_id": "af01-607-crypto-decimal-api-precision-20261010-gpt6",
       "owner": "AF01 / existing PR #607 crypto ledger adapter CI regression",
       "scope": "Restore exact decimal text normalization from PostgreSQL numeric SUM without floating-point conversion; preserve ledger math and receipt contract; execute Actions",
@@ -2883,6 +2854,39 @@
       "source_head_sha": "0e7c3d75f36d437125a8d94f3d545b575dc83f1c",
       "integration_head_sha": null,
       "test_state": "FAIL at unrelated workspace TS2459 and analyzer; focused Flutter Test/APK NOT_RUN; CI real runner logs 38035780178 and 38035780189"
+    },
+    {
+      "claim_id": "af09-609-canonical-contract-build-20261010-0802-gpt6",
+      "owner": "GPT-6 AF09 continuing existing PR #609 after AF00 bounded stale-path recovery",
+      "scope": "Fix real four cross-package TypeScript rootDir build failures by canonical shared contract extraction, without routes/migrations",
+      "paths": [
+        "packages/contracts/src/index.ts",
+        "packages/contracts/src/audio-posts.ts",
+        "packages/contracts/src/audio-posts.test.ts",
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/playback.ts",
+        "services/gateway/src/audio_posts/processing_worker.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/listen_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/processing_queue.ts",
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "scripts/flutterwave-billing-production-qualification.mjs",
+        "scripts/flutterwave-billing-production-qualification.test.mjs",
+        "vitest.config.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "source_pr": 609,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T08:01:28.377Z",
+      "heartbeat_at": "2026-10-10T08:15:02.391Z",
+      "expires_at": "2026-10-10T08:20:02.391Z",
+      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit. Executed Foundation run 38036528676 reduced TS6059 build errors 4→1; repository.ts is the sole remaining AF09 import; 3 new canonical contract tests pass (overall Vitest 1247 pass/85 fail/22 skip). Safe no-provider-work test import fix explicitly coordinated AF01 PR590 comment 6095528568, AF13 PR460 comment 6095528951 and AF09 PR609 comment 6095529270. Postgres Vitest shared schema race; exact bounded `vitest.config.ts` transfer AF13 #460 6095558419, AF00 #600 6095558791 and AF09 #609 6095559090; trial fileParallelism false, no skipped tests. Hosted build PASS and provider tooling PASS run 38036869594. Root typecheck/test still FAIL; Vitest fileParallelism:false exact-head run 38037083541 queued, mobile independent job 38037083542 running. No merge.",
+      "source_head_sha": "1374149bd7378227b7a77138e0fa2a6fb6eb1991",
+      "released_at": "2026-10-10T08:18:05.053Z",
+      "release_reason": "Source repaired on existing PR #609 exact head 1374149bd7378227b7a77138e0fa2a6fb6eb1991. Executed previous head: pnpm build PASS; provider qualification unit tests PASS, privacy contract 3 tests PASS; root TypeScript/Vitest and Flutter FAIL. Current serial PG CI 38037083541 queued; AF13 PR460 active owns shared suite and AF00 PR600 owns composition. Exact finite checklist with SHAs and owners PR #609 comment 6095602467. No main merge, no Railway deploy; pending gates are genuine, no local pull.",
+      "integration_head_sha": null,
+      "test_state": "GitHub Foundation build PASS and provider tooling PASS on c7e1ff6; new latest-head serial Foundation 38037083541 QUEUED. Typecheck 74 errors and mixed Vitest 85 fails on previous concurrent run, Flutter analyze/test FAIL, Android latest unverified; NO FULL PASS."
     }
   ]
 }
