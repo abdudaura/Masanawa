@@ -114,3 +114,29 @@ test('published feed, following, playback and report all use the same server ses
   assert.equal(reported.status,202);
   assert.equal(f.sessions,5); // report performs a second active-session check
 });
+
+test('new My Talks and Saved routes use the active server account and reject forged cursor inputs',async()=>{
+ const f=fixture();
+ const calls=[];
+ f.posts.libraryPage=async (who,query)=>{
+   calls.push({who,query});
+   return {items:[],nextCursor:null};
+ };
+ registerPublishedAudioFeatureRoutes(f.app,f);
+ const auth={authorization:'Bearer verified'};
+ const mine=await f.routes.get('GET /audio-posts/mine/page')(
+   {headers:auth,query:{limit:'20'}},reply());
+ const saved=await f.routes.get('GET /audio-posts/saved/page')(
+   {headers:auth,query:{}},reply());
+ assert.deepEqual(mine,{items:[],nextCursor:null});
+ assert.deepEqual(saved,{items:[],nextCursor:null});
+ assert.deepEqual(calls.map(v=>v.query.kind),['mine','saved']);
+ assert.ok(calls.every(v=>v.who.accountId==='alice' && v.who.tenantId==='tenant1'));
+ assert.equal(f.sessions,2);
+ const response=reply();
+ await f.routes.get('GET /audio-posts/saved/page')(
+   {headers:auth,query:{accountId:'bob'}},response);
+ assert.equal(response.status,400);
+ assert.equal(response.body.code,'VALIDATION');
+ assert.equal(f.sessions,2);
+});
