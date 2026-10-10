@@ -124,7 +124,7 @@ class _StaffCaseDetailState extends State<_StaffCaseDetail> {
                 .map((k) => DropdownMenuItem(value: k, child: Text(k.replaceAll('_', ' ')))).toList(),
             onChanged: (value) => setState(() => _kind = value ?? _kind),
           ),
-          TextField(controller: _reason, decoration: const InputDecoration(labelText: 'Evidence and justification'), maxLength: 1000, maxLines: 2),
+          TextField(controller: _reason, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Evidence and justification'), maxLength: 1000, maxLines: 2),
           const Text('Temporary actions expire after 24 hours. Bans require two different staff approvals.'),
           if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           FilledButton(
