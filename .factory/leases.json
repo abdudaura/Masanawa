@@ -90,30 +90,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "masanawa01-af08-phone-password-20261010-pr588-continuation",
-      "owner": "MASANAWA-01 / AF08 continuation PR #588",
-      "scope": "Canonical phone numeric-password registration/login service, bounded password policy and PostgreSQL adapter preserving OTP/email identity; AF00 owns shared routes/migration/mobile integration",
-      "paths": [
-        "services/gateway/src/auth_audio_first/phone_password_policy.ts",
-        "services/gateway/src/auth_audio_first/phone_password_policy.test.mjs",
-        "services/gateway/src/auth_audio_first/phone_password.ts",
-        "services/gateway/src/auth_audio_first/phone_password.test.ts",
-        "adapters/storage/postgres/src/security/phone_password.ts",
-        "docs/workstreams/AF08-auth-revocation-delivery-20261009.md",
-        "services/gateway/src/auth_audio_first/phone_password_routes.ts",
-        "apps/mobile/lib/src/auth_audio_first/phone_password_transport.dart",
-        "apps/mobile/lib/src/auth_audio_first/phone_password_form.dart"
-      ],
-      "branch": "work/af08-auth-revocation-delivery-20261009-masanawa01",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 588,
-      "source_head": "ec372e0e89ea3dcf815b2511e66bb92f548327d6",
-      "claimed_at": "2026-10-10T02:30:11.792Z",
-      "heartbeat_at": "2026-10-10T02:41:41.762Z",
-      "expires_at": "2026-10-10T02:46:41.762Z",
-      "notes": "Phone numeric-password service + PG adapter + route + Dart form authored on existing PR #588. Separated verified phone vs unverified self-declared. 4/4 exact-blob Node policy tests PASS_REAL; workspace Vitest/tsc/PG/Flutter BLOCKED; AF00 migration/composition gated. Completing SHA-specific handoff."
-    },
-    {
       "claim_id": "af09-609-playback-journey-20261010-gpt6-0338",
       "owner": "AF09 existing PR #609 playback-client continuation",
       "scope": "Connect authenticated AF09 ticketed audio to a single just_audio player and account-fenced Talks feed; retain AF05/AF15 playback authority and AF00 composition ownership",
@@ -1350,6 +1326,33 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/580",
       "head_sha": "74c6c3ce8f767daa6a9a0df18f11e630be0c15e2",
       "release_reason": "Same PR #580 recovered canonical task status after concurrent CAS settlement; 3 Vitest regressions authored not run; exact source readback, Node22/no pnpm/PG/Flutter/DNS; AF13/AF00 full source runner, U04 domain reader, AF00/F18 composition and U03 UI still required. PR comment #6092915728; no merge or release."
+    },
+    {
+      "claim_id": "masanawa01-af08-phone-password-20261010-pr588-continuation",
+      "owner": "MASANAWA-01 / AF08 continuation PR #588",
+      "scope": "Canonical phone numeric-password registration/login service, bounded password policy and PostgreSQL adapter preserving OTP/email identity; AF00 owns shared routes/migration/mobile integration",
+      "paths": [
+        "services/gateway/src/auth_audio_first/phone_password_policy.ts",
+        "services/gateway/src/auth_audio_first/phone_password_policy.test.mjs",
+        "services/gateway/src/auth_audio_first/phone_password.ts",
+        "services/gateway/src/auth_audio_first/phone_password.test.ts",
+        "adapters/storage/postgres/src/security/phone_password.ts",
+        "docs/workstreams/AF08-auth-revocation-delivery-20261009.md",
+        "services/gateway/src/auth_audio_first/phone_password_routes.ts",
+        "apps/mobile/lib/src/auth_audio_first/phone_password_transport.dart",
+        "apps/mobile/lib/src/auth_audio_first/phone_password_form.dart"
+      ],
+      "branch": "work/af08-auth-revocation-delivery-20261009-masanawa01",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 588,
+      "source_head": "34624a61e21bd4b587d19d0ff27b0df40261fa18",
+      "claimed_at": "2026-10-10T02:30:11.792Z",
+      "heartbeat_at": "2026-10-10T02:41:41.762Z",
+      "expires_at": "2026-10-10T02:46:41.762Z",
+      "notes": "Phone numeric-password service + PG adapter + route + Dart form authored on existing PR #588. Separated verified phone vs unverified self-declared. 4/4 exact-blob Node policy tests PASS_REAL; workspace Vitest/tsc/PG/Flutter BLOCKED; AF00 migration/composition gated. Completing SHA-specific handoff.",
+      "released_at": "2026-10-10T02:45:52.270Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/588",
+      "release_reason": "PR #588 extended with parent AF08 phone-password account source (policy/PG/Fastify/Dart) and SHA-specific migration/integration handoff. 4/4 exact-blob native Node policy tests PASS_REAL; TS/Vitest/PG/Flutter/Android NOT_RUN due missing checkout/deps/toolchains and zero-step CI; auth routes not mounted and migration not applied. Hold draft until AF00 migration/distributed rate limiting/composition and AF13 real source checks; no main or production merge."
     }
   ]
 }
