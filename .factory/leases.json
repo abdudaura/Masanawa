@@ -111,6 +111,23 @@
       "heartbeat_at": "2026-10-10T01:29:05.357Z",
       "expires_at": "2026-10-10T01:34:05.357Z",
       "notes": "Independent exact files; no deployed changes; existing AF13 qualifier remains untouched."
+    },
+    {
+      "claim_id": "masanawa01-af15-private-access-races-20261010",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "Recheck active authenticated principal and snapshot authorization identity+revision immutably across signing; add race regression cases",
+      "paths": [
+        "services/gateway/src/media_lifecycle/private_access.ts",
+        "services/gateway/src/media_lifecycle/private_access.test.mjs",
+        "docs/workstreams/AF15-private-media-access-20261010.md"
+      ],
+      "branch": "work/af15-private-media-access-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 601,
+      "source_head": "59644bde324ebc04b24426ae120450289ed20f10",
+      "claimed_at": "2026-10-10T01:30:07.026Z",
+      "heartbeat_at": "2026-10-10T01:30:07.026Z",
+      "expires_at": "2026-10-10T01:35:07.026Z"
     }
   ],
   "history": [
