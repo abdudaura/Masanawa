@@ -6,6 +6,7 @@ CREATE TABLE masana.character_revisions (
   revision integer NOT NULL CHECK (revision > 0),
   state text NOT NULL DEFAULT 'draft' CHECK (state IN ('draft','approved','retired')),
   profile jsonb NOT NULL CHECK (jsonb_typeof(profile) = 'object'
+    AND profile ? 'handle' AND profile ? 'displayName' AND profile ? 'profession'
     AND length(profile->>'displayName') BETWEEN 1 AND 100
     AND length(profile->>'profession') BETWEEN 1 AND 100
     AND (profile->>'handle') ~ '^[a-z0-9][a-z0-9._-]{1,39}$'),
@@ -19,6 +20,28 @@ CREATE TABLE masana.character_revisions (
   CHECK ((state = 'approved' AND approved_by IS NOT NULL AND approved_at IS NOT NULL)
        OR (state <> 'approved'))
 );
+-- Staff can create a NEW draft, but cannot rewrite any published or prior
+-- character bible in place. Allow only draft->approved->retired transitions.
+CREATE OR REPLACE FUNCTION masana.protect_revision_history()
+RETURNS trigger LANGUAGE plpgsql AS $
+BEGIN
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
+     OR NEW.character_id IS DISTINCT FROM OLD.character_id
+     OR NEW.revision IS DISTINCT FROM OLD.revision
+     OR NEW.profile IS DISTINCT FROM OLD.profile
+     OR NEW.voice_profile_id IS DISTINCT FROM OLD.voice_profile_id
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at
+     OR NOT (
+       (OLD.state='draft' AND NEW.state='approved')
+       OR (OLD.state='approved' AND NEW.state='retired')
+     )
+  THEN RAISE EXCEPTION 'masana_revision_immutable' USING ERRCODE='23514'; END IF;
+  RETURN NEW;
+END; $;
+CREATE TRIGGER masana_protect_revision
+BEFORE UPDATE ON masana.character_revisions
+FOR EACH ROW EXECUTE FUNCTION masana.protect_revision_history();
+
 CREATE UNIQUE INDEX masana_one_approved_revision
   ON masana.character_revisions(tenant_id,character_id) WHERE state = 'approved';
 CREATE UNIQUE INDEX masana_approved_handle
