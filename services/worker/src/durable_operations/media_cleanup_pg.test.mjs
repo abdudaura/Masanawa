@@ -45,7 +45,7 @@ test("claim enforces atomic SKIP LOCKED selection, live refs/holds and explicit 
   const results = await f.repo.claim({ workerId: "worker_instance_12345678", nowMs: now, max: 5 });
   assert.deepEqual(results, [candidate]);
   assert.equal(f.released, 1);
-  assert.deepEqual(f.calls[0].params, [now, 5, "worker_instance_12345678"]);
+  assert.deepEqual(f.calls[0].params, [5, "worker_instance_12345678"]);
   for (const necessary of [
     "FOR UPDATE OF o SKIP LOCKED", "delete_approved IS TRUE",
     "link_guard_installed IS TRUE", "domain_refs_reconciled IS TRUE",
