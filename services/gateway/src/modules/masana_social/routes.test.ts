@@ -16,7 +16,7 @@ function harness(actor?:TrustedStaffActor){
   transition:async(i)=>{
     const found=records.find(x=>x.tenantId===i.tenantId&&x.characterId===i.characterId&&x.identityId===i.identityId);
     if(!found)throw new Error("missing");
-    if(found.revision!==i.revision)throw new Error("stale");
+    if(found.revision!==i.revision)throw Object.assign(new Error("stale"),{code:"SOCIAL_REVISION_CONFLICT"});
     return {...found,revision:found.revision+1};
   },
  };
