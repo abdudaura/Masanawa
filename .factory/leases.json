@@ -189,6 +189,19 @@
       "heartbeat_at": "2026-10-10T03:16:53.958Z",
       "expires_at": "2026-10-10T03:21:53.958Z",
       "notes": "Do not touch shared task worker/route/financial/migration/integration files; source + unit regressions + finite parent handoff."
+    },
+    {
+      "claim_id": "root-chat-speed-billing-pending-20261010",
+      "owner": "Root owner-requested pending requirements",
+      "paths": [
+        "docs/NEXT-WAVE-DELIVERY-20261010.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md"
+      ],
+      "scope": "Record billing memory, truthful receipts, reply references, local-first speed and verification acceptance",
+      "branch": "docs/chat-speed-billing-pending-20261010",
+      "claimed_at": "2026-10-10T03:18:11.448Z",
+      "heartbeat_at": "2026-10-10T03:18:11.448Z",
+      "expires_at": "2026-10-10T03:23:11.448Z"
     }
   ],
   "history": [
