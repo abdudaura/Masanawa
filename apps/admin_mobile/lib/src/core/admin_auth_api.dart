@@ -6,6 +6,7 @@ String requireAdminAuthBaseUrl() {
   final value = adminAuthBaseUrl.trim();
   if (value.isEmpty) {
     throw const AdminAuthException(
+      'ADMIN_AUTH_NOT_CONFIGURED',
       'ADMIN_AUTH_BASE_URL is not configured for the Masanawa Gateway.',
     );
   }

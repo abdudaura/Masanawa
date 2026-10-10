@@ -505,10 +505,7 @@ class _OfferEditorDialogState extends State<_OfferEditorDialog> {
 
   String? _offerKey(String? value) {
     final normalized = value?.trim().toLowerCase() ?? '';
-    return RegExp(r'^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(String? value) {
-    final parsed = int.tryParse(value?.trim() ?? '');
-    return parsed == null || parsed < 0 ? 'Enter zero or more credits' : null;
-  }
+    return RegExp(r'^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
@@ -1506,7 +1503,7 @@ String shortId(String value) => value.length <= 20
                     controller: _key,
                     enabled: widget.current == null,
                     decoration: const InputDecoration(labelText: 'Key'),
-                    validator: _required,
+                    validator: _offerKey,
                   ),
                   TextFormField(
                     controller: _title,
@@ -1944,6 +1941,33 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
     }
   }
 
+
+  Future<void> _decideApproval(
+    AdminApproval approval,
+    String decision,
+  ) async {
+    try {
+      await widget.api.decideApproval(approval, decision);
+      if (!mounted) return;
+      setState(() => _future = _load());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            decision == 'approved'
+                ? 'Approval granted.'
+                : 'Approval denied.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AdminFuture<SystemAdminData>(
         future: _future,
@@ -2075,7 +2099,25 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
                             '${approval.resourceKey}',
                           ),
                           isThreeLine: true,
-                          trailing: Chip(label: Text(approval.state)),
+                          trailing: approval.state == 'pending'
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Deny',
+                                      onPressed: () =>
+                                          _decideApproval(approval, 'denied'),
+                                      icon: const Icon(Icons.close),
+                                    ),
+                                    IconButton.filledTonal(
+                                      tooltip: 'Approve',
+                                      onPressed: () =>
+                                          _decideApproval(approval, 'approved'),
+                                      icon: const Icon(Icons.check),
+                                    ),
+                                  ],
+                                )
+                              : Chip(label: Text(approval.state)),
                         ),
                       )),
                       const SizedBox(height: 12),
@@ -2083,9 +2125,10 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Text(
-                            'Approve/deny is intentionally not exposed until the '
-                            'production admin identity supplies a real operator '
-                            'principal for the security approval contract.',
+                            'Approvals are decided with the signed-in operator '
+                            'Principal. Approving records authority only; the '
+                            'exact bound action must still replay through its '
+                            'canonical Operation before any side effect occurs.',
                             style: TextStyle(color: context.masanawa.textMuted),
                           ),
                         ),
@@ -2162,8 +2205,8 @@ class ModulesAdminPage extends StatelessWidget {
     _ModuleStatus(
       'WhatsApp & Telegram',
       Icons.forum_outlined,
-      'Integration in progress',
-      'Channel ingress, identity linking and receipts are being implemented in the canonical channel workstream.',
+      'WhatsApp control ready',
+      'WhatsApp uses the admin-linked Gwani number with live status, QR pairing and relink controls. Telegram remains on its canonical bot transport.',
     ),
     _ModuleStatus(
       'Devices',
