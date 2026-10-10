@@ -594,15 +594,16 @@
         "adapters/storage/postgres/src/commerce/billing-funding.integration.test.ts",
         "adapters/storage/postgres/src/commerce/billing-runtime.integration.test.ts",
         "adapters/storage/postgres/src/commerce/ngn-wallet.integration.test.ts",
-        "adapters/storage/postgres/src/commerce/settlement.integration.test.ts"
+        "adapters/storage/postgres/src/commerce/settlement.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/isolated-test-database.ts"
       ],
       "branch": "work/shared-ci-recovery-work-20261008",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 460,
       "claimed_at": "2026-10-10T08:08:50.364Z",
-      "heartbeat_at": "2026-10-10T08:08:50.364Z",
-      "expires_at": "2026-10-10T08:13:50.364Z",
-      "notes": "Real Foundation 38036434565: four commerce suites setup FAIL relation offers already exists on common database. Independent DB per file via admin URL and disposable PG18 CREATE DATABASE; cleanup mandatory."
+      "heartbeat_at": "2026-10-10T08:12:37.061Z",
+      "expires_at": "2026-10-10T08:17:37.061Z",
+      "notes": "Real Foundation 38036434565: four commerce suites setup FAIL relation offers already exists on common database. Independent DB per file via admin URL and disposable PG18 CREATE DATABASE; cleanup mandatory.; Scope correction: place shared test helper under adapter package to resolve pg dependency strictly under pnpm; remove original test/support helper."
     }
   ],
   "history": [
