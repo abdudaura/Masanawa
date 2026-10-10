@@ -118,10 +118,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _load();
     }
   }
-  @override
   void _refreshFromReceipt() {
     if (mounted && _authorized) unawaited(_load());
   }
+  @override
   void dispose() {
     widget.refreshSignal?.removeListener(_refreshFromReceipt);
     ++_generation;
