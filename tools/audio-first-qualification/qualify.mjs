@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 import { verifyEvidenceFile } from '../../tests/security/audio_first/evidence_path_guard.mjs';
 const kinds=new Set(["NOT_RUN","BLOCKED","FAIL","PASS_SIMULATED","PASS_REAL"]);
 function checkMatrix(matrix){
@@ -46,6 +47,14 @@ function checkRecord(record,journey,sha){
   if(/(?:\bBearer\s+\S{12,}|-----BEGIN\s+(?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:ghp_|github_pat_)[A-Za-z0-9_]{15,}|\b[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b)/i.test(prose)||/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(prose))errors.push("unredacted secret or account identifier in evidence");
   return errors;
 }
+// The required acceptance contract is source-controlled and pinned by the
+// checked-out commit SHA. A caller-supplied matrix may not relax boundaries,
+// lower a release-tier journey to feature-tier, or change acceptance criteria.
+function checkCanonicalMatrix(matrix, canonical){
+  if(checkMatrix(canonical).length)return ['source-controlled acceptance matrix invalid'];
+  if(!isDeepStrictEqual(matrix,canonical))return ['acceptance matrix differs from source-controlled contract'];
+  return [];
+}
 function assess(matrix,records,sha,verifiedProofs=new Set()){
   const failures=checkMatrix(matrix);
   if(!/^[a-f0-9]{40}$/i.test(sha||""))failures.push("expected immutable commit SHA required");
@@ -69,7 +78,7 @@ function assess(matrix,records,sha,verifiedProofs=new Set()){
   const readiness=failures.length?"INVALID":required.some(j=>j.result==="FAIL")?"FAIL":required.some(j=>j.result!=="PASS_REAL")?"BLOCKED":"REVIEW_REQUIRED";
   return {valid:failures.length===0,readiness,errors:failures,summary:{total:journeys.length,release:required.length,counts:count},journeys};
 }
-export {checkMatrix,checkRecord,assess};
+export {checkMatrix,checkCanonicalMatrix,checkRecord,assess};
 export async function verifyProofs(records,root){
   const verified=new Set(), errors=[];
   // The proof root is operator-selected, not derived from evidence JSON.
@@ -99,9 +108,11 @@ async function main(args){
   if(!opts['--matrix']||!opts['--evidence']||!opts['--sha']||!opts['--proof-root'])throw Error('All flags required');
   const matrix=JSON.parse(await fs.readFile(opts['--matrix'],'utf8'));
   const records=JSON.parse(await fs.readFile(opts['--evidence'],'utf8'));
-  // A caller cannot weaken release qualification by supplying a smaller custom matrix.
-  const canonicalIds=[...Array.from({length:12},(_,i)=>'UX-A'+String(i+1).padStart(2,'0')),...Array.from({length:10},(_,i)=>'WF-A'+String(i+1).padStart(2,'0')),'CR-A01',...Array.from({length:4},(_,i)=>'PF-A'+String(i+1).padStart(2,'0')),...Array.from({length:8},(_,i)=>'SA-A'+String(i+1).padStart(2,'0')),...Array.from({length:8},(_,i)=>'DB-A'+String(i+1).padStart(2,'0'))];
-  if(matrix?.journeys?.length!==canonicalIds.length||canonicalIds.some(id=>!matrix.journeys.some(j=>j.id===id)))throw Error('Incomplete canonical acceptance matrix');
+  // Only the exact versioned, committed acceptance contract is authorized.
+  // Counting expected IDs alone allowed a modified matrix to remove DB/device
+  // boundaries or reclassify release-gated journeys as feature-only.
+  const canonicalMatrix=JSON.parse(await fs.readFile(new URL('./journeys.json',import.meta.url),'utf8'));
+  if(checkCanonicalMatrix(matrix,canonicalMatrix).length)throw Error('Noncanonical acceptance matrix');
   // --sha is not an honor-system field: it must match this checkout's exact HEAD.
   const currentHead=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',timeout:5000}).trim();
   if(currentHead!==opts['--sha'])throw Error('Expected SHA does not match checked-out source');
