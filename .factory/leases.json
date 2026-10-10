@@ -1124,9 +1124,10 @@
       "branch": "lane/l-video-manual-admission-20261010-gpt6",
       "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
       "claimed_at": "2026-10-10T16:12:36.964Z",
-      "heartbeat_at": "2026-10-10T16:30:08.458Z",
-      "expires_at": "2026-10-10T16:35:08.458Z",
-      "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation. PG adapter exact directory included; source commit 78b123aa. PR #624 pending CI and AF00 composition. CI runner found scoped TS2322 review transition narrowing; fix and rerun."
+      "heartbeat_at": "2026-10-10T16:33:32.691Z",
+      "expires_at": "2026-10-10T16:38:32.691Z",
+      "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation. PG adapter exact directory included; source commit 78b123aa. PR #624 pending CI and AF00 composition. CI runner found scoped TS2322 review transition narrowing; fix and rerun.",
+      "source_head": "068acb4ff84fb3a819e3a36ddb449806a6751b41"
     },
     {
       "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
