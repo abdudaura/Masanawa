@@ -309,9 +309,13 @@ export function createAgentConversationService(input: {
 
         // The existing NDJSON route delivers these deltas immediately.
         // Billing/crypto/teaching turns cannot stream untrusted raw model
-        // directives; instead emit only the settled server-authorized reply.
+        // directives; instead emit only server-settled presentation text.
+        // If a processor did not recognize a malformed directive and handed
+        // raw markup through, suppress early display rather than exposing it.
         // A disconnected stream must not retroactively fail a durable turn.
-        if (request.onTextDelta && !rawTextDelta && !request.signal?.aborted) {
+        const hasMachineMarkup = /<\\s*\\/?\\s*masanawa_[a-z_]+\\b/iu.test(reply);
+        if (request.onTextDelta && !rawTextDelta &&
+            !hasMachineMarkup && !request.signal?.aborted) {
           try {
             await request.onTextDelta(reply);
           } catch {
