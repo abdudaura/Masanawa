@@ -49,10 +49,10 @@ function credits(value: number): number {
   return value;
 }
 
-function timestamp(value: string): string {
+function timestamp(value: string, label = "createdAt"): string {
   const parsed = new Date(value);
   if (!value || Number.isNaN(parsed.getTime())) {
-    throw new TypeError("createdAt is invalid");
+    throw new TypeError(`${label} is invalid`);
   }
   return parsed.toISOString();
 }
@@ -125,21 +125,51 @@ export function reverseCreditTransfer(input: {
   if (input.original.status !== "completed") {
     throw new Error("Only a completed transfer can be reversed");
   }
+  // This is a receipt-shape guard, not a substitute for an authoritative
+  // ledger read or the atomic once-only reversal enforced by persistence.
+  const originalTransferId = text(input.original.transferId, "transferId");
+  const originalAdmission = admitCreditTransfer({
+    schemaVersion: 1,
+    requestId: input.original.requestId,
+    senderUserId: input.original.senderUserId,
+    recipientUserId: input.original.recipientUserId,
+    amountCredits: input.original.amountCredits,
+    provenanceClass: input.original.sourceProvenanceClass,
+    createdAt: input.original.createdAt,
+  });
+  if (
+    input.original.fingerprint !== originalAdmission.fingerprint ||
+    input.original.destinationProvenanceClass !== "internal-transfer" ||
+    input.original.commissionEligible !== false ||
+    input.original.reversalOfTransferId !== null
+  ) {
+    throw new TypeError("Original transfer receipt is invalid");
+  }
+  const originalCompletedAt = timestamp(input.original.completedAt, "completedAt");
+  if (Date.parse(originalCompletedAt) < Date.parse(originalAdmission.createdAt)) {
+    throw new RangeError("Original transfer completion predates admission");
+  }
   const reversalRequestId = text(input.reversalRequestId, "reversalRequestId");
-  const reversedAt = timestamp(input.reversedAt);
+  if (reversalRequestId === originalAdmission.requestId) {
+    throw new TypeError("Reversal must use a new request ID");
+  }
+  const reversedAt = timestamp(input.reversedAt, "reversedAt");
+  if (Date.parse(reversedAt) < Date.parse(originalCompletedAt)) {
+    throw new RangeError("Reversal predates original completion");
+  }
   return Object.freeze({
     ...input.original,
     requestId: reversalRequestId,
-    fingerprint: `credit-transfer-reversal:v1:${encodeURIComponent(input.original.transferId)}`,
+    fingerprint: `credit-transfer-reversal:v1:${encodeURIComponent(originalTransferId)}`,
     senderUserId: input.original.recipientUserId,
     recipientUserId: input.original.senderUserId,
     sourceProvenanceClass: "internal-transfer",
     destinationProvenanceClass: "internal-transfer",
     commissionEligible: false,
-    transferId: `${input.original.transferId}:reversal`,
+    transferId: `${originalTransferId}:reversal`,
     status: "reversed",
     createdAt: reversedAt,
     completedAt: reversedAt,
-    reversalOfTransferId: input.original.transferId,
+    reversalOfTransferId: originalTransferId,
   });
 }
