@@ -57,9 +57,11 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
 
   void _pushFeatureRoute(Route<void> route) {
     _featureRoutes.add(route);
-    unawaited(Navigator.of(context).push<void>(route).whenComplete(() {
-      _featureRoutes.remove(route);
-    }));
+    final pending = Navigator.of(context).push<void>(route);
+    unawaited(pending.then<void>(
+      (_) { _featureRoutes.remove(route); },
+      onError: (Object _, StackTrace __) { _featureRoutes.remove(route); },
+    ));
   }
 
   @override
