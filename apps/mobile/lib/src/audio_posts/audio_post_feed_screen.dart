@@ -47,8 +47,39 @@ class AudioPostFeedScreen extends StatefulWidget {
   @override
   State<AudioPostFeedScreen> createState() => _AudioPostFeedScreenState();
 }
+/// In-memory, account-scoped projections for each already-visited Talks tab.
+/// These are presentation snapshots only; every return still refreshes against
+/// the authenticated server, and old-account snapshots are never retained.
+class _TalkViewSnapshot {
+  const _TalkViewSnapshot(this.items, this.nextCursor, this.fromDisk, this.isFresh);
+  final List<AudioPost> items;
+  final String? nextCursor;
+  final bool fromDisk;
+  final bool isFresh;
+}
+
 class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   List<AudioPost> _items = const [];
+  final Map<String, _TalkViewSnapshot> _tabSnapshots = {};
+  final Map<String, double> _tabOffsets = {};
+  final ScrollController _scroll = ScrollController();
+  String get _tabKey => _mine ? 'mine' : _saved ? 'saved' :
+      _following ? 'following' : 'discover';
+
+  void _rememberTab() {
+    _tabSnapshots[_tabKey] = _TalkViewSnapshot(
+      _items, _next, _fromSnapshot, _freshDiscoverRead);
+    if (_scroll.hasClients) _tabOffsets[_tabKey] = _scroll.offset;
+  }
+
+  void _restoreTabOffset(String tab) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_authorized || _tabKey != tab || !_scroll.hasClients) return;
+      final target = _tabOffsets[tab] ?? 0.0;
+      _scroll.jumpTo(target.clamp(0.0, _scroll.position.maxScrollExtent)
+          .toDouble());
+    });
+  }
   late PublishedTalkFeedCache _cache;
   bool _fromSnapshot = false, _freshDiscoverRead = false;
   String? _next;
@@ -105,8 +136,11 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       if (widget.followingTransport == null) _following = false;
       if (old.playback != null) unawaited(old.playback!.stop());
       ++_generation;
+      _tabSnapshots.clear();
+      _tabOffsets.clear();
       _items = const [];
       _next = null;
+      _restoreTabOffset(_tabKey);
       _fromSnapshot = false;
       _freshDiscoverRead = false;
       _message = null;
@@ -128,17 +162,27 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     _commentsSession.value++;
     if (widget.playback != null) unawaited(widget.playback!.stop());
     _commentsSession.dispose();
+    _scroll.dispose();
     super.dispose();
   }
   void _selectFeed({bool mine = false, bool saved = false, bool following = false}) {
     if (following && widget.followingTransport == null) return;
     if (_mine == mine && _saved == saved && _following == following) return;
     if (widget.playback != null) unawaited(widget.playback!.stop());
+    _rememberTab();
+    final nextTab = mine ? 'mine' : saved ? 'saved' :
+        following ? 'following' : 'discover';
+    final previous = _tabSnapshots[nextTab];
     setState(() {
       _mine = mine; _saved = saved; _following = following;
-      _items = const []; _next = null;
-      _fromSnapshot = false; _freshDiscoverRead = false;
+      // Cached views stay visible while a new authoritative fetch runs.
+      _items = previous?.items ?? const [];
+      _next = previous?.nextCursor;
+      _fromSnapshot = previous?.fromDisk ?? false;
+      _freshDiscoverRead = previous?.isFresh ?? false;
+      _message = null;
     });
+    _restoreTabOffset(nextTab);
     _load();
   }
   Future<void> _load({bool more = false}) async {
@@ -183,6 +227,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
         _loading = false;
         _loadingMore = false;
       });
+      _tabSnapshots[_tabKey] = _TalkViewSnapshot(
+        _items, _next, _fromSnapshot, _freshDiscoverRead);
       if (!_mine && !_saved && !_following && _authorized) {
         // Best-effort presentation cache; failures never suppress live results.
         unawaited(_cache.write(widget.accountId, _items).catchError((Object _) {}));
@@ -437,6 +483,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : ListView(
                       key: const ValueKey('audio-post-discover'),
+                      controller: _scroll,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 40),
                       children: [
