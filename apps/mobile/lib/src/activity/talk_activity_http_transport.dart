@@ -7,6 +7,13 @@ class GatewayTalkActivityTransport implements TalkActivityTransport {
   final ApiClient api;
 
   @override
+  Future<void> markRead({required String activityId}) async {
+    await api.dio.post<dynamic>(
+      '/activity/' + Uri.encodeComponent(activityId) + '/read',
+    );
+  }
+
+  @override
   Future<void> respondToInvitation({
     required String talkId,
     required bool accept,
