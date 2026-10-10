@@ -157,6 +157,27 @@
       "heartbeat_at": "2026-10-10T03:31:51.051Z",
       "expires_at": "2026-10-10T03:36:51.051Z",
       "notes": "Account-isolated encrypted storage only; existing composer uses TalkPublishAttemptStore unchanged."
+    },
+    {
+      "claim_id": "af09-609-receipt-readback-20261010-gpt6-0428",
+      "owner": "AF09 #609 continuing authenticated publish receipt recovery / GPT-6 window 0428",
+      "scope": "Server-authenticated publish request status receipt lookup and explicit recovered Talk confirmation on existing composer, no root/migration/media changes",
+      "paths": [
+        "services/gateway/src/audio_posts/service.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-receipt-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:33:39.661Z",
+      "heartbeat_at": "2026-10-10T03:33:39.661Z",
+      "expires_at": "2026-10-10T03:38:39.661Z",
+      "notes": "Check current #609 head before each source edit. AF00 Gateway composition and AF05 media ownership untouched. Source-before-local-pull parent milestone."
     }
   ],
   "history": [
