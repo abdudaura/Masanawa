@@ -144,21 +144,23 @@ export function createAgentConversationService(input: {
         resolve(undefined);
       }, audioTimeoutMs);
     });
-    const task = controller.signal.aborted
-      ? Promise.resolve(undefined)
-      : input.nativeAudio.render(
-          reply,
-          controller.signal,
-          onAudioPcmChunk
-            ? async (chunk) => {
-                // An abandoned provider must not stream late PCM into the
-                // next turn after timeout/disconnect.
-                if (!inactive && !controller.signal.aborted) {
-                  await onAudioPcmChunk(chunk.toString("base64"));
-                }
+    const renderer = input.nativeAudio;
+    const task = Promise.resolve().then(() => {
+      if (controller.signal.aborted) return undefined;
+      return renderer.render(
+        reply,
+        controller.signal,
+        onAudioPcmChunk
+          ? async (chunk) => {
+              // An abandoned provider must not stream late PCM into the
+              // next turn after timeout/disconnect.
+              if (!inactive && !controller.signal.aborted) {
+                await onAudioPcmChunk(chunk.toString("base64"));
               }
-            : undefined,
-        ).catch(() => undefined);
+            }
+          : undefined,
+      );
+    }).catch(() => undefined);
     try {
       return await Promise.race([task, deadline, cancellation]);
     } finally {
