@@ -345,6 +345,23 @@
       "heartbeat_at": "2026-10-10T04:51:41.624Z",
       "expires_at": "2026-10-10T04:56:41.624Z",
       "notes": "Independent new feature-owned SQL proposal; request AF00 transfer for exact numbered migration once source contract reviewed; no production writes"
+    },
+    {
+      "claim_id": "af09-609-capture-composer-bridge-gpt6-0554",
+      "owner": "AF09 PR #609 / GPT-6 existing composer binding continuation",
+      "scope": "Mount exact capture sheet behind canonical AF05/AF15 verified private uploader optional composer dependency; split shared DTO; preserve existing test and older callback.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_media_contract.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:54:09.473Z",
+      "heartbeat_at": "2026-10-10T04:54:09.473Z",
+      "expires_at": "2026-10-10T04:59:09.473Z",
+      "notes": "No root / shared Gateway / native / financial or migration path edits."
     }
   ],
   "history": [
