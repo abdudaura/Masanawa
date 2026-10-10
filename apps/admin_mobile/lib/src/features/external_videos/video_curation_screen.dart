@@ -62,8 +62,8 @@ class _VideoCurationScreenState extends State<VideoCurationScreen> {
         if(items.isEmpty)return const ListTile(title:Text('No submitted videos'));
         return Column(children:[
           for(final v in items) Card(child:ListTile(title:Text(v.title),
-            subtitle:Text(v.channelName + ' · ' + v.provider + ' · ' + v.state),
-            trailing:Wrap(mainAxisSize:MainAxisSize.min,children:[
+            subtitle:Text('${v.channelName} · ${v.provider} · ${v.state}'),
+            trailing:Wrap(spacing:4,children:[
               if(v.state == 'pending') IconButton(tooltip:'Verify and approve',onPressed:working?null:()=>review(v,'approved'),icon:const Icon(Icons.check_circle_outline)),
               if(v.state == 'approved') IconButton(tooltip:'Hide',onPressed:working?null:()=>review(v,'hidden'),icon:const Icon(Icons.visibility_off_outlined)),
               if(v.state == 'approved') IconButton(tooltip:'Unavailable',onPressed:working?null:()=>review(v,'unavailable'),icon:const Icon(Icons.block)),
