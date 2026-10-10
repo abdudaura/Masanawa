@@ -112,6 +112,24 @@
       "heartbeat_at": "2026-10-10T02:35:06.277Z",
       "expires_at": "2026-10-10T02:40:06.277Z",
       "notes": "Policy exact blob Node tests 4/4 PASS_REAL; service, PG adapter and Vitest tests authored on same PR; API route and mobile transport/form next; AF00 retains shared app/migration/router."
+    },
+    {
+      "claim_id": "masanawa-u02-status-cas-race-20261010-gpt6p",
+      "owner": "Masanawa U02 same-PR recovery continuation (this window)",
+      "scope": "Close U02 customer task-status CAS race by readback of durable same-operation state and source regression tests; no new executor, ledger or routing",
+      "paths": [
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 580,
+      "source_head": "e13cbeb1cf34699d239ac77be3a14e62b616339f",
+      "claimed_at": "2026-10-10T02:39:00.655Z",
+      "heartbeat_at": "2026-10-10T02:39:00.655Z",
+      "expires_at": "2026-10-10T02:44:00.655Z",
+      "notes": "Prior U02 claims released; preserve stacked parent #520, no overlapping live CAS ownership. Reconcile status via owner-fenced repository read only, no external execute retry."
     }
   ],
   "history": [
