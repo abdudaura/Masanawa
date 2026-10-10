@@ -70,8 +70,8 @@
     },
     {
       "claim_id": "masanawa01-af15-orphan-20261010-0119",
-      "owner": "MASANAWA-01",
-      "scope": "AF15 safe orphan cleanup adapter and native unit tests",
+      "owner": "MASANAWA-01 / AF15 continuation",
+      "scope": "AF15 original owner resumed unchanged branch, safe bounded orphan cleanup against authoritative conditional purge, direct Node negative tests; no shared worker composition, DB migration or provider writes",
       "paths": [
         "adapters/storage/object_lifecycle/orphan_cleanup.ts",
         "adapters/storage/object_lifecycle/orphan_cleanup.test.mjs",
@@ -80,9 +80,10 @@
       "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
       "pr": "",
-      "claimed_at": "2026-10-10T01:19:59.149Z",
-      "heartbeat_at": "2026-10-10T01:19:59.149Z",
-      "expires_at": "2026-10-10T01:24:59.149Z"
+      "claimed_at": "2026-10-10T01:23:01.856Z",
+      "heartbeat_at": "2026-10-10T01:23:01.856Z",
+      "expires_at": "2026-10-10T01:28:01.856Z",
+      "notes": "Prior claim expired with source branch still equal to main@f381f077c485c04261459b77a42c215d3ce3a14b, no prior source to overwrite. Resumed same exact paths; preserve parallel media-batch branch."
     },
     {
       "claim_id": "masanawa-01-af15-media-batch-guards-20261010",
