@@ -1120,6 +1120,25 @@
       "heartbeat_at": "2026-10-10T16:12:32.194Z",
       "expires_at": "2026-10-10T16:27:32.194Z",
       "notes": "AF00 informed before edits, workflow only; preserve branch head CAS, no production or migrations."
+    },
+    {
+      "claim_id": "l-video-manual-admission-20261010-gpt6-1709",
+      "owner": "GPT-6 L-VIDEO manual-admission",
+      "scope": "L-VIDEO/J15 complete non-automated provider URL admission with moderation, tenant-safe PG source, consumer/admin UI, worker eligibility and negative tests; AF00 retains shared composition",
+      "paths": [
+        "packages/external-videos/**",
+        "services/gateway/src/modules/external_videos/**",
+        "services/worker/src/jobs/external_videos/**",
+        "apps/mobile/lib/src/features/videos/**",
+        "apps/admin_mobile/lib/src/features/external_videos/**",
+        "tests/e2e/J15/**"
+      ],
+      "branch": "lane/l-video-manual-admission-20261010-gpt6",
+      "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
+      "claimed_at": "2026-10-10T16:12:36.964Z",
+      "heartbeat_at": "2026-10-10T16:12:36.964Z",
+      "expires_at": "2026-10-10T16:17:36.964Z",
+      "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation."
     }
   ],
   "history": [
