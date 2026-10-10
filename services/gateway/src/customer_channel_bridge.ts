@@ -251,14 +251,24 @@ export function createCustomerChannelBridge(input: Readonly<{
   async function withInternalSession<T>(
     link: NonNullable<Awaited<ReturnType<typeof resolveOrLink>>>,
     run: (authorizationHeader: string) => Promise<T>,
+    phoneForRequest?: string,
   ): Promise<T> {
-    const profile = await input.sessions.resolveProfile({
-      tenantId: link.tenantId,
-      channel: "sms",
-      identifier:
-        requestPhoneCache.get(`${link.channel}:${link.externalUserId}`) ?? "",
-      observedAt: instant(),
-    }).catch(() => null);
+    // Resolve a phone only from this authenticated provider message. Never
+    // retain PII in process memory or reuse another message's contact value.
+    const profile = phoneForRequest
+      ? await input.sessions.resolveProfile({
+          tenantId: link.tenantId,
+          channel: "sms",
+          identifier: phoneForRequest,
+          observedAt: instant(),
+        }).catch(() => null)
+      : null;
+
+    // The durable channel link, not a subsequently shared phone number, owns
+    // the principal. Refuse a contact pointing at somebody else's account.
+    if (profile && (profile.tenantId !== link.tenantId || profile.userId !== link.userId)) {
+      throw new Error("channels.link_identity_mismatch");
+    }
 
     // Channel links are already foreign-keyed to an existing platform profile.
     // Resolve the durable profile directly from the link when a phone lookup is
@@ -301,8 +311,6 @@ export function createCustomerChannelBridge(input: Readonly<{
     }
   }
 
-  const requestPhoneCache = new Map<string, string>();
-
   return Object.freeze({
     async handle(request) {
       const messageId = request.messageId.trim();
@@ -311,17 +319,11 @@ export function createCustomerChannelBridge(input: Readonly<{
       if (!messageId || !externalUserId || !chatId) {
         throw new TypeError("channels.inbound_invalid");
       }
-      if (request.phone) {
-        requestPhoneCache.set(
-          `${request.channel}:${externalUserId}`,
-          normalizePhone(request.phone),
-        );
-      } else if (request.channel === "whatsapp") {
-        requestPhoneCache.set(
-          `${request.channel}:${externalUserId}`,
-          normalizePhone(externalUserId),
-        );
-      }
+      const phoneForRequest = request.phone
+        ? normalizePhone(request.phone)
+        : request.channel === "whatsapp"
+          ? normalizePhone(externalUserId)
+          : undefined;
 
       const claim = await input.channels.claimMessage({
         channel: request.channel,
@@ -442,6 +444,7 @@ export function createCustomerChannelBridge(input: Readonly<{
               });
               return `You're now chatting with ${selected.displayName}'s AI Twin. Text chat here is free. The real owner is not present.\n\nSend your message, or say "back to Gwani" anytime.`;
             },
+            phoneForRequest,
           );
           await input.channels.completeMessage({
             channel: request.channel,
@@ -522,7 +525,7 @@ export function createCustomerChannelBridge(input: Readonly<{
             await open();
             return turn();
           }
-        });
+        }, phoneForRequest);
 
         await input.channels.completeMessage({
           channel: request.channel,
