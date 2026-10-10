@@ -34,6 +34,7 @@ async function transaction<T>(pool: Pool, fn: (db: PoolClient) => Promise<T>): P
  finally { db.release(); }
 }
 const columns = "tenant_id,post_id,author_id,author_account_id,author_kind,asset_id,request_id,title,duration_ms,status,revision,created_at,published_at";
+const qualifiedColumns = columns.split(",").map(column => "p." + column).join(",");
 function parseCursor(raw: string | null): { stamp: number; id: string } | null {
  if (raw === null) return null;
  const at = raw.indexOf(":");
@@ -76,6 +77,23 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
     "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND author_account_id=$2 ORDER BY created_at DESC,post_id DESC LIMIT $3",
     [tenantId,accountId,limit]);
    return r.rows.map(map);
+  },
+  async saved({tenantId,viewerId,limit}) {
+   // A save is an account-private preference, not a global count or grant.
+   const r = await pool.query<Row>(
+    "SELECT " + qualifiedColumns + " FROM social.audio_posts p " +
+    "JOIN social.audio_post_reactions r ON r.tenant_id=p.tenant_id AND r.post_id=p.post_id " +
+    "WHERE p.tenant_id=$1 AND r.account_id=$2 AND r.kind='save' AND p.status='published' " +
+    "ORDER BY p.created_at DESC,p.post_id DESC LIMIT $3",
+    [tenantId,viewerId,Math.min(150,limit*3)]);
+   const items: AudioPostRecord[] = [];
+   for (const row of r.rows) {
+    if (await visibility.canView({tenantId,viewerId,authorAccountId:row.author_account_id})) {
+     items.push(map(row));
+     if (items.length === limit) break;
+    }
+   }
+   return items;
   },
   async removeOwn({tenantId,accountId,postId}) {
    return transaction(pool, async db => {
