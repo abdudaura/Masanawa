@@ -89,7 +89,7 @@ describe("U02 durable status-only recovery", () => {
     });
     expect(await rejected.runOnce()).toMatchObject({ unknown: 1 });
     const stalled = createStatusOnlyRecovery({
-      journal, status: { readback: () => new Promise<OperatorDomainOutcome>(() => undefined) },
+      journal, status: { readback: () => new Promise<RecoveryVerifiedReadback>(() => undefined) },
       now: () => new Date("2026-10-10T00:10:00.000Z"),
       timeoutMs: 50,
     });
@@ -108,7 +108,7 @@ describe("U02 durable status-only recovery", () => {
       }),
     };
     const valid = bound({ status: "confirmed", receiptRef: "ledger:valid_1" });
-    const unbound = [
+    const unbound: RecoveryVerifiedReadback[] = [
       { ...valid, tenantId: "another_tenant" },
       { ...valid, userId: "another_user" },
       { ...valid, taskId: "another_task" },
