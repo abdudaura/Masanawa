@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
 import 'package:masanawa/src/audio_posts/creator_profile_transport.dart';
 import 'package:masanawa/src/audio_posts/creator_profile_screen.dart';
+import 'package:masanawa/src/audio_posts/audio_post_report_action.dart';
 
 class FakeCreatorProfile implements CreatorProfileTransport {
   AudioPostPage? result;
@@ -25,6 +26,22 @@ AudioPost post({String authorId = 'alice'}) => AudioPost(
   revision: 1, createdAt: DateTime.utc(2026, 10, 10),
   likeCount: 2, commentCount: 1, listenCount: 4,
 );
+
+class FakeTalkReport implements PublishedAudioReportTransport {
+  final List<String> postIds = <String>[];
+  final List<String> requests = <String>[];
+  @override
+  Future<String> submit({
+    required String postId,
+    required String reason,
+    required String clientRequestId,
+    String? detail,
+  }) async {
+    postIds.add(postId);
+    requests.add(clientRequestId);
+    return 'canonical-report';
+  }
+}
 
 void main() {
   testWidgets('published creator posts open through injected action', (tester) async {
@@ -90,5 +107,64 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('A real Talk'), findsNothing);
     expect(find.text('Sign in to view creators.'), findsOneWidget);
+  });
+
+  testWidgets('creator Talk report uses canonical authority and confirmed receipt',
+      (tester) async {
+    final client = FakeCreatorProfile()
+      ..result = AudioPostPage(items: [post()], nextCursor: null);
+    final reports = FakeTalkReport();
+    await tester.pumpWidget(MaterialApp(home: CreatorProfileScreen(
+      transport: client, reportTransport: reports,
+      accountId: 'bob', isCurrentAccount: (id) => id == 'bob',
+      authorId: 'alice', authorKind: 'human',
+    )));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('creator-report-post1')), findsOneWidget);
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+    expect(find.text('Report this Talk'), findsOneWidget);
+    expect(reports.postIds, isEmpty);
+    await tester.tap(find.text('Submit report'));
+    await tester.pumpAndSettle();
+    expect(reports.postIds, ['post1']);
+    expect(reports.requests.single, isNotEmpty);
+    expect(find.text('Report received for review.'), findsOneWidget);
+    expect(find.text('A real Talk'), findsOneWidget);
+  });
+
+  testWidgets('creator report is absent without canonical capability',
+      (tester) async {
+    final client = FakeCreatorProfile()
+      ..result = AudioPostPage(items: [post()], nextCursor: null);
+    await tester.pumpWidget(MaterialApp(home: CreatorProfileScreen(
+      transport: client,
+      accountId: 'bob', isCurrentAccount: (_) => true,
+      authorId: 'alice', authorKind: 'human',
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('Report Talk'), findsNothing);
+    expect(find.byKey(const ValueKey('creator-report-post1')), findsNothing);
+  });
+
+  testWidgets('revoked session cannot send creator Talk report',
+      (tester) async {
+    final client = FakeCreatorProfile()
+      ..result = AudioPostPage(items: [post()], nextCursor: null);
+    final reports = FakeTalkReport();
+    var active = true;
+    await tester.pumpWidget(MaterialApp(home: CreatorProfileScreen(
+      transport: client, reportTransport: reports,
+      accountId: 'bob', isCurrentAccount: (_) => active,
+      authorId: 'alice', authorKind: 'human',
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+    active = false;
+    await tester.tap(find.text('Submit report'));
+    await tester.pumpAndSettle();
+    expect(reports.postIds, isEmpty);
+    expect(find.textContaining('Account changed.'), findsOneWidget);
   });
 }
