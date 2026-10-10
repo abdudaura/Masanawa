@@ -637,14 +637,15 @@
       "paths": [
         "config/production-env.json",
         "docs/API-LIFECYCLE.json",
-        "tests/contracts/public-api-lifecycle.test.ts"
+        "tests/contracts/public-api-lifecycle.test.ts",
+        "test/architecture/environment-contracts.test.ts"
       ],
       "branch": "work/shared-ci-recovery-work-20261008",
       "source_pr": 460,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:54:42.350Z",
-      "heartbeat_at": "2026-10-10T08:54:42.350Z",
-      "expires_at": "2026-10-10T08:59:42.350Z",
+      "heartbeat_at": "2026-10-10T08:56:09.333Z",
+      "expires_at": "2026-10-10T09:01:09.333Z",
       "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
     },
     {
@@ -661,8 +662,8 @@
       "source_pr": 600,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:54:42.350Z",
-      "heartbeat_at": "2026-10-10T08:54:42.350Z",
-      "expires_at": "2026-10-10T08:59:42.350Z",
+      "heartbeat_at": "2026-10-10T08:56:09.333Z",
+      "expires_at": "2026-10-10T09:01:09.333Z",
       "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
     }
   ],
