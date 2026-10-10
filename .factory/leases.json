@@ -90,24 +90,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "af09-609-playback-journey-20261010-gpt6-0338",
-      "owner": "AF09 existing PR #609 playback-client continuation",
-      "scope": "Connect authenticated AF09 ticketed audio to a single just_audio player and account-fenced Talks feed; retain AF05/AF15 playback authority and AF00 composition ownership",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
-        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
-        "docs/workstreams/AF09-playback-client-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "pr": "https://github.com/Baatiku/masanawa/pull/609",
-      "claimed_at": "2026-10-10T02:42:45.541Z",
-      "heartbeat_at": "2026-10-10T02:50:55.608Z",
-      "expires_at": "2026-10-10T02:55:55.608Z",
-      "notes": "Continued existing #609 to b62119bc331292712b0d77ce86d5a2cceeb39d09: playback client+feed+6 tests+handoff, exact-path source readback PASS structural; Flutter NOT_RUN. Finishing QA and handoff."
-    },
-    {
       "claim_id": "af09-609-feed-pagination-20261010-gpt6-0252",
       "owner": "AF09 PR #609 feed correctness continuation GPT-6",
       "scope": "Repair published Talks Discover keyset microsecond precision so two posts in one millisecond are not skipped. Continue current PR, no second branch; no AF00 composition/AF05 media files.",
@@ -1424,6 +1406,27 @@
       "release_reason": "Same PR #609 committed Following public projection/count source and privacy/Masana regressions, exact blob readback and PASS_ISOLATED canonical projection only. Full pnpm/Vitest/Flutter/PG blocked and zero-step CI; handoff and owners in PR comment 6092971540. No unverified main merge or production deployment.",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "source_head": "28c2cfd3e743cc4612516149c093d280fbee24ed"
+    },
+    {
+      "claim_id": "af09-609-playback-journey-20261010-gpt6-0338",
+      "owner": "AF09 existing PR #609 playback-client continuation",
+      "scope": "Connect authenticated AF09 ticketed audio to a single just_audio player and account-fenced Talks feed; retain AF05/AF15 playback authority and AF00 composition ownership",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
+        "docs/workstreams/AF09-playback-client-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "claimed_at": "2026-10-10T02:42:45.541Z",
+      "heartbeat_at": "2026-10-10T02:50:55.608Z",
+      "expires_at": "2026-10-10T02:55:55.608Z",
+      "notes": "Continued existing #609 to b62119bc331292712b0d77ce86d5a2cceeb39d09: playback client+feed+6 tests+handoff, exact-path source readback PASS structural; Flutter NOT_RUN. Finishing QA and handoff.",
+      "released_at": "2026-10-10T02:53:39.502Z",
+      "integration_head_sha": "72203c2b3d511cfed352dbd8a8048952722b53cc",
+      "release_reason": "AF09 playback-client source and six authored tests committed to original PR #609, exact path readback, handoff and PR comment 6093017974. Dart/Flutter runtime checks NOT_RUN; AF00+AF05 route/player composition and AF13 local execution required. Unmerged; no new integration branch."
     }
   ]
 }
