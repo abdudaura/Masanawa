@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/network/api_client.dart';
 import '../core/providers.dart';
+import '../state/session_state.dart';
 import '../agents/masanawa_transport.dart';
 import 'msn_balance_card.dart';
 import 'msn_balance_transport.dart';
@@ -378,6 +379,10 @@ class CryptoWalletScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(cryptoWalletProvider);
     final sessionClient = ref.watch(apiClientProvider);
+    final authState = ref.watch(sessionProvider);
+    final sessionIdentity = authState is SessionSignedIn
+        ? authState.tokens.accessToken
+        : null;
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
@@ -419,7 +424,7 @@ class CryptoWalletScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               MsnBalanceCard(
-                sessionIdentity: sessionClient.accessToken,
+                sessionIdentity: sessionIdentity,
                 transport: GatewayMsnBalanceTransport(
                   dio: sessionClient.dio,
                   baseUrl: kAgentBaseUrl,
