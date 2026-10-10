@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import { createCanonicalId } from "@masanawa/contracts";
-import { OperatorTaskError } from "./index.js";
 import { createPostgresOperatorTaskRepository } from "./postgres.js";
 
 /**
@@ -73,7 +72,7 @@ describe("U02 PostgreSQL admission approval expiry", () => {
     const f = fixture(false);
     await expect(f.change()).rejects.toMatchObject({
       code: "TASK_APPROVAL_INVALID", statusCode: 403,
-    } satisfies Partial<OperatorTaskError>);
+    });
     expect(f.calls.filter(x => x.sql.includes("INSERT INTO operator_tasks.events"))).toHaveLength(0);
     expect(f.calls.some(x => x.sql === "ROLLBACK")).toBe(true);
     expect(f.calls.some(x => x.sql === "COMMIT")).toBe(false);
