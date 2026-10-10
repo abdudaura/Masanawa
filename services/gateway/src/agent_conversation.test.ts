@@ -471,4 +471,53 @@ describe("Alpha conversation service", () => {
     expect(deltas).toEqual(["Hello ", "world"]);
   });
 
+
+  it("never early-streams unhandled billing or crypto machine markup", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute() {
+          return {
+            reply: 'Invalid purchase <masanawa_crypto_action>{"type":"crypto.withdraw.quote"}</masanawa_crypto_action>',
+            parts: [],
+          };
+        },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() { return null; },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy crypto",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    // Existing final-response sanitation is tracked separately. This ensures
+    // the new early channel never becomes an additional disclosure path.
+    expect(response.reply).toContain("masanawa_crypto_action");
+    expect(deltas).toEqual([]);
+  });
+
 });
