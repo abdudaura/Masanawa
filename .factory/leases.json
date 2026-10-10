@@ -226,25 +226,6 @@
       "source_head_sha": "b8d9694ea87b873cf28755f1c5b264a02c5f6b82",
       "integration_head_sha": null,
       "test_state": "Github exact blob readback and 9/9 source predicates only; 6 Flutter cases AUTHORED NOT_RUN; required Node24/pnpm12/Flutter/Dart/PG/Android unavailable."
-    },
-    {
-      "claim_id": "af09-609-comments-sheet-gpt6-0527",
-      "owner": "AF09 existing #609 — GPT-6 2026-10-10 0527 comments sheet",
-      "scope": "Add account-fenced published Talk comment sheet consuming canonical auth API and bounded cursor paging, with retry-safe writes; request bounded feed mount transfer from current AF09 owner; after released claim AF09-0517, mount new sheet in exact-path feed and preserve current behavior",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_comments_sheet.dart",
-        "apps/mobile/test/audio_first/af09/comments_sheet_test.dart",
-        "docs/workstreams/AF09-comments-sheet-20261010.md",
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T04:26:58.819Z",
-      "heartbeat_at": "2026-10-10T04:30:22.205Z",
-      "expires_at": "2026-10-10T04:35:22.205Z",
-      "notes": "No edits to concurrent feed/destination/transport/routes/SQL/shared migrations; existing PR only. Previous owner AF09-0517 released at 2026-10-10T04:29:26.879Z; CAS exact-path continuation, same PR source, preserve all edits. Shared AF00 shell/router unchanged."
     }
   ],
   "history": [
@@ -2026,6 +2007,29 @@
       "source_head": "c0a0df26acdf8cfd533d3ab76a70bf9a609a12f8",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "test_state": "GitHub byte readback; node --check PASS on exact hash 03394c56; full node --test blocked missing repo service.js; Flutter/PG NOT_RUN"
+    },
+    {
+      "claim_id": "af09-609-comments-sheet-gpt6-0527",
+      "owner": "AF09 existing #609 — GPT-6 2026-10-10 0527 comments sheet",
+      "scope": "Add account-fenced published Talk comment sheet consuming canonical auth API and bounded cursor paging, with retry-safe writes; request bounded feed mount transfer from current AF09 owner; after released claim AF09-0517, mount new sheet in exact-path feed and preserve current behavior",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_comments_sheet.dart",
+        "apps/mobile/test/audio_first/af09/comments_sheet_test.dart",
+        "docs/workstreams/AF09-comments-sheet-20261010.md",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:26:58.819Z",
+      "heartbeat_at": "2026-10-10T04:30:22.205Z",
+      "expires_at": "2026-10-10T04:35:22.205Z",
+      "notes": "No edits to concurrent feed/destination/transport/routes/SQL/shared migrations; existing PR only. Previous owner AF09-0517 released at 2026-10-10T04:29:26.879Z; CAS exact-path continuation, same PR source, preserve all edits. Shared AF00 shell/router unchanged.",
+      "released_at": "2026-10-10T04:35:38.528Z",
+      "release_reason": "Connected AF09 #609 comment sheet + feature feed hook committed, 10/10 structural checks only; Flutter/Node/Postgres/device tests unavailable. AF00 shell/Gateway/SQL/media integration and AF13 qualification remain OPEN. PR comment 6093815594, finite checklist docs/workstreams/AF09-comments-sheet-20261010.md. No local pull or merge.",
+      "source_head": "6b1160f0130ddaf045f5ab7b23e5cf73a60d4a25",
+      "integration_head_sha": null
     }
   ]
 }
