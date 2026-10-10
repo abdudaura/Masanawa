@@ -119,7 +119,7 @@ export function createPostgresOperatorTaskRepository(pool: Pool): OperatorTaskRe
       );
       return Object.freeze(result.rows.map(event));
     },
-    async change({ actor, taskId, expectedVersion, allowedFrom, patch, at }) {
+    async change({ actor, taskId, expectedVersion, allowedFrom, patch, at, requireUnexpiredApproval = false }) {
       return transaction(pool, async client => {
         const selected = await client.query<RawTask>(
           `SELECT * FROM operator_tasks.tasks
@@ -139,10 +139,18 @@ export function createPostgresOperatorTaskRepository(pool: Pool): OperatorTaskRe
         const updated = await client.query<RawTask>(
           `UPDATE operator_tasks.tasks SET ${assignments.join(",")},
               version=version+1,updated_at=$${values.length+4}
-            WHERE tenant_id=$1 AND user_id=$2 AND task_id=$3 RETURNING *`,
-          [actor.tenantId,actor.userId,taskId,...values,at],
+            WHERE tenant_id=$1 AND user_id=$2 AND task_id=$3
+              AND ($${values.length+5}::boolean = false OR
+                (phase='awaiting_approval' AND approval_expires_at > clock_timestamp()))
+            RETURNING *`,
+          [actor.tenantId,actor.userId,taskId,...values,at,requireUnexpiredApproval],
         );
         const next = updated.rows[0];
+        // The database clock is the final expiry authority at the actual CAS
+        // admission write, including delays acquiring the row lock.
+        if (!next && requireUnexpiredApproval) {
+          throw new OperatorTaskError("TASK_APPROVAL_INVALID", 403);
+        }
         if (!next) throw new OperatorTaskError("TASK_PERSISTENCE_UNAVAILABLE", 503);
         await client.query(
           `INSERT INTO operator_tasks.events(
