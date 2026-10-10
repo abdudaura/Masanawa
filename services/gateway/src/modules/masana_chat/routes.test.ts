@@ -62,7 +62,7 @@ describe("J03 Masana chat fan-only HTTP admission",()=>{
       const closed=await h.app.inject({method:"POST",
         url:root+"/"+sessionId+"/close",headers});
       expect(closed.statusCode).toBe(200);
-      expect(h.eligible).toHaveBeenCalledTimes(3);
+      expect(h.eligible).toHaveBeenCalledTimes(4);
       expect(h.close).toHaveBeenCalledOnce();
     }finally{await h.app.close();}
   });
