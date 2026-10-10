@@ -80,11 +80,15 @@ class _AudioPostDetailScreenState extends State<AudioPostDetailScreen> {
                     Text('${(widget.post.durationMs / 1000).round()} seconds'),
                     AnimatedBuilder(
                       animation: widget.playback,
-                      builder: (_, __) => Text(
-                        '${widget.post.likeCount} likes · '
-                        '${widget.post.commentCount} comments'
-                        '${(widget.playback.listenCountFor(widget.post.postId) ?? widget.post.listenCount) == null ? "" : " · ${widget.playback.listenCountFor(widget.post.postId) ?? widget.post.listenCount} listens"}',
-                      ),
+                      builder: (_, __) {
+                        final listens = widget.playback.listenCountFor(widget.post.postId)
+                            ?? widget.post.listenCount;
+                        return Text(
+                          '${widget.post.likeCount} likes · '
+                          '${widget.post.commentCount} comments'
+                          '${listens == null ? '' : ' · $listens listens'}',
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
                     AnimatedBuilder(
