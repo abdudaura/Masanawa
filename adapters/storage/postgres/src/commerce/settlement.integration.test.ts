@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createIsolatedPostgresTestDatabase } from "../../../../../test/support/isolated-postgres.js";
+import { createIsolatedPostgresTestDatabase } from "./isolated-test-database.js";
 import { createCanonicalId, nowInstant, toInstant } from "@masanawa/contracts";
 import type { CommerceFulfillmentAdmission, CommerceLedgerTransfer, CommerceQuote } from "@masanawa/commerce";
 import { runMigrations } from "../migrations.js";
