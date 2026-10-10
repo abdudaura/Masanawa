@@ -11,7 +11,7 @@ integration("J06 real PostgreSQL18 Feed tenant/idempotency/visibility",()=>{
   isolated=await createIsolatedPostgresTestDatabase(conn!);
   const {pool}=isolated;
   await pool.query(readFileSync(new URL("../../../../../packages/events/migrations/0001_event_foundation.sql",import.meta.url),"utf8"));
-  await pool.query("CREATE SCHEMA masana; CREATE TABLE masana.follows(tenant_id text NOT NULL,fan_user_id text NOT NULL,character_id text NOT NULL,PRIMARY KEY(tenant_id,fan_user_id,character_id))");
+  await pool.query("CREATE SCHEMA masana; CREATE TABLE masana.follows(tenant_id text NOT NULL,fan_user_id text NOT NULL,character_id text NOT NULL,PRIMARY KEY(tenant_id,fan_user_id,character_id)); CREATE TABLE masana.character_revisions(tenant_id text NOT NULL,character_id text NOT NULL,state text NOT NULL); INSERT INTO masana.character_revisions VALUES ('tenant_test','masana_one','approved')");
   await pool.query(readFileSync(new URL("../../../../../packages/feed/migrations/0001_feed.sql",import.meta.url),"utf8"));
   repo=new PgHomeFeedRepository(pool);
  });
