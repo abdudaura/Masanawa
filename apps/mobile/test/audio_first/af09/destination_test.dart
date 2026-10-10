@@ -8,6 +8,7 @@ import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/audio_posts/audio_post_draft_store.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
 import 'package:masanawa/src/audio_posts/creator_profile_transport.dart';
+import 'package:masanawa/src/audio_posts/audio_post_report_action.dart';
 
 final _post = AudioPost(
   postId: 'post1', authorId: 'creator1', authorKind: 'human',
@@ -96,6 +97,19 @@ class _FakeAudioOutput implements PublishedTalkAudioOutput {
   Future<void> stop() async {}
   @override
   Future<void> dispose() async {}
+}
+
+
+class _Reports implements PublishedAudioReportTransport {
+  final List<String> submitted = <String>[];
+  @override
+  Future<String> submit({
+    required String postId, required String reason,
+    required String clientRequestId, String? detail,
+  }) async {
+    submitted.add(postId);
+    return 'report-accepted';
+  }
 }
 
 void main() {
@@ -270,5 +284,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('audio-post-discover')), findsOneWidget);
     expect(posts.discoverCalls, 2);
+  });
+
+  testWidgets('destination passes canonical TalkSafety report to creator posts',
+      (tester) async {
+    final reports = _Reports();
+    await tester.pumpWidget(MaterialApp(
+      home: PublishedTalksDestination(
+        accountId: 'alice', isCurrentAccount: (id) => id == 'alice',
+        transport: _AudioPosts(), creatorTransport: _Creators(),
+        reportTransport: reports, attemptStore: _MemoryAttemptStore(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final creator = find.byKey(const ValueKey('talk-creator-post1'));
+    await tester.ensureVisible(creator);
+    await tester.tap(creator);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('creator-report-post1')), findsOneWidget);
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Submit report'));
+    await tester.pumpAndSettle();
+    expect(reports.submitted, ['post1']);
+    expect(find.byKey(const ValueKey('creator-profile-list')), findsOneWidget);
   });
 }
