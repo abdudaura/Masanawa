@@ -81,8 +81,8 @@
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
       "pr": "",
       "claimed_at": "2026-10-10T01:23:01.856Z",
-      "heartbeat_at": "2026-10-10T01:23:01.856Z",
-      "expires_at": "2026-10-10T01:28:01.856Z",
+      "heartbeat_at": "2026-10-10T01:24:16.021Z",
+      "expires_at": "2026-10-10T01:29:16.021Z",
       "notes": "Prior claim expired with source branch still equal to main@f381f077c485c04261459b77a42c215d3ce3a14b, no prior source to overwrite. Resumed same exact paths; preserve parallel media-batch branch."
     },
     {
