@@ -526,6 +526,23 @@
       "expires_at": "2026-10-10T08:09:02.815Z",
       "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit.",
       "source_head_sha": "1bef47c22f90769de7a9c3c02e7a5dcb09182813"
+    },
+    {
+      "claim_id": "af01-607-crypto-decimal-api-precision-20261010-gpt6",
+      "owner": "AF01 / existing PR #607 crypto ledger adapter CI regression",
+      "scope": "Restore exact decimal text normalization from PostgreSQL numeric SUM without floating-point conversion; preserve ledger math and receipt contract; execute Actions",
+      "paths": [
+        "adapters/storage/postgres/src/commerce/crypto-repository.ts",
+        "adapters/storage/postgres/src/commerce/crypto-repository.integration.test.ts",
+        "docs/workstreams/AF01-crypto-ledger-reason-20261010.md"
+      ],
+      "branch": "work/af01-crypto-ledger-reason-20261010-masanawa01-g",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 607,
+      "claimed_at": "2026-10-10T08:05:35.359Z",
+      "heartbeat_at": "2026-10-10T08:05:35.359Z",
+      "expires_at": "2026-10-10T08:10:35.359Z",
+      "notes": "Limited finance-owned database readback and existing PG integration tests; no API/migration/worker/production change; AF00 owns integration. CI sample: 14 numeric text cases returned 100.000000000000000000 rather than 100 in PR460 run 38036434565."
     }
   ],
   "history": [
