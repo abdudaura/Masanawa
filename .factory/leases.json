@@ -90,24 +90,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "af09-609-playback-journey-20261010-gpt6-0338",
-      "owner": "AF09 existing PR #609 playback-client continuation",
-      "scope": "Connect authenticated AF09 ticketed audio to a single just_audio player and account-fenced Talks feed; retain AF05/AF15 playback authority and AF00 composition ownership",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
-        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
-        "docs/workstreams/AF09-playback-client-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "pr": "https://github.com/Baatiku/masanawa/pull/609",
-      "claimed_at": "2026-10-10T02:42:45.541Z",
-      "heartbeat_at": "2026-10-10T02:50:55.608Z",
-      "expires_at": "2026-10-10T02:55:55.608Z",
-      "notes": "Continued existing #609 to b62119bc331292712b0d77ce86d5a2cceeb39d09: playback client+feed+6 tests+handoff, exact-path source readback PASS structural; Flutter NOT_RUN. Finishing QA and handoff."
-    },
-    {
       "claim_id": "af09-609-processing-pagination-gpt6-0342",
       "owner": "AF09 existing PR #609 processing queue continuation (GPT-6 window 0342)",
       "scope": "Repair demonstrated microsecond keyset pagination loss that can indefinitely skip pending audio publication after timestamp collisions. Continue existing worker/PG queue and its tests; no duplicate queue, shared worker registration or migrations.",
@@ -219,9 +201,48 @@
       "heartbeat_at": "2026-10-10T03:48:26.298Z",
       "expires_at": "2026-10-10T03:53:26.298Z",
       "notes": "No AF00 Gateway composition/worker/migrations, AF05 media, AF08 auth, nor active AF09 report/feed claims. Explicit projection of publish/remove HTTP receipts using existing canonical toPublicAudioPost."
+    },
+    {
+      "claim_id": "af09-609-report-feed-mount-gpt6-20261010",
+      "owner": "AF09 existing PR #609 report UI composition / GPT-6",
+      "scope": "Mount existing canonical published-audio report action on visible published Talk cards, account-session fenced and without changing playback/cache. Do not touch AF00 shared shell/routes.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/report_feed_test.dart",
+        "docs/workstreams/AF09-report-feed-wiring-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "source_head": "951978f959a3b23caabaca9824ce596578d9bb57",
+      "claimed_at": "2026-10-10T03:50:35.774Z",
+      "heartbeat_at": "2026-10-10T03:50:35.774Z",
+      "expires_at": "2026-10-10T03:55:35.774Z",
+      "notes": "Stale file claim reviewed and moved to history; preserve all newer feed cache/playback/reaction/comment source. Scope is one customer-visible report UI path."
     }
   ],
   "history": [
+    {
+      "claim_id": "af09-609-playback-journey-20261010-gpt6-0338",
+      "owner": "AF09 existing PR #609 playback-client continuation",
+      "scope": "Connect authenticated AF09 ticketed audio to a single just_audio player and account-fenced Talks feed; retain AF05/AF15 playback authority and AF00 composition ownership",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
+        "docs/workstreams/AF09-playback-client-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "claimed_at": "2026-10-10T02:42:45.541Z",
+      "heartbeat_at": "2026-10-10T02:50:55.608Z",
+      "expires_at": "2026-10-10T02:55:55.608Z",
+      "notes": "Continued existing #609 to b62119bc331292712b0d77ce86d5a2cceeb39d09: playback client+feed+6 tests+handoff, exact-path source readback PASS structural; Flutter NOT_RUN. Finishing QA and handoff.",
+      "recovered_at": "2026-10-10T03:50:35.774Z",
+      "recovered_by": "af09-609-report-feed-mount-gpt6-20261010",
+      "recovery_reason": "Reviewed expiry of earlier AF09 playback/old feed claim, newer shared PR #609 feed source preserved at blob 53bef0912dd1d708bf5cd0738bb8e4ae8ae6e3b3; no files reset. Previous owner's outstanding full media qualification stays with AF05/AF15."
+    },
     {
       "claim_id": "af09-609-creator-profile-20261010-gpt6-0423",
       "owner": "AF09 #609 continuing creator profile customer journey (GPT-6 window 0423)",
