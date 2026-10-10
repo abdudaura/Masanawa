@@ -86,6 +86,28 @@ export function createPostgresFollowingRepository(
         return { authorId: author.author_id, authorKind: author.author_kind, following: enabled };
       });
     },
+    async statusFromVisiblePost({ tenantId, accountId, postId }) {
+      const r = await pool.query<Creator>(
+        "SELECT author_id,author_kind,author_account_id FROM social.audio_posts " +
+        "WHERE tenant_id=$1 AND post_id=$2 AND status='published'",
+        [tenantId, postId],
+      );
+      const author = r.rows[0];
+      if (!author || author.author_account_id === accountId) return null;
+      if (!await visibility.canView({
+        tenantId, viewerId: accountId, authorAccountId: author.author_account_id,
+      })) return null;
+      const result = await pool.query<{ following: boolean }>(
+        "SELECT EXISTS(SELECT 1 FROM social.audio_post_follows WHERE " +
+        "tenant_id=$1 AND follower_account_id=$2 AND author_id=$3 AND author_kind=$4) AS following",
+        [tenantId, accountId, author.author_id, author.author_kind],
+      );
+      return {
+        authorId: author.author_id,
+        authorKind: author.author_kind,
+        following: result.rows[0]?.following === true,
+      };
+    },
     async feed({ tenantId, viewerId, limit, cursor: from }) {
       const seek = parseCursor(from);
       const batchSize = Math.min(limit * 3, 90);
