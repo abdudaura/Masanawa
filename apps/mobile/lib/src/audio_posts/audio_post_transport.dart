@@ -122,6 +122,16 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
   final ApiClient api;
 
   @override
+  Future<AudioPost?> receiptByRequest({required String requestId}) async {
+    final response = await api.dio.get<dynamic>(
+      '/audio-posts/requests/${Uri.encodeComponent(requestId)}');
+    final data = response.data;
+    if (data == null) return null;
+    if (data is! Map) throw const FormatException('Invalid publish receipt');
+    return AudioPost.fromJson(data.cast<String, dynamic>());
+  }
+
+  @override
   Future<AudioPostPage> discover({String? cursor}) async {
     final response = await api.dio.get<dynamic>(
       '/audio-posts', queryParameters: {'limit': 20, if (cursor != null) 'cursor': cursor});
