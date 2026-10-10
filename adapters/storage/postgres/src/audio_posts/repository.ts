@@ -99,7 +99,9 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
       "ORDER BY created_at DESC,post_id DESC LIMIT 30",
       [tenantId,position ? new Date(position.stamp).toISOString() : null,position?.id ?? ""]);
     if (!r.rows.length) { more = false; break; }
+    let consumed = 0;
     for (const row of r.rows) {
+     consumed++;
      const post = map(row);
      position = {stamp:Date.parse(post.createdAt),id:post.postId};
      scanned++;
@@ -108,9 +110,13 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
      })) items.push(post);
      if (items.length === limit || scanned >= 240) break;
     }
-    if (r.rows.length < 30) more = false;
+    // A short batch only ends the feed if every row was consumed.
+    // Reaching the visible-item limit partway through the batch leaves more.
+    if (r.rows.length < 30 && consumed === r.rows.length) more = false;
    }
-   return { items, nextCursor: more && items.length ? cursor(items[items.length - 1]) : null };
+   // Advance past the last *scanned* row, including hidden authors.
+   // Otherwise a full hidden page causes repeated rows or missing continuation.
+   return { items, nextCursor: more && position ? position.stamp + ":" + position.id : null };
   },
   async setReaction({tenantId,viewerId,postId,kind,enabled}) {
    return transaction(pool, async db => {
