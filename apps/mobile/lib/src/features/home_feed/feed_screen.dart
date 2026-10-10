@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'feed_api.dart';
+import 'feed_comments_sheet.dart';
 
 /// Feature-local C21 screen. AF00 wires this in the sole Home center shell.
 class MasanaFeedScreen extends StatefulWidget {
@@ -68,20 +69,10 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('Action failed. Retry.','Ba a yi nasara ba. Sake gwadawa.'))));
     }
   }
-  Future<void> addComment(FeedPost post) async {
-    final input=TextEditingController();
-    try{
-      final value=await showDialog<String>(context:context,builder:(ctx)=>AlertDialog(
-        title:Text(t('Comment','Sharhi')),
-        content:TextField(controller:input,maxLength:1000,maxLines:3,autofocus:true,
-          decoration:InputDecoration(hintText:t('Write a respectful comment','Rubuta sharhi mai kyau'))),
-        actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(t('Cancel','Soke'))),
-          FilledButton(onPressed:()=>Navigator.pop(ctx,input.text.trim()),child:Text(t('Send','Aika')))]));
-      if(value==null||value.isEmpty||!mounted)return;
-      await widget.api.comment(post.id,value,'feed-${DateTime.now().microsecondsSinceEpoch}');
-      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('Sent for review if needed','An aika domin dubawa idan ya cancanta'))));
-    }catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('Comment failed. Try again.','Aika sharhi bai yi nasara ba.'))));}
-    finally{input.dispose();}
+  void openComments(FeedPost post) {
+    showModalBottomSheet<void>(context:context,isScrollControlled:true,
+      builder:(ctx)=>SizedBox(height:MediaQuery.sizeOf(ctx).height*0.78,
+        child:FeedCommentsSheet(api:widget.api,post:post)));
   }
   @override Widget build(BuildContext context){
     if(!widget.enabled)return Center(child:Text(t('Feed is currently unavailable','Ba a samun labarai a yanzu')));
@@ -116,7 +107,7 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
                 Wrap(spacing:4,children:[
                   TextButton.icon(onPressed:()=>action(post,like:true),icon:Icon(post.liked?Icons.favorite:Icons.favorite_border),
                     label:Text('${post.likeCount}')),
-                  TextButton.icon(onPressed:()=>addComment(post),icon:const Icon(Icons.mode_comment_outlined),label:Text('${post.commentCount}')),
+                  TextButton.icon(onPressed:()=>openComments(post),icon:const Icon(Icons.mode_comment_outlined),label:Text('${post.commentCount}')),
                   IconButton(tooltip:t('Save','Ajiye'),onPressed:()=>action(post,like:false),
                     icon:Icon(post.saved?Icons.bookmark:Icons.bookmark_border)),
                   IconButton(tooltip:t('Report','Kai rahoto'),onPressed:widget.onReport==null?null:()=>widget.onReport!(post.id),
