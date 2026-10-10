@@ -375,20 +375,20 @@
     {
       "claim_id": "shared-ci-460-full-closure-20261010-gpt6",
       "owner": "GPT-6 / owner-requested CI and complete-window delivery",
-      "scope": "Continue shared CI PR #460 with transferred-repo mandatory end-to-end window/merge rules; no overlapping feature or production paths",
+      "scope": "Owner-ordered end-to-end delivery policy on fresh main; independent of older CI repair PR #460; exact claimed instruction files only",
       "paths": [
         "AGENTS.md",
         "CONTINUE-HERE.md",
         "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
         "docs/MULTI-WINDOW-WORK.md"
       ],
-      "branch": "work/shared-ci-recovery-work-20261008",
+      "branch": "work/window-end-to-end-closure-ci-20261010",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 460,
+      "source_pr": null,
       "claimed_at": "2026-10-10T07:01:59.921Z",
-      "heartbeat_at": "2026-10-10T07:01:59.921Z",
-      "expires_at": "2026-10-10T07:06:59.921Z",
-      "notes": "Policy docs only. Existing #460 source fixes preserved. No AF00 root, financial/auth/native or CI workflow source edits."
+      "heartbeat_at": "2026-10-10T07:03:05.631Z",
+      "expires_at": "2026-10-10T07:08:05.631Z",
+      "notes": "Reviewed transfer: original #460 base predates AGENTS and reusable prompt; updating #460 risks add/add conflict and repeated technical debt. The dedicated owner-directed window lifecycle policy PR will be a coherent governance change on fresh main (not integrator/helper)."
     }
   ],
   "history": [
