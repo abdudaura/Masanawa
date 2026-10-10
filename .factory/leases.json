@@ -177,8 +177,9 @@
       "source_pr": 604,
       "source_head": "981d6245b414c871b964a1e25270cc281fd7f95d",
       "claimed_at": "2026-10-10T03:13:35.896Z",
-      "heartbeat_at": "2026-10-10T03:13:35.896Z",
-      "expires_at": "2026-10-10T03:18:35.896Z"
+      "heartbeat_at": "2026-10-10T03:15:24.862Z",
+      "expires_at": "2026-10-10T03:20:24.862Z",
+      "notes": "Continuing existing #604; Activity 404/malformed response source and 6 transport tests committed; handoff documentation and finite parent-milestone checklist."
     },
     {
       "claim_id": "gpt6-u02-post-auth-expiry-20261010-0415",
