@@ -16,6 +16,9 @@ export interface FollowingRepository {
     postId: string;
     enabled: boolean;
   }): Promise<{ authorId: string; authorKind: "human" | "masana"; following: boolean } | null>;
+  statusFromVisiblePost(input: {
+    tenantId: string; accountId: string; postId: string;
+  }): Promise<{ authorId: string; authorKind: "human" | "masana"; following: boolean } | null>;
   /** Read only published Talks by followed creators, with visibility checked per viewer. */
   feed(input: {
     tenantId: string;
@@ -48,6 +51,20 @@ export function createFollowingService(repository: FollowingRepository) {
         postId: input.postId, enabled: input.enabled,
       });
       // Hidden, removed, blocked and nonexistent resources have identical readback.
+      if (!stored) throw new FollowingError("NOT_FOUND", "Talk creator unavailable");
+      if (!safeId(stored.authorId) ||
+          !["human", "masana"].includes(stored.authorKind) ||
+          typeof stored.following !== "boolean") {
+        throw new FollowingError("CAPABILITY_UNAVAILABLE", "Creator follow status unavailable");
+      }
+      return stored;
+    },
+    async status(actor: PostActor, postId: unknown) {
+      requireActor(actor);
+      if (!safeId(postId)) throw new FollowingError("VALIDATION", "Invalid Talk ID");
+      const stored = await repository.statusFromVisiblePost({
+        tenantId: actor.tenantId, accountId: actor.accountId, postId,
+      });
       if (!stored) throw new FollowingError("NOT_FOUND", "Talk creator unavailable");
       if (!safeId(stored.authorId) ||
           !["human", "masana"].includes(stored.authorKind) ||
