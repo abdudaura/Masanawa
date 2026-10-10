@@ -2,7 +2,7 @@
 
 **Parent milestone:** Published audio Talks, UX-A08/A09 and UI-04. **State:** PARTIAL_IMPLEMENTATION; mobile player and media delivery are NOT device- or production-qualified. This continues existing PR #609 at https://github.com/Baatiku/masanawa/pull/609 with its existing branch and preserves earlier processing, following, comments and feed changes.
 
-**Fresh main:** c7f7280e640d3098be3e26f05149a0d66085441b. **Previous PR head:** 3cfc9c5c42957f921d2adfd74ae334a205a1597a. **Branch:** work/af09-published-audio-20261010-gpt6. **CAS claim:** af09-609-playback-journey-20261010-gpt6-0338, published/read back on factory/claims. **Implementation commits:** 52877e9, 1c5eb35, 46f1232, 378c82b, ea9ce13 and 8f67846 (see live PR HEAD for exact final SHA).
+**Fresh main:** c7f7280e640d3098be3e26f05149a0d66085441b. **Previous PR head:** 3cfc9c5c42957f921d2adfd74ae334a205a1597a. **Branch:** work/af09-published-audio-20261010-gpt6. **CAS claim:** af09-609-playback-journey-20261010-gpt6-0338, published/read back on factory/claims. **Implementation commits:** 52877e9, 1c5eb35, 46f1232, 378c82b, ea9ce13, 8f67846, 564b1d8 and b62119b (see live PR HEAD for exact final SHA).
 
 ## Exact owned paths
 
@@ -15,11 +15,11 @@ No shared router, auth, native configuration, database migration registry, Gatew
 
 ## Connected source
 
-Listen on published Talks now supports authenticated GET /audio-posts/:postId/playback via the existing ApiClient, ticket host/expiry validation, one just_audio player per active feed, actionable Listen/Loading/Stop/error controls, no autoplay, and cancellation on account/feed changes, refresh and disposal. Signed URLs are never put in widgets, persisted or logged. In-flight tickets are fenced after logout/switch. HTTPS must match the AF15 configured trusted media host, with no userinfo/fragment/custom port, and 5–60 seconds remaining. A fresh ticket is requested on retry.
+Listen on published Talks now supports authenticated GET /audio-posts/:postId/playback via the existing ApiClient, ticket host/expiry validation, one just_audio player per active feed, actionable Listen/Loading/Stop/error controls, no autoplay, and cancellation on account/feed changes, refresh and disposal. Signed URLs are never put in widgets, persisted or logged. In-flight tickets are fenced after logout/switch or same-account session/token rotation. HTTPS must match the AF15 configured trusted media host, with no userinfo/fragment/custom port, and 5–60 seconds remaining. A fresh ticket is requested on retry.
 
 Existing just_audio and audio_session packages are reused without adding another signer. Native errors and completed playback reset listening state. AF05 must review app-wide audio focus/interruption/call coexistence; this is not yet a qualified unified player. Client-created media paths and unverified assets remain forbidden.
 
-Five widget/unit tests are authored for trusted vs foreign/expired URL, Listen/Stop, account-switch in-flight cancellation, error/untrusted ticket retry, and non-published/unauthorized refusal. Test ticket callback is injectable in tests only; production always uses the authenticated Gateway.
+Six widget/unit tests are authored for trusted vs foreign/expired URL, Listen/Stop, account-switch in-flight cancellation, same-account authentication-token rotation, error/untrusted ticket retry, and non-published/unauthorized refusal. Test ticket callback is injectable in tests only; production always uses the authenticated Gateway.
 
 ## Executable evidence and exact blockers
 
