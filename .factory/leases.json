@@ -458,7 +458,12 @@
       "claimed_at": "2026-10-10T07:57:36.832Z",
       "heartbeat_at": "2026-10-10T08:00:27.120Z",
       "expires_at": "2026-10-10T08:05:27.120Z",
-      "notes": "Same PR, no competing branch. Run GitHub Actions and report actual full-test blockers."
+      "notes": "Same PR, no competing branch. Run GitHub Actions and report actual full-test blockers.",
+      "released_at": "2026-10-10T08:07:08.821Z",
+      "release_reason": "Existing #612: repaired replay/media/attachment directive leakage; truthful terminal settlement uncertainty and auxiliary event recovery; added actual service negative tests. GitHub Foundation Actions ran Node24/pnpm12 but shared packages/agents TalkId TS2459 blocked target Vitest. AF13 #460 common fixes and AF00 #600 safe integration required. No production deployment, no main merge; milestone source partial.",
+      "source_head_sha": "e455a12638d3791e166f26ee3cc54d159a982ac6",
+      "integration_head_sha": null,
+      "test_state": "GitHub Foundation #38036538174: Typecheck FAIL at packages/agents/src/talk-replay.test.ts(6,8), targeted/new Vitest + provider + build SKIPPED/NOT_RUN. Source/test head 4e728ae30978f203371b86911151f16c4ff05091."
     },
     {
       "claim_id": "u02-580-suite-recovery-20261010-gpt6",
