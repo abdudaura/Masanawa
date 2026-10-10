@@ -196,6 +196,29 @@ void main() {
     expect(source.storedComments, isEmpty);
   });
 
+  testWidgets('late comments from previous account are never displayed',
+      (tester) async {
+    final previous = Completer<List<AudioPostComment>>();
+    final source = FakePosts()..commentsHandler = (_) => previous.future;
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comments'));
+    await tester.pump();
+    await tester.pumpWidget(screen(source, 'user-b'));
+    await tester.pumpAndSettle();
+    previous.complete([
+      AudioPostComment(postId: 'one', commentId: 'private-1',
+        isMine: false, body: 'Private prior-account content',
+        createdAt: DateTime.utc(2026, 10, 10), removed: false),
+    ]);
+    await tester.pumpAndSettle();
+    expect(find.text('Private prior-account content'), findsNothing);
+    await tester.tap(find.text('Comments'));
+    source.commentsHandler = (_) async => [];
+    await tester.pumpAndSettle();
+    expect(find.text('Private prior-account content'), findsNothing);
+  });
+
   testWidgets('comment read errors expose retry without invented content',
       (tester) async {
     final source = FakePosts()
