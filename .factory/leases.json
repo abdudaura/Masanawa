@@ -344,7 +344,11 @@
       "claimed_at": "2026-10-10T04:51:41.624Z",
       "heartbeat_at": "2026-10-10T04:51:41.624Z",
       "expires_at": "2026-10-10T04:56:41.624Z",
-      "notes": "Independent new feature-owned SQL proposal; request AF00 transfer for exact numbered migration once source contract reviewed; no production writes"
+      "notes": "Independent new feature-owned SQL proposal; request AF00 transfer for exact numbered migration once source contract reviewed; no production writes",
+      "released_at": "2026-10-10T04:55:33.592Z",
+      "release_reason": "Six-table feature-owned executable SQL + disposable PostgreSQL negative test authored, blob-readback and V8 stripped-module syntax only; AF00 numbered migration and real Gateway/worker/shell composition MISSING, AF05/15 media MISSING; no runtime Node/PG/Flutter execution; PR #609 comment 6093966267, AF00 #600 comment 6093963040. Milestone incomplete, not integrated, no local pull.",
+      "source_head": "c91d9c1d39abcb4342dfac06ab5e8c98b6a59bea",
+      "integration_head_sha": null
     },
     {
       "claim_id": "af09-609-capture-composer-bridge-gpt6-0554",
