@@ -8,7 +8,8 @@ class VideoCurationScreen extends StatefulWidget {
 }
 class _VideoCurationScreenState extends State<VideoCurationScreen> {
   final url = TextEditingController(), title = TextEditingController(), channel = TextEditingController();
-  late Future<List<CuratedVideo>> future = widget.api.list();
+  late Future<List<CuratedVideo>> future;
+  @override void initState() { super.initState(); future = widget.api.list(); }
   bool working = false;
   String? error;
   @override void dispose(){url.dispose();title.dispose();channel.dispose();super.dispose();}
