@@ -949,6 +949,21 @@
       "heartbeat_at": "2026-10-10T09:23:40.948Z",
       "expires_at": "2026-10-10T09:28:40.948Z",
       "notes": "Reproduced real flutter tests failed in #38040798435; PR comment #6096078619; no protected UI source edits; wallet offline widget missing custom app theme, real Flutter failure #38040798435, PR comment 6096088541"
+    },
+    {
+      "claim_id": "af13-460-agent-presence-malformed-truth-gpt6-1024",
+      "owner": "GPT-6 / existing AF13 CI recovery PR #460",
+      "scope": "Repair unclaimed malformed-presence Flutter regression to preserve canonical unknown (not falsely offline) using existing AgentPresence.parse authority",
+      "paths": [
+        "apps/mobile/test/agent_directory_readiness_test.dart"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "8977d4f0d0bf2c4625c4459cda9d423d1270004c",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:23:56.629Z",
+      "heartbeat_at": "2026-10-10T09:23:56.629Z",
+      "expires_at": "2026-10-10T09:28:56.629Z",
+      "notes": "Real Mobile run 38040798435: malformed 123 expects offline but model explicitly fails closed to unknown; preserve status unverified. Other window claimed profile/wallet tests, do not edit them."
     }
   ],
   "history": [
