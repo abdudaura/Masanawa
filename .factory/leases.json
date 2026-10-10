@@ -159,6 +159,24 @@
       "heartbeat_at": "2026-10-10T03:10:45.315Z",
       "expires_at": "2026-10-10T03:15:45.315Z",
       "notes": "Code commits f5f3b24,fd0861b,e58c10d,9a77dc3 for encrypted store/composer/tests/account fences. Prepare finite milestone handoff, no Flutter runner."
+    },
+    {
+      "claim_id": "af13-596-source-integrity-20261010-gpt6-0412",
+      "owner": "AF13 #596 checkout source integrity continuation GPT-6",
+      "scope": "Close existing PR #596's acceptance/source SHA integrity bypass by refusing dirty canonical runner/guard/matrix at exact checkout HEAD; tests and finite handoff only",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 596,
+      "source_head": "f73f87d2ca22d4ed04c62e953f9edba354e118f4",
+      "claimed_at": "2026-10-10T03:11:47.221Z",
+      "heartbeat_at": "2026-10-10T03:11:47.221Z",
+      "expires_at": "2026-10-10T03:16:47.221Z",
+      "notes": "Prior overlapping AF13 claim released; preserve all source and tests; do not edit root CI/worker/migration/runtime paths. One existing canonical runner, no new validator or branch."
     }
   ],
   "history": [
