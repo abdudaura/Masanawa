@@ -57,7 +57,7 @@ class SecureTalkGiftPendingStore implements TalkGiftPendingStore {
     required String record,
   }) {
     if (record.length > 300 || !RegExp(
-      r'^(pending|completed):talk-gift-[0-9]+(?:-[0-9]+){3},
+      r'^(pending|completed):talk-gift-[0-9]+(?:-[0-9]+){3}
     ).hasMatch(record)) {
       throw const FormatException('Invalid durable gift request state');
     }
@@ -66,8 +66,7 @@ class SecureTalkGiftPendingStore implements TalkGiftPendingStore {
       value: record,
     );
   }
-}
-,
+},
     ).hasMatch(record)) {
       throw const FormatException('Invalid durable gift request state');
     }
