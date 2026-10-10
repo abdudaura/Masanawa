@@ -179,6 +179,25 @@
       "heartbeat_at": "2026-10-10T03:38:19.320Z",
       "expires_at": "2026-10-10T03:43:19.320Z",
       "notes": "Use one feature PR, distinct from active feed-cache/receipt/draft claims. No root composition changes."
+    },
+    {
+      "claim_id": "af09-609-published-audio-reporting-gpt6-0442",
+      "owner": "AF09 existing PR #609 / GPT-6 reporting continuation",
+      "scope": "Implement Published Audio Talk report submission using canonical TalkSafety authority, authorized visibility, typed denial and Flutter reporting UI component; no duplicate safety ledger or AF00 composition edits",
+      "paths": [
+        "services/gateway/src/audio_posts/reporting.ts",
+        "services/gateway/src/audio_posts/reporting.test.mjs",
+        "apps/mobile/lib/src/audio_posts/audio_post_report_action.dart",
+        "apps/mobile/test/audio_first/af09/report_action_test.dart",
+        "docs/workstreams/AF09-published-audio-reporting-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:43:02.107Z",
+      "heartbeat_at": "2026-10-10T03:43:02.107Z",
+      "expires_at": "2026-10-10T03:48:02.107Z",
+      "notes": "Exact-path additive AF09 source; AF00 must register bounded route+feed action via protected existing files after source qualification"
     }
   ],
   "history": [
