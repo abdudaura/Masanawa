@@ -549,6 +549,22 @@
       "heartbeat_at": "2026-10-10T08:05:35.359Z",
       "expires_at": "2026-10-10T08:10:35.359Z",
       "notes": "Limited finance-owned database readback and existing PG integration tests; no API/migration/worker/production change; AF00 owns integration. CI sample: 14 numeric text cases returned 100.000000000000000000 rather than 100 in PR460 run 38036434565."
+    },
+    {
+      "claim_id": "af13-pr460-agentrun-read-only-pg18-20261010-gpt6",
+      "owner": "GPT-6 / AF13 existing CI PR #460",
+      "scope": "Repair real PostgreSQL 18 AgentRun read-only SELECT FOR SHARE failure without modifying financial or AF00 root authorities; re-run CI and acceptance tests at exact SHA",
+      "paths": [
+        "adapters/storage/postgres/src/agents/runs.ts",
+        "tests/integration/agent-run-acceptance.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T08:07:35.479Z",
+      "heartbeat_at": "2026-10-10T08:07:35.479Z",
+      "expires_at": "2026-10-10T08:12:35.479Z",
+      "notes": "Real Foundation CI 38036434565: agent-run-acceptance.test.ts read fails `cannot execute SELECT FOR SHARE in a read-only transaction`. Test exercises canonical read after create/finish."
     }
   ],
   "history": [
