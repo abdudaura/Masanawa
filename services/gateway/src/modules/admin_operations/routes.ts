@@ -3,20 +3,21 @@ import { FLAG_NAMES, OperationsError, type OperationsService, type OperationsFla
 
 /** AF00 registers once under the gateway's existing authenticated /v1 authority. */
 export function registerAdminOperationsRoutes(app: FastifyInstance, operations: OperationsService): void {
-  app.setErrorHandler((error, _request, reply) => {
+  void app.register(async (scope) => {
+  scope.setErrorHandler((error, _request, reply) => {
     if (error instanceof OperationsError) {
       void reply.code(error.status).send({code: "admin_ops."+error.code});
     } else {
       void reply.send(error);
     }
   });
-  app.get("/v1/admin/ops/flags", async request => operations.flags(request.headers.authorization));
+  scope.get("/v1/admin/ops/flags", async request => operations.flags(request.headers.authorization));
   app.get<{Querystring:{name:string;enabled:string}}>("/v1/admin/ops/flags/preview", async request => {
     const {name,enabled}=request.query;
     if (!FLAG_NAMES.some(n=>n===name) || (enabled!=="true" && enabled!=="false")) throw new OperationsError("invalid",400);
     return operations.preview(request.headers.authorization,name as OperationsFlag,enabled==="true");
   });
-  app.put<{Params:{name:string};Body:{enabled:boolean;expectedRevision:number;idempotencyKey:string;reason:string}}>("/v1/admin/ops/flags/:name", async request => {
+  scope.put<{Params:{name:string};Body:{enabled:boolean;expectedRevision:number;idempotencyKey:string;reason:string}}>("/v1/admin/ops/flags/:name", async request => {
     const {name}=request.params;
     if (!FLAG_NAMES.some(n=>n===name)) throw new OperationsError("invalid",400);
     if (!request.body || typeof request.body !== "object") throw new OperationsError("invalid",400);
@@ -26,5 +27,6 @@ export function registerAdminOperationsRoutes(app: FastifyInstance, operations: 
     const limit=request.query.limit===undefined?30:Number(request.query.limit);
     return operations.audit(request.headers.authorization,limit);
   });
-  app.get("/v1/admin/staff",async request=> operations.staff(request.headers.authorization));
+  scope.get("/v1/admin/staff",async request=> operations.staff(request.headers.authorization));
+  });
 }

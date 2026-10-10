@@ -1,7 +1,19 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
-import type { AuditRecord, FlagMutation, FlagSnapshot, OperationsFlag, OperationsRepository } from "../../../../../services/gateway/src/modules/admin_operations/service.js";
-import { FLAG_NAMES, OperationsError } from "../../../../../services/gateway/src/modules/admin_operations/service.js";
+// Deliberately structural: the canonical module adapter is wired by AF00 to avoid a
+// cross-project TypeScript build dependency before workspace contracts are registered.
+const FLAG_NAMES = ["posting","teaching","imports","calls","paid_joins"] as const;
+type OperationsFlag = (typeof FLAG_NAMES)[number];
+interface FlagSnapshot {readonly name:OperationsFlag; readonly enabled:boolean; readonly revision:number; readonly updatedAt:string|null;}
+interface AuditRecord {readonly eventId:string;readonly action:string;readonly actorId:string;readonly at:string;readonly subject:string;}
+interface FlagMutation {readonly name:OperationsFlag;readonly enabled:boolean;readonly expectedRevision:number;readonly idempotencyKey:string;readonly reason:string;}
+interface OperationsRepository {
+ listFlags(tenantId:string):Promise<readonly FlagSnapshot[]>;
+ setFlag(input:FlagMutation & {tenantId:string;actorId:string}):Promise<FlagSnapshot>;
+ audit(tenantId:string,limit:number):Promise<readonly AuditRecord[]>;
+}
+class OperationsError extends Error {constructor(readonly code:string,readonly status:number){super(code);}}
+
 type Row={flag_name:OperationsFlag;enabled:boolean;revision:string|number;changed_at:Date|string|null};
 function fromRow(row:Row):FlagSnapshot {return {name:row.flag_name,enabled:row.enabled,revision:Number(row.revision),updatedAt:row.changed_at ? new Date(row.changed_at).toISOString():null};}
 async function transaction<T>(pool:Pool, fn:(c:PoolClient)=>Promise<T>):Promise<T>{
