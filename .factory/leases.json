@@ -173,6 +173,22 @@
       "claimed_at": "2026-10-10T02:53:59Z",
       "heartbeat_at": "2026-10-10T02:53:59Z",
       "expires_at": "2026-10-10T02:58:59Z"
+    },
+    {
+      "claim_id": "af09-609-service-errors-20261010-gpt6",
+      "owner": "AF09 continuing PR 609 / GPT-6 service readback",
+      "scope": "Connect canonical repository denied/revoked post and malformed cursor errors to authenticated user-facing API status instead of generic 500. Amend existing repository-focused service test authority, no new helper or separate branch.",
+      "paths": [
+        "services/gateway/src/audio_posts/service.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "docs/workstreams/AF09-service-error-boundaries-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:54:59.712Z",
+      "heartbeat_at": "2026-10-10T02:54:59.712Z",
+      "expires_at": "2026-10-10T02:59:59.712Z"
     }
   ],
   "history": [
