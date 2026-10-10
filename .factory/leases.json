@@ -350,6 +350,26 @@
       "source_head_sha": "d9e87a3d193c96c3d2bbe2bc67e1683da9305127",
       "integration_head_sha": null,
       "test_state": "Source blob readback and structural one-class assertions only; pnpm/flutter/psql unavailable (127), Git clone DNS failure (128); actual repo tests NOT_RUN."
+    },
+    {
+      "claim_id": "af00-600-owner-directed-unified-source-20261010-gpt6-0518",
+      "owner": "AF00 user-directed unified integration / GPT-6",
+      "scope": "Integrate pinned AF09 feature source into existing root PR #600 non-main snapshot; root Talks composition, inspect CI zero-step and consolidate exact SHA; no release, no auth/payment or production execution",
+      "paths": [
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/worker/src/main.ts",
+        "docs/workstreams/AF00-integration-20261010.md"
+      ],
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 600,
+      "claimed_at": "2026-10-10T05:13:33.187Z",
+      "heartbeat_at": "2026-10-10T05:13:33.187Z",
+      "expires_at": "2026-10-10T05:18:33.187Z",
+      "notes": "User explicitly took over integration and CI coordination; AF09 feature path edits remain on existing PR609; no overwrite. Inspect deployment triggers, main and PR heads and do not fake CI evidence."
     }
   ],
   "history": [
