@@ -106,6 +106,27 @@ export function createPostgresCaseRepository(pool:Pool){
    });
   },
   resolveAppeal:createPostgresAppealReview(pool),
+  async dismiss(tenantId:string,caseId:string,actorId:string,reason:string,expectedVersion:number){
+   return transaction(pool,async c=>{
+    const rec=await c.query<CaseRow>(
+     "SELECT * FROM moderation.cases WHERE tenant_id=$1 AND case_id=$2 FOR UPDATE",[tenantId,caseId]);
+    const old=rec.rows[0];
+    if(!old)throw new CaseError("moderation.not_found",404);
+    if(old.version!==expectedVersion || !["open","investigating"].includes(old.state))
+      throw new CaseError("moderation.case_conflict",409);
+    const pending=await c.query(
+     "SELECT 1 FROM moderation.actions WHERE tenant_id=$1 AND case_id=$2 AND state IN ('proposed','approved','applied') LIMIT 1",
+     [tenantId,caseId]);
+    if(pending.rowCount)throw new CaseError("moderation.pending_action",409);
+    const next=await c.query<CaseRow>(
+     "UPDATE moderation.cases SET state='dismissed',version=version+1,updated_at=now() WHERE tenant_id=$1 AND case_id=$2 RETURNING *",
+     [tenantId,caseId]);
+    await c.query(`INSERT INTO moderation.case_events(tenant_id,event_id,case_id,actor_id,kind,detail)
+      VALUES($1,$2,$3,$4,'dismissed',$5)`,
+     [tenantId,"evt_dismissed_"+caseId+"_"+(expectedVersion+1),caseId,actorId,reason]);
+    return mapped(next.rows[0]!);
+   });
+  },
   async appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string){
    await transaction(pool,async c=>{
     const rs=await c.query<CaseRow>(`SELECT * FROM moderation.cases WHERE tenant_id=$1 AND case_id=$2 FOR UPDATE`,[tenantId,caseId]);
