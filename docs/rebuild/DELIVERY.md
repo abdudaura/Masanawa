@@ -21,18 +21,24 @@ R0 Baseline & freeze ──▶ R1 Platform foundation ──┬─▶ L-SHELL �
                                                    ├─▶ L-FIN                              │
                                                    └─▶ L-ADMIN (shell, RBAC, ops) ────────┘
 ```
-After R1, up to **six lanes run in parallel**. L-SHELL must land the shell and design tokens before other lanes merge UI into the router. Until it does, those lanes build screens behind their feature directory and run widget tests. L-MISSIONS starts once L-FEED's post model has merged.
+After R1, up to **six disjoint lanes run in parallel**. L-SOCIAL and the finance escrow milestone extend the dependency graph under their named owners; they are never assigned before R0/R1 authorization foundations. L-SHELL must land the shell and design tokens before other lanes merge UI into the router. Until it does, those lanes build screens behind their feature directory and run widget tests. L-MISSIONS starts once L-FEED's post model has merged.
 
 ### R0 — Baseline & freeze (AF00 alone; blocks everything)
 - [ ] Refresh `main`, the open PRs (§7), `factory/claims`, CI state (Actions quota, PR #460) and local Windows dirty source. Record the APK hash and signer of the last built APK.
 - [ ] Inspect Railway: the Git source branch, the start command, whether `migrate.ts` runs on boot, the PG version and the applied `masanawa_schema_migrations` rows (owner, name, sha256). Verify the backup, then **restore into a disposable staging DB** and record the result.
 - [ ] Create `integration/rebuild` from `main`. Its CI runs typecheck, Vitest, the PG18 fresh+upgrade migration check, Flutter analyze/test for both apps and an APK build. Zero-step or skipped is **not** pass.
-- [ ] **Freeze:** a server-side feature-flag gate returns `410 feature_retired` for Twin/clone, human DM/contacts/calls, Talk stage/seats/gifts/polls, member Room or post creation, owner access and WhatsApp/Telegram bridging (D3). This covers REST, WS and job enqueue. Read-only access to the user's own historical receipts stays.
+- [ ] **Freeze:** a server-side feature-flag gate returns `410 feature_retired` for Twin/clone, human DM/contacts/calls, Talk stage/seats/gifts/polls, member Room or post creation, owner access and **unauthorized legacy customer WhatsApp/Telegram bridging** (D3). Preserve verified Masana social identity public links and only legitimately authorized connectors; no personal-WhatsApp automation API is presumed. This covers REST, WS and job enqueue. Read-only access to the user's own historical receipts stays.
 - [ ] Apply the PR disposition (§7): close the excluded PRs with a salvage note, and rebase or re-target the keepers onto `integration/rebuild`.
 - [ ] Merge this blueprint PR (#615) after confirming that a docs-only merge to `main` triggers no unsafe deploy.
 - [ ] File the provider applications: TikTok Display API, Meta Page permissions, Play Console subscriptions (D1, D9).
 
 **Gate R0:** restore proven, CI green or failures listed with owners, freeze tests J10 (partial) pass, PRs dispositioned, blueprint on `main`.
+
+### R0 owner-approved scope corrections (mandatory before freezing)
+- [ ] Reconcile owner revision 1.2 (BLUEPRINT §§3.3.1/3.6 and ARCHITECTURE §§12–13) against old D3/D8, CI, and existing #515/#576/#607/#590. Do **not** close permitted verified social-profile/public-identity work as obsolete bridging.
+- [ ] Classify every old WhatsApp automation integration as authorized API capability, manual-only, link-only or disabled. Existing personal-session automation is **not** authorized merely because it links; no WhatsApp Business/Cloud API integration.
+- [ ] Preserve existing real ledger obligations and finance approval gates. Implement MSN purchase, conversion, external crypto withdrawals and escrow P2P as protected domain work, not as a parallel wallet; no direct fiat withdrawals.
+- [ ] Map all C01–C80 and A01–A35 destinations (including nested destinations) to exact existing/new Flutter route, API, SQL owner, event worker, tests and named owner. Mark missing source as missing—not done.
 
 ### R1 — Platform foundation (AF00 + L-PLATFORM)
 - [ ] Scaffold the packages `masana`, `feed`, `external-videos`, `rooms` and `moderation`, each with `migrations/0001_*.sql` following ARCHITECTURE §3/§4, and register them in `platformProductMigrationRoots()`. Add the duplicate-prefix CI check and the checksum-immutability check.
@@ -53,7 +59,8 @@ After R1, up to **six lanes run in parallel**. L-SHELL must land the shell and d
 | L-ROOMS | C30–C36, A09–A12 | J07 J08 | rooms, membership, lessons, questions and teacher queue (salvage talk_questions, U06 #579), Play Billing and entitlements | L-SHELL, L-MASANA |
 | L-GWANI | C40–C43, A15 | J13 | cases, evidence, actions, appeals, Gwani tools, comment and discussion moderation hooks (salvage F08 #548) | R1 |
 | L-MISSIONS | A07, A08, A16 | J11 J12 | missions, slots, publish-once, budgets, autonomy L0–L2, fan memory extraction and controls | L-FEED |
-| L-FIN | C50–C54, A17 | J05 J09 | standalone Bills and Crypto screens on the existing commerce ledger (AF01 #607/#590, #576 gated), Gwani task parity | L-SHELL |
+| L-FIN | C47–C80 and C50–C54; A17,A27–A35 | J05 J09 J23–J26 | existing commerce ledger: standalone Bills, MSN buy/convert, crypto payouts, real P2P reserve/dispute/fees with live-off compliance; AF01 #607/#590, #576 gated | R1, L-SHELL; Gwani case authority for J26 |
+| L-SOCIAL | C44–C46,C78–C79; A20–A26 | J21 J22 | per-Masana personal WhatsApp verified link-only, authorized Telegram/other social connections, Admin controls, secure provider capability and audit; no Business API or unapproved automation | R1, L-MASANA; L-SHELL for consumer wiring |
 | L-ADMIN | A01, A18, A19, admin shell | J19 | drawer shell, RBAC, overview, ops and kill switches, staff management | R1 |
 | L-PLATFORM | — | J10 J17 J20 | security negatives, restore and APK qualification (salvage the F11 and R16 gates), load and cost tests | R0 |
 
@@ -66,10 +73,16 @@ For each legacy family, the lane that replaced it deletes the old routes, worker
 Pin the integrated SHA, then:
 - run full CI on that SHA and the PG18 fresh and upgrade migrations on a staging restore
 - build signed consumer and admin APKs and record their hashes and signers
-- smoke-test on a low-end Tecno-class device, covering J01–J20
+- smoke-test on a low-end Tecno-class device, covering J01–J26
 - rehearse the provider webhooks, quotas, alerts, a backup restore and a rollback
 
 Promote to `main` and to staging, then production, only after owner sign-off on D1–D9 and approval of financial operations. Claim `DEPLOYED_VERIFIED` only with real execution evidence.
+
+### Owner expansion — milestones after R1
+- **L-SOCIAL:** consume C44–C46/C78–C79 and A20–A26, J21–J22, implementing full consumer/Admin/worker/PG source. Coordinate with L-MASANA on public profile rendering; no old user-channel bridge.
+- **L-FIN / MSN:** C48–49,C55–58,C71–74, A27–29, J23–J25; integrate existing payment/custody adapters and provider reconciliation with hard default-off live flags.
+- **L-FIN / escrow:** C59–70,C75–77,A30–35,J26; complete structured P2P trade, locked crypto reserve and dual-reviewed dispute/appeals. Pair Gwani integration with its domain owner; no unapproved live money.
+- **Verification:** publish all new journey negative tests and provider/corridor qualification evidence separately. No automatic merge to Railway-linked `main` until its deploy trigger is audited.
 
 ## 3. Path ownership (the anti-duplication contract)
 | Owner | Exclusive paths |
@@ -79,6 +92,8 @@ Promote to `main` and to staging, then production, only after owner sign-off on 
 | **Append-only shared** | `services/gateway/src/modules/index.ts`, `services/worker/src/jobs/index.ts`, `apps/*/lib/l10n/*.arb` (own key prefix `<lane>_`), `packages/contracts/src/index.ts` (one export line). Lanes add lines and never edit others' lines. |
 | **L-SHELL** | `apps/*/lib/src/shared/design/**`, Android launcher and splash assets |
 | **L-CHAT** | `apps/mobile/lib/src/shared/{media,transport}/**` (audio focus, composer) |
+
+New lanes: social→`masana_social,social_connections` (consumer `features/masana/**` requires explicit scoped coordination with L-MASANA); escrow belongs to finance, not a second ledger. Shared `app.ts`, migration roots, Admin drawer and provider activation remain AF00-only.
 
 Lane-to-directory names: shell→`account,notifications`, masana→`masana`, chat→`chats,calls`, feed→`home_feed`, video→`videos`/`external_videos`, rooms→`rooms,subscriptions,plans`, gwani→`gwani,moderation`, missions→`missions,fans_memory`, fin→`wallet,bills,crypto,finance`, admin→`overview,operations`.
 
