@@ -259,5 +259,56 @@ describe("U04 authoritative operator readers", () => {
         .toThrowError("OPERATOR_NOT_QUALIFIED");
     }
   });
+
+  it("reads canonical task progress via U02 without claiming pending work was paid or sent", async () => {
+    const task = Object.freeze({
+      taskId: "task_0199abcd-efab-7abc-8abc-abcdefabcdef",
+      capabilityId: "human.message.send", capabilityVersion: 1,
+      phase: "reconciling" as const, version: 3, operationClass: "send",
+      receiptAvailable: false, errorCode: "DOMAIN_UNCERTAIN",
+      updatedAt: "2026-10-10T00:00:00.000Z",
+    });
+    const taskHistory = {
+      recent: vi.fn(async () => [task]),
+      detail: vi.fn(async () => ({ task, events: [] })),
+    };
+    const h = harness({ taskHistory });
+    const recent = await run(h.service, action("tasks.recent.read"));
+    expect(recent.data).toEqual([task]);
+    expect(taskHistory.recent).toHaveBeenCalledWith({
+      authorizationHeader: "Bearer authenticated", principal,
+    });
+    const detail = await run(h.service, action("tasks.detail.read", { taskId: task.taskId },
+      { contextRef: { kind: "task", id: task.taskId } }));
+    expect(detail.data).toEqual({ task, events: [] });
+    expect(taskHistory.detail).toHaveBeenCalledWith({
+      authorizationHeader: "Bearer authenticated", principal, taskId: task.taskId,
+    });
+    expect(h.append).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(detail)).not.toContain("receiptRef");
+  });
+
+  it("requires the canonical journal adapter and exact task context before dispatch", async () => {
+    const h = harness();
+    expect(availableU04ReadCapabilities(h.deps)).not.toContain("tasks.recent.read");
+    await expect(run(h.service, action("tasks.recent.read")))
+      .rejects.toMatchObject({ code: "OPERATOR_NOT_QUALIFIED" });
+    const taskHistory = {
+      recent: vi.fn(async () => []),
+      detail: vi.fn(async () => ({ task: null as never, events: [] })),
+    };
+    const withTasks = harness({ taskHistory });
+    for (const attempt of [
+      action("tasks.detail.read", { taskId: "task_../private" }),
+      action("tasks.detail.read", { taskId: "task_0199abcd-efab-7abc-8abc-abcdefabcdef" },
+        { contextRef: { kind: "talk", id: "task_0199abcd-efab-7abc-8abc-abcdefabcdef" } }),
+      action("tasks.recent.read", { accountId: "other" }),
+    ]) {
+      await expect(run(withTasks.service, attempt)).rejects.toBeInstanceOf(U04ReadError);
+    }
+    expect(taskHistory.detail).not.toHaveBeenCalled();
+    expect(taskHistory.recent).not.toHaveBeenCalled();
+  });
+
 });
 
