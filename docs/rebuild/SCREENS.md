@@ -108,7 +108,76 @@
 | A18 | Operations [ops_admin] | flags, kill switches (posting, teaching, imports, calls, paid joins), job leases, dead letters, budgets, version, backups | L-ADMIN |
 | A19 | Staff & roles [super_admin] | invite staff, assign roles, 2FA status, audit log | L-ADMIN |
 
-## 4. Journeys (executable acceptance, J01–J20)
+
+## 2A. Screen coverage expansion — owner revision 1.2
+The following IDs extend the existing screen inventory without renumbering implemented C01–C54 routes. A destination may be a modal/subroute within one Flutter file; the functionality, deep links, backend checks and error states are not optional.
+
+| ID | Destination / owner | Layout, controls and navigation | Canonical API / persistent authority and negative states |
+|---|---|---|---|
+| C09 | Device security · L-SHELL | active device list, revoke, step-up, account recovery link | auth sessions; offline, expired, unauthorized, switch-account |
+| C16 | Chat attachments · L-CHAT | + tray, preview, cancel/upload/retry | signed private upload; denied permissions, oversized, offline |
+| C17 | Chat outbox · L-CHAT | pending/failed/retry/undo, no disappearing Send | idempotent agent turn; stream error, restart, duplicate |
+| C18 | Call history · L-CHAT | Masana-only entries, retry call | call session read; revoked microphone, service down |
+| C19 | Fan memory · L-MISSIONS | per-Masana read/correct/delete/disable | consent+memory; cross-fan read forbidden |
+| C37 | Free Room join · L-ROOMS | join/leave/mute and terms | server membership; blocked/expired |
+| C38 | Room saved lessons · L-ROOMS | bookmarks, resume, paywall if revoked | membership/entitlement; offline cached denial |
+| C39 | Room discussion · L-ROOMS | moderated thread reply/report, no member DM | room replies; membership and ACL |
+| C44 | External social contacts · L-MASANA | profile row of verified accounts; Follow/Message/Open, capability state | public identity read; never expose tokens/unverified handles |
+| C45 | External contact handoff · L-MASANA | provider confirmation/privacy, open approved URL, browser fallback | published identity and allowlisted URL; unavailable mode |
+| C46 | Following/interests · L-MASANA | followed Masana, mute, interest/language filters | follows; account fenced |
+| C47 | Wallet corridor/fees · L-FIN | policies, eligible assets, fee details and regional limits | financial eligibility; live-off reason |
+| C48 | Buy MSN quote · L-FIN | currency, payment rail, amount, quote/expiry/review | provider-backed funding quote; KYC/region denial |
+| C49 | Buy MSN checkout/receipt · L-FIN | hosted checkout, return, pending/retry/receipt | settlement callback and ledger; duplicate/underpaid/refund |
+| C55 | MSN→crypto quote · L-FIN | amount, token/network picker, rate, spread, fees, receive net | quote+reserve; expiry, insufficient, unsupported |
+| C56 | Conversion review/status · L-FIN | consent/confirm, pending/failure/unknown and receipt | idempotent provider job+reconcile; double-debit forbidden |
+| C57 | Withdraw destination · L-FIN | asset/network, address/memo, limits and warning | whitelist validation; wrong-chain denial |
+| C58 | Withdraw review/status · L-FIN | fee, step-up auth, confirm, broadcast and settled states | payout journal+worker; no fiat cashout |
+| C59 | P2P marketplace · L-FIN | Buy/Sell, fiat/crypto/method filters, verified seller stats | offers+eligibility; no unapproved corridors |
+| C60 | P2P offer detail · L-FIN | price, limits, fee, merchant status, terms, accept | quote/order policy; stale offer |
+| C61 | P2P merchant eligibility · L-FIN | identity/verification/limit and appeal | KYC/merchant registry; paused/prohibited |
+| C62 | Create/edit P2P offer · L-FIN | side, price, min/max, methods, pause/publish | reserve-backed availability; self-trade denial |
+| C63 | Escrow order review · L-FIN | countdown, parties, exact crypto locked and fee | unique order, atomic ledger reserve |
+| C64 | Fiat payment instructions · L-FIN | disclosed destination, mark paid and upload private evidence | external fiat only, not proof of receipt |
+| C65 | Seller receipt verification · L-FIN | bank receipt verified checkbox, step-up, release | seller-confirmed or independently staff-approved release |
+| C66 | P2P dispute · L-FIN/L-GWANI | case timeline, private structured evidence, escalation | frozen reserve and role-scoped audit |
+| C67 | P2P appeal · L-FIN/L-GWANI | submit appeal, reviewer outcome, no auto-settlement | independent human approval |
+| C68 | P2P orders/history · L-FIN | active, completed, cancelled, disputed and immutable receipts | ledger projection; account isolation |
+| C69 | P2P reputation/safety · L-FIN | verified seller stats, report, scam warning | actual computed values; no invented ratings |
+| C70 | P2P notifications · L-FIN | payment marked, reserve, dispute, expiry | per-order event dedupe and read cursor |
+| C71 | Funding reversal status · L-FIN | failed/refunded top-up, case handoff | verified provider refund/chargeback |
+| C72 | Conversion reconciliation · L-FIN | uncertain status, support, no blind retry | worker reconciliation |
+| C73 | Payout confirmations · L-FIN | network, txn hash when known, finality/reorg | custody provider confirmation |
+| C74 | Region & compliance notice · L-FIN | explanation and next eligible actions | live corridor/provider gate; fail closed |
+| C75 | Fee detail/terms · L-FIN | maker/taker, escrow, provider, network breakdown | price policy revision preserved |
+| C76 | Escrow evidence upload · L-FIN | secure document/statement, redact, revoke | case-only ACL and retention |
+| C77 | Dispute review status · L-FIN | staff decision/appeal, due dates | no AI unilateral transfer |
+| C78 | Social connection status · L-MASANA | verified/link-only/paused labels and help | capability and revision public projection |
+| C79 | External app fallback · L-MASANA | open web, copy link, dismiss | URI allowlist, missing-app handling |
+| C80 | Wallet provider incident · L-FIN | outage banner, pending obligations, support | read-only projections while live operations halted |
+
+All C screens share loading skeleton, empty explanation/action, pagination, offline/stale read-only, retry, typed 401/403/410/422/429/5xx errors, accessibility and English/Hausa content. The monetary screens additionally require authenticated step-up, expired quote, explicit irreversible confirmation, idempotency and switch-account cleanup; social screens require verified links and privacy handoff.
+
+## 3A. Additional Android Admin destinations — owner revision 1.2
+| ID | Destination / role | Controls and states | API/DB/worker and test |
+|---|---|---|---|
+| A20 | Social accounts per Masana · content_editor+ops_admin | provider tiles, account link/unlink, verify/publish, health, pause | social_identity unique character/provider/account; forged role denied |
+| A21 | Personal WhatsApp setup · ops_admin | record real official-device number, manual verification, link only/manual mode, revoke | no Business/Cloud API; no fake bot pairing; capability gate |
+| A22 | Telegram identity and approved bots · ops_admin | bot/link capability, authorized credential reference, test/pause | server vault, Telegram opt-in and deduped event |
+| A23 | Other social connectors · ops_admin | OAuth/approval, per-action capability matrix and revoke | API authorization evidence; disabled on token loss |
+| A24 | Social response policy · moderator+ops_admin | reply limits, languages, consent, staff takeover, disable | only actual authorized capabilities; audit |
+| A25 | External inbox/errors · moderator | per-agent scoped activity, replay and escalation | fan/channel isolation, dead-letter |
+| A26 | Public profile links preview · content_editor | verified handle, URL, hide/publish, preview | never expose secrets, unverified or stale URLs |
+| A27 | MSN backing & issuance · finance_operator | balance/liquidity policy, caps, disable | one ledger, no unsupported token claim |
+| A28 | Funding & conversion desk · finance_operator | reconciliation, failed/uncertain, refunds, fees | idempotent journal, provider callbacks |
+| A29 | Crypto payout controls · finance_operator | network allowlist, fees, payout states, pause | custody provider and step-up |
+| A30 | P2P merchants/corridors · finance_operator | regional/KYC review, methods, limits | AML/sanctions eligibility and audit |
+| A31 | Offer/escrow monitor · finance_operator | locked funds, aging, fraud flags, freeze | atomic reserve and journal conservation |
+| A32 | P2P dispute adjudication · moderator+finance_operator | evidence, decision, dual review, appeal, release | no screenshot/AI release, separate approver |
+| A33 | Fee and tariff policy · pricing_manager | preview, cap, revision, future effective date | preserve accepted quotes |
+| A34 | Finance compliance dashboard · finance_operator | provider approvals, region eligibility, alerts, kill switch | live-default-off, documented authorization |
+| A35 | Independent audit/restore · ops_admin | ledger reconciliation, audit export, incident/backup evidence | staging restore, checksum, human sign-off |
+
+## 4. Journeys (executable acceptance, J01–J26)
 Each journey is a test under `tests/e2e/J##/`. A journey is either backend-integration against PG18 or a Flutter integration test on device or emulator. Evidence is recorded as DELIVERY §6.
 
 | ID | Journey | Lane |
@@ -133,3 +202,13 @@ Each journey is a test under `tests/e2e/J##/`. A journey is either backend-integ
 | J18 | 12 Masana, 12 Rooms, 24 posts seeded idempotently twice on staging; media verified | L-MASANA |
 | J19 | admin RBAC: each role denied outside scope; audit entries written | L-ADMIN |
 | J20 | load profile (ARCHITECTURE §8) within latency and cost budgets | L-PLATFORM |
+
+## 5. New mandatory golden journeys
+| ID | Scenario (all must include negative cases) | Owner |
+|---|---|---|
+| J21 | Admin verifies each Masana personal WhatsApp number; fan profile opens real wa.me; automation remains disabled without eligible API; revoke removes public link; cross-character isolation | L-MASANA |
+| J22 | Admin authorizes Telegram bot or other permitted connection; inbound fan event routed once to correct character; disabled permission/link-only never sends; privacy and takeover | L-MASANA |
+| J23 | Buy MSN: quote→provider checkout→verified settlement→journal receipt. Duplicate/underpaid/reversed/expired callbacks cannot mint funds | L-FIN |
+| J24 | MSN→eligible crypto: quote expiry, reserve, provider execution, finality, uncertain retry/reconcile, exact fee. Insufficient/wrong-region denial | L-FIN |
+| J25 | Crypto withdrawal: asset/network/address/memo, step-up, broadcast/finality and reorg/timeout reconciliation; unsupported network and fiat cashout denied | L-FIN |
+| J26 | P2P: offer→reserve seller crypto→external fiat mark→seller receipt verification→one audited release, fee once; forged screenshot, duplicate/partial/timeout, dispute, human review/appeal conserve balances | L-FIN/L-GWANI |
