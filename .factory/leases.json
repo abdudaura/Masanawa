@@ -1162,6 +1162,26 @@
       "heartbeat_at": "2026-10-10T16:12:51.215Z",
       "expires_at": "2026-10-10T16:17:51.215Z",
       "notes": "R0 AF00 notified via #616 comment 6099540291; source strictly preserves retired Talk semantics but eliminates compilation blockers."
+    },
+    {
+      "claim_id": "l-rooms-free-question-lifecycle-20261010-gpt6",
+      "owner": "GPT-6 / L-ROOMS free question implementation",
+      "scope": "L-ROOMS/free J07–J08: room discovery, join, durable ask, worker answer queue and staff review; paid Play Billing excluded until verified. AF00 retains all root entrypoints, migration registry, release.",
+      "paths": [
+        "packages/rooms/**",
+        "services/gateway/src/modules/rooms/**",
+        "services/worker/src/jobs/rooms/**",
+        "adapters/storage/postgres/src/rooms/**",
+        "apps/mobile/lib/src/features/rooms/**",
+        "apps/admin_mobile/lib/src/features/rooms/**",
+        "tests/e2e/J07/**",
+        "tests/e2e/J08/**"
+      ],
+      "branch": "lane/l-rooms-free-questions-20261010-gpt6",
+      "claimed_at": "2026-10-10T16:15:54.922Z",
+      "heartbeat_at": "2026-10-10T16:15:54.922Z",
+      "expires_at": "2026-10-10T16:20:54.922Z",
+      "notes": "Started from integration/rebuild@2834c9a6; AF00 notified #616. Source-only, never production or billing activation."
     }
   ],
   "history": [
