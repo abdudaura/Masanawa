@@ -9,7 +9,7 @@ const mod:Actor={tenantId:"tenant_demo",userId:"staff1",kind:"staff",roles:["mod
 const record:CaseRecord={
  tenantId:"tenant_demo",caseId:"case_demo",reporterUserId:"fan1",
  targetKind:"comment",targetId:"comment1",category:"spam",details:"suspicious links",
- state:"actioned",version:2,slaDueAt:"2026-10-11T00:00:00Z",
+ state:"investigating",version:2,slaDueAt:"2026-10-11T00:00:00Z",
  createdAt:"2026-10-10T00:00:00Z",updatedAt:"2026-10-10T00:00:00Z"
 };
 const action:ActionRecord={tenantId:"tenant_demo",actionId:"action1",caseId:record.caseId,
@@ -27,7 +27,7 @@ function harness(){
  const propose=vi.fn<CaseRepository["propose"]>().mockResolvedValue(action);
  const review=vi.fn<CaseRepository["review"]>().mockResolvedValue(action);
  const resolveAppeal=vi.fn<CaseRepository["resolveAppeal"]>().mockResolvedValue(appeal);
- const appendAppeal=vi.fn<CaseRepository["appeal"]>().mockResolvedValue();
+ const appendAppeal=vi.fn<CaseRepository["appeal"]>().mockResolvedValue(undefined);
  const identities:Record<string,Actor>={fan,stranger,differentTenant,gwani,mod};
  const canReadTarget=vi.fn().mockImplementation(async (_a:Actor,t:{kind:string;id:string})=>t.id==="comment1");
  const service=createCaseService({
