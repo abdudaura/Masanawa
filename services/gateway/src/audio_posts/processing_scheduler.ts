@@ -2,7 +2,7 @@
  * AF00 injects this into the single trusted worker runtime after migrations.
  * This is NOT a second post queue and never accepts a client tenant list.
  */
-import type { Pool } from 'pg';
+import type { Pool } from "@masanawa/postgres";
 import type { ProcessingSweep } from './processing_worker.js';
 
 const validId = (value: unknown): value is string =>
