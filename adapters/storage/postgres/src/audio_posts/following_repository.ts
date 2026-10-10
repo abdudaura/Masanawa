@@ -10,8 +10,14 @@ type PostRow = {
   author_kind: "human" | "masana"; asset_id: string; request_id: string;
   title: string; duration_ms: number; status: AudioPostRecord["status"];
   revision: number; created_at: Date | string; published_at: Date | string | null;
+  like_count?: number | string; comment_count?: number | string;
 };
-const postColumns = "p.tenant_id,p.post_id,p.author_id,p.author_account_id,p.author_kind,p.asset_id,p.request_id,p.title,p.duration_ms,p.status,p.revision,p.created_at,p.published_at";
+const postColumns = "p.tenant_id,p.post_id,p.author_id,p.author_account_id,p.author_kind,p.asset_id,p.request_id,p.title,p.duration_ms,p.status,p.revision,p.created_at,p.published_at" +
+  // One canonical reaction/comment authority, matching Discover/Saved/My Talks.
+  ",(SELECT COUNT(*)::int FROM social.audio_post_reactions r2 " +
+  "WHERE r2.tenant_id=p.tenant_id AND r2.post_id=p.post_id AND r2.kind='like') AS like_count" +
+  ",(SELECT COUNT(*)::int FROM social.audio_post_comments c " +
+  "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count";
 const toDate = (value: string | Date): string =>
   value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 function record(r: PostRow): AudioPostRecord {
@@ -22,6 +28,7 @@ function record(r: PostRow): AudioPostRecord {
     durationMs: Number(r.duration_ms), status: r.status, revision: Number(r.revision),
     createdAt: toDate(r.created_at),
     publishedAt: r.published_at === null ? null : toDate(r.published_at),
+    likeCount: Number(r.like_count ?? 0), commentCount: Number(r.comment_count ?? 0),
   };
 }
 function cursor(r: PostRow): string {
