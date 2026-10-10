@@ -97,23 +97,6 @@
       "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated. Add explicit owner-approved tab translations to all 6 existing ARB catalogs; generated localization is build-time derived."
     },
     {
-      "claim_id": "masanawa01-af15-private-access-races-20261010",
-      "owner": "MASANAWA-01 / AF15",
-      "scope": "Recheck active authenticated principal and snapshot authorization identity+revision immutably across signing; add race regression cases",
-      "paths": [
-        "services/gateway/src/media_lifecycle/private_access.ts",
-        "services/gateway/src/media_lifecycle/private_access.test.mjs",
-        "docs/workstreams/AF15-private-media-access-20261010.md"
-      ],
-      "branch": "work/af15-private-media-access-20261010-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "source_pr": 601,
-      "source_head": "59644bde324ebc04b24426ae120450289ed20f10",
-      "claimed_at": "2026-10-10T01:30:07.026Z",
-      "heartbeat_at": "2026-10-10T01:30:07.026Z",
-      "expires_at": "2026-10-10T01:35:07.026Z"
-    },
-    {
       "claim_id": "masanawa01-af01-transfer-reversal-20261010",
       "owner": "MASANAWA-01 / AF01 reversal invariant",
       "scope": "Harden existing Credit transfer reversal receipt invariants and regressions, without inventing MSN ledger authority or changing provider settlement",
@@ -803,6 +786,26 @@
       "notes": "Independent exact files; no deployed changes; existing AF13 qualifier remains untouched.",
       "released_at": "2026-10-10T01:30:48.979Z",
       "release_reason": "Source/tests committed and read back on PR #603 at 014027f1d1edd33011e779c3904a5634224d784b; exact-head monorepo qualification not yet executed"
+    },
+    {
+      "claim_id": "masanawa01-af15-private-access-races-20261010",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "Recheck active authenticated principal and snapshot authorization identity+revision immutably across signing; add race regression cases",
+      "paths": [
+        "services/gateway/src/media_lifecycle/private_access.ts",
+        "services/gateway/src/media_lifecycle/private_access.test.mjs",
+        "docs/workstreams/AF15-private-media-access-20261010.md"
+      ],
+      "branch": "work/af15-private-media-access-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 601,
+      "source_head": "5bf1c0a184101201da9560c8adb303cae24be76b",
+      "claimed_at": "2026-10-10T01:30:07.026Z",
+      "heartbeat_at": "2026-10-10T01:30:07.026Z",
+      "expires_at": "2026-10-10T01:35:07.026Z",
+      "released_at": "2026-10-10T01:33:38.981Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/601",
+      "release_reason": "12/12 Node simulated tests plus strict TypeScript PASS on matching committed bytes; PR #601 merged to non-production integration/af15-media-cleanup-20261009@6f8133aa0ffe89ecd4c69b790f074fa1ca2014bc. AF00 route/DB/signer remain pending; no production activation."
     }
   ]
 }
