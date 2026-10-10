@@ -94,6 +94,21 @@ export function createMasanaPostgresStore(pool:Pool) {
         if(lock.rowCount===0) throw dbConflict("masana_not_found");
         const draft=await client.query("SELECT state,profile FROM masana.character_revisions WHERE tenant_id=$1 AND character_id=$2 AND revision=$3 FOR UPDATE",[tenantId,characterId,revision]);
         if(draft.rows[0]?.state!=="draft") throw dbConflict("revision_conflict");
+        // Do not publish drafts with imaginary seed images or unreviewed media.
+        // Verify both approved files belong to this character and are rights-cleared.
+        const profile=draft.rows[0]?.profile as {portraitMediaId?:unknown;bannerMediaId?:unknown}|undefined;
+        if(typeof profile?.portraitMediaId!=="string" || typeof profile?.bannerMediaId!=="string"
+           || profile.portraitMediaId===profile.bannerMediaId) throw dbConflict("masana_media_unverified");
+        const media=await client.query<{media_id:string;kind:string}>(
+          `SELECT media_id,kind FROM masana.character_media
+             WHERE tenant_id=$1 AND character_id=$2 AND media_id IN ($3,$4)
+               AND length(btrim(rights_note))>4 AND length(btrim(approved_by))>0
+             FOR SHARE`,
+          [tenantId,characterId,profile.portraitMediaId,profile.bannerMediaId]
+        );
+        if(!media.rows.some(m=>m.kind==="portrait"&&m.media_id===profile.portraitMediaId)
+            || !media.rows.some(m=>m.kind==="banner"&&m.media_id===profile.bannerMediaId))
+          throw dbConflict("masana_media_unverified");
         await client.query("UPDATE masana.character_revisions SET state='retired',updated_at=now() WHERE tenant_id=$1 AND character_id=$2 AND state='approved'",[tenantId,characterId]);
         await client.query("UPDATE masana.character_revisions SET state='approved',approved_at=now(),approved_by=$4,updated_at=now() WHERE tenant_id=$1 AND character_id=$2 AND revision=$3",[tenantId,characterId,revision,staffId]);
         await audit(client,tenantId,staffId,characterId,"masana.revision_approved",revision);

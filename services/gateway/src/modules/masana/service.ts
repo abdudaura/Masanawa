@@ -35,11 +35,12 @@ function asText(v:unknown,max:number):string {
 }
 /** Inject existing authenticated tenant/role authority; registering these routes without it is impossible. */
 export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;store:MasanaStore;validateProfile:(value:unknown)=>unknown}):void {
-  app.get("/v1/masana",async request=>{
+  app.get("/v1/masana",async (request,reply)=>{
     const actor=await deps.auth.optional(request.headers.authorization);
     const query=params(request.query);
     const n=query.limit===undefined?20:Number(query.limit);
-    if(!Number.isInteger(n)||n<1||n>50) throw new TypeError("invalid_limit");
+    if(!Number.isInteger(n)||n<1||n>50)
+      return reply.code(400).send({code:"invalid_limit"});
     return deps.store.list({tenantId:actor.tenantId,userId:actor.userId,q:asText(query.q,100),limit:n,cursor:asText(query.cursor,200)||null});
   });
   app.get("/v1/masana/:id",async (request,reply)=>{
