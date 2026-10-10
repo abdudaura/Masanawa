@@ -78,6 +78,18 @@ void main() {
     );
   });
 
+  test('missing Activity identity cannot display an inert unread action', () async {
+    final transport = _transport((_) async => _json(
+      '[{"kind":"talk_invitation","title":"Private item",'
+      '"detail":"Private detail","createdAt":"2026-10-10T01:00:00Z",'
+      '"unread":true}]',
+    ));
+    await expectLater(
+      transport.load(filter: TalkActivityFilter.all),
+      throwsFormatException,
+    );
+  });
+
   test('malformed Activity envelope is rejected rather than marked empty', () async {
     final transport = _transport((_) async => _json('{"items":[]}'));
     await expectLater(
