@@ -7,6 +7,7 @@ publishState:"published",mode:"profile_link_only",paused:false,revision:3};
 describe("J21 verified public social identity",()=>{
   it("hides pending, revoked, disabled and paused identities",()=>{
     expect(publicLink(sample)?.publicUrl).toBe("https://wa.me/2348012345678");
+    expect(publicLink({...sample,mode:"verified_automation_eligible"})?.availability).toBe("link_only");
     expect(publicLink({...sample, verifiedAt:null})).toBeNull();
     expect(publicLink({...sample,publishState:"revoked"})).toBeNull();
     expect(publicLink({...sample,paused:true})).toBeNull();
