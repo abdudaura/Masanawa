@@ -1,6 +1,6 @@
 import {randomUUID} from "node:crypto";
-import {assertActionTarget,choice,caseCategories,caseTargets,decisionRequiredApprovals,required,requireCaseViewer,requireModerator,CaseError,type Actor,type ActionKind,type ActionRecord,type CaseRecord,type CaseEvent} from "@masanawa/moderation";
-export type CaseSummary = CaseRecord & {events:readonly CaseEvent[];actions:readonly ActionRecord[]};
+import {assertActionTarget,choice,caseCategories,caseTargets,decisionRequiredApprovals,required,requireCaseViewer,requireModerator,CaseError,type Actor,type ActionKind,type ActionRecord,type CaseRecord,type CaseEvent,type AppealRecord} from "@masanawa/moderation";
+export type CaseSummary = CaseRecord & {events:readonly CaseEvent[];actions:readonly ActionRecord[];appeals:readonly AppealRecord[]};
 export interface CaseRepository {
  create(input:CaseRecord & {clientRequestId:string}):Promise<CaseRecord>;
  find(tenantId:string,caseId:string):Promise<CaseSummary|null>;
@@ -8,6 +8,7 @@ export interface CaseRepository {
  propose(action:ActionRecord,expectedCaseVersion:number):Promise<ActionRecord>;
  review(tenantId:string,caseId:string,actionId:string,reviewerId:string,approve:boolean,expectedVersion:number):Promise<ActionRecord>;
  appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string):Promise<void>;
+ resolveAppeal(tenantId:string,caseId:string,appealId:string,actorId:string,uphold:boolean,expectedVersion:number):Promise<AppealRecord>;
 }
 export interface CaseAuthority {
  authorize(header:string|undefined):Promise<Actor>;
@@ -84,6 +85,13 @@ export function createCaseService(options:{repository:CaseRepository;authority:C
    const expected=Number(input.expectedVersion);
    if(!Number.isSafeInteger(expected)||expected<1)throw new CaseError("moderation.version_invalid",400);
    return repo.review(who.tenantId,required(caseId,"caseId",128),required(actionId,"actionId",128),who.userId,input.approve,expected);
+  },
+  async reviewAppeal(header:string|undefined,caseId:string,appealId:string,input:{uphold:unknown;expectedVersion:unknown}){
+   const {who}=await owned(header,caseId);requireModerator(who);
+   if(typeof input.uphold!=="boolean")throw new CaseError("moderation.appeal_decision.invalid",400);
+   const version=Number(input.expectedVersion);
+   if(!Number.isSafeInteger(version)||version<1)throw new CaseError("moderation.version.invalid",400);
+   return repo.resolveAppeal(who.tenantId,required(caseId,"caseId",128),required(appealId,"appealId",128),who.userId,input.uphold,version);
   },
   async appeal(header:string|undefined,caseId:string,reason:unknown){
    const {who,rec}=await owned(header,caseId);
