@@ -19,7 +19,7 @@ A low-friction, audio-first social and messaging app for listening to short Talk
 Bottom tabs: `chats` · `rooms` · `talks` · `gwani` · `wallet`. Talks is central and default for an ordinary authenticated cold launch; deep links/incoming calls restore requested destination after auth; resume preserves the active tab/task. Each tab retains its own stack, scroll position and composer draft. Back dismisses overlays -> details -> previous tab state; no repeated duplicate routes. Legacy aliases require a versioned redirect map and account-authorized ID lookup.
 
 ### Visual system (proposed)
-Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent at reduced saturation, neutral background, 44–48dp-equivalent interactive touch areas, restrained elevation, readable contrast, dark mode, no flashy launch frames. No repetitive AI badges, AI disclaimers, synthetic-content warning strips or trust lectures in ordinary conversations, feeds or profiles. Top bar: product/identity context, context search/options; bottom: five stable tab icons/labels. One major action per screen. Never bury receipt status behind a transient toast. Handle small low-memory Android phones and large dynamic type, Talk waveform contrast, offline banners and reduced motion. English and Hausa need complete copy and realistic long-word layout before expansion.
+Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent at reduced saturation, neutral background, 44–48dp-equivalent interactive touch areas, restrained elevation, readable contrast, dark mode, no flashy launch frames. Show only names, avatars and useful roles; omit repeated AI badges, synthetic-content labels and cautionary copy from normal interactions. Top bar: product/identity context, context search/options; bottom: five stable tab icons/labels. One major action per screen. Never bury receipt status behind a transient toast. Handle small low-memory Android phones and large dynamic type, Talk waveform contrast, offline banners and reduced motion. English and Hausa need complete copy and realistic long-word layout before expansion.
 
 ## Detailed screen register: each line is an implementable screen or sheet
 `SC` IDs are **proposal IDs**; do not silently replace `UI-01..` or `UX-A..` until review. Unless noted, every screen must implement account-fenced loading/empty/error/offline/retry/permission/blocked/rate-limit states from the common matrix below.
@@ -32,7 +32,7 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-003 | Sign in / register -> SC-005 or home | email/phone, numeric-secret input for phone choice, show/hide, validation, Submit, Switch method, Recovery | masked auth errors; bounded rate limits, no phone-ownership inference |
 | SC-004 | Recovery / verify -> SC-003 | list eligible verified methods, recovery input, resend cooldown, device/session revocation confirmation | cannot recover using unverified phone number only; expired/invalid evidence states |
 | SC-005 | Name/profile setup -> home | display name, optional avatar, language, Save/Skip; no forced contacts access | server-owned account ID, save/readback, rejected avatar and retry |
-| SC-006 | My profile -> SC-007 / SC-045 | avatar, handle, bio, language, My Talks, My Twin, Settings, Activity | own profile projections only; no public wallet details |
+| SC-006 | My profile -> SC-007 / SC-045 | avatar, handle, bio, language, My Talks, Saved Talks, Settings, Activity | own profile projections only; no public wallet details |
 | SC-007 | Edit profile/avatar -> SC-006 | edit name/bio/avatar, crop, delete image, Save/Cancel | permission, upload size/type validation, late upload cancellation |
 | SC-008 | Account/security -> SC-004, SC-034 | sessions, verified identities, change credentials, sign out other devices, block list | reauth, stale session and revoke; no secret logging |
 
@@ -59,7 +59,7 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-022 | Talk comments sheet | paginated thread, reply composer, post, delete own comment, report | moderation filters, optimistic rollback, off-screen playback state retained |
 | SC-023 | Record/Compose Talk | record/pause/lock/cancel, preview, trim, title, publish, draft save | ~3min configurable default; upload and processing states independently persistent |
 | SC-024 | My drafts/published | list drafts/uploads/failed/published, resume/edit/delete, media status | dedupe by publication ID and account; no empty post if encoding fails |
-| SC-025 | Creator / Masana profile | bio, Follow/Unfollow, posts, report/block | stable backend identity types and access rules; avoid private wallet leakage |
+| SC-025 | Creator / Masana profile | bio, Follow/Unfollow, posts, report/block | stable backend access rules; avoid private wallet leakage |
 | SC-026 | Saved Talks library | filtered list, search, play, unsave, download only if authorized | cache access policy, deleted/blocked post handling |
 | SC-027 | Search/Discover | keyword, filters People / Masana / Talks, results, history clear | typed result IDs, empty/offline, no personal/private search leakage |
 
@@ -95,7 +95,7 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-046 | Permissions/privacy | mic/notification/contacts toggles with rationale; block list and data preferences | separate OS permission from server preferences and feature eligibility |
 | SC-047 | Help/account lifecycle | ticket, report abuse, export/delete account, pending deletion | preserve open transactions and legally retained records; safe reauthentication |
 | SC-048 | Admin home (separate Android app) | health summary, pending incidents, queue failures, search, role-scoped quick actions | production vs staging visible, no shared consumer privileged session |
-| SC-049 | Admin users/agents/channels | users/twins/skills, Masana schedule/approvals, WhatsApp/Telegram state, device and consent | least privilege, audit, per-provider redaction and rollback |
+| SC-049 | Admin users/agents/channels | users/platform agents/skills, Masana schedule/approvals, WhatsApp/Telegram state, device and consent | least privilege, audit, per-provider redaction and rollback |
 | SC-050 | Admin finance | ledger reconciliation, provider events, P2P disputes, holds, refunds and authorization | dual control where needed, no freeform SQL/mint button |
 | SC-051 | Admin content/support | reported Talks/Rooms/users, scheduled post review, pause/resume, tickets | , source/provenance, moderation redress and event history |
 | SC-052 | Admin operations | flags, queue lag, storage/budgets, backup health, release metadata, incident/rollback | no proof from /healthz alone; credentials never displayed |
