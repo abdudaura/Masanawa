@@ -173,6 +173,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       return;
     }
     final accountId = widget.accountId;
+    final wasAttempted = _attempted;
     final attempt = PendingTalkPublish(
       accountId: accountId, requestId: requestId, assetId: assetId,
       durationMs: _audio!.durationMs, title: title,
