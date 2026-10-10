@@ -4,10 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_feed_screen.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
 
-AudioPost post(String id) => AudioPost(
+AudioPost post(String id, {int likes = 0, int comments = 0}) => AudioPost(
   postId: id, authorId: 'author-a', authorKind: 'human',
   title: 'Published audio ' + id, durationMs: 22000,
   status: 'published', revision: 1, createdAt: DateTime.utc(2026, 10, 10),
+  likeCount: likes, commentCount: comments,
 );
 class FakePosts implements AudioPostTransport {
   Future<AudioPostPage> Function(String?)? discoverHandler;
@@ -232,6 +233,31 @@ void main() {
     await tester.tap(find.text('Refresh'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Could not load comments'), findsNothing);
+  });
+  testWidgets('persisted server engagement counts are visible to listeners', (tester) async {
+    final source = FakePosts()
+      ..discoverHandler = (_) async => AudioPostPage(
+        items: [post('counted', likes: 3, comments: 2)],
+        nextCursor: null);
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    expect(find.text('3 likes · 2 comments'), findsOneWidget);
+    expect(find.text('Published audio counted'), findsOneWidget);
+  });
+
+  test('audio-post wire parser refuses forged negative engagement totals', () {
+    final wire = {
+      'postId': 'p1', 'authorId': 'a1', 'authorKind': 'human',
+      'title': 'Title', 'durationMs': 2000, 'status': 'published',
+      'revision': 1, 'createdAt': '2026-10-10T00:00:00Z',
+      'likeCount': -1, 'commentCount': 0,
+    };
+    expect(() => AudioPost.fromJson(wire), throwsFormatException);
+    wire['likeCount'] = 2;
+    wire['commentCount'] = 3;
+    final parsed = AudioPost.fromJson(wire);
+    expect(parsed.likeCount, 2);
+    expect(parsed.commentCount, 3);
   });
 }
 String sourceAccount = 'old';
