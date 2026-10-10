@@ -39,6 +39,10 @@ import { registerTalkPollRoutes } from "./talk_poll_routes.js";
 import type { TalkPollService } from "./talk_polls/service.js";
 import { registerTalkSafetyRoutes } from "./talk_safety_routes.js";
 import type { TalkSafetyService } from "./talk_safety/service.js";
+import {
+  registerPublishedAudioFeatureRoutes,
+  type PublishedAudioFeatureDependencies,
+} from "./audio_posts/register_feature.js";
 import { registerDirectTwinRoutes } from "./talk_direct_twin_routes.js";
 import type { DirectTwinService } from "./talk_direct_twin/service.js";
 import type { TalkService } from "./talks/service.js";
@@ -117,6 +121,10 @@ export interface GatewayAppOptions {
   readonly talkGifts?: TalkGiftService;
   readonly talkPolls?: TalkPollService;
   readonly talkSafety?: TalkSafetyService;
+  /** AF09 published audio posts, never legacy live Talks. Requires complete
+   * canonical auth, media, privacy, moderation, DB migration and report pack.
+   * Absence keeps all 20 protected routes unregistered. */
+  readonly publishedAudio?: PublishedAudioFeatureDependencies;
   readonly directTwin?: DirectTwinService;
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
@@ -1427,6 +1435,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   }
   if (options.talkSafety) {
     registerTalkSafetyRoutes(app, options.talkSafety);
+  }
+  if (options.publishedAudio) {
+    registerPublishedAudioFeatureRoutes(app, options.publishedAudio);
   }
   if (options.directTwin) {
     registerDirectTwinRoutes(app, options.directTwin);
