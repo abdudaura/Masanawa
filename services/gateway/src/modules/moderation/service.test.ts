@@ -28,6 +28,7 @@ function harness(){
  const review=vi.fn<CaseRepository["review"]>().mockResolvedValue(action);
  const resolveAppeal=vi.fn<CaseRepository["resolveAppeal"]>().mockResolvedValue(appeal);
  const appendAppeal=vi.fn<CaseRepository["appeal"]>().mockResolvedValue(undefined);
+ const dismiss=vi.fn<CaseRepository["dismiss"]>().mockResolvedValue(record);
  const identities:Record<string,Actor>={fan,stranger,differentTenant,gwani,mod};
  const canReadTarget=vi.fn().mockImplementation(async (_a:Actor,t:{kind:string;id:string})=>t.id==="comment1");
  const service=createCaseService({
