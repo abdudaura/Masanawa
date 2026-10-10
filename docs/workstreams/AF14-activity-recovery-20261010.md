@@ -49,3 +49,47 @@ Status: **PARTIAL_IMPLEMENTATION / DRAFT / NOT DEPLOYED**. This is a bounded imp
 **Remaining:** after executed Flutter checks, compare latest #497/#604 exact heads and preserve unique source. AF00 integrates Activity into authenticated navigation on safe non-deploying target and verifies invitation status from the real Gateway. Relevant UX Activity controls: invite action, filtered listing, loading/error/offline/retry and correct human-visible status. Overall AF14 SA-A01..08 Settings/deletion/account qualification remains open.
 
 **Next action:** run stated Flutter commands in a Flutter-capable checkout at PR head, fix any real failures, then request AF00 integrator to merge this non-overlapping slice after confirming deploy triggers and #497 changes. Do not interpret mutation HTTP success as proof of a live invited-user end-to-end journey.
+
+
+## Continuation — account-specific Activity journey (2026-10-10)
+
+**Delivery-policy alignment:** `docs/NEXT-WAVE-DELIVERY-20261010.md` supersedes free selection of micro-fixes. This continues **the same PR #604**, tied to the Phone/email and Settings customer milestone (AF08 + AF14); it is not a new helper branch or completion of that milestone. Root integration and linked credentials remain with AF00/AF08.
+
+**New exact-path CAS claim:** `masanawa01-af14-activity-account-fence-20261010`, published and read back on `factory/claims` at `9ac3126439ecd8840f6b0bebf857eb4f61ea984d`, renewed at `17f8c86f5094588f6c905aa85af84c5936dc156b`. Existing #604 source and original widget regressions are preserved. Additional explicitly claimed files: `apps/mobile/lib/src/state/talk_activity_state.dart`, `apps/mobile/test/activity_screen_test.dart`. No root routing, SQL, gateway, migrations, native, CI, financial or auth-authority files edited.
+
+### Connected authority and implementation
+
+- Live source confirms `GET /activity` under `talk_activity_routes.ts` and the original human invitation `POST /talks/:talkId/invitation-response` under `talk_moderation_routes.ts` from already merged PR #389. **No duplicate invitation API is needed.**
+- The prior `talkActivityProvider` depended only on `talkActivityTransportProvider`; its shared `ApiClient.accessToken` is mutated in place by `SessionController`. Consequently a filter-keyed Activity provider could retain a prior account's private list across signout/change.
+- The provider now watches the canonical `sessionProvider`, returns no private list when signed out, and invalidates its data and in-flight read when the signed-in identity changes. The Activity screen distinguishes signed-out from actual empty Activity.
+- The Accept/Decline UI snapshots its authenticated user and action generation. A prior-account completion cannot report success, invalidate another user's projection, or clear the next account's pending action. A session change immediately clears the prior busy indicator.
+- Original `test/activity_screen_test.dart` now supplies a deterministic authorized test session rather than relying on a persistent local secure-store login. The dedicated AF14 test adds four account-boundary cases: session switch readback, old-account delayed mutation, signout, and late prior-account GET response. Combined new AF14 widget-test cases: **7 authored, NOT_EXECUTED**. Existing Activity tests remain preserved.
+
+**Source checkpoints after continuation:**
+- Session-fenced projection source `efb57c38aceefa03a69a9c637b3e0c8848ea3467`
+- Account-fenced invitation screen source `bd577f0a4e5210611c842915f3eaeb14b7913100`
+- Existing Activity fixture `86f7a64e31389eac2a71cbfe55d98f9b794d3dfd`
+- Delayed GET regression source `39c77b643d653d3787b7e3ef512efa1206a2f4df`
+- Main refreshed `c7f7280e640d3098be3e26f05149a0d66085441b`; this branch remains one documentation commit behind main (no runtime conflict shown in compare).
+
+### Execution / integration truth
+
+Local commands actually attempted in the available isolated runtime:
+
+```sh
+command -v flutter
+command -v dart
+GIT_TERMINAL_PROMPT=0 timeout 12 git ls-remote https://github.com/Baatiku/masanawa.git HEAD
+```
+
+`flutter` and `dart` not installed or available on PATH; `git ls-remote` failed with `Could not resolve host: github.com`. The GitHub connector read back source blobs; this validates text persistence, **not** Flutter compilation, unit execution, device authorization or backend persistence.
+
+**Required execution owner:** AF14/AF00 with a Flutter-capable checkout; run at the specific latest #604 HEAD, then again at the unified integration SHA:
+
+```sh
+cd apps/mobile
+flutter test test/activity_screen_test.dart test/audio_first/af14/activity_recovery_test.dart
+flutter analyze lib/src/screens/activity/activity_screen.dart lib/src/state/talk_activity_state.dart test/activity_screen_test.dart test/audio_first/af14/activity_recovery_test.dart
+```
+
+Review the #497 Activity screen unique diff (currently same legacy mutation outcome issue; distinct background token), #587/#606 Settings changes and #600 root nav, preserve owner's unreconciled local APK. AF00 must identify one non-deploying baseline after reviewing deploy triggers. The next integration action is a source-tested merge of #604 into that single baseline, **not main or production by assumption**. Status remains `PARTIAL_IMPLEMENTATION`; device/session/real two-account tests, combined Flutter tests and production are **NOT_RUN/BLOCKED**. The broader Phone/email and Settings milestone remains open until AF08 auth/recovery, AF14 profile/preferences/Settings composition and account/device journeys pass.
