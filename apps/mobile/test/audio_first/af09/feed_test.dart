@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_feed_screen.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
 import 'package:masanawa/src/audio_posts/following_transport.dart';
+import 'package:masanawa/src/audio_posts/audio_post_report_action.dart';
 
 AudioPost post(String id, {int likes = 0, int comments = 0}) => AudioPost(
   postId: id, authorId: 'author-a', authorKind: 'human',
@@ -102,16 +103,82 @@ class FakeCreatorFollowing implements CreatorFollowingTransport {
         Future.value(AudioPostPage(items: posts, nextCursor: null));
   }
 }
+class FakeReportSubmissions implements PublishedAudioReportTransport {
+  final requests = <String>[];
+  @override
+  Future<String> submit({
+    required String postId,
+    required String reason,
+    required String clientRequestId,
+    String? detail,
+  }) async {
+    requests.add(postId);
+    return 'report-accepted';
+  }
+}
+
 Widget screen(FakePosts source, String account, {
   bool Function(String)? current,
   CreatorFollowingTransport? following,
+  PublishedAudioReportTransport? reporting,
 }) =>
   MaterialApp(home: AudioPostFeedScreen(
     transport: source, followingTransport: following, accountId: account,
     isCurrentAccount: current ?? (id) => id == account,
+    reportTransport: reporting,
   ));
 
 void main() {
+  testWidgets('published cards offer canonical report only when reporting is connected',
+      (tester) async {
+    final posts = FakePosts()..mineHandler = () async => [post('mine')];
+    final reports = FakeReportSubmissions();
+    await tester.pumpWidget(screen(posts, 'user-a'));
+    await tester.pumpAndSettle();
+    expect(find.text('Report Talk'), findsNothing);
+
+    await tester.pumpWidget(screen(posts, 'user-a', reporting: reports));
+    await tester.pumpAndSettle();
+    expect(find.text('Report Talk'), findsOneWidget);
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+    expect(reports.requests, isEmpty);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(reports.requests, isEmpty);
+
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Submit report'));
+    await tester.pumpAndSettle();
+    expect(reports.requests, ['one']);
+    expect(find.text('Report received for review.'), findsOneWidget);
+
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    expect(find.text('Report Talk'), findsNothing);
+  });
+
+  testWidgets('report dialog cannot submit after active account changes',
+      (tester) async {
+    final posts = FakePosts();
+    final reports = FakeReportSubmissions();
+    var active = 'user-a';
+    await tester.pumpWidget(screen(posts, 'user-a',
+      current: (account) => account == active, reporting: reports));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Report Talk'));
+    await tester.pumpAndSettle();
+
+    active = 'user-b';
+    await tester.tap(find.text('Submit report'));
+    await tester.pumpAndSettle();
+    expect(reports.requests, isEmpty);
+    expect(find.textContaining('Account changed.'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('Following uses existing authenticated feed and per-post follow receipts',
       (tester) async {
     final source = FakePosts();
