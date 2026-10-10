@@ -142,24 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "af13-596-source-integrity-20261010-gpt6-0412",
-      "owner": "AF13 #596 checkout source integrity continuation GPT-6",
-      "scope": "Close existing PR #596's acceptance/source SHA integrity bypass by refusing dirty canonical runner/guard/matrix at exact checkout HEAD; tests and finite handoff only",
-      "paths": [
-        "tools/audio-first-qualification/qualify.mjs",
-        "tools/audio-first-qualification/qualify.test.mjs",
-        "docs/workstreams/AF13-evidence-ledger-20261009.md"
-      ],
-      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "source_pr": 596,
-      "source_head": "f73f87d2ca22d4ed04c62e953f9edba354e118f4",
-      "claimed_at": "2026-10-10T03:11:47.221Z",
-      "heartbeat_at": "2026-10-10T03:11:47.221Z",
-      "expires_at": "2026-10-10T03:16:47.221Z",
-      "notes": "Prior overlapping AF13 claim released; preserve all source and tests; do not edit root CI/worker/migration/runtime paths. One existing canonical runner, no new validator or branch."
-    },
-    {
       "claim_id": "masanawa01-af14-activity-http-truth-20261010",
       "owner": "MASANAWA-01 / AF14 continuing #604",
       "scope": "Continue existing #604 with account-scoped durable mark-read through existing Talk Activity service/Postgres/API/Flutter UI and tests; no new migration/route composer or authority. Preserve original invitation/account-fence work.",
@@ -1598,6 +1580,26 @@
       "released_at": "2026-10-10T03:10:02.945Z",
       "integration_head_sha": "f73f87d2ca22d4ed04c62e953f9edba354e118f4",
       "release_reason": "Existing #596 reconciles #592/#594 unique real-evidence command/steps/fresh UTC and bounded nonblocking JSON; code/test head 4a22f25, docs final head f73f87d. Node local mirror 13/13 PASS_SIMULATED, GitHub structural 12/12; exact head tests NOT_RUN (container cannot git clone). AF00 must publish audited unified nondeploying baseline, execute exact checkout tests and merge; AF15/AF00/domain source and DB/SA qualification remain unfinished. No runtime deployment/local pull."
+    },
+    {
+      "claim_id": "af13-596-source-integrity-20261010-gpt6-0412",
+      "owner": "AF13 #596 checkout source integrity continuation GPT-6",
+      "scope": "Close existing PR #596's acceptance/source SHA integrity bypass by refusing dirty canonical runner/guard/matrix at exact checkout HEAD; tests and finite handoff only",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 596,
+      "source_head": "f73f87d2ca22d4ed04c62e953f9edba354e118f4",
+      "claimed_at": "2026-10-10T03:11:47.221Z",
+      "heartbeat_at": "2026-10-10T03:11:47.221Z",
+      "expires_at": "2026-10-10T03:16:47.221Z",
+      "notes": "Prior overlapping AF13 claim released; preserve all source and tests; do not edit root CI/worker/migration/runtime paths. One existing canonical runner, no new validator or branch.",
+      "released_at": "2026-10-10T03:16:40.011Z",
+      "release_reason": "PR #596 source/test+finite checklist committed at e2f30c74033e96369e173f6536d295bcaf54bcf3; isolated 1/1 Node temporary-Git fixture PASS_SIMULATED, 12/12 structural checks, exact-head tests BLOCKED by private checkout DNS. AF00 owns single safe baseline review and merge; AF15 owns connected operational source. GitHub PR handoff comment 6093213591."
     }
   ]
 }
