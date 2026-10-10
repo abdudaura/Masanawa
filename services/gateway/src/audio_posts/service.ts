@@ -1,7 +1,7 @@
 import type {
   AudioPostModeration, AudioAssetAuthority, AudioPostRecord, AudioPostRepository,
   AudioPostComment, PublicAudioPostComment,
-  PostActor, PublicAudioFeedPage, VerifiedAudioAsset,
+  PostActor, PublicAudioFeedPage, PublicAudioPostCommentPage, VerifiedAudioAsset,
 } from "./contract.js";
 import { toPublicAudioPost } from "./contract.js";
 
@@ -67,6 +67,9 @@ export function createAudioPostService(deps: {
     }
     if (error instanceof Error && error.message === "audio_posts.invalid_cursor") {
       throw new AudioPostError("VALIDATION", "Invalid feed cursor");
+    }
+    if (error instanceof Error && error.message === "audio_posts.invalid_comment_cursor") {
+      throw new AudioPostError("VALIDATION", "Invalid comment cursor");
     }
     if (error instanceof Error && error.message === "audio_posts.comment_conflict") {
       throw new AudioPostError("CONFLICT", "Comment request key already used");
@@ -218,6 +221,27 @@ export function createAudioPostService(deps: {
       return items.map(item => commentView(item, actor.accountId));
     } catch (error) { return mapRepositoryError(error); }
   };
+  // Existing comments() remains wire-compatible for prior clients. New readers
+  // fetch older comments with a scoped immutable comment ID cursor and limit+1.
+  const commentsPage = async (
+    actor: PostActor, postId: string, cursor?: string,
+  ): Promise<PublicAudioPostCommentPage> => {
+    assertActor(actor);
+    safeId(postId, "post");
+    if (cursor !== undefined) safeId(cursor, "comment cursor");
+    try {
+      const rows = await repository.listComments({
+        tenantId: actor.tenantId, viewerId: actor.accountId, postId,
+        limit: 51, beforeCommentId: cursor ?? null,
+      });
+      const page = rows.slice(0, 50);
+      return {
+        items: page.map(item => commentView(item, actor.accountId)),
+        nextCursor: rows.length > 50 && page.length > 0
+          ? page[page.length - 1]!.commentId : null,
+      };
+    } catch (error) { return mapRepositoryError(error); }
+  };
   const comment = async (actor: PostActor, postId: string, body: unknown) => {
     assertActor(actor);
     safeId(postId, "post");
@@ -248,5 +272,5 @@ export function createAudioPostService(deps: {
     if (!removed) throw new AudioPostError("NOT_FOUND", "Comment not found");
     return { removed: true };
   };
-  return Object.freeze({ publish, settle, feed, receiptByRequest, mine, saved, removeOwn, reaction, comments, comment, removeOwnComment });
+  return Object.freeze({ publish, settle, feed, receiptByRequest, mine, saved, removeOwn, reaction, comments, commentsPage, comment, removeOwnComment });
 }
