@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../activity/talk_activity.dart';
 import '../../state/talk_activity_state.dart';
+import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
@@ -24,13 +25,29 @@ class ActivityScreen extends ConsumerStatefulWidget {
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   TalkActivityFilter _filter = TalkActivityFilter.all;
   String? _busyInvitationId;
+  int _actionEpoch = 0;
+
+  String? _userId(SessionState? session) =>
+      session is SessionSignedIn ? session.user.id : null;
 
   Future<void> _respondToInvitation(
     TalkActivityItem item, {
     required bool accept,
   }) async {
     final talkId = item.talkId?.trim();
-    if (_busyInvitationId != null || talkId == null || talkId.isEmpty) return;
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn ||
+        _busyInvitationId != null ||
+        talkId == null ||
+        talkId.isEmpty) {
+      return;
+    }
+    final actorUserId = session.user.id;
+    final epoch = ++_actionEpoch;
+    bool isCurrentActor() =>
+        mounted &&
+        _actionEpoch == epoch &&
+        _userId(ref.read(sessionProvider)) == actorUserId;
     setState(() => _busyInvitationId = item.id);
     try {
       // A timeout after sending a response is not proof that the server
@@ -40,7 +57,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             .read(talkActivityTransportProvider)
             .respondToInvitation(talkId: talkId, accept: accept);
       } catch (_) {
-        if (!mounted) return;
+        if (!isCurrentActor()) return;
         _invalidateInvitationFilters();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -52,7 +69,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         return;
       }
 
-      if (!mounted) return;
+      if (!isCurrentActor()) return;
       // A successful mutation stays successful even if the following list
       // read fails. The provider owns the retryable read error state.
       _invalidateInvitationFilters();
@@ -64,7 +81,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         ),
       );
     } finally {
-      if (mounted) setState(() => _busyInvitationId = null);
+      if (isCurrentActor()) {
+        setState(() => _busyInvitationId = null);
+      }
     }
   }
 
@@ -127,6 +146,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<SessionState>(sessionProvider, (previous, next) {
+      if (_userId(previous) != _userId(next)) {
+        // Any in-flight action belongs to the prior principal. Do not let its
+        // eventual completion re-enable or mutate the next account's UI.
+        _actionEpoch++;
+        if (mounted) setState(() => _busyInvitationId = null);
+      }
+    });
+    final session = ref.watch(sessionProvider);
     final u = context.masanawa;
     final activity = ref.watch(talkActivityProvider(_filter));
 
@@ -146,7 +174,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refresh,
-              child: activity.when(
+              child: session is! SessionSignedIn
+                  ? const _ActivityState(
+                      icon: Icons.lock_outline_rounded,
+                      title: 'Sign in to view Activity.',
+                      subtitle: 'Your invitations and updates are private.',
+                    )
+                  : activity.when(
                 loading: () => const _ActivityLoading(),
                 error: (_, __) => _ActivityState(
                   icon: Icons.wifi_off_rounded,
