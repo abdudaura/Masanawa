@@ -54,12 +54,12 @@ class AudioPost {
 class AudioPostComment {
   const AudioPostComment({
     required this.postId, required this.commentId,
-    required this.authorAccountId, required this.body,
+    required this.isMine, required this.body,
     required this.createdAt, required this.removed,
   });
   final String postId;
   final String commentId;
-  final String authorAccountId;
+  final bool isMine;
   final String body;
   final DateTime createdAt;
   final bool removed;
@@ -67,19 +67,19 @@ class AudioPostComment {
   factory AudioPostComment.fromJson(Map<String, dynamic> json) {
     final id = json['commentId'];
     final post = json['postId'];
-    final author = json['authorAccountId'];
+    final mine = json['isMine'];
     final body = json['body'];
     final removed = json['removed'];
     final stamp = json['createdAt'];
     if (id is! String || id.isEmpty || post is! String || post.isEmpty ||
-        author is! String || author.isEmpty || body is! String ||
+        mine is! bool || body is! String ||
         removed is! bool || stamp is! String) {
       throw const FormatException('Invalid comment response');
     }
     final date = DateTime.tryParse(stamp);
     if (date == null) throw const FormatException('Invalid comment date');
     return AudioPostComment(postId: post, commentId: id,
-      authorAccountId: author, body: body, createdAt: date, removed: removed);
+      isMine: mine, body: body, createdAt: date, removed: removed);
   }
 }
 class AudioPostPage {
