@@ -289,4 +289,89 @@ void main() {
       find.byKey(const ValueKey('talk-record'))).onPressed, isNotNull);
   });
 
+
+
+/// Supports the same optional receipt contract as the production Gateway
+/// transport without changing legacy fake transports in these widget tests.
+class ReceiptPostsFake extends PostsFake implements AudioPostReceiptLookup {
+  int lookups = 0;
+  AudioPost? serverReceipt;
+  bool lookupOffline = false;
+  @override
+  Future<AudioPost?> receiptByRequest({required String requestId}) async {
+    lookups++;
+    if (lookupOffline) throw StateError('receipt lookup offline');
+    if (requestId != 'stable-attempt-1') throw StateError('unexpected key');
+    return serverReceipt;
+  }
+}
+
+testWidgets('uncertain publish retry reads server receipt without posting twice', (tester) async {
+  final posts = ReceiptPostsFake()..onSend = () async => throw StateError('lost response');
+  final store = FakeAttempts();
+  var callbacks = 0;
+  await tester.pumpWidget(composer(posts, 'user-a', store: store,
+      record: () async => const VerifiedPostAudio(assetId: 'asset-a', durationMs: 6000),
+      published: (_) => callbacks++));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Recovered title');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  expect(posts.sends, 1);
+  expect(store.pending?.requestId, 'stable-attempt-1');
+  posts.serverReceipt = AudioPost(
+    postId: 'already-committed', authorId: 'owner', authorKind: 'human',
+    title: 'Recovered title', durationMs: 6000, status: 'processing',
+    revision: 0, createdAt: DateTime.utc(2026, 10, 10));
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  expect(posts.lookups, 1);
+  expect(posts.sends, 1);
+  expect(store.pending, isNull);
+  expect(callbacks, 1);
+  expect(find.textContaining('Talk received'), findsOneWidget);
+});
+
+testWidgets('failed server receipt lookup cannot cause a blind repost', (tester) async {
+  final posts = ReceiptPostsFake()..onSend = () async => throw StateError('lost response');
+  final store = FakeAttempts();
+  await tester.pumpWidget(composer(posts, 'user-a', store: store,
+      record: () async => const VerifiedPostAudio(assetId: 'asset-a', durationMs: 6000)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Still uncertain');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  posts.lookupOffline = true;
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  expect(posts.sends, 1);
+  expect(posts.lookups, 1);
+  expect(store.pending?.requestId, 'stable-attempt-1');
+  expect(find.textContaining('unconfirmed'), findsOneWidget);
+});
+
+testWidgets('confirmed absence permits replay with the original request key', (tester) async {
+  final posts = ReceiptPostsFake()..onSend = () async => throw StateError('timeout');
+  final store = FakeAttempts();
+  await tester.pumpWidget(composer(posts, 'user-a', store: store,
+      record: () async => const VerifiedPostAudio(assetId: 'asset-a', durationMs: 6000)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Safe replay');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  posts.onSend = null;
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  expect(posts.lookups, 1);
+  expect(posts.sends, 2);
+  expect(posts.requestId, 'stable-attempt-1');
+  expect(store.pending, isNull);
+});
+
 }
