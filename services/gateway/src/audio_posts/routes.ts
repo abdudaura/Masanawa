@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import type { PostActor } from "./contract.js";
 import type { createAudioPostService } from "./service.js";
 import { AudioPostError } from "./service.js";
@@ -11,13 +11,15 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
   requireActor: (authorization: string | undefined) => Promise<PostActor>;
 }): void {
   const actor = (authorization: string | undefined) => deps.requireActor(authorization);
-  const fail = (reply: { code: (status: number) => unknown }, error: unknown): never => {
+  const fail = (reply: FastifyReply, error: unknown) => {
     if (error instanceof AudioPostError) {
       const status = error.code === "FORBIDDEN" ? 403 :
         error.code === "NOT_FOUND" ? 404 :
         error.code === "CONFLICT" ? 409 :
         error.code === "CAPABILITY_UNAVAILABLE" ? 503 : 400;
-      reply.code(status);
+      // Return a typed response without passing expected user failures through
+      // the generic Fastify handler, which may misclassify them as HTTP 500.
+      return reply.code(status).send({ code: error.code, message: error.message });
     }
     throw error;
   };
