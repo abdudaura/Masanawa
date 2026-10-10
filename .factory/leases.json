@@ -426,7 +426,9 @@
       "claimed_at": "2026-10-10T07:48:31.704Z",
       "heartbeat_at": "2026-10-10T07:48:31.704Z",
       "expires_at": "2026-10-10T07:53:31.704Z",
-      "notes": "Foundation Vitest 38035472618: 41 tests fail in common beforeEach due eight missing expected migration identifiers; keep strict list."
+      "notes": "Foundation Vitest 38035472618: 41 tests fail in common beforeEach due eight missing expected migration identifiers; keep strict list.",
+      "released_at": "2026-10-10T09:00:51.596Z",
+      "release_reason": "Reviewed stale exact-path recovery on user-directed all-errors continuation; prior lease expired at 07:53 UTC, no pending conflicting path work seen, all PR #460 source preserved; append-only security 0103 requires extending canonical acceptance manifest."
     },
     {
       "claim_id": "af13-pr460-twin-runtime-contract-test-20261010",
@@ -722,6 +724,21 @@
       "heartbeat_at": "2026-10-10T09:00:33.866Z",
       "expires_at": "2026-10-10T09:05:33.866Z",
       "notes": "Continuing PR #497: account-switch-safe async chat action source + authored explicit account-fence regression; Flutter CI must execute on latest head, no local Flutter."
+    },
+    {
+      "claim_id": "af13-460-security-migration-manifest-gpt6-20261010",
+      "owner": "GPT-6 / AF13 existing PR #460 schema-manifest acceptance",
+      "scope": "Adopt new append-only 0103 auth migration in exact PostgreSQL foundation acceptance snapshot, without removing old migrations or weakening hash-drift checks.",
+      "paths": [
+        "adapters/storage/postgres/src/postgres.integration.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:00:51.596Z",
+      "heartbeat_at": "2026-10-10T09:00:51.596Z",
+      "expires_at": "2026-10-10T09:05:51.596Z",
+      "notes": "Actual CI 38039668485: 25 foundation test failures cascading solely from 31-vs-30 migrations; old exact-path lease expired >1h; preserve previous #460 source and tests."
     }
   ],
   "history": [
