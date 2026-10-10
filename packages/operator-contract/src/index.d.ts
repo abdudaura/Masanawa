@@ -1,0 +1,25 @@
+import type { TenantId, UserId, DeviceId, CharacterSessionId, RequestId, OperationId } from "@masanawa/contracts";
+export type OperatorScope = "private-assistant" | "persona-chat" | "human-dm" | "public-talk" | "direct-twin";
+export type ExecutionClass = "read" | "draft" | "send" | "financial";
+export type TaskPhase = "proposed" | "clarifying" | "prepared" | "awaiting_approval" | "running" | "reconciling" | "succeeded" | "failed" | "cancelled";
+export type OperatorContext = Readonly<{kind:"talk"|"dm-selected-message"|"wallet"|"twin";id:string;revision?:string}>;
+export type OperatorProposal = Readonly<{requestId:RequestId;capabilityId:string;capabilityVersion:number;untrustedArguments:Readonly<Record<string,unknown>>;contextRef?:OperatorContext}>;
+export type VerifiedPrincipal = Readonly<{tenantId:TenantId;userId:UserId;accountId:string;sessionId:CharacterSessionId;deviceId:DeviceId}>;
+export type CapabilityDescriptor = Readonly<{id:string;version:number;enabled:boolean;executionClass:ExecutionClass;scopes:readonly OperatorScope[];regions:readonly string[];argumentKeys:readonly string[]}>;
+export type ApprovedOperationTerms = Readonly<Record<string,unknown>>;
+export type IssuedApprovalRecord = Readonly<{state:"issued"|"used"|"revoked";ticketId:string;tenantId:TenantId;userId:UserId;accountId:string;sessionId:CharacterSessionId;deviceId:DeviceId;operationId:OperationId;capabilityId:string;capabilityVersion:number;revision:string;issuedAtMs:number;expiresAtMs:number;terms:ApprovedOperationTerms}>;
+export class OperatorContractError extends Error { readonly code:string;constructor(code:string); }
+export function isRecord(x:unknown):x is Record<string,unknown>;
+export function strict(x:unknown,required:readonly string[],optional?:readonly string[]):void;
+export function str(x:unknown,min?:number,max?:number):string;
+export function version(x:unknown):number;
+export function capability(x:unknown):string;
+export function cleanArguments(x:unknown):Readonly<Record<string,unknown>>;
+export function parseOperatorProposal(input:unknown):OperatorProposal;
+export function authorizeOperatorProposal(input:{proposal:OperatorProposal;catalog:readonly CapabilityDescriptor[];principal:VerifiedPrincipal;scope:OperatorScope;region:string;authorizeCapability:(input:{principal:VerifiedPrincipal;scope:OperatorScope;region:string;capability:CapabilityDescriptor;arguments:Readonly<Record<string,unknown>>})=>boolean;authorizeContext:(input:{principal:VerifiedPrincipal;scope:OperatorScope;contextRef:OperatorContext})=>boolean}):Readonly<{capability:CapabilityDescriptor;arguments:Readonly<Record<string,unknown>>;contextRef:OperatorContext|null;classification:ExecutionClass;requestId:RequestId}>;
+export function normalizedTerms(value:ApprovedOperationTerms):string;
+export function verifyIssuedApproval(input:{issued:IssuedApprovalRecord;presentedTicketId:string;principal:VerifiedPrincipal;expected:{operationId:OperationId;capabilityId:string;capabilityVersion:number;revision:string;terms:ApprovedOperationTerms};now:number}):Readonly<{operationId:OperationId;ticketId:string;revision:string}>;
+export function admitTaskExecution(input:{phase:TaskPhase;classification:ExecutionClass;approvalVerified:boolean}):"running";
+export function advanceTaskPhase(input:{from:TaskPhase;to:TaskPhase;receipt?:{verifiedReadback:boolean;domainReceiptId:string};errorCode?:string}):TaskPhase;
+export function validateTaskEventPage(input:{taskId:string;afterRevision:number;events:readonly {taskId:string;revision:number;phase:TaskPhase;at:string}[]}):Readonly<{nextRevision:number;count:number}>;
+export function selectOperatorCard(input:{card:{version:number;kind:string;message:string};supportedVersions:readonly number[]}):Readonly<{version:number;kind:string;message:string;actionable:false}>;

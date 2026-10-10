@@ -1,0 +1,127 @@
+// U01 operator contract V1: pure protocol validation; no credential, DB, or side-effect authority.
+// Client/model input is always untrusted. Issued approvals MUST come from server-side persistence.
+export class OperatorContractError extends Error { constructor(code){super(code);this.name="OperatorContractError";this.code=code;} }
+
+export function isRecord(x){return x!==null&&typeof x==="object"&&!Array.isArray(x)&&(Object.getPrototypeOf(x)===Object.prototype||Object.getPrototypeOf(x)===null)}
+
+export function strict(x,required,optional=[]){if(!isRecord(x))throw new OperatorContractError("invalid_shape");const keys=new Set([...required,...optional]);for(const k of Object.keys(x))if(!keys.has(k))throw new OperatorContractError("unknown_field");for(const k of required)if(!Object.hasOwn(x,k))throw new OperatorContractError("missing_field")}
+
+export function str(x,min=1,max=128){if(typeof x!=="string"||x.length<min||x.length>max||x.trim()!==x||x.trim().length===0||/[\u0000-\u001f\u007f]/u.test(x))throw new OperatorContractError("invalid_string");return x}
+
+export function version(x){if(!Number.isSafeInteger(x)||x<1||x>1000)throw new OperatorContractError("unsupported_version");return x}
+
+export function capability(x){const s=str(x,3,128);if(!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(s)||!s.includes("."))throw new OperatorContractError("invalid_capability");return s}
+
+export function cleanArguments(x){const seen=new WeakSet();let count=0;const prohibited=new Set(["tenantid","userid","accountid","owneruserid","actorid","authorization","accesstoken","refreshtoken","apikey","password","role","sessionid","deviceid","approval","approved","approvaltoken","receiptevidence","verifiedreceipt","istrusted","authcontext","credential","secret"]);function visit(v,d){if(++count>200||d>6)throw new OperatorContractError("arguments_too_complex");if(v===null||typeof v==="boolean")return v;if(typeof v==="number"){if(!Number.isFinite(v)||Math.abs(v)>1e15)throw new OperatorContractError("invalid_number");return v}if(typeof v==="string"){if(v.length>2048||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(v))throw new OperatorContractError("invalid_string");return v}if(!v||typeof v!=="object"||seen.has(v))throw new OperatorContractError("invalid_argument");seen.add(v);if(Array.isArray(v)){if(v.length>32)throw new OperatorContractError("arguments_too_large");const out=Object.freeze(v.map(y=>visit(y,d+1)));seen.delete(v);return out}if(!isRecord(v)||Object.keys(v).length>32)throw new OperatorContractError("invalid_argument");const out=Object.create(null);for(const [k,item]of Object.entries(v)){if(!/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/u.test(k))throw new OperatorContractError("invalid_argument_key");if(prohibited.has(k.toLowerCase().replace(/_/gu,""))||k.startsWith("__")||k==="constructor"||k==="prototype")throw new OperatorContractError("privileged_argument");out[k]=visit(item,d+1)}seen.delete(v);return Object.freeze(out)}if(!isRecord(x))throw new OperatorContractError("invalid_shape");const out=visit(x,0);if(JSON.stringify(out).length>8192)throw new OperatorContractError("arguments_too_large");return out}
+
+export function parseOperatorProposal(input){strict(input,["requestId","capabilityId","capabilityVersion","untrustedArguments"],["contextRef"]);const requestId=str(input.requestId,8,100);if(!/^request_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(requestId))throw new OperatorContractError("invalid_request_id");const proposal={requestId,capabilityId:capability(input.capabilityId),capabilityVersion:version(input.capabilityVersion),untrustedArguments:cleanArguments(input.untrustedArguments)};if(input.contextRef!==undefined){strict(input.contextRef,["kind","id"],["revision"]);if(!["talk","dm-selected-message","wallet","twin"].includes(input.contextRef.kind))throw new OperatorContractError("invalid_context");const c={kind:input.contextRef.kind,id:str(input.contextRef.id,4,128)};if(input.contextRef.revision!==undefined)c.revision=str(input.contextRef.revision,1,80);proposal.contextRef=Object.freeze(c)}return Object.freeze(proposal)}
+
+// Permission checks are synchronous by contract. A Promise is truthy even when it later resolves false;
+// accepting it would bypass tenant/resource authorization. Async policies must resolve BEFORE admission.
+function isExplicitlyAuthorized(check,claims){try{return check(claims)===true}catch{return false}}
+
+// Policy inputs must be plain data. Getters can change a capability ID between
+// catalog lookup and authorization, silently promoting a read into a money action.
+function dataSnapshot(value,code){
+  if(!isRecord(value))throw new OperatorContractError(code);
+  const descriptors=Object.getOwnPropertyDescriptors(value);
+  if(Reflect.ownKeys(value).some(key=>typeof key!=="string"))throw new OperatorContractError(code);
+  const copy=Object.create(null);
+  for(const [key,property] of Object.entries(descriptors)){
+    if(!Object.hasOwn(property,"value")||property.enumerable!==true)throw new OperatorContractError(code);
+    copy[key]=property.value;
+  }
+  return copy;
+}
+
+export function authorizeOperatorProposal(input){strict(input,["proposal","catalog","principal","scope","region","authorizeCapability","authorizeContext"]);const{proposal,catalog,principal,scope,region,authorizeCapability,authorizeContext}=input;if(!isRecord(proposal)||!isRecord(principal))throw new OperatorContractError("invalid_shape");const stablePrincipal=Object.freeze(dataSnapshot(principal,"invalid_shape"));const checked=parseOperatorProposal(proposal);for(const k of ["tenantId","userId","accountId","sessionId","deviceId"])str(stablePrincipal[k]);str(scope);str(region);if(typeof authorizeCapability!=="function"||typeof authorizeContext!=="function")throw new OperatorContractError("missing_authorizer");if(!Array.isArray(catalog)||catalog.length>200)throw new OperatorContractError("invalid_catalog");const stableCatalog=catalog.map(c=>dataSnapshot(c,"invalid_catalog"));const matches=stableCatalog.filter(c=>c.id===checked.capabilityId&&c.version===checked.capabilityVersion);if(matches.length>1)throw new OperatorContractError("invalid_catalog");const rawItem=matches[0];
+// Snapshot the server catalog before policy callbacks: authorization is never allowed to
+// change the action identity, class or eligibility by mutating a shared descriptor.
+const item=isRecord(rawItem)?Object.freeze({...rawItem,
+  scopes:Array.isArray(rawItem.scopes)?Object.freeze([...rawItem.scopes]):rawItem.scopes,
+  regions:Array.isArray(rawItem.regions)?Object.freeze([...rawItem.regions]):rawItem.regions,
+  argumentKeys:Array.isArray(rawItem.argumentKeys)?Object.freeze([...rawItem.argumentKeys]):rawItem.argumentKeys}):null;if(!item||item.id!==checked.capabilityId||item.version!==checked.capabilityVersion||item.enabled!==true||!["read","draft","send","financial"].includes(item.executionClass)||!Array.isArray(item.scopes)||!item.scopes.includes(scope)||!Array.isArray(item.regions)||!item.regions.includes(region))throw new OperatorContractError("not_qualified");if(!Array.isArray(item.argumentKeys)||item.argumentKeys.length>32||!item.argumentKeys.every(k=>typeof k==="string"))throw new OperatorContractError("invalid_catalog");for(const k of Object.keys(checked.untrustedArguments))if(!item.argumentKeys.includes(k))throw new OperatorContractError("unknown_argument");if(!isExplicitlyAuthorized(authorizeCapability,{principal:stablePrincipal,scope,region,capability:item,arguments:checked.untrustedArguments}))throw new OperatorContractError("not_authorized");if(checked.contextRef&&!isExplicitlyAuthorized(authorizeContext,{principal:stablePrincipal,scope,contextRef:checked.contextRef}))throw new OperatorContractError("not_authorized");return Object.freeze({capability:item,arguments:checked.untrustedArguments,contextRef:checked.contextRef??null,classification:item.executionClass,requestId:checked.requestId})}
+
+export function normalizedTerms(v){
+  // Approval terms are persisted JSON data. Never evaluate computed fields or
+  // collapse sparse/extended arrays into a different transaction's JSON terms.
+  function norm(x,d){
+    if(d>5)throw new OperatorContractError("invalid_terms");
+    if(x===null||typeof x==="boolean"||(typeof x==="string"&&x.length<=256)||(typeof x==="number"&&Number.isSafeInteger(x)))return x;
+    if(Array.isArray(x)){
+      const properties=Object.getOwnPropertyDescriptors(x);
+      const length=properties.length?.value;
+      if(!Number.isSafeInteger(length)||length<0||length>20||Reflect.ownKeys(x).length!==length+1)
+        throw new OperatorContractError("invalid_terms");
+      const out=[];
+      for(let i=0;i<length;i++){
+        const property=properties[String(i)];
+        if(!property||!Object.hasOwn(property,"value")||property.enumerable!==true)
+          throw new OperatorContractError("invalid_terms");
+        out.push(norm(property.value,d+1));
+      }
+      return out;
+    }
+    if(isRecord(x)){
+      const snapshot=dataSnapshot(x,"invalid_terms");
+      if(Object.keys(snapshot).length>30)throw new OperatorContractError("invalid_terms");
+      const out=Object.create(null);
+      for(const k of Object.keys(snapshot).sort()){
+        if(["__proto__","constructor","prototype"].includes(k)||k.length>64)throw new OperatorContractError("invalid_terms");
+        out[k]=norm(snapshot[k],d+1);
+      }
+      return out;
+    }
+    throw new OperatorContractError("invalid_terms");
+  }
+  if(!isRecord(v))throw new OperatorContractError("invalid_terms");
+  const s=JSON.stringify(norm(v,0));
+  if(s.length>4096)throw new OperatorContractError("invalid_terms");
+  return s;
+}
+
+export function verifyIssuedApproval(input){
+  input=dataSnapshot(input,"approval_invalid");
+  strict(input,["issued","presentedTicketId","principal","expected","now"]);
+  const{presentedTicketId,now}=input;
+  const issued=dataSnapshot(input.issued,"approval_invalid");
+  const principal=dataSnapshot(input.principal,"approval_invalid");
+  const expected=dataSnapshot(input.expected,"approval_invalid");
+  // 'issued' must originate in authenticated server persistence, never from model, card or client JSON.
+  // Validate all identity fields independently: two missing/undefined bindings must not compare equal.
+  if(!isRecord(issued)||!isRecord(principal)||!isRecord(expected)||!Number.isSafeInteger(now)||now<0)
+    throw new OperatorContractError("approval_invalid");
+  const identities=["tenantId","userId","accountId","sessionId","deviceId"];
+  try{
+    for(const k of identities){str(principal[k]);str(issued[k]);}
+    for(const k of ["operationId","revision"]){str(issued[k]);str(expected[k]);}
+    capability(issued.capabilityId);capability(expected.capabilityId);
+    str(presentedTicketId,8,256);str(issued.ticketId,8,256);
+  }catch{throw new OperatorContractError("approval_invalid");}
+  if(!identities.every(k=>Object.hasOwn(principal,k)&&Object.hasOwn(issued,k)&&typeof principal[k]==="string"&&principal[k].trim().length>0&&principal[k].trim()===principal[k]&&issued[k]===principal[k]))
+    throw new OperatorContractError("approval_invalid");
+  const refs=["operationId","capabilityId","revision"];
+  if(!refs.every(k=>Object.hasOwn(issued,k)&&Object.hasOwn(expected,k)&&typeof expected[k]==="string"&&expected[k].trim().length>0&&issued[k]===expected[k]))
+    throw new OperatorContractError("approval_invalid");
+  if(issued.state!=="issued"||typeof presentedTicketId!=="string"||presentedTicketId.length<8||
+     presentedTicketId.trim()!==presentedTicketId||issued.ticketId!==presentedTicketId||
+     !Number.isSafeInteger(issued.capabilityVersion)||issued.capabilityVersion<1||
+     issued.capabilityVersion>1000||issued.capabilityVersion!==expected.capabilityVersion||
+     !Number.isSafeInteger(issued.issuedAtMs)||issued.issuedAtMs<0||
+     !Number.isSafeInteger(issued.expiresAtMs)||issued.expiresAtMs<=issued.issuedAtMs||
+     now<issued.issuedAtMs||now>=issued.expiresAtMs||
+     issued.expiresAtMs-issued.issuedAtMs>900000||
+     !isRecord(issued.terms)||!isRecord(expected.terms))
+    throw new OperatorContractError("approval_invalid");
+  if(normalizedTerms(issued.terms)!==normalizedTerms(expected.terms))
+    throw new OperatorContractError("approval_terms_changed");
+  return Object.freeze({operationId:issued.operationId,ticketId:issued.ticketId,revision:issued.revision});
+}
+
+export function admitTaskExecution(input){strict(input,["phase","classification","approvalVerified"]);if(!["read","draft","send","financial"].includes(input.classification))throw new OperatorContractError("invalid_classification");if(input.classification==="read"||input.classification==="draft"){if(input.phase!=="prepared")throw new OperatorContractError("approval_required")}else if(input.phase!=="awaiting_approval"||input.approvalVerified!==true)throw new OperatorContractError("approval_required");return "running"}
+
+export function advanceTaskPhase(input){strict(input,["from","to"],["receipt","errorCode"]);const allowed={proposed:["clarifying","prepared","cancelled"],clarifying:["prepared","cancelled"],prepared:["awaiting_approval","running","cancelled"],awaiting_approval:["running","cancelled"],running:["reconciling","succeeded","failed"],reconciling:["succeeded","failed"],succeeded:[],failed:[],cancelled:[]};if(!Object.hasOwn(allowed,input.from)||!allowed[input.from].includes(input.to))throw new OperatorContractError("illegal_transition");if(input.to==="succeeded"&&(!isRecord(input.receipt)||input.receipt.verifiedReadback!==true||typeof input.receipt.domainReceiptId!=="string"||input.receipt.domainReceiptId.length<6||input.receipt.domainReceiptId.length>256||input.receipt.domainReceiptId.trim()!==input.receipt.domainReceiptId||/[\u0000-\u001f\u007f]/u.test(input.receipt.domainReceiptId)||input.receipt.domainReceiptId.trim().length===0))throw new OperatorContractError("missing_authoritative_receipt");if(input.to==="failed"&&(typeof input.errorCode!=="string"||!/^[a-z][a-z0-9_.-]{1,79}$/u.test(input.errorCode)))throw new OperatorContractError("missing_failure_evidence");return input.to}
+
+export function validateTaskEventPage(input){strict(input,["taskId","afterRevision","events"]);const id=str(input.taskId);if(!Number.isSafeInteger(input.afterRevision)||input.afterRevision<0||!Array.isArray(input.events)||input.events.length>200)throw new OperatorContractError("invalid_event_page");let last=input.afterRevision;for(const e of input.events){strict(e,["taskId","revision","phase","at"]);if(e.taskId!==id||!Number.isSafeInteger(e.revision)||e.revision!==last+1||typeof e.at!=="string"||!["proposed","clarifying","prepared","awaiting_approval","running","reconciling","succeeded","failed","cancelled"].includes(e.phase))throw new OperatorContractError("invalid_event_page");last=e.revision}return Object.freeze({nextRevision:last,count:input.events.length})}
+
+export function selectOperatorCard(input){strict(input,["card","supportedVersions"]);const{card,supportedVersions}=input;if(!isRecord(card)||!Array.isArray(supportedVersions)||supportedVersions.length>10)throw new OperatorContractError("invalid_shape");if(!Number.isSafeInteger(card.version)||!supportedVersions.includes(card.version)||!["review","choices","approval","progress","result","pending","unknown","unsupported"].includes(card.kind))return Object.freeze({version:1,kind:"unsupported",message:"This task requires a newer Masanawa app. No action has been executed here.",actionable:false});return Object.freeze({version:card.version,kind:card.kind,message:str(card.message,1,500),actionable:false})}
