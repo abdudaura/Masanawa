@@ -220,7 +220,7 @@ describe("Postgres Talk repository", () => {
         avatarUrl: null,
         isHost: false,
       },
-    ]);
+    ] });
     expect(calls[0]?.text).toContain("FROM talks.talk_seats s");
     expect(calls[0]?.text).toContain("s.active=true OR t.state='ended'");
     expect(calls[0]?.text).toContain(
