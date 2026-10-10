@@ -255,3 +255,27 @@ test("rejects malformed comments and attempts to impersonate authors",async()=>{
  }
  assert.equal(f.rows.size,1);
 });
+
+test("public DTOs conceal storage and caller identifiers but retain persisted social counts", async () => {
+  const f = fixture();
+  const pending = await f.service.publish(actor, input);
+  await f.service.settle({tenantId: actor.tenantId, postId: pending.postId, expectedRevision: 0});
+  f.rows.set(pending.postId, {...f.rows.get(pending.postId), likeCount: 7, commentCount: 2});
+  const publicFeed = await f.service.feed({tenantId: actor.tenantId, viewerId: second.accountId});
+  assert.equal(publicFeed.items.length, 1);
+  const publicPost = publicFeed.items[0];
+  assert.deepEqual([publicPost.likeCount, publicPost.commentCount], [7, 2]);
+  for (const secret of ["authorAccountId", "tenantId", "requestId", "assetId"]) {
+    assert.equal(Object.hasOwn(publicPost, secret), false, secret + " must not escape");
+  }
+  for (const list of [await f.service.mine(actor),
+                      await (async () => {
+                        await f.service.reaction(second, {postId: pending.postId, kind: "save", enabled: true});
+                        return f.service.saved(second);
+                      })()]) {
+    assert.equal(list.length, 1);
+    assert.deepEqual([list[0].likeCount, list[0].commentCount], [7, 2]);
+    assert.equal(Object.hasOwn(list[0], "assetId"), false);
+    assert.equal(Object.hasOwn(list[0], "authorAccountId"), false);
+  }
+});
