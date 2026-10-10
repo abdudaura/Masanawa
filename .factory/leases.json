@@ -440,9 +440,9 @@
       "source_pr": 604,
       "base_sha": "0244a2f4ffcff2a13372e89a160f221d460fc2d5",
       "claimed_at": "2026-10-10T07:48:00Z",
-      "heartbeat_at": "2026-10-10T07:48:00Z",
-      "expires_at": "2026-10-10T07:53:00Z",
-      "notes": "Continuing #604 bounded connected invitation UI and widget-negative test; no AF00 shared root, backend, auth, finance or deployment edits."
+      "heartbeat_at": "2026-10-10T07:52:00Z",
+      "expires_at": "2026-10-10T07:57:00Z",
+      "notes": "Two commits on existing #604: 898c294a49ca10652719b470ef60626a9e363646 UI, 0e7c3d75f36d437125a8d94f3d545b575dc83f1c tests. Exact-head GitHub Actions Foundation 38035780178 TS2459 preexisting; Flutter 38035780189 analyzer failed preexisting #609 parse and root #600 fake markRead; scoped AF00 comment 6095325579. Continue source review and test owner coordination."
     },
     {
       "claim_id": "af13-pr460-twin-runtime-contract-test-20261010",
