@@ -26,7 +26,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   List<AudioPost> _items = const [];
   String? _next;
   String? _message;
-  bool _loading = true, _loadingMore = false, _mine = false;
+  bool _loading = true, _loadingMore = false, _mine = false, _saved = false;
   int _generation = 0;
   final Set<String> _reacting = {};
   final Set<String> _removing = {};
@@ -57,13 +57,13 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     ++_generation;
     super.dispose();
   }
-  void _switchFeed(bool mine) {
-    if (_mine == mine) return;
-    setState(() => _mine = mine);
+  void _selectFeed({bool mine = false, bool saved = false}) {
+    if (_mine == mine && _saved == saved) return;
+    setState(() { _mine = mine; _saved = saved; });
     _load();
   }
   Future<void> _load({bool more = false}) async {
-    if (!_authorized || (more && (_mine || _next == null || _loadingMore))) {
+    if (!_authorized || (more && (_mine || _saved || _next == null || _loadingMore))) {
       if (mounted) setState(() => _loading = false);
       return;
     }
@@ -76,7 +76,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     try {
       final page = _mine
           ? AudioPostPage(items: await widget.transport.mine(), nextCursor: null)
-          : await widget.transport.discover(cursor: more ? _next : null);
+          : _saved
+            ? AudioPostPage(items: await widget.transport.saved(), nextCursor: null)
+            : await widget.transport.discover(cursor: more ? _next : null);
       if (!mounted || sequence != _generation || !_authorized) return;
       final seen = more ? _items.map((e) => e.postId).toSet() : <String>{};
       setState(() {
@@ -133,14 +135,21 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       if (mounted) setState(() => _removing.remove(post.postId));
     }
   }
-  Future<void> _react(AudioPost post, String kind) async {
+  Future<void> _react(AudioPost post, String kind, {bool enabled = true}) async {
     if (!_authorized || !_reacting.add(post.postId + kind)) return;
     setState(() {});
     try {
-      await widget.transport.react(postId: post.postId, kind: kind, enabled: true);
+      await widget.transport.react(postId: post.postId, kind: kind, enabled: enabled);
       if (!mounted || !_authorized) return;
+      if (kind == 'save' && !enabled && _saved) {
+        setState(() => _items = List.unmodifiable(
+          _items.where((item) => item.postId != post.postId),
+        ));
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(kind == 'save' ? 'Saved to your library.' : 'Liked.')),
+        SnackBar(content: Text(kind == 'save'
+          ? (enabled ? 'Saved to your library.' : 'Removed from saved Talks.')
+          : 'Liked.')),
       );
     } catch (_) {
       if (!mounted || !_authorized) return;
@@ -182,10 +191,14 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 40),
                       children: [
                         Wrap(spacing: 8, children: [
-                          ChoiceChip(label: const Text('Discover'), selected: !_mine,
-                            onSelected: _authorized ? (_) => _switchFeed(false) : null),
+                          ChoiceChip(label: const Text('Discover'), selected: !_mine && !_saved,
+                            onSelected: _authorized ? (_) => _selectFeed() : null),
+                          ChoiceChip(label: const Text('Following'), selected: false,
+                            onSelected: null),
+                          ChoiceChip(label: const Text('Saved'), selected: _saved,
+                            onSelected: _authorized ? (_) => _selectFeed(saved: true) : null),
                           ChoiceChip(label: const Text('My Talks'), selected: _mine,
-                            onSelected: _authorized ? (_) => _switchFeed(true) : null),
+                            onSelected: _authorized ? (_) => _selectFeed(mine: true) : null),
                         ]),
                         const SizedBox(height: 8),
                         if (_message != null)
@@ -203,7 +216,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                               children: [
                                 Icon(Icons.graphic_eq, size: 48),
                                 SizedBox(height: 14),
-                                Text(_mine ? 'No Talks in your library yet.' : 'No published audio Talks yet.'),
+                                Text(_mine ? 'No Talks in your library yet.'
+                                  : _saved ? 'No saved Talks yet.' : 'No published audio Talks yet.'),
                                 SizedBox(height: 6),
                                 Text('New audio posts will appear here.'),
                               ],
@@ -259,9 +273,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                     ),
                                     TextButton.icon(
                                       onPressed: post.status != 'published' || _reacting.contains(post.postId + 'save')
-                                          ? null : () => _react(post, 'save'),
-                                      icon: const Icon(Icons.bookmark_border),
-                                      label: const Text('Save'),
+                                          ? null : () => _react(post, 'save', enabled: !_saved),
+                                      icon: Icon(_saved ? Icons.bookmark_remove_outlined : Icons.bookmark_border),
+                                      label: Text(_saved ? 'Unsave' : 'Save'),
                                     ),
                                   ]),
                                   if (widget.onPlayAuthorized == null)
