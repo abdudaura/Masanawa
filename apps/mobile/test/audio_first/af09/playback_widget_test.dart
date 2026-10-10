@@ -291,6 +291,30 @@ void main() {
     playback.dispose();
   });
 
+  test('short-lived ticket expires while native media is queued; retry remains safe', () async {
+    final output = DelayedStartOutput();
+    var clockMs = 1000;
+    final playback = AudioPostPlaybackController(
+      api: client(), accountId: 'a', isCurrentAccount: (_) => true,
+      expectedMediaHost: 'media.example.test', output: output,
+      nowMs: () => clockMs, ticketRequest: (_) async => ticket(),
+    );
+    final first = playback.play(fixture(postId: 'talk-01'));
+    await output.firstEntered.future;
+    final second = playback.play(fixture(postId: 'talk-02'));
+    await Future<void>.delayed(Duration.zero);
+    // Both media tickets were valid when requested, but the second cannot
+    // reuse its ticket after waiting behind a long-running first start.
+    clockMs = 30000;
+    output.releaseFirst.complete();
+    await Future.wait([first, second]);
+    expect(output.starts, 1);
+    expect(output.stopsDuringStart, 0);
+    expect(playback.playing, isFalse);
+    expect(playback.error, 'Audio unavailable. Reconnect or retry.');
+    playback.dispose();
+  });
+
   test('non-published posts and absent account never issue tickets', () async {
     final output = RecordingOutput();
     var requests = 0;
