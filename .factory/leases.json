@@ -1252,14 +1252,15 @@
         "tests/e2e/J14/**",
         "packages/external-videos/migrations/0002_youtube_sources.sql",
         "adapters/storage/postgres/src/external_videos/youtube_source.ts",
-        "adapters/storage/postgres/src/external_videos/youtube_source.test.ts"
+        "adapters/storage/postgres/src/external_videos/youtube_source.test.ts",
+        "packages/external-videos/migrations/0002_youtube_websub.sql"
       ],
       "branch": "lane/l-video-youtube-websub-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:30:45.836Z",
-      "heartbeat_at": "2026-10-10T16:46:07.733Z",
-      "expires_at": "2026-10-10T16:51:07.733Z",
-      "notes": "J15 #624 merged and released; claim expanded only to new J14 forward-only migration/repository exact files. No edit of J15 existing paths.",
+      "heartbeat_at": "2026-10-10T16:46:22.468Z",
+      "expires_at": "2026-10-10T16:51:22.468Z",
+      "notes": "J15 #624 merged and released claim. Extend J14 to additive 0002 migration only; retain immutable 0001. No live activation.",
       "source_head": "35860eb120ae21209e2a82f47d1c04814d8e8e69",
       "source_pr": 627
     },
