@@ -291,8 +291,8 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T04:50:56.006Z",
-      "heartbeat_at": "2026-10-10T04:52:06.272Z",
-      "expires_at": "2026-10-10T04:57:06.272Z",
+      "heartbeat_at": "2026-10-10T04:57:13.869Z",
+      "expires_at": "2026-10-10T05:02:13.869Z",
       "notes": "Scope is only new feature-layer Flutter files; AF05 owns native recording infrastructure and AF15 owns canonical media authority. AF00 owns composer injection/shell."
     },
     {
@@ -329,8 +329,8 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T04:54:09.473Z",
-      "heartbeat_at": "2026-10-10T04:54:09.473Z",
-      "expires_at": "2026-10-10T04:59:09.473Z",
+      "heartbeat_at": "2026-10-10T04:57:13.869Z",
+      "expires_at": "2026-10-10T05:02:13.869Z",
       "notes": "No root / shared Gateway / native / financial or migration path edits."
     }
   ],
