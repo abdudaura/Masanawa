@@ -41,22 +41,22 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
  async list(a,filters){
    const search=(filters.search||"").trim().slice(0,100);
    const r=await pool.query(
-    \`SELECT r.*, (SELECT count(*) FROM rooms.memberships m WHERE m.tenant_id=r.tenant_id AND m.room_id=r.room_id AND m.state='active') AS member_count,
+    `SELECT r.*, (SELECT count(*) FROM rooms.memberships m WHERE m.tenant_id=r.tenant_id AND m.room_id=r.room_id AND m.state='active') AS member_count,
     EXISTS(SELECT 1 FROM rooms.memberships m WHERE m.tenant_id=r.tenant_id AND m.room_id=r.room_id AND m.user_id=$2 AND m.state='active') AS joined
     FROM rooms.rooms r WHERE r.tenant_id=$1 AND r.state='published'
     AND ($3::text='' OR r.profession_title ILIKE '%' || $3 || '%')
     AND ($4::text='' OR r.language=$4)
     AND ($5::boolean=false OR EXISTS(SELECT 1 FROM rooms.memberships m WHERE m.tenant_id=r.tenant_id AND m.room_id=r.room_id AND m.user_id=$2 AND m.state='active'))
-    ORDER BY r.profession_title,r.room_id LIMIT 100\`,
+    ORDER BY r.profession_title,r.room_id LIMIT 100`,
     [a.tenantId,a.userId,search,filters.language||"",filters.joined===true]);
    return r.rows.map(parsePreview);
  },
  async get(a,id){
    assertRoom(id);
-   const r=await pool.query(\`SELECT r.*,
+   const r=await pool.query(`SELECT r.*,
     (SELECT count(*) FROM rooms.memberships m WHERE m.tenant_id=r.tenant_id AND m.room_id=r.room_id AND m.state='active') AS member_count,
     EXISTS(SELECT 1 FROM rooms.memberships m WHERE m.tenant_id=r.tenant_id AND m.room_id=r.room_id AND m.user_id=$3 AND m.state='active') AS joined
-    FROM rooms.rooms r WHERE r.tenant_id=$1 AND r.room_id=$2 AND r.state='published'\`,
+    FROM rooms.rooms r WHERE r.tenant_id=$1 AND r.room_id=$2 AND r.state='published'`,
     [a.tenantId,id,a.userId]);
    return r.rows.length?parsePreview(r.rows[0]):null;
  },
@@ -77,10 +77,10 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    if(input.title.trim().toLowerCase()===input.teacherCharacterId.trim().toLowerCase())
      throw new RoomError(422,"profession_title_required");
    const id=newId("room_");
-   await pool.query(\`INSERT INTO rooms.rooms
+   await pool.query(`INSERT INTO rooms.rooms
     (tenant_id,room_id,slug,profession_title,teacher_character_id,language)
     SELECT $1,$2,$3,$4,c.character_id,$6 FROM identity.characters c
-    WHERE c.tenant_id=$1 AND c.character_id=$5 AND c.state='active'\`,
+    WHERE c.tenant_id=$1 AND c.character_id=$5 AND c.state='active'`,
     [a.tenantId,id,input.slug,input.title.trim(),input.teacherCharacterId,input.language||"en"]);
    const x=await pool.query("SELECT * FROM rooms.rooms WHERE tenant_id=$1 AND room_id=$2",[a.tenantId,id]);
    if(!x.rows.length)throw new RoomError(422,"teacher_not_found");
@@ -89,8 +89,8 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
  async publish(a,id,eligibleMasana){
    requireRoomStaff(a.roles);assertRoom(id);
    if(!eligibleMasana)throw new RoomError(403,"masana_teacher_required");
-   const r=await pool.query(\`UPDATE rooms.rooms SET state='published',updated_at=now()
-     WHERE tenant_id=$1 AND room_id=$2 AND state='draft' RETURNING room_id\`,[a.tenantId,id]);
+   const r=await pool.query(`UPDATE rooms.rooms SET state='published',updated_at=now()
+     WHERE tenant_id=$1 AND room_id=$2 AND state='draft' RETURNING room_id`,[a.tenantId,id]);
    if(!r.rows.length)throw new RoomError(409,"room_publish_conflict");
  },
  async join(a,id){
@@ -99,8 +99,8 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
      const room=await lookupRoom(q,a.tenantId,id,true);requirePublishedFree(room);
      const prev=await q.query("SELECT state FROM rooms.memberships WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3 FOR UPDATE",[a.tenantId,id,userId]);
      if(prev.rows[0]?.state==="banned")throw new RoomError(403,"room_banned");
-     await q.query(\`INSERT INTO rooms.memberships(tenant_id,room_id,user_id) VALUES ($1,$2,$3)
-       ON CONFLICT(tenant_id,room_id,user_id) DO UPDATE SET state='active',updated_at=now()\`,[a.tenantId,id,userId]);
+     await q.query(`INSERT INTO rooms.memberships(tenant_id,room_id,user_id) VALUES ($1,$2,$3)
+       ON CONFLICT(tenant_id,room_id,user_id) DO UPDATE SET state='active',updated_at=now()`,[a.tenantId,id,userId]);
    });
  },
  async leave(a,id){
@@ -113,23 +113,23 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    return transaction(pool,async q=>{
      const room=await lookupRoom(q,a.tenantId,id);
      requirePublishedFree(room);await requireMember(q,a,id,true);
-     const duplicate=await q.query(\`SELECT question_id,room_id,body,state,queued_at,NULL::text AS answer
-       FROM rooms.questions WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3 AND idempotency_key=$4\`,
+     const duplicate=await q.query(`SELECT question_id,room_id,body,state,queued_at,NULL::text AS answer
+       FROM rooms.questions WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3 AND idempotency_key=$4`,
        [a.tenantId,id,userId,key]);
      if(duplicate.rows.length){
        if(duplicate.rows[0].body!==body)throw new RoomError(409,"idempotency_conflict");
        return parseQuestion(duplicate.rows[0]);
      }
-     const count=await q.query(\`SELECT count(*)::int AS n FROM rooms.questions
-       WHERE tenant_id=$1 AND user_id=$2 AND queued_at>=now()-interval '24 hours'\`,[a.tenantId,userId]);
+     const count=await q.query(`SELECT count(*)::int AS n FROM rooms.questions
+       WHERE tenant_id=$1 AND user_id=$2 AND queued_at>=now()-interval '24 hours'`,[a.tenantId,userId]);
      if(Number(count.rows[0].n)>=20)throw new RoomError(429,"question_quota_reached");
      const questionId=newId("room-question_");
-     await q.query(\`INSERT INTO rooms.questions(tenant_id,question_id,room_id,user_id,body,idempotency_key)
-       VALUES ($1,$2,$3,$4,$5,$6)\`,[a.tenantId,questionId,id,userId,body,key]);
+     await q.query(`INSERT INTO rooms.questions(tenant_id,question_id,room_id,user_id,body,idempotency_key)
+       VALUES ($1,$2,$3,$4,$5,$6)`,[a.tenantId,questionId,id,userId,body,key]);
      const eid=newId("event_"),correlation=newId("correlation_");
-     await q.query(\`INSERT INTO events.outbox
+     await q.query(`INSERT INTO events.outbox
        (outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload)
-       VALUES ($1,$2,$3,'rooms.question.queued',1,'room_question',$4,$5,'rooms.teacher',jsonb_build_object('roomId',$6,'questionId',$4))\`,
+       VALUES ($1,$2,$3,'rooms.question.queued',1,'room_question',$4,$5,'rooms.teacher',jsonb_build_object('roomId',$6,'questionId',$4))`,
        [newId("outbox-event_"),a.tenantId,eid,questionId,correlation,id]);
      return {questionId,roomId:id,body,state:"queued" as const,queuedAt:new Date().toISOString(),answer:null};
    });
@@ -137,12 +137,12 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
  async questions(a,id){
    assertRoom(id);const room=await lookupRoom(pool,a.tenantId,id);requirePublishedFree(room);
    await requireMember(pool,a,id);
-   const res=await pool.query(\`SELECT q.question_id,q.room_id,q.body,q.state,q.queued_at,
+   const res=await pool.query(`SELECT q.question_id,q.room_id,q.body,q.state,q.queued_at,
      CASE WHEN ans.state='approved' THEN ans.body ELSE NULL END AS answer
      FROM rooms.questions q LEFT JOIN rooms.answers ans
      ON ans.tenant_id=q.tenant_id AND ans.question_id=q.question_id
      WHERE q.tenant_id=$1 AND q.room_id=$2 AND q.state<>'rejected'
-     ORDER BY q.queued_at DESC,q.question_id LIMIT 100\`,[a.tenantId,id]);
+     ORDER BY q.queued_at DESC,q.question_id LIMIT 100`,[a.tenantId,id]);
    return res.rows.map(parseQuestion);
  },
  async question(a,id,qid){
@@ -151,12 +151,12 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
  },
  async staffQueue(a){
    requireRoomStaff(a.roles);
-   const r=await pool.query(\`SELECT q.question_id,q.room_id,q.body,q.state,q.queued_at,
+   const r=await pool.query(`SELECT q.question_id,q.room_id,q.body,q.state,q.queued_at,
        ans.body AS answer FROM rooms.questions q
        JOIN rooms.rooms room ON room.tenant_id=q.tenant_id AND room.room_id=q.room_id
        LEFT JOIN rooms.answers ans ON ans.tenant_id=q.tenant_id AND ans.question_id=q.question_id
        WHERE q.tenant_id=$1 AND q.state IN ('queued','answering','needs_staff')
-       ORDER BY q.queued_at,q.question_id LIMIT 100\`,[a.tenantId]);
+       ORDER BY q.queued_at,q.question_id LIMIT 100`,[a.tenantId]);
    return r.rows.map(parseQuestion);
  },
  async review(a,qid,raw,decision){
@@ -164,29 +164,36 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    const body=raw.trim();
    if(body.length<1||body.length>6000)throw new RoomError(422,"invalid_answer");
    await transaction(pool,async q=>{
-     const r=await q.query(\`SELECT q.*,r.teacher_character_id
+     const r=await q.query(`SELECT q.*,r.teacher_character_id
        FROM rooms.questions q JOIN rooms.rooms r ON r.tenant_id=q.tenant_id AND r.room_id=q.room_id
-       WHERE q.tenant_id=$1 AND q.question_id=$2 FOR UPDATE OF q\`,[a.tenantId,qid]);
+       WHERE q.tenant_id=$1 AND q.question_id=$2 FOR UPDATE OF q`,[a.tenantId,qid]);
      if(!r.rows.length)throw new RoomError(404,"question_not_found");
      if(r.rows[0].state==="answered"||r.rows[0].state==="rejected")throw new RoomError(409,"question_already_reviewed");
-     await q.query(\`INSERT INTO rooms.answers(tenant_id,answer_id,question_id,teacher_character_id,body,state,reviewed_by,reviewed_at)
+     await q.query(`INSERT INTO rooms.answers(tenant_id,answer_id,question_id,teacher_character_id,body,state,reviewed_by,reviewed_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,now())
-       ON CONFLICT(tenant_id,question_id) DO UPDATE SET body=$5,state=$6,reviewed_by=$7,reviewed_at=now()\`,
+       ON CONFLICT(tenant_id,question_id) DO UPDATE SET body=$5,state=$6,reviewed_by=$7,reviewed_at=now()`,
        [a.tenantId,newId("room-answer_"),qid,r.rows[0].teacher_character_id,body,decision==="approve"?"approved":"rejected",userId]);
      await q.query("UPDATE rooms.questions SET state=$3,updated_at=now() WHERE tenant_id=$1 AND question_id=$2",
        [a.tenantId,qid,decision==="approve"?"answered":"rejected"]);
-     await q.query(\`INSERT INTO events.audit_events
+     if(decision==="approve"){
+       await q.query(`INSERT INTO events.outbox
+         (outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload)
+         VALUES($1,$2,$3,'rooms.answer.approved',1,'room_question',$4,$5,'notifications.rooms',
+           jsonb_build_object('userId',$6,'roomId',$7,'questionId',$4))`,
+         [newId("outbox-event_"),a.tenantId,newId("event_"),qid,newId("correlation_"),r.rows[0].user_id,r.rows[0].room_id]);
+     }
+     await q.query(`INSERT INTO events.audit_events
        (audit_event_id,tenant_id,event_type,schema_version,aggregate_type,aggregate_id,occurred_at,actor,correlation_id,sensitivity,payload)
-       VALUES($1,$2,'rooms.answer.reviewed',1,'room_question',$3,now(),jsonb_build_object('userId',$4),$5,'internal',jsonb_build_object('decision',$6))\`,
+       VALUES($1,$2,'rooms.answer.reviewed',1,'room_question',$3,now(),jsonb_build_object('userId',$4),$5,'internal',jsonb_build_object('decision',$6))`,
        [newId("audit-event_"),a.tenantId,qid,userId,newId("correlation_"),decision]);
    });
  },
  async lessons(a,id){
    const room=await lookupRoom(pool,a.tenantId,id);requirePublishedFree(room);
    await requireMember(pool,a,id);
-   const r=await pool.query(\`SELECT lesson_id,body,kind FROM rooms.lessons
+   const r=await pool.query(`SELECT lesson_id,body,kind FROM rooms.lessons
      WHERE tenant_id=$1 AND room_id=$2 AND state='published' AND (publish_at IS NULL OR publish_at<=now())
-     ORDER BY publish_at DESC NULLS LAST,lesson_id DESC LIMIT 100\`,[a.tenantId,id]);
+     ORDER BY publish_at DESC NULLS LAST,lesson_id DESC LIMIT 100`,[a.tenantId,id]);
    return r.rows.map(x=>({lessonId:x.lesson_id,body:x.body,kind:x.kind}));
  },
  async createLesson(a,id,body,kind){
@@ -194,8 +201,8 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    if(!["lesson","announcement"].includes(kind)||!body.trim()||body.length>10000)
      throw new RoomError(422,"invalid_lesson");
    await lookupRoom(pool,a.tenantId,id);
-   await pool.query(\`INSERT INTO rooms.lessons(tenant_id,lesson_id,room_id,kind,body,state,publish_at)
-     VALUES ($1,$2,$3,$4,$5,'published',now())\`,
+   await pool.query(`INSERT INTO rooms.lessons(tenant_id,lesson_id,room_id,kind,body,state,publish_at)
+     VALUES ($1,$2,$3,$4,$5,'published',now())`,
      [a.tenantId,newId("room-lesson_"),id,kind,body.trim()]);
  }
  };
