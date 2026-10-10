@@ -1,21 +1,11 @@
-import {canDeliver,type DeliveryPermission} from "@masanawa/masana-social";
+import {canDeliver,type SocialDeliveryJob,type SocialDeliveryGate} from "@masanawa/masana-social";
+export type {SocialDeliveryJob,SocialDeliveryGate} from "@masanawa/masana-social";
 /**
  * Capability revalidation is mandatory at execution time (not only at webhook
  * admission). This adapter never opens WhatsApp personal sessions.
  * Actual enabled provider transport must be supplied by a separately authorized
  * AF00 composition with a documented provider-specific right to automate.
  */
-export interface SocialDeliveryJob {
-  tenantId:string; identityId:string;characterId:string;eventId:string;
-  externalFanHash:string;action:"reply"; idempotencyKey:string;
-}
-export interface SocialDeliveryGate {
-  /** Resolves current permission, consent and vault authorization under tenant/character. */
-  readPermission(job:SocialDeliveryJob):Promise<DeliveryPermission|null>;
-  /** Atomic existing events journal lease keyed by tenant+provider+eventId. */
-  claim(job:SocialDeliveryJob):Promise<"acquired"|"duplicate"|"busy">;
-  finish(job:SocialDeliveryJob,outcome:"blocked"|"sent"|"held_unknown",reason?:string):Promise<void>;
-}
 export interface SocialAuthorizedTransport {
   send(job:SocialDeliveryJob):Promise<void>;
 }
