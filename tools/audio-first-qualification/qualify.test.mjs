@@ -140,6 +140,7 @@ test('PASS_REAL requires actual execution command, nonzero steps, assertions and
  for(const execution of [{...good.execution,steps:0},{...good.execution,assertions:[]},{...good.execution,command:''},undefined]){
    assert.ok(checkRecord({...good,execution},mat.journeys[0],sha).some(x=>x.includes('executed command')));
  }
+ assert.ok(checkRecord({...good,execution:{...good.execution,command:'curl -H "Bearer abcdefghijklmnopqrs"'}},mat.journeys[0],sha).some(x=>x.includes('unredacted')));
  for(const executedAt of ['2020-01-01T00:00:00Z','2030-01-01T00:00:00+01:00','not-a-date']){
    assert.ok(checkRecord({...good,executedAt},mat.journeys[0],sha).some(x=>x.includes('recent UTC')));
  }
