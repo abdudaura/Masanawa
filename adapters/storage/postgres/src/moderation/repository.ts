@@ -1,5 +1,5 @@
 import type {Pool,PoolClient} from "pg";
-import type {CaseRecord,CaseEvent,ActionRecord,CaseTarget,CaseCategory,CaseState,ActionKind,AppealRecord} from "@masanawa/moderation";
+import type {CaseRecord,CaseEvent,ActionRecord,CaseTarget,CaseCategory,CaseState,ActionKind,AppealRecord,CaseEvidence} from "@masanawa/moderation";
 import {CaseError,decisionRequiredApprovals} from "@masanawa/moderation";
 import {createPostgresAppealReview} from "./appeals.js";
 type CaseRow={tenant_id:string;case_id:string;reporter_user_id:string;target_kind:CaseTarget;target_id:string;category:CaseCategory;details:string;state:CaseState;version:number;created_at:Date;updated_at:Date;sla_due_at:Date;client_request_id:string};
@@ -26,6 +26,10 @@ export function createPostgresCaseRepository(pool:Pool){
     if(!row)throw new CaseError("moderation.create_conflict",409);
     if(row.target_kind!==record.targetKind||row.target_id!==record.targetId||row.category!==record.category||row.details!==record.details)
      throw new CaseError("moderation.idempotency_conflict",409);
+    if(row.case_id===record.caseId)await c.query(`INSERT INTO moderation.evidence_refs(
+      tenant_id,evidence_id,case_id,source_kind,source_id,submitted_by)
+      VALUES($1,$2,$3,$4,$5,$6)`,
+      [record.tenantId,"evidence_"+record.caseId,record.caseId,record.targetKind,record.targetId,record.reporterUserId]);
     if(row.case_id===record.caseId)await c.query(`INSERT INTO moderation.case_events(tenant_id,event_id,case_id,actor_id,kind,detail) VALUES($1,$2,$3,$4,'opened','')`,
      [record.tenantId,"evt_"+record.caseId,record.caseId,record.reporterUserId]);
     return mapped(row);
@@ -36,10 +40,15 @@ export function createPostgresCaseRepository(pool:Pool){
     const rs=await c.query<CaseRow>(`SELECT * FROM moderation.cases WHERE tenant_id=$1 AND case_id=$2`,[tenantId,caseId]);
     const row=rs.rows[0];if(!row)return null;
     const events=await c.query<EventRow>(`SELECT * FROM moderation.case_events WHERE tenant_id=$1 AND case_id=$2 ORDER BY created_at,event_id`,[tenantId,caseId]);
+    const evidence=await c.query<{evidence_id:string;source_kind:CaseTarget;source_id:string;submitted_by:string;created_at:Date}>(`
+     SELECT evidence_id,source_kind,source_id,submitted_by,created_at FROM moderation.evidence_refs
+     WHERE tenant_id=$1 AND case_id=$2 ORDER BY created_at,evidence_id`,[tenantId,caseId]);
     const actions=await c.query<ActionRow>(`SELECT * FROM moderation.actions WHERE tenant_id=$1 AND case_id=$2 ORDER BY created_at,action_id`,[tenantId,caseId]);
     const appeals=await c.query<{tenant_id:string;appeal_id:string;case_id:string;appellant_user_id:string;reason:string;state:AppealRecord["state"];reviewed_by:string|null;second_reviewed_by:string|null;version:number;created_at:Date}>(
        "SELECT * FROM moderation.appeals WHERE tenant_id=$1 AND case_id=$2 ORDER BY created_at,appeal_id",[tenantId,caseId]);
     return {...mapped(row),events:events.rows.map(event),actions:actions.rows.map(action),
+      evidence:evidence.rows.map((e):CaseEvidence=>({evidenceId:e.evidence_id,sourceKind:e.source_kind,
+       sourceId:e.source_id,submittedBy:e.submitted_by,createdAt:e.created_at.toISOString()})),
       appeals:appeals.rows.map(a=>({tenantId:a.tenant_id,appealId:a.appeal_id,caseId:a.case_id,appellantUserId:a.appellant_user_id,
        reason:a.reason,state:a.state,reviewedBy:a.reviewed_by,secondReviewedBy:a.second_reviewed_by,version:a.version,
        createdAt:a.created_at.toISOString()}))};
