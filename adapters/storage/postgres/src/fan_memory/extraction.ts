@@ -1,7 +1,11 @@
 import {createCanonicalId,parseCanonicalId,toInstant} from "@masanawa/contracts";
 import {createMemoryRecord} from "../memory/repository.js";
 import type {Pool,PoolClient} from "pg";
-import type {Candidate,ExtractionPort} from "../../../../../../services/worker/src/jobs/fan_memory/extract.js";
+interface Candidate {content:string;category:string;messageId:string;confidence:number;sourceHash:string}
+interface ExtractionPort {
+ enabled(t:string,r:string):Promise<boolean>;
+ commit(t:string,r:string,items:readonly Candidate[],ttlDays:180):Promise<number>;
+}
 
 /**
  * Inject a server-owned message ACL. Source IDs and hashes supplied by an LLM
