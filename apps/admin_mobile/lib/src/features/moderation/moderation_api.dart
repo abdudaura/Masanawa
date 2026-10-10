@@ -29,6 +29,10 @@ class ModerationApi {
       data: {'approve': approve, 'expectedVersion': version},
     );
   }
+  Future<void> dismiss({required String caseId,required String reason,required int version}) async {
+    await dio.post<dynamic>('/v1/admin/cases/${Uri.encodeComponent(caseId)}/dismiss',
+      data: {'reason': reason, 'expectedVersion': version});
+  }
   Future<void> reviewAppeal({
     required String caseId, required String appealId,
     required bool uphold, required int version,
