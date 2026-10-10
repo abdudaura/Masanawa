@@ -14,7 +14,7 @@ describe("Postgres Talk poll repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkPollSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [liveTalk] as unknown as Row[] };
         }
@@ -171,7 +171,7 @@ describe("Postgres Talk poll repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkPollSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [liveTalk] as unknown as Row[] };
         }

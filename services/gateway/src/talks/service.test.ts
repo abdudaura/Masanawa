@@ -9,8 +9,6 @@ import type {
 function talk(input: Partial<TalkRecord> & Pick<TalkRecord, "talkId" | "hostUserId">): TalkRecord {
   return Object.freeze({
     tenantId: "tenant-1",
-    talkId: input.talkId,
-    hostUserId: input.hostUserId,
     hostName: input.hostUserId,
     title: input.talkId,
     topic: "Topic",
