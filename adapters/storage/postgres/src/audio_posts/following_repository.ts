@@ -115,6 +115,32 @@ export function createPostgresFollowingRepository(
         following: result.rows[0]?.following === true,
       };
     },
+    async creatorFeed({ tenantId, viewerId, authorId, authorKind, limit, cursor: from }) {
+      const seek = parseCursor(from);
+      const batchSize = Math.min(limit * 3, 90);
+      const rows = await pool.query<PostRow>(
+        "SELECT " + postColumns + " FROM social.audio_posts p " +
+        "WHERE p.tenant_id=$1 AND p.author_id=$2 AND p.author_kind=$3 " +
+        "AND p.status='published' AND ($4::timestamptz IS NULL OR " +
+        "(date_trunc('milliseconds',p.created_at),p.post_id)<($4::timestamptz,$5::text)) " +
+        "ORDER BY date_trunc('milliseconds',p.created_at) DESC,p.post_id DESC LIMIT $6",
+        [tenantId, authorId, authorKind, seek?.created ?? null, seek?.id ?? null, batchSize],
+      );
+      const visible: AudioPostRecord[] = [];
+      let scanned = 0;
+      for (const r of rows.rows) {
+        scanned++;
+        if (await visibility.canView({
+          tenantId, viewerId, authorAccountId: r.author_account_id,
+        })) visible.push(record(r));
+        if (visible.length >= limit) break;
+      }
+      const hasMore = scanned < rows.rows.length || rows.rows.length === batchSize;
+      return {
+        items: visible,
+        nextCursor: hasMore && scanned ? cursor(rows.rows[scanned - 1]!) : null,
+      } satisfies PublicFeedPage;
+    },
     async feed({ tenantId, viewerId, limit, cursor: from }) {
       const seek = parseCursor(from);
       const batchSize = Math.min(limit * 3, 90);

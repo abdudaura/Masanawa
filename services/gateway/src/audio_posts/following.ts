@@ -22,6 +22,11 @@ export interface FollowingRepository {
   statusFromVisiblePost(input: {
     tenantId: string; accountId: string; postId: string;
   }): Promise<{ authorId: string; authorKind: "human" | "masana"; following: boolean } | null>;
+  /** A creator profile resolves against canonical author IDs and shared visibility. */
+  creatorFeed(input: {
+    tenantId: string; viewerId: string; authorId: string;
+    authorKind: "human" | "masana"; limit: number; cursor: string | null;
+  }): Promise<PublicFeedPage>;
   /** Read only published Talks by followed creators, with visibility checked per viewer. */
   feed(input: {
     tenantId: string;
@@ -75,6 +80,36 @@ export function createFollowingService(repository: FollowingRepository) {
         throw new FollowingError("CAPABILITY_UNAVAILABLE", "Creator follow status unavailable");
       }
       return stored;
+    },
+    async creatorFeed(actor: PostActor, input: {
+      authorId: unknown; authorKind: unknown; cursor?: unknown; limit?: unknown;
+    }): Promise<PublicAudioFeedPage> {
+      requireActor(actor);
+      if (!safeId(input?.authorId) ||
+          (input.authorKind !== "human" && input.authorKind !== "masana")) {
+        throw new FollowingError("VALIDATION", "Invalid creator");
+      }
+      const limit = input.limit === undefined ? 20 : input.limit;
+      if (!Number.isSafeInteger(limit) || (limit as number) < 1 ||
+          (limit as number) > 30 ||
+          (input.cursor != null && (typeof input.cursor !== "string" ||
+            !/^\d{13}:[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/.test(input.cursor)))) {
+        throw new FollowingError("VALIDATION", "Invalid creator page");
+      }
+      const page = await repository.creatorFeed({
+        tenantId: actor.tenantId, viewerId: actor.accountId,
+        authorId: input.authorId, authorKind: input.authorKind,
+        limit: limit as number, cursor: (input.cursor as string | null | undefined) ?? null,
+      });
+      if (!page || !Array.isArray(page.items) ||
+          (page.nextCursor !== null && typeof page.nextCursor !== "string") ||
+          page.items.some(post => post.authorKind !== input.authorKind ||
+            post.authorId !== input.authorId || post.status !== "published")) {
+        throw new FollowingError("CAPABILITY_UNAVAILABLE", "Creator Talks unavailable");
+      }
+      return {
+        items: page.items.map(toPublicAudioPost), nextCursor: page.nextCursor,
+      };
     },
     async feed(actor: PostActor, input: { cursor?: unknown; limit?: unknown } = {}): Promise<PublicAudioFeedPage> {
       requireActor(actor);

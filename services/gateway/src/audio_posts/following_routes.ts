@@ -42,6 +42,22 @@ export function registerAudioFollowingRoutes(app: FastifyInstance, deps: {
       );
     } catch (error) { return fail(reply, error); }
   });
+  app.get("/audio-posts/creators/:authorKind/:authorId", async (request, reply) => {
+    try {
+      const params = request.params as { authorKind?: unknown; authorId?: unknown };
+      const query = request.query;
+      if (!query || typeof query !== "object" || Array.isArray(query) ||
+          Object.keys(query).some(k => k !== "cursor" && k !== "limit")) {
+        throw new FollowingError("VALIDATION", "Invalid creator query");
+      }
+      const q = query as { cursor?: unknown; limit?: unknown };
+      return await deps.service.creatorFeed(
+        await deps.requireActor(request.headers.authorization),
+        { authorKind: params.authorKind, authorId: params.authorId,
+          cursor: q.cursor, limit: q.limit === undefined ? undefined : Number(q.limit) },
+      );
+    } catch (error) { return fail(reply, error); }
+  });
   app.get("/audio-posts/following", async (request, reply) => {
     try {
       const query = request.query;
