@@ -77,16 +77,18 @@
         "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
         "apps/mobile/lib/src/router/app_router.dart",
         "apps/mobile/test/audio_first/af00/root_navigation_test.dart",
-        "docs/workstreams/AF00-root-navigation-20261010.md"
+        "docs/workstreams/AF00-root-navigation-20261010.md",
+        "apps/mobile/test/app_shell_route_compatibility_test.dart",
+        "apps/mobile/test/twin_home_shell_test.dart"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
       "source_pr": 497,
       "source_head": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
       "claimed_at": "2026-10-10T01:25:37.990Z",
-      "heartbeat_at": "2026-10-10T01:25:37.990Z",
-      "expires_at": "2026-10-10T01:30:37.990Z",
-      "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff."
+      "heartbeat_at": "2026-10-10T01:29:00.853Z",
+      "expires_at": "2026-10-10T01:34:00.853Z",
+      "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated."
     },
     {
       "claim_id": "masanawa01-af15-private-access-20261010",
