@@ -88,7 +88,7 @@ class JustAudioTalkOutput implements PublishedTalkAudioOutput, PublishedTalkProg
   Future<void> start(Uri signedUrl) async {
     if (_disposed) throw StateError('Playback disposed');
     await _player.stop();
-    final session = await AudioSession.instance();
+    final session = await AudioSession.instance;
     if (!await session.setActive(true)) {
       throw StateError('Audio focus unavailable');
     }
@@ -114,7 +114,7 @@ class JustAudioTalkOutput implements PublishedTalkAudioOutput, PublishedTalkProg
   Future<void> stop() async {
     if (_disposed) return;
     await _player.stop();
-    final session = await AudioSession.instance();
+    final session = await AudioSession.instance;
     await session.setActive(false);
   }
 
