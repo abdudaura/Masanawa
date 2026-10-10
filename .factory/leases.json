@@ -105,24 +105,6 @@
       "heartbeat_at": "2026-10-10T02:15:54.798Z",
       "expires_at": "2026-10-10T02:20:54.798Z",
       "notes": "Created and executed new processing worker and Postgres adapter locally: Node22.16 node --experimental-strip-types --test 10/10 PASS; preparing SHA-matched existing PR source commit"
-    },
-    {
-      "claim_id": "masanawa-u02-status-readback-20261010-02",
-      "owner": "Masanawa U02 continuation, existing PR #580",
-      "scope": "Complete existing U02 recovery source status result binding and negative cases; no provider/wallet/shared composition change",
-      "paths": [
-        "packages/operator-tasks/src/recovery.ts",
-        "packages/operator-tasks/src/recovery.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md"
-      ],
-      "branch": "work/recovery-02-u02-task-journal-20261009",
-      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
-      "source_pr": 580,
-      "source_head": "64a8462de00229ce7b3be66175c40b0c74958715",
-      "claimed_at": "2026-10-10T02:15:00.656Z",
-      "heartbeat_at": "2026-10-10T02:15:00.656Z",
-      "expires_at": "2026-10-10T02:20:00.656Z",
-      "notes": "Direct continuation of previously released claim masanawa-u02-milestone-20261010 on same PR #580, preserving source and approved stale transfer; no competing branch."
     }
   ],
   "history": [
@@ -1068,6 +1050,28 @@
       "notes": "Continuing one PR #609: removal source and tests committed; saved-library readback using existing reaction table next. No AF00 files.",
       "released_at": "2026-10-10T02:17:07.823Z",
       "release_reason": "Continued existing PR #609: owner-only persisted removal + My Talks; saved library/unsave via existing reactions; 14 backend + 6 Flutter widget test cases authored; exact SHA-specific handoff docs updated. CI zero steps, runner unavailable; retain draft, no production/main merge. Concurrent AF09 worker under separate non-overlapping claim retained."
+    },
+    {
+      "claim_id": "masanawa-u02-status-readback-20261010-02",
+      "owner": "Masanawa U02 continuation, existing PR #580",
+      "scope": "Complete existing U02 recovery source status result binding and negative cases; no provider/wallet/shared composition change",
+      "paths": [
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/recovery.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 580,
+      "source_head": "64a8462de00229ce7b3be66175c40b0c74958715",
+      "claimed_at": "2026-10-10T02:15:00.656Z",
+      "heartbeat_at": "2026-10-10T02:15:00.656Z",
+      "expires_at": "2026-10-10T02:20:00.656Z",
+      "notes": "Direct continuation of previously released claim masanawa-u02-milestone-20261010 on same PR #580, preserving source and approved stale transfer; no competing branch.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/580",
+      "released_at": "2026-10-10T02:18:51.588Z",
+      "integration_head_sha": "e13cbeb1cf34699d239ac77be3a14e62b616339f",
+      "release_reason": "Same PR #580 recovery source/tests/handoff updated, source SHA 6929c5e64422dff0e77a89eefadaa14a71957ebe; 13/13 type-erased exact-function V8 checks PASS_SIMULATED, full TypeScript/Vitest/PG18/Flutter NOT_RUN; U02 customer journey remains PARTIAL and not merged; execution owner AF13/AF00."
     }
   ]
 }
