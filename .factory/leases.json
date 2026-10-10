@@ -228,24 +228,6 @@
       "test_state": "Github exact blob readback and 9/9 source predicates only; 6 Flutter cases AUTHORED NOT_RUN; required Node24/pnpm12/Flutter/Dart/PG/Android unavailable."
     },
     {
-      "claim_id": "af09-609-pending-tenant-dispatch-gpt6-0540",
-      "owner": "AF09 existing PR #609 / GPT-6 tenant-dispatch source continuation 0540",
-      "scope": "Implement bounded fair PostgreSQL tenant discovery and worker sweep dispatch for persistent published audio processing. No second queue, migration or AF00 worker registration.",
-      "paths": [
-        "services/gateway/src/audio_posts/processing_scheduler.ts",
-        "services/gateway/src/audio_posts/processing_scheduler.test.mjs",
-        "docs/workstreams/AF09-processing-dispatch-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "source_head": "6b1160f0130ddaf045f5ab7b23e5cf73a60d4a25",
-      "claimed_at": "2026-10-10T04:41:35.214Z",
-      "heartbeat_at": "2026-10-10T04:41:35.214Z",
-      "expires_at": "2026-10-10T04:46:35.214Z",
-      "notes": "AF09 new-path isolated scheduling adapter + negative tests, AF00 composes into canonical worker runtime after review; no protected files."
-    },
-    {
       "claim_id": "af09-609-listens-20261010-gpt6-0553",
       "owner": "AF09 existing PR #609 GPT-6 listening count continuation",
       "scope": "Complete durable bounded listened-media plays using existing authorized ticket, PG view/lookup and actual player-progress events; AF00 retains unique migration, Gateway composition, root and CI.",
@@ -291,6 +273,33 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "af09-609-pending-tenant-dispatch-gpt6-0540",
+      "owner": "AF09 existing PR #609 / GPT-6 tenant-dispatch source continuation 0540",
+      "scope": "Implement bounded fair PostgreSQL tenant discovery and worker sweep dispatch for persistent published audio processing. No second queue, migration or AF00 worker registration.",
+      "paths": [
+        "services/gateway/src/audio_posts/processing_scheduler.ts",
+        "services/gateway/src/audio_posts/processing_scheduler.test.mjs",
+        "docs/workstreams/AF09-processing-dispatch-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "source_head": "a3a028231e1dfa86704d1586b281c6b3a1597cf9",
+      "claimed_at": "2026-10-10T04:41:35.214Z",
+      "heartbeat_at": "2026-10-10T04:41:35.214Z",
+      "expires_at": "2026-10-10T04:46:35.214Z",
+      "notes": "AF09 new-path isolated scheduling adapter + negative tests, AF00 composes into canonical worker runtime after review; no protected files.",
+      "released_at": "2026-10-10T04:45:13.166Z",
+      "release_reason": "Same PR #609 bounded pending tenant discovery and finite processing worker dispatch at d8faca91 / 5a534c44 plus parent checklist b928b515. Source-matched GitHub blobs passed five local Node22 node:test mocked-boundary cases; Node24/pnpm workspace, disposable PG, AF00 worker registration, AF05/15 media and device remain blocked/unimplemented. PR #609 remains partial and unintegrated.",
+      "source_commits": [
+        "d8faca91ae7ad8ce56afb7eee2ed43ecf10c3517",
+        "5a534c44710416a01e7499b0cb9cd45c9275e7af",
+        "b928b515466516be5287510e7963c879e2696c4d"
+      ],
+      "integration_head_sha": null,
+      "test_state": "PASS_SIMULATED 5/5 Node22 source-matched isolated tests; Node24/pnpm/PG/Flutter/device unrun"
+    },
     {
       "claim_id": "af09-609-playback-sequencing-gpt6-0531",
       "owner": "AF09 existing PR #609 / GPT-6 playback sequencing continuation",
