@@ -209,16 +209,19 @@
       "paths": [
         "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
         "apps/mobile/test/audio_first/af09/report_feed_test.dart",
-        "docs/workstreams/AF09-report-feed-wiring-20261010.md"
+        "docs/workstreams/AF09-report-feed-wiring-20261010.md",
+        "apps/mobile/lib/src/audio_posts/audio_post_report_action.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "apps/mobile/test/audio_first/af09/report_action_test.dart"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
       "source_pr": 609,
       "source_head": "951978f959a3b23caabaca9824ce596578d9bb57",
       "claimed_at": "2026-10-10T03:50:35.774Z",
-      "heartbeat_at": "2026-10-10T03:50:35.774Z",
-      "expires_at": "2026-10-10T03:55:35.774Z",
-      "notes": "Stale file claim reviewed and moved to history; preserve all newer feed cache/playback/reaction/comment source. Scope is one customer-visible report UI path."
+      "heartbeat_at": "2026-10-10T03:51:07.969Z",
+      "expires_at": "2026-10-10T03:56:07.969Z",
+      "notes": "Stale file claim reviewed and moved to history; preserve all newer feed cache/playback/reaction/comment source. Scope is one customer-visible report UI path. Also guard reporting dialog against account switching; add focused existing widget tests."
     }
   ],
   "history": [
