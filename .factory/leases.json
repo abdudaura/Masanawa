@@ -162,25 +162,6 @@
       "integration_head_sha": null
     },
     {
-      "claim_id": "af09-609-following-precision-20261010-gpt6-0435",
-      "owner": "AF09 existing PR #609 / GPT-6 continuation",
-      "scope": "Preserve exact PostgreSQL microsecond ordering and safe keyset pagination for Following and creator published Talks, service validation and executable adapter regressions; no shared AF00 files",
-      "paths": [
-        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
-        "adapters/storage/postgres/src/audio_posts/following_repository_pagination.test.mjs",
-        "services/gateway/src/audio_posts/following.ts",
-        "services/gateway/src/audio_posts/following.test.mjs",
-        "docs/workstreams/AF09-following-precision-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T03:38:19.320Z",
-      "heartbeat_at": "2026-10-10T03:38:19.320Z",
-      "expires_at": "2026-10-10T03:43:19.320Z",
-      "notes": "Use one feature PR, distinct from active feed-cache/receipt/draft claims. No root composition changes."
-    },
-    {
       "claim_id": "af09-609-published-audio-reporting-gpt6-0442",
       "owner": "AF09 existing PR #609 / GPT-6 reporting continuation",
       "scope": "Implement Published Audio Talk report submission using canonical TalkSafety authority, authorized visibility, typed denial and Flutter reporting UI component; no duplicate safety ledger or AF00 composition edits",
@@ -1789,6 +1770,29 @@
       "source_head": "8cf9c2987e34b6c60608a340fe90b0f0b00c6cc3",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "release_reason": "Same PR #609 warm/offline account-fenced secure Talks snapshot and 5 authored widget tests; GitHub source readback 11/11 structural checks; Flutter/Dart/Android NOT_RUN (no runner/clone DNS). AF09 customer milestone remains PARTIAL, AF00 shared integration and AF05/15 media missing; exact-sha handoff in docs/workstreams/AF09-feed-cache-20261010.md."
+    },
+    {
+      "claim_id": "af09-609-following-precision-20261010-gpt6-0435",
+      "owner": "AF09 existing PR #609 / GPT-6 continuation",
+      "scope": "Preserve exact PostgreSQL microsecond ordering and safe keyset pagination for Following and creator published Talks, service validation and executable adapter regressions; no shared AF00 files",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository_pagination.test.mjs",
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/following.test.mjs",
+        "docs/workstreams/AF09-following-precision-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:38:19.320Z",
+      "heartbeat_at": "2026-10-10T03:38:19.320Z",
+      "expires_at": "2026-10-10T03:43:19.320Z",
+      "notes": "Use one feature PR, distinct from active feed-cache/receipt/draft claims. No root composition changes.",
+      "released_at": "2026-10-10T03:43:15.913Z",
+      "release_reason": "Existing PR #609 source commits 5 + handoff 73f2cc7, Github blob readback. Nine new Node regressions authored NOT_RUN: Node24/pnpm12/private checkout, real PG and Flutter unavailable. Missing AF00 composition/AF05 media; no local pull or milestone completion.",
+      "source_head": "73f2cc73d22fa1f6303afa91c8032b40961808c8",
+      "integration_head_sha": null
     }
   ]
 }
