@@ -393,7 +393,12 @@ describe("BillingFinancialService catalog authority", () => {
       providerClient: new FlutterwaveBillsClient({secretKey: "secret", transport: {async request() {calls++; throw new Error("must not call provider"); }}}),
     };
     const request = {authorizationHeader: "Bearer test", requestId: "billing-request", billerCode: "B", itemCode: "I", itemName: "Bill", customerId: "Customer", amount: "100", catalogAmount: "100"};
-    await expect(createBillingFinancialService(base).purchase(request)).rejects.toThrow("funding_unavailable");
+    // A missing quote fails closed before funding status or provider execution.
+    await expect(createBillingFinancialService(base).purchase(request)).rejects.toThrow("confirmed_quote_required");
+    // With valid quote identity, unavailable funding still fails before catalog/provider calls.
+    await expect(createBillingFinancialService(base).purchase({
+      ...request, quoteId: "quoted-billing-request", quoteRevision: 1,
+    })).rejects.toThrow("funding_unavailable");
     await expect(createBillingFinancialService({...base, billingFunding: {async reserveConfirmedBill() {}, async settleBill() {}}}).purchase(request)).rejects.toThrow("confirmed_quote_required");
     expect(calls).toBe(0);
   });
