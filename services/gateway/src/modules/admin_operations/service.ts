@@ -93,7 +93,14 @@ export function createOperationsService(deps: {
       verifiedMutation(change);
       // Default-off activation guard prevents enabling provider-backed products by code merge.
       if (change.enabled && !(await deps.allowEnable?.(p,change.name))) throw new OperationsError("forbidden",403);
-      return deps.repo.setFlag({...change,tenantId:p.tenantId,actorId:p.userId});
+      try {
+        return await deps.repo.setFlag({...change,tenantId:p.tenantId,actorId:p.userId});
+      } catch (error) {
+        // Adapter independence: avoid importing Gateway errors into PostgreSQL's tsconfig.
+        if (error instanceof Error && error.message === "admin_ops.conflict") throw new OperationsError("conflict",409);
+        if (error instanceof Error && error.message === "admin_ops.unavailable") throw new OperationsError("unavailable",503);
+        throw error;
+      }
     },
     async audit(auth,limit=30) {
       const p=requirePrincipal(await deps.authorizer.resolve(auth),"super_admin",true);

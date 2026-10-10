@@ -12,7 +12,7 @@ interface OperationsRepository {
  setFlag(input:FlagMutation & {tenantId:string;actorId:string}):Promise<FlagSnapshot>;
  audit(tenantId:string,limit:number):Promise<readonly AuditRecord[]>;
 }
-class OperationsError extends Error {constructor(readonly code:string,readonly status:number){super(code);}}
+class OperationsStorageError extends Error {constructor(readonly code:string){super("admin_ops."+code);}}
 
 type Row={flag_name:OperationsFlag;enabled:boolean;revision:string|number;changed_at:Date|string|null};
 function fromRow(row:Row):FlagSnapshot {return {name:row.flag_name,enabled:row.enabled,revision:Number(row.revision),updatedAt:row.changed_at ? new Date(row.changed_at).toISOString():null};}
@@ -35,19 +35,19 @@ export function createPostgresOperationsRepository(pool:Pool): OperationsReposit
       "SELECT flag_name,requested_enabled,expected_revision,reason,result_revision FROM admin_operations.flag_requests WHERE tenant_id=$1 AND actor_id=$2 AND request_key=$3 FOR UPDATE",
       [input.tenantId,input.actorId,input.idempotencyKey]);
     if(prior.rows[0]){
-      const x=prior.rows[0];if(x.flag_name!==input.name || x.requested_enabled!==input.enabled || Number(x.expected_revision)!==input.expectedRevision || x.reason!==input.reason) throw new OperationsError("conflict",409);
+      const x=prior.rows[0];if(x.flag_name!==input.name || x.requested_enabled!==input.enabled || Number(x.expected_revision)!==input.expectedRevision || x.reason!==input.reason) throw new OperationsStorageError("conflict");
       const snap=await client.query<Row>("SELECT flag_name,enabled,revision,changed_at FROM admin_operations.flags WHERE tenant_id=$1 AND flag_name=$2",[input.tenantId,input.name]);
-      const current=snap.rows[0];if(!current) throw new OperationsError("unavailable",503);
+      const current=snap.rows[0];if(!current) throw new OperationsStorageError("unavailable");
       // Do not falsely claim replay's original snapshot if later changes exist.
       return fromRow(current);
     }
     await client.query("INSERT INTO admin_operations.flags(tenant_id,flag_name) VALUES($1,$2) ON CONFLICT DO NOTHING",[input.tenantId,input.name]);
     const current=await client.query<Row>("SELECT flag_name,enabled,revision,changed_at FROM admin_operations.flags WHERE tenant_id=$1 AND flag_name=$2 FOR UPDATE",[input.tenantId,input.name]);
-    const row=current.rows[0];if(!row) throw new OperationsError("unavailable",503);
-    if(Number(row.revision)!==input.expectedRevision) throw new OperationsError("conflict",409);
+    const row=current.rows[0];if(!row) throw new OperationsStorageError("unavailable");
+    if(Number(row.revision)!==input.expectedRevision) throw new OperationsStorageError("conflict");
     // No-op still writes a durable audit and consumes exactly one revision.
     const next=await client.query<Row>("UPDATE admin_operations.flags SET enabled=$3,revision=revision+1,changed_by=$4,changed_at=NOW() WHERE tenant_id=$1 AND flag_name=$2 RETURNING flag_name,enabled,revision,changed_at",[input.tenantId,input.name,input.enabled,input.actorId]);
-    const updated=next.rows[0];if(!updated) throw new OperationsError("unavailable",503);
+    const updated=next.rows[0];if(!updated) throw new OperationsStorageError("unavailable");
     await client.query("INSERT INTO admin_operations.flag_requests(tenant_id,actor_id,request_key,flag_name,expected_revision,requested_enabled,reason,result_revision) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",[input.tenantId,input.actorId,input.idempotencyKey,input.name,input.expectedRevision,input.enabled,input.reason,updated.revision]);
     await client.query("INSERT INTO admin_operations.audit(tenant_id,event_id,actor_id,action,subject,details) VALUES($1,$2,$3,$4,$5,$6::jsonb)",[input.tenantId,randomUUID(),input.actorId,"flag.change",input.name,JSON.stringify({before:row.enabled,after:input.enabled,reason:input.reason,revision:updated.revision})]);
     return fromRow(updated);
@@ -58,4 +58,12 @@ export function createPostgresOperationsRepository(pool:Pool): OperationsReposit
    return result.rows.map(row=>({eventId:row.event_id,action:row.action,actorId:row.actor_id,at:new Date(row.created_at).toISOString(),subject:row.subject} satisfies AuditRecord));
   }
  };
+}
+
+/** AF00 uses this verified tenant scoped reader to wire the existing events.outbox worker. */
+export function createPostgresProductJobFlags(pool: Pool) {
+ return { async read(input:{tenantId:string;family:OperationsFlag}):Promise<boolean> {
+  const row=await pool.query<{enabled:boolean}>("SELECT enabled FROM admin_operations.flags WHERE tenant_id=$1 AND flag_name=$2",[input.tenantId,input.family]);
+  return row.rows[0]?.enabled===true;
+ }};
 }
