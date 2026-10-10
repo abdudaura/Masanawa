@@ -23,7 +23,7 @@ AudioPost post({String authorId = 'alice'}) => AudioPost(
   postId: 'post1', authorId: authorId, authorKind: 'human',
   title: 'A real Talk', durationMs: 12000, status: 'published',
   revision: 1, createdAt: DateTime.utc(2026, 10, 10),
-  likeCount: 2, commentCount: 1,
+  likeCount: 2, commentCount: 1, listenCount: 4,
 );
 
 void main() {
@@ -38,6 +38,7 @@ void main() {
     )));
     await tester.pumpAndSettle();
     expect(find.text('A real Talk'), findsOneWidget);
+    expect(find.text('2 likes · 1 comments · 4 listens'), findsOneWidget);
     await tester.tap(find.text('A real Talk'));
     expect(opened, 'post1');
   });
