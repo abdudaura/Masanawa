@@ -190,6 +190,28 @@
       "heartbeat_at": "2026-10-10T03:20:16.455Z",
       "expires_at": "2026-10-10T03:25:16.455Z",
       "notes": "Original #576 source lease was released; this exact client-only continuation preserves it. Gateway route /v1/wallet/msn remains unmounted; AF00 composition transfer required."
+    },
+    {
+      "claim_id": "af09-609-creator-profile-20261010-gpt6-0423",
+      "owner": "AF09 #609 continuing creator profile customer journey (GPT-6 window 0423)",
+      "scope": "Implement canonical public creator Talks listing, profile client and follow entry without duplicating identity or changing protected Gateway/root composition",
+      "paths": [
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/following_routes.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "services/gateway/src/audio_posts/creator_profile.test.mjs",
+        "apps/mobile/lib/src/audio_posts/creator_profile_screen.dart",
+        "apps/mobile/lib/src/audio_posts/creator_profile_transport.dart",
+        "apps/mobile/test/audio_first/af09/creator_profile_test.dart",
+        "docs/workstreams/AF09-creator-profile-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:23:31.027Z",
+      "heartbeat_at": "2026-10-10T03:23:31.027Z",
+      "expires_at": "2026-10-10T03:28:31.027Z",
+      "notes": "Existing PR #609 only. AF00 owns shared app/route registration and canonical profile resolver; AF05/15 private media. No DB migration changes."
     }
   ],
   "history": [
