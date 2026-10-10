@@ -41,7 +41,8 @@ export async function verifyEvidenceFile(root, relativePath, expectedSha256, max
     const stat = await lstat(cursor);
     if (stat.isSymbolicLink()) throw new EvidencePathError('SYMLINK', 'Evidence symlinks are prohibited');
   }
-  const file = await open(cursor, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+  // Nonblocking admission avoids hanging forever on a FIFO or unexpected device node.
+  const file = await open(cursor, constants.O_RDONLY | (constants.O_NONBLOCK ?? 0) | (constants.O_NOFOLLOW ?? 0));
   try {
     const before = await file.stat();
     if (!before.isFile()) throw new EvidencePathError('NOT_FILE', 'Evidence must be a regular file');
