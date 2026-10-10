@@ -25,7 +25,8 @@ class NotificationSwitchController extends ChangeNotifier {
   String? error;
 
   String? get accountId => _accountId;
-  bool get canChange => _accountId != null && !loading && !saving;
+  bool get canChange => _accountId != null && !loading && !saving && error == null;
+  bool get canRefresh => _accountId != null && !loading && !saving;
 
   void _publish() {
     if (!_disposed) notifyListeners();
