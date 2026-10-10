@@ -128,6 +128,27 @@
       "heartbeat_at": "2026-10-10T01:40:26.479Z",
       "expires_at": "2026-10-10T01:45:26.479Z",
       "notes": "Separated from AF01 active onramp and transfer-guard #605; existing crypto ledger admission normalizer in use by Postgres adapter. Strictly scoped source/tests; no shared composition."
+    },
+    {
+      "claim_id": "delivery-correction-docs-20261010",
+      "owner": "DELIVERY-CORRECTION",
+      "scope": "Owner-requested outcome-first dispatch and anti-duplication documentation correction only; preserve active feature claims",
+      "paths": [
+        "CONTINUE-HERE.md",
+        "AGENTS.md",
+        "docs/MULTI-WINDOW-WORK.md",
+        "docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md",
+        "docs/AUDIO-FIRST-WINDOW-PLAN-20261009.json",
+        "docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md",
+        "docs/NEXT-WAVE-DELIVERY-20261010.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
+        "docs/workstreams/DELIVERY-CORRECTION-20261010.md"
+      ],
+      "branch": "docs/delivery-correction-20261010",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:40:36.516Z",
+      "heartbeat_at": "2026-10-10T01:40:36.516Z",
+      "expires_at": "2026-10-10T01:45:36.516Z"
     }
   ],
   "history": [
