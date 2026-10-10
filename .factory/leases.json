@@ -149,6 +149,26 @@
       "claimed_at": "2026-10-10T01:40:36.516Z",
       "heartbeat_at": "2026-10-10T01:40:36.516Z",
       "expires_at": "2026-10-10T01:45:36.516Z"
+    },
+    {
+      "claim_id": "masanawa01-af13-qualifier-guard-integration-20261010",
+      "owner": "MASANAWA-01 / AF13 qualifier integration",
+      "scope": "Integrate existing released #603 bounded symlink-safe evidence guard into #596 acceptance qualifier, preserve one authoritative read-only release gate, execute negative cases; no runtime, CI, provider or production mutations.",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "tests/security/audio_first/evidence_path_guard.mjs",
+        "tests/security/audio_first/evidence_path_guard.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 596,
+      "source_head": "0729f1d8a504d6e84e508abf35e6fcdaf99292dd",
+      "claimed_at": "2026-10-10T01:44:07.822Z",
+      "heartbeat_at": "2026-10-10T01:44:07.822Z",
+      "expires_at": "2026-10-10T01:49:07.822Z",
+      "notes": "Both prior AF13 workstream claims released. Source #596 and distinct guard #603 retained. No shared route/ledger/native/deploy edits."
     }
   ],
   "history": [
