@@ -1027,6 +1027,21 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
+    },
+    {
+      "claim_id": "r0-ts2459-recovery-20261010-gpt6-1642",
+      "owner": "GPT-6 R0 independent CI blocker (AF00 handoff)",
+      "scope": "Reuse exact existing PR #460 corrected TalkId type-only import to unblock Foundation CI; one legacy test file only, no runtime/DB/router/migrations/docs or financial changes; handoff to AF00.",
+      "paths": [
+        "packages/agents/src/talk-replay.test.ts"
+      ],
+      "branch": "lane/r0-typecheck-recovery-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T15:43:00.083Z",
+      "heartbeat_at": "2026-10-10T15:43:00.083Z",
+      "expires_at": "2026-10-10T15:48:00.083Z",
+      "notes": "All claims inspected; none active as of 2026-10-10 15:40Z; existing #460 path contains the verified fix. Do not reintroduce old Talk product behavior."
     }
   ],
   "history": [
