@@ -426,7 +426,12 @@
       "claimed_at": "2026-10-10T06:24:30.815Z",
       "heartbeat_at": "2026-10-10T06:29:22.290Z",
       "expires_at": "2026-10-10T06:34:22.290Z",
-      "notes": "Source/tab tests and finite checklist committed to same #609; final source readback and PR handoff pending."
+      "notes": "Source/tab tests and finite checklist committed to same #609; final source readback and PR handoff pending.",
+      "released_at": "2026-10-10T06:32:06.313Z",
+      "release_reason": "Feature source, two authored Flutter tests and 14-row source/verification handoff committed to continuing PR #609 at 86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1; 11/11 PASS_STATIC readback only; Dart/Flutter/Node24 workspace/PG/device NOT_RUN; AF00 #600 bounded integration request, no integration SHA update or local pull. Milestone remains PARTIAL.",
+      "source_head_sha": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
+      "integration_head_sha": null,
+      "test_state": "11/11 GitHub static blob predicates; Flutter and whole-repository checks NOT_RUN/BLOCKED environment; actual external runner assigned AF13."
     }
   ],
   "history": [
