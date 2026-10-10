@@ -321,9 +321,9 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T07:31:14.901Z",
-      "heartbeat_at": "2026-10-10T07:36:58.671Z",
-      "expires_at": "2026-10-10T07:41:58.671Z",
-      "notes": "Visible reviewed stale transfer in PR #609 comment 6095139105; GitHub Actions real compiler output at exact old head; no main change. Actual follow-up TypeScript failures from 38034756975: AF09 author narrowing and identity test UUID annotation; compiler-only fixes. Owner-mandated execute-all-independent-checks: existing CI steps currently skip tests after analyzer/typecheck fail; preserve red workflow conclusion and execute tests/build independently via !cancelled()."
+      "heartbeat_at": "2026-10-10T07:40:09.544Z",
+      "expires_at": "2026-10-10T07:45:09.544Z",
+      "notes": "Visible reviewed stale transfer in PR #609 comment 6095139105; GitHub Actions real compiler output at exact old head; no main change. Actual follow-up TypeScript failures from 38034756975: AF09 author narrowing and identity test UUID annotation; compiler-only fixes. Owner-mandated execute-all-independent-checks: existing CI steps currently skip tests after analyzer/typecheck fail; preserve red workflow conclusion and execute tests/build independently via !cancelled(). CI after independent steps confirms real typecheck, Vitest and qualification failures; collecting exact per-job diagnostics before any further source patch."
     },
     {
       "claim_id": "af13-existing-pr460-sql-fixtures-20261010-gpt6-0735",
