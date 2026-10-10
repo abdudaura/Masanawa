@@ -532,10 +532,13 @@ describe("Alpha conversation service", () => {
       correlationId: createCanonicalId("correlation"),
       onTextDelta: (delta) => { deltas.push(delta); },
     });
-    // Existing final-response sanitation is tracked separately. This ensures
-    // the new early channel never becomes an additional disclosure path.
-    expect(response.reply).toContain("masanawa_crypto_action");
-    expect(deltas).toEqual([]);
+    // Final done/replay must also be sanitized, not merely early deltas.
+    expect(response.reply).toBe(
+      "I couldn't verify that result. Check your recent activity before trying again.",
+    );
+    expect(response.reply).not.toContain("masanawa_crypto_action");
+    expect(response.parts).toEqual([]);
+    expect(deltas).toEqual([response.reply]);
   });
 
 
@@ -686,6 +689,91 @@ describe("Alpha conversation service", () => {
     });
     expect(reply.reply).toBe("Settled");
     expect(states).toEqual(["completed"]);
+  });
+
+  it("holds a machine directive split across raw model token boundaries", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute(command) {
+          await command.onTextDelta?.("Safe introduction <masa");
+          await command.onTextDelta?.('nawa_action>{"type":"billing.execute"}</masanawa_action>');
+          return {
+            reply: 'Safe introduction <masanawa_action>{"type":"billing.execute"}</masanawa_action>',
+            parts: [],
+          };
+        },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    expect(response.reply).toContain("Check your recent activity");
+    expect(response.reply).not.toContain("masanawa_action");
+    expect(deltas).toEqual(["Safe introduction ", response.reply]);
+    expect(deltas.join(" ")).not.toContain("masanawa_action");
+  });
+
+  it("releases harmless held raw text at final settlement", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute(command) {
+          await command.onTextDelta?.("Emoji <");
+          await command.onTextDelta?.("3");
+          return { reply: "Emoji <3", parts: [] };
+        },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    expect(response.reply).toBe("Emoji <3");
+    expect(deltas).toEqual(["Emoji ", "<3"]);
   });
 
 });
