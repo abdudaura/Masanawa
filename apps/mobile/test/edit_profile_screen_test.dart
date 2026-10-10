@@ -151,6 +151,8 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('profile-create-handle')), 'amina_2026',
     );
+    // Creation becomes actionable only after the form rebuilds.
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('profile-edit-save')));
     await tester.pumpAndSettle();
 
