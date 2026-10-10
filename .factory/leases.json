@@ -1292,11 +1292,12 @@
       ],
       "branch": "lane/l-feed-j06-core-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
-      "source_pr": null,
+      "source_pr": 631,
       "claimed_at": "2026-10-10T16:34:00Z",
-      "heartbeat_at": "2026-10-10T16:34:00Z",
-      "expires_at": "2026-10-10T16:39:00Z",
-      "notes": "Claimed after reading #615 planning blueprint and active lanes; no main, Railway, finance, shared composition edits."
+      "heartbeat_at": "2026-10-10T16:37:15Z",
+      "expires_at": "2026-10-10T16:42:15Z",
+      "notes": "Claimed after reading #615 planning blueprint and active lanes; no main, Railway, finance, shared composition edits.",
+      "source_head": "0f6281a9daabe71aca228a85ba059c86a75b6c8c"
     },
     {
       "claim_id": "l-shell-c08-inbox-20261010-gpt6-1738",
