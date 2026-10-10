@@ -122,6 +122,7 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
         authorId: authorId,
         authorKind: authorKind,
         onOpenPost: widget.playback == null ? null : _openCreatorPost,
+        reportTransport: widget.reportTransport,
       ),
     ));
   }
