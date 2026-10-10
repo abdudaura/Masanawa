@@ -12,14 +12,16 @@ async function owner(c:PoolClient,p:Fan,ch:string,write=false):Promise<Rel|null>
  WHERE r.tenant_id=$1 AND r.user_id=$2 AND r.character_id=$3 AND r.state='active' ${write?'FOR UPDATE OF r':''}`,
  [p.tenantId,p.userId,ch]);return q.rows[0]??null;
 }
-export function createPostgresFanMemoryStore(pool:Pool){
+/** Must consult the approved platform-owned Masana registry (J18) on the server. */
+export type ApprovedMasanaGuard=(client:PoolClient,tenantId:string,characterId:string)=>Promise<boolean>;
+export function createPostgresFanMemoryStore(pool:Pool,approvedMasana:ApprovedMasanaGuard){
  return {
  async read(p:Fan,ch:string){
   const c=await pool.connect();
   try{
    await c.query("BEGIN");
    const o=await owner(c,p,ch);
-   if(!o){await c.query("COMMIT");return null;}
+   if(!o||!await approvedMasana(c,p.tenantId,ch)){await c.query("COMMIT");return null;}
    // Hold a row-share lock on live consent until the read completes.
    const approved=await c.query<{enabled:boolean;revision:string}>(`
      SELECT enabled,revision::text FROM memory.fan_controls
@@ -44,7 +46,7 @@ export function createPostgresFanMemoryStore(pool:Pool){
  async setEnabled(p:Fan,ch:string,enabled:boolean,expectedRevision:number){
   const c=await pool.connect();try{
    await c.query("BEGIN");const o=await owner(c,p,ch,true);
-   if(!o||Number(o.revision)!==expectedRevision){await c.query("ROLLBACK");return null;}
+   if(!o||!await approvedMasana(c,p.tenantId,ch)||Number(o.revision)!==expectedRevision){await c.query("ROLLBACK");return null;}
    const r=await c.query<{revision:string}>(`INSERT INTO memory.fan_controls(tenant_id,relationship_id,enabled,revision)
      VALUES($1,$2,$3,1)
      ON CONFLICT(tenant_id,relationship_id) DO UPDATE SET
@@ -62,7 +64,7 @@ export function createPostgresFanMemoryStore(pool:Pool){
  async enqueueErase(p:Fan,ch:string,recordId:string|null,key:string){
   const c=await pool.connect();try{
    await c.query("BEGIN");const o=await owner(c,p,ch,true);
-   if(!o){await c.query("ROLLBACK");return null;}
+   if(!o||!await approvedMasana(c,p.tenantId,ch)){await c.query("ROLLBACK");return null;}
    // Identical replay returns the original receipt without a second consent revision.
    const prior=await c.query<{request_id:string;state:string;target_record_id:string|null}>(`
     SELECT request_id,state,target_record_id FROM memory.fan_erase_requests
