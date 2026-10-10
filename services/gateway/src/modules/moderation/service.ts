@@ -1,5 +1,5 @@
 import {randomUUID} from "node:crypto";
-import {assertActionTarget,choice,caseCategories,caseTargets,decisionRequiredApprovals,required,requireCaseViewer,requireModerator,CaseError,type Actor,type ActionKind,type ActionRecord,type CaseRecord,type CaseEvent,type AppealRecord} from "@masanawa/moderation";
+import {assertActionTarget,choice,caseCategories,caseTargets,decisionRequiredApprovals,required,requireCaseViewer,requireModerator,CaseError,type Actor,type ActionKind,type ActionRecord,type CaseRecord,type CaseEvent,type AppealRecord,type CaseEvidence} from "@masanawa/moderation";
 export type CaseSummary = CaseRecord & {events:readonly CaseEvent[];actions:readonly ActionRecord[];appeals:readonly AppealRecord[]};
 export interface CaseRepository {
  create(input:CaseRecord & {clientRequestId:string}):Promise<CaseRecord>;
