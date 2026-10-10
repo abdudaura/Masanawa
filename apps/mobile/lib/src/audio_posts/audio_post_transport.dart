@@ -126,13 +126,19 @@ abstract class AudioPostTransport {
   /// Remove only the currently authenticated user's own post. Idempotent.
   Future<AudioPost> removeMine({required String postId});
 }
+/// Additive paged My Talks/Saved history without breaking older transports.
+abstract class AudioPostLibraryPager {
+  Future<AudioPostPage> minePage({String? cursor});
+  Future<AudioPostPage> savedPage({String? cursor});
+}
+
 /// Optional contract for checking the server receipt of a durable publish key.
 abstract class AudioPostReceiptLookup {
   /// Null means the authenticated account has no post for this request key.
   Future<AudioPost?> receiptByRequest({required String requestId});
 }
 
-class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptLookup, AudioPostCommentPager {
+class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptLookup, AudioPostCommentPager, AudioPostLibraryPager {
   GatewayAudioPostTransport(this.api);
   final ApiClient api;
 
@@ -170,6 +176,28 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
       nextCursor: next as String?,
     );
   }
+
+  Future<AudioPostPage> _libraryPage(String kind, String? cursor) async {
+    final response = await api.dio.get<dynamic>('/audio-posts/$kind/page',
+        queryParameters: {'limit': 20, if (cursor != null) 'cursor': cursor});
+    final raw = response.data;
+    if (raw is! Map || raw['items'] is! List ||
+        (raw['nextCursor'] != null && raw['nextCursor'] is! String)) {
+      throw const FormatException('Invalid private Talk library page');
+    }
+    final entries = (raw['items'] as List).map((value) {
+      if (value is! Map) throw const FormatException('Invalid library Talk');
+      return AudioPost.fromJson(value.cast<String,dynamic>());
+    });
+    return AudioPostPage(items: List.unmodifiable(entries),
+        nextCursor: raw['nextCursor'] as String?);
+  }
+
+  @override
+  Future<AudioPostPage> minePage({String? cursor}) => _libraryPage('mine', cursor);
+
+  @override
+  Future<AudioPostPage> savedPage({String? cursor}) => _libraryPage('saved', cursor);
 
   @override
   Future<List<AudioPost>> mine() async {
