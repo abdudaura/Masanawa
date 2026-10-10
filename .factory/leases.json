@@ -681,6 +681,22 @@
       "heartbeat_at": "2026-10-10T08:56:19.494Z",
       "expires_at": "2026-10-10T09:01:19.494Z",
       "notes": "User directed repair of all CI errors. AF00 owns global composition; this patch is append-only security migration and test only, no protected migration manifest edits. CI run 38037792873 three account-deletion tests failed on NULLS NOT DISTINCT profile contact indexes."
+    },
+    {
+      "claim_id": "af13-460-independent-real-ci-20261010-gpt6-0955",
+      "owner": "GPT-6 / owner-directed AF13 shared CI recovery (bounded AF00 workflow transfer)",
+      "scope": "Enable independent real backend/Flutter tests and builds after prior failures while keeping overall job red, reusing reviewed AF09 CI pattern; no paid service or deployment",
+      "paths": [
+        ".github/workflows/foundation-ci.yml",
+        ".github/workflows/mobile-build.yml"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "512fa4b9613fad9b5de8feebca49be562f2464e8",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T08:56:34.839Z",
+      "heartbeat_at": "2026-10-10T08:56:34.839Z",
+      "expires_at": "2026-10-10T09:01:34.839Z",
+      "notes": "AF00 #600 owns root app; this is a bounded exact-path workflow repair under direct owner request. Already present in AF09 #609, now copied to current CI recovery PR. No rerun considered pass without steps."
     }
   ],
   "history": [
