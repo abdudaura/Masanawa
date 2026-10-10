@@ -197,6 +197,25 @@
       "integration_head_sha": null,
       "source_head_sha": "d85c911b30859ddbe1168c7eeea27cb4348612ef",
       "test_state": "GitHub CI zero-step BLOCKED; exact blob structural readbacks only. Node/Vitest/PG/S3 NOT_RUN."
+    },
+    {
+      "claim_id": "af09-609-creator-navigation-20261010-gpt6-0517",
+      "owner": "AF09 PR #609 / GPT-6 creator-navigation continuation",
+      "scope": "Connect Published Talks feed creator identity to existing authenticated creator profile and feature-level composer navigation; preserve AF00 root auth/Gateway/media composition.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
+        "apps/mobile/test/audio_first/af09/destination_test.dart",
+        "docs/workstreams/AF09-destination-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "446594187be5525b1e2703af8fc29960785b8190",
+      "claimed_at": "2026-10-10T04:21:01.879Z",
+      "heartbeat_at": "2026-10-10T04:21:01.884Z",
+      "expires_at": "2026-10-10T04:26:01.884Z",
+      "notes": "AF09 feature-local UI wiring only; AF00 root/router/migrations and AF05/AF15 media untouched. New paths do not overlap active paths; prior feed claims are in history."
     }
   ],
   "history": [
