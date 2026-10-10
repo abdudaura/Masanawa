@@ -80,6 +80,8 @@ export interface OperatorTaskRepository {
       "phase" | "operationClass" | "operationId" | "termsDigest" | "approvalDigest" |
       "approvalSessionDigest" | "approvalExpiresAt" | "receiptRef" | "errorCode">>>;
     at: string;
+    /** Require the server database clock to be before the stored approval expiry at the actual CAS write. */
+    requireUnexpiredApproval?: boolean;
   }>): Promise<OperatorTaskRecord>;
 }
 
@@ -206,11 +208,12 @@ export function createOperatorTaskService(input: Readonly<{
   async function transition(
     actor: OperatorActor, task: OperatorTaskRecord, allowedFrom: readonly OperatorTaskPhase[],
     patch: Parameters<OperatorTaskRepository["change"]>[0]["patch"],
+    requireUnexpiredApproval = false,
   ): Promise<OperatorTaskRecord> {
     try {
       return await input.repository.change({
         actor, taskId: task.taskId, expectedVersion: task.version,
-        allowedFrom, patch, at: clock(),
+        allowedFrom, patch, at: clock(), requireUnexpiredApproval,
       });
     } catch (error) {
       if (error instanceof OperatorTaskError) throw error;
@@ -343,7 +346,7 @@ export function createOperatorTaskService(input: Readonly<{
       // No API retry may call execute() again once this CAS has succeeded.
       const running = await transition(request.actor, current, ["awaiting_approval"], {
         phase: "running", approvalDigest: null, approvalSessionDigest: null,
-      });
+      }, true);
       // Execution acknowledgment alone is not proof of success. The domain's
       // separate readback MUST confirm the exact idempotent operation outcome.
       let outcome: OperatorDomainOutcome = { status: "unknown" };
