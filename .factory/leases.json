@@ -1246,7 +1246,10 @@
       "expires_at": "2026-10-10T16:54:11.016Z",
       "notes": "No production activation; source implementation on nondeploying integration; await AF00 composition and R1 authorized identity.",
       "source_head": "8872c56575d54d730df125f8f9b374c056749c06",
-      "source_pr": 629
+      "source_pr": 629,
+      "integration_head_sha": "05162fc7f378fcf2d3fc3238274ce3647a0f0a8a",
+      "released_at": "2026-10-10T16:51:51.621Z",
+      "release_reason": "PR #629 feature-owned source merged to nondeploying integration at SHA 05162fc7; AF00 shared composition/role authority outstanding, actual TS/PG/Flutter/Android CI queued and cannot be counted as PASS; no prod deployments/migrations."
     },
     {
       "claim_id": "l-video-youtube-websub-j14-20261010-gpt6-1730",
