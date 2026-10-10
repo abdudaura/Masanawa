@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// Device push registration is not an account-wide notification preference.
+/// An OS notification preference is not proof of remote push delivery.
 /// This controller never assumes an OS permission request or failed transport
 /// call succeeded; callers must still reconcile the server/device token.
 class NotificationSwitchController extends ChangeNotifier {
@@ -66,7 +66,7 @@ class NotificationSwitchController extends ChangeNotifier {
       enabled = value;
     } catch (_) {
       if (!_current(generation, account)) return;
-      // An unknown OS/registration state must not display a true switch.
+      // An unknown device permission state must not display a true switch.
       enabled = false;
       error = 'Could not check notification permissions. Retry to refresh.';
     } finally {
