@@ -114,27 +114,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "delivery-correction-docs-20261010",
-      "owner": "DELIVERY-CORRECTION",
-      "scope": "Owner-requested outcome-first dispatch and anti-duplication documentation correction only; preserve active feature claims",
-      "paths": [
-        "CONTINUE-HERE.md",
-        "AGENTS.md",
-        "docs/MULTI-WINDOW-WORK.md",
-        "docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md",
-        "docs/AUDIO-FIRST-WINDOW-PLAN-20261009.json",
-        "docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md",
-        "docs/NEXT-WAVE-DELIVERY-20261010.md",
-        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
-        "docs/workstreams/DELIVERY-CORRECTION-20261010.md"
-      ],
-      "branch": "docs/delivery-correction-20261010",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-10T01:40:36.516Z",
-      "heartbeat_at": "2026-10-10T01:40:36.516Z",
-      "expires_at": "2026-10-10T01:45:36.516Z"
-    },
-    {
       "claim_id": "masanawa01-af13-qualifier-guard-integration-20261010",
       "owner": "MASANAWA-01 / AF13 qualifier integration",
       "scope": "Integrate existing released #603 bounded symlink-safe evidence guard into #596 acceptance qualifier, preserve one authoritative read-only release gate, execute negative cases; no runtime, CI, provider or production mutations.",
@@ -925,6 +904,30 @@
       "expires_at": "2026-10-10T01:42:19Z",
       "released_at": "2026-10-10T01:39:27Z",
       "release_reason": "SHA-specific handoff committed at 19d29dd2a8da0ddcb7008c311f04c001669a5fc7 in draft PR #606; implementation source bounded, Flutter execution and #587/#497 reconciliation pending"
+    },
+    {
+      "claim_id": "delivery-correction-docs-20261010",
+      "owner": "DELIVERY-CORRECTION",
+      "scope": "Owner-requested outcome-first dispatch and anti-duplication documentation correction only; preserve active feature claims",
+      "paths": [
+        "CONTINUE-HERE.md",
+        "AGENTS.md",
+        "docs/MULTI-WINDOW-WORK.md",
+        "docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md",
+        "docs/AUDIO-FIRST-WINDOW-PLAN-20261009.json",
+        "docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md",
+        "docs/NEXT-WAVE-DELIVERY-20261010.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
+        "docs/workstreams/DELIVERY-CORRECTION-20261010.md"
+      ],
+      "branch": "docs/delivery-correction-20261010",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:40:36.516Z",
+      "heartbeat_at": "2026-10-10T01:40:36.516Z",
+      "expires_at": "2026-10-10T01:45:36.516Z",
+      "released_at": "2026-10-10T01:44:37.170Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/608",
+      "release_reason": "Owner-directed docs-only delivery correction merged c7f7280; runtime unchanged, 30 links and16 lane/prompt references checked."
     }
   ]
 }
