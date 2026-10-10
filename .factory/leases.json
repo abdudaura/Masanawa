@@ -270,6 +270,24 @@
       "heartbeat_at": "2026-10-10T04:43:27.388Z",
       "expires_at": "2026-10-10T04:48:27.388Z",
       "notes": "Continue #609; no duplicate media provider, production SQL migration or AF00 auth/router composition. Requires bounded AF00 migration/schema and route wiring."
+    },
+    {
+      "claim_id": "af09-609-removal-recovery-gpt6-0549",
+      "owner": "AF09 existing PR #609 / GPT-6 deletion recovery continuation",
+      "scope": "Close My Talks delete outcome uncertainty using canonical authenticated history readback; prevent false failure and stale account feedback. No backend/migration/AF00 authority.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-removal-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "6b1160f0130ddaf045f5ab7b23e5cf73a60d4a25",
+      "claimed_at": "2026-10-10T04:44:58.732Z",
+      "heartbeat_at": "2026-10-10T04:44:58.732Z",
+      "expires_at": "2026-10-10T04:49:58.732Z",
+      "notes": "Shared AF09 PR; independent feed paths currently unclaimed in CAS; connect real My Talks delete readback and Dart widgets. Guard old account/session. No protected root/API source."
     }
   ],
   "history": [
