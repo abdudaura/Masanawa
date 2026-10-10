@@ -322,3 +322,34 @@ test("lookalike error messages cannot spoof a canonical repository denial", asyn
   await assert.rejects(f.service.reaction(second, {postId:"post1",kind:"like",enabled:false}),
     error => error === unknown);
 });
+
+
+test("authenticated receipt lookup recovers the same durable publish without another write", async () => {
+  const f = fixture();
+  assert.equal(await f.service.receiptByRequest(actor, "request1"), null);
+  const created = await f.service.publish(actor, input);
+  const receipt = await f.service.receiptByRequest(actor, "request1");
+  assert.equal(receipt.postId, created.postId);
+  assert.equal(receipt.status, "processing");
+  assert.equal(receipt.title, created.title);
+  for (const key of ["tenantId", "authorAccountId", "assetId", "requestId"]) {
+    assert.equal(Object.hasOwn(receipt, key), false, key + " must stay private");
+  }
+  assert.equal(f.rows.size, 1);
+  assert.equal(f.counters.verifications, 1);
+  await f.service.settle({tenantId: actor.tenantId, postId: created.postId, expectedRevision: 0});
+  assert.equal((await f.service.receiptByRequest(actor, "request1")).status, "published");
+});
+
+test("receipt lookup is tenant/account fenced and validates untrusted keys", async () => {
+  const f = fixture();
+  await f.service.publish(actor, input);
+  assert.equal(await f.service.receiptByRequest(second, "request1"), null);
+  assert.equal(await f.service.receiptByRequest({...actor,tenantId:"tenant2"}, "request1"), null);
+  for (const invalid of ["../request1", "", "x".repeat(97)]) {
+    await assert.rejects(f.service.receiptByRequest(actor, invalid),
+      error => error instanceof AudioPostError && error.code === "VALIDATION");
+  }
+  await assert.rejects(f.service.receiptByRequest({...actor, accountId:""}, "request1"),
+    error => error instanceof AudioPostError && error.code === "VALIDATION");
+});
