@@ -521,9 +521,10 @@
       "source_pr": 609,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:01:28.377Z",
-      "heartbeat_at": "2026-10-10T08:01:28.377Z",
-      "expires_at": "2026-10-10T08:06:28.377Z",
-      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch."
+      "heartbeat_at": "2026-10-10T08:04:02.815Z",
+      "expires_at": "2026-10-10T08:09:02.815Z",
+      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit.",
+      "source_head_sha": "1bef47c22f90769de7a9c3c02e7a5dcb09182813"
     }
   ],
   "history": [
