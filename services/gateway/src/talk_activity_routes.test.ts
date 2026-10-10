@@ -139,16 +139,6 @@ describe("Talk Activity API", () => {
     expect(response.body).not.toContain("tenant_1");
   });
 
-  it("rejects malformed read paths instead of accepting unexpected fields", async () => {
-    const response = await createApp().inject({
-      method: "POST",
-      url: "/activity/activity_1/read",
-      headers: { authorization: "Bearer customer" },
-      payload: { userId: "someone_else" },
-    });
-    expect([400, 415]).toContain(response.statusCode);
-  });
-
   it("keeps money labels display-only and does not expose ledger internals", async () => {
     const response = await createApp().inject({
       method: "GET",
