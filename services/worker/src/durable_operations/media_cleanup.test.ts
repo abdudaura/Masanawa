@@ -41,6 +41,9 @@ describe("AF15 durable media deletion boundary", () => {
     expect(validCleanupCandidate({ ...valid, objectKey: "profiles/tenant_123456789012/../bad" })).toBe(false);
     expect(validCleanupCandidate({ ...valid, objectKey: "profiles/tenant_123456789012/mutable.jpg" })).toBe(false);
     expect(validCleanupCandidate({ ...valid, objectKey: "profiles/tenant_123456789012/a*" })).toBe(false);
+    expect(validCleanupCandidate({ ...valid,
+      objectKey: `private/tenant_foreign999999/tenant_123456789012/sha256-${checksum}.webp`,
+    })).toBe(false);
     expect(validCleanupCandidate({ ...valid, objectVersion: "version-1" })).toBe(true);
   });
 
@@ -111,6 +114,55 @@ describe("AF15 durable media deletion boundary", () => {
     vi.mocked(r.repository.claim).mockResolvedValue(Array(11).fill(valid));
     await expect(r.run()).rejects.toThrow(/invalid_claim_response/);
     expect(r.storage.deleteExact).not.toHaveBeenCalled();
+  });
+
+  it("rejects structurally corrupt claim response before any delete", async () => {
+    const r = rig([valid, null as unknown as CleanupCandidate]);
+    await expect(r.run()).rejects.toThrow(/invalid_claim_response/);
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    expect(r.repository.complete).not.toHaveBeenCalled();
+  });
+
+  it("quarantines a corrupt preflight result instead of deleting or crashing", async () => {
+    const r = rig();
+    vi.mocked(r.repository.preflight).mockResolvedValue(null as unknown as CleanupPreflight);
+    expect(await r.run()).toMatchObject({ claimed: 1, quarantined: 1, deleted: 0 });
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    expect(r.repository.stop).toHaveBeenCalledWith(valid, "invalid");
+  });
+
+  it("honors drain requested during awaited preflight", async () => {
+    const r = rig();
+    let stopping = false;
+    vi.mocked(r.repository.preflight).mockImplementation(async () => {
+      await Promise.resolve();
+      stopping = true;
+      return ready;
+    });
+    const result = await runMediaCleanupBatch({
+      workerId: "worker_instance_12345678", nowMs: 0, max: 1,
+      repository: r.repository, storage: r.storage, shouldStop: () => stopping,
+    });
+    expect(result).toMatchObject({ claimed: 1, deleted: 0, absent: 0 });
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    // Lease remains durable and recoverable; we do not falsely record a stop.
+    expect(r.repository.complete).not.toHaveBeenCalled();
+    expect(r.repository.stop).not.toHaveBeenCalled();
+  });
+
+  it("finishes already-started deletion even if drain arrives during provider I/O", async () => {
+    const r = rig();
+    let stopping = false;
+    vi.mocked(r.storage.deleteExact).mockImplementation(async () => {
+      stopping = true;
+      return "deleted";
+    });
+    const result = await runMediaCleanupBatch({
+      workerId: "worker_instance_12345678", nowMs: 0, max: 1,
+      repository: r.repository, storage: r.storage, shouldStop: () => stopping,
+    });
+    expect(result).toMatchObject({ claimed: 1, deleted: 1 });
+    expect(r.repository.complete).toHaveBeenCalledOnce();
   });
 
   it("stops on drain without claiming or starting subsequent deletes", async () => {
