@@ -54,13 +54,31 @@ const countColumns = qualifiedColumns +
   "WHERE r2.tenant_id=p.tenant_id AND r2.post_id=p.post_id AND r2.kind='like') AS like_count" +
   ",(SELECT COUNT(*)::int FROM social.audio_post_comments c " +
   "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count";
-function parseCursor(raw: string | null): { stamp: number; id: string } | null {
+// PostgreSQL stores microseconds; pg's Date conversion truncates to milliseconds.
+// The page cursor must retain the exact SQL timestamp so adjacent posts cannot
+// silently disappear when multiple publications share the same millisecond.
+const microsecondUtc = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$/;
+function parseCursor(raw: string | null): { stamp: string; id: string } | null {
  if (raw === null) return null;
- const at = raw.indexOf(":");
- const stamp = Number(raw.slice(0, at)); const id = raw.slice(at + 1);
- if (at < 1 || !Number.isSafeInteger(stamp) || stamp <= 0 ||
-     !/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(id)) throw new Error("audio_posts.invalid_cursor");
- return { stamp, id };
+ if (typeof raw !== "string" || !/^[A-Za-z0-9_-]{1,256}$/.test(raw)) {
+  throw new Error("audio_posts.invalid_cursor");
+ }
+ try {
+  const decoded = Buffer.from(raw, "base64url").toString("utf8");
+  if (Buffer.from(decoded).toString("base64url") !== raw) throw new Error("invalid");
+  const pair: unknown = JSON.parse(decoded);
+  if (!Array.isArray(pair) || pair.length !== 2 ||
+      typeof pair[0] !== "string" || !microsecondUtc.test(pair[0]) ||
+      !Number.isFinite(Date.parse(pair[0])) || typeof pair[1] !== "string" ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(pair[1])) throw new Error("invalid");
+  return { stamp: pair[0], id: pair[1] };
+ } catch { throw new Error("audio_posts.invalid_cursor"); }
+}
+function makeCursor(stamp: string, id: string): string {
+ if (!microsecondUtc.test(stamp) || !Number.isFinite(Date.parse(stamp))) {
+  throw new Error("audio_posts.invalid_feed_timestamp");
+ }
+ return Buffer.from(JSON.stringify([stamp, id])).toString("base64url");
 }
 export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVisibility): AudioPostRepository {
  return {
@@ -145,17 +163,23 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
    const items: AudioPostRecord[] = [];
    let more = true, scanned = 0;
    while (items.length < limit && more && scanned < 240) {
-    const r = await pool.query<Row>(
-      "SELECT " + countColumns + " FROM social.audio_posts p WHERE p.tenant_id=$1 AND p.status='published' " +
+    const r = await pool.query<Row & { cursor_time: string }>(
+      "SELECT " + countColumns +
+      `,to_char(p.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_time` +
+      " FROM social.audio_posts p WHERE p.tenant_id=$1 AND p.status='published' " +
       "AND ($2::timestamptz IS NULL OR (p.created_at,p.post_id) < ($2::timestamptz,$3)) " +
       "ORDER BY p.created_at DESC,p.post_id DESC LIMIT 30",
-      [tenantId,position ? new Date(position.stamp).toISOString() : null,position?.id ?? ""]);
+      [tenantId,position?.stamp ?? null,position?.id ?? ""]);
     if (!r.rows.length) { more = false; break; }
     let consumed = 0;
     for (const row of r.rows) {
      consumed++;
      const post = map(row);
-     position = {stamp:Date.parse(post.createdAt),id:post.postId};
+     // pg Date loses fractional microseconds, so use the SQL text alias.
+     if (typeof row.cursor_time !== "string" || !microsecondUtc.test(row.cursor_time)) {
+      throw new Error("audio_posts.invalid_feed_timestamp");
+     }
+     position = {stamp:row.cursor_time,id:post.postId};
      scanned++;
      if (await visibility.canView({
        tenantId,viewerId,authorAccountId:post.authorAccountId,
@@ -168,7 +192,7 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
    }
    // Advance past the last *scanned* row, including hidden authors.
    // Otherwise a full hidden page causes repeated rows or missing continuation.
-   return { items, nextCursor: more && position ? position.stamp + ":" + position.id : null };
+   return { items, nextCursor: more && position ? makeCursor(position.stamp, position.id) : null };
   },
   async listComments({tenantId,viewerId,postId,limit}) {
    return transaction(pool, async db => {
