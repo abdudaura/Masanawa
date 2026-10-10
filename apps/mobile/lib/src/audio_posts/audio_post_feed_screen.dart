@@ -69,7 +69,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
 
   void _rememberTab() {
     _tabSnapshots[_tabKey] = _TalkViewSnapshot(
-      _items, _next, _fromSnapshot, _freshDiscoverRead);
+      _items, _next, _fromSnapshot, _freshTabRead);
     if (_scroll.hasClients) _tabOffsets[_tabKey] = _scroll.offset;
   }
 
@@ -85,7 +85,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     });
   }
   late PublishedTalkFeedCache _cache;
-  bool _fromSnapshot = false, _freshDiscoverRead = false;
+  bool _fromSnapshot = false, _freshTabRead = false;
   String? _next;
   String? _message;
   bool _loading = true, _loadingMore = false, _mine = false, _saved = false, _following = false;
@@ -108,12 +108,21 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     _load();
   }
 
-  Future<void> _restoreSnapshot(int sequence) async {
+  Future<void> _restoreSnapshot(int sequence, String tab) async {
     try {
-      final items = await _cache.read(widget.accountId);
+      final account = widget.accountId;
+      final cache = _cache;
+      final items = tab == 'discover'
+          ? await cache.read(account)
+          : cache is PublishedTalkTabCache
+              ? await cache.readTab(account, tab)
+              : null;
+      // Network readback, account/transport replacement and a later tab
+      // selection always take precedence over slow secure-storage hydration.
       if (items == null || items.isEmpty || !mounted || !_authorized ||
-          sequence != _generation || _freshDiscoverRead || _items.isNotEmpty ||
-          _mine || _saved || _following) return;
+          widget.accountId != account || !identical(cache, _cache) ||
+          _tabKey != tab || sequence != _generation ||
+          _freshTabRead || _items.isNotEmpty) return;
       setState(() { _items = items; _fromSnapshot = true; });
     } catch (_) {
       // Secure-store denial/corruption must not leak or fabricate feed data.
@@ -146,7 +155,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _next = null;
       _restoreTabOffset(_tabKey);
       _fromSnapshot = false;
-      _freshDiscoverRead = false;
+      _freshTabRead = false;
       _loadingMore = false;
       _message = null;
       _reacting.clear();
@@ -185,7 +194,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _items = previous?.items ?? const [];
       _next = previous?.nextCursor;
       _fromSnapshot = previous?.fromDisk ?? false;
-      _freshDiscoverRead = previous?.isFresh ?? false;
+      _freshTabRead = previous?.isFresh ?? false;
       _loadingMore = false;
       _message = null;
     });
@@ -200,9 +209,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     }
     final sequence = ++_generation;
     // Never block a cached warm screen on a slow network or disk read.
-    if (!more && !_mine && !_saved && !_following && _items.isEmpty) {
-      _freshDiscoverRead = false;
-      unawaited(_restoreSnapshot(sequence));
+    final loadingTab = _tabKey;
+    if (!more && _items.isEmpty) {
+      _freshTabRead = false;
+      unawaited(_restoreSnapshot(sequence, loadingTab));
     }
     setState(() {
       if (more) _loadingMore = true;
@@ -230,21 +240,30 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
         ]);
         _next = page.nextCursor;
         _fromSnapshot = false;
-        if (!_mine && !_saved && !_following) _freshDiscoverRead = true;
+        _freshTabRead = true;
         _loading = false;
         _loadingMore = false;
       });
       _tabSnapshots[_tabKey] = _TalkViewSnapshot(
-        _items, _next, _fromSnapshot, _freshDiscoverRead);
+        _items, _next, _fromSnapshot, _freshTabRead);
       // A tab with no prior rows had no attached ListView when the initial
       // restore ran. Apply its saved offset (usually zero) after first render;
       // background refreshes of an already visible tab never jump.
       if (!more && _pendingOffsetTab == _tabKey) {
         _restoreTabOffset(_tabKey);
       }
-      if (!_mine && !_saved && !_following && _authorized) {
-        // Best-effort presentation cache; failures never suppress live results.
-        unawaited(_cache.write(widget.accountId, _items).catchError((Object _) {}));
+      if (_authorized) {
+        // All four tabs now survive process restart in the same encrypted
+        // account-local cache. An older Discover-only test cache stays valid.
+        final cache = _cache;
+        final account = widget.accountId;
+        final posts = List<AudioPost>.of(_items);
+        if (cache is PublishedTalkTabCache) {
+          unawaited(cache.writeTab(account, loadingTab, posts)
+              .catchError((Object _) {}));
+        } else if (loadingTab == 'discover') {
+          unawaited(cache.write(account, posts).catchError((Object _) {}));
+        }
       }
     } catch (_) {
       if (!mounted || sequence != _generation || !_authorized) return;
@@ -306,7 +325,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   }
 
   Future<void> _remove(AudioPost post) async {
-    if (!_authorized || !_mine || _removing.contains(post.postId) ||
+    if (!_authorized || _fromSnapshot || !_mine || _removing.contains(post.postId) ||
         _uncertainRemovals.contains(post.postId) || post.status == 'removed') return;
     final account = widget.accountId, transport = widget.transport;
     final confirmed = await showDialog<bool>(
@@ -366,7 +385,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   }
 
   Future<void> _react(AudioPost post, String kind, {bool enabled = true}) async {
-    if (!_authorized || !_reacting.add(post.postId + kind)) return;
+    if (!_authorized || _fromSnapshot || !_reacting.add(post.postId + kind)) return;
     setState(() {});
     try {
       await widget.transport.react(postId: post.postId, kind: kind, enabled: enabled);
@@ -392,7 +411,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   }
 
   Future<void> _openComments(String postId) async {
-    if (!_authorized) return;
+    if (!_authorized || _fromSnapshot) return;
     final account = widget.accountId;
     final transport = widget.transport;
     await showModalBottomSheet<void>(
@@ -422,8 +441,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       key: ValueKey('talk-report-${post.postId}'),
       postId: post.postId,
       transport: transport,
-      enabled: _authorized,
-      isAuthorized: () => mounted && widget.accountId == expectedAccount &&
+      enabled: _authorized && !_fromSnapshot,
+      isAuthorized: () => mounted && !_fromSnapshot &&
+          widget.accountId == expectedAccount &&
           identical(widget.reportTransport, transport) &&
           widget.isCurrentAccount(expectedAccount),
     );
@@ -438,7 +458,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
           final active = playback.activePostId == post.postId;
           final busy = active && playback.loading;
           final playing = active && playback.playing;
-          final enabled = _authorized && playback.accountId == widget.accountId &&
+          final enabled = _authorized && !_fromSnapshot &&
+              playback.accountId == widget.accountId &&
               playback.isAuthorized && post.status == 'published';
           return Column(mainAxisSize: MainAxisSize.min, children: [
             OutlinedButton.icon(
@@ -457,7 +478,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       );
     }
     return OutlinedButton.icon(
-      onPressed: !_authorized || widget.onPlayAuthorized == null ||
+      onPressed: !_authorized || _fromSnapshot ||
+          widget.onPlayAuthorized == null ||
           post.status != 'published' ? null : () async {
         try { await widget.onPlayAuthorized!(post); }
         catch (_) {
@@ -573,7 +595,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                       const Text('AI', semanticsLabel: 'AI-created audio'),
                                   ]),
                                   if (widget.followingTransport != null && !_mine &&
-                                      post.status == 'published')
+                                      !_fromSnapshot && post.status == 'published')
                                     CreatorFollowButton(
                                       key: ValueKey('creator-follow-${post.postId}'),
                                       transport: widget.followingTransport!,
@@ -595,7 +617,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                   Wrap(spacing: 8, children: [
                                     if (_mine && post.status != 'removed')
                                       TextButton.icon(
-                                        onPressed: _removing.contains(post.postId) ? null :
+                                        onPressed: _fromSnapshot || _removing.contains(post.postId) ? null :
                                             _uncertainRemovals.contains(post.postId)
                                               ? () => _checkRemovalStatus(post) : () => _remove(post),
                                         icon: Icon(_uncertainRemovals.contains(post.postId)
@@ -610,18 +632,20 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                       _reportAction(post),
                                     if (post.status == 'published')
                                       TextButton.icon(
-                                        onPressed: () => _openComments(post.postId),
+                                        onPressed: _fromSnapshot ? null : () => _openComments(post.postId),
                                         icon: const Icon(Icons.chat_bubble_outline),
                                         label: const Text('Comments'),
                                       ),
                                     TextButton.icon(
-                                      onPressed: post.status != 'published' || _reacting.contains(post.postId + 'like')
+                                      onPressed: _fromSnapshot || post.status != 'published' ||
+                                            _reacting.contains(post.postId + 'like')
                                           ? null : () => _react(post, 'like'),
                                       icon: const Icon(Icons.favorite_border),
                                       label: const Text('Like'),
                                     ),
                                     TextButton.icon(
-                                      onPressed: post.status != 'published' || _reacting.contains(post.postId + 'save')
+                                      onPressed: _fromSnapshot || post.status != 'published' ||
+                                            _reacting.contains(post.postId + 'save')
                                           ? null : () => _react(post, 'save', enabled: !_saved),
                                       icon: Icon(_saved ? Icons.bookmark_remove_outlined : Icons.bookmark_border),
                                       label: Text(_saved ? 'Unsave' : 'Save'),
