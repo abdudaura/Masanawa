@@ -37,6 +37,8 @@ export interface AudioPostRecord {
   /** Derived from persisted reactions and non-removed comments, never the client. */
   likeCount?: number;
   commentCount?: number;
+  /** One authorized, qualified listen per viewer/post/day; not card impressions. */
+  listenCount?: number;
 }
 
 export interface NewAudioPost {
@@ -57,7 +59,7 @@ export interface PublicFeedPage {
 export type PublicAudioPost = Pick<AudioPostRecord,
   "postId" | "authorId" | "authorKind" | "title" | "durationMs" |
   "status" | "revision" | "createdAt" | "publishedAt"
-> & { likeCount: number; commentCount: number };
+> & { likeCount: number; commentCount: number; listenCount: number };
 
 export interface PublicAudioFeedPage {
   items: PublicAudioPost[];
@@ -71,6 +73,7 @@ export function toPublicAudioPost(post: AudioPostRecord): PublicAudioPost {
     title: post.title, durationMs: post.durationMs, status: post.status,
     revision: post.revision, createdAt: post.createdAt, publishedAt: post.publishedAt,
     likeCount: post.likeCount ?? 0, commentCount: post.commentCount ?? 0,
+    listenCount: post.listenCount ?? 0,
   };
 }
 
