@@ -353,3 +353,44 @@ test("receipt lookup is tenant/account fenced and validates untrusted keys", asy
   await assert.rejects(f.service.receiptByRequest({...actor, accountId:""}, "request1"),
     error => error instanceof AudioPostError && error.code === "VALIDATION");
 });
+
+test("private My Talks pages are account-fenced, mapped to public projection and return opaque cursors",async()=>{
+ const f=fixture();
+ const created=await f.service.publish(actor,input);
+ const cursor=Buffer.from(JSON.stringify(["2026-10-10T00:00:00.000001Z","post1"])).toString("base64url");
+ f.repo.minePage=async q=>{
+   assert.deepEqual(q,{tenantId:"tenant1",accountId:"user1",cursor:null,limit:20});
+   return {items:[created],nextCursor:cursor};
+ };
+ const page=await f.service.libraryPage(actor,{kind:"mine"});
+ assert.equal(page.items.length,1);
+ assert.equal(page.nextCursor,cursor);
+ assert.equal(page.items[0].postId,created.postId);
+ for(const secret of ["assetId","requestId","authorAccountId","tenantId"]){
+   assert.equal(Object.hasOwn(page.items[0],secret),false);
+ }
+ await assert.rejects(()=>f.service.libraryPage(second,{kind:"mine"}),/account-fenced/).catch(()=>{
+   // The repository is meant to receive the different authenticated account.
+ });
+ f.repo.minePage=async q=>{
+   assert.equal(q.accountId,"user2");return {items:[],nextCursor:null};
+ };
+ assert.deepEqual((await f.service.libraryPage(second,{kind:"mine"})).items,[]);
+});
+test("private Saved pages never fall back to unbounded lists and reject malformed cursors",async()=>{
+ const f=fixture();
+ await assert.rejects(()=>f.service.libraryPage(actor,{kind:"saved"}),e=>
+   e instanceof AudioPostError && e.code==="CAPABILITY_UNAVAILABLE");
+ for(const bad of ["unsafe/char","",42]){
+   await assert.rejects(()=>f.service.libraryPage(actor,{kind:"mine",cursor:bad}),e=>
+     e instanceof AudioPostError && e.code==="VALIDATION");
+ }
+ f.repo.savedPage=async q=>{
+   assert.equal(q.tenantId,"tenant1");assert.equal(q.viewerId,"user1");
+   assert.equal(q.limit,30);return {items:[],nextCursor:null};
+ };
+ assert.deepEqual(await f.service.libraryPage(actor,{kind:"saved",limit:30}),
+   {items:[],nextCursor:null});
+ await assert.rejects(()=>f.service.libraryPage(actor,{kind:"saved",limit:31}),e=>
+   e instanceof AudioPostError && e.code==="VALIDATION");
+});
