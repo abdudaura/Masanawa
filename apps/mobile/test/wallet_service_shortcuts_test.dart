@@ -4,6 +4,7 @@ import 'package:masanawa/src/commerce/wallet_models.dart';
 import 'package:masanawa/src/state/wallet_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/wallet/wallet_screen.dart';
+import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class _UnavailableWalletController extends WalletController {
   @override
@@ -18,6 +19,7 @@ void main() {
         walletProvider.overrideWith(_UnavailableWalletController.new),
       ],
       child: MaterialApp(
+        theme: buildMasanawaTheme(brightness: Brightness.light),
         home: WalletScreen(onOpenBillingService: intents.add),
       ),
     ));

@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createIsolatedPostgresTestDatabase } from "./isolated-test-database.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
 import { runMigrations } from "../migrations.js";
@@ -10,9 +11,11 @@ const describeDatabase = connectionString ? describe : describe.skip;
 
 describeDatabase("Twin economy PostgreSQL acceptance", () => {
   let pool: Pool;
+  let isolated: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>> | undefined;
 
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    isolated = await createIsolatedPostgresTestDatabase(connectionString!);
+    pool = isolated.pool;
     await runMigrations(pool, [{
       owner: "commerce",
       directory: fileURLToPath(
@@ -22,7 +25,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
   });
 
   afterAll(async () => {
-    await pool?.end();
+    await isolated?.close();
   });
 
   it("persists one immutable Credit transfer receipt and accepts only exact replay", async () => {
@@ -662,6 +665,41 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
         WHERE tenant_id=$1 AND valuation_key=$2 AND event_type=$3 AND revision=1`,
       [tenantId, "flutterwave:NGN:kobo", "external-funding"],
     )).rejects.toThrow("Twin economy history is immutable");
+  });
+
+  it("rejects reusing one immutable ledger entry under a different request", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const input = {
+      tenantId,
+      requestId: "twin-ledger-reuse-original",
+      kind: "transfer" as const,
+      senderUserId: createCanonicalId("user"),
+      recipientUserId: createCanonicalId("user"),
+      characterId: null,
+      amountCredits: 15,
+      ledgerEntryId: createCanonicalId("ledger-entry"),
+      completedAt: "2026-10-05T17:31:00.000Z",
+    };
+    const first = await repository.recordCreditOperation(input);
+    expect(first.requestId).toBe(input.requestId);
+
+    // Do not turn the concurrency fix into a false second receipt or
+    // a cross-request alias to an unrelated transfer.
+    await expect(repository.recordCreditOperation({
+      ...input, requestId: "twin-ledger-reuse-other",
+    })).rejects.toThrow("Twin credit operation persistence failed");
+    const other = await repository.readCreditOperation({
+      tenantId, requestId: "twin-ledger-reuse-other",
+    });
+    expect(other).toBeNull();
+
+    const count = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM commerce.twin_credit_operations
+        WHERE tenant_id=$1 AND ledger_entry_id=$2`,
+      [tenantId, input.ledgerEntryId],
+    );
+    expect(count.rows[0]?.count).toBe("1");
   });
 
   it("converges concurrent exact replays onto one durable receipt", async () => {

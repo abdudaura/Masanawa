@@ -82,7 +82,7 @@ describe("Postgres Talk profile repository", () => {
     const pool: TalkProfileSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
-        if (text.includes("SELECT user_id FROM talks.public_profiles")) {
+        if (text.includes("SELECT p.user_id FROM talks.public_profiles p")) {
           return { rowCount: 1, rows: [{ user_id: "user_target" }] as unknown as Row[] };
         }
         if (text.includes("SELECT p.tenant_id")) {
@@ -105,6 +105,7 @@ describe("Postgres Talk profile repository", () => {
       changedAt: "2026-10-07T09:00:00.000Z",
     });
     expect(followed).toMatchObject({ isFollowing: true, followerCount: 5 });
+    expect(calls[0]?.text).toContain("se.visibility IN ('restricted','blocked')");
     expect(calls.some((call) => call.text.includes("ON CONFLICT"))).toBe(true);
 
     await repository.setFollowing({
@@ -163,7 +164,7 @@ describe("Postgres Talk profile repository", () => {
     const pool: TalkProfileSqlPool = {
       async query<Row>(text: string) {
         calls.push(text);
-        if (text.includes("SELECT user_id FROM talks.public_profiles")) {
+        if (text.includes("SELECT p.user_id FROM talks.public_profiles p")) {
           return { rowCount: 1, rows: [{ user_id: "user_viewer" }] as unknown as Row[] };
         }
         return { rowCount: 0, rows: [] as unknown as Row[] };
@@ -180,6 +181,7 @@ describe("Postgres Talk profile repository", () => {
       }),
     ).rejects.toThrow("profiles.cannot_follow_self");
 
+    expect(calls[0]).toContain("se.visibility IN ('restricted','blocked')");
     expect(calls.some((text) => text.includes("INSERT INTO talks.follows"))).toBe(false);
   });
 });

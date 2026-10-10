@@ -143,7 +143,7 @@ describe("Postgres Talk moderation repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkModerationSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
         }
@@ -302,7 +302,7 @@ describe("Postgres Talk moderation repository", () => {
 
     const pool: TalkModerationSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
         }
@@ -419,7 +419,7 @@ describe("Postgres Talk moderation repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkModerationSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         if (text.includes("FROM talks.talks")) {
           return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
         }
