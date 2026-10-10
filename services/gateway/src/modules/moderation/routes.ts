@@ -15,5 +15,8 @@ export function registerModerationRoutes(app:FastifyInstance,service:ModerationR
  app.get("/v1/admin/cases",async r=>wrap(()=>service.adminCases(r.headers.authorization)));
  app.get("/v1/admin/cases/:id",async r=>wrap(()=>service.read(r.headers.authorization,(r.params as {id:string}).id)));
  app.post("/v1/admin/cases/:id/actions",async r=>wrap(()=>service.propose(r.headers.authorization,(r.params as {id:string}).id,r.body as Parameters<ModerationRoutes["propose"]>[2])));
+ app.post("/v1/admin/cases/:id/appeals/:appealId/review",async r=>wrap(()=>service.reviewAppeal(r.headers.authorization,
+ (r.params as {id:string}).id,(r.params as {appealId:string}).appealId,
+ r.body as Parameters<ModerationRoutes["reviewAppeal"]>[3])));
  app.post("/v1/admin/cases/:id/actions/:actionId/review",async r=>wrap(()=>service.review(r.headers.authorization,(r.params as {id:string,actionId:string}).id,(r.params as {actionId:string}).actionId,r.body as Parameters<ModerationRoutes["review"]>[3])));
 }
