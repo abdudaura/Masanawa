@@ -26,6 +26,10 @@ $mobileDir = Join-Path $repoRoot "apps\mobile"
 $expectedBranch = "main"
 $packageName = "com.masanawa.app"
 
+if (-not (Get-Command flutter -ErrorAction SilentlyContinue) -and (Test-Path "C:\flutter\bin\flutter.bat")) {
+  $env:PATH = "C:\flutter\bin;" + $env:PATH
+}
+
 $firebaseBuildArguments = @()
 if (-not [string]::IsNullOrWhiteSpace($FirebaseDefinesFile)) {
   $firebasePath = (Resolve-Path -LiteralPath $FirebaseDefinesFile).Path
