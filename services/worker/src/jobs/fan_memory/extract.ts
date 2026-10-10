@@ -1,8 +1,8 @@
 /** Must be dispatched by canonical events.outbox, not a new queue. */
 export interface Candidate {content:string;category:string;messageId:string;confidence:number;sourceHash:string}
-const sensitive=new Set(["health","religion","politics","sexuality","finance","financial_identifier","location","precise_location","biometric","criminal"]);
+const allowedCategories=new Set(["preference","non_sensitive_fact"]);
 export function allowedCandidates(items:readonly Candidate[]):readonly Candidate[]{
- return items.filter(i=>i && typeof i.category==="string"&&!sensitive.has(i.category.toLowerCase())&&
+ return items.filter(i=>i && typeof i.category==="string"&&allowedCategories.has(i.category.toLowerCase())&&
   typeof i.content==="string"&&i.content.trim().length>=3&&i.content.length<=1000&&
   i.confidence>=0.6&&i.confidence<=1&&/^[a-f0-9]{64}$/u.test(i.sourceHash)&&
   typeof i.messageId==="string"&&i.messageId.length>0&&i.messageId.length<=200).slice(0,8);
