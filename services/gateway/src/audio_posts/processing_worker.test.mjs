@@ -86,6 +86,46 @@ test('Postgres queue uses tenant-fenced parameterized keyset query and bounded p
   assert.ok(queries[1][1][1]?.startsWith('2026-10-10'));
   await assert.rejects(queue.listPending({tenantId:'tenantA',cursor:'!!!',limit:1}),/invalid_processing_cursor/);
 });
+test('keyset retains six-digit PG timestamps so pending posts in one millisecond are not skipped', async () => {
+  const calls = [];
+  const first = {tenant_id:'tenantA',post_id:'newer',revision:0,
+    created_at:'2026-10-10T00:00:00.123456Z'};
+  const second = {tenant_id:'tenantA',post_id:'older',revision:0,
+    created_at:'2026-10-10T00:00:00.123455Z'};
+  const pool = {query: async (sql, params) => {
+    calls.push([sql,params]);
+    return {rows: params[1] === null ? [first,second] : [second]};
+  }};
+  const queue = createPostgresAudioPostProcessingQueue(pool);
+  const one = await queue.listPending({tenantId:'tenantA',cursor:null,limit:1});
+  assert.equal(one.items[0].createdAt,first.created_at);
+  assert.ok(one.nextCursor);
+  const decoded = JSON.parse(Buffer.from(one.nextCursor,'base64url').toString('utf8'));
+  assert.deepEqual(decoded,[first.created_at,'newer']);
+  const two = await queue.listPending({tenantId:'tenantA',cursor:one.nextCursor,limit:1});
+  assert.equal(two.items[0].postId,'older');
+  assert.equal(calls[1][1][1],first.created_at);
+  assert.match(calls[0][0],/created_at AT TIME ZONE 'UTC'/);
+  assert.match(calls[0][0],/HH24:MI:SS.US/);
+  assert.match(calls[0][0],/created_at,post_id\) < \(\$2::timestamptz,\$3\)/);
+});
+
+test('queue rejects rounded or corrupted cursor times instead of skipping unpublished posts', async () => {
+  const queue = createPostgresAudioPostProcessingQueue({query: async () => ({rows:[]})});
+  const invalid = Buffer.from(JSON.stringify(['2026-10-10T00:00:00.123Z','newer']))
+    .toString('base64url');
+  await assert.rejects(queue.listPending({tenantId:'tenantA',cursor:invalid,limit:1}),
+    /invalid_processing_cursor/);
+  const badPool = {query: async () => ({rows:[{
+    tenant_id:'tenantA',post_id:'newer',revision:0,
+    created_at:'2026-10-10T00:00:00.123Z',
+  }]})};
+  await assert.rejects(
+    createPostgresAudioPostProcessingQueue(badPool)
+      .listPending({tenantId:'tenantA',cursor:null,limit:1}),
+    /invalid_pending_time/);
+});
+
 test('Postgres session advisory lock releases on success and failure', async () => {
   let unlocked=0, releaseArgs=[], workCount=0;
   const client={async query(sql,args){
