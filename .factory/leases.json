@@ -1383,6 +1383,26 @@
       "heartbeat_at": "2026-10-10T16:58:13.535Z",
       "expires_at": "2026-10-10T17:03:13.535Z",
       "notes": "J14 PR #627 merged as source; avoid edit to existing migrations/worker source and root composition; authorization must be server derived."
+    },
+    {
+      "claim_id": "l-video-admin-youtube-sources-a13-20261010-gpt6",
+      "owner": "GPT-6 L-VIDEO A13 Admin YouTube source controls",
+      "scope": "Tenant/RBAC-guarded YouTube source registration/read/pause with Android Admin UX, canonical PG source and negatives; no automation enable; AF00 owns shared composition",
+      "paths": [
+        "services/gateway/src/modules/youtube_websub/source_admin.ts",
+        "services/gateway/src/modules/youtube_websub/source_admin.test.ts",
+        "services/gateway/src/modules/youtube_websub/source_admin_routes.ts",
+        "adapters/storage/postgres/src/external_videos/youtube_sources.ts",
+        "apps/admin_mobile/lib/src/features/external_videos/youtube_sources_api.dart",
+        "apps/admin_mobile/lib/src/features/external_videos/youtube_sources_screen.dart",
+        "apps/admin_mobile/test/features/external_videos/youtube_sources_test.dart"
+      ],
+      "branch": "lane/l-video-youtube-admin-20261010-gpt6",
+      "base_sha": "2ba69aac76b022fa4c19de907759eae89d65b27e",
+      "claimed_at": "2026-10-10T16:58:58.175Z",
+      "heartbeat_at": "2026-10-10T16:58:58.175Z",
+      "expires_at": "2026-10-10T17:03:58.175Z",
+      "notes": "Continuation after #624/#627 source merged; no root or shared ownership."
     }
   ],
   "history": [
