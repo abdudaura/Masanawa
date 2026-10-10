@@ -128,7 +128,7 @@ void main() {
       'revision':2,'createdAt':'2026-10-10T00:00:00.000Z',
       'likeCount':1,'commentCount':2,
     };
-    expect(AudioPost.fromJson(fields).listenCount,0);
+    expect(AudioPost.fromJson(fields).listenCount,isNull);
     expect(AudioPost.fromJson({...fields,'listenCount':4}).listenCount,4);
     for(final bad in [-1,3.5,'10',null]) {
       // Null remains backward-compatible with an absent pre-migration value.
