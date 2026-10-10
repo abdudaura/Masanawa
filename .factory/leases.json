@@ -403,6 +403,21 @@
       "heartbeat_at": "2026-10-10T07:44:23.167Z",
       "expires_at": "2026-10-10T07:49:23.167Z",
       "notes": "Narrow package-local tsconfig, no AF00 root config edits. Exact executed CI 38035232656: only 20 third-party declaration diagnostics plus 2 duplicate import fixes since e36ec55. Test and revert if actual TypeScript source checks decrease."
+    },
+    {
+      "claim_id": "af13-pr460-postgres-migration-manifest-regression-20261010",
+      "owner": "AF13 CI recovery PR 460",
+      "scope": "Repair failing PG18 foundation test outdated exact migration manifest expectation (no migration/source changes).",
+      "paths": [
+        "adapters/storage/postgres/src/postgres.integration.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "source_pr": 460,
+      "source_head": "809516bfdaf9866df3c0ea79a4cc8ca1d114698c",
+      "claimed_at": "2026-10-10T07:48:31.704Z",
+      "heartbeat_at": "2026-10-10T07:48:31.704Z",
+      "expires_at": "2026-10-10T07:53:31.704Z",
+      "notes": "Foundation Vitest 38035472618: 41 tests fail in common beforeEach due eight missing expected migration identifiers; keep strict list."
     }
   ],
   "history": [
