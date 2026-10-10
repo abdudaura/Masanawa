@@ -108,9 +108,9 @@
       "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
       "source_pr": 609,
       "claimed_at": "2026-10-10T02:19:01.736Z",
-      "heartbeat_at": "2026-10-10T02:27:41.721Z",
-      "expires_at": "2026-10-10T02:32:41.721Z",
-      "notes": "Public account-ID redaction added to existing AF09 PR #609 comments API+Flutter; source committed, verification and exact-head handoff pending."
+      "heartbeat_at": "2026-10-10T02:29:01.915Z",
+      "expires_at": "2026-10-10T02:34:01.915Z",
+      "notes": "Continuing existing AF09 #609 after comment journey. Exact claimed files only: public feed response privacy/data contract + social counts; no worker, Following, composer, root, migration or native edits. Latest PR head must be rechecked before updates."
     },
     {
       "claim_id": "af09-following-journey-20261010-gpt6d",
