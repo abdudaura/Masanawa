@@ -67,6 +67,27 @@ void main() {
     );
   });
 
+  test('in-flight account change discards otherwise valid server balance', () async {
+    var currentToken = 'old-account';
+    final dio = Dio();
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        currentToken = 'new-account';
+        handler.resolve(Response<Map<String, dynamic>>(
+          requestOptions: options,
+          statusCode: 200,
+          data: {'asset': 'MSN', 'spendableMicro': '9000000'},
+        ));
+      },
+    ));
+    final t = GatewayMsnBalanceTransport(
+      dio: dio, baseUrl: 'https://gateway.example',
+      readAccessToken: () => currentToken,
+    );
+    await expectLater(t.read(), throwsA(isA<ApiException>().having(
+      (e) => e.statusCode, 'statusCode', 401)));
+  });
+
   test('fails closed when MSN route is not mounted', () async {
     final dio = Dio();
     dio.interceptors.add(InterceptorsWrapper(
