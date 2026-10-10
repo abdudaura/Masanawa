@@ -1247,9 +1247,11 @@
       "branch": "lane/l-video-youtube-websub-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:30:45.836Z",
-      "heartbeat_at": "2026-10-10T16:33:02.504Z",
-      "expires_at": "2026-10-10T16:38:02.504Z",
-      "notes": "Non-overlap verified with #624 J15 claim; source under J14 paths only; no runtime activation/provider keys."
+      "heartbeat_at": "2026-10-10T16:38:45.173Z",
+      "expires_at": "2026-10-10T16:43:45.173Z",
+      "notes": "Non-overlap verified with #624 J15 claim; source under J14 paths only; no runtime activation/provider keys.",
+      "source_head": "e5e1b259d97a9d838940530b4f4f983a779b2a04",
+      "source_pr": 627
     },
     {
       "claim_id": "l-missions-j12-publish-once-20261010-gpt6-1730",
