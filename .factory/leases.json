@@ -274,6 +274,23 @@
       "heartbeat_at": "2026-10-10T04:44:58.732Z",
       "expires_at": "2026-10-10T04:49:58.732Z",
       "notes": "Shared AF09 PR; independent feed paths currently unclaimed in CAS; connect real My Talks delete readback and Dart widgets. Guard old account/session. No protected root/API source."
+    },
+    {
+      "claim_id": "af09-609-route-composition-gpt6-0544",
+      "owner": "AF09 #609 existing feature PR / GPT-6 continuing window 0544",
+      "scope": "Close disconnected AF09 route composition by one feature-owned registration boundary for post, follows, playback and canonical report; AF00 retains app/main and actor/media/DB composition",
+      "paths": [
+        "services/gateway/src/audio_posts/register_feature.ts",
+        "services/gateway/src/audio_posts/register_feature.test.mjs",
+        "docs/workstreams/AF09-route-composition-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:46:55.813Z",
+      "heartbeat_at": "2026-10-10T04:46:55.813Z",
+      "expires_at": "2026-10-10T04:51:55.813Z",
+      "notes": "New feature-owned route pack, not shared Gateway app/main, DB registry, media authority or worker. No competing integration branch."
     }
   ],
   "history": [
