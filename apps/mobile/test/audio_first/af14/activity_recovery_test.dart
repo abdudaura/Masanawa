@@ -35,6 +35,19 @@ class _RecoverySession extends SessionController {
 }
 
 class _RecoveryTransport implements TalkActivityTransport {
+  bool unread = true;
+  bool failMarkRead = false;
+  int markReadCalls = 0;
+  Completer<void>? markReadGate;
+
+  @override
+  Future<void> markRead({required String activityId}) async {
+    markReadCalls += 1;
+    if (markReadGate != null) await markReadGate!.future;
+    if (failMarkRead) throw StateError('PRIVATE_MARK_READ_FAILURE');
+    unread = false;
+  }
+
   bool failLoad = false;
   bool failDecision = false;
   bool failReadbackAfterDecision = false;
@@ -64,6 +77,7 @@ class _RecoveryTransport implements TalkActivityTransport {
         createdAt: DateTime(2026, 10, 9),
         talkId: 'talk-123',
         requiresAction: decisionCalls == 0 || failDecision,
+        unread: unread,
       ),
     ];
   }
