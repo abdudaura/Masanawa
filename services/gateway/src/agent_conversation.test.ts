@@ -337,4 +337,841 @@ describe("Alpha conversation service", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+
+  it("streams only settled billing text before slow audio and survives stream disconnect", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const trace: string[] = [];
+    const timings: Array<{ readonly event: string; readonly outcome: string; readonly totalMs: number; readonly firstTextMs?: number; readonly stagesMs: Readonly<Record<string, number>> }> = [];
+    let releaseAudio!: () => void;
+    const audioPending = new Promise<void>((resolve) => { releaseAudio = resolve; });
+    const sessions: CharacterSessionRepository = {
+      async create() { return session; },
+      async read() { return session; },
+      async updateBindings() { throw new Error("not used"); },
+      async close() { return session; },
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create() { return {} as never; },
+      async read() { throw new Error("not used"); },
+      async finish(input) {
+        trace.push(`run:${input.outcome.state}`);
+        return {} as never;
+      },
+    };
+    const service = createAgentConversationService({
+      sessions,
+      runs,
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute() {
+          return {
+            reply: 'model-private <masanawa_action>{"type":"billing.quote"}</masanawa_action>',
+            parts: [],
+          };
+        },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() {
+          return { reply: "Your quote is ready. Confirm before any purchase.", parts: [] };
+        },
+      },
+      nativeAudio: {
+        async render() {
+          trace.push("audio:started");
+          await audioPending;
+          trace.push("audio:finished");
+          return { dataBase64: "YQ==", mimeType: "audio/pcm", durationMs: 1 };
+        },
+      },
+      sessionDurationMs: 60_000,
+      onTurnTiming: (record) => { timings.push(record); },
+    });
+    const request = {
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy airtime",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    };
+    const settledText = "Your quote is ready. Confirm before any purchase.";
+    const pending = service.turn({
+      ...request,
+      onTextDelta: (delta) => { trace.push(`text:${delta}`); },
+    });
+    try {
+      await vi.waitFor(() => expect(trace).toContain("audio:started"));
+      expect(trace).toContain("run:completed");
+      expect(trace.filter((entry) => entry.startsWith("text:"))).toEqual([
+        `text:${settledText}`,
+      ]);
+      expect(trace.indexOf(`text:${settledText}`)).toBeLessThan(
+        trace.indexOf("audio:started"),
+      );
+      expect(trace).not.toContain("audio:finished");
+      expect(trace.join(" ")).not.toContain("model-private");
+      expect(trace.join(" ")).not.toContain("masanawa_action");
+    } finally {
+      releaseAudio();
+    }
+    const response = await pending;
+    expect(response.reply).toBe(settledText);
+
+    // The streaming socket can close after the canonical turn is settled:
+    // callback transport errors must not convert a completed bill into failure.
+    const disconnected = await service.turn({
+      ...request,
+      requestId: createCanonicalId("request"),
+      onTextDelta: () => { throw new Error("client went away"); },
+    });
+    expect(disconnected.reply).toBe(settledText);
+    expect(trace.filter((entry) => entry === "run:failed")).toHaveLength(0);
+    expect(timings).toHaveLength(2);
+    // First text is measured only when the client actually accepts delivery;
+    // a disconnected transport must not fabricate a successful first-text time.
+    expect(timings[0]?.firstTextMs).toBeGreaterThanOrEqual(0);
+    expect(timings[1]?.firstTextMs).toBeUndefined();
+    for (const timing of timings) {
+      expect(timing).toMatchObject({ event: "agent.turn.latency", outcome: "completed" });
+      expect(timing.totalMs).toBeGreaterThanOrEqual(0);
+      expect(timing.stagesMs).toHaveProperty("authorization");
+      expect(timing.stagesMs).toHaveProperty("sessionRead");
+      expect(timing.stagesMs).toHaveProperty("model");
+      expect(timing.stagesMs).toHaveProperty("preInference");
+      expect(timing.stagesMs).toHaveProperty("postInference");
+      expect(timing.stagesMs).toHaveProperty("settlement");
+      expect(timing.stagesMs).toHaveProperty("audio");
+    }
+    expect(JSON.stringify(timings)).not.toContain("model-private");
+    expect(JSON.stringify(timings)).not.toContain("masanawa_action");
+    expect(JSON.stringify(timings)).not.toContain("buy airtime");
+  });
+
+
+  it("does not duplicate safe raw deltas when no post-processor changes the reply", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute(command) {
+          await command.onTextDelta?.("Hello ");
+          await command.onTextDelta?.("world");
+          return { reply: "Hello world", parts: [] };
+        },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    expect(response.reply).toBe("Hello world");
+    expect(deltas).toEqual(["Hello ", "world"]);
+  });
+
+
+  it.each([false, true])(
+    "does not let stalled %s text-stream acknowledgement block a settled turn",
+    async (postProcessed) => {
+      const f = fixture();
+      const session = sessionFor(f);
+      let completed = 0;
+      let textAttempts = 0;
+      const service = createAgentConversationService({
+        sessions: {
+          async create() { return session; },
+          async read() { return session; },
+          async updateBindings() { throw new Error("not used"); },
+          async close() { return session; },
+          async reset() { throw new Error("not used"); },
+        },
+        runs: {
+          async create() { return {} as never; },
+          async read() { throw new Error("not used"); },
+          async finish() { completed += 1; return {} as never; },
+        },
+        authorizer: { async authorize() { return f.admission; } },
+        ...(postProcessed ? { billingAssistant: {
+          async beforeInference() { return null; },
+          async afterInference() { return null; },
+        } as never } : {}),
+        strategy: {
+          async execute(command) {
+            if (!postProcessed) await command.onTextDelta?.("Hello");
+            return { reply: "Hello", parts: [] };
+          },
+        },
+        sessionDurationMs: 60_000,
+      });
+      const response = await service.turn({
+        authorizationHeader: "Bearer alpha",
+        characterSessionId: session.characterSessionId,
+        characterId: f.scope.characterId,
+        text: "hello",
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        onTextDelta: async () => {
+          textAttempts += 1;
+          await new Promise<void>(() => {}); // Simulated client that never ACKs.
+        },
+      });
+      expect(response.reply).toBe("Hello");
+      expect(completed).toBe(1);
+      expect(textAttempts).toBe(1);
+    },
+  );
+
+  it("never early-streams unhandled billing or crypto machine markup", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute() {
+          return {
+            reply: 'Invalid purchase <masanawa_crypto_action>{"type":"crypto.withdraw.quote"}</masanawa_crypto_action>',
+            parts: [],
+          };
+        },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() { return null; },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy crypto",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    // Final done/replay must also be sanitized, not merely early deltas.
+    expect(response.reply).toBe(
+      "I couldn't verify that result. Check your recent activity before trying again.",
+    );
+    expect(response.reply).not.toContain("masanawa_crypto_action");
+    expect(response.parts).toEqual([]);
+    expect(deltas).toEqual([response.reply]);
+  });
+
+
+  it("bounds optional audio after durable text and suppresses late PCM", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const runStates: string[] = [];
+    const visible: string[] = [];
+    const pcm: string[] = [];
+    let audioSignal: AbortSignal | undefined;
+    let lateChunk: ((chunk: Buffer) => void | Promise<void>) | undefined;
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(request) {
+          runStates.push(request.outcome.state);
+          return {} as never;
+        },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute() { return { reply: "Internal raw model answer", parts: [] }; },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() {
+          return { reply: "Safe authorized text.", parts: [] };
+        },
+      },
+      nativeAudio: {
+        render(_text, signal, onPcmChunk) {
+          audioSignal = signal;
+          lateChunk = onPcmChunk;
+          // Deliberately ignore AbortSignal: Gateway still must finish text.
+          return new Promise<never>(() => {});
+        },
+      },
+      sessionDurationMs: 60_000,
+      audioTimeoutMs: 100,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "show quote",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { visible.push(delta); },
+      onAudioPcmChunk: (chunk) => { pcm.push(chunk); },
+    });
+    expect(response.reply).toBe("Safe authorized text.");
+    expect(response.audioBase64).toBeUndefined();
+    expect(runStates).toEqual(["completed"]);
+    expect(visible).toEqual(["Safe authorized text."]);
+    expect(audioSignal?.aborted).toBe(true);
+    await lateChunk?.(Buffer.from("late audio"));
+    expect(pcm).toEqual([]);
+  });
+
+  it("cancels waiting audio on disconnect without undoing completed text", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const aborter = new AbortController();
+    let audioStarted!: () => void;
+    const started = new Promise<void>((resolve) => { audioStarted = resolve; });
+    const states: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(request) { states.push(request.outcome.state); return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: { async execute() { return { reply: "Already settled", parts: [] }; } },
+      nativeAudio: {
+        async render() {
+          audioStarted();
+          return new Promise<never>(() => {});
+        },
+      },
+      audioTimeoutMs: 60_000,
+      sessionDurationMs: 60_000,
+    });
+    const pending = service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      signal: aborter.signal,
+    });
+    await started;
+    aborter.abort();
+    const response = await pending;
+    expect(response.reply).toBe("Already settled");
+    expect(response.audioBase64).toBeUndefined();
+    expect(states).toEqual(["completed"]);
+  });
+
+  it("never turns a synchronous audio provider throw into a failed settled run", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const states: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(request) { states.push(request.outcome.state); return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: { async execute() { return { reply: "Settled", parts: [] }; } },
+      nativeAudio: {
+        render() { throw new Error("provider failed synchronously"); },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const reply = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    expect(reply.reply).toBe("Settled");
+    expect(states).toEqual(["completed"]);
+  });
+
+  it("holds a machine directive split across raw model token boundaries", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute(command) {
+          await command.onTextDelta?.("Safe introduction <masa");
+          await command.onTextDelta?.('nawa_action>{"type":"billing.execute"}</masanawa_action>');
+          return {
+            reply: 'Safe introduction <masanawa_action>{"type":"billing.execute"}</masanawa_action>',
+            parts: [],
+          };
+        },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    expect(response.reply).toContain("Check your recent activity");
+    expect(response.reply).not.toContain("masanawa_action");
+    expect(deltas).toEqual(["Safe introduction ", response.reply]);
+    expect(deltas.join(" ")).not.toContain("masanawa_action");
+  });
+
+  it("releases harmless held raw text at final settlement", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute(command) {
+          await command.onTextDelta?.("Emoji <");
+          await command.onTextDelta?.("3");
+          return { reply: "Emoji <3", parts: [] };
+        },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    expect(response.reply).toBe("Emoji <3");
+    expect(deltas).toEqual(["Emoji ", "<3"]);
+  });
+
+  it("persists only a safe recovery message when a processor misses a directive", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const completed: Array<{ reply: string; parts: readonly unknown[] }> = [];
+    const eventPayloads: Array<Readonly<Record<string, unknown>>> = [];
+    const output: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() { return { state: "created" }; },
+        async appendEvent(event: { payload: Readonly<Record<string, unknown>> }) {
+          eventPayloads.push(event.payload);
+          return {};
+        },
+        async completeTurn(value: { reply: string; parts: readonly unknown[] }) {
+          completed.push({ reply: value.reply, parts: value.parts });
+          return {};
+        },
+        async failTurn() { throw new Error("must not fail settled run"); },
+      } as never,
+      strategy: {
+        async execute() {
+          return {
+            reply: 'Unprocessed <masanawa_action>{"amount":123}</masanawa_action>',
+            parts: [{ internal: "never publish" }],
+          };
+        },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() { return null; },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy airtime",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { output.push(delta); },
+    });
+    expect(completed).toEqual([{ reply: response.reply, parts: [] }]);
+    expect(response.parts).toEqual([]);
+    expect(output).toEqual([response.reply]);
+    expect(eventPayloads[eventPayloads.length - 1]).toMatchObject({
+      reply: response.reply,
+      parts: [],
+    });
+    expect(JSON.stringify({ completed, eventPayloads })).not.toContain("masanawa_action");
+    expect(JSON.stringify({ completed, eventPayloads })).not.toContain("never publish");
+  });
+
+  it("redacts an older completed-turn replay without running the model again", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const modelExecute = vi.fn();
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { throw new Error("replay must not start another run"); },
+        async read() { throw new Error("not used"); },
+        async finish() { throw new Error("replay must not mutate terminal run"); },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() {
+          return { state: "existing", command: {
+            state: "completed",
+            reply: 'Stale <masanawa_crypto_action>{"type":"crypto.withdraw"}</masanawa_crypto_action>',
+            agentRunId: createCanonicalId("agent-run"),
+            parts: [{ private: "do not expose" }],
+          } };
+        },
+      } as never,
+      strategy: { execute: modelExecute },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy crypto",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    expect(response.reply).toContain("Check your recent activity");
+    expect(response.reply).not.toContain("masanawa_crypto_action");
+    expect(response.parts).toEqual([]);
+    expect(modelExecute).not.toHaveBeenCalled();
+  });
+
+  it.each(["media", "media-set"] as const)(
+    "redacts unresolved directives from %s result and durable history",
+    async (kind) => {
+      const f = fixture();
+      const session = sessionFor(f);
+      const completed: Array<{ reply: string; parts: readonly unknown[] }> = [];
+      const events: Array<Readonly<Record<string, unknown>>> = [];
+      const service = createAgentConversationService({
+        sessions: {
+          async create() { return session; },
+          async read() { return session; },
+          async updateBindings() { throw new Error("not used"); },
+          async close() { return session; },
+          async reset() { throw new Error("not used"); },
+        },
+        runs: {
+          async create() { return {} as never; },
+          async read() { throw new Error("not used"); },
+          async finish() { return {} as never; },
+        },
+        authorizer: { async authorize() { return f.admission; } },
+        mobileShell: {
+          async claimTurn() { return { state: "created" }; },
+          async appendEvent(event: { payload: Readonly<Record<string, unknown>> }) {
+            events.push(event.payload);
+            return {};
+          },
+          async completeTurn(item: { reply: string; parts: readonly unknown[] }) {
+            completed.push({ reply: item.reply, parts: item.parts });
+            return {};
+          },
+          async failTurn() { throw new Error("completed run must not fail"); },
+        } as never,
+        strategy: {
+          async execute() {
+            return {
+              reply: 'Raw <masanawa_learning_state>{"private":true}</masanawa_learning_state>',
+              parts: [{ secret: true }],
+            };
+          },
+        },
+        sessionDurationMs: 60_000,
+      });
+      const common = {
+        authorizationHeader: "Bearer alpha",
+        characterSessionId: session.characterSessionId,
+        characterId: f.scope.characterId,
+        caption: "analyze this",
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      };
+      const response = kind === "media"
+        ? await service.mediaTurn({
+            ...common,
+            mimeType: "audio/mp4",
+            dataBase64: "YWJj",
+          })
+        : await service.mediaSetTurn({
+            ...common,
+            media: [
+              { mimeType: "image/jpeg", dataBase64: "YWJj" },
+              { mimeType: "image/jpeg", dataBase64: "ZGVm" },
+            ],
+          });
+      expect(response.reply).toContain("Check your recent activity");
+      expect(response.parts).toEqual([]);
+      expect(completed).toEqual([{ reply: response.reply, parts: [] }]);
+      expect(events[events.length - 1]).toMatchObject({
+        reply: response.reply,
+        parts: [],
+      });
+      expect(JSON.stringify({ response, completed, events })).not.toContain("masanawa_learning_state");
+      expect(JSON.stringify({ response, completed, events })).not.toContain("secret");
+    },
+  );
+
+  it.each(["text", "media", "media-set"] as const)(
+    "does not falsely fail a completed %s run when the receipt write is uncertain",
+    async (kind) => {
+      const f = fixture();
+      const session = sessionFor(f);
+      const states: string[] = [];
+      const shellFailures: string[] = [];
+      const service = createAgentConversationService({
+        sessions: {
+          async create() { return session; },
+          async read() { return session; },
+          async updateBindings() { throw new Error("not used"); },
+          async close() { return session; },
+          async reset() { throw new Error("not used"); },
+        },
+        runs: {
+          async create() { return {} as never; },
+          async read() { throw new Error("not used"); },
+          async finish(input) { states.push(input.outcome.state); return {} as never; },
+        },
+        authorizer: { async authorize() { return f.admission; } },
+        mobileShell: {
+          async claimTurn() { return { state: "created" }; },
+          async appendEvent() { return {}; },
+          async completeTurn() { throw new Error("database timeout after commit"); },
+          async failTurn() { shellFailures.push("failed"); return {}; },
+        } as never,
+        strategy: { async execute() { return { reply: "Prepared reply", parts: [] }; } },
+        sessionDurationMs: 60_000,
+      });
+      const common = {
+        authorizationHeader: "Bearer alpha",
+        characterSessionId: session.characterSessionId,
+        characterId: f.scope.characterId,
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      };
+      const pending = kind === "text"
+        ? service.turn({ ...common, text: "hello" })
+        : kind === "media"
+          ? service.mediaTurn({
+              ...common,
+              caption: "hello",
+              mimeType: "audio/mp4",
+              dataBase64: "YWJj",
+            })
+          : service.mediaSetTurn({
+              ...common,
+              caption: "hello",
+              media: [
+                { mimeType: "image/jpeg", dataBase64: "YWJj" },
+                { mimeType: "image/jpeg", dataBase64: "ZGVm" },
+              ],
+            });
+      await expect(pending).rejects.toMatchObject({
+        code: "agents.turn_settlement_uncertain",
+        retryable: false,
+      });
+      expect(states).toEqual(["completed"]);
+      expect(shellFailures).toEqual([]);
+    },
+  );
+
+  it("keeps a durably completed text turn successful when an auxiliary event write fails", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const states: string[] = [];
+    const completed: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(value) { states.push(value.outcome.state); return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() { return { state: "created" }; },
+        async appendEvent(value: { type: string }) {
+          if (value.type === "turn.completed") throw new Error("event write outage");
+          return {};
+        },
+        async completeTurn(value: { reply: string }) {
+          completed.push(value.reply);
+          return {};
+        },
+        async failTurn() { throw new Error("must not fail settled command"); },
+      } as never,
+      strategy: { async execute() { return { reply: "Confirmed in canonical receipt.", parts: [] }; } },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    expect(response.reply).toBe("Confirmed in canonical receipt.");
+    expect(states).toEqual(["completed"]);
+    expect(completed).toEqual([response.reply]);
+  });
+
+  it("never issues a contradicting failed run after a timed-out terminal completion", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const finishStates: string[] = [];
+    let shellMarkedFailed = false;
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(value) {
+          finishStates.push(value.outcome.state);
+          throw new Error("lost database acknowledgement after commit");
+        },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() { return { state: "created" }; },
+        async appendEvent() { return {}; },
+        async completeTurn() { throw new Error("should not complete before run"); },
+        async failTurn() { shellMarkedFailed = true; return {}; },
+      } as never,
+      strategy: { async execute() { return { reply: "A financial status might exist.", parts: [] }; } },
+      sessionDurationMs: 60_000,
+    });
+    await expect(service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "what is my purchase status",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    })).rejects.toMatchObject({
+      code: "agents.turn_settlement_uncertain",
+      retryable: false,
+    });
+    expect(finishStates).toEqual(["completed"]);
+    expect(shellMarkedFailed).toBe(false);
+  });
+
 });

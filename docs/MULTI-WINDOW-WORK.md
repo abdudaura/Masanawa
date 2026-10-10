@@ -2,6 +2,10 @@
 
 Updated 2026-10-09. Use [AF allocation](AUDIO-FIRST-WINDOW-PLAN-20261009.md), not the superseded 20/48-window launch sets. The archived rules are historical; no blanket development freeze or mandatory indefinite draft backlog is active.
 
+## Delivery priority
+
+[Outcome-first dispatch](NEXT-WAVE-DELIVERY-20261010.md) and [replacement prompt](REUSABLE-IMPLEMENTATION-PROMPT.md) supersede unrestricted micro-fix selection. One continuing root integrator and one reviewed safe integration queue; feature owners can receive published bounded composition transfers. No new per-patch integration branches or duplicate helper authorities without a demonstrated need. Every waiting PR needs head/blocker/owner/next executable action. Partial source milestones must continue instead of resetting to another easy guard.
+
 ## Before edits
 
 Read CONTINUE-HERE.md and current contracts. Inspect fresh main, working tree, relevant open/draft PR head SHAs and touched files. Check docs/workstreams/ claims and any later repository CAS registry. Preserve local and remote work; use an isolated checkout/worktree and one assigned lane per window.

@@ -1,5 +1,7 @@
 # Copyable implementation prompts — 2026-10-09
 
+**2026-10-10 dispatch correction:** Start with [outcome-first delivery](NEXT-WAVE-DELIVERY-20261010.md) and [replacement reusable prompt](REUSABLE-IMPLEMENTATION-PROMPT.md). The blocks below remain lane-specific boundary/recovery references; no longer use them to justify isolated micro-fix completion.
+
 Use one lane per window. Start dependency-ready waves from [the plan](AUDIO-FIRST-WINDOW-PLAN-20261009.md); do not launch all IDs concurrently. These prompts replace old U/R/C/F launch instructions. Each block is self-contained. No runtime path is claimed until the new window publishes its exact claim.
 
 ## AF00 — Recovery and integration
@@ -8,6 +10,7 @@ Use one lane per window. Start dependency-ready waves from [the plan](AUDIO-FIRS
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF00
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF00-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF00 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -50,6 +53,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF01
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF01-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF01 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -89,6 +93,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF02
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF02-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF02 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -121,6 +126,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF03
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF03-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF03 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -154,6 +160,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF04
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF04-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF04 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -190,6 +197,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF05
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF05-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF05 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -225,6 +233,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF06
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF06-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF06 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -264,6 +273,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF07
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF07-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF07 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -300,6 +310,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF08
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF08-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF08 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -345,6 +356,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF09
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF09-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF09 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -382,6 +394,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF10
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF10-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF10 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -415,6 +428,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF11
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF11-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF11 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -446,6 +460,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF12
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF12-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF12 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -481,6 +496,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF13
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF13-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF13 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -515,6 +531,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF14
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF14-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF14 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
@@ -553,6 +570,7 @@ Publish committed source/tests and immutable SHA-specific handoff with base/head
 MASANAWA AUDIO-FIRST IMPLEMENTATION — AF15
 Repository: https://github.com/Baatiku/masanawa
 Software Factory: https://github.com/Baatiku/Software-Factory-starter-kit
+Read docs/NEXT-WAVE-DELIVERY-20261010.md before choosing work. Finish connected customer milestones; no duplicate evidence/cleanup helpers. Use one reviewed safe integration baseline and exact blocker/owner/action records.
 Window ID: AF15-<unique-label>
 
 Read current main CONTINUE-HERE.md and AGENTS.md, latest available Factory SKILL.md/AGENTS.md, docs/MULTI-WINDOW-WORK.md, docs/AUDIO-FIRST-PRODUCT-20261009.md, docs/AUDIO-FIRST-SCREEN-SPECS.md, docs/MSN-WALLET-P2P-CONTRACT.md, docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md, docs/AUDIO-FIRST-RECOVERY-20261009.md and your AF15 section in docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md.
