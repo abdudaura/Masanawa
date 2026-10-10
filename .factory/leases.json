@@ -427,6 +427,23 @@
       "heartbeat_at": "2026-10-10T06:24:05.221Z",
       "expires_at": "2026-10-10T06:29:05.221Z",
       "notes": "Progress source+regression 88dc9c9; remaining active work implementing privacy-safe correlated latency spans before final handoff. No extra root files."
+    },
+    {
+      "claim_id": "af09-609-talks-tab-cache-20261010-gpt6-0624",
+      "owner": "AF09 existing PR #609 / GPT-6 Talks cached-navigation continuation",
+      "scope": "CHAT-P01 retain per-tab in-memory published Talks pages, tab/scroll position, background refresh and account-fenced invalidation; no Gateway/root/native or media changes",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-tab-cache-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "source_pr": 609,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T06:24:30.815Z",
+      "heartbeat_at": "2026-10-10T06:24:30.815Z",
+      "expires_at": "2026-10-10T06:29:30.815Z",
+      "notes": "Feature-local source, exact existing #609 branch; earlier AF09 feed path lease released; do not touch protected AF00 integration files."
     }
   ],
   "history": [
