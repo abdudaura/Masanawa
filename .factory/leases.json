@@ -201,6 +201,24 @@
       "heartbeat_at": "2026-10-10T03:47:21.887Z",
       "expires_at": "2026-10-10T03:52:21.887Z",
       "notes": "PostgreSQL adapter and 10 regression tests committed to existing PR #599; reviewing exact source and finite handoff. No migration/startup/provider enabled."
+    },
+    {
+      "claim_id": "af09-609-response-projection-20261010-gpt6-0445",
+      "owner": "AF09 #609 continuation — GPT-6 response projection",
+      "scope": "Close actual published-audio publish/delete metadata leak at authenticated Gateway response boundary and add negative regression tests; same PR, no shared composition",
+      "paths": [
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/routes_projection.test.mjs",
+        "docs/workstreams/AF09-response-projection-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "3b2782183c3044c5e3637c03a19c9b2da653e44e",
+      "claimed_at": "2026-10-10T03:48:26.298Z",
+      "heartbeat_at": "2026-10-10T03:48:26.298Z",
+      "expires_at": "2026-10-10T03:53:26.298Z",
+      "notes": "No AF00 Gateway composition/worker/migrations, AF05 media, AF08 auth, nor active AF09 report/feed claims. Explicit projection of publish/remove HTTP receipts using existing canonical toPublicAudioPost."
     }
   ],
   "history": [
