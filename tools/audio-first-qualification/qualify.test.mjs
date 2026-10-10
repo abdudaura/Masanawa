@@ -4,6 +4,7 @@ import {mkdtemp,writeFile,rm,symlink,mkdir} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {checkMatrix,checkCanonicalMatrix,checkRecord,assess,verifyProofs,readBoundedJson} from './qualify.mjs';
 const sha='f381f077c485c04261459b77a42c215d3ce3a14b';
@@ -155,5 +156,9 @@ test('qualification input parser refuses oversized, empty and nonregular files',
    await writeFile(path.join(dir,'empty.json'),'');
    await assert.rejects(readBoundedJson(path.join(dir,'empty.json')),/empty/);
    await assert.rejects(readBoundedJson(dir),/unsafe/);
+   if(process.platform==='linux'){
+     execFileSync('mkfifo',[path.join(dir,'named-pipe')],{timeout:2000});
+     await assert.rejects(readBoundedJson(path.join(dir,'named-pipe')),/unsafe/);
+   }
  }finally{await rm(dir,{recursive:true,force:true});}
 });
