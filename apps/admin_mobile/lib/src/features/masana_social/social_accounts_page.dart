@@ -24,7 +24,7 @@ class MasanaSocialAdminApi {
   Future<void> action(String characterId,MasanaSocialAccount item,
       String action,{String? evidenceRef})async{
     await dio.post<void>('${_base(characterId)}/${Uri.encodeComponent(item.identityId)}/$action',
-      data:{'revision':item.revision,if(evidenceRef!=null)'evidenceRef':evidenceRef});
+      data:{'revision':item.revision, if(evidenceRef case final evidenceRef?) 'evidenceRef':evidenceRef});
   }
 }
 class MasanaSocialAccount {
@@ -68,8 +68,9 @@ class _SocialAccountsState extends State<MasanaSocialAccountsPage>{
       if(e.response?.statusCode==403)return 'Permission denied. Ask an authorized administrator.';
       if(e.response?.statusCode==409)return 'Account changed or already exists. Reload and try again.';
       if(e.response?.statusCode==401)return 'Session expired. Sign in again.';
-      if(e.type==DioExceptionType.connectionError || e.type==DioExceptionType.connectionTimeout)
+      if(e.type==DioExceptionType.connectionError || e.type==DioExceptionType.connectionTimeout){
         return 'Offline. Existing accounts are not modified.';
+      }
     }
     return 'Request failed. Retry when your connection is available.';
   }
