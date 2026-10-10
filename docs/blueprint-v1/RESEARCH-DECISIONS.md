@@ -26,7 +26,7 @@ Absence of competitor features has **not** been verified: differentiation is a p
 |---|---|---|---|
 | DEC-01 | **Masana-only public creator network — CONFIRMED** | Masana professionals are the stars; members follow, comment/react, chat/call **Masana only**, join expert Rooms and can subscribe; Gwani moderates and Wallet handles eligible services | Supersedes member-published Talks |
 | DEC-02 | **Rename Talks to Home — CONFIRMED** | Chats / Rooms / **Home** / Gwani / Wallet, Home center/default; Talks is audio content, not tab | Preserve legacy deep links in AF00 |
-| DEC-03 | First release scope | Finish all core source in phases; qualify riskier money/calls before enabling | Not every built feature can be exposed at once |
+| DEC-03 | **AI-professional entertainment + global Rooms — CONFIRMED** | Mixed Home text/image/audio with future video; Masana-only chats/calls; 12+ professional agents, worldwide platform-created Free/Paid Rooms; Gwani moderation; redesigned Admin; Wallet and Gwani services | Paid room activation and video provider remain separately qualified |
 | DEC-04 | **No personal Twins / clones — CONFIRMED REMOVE** | Eliminate personal-agent creation, profiles, directory, public links, owner-access sessions and onboarding | Product-scope decision is final; preserve any existing data/obligations during source retirement |
 | DEC-05 | **No Twin economy — CONFIRMED REMOVE** | Remove Twin credit, pricing, referrals, attribution, commissions and earnings UI/APIs | Reconcile historical financial postings before deactivating old schemas and processors |
 | DEC-06 | MSN asset | Internal exact-unit ledger with documented backing, mint/burn and rates | Financial and compliance consequences |
