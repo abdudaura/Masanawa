@@ -1399,8 +1399,12 @@
       "claimed_at": "2026-10-10T16:51:45.878Z",
       "heartbeat_at": "2026-10-10T16:51:45.878Z",
       "expires_at": "2026-10-10T16:56:45.878Z",
-      "source_pr": 633,
-      "notes": "Fix fail-closed HTTP status/error mapping and add negative test. No shared app.ts or auth authority changes."
+      "source_pr": 636,
+      "notes": "Fix fail-closed HTTP status/error mapping and add negative test. No shared app.ts or auth authority changes.",
+      "released_at": "2026-10-10T16:53:10.795Z",
+      "source_head": "208ef2a1aae9147018b86d6a96307304a47659b2",
+      "integration_head_sha": "af325f00cddfe0938492471560af998c043524a4",
+      "release_reason": "PR #636 source-only merged into integration/rebuild; Fastify auth negatives authored, executable test NOT_RUN due missing workspace lock importer; root auth remains AF00, no main/live deployment."
     }
   ],
   "history": [
