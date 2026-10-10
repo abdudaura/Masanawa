@@ -68,3 +68,20 @@ Keep one continuing branch/PR for a coherent milestone. A released short lease i
 If a real dependency/toolchain prevents completion, publish the source and precise handoff, then continue a dependency-independent part of the same milestone or an explicitly claimed next critical milestone. Do not invent new low-priority work merely to appear active.
 
 Before local pull/rebuild, AF00 publishes exact unified source SHA, adopted/superseded PR dispositions, local-source reconciliation status, migrations/config requirements, executable build/analyzer/test results, remaining disabled/unqualified features and reproducible APK steps. Never say “all done” from a PR count.
+
+## Owner's pre-pull completion boundary — 2026-10-10
+
+Finish all implementable source and integration here before asking the owner to pull locally. Local execution is reserved for genuinely unavailable toolchains, devices, credentials or provider environments; it is not a destination for missing feature code, unwired routes, unallocated migrations or unresolved source conflicts. This is a source-completion boundary, not permission to claim unrun checks passed or activate unqualified financial/provider behavior.
+
+Every continuing milestone PR must maintain a finite closure checklist derived from the agreed journeys:
+- Required source item and exact paths; current implementation commit or explicit missing source.
+- Named current implementation owner; dependency contract and bounded composition transfer if needed.
+- Source state: MISSING / IN_PROGRESS / IMPLEMENTED_UNVERIFIED / SOURCE_CHECKED / INTEGRATED.
+- Separate execution result and environment; integration target and exact integrated SHA.
+- For a local-only check, the exact missing capability, attempted command/error, owner and reproducible next command. An unavailable test runner never makes missing implementation local-only.
+
+At each handoff, identify which checklist items were closed and continue the highest-priority remaining implementable item. A released lease or finished small patch does not close the customer milestone. If the current session must end, explicitly transfer those remaining items in the existing PR; the next window resumes the checklist instead of opening an unrelated helper. Do not manufacture activity or repeat documentation/zero-step CI while core source is missing.
+
+AF00 must publish the reviewed single integration target and a queue of exact-head composition tasks. Distinguish awaiting feature source, unresolved source conflict and unavailable execution; do not bundle them as “waiting for tests”. Implement imports, authenticated bindings, client routes, allocated migrations, worker registration and config validation under exact-path ownership while running all checks actually available. Delegate bounded composition through the registry when capacity blocks progress; never silently seize paths or merge known failing/unsafe source.
+
+Before requesting the local pull, publish one pinned unified source SHA and the closure checklist: no required source item may remain MISSING/IN_PROGRESS or disconnected. List unavailable checks honestly and provide the local reconciliation/test/build commands. The owner's unseen local fixes still require preservation and reconciliation; do not claim them reconciled remotely. After local tests, repair any discovered defects before release. Remote source completion and real end-to-end qualification are separate claims.
