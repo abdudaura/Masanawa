@@ -101,6 +101,29 @@ void main() {
         expectedHost: 'media.example.test', nowMs: 1000), throwsFormatException);
   });
 
+  test('listen grant parser preserves valid UUID and refuses forged receipts', () {
+    const validId = '123e4567-e89b-42d3-a456-426614174000';
+    final parsed = PublishedTalkTicket.parse({
+      'url': 'https://media.example.test/private/audio?sig=redacted',
+      'expiresAtMs': 31000,
+      'listenSessionId': validId,
+    }, expectedHost: 'media.example.test', nowMs: 1000);
+    expect(parsed.listenSessionId, validId);
+    for (final invalid in [
+      'user-supplied-id', '123e4567-e89b-42d3-0456-426614174000',
+      '123e4567-e89b-02d3-a456-426614174000',
+      '123e4567-e89b-42d3-a456-426614174000/../other',
+      '',
+    ]) {
+      expect(() => PublishedTalkTicket.parse({
+        'url': 'https://media.example.test/private/audio?sig=redacted',
+        'expiresAtMs': 31000,
+        'listenSessionId': invalid,
+      }, expectedHost: 'media.example.test', nowMs: 1000),
+      throwsFormatException);
+    }
+  });
+
   testWidgets('published Talk fetches one authorized ticket and can stop playback',
       (tester) async {
     final api = client();
