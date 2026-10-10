@@ -2,7 +2,8 @@
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 function fail(message, code = 1) {
   const error = new Error(message);
@@ -108,7 +109,10 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+// Importers run qualification unit tests without executing the live provider CLI.
+// A direct CLI invocation still validates all production evidence and fails closed.
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main().catch((error) => {
   const code =
     error && typeof error === "object" && Number.isInteger(error.exitCode)
       ? error.exitCode
@@ -117,4 +121,5 @@ main().catch((error) => {
     `billing production qualification failed: ${error instanceof Error ? error.message : String(error)}\n`,
   );
   process.exitCode = code;
-});
+  });
+}
