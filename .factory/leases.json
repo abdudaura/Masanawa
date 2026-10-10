@@ -237,8 +237,8 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T04:22:31.829Z",
-      "heartbeat_at": "2026-10-10T04:22:31.829Z",
-      "expires_at": "2026-10-10T04:27:31.829Z"
+      "heartbeat_at": "2026-10-10T04:26:30.319Z",
+      "expires_at": "2026-10-10T04:31:30.319Z"
     },
     {
       "claim_id": "af09-609-publish-status-20261010-gpt6-0521",
