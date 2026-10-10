@@ -157,6 +157,24 @@
       "claimed_at": "2026-10-10T02:53:59Z",
       "heartbeat_at": "2026-10-10T02:56:26Z",
       "expires_at": "2026-10-10T03:01:26Z"
+    },
+    {
+      "claim_id": "masanawa-af15-599-continuation-20261010-v2",
+      "owner": "MASANAWA-AF15 PR599 canonical source continuation",
+      "scope": "Add concrete version-pinned S3 delete adapter and tests to existing canonical worker cleanup without activating runtime",
+      "paths": [
+        "services/worker/src/durable_operations/media_cleanup_s3.ts",
+        "services/worker/src/durable_operations/media_cleanup_s3.test.ts",
+        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
+      ],
+      "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 599,
+      "source_head": "4d8b2c97c35a753e074d8367f9abfdac5c7ddf2c",
+      "claimed_at": "2026-10-10T02:59:18.620Z",
+      "heartbeat_at": "2026-10-10T02:59:18.620Z",
+      "expires_at": "2026-10-10T03:04:18.620Z",
+      "notes": "Prior claim was published/read back but lost from the shared registry following concurrent updates; no conflicting exact-path owners found on refresh. This new bounded claim does not authorize AF00 composition, migration, or production delete."
     }
   ],
   "history": [
