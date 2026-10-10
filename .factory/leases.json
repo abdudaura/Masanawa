@@ -716,18 +716,18 @@
     {
       "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
       "owner": "GPT-6 AF06 continuing existing PR #497 chat lifecycle repair",
-      "scope": "Repair observed Flutter analyzer async-context warning and prevent destructive stale chat action after route unmount; do not change other root/financial files",
+      "scope": "Adopt exact reviewed chat action ownership fence + tests from conflicted source PR #497 into existing AF00 nondeploying integration PR #600 after bounded coordination; no unrelated root paths",
       "paths": [
         "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
         "apps/mobile/test/chat/chat_action_account_test.dart"
       ],
-      "branch": "work/work-lane-consolidation-20261008",
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 497,
+      "source_pr": 600,
       "claimed_at": "2026-10-10T08:58:13.359Z",
-      "heartbeat_at": "2026-10-10T09:00:33.866Z",
-      "expires_at": "2026-10-10T09:05:33.866Z",
-      "notes": "Continuing PR #497: account-switch-safe async chat action source + authored explicit account-fence regression; Flutter CI must execute on latest head, no local Flutter."
+      "heartbeat_at": "2026-10-10T09:03:25.747Z",
+      "expires_at": "2026-10-10T09:08:25.747Z",
+      "notes": "Source PR #497 remains unchanged/preserved; transfer exact two paths to existing AF00 PR #600. Owner-approved merge-when-safe direction. Do not modify protected root/router/migrations."
     },
     {
       "claim_id": "af13-460-security-migration-manifest-gpt6-20261010",
