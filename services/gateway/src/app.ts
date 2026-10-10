@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { isRetiredLegacySurface } from "./rebuild/retired_surface.js";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
@@ -338,6 +339,20 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         message: "Internal server error",
       },
     });
+  });
+
+  // R0: fail closed for obsolete Twin, live Talk, human-contact and
+  // unsupported customer-channel paths. Includes WebSocket upgrade handshakes.
+  // Eligible Masana public socials and escrow/P2P routes use different paths.
+  app.addHook("onRequest", async (request, reply) => {
+    if (isRetiredLegacySurface(request.url)) {
+      void reply.code(410).send({
+        error: {
+          code: "feature_retired",
+          message: "This feature is no longer available.",
+        },
+      });
+    }
   });
 
   app.addHook("onRequest", async (request, reply) => {
