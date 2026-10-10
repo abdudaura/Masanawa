@@ -129,9 +129,9 @@
       "source_pr": 596,
       "source_head": "0729f1d8a504d6e84e508abf35e6fcdaf99292dd",
       "claimed_at": "2026-10-10T01:44:07.822Z",
-      "heartbeat_at": "2026-10-10T01:44:07.822Z",
-      "expires_at": "2026-10-10T01:49:07.822Z",
-      "notes": "Both prior AF13 workstream claims released. Source #596 and distinct guard #603 retained. No shared route/ledger/native/deploy edits."
+      "heartbeat_at": "2026-10-10T01:46:46.711Z",
+      "expires_at": "2026-10-10T01:51:46.711Z",
+      "notes": "Source integration commits e24534c4,3c9cc601,9577e38b,ee83f79e committed and fetched; 5/5 native Node tests on separately reconstructed mirror, exact PR bytes not yet run. Preparing SHA-specific handoff."
     }
   ],
   "history": [
