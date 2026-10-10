@@ -156,7 +156,10 @@
       "claimed_at": "2026-10-10T03:31:51.051Z",
       "heartbeat_at": "2026-10-10T03:35:02.358Z",
       "expires_at": "2026-10-10T03:40:02.358Z",
-      "notes": "Account-isolated encrypted storage only; existing composer uses TalkPublishAttemptStore unchanged."
+      "notes": "Account-isolated encrypted storage only; existing composer uses TalkPublishAttemptStore unchanged.",
+      "released_at": "2026-10-10T03:36:50.551Z",
+      "release_reason": "Connected source + 9 authored Flutter regressions on existing PR #609; storage+tests GitHub blob readback verified; full Flutter NOT_RUN, one parent milestone still missing AF00/AF05/AF15 source composition, verified runner and audited nondeploying baseline. Handoff docs/workstreams/AF09-publish-account-isolation-20261010.md; PR comment 6093366687.",
+      "integration_head_sha": null
     },
     {
       "claim_id": "af09-609-receipt-readback-20261010-gpt6-0428",
