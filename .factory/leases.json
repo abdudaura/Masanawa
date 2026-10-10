@@ -158,6 +158,27 @@
       "heartbeat_at": "2026-10-10T03:11:47.221Z",
       "expires_at": "2026-10-10T03:16:47.221Z",
       "notes": "Prior overlapping AF13 claim released; preserve all source and tests; do not edit root CI/worker/migration/runtime paths. One existing canonical runner, no new validator or branch."
+    },
+    {
+      "claim_id": "masanawa01-af14-activity-http-truth-20261010",
+      "owner": "MASANAWA-01 / AF14 continuing #604",
+      "scope": "Continue existing AF14 Activity PR #604: fix falsely empty authenticated Activity projection on 404/malformed 200, add Dio adapter regressions; preserve existing account-fence and invitation handling. No new API/ledger/router/CI/production source.",
+      "paths": [
+        "apps/mobile/lib/src/activity/talk_activity_http_transport.dart",
+        "apps/mobile/test/audio_first/af14/activity_http_transport_test.dart",
+        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
+        "apps/mobile/lib/src/state/talk_activity_state.dart",
+        "apps/mobile/test/activity_screen_test.dart",
+        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
+        "docs/workstreams/AF14-activity-recovery-20261010.md"
+      ],
+      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 604,
+      "source_head": "981d6245b414c871b964a1e25270cc281fd7f95d",
+      "claimed_at": "2026-10-10T03:13:35.896Z",
+      "heartbeat_at": "2026-10-10T03:13:35.896Z",
+      "expires_at": "2026-10-10T03:18:35.896Z"
     }
   ],
   "history": [
