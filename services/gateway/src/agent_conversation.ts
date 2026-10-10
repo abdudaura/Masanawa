@@ -332,12 +332,32 @@ export function createAgentConversationService(input: {
         const inferenceText = teachingPreparation?.text ?? text;
         // Raw model deltas may include machine directives. Stream them only
         // when no billing/crypto/teaching post-processing can change the reply.
+        // Withhold any possible opening tag and its following bytes until
+        // the settled response is vetted; model tokens may split a directive.
+        let heldRawSuffix = "";
+        let holdingRawSuffix = false;
+        let rawCallbackDisconnected = false;
         const rawTextDelta =
           !input.billingAssistant && !input.cryptoAssistant &&
           !teachingPreparation && !direct && request.onTextDelta
             ? async (delta: string) => {
-                await request.onTextDelta!(delta);
-                if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
+                if (holdingRawSuffix) {
+                  heldRawSuffix += delta;
+                  return;
+                }
+                const boundary = delta.indexOf("<");
+                if (boundary >= 0) {
+                  holdingRawSuffix = true;
+                  heldRawSuffix += delta.slice(boundary);
+                  delta = delta.slice(0, boundary);
+                }
+                if (!delta || rawCallbackDisconnected || request.signal?.aborted) return;
+                try {
+                  await request.onTextDelta!(delta);
+                  if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
+                } catch {
+                  rawCallbackDisconnected = true;
+                }
               }
             : undefined;
         const modelStart = performance.now();
@@ -380,8 +400,15 @@ export function createAgentConversationService(input: {
               })) ??
               generated;
         stagesMs.postInference = elapsed(postStart);
-        const reply = result.reply.trim();
-        if (!reply) throw new Error("empty strategy reply");
+        const rawReply = result.reply.trim();
+        if (!rawReply) throw new Error("empty strategy reply");
+        // Unresolved machine directives must not reach history, the final
+        // NDJSON response, or native audio, even if a processor declines them.
+        const unresolvedDirective = /<\s*\/?\s*masanawa_/iu.test(rawReply);
+        const reply = unresolvedDirective
+          ? "I couldn't verify that result. Check your recent activity before trying again."
+          : rawReply;
+        const parts = unresolvedDirective ? [] : result.parts;
 
         const persistStart = performance.now();
         await input.runs.finish({
@@ -397,7 +424,7 @@ export function createAgentConversationService(input: {
             requestId: request.requestId,
             agentRunId,
             reply,
-            parts: result.parts,
+            parts,
           });
           await input.mobileShell.appendEvent({
             scope: admission.scope,
@@ -407,7 +434,7 @@ export function createAgentConversationService(input: {
               requestId: request.requestId,
               agentRunId,
               reply,
-              parts: [...result.parts],
+              parts: [...parts],
             },
           });
         }
@@ -416,17 +443,20 @@ export function createAgentConversationService(input: {
         // The existing NDJSON route delivers these deltas immediately.
         // Billing/crypto/teaching turns cannot stream untrusted raw model
         // directives; instead emit only server-settled presentation text.
-        // If a processor did not recognize a malformed directive and handed
-        // raw markup through, suppress early display rather than exposing it.
-        // A disconnected stream must not retroactively fail a durable turn.
-        const hasMachineMarkup = /<\s*\/?\s*masanawa_[a-z_]+\b/iu.test(reply);
-        if (request.onTextDelta && !rawTextDelta &&
-            !hasMachineMarkup && !request.signal?.aborted) {
-          try {
-            await request.onTextDelta(reply);
-            if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
-          } catch {
-            // Delivery is recoverable from canonical turn history.
+        // An interrupted socket cannot retroactively fail a settled run.
+        // Release withheld text only after checking the authoritative reply.
+        if (request.onTextDelta && !request.signal?.aborted &&
+            !rawCallbackDisconnected) {
+          const settledDelta = rawTextDelta
+            ? (unresolvedDirective ? reply : heldRawSuffix)
+            : reply;
+          if (settledDelta) {
+            try {
+              await request.onTextDelta(settledDelta);
+              if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
+            } catch {
+              // Delivery is recoverable from canonical turn history.
+            }
           }
         }
 
@@ -448,7 +478,7 @@ export function createAgentConversationService(input: {
         return Object.freeze({
           reply,
           agentRunId,
-          parts: result.parts,
+          parts,
           ...(audio
             ? {
                 audioBase64: audio.dataBase64,
