@@ -33,7 +33,12 @@ function rev(value:unknown):number{
 function id(value:unknown):string{
   return field(value,"identity_id",180);
 }
-export function createMasanaSocialService(store:SocialStore){
+export interface SocialVerificationEvidence {
+  /** Must validate durable proof for THIS tenant, character and identity (e.g. staff-attested phone ownership). */
+  verify(input:Readonly<{tenantId:string;characterId:string;identityId:string;actorId:string;
+    evidenceRef:string}>):Promise<boolean>;
+}
+export function createMasanaSocialService(store:SocialStore, evidence?:SocialVerificationEvidence){
  return {
   async publicLinks(tenantId:string, characterId:string){
     if(!tenantId || !characterId) throw new SocialHttpError(404,"masana_not_found");
@@ -59,7 +64,12 @@ export function createMasanaSocialService(store:SocialStore){
      action:"verify"|"publish"|"pause"|"resume"|"revoke"|"edit",body:Record<string,unknown>){
     const a=staff(actor,action), revision=rev(body.revision);
     const extras:{evidenceRef?:string;providerAccountId?:string;handle?:string;publicUrl?:string}={};
-    if(action==="verify") extras.evidenceRef=field(body.evidenceRef,"evidence_ref",200);
+    if(action==="verify") {
+      extras.evidenceRef=field(body.evidenceRef,"evidence_ref",200);
+      const accepted=await evidence?.verify({tenantId:a.tenantId,characterId:field(characterId,"character_id"),
+        identityId:id(identityId),actorId:a.userId,evidenceRef:extras.evidenceRef});
+      if(accepted!==true)throw new SocialHttpError(403,"social_evidence_unverified");
+    }
     if(action==="edit"){
        extras.providerAccountId=field(body.providerAccountId,"provider_account_id");
        extras.handle=field(body.handle,"handle");
