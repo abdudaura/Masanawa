@@ -39,7 +39,7 @@ export function createCaseService(options:{repository:CaseRepository;authority:C
    const saved=await repo.create({
     tenantId:who.tenantId,caseId:"case_"+id(),reporterUserId:who.userId,
     targetKind,targetId,category:choice(input.category,caseCategories,"category"),
-    details:typeof input.details==="string" && !input.details.trim()?"":required(input.details,"details",2000),
+    details:input.details==null||(typeof input.details==="string"&&!input.details.trim())?"":required(input.details,"details",2000),
     clientRequestId:required(input.clientRequestId,"clientRequestId",128),
     state:"open",version:1,slaDueAt:new Date(t.getTime()+24*60*60*1000).toISOString(),
     createdAt:stamp,updatedAt:stamp
