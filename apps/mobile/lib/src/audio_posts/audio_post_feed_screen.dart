@@ -288,10 +288,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            title: Text(comment.authorAccountId == widget.accountId
+            title: Text(comment.isMine
                 ? 'You' : 'Member'),
             subtitle: Text(comment.body),
-            trailing: comment.authorAccountId == widget.accountId
+            trailing: comment.isMine
                 ? IconButton(
                     tooltip: 'Remove your comment',
                     icon: const Icon(Icons.delete_outline),
