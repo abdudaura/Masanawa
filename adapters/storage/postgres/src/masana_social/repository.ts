@@ -1,7 +1,6 @@
 import type {Pool, PoolClient} from "pg";
 import {randomUUID} from "node:crypto";
-import {approvedPublicUrl,type SocialIdentity,type SocialProvider} from "@masanawa/masana-social";
-import type {SocialStore} from "../../../../../services/gateway/src/modules/masana_social/service.js";
+import {approvedPublicUrl,type SocialIdentity,type SocialProvider,type SocialStore} from "@masanawa/masana-social";
 interface SocialRow {
  tenant_id:string;identity_id:string;character_id:string;provider:SocialProvider;
  provider_account_id:string;handle:string;public_url:string;verified_at:Date|null;
