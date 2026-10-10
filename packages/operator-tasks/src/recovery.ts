@@ -64,8 +64,8 @@ function positiveInt(value: number, maximum: number): number {
 function validReceipt(ref: string): boolean {
   return ref.length > 0 && ref.length <= 200 && /^[a-zA-Z0-9:_./-]+$/u.test(ref);
 }
-function safeCode(code: string): string {
-  return /^[A-Z][A-Z0-9_]{1,63}$/u.test(code) ? code : "DOMAIN_STATUS_UNAVAILABLE";
+function validRejectionCode(code: string): boolean {
+  return /^[A-Z][A-Z0-9_]{1,63}$/u.test(code);
 }
 /** A verified domain record must bind a result to the *claimed* operation. */
 function boundOutcome(
@@ -81,8 +81,8 @@ function boundOutcome(
   }
   const outcome = result.outcome;
   if (outcome.status === "unknown") return { status: "unknown" };
-  if (outcome.status === "confirmed" && typeof outcome.receiptRef === "string") return outcome;
-  if (outcome.status === "rejected" && typeof outcome.code === "string") return outcome;
+  if (outcome.status === "confirmed" && typeof outcome.receiptRef === "string" && validReceipt(outcome.receiptRef)) return outcome;
+  if (outcome.status === "rejected" && typeof outcome.code === "string" && validRejectionCode(outcome.code)) return outcome;
   return { status: "unknown" };
 }
 
@@ -170,15 +170,16 @@ export function createPostgresRecoveryJournal(pool: Pool): RecoveryJournal {
       // Invalid receipts are NEVER promoted to success. A bad domain code
       // cannot be injected into an audit row as raw provider/user text.
       if (outcome.status === "confirmed" && !validReceipt(outcome.receiptRef)) return "unknown";
+      if (outcome.status === "rejected" && !validRejectionCode(outcome.code)) return "unknown";
       const phase: "succeeded" | "failed" = outcome.status === "confirmed" ? "succeeded" : "failed";
       const receipt = outcome.status === "confirmed" ? outcome.receiptRef : null;
-      const errorCode = outcome.status === "rejected" ? safeCode(outcome.code) : null;
+      const errorCode = outcome.status === "rejected" ? outcome.code : null;
       return inTransaction(pool, async client => {
         const found = await client.query<VersionRow>(
           `SELECT phase,version FROM operator_tasks.tasks
             WHERE tenant_id=$1 AND user_id=$2 AND task_id=$3
-              AND operation_id=$4 FOR UPDATE`,
-          [operation.tenantId,operation.userId,operation.taskId,operation.operationId],
+              AND operation_id=$4 AND capability_id=$5 FOR UPDATE`,
+          [operation.tenantId,operation.userId,operation.taskId,operation.operationId,operation.capabilityId],
         );
         const task = found.rows[0];
         if (!task || task.phase !== "reconciling" || task.version !== operation.version) return "stale";
@@ -186,9 +187,9 @@ export function createPostgresRecoveryJournal(pool: Pool): RecoveryJournal {
           `UPDATE operator_tasks.tasks SET phase=$5,receipt_ref=$6,error_code=$7,
                    version=version+1,updated_at=$8::timestamptz
             WHERE tenant_id=$1 AND user_id=$2 AND task_id=$3 AND operation_id=$4
-                  AND version=$9 AND phase='reconciling' RETURNING version`,
+                  AND version=$9 AND phase='reconciling' AND capability_id=$10 RETURNING version`,
           [operation.tenantId,operation.userId,operation.taskId,operation.operationId,
-           phase,receipt,errorCode,at,operation.version],
+           phase,receipt,errorCode,at,operation.version,operation.capabilityId],
         );
         const updated = result.rows[0];
         if (!updated) return "stale";
