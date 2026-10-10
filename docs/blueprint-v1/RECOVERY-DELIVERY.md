@@ -39,7 +39,7 @@ Open PR metadata alone cannot establish mergeability, source completeness, overl
 ## Dependency-order delivery: complete vertical slices, not isolated helpers
 **M0 — Preservation & accepted blueprint with owner-ordered removal of personal Twins, AI badge clutter and legacy stage features.** Record local APK and dirty source SHA, deployment links/triggers, DB/object backup and applied migration checksums; approve product DEC-01..15 and control-level UX. Acceptance: no unexplained/overwritten local changes; clear reusable/repair/retire map.
 
-**M1 — Unified reliable core.** Merge compatible original fixes onto one safe integration SHA. Deliver auth/session, five-tab navigation, directory, reliable text/outbox, locally recorded/playable voice notes and account-fenced cached data on real Android. Acceptance: J-01..04 end-to-end, no human/AI identity confusion or duplicate/out-of-order messages.
+**M1 — Unified reliable core.** Merge compatible original fixes onto one safe integration SHA. Deliver auth/session, five-tab navigation, directory, reliable text/outbox, locally recorded/playable voice notes and account-fenced cached data on real Android. Acceptance: J-01..04 end-to-end, correct conversation routing, no duplicate/out-of-order messages.
 
 **M2 — Published Talks and Rooms.** Post create/trim/upload/process/feed/play/follow/comment/moderation and persistent Room membership/history in one DB/media authority. Acceptance: J-06/07 with two accounts/devices and restart/offline cases; only then qualify optional live Rooms separately.
 
@@ -55,7 +55,7 @@ These are **dependency gates**, not promises of delivery dates, and do not allow
 
 ## Exact-path ownership strategy
 - One continuing AF00 integrator for root app routing, shared Gateway exports, worker registration, schema migration registry, deployment and versioned deep links. Delegate bounded compositional changes only by an explicit reviewed transfer.
-- AF08 owns authentication; AF01 owns canonical financial ledger/executors; AF05 native recording/audio; AF06 human/AI DM; AF09 Talks; AF10 Rooms; AF12 AI content; AF13 independently verifies; AF14 accounts/settings; AF15 storage, queues, recovery. Others use exact existing per-feature allocations, not assumed free lanes.
+- AF08 owns authentication; AF01 owns canonical financial ledger/executors; AF05 native recording/audio; AF06 Chats/agent conversations; AF09 Talks; AF10 Rooms; AF12 Masana publishing; AF13 independently verifies; AF14 accounts/settings; AF15 storage, queues, recovery. Others use exact existing per-feature allocations, not assumed free lanes.
 - Four to six genuine independent implementers is more realistic than opening sixteen windows. Each workstream has paths, owner, branch, base/head SHA, acceptance ID, live claim, tests and bounded handoff.
 - Use the existing `factory/claims` protocol, 5-minute claims and branch protection. Review expired claims; no silent override. No new helper branch if a related substantive PR already exists.
 - **Merge-first:** finished, code-reviewed, genuinely tested and non-conflicting feature source goes promptly into one audited non-deploying integration target. Production activation separate. If tests actually fail, fix them; if CI has zero steps, report BLOCKED and use an eligible alternate runner, not PASS.
