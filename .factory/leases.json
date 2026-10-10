@@ -108,23 +108,6 @@
       "notes": "Published AF09 ticket/mobile feed source on existing PR #609: 52877e9, 1c5eb35, 46f1232. Widget+contract regression tests in progress, AF05/AF00 boundaries unchanged."
     },
     {
-      "claim_id": "af09-609-following-projection-20261010-gpt6",
-      "owner": "AF09 continued PR #609; fresh window, no AF00 ownership",
-      "scope": "Complete existing Published Talks Following feed readback: canonical public projection and persisted counts, negative privacy regression. Same PR, no router/migrations/native/media.",
-      "paths": [
-        "services/gateway/src/audio_posts/following.ts",
-        "services/gateway/src/audio_posts/following.test.mjs",
-        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
-        "docs/workstreams/AF09-following-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:43:12.070Z",
-      "heartbeat_at": "2026-10-10T02:43:12.070Z",
-      "expires_at": "2026-10-10T02:48:12.070Z"
-    },
-    {
       "claim_id": "af09-609-processing-pagination-gpt6-0342",
       "owner": "AF09 existing PR #609 processing queue continuation (GPT-6 window 0342)",
       "scope": "Repair demonstrated microsecond keyset pagination loss that can indefinitely skip pending audio publication after timestamp collisions. Continue existing worker/PG queue and its tests; no duplicate queue, shared worker registration or migrations.",
@@ -1374,6 +1357,27 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/610",
       "integration_head_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
       "release_reason": "Three policy files exact-readback verified and documentation-only PR610 merged. Require finite source/integration closure before local pull; no runtime completion claimed."
+    },
+    {
+      "claim_id": "af09-609-following-projection-20261010-gpt6",
+      "owner": "AF09 continued PR #609; fresh window, no AF00 ownership",
+      "scope": "Complete existing Published Talks Following feed readback: canonical public projection and persisted counts, negative privacy regression. Same PR, no router/migrations/native/media.",
+      "paths": [
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/following.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "docs/workstreams/AF09-following-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:43:12.070Z",
+      "heartbeat_at": "2026-10-10T02:43:12.070Z",
+      "expires_at": "2026-10-10T02:48:12.070Z",
+      "released_at": "2026-10-10T02:48:42.478Z",
+      "release_reason": "Same PR #609 committed Following public projection/count source and privacy/Masana regressions, exact blob readback and PASS_ISOLATED canonical projection only. Full pnpm/Vitest/Flutter/PG blocked and zero-step CI; handoff and owners in PR comment 6092971540. No unverified main merge or production deployment.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "source_head": "28c2cfd3e743cc4612516149c093d280fbee24ed"
     }
   ]
 }
