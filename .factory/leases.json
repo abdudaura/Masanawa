@@ -112,24 +112,6 @@
       "heartbeat_at": "2026-10-10T02:41:41.762Z",
       "expires_at": "2026-10-10T02:46:41.762Z",
       "notes": "Phone numeric-password service + PG adapter + route + Dart form authored on existing PR #588. Separated verified phone vs unverified self-declared. 4/4 exact-blob Node policy tests PASS_REAL; workspace Vitest/tsc/PG/Flutter BLOCKED; AF00 migration/composition gated. Completing SHA-specific handoff."
-    },
-    {
-      "claim_id": "masanawa-u02-status-cas-race-20261010-gpt6p",
-      "owner": "Masanawa U02 same-PR recovery continuation (this window)",
-      "scope": "Close U02 customer task-status CAS race by readback of durable same-operation state and source regression tests; no new executor, ledger or routing",
-      "paths": [
-        "packages/operator-tasks/src/index.ts",
-        "packages/operator-tasks/src/index.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md"
-      ],
-      "branch": "work/recovery-02-u02-task-journal-20261009",
-      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
-      "source_pr": 580,
-      "source_head": "e13cbeb1cf34699d239ac77be3a14e62b616339f",
-      "claimed_at": "2026-10-10T02:39:00.655Z",
-      "heartbeat_at": "2026-10-10T02:39:00.655Z",
-      "expires_at": "2026-10-10T02:44:00.655Z",
-      "notes": "Prior U02 claims released; preserve stacked parent #520, no overlapping live CAS ownership. Reconcile status via owner-fenced repository read only, no external execute retry."
     }
   ],
   "history": [
@@ -1296,6 +1278,28 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "released_at": "2026-10-10T02:37:35.948Z",
       "release_reason": "Bounded Following UI composition and three widget regressions committed on existing PR #609; readback checked; exact blockers and handoff posted in PR comment 6092843887. Flutter tests and project E2E NOT_RUN; no merge, deployment or shared files."
+    },
+    {
+      "claim_id": "masanawa-u02-status-cas-race-20261010-gpt6p",
+      "owner": "Masanawa U02 same-PR recovery continuation (this window)",
+      "scope": "Close U02 customer task-status CAS race by readback of durable same-operation state and source regression tests; no new executor, ledger or routing",
+      "paths": [
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 580,
+      "source_head": "e13cbeb1cf34699d239ac77be3a14e62b616339f",
+      "claimed_at": "2026-10-10T02:39:00.655Z",
+      "heartbeat_at": "2026-10-10T02:39:00.655Z",
+      "expires_at": "2026-10-10T02:44:00.655Z",
+      "notes": "Prior U02 claims released; preserve stacked parent #520, no overlapping live CAS ownership. Reconcile status via owner-fenced repository read only, no external execute retry.",
+      "released_at": "2026-10-10T02:42:39.498Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/580",
+      "head_sha": "74c6c3ce8f767daa6a9a0df18f11e630be0c15e2",
+      "release_reason": "Same PR #580 recovered canonical task status after concurrent CAS settlement; 3 Vitest regressions authored not run; exact source readback, Node22/no pnpm/PG/Flutter/DNS; AF13/AF00 full source runner, U04 domain reader, AF00/F18 composition and U03 UI still required. PR comment #6092915728; no merge or release."
     }
   ]
 }
