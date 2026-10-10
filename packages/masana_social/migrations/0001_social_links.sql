@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS masana.social_events (
   tenant_id text NOT NULL, provider text NOT NULL, provider_event_id text NOT NULL,
   identity_id text NOT NULL, external_fan_hash text NOT NULL,
   origin text NOT NULL, consent_scope text, status text NOT NULL DEFAULT 'held'
-    CHECK(status IN ('held','eligible','processing','processed','rejected')),
+    CHECK(status IN ('held','eligible','processing','processed','rejected','held_unknown')),
   received_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY(tenant_id,provider,provider_event_id),
   FOREIGN KEY(tenant_id,identity_id) REFERENCES masana.social_identities(tenant_id,identity_id)
@@ -62,10 +62,11 @@ CREATE TABLE IF NOT EXISTS masana.social_events (
 CREATE TABLE IF NOT EXISTS masana.social_delivery_attempts (
   tenant_id text NOT NULL, attempt_id text NOT NULL, provider text NOT NULL,
   provider_event_id text NOT NULL, identity_id text NOT NULL,
-  status text NOT NULL CHECK(status IN ('blocked','pending','sent','retry','dead_letter')),
+  status text NOT NULL CHECK(status IN ('blocked','pending','sent','retry','dead_letter','held_unknown')),
   retry_count integer NOT NULL DEFAULT 0 CHECK(retry_count >= 0),
   next_attempt_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY(tenant_id,attempt_id),
+  UNIQUE(tenant_id,provider,provider_event_id),
   FOREIGN KEY(tenant_id,provider,provider_event_id)
     REFERENCES masana.social_events(tenant_id,provider,provider_event_id),
   FOREIGN KEY(tenant_id,identity_id)
