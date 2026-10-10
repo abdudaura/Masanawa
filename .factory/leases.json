@@ -178,6 +178,24 @@
       "heartbeat_at": "2026-10-10T03:33:39.661Z",
       "expires_at": "2026-10-10T03:38:39.661Z",
       "notes": "Check current #609 head before each source edit. AF00 Gateway composition and AF05 media ownership untouched. Source-before-local-pull parent milestone."
+    },
+    {
+      "claim_id": "af09-609-feed-warm-cache-20261010-gpt6",
+      "owner": "AF09 PR #609 / GPT-6 feed warm/offline recovery",
+      "scope": "Keep authenticated Published Talks feed visible during refresh and warm reentry with bounded, account-fenced encrypted snapshots; no root shell, auth, routes, provider or financial authority",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_cache.dart",
+        "apps/mobile/test/audio_first/af09/feed_cache_test.dart",
+        "docs/workstreams/AF09-feed-cache-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:36:34.664Z",
+      "heartbeat_at": "2026-10-10T03:36:34.664Z",
+      "expires_at": "2026-10-10T03:41:34.664Z",
+      "notes": "Published Talks CHAT-P01 partial, same PR; previously expired playback-journey ownership preserved; no claim to other active AF09 draft/receipt windows."
     }
   ],
   "history": [
