@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { createCanonicalId, parseCanonicalId, type RequestId, type CharacterSessionId } from "@masanawa/contracts";
+import { createCanonicalId, parseCanonicalId, type RequestId, type CharacterSessionId, type CharacterId } from "@masanawa/contracts";
 import type { AgentConversationService } from "../../agent_conversation_contract.js";
 
 /** Existing session and turn service remains the sole write/idempotency authority. */
@@ -37,7 +37,9 @@ export function registerMasanaChatRoutes(app: FastifyInstance, deps: MasanaChatD
     const actor = await deps.resolveFan(authHeader);
     const characterId = typeof rawId === "string" ? rawId : "";
     if (!/^character_[0-9a-f-]{36}$/i.test(characterId)) return null;
-    const canonical = parseCanonicalId("character", characterId);
+    let canonical: CharacterId;
+    try { canonical = parseCanonicalId("character", characterId); }
+    catch { return null; }
     if (!actor.tenantId || !actor.fanUserId) return null;
     if (!await deps.eligibility.isApprovedPlatformMasana({
       tenantId: actor.tenantId, characterId: canonical,
