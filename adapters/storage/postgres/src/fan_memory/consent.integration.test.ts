@@ -42,7 +42,7 @@ pg("J11 fan memory PG18 source acceptance",()=>{
   return {tenantId,characterId,userId,otherUserId,relationshipId,otherRelationshipId};
  }
  it("starts off and isolates two fans through opt-in, extraction and readback",async()=>{
-  const x=await fixture(),store=createPostgresFanMemoryStore(pool);
+  const x=await fixture(),store=createPostgresFanMemoryStore(pool,async(_client,_tenant,character)=>character===x.characterId);
   const owner={tenantId:x.tenantId,userId:x.userId};
   const other={tenantId:x.tenantId,userId:x.otherUserId};
   expect(await store.read(owner,x.characterId)).toMatchObject({enabled:false,revision:0,items:[]});
@@ -51,7 +51,8 @@ pg("J11 fan memory PG18 source acceptance",()=>{
   expect(enabled).toMatchObject({enabled:true,revision:1});
   const source="a".repeat(64);
   const extractor=createPostgresFanExtractionPort(pool,async(_client,t,r,messageId,hash)=>
-    t===x.tenantId&&r===x.relationshipId&&messageId==="message:verified"&&hash===source);
+    t===x.tenantId&&r===x.relationshipId&&messageId==="message:verified"&&hash===source,
+    async(_client,_tenant,character)=>character===x.characterId);
   expect(await extractor.enabled(x.tenantId,x.relationshipId)).toBe(true);
   expect(await extractor.enabled(x.tenantId,x.otherRelationshipId)).toBe(false);
   const fact={content:"I prefer short chapters",category:"preference",messageId:"message:verified",sourceHash:source,confidence:0.95};
@@ -67,7 +68,7 @@ pg("J11 fan memory PG18 source acceptance",()=>{
   expect(await store.setEnabled(owner,x.characterId,true,1)).toBeNull();
  });
  it("queues exactly one outbox event on whole-memory deletion retries",async()=>{
-  const x=await fixture(),store=createPostgresFanMemoryStore(pool);
+  const x=await fixture(),store=createPostgresFanMemoryStore(pool,async(_client,_tenant,character)=>character===x.characterId);
   const actor={tenantId:x.tenantId,userId:x.userId};
   await store.setEnabled(actor,x.characterId,true,0);
   const first=await store.enqueueErase(actor,x.characterId,null,"erase-all-stable-key-01");
@@ -83,7 +84,7 @@ pg("J11 fan memory PG18 source acceptance",()=>{
   expect(await store.read(actor,x.characterId)).toMatchObject({enabled:false,revision:2,items:[]});
  });
  it("never allows foreign fan to queue another fan's single-record erasure",async()=>{
-  const x=await fixture(),store=createPostgresFanMemoryStore(pool);
+  const x=await fixture(),store=createPostgresFanMemoryStore(pool,async(_client,_tenant,character)=>character===x.characterId);
   await store.setEnabled({tenantId:x.tenantId,userId:x.userId},x.characterId,true,0);
   expect(await store.enqueueErase({tenantId:x.tenantId,userId:x.otherUserId},
     x.characterId,createCanonicalId("memory-record"),"foreign-erase-key")).toBeNull();
