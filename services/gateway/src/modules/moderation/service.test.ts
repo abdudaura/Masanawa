@@ -32,7 +32,7 @@ function harness(){
  const identities:Record<string,Actor>={fan,stranger,differentTenant,gwani,mod};
  const canReadTarget=vi.fn().mockImplementation(async (_a:Actor,t:{kind:string;id:string})=>t.id==="comment1");
  const service=createCaseService({
-  repository:{create,find,list,propose,review,appeal:appendAppeal,resolveAppeal},
+  repository:{create,find,list,propose,review,dismiss,appeal:appendAppeal,resolveAppeal},
   authority:{authorize:async header=>identities[header??""]??Promise.reject(new CaseError("unauthorized",401)),
              canReadTarget},now:()=>new Date("2026-10-10T10:00:00Z"),id:()=> "deterministic",
  });
