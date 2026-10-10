@@ -93,7 +93,7 @@ export function createFollowingService(repository: FollowingRepository) {
       if (!Number.isSafeInteger(limit) || (limit as number) < 1 ||
           (limit as number) > 30 ||
           (input.cursor != null && (typeof input.cursor !== "string" ||
-            !/^\d{13}:[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/.test(input.cursor)))) {
+            !/^[A-Za-z0-9_-]{12,256}$/.test(input.cursor)))) {
         throw new FollowingError("VALIDATION", "Invalid creator page");
       }
       const page = await repository.creatorFeed({
@@ -117,7 +117,7 @@ export function createFollowingService(repository: FollowingRepository) {
       if (!Number.isSafeInteger(limit) || (limit as number) < 1 || (limit as number) > 30 ||
           (input.cursor != null &&
            (typeof input.cursor !== "string" || input.cursor.length > 256 ||
-            !/^\d{13}:[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(input.cursor)))) {
+            !/^[A-Za-z0-9_-]{12,256}$/.test(input.cursor)))) {
         throw new FollowingError("VALIDATION", "Invalid following page");
       }
       const page = await repository.feed({
