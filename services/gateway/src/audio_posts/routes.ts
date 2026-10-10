@@ -44,7 +44,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       return await deps.service.feed({
         tenantId: current.tenantId,
         viewerId: current.accountId,
-        cursor: query.cursor as string | undefined,
+        ...(query.cursor === undefined ? {} : { cursor: query.cursor as string }),
         limit: rawLimit,
       });
     } catch (error) { return fail(reply, error); }
