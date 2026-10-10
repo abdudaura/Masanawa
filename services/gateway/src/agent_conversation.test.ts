@@ -430,4 +430,45 @@ describe("Alpha conversation service", () => {
     expect(trace.filter((entry) => entry === "run:failed")).toHaveLength(0);
   });
 
+
+  it("does not duplicate safe raw deltas when no post-processor changes the reply", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const deltas: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute(command) {
+          await command.onTextDelta?.("Hello ");
+          await command.onTextDelta?.("world");
+          return { reply: "Hello world", parts: [] };
+        },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { deltas.push(delta); },
+    });
+    expect(response.reply).toBe("Hello world");
+    expect(deltas).toEqual(["Hello ", "world"]);
+  });
+
 });
