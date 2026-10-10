@@ -127,6 +127,23 @@
       "heartbeat_at": "2026-10-10T01:34:02.408Z",
       "expires_at": "2026-10-10T01:39:02.408Z",
       "notes": "Exact activity screen, isolated AF14 widget tests and handoff only; other active claims inspected; no shared Gateway/financial/nav/migration/native/CI files."
+    },
+    {
+      "claim_id": "masanawa01-af14-notification-state-20261010",
+      "owner": "MASANAWA-01 / AF14 notification-state",
+      "scope": "Integrate truthful notification enable/disable state, serialize mutations, fence old account responses and expose OS-versus-registration failures without changing shared push transport",
+      "paths": [
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/lib/src/account_preferences/notification_switch_controller.dart",
+        "apps/mobile/test/audio_first/af14/notification_switch_controller_test.dart",
+        "docs/workstreams/AF14-notification-state-20261010.md"
+      ],
+      "branch": "work/af14-notification-state-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "",
+      "claimed_at": "2026-10-10T01:34:27Z",
+      "heartbeat_at": "2026-10-10T01:34:27Z",
+      "expires_at": "2026-10-10T01:39:27Z"
     }
   ],
   "history": [
