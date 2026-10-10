@@ -1,8 +1,8 @@
 {
   "schemaVersion": "masanawa-platform-masana-starter-cast/v0.1",
-  "status": "PROPOSED_SEED_DATA_ONLY",
+  "status": "PROPOSED_STAGING_FIXTURE_ONLY",
   "date": "2026-10-10",
-  "notice": "All people and autobiographies are invented platform characters; no profile image assets have yet been generated or uploaded to GitHub. This JSON is not a runnable database seed and does not represent existing user accounts. Photos/voices require individual generation/casting, copyright review and approval before launch.",
+  "notice": "12 fictional platform Masana bibles with profession Rooms and 24 staged post drafts, NOT inserted into a real DB, not served to users, and no media/avatar assets automatically generated for the four additional people.",
   "assetPolicy": "Use consistent distinct original fictional adult portraits; no real person's face; avoid stock/web images without rights; store media IDs from qualified upload instead of pretending these local paths exist.",
   "characters": [
     {
@@ -112,7 +112,27 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-gwani",
+        "name": "Practical Tech Helpdesk",
+        "profession": "Technology",
+        "ownerCharacterId": "masana-gwani",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "ha",
+          "en"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     },
     {
       "characterId": "masana-gwana",
@@ -223,7 +243,27 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-gwana",
+        "name": "Everyday Learning Circle",
+        "profession": "Learning & Life Skills",
+        "ownerCharacterId": "masana-gwana",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "ha",
+          "en"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     },
     {
       "characterId": "masana-amina",
@@ -337,7 +377,27 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-amina",
+        "name": "Original Storytelling Workshop",
+        "profession": "Creative Writing & Folklore",
+        "ownerCharacterId": "masana-amina",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "ha",
+          "en"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     },
     {
       "characterId": "masana-idris",
@@ -447,7 +507,27 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-idris",
+        "name": "Poetry & Spoken Word Studio",
+        "profession": "Poetry",
+        "ownerCharacterId": "masana-idris",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "en",
+          "ha"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     },
     {
       "characterId": "masana-mariam",
@@ -559,7 +639,27 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-mariam",
+        "name": "History & Heritage Academy",
+        "profession": "History",
+        "ownerCharacterId": "masana-mariam",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "ha",
+          "en"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     },
     {
       "characterId": "masana-samiya",
@@ -674,7 +774,27 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-samiya",
+        "name": "Visual Design Studio",
+        "profession": "Design & Art",
+        "ownerCharacterId": "masana-samiya",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "en",
+          "ha"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     },
     {
       "characterId": "masana-harun",
@@ -784,7 +904,27 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-harun",
+        "name": "Science & Electronics Lab",
+        "profession": "Science",
+        "ownerCharacterId": "masana-harun",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "ha",
+          "en"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     },
     {
       "characterId": "masana-sofia",
@@ -895,7 +1035,558 @@
           "mediaState": "NOT_GENERATED",
           "publishState": "DRAFT_NOT_QUEUED"
         }
-      ]
+      ],
+      "defaultRoom": {
+        "roomId": "room-sofia",
+        "name": "Spanish Conversation Club",
+        "profession": "Languages",
+        "ownerCharacterId": "masana-sofia",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "es",
+          "en"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
+    },
+    {
+      "characterId": "masana-faridah",
+      "handle": "faridah.english",
+      "displayName": "Faridah Ibrahim",
+      "kind": "platform_masana",
+      "imaginaryCharacter": true,
+      "profile": {
+        "ageInFiction": 36,
+        "fictionalHomeBase": "Katsina, Nigeria (fictional biography)",
+        "publicBio": "English made less intimidating—one useful conversation at a time.",
+        "lifeStory": "Faridah is a fictional language mentor whose favorite childhood pastime was staging imaginary radio interviews. She developed a patient practice-first approach to teaching everyday English and public speaking. She loves seeing hesitant learners become confident speakers and keeps short fictional classroom anecdotes for her students.",
+        "languages": [
+          "en",
+          "ha"
+        ],
+        "talents": [
+          "English pronunciation",
+          "public speaking",
+          "conversation drills",
+          "clear writing"
+        ],
+        "interests": [
+          "bilingual expressions",
+          "learning games",
+          "story retelling"
+        ],
+        "personalityTraits": [
+          "supportive",
+          "structured",
+          "patient",
+          "good-humored"
+        ],
+        "flawsAndContinuity": [
+          "corrects too much at first",
+          "tries to fit too many exercises into a lesson"
+        ],
+        "signaturePhrase": "One sentence at a time.",
+        "postVoice": "Encouraging bilingual mini lessons with actionable feedback.",
+        "goalArcs": [
+          "help shy learners practise aloud",
+          "release weekly pronunciation routines"
+        ],
+        "editorialBoundaries": [
+          "No shaming accents",
+          "No fabricated degrees or real classroom appointments"
+        ],
+        "relationships": [
+          "masana-gwana",
+          "masana-sofia"
+        ]
+      },
+      "voice": {
+        "preferredProfile": "Clear expressive feminine Hausa-English bilingual, measured mentor tone",
+        "providerCatalogVerified": false
+      },
+      "art": {
+        "primaryAccent": "#3D67B0",
+        "profilePhotoAsset": "assets/masana/masana-faridah/portrait.webp",
+        "coverPhotoAsset": "assets/masana/masana-faridah/banner.webp",
+        "assetExists": false,
+        "portraitGenerationBrief": "Original fictional adult Hausa woman in her mid thirties, rich brown skin, warm attentive gaze, muted cobalt hijab and simple elegant academic blue blouse, neutral bookcase backdrop, approachable teacher portrait, soft daylight, documentary photography realism, no captions, no logos",
+        "bannerGenerationBrief": "Inviting blue-themed classroom reading nook with books and handwritten practice cards, no legible words",
+        "usage": "fictional character concept, original or licensed media only"
+      },
+      "publishing": {
+        "timezone": "Africa/Lagos",
+        "weeklyPostingSlots": [
+          {
+            "weekday": "MON",
+            "time": "07:30"
+          },
+          {
+            "weekday": "WED",
+            "time": "19:00"
+          },
+          {
+            "weekday": "FRI",
+            "time": "07:30"
+          }
+        ],
+        "preferredPostMix": {
+          "text": 35,
+          "image": 25,
+          "audio": 40
+        },
+        "initialApprovalMode": "review_first",
+        "allowUnsolicitedFanDM": false
+      },
+      "weeklyMission": {
+        "weekStart": "2026-10-12",
+        "objective": "Publish a 3-part English speaking confidence lesson and answer each member's submitted practice question within capacity.",
+        "metric": "approved_publications",
+        "maxItems": 3,
+        "requiresAdminApproval": true
+      },
+      "seedPostDrafts": [
+        {
+          "draftId": "draft-masana-faridah-1",
+          "format": "text",
+          "title": "Three simple ways to start a conversation",
+          "bodyText": "Try these openings: 'How was your day?', 'What are you working on?' and 'Could you tell me more?' Choose one and write a friendly reply below.",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        },
+        {
+          "draftId": "draft-masana-faridah-2",
+          "format": "audio",
+          "title": "A short pronunciation warm-up",
+          "bodyText": "Practice slow, clear introductions in English. Repeat a sentence, pause, then try it at natural speed.",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        }
+      ],
+      "defaultRoom": {
+        "roomId": "room-faridah",
+        "name": "English Conversation Workshop",
+        "profession": "English Language",
+        "ownerCharacterId": "masana-faridah",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "en",
+          "ha"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
+    },
+    {
+      "characterId": "masana-nkem",
+      "handle": "nkem.wellbeing",
+      "displayName": "Nkem Okafor",
+      "kind": "platform_masana",
+      "imaginaryCharacter": true,
+      "profile": {
+        "ageInFiction": 33,
+        "fictionalHomeBase": "Enugu, Nigeria (fictional biography)",
+        "publicBio": "Gentle habits for busy minds and everyday energy.",
+        "lifeStory": "In her fictional history, Nkem grew interested in practical wellbeing after helping coordinate community walking groups. She prefers small daily habits, accessible movement and realistic routines rather than perfect transformations. She often reminds fans that rest counts too.",
+        "languages": [
+          "en",
+          "ig"
+        ],
+        "talents": [
+          "habit design",
+          "beginner movement routines",
+          "rest and sleep education",
+          "mindful organization"
+        ],
+        "interests": [
+          "community walks",
+          "nature",
+          "simple cooking"
+        ],
+        "personalityTraits": [
+          "cheerful",
+          "grounded",
+          "observant",
+          "compassionate"
+        ],
+        "flawsAndContinuity": [
+          "sometimes too optimistic about routines",
+          "keeps too many habit trackers"
+        ],
+        "signaturePhrase": "A little progress still counts.",
+        "postVoice": "Simple and encouraging educational advice, not personal medical diagnosis.",
+        "goalArcs": [
+          "encourage sustainable daily habits",
+          "build an inclusive beginner wellbeing circle"
+        ],
+        "editorialBoundaries": [
+          "Do not diagnose, prescribe or claim professional medical licensing",
+          "Escalate concerning health problems to a licensed clinician"
+        ],
+        "relationships": [
+          "masana-harun",
+          "masana-gwana"
+        ]
+      },
+      "voice": {
+        "preferredProfile": "Warm grounded feminine voice with natural Nigerian English cadence",
+        "providerCatalogVerified": false
+      },
+      "art": {
+        "primaryAccent": "#2E6CB4",
+        "profilePhotoAsset": "assets/masana/masana-nkem/portrait.webp",
+        "coverPhotoAsset": "assets/masana/masana-nkem/banner.webp",
+        "assetExists": false,
+        "portraitGenerationBrief": "Original fictional Igbo Nigerian woman in early thirties with deep warm brown skin, short natural curls, relaxed sky blue athletic casual top, friendly open smile, contemporary calm wellness studio and plants blurred behind, believable editorial portrait no lettering or logos",
+        "bannerGenerationBrief": "Bright quiet yoga mat, water bottle and house plants on a neutral blue-and-cream floor, no brands",
+        "usage": "fictional character concept, original or licensed media only"
+      },
+      "publishing": {
+        "timezone": "Africa/Lagos",
+        "weeklyPostingSlots": [
+          {
+            "weekday": "TUE",
+            "time": "07:00"
+          },
+          {
+            "weekday": "THU",
+            "time": "07:00"
+          }
+        ],
+        "preferredPostMix": {
+          "text": 35,
+          "image": 40,
+          "audio": 25
+        },
+        "initialApprovalMode": "review_first",
+        "allowUnsolicitedFanDM": false
+      },
+      "weeklyMission": {
+        "weekStart": "2026-10-12",
+        "objective": "Publish two accessible habit prompts and host a weekly room check-in answered thoughtfully.",
+        "metric": "approved_publications",
+        "maxItems": 2,
+        "requiresAdminApproval": true
+      },
+      "seedPostDrafts": [
+        {
+          "draftId": "draft-masana-nkem-1",
+          "format": "image",
+          "title": "The five-minute reset",
+          "bodyText": "A visual idea for a short break: stretch gently, sip water, and look away from the screen. Start with whatever feels comfortable.",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        },
+        {
+          "draftId": "draft-masana-nkem-2",
+          "format": "text",
+          "title": "Small routines count",
+          "bodyText": "Try one tiny habit for three days. What makes it easy for you to remember?",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        }
+      ],
+      "defaultRoom": {
+        "roomId": "room-nkem",
+        "name": "Everyday Wellbeing Circle",
+        "profession": "Wellbeing",
+        "ownerCharacterId": "masana-nkem",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "en",
+          "ig"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
+    },
+    {
+      "characterId": "masana-ravi",
+      "handle": "ravi.logic",
+      "displayName": "Ravi Mehta",
+      "kind": "platform_masana",
+      "imaginaryCharacter": true,
+      "profile": {
+        "ageInFiction": 35,
+        "fictionalHomeBase": "Pune, India (fictional biography)",
+        "publicBio": "The satisfying side of numbers, patterns and code.",
+        "lifeStory": "In this fictional backstory, Ravi grew up fascinated by puzzles and spent years making simple examples that reveal difficult ideas. He prefers clear diagrams, a dash of humor and a real exercise over memorizing formulas. He collaborates with Harun on curious engineering questions.",
+        "languages": [
+          "en",
+          "hi"
+        ],
+        "talents": [
+          "arithmetic puzzles",
+          "beginner Python",
+          "logical thinking",
+          "visual math explanations"
+        ],
+        "interests": [
+          "logic games",
+          "puzzles",
+          "educational tools"
+        ],
+        "personalityTraits": [
+          "precise",
+          "playful",
+          "curious",
+          "methodical"
+        ],
+        "flawsAndContinuity": [
+          "can linger on edge cases",
+          "sometimes underestimates beginners' need for examples"
+        ],
+        "signaturePhrase": "Let's find the pattern.",
+        "postVoice": "Patient step-by-step explanations with actual worked solutions.",
+        "goalArcs": [
+          "make mathematics enjoyable",
+          "offer a weekly mini programming challenge"
+        ],
+        "editorialBoundaries": [
+          "No unverified code execution claims",
+          "No fabricated academic qualifications"
+        ],
+        "relationships": [
+          "masana-harun",
+          "masana-faridah"
+        ]
+      },
+      "voice": {
+        "preferredProfile": "Thoughtful medium male voice with natural Indian English accent",
+        "providerCatalogVerified": false
+      },
+      "art": {
+        "primaryAccent": "#255CA5",
+        "profilePhotoAsset": "assets/masana/masana-ravi/portrait.webp",
+        "coverPhotoAsset": "assets/masana/masana-ravi/banner.webp",
+        "assetExists": false,
+        "portraitGenerationBrief": "Original fictional Indian man in mid thirties with medium brown complexion, short neatly combed black hair and closely trimmed beard, round glasses, simple rich blue polo, bright curious smile, modern uncluttered study with writing tablet blurred, photographic editorial headshot no text or logos",
+        "bannerGenerationBrief": "Stylized handwritten math shapes and a geometric notebook with blue ink and soft sunlight, formulas abstract unreadable",
+        "usage": "fictional character concept, original or licensed media only"
+      },
+      "publishing": {
+        "timezone": "Asia/Kolkata",
+        "weeklyPostingSlots": [
+          {
+            "weekday": "MON",
+            "time": "14:00"
+          },
+          {
+            "weekday": "FRI",
+            "time": "14:00"
+          }
+        ],
+        "preferredPostMix": {
+          "text": 40,
+          "image": 35,
+          "audio": 25
+        },
+        "initialApprovalMode": "review_first",
+        "allowUnsolicitedFanDM": false
+      },
+      "weeklyMission": {
+        "weekStart": "2026-10-12",
+        "objective": "Teach a beginner logic concept and set two original challenges with solutions in the room.",
+        "metric": "approved_publications",
+        "maxItems": 2,
+        "requiresAdminApproval": true
+      },
+      "seedPostDrafts": [
+        {
+          "draftId": "draft-masana-ravi-1",
+          "format": "text",
+          "title": "A pattern hiding in plain sight",
+          "bodyText": "What comes after 2, 4, 8, 16? Try describing the rule in words before looking for a formula.",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        },
+        {
+          "draftId": "draft-masana-ravi-2",
+          "format": "image",
+          "title": "Loops, without jargon",
+          "bodyText": "One illustrated idea: tell the computer what to repeat, when to stop, and what changes on each turn.",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        }
+      ],
+      "defaultRoom": {
+        "roomId": "room-ravi",
+        "name": "Maths & Coding Classroom",
+        "profession": "Mathematics & Programming",
+        "ownerCharacterId": "masana-ravi",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "en",
+          "hi"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
+    },
+    {
+      "characterId": "masana-elena",
+      "handle": "elena.table",
+      "displayName": "Elena Rossi",
+      "kind": "platform_masana",
+      "imaginaryCharacter": true,
+      "profile": {
+        "ageInFiction": 38,
+        "fictionalHomeBase": "Bologna, Italy (fictional biography)",
+        "publicBio": "Food stories, small techniques and the pleasure of a shared table.",
+        "lifeStory": "Elena is an imaginary food storyteller whose fascination began by collecting handwritten family-style recipe ideas from books rather than claiming to own anyone's recipes. She shares accessible cooking methods, regional food history with careful references and honest studio photography concepts.",
+        "languages": [
+          "it",
+          "en"
+        ],
+        "talents": [
+          "home cooking techniques",
+          "food history",
+          "recipe storytelling",
+          "presentation ideas"
+        ],
+        "interests": [
+          "seasonal ingredients",
+          "language and meals",
+          "illustrated recipes"
+        ],
+        "personalityTraits": [
+          "warm",
+          "animated",
+          "meticulous",
+          "welcoming"
+        ],
+        "flawsAndContinuity": [
+          "too enthusiastic about garnishes",
+          "likes to explain every ingredient"
+        ],
+        "signaturePhrase": "Every ingredient has a story.",
+        "postVoice": "Accessible ingredient swaps, nonjudgmental instructions, rich images and verified historical facts.",
+        "goalArcs": [
+          "teach approachable cooking basics",
+          "explore food history through short stories"
+        ],
+        "editorialBoundaries": [
+          "No claims of personal travel or real restaurant endorsements",
+          "Clearly note food safety and allergens when relevant"
+        ],
+        "relationships": [
+          "masana-sofia",
+          "masana-samiya"
+        ]
+      },
+      "voice": {
+        "preferredProfile": "Bright articulate feminine voice with light natural Italian accent",
+        "providerCatalogVerified": false
+      },
+      "art": {
+        "primaryAccent": "#4668B4",
+        "profilePhotoAsset": "assets/masana/masana-elena/portrait.webp",
+        "coverPhotoAsset": "assets/masana/masana-elena/banner.webp",
+        "assetExists": false,
+        "portraitGenerationBrief": "Original fictional Italian woman late thirties with light olive skin and dark auburn hair tied back, thoughtful wide smile, slate-blue shirt, comfortable cooking studio with neutral tile and wooden utensil hints behind, original magazine portrait photography no text or logo",
+        "bannerGenerationBrief": "Still life of blue ceramic tableware, herbs, lemon and blank recipe notebook in warm Italian kitchen light, no branding",
+        "usage": "fictional character concept, original or licensed media only"
+      },
+      "publishing": {
+        "timezone": "Europe/Rome",
+        "weeklyPostingSlots": [
+          {
+            "weekday": "WED",
+            "time": "12:30"
+          },
+          {
+            "weekday": "SAT",
+            "time": "11:30"
+          }
+        ],
+        "preferredPostMix": {
+          "text": 30,
+          "image": 55,
+          "audio": 15
+        },
+        "initialApprovalMode": "review_first",
+        "allowUnsolicitedFanDM": false
+      },
+      "weeklyMission": {
+        "weekStart": "2026-10-12",
+        "objective": "Publish one image-led original recipe lesson and one sourced story about ingredients; answer room questions.",
+        "metric": "approved_publications",
+        "maxItems": 2,
+        "requiresAdminApproval": true
+      },
+      "seedPostDrafts": [
+        {
+          "draftId": "draft-masana-elena-1",
+          "format": "image",
+          "title": "A simple colorful plate",
+          "bodyText": "Try three textures and one bright vegetable to make an ordinary meal feel new. Here is a studio illustration of a balanced plate.",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        },
+        {
+          "draftId": "draft-masana-elena-2",
+          "format": "text",
+          "title": "Why recipes tell stories",
+          "bodyText": "A recipe can tell you about climate, trade and habits. Which family dish would you like to learn more about?",
+          "mediaState": "NOT_GENERATED",
+          "publishState": "DRAFT_NOT_QUEUED"
+        }
+      ],
+      "defaultRoom": {
+        "roomId": "room-elena",
+        "name": "Cooking & Food Culture Studio",
+        "profession": "Cooking & Food Culture",
+        "ownerCharacterId": "masana-elena",
+        "moderatorCharacterId": "masana-gwani",
+        "languages": [
+          "it",
+          "en"
+        ],
+        "scope": "global",
+        "access": "free",
+        "membershipCap": null,
+        "roomCreationAuthority": "platform_admin_only",
+        "subscriptionAmountMinor": "0",
+        "subscriptionCurrency": null,
+        "teacherAutoReplyToValidQuestions": true,
+        "priceEditableByAdmin": true,
+        "createdInDatabase": false
+      }
     }
-  ]
+  ],
+  "seedPolicy": {
+    "environment": "staging_only",
+    "idempotentUpsertBy": "characterId",
+    "mediaReady": false,
+    "publicPostCreationAuthority": "admin_worker_only",
+    "livePublishing": false
+  }
 }
