@@ -413,6 +413,22 @@
       "heartbeat_at": "2026-10-10T07:41:47.344Z",
       "expires_at": "2026-10-10T07:46:47.344Z",
       "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths."
+    },
+    {
+      "claim_id": "af13-pr460-gateway-declaration-typing-20261010",
+      "owner": "AF13 existing CI recovery PR #460 (bounded Gateway-local configuration)",
+      "scope": "Gateway-only TypeScript third-party declaration incompatibilities: review option to skip checking dependency .d.ts while preserving strict local source checking. Requested AF00 path transfer via PR #600 comment 6095218021; no root/deploy changes.",
+      "paths": [
+        "services/gateway/tsconfig.json"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "source_pr": 460,
+      "source_head": "e36ec551648fe1d72dcfa3ddb23cfcc9dfc37613",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T07:44:23.167Z",
+      "heartbeat_at": "2026-10-10T07:44:23.167Z",
+      "expires_at": "2026-10-10T07:49:23.167Z",
+      "notes": "Narrow package-local tsconfig, no AF00 root config edits. Exact executed CI 38035232656: only 20 third-party declaration diagnostics plus 2 duplicate import fixes since e36ec55. Test and revert if actual TypeScript source checks decrease."
     }
   ],
   "history": [
