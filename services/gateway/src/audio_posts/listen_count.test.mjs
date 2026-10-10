@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createAudioPostPlaybackService, registerAudioPostPlaybackRoutes } from "./playback.js";
+import { toPublicAudioPost } from "./contract.js";
 
 const actor = {tenantId:"tenant-a",accountId:"account-a",authorId:"account-a",authorKind:"human"};
 const post = {tenantId:"tenant-a",postId:"post-a",authorId:"creator-a",
@@ -119,4 +120,14 @@ test("authenticated HTTP listen route maps errors and never trusts account body"
     params:{postId:"post-a"},body:{listenSessionId,playedMs:0,userId:"attacker"}},reply);
   assert.equal(reply.status,400);
   assert.equal(denied.code,"VALIDATION");
+});
+
+test("public qualified-listen projection never reveals viewer or signed grant",()=>{
+  const dto=toPublicAudioPost({...post,listenCount:9});
+  assert.equal(dto.listenCount,9);
+  assert.equal(dto.likeCount,0);
+  assert.equal(dto.commentCount,0);
+  for(const privateKey of ["tenantId","authorAccountId","assetId","requestId","listenSessionId"]) {
+    assert.equal(Object.hasOwn(dto,privateKey),false);
+  }
 });
