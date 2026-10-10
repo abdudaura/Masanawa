@@ -1,0 +1,225 @@
+import { describe, expect, it, vi } from "vitest";
+import {
+  runMediaCleanupBatch, validCleanupCandidate,
+  type CleanupCandidate, type CleanupPreflight, type MediaCleanupRepository,
+  type ImmutableObjectDeleter,
+} from "./media_cleanup.js";
+
+const checksum = "a".repeat(64);
+const valid: CleanupCandidate = {
+  tenantId: "tenant_123456789012",
+  kind: "avatar",
+  objectKey: `profiles/tenant_123456789012/user_123456789012/sha256-${checksum}.webp`,
+  objectVersion: null,
+  leaseToken: "claimed_token_123456789",
+  referenceRevision: 7,
+  createdAtMs: Date.parse("2026-10-01T00:00:00Z"),
+  retainUntilMs: Date.parse("2026-10-02T00:00:00Z"),
+};
+const ready: CleanupPreflight = { state: "ready", referenceRevision: 7, activeReferences: 0, activeHolds: 0, immutable: true };
+
+function rig(candidates: CleanupCandidate[] = [valid]) {
+  const repository: MediaCleanupRepository = {
+    claim: vi.fn(async () => candidates),
+    preflight: vi.fn(async () => ready),
+    complete: vi.fn(async () => true),
+    stop: vi.fn(async () => undefined),
+  };
+  const storage: ImmutableObjectDeleter = {
+    deleteExact: vi.fn(async () => "deleted" as const),
+  };
+  const run = () => runMediaCleanupBatch({
+    workerId: "worker_instance_12345678", max: 10, nowMs: Date.now(),
+    repository, storage, allowDelete: true,
+  });
+  return { repository, storage, run };
+}
+
+describe("AF15 durable media deletion boundary", () => {
+  it("accepts only tenant-fenced immutable candidates", () => {
+    expect(validCleanupCandidate(valid)).toBe(true);
+    expect(validCleanupCandidate({ ...valid, tenantId: "tenant_foreign999999" })).toBe(false);
+    expect(validCleanupCandidate({ ...valid, objectKey: "https://example.org/foo" })).toBe(false);
+    expect(validCleanupCandidate({ ...valid, objectKey: "profiles/tenant_123456789012/../bad" })).toBe(false);
+    expect(validCleanupCandidate({ ...valid, objectKey: "profiles/tenant_123456789012/mutable.jpg" })).toBe(false);
+    expect(validCleanupCandidate({ ...valid, objectKey: "profiles/tenant_123456789012/a*" })).toBe(false);
+    expect(validCleanupCandidate({ ...valid,
+      objectKey: `private/tenant_foreign999999/tenant_123456789012/sha256-${checksum}.webp`,
+    })).toBe(false);
+    expect(validCleanupCandidate({ ...valid, objectVersion: "version-1" })).toBe(true);
+  });
+
+  it("runs a single tombstoned object and commits only after delete", async () => {
+    const { storage, repository, run } = rig();
+    expect(await run()).toMatchObject({ claimed: 1, deleted: 1, absent: 0 });
+    expect(storage.deleteExact).toHaveBeenCalledOnce();
+    expect(repository.complete).toHaveBeenCalledWith(valid);
+    expect(repository.stop).not.toHaveBeenCalled();
+  });
+
+  it("treats known missing objects as idempotent cleanup", async () => {
+    const r = rig();
+    vi.mocked(r.storage.deleteExact).mockResolvedValue("absent");
+    expect(await r.run()).toMatchObject({ absent: 1, deleted: 0 });
+  });
+
+  it("does not delete held, referenced, forged or mismatched revision objects", async () => {
+    for (const state of [
+      { state: "blocked" } as const,
+      { ...ready, activeHolds: 1 } as unknown as CleanupPreflight,
+      { ...ready, activeReferences: 1 } as unknown as CleanupPreflight,
+      { ...ready, referenceRevision: 8 },
+      { ...ready, immutable: false } as unknown as CleanupPreflight,
+    ]) {
+      const r = rig();
+      vi.mocked(r.repository.preflight).mockResolvedValue(state);
+      const result = await r.run();
+      expect(result.deleted).toBe(0);
+      expect(r.storage.deleteExact).not.toHaveBeenCalled();
+      expect(r.repository.stop).toHaveBeenCalledOnce();
+    }
+  });
+
+  it("does not delete after lease loss", async () => {
+    const r = rig();
+    vi.mocked(r.repository.preflight).mockResolvedValue({ state: "lease-lost" });
+    expect(await r.run()).toMatchObject({ leaseLost: 1 });
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    expect(r.repository.stop).not.toHaveBeenCalled();
+  });
+
+  it("quarantines provider uncertainty without automatic retries", async () => {
+    const r = rig();
+    vi.mocked(r.storage.deleteExact).mockRejectedValue(new Error("timeout after commit"));
+    expect(await r.run()).toMatchObject({ quarantined: 1, deleted: 0 });
+    expect(r.storage.deleteExact).toHaveBeenCalledTimes(1);
+    expect(r.repository.complete).not.toHaveBeenCalled();
+    expect(r.repository.stop).toHaveBeenCalledWith(valid, "uncertain");
+  });
+
+  it("quarantines success when durable completion fails", async () => {
+    const r = rig();
+    vi.mocked(r.repository.complete).mockRejectedValue(new Error("DB unavailable"));
+    expect(await r.run()).toMatchObject({ quarantined: 1, deleted: 0 });
+    expect(r.repository.stop).toHaveBeenCalledWith(valid, "completed-but-unrecorded");
+  });
+
+  it("honors lease fence failure without falsely confirming deletion", async () => {
+    const r = rig();
+    vi.mocked(r.repository.complete).mockResolvedValue(false);
+    expect(await r.run()).toMatchObject({ deleted: 0, leaseLost: 1 });
+  });
+
+  it("rejects invalid job options and oversized claimed batches", async () => {
+    const r = rig();
+    await expect(runMediaCleanupBatch({ workerId: "bad", nowMs: 0, max: 10, repository: r.repository, storage: r.storage })).rejects.toThrow(/invalid_batch/);
+    vi.mocked(r.repository.claim).mockResolvedValue(Array(11).fill(valid));
+    await expect(r.run()).rejects.toThrow(/invalid_claim_response/);
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+  });
+
+  it("rejects structurally corrupt claim response before any delete", async () => {
+    const r = rig([valid, null as unknown as CleanupCandidate]);
+    await expect(r.run()).rejects.toThrow(/invalid_claim_response/);
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    expect(r.repository.complete).not.toHaveBeenCalled();
+  });
+
+  it("quarantines a corrupt preflight result instead of deleting or crashing", async () => {
+    const r = rig();
+    vi.mocked(r.repository.preflight).mockResolvedValue(null as unknown as CleanupPreflight);
+    expect(await r.run()).toMatchObject({ claimed: 1, quarantined: 1, deleted: 0 });
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    expect(r.repository.stop).toHaveBeenCalledWith(valid, "invalid");
+  });
+
+  it("honors drain requested during awaited preflight", async () => {
+    const r = rig();
+    let stopping = false;
+    vi.mocked(r.repository.preflight).mockImplementation(async () => {
+      await Promise.resolve();
+      stopping = true;
+      return ready;
+    });
+    const result = await runMediaCleanupBatch({
+      workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1, allowDelete: true,
+      repository: r.repository, storage: r.storage, shouldStop: () => stopping,
+    });
+    expect(result).toMatchObject({ claimed: 1, deleted: 0, absent: 0 });
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    // Lease remains durable and recoverable; we do not falsely record a stop.
+    expect(r.repository.complete).not.toHaveBeenCalled();
+    expect(r.repository.stop).not.toHaveBeenCalled();
+  });
+
+  it("finishes already-started deletion even if drain arrives during provider I/O", async () => {
+    const r = rig();
+    let stopping = false;
+    vi.mocked(r.storage.deleteExact).mockImplementation(async () => {
+      stopping = true;
+      return "deleted";
+    });
+    const result = await runMediaCleanupBatch({
+      workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1, allowDelete: true,
+      repository: r.repository, storage: r.storage, shouldStop: () => stopping,
+    });
+    expect(result).toMatchObject({ claimed: 1, deleted: 1 });
+    expect(r.repository.complete).toHaveBeenCalledOnce();
+  });
+
+  it("stops on drain without claiming or starting subsequent deletes", async () => {
+    const r = rig([valid]);
+    expect(await runMediaCleanupBatch({ workerId: "worker_instance_12345678", nowMs: Date.now(), max: 2, allowDelete: true, repository: r.repository, storage: r.storage, shouldStop: () => true })).toMatchObject({ claimed: 0 });
+    expect(r.repository.claim).not.toHaveBeenCalled();
+  });
+
+  it("does not delete a duplicate claimed object twice", async () => {
+    const r = rig([valid, { ...valid, leaseToken: "another_token_12345678" }]);
+    await expect(r.run()).rejects.toThrow(/duplicate_claim_response/);
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
+  });
+
+  it("defaults to a nonmutating dry-run, including nonboolean truthy opt-in", async () => {
+    for (const optIn of [undefined, 1 as unknown as boolean, "true" as unknown as boolean]) {
+      const r = rig();
+      expect(await runMediaCleanupBatch({
+        workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1,
+        repository: r.repository, storage: r.storage, allowDelete: optIn,
+      })).toMatchObject({ dryRun: true, claimed: 0, deleted: 0 });
+      expect(r.repository.claim).not.toHaveBeenCalled();
+      expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    }
+  });
+
+  it("denies young and retained objects without any storage side effect", async () => {
+    for (const patch of [
+      { createdAtMs: Date.now() - 1000 },
+      { retainUntilMs: Date.now() + 86_400_000 },
+    ]) {
+      const c = { ...valid, ...patch };
+      const r = rig([c]);
+      expect(await r.run()).toMatchObject({ blocked: 1, deleted: 0 });
+      expect(r.repository.preflight).not.toHaveBeenCalled();
+      expect(r.storage.deleteExact).not.toHaveBeenCalled();
+      expect(r.repository.stop).toHaveBeenCalledWith(c, "blocked");
+    }
+  });
+
+  it("refuses unsafe time policy and malformed authoritative timestamps", async () => {
+    const r = rig();
+    await expect(runMediaCleanupBatch({
+      workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1,
+      repository: r.repository, storage: r.storage, allowDelete: true, minAgeMs: 1000,
+    })).rejects.toThrow(/invalid_batch_options/);
+    expect(r.repository.claim).not.toHaveBeenCalled();
+    for (const bad of [
+      { ...valid, createdAtMs: Number.NaN },
+      { ...valid, retainUntilMs: 0 },
+    ]) {
+      const f = rig([bad]);
+      expect(await f.run()).toMatchObject({ quarantined: 1, deleted: 0 });
+      expect(f.storage.deleteExact).not.toHaveBeenCalled();
+    }
+  });
+
+});
