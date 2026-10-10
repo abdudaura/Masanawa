@@ -55,6 +55,13 @@ function nonNegativeDecimal(value: string): string {
   return normalizeCryptoNonNegativeAmount(value);
 }
 
+/** Preserve legitimate signed ledger projections without losing NUMERIC precision. */
+function signedBalanceDecimal(value: string): string {
+  if (!value.startsWith("-")) return nonNegativeDecimal(value);
+  const magnitude = nonNegativeDecimal(value.slice(1));
+  return magnitude === "0" ? "0" : `-${magnitude}`;
+}
+
 function sameWithdrawalTerms(left: CryptoIntent, right: CryptoIntent): boolean {
   return (
     left.operation === "withdraw" &&
@@ -179,15 +186,15 @@ async function accountBalance(
   input: { tenantId: TenantId; userId: UserId; asset: string; network: string | null },
 ): Promise<string> {
   const result = await client.query<{ balance: string }>(
-    `SELECT COALESCE(SUM(
+    `SELECT trim_scale(COALESCE(SUM(
          CASE direction WHEN 'credit' THEN amount ELSE -amount END
-       ),0)::text AS balance
+       ),0))::text AS balance
        FROM commerce.crypto_ledger_entries
       WHERE tenant_id=$1 AND user_id=$2 AND asset=$3
         AND network IS NOT DISTINCT FROM $4`,
     [input.tenantId, input.userId, input.asset, input.network],
   );
-  return result.rows[0]?.balance ?? "0";
+  return signedBalanceDecimal(result.rows[0]?.balance ?? "0");
 }
 
 async function aggregateLiability(
@@ -195,7 +202,7 @@ async function aggregateLiability(
   input: { tenantId: TenantId; asset: string; network: string | null },
 ): Promise<string> {
   const result = await client.query<{ liability: string }>(
-    `SELECT COALESCE(SUM(GREATEST(user_balance, 0)), 0)::text AS liability
+    `SELECT trim_scale(COALESCE(SUM(GREATEST(user_balance, 0)), 0))::text AS liability
        FROM (
          SELECT user_id,
                 COALESCE(SUM(
@@ -208,7 +215,7 @@ async function aggregateLiability(
        ) AS user_balances`,
     [input.tenantId, input.asset, input.network],
   );
-  return result.rows[0]?.liability ?? "0";
+  return nonNegativeDecimal(result.rows[0]?.liability ?? "0");
 }
 
 async function platformAggregateLiability(
@@ -216,7 +223,7 @@ async function platformAggregateLiability(
   input: { asset: string; network: string | null },
 ): Promise<string> {
   const result = await client.query<{ liability: string }>(
-    `SELECT COALESCE(SUM(GREATEST(user_balance, 0)), 0)::text AS liability
+    `SELECT trim_scale(COALESCE(SUM(GREATEST(user_balance, 0)), 0))::text AS liability
        FROM (
          SELECT tenant_id, user_id,
                 COALESCE(SUM(
@@ -229,7 +236,7 @@ async function platformAggregateLiability(
        ) AS user_balances`,
     [input.asset, input.network],
   );
-  return result.rows[0]?.liability ?? "0";
+  return nonNegativeDecimal(result.rows[0]?.liability ?? "0");
 }
 
 async function lockBalance(
