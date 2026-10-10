@@ -1193,10 +1193,10 @@
       "branch": "lane/l-masana-profiles-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:23:42Z",
-      "heartbeat_at": "2026-10-10T16:36:44Z",
-      "expires_at": "2026-10-10T16:41:44Z",
+      "heartbeat_at": "2026-10-10T16:41:40Z",
+      "expires_at": "2026-10-10T16:46:40Z",
       "notes": "No overlapping active lane; preserve existing identity.characters and AF00 app/router/migration roots; use new masana namespace only.",
-      "source_head": "9161a4a64b2f4db25e27a1d41f9912ace3e8f907"
+      "source_head": "3fb3fe75511921af264bdf46c23d3bcfe9e08ad7"
     },
     {
       "claim_id": "l-gwani-cases-j13-20261010-gpt6-1724",
