@@ -28,3 +28,30 @@ describe("J12 crash-replay publisher port",()=>{
     expect(emitted).toBe(0);expect(reasons).toEqual(["unsupported_media","not_eligible"]);
   });
 });
+
+describe("PostgreSQL exhausted lease recovery",()=>{
+  it("reaps terminal expired leases and preserves the stable publication key",async()=>{
+    const sql:string[]=[];
+    const params:unknown[][]=[];
+    const client={
+      query:async(statement:string,args:unknown[] = [])=>{
+        sql.push(statement);params.push(args);
+        if(statement.includes("UPDATE masana.posting_slots s"))
+          return {rows:[{tenant_id:"tenant_a",slot_id:"slot_1",attempt_count:6}],rowCount:1};
+        if(statement.includes("SELECT s.*,m.autonomy_level"))
+          return {rows:[],rowCount:0};
+        return {rows:[],rowCount:0};
+      },
+      release:()=>{}
+    };
+    const pool={connect:async()=>client} as unknown as import("pg").Pool;
+    const {PostgresMissionPublishQueue}=await import("./publisher.js");
+    expect(await new PostgresMissionPublishQueue(pool).lease()).toBeNull();
+    expect(sql.some(statement=>statement.includes("lease_expired_exhausted"))).toBe(true);
+    const runIndex=sql.findIndex(statement=>statement.includes("UPDATE masana.mission_runs"));
+    expect(runIndex).toBeGreaterThan(-1);
+    expect(params[runIndex]).toEqual(["tenant_a","slot_1",6]);
+    expect(sql.some(statement=>statement.includes("publication_key="))).toBe(false);
+    expect(sql[sql.length-1]).toBe("COMMIT");
+  });
+});
