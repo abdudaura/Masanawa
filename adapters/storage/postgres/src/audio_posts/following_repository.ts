@@ -10,7 +10,7 @@ type PostRow = {
   author_kind: "human" | "masana"; asset_id: string; request_id: string;
   title: string; duration_ms: number; status: AudioPostRecord["status"];
   revision: number; created_at: Date | string; published_at: Date | string | null;
-  like_count?: number | string; comment_count?: number | string;
+  like_count?: number | string; comment_count?: number | string; listen_count?: number | string;
   /** Exact six-digit timestamp returned as SQL text; pg Date truncates microseconds. */
   cursor_time: string;
 };
@@ -19,7 +19,9 @@ const postColumns = "p.tenant_id,p.post_id,p.author_id,p.author_account_id,p.aut
   ",(SELECT COUNT(*)::int FROM social.audio_post_reactions r2 " +
   "WHERE r2.tenant_id=p.tenant_id AND r2.post_id=p.post_id AND r2.kind='like') AS like_count" +
   ",(SELECT COUNT(*)::int FROM social.audio_post_comments c " +
-  "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count";
+  "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count" +
+  ",(SELECT COUNT(*)::int FROM social.audio_post_listen_days l " +
+  "WHERE l.tenant_id=p.tenant_id AND l.post_id=p.post_id) AS listen_count";
 const cursorStampSql = "to_char(p.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_time";
 const toDate = (value: string | Date): string =>
   value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -32,6 +34,7 @@ function record(r: PostRow): AudioPostRecord {
     createdAt: toDate(r.created_at),
     publishedAt: r.published_at === null ? null : toDate(r.published_at),
     likeCount: Number(r.like_count ?? 0), commentCount: Number(r.comment_count ?? 0),
+    listenCount: Number(r.listen_count ?? 0),
   };
 }
 // Opaque cursor retains the full PostgreSQL microseconds; do not parse pg's
