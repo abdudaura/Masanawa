@@ -850,6 +850,22 @@
       "heartbeat_at": "2026-10-10T09:07:57.251Z",
       "expires_at": "2026-10-10T09:12:57.251Z",
       "notes": "AF01 claim af01-607-live-pg18-crypto-normalization-gpt6-20261010-0951 released 09:02:18 UTC. Four current CI blobs matched main exactly. Copy four full source blobs from #607 at 02f15223e17ea21e011788abd5e7f6cce24a6b4f; execute actual PG18 Vitest at new CI SHA."
+    },
+    {
+      "claim_id": "af13-460-final-pg-suite-isolation-gpt6-20261010",
+      "owner": "GPT-6 AF13 existing PR #460 real PostgreSQL18 last-suite failure",
+      "scope": "Fix shared PG migration ledger contamination of twin economy test suite using existing isolated disposable test DB authority",
+      "paths": [
+        "adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "source_pr": 460,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_head": "3d3deab211a964ef41fcb38b8f9f177496f184f2",
+      "claimed_at": "2026-10-10T09:11:59.983Z",
+      "heartbeat_at": "2026-10-10T09:11:59.983Z",
+      "expires_at": "2026-10-10T09:16:59.983Z",
+      "notes": "Existing #460 PR comment #6095999780, real Foundation CI run 38040330645 last suite setup ERROR 42P07; no production migration/wallet changes."
     }
   ],
   "history": [
