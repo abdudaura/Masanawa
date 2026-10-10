@@ -341,6 +341,24 @@
       "heartbeat_at": "2026-10-10T05:02:25.045Z",
       "expires_at": "2026-10-10T05:07:25.049Z",
       "notes": "No composer/feed/library/social SQL/AF00 root/native/provider changes; existing PR only."
+    },
+    {
+      "claim_id": "af09-609-processing-checkpoint-gpt6-0603",
+      "owner": "AF09 existing PR #609 / GPT-6 checkpoint continuation 0603",
+      "scope": "Add real PostgreSQL CAS tenant cursor checkpoint and bounded one-shot scheduling bridge for the existing AF09 post worker, with isolated tests. AF00 allocates migration/startup. No duplicate queue or timer.",
+      "paths": [
+        "services/gateway/src/audio_posts/processing_checkpoint.ts",
+        "services/gateway/src/audio_posts/processing_checkpoint.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/checkpoint_schema.proposal.sql",
+        "docs/workstreams/AF09-processing-checkpoint-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T05:03:52.488Z",
+      "heartbeat_at": "2026-10-10T05:03:52.488Z",
+      "expires_at": "2026-10-10T05:08:52.488Z",
+      "notes": "Fresh source paths only. No AF00 Gateway/worker root/migrations or AF05/AF15 media."
     }
   ],
   "history": [
