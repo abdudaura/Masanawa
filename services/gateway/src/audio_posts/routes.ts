@@ -61,6 +61,21 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
         await actor(request.headers.authorization), params.requestId) };
     } catch (error) { return fail(reply, error); }
   });
+  // Versioned pages retain older list endpoints; actor is always server-derived.
+  for (const kind of ["mine","saved"] as const) {
+    app.get(`/audio-posts/${kind}/page`, async (request, reply) => {
+      try {
+        const q = (request.query ?? {}) as Record<string,unknown>;
+        if (Object.keys(q).some(key => key !== "cursor" && key !== "limit") ||
+            (q.cursor !== undefined && typeof q.cursor !== "string") ||
+            (q.limit !== undefined && (typeof q.limit !== "string" || !/^[1-9][0-9]?$/.test(q.limit)))) {
+          throw new AudioPostError("VALIDATION","Invalid library page");
+        }
+        return await deps.service.libraryPage(await actor(request.headers.authorization),
+          {kind,cursor:q.cursor,limit:q.limit === undefined ? undefined : Number(q.limit)});
+      } catch (error) { return fail(reply,error); }
+    });
+  }
   app.get("/audio-posts/mine", async (request, reply) => {
     try { return await deps.service.mine(await actor(request.headers.authorization)); }
     catch (error) { return fail(reply, error); }
