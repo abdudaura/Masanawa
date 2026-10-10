@@ -84,6 +84,26 @@
       "heartbeat_at": "2026-10-10T01:24:16.021Z",
       "expires_at": "2026-10-10T01:29:16.021Z",
       "notes": "Prior claim expired with source branch still equal to main@f381f077c485c04261459b77a42c215d3ce3a14b, no prior source to overwrite. Resumed same exact paths; preserve parallel media-batch branch."
+    },
+    {
+      "claim_id": "masanawa01-af00-root-navigation-20261010-c",
+      "owner": "MASANAWA-01 / AF00 root integrator",
+      "scope": "Reconcile legacy four-tab root with confirmed Chats Rooms Talks Gwani Wallet order, Talks centre/default, typed aliasing and no hidden voice.",
+      "paths": [
+        "apps/mobile/lib/src/screens/twin/shell_tab.dart",
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/test/audio_first/af00/root_navigation_test.dart",
+        "docs/workstreams/AF00-root-navigation-20261010.md"
+      ],
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 497,
+      "source_head": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
+      "claimed_at": "2026-10-10T01:25:37.990Z",
+      "heartbeat_at": "2026-10-10T01:25:37.990Z",
+      "expires_at": "2026-10-10T01:30:37.990Z",
+      "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff."
     }
   ],
   "history": [
