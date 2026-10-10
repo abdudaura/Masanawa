@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
-import {checkMatrix,checkCanonicalMatrix,checkRecord,assess,verifyProofs,readBoundedJson} from './qualify.mjs';
+import {checkMatrix,checkCanonicalMatrix,checkRecord,assess,verifyProofs,readBoundedJson,assertCleanQualificationSource} from './qualify.mjs';
 const sha='f381f077c485c04261459b77a42c215d3ce3a14b';
 const mat={schemaVersion:1,contract:'AF-v1',journeys:[{id:'WF-A01',boundaries:['auth','database','provider'],tier:'release'}]};
 const rec=(patch={})=>({journeyId:'WF-A01',result:'NOT_RUN',codeSha:sha,executedAt:new Date().toISOString(),boundaries:[],environment:{mode:'not_run'},...patch});
@@ -160,5 +160,43 @@ test('qualification input parser refuses oversized, empty and nonregular files',
      execFileSync('mkfifo',[path.join(dir,'named-pipe')],{timeout:2000});
      await assert.rejects(readBoundedJson(path.join(dir,'named-pipe')),/unsafe/);
    }
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('pinned qualifier refuses dirty, staged and untracked execution authorities',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'af13-checkout-integrity-'));
+ const paths=[
+   'tools/audio-first-qualification/qualify.mjs',
+   'tools/audio-first-qualification/journeys.json',
+   'tests/security/audio_first/evidence_path_guard.mjs',
+ ];
+ const git=(...args)=>execFileSync('git',['-C',dir,...args],{encoding:'utf8',timeout:5000});
+ try{
+   git('init','-q');
+   for(const [index,name] of paths.entries()){
+     await mkdir(path.dirname(path.join(dir,name)),{recursive:true});
+     await writeFile(path.join(dir,name),'original '+index+'\n');
+   }
+   git('add','--',...paths);
+   git('-c','user.name=AF13 Test','-c','user.email=af13@example.invalid','commit','-qm','tracked fixture');
+   const head=git('rev-parse','HEAD').trim();
+   assert.doesNotThrow(()=>assertCleanQualificationSource(dir,head));
+   assert.throws(()=>assertCleanQualificationSource(dir,'0'.repeat(40)),/SHA/);
+   // Changing the canonical release matrix without committing must not
+   // silently weaken an acceptance contract while HEAD remains unchanged.
+   await writeFile(path.join(dir,paths[1]),'downgraded matrix\n');
+   assert.throws(()=>assertCleanQualificationSource(dir,head),/modified/);
+   git('add','--',paths[1]); // staged changes are also unsafe
+   assert.throws(()=>assertCleanQualificationSource(dir,head),/modified/);
+   git('restore','--staged','--worktree','--',paths[1]);
+   for(const name of [paths[0],paths[2]]){
+     await writeFile(path.join(dir,name),'modified authority\n');
+     assert.throws(()=>assertCleanQualificationSource(dir,head),/modified/);
+     git('restore','--worktree','--',name);
+   }
+   git('rm','--cached','--',paths[2]);
+   assert.throws(()=>assertCleanQualificationSource(dir,head),/modified/);
+   git('restore','--staged','--',paths[2]);
+   assert.doesNotThrow(()=>assertCleanQualificationSource(dir,head));
  }finally{await rm(dir,{recursive:true,force:true});}
 });
