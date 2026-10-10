@@ -104,6 +104,22 @@
       "heartbeat_at": "2026-10-10T01:25:37.990Z",
       "expires_at": "2026-10-10T01:30:37.990Z",
       "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff."
+    },
+    {
+      "claim_id": "masanawa01-af15-private-access-20261010",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "Guard private media URL issuance with current authoritative permission, bounded expiry, account and object scope and no-store readback. Isolated executable tests, no router/composition or migrations",
+      "paths": [
+        "services/gateway/src/media_lifecycle/private_access.ts",
+        "services/gateway/src/media_lifecycle/private_access.test.mjs",
+        "docs/workstreams/AF15-private-media-access-20261010.md"
+      ],
+      "branch": "work/af15-private-media-access-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:26:11.463Z",
+      "heartbeat_at": "2026-10-10T01:26:11.463Z",
+      "expires_at": "2026-10-10T01:31:11.463Z",
+      "notes": "Independent AF15 media-access slice, not the parallel orphan cleanup nor worker cleanup module. No private object store operations until the authorization contract is integrated."
     }
   ],
   "history": [
