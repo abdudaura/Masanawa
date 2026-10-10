@@ -214,7 +214,18 @@
       "claimed_at": "2026-10-10T04:24:29.040Z",
       "heartbeat_at": "2026-10-10T04:24:29.040Z",
       "expires_at": "2026-10-10T04:29:29.040Z",
-      "notes": "Independent AF09 composer+widget tests. Does not touch 0517 creator navigation or 0519 comment pagination source."
+      "notes": "Independent AF09 composer+widget tests. Does not touch 0517 creator navigation or 0519 comment pagination source.",
+      "released_at": "2026-10-10T04:29:42.421Z",
+      "release_reason": "Source on same PR #609: authenticated post-acceptance composer status readback without retry POST; six authored widget tests; 9/9 source checks only. Flutter/Dart/Node24/pnpm/PG/device E2E BLOCKED/NOT_RUN; still MISSING AF00 migration/routes/worker/shell integration, AF05/15 media and one safe SHA. Handoff docs/workstreams/AF09-publish-status-recovery-20261010.md and PR comments #609 6093774218 / #600 6093774416.",
+      "source_commits": [
+        "4e6513fa5ad3328992dfca99e67ae81623c44175",
+        "ad537a61a9e08043570f35b995fc1c0b887802f9",
+        "e6bf896bdfc7d5a87e048ea2d783cfa6bafbb016",
+        "fba38e53d7d21aaf5d7ccef83755fef616c8dcd3"
+      ],
+      "source_head_sha": "b8d9694ea87b873cf28755f1c5b264a02c5f6b82",
+      "integration_head_sha": null,
+      "test_state": "Github exact blob readback and 9/9 source predicates only; 6 Flutter cases AUTHORED NOT_RUN; required Node24/pnpm12/Flutter/Dart/PG/Android unavailable."
     },
     {
       "claim_id": "af09-609-comments-sheet-gpt6-0527",
