@@ -424,9 +424,9 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 612,
       "claimed_at": "2026-10-10T06:16:44.001Z",
-      "heartbeat_at": "2026-10-10T06:16:44.001Z",
-      "expires_at": "2026-10-10T06:21:44.001Z",
-      "notes": "Continuing prior released #612 source with exact path authority; no new branch. Do not seize Gateway route, mobile/finance or AF00 integrations."
+      "heartbeat_at": "2026-10-10T06:19:57.338Z",
+      "expires_at": "2026-10-10T06:24:57.338Z",
+      "notes": "Source commits afd343b0,0845be37,5dc046ea,4e34587c: audio deadline, cancellation, sync failure plus authored regressions; still completing same PR."
     }
   ],
   "history": [
