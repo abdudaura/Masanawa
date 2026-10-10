@@ -14,7 +14,7 @@ type Row = {
  author_kind: "human" | "masana"; asset_id: string; request_id: string;
  title: string; duration_ms: number; status: AudioPostRecord["status"];
  revision: number; created_at: Date | string; published_at: Date | string | null;
- like_count?: number | string; comment_count?: number | string;
+ like_count?: number | string; comment_count?: number | string; listen_count?: number | string;
 };
 function date(value: Date | string): string {
  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -27,6 +27,7 @@ function map(row: Row): AudioPostRecord {
   durationMs: Number(row.duration_ms), status: row.status, revision: Number(row.revision),
   createdAt: date(row.created_at), publishedAt: row.published_at ? date(row.published_at) : null,
   likeCount: Number(row.like_count ?? 0), commentCount: Number(row.comment_count ?? 0),
+  listenCount: Number(row.listen_count ?? 0),
  };
 }
 async function transaction<T>(pool: Pool, fn: (db: PoolClient) => Promise<T>): Promise<T> {
@@ -53,7 +54,9 @@ const countColumns = qualifiedColumns +
   ",(SELECT COUNT(*)::int FROM social.audio_post_reactions r2 " +
   "WHERE r2.tenant_id=p.tenant_id AND r2.post_id=p.post_id AND r2.kind='like') AS like_count" +
   ",(SELECT COUNT(*)::int FROM social.audio_post_comments c " +
-  "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count";
+  "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count" +
+  ",(SELECT COUNT(*)::int FROM social.audio_post_listen_days l " +
+  "WHERE l.tenant_id=p.tenant_id AND l.post_id=p.post_id) AS listen_count";
 // PostgreSQL stores microseconds; pg's Date conversion truncates to milliseconds.
 // The page cursor must retain the exact SQL timestamp so adjacent posts cannot
 // silently disappear when multiple publications share the same millisecond.
