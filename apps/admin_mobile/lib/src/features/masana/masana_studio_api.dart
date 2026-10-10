@@ -10,7 +10,7 @@ class MasanaRevision {
 }
 abstract class MasanaStudioRepository {
  Future<List<MasanaRevision>> list();
- Future<void> draft(String characterId,Map<String,dynamic> profile);
+ Future<void> draft(String characterId,int expectedRevision,Map<String,dynamic> profile);
  Future<void> approve(String characterId,int revision);
  Future<void> attachVerifiedMedia(String characterId,int revision,String mediaId,String kind,String rightsNote);
 }
@@ -22,9 +22,9 @@ class GatewayMasanaStudioRepository implements MasanaStudioRepository {
   final items=(response.data as Map)['items'] as List<dynamic>? ?? const [];
   return items.map((raw)=>MasanaRevision.fromJson(Map<String,dynamic>.from(raw as Map))).toList();
  }
- @override Future<void> draft(String characterId,Map<String,dynamic> profile) async {
+ @override Future<void> draft(String characterId,int expectedRevision,Map<String,dynamic> profile) async {
   await dio.post<dynamic>('/v1/admin/masana/${Uri.encodeComponent(characterId)}/revisions',
-   data:{'profile':profile});
+   data:{'expectedRevision':expectedRevision,'profile':profile});
  }
  @override Future<void> attachVerifiedMedia(String characterId,int revision,String mediaId,String kind,String rightsNote) async {
   await dio.post<dynamic>('/v1/admin/masana/${Uri.encodeComponent(characterId)}/revisions/$revision/media',

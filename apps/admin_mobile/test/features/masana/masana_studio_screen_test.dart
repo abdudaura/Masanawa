@@ -16,7 +16,7 @@ class FakeStudio implements MasanaStudioRepository {
    'portraitMediaId':null,'bannerMediaId':null,
   })];
  }
- @override Future<void> draft(String id,Map<String,dynamic> p) async {drafts++;}
+ @override Future<void> draft(String id,int rev,Map<String,dynamic> p) async {drafts++;}
  @override Future<void> approve(String id,int r) async {approvals++;}
  @override Future<void> attachVerifiedMedia(String id,int revision,String media,String kind,String rights) async {}
 }

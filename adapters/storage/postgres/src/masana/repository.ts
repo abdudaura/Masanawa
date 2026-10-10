@@ -73,12 +73,16 @@ export function createMasanaPostgresStore(pool:Pool) {
       });
     },
     async listDrafts({tenantId}:{tenantId:string}) {
-      const result=await pool.query(`SELECT r.character_id,r.revision,r.state,r.profile
+      const result=await pool.query(`SELECT r.character_id,r.revision,
+       CASE WHEN r.state='draft' AND r.revision<
+          max(r.revision) OVER(PARTITION BY r.tenant_id,r.character_id)
+          THEN 'superseded' ELSE r.state END AS state,
+       r.profile
        FROM masana.character_revisions r JOIN identity.character_ownership o USING(tenant_id,character_id)
        WHERE r.tenant_id=$1 AND o.kind='platform' ORDER BY r.character_id,r.revision DESC LIMIT 200`,[tenantId]);
       return {items:result.rows.map(x=>({characterId:x.character_id,revision:x.revision,state:x.state,profile:x.profile}))};
     },
-    async draft({tenantId,characterId,profile,staffId}:{tenantId:string;characterId:string;profile:unknown;staffId:string}) {
+    async draft({tenantId,characterId,expectedRevision,profile,staffId}:{tenantId:string;characterId:string;expectedRevision:number;profile:unknown;staffId:string}) {
       // Validated by injected service boundary before composition; do not trust arbitrary JSON callers.
       return inTx(pool,async client=>{
         const lock=await client.query(`SELECT c.character_id FROM identity.characters c JOIN identity.character_ownership o USING(tenant_id,character_id)
@@ -86,6 +90,7 @@ export function createMasanaPostgresStore(pool:Pool) {
         if(lock.rowCount===0) throw dbConflict("not_platform_masana");
         const v=await client.query<{next_revision:string}>(`SELECT (coalesce(max(revision),0)+1)::text AS next_revision FROM masana.character_revisions WHERE tenant_id=$1 AND character_id=$2`,[tenantId,characterId]);
         const revision=Number(v.rows[0]?.next_revision);
+        if(revision!==expectedRevision+1)throw dbConflict("revision_conflict");
         await client.query("INSERT INTO masana.character_revisions(tenant_id,character_id,revision,profile) VALUES($1,$2,$3,$4::jsonb)",[tenantId,characterId,revision,JSON.stringify(profile)]);
         await audit(client,tenantId,staffId,characterId,"masana.revision_drafted",revision);
         return {characterId,revision,state:"draft" as const};
@@ -105,14 +110,25 @@ export function createMasanaPostgresStore(pool:Pool) {
         if(source.rows[0]?.state!=="draft")throw dbConflict("revision_conflict");
         const field=kind==="portrait"?"portraitMediaId":"bannerMediaId";
         const nextProfile={...source.rows[0].profile,[field]:mediaId};
-        // Verify the reference has been attested by the existing object store.
-        // Duplicate identical requests reuse the first new draft; no append explosion.
-        const previous=await client.query<{revision:number;profile:Record<string,unknown>}>(`
-          SELECT revision,profile FROM masana.character_revisions
-          WHERE tenant_id=$1 AND character_id=$2 AND revision>$3 AND state='draft'
-            AND profile=$4::jsonb ORDER BY revision DESC LIMIT 1`,
-          [tenantId,characterId,revision,JSON.stringify(nextProfile)]);
-        if(previous.rows[0])return {characterId,revision:previous.rows[0].revision,state:"draft" as const,reused:true};
+        const latest=await client.query<{revision:number}>(`
+          SELECT revision FROM masana.character_revisions
+          WHERE tenant_id=$1 AND character_id=$2 ORDER BY revision DESC LIMIT 1`,[tenantId,characterId]);
+        if(Number(latest.rows[0]?.revision)!==revision) {
+          // A retry after a successful attachment is safe; a divergent stale
+          // editor is rejected and cannot overwrite the newest character bible.
+          const previous=await client.query<{revision:number}>(`
+            SELECT revision FROM masana.character_revisions
+            WHERE tenant_id=$1 AND character_id=$2 AND revision>$3 AND state='draft'
+              AND profile=$4::jsonb ORDER BY revision DESC LIMIT 1`,
+            [tenantId,characterId,revision,JSON.stringify(nextProfile)]);
+          const known=await client.query<{character_id:string;kind:string;object_key:string}>(`
+            SELECT character_id,kind,object_key FROM masana.character_media
+            WHERE tenant_id=$1 AND media_id=$2`,[tenantId,mediaId]);
+          if(previous.rows[0] && known.rows[0]?.character_id===characterId &&
+             known.rows[0]?.kind===kind && known.rows[0]?.object_key===objectKey)
+            return {characterId,revision:previous.rows[0].revision,state:"draft" as const,reused:true};
+          throw dbConflict("revision_conflict");
+        }
         const registration=await client.query(`INSERT INTO masana.character_media
           (tenant_id,media_id,character_id,kind,object_key,rights_note,approved_by)
           VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING media_id`,
@@ -142,6 +158,10 @@ export function createMasanaPostgresStore(pool:Pool) {
         if(lock.rowCount===0) throw dbConflict("masana_not_found");
         const draft=await client.query("SELECT state,profile FROM masana.character_revisions WHERE tenant_id=$1 AND character_id=$2 AND revision=$3 FOR UPDATE",[tenantId,characterId,revision]);
         if(draft.rows[0]?.state!=="draft") throw dbConflict("revision_conflict");
+        const latest=await client.query<{revision:number}>(`
+          SELECT revision FROM masana.character_revisions
+          WHERE tenant_id=$1 AND character_id=$2 ORDER BY revision DESC LIMIT 1`,[tenantId,characterId]);
+        if(Number(latest.rows[0]?.revision)!==revision)throw dbConflict("revision_conflict");
         // Do not publish drafts with imaginary seed images or unreviewed media.
         // Verify both approved files belong to this character and are rights-cleared.
         const profile=draft.rows[0]?.profile as {portraitMediaId?:unknown;bannerMediaId?:unknown}|undefined;

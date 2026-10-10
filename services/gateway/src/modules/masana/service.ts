@@ -18,7 +18,7 @@ export interface MasanaStore {
   read(input: {tenantId:string; userId:string|null; characterId:string}): Promise<unknown|null>;
   follow(input: {tenantId:string; userId:string; characterId:string; active:boolean}): Promise<boolean>;
   listDrafts(input: {tenantId:string}): Promise<unknown>;
-  draft(input: {tenantId:string; characterId:string; profile:unknown; staffId:string}): Promise<unknown>;
+  draft(input: {tenantId:string; characterId:string; expectedRevision:number; profile:unknown; staffId:string}): Promise<unknown>;
   approve(input: {tenantId:string; characterId:string; revision:number; staffId:string}): Promise<unknown>;
   attachMedia(input: {tenantId:string; characterId:string; revision:number; mediaId:string; kind:"portrait"|"banner"; objectKey:string; rightsNote:string; staffId:string}): Promise<unknown>;
 }
@@ -79,7 +79,13 @@ export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;
     const actor=await deps.auth.staff(request.headers.authorization,"content_editor");
     const id=characterId(params(request.params).id);
     const input=params(request.body);
-    return reply.code(201).send(await deps.store.draft({tenantId:actor.tenantId,characterId:id,profile:deps.validateProfile(input.profile),staffId:actor.userId}));
+    const expectedRevision=Number(input.expectedRevision);
+    if(!Number.isSafeInteger(expectedRevision)||expectedRevision<1)
+      return reply.code(400).send({code:"invalid_expected_revision"});
+    return reply.code(201).send(await deps.store.draft({
+      tenantId:actor.tenantId,characterId:id,expectedRevision,
+      profile:deps.validateProfile(input.profile),staffId:actor.userId
+    }));
   });
   app.post("/v1/admin/masana/:id/revisions/:revision/media",async (request,reply)=>{
     const actor=await deps.auth.staff(request.headers.authorization,"content_editor");

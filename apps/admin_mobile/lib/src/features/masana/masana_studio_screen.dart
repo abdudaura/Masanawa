@@ -47,7 +47,7 @@ class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
   if(next==null || !mounted)return;
   final current=generation;
   setState(()=>saving=true);
-  try{await widget.repository.draft(revision.characterId,next);
+  try{await widget.repository.draft(revision.characterId,revision.revision,next);
    if(mounted&&current==generation)reload();}
   catch(_){if(mounted&&current==generation)setState(()=>error='Draft not saved. Check role and network.');}
   finally{if(mounted&&current==generation)setState(()=>saving=false);}
@@ -109,7 +109,7 @@ class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
      leading:const Icon(Icons.person_outline),
      title:Text(r.profile['displayName']?.toString()??r.characterId),
      subtitle:Text('${r.characterId} · revision ${r.revision} · ${r.state}'),
-     onTap:saving?null:()=>edit(r),
+     onTap:saving||r.state!='draft'?null:()=>edit(r),
      trailing:r.state=='draft'?Row(mainAxisSize:MainAxisSize.min,children:[
       IconButton(tooltip:'Attach verified media',icon:const Icon(Icons.image_outlined),
        onPressed:saving?null:()=>attachMedia(r)),
