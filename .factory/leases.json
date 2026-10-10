@@ -390,10 +390,10 @@
       "branch": "work/shared-ci-recovery-work-20261008",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 460,
-      "source_head": "90c82586ca54bec7b234fa2335fc00b6d16122f0",
+      "source_head": "e36ec551648fe1d72dcfa3ddb23cfcc9dfc37613",
       "claimed_at": "2026-10-10T07:37:56.513Z",
-      "heartbeat_at": "2026-10-10T07:37:56.513Z",
-      "expires_at": "2026-10-10T07:42:56.513Z",
+      "heartbeat_at": "2026-10-10T07:43:53.136Z",
+      "expires_at": "2026-10-10T07:48:53.136Z",
       "notes": "Existing registry claims for AF09 locale/talk replay test not touched. Execute CI exact head after commit; preserve customer semantics and typed negative controls."
     },
     {
