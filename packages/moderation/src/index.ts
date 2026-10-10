@@ -18,6 +18,9 @@ export type AppealRecord = Readonly<{
  state:"pending"|"under_review"|"upheld"|"rejected";reviewedBy:string|null;
  secondReviewedBy:string|null;version:number;createdAt:string;
 }>;
+export type CaseEvidence = Readonly<{
+ evidenceId:string;sourceKind:CaseTarget;sourceId:string;submittedBy:string;createdAt:string;
+}>;
 export type CaseEvent = Readonly<{eventId:string;caseId:string;type:string;actorId:string;createdAt:string;details:string}>;
 export type ActionRecord = Readonly<{
   tenantId:string;actionId:string;caseId:string;targetKind:CaseTarget;targetId:string;
