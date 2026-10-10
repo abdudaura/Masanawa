@@ -109,9 +109,9 @@
       "source_pr": 588,
       "source_head": "ec372e0e89ea3dcf815b2511e66bb92f548327d6",
       "claimed_at": "2026-10-10T02:30:11.792Z",
-      "heartbeat_at": "2026-10-10T02:35:06.277Z",
-      "expires_at": "2026-10-10T02:40:06.277Z",
-      "notes": "Policy exact blob Node tests 4/4 PASS_REAL; service, PG adapter and Vitest tests authored on same PR; API route and mobile transport/form next; AF00 retains shared app/migration/router."
+      "heartbeat_at": "2026-10-10T02:41:41.762Z",
+      "expires_at": "2026-10-10T02:46:41.762Z",
+      "notes": "Phone numeric-password service + PG adapter + route + Dart form authored on existing PR #588. Separated verified phone vs unverified self-declared. 4/4 exact-blob Node policy tests PASS_REAL; workspace Vitest/tsc/PG/Flutter BLOCKED; AF00 migration/composition gated. Completing SHA-specific handoff."
     },
     {
       "claim_id": "masanawa-u02-status-cas-race-20261010-gpt6p",
