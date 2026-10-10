@@ -17,7 +17,7 @@ export function createPostgresFanMemoryStore(pool:Pool){
  async read(p:Fan,ch:string){
   const c=await pool.connect();
   try{
-   await c.query("BEGIN READ ONLY");
+   await c.query("BEGIN");
    const o=await owner(c,p,ch);
    if(!o){await c.query("COMMIT");return null;}
    // Hold a row-share lock on live consent until the read completes.
