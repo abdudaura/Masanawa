@@ -1149,26 +1149,6 @@
       "notes": "PR #623 head 6efb9cca3219af81200d562a98cc269a1d05cf26: Admin analyze PASS in run 38067461575; Admin widget tests FAIL inherited or scope pending logs; Admin APK compiling, consumer in progress."
     },
     {
-      "claim_id": "l-rooms-free-question-lifecycle-20261010-gpt6",
-      "owner": "GPT-6 / L-ROOMS free question implementation",
-      "scope": "L-ROOMS/free J07–J08: room discovery, join, durable ask, worker answer queue and staff review; paid Play Billing excluded until verified. AF00 retains all root entrypoints, migration registry, release.",
-      "paths": [
-        "packages/rooms/**",
-        "services/gateway/src/modules/rooms/**",
-        "services/worker/src/jobs/rooms/**",
-        "adapters/storage/postgres/src/rooms/**",
-        "apps/mobile/lib/src/features/rooms/**",
-        "apps/admin_mobile/lib/src/features/rooms/**",
-        "tests/e2e/J07/**",
-        "tests/e2e/J08/**"
-      ],
-      "branch": "lane/l-rooms-free-questions-20261010-gpt6",
-      "claimed_at": "2026-10-10T16:15:54.922Z",
-      "heartbeat_at": "2026-10-10T16:15:54.922Z",
-      "expires_at": "2026-10-10T16:20:54.922Z",
-      "notes": "Started from integration/rebuild@2834c9a6; AF00 notified #616. Source-only, never production or billing activation."
-    },
-    {
       "claim_id": "l-social-verified-links-20261010-gpt6-1718",
       "owner": "GPT-6 L-SOCIAL J21/J22",
       "scope": "Verified Masana public social identities; role-gated staff link-only registration, publish, pause/revoke; no automated personal WhatsApp",
@@ -3972,6 +3952,30 @@
       ],
       "integration_head_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "test_state": "PARTIAL: 7 PostgreSQL test/helper paths all pass in full Vitest; overall 1368 passed/41 failed; TypeScript/build/tooling PASS"
+    },
+    {
+      "claim_id": "l-rooms-free-question-lifecycle-20261010-gpt6",
+      "owner": "GPT-6 / L-ROOMS free question implementation",
+      "scope": "L-ROOMS/free J07–J08: room discovery, join, durable ask, worker answer queue and staff review; paid Play Billing excluded until verified. AF00 retains all root entrypoints, migration registry, release.",
+      "paths": [
+        "packages/rooms/**",
+        "services/gateway/src/modules/rooms/**",
+        "services/worker/src/jobs/rooms/**",
+        "adapters/storage/postgres/src/rooms/**",
+        "apps/mobile/lib/src/features/rooms/**",
+        "apps/admin_mobile/lib/src/features/rooms/**",
+        "tests/e2e/J07/**",
+        "tests/e2e/J08/**"
+      ],
+      "branch": "lane/l-rooms-free-questions-20261010-gpt6",
+      "claimed_at": "2026-10-10T16:15:54.922Z",
+      "heartbeat_at": "2026-10-10T16:15:54.922Z",
+      "expires_at": "2026-10-10T16:20:54.922Z",
+      "notes": "Started from integration/rebuild@2834c9a6; AF00 notified #616. Source-only, never production or billing activation.",
+      "released_at": "2026-10-10T16:38:24.639Z",
+      "source_pr": 625,
+      "source_head": "d3e2fcda445565c83363f2b57822bc08e985a7a4",
+      "release_reason": "Source PR #625 committed a free Room vertical in exclusive paths. Real Flutter Admin widget step PASS, newer consumer test pending at handoff, Foundation install FAIL new packages/rooms lock importer; PG/TypeScript/Android E2E unverified. AF00 composition/lockfile required, paid J08 excluded. Not released/deployed/merged."
     }
   ]
 }
