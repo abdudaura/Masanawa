@@ -1,4 +1,4 @@
-import { generateKeyPairSync, randomUUID } from "node:crypto";
+import { generateKeyPairSync } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import {
   createCanonicalId,
@@ -25,6 +25,7 @@ import {
 } from "@masanawa/security";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
+import { createIsolatedPostgresTestDatabase } from "./commerce/isolated-test-database.js";
 import {
   createFaultInjector,
   InjectedCrash,
@@ -35,7 +36,6 @@ import {
   checkPostgresReadiness,
   claimInboxBatch,
   claimOutboxBatch,
-  createPostgresPool,
   createTenant,
   createUser,
   linkExternalUserIdentity,
@@ -153,25 +153,13 @@ function testCharacterConstitution() {
 
 describePostgres("PostgreSQL 18 foundation integration", () => {
   let pool: Pool;
-  let adminPool: Pool | undefined;
-  // This suite resets entire migration registries per test. Never share its
-  // database with the other concurrently running PostgreSQL acceptance suites.
-  const isolatedDatabaseName = `masanawa_foundation_${randomUUID().replace(/-/gu, "")}`;
+  let isolated: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>> | undefined;
 
   beforeAll(async () => {
-    adminPool = createPostgresPool({
-      connectionString: connectionString!,
-      applicationName: "masanawa-foundation-database-setup",
-      max: 1,
-    });
-    await adminPool.query(`CREATE DATABASE "${isolatedDatabaseName}"`);
-    const isolatedUrl = new URL(connectionString!);
-    isolatedUrl.pathname = `/${isolatedDatabaseName}`;
-    pool = createPostgresPool({
-      connectionString: isolatedUrl.toString(),
-      applicationName: "masanawa-foundation-integration",
-      max: 4,
-    });
+    // The shared helper requires an explicit test database and cleanly
+    // isolates this suite from concurrent commerce migration resets.
+    isolated = await createIsolatedPostgresTestDatabase(connectionString!);
+    pool = isolated.pool;
 
     const version = await pool.query<{ server_version_num: string }>(
       "SHOW server_version_num",
@@ -233,14 +221,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   });
 
   afterAll(async () => {
-    await pool?.end();
-    if (adminPool) {
-      try {
-        await adminPool.query(`DROP DATABASE IF EXISTS "${isolatedDatabaseName}" WITH (FORCE)`);
-      } finally {
-        await adminPool.end();
-      }
-    }
+    await isolated?.close();
   });
 
   it("resolves explicitly linked external identity only inside its tenant", async () => {
