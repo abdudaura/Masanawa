@@ -656,14 +656,23 @@
         "apps/mobile/lib/src/router/app_router.dart",
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
         "packages/security/migrations/0103_platform_profile_contact_uniqueness.sql",
-        "adapters/storage/postgres/src/identity/account-deletion.integration.test.ts"
+        "adapters/storage/postgres/src/identity/account-deletion.integration.test.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/localization/locale_preference.dart",
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/social/own_profile_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "source_pr": 600,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:54:42.350Z",
-      "heartbeat_at": "2026-10-10T08:56:09.333Z",
-      "expires_at": "2026-10-10T09:01:09.333Z",
+      "heartbeat_at": "2026-10-10T08:59:03.029Z",
+      "expires_at": "2026-10-10T09:04:03.029Z",
       "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
     },
     {
