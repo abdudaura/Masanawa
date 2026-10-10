@@ -1,8 +1,9 @@
 import type {
   AudioPostModeration, AudioAssetAuthority, AudioPostRecord, AudioPostRepository,
   AudioPostComment, PublicAudioPostComment,
-  PostActor, PublicAudioFeedPage, toPublicAudioPost, VerifiedAudioAsset,
+  PostActor, PublicAudioFeedPage, VerifiedAudioAsset,
 } from "./contract.js";
+import { toPublicAudioPost } from "./contract.js";
 
 export class AudioPostError extends Error {
   constructor(public readonly code:
