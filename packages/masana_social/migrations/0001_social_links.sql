@@ -40,8 +40,7 @@ CREATE TABLE IF NOT EXISTS masana.social_connections (
   FOREIGN KEY(tenant_id,identity_id) REFERENCES masana.social_identities(tenant_id,identity_id),
   CHECK(connection_mode <> 'verified_automation_eligible' OR
     (authorization_ref IS NOT NULL AND authorization_checked_at IS NOT NULL AND
-     permission_expiry > authorization_checked_at)),
-  CHECK(auth_ref IS NULL OR auth_ref NOT LIKE '%:%')
+     permission_expiry > authorization_checked_at))
 );
 CREATE TABLE IF NOT EXISTS masana.social_connection_audit (
   tenant_id text NOT NULL, audit_id text NOT NULL, identity_id text NOT NULL,
