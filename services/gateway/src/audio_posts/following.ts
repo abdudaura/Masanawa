@@ -2,8 +2,10 @@ import type { PostActor, PublicFeedPage } from "./contract.js";
 
 /** AF09 following is a relation to the existing canonical creator, not a second identity store. */
 export class FollowingError extends Error {
-  constructor(public readonly code: "VALIDATION" | "NOT_FOUND" | "FORBIDDEN" | "CAPABILITY_UNAVAILABLE", message: string) {
+  readonly code: "VALIDATION" | "NOT_FOUND" | "FORBIDDEN" | "CAPABILITY_UNAVAILABLE";
+  constructor(code: "VALIDATION" | "NOT_FOUND" | "FORBIDDEN" | "CAPABILITY_UNAVAILABLE", message: string) {
     super(message);
+    this.code = code;
     this.name = "FollowingError";
   }
 }
