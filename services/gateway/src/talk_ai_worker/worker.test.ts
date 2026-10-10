@@ -277,7 +277,7 @@ describe("live Talk AI Seat worker", () => {
     const persona: TalkAiSeatPersonaRuntime = {
       respond: vi.fn(
         () =>
-          new Promise((resolve) => {
+          new Promise<{ text: string; correlationId: string }>((resolve) => {
             resolveReply = resolve;
           }),
       ),

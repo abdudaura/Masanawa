@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  type RankedTalk,
+  type TalkRankingCandidate,
   diversifyRankedTalks,
   rankTalksForExplore,
   scoreTalkForExplore,
@@ -140,12 +142,12 @@ describe("Talk Explore ranking", () => {
   });
 
   it("limits long runs from one Host without changing underlying scores", () => {
-    const ranked = [
+    const ranked: readonly RankedTalk<TalkRankingCandidate & { readonly hostId: string }>[] = [
       { item: { ...candidate({ talkId: "a1" }), hostId: "host-a" }, score: 100, reasons: [] },
       { item: { ...candidate({ talkId: "a2" }), hostId: "host-a" }, score: 99, reasons: [] },
       { item: { ...candidate({ talkId: "a3" }), hostId: "host-a" }, score: 98, reasons: [] },
       { item: { ...candidate({ talkId: "b1" }), hostId: "host-b" }, score: 80, reasons: [] },
-    ] as const;
+    ];
 
     const diversified = diversifyRankedTalks(ranked, 2);
     expect(diversified.map((entry) => entry.item.talkId)).toEqual(["a1", "a2", "b1", "a3"]);
