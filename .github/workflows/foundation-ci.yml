@@ -44,12 +44,16 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
       - name: Test
+        # Preserve a failing job conclusion but execute independent tests after typecheck.
+        if: ${{ !cancelled() }}
         run: pnpm test:ci
       - name: Provider qualification tooling tests
+        if: ${{ !cancelled() }}
         run: >-
           node --test
           scripts/flutterwave-billing-qualification-gate.test.mjs
           scripts/flutterwave-billing-production-qualification.test.mjs
           scripts/nowpayments-production-qualification.test.mjs
       - name: Build
+        if: ${{ !cancelled() }}
         run: pnpm build
