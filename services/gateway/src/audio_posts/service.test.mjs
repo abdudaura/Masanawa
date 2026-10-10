@@ -22,6 +22,13 @@ function fixture() {
     status:"processing",revision:0,createdAt:intent.createdAt,publishedAt:null};
    rows.set(record.postId,record);keys.set(key,record.postId);return record;
   },
+  async removeOwn({tenantId,accountId,postId}) {
+   const r=rows.get(postId);
+   if(!r || r.tenantId!==tenantId || r.authorAccountId!==accountId) return null;
+   if(r.status==='removed') return r;
+   const next={...r,status:'removed',revision:r.revision+1,publishedAt:null};
+   rows.set(postId,next);return next;
+  },
   async settle({tenantId,postId,expectedRevision,status}) {
    const r=rows.get(postId);
    if(!r||r.tenantId!==tenantId||r.revision!==expectedRevision||r.status!=="processing")throw Error("conflict");
@@ -90,7 +97,7 @@ test("cross-account object and unsupported formats reject before persistence",as
   repository:{
    byRequest:async()=>null, createOnce:async()=>{throw Error("should not persist");},
    byId:async()=>null,publicFeed:async()=>({items:[],nextCursor:null}),
-   mine:async()=>[],settle:async()=>{throw Error("should not settle");},
+   mine:async()=>[],removeOwn:async()=>null,settle:async()=>{throw Error("should not settle");},
    setReaction:async()=>({enabled:false}),
   },
   assets:{verifyOwnedReady:async()=>({...accepted,ownerAccountId:"user2"})},
@@ -112,6 +119,33 @@ test("feed page has strict bounded cursor/limit and requires viewer",async()=>{
  }
  await assert.rejects(f.service.feed({tenantId:"tenant1",viewerId:"user2",cursor:"bad cursor"}),e=>e.code==="VALIDATION");
  await assert.rejects(f.service.feed({tenantId:"tenant1",viewerId:"",limit:1}),e=>e.code==="VALIDATION");
+});
+test("owner can remove a published post, repeat safely, and hide it from feeds",async()=>{
+ const f=fixture();const post=await f.service.publish(actor,input);
+ await f.service.settle({tenantId:'tenant1',postId:post.postId,expectedRevision:0});
+ const removed=await f.service.removeOwn(actor,post.postId);
+ assert.equal(removed.status,'removed');
+ assert.equal(removed.publishedAt,null);
+ assert.equal(removed.revision,2);
+ assert.equal((await f.service.feed({tenantId:'tenant1',viewerId:'user2'})).items.length,0);
+ const again=await f.service.removeOwn(actor,post.postId);
+ assert.deepEqual(again,removed);
+ assert.equal(f.rows.size,1);
+ assert.equal((await f.service.mine(actor))[0].status,'removed');
+});
+test("non-owner, missing and cross-tenant deletion cannot reveal or mutate posts",async()=>{
+ const f=fixture();const post=await f.service.publish(actor,input);
+ await assert.rejects(f.service.removeOwn(second,post.postId),e=>e.code==='NOT_FOUND');
+ await assert.rejects(f.service.removeOwn({...actor,tenantId:'tenant2'},post.postId),e=>e.code==='NOT_FOUND');
+ await assert.rejects(f.service.removeOwn(actor,'not-found'),e=>e.code==='NOT_FOUND');
+ await assert.rejects(f.service.removeOwn(actor,'bad/path'),e=>e.code==='VALIDATION');
+ assert.equal(f.rows.get(post.postId).status,'processing');
+});
+test("removed pending post cannot later be published by an old moderation revision",async()=>{
+ const f=fixture();const post=await f.service.publish(actor,input);
+ await f.service.removeOwn(actor,post.postId);
+ await assert.rejects(f.service.settle({tenantId:'tenant1',postId:post.postId,expectedRevision:0}),e=>e.code==='CONFLICT');
+ assert.equal(f.counters.decisions,0);
 });
 test("reaction accepts only a boolean and explicit like/save",async()=>{
  const f=fixture();
