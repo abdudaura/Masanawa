@@ -125,9 +125,17 @@ export function createAgentConversationService(input: {
     // provider that ignores AbortSignal must not hold up NDJSON 'done'.
     const controller = new AbortController();
     let inactive = false;
-    const forwardAbort = () => controller.abort();
+    let cancel!: () => void;
+    const cancellation = new Promise<undefined>((resolve) => {
+      cancel = () => resolve(undefined);
+    });
+    const forwardAbort = () => {
+      inactive = true;
+      controller.abort();
+      cancel();
+    };
     signal?.addEventListener("abort", forwardAbort, { once: true });
-    if (signal?.aborted) controller.abort();
+    if (signal?.aborted) forwardAbort();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<undefined>((resolve) => {
       timer = setTimeout(() => {
@@ -152,7 +160,7 @@ export function createAgentConversationService(input: {
             : undefined,
         ).catch(() => undefined);
     try {
-      return await Promise.race([task, deadline]);
+      return await Promise.race([task, deadline, cancellation]);
     } finally {
       inactive = true;
       if (timer !== undefined) clearTimeout(timer);
