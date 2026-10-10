@@ -4,12 +4,35 @@ import fs from 'node:fs/promises';
 import { constants as openFlags } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { verifyEvidenceFile } from '../../tests/security/audio_first/evidence_path_guard.mjs';
 const kinds=new Set(["NOT_RUN","BLOCKED","FAIL","PASS_SIMULATED","PASS_REAL"]);
 const MAX_QUALIFICATION_JSON_BYTES=512*1024;
 const MAX_REAL_EVIDENCE_AGE_MS=30*24*60*60*1000;
+const QUALIFICATION_SOURCE_PATHS=[
+  'tools/audio-first-qualification/qualify.mjs',
+  'tools/audio-first-qualification/journeys.json',
+  'tests/security/audio_first/evidence_path_guard.mjs',
+];
+
+// Git HEAD stays unchanged when tracked files are modified or staged.
+// Bind the actual executable, release matrix and proof guard to pinned HEAD.
+// Other unrelated dirty worktree paths do not matter.
+export function assertCleanQualificationSource(repoRoot, expectedSha){
+  const git=(...args)=>execFileSync('git',['-C',repoRoot,...args],{
+    encoding:'utf8',timeout:5000,stdio:['ignore','pipe','ignore'],
+  });
+  const head=git('rev-parse','HEAD').trim();
+  if(head!==expectedSha)throw Error('Expected SHA does not match checked-out source');
+  try{
+    git('ls-files','--error-unmatch','--',...QUALIFICATION_SOURCE_PATHS);
+    git('diff','--quiet','HEAD','--',...QUALIFICATION_SOURCE_PATHS);
+  }catch{
+    throw Error('Qualification authority is untracked or modified relative to pinned HEAD');
+  }
+}
+
 
 // #594 bounded inputs: do not load an attacker-sized manifest before rejecting it.
 export async function readBoundedJson(file){
@@ -142,6 +165,12 @@ async function main(args){
   const opts={};
   for(let i=0;i<args.length;i+=2){const key=args[i];if(!['--matrix','--evidence','--sha','--proof-root'].includes(key)||!args[i+1])throw Error('Usage: --matrix file --evidence file --sha commit --proof-root directory');opts[key]=args[i+1];}
   if(!opts['--matrix']||!opts['--evidence']||!opts['--sha']||!opts['--proof-root'])throw Error('All flags required');
+  // Resolve the repository containing THIS module, not an unrelated checkout.
+  const repoRoot=execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8',timeout:5000}).trim();
+  if(await fs.realpath(path.join(repoRoot,QUALIFICATION_SOURCE_PATHS[0]))!==await fs.realpath(fileURLToPath(import.meta.url))){
+    throw Error('Qualifier does not belong to the selected Git checkout');
+  }
+  assertCleanQualificationSource(repoRoot,opts['--sha']);
   const matrix=await readBoundedJson(opts['--matrix']);
   const records=await readBoundedJson(opts['--evidence']);
   // Only the exact versioned, committed acceptance contract is authorized.
@@ -149,9 +178,6 @@ async function main(args){
   // boundaries or reclassify release-gated journeys as feature-only.
   const canonicalMatrix=await readBoundedJson(new URL('./journeys.json',import.meta.url));
   if(checkCanonicalMatrix(matrix,canonicalMatrix).length)throw Error('Noncanonical acceptance matrix');
-  // --sha is not an honor-system field: it must match this checkout's exact HEAD.
-  const currentHead=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',timeout:5000}).trim();
-  if(currentHead!==opts['--sha'])throw Error('Expected SHA does not match checked-out source');
   const proofs=await verifyProofs(Array.isArray(records)?records:[],opts['--proof-root']);
   const report=assess(matrix,records,opts['--sha'],proofs.verified);
   if(proofs.errors.length){report.valid=false;report.readiness='INVALID';report.errors.push(...proofs.errors);}
