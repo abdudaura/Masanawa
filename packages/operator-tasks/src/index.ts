@@ -334,6 +334,11 @@ export function createOperatorTaskService(input: Readonly<{
       }
       // Recheck permissions and terms at confirmation; adapters also recheck at the effect.
       await input.domain.authorizeConfirmation({ actor: request.actor, task: current });
+      // The authority check may wait for remote policy, consent or quote readback.
+      // Never admit an execution after the one-use approval expired during that wait.
+      if (Date.parse(current.approvalExpiresAt) <= Date.parse(clock())) {
+        throw new OperatorTaskError("TASK_APPROVAL_INVALID", 403);
+      }
       // Persist the irrevocable execution admission BEFORE contacting the domain.
       // No API retry may call execute() again once this CAS has succeeded.
       const running = await transition(request.actor, current, ["awaiting_approval"], {
