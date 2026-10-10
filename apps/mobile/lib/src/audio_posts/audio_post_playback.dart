@@ -172,10 +172,11 @@ class AudioPostPlaybackController extends ChangeNotifier {
   String? _listenSessionId;
   String? _listenAuthToken;
   int _lastPositionMs = 0, _lastPositionAtMs = 0, _listenedMs = 0;
+  int _listenTargetMs = 3000;
   bool _listenCounted = false, _listenReporting = false;
   int _listenAttemptAtMs = -100000;
   final Map<String,int> _countedListens = {};
-  int? listenCountFor(String postId) => _countedListens[postId];
+  int? listenCountFor(String postId) => isAuthorized ? _countedListens[postId] : null;
 
   // Native audio start/stop are asynchronous. Serializing them prevents a late
   // start for Talk A from racing with a stop or start for Talk B. Each queued
@@ -204,6 +205,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
     _lastPositionMs = 0;
     _lastPositionAtMs = 0;
     _listenedMs = 0;
+    _listenTargetMs = 3000;
     _listenCounted = false;
     _listenReporting = false;
     _listenAttemptAtMs = -100000;
@@ -221,12 +223,12 @@ class AudioPostPlaybackController extends ChangeNotifier {
       final elapsed = now - _lastPositionAtMs;
       // Ignore jumps/seek/speed changes; only continuous native played time.
       if (delta > 0 && elapsed > 0 && delta <= 2000) {
-        _listenedMs += delta.clamp(0, elapsed + 250);
+        _listenedMs += delta.clamp(0, elapsed + 250).toInt();
       }
     }
     _lastPositionMs = next;
     _lastPositionAtMs = now;
-    if (_listenedMs >= 3000 && !_listenCounted && !_listenReporting &&
+    if (_listenedMs >= _listenTargetMs && !_listenCounted && !_listenReporting &&
         now - _listenAttemptAtMs >= 5000) {
       _listenAttemptAtMs = now;
       _listenReporting = true;
@@ -359,6 +361,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
       }
       _loading = false;
       _listenSessionId = ticket.listenSessionId;
+      _listenTargetMs = (post.durationMs * 0.75).ceil().clamp(0, 3000);
       _listenAuthToken = authorizationAtStart;
       _lastPositionAtMs = _nowMs();
       _playing = true;
