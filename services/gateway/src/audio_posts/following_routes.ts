@@ -34,6 +34,14 @@ export function registerAudioFollowingRoutes(app: FastifyInstance, deps: {
       });
     } catch (error) { return fail(reply, error); }
   });
+  app.get("/audio-posts/:postId/follow", async (request, reply) => {
+    try {
+      const params = request.params as { postId?: unknown };
+      return await deps.service.status(
+        await deps.requireActor(request.headers.authorization), params.postId,
+      );
+    } catch (error) { return fail(reply, error); }
+  });
   app.get("/audio-posts/following", async (request, reply) => {
     try {
       const query = request.query;
