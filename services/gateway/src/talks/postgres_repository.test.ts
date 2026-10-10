@@ -198,7 +198,7 @@ describe("Postgres Talk repository", () => {
       limit: 50,
     });
 
-    expect(result?.talk.participants).toEqual([
+    expect(result).toMatchObject({ participants: [
       {
         id: "user_speaker",
         name: "Amina",
@@ -281,7 +281,7 @@ describe("Postgres Talk repository", () => {
       viewerUserId: "user_viewer",
     });
 
-    expect(result?.participants).toEqual([
+    expect(result).toMatchObject({ participants: [
       {
         id: "user_speaker",
         name: "Amina",
@@ -289,7 +289,7 @@ describe("Postgres Talk repository", () => {
         avatarUrl: null,
         isHost: false,
       },
-    ]);
+    ] });
     expect(sql).toContain("participants_json");
     expect(sql).toContain("FROM talks.talk_seats s");
   });
