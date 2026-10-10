@@ -29,7 +29,9 @@ export async function registerHomeFeedRoutes(app:FastifyInstance,o:FeedRoutesOpt
  };
  const member=(actor:Actor|null)=>{if(!actor)throw Object.assign(new Error("authentication_required"),{status:401,code:"authentication_required"});return actor};
  app.get("/v1/feed",async(req,rep)=>run(req,rep,async({tenant,viewer})=>{
-  const q=object(req.query),mode=q.mode==="following"?"following":"for_you";return o.service.list(tenant,viewer,mode,str(q.cursor)||undefined);
+  const q=object(req.query),mode=q.mode===undefined?"for_you":str(q.mode);
+  if(mode!=="for_you"&&mode!=="following")throw Object.assign(new Error("invalid_mode"),{status:422,code:"invalid_mode"});
+  return o.service.list(tenant,viewer,mode,str(q.cursor)||undefined);
  }));
  app.get("/v1/posts/:id",async(req,rep)=>run(req,rep,async({tenant,viewer})=>o.service.detail(tenant,viewer,str(object(req.params).id))));
  app.get("/v1/posts/:id/comments",async(req,rep)=>run(req,rep,async({tenant,viewer})=>o.service.comments(tenant,str(object(req.params).id),viewer,str(object(req.query).before)||undefined)));
