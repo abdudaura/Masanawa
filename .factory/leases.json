@@ -1124,9 +1124,9 @@
       "branch": "lane/l-video-manual-admission-20261010-gpt6",
       "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
       "claimed_at": "2026-10-10T16:12:36.964Z",
-      "heartbeat_at": "2026-10-10T16:17:09.253Z",
-      "expires_at": "2026-10-10T16:22:09.253Z",
-      "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation. PG adapter exact directory included; source commit 78b123aa."
+      "heartbeat_at": "2026-10-10T16:24:17.222Z",
+      "expires_at": "2026-10-10T16:29:17.222Z",
+      "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation. PG adapter exact directory included; source commit 78b123aa. PR #624 pending CI and AF00 composition."
     },
     {
       "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
