@@ -123,21 +123,6 @@
       "claimed_at": "2026-10-10T02:43:12.070Z",
       "heartbeat_at": "2026-10-10T02:43:12.070Z",
       "expires_at": "2026-10-10T02:48:12.070Z"
-    },
-    {
-      "claim_id": "owner-prepull-completion-policy-20261010-root",
-      "owner": "Root owner-directed delivery coordination",
-      "scope": "Enforce complete remote source before local pull; finite milestone checklists and integration closure",
-      "paths": [
-        "AGENTS.md",
-        "docs/NEXT-WAVE-DELIVERY-20261010.md",
-        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md"
-      ],
-      "branch": "docs/prepull-completion-20261010",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "claimed_at": "2026-10-10T02:45:12.090Z",
-      "heartbeat_at": "2026-10-10T02:45:12.090Z",
-      "expires_at": "2026-10-10T02:50:12.090Z"
     }
   ],
   "history": [
@@ -1353,6 +1338,25 @@
       "released_at": "2026-10-10T02:45:52.270Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/588",
       "release_reason": "PR #588 extended with parent AF08 phone-password account source (policy/PG/Fastify/Dart) and SHA-specific migration/integration handoff. 4/4 exact-blob native Node policy tests PASS_REAL; TS/Vitest/PG/Flutter/Android NOT_RUN due missing checkout/deps/toolchains and zero-step CI; auth routes not mounted and migration not applied. Hold draft until AF00 migration/distributed rate limiting/composition and AF13 real source checks; no main or production merge."
+    },
+    {
+      "claim_id": "owner-prepull-completion-policy-20261010-root",
+      "owner": "Root owner-directed delivery coordination",
+      "scope": "Enforce complete remote source before local pull; finite milestone checklists and integration closure",
+      "paths": [
+        "AGENTS.md",
+        "docs/NEXT-WAVE-DELIVERY-20261010.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md"
+      ],
+      "branch": "docs/prepull-completion-20261010",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "claimed_at": "2026-10-10T02:45:12.090Z",
+      "heartbeat_at": "2026-10-10T02:45:12.090Z",
+      "expires_at": "2026-10-10T02:50:12.090Z",
+      "released_at": "2026-10-10T02:46:17.549Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/610",
+      "integration_head_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "release_reason": "Three policy files exact-readback verified and documentation-only PR610 merged. Require finite source/integration closure before local pull; no runtime completion claimed."
     }
   ]
 }
