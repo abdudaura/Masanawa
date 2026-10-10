@@ -111,6 +111,22 @@
       "heartbeat_at": "2026-10-10T01:31:50.018Z",
       "expires_at": "2026-10-10T01:36:50.018Z",
       "notes": "Fresh main and AF01 PR #590 reviewed; no overlap with active exact-path claim. Only legacy Credit transfer pure source/test; MSN authority remains separate #576. No shared composition, migration or deployment edits."
+    },
+    {
+      "claim_id": "masanawa01-af14-activity-recovery-20261010-d",
+      "owner": "MASANAWA-01 / AF14 Activity recovery",
+      "scope": "Fix Activity invitation response/readback truthfulness and retryable failed-loading state with Flutter widget regressions; preserve #497/#587 and owner local APK; no router or financial edits.",
+      "paths": [
+        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
+        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
+        "docs/workstreams/AF14-activity-recovery-20261010.md"
+      ],
+      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:34:02.408Z",
+      "heartbeat_at": "2026-10-10T01:34:02.408Z",
+      "expires_at": "2026-10-10T01:39:02.408Z",
+      "notes": "Exact activity screen, isolated AF14 widget tests and handoff only; other active claims inspected; no shared Gateway/financial/nav/migration/native/CI files."
     }
   ],
   "history": [
