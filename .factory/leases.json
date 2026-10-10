@@ -112,6 +112,22 @@
       "claimed_at": "2026-10-10T01:30:07.026Z",
       "heartbeat_at": "2026-10-10T01:30:07.026Z",
       "expires_at": "2026-10-10T01:35:07.026Z"
+    },
+    {
+      "claim_id": "masanawa01-af01-transfer-reversal-20261010",
+      "owner": "MASANAWA-01 / AF01 reversal invariant",
+      "scope": "Harden existing Credit transfer reversal receipt invariants and regressions, without inventing MSN ledger authority or changing provider settlement",
+      "paths": [
+        "packages/commerce/src/transfers.ts",
+        "packages/commerce/src/transfers.test.ts",
+        "docs/workstreams/AF01-transfer-reversal-20261010.md"
+      ],
+      "branch": "work/af01-transfer-reversal-guard-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:31:50.018Z",
+      "heartbeat_at": "2026-10-10T01:31:50.018Z",
+      "expires_at": "2026-10-10T01:36:50.018Z",
+      "notes": "Fresh main and AF01 PR #590 reviewed; no overlap with active exact-path claim. Only legacy Credit transfer pure source/test; MSN authority remains separate #576. No shared composition, migration or deployment edits."
     }
   ],
   "history": [
