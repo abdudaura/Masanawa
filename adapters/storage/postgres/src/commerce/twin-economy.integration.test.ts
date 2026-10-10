@@ -664,6 +664,41 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     )).rejects.toThrow("Twin economy history is immutable");
   });
 
+  it("rejects reusing one immutable ledger entry under a different request", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const input = {
+      tenantId,
+      requestId: "twin-ledger-reuse-original",
+      kind: "transfer" as const,
+      senderUserId: createCanonicalId("user"),
+      recipientUserId: createCanonicalId("user"),
+      characterId: null,
+      amountCredits: 15,
+      ledgerEntryId: createCanonicalId("ledger-entry"),
+      completedAt: "2026-10-05T17:31:00.000Z",
+    };
+    const first = await repository.recordCreditOperation(input);
+    expect(first.requestId).toBe(input.requestId);
+
+    // Do not turn the concurrency fix into a false second receipt or
+    // a cross-request alias to an unrelated transfer.
+    await expect(repository.recordCreditOperation({
+      ...input, requestId: "twin-ledger-reuse-other",
+    })).rejects.toThrow("Twin credit operation persistence failed");
+    const other = await repository.readCreditOperation({
+      tenantId, requestId: "twin-ledger-reuse-other",
+    });
+    expect(other).toBeNull();
+
+    const count = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM commerce.twin_credit_operations
+        WHERE tenant_id=$1 AND ledger_entry_id=$2`,
+      [tenantId, input.ledgerEntryId],
+    );
+    expect(count.rows[0]?.count).toBe("1");
+  });
+
   it("converges concurrent exact replays onto one durable receipt", async () => {
     const repository = createPostgresTwinRuntimeRepository(pool);
     const tenantId = createCanonicalId("tenant");
