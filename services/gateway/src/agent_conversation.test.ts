@@ -520,4 +520,154 @@ describe("Alpha conversation service", () => {
     expect(deltas).toEqual([]);
   });
 
+
+  it("bounds optional audio after durable text and suppresses late PCM", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const runStates: string[] = [];
+    const visible: string[] = [];
+    const pcm: string[] = [];
+    let audioSignal: AbortSignal | undefined;
+    let lateChunk: ((chunk: Buffer) => void | Promise<void>) | undefined;
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(request) {
+          runStates.push(request.outcome.state);
+          return {} as never;
+        },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute() { return { reply: "Internal raw model answer", parts: [] }; },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() {
+          return { reply: "Safe authorized text.", parts: [] };
+        },
+      },
+      nativeAudio: {
+        render(_text, signal, onPcmChunk) {
+          audioSignal = signal;
+          lateChunk = onPcmChunk;
+          // Deliberately ignore AbortSignal: Gateway still must finish text.
+          return new Promise<never>(() => {});
+        },
+      },
+      sessionDurationMs: 60_000,
+      audioTimeoutMs: 100,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "show quote",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { visible.push(delta); },
+      onAudioPcmChunk: (chunk) => { pcm.push(chunk); },
+    });
+    expect(response.reply).toBe("Safe authorized text.");
+    expect(response.audioBase64).toBeUndefined();
+    expect(runStates).toEqual(["completed"]);
+    expect(visible).toEqual(["Safe authorized text."]);
+    expect(audioSignal?.aborted).toBe(true);
+    await lateChunk?.(Buffer.from("late audio"));
+    expect(pcm).toEqual([]);
+  });
+
+  it("cancels waiting audio on disconnect without undoing completed text", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const aborter = new AbortController();
+    let audioStarted!: () => void;
+    const started = new Promise<void>((resolve) => { audioStarted = resolve; });
+    const states: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(request) { states.push(request.outcome.state); return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: { async execute() { return { reply: "Already settled", parts: [] }; } },
+      nativeAudio: {
+        async render() {
+          audioStarted();
+          return new Promise<never>(() => {});
+        },
+      },
+      audioTimeoutMs: 60_000,
+      sessionDurationMs: 60_000,
+    });
+    const pending = service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      signal: aborter.signal,
+    });
+    await started;
+    aborter.abort();
+    const response = await pending;
+    expect(response.reply).toBe("Already settled");
+    expect(response.audioBase64).toBeUndefined();
+    expect(states).toEqual(["completed"]);
+  });
+
+  it("never turns a synchronous audio provider throw into a failed settled run", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const states: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(request) { states.push(request.outcome.state); return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: { async execute() { return { reply: "Settled", parts: [] }; } },
+      nativeAudio: {
+        render() { throw new Error("provider failed synchronously"); },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const reply = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    expect(reply.reply).toBe("Settled");
+    expect(states).toEqual(["completed"]);
+  });
+
 });
