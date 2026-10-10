@@ -2,7 +2,7 @@
 Status: **HISTORICAL DESIGN OPTIONS — TALK/USER-PUBLISHING PARTS SUPERSEDED**, 2026-10-10. Retained only for composer/blue brand/independent Billing/Crypto source findings. Current **confirmed** authority: [Masana-only mixed-media Home](MASANA-CREATOR-NETWORK-20261010.md). NO member posting, NO public Talk composer, NO audio-only full-screen default, NO Twins. Home replaces root Talks. Old draft options in this file MUST NOT be dispatched into code.
 
 ## Executive recommendation
-**Talks Explore:** vertical snap-scroll with **one immersive audio post per viewport** (not a video-only TikTok clone). **Following:** compact multi-card list for scanning subscriptions. Shared playback state means swiping, comments, tab changes and deep links preserve progress predictably.
+**Historical/superseded Talk option:** former one-audio-post Explore is NOT the new Home default. New Home has Masana-only text/image/audio/video-ready cards with For You/Following. Shared playback state means swiping, comments, tab changes and deep links preserve progress predictably.
 **Cover art:** optional creator upload; attractive blue/waveform default; thumbnail variants and short-lived upload; no dependence on generative-image API.
 **Brand:** replace legacy WhatsApp greens with a consistent Masanawa blue/neutral design token system; reserve a single green only for confirmed success.
 **Chat:** one stable text input and attachment tray; dedicated mic for recorded voice notes and separate optional live Gwani voice; send always present when draft is nonempty, even while previous agent response is pending.
@@ -92,3 +92,5 @@ E. Qualify Android low-end, data usage, capture/playback, account switching, all
 - **OPT-04 Chat composer:** retain fix recommendation, recorded voice note in composer; Live voice separate. Supports human and Masana DM/calls.
 - **OPT-05 Independent Billing/Crypto:** unchanged, no automatic chat redirect; Gwani remains optional task entry.
 No code in this file is claimed implemented.
+## Definitive current chat/Rooms direction (new owner override)
+Composer advice in this file applies **only** to fan-to-Masana direct chats and Gwani; no human-to-human chat/contact/calls exist. Rooms are **staff-created and owned by professional Masana** with announcements/questions, free/paid subscriptions and automatic Masana teacher replies, not group DMs. Home video-ready, admin-managed content only; full new scope in [canonical Rooms/admin plan](MASANA-ROOMS-ADMIN-ARCHITECTURE-20261010.md). Do not implement obsolete creator/human Chat instructions from historic design options.
