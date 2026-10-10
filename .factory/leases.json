@@ -350,6 +350,24 @@
       "source_head_sha": "d9e87a3d193c96c3d2bbe2bc67e1683da9305127",
       "integration_head_sha": null,
       "test_state": "Source blob readback and structural one-class assertions only; pnpm/flutter/psql unavailable (127), Git clone DNS failure (128); actual repo tests NOT_RUN."
+    },
+    {
+      "claim_id": "af09-609-creator-report-20261010-gpt6-0604",
+      "owner": "AF09 #609 published Talks creator reporting / GPT-6 0604",
+      "scope": "Wire existing canonical TalkSafety report action into authorized creator published-Talk cards and feature navigation; no new safety authority or root route",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/creator_profile_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
+        "apps/mobile/test/audio_first/af09/creator_profile_test.dart",
+        "docs/workstreams/AF09-creator-report-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T05:08:18.868Z",
+      "heartbeat_at": "2026-10-10T05:08:18.868Z",
+      "expires_at": "2026-10-10T05:13:18.868Z",
+      "notes": "No work on active feed/SQL/route/migration/native paths. Preserve creator navigation, follow, pagination."
     }
   ],
   "history": [
