@@ -91,22 +91,6 @@
       "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated."
     },
     {
-      "claim_id": "masanawa01-af15-private-access-20261010",
-      "owner": "MASANAWA-01 / AF15",
-      "scope": "Guard private media URL issuance with current authoritative permission, bounded expiry, account and object scope and no-store readback. Isolated executable tests, no router/composition or migrations",
-      "paths": [
-        "services/gateway/src/media_lifecycle/private_access.ts",
-        "services/gateway/src/media_lifecycle/private_access.test.mjs",
-        "docs/workstreams/AF15-private-media-access-20261010.md"
-      ],
-      "branch": "work/af15-private-media-access-20261010-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-10T01:26:11.463Z",
-      "heartbeat_at": "2026-10-10T01:26:11.463Z",
-      "expires_at": "2026-10-10T01:31:11.463Z",
-      "notes": "Independent AF15 media-access slice, not the parallel orphan cleanup nor worker cleanup module. No private object store operations until the authorization contract is integrated."
-    },
-    {
       "claim_id": "masanawa01-af05-pcm-bridge-guard-20261010",
       "owner": "MASANAWA-01 / AF05 native playback boundary",
       "scope": "Bound live PCM MethodChannel rate/frame admission and verify no malformed data crosses Android bridge",
@@ -755,6 +739,26 @@
       "notes": "Prior claim expired with source branch still equal to main@f381f077c485c04261459b77a42c215d3ce3a14b, no prior source to overwrite. Resumed same exact paths; preserve parallel media-batch branch.",
       "released_at": "2026-10-10T01:27:00.396Z",
       "release_reason": "Scoped source and 12 native Node + standalone strict TS tests checkpointed in draft #599; exact blobs match local tests. Canonical AF15 media runner #595/#598 exists; preserve prototype, DO NOT MERGE duplicate executor. Transfer unique orphan retention gates into canonical adapter after reviewed claim."
+    },
+    {
+      "claim_id": "masanawa01-af15-private-access-20261010",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "Guard private media URL issuance with current authoritative permission, bounded expiry, account and object scope and no-store readback. Isolated executable tests, no router/composition or migrations",
+      "paths": [
+        "services/gateway/src/media_lifecycle/private_access.ts",
+        "services/gateway/src/media_lifecycle/private_access.test.mjs",
+        "docs/workstreams/AF15-private-media-access-20261010.md"
+      ],
+      "branch": "work/af15-private-media-access-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:26:11.463Z",
+      "heartbeat_at": "2026-10-10T01:26:11.463Z",
+      "expires_at": "2026-10-10T01:31:11.463Z",
+      "notes": "Independent AF15 media-access slice, not the parallel orphan cleanup nor worker cleanup module. No private object store operations until the authorization contract is integrated.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/601",
+      "source_head": "59644bde324ebc04b24426ae120450289ed20f10",
+      "released_at": "2026-10-10T01:29:33.062Z",
+      "release_reason": "Committed source+negative tests and SHA-specific handoff to draft PR #601 (base integration/af15-media-cleanup-20261009); 10/10 local unit tests and strict TS passed; Gateway DB/signer routing remains AF00 integration, no production release."
     }
   ]
 }
