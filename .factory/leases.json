@@ -439,6 +439,21 @@
       "heartbeat_at": "2026-10-10T07:48:00Z",
       "expires_at": "2026-10-10T07:53:00Z",
       "notes": "Continuing #604 bounded connected invitation UI and widget-negative test; no AF00 shared root, backend, auth, finance or deployment edits."
+    },
+    {
+      "claim_id": "af13-pr460-twin-runtime-contract-test-20261010",
+      "owner": "AF13 shared CI PR #460",
+      "scope": "Update exhaustive runtime public service inventory test to reflect exactly verified two additional canonical endpoints without changing runtime/API/config.",
+      "paths": [
+        "services/gateway/src/twin_production_runtime.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "source_pr": 460,
+      "source_head": "ca7c2a6f69be4d5324fe58c98a285f8ded56857d",
+      "claimed_at": "2026-10-10T07:52:27.786Z",
+      "heartbeat_at": "2026-10-10T07:52:27.786Z",
+      "expires_at": "2026-10-10T07:57:27.786Z",
+      "notes": "Executed Vitest showed runtime includes creditGift and providerValuationAdmin in frozen surface; test stale. Preserve exhaustive equality."
     }
   ],
   "history": [
