@@ -882,11 +882,14 @@
       "branch": "work/shared-ci-recovery-work-20261008",
       "source_pr": 460,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_head": "3d3deab211a964ef41fcb38b8f9f177496f184f2",
+      "source_head": "f2d111533f6f122d9a328ccf9798e525c1a13b03",
       "claimed_at": "2026-10-10T09:11:59.983Z",
       "heartbeat_at": "2026-10-10T09:11:59.983Z",
       "expires_at": "2026-10-10T09:16:59.983Z",
-      "notes": "Existing #460 PR comment #6095999780, real Foundation CI run 38040330645 last suite setup ERROR 42P07; no production migration/wallet changes."
+      "notes": "Existing #460 PR comment #6095999780, real Foundation CI run 38040330645 last suite setup ERROR 42P07; no production migration/wallet changes.",
+      "released_at": "2026-10-10T09:16:14.215Z",
+      "test_state": "PASS_REAL CI Foundation 38040560645: TS, 254/254 Vitest files 1359/1359 tests, PG18, provider tools, build all PASS; Mobile 38040560634 Analyze FAIL ongoing",
+      "release_reason": "Exact file source fix and real PG18 Foundation PASS read back; handoff PR460 comment 6096029300 / AF00 PR600 comment 6096030676. No merge or deployment. AF00 owns migration collision and Flutter blocker."
     },
     {
       "claim_id": "af13-460-flutter-fatal-info-policy-gpt6-20261010",
