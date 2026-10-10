@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createIsolatedPostgresTestDatabase } from "../../../../../test/support/isolated-postgres.js";
 import { createCanonicalId } from "@masanawa/contracts";
 import { runMigrations } from "../migrations.js";
 import {
@@ -13,9 +14,11 @@ const describeDatabase = connectionString ? describe : describe.skip;
 
 describeDatabase("billing runtime PostgreSQL acceptance", () => {
   let pool: Pool;
+  let isolated: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>> | undefined;
 
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    isolated = await createIsolatedPostgresTestDatabase(connectionString!);
+    pool = isolated.pool;
     await runMigrations(pool, [{
       owner: "commerce",
       directory: fileURLToPath(
@@ -25,7 +28,7 @@ describeDatabase("billing runtime PostgreSQL acceptance", () => {
   });
 
   afterAll(async () => {
-    await pool?.end();
+    await isolated?.close();
   });
 
   it("scopes fulfillment evidence by tenant and user and enforces immutable terms", async () => {
