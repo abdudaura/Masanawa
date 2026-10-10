@@ -1,6 +1,6 @@
 import { describe,expect,it } from "vitest";
 import { runMissionPublicationOnce } from "./publisher.js";
-import type { LeasedMissionPost, MissionPublishQueue } from "./publisher.js";
+import type { LeasedMissionPost, MissionPublishQueue, MissionSqlPool } from "./publisher.js";
 const post:LeasedMissionPost={tenantId:"t",missionId:"m",slotId:"s",characterId:"c",
   publicationKey:"stable-key",leaseToken:"lease-one",kind:"text",topic:"astronomy",
   draftBody:"A real reviewed draft.",estimatedCostMinor:"12",attempt:1};
@@ -44,7 +44,7 @@ describe("PostgreSQL exhausted lease recovery",()=>{
       },
       release:()=>{}
     };
-    const pool={connect:async()=>client} as unknown as import("pg").Pool;
+    const pool={connect:async()=>client} as unknown as MissionSqlPool;
     const {PostgresMissionPublishQueue}=await import("./publisher.js");
     expect(await new PostgresMissionPublishQueue(pool).lease()).toBeNull();
     expect(sql.some(statement=>statement.includes("lease_expired_exhausted"))).toBe(true);

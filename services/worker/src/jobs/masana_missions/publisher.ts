@@ -57,9 +57,6 @@ export class PostgresMissionPublishQueue implements MissionPublishQueue {
           [row.tenant_id,row.slot_id,row.attempt_count]);
       }
       // Locks a slot, then its single parent budget row. Concurrent workers SKIP LOCKED.
-      await db.query("UPDATE masana.posting_slots SET state='failed',last_error='attempts_exhausted',"+ 
-  " lease_token=NULL,lease_until=NULL,revision=revision+1,updated_at=now()"+
-  " WHERE state='publishing' AND lease_until<now() AND attempt_count>=6");
       const a=await db.query(`
         SELECT s.*,m.autonomy_level FROM masana.posting_slots s
         JOIN masana.missions m ON m.tenant_id=s.tenant_id AND m.mission_id=s.mission_id
