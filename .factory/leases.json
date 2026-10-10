@@ -121,6 +121,22 @@
       "heartbeat_at": "2026-10-10T01:28:38.285Z",
       "expires_at": "2026-10-10T01:33:38.285Z",
       "notes": "No overlapping active exact path lease; preserve PR #591 live session modifications, no shared native/manifest/router changes."
+    },
+    {
+      "claim_id": "masanawa01-af13-evidence-path-guard-20261010",
+      "owner": "MASANAWA-01 / AF13 evidence security",
+      "scope": "Isolated security qualification of real evidence artifact path and symlink traversal without touching AF13 qualifier owned by prior PR.",
+      "paths": [
+        "tests/security/audio_first/evidence_path_guard.mjs",
+        "tests/security/audio_first/evidence_path_guard.test.mjs",
+        "docs/workstreams/AF13-evidence-path-guard-20261010.md"
+      ],
+      "branch": "work/af13-evidence-path-security-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:29:05.357Z",
+      "heartbeat_at": "2026-10-10T01:29:05.357Z",
+      "expires_at": "2026-10-10T01:34:05.357Z",
+      "notes": "Independent exact files; no deployed changes; existing AF13 qualifier remains untouched."
     }
   ],
   "history": [
