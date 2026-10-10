@@ -57,7 +57,7 @@ const countColumns = qualifiedColumns +
 // PostgreSQL stores microseconds; pg's Date conversion truncates to milliseconds.
 // The page cursor must retain the exact SQL timestamp so adjacent posts cannot
 // silently disappear when multiple publications share the same millisecond.
-const microsecondUtc = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$/;
+const microsecondUtc = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 function parseCursor(raw: string | null): { stamp: string; id: string } | null {
  if (raw === null) return null;
  if (typeof raw !== "string" || !/^[A-Za-z0-9_-]{1,256}$/.test(raw)) {
