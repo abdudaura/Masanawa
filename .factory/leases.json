@@ -387,11 +387,15 @@
       "branch": "work/recovery-02-u02-task-journal-20261009",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 580,
-      "source_head": "027225d9939f0e482b10e41b08493b99358147be",
+      "source_head": "61724ca50a634452eda6bd7f5cd30e6f37caf8ff",
       "claimed_at": "2026-10-10T07:41:47.344Z",
       "heartbeat_at": "2026-10-10T07:48:17.804Z",
       "expires_at": "2026-10-10T07:53:17.804Z",
-      "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths.; AF00 bounded transfer requested on PR #600 comment 6095247924 after 2h inactive AF00 registry claim; emergency non-deploying CI failure repair limited to additive operator-tasks pnpm frozen importer, confirmed existing packages/versions. User directs finish tests; no shared CI workflow changes.; real GitHub run 38035545178 TypeScript errors in exact owned source plus inherited #520 index.test.ts typed fixture. Scoped extension to exact test path to fix actual compiler error."
+      "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths.; AF00 bounded transfer requested on PR #600 comment 6095247924 after 2h inactive AF00 registry claim; emergency non-deploying CI failure repair limited to additive operator-tasks pnpm frozen importer, confirmed existing packages/versions. User directs finish tests; no shared CI workflow changes.; real GitHub run 38035545178 TypeScript errors in exact owned source plus inherited #520 index.test.ts typed fixture. Scoped extension to exact test path to fix actual compiler error.",
+      "released_at": "2026-10-10T07:53:53.776Z",
+      "release_reason": "PR #580 same-branch complete bounded source repair, real Node24/pnpm12 PG18 CI install PASS, packages/operator-tasks strict TypeScript PASS at current head 61724ca; repo-wide CI blocked by unowned AF09 TalkId import TS2459. Vitest/PG integration/build/Flutter not executed, parent U02 partially integrated. AF09 owner comment #6095295993, AF00 #600 comment #6095247924, exact PR580 comments #6095315352 and #6095320605. No unsafe merge or deployment.",
+      "integration_head_sha": null,
+      "test_state": "PASS_REAL frozen pnpm install + package typecheck; FAIL repository typecheck TalkId import unowned; Vitest/PG/build NOT_RUN"
     },
     {
       "claim_id": "af13-pr460-gateway-declaration-typing-20261010",
