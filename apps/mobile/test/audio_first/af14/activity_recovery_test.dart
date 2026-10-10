@@ -225,6 +225,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('mark read writes to server then hides unread action after refetch',
+      (tester) async {
+    final transport = _RecoveryTransport();
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('activity-mark-read-invitation-1')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('activity-mark-read-invitation-1')));
+    await tester.pumpAndSettle();
+
+    expect(transport.markReadCalls, 1);
+    expect(transport.unread, isFalse);
+    expect(find.byKey(const ValueKey('activity-mark-read-invitation-1')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('failed mark-read preserves unread state and offers a retry',
+      (tester) async {
+    final transport = _RecoveryTransport()..failMarkRead = true;
+    await tester.pumpWidget(_app(transport));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('activity-mark-read-invitation-1')));
+    await tester.pumpAndSettle();
+
+    expect(transport.markReadCalls, 1);
+    expect(transport.unread, isTrue);
+    expect(find.byKey(const ValueKey('activity-mark-read-invitation-1')), findsOneWidget);
+    expect(find.text('Could not mark as read. Try again.'), findsOneWidget);
+    expect(find.textContaining('PRIVATE_MARK_READ_FAILURE'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('signed-out Activity never fetches or displays private results',
       (tester) async {
     final transport = _RecoveryTransport();
