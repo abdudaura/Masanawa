@@ -92,9 +92,9 @@
       "source_pr": 497,
       "source_head": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
       "claimed_at": "2026-10-10T01:25:37.990Z",
-      "heartbeat_at": "2026-10-10T01:29:44.228Z",
-      "expires_at": "2026-10-10T01:34:44.228Z",
-      "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated. Add explicit owner-approved tab translations to all 6 existing ARB catalogs; generated localization is build-time derived."
+      "heartbeat_at": "2026-10-10T01:34:57.981Z",
+      "expires_at": "2026-10-10T01:39:57.981Z",
+      "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated. Add explicit owner-approved tab translations to all 6 existing ARB catalogs; generated localization is build-time derived. Source/test checkpoint through c185bf70; original four-tab assertions superseded, all six locales updated; 20 exact-head static checks passed; Flutter runtime not available."
     },
     {
       "claim_id": "masanawa01-af01-transfer-reversal-20261010",
