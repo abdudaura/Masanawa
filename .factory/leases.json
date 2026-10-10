@@ -608,11 +608,11 @@
       "branch": "work/af01-crypto-ledger-reason-20261010-masanawa01-g",
       "source_pr": 607,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_head": "ed8dc29f25b6d116c2194b7ee8491511fc60144c",
+      "source_head": "02f15223e17ea21e011788abd5e7f6cce24a6b4f",
       "claimed_at": "2026-10-10T08:50:37.823Z",
-      "heartbeat_at": "2026-10-10T08:54:50.546Z",
-      "expires_at": "2026-10-10T08:59:50.546Z",
-      "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR; actual CI 38039308614 typecheck blocker: wrong TalkId import; using pre-existing correct #580 source readback, no production code change; actual runner typecheck at 7d00ecd: typed UUID test fixture mismatch; copying established existing #460/#580 repair"
+      "heartbeat_at": "2026-10-10T08:56:56.350Z",
+      "expires_at": "2026-10-10T09:01:56.350Z",
+      "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR; actual CI 38039308614 typecheck blocker: wrong TalkId import; using pre-existing correct #580 source readback, no production code change; actual runner typecheck at 7d00ecd: typed UUID test fixture mismatch; copying established existing #460/#580 repair; real CI 38039545183 progressed past agents and adapter TS; blocked at unrelated Gateway test typings owned in existing #460; branch 02f signed decimal repair undergoing CI"
     },
     {
       "claim_id": "af13-460-financial-tests-gpt6-20261010-0954",
