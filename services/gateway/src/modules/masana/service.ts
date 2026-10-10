@@ -34,7 +34,7 @@ function asText(v:unknown,max:number):string {
   return v.trim();
 }
 /** Inject existing authenticated tenant/role authority; registering these routes without it is impossible. */
-export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;store:MasanaStore}):void {
+export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;store:MasanaStore;validateProfile:(value:unknown)=>unknown}):void {
   app.get("/v1/masana",async request=>{
     const actor=await deps.auth.optional(request.headers.authorization);
     const query=params(request.query);
@@ -65,7 +65,7 @@ export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;
     const actor=await deps.auth.staff(request.headers.authorization,"content_editor");
     const id=characterId(params(request.params).id);
     const input=params(request.body);
-    return reply.code(201).send(await deps.store.draft({tenantId:actor.tenantId,characterId:id,profile:input.profile,staffId:actor.userId}));
+    return reply.code(201).send(await deps.store.draft({tenantId:actor.tenantId,characterId:id,profile:deps.validateProfile(input.profile),staffId:actor.userId}));
   });
   app.post("/v1/admin/masana/:id/revisions/:revision/approve",async (request,reply)=>{
     const actor=await deps.auth.staff(request.headers.authorization,"content_editor");

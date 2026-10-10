@@ -17,7 +17,7 @@ describe("Masana public and staff authority",()=>{
     async fan(h){if(h!=="Bearer fan") throw new Error("unauthorized");return {tenantId:"tenant_test",userId:"fan_a"};},
     async staff(h){if(h!=="Bearer editor") throw new Error("forbidden");return {tenantId:"tenant_test",userId:"staff_a"};}
   };
-  async function app(){const instance=Fastify();registerMasanaRoutes(instance,{auth,store});await instance.ready();return instance;}
+  async function app(){const instance=Fastify();registerMasanaRoutes(instance,{auth,store,validateProfile:value=>value});await instance.ready();return instance;}
   it("does not read draft records on guest profile",async()=>{
     events.length=0;const server=await app();const response=await server.inject({method:"GET",url:"/v1/masana/foo"});
     expect(response.statusCode).toBe(404);expect(events).toEqual(["read:foo"]);await server.close();
