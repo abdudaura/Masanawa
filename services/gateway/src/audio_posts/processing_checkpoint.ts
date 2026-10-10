@@ -2,7 +2,7 @@
  * existing trusted worker after installing the reviewed append-only migration.
  * No timer, competing queue, client actor, or implied moderation capability.
  */
-import type { Pool } from "pg";
+import type { Pool } from "@masanawa/postgres";
 import type { TenantDispatchResult } from "./processing_scheduler.js";
 
 const validCursor = (v: unknown): v is string | null =>
