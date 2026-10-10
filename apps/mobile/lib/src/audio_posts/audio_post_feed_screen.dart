@@ -233,7 +233,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
           const SnackBar(content: Text('Could not check removal status. Retry when online.')));
       }
     } finally {
-      if (_sameRemovalSession(account, transport, version)) {
+      // Always retire this busy marker for the same account even if an
+      // unrelated refresh advanced the feed generation or another tab opened.
+      if (mounted && _authorized && widget.accountId == account &&
+          identical(widget.transport, transport)) {
         setState(() => _removing.remove(post.postId));
       }
     }
@@ -290,7 +293,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
           const SnackBar(content: Text('Removal status unknown. Check status before retrying.')));
       }
     } finally {
-      if (_sameRemovalSession(account, transport, version)) {
+      // Always retire this busy marker for the same account even if an
+      // unrelated refresh advanced the feed generation or another tab opened.
+      if (mounted && _authorized && widget.accountId == account &&
+          identical(widget.transport, transport)) {
         setState(() => _removing.remove(post.postId));
       }
     }
