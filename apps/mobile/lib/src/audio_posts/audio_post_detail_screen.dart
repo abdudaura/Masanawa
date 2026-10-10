@@ -78,8 +78,14 @@ class _AudioPostDetailScreenState extends State<AudioPostDetailScreen> {
                           semanticsLabel: 'AI-created audio'),
                     const SizedBox(height: 12),
                     Text('${(widget.post.durationMs / 1000).round()} seconds'),
-                    Text('${widget.post.likeCount} likes · '
-                        '${widget.post.commentCount} comments'),
+                    AnimatedBuilder(
+                      animation: widget.playback,
+                      builder: (_, __) => Text(
+                        '${widget.post.likeCount} likes · '
+                        '${widget.post.commentCount} comments · '
+                        '${widget.playback.listenCountFor(widget.post.postId) ?? widget.post.listenCount} listens',
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     AnimatedBuilder(
                       animation: widget.playback,
