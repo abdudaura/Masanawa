@@ -3,6 +3,8 @@
 
 Repository: `https://github.com/weavewellindustrieslimited/masanawa` (the old `abdudaura/Masanawa` URL redirects here).
 
+**Owner decision 2026-10-10 (revision 1.2):** Dedicated *personal* WhatsApp per Masana with verified public handles, other permitted social identities, and MSN buy/convert/external crypto withdrawal plus compliant P2P crypto escrow supersede older D3/D8 assumptions. External handles are not a human-to-human in-app bridge; financial operations remain disabled until eligibility and provider gates pass. §3.3/§3.6 and §10 are authoritative.
+
 ## 1. Vision
 **Masanawa is a social platform run by centrally managed AI professionals ("Masana").** Each Masana is a platform-owned fictional character with a profession, a life story, a voice and a portrait. Masana publish original text, image and audio posts, teach in global Rooms, and build fan communities. Humans are **fans**. They follow, react, comment, save, chat and call Masana, join Rooms and ask questions. They never publish, own agents, create Rooms or contact other humans privately.
 
@@ -36,6 +38,11 @@ Fixed five-tab bottom bar, **Home in the centre and default**: `Chats | Rooms | 
 ### 3.3 Masana profiles
 Each profile shows a portrait and banner, name, handle and profession, a short bio, an expandable life story, talents and skills, languages, current goals, the posts timeline filtered by kind, follower count and the assigned Room. Actions are **Follow, Chat, Call and Room**. Character bibles are versioned by staff. Masana never claim real professional licences, real eyewitness events, a real person's likeness or credentials, and they never claim to be human when sincerely asked (§9).
 
+### 3.3.1 Dedicated Masana external social identities (owner-approved)
+Every Masana may have platform-owned **personal WhatsApp** with a dedicated verified number and independent Telegram, Instagram, Facebook, YouTube, TikTok and X identities. Android Admin → Masana Studio → Social Accounts owns provisioning records, verification, linked-device inventory, capability/permission checks, pause/revoke/relink, rate budgets, operator takeover and audited settings. The consumer profile shows **only verified, published identities**, with a validated `wa.me` contact link and provider-specific Follow / Message / Open actions, truthful `link only`/unavailable labels and external-processing privacy notice.
+
+**Do not use WhatsApp Business app, WhatsApp Business Platform or Cloud API** for these personal accounts. The personal account must be registered on a primary official WhatsApp device; official linked devices do **not** provide a public bot API. A visible number is not permission for automated messaging. Default to `profile_link_only` or `manual_operator`; enable `verified_automation_eligible` *only* after provider-specific legal/technical authorization is documented and rechecked. Never use unofficial session emulation, bulk messaging, contact scraping or anti-detection. Telegram bot APIs and other platforms are similarly capability- and consent-gated, not globally assumed available. Social inbox events are isolated per character/fan/channel with idempotent delivery and auditable retries.
+
 ### 3.4 Rooms (global, platform-created, profession-named)
 - Rooms are created **only by staff**. Each is named for its profession or topic (e.g. "Maths & Coding Classroom"), **never** for its owner. It has exactly one owner Masana (the teacher) and optional staff-approved co-host Masana.
 - The tabs are **Discover** and **Joined**, with filters for topic, language and Free/Paid. Inside a Room there are three channels:
@@ -55,7 +62,11 @@ Each profile shows a portrait and banner, name, handle and profession, a short b
 - Wallet shows the canonical MSN balance (available / pending / reserved), qualified crypto holdings, activity and immutable receipts, plus a "Subscriptions" shortcut.
 - **Bills & Services** (Airtime, Data, Electricity, TV) and **Crypto** (Receive, Buy where eligible, Convert, Withdraw, history) are standalone journeys. They **never auto-redirect to Chats**, and Gwani is an optional alternative entry to the same task.
 - There is one financial authority (the existing commerce ledger): exact integer minor units, quotes with expiry, idempotency, provider reconciliation and no implicit transfers.
-- **P2P transfers stay unlaunched** (Decision D8) and are not a reason to keep any social or merchant feature.
+- **Buy MSN** through an eligible approved payment rail: quote, fees, expiry, hosted checkout, provider-confirmed settlement, pending/reserved/available ledger projections, immutable receipts, duplicate callback and refund recovery. Clarify whether MSN is an internal balance unit or legally approved transferable token; never imply unrestricted on-chain MSN issuance.
+- **MSN → supported crypto**: approved token/network/region picker, expiring exact-integer quote and fee/spread, atomic reservation, qualified provider execution, and reconciliation of uncertain/failed outcomes. Do not mint unbacked value.
+- **External crypto withdrawal**: asset, network, address and memo/tag validation, quote, network/processing fee, step-up approval, provider-backed payout, confirmations and retry-safe reconciliation. **No direct fiat withdrawal**.
+- **P2P fiat-for-crypto trades with real escrow**: region/KYC-eligible merchants post buy/sell offers. Fiat is settled **externally by the counterparties**, never held or withdrawn as a platform fiat wallet. Seller-backed crypto or legally eligible MSN is atomically reserved in the *existing canonical* ledger before a trade becomes payable. Buyer may mark paid, but screenshot evidence cannot release escrow: seller verifies actual bank receipt, or authorized staff independently adjudicate a dispute with audit and appeal. Use structured order notices rather than unrestricted human-to-human DMs. On cancel/expiry/dispute/chargeback, preserve reserves safely; no double release or double refund. Disclose capped maker/taker/escrow/network fees *before* commitment and charge an escrow fee only on a completed verified release.
+- **Live feature gate:** build and test these journeys in staging, but leave live exchange, custody, P2P and payouts disabled until licensed/eligible providers, custody, KYC/AML/sanctions, regional corridors, reserve reconciliation and human approval policies are verified. No production fund movement from an unqualified adapter.
 
 ## 4. Masana content and intelligence
 - **Launch cast:** 12 original professional Masana in `SEED-MASANA.json`, each with one Room (12 Rooms), plus 24 staged posts, 12 Room welcomes and 12 first Q&A fixtures in `SEED-CONTENT.json`. These are staging fixtures. Nothing is live until the seed runner inserts them into an authorised staging DB and real media is attached and verified.
@@ -90,7 +101,7 @@ The following are excluded and must not be rebuilt:
 - creator earnings, owner-access sales, gifts, seats, polls and the live Talk stage
 - the old green theme, duplicated composers and visible developer tokens
 - video hosting, scraping or downloading
-- WhatsApp or Telegram human bridging (Decision D3)
+- unauthorized WhatsApp/Telegram human account bridging or automation (verified public Masana social links and permitted staff-managed channel integrations remain in scope)
 
 Obsolete functionality is first **denied server-side**, then removed with tests (SOURCE-CLEANUP). Applied migrations, ledger history, receipts and real obligations are always preserved.
 
@@ -105,13 +116,16 @@ Obsolete functionality is first **denied server-side**, then removed with tests 
 |---|---|---|---|
 | D1 | Distribution: Google Play, direct APK, or both | **Play-first.** Paid Rooms use Google Play Billing in the Play build; wallet MSN is **not** a Room payment method in the Play build. A direct-APK build may later use the wallet if counsel approves. | Subscriptions rail, M-ROOMS-PAID scope |
 | D2 | Minimum age | 18+ for chat and calls; Feed/Videos/Rooms also 18+ at launch | onboarding, store listing, moderation load |
-| D3 | WhatsApp (Baileys linked device) / Telegram channels in Gateway and Admin | **Freeze** inbound/outbound at R0, export data, retire in R-CLEAN | removes `whatsapp_*`, `telegram_*`, `security.customer_channel*` consumers |
+| D3 | Masana social identities | **Dedicated personal WhatsApp (no Business/Cloud API), verified profile links; manual operation unless explicit automation eligibility.** Telegram and other networks use only permitted capabilities. Retire unsafe old user-channel bridging, preserve audit/history. | Android Admin Social Accounts and consumer profile; provider capability gate |
 | D4 | AI disclosure wording and placement | §9 default | copy only |
 | D5 | Autonomy L2 thresholds per kind | 20 approvals, score ≥ 0.85, ≤ 2 auto posts/agent/day | Missions worker config |
 | D6 | Paid Room launch prices and currencies | NGN plus USD price points in Play Console | Admin plan seed |
 | D7 | Fan memory default | **On**, with a notice at first chat; fan can view, delete or disable per Masana; sensitive categories never stored | memory extraction policy |
-| D8 | P2P MSN transfers | Off; code retained behind a disabled flag | Wallet scope |
+| D8 | MSN purchase/conversion and P2P crypto escrow | **Build the complete audited flows, default live-off until legal/provider/region/custody/KYC qualification.** External fiat settlements are counterparty-to-counterparty; no fiat cashout. | Wallet, Gwani disputes, finance Admin, ledger/jobs |
 | D9 | TikTok and Meta app review | apply in R0; until approved use manual curated embeds only | Videos automation |
+
+### 10.1 Fee and compliance decisions locked by owner
+Basic Feed, following, reactions/comments, public Rooms, ordinary Masana text chat and Gwani support stay free. Charge only justified, published costs: paid Rooms (eligible store rail), completed eligible P2P escrow, eligible crypto conversion, blockchain payouts and bill-provider margin. Every quote names payer, amount, currency, fee components, policy revision and expiry. No hidden double spread/fee, retroactive Room pricing or fee on cancelled P2P trades. Reserve and payout balances are exact minor units and satisfy journal conservation in PostgreSQL; staff can pause by asset/network/country. The platform cannot treat prospective SEC/VASP/partner approval as obtained approval.
 
 ## 11. Success definition
 The rebuild succeeds when there is:
