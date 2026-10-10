@@ -199,27 +199,6 @@
       "test_state": "GitHub CI zero-step BLOCKED; exact blob structural readbacks only. Node/Vitest/PG/S3 NOT_RUN."
     },
     {
-      "claim_id": "af09-609-comments-backend-paging-gpt6-0519",
-      "owner": "AF09 #609 continuation — comments pagination / GPT-6",
-      "scope": "Source: bounded older-comments pagination using existing PG visibility, authenticated Gateway and Flutter transport; UI feed screen owned by separate 0517 claimant and will receive bounded integration request, no protected composition",
-      "paths": [
-        "services/gateway/src/audio_posts/contract.ts",
-        "services/gateway/src/audio_posts/service.ts",
-        "services/gateway/src/audio_posts/routes.ts",
-        "adapters/storage/postgres/src/audio_posts/repository.ts",
-        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
-        "services/gateway/src/audio_posts/comments_pagination.test.mjs",
-        "apps/mobile/test/audio_first/af09/comments_pagination_test.dart",
-        "docs/workstreams/AF09-comments-pagination-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T04:22:31.829Z",
-      "heartbeat_at": "2026-10-10T04:26:30.319Z",
-      "expires_at": "2026-10-10T04:31:30.319Z"
-    },
-    {
       "claim_id": "af09-609-publish-status-20261010-gpt6-0521",
       "owner": "AF09 PR #609 / GPT-6 publish-status continuation",
       "scope": "Connect authenticated publish receipt lookup to composer processing-status refresh and account-safe terminal readback, no second publish or AF00 root edits",
@@ -1986,6 +1965,32 @@
       "released_at": "2026-10-10T03:52:04.009Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "release_reason": "Close AF09-13 publish/delete raw-record disclosure with canonical public projection, four regression cases authored and static JS-body parse pass. Node24/pnpm/Flutter/PG NOT_RUN; core Talks milestone missing AF00/AF05/AF15 source and unified integration. Handoff docs/workstreams/AF09-response-projection-20261010.md; coordination posted on PRs #609/#600."
+    },
+    {
+      "claim_id": "af09-609-comments-backend-paging-gpt6-0519",
+      "owner": "AF09 #609 continuation — comments pagination / GPT-6",
+      "scope": "Source: bounded older-comments pagination using existing PG visibility, authenticated Gateway and Flutter transport; UI feed screen owned by separate 0517 claimant and will receive bounded integration request, no protected composition",
+      "paths": [
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/service.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "services/gateway/src/audio_posts/comments_pagination.test.mjs",
+        "apps/mobile/test/audio_first/af09/comments_pagination_test.dart",
+        "docs/workstreams/AF09-comments-pagination-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:22:31.829Z",
+      "heartbeat_at": "2026-10-10T04:26:30.319Z",
+      "expires_at": "2026-10-10T04:31:30.319Z",
+      "released_at": "2026-10-10T04:29:30.182Z",
+      "release_reason": "Source and six authored regressions committed on same PR #609; real Node24/pnpm/Flutter/PG tests unavailable, exact Node test blob syntax-only PASS. Feature feed owner retains UI screen, AF00 retains shared integration; parent milestone and local-pull gate remain open. Bounded PR #609/#600 transfers posted; no deployed/main/integration merge.",
+      "source_head": "c0a0df26acdf8cfd533d3ab76a70bf9a609a12f8",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "test_state": "GitHub byte readback; node --check PASS on exact hash 03394c56; full node --test blocked missing repo service.js; Flutter/PG NOT_RUN"
     }
   ]
 }
