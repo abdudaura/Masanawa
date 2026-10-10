@@ -231,7 +231,7 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Talks'), findsWidgets);
     expect(find.text('Chats'), findsOneWidget);
-    expect(find.text('Assistant'), findsOneWidget);
+    expect(find.text('Gwani'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
     expect(find.text('Agents'), findsOneWidget);
     expect(find.text('Create'), findsNothing);
@@ -353,7 +353,7 @@ void main() {
   testWidgets('private Talk does not start a microphone on tab entry', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Assistant'));
+    await tester.tap(find.text('Gwani'));
     await tester.pumpAndSettle();
     // Unauthenticated selection cannot silently turn on the microphone.
     expect(find.text('Sign in to open your private Assistant.'), findsOneWidget);
@@ -417,7 +417,7 @@ void main() {
     expect(find.text('Chats'), findsOneWidget);
     expect(find.text('Agents'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
-    expect(find.text('Assistant'), findsOneWidget);
+    expect(find.text('Gwani'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

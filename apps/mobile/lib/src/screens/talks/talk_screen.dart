@@ -479,7 +479,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go('/home?tab=talk');
+          context.go('/talks');
         }
       }
     } catch (_) {
@@ -806,7 +806,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/home?tab=talk');
+                  context.go('/talks');
                 }
               },
             ),
@@ -874,7 +874,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
                 if (context.canPop()) {
                   context.pop();
                 } else {
-                  context.go('/home?tab=talk');
+                  context.go('/talks');
                 }
               },
             ),
@@ -997,7 +997,7 @@ class _TalkBody extends StatelessWidget {
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go('/home?tab=talk');
+          context.go('/talks');
         }
       },
       child: Scaffold(
@@ -1010,7 +1010,7 @@ class _TalkBody extends StatelessWidget {
               if (context.canPop()) {
                 context.pop();
               } else {
-                context.go('/home?tab=talk');
+                context.go('/talks');
               }
             },
           ),

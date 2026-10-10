@@ -426,9 +426,9 @@
   "@chatsTab": {
     "description": "Human-only private conversations root"
   },
-  "assistantTab": "Assistant",
+  "assistantTab": "Gwani",
   "@assistantTab": {
-    "description": "Private Gwani/Gwana Assistant root"
+    "description": "Private Gwani Assistant root"
   },
   "billingRecent": "Recent bills",
   "@billingRecent": {

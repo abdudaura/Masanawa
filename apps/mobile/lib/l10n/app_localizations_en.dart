@@ -337,7 +337,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatsTab => 'Chats';
 
   @override
-  String get assistantTab => 'Assistant';
+  String get assistantTab => 'Gwani';
 
   @override
   String get billingRecent => 'Recent bills';

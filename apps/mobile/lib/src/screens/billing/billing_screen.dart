@@ -425,9 +425,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(l.billingPayTitle, style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 6),
-        Text(l.billingInstructions),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         DropdownButtonFormField<BillCategory>(
           value: category,
           decoration: InputDecoration(labelText: l.billingCategory),

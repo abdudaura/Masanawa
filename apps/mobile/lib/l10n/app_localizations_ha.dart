@@ -340,7 +340,7 @@ class AppLocalizationsHa extends AppLocalizations {
   String get chatsTab => 'Saƙonni';
 
   @override
-  String get assistantTab => 'Mataimaki';
+  String get assistantTab => 'Gwani';
 
   @override
   String get billingRecent => 'Biyan kuɗi na baya-bayan nan';

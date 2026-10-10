@@ -676,10 +676,10 @@ abstract class AppLocalizations {
   /// **'Chats'**
   String get chatsTab;
 
-  /// Private Gwani/Gwana Assistant root
+  /// Private Gwani Assistant root
   ///
   /// In en, this message translates to:
-  /// **'Assistant'**
+  /// **'Gwani'**
   String get assistantTab;
 
   /// Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority.

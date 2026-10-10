@@ -101,9 +101,9 @@
   "@chatsTab": {
     "description": "Human-only private conversations root"
   },
-  "assistantTab": "Mataimaki",
+  "assistantTab": "Gwani",
   "@assistantTab": {
-    "description": "Private Gwani/Gwana Assistant root"
+    "description": "Private Gwani Assistant root"
   },
   "billingRecent": "Biyan kuɗi na baya-bayan nan",
   "billingRefreshHistory": "Sabunta tarihin biya",
