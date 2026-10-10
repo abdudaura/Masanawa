@@ -15,7 +15,8 @@ class ExternalVideosScreen extends StatefulWidget {
 }
 class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
   String? filter;
-  late Future<List<ExternalVideo>> future = widget.load();
+  late Future<List<ExternalVideo>> future;
+  @override void initState() { super.initState(); future = widget.load(); }
   String? error;
   String t(String en, String ha) => widget.languageCode == 'ha' ? ha : en;
   void reload([String? f]) => setState(() { filter = f; future = widget.load(provider: f); error = null; });
