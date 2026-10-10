@@ -50,7 +50,8 @@ describe("U02 durable status-only recovery", () => {
     expect(await f.worker.runOnce()).toMatchObject({
       claimed: 1, confirmed: 1, rejected: 0, unknown: 0,
     });
-    expect(f.readback).toHaveBeenCalledExactlyOnceWith(operation);
+    expect(f.readback).toHaveBeenCalledTimes(1);
+    expect(f.readback).toHaveBeenCalledWith(operation);
     expect(f.persist).toHaveBeenCalledWith({
       operation, outcome: { status: "confirmed", receiptRef: "talk:receipt-124" },
       now: "2026-10-10T00:10:00.000Z",
