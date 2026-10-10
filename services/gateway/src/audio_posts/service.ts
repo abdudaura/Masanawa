@@ -163,5 +163,62 @@ export function createAudioPostService(deps: {
       postId: input.postId, kind: input.kind, enabled: input.enabled,
     });
   };
-  return Object.freeze({ publish, settle, feed, mine, saved, removeOwn, reaction });
+
+  const commentText = (value: unknown): string => {
+    if (typeof value !== "string") throw new AudioPostError("VALIDATION", "Comment text required");
+    const trimmed = value.trim();
+    if (trimmed.length < 1 || trimmed.length > 400 ||
+        /[\u0000-\u001F\u007F-\u009F\u202A-\u202E\u2066-\u2069]/u.test(trimmed)) {
+      throw new AudioPostError("VALIDATION", "Comment must be 1–400 plain-text characters");
+    }
+    return trimmed;
+  };
+  const commentError = (error: unknown): never => {
+    if (error instanceof Error && error.message === "audio_posts.not_visible") {
+      throw new AudioPostError("NOT_FOUND", "Audio post not found");
+    }
+    if (error instanceof Error && error.message === "audio_posts.comment_conflict") {
+      throw new AudioPostError("CONFLICT", "Comment request key already used");
+    }
+    throw error;
+  };
+  const comments = async (actor: PostActor, postId: string) => {
+    assertActor(actor);
+    safeId(postId, "post");
+    try {
+      return await repository.listComments({
+        tenantId: actor.tenantId, viewerId: actor.accountId, postId, limit: 50,
+      });
+    } catch (error) { return commentError(error); }
+  };
+  const comment = async (actor: PostActor, postId: string, body: unknown) => {
+    assertActor(actor);
+    safeId(postId, "post");
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      throw new AudioPostError("VALIDATION", "Invalid comment");
+    }
+    const payload = body as Record<string, unknown>;
+    if (Object.keys(payload).some(k => k !== "requestId" && k !== "body")) {
+      throw new AudioPostError("VALIDATION", "Unknown comment field");
+    }
+    const requestId = safeId(payload.requestId, "request", 96);
+    const text = commentText(payload.body);
+    try {
+      return await repository.addComment({
+        tenantId: actor.tenantId, viewerId: actor.accountId, postId,
+        commentId: safeId(newId(), "comment"), requestId, body: text, createdAt: now(),
+      });
+    } catch (error) { return commentError(error); }
+  };
+  const removeOwnComment = async (actor: PostActor, postId: string, commentId: string) => {
+    assertActor(actor);
+    safeId(postId, "post");
+    safeId(commentId, "comment");
+    const removed = await repository.removeOwnComment({
+      tenantId: actor.tenantId, viewerId: actor.accountId, postId, commentId,
+    });
+    if (!removed) throw new AudioPostError("NOT_FOUND", "Comment not found");
+    return { removed: true };
+  };
+  return Object.freeze({ publish, settle, feed, mine, saved, removeOwn, reaction, comments, comment, removeOwnComment });
 }
