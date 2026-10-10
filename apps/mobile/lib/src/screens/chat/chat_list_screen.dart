@@ -166,9 +166,28 @@ class ChatListScreen extends ConsumerWidget {
       ),
     );
     if (action == null || !context.mounted) return;
-    final ctl = ref.read(aiChatProvider.notifier);
-    if (action == 'pin') ctl.togglePin(thread.characterId);
-    if (action == 'archive') ctl.toggleArchive(thread.characterId);
+    // A dialog can outlive logout or an account switch. Never apply a pending
+    // action to another account's thread with the same Character ID.
+    final openingSession = ref.read(sessionProvider);
+    bool sameAccount() {
+      if (!context.mounted) return false;
+      final currentSession = ref.read(sessionProvider);
+      if (openingSession is SessionSignedIn) {
+        return currentSession is SessionSignedIn &&
+            currentSession.user.id == openingSession.user.id;
+      }
+      return identical(currentSession, openingSession);
+    }
+
+    if (!sameAccount()) return;
+    if (action == 'pin') {
+      ref.read(aiChatProvider.notifier).togglePin(thread.characterId);
+      return;
+    }
+    if (action == 'archive') {
+      ref.read(aiChatProvider.notifier).toggleArchive(thread.characterId);
+      return;
+    }
     if (action == 'delete') {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -189,9 +208,13 @@ class ChatListScreen extends ConsumerWidget {
           ],
         ),
       );
-      if (confirmed == true) ctl.clearThread(thread.characterId);
+      if (confirmed == true && sameAccount()) {
+        ref.read(aiChatProvider.notifier).clearThread(thread.characterId);
+      }
+      return;
     }
     if (action == 'rename') {
+      if (!context.mounted || !sameAccount()) return;
       final editor = TextEditingController(text: thread.title ?? '');
       final value = await showDialog<String>(
         context: context,
@@ -211,7 +234,9 @@ class ChatListScreen extends ConsumerWidget {
         ),
       );
       editor.dispose();
-      if (value != null) ctl.renameThread(thread.characterId, value);
+      if (value != null && sameAccount()) {
+        ref.read(aiChatProvider.notifier).renameThread(thread.characterId, value);
+      }
     }
   }
 
