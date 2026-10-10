@@ -72,6 +72,17 @@ function replayTurn(command: MobileTurnCommand) {
   });
 }
 
+/** Request-scoped, content-free stage timings used to calculate real p50/p95. */
+export interface AgentTurnTimingRecord {
+  readonly event: "agent.turn.latency";
+  readonly requestId: string;
+  readonly correlationId: string;
+  readonly outcome: "completed" | "failed";
+  readonly totalMs: number;
+  readonly firstTextMs?: number;
+  readonly stagesMs: Readonly<Record<string, number>>;
+}
+
 export interface TwinConversationObserver {
   opened(input: {
     readonly tenantId: string;
@@ -101,6 +112,8 @@ export function createAgentConversationService(input: {
   readonly sessionDurationMs: number;
   /** Audio is optional: never hold a completed text turn indefinitely for TTS. */
   readonly audioTimeoutMs?: number;
+  /** Optional safe observer; when omitted, emit one structured log per turn. */
+  readonly onTurnTiming?: (record: AgentTurnTimingRecord) => void;
 }): AgentConversationService {
   if (
     !Number.isSafeInteger(input.sessionDurationMs) ||
@@ -200,6 +213,28 @@ export function createAgentConversationService(input: {
     },
 
     async turn(request) {
+      const turnStarted = performance.now();
+      const stagesMs: Record<string, number> = {};
+      let firstTextMs: number | undefined;
+      const elapsed = (start: number) =>
+        Math.max(0, Math.round(performance.now() - start));
+      const emitTiming = (outcome: "completed" | "failed") => {
+        const record: AgentTurnTimingRecord = Object.freeze({
+          event: "agent.turn.latency",
+          requestId: request.requestId,
+          correlationId: request.correlationId,
+          outcome,
+          totalMs: elapsed(turnStarted),
+          ...(firstTextMs === undefined ? {} : { firstTextMs }),
+          stagesMs: Object.freeze({ ...stagesMs }),
+        });
+        // No text, tokens, account, tenant, recipient or payment metadata.
+        // Metrics failures must not alter operation status.
+        try {
+          if (input.onTurnTiming) input.onTurnTiming(record);
+          else console.info(JSON.stringify(record));
+        } catch { /* Diagnostics are best effort. */ }
+      };
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,
@@ -209,18 +244,23 @@ export function createAgentConversationService(input: {
         throw new RangeError("Agent turn text is invalid");
       }
 
+      const authorizationStart = performance.now();
       const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         characterId: parseCanonicalId("character", request.characterId),
       });
+      stagesMs.authorization = elapsed(authorizationStart);
+      const sessionStart = performance.now();
       const session = await input.sessions.read({
         authority: admission.authority,
         scope: admission.scope,
         characterSessionId,
       });
+      stagesMs.sessionRead = elapsed(sessionStart);
       assertConversationSessionOpen(session);
 
       if (input.mobileShell) {
+        const claimStart = performance.now();
         const claim = await input.mobileShell.claimTurn({
           scope: admission.scope,
           characterSessionId,
@@ -229,7 +269,12 @@ export function createAgentConversationService(input: {
           userText: text,
           payloadHash: hashTurnPayload(text),
         });
-        if (claim.state === "existing") return replayTurn(claim.command);
+        stagesMs.commandClaim = elapsed(claimStart);
+        if (claim.state === "existing") {
+          const replay = replayTurn(claim.command);
+          emitTiming("completed");
+          return replay;
+        }
         await input.mobileShell.appendEvent({
           scope: admission.scope,
           characterSessionId,
@@ -239,6 +284,7 @@ export function createAgentConversationService(input: {
       }
 
       const agentRunId = createCanonicalId("agent-run");
+      const createStart = performance.now();
       await input.runs.create({
         authority: admission.authority,
         scope: admission.scope,
@@ -258,8 +304,10 @@ export function createAgentConversationService(input: {
           operationIds: [],
         },
       });
+      stagesMs.runCreate = elapsed(createStart);
 
       try {
+        const prepStart = performance.now();
         const teachingPreparation = await input.teachingAssistant?.prepare({
           scope: admission.scope,
           text,
@@ -280,12 +328,19 @@ export function createAgentConversationService(input: {
               text,
             });
         const direct = billingDirect ?? cryptoDirect;
+        stagesMs.preInference = elapsed(prepStart);
         const inferenceText = teachingPreparation?.text ?? text;
         // Raw model deltas may include machine directives. Stream them only
         // when no billing/crypto/teaching post-processing can change the reply.
         const rawTextDelta =
           !input.billingAssistant && !input.cryptoAssistant &&
-          !teachingPreparation && !direct ? request.onTextDelta : undefined;
+          !teachingPreparation && !direct && request.onTextDelta
+            ? async (delta: string) => {
+                await request.onTextDelta!(delta);
+                if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
+              }
+            : undefined;
+        const modelStart = performance.now();
         const generated = direct ?? await input.strategy.execute({
           agentRunId,
           characterSessionId,
@@ -300,6 +355,8 @@ export function createAgentConversationService(input: {
           ...(rawTextDelta ? { onTextDelta: rawTextDelta } : {}),
           input: Object.freeze({ kind: "text" as const, text: inferenceText }),
         });
+        if (!direct) stagesMs.model = elapsed(modelStart);
+        const postStart = performance.now();
         const cryptoResult = direct || teachingPreparation
           ? null
           : await input.cryptoAssistant?.afterInference({
@@ -322,9 +379,11 @@ export function createAgentConversationService(input: {
                 modelReply: generated.reply,
               })) ??
               generated;
+        stagesMs.postInference = elapsed(postStart);
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
+        const persistStart = performance.now();
         await input.runs.finish({
           authority: admission.authority,
           scope: admission.scope,
@@ -353,6 +412,7 @@ export function createAgentConversationService(input: {
           });
         }
 
+        stagesMs.settlement = elapsed(persistStart);
         // The existing NDJSON route delivers these deltas immediately.
         // Billing/crypto/teaching turns cannot stream untrusted raw model
         // directives; instead emit only server-settled presentation text.
@@ -364,6 +424,7 @@ export function createAgentConversationService(input: {
             !hasMachineMarkup && !request.signal?.aborted) {
           try {
             await request.onTextDelta(reply);
+            if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
           } catch {
             // Delivery is recoverable from canonical turn history.
           }
@@ -376,11 +437,14 @@ export function createAgentConversationService(input: {
           referenceId: request.requestId,
         }).catch(() => undefined);
 
+        const audioStart = performance.now();
         const audio = await renderAudio(
           reply,
           request.signal,
           request.onAudioPcmChunk,
         );
+        stagesMs.audio = elapsed(audioStart);
+        emitTiming("completed");
         return Object.freeze({
           reply,
           agentRunId,
@@ -394,6 +458,7 @@ export function createAgentConversationService(input: {
             : {}),
         });
       } catch (error) {
+        emitTiming("failed");
         await input.runs
           .finish({
             authority: admission.authority,
