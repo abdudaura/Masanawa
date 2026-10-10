@@ -29,7 +29,7 @@ class PublishedTalkTicket {
     }
     final uri = Uri.tryParse(rawUrl);
     if (uri == null || uri.scheme != 'https' ||
-        uri.host.toLowerCase() != host || uri.hasUserInfo ||
+        uri.host.toLowerCase() != host || uri.userInfo.isNotEmpty ||
         uri.hasFragment || uri.port != 443 || uri.path.isEmpty ||
         expiry <= nowMs + 5000 || expiry > nowMs + 60000) {
       throw const FormatException('Untrusted or expired audio ticket');
@@ -107,8 +107,10 @@ class AudioPostPlaybackController extends ChangeNotifier {
     required this.isCurrentAccount,
     required this.expectedMediaHost,
     PublishedTalkAudioOutput? output,
+    Future<Object?> Function(String)? ticketRequest,
     int Function()? nowMs,
   }) : _output = output ?? JustAudioTalkOutput(),
+       _ticketRequest = ticketRequest,
        _nowMs = nowMs ?? _systemNow;
 
   final ApiClient api;
@@ -116,6 +118,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
   final bool Function(String) isCurrentAccount;
   final String expectedMediaHost;
   final PublishedTalkAudioOutput _output;
+  final Future<Object?> Function(String)? _ticketRequest;
   final int Function() _nowMs;
   static int _systemNow() => DateTime.now().millisecondsSinceEpoch;
 
@@ -153,13 +156,14 @@ class AudioPostPlaybackController extends ChangeNotifier {
     try {
       await _output.stop();
       if (!isAuthorized || requestGeneration != _generation) return;
-      final response = await api.dio.get<dynamic>(
-        '/audio-posts/' + Uri.encodeComponent(post.postId) + '/playback',
-        options: null,
-      );
+      final payload = _ticketRequest != null
+          ? await _ticketRequest(post.postId)
+          : (await api.dio.get<dynamic>(
+              '/audio-posts/' + Uri.encodeComponent(post.postId) + '/playback',
+            )).data;
       if (!isAuthorized || requestGeneration != _generation) return;
       final ticket = PublishedTalkTicket.parse(
-        response.data, expectedHost: expectedMediaHost, nowMs: _nowMs());
+        payload, expectedHost: expectedMediaHost, nowMs: _nowMs());
       if (!isAuthorized || requestGeneration != _generation) return;
       await _output.start(ticket.url);
       if (!isAuthorized || requestGeneration != _generation) {
@@ -176,7 +180,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
       _playing = false;
       _error = 'Audio unavailable. Reconnect or retry.';
       _notify();
-      await _output.stop();
+      try { await _output.stop(); } catch (_) { /* keep sanitized UI */ }
     }
   }
 
