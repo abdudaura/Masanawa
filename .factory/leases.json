@@ -162,27 +162,6 @@
       "integration_head_sha": null
     },
     {
-      "claim_id": "af09-609-receipt-readback-20261010-gpt6-0428",
-      "owner": "AF09 #609 continuing authenticated publish receipt recovery / GPT-6 window 0428",
-      "scope": "Server-authenticated publish request status receipt lookup and explicit recovered Talk confirmation on existing composer, no root/migration/media changes",
-      "paths": [
-        "services/gateway/src/audio_posts/service.ts",
-        "services/gateway/src/audio_posts/routes.ts",
-        "services/gateway/src/audio_posts/service.test.mjs",
-        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
-        "apps/mobile/test/audio_first/af09/composer_test.dart",
-        "docs/workstreams/AF09-receipt-recovery-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T03:33:39.661Z",
-      "heartbeat_at": "2026-10-10T03:33:39.661Z",
-      "expires_at": "2026-10-10T03:38:39.661Z",
-      "notes": "Check current #609 head before each source edit. AF00 Gateway composition and AF05 media ownership untouched. Source-before-local-pull parent milestone."
-    },
-    {
       "claim_id": "af09-609-feed-warm-cache-20261010-gpt6",
       "owner": "AF09 PR #609 / GPT-6 feed warm/offline recovery",
       "scope": "Keep authenticated Published Talks feed visible during refresh and warm reentry with bounded, account-fenced encrypted snapshots; no root shell, auth, routes, provider or financial authority",
@@ -1762,6 +1741,31 @@
       "notes": "Concrete source: MSN typed authenticated Dio read, session-reactive crypto Wallet card, exact decimal formatting, stale-account fencing, auth/404/offline/retry + tests. Gateway composition requires AF00/AF01 bounded transfer; Dart/Flutter unavailable in this runner. Home Wallet path checked unclaimed on live registry at 2026-10-10T03:27:05.531Z; only additions, no Cr ledger rename.",
       "released_at": "2026-10-10T03:31:18.325Z",
       "release_reason": "Source changes and finite checklist committed to continuing PR #576@aa88511; static source readback 13/13, Flutter/TS/PG tests NOT_RUN. AF00 bounded Gateway composition requested on #497 comment 6093319806; AF01 financial settlement remains necessary. Not a closed customer milestone, never a local pull gate."
+    },
+    {
+      "claim_id": "af09-609-receipt-readback-20261010-gpt6-0428",
+      "owner": "AF09 #609 continuing authenticated publish receipt recovery / GPT-6 window 0428",
+      "scope": "Server-authenticated publish request status receipt lookup and explicit recovered Talk confirmation on existing composer, no root/migration/media changes",
+      "paths": [
+        "services/gateway/src/audio_posts/service.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-receipt-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:33:39.661Z",
+      "heartbeat_at": "2026-10-10T03:33:39.661Z",
+      "expires_at": "2026-10-10T03:38:39.661Z",
+      "notes": "Check current #609 head before each source edit. AF00 Gateway composition and AF05 media ownership untouched. Source-before-local-pull parent milestone.",
+      "released_at": "2026-10-10T03:39:52.544Z",
+      "source_head": "d85f7b59e19926ddb3f2fd928f491a531cc618b1",
+      "test_state": "GitHub blob readback + 9/10 initial structural assertions; Dart test class position corrected; full Node/Flutter/PG NOT_RUN/BLOCKED (Node22 no private checkout/pnpm/Dart/Flutter/PG), GitHub CI zero-step",
+      "release_reason": "Feature-source receipt recovery increment committed and bounded AF00 composition request sent; entire Published Talks milestone remains PARTIAL, not source-complete/integrated"
     }
   ]
 }
