@@ -266,7 +266,9 @@ class _ComposerState extends State<AudioPostComposerScreen> {
             'received; reconnect and check again without reposting.');
       }
     } finally {
-      if (mounted && generation == _generation && _authorized) {
+      if (mounted && generation == _generation) {
+        // Logout may deny the read while this widget is retained. Clear the
+        // spinner without restoring any previous-account result.
         setState(() => _checkingStatus = false);
       }
     }
