@@ -50,7 +50,8 @@ export function createReplayObjectStore(input:Readonly<{
   sleep?: (milliseconds:number)=>Promise<void>;
 }>):ReplayObjectStore{
   const endpoint=new URL(input.endpoint);
-  if(endpoint.protocol!=="https:"||endpoint.pathname!=="/"){
+  if(endpoint.protocol!=="https:"||endpoint.pathname!=="/"||
+    endpoint.username||endpoint.password||endpoint.search||endpoint.hash){
     throw new TypeError("Replay S3 endpoint must be an HTTPS origin");
   }
   const region=input.region.trim();
@@ -113,7 +114,12 @@ export function createReplayObjectStore(input:Readonly<{
     async checksumSha256(objectKey){
       const url=objectUrl(objectKey);
       for(let attempt=1;attempt<=availabilityAttempts;attempt+=1){
-        const response=await fetchImpl(url,{headers:authHeaders(url,now(),"GET")});
+        // Redirects must not forward signed S3 requests to another origin or path.
+        // A changed endpoint also invalidates the SigV4 canonical request.
+        const response=await fetchImpl(url,{
+          headers:authHeaders(url,now(),"GET"),
+          redirect:"manual",
+        });
         if(response.status===404){
           if(attempt<availabilityAttempts){
             await sleep(availabilityDelayMs*attempt);
@@ -153,6 +159,7 @@ export function createReplayObjectStore(input:Readonly<{
       const response=await fetchImpl(url,{
         method:"DELETE",
         headers:authHeaders(url,now(),"DELETE"),
+        redirect:"manual",
       });
       if(!response.ok&&response.status!==404){
         throw new Error("talks.replay.object_delete_failed");

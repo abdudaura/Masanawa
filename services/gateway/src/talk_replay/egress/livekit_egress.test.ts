@@ -67,3 +67,156 @@ describe("LiveKit replay Egress client",()=>{
     expect(body).toEqual({egress_id:"EG_test"});
   });
 });
+
+
+const config={
+  serverUrl:"wss://live.example.test",
+  apiKey:"api-key",
+  apiSecret:"0123456789abcdef0123456789abcdef",
+  s3:{endpoint:"https://ams3.digitaloceanspaces.com",region:"ams3",bucket:"private-replay",accessKey:"access-id",secret:"12345678"},
+} as const;
+
+describe("LiveKit Egress credential boundary",()=>{
+  it.each([
+    "http://live.example.test",
+    "ws://live.example.test",
+    "https://user:password@live.example.test",
+    "wss://live.example.test/custom/path",
+    "wss://live.example.test/?token=secret",
+    "https://live.example.test/#fragment",
+    "not a URL",
+  ])("rejects insecure or non-origin LiveKit URL %s before any request",(serverUrl)=>{
+    expect(()=>createLiveKitReplayEgress({...config,serverUrl})).toThrow();
+  });
+
+  it.each([
+    "http://spaces.example.test",
+    "https://user:password@spaces.example.test",
+    "https://spaces.example.test/custom",
+    "https://spaces.example.test/?token=secret",
+    "https://spaces.example.test/#fragment",
+  ])("rejects non-clean S3 destination %s before forwarding credentials",(endpoint)=>{
+    expect(()=>createLiveKitReplayEgress({
+      ...config,s3:{...config.s3,endpoint},
+    })).toThrow();
+  });
+
+  it("does not follow a redirect carrying the signed token or S3 secret",async()=>{
+    const calls:RequestInit[]=[];
+    const client=createLiveKitReplayEgress({
+      ...config,
+      fetchImpl:async(_url,init)=>{
+        calls.push(init??{});
+        return new Response(null,{status:307,headers:{location:"https://attacker.example.test/ingest"}});
+      },
+    });
+    await expect(client.start({roomName:"talk_1",objectKey:"talk-replays/tenant/recording.ogg"}))
+      .rejects.toThrow("talks.replay.egress_startegress_failed");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.redirect).toBe("manual");
+    expect(String(calls[0]?.body)).toContain('"secret":"12345678"');
+  });
+
+  it("never retries or follows StopEgress redirects",async()=>{
+    const calls:RequestInit[]=[];
+    const client=createLiveKitReplayEgress({
+      ...config,
+      fetchImpl:async(_url,init)=>{
+        calls.push(init??{});
+        return new Response(null,{status:308,headers:{location:"https://other.example.test/stop"}});
+      },
+    });
+    await expect(client.stop("EG_test"))
+      .rejects.toThrow("talks.replay.egress_stopegress_failed");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.redirect).toBe("manual");
+  });
+
+  it("bounds streamed response bytes even without a Content-Length header",async()=>{
+    const client=createLiveKitReplayEgress({
+      ...config,
+      fetchImpl:async()=>new Response("x".repeat(65*1024),{status:200}),
+    });
+    await expect(client.start({roomName:"talk_1",objectKey:"talk-replays/tenant/recording.ogg"}))
+      .rejects.toThrow("talks.replay.egress_response_too_large");
+  });
+
+  it("rejects declared excessive response length before body consumption",async()=>{
+    const client=createLiveKitReplayEgress({
+      ...config,
+      fetchImpl:async()=>new Response('{"egress_id":"EG_1"}',{
+        status:200,headers:{"content-length":"999999"},
+      }),
+    });
+    await expect(client.start({roomName:"talk_1",objectKey:"talk-replays/tenant/recording.ogg"}))
+      .rejects.toThrow("talks.replay.egress_response_too_large");
+  });
+
+  it.each(["not-json","[]","null","23"])("rejects malformed or non-object LiveKit responses",(body)=>{
+    const client=createLiveKitReplayEgress({...config,fetchImpl:async()=>new Response(body,{status:200})});
+    await expect(client.start({roomName:"talk_1",objectKey:"talk-replays/tenant/recording.ogg"}))
+      .rejects.toThrow("talks.replay.egress_invalid_response");
+  });
+
+  it("keeps secure WebSocket origin conversion and normal StartEgress response working",async()=>{
+    let observedUrl="";
+    const client=createLiveKitReplayEgress({
+      ...config,
+      fetchImpl:async(url)=>{
+        observedUrl=String(url);
+        return new Response(JSON.stringify({egress_id:"EG_secure"}),{status:200});
+      },
+    });
+    await expect(client.start({roomName:"talk_1",objectKey:"talk-replays/tenant/recording.ogg"}))
+      .resolves.toEqual({egressId:"EG_secure"});
+    expect(observedUrl).toBe("https://live.example.test/twirp/livekit.Egress/StartEgress");
+  });
+});
+
+
+describe("F09 bounded LiveKit Egress side-effect uncertainty",()=>{
+  it.each(["start","stop"] as const)(
+    "aborts an unresponsive %s request without blindly retrying",async(operation)=>{
+      let calls=0;
+      let signalSeen:AbortSignal|undefined;
+      const client=createLiveKitReplayEgress({
+        ...config,
+        requestTimeoutMs:20,
+        fetchImpl:async(_url,init)=>{
+          calls++;
+          signalSeen=init?.signal??undefined;
+          return await new Promise<Response>((_resolve,reject)=>{
+            if(!init?.signal) return reject(new Error("missing AbortSignal"));
+            init.signal.addEventListener("abort",()=>{
+              reject(init.signal?.reason??new Error("aborted"));
+            },{once:true});
+          });
+        },
+      });
+      const attempt=operation==="start"
+        ? client.start({roomName:"talk_1",objectKey:"talk-replays/tenant/recording.ogg"})
+        : client.stop("EG_active");
+      await expect(attempt).rejects.toThrow(
+        `talks.replay.egress_${operation==="start"?"startegress":"stopegress"}_timeout_uncertain`,
+      );
+      expect(calls).toBe(1);
+      expect(signalSeen?.aborted).toBe(true);
+    },
+  );
+
+  it.each([0,-1,1,9,120001,1.5,Number.NaN,Number.POSITIVE_INFINITY])(
+    "rejects unsafe request timeout %s before any provider operation",(requestTimeoutMs)=>{
+      expect(()=>createLiveKitReplayEgress({...config,requestTimeoutMs}))
+        .toThrow("LiveKit Egress request timeout");
+    },
+  );
+
+  it("keeps ordinary provider denial distinct from timeout uncertainty",async()=>{
+    const client=createLiveKitReplayEgress({
+      ...config,requestTimeoutMs:50,
+      fetchImpl:async()=>new Response("denied",{status:403}),
+    });
+    await expect(client.stop("EG_active"))
+      .rejects.toThrow("talks.replay.egress_stopegress_failed");
+  });
+});
