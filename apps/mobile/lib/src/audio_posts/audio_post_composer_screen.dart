@@ -2,35 +2,23 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'audio_post_transport.dart';
 import 'audio_post_draft_store.dart';
-
-/// AF05 must provide a server-verified uploaded asset; the Gateway independently
-/// rechecks ownership, codec, size and duration on every publish operation.
-class VerifiedPostAudio {
-  const VerifiedPostAudio({required this.assetId, required this.durationMs});
-  final String assetId;
-  final int durationMs;
-  bool get isPlausible => RegExp(r'^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$').hasMatch(assetId)
-      && durationMs >= 1000 && durationMs <= 180000;
-}
-
-typedef AcquireVerifiedPostAudio = Future<VerifiedPostAudio?> Function();
-enum AudioCaptureFailure { permission, offline, tooLong, unavailable, other }
-class AudioCaptureException implements Exception {
-  const AudioCaptureException(this.reason);
-  final AudioCaptureFailure reason;
-}
+import 'audio_post_media_contract.dart';
+import 'audio_post_capture_sheet.dart';
+export 'audio_post_media_contract.dart';
 
 /// AF09 composer. AF00 mounts it from Talks and injects AF05 verified media.
 class AudioPostComposerScreen extends StatefulWidget {
   const AudioPostComposerScreen({
     super.key, required this.transport, required this.accountId,
     required this.isCurrentAccount, this.acquireVerifiedAudio,
-    this.onPublished, this.newRequestId, this.attemptStore,
+    this.uploadVerifiedAudio, this.onPublished, this.newRequestId, this.attemptStore,
   });
   final AudioPostTransport transport;
   final String accountId;
   final bool Function(String) isCurrentAccount;
   final AcquireVerifiedPostAudio? acquireVerifiedAudio;
+  /// Optional AF05/AF15 authenticated private upload; never a local-only asset.
+  final UploadVerifiedTalkAudio? uploadVerifiedAudio;
   final ValueChanged<AudioPost>? onPublished;
   final String Function()? newRequestId;
   final TalkPublishAttemptStore? attemptStore;
@@ -51,6 +39,8 @@ class _ComposerState extends State<AudioPostComposerScreen> {
   int _generation = 0;
   bool get _authorized => widget.accountId.trim().isNotEmpty &&
       widget.isCurrentAccount(widget.accountId);
+  bool get _hasCapture => widget.acquireVerifiedAudio != null ||
+      widget.uploadVerifiedAudio != null;
   bool get _validTitle {
     final t = _title.text.trim();
     return t.isNotEmpty && t.length <= 100 &&
@@ -136,11 +126,16 @@ class _ComposerState extends State<AudioPostComposerScreen> {
   }
   Future<void> _record() async {
     if (!_authorized || _restoring || _restoreFailed || _saving ||
-        _acquiring || _attempted || widget.acquireVerifiedAudio == null) return;
+        _acquiring || _attempted || !_hasCapture) return;
     final generation = ++_generation;
     setState(() { _acquiring = true; _message = null; });
     try {
-      final next = await widget.acquireVerifiedAudio!();
+      final next = widget.acquireVerifiedAudio != null
+          ? await widget.acquireVerifiedAudio!()
+          : await showTalkCaptureSheet(context,
+              accountId: widget.accountId,
+              isCurrentAccount: widget.isCurrentAccount,
+              upload: widget.uploadVerifiedAudio);
       if (!mounted || !_authorized || generation != _generation) return;
       if (next != null && !next.isPlausible) {
         setState(() => _message = 'Verified audio must be between 1 second and 3 minutes.');
@@ -318,14 +313,14 @@ class _ComposerState extends State<AudioPostComposerScreen> {
           const SizedBox(height: 14),
           OutlinedButton.icon(
             key: const ValueKey('talk-record'),
-            onPressed: widget.acquireVerifiedAudio == null || _attempted ||
+            onPressed: !_hasCapture || _attempted ||
                 _restoring || _restoreFailed || _saving ||
                 _acquiring || _sending || _receipt != null ? null : _record,
             icon: const Icon(Icons.mic_outlined),
             label: Text(_acquiring ? 'Preparing audio…' :
                 _audio == null ? 'Record audio' : 'Replace recording'),
           ),
-          if (widget.acquireVerifiedAudio == null)
+          if (!_hasCapture)
             const Text('Recording and verified upload are not configured in this build.'),
           if (_audio != null)
             Text('Verified audio: ' + (_audio!.durationMs / 1000).ceil().toString() + ' seconds'),
