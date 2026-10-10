@@ -35,7 +35,7 @@ function asText(v:unknown,max:number):string {
   return v.trim();
 }
 /** Inject existing authenticated tenant/role authority; registering these routes without it is impossible. */
-export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;store:MasanaStore;validateProfile:(value:unknown)=>unknown; verifyMedia:(input:{tenantId:string;mediaId:string;kind:"portrait"|"banner";staffId:string})=>Promise<{objectKey:string}>}):void {
+export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;store:MasanaStore;validateProfile:(value:unknown)=>unknown; verifyMedia:(input:{tenantId:string;mediaId:string;kind:"portrait"|"banner";staffId:string})=>Promise<{objectKey:string}>; publicMediaUrl:(input:{tenantId:string;characterId:string;mediaId:string;kind:"portrait"|"banner"})=>Promise<string|null>}):void {
   app.get("/v1/masana",async (request,reply)=>{
     const actor=await deps.auth.optional(request.headers.authorization);
     const query=params(request.query);
@@ -49,7 +49,19 @@ export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;
     const id=characterId(params(request.params).id);
     const profile=await deps.store.read({tenantId:actor.tenantId,userId:actor.userId,characterId:id});
     if(!profile) return reply.code(404).send({code:"masana_not_found"});
-    return profile;
+    const output=profile as {profile?:{portraitMediaId?:unknown;bannerMediaId?:unknown}};
+    const data=output.profile;
+    // Signed/read-through media links come from the existing qualified object store.
+    // Never expose object keys, unreviewed uploads or permanent public S3 URLs.
+    const media=await Promise.all([
+      typeof data?.portraitMediaId==="string"
+        ? deps.publicMediaUrl({tenantId:actor.tenantId,characterId:id,mediaId:data.portraitMediaId,kind:"portrait"})
+        : Promise.resolve(null),
+      typeof data?.bannerMediaId==="string"
+        ? deps.publicMediaUrl({tenantId:actor.tenantId,characterId:id,mediaId:data.bannerMediaId,kind:"banner"})
+        : Promise.resolve(null)
+    ]);
+    return {...(profile as object),portraitUrl:media[0],bannerUrl:media[1]};
   });
   for(const [method,active] of [["post",true],["delete",false]] as const){
     app[method]("/v1/masana/:id/follow",async (request,reply)=>{

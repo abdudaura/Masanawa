@@ -47,9 +47,11 @@ class _MasanaProfileScreenState extends State<MasanaProfileScreen> {
    if(p==null)return const Center(child:Text('This Masana is unavailable.'));
    final theme=Theme.of(context);
    return ListView(padding:const EdgeInsets.all(16),children:[
-    Container(height:120,alignment:Alignment.center,decoration:BoxDecoration(
-     color:theme.colorScheme.primaryContainer,borderRadius:BorderRadius.circular(16)),
-     child:CircleAvatar(radius:36,child:Text(p.displayName.isNotEmpty?p.displayName.substring(0,1):'?'))),
+    Container(height:120,alignment:Alignment.center,clipBehavior:Clip.antiAlias,
+     decoration:BoxDecoration(color:theme.colorScheme.primaryContainer,borderRadius:BorderRadius.circular(16)),
+     child:p.bannerUrl!=null?Image.network(p.bannerUrl!,fit:BoxFit.cover,width:double.infinity,
+      errorBuilder:(_,__,___)=>const Icon(Icons.image_not_supported_outlined)):
+      CircleAvatar(radius:36,child:Text(p.displayName.isNotEmpty?p.displayName.substring(0,1):'?'))),
     const SizedBox(height:12),Text(p.displayName,style:theme.textTheme.headlineSmall),
     Text(p.profession),Text('${p.followers} followers'),
     const SizedBox(height:12),

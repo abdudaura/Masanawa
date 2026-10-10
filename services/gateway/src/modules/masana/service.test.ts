@@ -18,7 +18,7 @@ describe("Masana public and staff authority",()=>{
     async fan(h){if(h!=="Bearer fan") throw Object.assign(new Error("unauthorized"),{statusCode:401});return {tenantId:"tenant_test",userId:"fan_a"};},
     async staff(h){if(h!=="Bearer editor") throw Object.assign(new Error("forbidden"),{statusCode:403});return {tenantId:"tenant_test",userId:"staff_a"};}
   };
-  async function app(){const instance=Fastify();registerMasanaRoutes(instance,{auth,store,validateProfile:value=>value,verifyMedia:async(input)=>({objectKey:"verified/"+input.mediaId})});await instance.ready();return instance;}
+  async function app(){const instance=Fastify();registerMasanaRoutes(instance,{auth,store,validateProfile:value=>value,verifyMedia:async(input)=>({objectKey:"verified/"+input.mediaId}),publicMediaUrl:async()=>null});await instance.ready();return instance;}
   it("does not read draft records on guest profile",async()=>{
     events.length=0;const server=await app();const response=await server.inject({method:"GET",url:"/v1/masana/foo"});
     expect(response.statusCode).toBe(404);expect(events).toEqual(["read:foo"]);await server.close();

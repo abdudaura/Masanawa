@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 
 class MasanaProfile {
- const MasanaProfile({required this.characterId,required this.revision,required this.profile,required this.following,required this.followers});
+ const MasanaProfile({required this.characterId,required this.revision,required this.profile,required this.following,required this.followers,this.portraitUrl,this.bannerUrl});
+ final String? portraitUrl,bannerUrl;
  final String characterId;
  final int revision,followers;
  final Map<String,dynamic> profile;
@@ -14,9 +15,11 @@ class MasanaProfile {
  factory MasanaProfile.fromJson(Map<String,dynamic> json)=>MasanaProfile(
   characterId:json['characterId'] as String,revision:(json['revision'] as num).toInt(),
   profile:Map<String,dynamic>.from(json['profile'] as Map),
-  following:json['following']==true,followers:(json['followerCount'] as num? ?? 0).toInt());
+  following:json['following']==true,followers:(json['followerCount'] as num? ?? 0).toInt(),
+  portraitUrl:json['portraitUrl'] as String?,bannerUrl:json['bannerUrl'] as String?);
  MasanaProfile followState(bool follow)=>MasanaProfile(
   characterId:characterId,revision:revision,profile:profile,following:follow,
+  portraitUrl:portraitUrl,bannerUrl:bannerUrl,
   followers:(followers+(follow&&!following?1:!follow&&following?-1:0)).clamp(0,2147483647).toInt());
 }
 abstract class MasanaRepository {
