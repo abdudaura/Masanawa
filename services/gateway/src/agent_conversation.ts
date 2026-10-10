@@ -99,6 +99,8 @@ export function createAgentConversationService(input: {
   readonly teachingAssistant?: AgentTeachingAssistant;
   readonly cryptoAssistant?: AgentCryptoAssistant;
   readonly sessionDurationMs: number;
+  /** Audio is optional: never hold a completed text turn indefinitely for TTS. */
+  readonly audioTimeoutMs?: number;
 }): AgentConversationService {
   if (
     !Number.isSafeInteger(input.sessionDurationMs) ||
@@ -107,21 +109,55 @@ export function createAgentConversationService(input: {
     throw new RangeError("Alpha session duration must be at least one minute");
   }
 
+  const audioTimeoutMs = input.audioTimeoutMs ?? 15_000;
+  if (!Number.isSafeInteger(audioTimeoutMs) ||
+      audioTimeoutMs < 100 || audioTimeoutMs > 60_000) {
+    throw new RangeError("Agent audio deadline must be 100..60000 ms");
+  }
+
   async function renderAudio(
     reply: string,
     signal?: AbortSignal,
     onAudioPcmChunk?: (dataBase64: string) => void | Promise<void>,
   ) {
     if (!input.nativeAudio || signal?.aborted) return undefined;
-    return input.nativeAudio
-      .render(
-        reply,
-        signal,
-        onAudioPcmChunk
-          ? async (chunk) => onAudioPcmChunk(chunk.toString("base64"))
-          : undefined,
-      )
-      .catch(() => undefined);
+    // TTS is a best-effort enhancement AFTER durable text completion. A
+    // provider that ignores AbortSignal must not hold up NDJSON 'done'.
+    const controller = new AbortController();
+    let inactive = false;
+    const forwardAbort = () => controller.abort();
+    signal?.addEventListener("abort", forwardAbort, { once: true });
+    if (signal?.aborted) controller.abort();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<undefined>((resolve) => {
+      timer = setTimeout(() => {
+        inactive = true;
+        controller.abort();
+        resolve(undefined);
+      }, audioTimeoutMs);
+    });
+    const task = controller.signal.aborted
+      ? Promise.resolve(undefined)
+      : input.nativeAudio.render(
+          reply,
+          controller.signal,
+          onAudioPcmChunk
+            ? async (chunk) => {
+                // An abandoned provider must not stream late PCM into the
+                // next turn after timeout/disconnect.
+                if (!inactive && !controller.signal.aborted) {
+                  await onAudioPcmChunk(chunk.toString("base64"));
+                }
+              }
+            : undefined,
+        ).catch(() => undefined);
+    try {
+      return await Promise.race([task, deadline]);
+    } finally {
+      inactive = true;
+      if (timer !== undefined) clearTimeout(timer);
+      signal?.removeEventListener("abort", forwardAbort);
+    }
   }
 
   const service: AgentConversationService = {
