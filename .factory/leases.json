@@ -1242,10 +1242,10 @@
       "branch": "lane/l-admin-j19-ops-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:29:51.835Z",
-      "heartbeat_at": "2026-10-10T16:47:27.276Z",
-      "expires_at": "2026-10-10T16:52:27.276Z",
+      "heartbeat_at": "2026-10-10T16:49:11.015Z",
+      "expires_at": "2026-10-10T16:54:11.016Z",
       "notes": "No production activation; source implementation on nondeploying integration; await AF00 composition and R1 authorized identity.",
-      "source_head": "586d59b81bff84e591f564b8206555b1c2020834",
+      "source_head": "8872c56575d54d730df125f8f9b374c056749c06",
       "source_pr": 629
     },
     {
