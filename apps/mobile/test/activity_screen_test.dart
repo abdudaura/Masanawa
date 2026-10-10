@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/activity/talk_activity.dart';
+import 'package:masanawa/src/core/api/models.dart';
+import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/screens/activity/activity_screen.dart';
 import 'package:masanawa/src/state/talk_activity_state.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
