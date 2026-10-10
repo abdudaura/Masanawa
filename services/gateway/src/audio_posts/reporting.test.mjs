@@ -77,6 +77,18 @@ test("session rotation between lookup and safety write fails closed", async () =
   await denies(h.service.report(input()), "AUTH_REQUIRED");
   assert.equal(h.calls.length, 0);
 });
+test("mutable reused session objects cannot rewrite the original report actor", async () => {
+  const mutable = {...actor};
+  const h = harness({
+    requireActor: async () => mutable,
+    visibility: {canView: async () => {
+      mutable.accountId = "account-3";
+      return true;
+    }},
+  });
+  await denies(h.service.report(input()), "AUTH_REQUIRED");
+  assert.deepEqual(h.calls, []);
+});
 test("an unavailable canonical safety receipt is not reported as a successful submission", async () => {
   const h = harness({safety: {report: async () => ({accepted: false})}});
   await denies(h.service.report(input()), "CAPABILITY_UNAVAILABLE");
