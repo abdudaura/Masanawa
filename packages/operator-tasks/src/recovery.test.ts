@@ -82,7 +82,7 @@ describe("U02 durable status-only recovery", () => {
     });
     expect(await rejected.runOnce()).toMatchObject({ unknown: 1 });
     const stalled = createStatusOnlyRecovery({
-      journal, status: { readback: () => new Promise(() => undefined) },
+      journal, status: { readback: () => new Promise<OperatorDomainOutcome>(() => undefined) },
       now: () => new Date("2026-10-10T00:10:00.000Z"),
       timeoutMs: 50,
     });
