@@ -99,6 +99,47 @@ class _FakeAudioOutput implements PublishedTalkAudioOutput {
 }
 
 void main() {
+  testWidgets('Talks destination wires real capture when server-verified uploader exists',
+      (tester) async {
+    final posts = _AudioPosts();
+    var uploaded = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: PublishedTalksDestination(
+        accountId: 'alice', isCurrentAccount: (id) => id == 'alice',
+        transport: posts, attemptStore: _MemoryAttemptStore(),
+        uploadVerifiedAudio: ({
+          required localPath,
+          required uploadRequestId,
+          required startMs,
+          required endMs,
+        }) async {
+          uploaded++;
+          return VerifiedPostAudio(
+            assetId: 'server-owned-audio',
+            durationMs: endMs - startMs,
+          );
+        },
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Record an audio Talk'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('talk-record')), findsOneWidget);
+    final button = tester.widget<OutlinedButton>(
+      find.byKey(const ValueKey('talk-record')));
+    expect(button.onPressed, isNotNull);
+    await tester.tap(find.byKey(const ValueKey('talk-record')));
+    await tester.pumpAndSettle();
+    expect(find.text('Record a Talk'), findsOneWidget);
+    expect(find.text('Discard and close'), findsOneWidget);
+    expect(posts.publishCalls, 0);
+    await tester.tap(find.text('Discard and close'));
+    await tester.pumpAndSettle();
+    expect(find.text('Record a Talk'), findsNothing);
+    expect(uploaded, 0);
+    expect(posts.publishCalls, 0);
+  });
+
   testWidgets('account replacement closes an older creator route',
       (tester) async {
     final posts = _AudioPosts();
