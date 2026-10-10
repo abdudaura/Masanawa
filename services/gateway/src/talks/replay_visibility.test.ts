@@ -14,7 +14,7 @@ describe("Talk replay visibility",()=>{
       },
     };
     await createPostgresTalkRepository(pool).listTalks({
-      tenantId:"tenant_1",feed:"explore",limit:40,
+      tenantId:"tenant_1",viewerUserId:"viewer_1",feed:"explore",limit:40,
     });
     expect(calls[0]?.text).toContain("recording_state='finalized'");
     expect(calls[0]?.text).toContain("publication_state='published'");
