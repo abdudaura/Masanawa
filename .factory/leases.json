@@ -1319,10 +1319,10 @@
       "branch": "lane/l-missions-fan-memory-j11-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "source_pr": null,
-      "source_head": "64c55f5c0c823d4d7a8fc935e06889d475f1f93d",
+      "source_head": "6a326f494579f276d5063a8cfa72c17fb5f0b8ea",
       "claimed_at": "2026-10-10T16:39:29.161Z",
-      "heartbeat_at": "2026-10-10T16:53:45.230Z",
-      "expires_at": "2026-10-10T16:58:45.230Z",
+      "heartbeat_at": "2026-10-10T16:58:49.656Z",
+      "expires_at": "2026-10-10T17:03:49.656Z",
       "notes": "No shared router/composition/migration registry. Preserve canonical memory repository/approval, no duplicate ledger or memory database. Recheck before editing."
     },
     {
