@@ -324,8 +324,8 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T04:50:56.006Z",
-      "heartbeat_at": "2026-10-10T04:50:56.006Z",
-      "expires_at": "2026-10-10T04:55:56.006Z",
+      "heartbeat_at": "2026-10-10T04:52:06.272Z",
+      "expires_at": "2026-10-10T04:57:06.272Z",
       "notes": "Scope is only new feature-layer Flutter files; AF05 owns native recording infrastructure and AF15 owns canonical media authority. AF00 owns composer injection/shell."
     },
     {
