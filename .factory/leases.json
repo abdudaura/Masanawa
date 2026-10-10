@@ -371,27 +371,6 @@
       "heartbeat_at": "2026-10-10T06:49:04.769Z",
       "expires_at": "2026-10-10T06:54:04.769Z",
       "notes": "Reviewed existing #609 source and explicit stale transfer in PR comment 6094811024; AF00 protected paths excluded"
-    },
-    {
-      "claim_id": "shared-ci-460-full-closure-20261010-gpt6",
-      "owner": "GPT-6 / owner-requested CI and complete-window delivery",
-      "scope": "Owner-ordered end-to-end delivery policy on fresh main; independent of older CI repair PR #460; exact claimed instruction files only",
-      "paths": [
-        "AGENTS.md",
-        "CONTINUE-HERE.md",
-        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
-        "docs/MULTI-WINDOW-WORK.md"
-      ],
-      "branch": "work/window-end-to-end-closure-ci-20261010",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 614,
-      "claimed_at": "2026-10-10T07:01:59.921Z",
-      "heartbeat_at": "2026-10-10T07:12:32.988Z",
-      "expires_at": "2026-10-10T07:17:32.988Z",
-      "notes": "Owner-directed policy PR #614 4 docs from current main; posted guidance to existing PRs #600/#609/#612/#460/#576/#497 and issue #457; actual CI evidence logged. Historical #460 source preserved.",
-      "source_head_sha": "32b2e6c0987cb8b232174434d0712c40e657a737",
-      "integration_head_sha": null,
-      "test_state": "GitHub source/readback 4/4 structural only; Foundation CI 38033356630 executed and failed known unrelated main TS2459; Test/Build skipped; no safe main merge (Railway gateway Git main checkSuites:false)"
     }
   ],
   "history": [
@@ -2516,6 +2495,29 @@
       "test_state": "10/10 source-structure predicates only; 4 widget tests authored NOT_RUN. No Flutter/Dart/Node24/pnpm/PG/Android/provider E2E.",
       "recovered_by": "af09-609-multitab-persistence-20261010-gpt6-0648",
       "recovery_source_head": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1"
+    },
+    {
+      "claim_id": "shared-ci-460-full-closure-20261010-gpt6",
+      "owner": "GPT-6 / owner-requested CI and complete-window delivery",
+      "scope": "Owner-ordered end-to-end delivery policy on fresh main; independent of older CI repair PR #460; exact claimed instruction files only",
+      "paths": [
+        "AGENTS.md",
+        "CONTINUE-HERE.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
+        "docs/MULTI-WINDOW-WORK.md"
+      ],
+      "branch": "work/window-end-to-end-closure-ci-20261010",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 614,
+      "claimed_at": "2026-10-10T07:01:59.921Z",
+      "heartbeat_at": "2026-10-10T07:12:32.988Z",
+      "expires_at": "2026-10-10T07:17:32.988Z",
+      "notes": "Owner-directed policy PR #614 4 docs from current main; posted guidance to existing PRs #600/#609/#612/#460/#576/#497 and issue #457; actual CI evidence logged. Historical #460 source preserved.",
+      "source_head_sha": "32b2e6c0987cb8b232174434d0712c40e657a737",
+      "integration_head_sha": null,
+      "test_state": "GitHub source/readback 4/4 structural only; Foundation CI 38033356630 executed and failed known unrelated main TS2459; Test/Build skipped; no safe main merge (Railway gateway Git main checkSuites:false)",
+      "released_at": "2026-10-10T07:13:18.210Z",
+      "release_reason": "New owner-directed work-to-merge policy source complete in PR #614 head 32b2e6c0987cb8b232174434d0712c40e657a737: AGENTS/CONTINUE/MULTI-WINDOW/REUSABLE. Structural readback succeeded (not repo tests). Foundation #614 run 38033356630 executed and failed pre-existing TalkId TS2459; #460 CI run 37743948779 executed and failed Gateway typecheck fixture errors; #460 Mobile 37743948782 analyzed and exited 1 with 390 analyzer diagnostics; #609 Mobile 38032335846 source errors. Actual suite Test/Build/APK remain skipped. Root production Railway main is auto Git-connected checkSuites:false; gateway start runs pnpm migrate, so unsafe to merge policy to main without AF00 reversible gate. Policy broadcast to PRs #600/#609/#612/#460/#576/#497; test queue in issue #457. Merge SHA NONE; no local pull/production action. AF00 next: safe gate/integration; AF13 source runner; domain owners fix errors in existing PRs."
     }
   ]
 }
