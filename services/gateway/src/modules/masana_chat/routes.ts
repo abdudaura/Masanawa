@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { createCanonicalId, parseCanonicalId } from "@masanawa/contracts";
+import { createCanonicalId, parseCanonicalId, type RequestId, type CharacterSessionId } from "@masanawa/contracts";
 import type { AgentConversationService } from "../../agent_conversation_contract.js";
 
 /** Existing session and turn service remains the sole write/idempotency authority. */
@@ -61,8 +61,8 @@ export function registerMasanaChatRoutes(app: FastifyInstance, deps: MasanaChatD
     if (!text || !requestId) return reply.code(422).send({ code: "invalid_chat_turn" });
     const sessionId = object(request.params).sessionId;
     if (typeof sessionId !== "string") return reply.code(422).send({ code: "invalid_session" });
-    let canonicalRequest: ReturnType<typeof parseCanonicalId<"request">>;
-    let canonicalSession: ReturnType<typeof parseCanonicalId<"character-session">>;
+    let canonicalRequest: RequestId;
+    let canonicalSession: CharacterSessionId;
     try {
       canonicalRequest = parseCanonicalId("request", requestId);
       canonicalSession = parseCanonicalId("character-session", sessionId);
@@ -78,14 +78,14 @@ export function registerMasanaChatRoutes(app: FastifyInstance, deps: MasanaChatD
       text, requestId: canonicalRequest,
       correlationId: createCanonicalId("correlation"),
       representation: "platform-agent",
-      surface: "chat",
+      surface: "mobile",
     });
     return reply.send(result);
   });
   app.post("/v1/masana/:id/chat/sessions/:sessionId/close", async (request, reply) => {
     const actor = await admit(request.headers.authorization, object(request.params).id);
     if (!actor) return reply.code(403).send({ code: "masana_chat_forbidden" });
-    let canonicalSession: ReturnType<typeof parseCanonicalId<"character-session">>;
+    let canonicalSession: CharacterSessionId;
     try {
       const raw = object(request.params).sessionId;
       if (typeof raw !== "string") throw new TypeError("invalid_session");
