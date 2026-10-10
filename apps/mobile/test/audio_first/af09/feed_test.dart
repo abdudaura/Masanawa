@@ -13,6 +13,8 @@ class FakePosts implements AudioPostTransport {
   Future<AudioPostPage> Function(String?)? discoverHandler;
   int requests = 0, likes = 0, saves = 0, removals = 0;
   Future<List<AudioPost>> Function()? mineHandler;
+  Future<List<AudioPost>> Function()? savedHandler;
+  bool? lastReactionEnabled;
   Future<AudioPost> Function(String)? removeHandler;
   @override
   Future<AudioPostPage> discover({String? cursor}) {
@@ -22,6 +24,8 @@ class FakePosts implements AudioPostTransport {
   }
   @override
   Future<List<AudioPost>> mine() => mineHandler?.call() ?? Future.value([]);
+  @override
+  Future<List<AudioPost>> saved() => savedHandler?.call() ?? Future.value([]);
   @override
   Future<AudioPost> publish({
     required String requestId, required String assetId, required String title,
@@ -37,7 +41,10 @@ class FakePosts implements AudioPostTransport {
   @override
   Future<void> react({
     required String postId, required String kind, required bool enabled,
-  }) async { if (kind == 'save') saves++; else likes++; }
+  }) async {
+    lastReactionEnabled = enabled;
+    if (kind == 'save') saves++; else likes++;
+  }
 }
 Widget screen(FakePosts source, String account, {bool Function(String)? current}) =>
   MaterialApp(home: AudioPostFeedScreen(
@@ -71,6 +78,19 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     expect(source.requests, 2);
+  });
+
+  testWidgets('saved library reads account data and unsaves without false success', (tester) async {
+    final source = FakePosts()..savedHandler = () async => [post('saved')];
+    await tester.pumpWidget(screen(source, 'user-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio saved'), findsOneWidget);
+    await tester.tap(find.text('Unsave'));
+    await tester.pumpAndSettle();
+    expect(source.lastReactionEnabled, false);
+    expect(find.text('Published audio saved'), findsNothing);
   });
 
   testWidgets('My Talks removal requires confirmation and retains server status', (tester) async {
