@@ -126,9 +126,13 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
     final response = await api.dio.get<dynamic>(
       '/audio-posts/requests/${Uri.encodeComponent(requestId)}');
     final data = response.data;
-    if (data == null) return null;
-    if (data is! Map) throw const FormatException('Invalid publish receipt');
-    return AudioPost.fromJson(data.cast<String, dynamic>());
+    if (data is! Map || !data.containsKey('receipt')) {
+      throw const FormatException('Invalid publish lookup response');
+    }
+    final receipt = data['receipt'];
+    if (receipt == null) return null;
+    if (receipt is! Map) throw const FormatException('Invalid publish receipt');
+    return AudioPost.fromJson(receipt.cast<String, dynamic>());
   }
 
   @override
