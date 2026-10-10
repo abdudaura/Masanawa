@@ -720,18 +720,19 @@
     {
       "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
       "owner": "GPT-6 AF06 continuing existing PR #497 chat lifecycle repair",
-      "scope": "Adopt exact reviewed chat action ownership fence + tests from conflicted source PR #497 into existing AF00 nondeploying integration PR #600 after bounded coordination; no unrelated root paths",
+      "scope": "Existing AF00 PR #600 source integration: adopt scoped chat async session fencing and tested TypeScript TalkId import correction from existing AF13 PR #460",
       "paths": [
         "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
-        "apps/mobile/test/chat/chat_action_account_test.dart"
+        "apps/mobile/test/chat/chat_action_account_test.dart",
+        "packages/agents/src/talk-replay.test.ts"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 600,
       "claimed_at": "2026-10-10T08:58:13.359Z",
-      "heartbeat_at": "2026-10-10T09:03:25.747Z",
-      "expires_at": "2026-10-10T09:08:25.747Z",
-      "notes": "Source PR #497 remains unchanged/preserved; transfer exact two paths to existing AF00 PR #600. Owner-approved merge-when-safe direction. Do not modify protected root/router/migrations."
+      "heartbeat_at": "2026-10-10T09:05:55.625Z",
+      "expires_at": "2026-10-10T09:10:55.625Z",
+      "notes": "Source import repair is already in PR #460 and passed its workspace typecheck; adopt only 1-file independent diff to unblock AF00 baseline, no changes to financial migration/source."
     },
     {
       "claim_id": "af13-460-security-migration-manifest-gpt6-20261010",
