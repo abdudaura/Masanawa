@@ -1,5 +1,5 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
-import {RoomError,requireRoomStaff,requireFan} from "@masanawa/rooms";
+import {RoomError,requireRoomStaff,requireFan,validateQuestion,validateIdempotencyKey} from "@masanawa/rooms";
 import type {RoomActor,RoomsRepository} from "@masanawa/rooms/ports";
 
 type Capability="rooms.read"|"rooms.join"|"rooms.ask"|"rooms.staff";
@@ -28,7 +28,7 @@ export function registerRoomsRoutes(app:FastifyInstance,ports:RoomsRoutePorts):v
  };
  app.get("/v1/rooms",async(req,reply)=>{
    try{const a=await guard(req,"rooms.read");const q=req.query as {tab?:string;q?:string;lang?:string};
-     return {items:await ports.repository.list(a,{joined:q.tab==="joined",search:q.q,language:q.lang})};
+     return {items:await ports.repository.list(a,{joined:q.tab==="joined",search:q.q??"",language:q.lang??""})};
    }catch(e){return respondError(e,reply);}
  });
  app.get("/v1/rooms/:id",async(req,reply)=>{
@@ -49,8 +49,8 @@ export function registerRoomsRoutes(app:FastifyInstance,ports:RoomsRoutePorts):v
  app.post("/v1/rooms/:id/questions",async(req,reply)=>{
    try{const a=await guard(req,"rooms.ask");requireFan(a.userId);
      const key=req.headers["idempotency-key"];
-     const item=await ports.repository.ask(a,id(req),data(req)?.body,
-       typeof key==="string"?key:"");
+     const item=await ports.repository.ask(a,id(req),validateQuestion(data(req)?.body),
+       validateIdempotencyKey(typeof key==="string"?key:""));
      return reply.code(202).send(item);
    }catch(e){return respondError(e,reply);}
  });
