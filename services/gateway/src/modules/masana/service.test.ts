@@ -35,6 +35,13 @@ describe("Masana public and staff authority",()=>{
     const res=await server.inject({method:"POST",url:"/v1/admin/masana/foo/revisions",headers:{authorization:"Bearer fan"},payload:{profile:{}}});
     expect(res.statusCode).toBe(403);expect(events).toEqual([]);await server.close();
   });
+  it("supports profession and language filters without trusting caller tenancy",async()=>{
+    events.length=0;const server=await app();
+    const res=await server.inject({method:"GET",url:"/v1/masana?q=tech&profession=teaching&language=ha&tenantId=forged"});
+    expect(res.statusCode).toBe(200);
+    expect(events).toEqual(["list:tenant_test"]);
+    await server.close();
+  });
   it("never stores media before staff permission and provider verification",async()=>{
     events.length=0;const server=await app();
     const bad=await server.inject({method:"POST",url:"/v1/admin/masana/masana-gwani/media",

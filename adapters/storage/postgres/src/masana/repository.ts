@@ -38,11 +38,15 @@ async function inTx<T>(pool:Pool,fn:(client:PoolClient)=>Promise<T>):Promise<T>{
 /** Uses existing identity and event tables; never creates a second agent or ledger. */
 export function createMasanaPostgresStore(pool:Pool) {
   return {
-    async list({tenantId,userId,q,limit,cursor}:{tenantId:string;userId:string|null;q:string;limit:number;cursor:string|null}) {
+    async list({tenantId,userId,q,profession,language,limit,cursor}:{tenantId:string;userId:string|null;q:string;profession:string;language:string;limit:number;cursor:string|null}) {
       const rows=await pool.query(projection+String.raw`
-       AND ($3='' OR r.profile->>'displayName' ILIKE '%'||$3||'%' OR r.profile->>'profession' ILIKE '%'||$3||'%')
+       AND ($3='' OR r.profile->>'displayName' ILIKE '%'||$3||'%' OR r.profile->>'profession' ILIKE '%'||$3||'%'
+              OR EXISTS(SELECT 1 FROM jsonb_array_elements_text(coalesce(r.profile->'talents','[]'::jsonb)) talent
+                 WHERE talent ILIKE '%'||$3||'%'))
+       AND ($6='' OR r.profile->>'profession' ILIKE '%'||$6||'%')
+       AND ($7='' OR r.profile->'languages' @> to_jsonb(ARRAY[$7]::text[]))
        AND ($4::text IS NULL OR r.character_id > $4)
-       ORDER BY r.character_id ASC LIMIT $5`,[tenantId,userId,q,cursor,limit+1]);
+       ORDER BY r.character_id ASC LIMIT $5`,[tenantId,userId,q,cursor,limit+1,profession,language]);
       const more=rows.rows.length>limit;
       const items=profileRows(rows.rows.slice(0,limit));
       return {items,nextCursor:more?String(items[items.length-1]?.characterId):null};

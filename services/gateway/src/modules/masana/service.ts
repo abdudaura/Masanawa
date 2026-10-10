@@ -14,7 +14,7 @@ export interface MasanaAuth {
   staff(header: string | undefined, role: "content_editor"): Promise<MasanaAdminActor>;
 }
 export interface MasanaStore {
-  list(input: {tenantId:string; userId:string|null; q:string; limit:number; cursor:string|null}): Promise<unknown>;
+  list(input: {tenantId:string; userId:string|null; q:string; profession:string; language:string; limit:number; cursor:string|null}): Promise<unknown>;
   read(input: {tenantId:string; userId:string|null; characterId:string}): Promise<unknown|null>;
   follow(input: {tenantId:string; userId:string; characterId:string; active:boolean}): Promise<boolean>;
   listDrafts(input: {tenantId:string}): Promise<unknown>;
@@ -42,7 +42,7 @@ export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;
     const n=query.limit===undefined?20:Number(query.limit);
     if(!Number.isInteger(n)||n<1||n>50)
       return reply.code(400).send({code:"invalid_limit"});
-    return deps.store.list({tenantId:actor.tenantId,userId:actor.userId,q:asText(query.q,100),limit:n,cursor:asText(query.cursor,200)||null});
+    return deps.store.list({tenantId:actor.tenantId,userId:actor.userId,q:asText(query.q,100),profession:asText(query.profession,100),language:asText(query.language,16),limit:n,cursor:asText(query.cursor,200)||null});
   });
   app.get("/v1/masana/:id",async (request,reply)=>{
     const actor=await deps.auth.optional(request.headers.authorization);
