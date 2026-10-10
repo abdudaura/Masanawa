@@ -912,7 +912,11 @@
       "claimed_at": "2026-10-10T09:15:59.907Z",
       "heartbeat_at": "2026-10-10T09:15:59.907Z",
       "expires_at": "2026-10-10T09:20:59.907Z",
-      "notes": "Reviewed old AF13 claim expiration 09:14:35Z and 09:09:35Z last heartbeat; real Flutter analyzer 0 error/0 warning with 457 info-only. Switch only Analyze to flutter analyze --no-fatal-infos, keep all warnings fatal; run actual workflow at exact head."
+      "notes": "Reviewed old AF13 claim expiration 09:14:35Z and 09:09:35Z last heartbeat; real Flutter analyzer 0 error/0 warning with 457 info-only. Switch only Analyze to flutter analyze --no-fatal-infos, keep all warnings fatal; run actual workflow at exact head.",
+      "released_at": "2026-10-10T09:21:23.282Z",
+      "release_reason": "Committed exact workflow 7930b0ebd2440d1f93534d425faa283748fcae08; analyzer errors/warnings remain fatal, informational notices nonfatal. Foundation #38040798427 Typecheck, provider tooling and build PASS; Vitest policy contract failed and continuing owner claimed topology test with actual repair at 8977d4f0. Flutter full tests/APK pending. No merge/deploy.",
+      "source_head_sha": "7930b0ebd2440d1f93534d425faa283748fcae08",
+      "integration_head_sha": null
     },
     {
       "claim_id": "af13-460-topology-analyzer-policy-recovery-gpt6-1020",
