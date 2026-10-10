@@ -88,6 +88,22 @@ export function createMasanaPostgresStore(pool:Pool) {
         return {characterId,revision,state:"draft" as const};
       });
     },
+    async registerMedia({tenantId,characterId,mediaId,kind,objectKey,rightsNote,staffId}:{tenantId:string;characterId:string;mediaId:string;kind:"portrait"|"banner";objectKey:string;rightsNote:string;staffId:string}) {
+      return inTx(pool,async client=>{
+        const identity=await client.query(`SELECT c.character_id FROM identity.characters c
+          JOIN identity.character_ownership o USING(tenant_id,character_id)
+          WHERE c.tenant_id=$1 AND c.character_id=$2 AND c.state='active' AND o.kind='platform'
+          FOR UPDATE OF c`,[tenantId,characterId]);
+        if(identity.rowCount===0)throw dbConflict("not_platform_masana");
+        const result=await client.query(`INSERT INTO masana.character_media
+          (tenant_id,media_id,character_id,kind,object_key,rights_note,approved_by)
+          VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING media_id`,
+          [tenantId,mediaId,characterId,kind,objectKey,rightsNote,staffId]);
+        if(result.rowCount===0)throw dbConflict("media_reference_conflict");
+        await audit(client,tenantId,staffId,characterId,"masana.media_registered",0);
+        return {mediaId,characterId,kind,state:"verified"};
+      });
+    },
     async approve({tenantId,characterId,revision,staffId}:{tenantId:string;characterId:string;revision:number;staffId:string}) {
       return inTx(pool,async client=>{
         const lock=await client.query("SELECT character_id FROM identity.characters WHERE tenant_id=$1 AND character_id=$2 FOR UPDATE",[tenantId,characterId]);

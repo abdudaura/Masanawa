@@ -20,6 +20,7 @@ export interface MasanaStore {
   listDrafts(input: {tenantId:string}): Promise<unknown>;
   draft(input: {tenantId:string; characterId:string; profile:unknown; staffId:string}): Promise<unknown>;
   approve(input: {tenantId:string; characterId:string; revision:number; staffId:string}): Promise<unknown>;
+  registerMedia(input: {tenantId:string; characterId:string; mediaId:string; kind:"portrait"|"banner"; objectKey:string; rightsNote:string; staffId:string}): Promise<unknown>;
 }
 function params(raw:unknown):Record<string,unknown> {
   return raw && typeof raw==="object" && !Array.isArray(raw) ? raw as Record<string,unknown> : {};
@@ -34,7 +35,7 @@ function asText(v:unknown,max:number):string {
   return v.trim();
 }
 /** Inject existing authenticated tenant/role authority; registering these routes without it is impossible. */
-export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;store:MasanaStore;validateProfile:(value:unknown)=>unknown}):void {
+export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;store:MasanaStore;validateProfile:(value:unknown)=>unknown; verifyMedia:(input:{tenantId:string;mediaId:string;kind:"portrait"|"banner";staffId:string})=>Promise<{objectKey:string}>}):void {
   app.get("/v1/masana",async (request,reply)=>{
     const actor=await deps.auth.optional(request.headers.authorization);
     const query=params(request.query);
@@ -67,6 +68,24 @@ export function registerMasanaRoutes(app:FastifyInstance, deps:{auth:MasanaAuth;
     const id=characterId(params(request.params).id);
     const input=params(request.body);
     return reply.code(201).send(await deps.store.draft({tenantId:actor.tenantId,characterId:id,profile:deps.validateProfile(input.profile),staffId:actor.userId}));
+  });
+  app.post("/v1/admin/masana/:id/media",async (request,reply)=>{
+    const actor=await deps.auth.staff(request.headers.authorization,"content_editor");
+    const id=characterId(params(request.params).id);
+    const input=params(request.body);
+    const kind=input.kind;
+    if(kind!=="portrait"&&kind!=="banner")return reply.code(400).send({code:"invalid_media_kind"});
+    const mediaId=characterId(input.mediaId);
+    const rightsNote=asText(input.rightsNote,1024);
+    if(rightsNote.length<5)return reply.code(400).send({code:"rights_note_required"});
+    // The authoritative provider/media store must verify a genuine tenant-owned upload
+    // and its moderation status. An arbitrary storage key from the client is never trusted.
+    const verified=await deps.verifyMedia({tenantId:actor.tenantId,mediaId,kind,staffId:actor.userId});
+    if(!verified.objectKey||verified.objectKey.length>1024)throw new TypeError("unverified_media");
+    return reply.code(201).send(await deps.store.registerMedia({
+      tenantId:actor.tenantId,characterId:id,mediaId,kind,objectKey:verified.objectKey,
+      rightsNote,staffId:actor.userId
+    }));
   });
   app.post("/v1/admin/masana/:id/revisions/:revision/approve",async (request,reply)=>{
     const actor=await deps.auth.staff(request.headers.authorization,"content_editor");

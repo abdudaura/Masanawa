@@ -12,6 +12,7 @@ abstract class MasanaStudioRepository {
  Future<List<MasanaRevision>> list();
  Future<void> draft(String characterId,Map<String,dynamic> profile);
  Future<void> approve(String characterId,int revision);
+ Future<void> attachVerifiedMedia(String characterId,String mediaId,String kind,String rightsNote);
 }
 /// Reuses the existing Admin authenticated Dio. No new token store.
 class GatewayMasanaStudioRepository implements MasanaStudioRepository {
@@ -24,6 +25,10 @@ class GatewayMasanaStudioRepository implements MasanaStudioRepository {
  @override Future<void> draft(String characterId,Map<String,dynamic> profile) async {
   await dio.post<dynamic>('/v1/admin/masana/${Uri.encodeComponent(characterId)}/revisions',
    data:{'profile':profile});
+ }
+ @override Future<void> attachVerifiedMedia(String characterId,String mediaId,String kind,String rightsNote) async {
+  await dio.post<dynamic>('/v1/admin/masana/${Uri.encodeComponent(characterId)}/media',
+   data:{'mediaId':mediaId,'kind':kind,'rightsNote':rightsNote});
  }
  @override Future<void> approve(String characterId,int revision) async {
   await dio.post<dynamic>('/v1/admin/masana/${Uri.encodeComponent(characterId)}/revisions/$revision/approve');

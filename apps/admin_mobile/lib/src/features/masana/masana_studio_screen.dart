@@ -52,6 +52,34 @@ class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
   catch(_){if(mounted&&current==generation)setState(()=>error='Draft not saved. Check role and network.');}
   finally{if(mounted&&current==generation)setState(()=>saving=false);}
  }
+ Future<void> attachMedia(MasanaRevision revision) async {
+  final mediaId=TextEditingController();
+  final rights=TextEditingController();
+  String kind='portrait';
+  final data=await showDialog<List<String>>(context:context,builder:(ctx)=>StatefulBuilder(
+   builder:(ctx,update)=>AlertDialog(
+    title:const Text('Register verified media'),
+    content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+     DropdownButton<String>(value:kind,items:const [
+      DropdownMenuItem(value:'portrait',child:Text('Portrait')),
+      DropdownMenuItem(value:'banner',child:Text('Banner'))],
+      onChanged:(v)=>update(()=>kind=v??'portrait')),
+     TextField(controller:mediaId,decoration:const InputDecoration(labelText:'Existing approved media ID')),
+     TextField(controller:rights,maxLength:1024,maxLines:2,
+      decoration:const InputDecoration(labelText:'Rights/licensing provenance')),
+     const Text('A server-side media verification is required. This screen does not upload new bytes.'),
+    ])),
+    actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Cancel')),
+     FilledButton(onPressed:()=>Navigator.pop(ctx,[mediaId.text.trim(),kind,rights.text.trim()]),child:const Text('Verify and attach'))],
+   )));
+  mediaId.dispose();rights.dispose();
+  if(data==null||!mounted)return;
+  final current=generation;setState(()=>saving=true);
+  try{await widget.repository.attachVerifiedMedia(revision.characterId,data[0],data[1],data[2]);
+   if(mounted&&generation==current)reload();}
+  catch(_){if(mounted&&generation==current)setState(()=>error='Media verification failed; nothing attached.');}
+  finally{if(mounted&&generation==current)setState(()=>saving=false);}
+ }
  Future<void> approve(MasanaRevision revision) async {
   final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
    title:const Text('Publish approved revision?'),
@@ -82,9 +110,12 @@ class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
      title:Text(r.profile['displayName']?.toString()??r.characterId),
      subtitle:Text('${r.characterId} · revision ${r.revision} · ${r.state}'),
      onTap:saving?null:()=>edit(r),
-     trailing:r.state=='draft'?IconButton(
-      tooltip:'Approve revision',icon:const Icon(Icons.verified_outlined),
-      onPressed:saving?null:()=>approve(r)):null,
+     trailing:r.state=='draft'?Row(mainAxisSize:MainAxisSize.min,children:[
+      IconButton(tooltip:'Attach verified media',icon:const Icon(Icons.image_outlined),
+       onPressed:saving?null:()=>attachMedia(r)),
+      IconButton(tooltip:'Approve revision',icon:const Icon(Icons.verified_outlined),
+       onPressed:saving?null:()=>approve(r)),
+     ]):null,
     )),
    ]);
   }),
