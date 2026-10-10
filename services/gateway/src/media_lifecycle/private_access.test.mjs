@@ -18,7 +18,7 @@ async function code(p, expected) {await assert.rejects(p,(e)=>e instanceof Media
 test('authorized URL is short-lived, no-store and permission rechecked after signing',async()=>{
  const h=fixture(); const r=await h.run();
  assert.equal(r.cacheControl,'private, no-store'); assert.equal(r.expiresAtMs,now+30000);
- assert.deepEqual(h.calls,['principal','auth',['sign',good.objectKey,30],'auth']);
+ assert.deepEqual(h.calls,['principal','auth',['sign',good.objectKey,30],'principal','auth']);
 });
 test('reject unauthenticated before authorization or signing',async()=>{
  const h=fixture({principal:async()=>null});await code(h.run(),'unauthenticated');assert.deepEqual(h.calls,[]);
@@ -55,4 +55,15 @@ test('TTL and namespace cannot be client widened',async()=>{
 });
 test('shorter bounded TTL is passed to signer',async()=>{
  const h=fixture();const r=await h.run({ttlSeconds:5});assert.equal(r.expiresAtMs,now+5000);assert.deepEqual(h.calls[2],['sign',good.objectKey,5]);
+});
+
+test('mutable cached permission cannot hide a revision change during signing',async()=>{
+ const grant={...good};
+ const h=fixture({authorize:async()=>grant,sign:async()=>{grant.accessRevision='rev4';return 'https://storage.example.com/key?sig=ok'}});
+ await code(h.run(),'not_found');
+});
+test('logout or account switch while signing blocks return of already-signed URL',async()=>{
+ let n=0;
+ const h=fixture({principal:async()=>++n===1?{userId:'user1',tenantId:'tenant1'}:{userId:'user2',tenantId:'tenant1'}});
+ await code(h.run(),'unauthenticated');
 });
