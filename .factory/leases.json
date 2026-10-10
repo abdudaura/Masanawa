@@ -140,7 +140,9 @@
       "heartbeat_at": "2026-10-10T02:48:46.298Z",
       "expires_at": "2026-10-10T02:53:46.298Z",
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
-    },
+    }
+  ],
+  "history": [
     {
       "claim_id": "af09-609-creator-profile-20261010-gpt6-0423",
       "owner": "AF09 #609 continuing creator profile customer journey (GPT-6 window 0423)",
@@ -161,10 +163,20 @@
       "claimed_at": "2026-10-10T03:23:31.027Z",
       "heartbeat_at": "2026-10-10T03:29:13.272Z",
       "expires_at": "2026-10-10T03:34:13.272Z",
-      "notes": "Same #609 source pushed at 5d695aa9; refreshing UI retry/source correctness before final handoff."
-    }
-  ],
-  "history": [
+      "notes": "Same #609 source pushed at 5d695aa9; refreshing UI retry/source correctness before final handoff.",
+      "released_at": "2026-10-10T03:31:42.381Z",
+      "integration_head_sha": "c26bd0e9900146bf9aa52fde5cfad6fce3ed700c",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "source_commits": [
+        "2f7f586a307ebdf45d04d296cb6983d42ec951ef",
+        "5d695aa9d97cf7f57f2bd152088e7146208ac353",
+        "63fd23d392e4155b6fd8bb82663e9faa936bb624",
+        "e75f6c2cc412c82d0d0efec8d27f3ebd4431c307",
+        "c26bd0e9900146bf9aa52fde5cfad6fce3ed700c"
+      ],
+      "test_state": "10/10 structural GitHub source readback only. Four backend and four Flutter test cases authored NOT_RUN; exact-head Node24/pnpm12/Flutter/PG blocked in this environment.",
+      "release_reason": "Source increment committed on same PR #609. AF00 composition, append-only migrations, worker and reviewed nondeploying baseline remain missing; AF05/15 media needs implementation and E2E. Handoff in docs/workstreams/AF09-creator-profile-20261010.md and PR comment 6093324705. Milestone partial. No main merge."
+    },
     {
       "claim_id": "gpt6-u02-post-auth-expiry-20261010-0415",
       "owner": "GPT-6 U02 Gwani task approval continuation",
