@@ -105,6 +105,29 @@
       "heartbeat_at": "2026-10-10T02:15:54.798Z",
       "expires_at": "2026-10-10T02:20:54.798Z",
       "notes": "Created and executed new processing worker and Postgres adapter locally: Node22.16 node --experimental-strip-types --test 10/10 PASS; preparing SHA-matched existing PR source commit"
+    },
+    {
+      "claim_id": "af09-comment-thread-20261010-gpt6c",
+      "owner": "AF09 continuation existing PR #609",
+      "scope": "Connected Published Talks comments API/DB/Flutter with bounded account fencing, and fix feed compile errors. Continue prior released AF09 paths; independent worker remains owned by another claim.",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-published-audio-core-20261010.md",
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "services/gateway/src/audio_posts/service.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:19:01.736Z",
+      "heartbeat_at": "2026-10-10T02:19:01.736Z",
+      "expires_at": "2026-10-10T02:24:01.736Z",
+      "notes": "Same PR #609; no migrations, root/router, native audio or worker edits."
     }
   ],
   "history": [
