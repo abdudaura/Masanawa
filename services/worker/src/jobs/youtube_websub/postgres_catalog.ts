@@ -19,8 +19,7 @@ export function createPostgresYouTubeSourceLoader(pool: Pool) {
                s.sync_mode AS mode,
                (y.authorized_api AND s.authorization_ref IS NOT NULL
                  AND s.permission_expires_at > clock_timestamp()
-                 AND y.permission_expires_at > clock_timestamp()
-                 AND y.lease_expires_at > clock_timestamp()) AS api_qualified
+                 AND y.permission_expires_at > clock_timestamp()) AS api_qualified
           FROM external_videos.sources AS s
           JOIN external_videos.youtube_subscriptions AS y
             ON y.tenant_id=s.tenant_id AND y.source_id=s.source_id
@@ -55,36 +54,43 @@ export function createPostgresYouTubeCatalogSink(pool: Pool): YouTubeCatalogSink
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        // Lock current source+credential authority through commit, not only at
+        // the earlier job-claim boundary. Stale permission may never publish.
+        const eligible = await client.query(
+          `SELECT 1 FROM external_videos.sources s
+             JOIN external_videos.youtube_subscriptions y
+               ON y.tenant_id=s.tenant_id AND y.source_id=s.source_id
+              AND y.channel_id=s.provider_channel_id
+            WHERE s.tenant_id=$1 AND s.source_id=$2
+              AND s.provider='youtube' AND s.enabled AND y.enabled
+              AND s.sync_mode='authorized_api' AND y.authorized_api
+              AND s.permission_expires_at > clock_timestamp()
+              AND y.permission_expires_at > clock_timestamp()
+            FOR SHARE OF s,y`,
+          [item.tenantId,item.sourceId]);
+        if (eligible.rowCount!==1) throw new Error("youtube_source_not_authorized");
+        const id=randomUUID();
         const saved = await client.query<{item_id: string}>(
           `INSERT INTO external_videos.items
               (tenant_id,item_id,provider,provider_video_id,source_url,title,channel_name)
-            SELECT $1,$2,'youtube',$3,$4,$5,$6
-             WHERE EXISTS (SELECT 1 FROM external_videos.sources
-                            WHERE tenant_id=$1 AND source_id=$7
-                              AND provider='youtube' AND enabled)
+            VALUES ($1,$2,'youtube',$3,$4,$5,$6)
             ON CONFLICT (tenant_id,provider,provider_video_id) DO NOTHING
             RETURNING item_id`,
-          [item.tenantId,randomUUID(),item.providerVideoId,item.sourceUrl,
-           item.title.slice(0,180),item.channelName.slice(0,100),item.sourceId]);
-        const existing = saved.rows[0] ?? (await client.query<{item_id:string}>(
-          `SELECT item_id FROM external_videos.items
-             WHERE tenant_id=$1 AND provider='youtube' AND provider_video_id=$2`,
-          [item.tenantId,item.providerVideoId])).rows[0];
-        if (!existing) throw new Error("youtube_source_not_authorized");
+          [item.tenantId,id,item.providerVideoId,item.sourceUrl,
+           item.title.slice(0,180),item.channelName.slice(0,100)]);
+        // Crucial: an existing staff/manual item is NOT silently linked to an
+        // automated source, otherwise a later sync could hide staff content.
         if (saved.rows[0]) {
+          await client.query(
+            `INSERT INTO external_videos.item_sources(tenant_id,item_id,source_id)
+             VALUES ($1,$2,$3)`,
+            [item.tenantId,id,item.sourceId]);
           await client.query(
             `INSERT INTO external_videos.review_audit
                (tenant_id,event_id,item_id,actor_id,action)
-               VALUES ($1,$2,$3,'youtube-sync','submit')`,
-            [item.tenantId,randomUUID(),existing.item_id]);
+             VALUES ($1,$2,$3,'youtube-sync','submit')`,
+            [item.tenantId,randomUUID(),id]);
         }
-        await client.query(
-          `INSERT INTO external_videos.item_sources(tenant_id,item_id,source_id)
-           SELECT $1,$2,$3 WHERE EXISTS (
-             SELECT 1 FROM external_videos.sources
-              WHERE tenant_id=$1 AND source_id=$3 AND provider='youtube' AND enabled)
-           ON CONFLICT DO NOTHING`,
-          [item.tenantId,existing.item_id,item.sourceId]);
         await client.query("COMMIT");
       } catch(error) {
         await client.query("ROLLBACK");
@@ -106,8 +112,19 @@ export function createPostgresYouTubeCatalogSink(pool: Pool): YouTubeCatalogSink
               AND v.provider_video_id=$2 AND v.review_state <> 'unavailable'
               AND EXISTS (
                 SELECT 1 FROM external_videos.item_sources AS origin
+                 JOIN external_videos.sources AS authority
+                   ON authority.tenant_id=origin.tenant_id
+                  AND authority.source_id=origin.source_id
+                 JOIN external_videos.youtube_subscriptions AS subscription
+                   ON subscription.tenant_id=authority.tenant_id
+                  AND subscription.source_id=authority.source_id
+                  AND subscription.channel_id=authority.provider_channel_id
                  WHERE origin.tenant_id=v.tenant_id AND origin.item_id=v.item_id
-                   AND origin.source_id=$3)
+                   AND origin.source_id=$3 AND authority.provider='youtube'
+                   AND authority.enabled AND subscription.enabled
+                   AND authority.sync_mode='authorized_api' AND subscription.authorized_api
+                   AND authority.permission_expires_at>clock_timestamp()
+                   AND subscription.permission_expires_at>clock_timestamp())
             RETURNING item_id`,
           [item.tenantId,item.providerVideoId,item.sourceId]);
         if (result.rows[0]) {
