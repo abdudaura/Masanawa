@@ -142,25 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "af09-609-durable-publish-20261010-gpt6-0406",
-      "owner": "AF09 existing PR #609 durable publish continuation GPT-6",
-      "scope": "Persist replay-safe audio publish attempts encrypted, allow deliberate account-fenced recovery after app restart and block network send on persistence failure. No AF05 media or AF00 composition paths.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_draft_store.dart",
-        "apps/mobile/test/audio_first/af09/composer_test.dart",
-        "docs/workstreams/AF09-durable-publish-attempt-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
-      "source_pr": 609,
-      "source_head": "9a77dc3bb73fe5e5f3f0476750b0da4f38b564c5",
-      "claimed_at": "2026-10-10T03:06:12.498Z",
-      "heartbeat_at": "2026-10-10T03:10:45.315Z",
-      "expires_at": "2026-10-10T03:15:45.315Z",
-      "notes": "Code commits f5f3b24,fd0861b,e58c10d,9a77dc3 for encrypted store/composer/tests/account fences. Prepare finite milestone handoff, no Flutter runner."
-    },
-    {
       "claim_id": "af13-596-source-integrity-20261010-gpt6-0412",
       "owner": "AF13 #596 checkout source integrity continuation GPT-6",
       "scope": "Close existing PR #596's acceptance/source SHA integrity bypass by refusing dirty canonical runner/guard/matrix at exact checkout HEAD; tests and finite handoff only",
@@ -180,6 +161,37 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "af09-609-durable-publish-20261010-gpt6-0406",
+      "owner": "AF09 existing PR #609 durable publish continuation GPT-6",
+      "scope": "Persist replay-safe audio publish attempts encrypted, allow deliberate account-fenced recovery after app restart and block network send on persistence failure. No AF05 media or AF00 composition paths.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_draft_store.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-durable-publish-attempt-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 609,
+      "source_head": "9a77dc3bb73fe5e5f3f0476750b0da4f38b564c5",
+      "claimed_at": "2026-10-10T03:06:12.498Z",
+      "heartbeat_at": "2026-10-10T03:10:45.315Z",
+      "expires_at": "2026-10-10T03:15:45.315Z",
+      "notes": "Code commits f5f3b24,fd0861b,e58c10d,9a77dc3 for encrypted store/composer/tests/account fences. Prepare finite milestone handoff, no Flutter runner.",
+      "released_at": "2026-10-10T03:13:25.608Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "integration_head_sha": "3561b3f2864c4e6e389249f50f0d04d2abdf8807",
+      "source_commits": [
+        "f5f3b24047d080b81520ecbfd09aae415c3002e2",
+        "fd0861b5a11633b08f53a26fac41682d57f31604",
+        "e58c10d15dd7d28cf792f7a264eeb44ae60a20f0",
+        "9a77dc3bb73fe5e5f3f0476750b0da4f38b564c5",
+        "3561b3f2864c4e6e389249f50f0d04d2abdf8807"
+      ],
+      "test_state": "AUTHORED_NOT_RUN 4 new Flutter widget tests; source readback only; no Dart/Flutter, Node24/pnpm12/checkout, PG or device",
+      "release_reason": "AF09-11 encrypted publish replay source committed and handed off same PR; parent published Talks still PARTIAL. AF00 path transfer requested on #600; no integrated baseline, no main merge."
+    },
     {
       "claim_id": "af09-609-service-errors-20261010-gpt6",
       "owner": "AF09 continuing PR 609 / GPT-6 service readback",
