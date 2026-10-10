@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -44,12 +48,18 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
       - name: Test
+        # Execute independent checks even when an earlier check fails; overall job stays failed.
+        if: ${{ !cancelled() }}
         run: pnpm test:ci
       - name: Provider qualification tooling tests
+        # Execute independent checks even when an earlier check fails; overall job stays failed.
+        if: ${{ !cancelled() }}
         run: >-
           node --test
           scripts/flutterwave-billing-qualification-gate.test.mjs
           scripts/flutterwave-billing-production-qualification.test.mjs
           scripts/nowpayments-production-qualification.test.mjs
       - name: Build
+        # Execute independent checks even when an earlier check fails; overall job stays failed.
+        if: ${{ !cancelled() }}
         run: pnpm build
