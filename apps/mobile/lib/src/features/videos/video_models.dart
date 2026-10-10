@@ -12,6 +12,6 @@ class ExternalVideo {
        (provider == 'facebook' && host == 'www.facebook.com'));
     if (!valid || j['reviewState'] != 'approved' || j['verifiedAt'] == null) throw const FormatException('Unverified video');
     return ExternalVideo(id: j['id'] as String, title: j['title'] as String,
-      channelName: j['channelName'] as String, provider: provider as String, sourceUrl: url!);
+      channelName: j['channelName'] as String, provider: provider as String, sourceUrl: url);
   }
 }
