@@ -102,7 +102,10 @@ describe("U02 durable status-only recovery", () => {
     const checked: OperatorDomainOutcome[] = [];
     const journal: RecoveryJournal = {
       claim: async () => [operation],
-      settle: vi.fn(async ({ outcome }) => { checked.push(outcome); return "unknown" as const; }),
+      settle: vi.fn(async ({ outcome }: Parameters<RecoveryJournal["settle"]>[0]) => {
+        checked.push(outcome);
+        return "unknown" as const;
+      }),
     };
     const valid = bound({ status: "confirmed", receiptRef: "ledger:valid_1" });
     const unbound = [
