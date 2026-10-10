@@ -59,11 +59,10 @@ export function createMasanaPostgresStore(pool:Pool) {
       return inTx(pool,async client=>{
         const visible=await client.query(projection+" AND r.character_id=$3 LIMIT 1",[tenantId,userId,characterId]);
         if(visible.rowCount===0) throw dbConflict("masana_not_found");
-        if(active){
-          await client.query("INSERT INTO masana.follows(tenant_id,fan_user_id,character_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",[tenantId,userId,characterId]);
-        }else{
-          await client.query("DELETE FROM masana.follows WHERE tenant_id=$1 AND fan_user_id=$2 AND character_id=$3",[tenantId,userId,characterId]);
-        }
+        const change=active
+          ? await client.query("INSERT INTO masana.follows(tenant_id,fan_user_id,character_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING fan_user_id",[tenantId,userId,characterId])
+          : await client.query("DELETE FROM masana.follows WHERE tenant_id=$1 AND fan_user_id=$2 AND character_id=$3 RETURNING fan_user_id",[tenantId,userId,characterId]);
+        if(change.rowCount===0)return active; // Repeat request: no event and no duplicate work.
         const uuid=randomUUID();
         await client.query(`INSERT INTO events.outbox
          (outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload)

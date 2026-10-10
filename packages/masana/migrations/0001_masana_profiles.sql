@@ -37,6 +37,28 @@ CREATE TABLE masana.character_media (
   PRIMARY KEY(tenant_id,media_id),
   FOREIGN KEY(tenant_id,character_id) REFERENCES identity.characters(tenant_id,character_id)
 );
+-- Defence in depth: even privileged direct SQL may never approve unverified imagery.
+CREATE OR REPLACE FUNCTION masana.require_rights_cleared_approved_media()
+RETURNS trigger LANGUAGE plpgsql AS $
+DECLARE approved_kinds integer;
+BEGIN
+  IF NEW.state <> 'approved' THEN RETURN NEW; END IF;
+  SELECT count(DISTINCT m.kind) INTO approved_kinds
+  FROM masana.character_media m
+  WHERE m.tenant_id=NEW.tenant_id AND m.character_id=NEW.character_id
+    AND length(btrim(m.rights_note))>4 AND length(btrim(m.approved_by))>0
+    AND ((m.kind='portrait' AND m.media_id=NEW.profile->>'portraitMediaId')
+      OR (m.kind='banner' AND m.media_id=NEW.profile->>'bannerMediaId'));
+  IF approved_kinds <> 2 THEN
+    RAISE EXCEPTION 'masana_media_unverified' USING ERRCODE='23514';
+  END IF;
+  RETURN NEW;
+END; $;
+CREATE TRIGGER masana_approval_requires_media
+BEFORE INSERT OR UPDATE ON masana.character_revisions
+FOR EACH ROW WHEN (NEW.state='approved')
+EXECUTE FUNCTION masana.require_rights_cleared_approved_media();
+
 CREATE TABLE masana.follows (
   tenant_id text NOT NULL,
   fan_user_id text NOT NULL,
