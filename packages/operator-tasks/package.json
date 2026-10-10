@@ -13,6 +13,11 @@
       "types": "./src/postgres.ts",
       "production": "./dist/postgres.js",
       "default": "./src/postgres.ts"
+    },
+    "./recovery": {
+      "types": "./src/recovery.ts",
+      "production": "./dist/recovery.js",
+      "default": "./src/recovery.ts"
     }
   },
   "scripts": {
