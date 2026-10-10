@@ -56,7 +56,10 @@ export function createPublishedAudioReportService(deps: PublishedAudioReportDeps
              fields.detail.trim().length > 400 || /[\u0000-\u001f\u007f-\u009f]/u.test(fields.detail)))) {
         throw new PublishedAudioReportError("VALIDATION");
       }
-      const tenantId = actor.tenantId, accountId = actor.accountId;
+      // Snapshot identity scalars before asynchronous reads; some session
+      // resolvers reuse and mutate the same object on account switching.
+      const snapshot = { ...actor };
+      const tenantId = snapshot.tenantId, accountId = snapshot.accountId;
       const postId = input.postId;
       const found = await deps.repository.byId(tenantId, postId);
       if (!found || found.tenantId !== tenantId || found.postId !== postId ||
@@ -68,7 +71,7 @@ export function createPublishedAudioReportService(deps: PublishedAudioReportDeps
       // Require the same live actor again after asynchronous visibility checks;
       // canonical safety service independently authorizes the supplied header.
       const current = await deps.requireActor(input.authorization);
-      if (!current || !sameActor(actor, current)) {
+      if (!current || !sameActor(snapshot, current)) {
         throw new PublishedAudioReportError("AUTH_REQUIRED");
       }
       const saved = await deps.safety.report({
