@@ -832,9 +832,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final directory = ref.watch(agentDirectoryProvider);
     final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
-    final wallet = ref.watch(walletProvider);
-    final ngnBalanceLabel =
-        wallet.asData?.value?.ngnBalanceLabel ?? '₦—';
     final thread = chat.threads[widget.characterId];
     final shellConfig = chat.shellConfigs[widget.characterId];
     final updateRequired = shellConfig?.requiresUpdate() ?? false;
