@@ -112,13 +112,6 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return null;
   }
 
-  Future<AgentDirectoryEntry?> _ensureSupportAgent() async {
-    var agent = _supportAgent();
-    if (agent != null) return agent;
-    await ref.read(agentDirectoryProvider.notifier).refresh();
-    return _supportAgent();
-  }
-
   Widget _wallet() => WalletScreen(
         embeddedInShell: true,
         onOpenCrypto: () => context.push('/crypto'),
