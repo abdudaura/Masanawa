@@ -48,13 +48,32 @@ class GatewayTalkLiveTransport implements TalkLiveTransport {
       data: {'sessionId': sessionId},
     );
     final data = response.data;
+    final Map<String, dynamic> envelope;
     if (data is Map<String, dynamic>) {
-      return TalkLiveMediaCredentials.fromJson(data);
+      envelope = data;
+    } else if (data is Map) {
+      envelope = data.cast<String, dynamic>();
+    } else {
+      throw const FormatException('Invalid Talk media credentials');
     }
-    if (data is Map) {
-      return TalkLiveMediaCredentials.fromJson(data.cast<String, dynamic>());
+    final credentials = TalkLiveMediaCredentials.fromJson(envelope);
+    final endpoint = Uri.tryParse(credentials.serverUrl);
+    final participant = credentials.participantIdentity;
+    // A media token for another Talk or another session must not be handed to
+    // LiveKit even if a cached/raced response returned HTTP 200.
+    if (credentials.roomName != talkId ||
+        participant.length <= sessionId.length + 1 ||
+        !participant.endsWith(':$sessionId') ||
+        credentials.participantToken.trim().isEmpty ||
+        endpoint == null ||
+        (endpoint.scheme != 'wss' && endpoint.scheme != 'ws') ||
+        endpoint.host.isEmpty ||
+        endpoint.userInfo.isNotEmpty ||
+        endpoint.hasFragment ||
+        !credentials.expiresAt.isAfter(DateTime.now())) {
+      throw const FormatException('Talk media credentials do not match the active session');
     }
-    throw const FormatException('Invalid Talk media credentials');
+    return credentials;
   }
 
   @override
