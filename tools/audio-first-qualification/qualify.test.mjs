@@ -120,3 +120,15 @@ test('canonical matrix is immutable across CLI-supplied acceptance input',()=>{
  const badCanonical=copy();badCanonical.schemaVersion=2;
  assert.ok(checkCanonicalMatrix(copy(),badCanonical).length>0);
 });
+
+test('all eight DB restore and operations gates are mandatory to review release',()=>{
+ const canonical=JSON.parse(readFileSync(new URL('./journeys.json',import.meta.url),'utf8'));
+ const databaseGates=canonical.journeys.filter(j=>/^DB-A0[1-8]$/.test(j.id));
+ assert.equal(databaseGates.length,8);
+ assert.ok(databaseGates.every(j=>j.tier==='release'),'DB failures or missing restore cannot be feature-only');
+ const report=assess(canonical,[],sha);
+ assert.equal(report.valid,true);
+ assert.equal(report.readiness,'BLOCKED');
+ assert.equal(report.summary.release,35);
+ assert.equal(report.journeys.filter(j=>j.id.startsWith('DB-')&&j.result==='NOT_RUN').length,8);
+});
