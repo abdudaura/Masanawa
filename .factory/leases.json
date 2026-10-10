@@ -129,6 +129,24 @@
       "heartbeat_at": "2026-10-10T02:13:58.204Z",
       "expires_at": "2026-10-10T02:18:58.204Z",
       "notes": "AF09 processing milestone; distinct from current owner #609 comments/remove claim. Same existing PR; new files only; no production wire."
+    },
+    {
+      "claim_id": "masanawa-u02-status-readback-20261010-02",
+      "owner": "Masanawa U02 continuation, existing PR #580",
+      "scope": "Complete existing U02 recovery source status result binding and negative cases; no provider/wallet/shared composition change",
+      "paths": [
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/recovery.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 580,
+      "source_head": "64a8462de00229ce7b3be66175c40b0c74958715",
+      "claimed_at": "2026-10-10T02:15:00.656Z",
+      "heartbeat_at": "2026-10-10T02:15:00.656Z",
+      "expires_at": "2026-10-10T02:20:00.656Z",
+      "notes": "Direct continuation of previously released claim masanawa-u02-milestone-20261010 on same PR #580, preserving source and approved stale transfer; no competing branch."
     }
   ],
   "history": [
