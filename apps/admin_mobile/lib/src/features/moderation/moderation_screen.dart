@@ -85,6 +85,7 @@ class _StaffCaseDetailState extends State<_StaffCaseDetail> {
         if (snapshot.hasError) return Center(child: TextButton(onPressed: _refresh, child: const Text('Retry case load')));
         final item = snapshot.data!;
         final actions = item['actions'] as List<dynamic>? ?? const [];
+        final appeals = item['appeals'] as List<dynamic>? ?? const [];
         return ListView(padding: const EdgeInsets.all(16), children: [
           Text('Status: ${item['state']}', style: Theme.of(context).textTheme.titleLarge),
           Text('${item['targetKind']} · ${item['targetId']}'),
@@ -116,6 +117,43 @@ class _StaffCaseDetailState extends State<_StaffCaseDetail> {
                   ),
                 ]),
             ])),
+          const Divider(),
+          Text('Appeals', style: Theme.of(context).textTheme.titleMedium),
+          if (appeals.isEmpty)
+            const ListTile(title: Text('No appeals submitted')),
+          for (final raw in appeals)
+            Builder(builder: (context) {
+              final appeal = Map<String, dynamic>.from(raw as Map);
+              final status = appeal['state'] as String? ?? 'pending';
+              return Card(child: Column(children: [
+                ListTile(
+                  title: Text('Appeal · $status'),
+                  subtitle: Text(appeal['reason']?.toString() ?? ''),
+                ),
+                if (status == 'pending' || status == 'under_review')
+                  Wrap(spacing: 8, children: [
+                    if (status == 'pending')
+                      TextButton(
+                        onPressed: _saving ? null : () => _do(() => widget.api.reviewAppeal(
+                          caseId: widget.id,
+                          appealId: appeal['appealId'] as String,
+                          uphold: false,
+                          version: appeal['version'] as int,
+                        )),
+                        child: const Text('Reject appeal'),
+                      ),
+                    FilledButton(
+                      onPressed: _saving ? null : () => _do(() => widget.api.reviewAppeal(
+                        caseId: widget.id,
+                        appealId: appeal['appealId'] as String,
+                        uphold: true,
+                        version: appeal['version'] as int,
+                      )),
+                      child: Text(status == 'pending' ? 'Review to uphold' : 'Second review to uphold'),
+                    ),
+                  ]),
+              ]));
+            }),
           const Divider(),
           const Text('Propose an action'),
           DropdownButtonFormField<String>(
