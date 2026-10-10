@@ -112,6 +112,16 @@ class SecureTalkPublishAttemptStore implements TalkPublishAttemptStore {
   @override
   Future<void> write(PendingTalkPublish attempt) async {
     if (!attempt.isValid) throw const FormatException('Invalid Talk attempt');
+    // A second composer instance or a restart must not overwrite an earlier
+    // uncertain same-account request. Same-key, same-payload replay is safe.
+    final prior = await read(attempt.accountId);
+    if (prior != null &&
+        (prior.requestId != attempt.requestId ||
+         prior.assetId != attempt.assetId ||
+         prior.durationMs != attempt.durationMs ||
+         prior.title != attempt.title)) {
+      throw const FormatException('Another Talk publish attempt is pending');
+    }
     await _storage.write(
       key: _keyFor(attempt.accountId), value: jsonEncode(attempt.toJson()));
   }
