@@ -99,6 +99,8 @@ class MasanaChatController extends ChangeNotifier {
     }
   }
   Future<void> send(String raw) async {
+    await restore();
+    if (!_restored) return;
     final text = raw.trim();
     if (_disposed || text.isEmpty || text.length > 32000) return;
     _turns.add(MasanaChatTurn(
