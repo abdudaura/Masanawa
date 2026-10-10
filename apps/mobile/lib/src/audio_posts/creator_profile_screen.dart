@@ -153,8 +153,9 @@ class _CreatorProfileState extends State<CreatorProfileScreen> {
                     subtitle: Text(
                       (post.durationMs / 1000).ceil().toString() + ' seconds · ' +
                       post.likeCount.toString() + ' likes · ' +
-                      post.commentCount.toString() + ' comments · ' +
-                      post.listenCount.toString() + ' listens',
+                      post.commentCount.toString() + ' comments' +
+                      (post.listenCount == null
+                        ? '' : ' · ${post.listenCount} listens'),
                     ),
                     trailing: widget.onOpenPost == null ? null :
                       const Icon(Icons.chevron_right),
