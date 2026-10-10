@@ -12,6 +12,7 @@ import type { TalkService } from "../talks/service.js";
 import type { TalkLibraryService } from "../talk_library/service.js";
 import type { TalkProfileService } from "../talk_profiles/service.js";
 import type { BillingWalletService } from "../billing_wallet.js";
+import type { TaskHistoryCard, TaskHistoryEvent, TaskHistoryPrincipal } from "./task_history.js";
 
 export const U04_READ_CONTRACT_VERSION = 1 as const;
 
@@ -22,7 +23,9 @@ export type U04ReadCapability =
   | "talks.detail.read"
   | "talks.mine.read"
   | "settings.profile.read"
-  | "wallet.balance.read";
+  | "wallet.balance.read"
+  | "tasks.recent.read"
+  | "tasks.detail.read";
 
 export type U04Principal = Readonly<{
   tenantId: string;
@@ -60,7 +63,7 @@ export class U04ReadError extends Error {
 const failure = (code: string, statusCode: number): never => { throw new U04ReadError(code, statusCode); };
 const unavailable = (): never => failure("OPERATOR_NOT_QUALIFIED", 503);
 
-type ReadSpec = Readonly<{ keys: readonly string[]; context: "none" | "talk"; cost: number }>;
+type ReadSpec = Readonly<{ keys: readonly string[]; context: "none" | "talk" | "task"; cost: number }>;
 const specs: Readonly<Record<U04ReadCapability, ReadSpec>> = Object.freeze({
   "accounts.me.read": { keys: [], context: "none", cost: 1 },
   "agents.directory.read": { keys: [], context: "none", cost: 2 },
@@ -69,6 +72,8 @@ const specs: Readonly<Record<U04ReadCapability, ReadSpec>> = Object.freeze({
   "talks.mine.read": { keys: [], context: "none", cost: 2 },
   "settings.profile.read": { keys: [], context: "none", cost: 1 },
   "wallet.balance.read": { keys: [], context: "none", cost: 3 },
+  "tasks.recent.read": { keys: [], context: "none", cost: 2 },
+  "tasks.detail.read": { keys: ["taskId"], context: "task", cost: 2 },
 });
 
 /** U01 catalog composer chooses actual enabled scopes/regions; this is ONLY a
@@ -80,7 +85,8 @@ export function availableU04ReadCapabilities(input: U04Dependencies): readonly U
     ((id === "talks.discover" || id === "talks.detail.read") && !!input.talks) ||
     (id === "talks.mine.read" && !!input.library) ||
     (id === "settings.profile.read" && !!input.profiles) ||
-    (id === "wallet.balance.read" && !!input.wallet)
+    (id === "wallet.balance.read" && !!input.wallet) ||
+    ((id === "tasks.recent.read" || id === "tasks.detail.read") && !!input.taskHistory)
   ));
 }
 
@@ -115,6 +121,13 @@ export interface U04Dependencies {
   readonly library?: Pick<TalkLibraryService, "myTalks">;
   readonly profiles?: Pick<TalkProfileService, "self">;
   readonly wallet?: Pick<BillingWalletService, "balance">;
+  /** Canonical U02 task journal readback; no second task store or executor. */
+  readonly taskHistory?: Readonly<{
+    recent(input: Readonly<{ authorizationHeader: string; principal: TaskHistoryPrincipal }>): Promise<readonly TaskHistoryCard[]>;
+    detail(input: Readonly<{ authorizationHeader: string; principal: TaskHistoryPrincipal; taskId: string }>): Promise<Readonly<{
+      task: TaskHistoryCard; events: readonly TaskHistoryEvent[];
+    }>>;
+  }>;
   readonly now?: () => Date;
   readonly timeoutMs?: number;
 }
@@ -212,6 +225,10 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
           (action.contextRef.kind !== "talk" || action.contextRef.id !== args.talkId)) {
         return failure("OPERATOR_CONTEXT_NOT_AUTHORIZED", 403);
       }
+      if (spec.context === "task" && action.contextRef &&
+          (action.contextRef.kind !== "task" || action.contextRef.id !== args.taskId)) {
+        return failure("OPERATOR_CONTEXT_NOT_AUTHORIZED", 403);
+      }
       const principal = Object.freeze({ ...request.principal });
       const authorizationHeader = request.authorizationHeader;
       if (!principal || ![principal.tenantId, principal.userId, principal.accountId,
@@ -247,6 +264,10 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
         return failure("OPERATOR_INVALID_ARGUMENTS", 400);
       }
 
+      const taskId = capabilityId === "tasks.detail.read" ? exactString(args.taskId, 133) : null;
+      if (capabilityId === "tasks.detail.read" && !/^task_[A-Za-z0-9_-]{8,128}$/u.test(taskId!)) {
+        return failure("OPERATOR_INVALID_ARGUMENTS", 400);
+      }
       let status: "succeeded" | "failed" = "failed";
       let code = "OPERATOR_SOURCE_UNAVAILABLE";
       try {
@@ -307,6 +328,16 @@ export function createU04ReadService(input: U04Dependencies): Readonly<{
             data = Object.freeze({ balanceKobo: balance.balanceKobo, balance: balance.balance });
             break;
           }
+          case "tasks.recent.read":
+            data = await timeoutRead(input.taskHistory!.recent({
+              authorizationHeader: header, principal,
+            }), timeoutMs);
+            break;
+          case "tasks.detail.read":
+            data = await timeoutRead(input.taskHistory!.detail({
+              authorizationHeader: header, principal, taskId: taskId!,
+            }), timeoutMs);
+            break;
           default:
             return unavailable();
         }
