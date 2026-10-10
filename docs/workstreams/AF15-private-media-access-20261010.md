@@ -3,8 +3,9 @@
 **Window:** MASANAWA-01 / AF15 private-media-access
 **Five-minute CAS claim:** factory/claims @ 5f13a80be062345e623b9fe6c311c2b7d90f136a, read back at that immutable SHA
 **Base main SHA:** f381f077c485c04261459b77a42c215d3ce3a14b
-**Source and test checkpoint:** ce534423873f9059eac9e2e80219f4ce44dce804
+**Source and test checkpoint:** e8bf35ae6fd464eae16fb8da9626ce7efde07ee1
 **Branch:** work/af15-private-media-access-20261010-masanawa01
+**PR:** https://github.com/Baatiku/masanawa/pull/601 (draft, integration target)
 **Status:** PARTIAL_IMPLEMENTATION. This slice is implemented and locally unit-tested, but has no integrated authenticated route, DB-backed permission resolver, actual signer, or provider/device/restore verification.
 
 ## Exactly owned paths
@@ -19,13 +20,13 @@ No root composer/router, worker startup, financial authority, schema registry, e
 
 AF v1 private-media lifecycle and backend/storage operations requirements; supporting DB-A media access/revocation gate, UX-A08/A10/A11 media/room/chat privacy acceptance and PF-A01 privacy gating. Server-sourced principal -> authoritative current membership/visibility/block/deletion decision -> signed URL limited to 5–60 s (default 30 s) and HTTPS configured signer host -> recheck current access revision and object key after signing -> deliver with private/no-store metadata. Denial maps to a non-enumerating not_found. Backend/signer outages map to temporarily_unavailable. No object key, caller identity, or signer host is authorized from client parameters.
 
-The access revision MUST change on membership, block, deletion and media replacement; sign callback MUST obey the requested TTL. A revocation cannot revoke an already-issued presigned URL: its residual risk window is limited by TTL and object-store/cache configuration. A real route MUST set HTTP Cache-Control: private, no-store; the returned metadata alone cannot enforce HTTP headers.
+The access revision MUST change on membership, block, deletion and media replacement; sign callback MUST obey the requested TTL. Permission decisions are snapshotted across asynchronous signing, and the current authenticated session is rechecked before URL return. Regression tests cover mutable cached decisions and account switching during signing. A revocation cannot revoke an already-issued presigned URL: its residual risk window is limited by TTL and object-store/cache configuration. A real route MUST set HTTP Cache-Control: private, no-store; the returned metadata alone cannot enforce HTTP headers.
 
 ## Executed checks
 
-- Node v22.16.0: node --experimental-strip-types --test /mnt/data/private_access/private_access.test.mjs — PASS 10/10, native Node test runner. Simulated authoritative signer/DB; no real provider.
+- Node v22.16.0: node --experimental-strip-types --test /mnt/data/private_access/private_access.test.mjs — PASS 12/12, native Node test runner. Simulated authoritative signer/DB; no real provider.
 - TypeScript: tsc --noEmit --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --skipLibCheck /mnt/data/private_access/private_access.ts — PASS.
-- GitHub file readback: exact uploaded source bytes matched local tested files (4878 and 3578 bytes respectively).
+- GitHub file readback: exact uploaded source bytes matched local tested files (5769 and 4147 bytes respectively).
 - DB/provider/device/whole-Gateway build, real signed URL TTL and resource revocation: NOT_RUN. Container cannot access github.com through DNS, so full monorepo checkout/test unavailable here.
 
 ## Unfinished integration and safety gates
