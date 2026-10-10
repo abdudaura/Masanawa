@@ -1,14 +1,15 @@
-import {randomUUID} from "node:crypto";
+import {createCanonicalId,parseCanonicalId,toInstant} from "@masanawa/contracts";
+import {enqueueOutbox} from "../events/outbox.js";
 import type {Pool,PoolClient} from "pg";
 interface Fan {tenantId:string;userId:string}
 interface Rel {relationship_id:string;enabled:boolean;revision:string}
-async function owner(c:PoolClient,p:Fan,ch:string):Promise<Rel|null>{
+async function owner(c:PoolClient,p:Fan,ch:string,write=false):Promise<Rel|null>{
  const q=await c.query<Rel>(`SELECT r.relationship_id,COALESCE(f.enabled,false) enabled,
  COALESCE(f.revision,0)::text revision FROM identity.relationships r
  JOIN identity.users u ON u.tenant_id=r.tenant_id AND u.user_id=r.user_id AND u.state='active'
  JOIN identity.characters a ON a.tenant_id=r.tenant_id AND a.character_id=r.character_id AND a.state='active'
  LEFT JOIN memory.fan_controls f ON f.tenant_id=r.tenant_id AND f.relationship_id=r.relationship_id
- WHERE r.tenant_id=$1 AND r.user_id=$2 AND r.character_id=$3 AND r.state='active'`,
+ WHERE r.tenant_id=$1 AND r.user_id=$2 AND r.character_id=$3 AND r.state='active' ${write?'FOR UPDATE OF r':''}`,
  [p.tenantId,p.userId,ch]);return q.rows[0]??null;
 }
 export function createPostgresFanMemoryStore(pool:Pool){
@@ -31,7 +32,7 @@ export function createPostgresFanMemoryStore(pool:Pool){
  },
  async setEnabled(p:Fan,ch:string,enabled:boolean,expectedRevision:number){
   const c=await pool.connect();try{
-   await c.query("BEGIN");const o=await owner(c,p,ch);
+   await c.query("BEGIN");const o=await owner(c,p,ch,true);
    if(!o||Number(o.revision)!==expectedRevision){await c.query("ROLLBACK");return null;}
    const r=await c.query<{revision:string}>(`INSERT INTO memory.fan_controls(tenant_id,relationship_id,enabled,revision)
      SELECT $1,$2,$3,1 WHERE $4=0
@@ -49,8 +50,18 @@ export function createPostgresFanMemoryStore(pool:Pool){
  },
  async enqueueErase(p:Fan,ch:string,recordId:string|null,key:string){
   const c=await pool.connect();try{
-   await c.query("BEGIN");const o=await owner(c,p,ch);
+   await c.query("BEGIN");const o=await owner(c,p,ch,true);
    if(!o){await c.query("ROLLBACK");return null;}
+   // Identical replay returns the original receipt without a second consent revision.
+   const prior=await c.query<{request_id:string;state:string;target_record_id:string|null}>(`
+    SELECT request_id,state,target_record_id FROM memory.fan_erase_requests
+    WHERE tenant_id=$1 AND relationship_id=$2 AND idempotency_key=$3 FOR UPDATE`,
+    [p.tenantId,o.relationship_id,key]);
+   if(prior.rows[0]){
+    if(prior.rows[0].target_record_id!==recordId){await c.query("ROLLBACK");return null;}
+    await c.query("COMMIT");
+    return {requestId:prior.rows[0].request_id,state:prior.rows[0].state};
+   }
    if(recordId){
     const r=await c.query(`SELECT 1 FROM memory.records WHERE tenant_id=$1 AND
       memory_record_id=$2 AND scope_kind='relationship' AND scope_ref_id=$3
@@ -66,6 +77,7 @@ export function createPostgresFanMemoryStore(pool:Pool){
      SELECT tenant_id,relationship_id,revision,false,$3 FROM memory.fan_controls
      WHERE tenant_id=$1 AND relationship_id=$2`,[p.tenantId,o.relationship_id,p.userId]);
    }
+   const requestId=createCanonicalId("request");
    const r=await c.query<{request_id:string;state:string}>(`INSERT INTO memory.fan_erase_requests
     (tenant_id,request_id,relationship_id,actor_user_id,target_record_id,idempotency_key)
     VALUES($1,$2,$3,$4,$5,$6)
@@ -73,8 +85,17 @@ export function createPostgresFanMemoryStore(pool:Pool){
     SET idempotency_key=EXCLUDED.idempotency_key
     WHERE memory.fan_erase_requests.target_record_id IS NOT DISTINCT FROM EXCLUDED.target_record_id
     RETURNING request_id,state`,
-    [p.tenantId,randomUUID(),o.relationship_id,p.userId,recordId,key]);
+    [p.tenantId,requestId,o.relationship_id,p.userId,recordId,key]);
    if(!r.rows[0]){await c.query("ROLLBACK");return null;}
+   // Atomic with the request: canonical events.outbox owns all retries and leases.
+   await enqueueOutbox(c,{
+    tenantId:parseCanonicalId("tenant",p.tenantId),eventId:createCanonicalId("event"),
+    eventType:"fan_memory.erase_requested",schemaVersion:1,
+    aggregateType:"fan_memory_erase",aggregateId:requestId,
+    correlationId:createCanonicalId("correlation"),causationId:null,
+    destination:"fan-memory-erase",availableAt:toInstant(new Date().toISOString()),
+    payload:{tenantId:p.tenantId,requestId}
+   });
    await c.query("COMMIT");
    return {requestId:r.rows[0].request_id,state:r.rows[0].state};
   }catch(e){await c.query("ROLLBACK");throw e;}finally{c.release();}
