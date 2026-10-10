@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { verifyEvidenceFile } from './evidence_path_guard.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -46,4 +47,12 @@ test('empty evidence cannot satisfy a matching digest', async (t) => {
   t.after(() => rm(root, { recursive: true, force: true }));
   await writeFile(path.join(root, 'empty'), '');
   await assert.rejects(verifyEvidenceFile(root, 'empty', sha('')), { code: 'EMPTY' });
+});
+
+
+test('Linux named pipe cannot block qualification or masquerade as a proof', { skip: process.platform !== 'linux' }, async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'af13-fifo-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  execFileSync('mkfifo', [path.join(root, 'unexpected-pipe')], { timeout: 2000 });
+  await assert.rejects(verifyEvidenceFile(root, 'unexpected-pipe', sha('')), { code: 'NOT_FILE' });
 });
