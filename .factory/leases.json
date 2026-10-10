@@ -359,15 +359,16 @@
         "apps/mobile/lib/src/audio_posts/creator_profile_screen.dart",
         "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
         "apps/mobile/test/audio_first/af09/creator_profile_test.dart",
-        "docs/workstreams/AF09-creator-report-20261010.md"
+        "docs/workstreams/AF09-creator-report-20261010.md",
+        "apps/mobile/test/audio_first/af09/destination_test.dart"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T05:08:18.868Z",
-      "heartbeat_at": "2026-10-10T05:08:18.868Z",
-      "expires_at": "2026-10-10T05:13:18.868Z",
-      "notes": "No work on active feed/SQL/route/migration/native paths. Preserve creator navigation, follow, pagination."
+      "heartbeat_at": "2026-10-10T05:10:11.286Z",
+      "expires_at": "2026-10-10T05:15:11.286Z",
+      "notes": "No work on active feed/SQL/route/migration/native paths. Preserve creator navigation, follow, pagination. Expanded scope to destination widget regression (new exact path unclaimed)."
     }
   ],
   "history": [
