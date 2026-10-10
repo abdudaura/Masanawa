@@ -88,6 +88,30 @@
       "claimed_at": "2026-10-10T01:36:55Z",
       "heartbeat_at": "2026-10-10T01:36:55Z",
       "expires_at": "2026-10-10T01:41:55Z"
+    },
+    {
+      "claim_id": "af09-continue-609-20261010-gpt6",
+      "owner": "AF09 continuation (existing PR #609)",
+      "scope": "Continue existing audio-post customer milestone: authenticated comments, safe deletion, list readback and Flutter conversation integration; no router/migrations/media/AF00 paths",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-published-audio-core-20261010.md",
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "services/gateway/src/audio_posts/service.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "source_head": "094aeabcf8c7e6161201c80bf796b4df46ee2932",
+      "claimed_at": "2026-10-10T02:06:00.614Z",
+      "heartbeat_at": "2026-10-10T02:06:00.614Z",
+      "expires_at": "2026-10-10T02:11:00.614Z",
+      "notes": "Continuing released AF09 exact-file claim; root/router/migration remain AF00; no competing integration branch."
     }
   ],
   "history": [
