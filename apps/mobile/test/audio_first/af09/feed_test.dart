@@ -123,6 +123,22 @@ class FakeReportSubmissions implements PublishedAudioReportTransport {
   }
 }
 
+class PagedFakePosts extends FakePosts implements AudioPostLibraryPager {
+  final List<String?> mineCursors = [], savedCursors = [];
+  Future<AudioPostPage> Function(String?)? minePageHandler, savedPageHandler;
+  @override
+  Future<AudioPostPage> minePage({String? cursor}) {
+    mineCursors.add(cursor);
+    return minePageHandler?.call(cursor) ??
+      Future.value(AudioPostPage(items: [], nextCursor: null));
+  }
+  @override
+  Future<AudioPostPage> savedPage({String? cursor}) {
+    savedCursors.add(cursor);
+    return savedPageHandler?.call(cursor) ??
+      Future.value(AudioPostPage(items: [], nextCursor: null));
+  }
+}
 Widget screen(FakePosts source, String account, {
   bool Function(String)? current,
   CreatorFollowingTransport? following,
@@ -136,6 +152,41 @@ Widget screen(FakePosts source, String account, {
   ));
 
 void main() {
+  testWidgets('My Talks loads more private history and deduplicates overlapped cursor rows',
+      (tester) async {
+    final source = PagedFakePosts()..minePageHandler = (cursor) async =>
+      cursor == null
+       ? AudioPostPage(items: [post('first')], nextCursor: 'next-page')
+       : AudioPostPage(items: [post('first'), post('older')], nextCursor: null);
+    await tester.pumpWidget(screen(source, 'current'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio first'), findsOneWidget);
+    expect(find.text('Load more'), findsOneWidget);
+    await tester.tap(find.text('Load more'));
+    await tester.pumpAndSettle();
+    expect(source.mineCursors, [null,'next-page']);
+    expect(find.text('Published audio first'), findsOneWidget);
+    expect(find.text('Published audio older'), findsOneWidget);
+    expect(find.text('Load more'), findsNothing);
+  });
+  testWidgets('Saved cursor fetch failure retains first page and offers retry',
+      (tester) async {
+    final source = PagedFakePosts()..savedPageHandler = (cursor) async {
+      if (cursor != null) throw StateError('offline');
+      return AudioPostPage(items: [post('saved-first')], nextCursor: 'next-page');
+    };
+    await tester.pumpWidget(screen(source, 'current'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio saved-first'), findsOneWidget);
+    await tester.tap(find.text('Load more'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio saved-first'), findsOneWidget);
+    expect(find.textContaining('Could not load audio Talks'), findsOneWidget);
+  });
   testWidgets('published cards offer canonical report only when reporting is connected',
       (tester) async {
     final posts = FakePosts()..mineHandler = () async => [post('mine')];
