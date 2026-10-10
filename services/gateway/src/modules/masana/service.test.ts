@@ -11,7 +11,7 @@ describe("Masana public and staff authority",()=>{
     async listDrafts(){events.push("drafts");return {items:[]};},
     async draft(){events.push("draft");return {revision:1};},
     async approve(){events.push("approve");return {revision:1};},
-    async registerMedia(input){events.push("media:"+input.mediaId);return {mediaId:input.mediaId};}
+    async attachMedia(input){events.push("media:"+input.revision+":"+input.mediaId);return {revision:input.revision+1};}
   };
   const auth:MasanaAuth={
     async optional(){return {tenantId:"tenant_test",userId:null};},
@@ -44,12 +44,12 @@ describe("Masana public and staff authority",()=>{
   });
   it("never stores media before staff permission and provider verification",async()=>{
     events.length=0;const server=await app();
-    const bad=await server.inject({method:"POST",url:"/v1/admin/masana/masana-gwani/media",
+    const bad=await server.inject({method:"POST",url:"/v1/admin/masana/masana-gwani/revisions/1/media",
       headers:{authorization:"Bearer fan"},payload:{mediaId:"media-good",kind:"portrait",rightsNote:"licensed to platform"}});
     expect(bad.statusCode).toBe(403);expect(events).toEqual([]);
-    const good=await server.inject({method:"POST",url:"/v1/admin/masana/masana-gwani/media",
+    const good=await server.inject({method:"POST",url:"/v1/admin/masana/masana-gwani/revisions/1/media",
       headers:{authorization:"Bearer editor"},payload:{mediaId:"media-good",kind:"portrait",rightsNote:"licensed to platform"}});
-    expect(good.statusCode).toBe(201);expect(events).toEqual(["media:media-good"]);await server.close();
+    expect(good.statusCode).toBe(201);expect(events).toEqual(["media:1:media-good"]);await server.close();
   });
   it("rejects excessive limit before querying the store",async()=>{
     events.length=0;const server=await app();

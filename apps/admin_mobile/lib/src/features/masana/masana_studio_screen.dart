@@ -75,9 +75,9 @@ class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
   mediaId.dispose();rights.dispose();
   if(data==null||!mounted)return;
   final current=generation;setState(()=>saving=true);
-  try{await widget.repository.attachVerifiedMedia(revision.characterId,data[0],data[1],data[2]);
+  try{await widget.repository.attachVerifiedMedia(revision.characterId,revision.revision,data[0],data[1],data[2]);
    if(mounted&&generation==current)reload();}
-  catch(_){if(mounted&&generation==current)setState(()=>error='Media verification failed; nothing attached.');}
+  catch(_){if(mounted&&generation==current)setState(()=>error='Media attachment was not saved; revision remains unchanged.');}
   finally{if(mounted&&generation==current)setState(()=>saving=false);}
  }
  Future<void> approve(MasanaRevision revision) async {

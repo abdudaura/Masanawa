@@ -18,7 +18,7 @@ class FakeStudio implements MasanaStudioRepository {
  }
  @override Future<void> draft(String id,Map<String,dynamic> p) async {drafts++;}
  @override Future<void> approve(String id,int r) async {approvals++;}
- @override Future<void> attachVerifiedMedia(String id,String media,String kind,String rights) async {}
+ @override Future<void> attachVerifiedMedia(String id,int revision,String media,String kind,String rights) async {}
 }
 void main(){
  testWidgets('staff draft list requires explicit approval confirmation',(tester) async {

@@ -91,20 +91,49 @@ export function createMasanaPostgresStore(pool:Pool) {
         return {characterId,revision,state:"draft" as const};
       });
     },
-    async registerMedia({tenantId,characterId,mediaId,kind,objectKey,rightsNote,staffId}:{tenantId:string;characterId:string;mediaId:string;kind:"portrait"|"banner";objectKey:string;rightsNote:string;staffId:string}) {
+    async attachMedia({tenantId,characterId,revision,mediaId,kind,objectKey,rightsNote,staffId}:{tenantId:string;characterId:string;revision:number;mediaId:string;kind:"portrait"|"banner";objectKey:string;rightsNote:string;staffId:string}) {
       return inTx(pool,async client=>{
         const identity=await client.query(`SELECT c.character_id FROM identity.characters c
           JOIN identity.character_ownership o USING(tenant_id,character_id)
           WHERE c.tenant_id=$1 AND c.character_id=$2 AND c.state='active' AND o.kind='platform'
           FOR UPDATE OF c`,[tenantId,characterId]);
         if(identity.rowCount===0)throw dbConflict("not_platform_masana");
-        const result=await client.query(`INSERT INTO masana.character_media
+        const source=await client.query<{state:string;profile:Record<string,unknown>}>(`
+          SELECT state,profile FROM masana.character_revisions
+          WHERE tenant_id=$1 AND character_id=$2 AND revision=$3 FOR UPDATE`,
+          [tenantId,characterId,revision]);
+        if(source.rows[0]?.state!=="draft")throw dbConflict("revision_conflict");
+        const field=kind==="portrait"?"portraitMediaId":"bannerMediaId";
+        const nextProfile={...source.rows[0].profile,[field]:mediaId};
+        // Verify the reference has been attested by the existing object store.
+        // Duplicate identical requests reuse the first new draft; no append explosion.
+        const previous=await client.query<{revision:number;profile:Record<string,unknown>}>(`
+          SELECT revision,profile FROM masana.character_revisions
+          WHERE tenant_id=$1 AND character_id=$2 AND revision>$3 AND state='draft'
+            AND profile=$4::jsonb ORDER BY revision DESC LIMIT 1`,
+          [tenantId,characterId,revision,JSON.stringify(nextProfile)]);
+        if(previous.rows[0])return {characterId,revision:previous.rows[0].revision,state:"draft" as const,reused:true};
+        const registration=await client.query(`INSERT INTO masana.character_media
           (tenant_id,media_id,character_id,kind,object_key,rights_note,approved_by)
           VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING media_id`,
           [tenantId,mediaId,characterId,kind,objectKey,rightsNote,staffId]);
-        if(result.rowCount===0)throw dbConflict("media_reference_conflict");
-        await audit(client,tenantId,staffId,characterId,"masana.media_registered",0);
-        return {mediaId,characterId,kind,state:"verified"};
+        if(registration.rowCount===0){
+          const existing=await client.query<{character_id:string;kind:string;object_key:string}>(`
+            SELECT character_id,kind,object_key FROM masana.character_media
+            WHERE tenant_id=$1 AND media_id=$2 FOR SHARE`,[tenantId,mediaId]);
+          if(existing.rows[0]?.character_id!==characterId ||
+             existing.rows[0]?.kind!==kind || existing.rows[0]?.object_key!==objectKey)
+            throw dbConflict("media_reference_conflict");
+        }
+        const v=await client.query<{next_revision:string}>(`
+          SELECT (coalesce(max(revision),0)+1)::text AS next_revision
+          FROM masana.character_revisions WHERE tenant_id=$1 AND character_id=$2`,[tenantId,characterId]);
+        const nextRevision=Number(v.rows[0]?.next_revision);
+        await client.query(`INSERT INTO masana.character_revisions
+          (tenant_id,character_id,revision,state,profile) VALUES($1,$2,$3,'draft',$4::jsonb)`,
+          [tenantId,characterId,nextRevision,JSON.stringify(nextProfile)]);
+        await audit(client,tenantId,staffId,characterId,"masana.verified_media_attached",nextRevision);
+        return {characterId,revision:nextRevision,state:"draft" as const,reused:false};
       });
     },
     async approve({tenantId,characterId,revision,staffId}:{tenantId:string;characterId:string;revision:number;staffId:string}) {
