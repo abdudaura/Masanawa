@@ -755,4 +755,26 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       tenantId: f.tenantId, asset: "USDTTRC20", network: "tron",
     })).toBe("70");
   });
+
+  it("returns compact exact decimal custody balances and liabilities", async () => {
+    const f = await fundedFixture("30.125");
+    const balance = () => f.repository.readBalance({
+      tenantId: f.tenantId, userId: f.userId,
+      asset: "USDTTRC20", network: "tron",
+    });
+    const liability = () => f.repository.readAggregateLiability({
+      tenantId: f.tenantId, asset: "USDTTRC20", network: "tron",
+    });
+
+    // Decimal strings remain lossless. PostgreSQL NUMERIC storage scale
+    // must not leak into the public amount contract as trailing zeroes.
+    expect(await balance()).toBe("30.125");
+    expect(await liability()).toBe("30.125");
+
+    await f.repository.reserveWithdrawal(
+      withdrawalIntent(f.tenantId, f.userId, "0.125"),
+    );
+    expect(await balance()).toBe("30");
+    expect(await liability()).toBe("30");
+  });
 });

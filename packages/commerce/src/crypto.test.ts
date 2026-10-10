@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
-import { normalizeCryptoIntent, type CryptoIntent } from "./crypto.js";
+import {
+  normalizeCryptoIntent,
+  normalizeCryptoLedgerEntry,
+  type CryptoIntent,
+  type CryptoLedgerEntry,
+} from "./crypto.js";
 
 const at = toInstant("2026-10-05T00:00:00.000Z");
 const base: CryptoIntent = {
@@ -139,5 +144,80 @@ describe("crypto intent normalization", () => {
       providerNetworkFee: "0.1",
       withdrawalFeePayer: "platform",
     })).toThrow("crypto.withdrawal_fee.unexpected");
+  });
+});
+
+describe("crypto ledger posting admission", () => {
+  const ledgerBase: CryptoLedgerEntry = {
+    schemaVersion: 1,
+    tenantId: base.tenantId,
+    ledgerEntryId: createCanonicalId("ledger-entry"),
+    userId: base.userId,
+    requestId: base.requestId,
+    asset: "USDTTRC20",
+    network: "tron",
+    amount: "0.000000000000000001",
+    direction: "credit",
+    reason: "provider-deposit",
+    providerReference: "payment-1",
+    createdAt: at,
+  };
+
+  const cases: ReadonlyArray<readonly [CryptoLedgerEntry["reason"], "credit" | "debit"]> = [
+    ["provider-deposit", "credit"],
+    ["provider-refund", "debit"],
+    ["withdrawal-reserve", "debit"],
+    ["withdrawal-release", "credit"],
+    ["withdrawal-fee-reserve", "debit"],
+    ["withdrawal-fee-release", "credit"],
+    ["conversion-debit", "debit"],
+    ["conversion-credit", "credit"],
+    ["conversion-release", "credit"],
+    ["fiat-purchase-credit", "credit"],
+    ["fiat-purchase-refund", "debit"],
+    ["adjustment", "credit"],
+    ["adjustment", "debit"],
+  ];
+
+  it("admits every canonical reason only in its valid direction without rounding", () => {
+    for (const [reason, direction] of cases) {
+      const admitted = normalizeCryptoLedgerEntry({
+        ...ledgerBase, reason, direction,
+      });
+      expect(admitted.reason).toBe(reason);
+      expect(admitted.direction).toBe(direction);
+      expect(admitted.amount).toBe("0.000000000000000001");
+      expect(Object.isFrozen(admitted)).toBe(true);
+    }
+  });
+
+  it("fails closed on forged or malformed reasons before persistence", () => {
+    for (const reason of ["unknown", "provider-deposit ", "__proto__", "", null, undefined, 0]) {
+      expect(() => normalizeCryptoLedgerEntry({
+        ...ledgerBase, reason,
+      } as CryptoLedgerEntry)).toThrow("crypto.ledger.reason.invalid");
+    }
+  });
+
+  it("rejects a reason with its opposite money direction", () => {
+    for (const [reason, direction] of cases.filter(([reason]) => reason !== "adjustment")) {
+      expect(() => normalizeCryptoLedgerEntry({
+        ...ledgerBase, reason, direction: direction === "credit" ? "debit" : "credit",
+      })).toThrow("crypto.ledger.reason_direction.invalid");
+    }
+  });
+
+  it("still rejects malformed direction, schema and non-positive amounts", () => {
+    for (const direction of ["both", null, undefined]) {
+      expect(() => normalizeCryptoLedgerEntry({
+        ...ledgerBase, direction,
+      } as CryptoLedgerEntry)).toThrow("crypto.ledger.direction.invalid");
+    }
+    expect(() => normalizeCryptoLedgerEntry({
+      ...ledgerBase, schemaVersion: 2,
+    } as unknown as CryptoLedgerEntry)).toThrow("crypto.ledger.schema.invalid");
+    expect(() => normalizeCryptoLedgerEntry({
+      ...ledgerBase, amount: "0",
+    })).toThrow("crypto.amount.invalid");
   });
 });
