@@ -145,6 +145,18 @@ class AudioPostPlaybackController extends ChangeNotifier {
   bool _loading = false;
   bool _playing = false;
 
+  // Native audio start/stop are asynchronous. Serializing them prevents a late
+  // start for Talk A from racing with a stop or start for Talk B. Each queued
+  // start also checks the latest session and generation before touching media.
+  Future<void> _mediaTail = Future<void>.value();
+  Future<void> _runMedia(Future<void> Function() work) {
+    final operation = _mediaTail.then((_) => work());
+    _mediaTail = operation.then<void>(
+      (_) {}, onError: (Object _, StackTrace __) {},
+    );
+    return operation;
+  }
+
   String? get activePostId => _activePostId;
   String? get error => _error;
   bool get loading => _loading;
@@ -159,7 +171,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
     _playing = false;
     _activePostId = null;
     _notify();
-    unawaited(_output.stop());
+    unawaited(_runMedia(_output.stop).catchError((Object _) {}));
   }
 
   void _failPlayback() {
@@ -167,7 +179,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
     _playing = false;
     _error = 'Audio stopped. Retry to listen.';
     _notify();
-    unawaited(_output.stop());
+    unawaited(_runMedia(_output.stop).catchError((Object _) {}));
   }
 
   Future<void> play(AudioPost post) async {
@@ -189,8 +201,9 @@ class AudioPostPlaybackController extends ChangeNotifier {
     _error = null;
     _notify();
     try {
-      await _output.stop();
-      if (!isAuthorized || requestGeneration != _generation) return;
+      await _runMedia(_output.stop);
+      if (!isAuthorized || requestGeneration != _generation ||
+          api.accessToken != authorizationAtStart) return;
       final payload = _ticketRequest != null
           ? await _ticketRequest(post.postId)
           : (await api.dio.get<dynamic>(
@@ -201,10 +214,19 @@ class AudioPostPlaybackController extends ChangeNotifier {
       final ticket = PublishedTalkTicket.parse(
         payload, expectedHost: expectedMediaHost, nowMs: _nowMs());
       if (!isAuthorized || requestGeneration != _generation) return;
-      await _output.start(ticket.url);
+      await _runMedia(() async {
+        // A newer stop/play can be queued while waiting on the media ticket.
+        if (!isAuthorized || requestGeneration != _generation ||
+            api.accessToken != authorizationAtStart) return;
+        await _output.start(ticket.url);
+      });
       if (!isAuthorized || requestGeneration != _generation ||
           api.accessToken != authorizationAtStart) {
-        await _output.stop();
+        // A newer play/stop owns its own queued cleanup. Never stop that
+        // newer playback from an earlier request's stale continuation.
+        if (requestGeneration == _generation) {
+          await _runMedia(_output.stop);
+        }
         return;
       }
       _loading = false;
@@ -217,7 +239,8 @@ class AudioPostPlaybackController extends ChangeNotifier {
       _playing = false;
       _error = 'Audio unavailable. Reconnect or retry.';
       _notify();
-      try { await _output.stop(); } catch (_) { /* keep sanitized UI */ }
+      try { await _runMedia(_output.stop); }
+      catch (_) { /* keep sanitized UI */ }
     }
   }
 
@@ -228,7 +251,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
     _activePostId = null;
     _error = null;
     _notify();
-    await _output.stop();
+    await _runMedia(_output.stop);
   }
 
   @override
@@ -236,7 +259,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
     if (_closed) return;
     ++_generation;
     _closed = true;
-    unawaited(_output.dispose());
+    unawaited(_runMedia(_output.dispose).catchError((Object _) {}));
     super.dispose();
   }
 }
