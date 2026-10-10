@@ -131,21 +131,6 @@
       "notes": "Policy exact blob Node tests 4/4 PASS_REAL; service, PG adapter and Vitest tests authored on same PR; API route and mobile transport/form next; AF00 retains shared app/migration/router."
     },
     {
-      "claim_id": "af09-609-counts-privacy-handoff-20261010-gpt6c",
-      "owner": "AF09 same-PR #609 feed/privacy continuation",
-      "scope": "Document in same existing AF09 handoff persisted counts and public DTO privacy, explicitly transfer Following projection and required exact-head checks",
-      "paths": [
-        "docs/workstreams/AF09-published-audio-core-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:33:42.098Z",
-      "heartbeat_at": "2026-10-10T02:33:42.098Z",
-      "expires_at": "2026-10-10T02:38:42.098Z",
-      "notes": "Original #609 comment claim released after source commits; continuation is documentation only; no competing branch, no unclaimed code edits."
-    },
-    {
       "claim_id": "af09-609-connect-following-20261010-gpt6-integration",
       "owner": "AF09 continuing PR #609 / bounded feed composition",
       "scope": "Wire existing authenticated Following transport and verified follow controls into published Talks feed using exactly two previously released paths; no AF00 shared root, migration, recorder, media, or other AF09 module changes",
@@ -1265,6 +1250,25 @@
       "released_at": "2026-10-10T02:32:08.199Z",
       "release_reason": "Continuing PR #609 comment path committed and GitHub-readback checked; no executable repository test runner; CI job reports zero steps, SQL migration and AF00 bindings absent. Exact-head blocker/owner/action recorded in PR comment 6092779199; NO MERGE to main.",
       "source_head": "75a0fa1710614db769e1ab46f734fd4986ec8cad",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609"
+    },
+    {
+      "claim_id": "af09-609-counts-privacy-handoff-20261010-gpt6c",
+      "owner": "AF09 same-PR #609 feed/privacy continuation",
+      "scope": "Document in same existing AF09 handoff persisted counts and public DTO privacy, explicitly transfer Following projection and required exact-head checks",
+      "paths": [
+        "docs/workstreams/AF09-published-audio-core-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:33:42.098Z",
+      "heartbeat_at": "2026-10-10T02:33:42.098Z",
+      "expires_at": "2026-10-10T02:38:42.098Z",
+      "notes": "Original #609 comment claim released after source commits; continuation is documentation only; no competing branch, no unclaimed code edits.",
+      "released_at": "2026-10-10T02:36:14.478Z",
+      "release_reason": "Same existing #609 received public DTO/counts source and SHA-specific handoff; PR comment 6092824868 records exact runner/composition blockers. No source test PASS or merge. Released handoff path for other AF09 owners.",
+      "source_head": "c6d8b8def9d31caef5f46deb53571bd12be212b2",
       "pr": "https://github.com/Baatiku/masanawa/pull/609"
     }
   ]
