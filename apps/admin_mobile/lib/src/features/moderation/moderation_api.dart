@@ -29,4 +29,13 @@ class ModerationApi {
       data: {'approve': approve, 'expectedVersion': version},
     );
   }
+  Future<void> reviewAppeal({
+    required String caseId, required String appealId,
+    required bool uphold, required int version,
+  }) async {
+    await dio.post<dynamic>(
+      '/v1/admin/cases/${Uri.encodeComponent(caseId)}/appeals/${Uri.encodeComponent(appealId)}/review',
+      data: {'uphold': uphold, 'expectedVersion': version},
+    );
+  }
 }
