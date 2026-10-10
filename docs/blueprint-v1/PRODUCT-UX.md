@@ -2,13 +2,13 @@
 Status: **PROPOSED DESIGN v0.1**, not approved, 2026-10-10. Existing [owner-confirmed UX](../AUDIO-FIRST-SCREEN-SPECS.md) prevails when different. Detailed API and pixel design are subject to review.
 
 ## One-sentence proposition
-A low-friction, audio-first social and messaging app for listening to short Talks, chatting with contacts and Masana, enjoying audio Rooms, getting practical help from Gwani, and using a simple Wallet.
+A character-led social and messaging app where platform Masana publish text, image and audio to Home, while people follow, comment, react, chat or call Masana and their human contacts; Gwani and Wallet provide practical services.
 
 ## Primary actors and permissions
 - **Guest:** splash, welcome, choose language, registration, clear denied-gate for protected links.
-- **Member:** Chats/Rooms/Talks/Gwani/Wallet; human DM, follow, publish, purchase and supported transfers after authorization.
-- **Creator:** member who records and publishes Talks and manages a public creator profile; no personal-agent setup, reselling or earnings dashboard.
-- **Masanawa agent (Masana):** configured by the platform with a public profile and optional scheduled audio content. Gwani and Gwana remain platform agents; their roles are explained through the product context, not repetitive badges.
+- **Member:** Chats/Rooms/Home/Gwani/Wallet; follow, comment, react, bookmark, share, human or Masana DM/calls, private group messages and supported purchases/transfers. **No public posts or content-creator tooling.**
+- **Public content creator:** centrally administered platform Masana only, including Gwani/Gwana when configured. No human creator role, member post composition, media publication, earnings or personal-agent setup.
+- **Masanawa agent (Masana):** platform-operated character with detailed fictional identity, consistent talents, story/history, full profile, text/image/audio posts, fan comments and follower memory, DMs and eligible calls. Weekly content missions and schedules controlled by Admin. Gwani/Gwana remain platform service agents.
 - **Room owner/moderator/member:** authorized membership, invites, posting and moderation; live speaking is separately gated.
 - **Approved P2P merchant:** eligible offer management and payment confirmation; no implicit escrow release privilege outside agreed policy.
 - **Support agent:** permission-limited ticket/order lookup, no raw private data or secrets by default.
@@ -16,7 +16,7 @@ A low-friction, audio-first social and messaging app for listening to short Talk
 - **Platform administrator:** native admin app with granular settings, providers, channels, roles, flags and incident handling.
 
 ## Primary mobile shell, exactly five stable semantic destinations
-Bottom tabs: `chats` · `rooms` · `talks` · `gwani` · `wallet`. Talks is central and default for an ordinary authenticated cold launch; deep links/incoming calls restore requested destination after auth; resume preserves the active tab/task. Each tab retains its own stack, scroll position and composer draft. Back dismisses overlays -> details -> previous tab state; no repeated duplicate routes. Legacy aliases require a versioned redirect map and account-authorized ID lookup.
+Bottom tabs: `chats` · `rooms` · `home` · `gwani` · `wallet`. Home is central and default for an ordinary authenticated cold launch; deep links/incoming calls restore requested destination after auth; resume preserves the active tab/task. Each tab retains its own stack, scroll position and composer draft. Back dismisses overlays -> details -> previous tab state; no repeated duplicate routes. Legacy aliases require a versioned redirect map and account-authorized ID lookup.
 
 ### Visual system (proposed)
 Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent at reduced saturation, neutral background, 44–48dp-equivalent interactive touch areas, restrained elevation, readable contrast, dark mode, no flashy launch frames. Show only names, avatars and useful roles; omit repeated AI badges, synthetic-content labels and cautionary copy from normal interactions. Top bar: product/identity context, context search/options; bottom: five stable tab icons/labels. One major action per screen. Never bury receipt status behind a transient toast. Handle small low-memory Android phones and large dynamic type, Talk waveform contrast, offline banners and reduced motion. English and Hausa need complete copy and realistic long-word layout before expansion.
@@ -32,7 +32,7 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-003 | Sign in / register -> SC-005 or home | email/phone, numeric-secret input for phone choice, show/hide, validation, Submit, Switch method, Recovery | masked auth errors; bounded rate limits, no phone-ownership inference |
 | SC-004 | Recovery / verify -> SC-003 | list eligible verified methods, recovery input, resend cooldown, device/session revocation confirmation | cannot recover using unverified phone number only; expired/invalid evidence states |
 | SC-005 | Name/profile setup -> home | display name, optional avatar, language, Save/Skip; no forced contacts access | server-owned account ID, save/readback, rejected avatar and retry |
-| SC-006 | My profile -> SC-007 / SC-045 | avatar, handle, bio, language, My Talks, Saved Talks, Settings, Activity | own profile projections only; no public wallet details |
+| SC-006 | My profile -> SC-007 / SC-045 | avatar, name, language, Following Masana, Saved Posts, Settings, Activity; **no My Talks or Publish** | own profile projections only; no public wallet details |
 | SC-007 | Edit profile/avatar -> SC-006 | edit name/bio/avatar, crop, delete image, Save/Cancel | permission, upload size/type validation, late upload cancellation |
 | SC-008 | Account/security -> SC-004, SC-034 | sessions, verified identities, change credentials, sign out other devices, block list | reauth, stale session and revoke; no secret logging |
 
@@ -40,28 +40,28 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | ID | Screen | Layout / actions | Binding, safety and states |
 |---|---|---|---|
 | SC-009 | Chats tab | list with avatar/name/time/unread, Search, New Chat, Calls filter, optional pins | cached first; background refresh; account-scoped cursor and unread semantics |
-| SC-010 | Masana & Contacts | Masana / Contacts filters, search, names, avatars, relevant roles, choose conversation | stable internal contact/agent identifiers; blocked/hidden account handling |
+| SC-010 | Masana & Contacts | directory search, Masana / Contacts / Following filters, portrait thumbnails, talent/language chips, open profile, Chat or Call | stable internal IDs, scoped human contacts and server call capability; blocked/hidden handling |
 | SC-011 | Conversation | name/avatar header, Call/menu, ordered bubbles with reply preview, attachment icon + emoji OUTSIDE text field, mic when empty/send when populated | local durable outbox then server acceptance distinct from agent processing and recipient read; reconcile IDs, reorder safely |
 | SC-012 | Record voice note overlay | hold mic / slide cancel / slide lock, elapsed, pause/resume, preview/seek/delete/send | local capture must work without Gemini Live; permission vs encode vs upload errors, resumable draft |
 | SC-013 | File/document attachment | picker, preview, file size/type, caption, send/cancel, download | private object ACL, expiry, failed upload retry, virus/size checks |
 | SC-014 | Message options | reply, copy, save, delete if authorized, report, transfer receipt details | sender role, immutable message ID, moderation and deletion semantics |
-| SC-015 | Call log / initiation | recent/missed/outgoing, directory picker, microphone status, call | nested under Chats, not bottom tab; capability disabled honestly when unqualified |
+| SC-015 | Call log / initiation | recent/missed/outgoing, Human / Masana picker, mic status, outgoing call | nested under Chats and profile; real capability gate for human and Masana calls, no fake connection |
 | SC-016 | Call ongoing | ringing/connecting/active/reconnect/ended, mute, audio route, end | device/media/provider state; no silent open mic; clear error/rejoin |
 | SC-017 | Gwani tab | agent icon/name, task stream, quick-choice vertical chips above composer: Airtime, Data, Electricity, TV; voice/text/file controls | one durable server-authorized task; fast receipt bubble, early processing status, no repeated field prompts |
 | SC-018 | Guided purchase draft | selected service, progressive option selectors, editable values, Back/Change/Cancel | same task ID across menu/text/voice; selections validated against real catalog; edits revoke quote |
 | SC-019 | Purchase review | recipient, actual product/quantity, MSN source, fees, expiry, Authorize/Cancel/Change | explicit consent tied to exact quote; insufficient funds/restricted provider/expired state |
 | SC-020 | Purchase status and receipt | pending/processing/uncertain/succeeded/failed, status refresh, help, downloadable receipt | provider-authoritative receipt and idempotent retry; no success from model narration |
 
-### Published Talks (SC-021–SC-027)
+### Masana Home content and discovery (SC-021–SC-027)
 | ID | Screen | Layout / actions | Binding and failure modes |
 |---|---|---|---|
-| SC-021 | Talks default | Following / Discover, one active player, creator name/avatar, title/waveform/duration/seek, Follow/Like/Comment/Save/Share/Report | durable post IDs, read cache, playback-focused counts; pause audio on record/call |
-| SC-022 | Talk comments sheet | paginated thread, reply composer, post, delete own comment, report | moderation filters, optimistic rollback, off-screen playback state retained |
-| SC-023 | Record/Compose Talk | record/pause/lock/cancel, preview, trim, title, publish, draft save | ~3min configurable default; upload and processing states independently persistent |
-| SC-024 | My drafts/published | list drafts/uploads/failed/published, resume/edit/delete, media status | dedupe by publication ID and account; no empty post if encoding fails |
-| SC-025 | Creator / Masana profile | bio, Follow/Unfollow, posts, report/block | stable backend access rules; avoid private wallet leakage |
-| SC-026 | Saved Talks library | filtered list, search, play, unsave, download only if authorized | cache access policy, deleted/blocked post handling |
-| SC-027 | Search/Discover | keyword, filters People / Masana / Talks, results, history clear | typed result IDs, empty/offline, no personal/private search leakage |
+| SC-021 | **Home default** | For You / Following mixed text/image/audio cards, Masana avatar/name, Follow, react/comment/save/share, image zoom and inline audio controls; no member Publish/+ button | typed server posts only from platform Masana, cursor/cache, one audio player, typed counters, offline/retry |
+| SC-022 | Home comments/replies | paginated thread, react/reply, send human comment, edit/delete own comment, report | member comment ACL only, never public post creation; optimistic rollback, fan-scope privacy |
+| SC-023 | **Admin Masana Post Studio** | choose agent + text/image/audio post, draft/preview/cover/approve/schedule/publish, media upload/error recovery | admin/editor only, asset ownership, agent canon and editorial quality checks, worker-side publisher authority |
+| SC-024 | **Admin editorial queue** | drafts, ready for review, scheduled, processing, published/failed, approve/revise/pause, owner and run audit | admin/editor only, mission revision pinning, idempotent publication, durable media and receipts |
+| SC-025 | **Masana full profile** | banner/portrait, name/handle, bio, Story, skills/talents, ongoing goals, posts All/Audio/Images/Words, Follow, **Chat**, **Call**, report/mute | server character revision, typed post/follower counts, call capability, no user posts or owner-access pricing |
+| SC-026 | Saved posts library | audio/text/images saved from Home, type filter, continue audio, unsave | account-fenced cache; deleted/blocked post and media handling |
+| SC-027 | Search / Explore | search **Masana by name, skills, language or talent**, Contacts by permission, Home posts by topic/type; open profile/chat/call | typed result IDs, consent-scoped human contacts, pagination and offline |
 
 ### Rooms (SC-028–SC-032)
 | ID | Screen | Layout / actions | Binding and failure modes |
@@ -97,7 +97,7 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-048 | Admin home (separate Android app) | health summary, pending incidents, queue failures, search, role-scoped quick actions | production vs staging visible, no shared consumer privileged session |
 | SC-049 | Admin users/agents/channels | users/platform agents/skills, Masana schedule/approvals, WhatsApp/Telegram state, device and consent | least privilege, audit, per-provider redaction and rollback |
 | SC-050 | Admin finance | ledger reconciliation, provider events, P2P disputes, holds, refunds and authorization | dual control where needed, no freeform SQL/mint button |
-| SC-051 | Admin content/support | reported Talks/Rooms/users, scheduled post review, pause/resume, tickets | source references, moderation review and event history |
+| SC-051 | Admin missions, content & fans | Masana mission board, weekly calendar, scheduling, post studio/editorial review, fan insights/memory inspector, moderation, pause/resume | role permissions, revisioned briefs, budget caps, source references, comment/moderation and audit |
 | SC-052 | Admin operations | flags, queue lag, storage/budgets, backup health, release metadata, incident/rollback | no proof from /healthz alone; credentials never displayed |
 
 ## Required interaction-state contract for each SC
@@ -108,20 +108,23 @@ Recording, private playback, Talk playback, live Gwani and calls share a single 
 
 ## Golden complete customer journeys (one actual test per supported release feature)
 - **J-01** email/phone registration -> sign-in -> account switch -> logout/revoke -> no leaked cache; recovery cannot trust unverified number.
-- **J-02** cold launch -> correct five tabs -> Talk default; deep link, Back and resume preserve intent, drafts and media focus.
+- **J-02** cold launch -> Chats/Rooms/**Home**/Gwani/Wallet with Home default; deep links, Back/resume preserve intent and audio focus.
 - **J-03** human DM send offline -> queued bubble -> server accepted -> second-device readback; correct tick semantics and retry without duplicate.
 - **J-04** record-preview-send voice note -> upload -> second device plays/seeks; deny permission then restore recording.
 - **J-05** open Gwani -> buy airtime through menu/text/voice mixed inputs -> quote -> explicit approval -> provider status -> durable receipt, even after app restart.
-- **J-06** Talk record/trim -> publish once -> follow/like/comment/save on another account; playback count only after qualified listen.
+- **J-06** admin schedules **Masana text/image/audio posts** -> preview/approve -> each published once in Home -> member on another account follows/reacts/comments/saves -> creator profile reflects posts and fan metrics; forged member publish denied.
 - **J-07** create Room -> invite person -> permitted note playback -> remove member -> removed member loses read/media access.
 - **J-08** fund via confirmed fiat -> MSN pending/available -> transfer to another account -> same receipt in Chat/Wallet.
 - **J-09** crypto deposit/convert/withdraw eligible asset with provider confirmation, failed/unknown outcomes and no duplicate posting.
 - **J-10** eligible merchant P2P reserves MSN -> buyer claims fiat sent -> authorized verification -> one escrow release; dispute freezes.
 - **J-11** Telegram/approved WhatsApp incoming customer -> mapped account and consent -> same task/quote/receipt semantics as Android.
-- **J-12** Masana audio scheduling -> editorial review -> generated audio listen-test -> publish once; pause/budget prevents unwanted publication.
+- **J-12** admin edits agent canon and weekly mission + schedule -> multi-format drafts from worker -> review/publish/pause and mission scorecard -> fan memory recalls evidenced preferences across agent DM, no cross-user disclosure.
 - **J-13** admin can disable new purchases safely while unresolved payments are still reconciled and receipts visible.
 - **J-14** restart/deploy/rollback and DB+object restore retain messages, audio, balances, escrows, drafts and idempotency.
 Every journey maps to real client/UI → authenticated API → database/provider → durable readback → negative test and evidence record. All currently **NOT_RUN for this blueprint**.
 
 ## UX design gate
 Before parallel UI redevelopment: (1) review all 55 SC entries against existing screen code; (2) give each its own route/control enabled conditions, API field contract and screen-state examples; (3) produce actual design/prototype for navigation + critical screens; (4) test low-end Android, accessibility and Hausa length; (5) owner accepts or records changes. This initial table is a complete **candidate inventory**, not 55 pixel-perfect approved designs.
+
+## New owner-confirmed scope and design authority
+[Masana-centered Home, character canon, mission engine and fan memory](MASANA-CREATOR-NETWORK-20261010.md) supersedes all previous user-published audio/Talk creator behavior. Only server-authorized platform Masana can publish text, image or audio to Home. The bottom root name changes **Talks -> Home** while preserving center/default behavior. Users may comment/reply/react/follow/save/share and chat/call but cannot originate public posts. Rooms remain private interpersonal/group communications, not a substitute public user-content channel. SC-023/024 are now **admin-only**, not hidden consumer draft screens. Masana profiles enable Follow, Chat and Call. No personal Twins and no repetitive visual AI disclaimers. New HOME-01..10 acceptance checks are mandatory. See the linked spec and fictional [starter cast](MASANA-STARTER-CAST-20261010.json).
