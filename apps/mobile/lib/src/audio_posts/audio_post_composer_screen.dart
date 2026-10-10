@@ -229,7 +229,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
     final receipt = _receipt;
     final requestId = _requestId;
     if (!_authorized || _checkingStatus || _saving || _sending || _acquiring ||
-        receipt?.status != 'processing' || requestId == null ||
+        receipt == null || receipt.status != 'processing' || requestId == null ||
         widget.transport is! AudioPostReceiptLookup) return;
     final generation = _generation;
     final accountId = widget.accountId;
@@ -242,7 +242,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       // Only the authenticated request's exact post can advance this receipt.
       // Absence/offline/malformed responses cannot turn an acknowledged
       // publication back into a missing post or trigger another charge/upload.
-      if (latest == null || latest.postId != receipt!.postId ||
+      if (latest == null || latest.postId != receipt.postId ||
           latest.title != receipt.title ||
           latest.durationMs != receipt.durationMs ||
           latest.authorId != receipt.authorId ||
