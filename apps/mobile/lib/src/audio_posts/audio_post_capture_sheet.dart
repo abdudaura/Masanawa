@@ -100,8 +100,12 @@ class TalkCaptureSheet extends StatefulWidget {
 enum _Stage { idle, recording, paused, preview, uploading }
 
 class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
-  late final TalkCaptureRecorder _rec = widget.recorder ?? DeviceTalkCaptureRecorder();
-  late final TalkCapturePlayer _player = widget.player ?? DeviceTalkCapturePlayer();
+  TalkCaptureRecorder? _recInstance;
+  TalkCapturePlayer? _playerInstance;
+  TalkCaptureRecorder get _rec => _recInstance ??=
+      widget.recorder ?? DeviceTalkCaptureRecorder();
+  TalkCapturePlayer get _player => _playerInstance ??=
+      widget.player ?? DeviceTalkCapturePlayer();
   _Stage _stage = _Stage.idle;
   Stopwatch? _clock;
   Timer? _ticker;
@@ -260,7 +264,9 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
   Future<void> _discard() async {
     _ticker?.cancel();
     _clock?.stop();
-    try { await _player.stop(); } catch (_) {}
+    if (_playerInstance != null) {
+      try { await _playerInstance!.stop(); } catch (_) {}
+    }
     if (_stage == _Stage.recording || _stage == _Stage.paused) {
       try { await _rec.stop(); } catch (_) {}
     }
@@ -283,11 +289,19 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
     final path = _path;
     _path = null;
     unawaited(() async {
-      try { await _rec.stop(); } catch (_) {}
-      try { await _player.stop(); } catch (_) {}
+      if (_recInstance != null) {
+        try { await _recInstance!.stop(); } catch (_) {}
+      }
+      if (_playerInstance != null) {
+        try { await _playerInstance!.stop(); } catch (_) {}
+      }
       await _delete(path);
-      await _rec.close();
-      await _player.close();
+      if (_recInstance != null) {
+        try { await _recInstance!.close(); } catch (_) {}
+      }
+      if (_playerInstance != null) {
+        try { await _playerInstance!.close(); } catch (_) {}
+      }
     }());
     super.dispose();
   }
