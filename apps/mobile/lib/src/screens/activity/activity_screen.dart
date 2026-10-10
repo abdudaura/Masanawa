@@ -26,6 +26,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   TalkActivityFilter _filter = TalkActivityFilter.all;
   String? _busyInvitationId;
   String? _busyReadId;
+  // Timeout after an invitation decision is an UNKNOWN outcome, not a retry
+  // invitation. Require a deliberate, successful server read before retrying.
+  final Set<String> _uncertainInvitationIds = <String>{};
   int _actionEpoch = 0;
   int _principalEpoch = 0;
 
@@ -40,6 +43,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final session = ref.read(sessionProvider);
     if (session is! SessionSignedIn ||
         _busyInvitationId != null ||
+        _uncertainInvitationIds.contains(item.id) ||
         talkId == null ||
         talkId.isEmpty) {
       return;
@@ -60,6 +64,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             .respondToInvitation(talkId: talkId, accept: accept);
       } catch (_) {
         if (!isCurrentActor()) return;
+        setState(() => _uncertainInvitationIds.add(item.id));
         _invalidateInvitationFilters();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -132,9 +137,23 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   Future<void> _refresh() async {
     final filter = _filter;
+    final actorUserId = _userId(ref.read(sessionProvider));
+    final principalEpoch = _principalEpoch;
     ref.invalidate(talkActivityProvider(filter));
     try {
       await ref.read(talkActivityProvider(filter).future);
+      // A Money/Social filter does not establish whether a Talk invitation
+      // was accepted. Confirm the account's All projection before unlocking.
+      if (_uncertainInvitationIds.isNotEmpty && filter != TalkActivityFilter.all) {
+        ref.invalidate(talkActivityProvider(TalkActivityFilter.all));
+        await ref.read(talkActivityProvider(TalkActivityFilter.all).future);
+      }
+      if (mounted &&
+          _principalEpoch == principalEpoch &&
+          _userId(ref.read(sessionProvider)) == actorUserId &&
+          _uncertainInvitationIds.isNotEmpty) {
+        setState(_uncertainInvitationIds.clear);
+      }
     } catch (_) {
       // Keep the retryable, redacted error within the watched provider.
       // RefreshIndicator and retry-button callbacks must not leak a Future
@@ -192,6 +211,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           setState(() {
             _busyInvitationId = null;
             _busyReadId = null;
+            _uncertainInvitationIds.clear();
           });
         }
       }
@@ -260,6 +280,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         item: item,
                         canOpen: _canOpen(item),
                         busy: _busyInvitationId == item.id,
+                        decisionUncertain: _uncertainInvitationIds.contains(item.id),
+                        onRefreshUncertain: _refresh,
                         markingRead: _busyReadId == item.id,
                         onMarkRead:
                             item.unread ? () => _markRead(item) : null,
@@ -323,6 +345,8 @@ class _ActivityItemTile extends StatelessWidget {
     required this.item,
     required this.canOpen,
     this.busy = false,
+    this.decisionUncertain = false,
+    this.onRefreshUncertain,
     this.markingRead = false,
     this.onMarkRead,
     this.onTap,
@@ -333,6 +357,8 @@ class _ActivityItemTile extends StatelessWidget {
   final TalkActivityItem item;
   final bool canOpen;
   final bool busy;
+  final bool decisionUncertain;
+  final VoidCallback? onRefreshUncertain;
   final bool markingRead;
   final VoidCallback? onMarkRead;
   final VoidCallback? onTap;
@@ -419,13 +445,13 @@ class _ActivityItemTile extends StatelessWidget {
                         children: [
                           OutlinedButton(
                             key: ValueKey('activity-invite-decline-' + item.id),
-                            onPressed: busy ? null : onDecline,
+                            onPressed: busy || decisionUncertain ? null : onDecline,
                             child: const Text('Decline'),
                           ),
                           const SizedBox(width: 8),
                           FilledButton(
                             key: ValueKey('activity-invite-accept-' + item.id),
-                            onPressed: busy ? null : onAccept,
+                            onPressed: busy || decisionUncertain ? null : onAccept,
                             child: busy
                                 ? const SizedBox(
                                     width: 16,
@@ -437,6 +463,17 @@ class _ActivityItemTile extends StatelessWidget {
                                 : const Text('Accept'),
                           ),
                         ],
+                      ),
+                    ],
+                    if (decisionUncertain &&
+                        onAccept != null &&
+                        onDecline != null &&
+                        onRefreshUncertain != null) ...[
+                      const SizedBox(height: 4),
+                      TextButton(
+                        key: ValueKey('activity-invite-refresh-' + item.id),
+                        onPressed: onRefreshUncertain,
+                        child: const Text('Refresh Activity to retry'),
                       ),
                     ],
                     const SizedBox(height: 6),
