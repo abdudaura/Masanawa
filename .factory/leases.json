@@ -1009,21 +1009,6 @@
       "notes": "Real Mobile run 38040798435: malformed 123 expects offline but model explicitly fails closed to unknown; preserve status unverified. Other window claimed profile/wallet tests, do not edit them.",
       "released_at": "2026-10-10T09:24:49.534Z",
       "release_reason": "Malformed-presence truthful unknown+label+cache regression committed 392072d; GitHub Flutter execution underway, no blanket acceptance."
-    },
-    {
-      "claim_id": "af13-600-adopt-topology-ci-repair-20261010-gpt6-0937",
-      "owner": "GPT-6 / AF13 bounded non-overlap source integration on continuing AF00 PR #600",
-      "scope": "Repair executed Foundation CI topology regression by adopting existing #460 exact-path qualification fixture, without editing workflow/router/DB/migrations",
-      "paths": [
-        "test/architecture/test-topology.test.ts"
-      ],
-      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
-      "base_sha": "4698dcdf9a476a8197fa7ba52f7131a4764cd723",
-      "source_pr": 600,
-      "claimed_at": "2026-10-10T09:37:27.513Z",
-      "heartbeat_at": "2026-10-10T09:37:27.513Z",
-      "expires_at": "2026-10-10T09:42:27.513Z",
-      "notes": "Prior AF13 #460 exact-path claims expired 09:25Z, unique source reviewed; only test/architecture/test-topology.test.ts assigned here. Preserve #460's unique CI/test policy logic and AF00 root composition; perform SHA-specific CI after edit."
     }
   ],
   "history": [
@@ -3355,6 +3340,26 @@
       "source_head_sha": "48f232c59430e242ba99c7ce8eef84856ca758fb",
       "integration_head_sha": null,
       "test_state": "Test suite 85 FAIL (serial & parallel), root typecheck FAIL, Flutter analyze/test FAIL; build and provider tooling PASS on previous exact SHA; latest CI QUEUED"
+    },
+    {
+      "claim_id": "af13-600-adopt-topology-ci-repair-20261010-gpt6-0937",
+      "owner": "GPT-6 / AF13 bounded non-overlap source integration on continuing AF00 PR #600",
+      "scope": "Repair executed Foundation CI topology regression by adopting existing #460 exact-path qualification fixture, without editing workflow/router/DB/migrations",
+      "paths": [
+        "test/architecture/test-topology.test.ts"
+      ],
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "base_sha": "4698dcdf9a476a8197fa7ba52f7131a4764cd723",
+      "source_pr": 600,
+      "claimed_at": "2026-10-10T09:37:27.513Z",
+      "heartbeat_at": "2026-10-10T09:37:27.513Z",
+      "expires_at": "2026-10-10T09:42:27.513Z",
+      "notes": "Prior AF13 #460 exact-path claims expired 09:25Z, unique source reviewed; only test/architecture/test-topology.test.ts assigned here. Preserve #460's unique CI/test policy logic and AF00 root composition; perform SHA-specific CI after edit.",
+      "released_at": "2026-10-10T09:41:15.510Z",
+      "release_reason": "Adopted existing #460 topology test assertions into root PR #600 at a8ee47c830e1b5f6b30d1e03064e6bea96c35859; source readback matched. Existing AF00 owner continues Gateway/DB/root; current CI executing at exact head, no blanket milestone completion.",
+      "source_head_sha": "a8ee47c830e1b5f6b30d1e03064e6bea96c35859",
+      "integration_head_sha": "a8ee47c830e1b5f6b30d1e03064e6bea96c35859",
+      "test_state": "Exact-head Foundation run 38042069108 Typecheck PASS, Vitest in progress, build pending as of release; Flutter 38042069089 analyze PASS, tests in progress; NOT VERIFIED E2E; no main merge or deployment."
     }
   ]
 }
