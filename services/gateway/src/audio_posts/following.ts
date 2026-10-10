@@ -1,4 +1,5 @@
-import type { PostActor, PublicFeedPage } from "./contract.js";
+import type { PostActor, PublicFeedPage, PublicAudioFeedPage } from "./contract.js";
+import { toPublicAudioPost } from "./contract.js";
 
 /** AF09 following is a relation to the existing canonical creator, not a second identity store. */
 export class FollowingError extends Error {
@@ -75,7 +76,7 @@ export function createFollowingService(repository: FollowingRepository) {
       }
       return stored;
     },
-    async feed(actor: PostActor, input: { cursor?: unknown; limit?: unknown } = {}): Promise<PublicFeedPage> {
+    async feed(actor: PostActor, input: { cursor?: unknown; limit?: unknown } = {}): Promise<PublicAudioFeedPage> {
       requireActor(actor);
       const limit = input.limit === undefined ? 20 : input.limit;
       if (!Number.isSafeInteger(limit) || (limit as number) < 1 || (limit as number) > 30 ||
@@ -92,7 +93,12 @@ export function createFollowingService(repository: FollowingRepository) {
           (page.nextCursor !== null && typeof page.nextCursor !== "string")) {
         throw new FollowingError("CAPABILITY_UNAVAILABLE", "Following feed unavailable");
       }
-      return page;
+      // Shared Discover/Saved projection: internal tenant, owner, asset and
+      // idempotency keys must never reach the Following HTTP response.
+      return {
+        items: page.items.map(toPublicAudioPost),
+        nextCursor: page.nextCursor,
+      };
     },
   });
 }
