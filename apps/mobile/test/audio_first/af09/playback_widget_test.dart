@@ -8,8 +8,8 @@ import 'package:masanawa/src/audio_posts/audio_post_playback.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 
-AudioPost fixture({String status = 'published'}) => AudioPost(
-  postId: 'talk-01', authorId: 'member-a', authorKind: 'human',
+AudioPost fixture({String status = 'published', String postId = 'talk-01'}) => AudioPost(
+  postId: postId, authorId: 'member-a', authorKind: 'human',
   title: 'A published story', durationMs: 34000, status: status,
   revision: 1, createdAt: DateTime.utc(2026, 10, 10),
 );
@@ -35,6 +35,43 @@ class RecordingOutput implements PublishedTalkAudioOutput {
   Future<void> stop() async { stops++; }
   @override
   Future<void> dispose() async { disposals++; }
+}
+
+/// A pending native media start used to prove stop/start never overlap.
+class DelayedStartOutput implements PublishedTalkAudioOutput {
+  final Completer<void> firstEntered = Completer<void>();
+  final Completer<void> releaseFirst = Completer<void>();
+  final List<String> events = [];
+  int starts = 0, concurrentStarts = 0, peakConcurrentStarts = 0;
+  int stopsDuringStart = 0;
+
+  @override
+  Future<void> start(Uri signedUrl) async {
+    final number = ++starts;
+    events.add('start-$number');
+    ++concurrentStarts;
+    if (concurrentStarts > peakConcurrentStarts) {
+      peakConcurrentStarts = concurrentStarts;
+    }
+    try {
+      if (number == 1) {
+        firstEntered.complete();
+        await releaseFirst.future;
+      }
+    } finally {
+      --concurrentStarts;
+      events.add('end-$number');
+    }
+  }
+
+  @override
+  Future<void> stop() async {
+    if (concurrentStarts > 0) ++stopsDuringStart;
+    events.add('stop');
+  }
+
+  @override
+  Future<void> dispose() async { events.add('dispose'); }
 }
 
 ApiClient client() => ApiClient(dio: Dio(BaseOptions(baseUrl: 'https://api.example.test')));
@@ -184,6 +221,74 @@ void main() {
     await tester.pumpAndSettle();
     expect(output.starts, 1);
     expect(playback.playing, true);
+  });
+
+  test('rapid Talk switch serializes native starts and stops', () async {
+    final api = client()..accessToken = 'session-a';
+    final output = DelayedStartOutput();
+    final playback = AudioPostPlaybackController(
+      api: api, accountId: 'a', isCurrentAccount: (_) => true,
+      expectedMediaHost: 'media.example.test', output: output, nowMs: () => 1000,
+      ticketRequest: (_) async => ticket(),
+    );
+    final first = playback.play(fixture(postId: 'talk-01'));
+    await output.firstEntered.future;
+    final second = playback.play(fixture(postId: 'talk-02'));
+    await Future<void>.delayed(Duration.zero);
+    expect(output.starts, 1);
+    expect(output.stopsDuringStart, 0);
+    output.releaseFirst.complete();
+    await Future.wait([first, second]);
+    expect(output.starts, 2);
+    expect(output.peakConcurrentStarts, 1);
+    expect(output.stopsDuringStart, 0);
+    expect(output.events.indexOf('end-1'),
+        lessThan(output.events.indexOf('start-2')));
+    expect(playback.activePostId, 'talk-02');
+    expect(playback.playing, isTrue);
+    playback.dispose();
+  });
+
+  test('stop queued during pending media start cannot resurrect audio', () async {
+    final output = DelayedStartOutput();
+    final playback = AudioPostPlaybackController(
+      api: client(), accountId: 'a', isCurrentAccount: (_) => true,
+      expectedMediaHost: 'media.example.test', output: output, nowMs: () => 1000,
+      ticketRequest: (_) async => ticket(),
+    );
+    final playing = playback.play(fixture());
+    await output.firstEntered.future;
+    final stopping = playback.stop();
+    expect(playback.activePostId, isNull);
+    expect(playback.playing, isFalse);
+    expect(output.stopsDuringStart, 0);
+    output.releaseFirst.complete();
+    await Future.wait([playing, stopping]);
+    expect(output.starts, 1);
+    expect(output.stopsDuringStart, 0);
+    expect(output.events.last, 'stop');
+    expect(playback.playing, isFalse);
+    playback.dispose();
+  });
+
+  test('rotated session while native start is pending stops stale audio', () async {
+    final api = client()..accessToken = 'session-a';
+    final output = DelayedStartOutput();
+    final playback = AudioPostPlaybackController(
+      api: api, accountId: 'a', isCurrentAccount: (_) => true,
+      expectedMediaHost: 'media.example.test', output: output, nowMs: () => 1000,
+      ticketRequest: (_) async => ticket(),
+    );
+    final playing = playback.play(fixture());
+    await output.firstEntered.future;
+    api.accessToken = 'session-b';
+    output.releaseFirst.complete();
+    await playing;
+    expect(output.starts, 1);
+    expect(output.stopsDuringStart, 0);
+    expect(output.events.last, 'stop');
+    expect(playback.playing, isFalse);
+    playback.dispose();
   });
 
   test('non-published posts and absent account never issue tickets', () async {
