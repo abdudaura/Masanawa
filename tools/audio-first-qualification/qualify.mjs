@@ -7,6 +7,17 @@ import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { verifyEvidenceFile } from '../../tests/security/audio_first/evidence_path_guard.mjs';
 const kinds=new Set(["NOT_RUN","BLOCKED","FAIL","PASS_SIMULATED","PASS_REAL"]);
+const MAX_QUALIFICATION_JSON_BYTES=512*1024;
+const MAX_REAL_EVIDENCE_AGE_MS=30*24*60*60*1000;
+
+// #594 bounded inputs: do not load an attacker-sized manifest before rejecting it.
+export async function readBoundedJson(file){
+  const info=await fs.stat(file);
+  if(!info.isFile()||info.size<1||info.size>MAX_QUALIFICATION_JSON_BYTES)throw Error('Qualification JSON input is empty, unsafe or oversized');
+  const bytes=await fs.readFile(file);
+  if(bytes.byteLength>MAX_QUALIFICATION_JSON_BYTES)throw Error('Qualification JSON input exceeds limit');
+  return JSON.parse(bytes.toString('utf8'));
+}
 function checkMatrix(matrix){
   const faults=[];
   if(matrix?.schemaVersion!==1||matrix?.contract!=="AF-v1"||!Array.isArray(matrix?.journeys)||matrix.journeys.length<1)return ["invalid AF-v1 journey matrix"];
@@ -34,6 +45,15 @@ function checkRecord(record,journey,sha){
   if(record.result==="NOT_RUN"&&observed.length)errors.push("unrun journey cannot claim boundaries");
   if(record.result==="PASS_SIMULATED"&&record.environment?.mode!=="simulated")errors.push("simulated status must use simulated environment");
   if(record.result==="PASS_REAL"){
+    // Reconcile unique executed-step assertions from #592 and source freshness
+    // from #594. A checked proof digest alone never means a test was executed.
+    const execution=record.execution;
+    if(!execution||!Number.isInteger(execution.steps)||execution.steps<1||execution.steps>100000||
+       typeof execution.command!=='string'||!execution.command.trim()||execution.command.length>1500||
+       !Array.isArray(execution.assertions)||execution.assertions.length<1||execution.assertions.length>100||
+       execution.assertions.some(a=>typeof a!=='string'||!a.trim()||a.length>200))errors.push('real evidence requires executed command, steps and assertions');
+    if(typeof record.executedAt!=='string'||!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$/.test(record.executedAt)||
+       Date.now()-Date.parse(record.executedAt)>MAX_REAL_EVIDENCE_AGE_MS)errors.push('real evidence needs recent UTC execution time');
     if(record.environment?.mode!=="real")errors.push("real status requires real environment");
     if(journey.boundaries.some(b=>!observed.includes(b)))errors.push("missing full-boundary observation");
     if(journey.boundaries.includes("device")&&!(record.environment?.physicalDevice===true&&typeof record.environment?.deviceOS==="string"&&record.environment.deviceOS.length>1&&isHash(record.apkSha256)))errors.push("physical device and APK hash required");
@@ -106,12 +126,12 @@ async function main(args){
   const opts={};
   for(let i=0;i<args.length;i+=2){const key=args[i];if(!['--matrix','--evidence','--sha','--proof-root'].includes(key)||!args[i+1])throw Error('Usage: --matrix file --evidence file --sha commit --proof-root directory');opts[key]=args[i+1];}
   if(!opts['--matrix']||!opts['--evidence']||!opts['--sha']||!opts['--proof-root'])throw Error('All flags required');
-  const matrix=JSON.parse(await fs.readFile(opts['--matrix'],'utf8'));
-  const records=JSON.parse(await fs.readFile(opts['--evidence'],'utf8'));
+  const matrix=await readBoundedJson(opts['--matrix']);
+  const records=await readBoundedJson(opts['--evidence']);
   // Only the exact versioned, committed acceptance contract is authorized.
   // Counting expected IDs alone allowed a modified matrix to remove DB/device
   // boundaries or reclassify release-gated journeys as feature-only.
-  const canonicalMatrix=JSON.parse(await fs.readFile(new URL('./journeys.json',import.meta.url),'utf8'));
+  const canonicalMatrix=await readBoundedJson(new URL('./journeys.json',import.meta.url));
   if(checkCanonicalMatrix(matrix,canonicalMatrix).length)throw Error('Noncanonical acceptance matrix');
   // --sha is not an honor-system field: it must match this checkout's exact HEAD.
   const currentHead=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',timeout:5000}).trim();
