@@ -34,7 +34,8 @@ class _FanNotificationsScreenState extends State<FanNotificationsScreen> {
   void didUpdateWidget(covariant FanNotificationsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(widget.transport, oldWidget.transport) ||
-        widget.transport.ownerAccountId != oldWidget.transport.ownerAccountId) {
+        widget.transport.ownerAccountId != oldWidget.transport.ownerAccountId ||
+        !widget.transport.isCurrentAccount) {
       ++_generation;
       _items = [];
       _nextCursor = null;
@@ -119,6 +120,14 @@ class _FanNotificationsScreenState extends State<FanNotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Account switches must never paint the prior fan's cached rows, including
+    // during the frame before the parent disposes this route.
+    if (!widget.transport.isCurrentAccount) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Notifications')),
+        body: const Center(child: Text('Sign in to see your notifications.')),
+      );
+    }
     final visible = _unreadOnly ? _items.where((n) => n.unread).toList() : _items;
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications'), actions: [
