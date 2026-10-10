@@ -6,9 +6,9 @@
 
 The earlier `SecureTalkPublishAttemptStore` stored **one** encrypted publish attempt for the entire device. Account B's new publish could replace account A's unknown-outcome attempt, erasing the only local copy of A's idempotency key and allowing a duplicate after restart. The active audio composer already uses this interface, so no new route/provider/library/UI is introduced.
 
-- `apps/mobile/lib/src/audio_posts/audio_post_draft_store.dart`: per-account encrypted recovery slots, strict account and request match on read/clear, crash-safe migration of the old single-slot value (new write before old delete), no cross-account overwrites. The account-key suffix is an encoding of the opaque account ID **for namespacing, not secrecy**; values remain in `FlutterSecureStorage`. Existing unknown-outcome recovery is never auto-submitted.
-- `apps/mobile/test/audio_first/af09/draft_store_test.dart`: seven authored Flutter tests covering account switching/restart, same-key isolation, legacy migration without loss, wrong-account legacy clearance denial, wrong-key clearance denial, mis-scoped state and corrupt storage.
-- Source commits in existing PR: storage `638a8eef9c76356411647cc22247d9746aca7755`; tests `e7eb0eaf212fa5b6340aaf584882f6071a865d72`. Blob readback matched committed source and tests. This is **IMPLEMENTED_UNVERIFIED**; no runtime test was executed.
+- `apps/mobile/lib/src/audio_posts/audio_post_draft_store.dart`: per-account encrypted recovery slots, conflicting same-account publish-key/payload rejection, strict account and request match on read/clear, crash-safe migration of the old single-slot value (new write before old delete), no cross-account overwrites. The account-key suffix is an encoding of the opaque account ID **for namespacing, not secrecy**; values remain in `FlutterSecureStorage`. Existing unknown-outcome recovery is never auto-submitted.
+- `apps/mobile/test/audio_first/af09/draft_store_test.dart`: nine authored Flutter tests covering account switching/restart, same-key isolation, legacy migration without loss, wrong-account legacy clearance denial, wrong-key clearance denial, mis-scoped state, corrupt storage, conflicting same-account attempts and same-key payload mutations.
+- Source commits in existing PR: storage `638a8eef9c76356411647cc22247d9746aca7755` + same-account guard `e8311fe2e39c945c0cf0c3580ccea7c65583875c`; tests `e7eb0eaf212fa5b6340aaf584882f6071a865d72` + `0eecd1d1bfc8f2c5d8ddafa85e1bc4f31e314caa`. Blob readback matched committed source and tests. This is **IMPLEMENTED_UNVERIFIED**; no runtime test was executed.
 
 This does **not** add raw audio recovery or fix missing AF05 recording/upload, signed playback, worker registration, migration or shell wiring. Legacy migration of an inaccessible/corrupt entry blocks recovery instead of silently issuing a different publish key.
 
@@ -16,7 +16,7 @@ This does **not** add raw audio recovery or fix missing AF05 recording/upload, s
 
 | ID / exact source boundary | Owner | Source state at this checkpoint | Separate execution / integration |
 | --- | --- | --- | --- |
-| AF09-11 account-isolated pending publish, `audio_post_draft_store.dart`, `draft_store_test.dart` | AF09 / this PR | **IMPLEMENTED_UNVERIFIED**, commits above | 7 Flutter cases AUTHORED/NOT_RUN; no integrated SHA |
+| AF09-11 account-isolated pending publish, `audio_post_draft_store.dart`, `draft_store_test.dart` | AF09 / this PR | **IMPLEMENTED_UNVERIFIED**, commits above | 9 Flutter cases AUTHORED/NOT_RUN; no integrated SHA |
 | AF09-01/02 social contract/service/route and `adapters/storage/postgres/src/audio_posts/{repository,following_repository,processing_queue}.ts` | AF09 | IMPLEMENTED_UNVERIFIED in #609; review combined source | Real Node24/pnpm12/PG NOT_RUN |
 | AF09-04 composer/feed/Following/Saved/My Talks/comment/player UI under `apps/mobile/lib/src/audio_posts/**` | AF09, AF05 | PARTIAL: many modules in #609, root mounting still **MISSING** | Flutter analyze/widget/E2E NOT_RUN |
 | AF09-03/07 recording→verified private upload, server media verification, signed playable range + single audio focus, canonical media authorities | AF05 + AF15 | **MISSING connected production source/adapter** | Real device/object/provider NOT_RUN |
