@@ -28,6 +28,9 @@ class ActivityTestSession extends SessionController {
 }
 
 class _ActivityTransport implements TalkActivityTransport {
+  @override
+  Future<void> markRead({required String activityId}) async {}
+
   final List<TalkActivityFilter> loads = [];
   final List<({String talkId, bool accept})> decisions = [];
   bool invitationPending = true;
@@ -105,6 +108,11 @@ class _ActivityTransport implements TalkActivityTransport {
 }
 
 class _FailingActivityTransport implements TalkActivityTransport {
+  @override
+  Future<void> markRead({required String activityId}) async {
+    throw StateError('unavailable');
+  }
+
   @override
   Future<void> respondToInvitation({
     required String talkId,
