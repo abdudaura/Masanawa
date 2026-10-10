@@ -16,11 +16,12 @@ class _FanMemoryScreenState extends State<FanMemoryScreen> {
   bool busy = false;
   String? error;
   int generation = 0;
+  final Map<String,String> _retryKeys = {};
   @override void initState(){super.initState();_load();}
   @override void didUpdateWidget(covariant FanMemoryScreen old){
     super.didUpdateWidget(old);
     if(old.accountFence!=widget.accountFence || old.characterId!=widget.characterId){
-      ++generation; data=null;error=null;busy=false;_load();
+      ++generation; _retryKeys.clear();data=null;error=null;busy=false;_load();
     }
   }
   @override void dispose(){++generation;super.dispose();}
@@ -60,11 +61,14 @@ class _FanMemoryScreenState extends State<FanMemoryScreen> {
     if(yes!=true||!mounted)return;
     final current=++generation;
     setState((){busy=true;error=null;});
-    // Local request ID stays stable across a retry in this screen instance.
-    final key='fan-erase-${DateTime.now().microsecondsSinceEpoch}-${id??'all'}';
+    // Reuse this exact server idempotency key after an uncertain network outcome.
+    final target='${widget.characterId}:${id??'all'}';
+    final key=_retryKeys.putIfAbsent(target,()=>
+       'fan-erase-${DateTime.now().microsecondsSinceEpoch}-${id??'all'}');
     try{
       final result=await widget.repository.erase(widget.characterId,id,key);
       if(!mounted||current!=generation)return;
+      _retryKeys.remove(target);
       setState((){busy=false;});
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(
         result['state']=='completed'?'Memory erased':'Deletion requested; awaiting processing')));
