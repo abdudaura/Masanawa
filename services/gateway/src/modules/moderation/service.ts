@@ -9,6 +9,7 @@ export interface CaseRepository {
  review(tenantId:string,caseId:string,actionId:string,reviewerId:string,approve:boolean,expectedVersion:number):Promise<ActionRecord>;
  appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string):Promise<void>;
  resolveAppeal(tenantId:string,caseId:string,appealId:string,actorId:string,uphold:boolean,expectedVersion:number):Promise<AppealRecord>;
+ dismiss(tenantId:string,caseId:string,actorId:string,reason:string,expectedVersion:number):Promise<CaseRecord>;
 }
 export interface CaseAuthority {
  authorize(header:string|undefined):Promise<Actor>;
@@ -85,6 +86,13 @@ export function createCaseService(options:{repository:CaseRepository;authority:C
    const expected=Number(input.expectedVersion);
    if(!Number.isSafeInteger(expected)||expected<1)throw new CaseError("moderation.version_invalid",400);
    return repo.review(who.tenantId,required(caseId,"caseId",128),required(actionId,"actionId",128),who.userId,input.approve,expected);
+  },
+  async dismiss(header:string|undefined,caseId:string,input:{reason:unknown;expectedVersion:unknown}){
+   const {who}=await owned(header,caseId);requireModerator(who);
+   const version=Number(input.expectedVersion);
+   if(!Number.isSafeInteger(version)||version<1)throw new CaseError("moderation.version_invalid",400);
+   return repo.dismiss(who.tenantId,required(caseId,"caseId",128),who.userId,
+    required(input.reason,"reason",1000),version);
   },
   async reviewAppeal(header:string|undefined,caseId:string,appealId:string,input:{uphold:unknown;expectedVersion:unknown}){
    const {who}=await owned(header,caseId);requireModerator(who);
