@@ -556,9 +556,9 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 460,
       "claimed_at": "2026-10-10T08:07:35.479Z",
-      "heartbeat_at": "2026-10-10T08:16:36.741Z",
-      "expires_at": "2026-10-10T08:21:36.741Z",
-      "notes": "Real Foundation CI 38036434565: agent-run-acceptance.test.ts read fails `cannot execute SELECT FOR SHARE in a read-only transaction`. Test exercises canonical read after create/finish.; Post-commit real CI queued while other windows use runner; awaiting latest exact-SHA checks."
+      "heartbeat_at": "2026-10-10T08:24:21.422Z",
+      "expires_at": "2026-10-10T08:29:21.422Z",
+      "notes": "Real Foundation CI 38036434565: agent-run-acceptance.test.ts read fails `cannot execute SELECT FOR SHARE in a read-only transaction`. Test exercises canonical read after create/finish.; Post-commit real CI queued while other windows use runner; awaiting latest exact-SHA checks.; Latest PG18 38037119811: 4 commerce suites 22/22 and AgentRun 3/3 PASS_REAL_DB; 3 unhandled FORCE drop errors require isolated helper teardown correction, then rerun."
     },
     {
       "claim_id": "af13-pr460-commerce-integration-db-isolation-20261010-gpt6",
@@ -576,9 +576,9 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 460,
       "claimed_at": "2026-10-10T08:08:50.364Z",
-      "heartbeat_at": "2026-10-10T08:16:36.741Z",
-      "expires_at": "2026-10-10T08:21:36.741Z",
-      "notes": "Real Foundation 38036434565: four commerce suites setup FAIL relation offers already exists on common database. Independent DB per file via admin URL and disposable PG18 CREATE DATABASE; cleanup mandatory.; Scope correction: place shared test helper under adapter package to resolve pg dependency strictly under pnpm; remove original test/support helper.; Post-commit real CI queued while other windows use runner; awaiting latest exact-SHA checks."
+      "heartbeat_at": "2026-10-10T08:24:21.422Z",
+      "expires_at": "2026-10-10T08:29:21.422Z",
+      "notes": "Real Foundation 38036434565: four commerce suites setup FAIL relation offers already exists on common database. Independent DB per file via admin URL and disposable PG18 CREATE DATABASE; cleanup mandatory.; Scope correction: place shared test helper under adapter package to resolve pg dependency strictly under pnpm; remove original test/support helper.; Post-commit real CI queued while other windows use runner; awaiting latest exact-SHA checks.; Latest PG18 38037119811: 4 commerce suites 22/22 and AgentRun 3/3 PASS_REAL_DB; 3 unhandled FORCE drop errors require isolated helper teardown correction, then rerun."
     }
   ],
   "history": [
