@@ -3,13 +3,12 @@ import {describe,it,expect,beforeAll,afterAll} from "vitest";
 import {createIsolatedPostgresTestDatabase} from "../../../adapters/storage/postgres/src/commerce/isolated-test-database.js";
 import {createPostgresMasanaSocialStore} from "../../../adapters/storage/postgres/src/masana_social/repository.js";
 import {createMasanaSocialService} from "../../../services/gateway/src/modules/masana_social/service.js";
-import type {Pool} from "pg";
-
+ 
 const connectionString=process.env.MASANAWA_TEST_DATABASE_URL;
 const suite=connectionString?describe:describe.skip;
 suite("J21 real PostgreSQL verify/link lifecycle and cross-tenant isolation",()=>{
   let db: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>>;
-  let pool:Pool;
+  let pool: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>>["pool"];
   beforeAll(async()=>{
     db=await createIsolatedPostgresTestDatabase(connectionString!);
     pool=db.pool;
