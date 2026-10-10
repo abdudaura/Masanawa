@@ -28,7 +28,8 @@ export function decodeCursor(value?:string):{at:string;id:string}|null{
  return {at:decoded[0],id:decoded[1]};}catch{throw new FeedError(422,"invalid_cursor")}
 }
 export class FeedService {
- constructor(private readonly repo:Repository,private readonly approvedMasana:(tenant:string,id:string)=>Promise<boolean>,\n  private readonly approvedMedia:(tenant:string,masana:string,mediaId:string)=>Promise<boolean>=async()=>false){}
+ constructor(private readonly repo:Repository,private readonly approvedMasana:(tenant:string,id:string)=>Promise<boolean>,
+  private readonly approvedMedia:(tenant:string,masana:string,mediaId:string)=>Promise<boolean>=async()=>false){}
  async list(tenant:string,viewer:string|null,mode:FeedMode,cursor?:string){
   requireId(tenant);if(viewer)requireId(viewer);
   if(mode!=="for_you"&&mode!=="following")throw new FeedError(422,"invalid_mode");
@@ -49,7 +50,8 @@ export class FeedService {
   if(!Array.isArray(media)||media.length>(value.kind==="image"?10:value.kind==="audio"?1:0)||(value.kind!=="text"&&media.length===0)||
     media.some(x=>typeof x!=="string"||!/^media_[A-Za-z0-9_-]{8,128}$/.test(x)))throw new FeedError(422,"invalid_media_reference");
   if((value.kind==="text"&&!value.body.trim())||value.body.length>5000||(value.transcript?.length??0)>15000)throw new FeedError(422,"invalid_post_text");
-  if(value.kind==="audio"&&!value.transcript?.trim())throw new FeedError(422,"audio_transcript_required");\n  for(const mediaId of media){if(!await this.approvedMedia(actor.tenantId,value.authorMasanaId,mediaId))throw new FeedError(403,"media_not_approved");}
+  if(value.kind==="audio"&&!value.transcript?.trim())throw new FeedError(422,"audio_transcript_required");
+  for(const mediaId of media){if(!await this.approvedMedia(actor.tenantId,value.authorMasanaId,mediaId))throw new FeedError(403,"media_not_approved");}
   return this.repo.publish(actor.tenantId,actor.id,{...value,body:value.body.trim(),media,transcript:value.transcript??null});
  }
  private fan(actor:Actor){if(actor.kind!=="fan")throw new FeedError(403,"fan_only_action");requireId(actor.tenantId);requireId(actor.id);return actor.id}
