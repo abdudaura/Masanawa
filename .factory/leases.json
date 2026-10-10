@@ -126,6 +126,21 @@
       "heartbeat_at": "2026-10-10T02:30:11.792Z",
       "expires_at": "2026-10-10T02:35:11.792Z",
       "notes": "Continue existing PR and no app/root/export/migration writes. Independent phone password code + tests; pending AF00 composer/migration transfer and AF08 UI."
+    },
+    {
+      "claim_id": "af09-609-counts-privacy-handoff-20261010-gpt6c",
+      "owner": "AF09 same-PR #609 feed/privacy continuation",
+      "scope": "Document in same existing AF09 handoff persisted counts and public DTO privacy, explicitly transfer Following projection and required exact-head checks",
+      "paths": [
+        "docs/workstreams/AF09-published-audio-core-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:33:42.098Z",
+      "heartbeat_at": "2026-10-10T02:33:42.098Z",
+      "expires_at": "2026-10-10T02:38:42.098Z",
+      "notes": "Original #609 comment claim released after source commits; continuation is documentation only; no competing branch, no unclaimed code edits."
     }
   ],
   "history": [
