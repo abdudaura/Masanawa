@@ -1065,6 +1065,21 @@
       "released_at": "2026-10-10T15:54:32.145Z",
       "release_reason": "Exact old route API denial patterns + tests committed on existing PR618 head b15f148; 46 static policy assertions PASS; integrated tests not run, AF00 merge conflict pending; source/financial data preserved.",
       "integration_head_sha": null
+    },
+    {
+      "claim_id": "r0-pg18-foundation-isolation-20261010-gpt6-1659",
+      "owner": "GPT-6 / R0 PG18 foundation recovery coordination with AF00 #616",
+      "scope": "Recover current R0 Foundation PG18 migration manifest and disposable isolation from reviewed existing #460; exact file only; no new financial migration or root composition",
+      "paths": [
+        "adapters/storage/postgres/src/postgres.integration.test.ts"
+      ],
+      "branch": "lane/r0-pg18-foundation-20261010-gpt6",
+      "source_pr": 460,
+      "base_sha": "b31d054ab2c7de6ecfa165fda8c10ab45656ad86",
+      "claimed_at": "2026-10-10T15:59:23.076Z",
+      "heartbeat_at": "2026-10-10T15:59:23.076Z",
+      "expires_at": "2026-10-10T16:04:23.076Z",
+      "notes": "Explicit proposed transfer on PR #616 comment 6099407898. Source donor reviewed #460. No production DB access."
     }
   ],
   "history": [
