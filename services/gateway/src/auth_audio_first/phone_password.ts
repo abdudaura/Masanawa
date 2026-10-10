@@ -58,7 +58,7 @@ export function createPhonePasswordAuthService(input: Readonly<{
     try { return assertNumericPassword(value, number); }
     catch { throw new CustomerAuthError("PASSWORD_INVALID", 400); }
   }
-  async function issue(profile: PlatformAuthProfile): Promise<AuthTokensView> {
+  async function issue(profile: PlatformAuthProfile, isNewUser: boolean): Promise<AuthTokensView> {
     const issuedAt = now();
     const accessToken = mintPlatformSessionToken("access");
     const refreshToken = mintPlatformSessionToken("refresh");
@@ -83,10 +83,11 @@ export function createPhonePasswordAuthService(input: Readonly<{
       accessExpiresIn: accessTtlSeconds,
       user: Object.freeze({
         id: profile.userId, name: profile.name,
-        phone: profile.phone ?? (profile as PlatformAuthProfile & { unverifiedPhone?: string | null }).unverifiedPhone ?? null,
+        phone: profile.phone,
+        unverifiedPhone: (profile as PlatformAuthProfile & { unverifiedPhone?: string | null }).unverifiedPhone ?? null,
         email: profile.email, locale: profile.locale,
         status: "ACTIVE" as const, role: "CITIZEN" as const,
-        isNewUser: false, communityId: null, stateId: null,
+        isNewUser, communityId: null, stateId: null,
         createdAt: profile.createdAt,
         // Distinguish account authentication from phone-number ownership proof.
         phoneVerified: false,
@@ -112,7 +113,7 @@ export function createPhonePasswordAuthService(input: Readonly<{
         }
         throw new CustomerAuthError("AUTH_UNAVAILABLE", 503);
       }
-      return issue(profile);
+      return issue(profile, true);
     },
     async login(request) {
       const normalizedPhone = phone(request.phone);
@@ -130,7 +131,7 @@ export function createPhonePasswordAuthService(input: Readonly<{
         throw new CustomerAuthError("AUTH_UNAVAILABLE", 503);
       }
       if (!profile) throw new CustomerAuthError("INVALID_CREDENTIALS", 401);
-      return issue(profile);
+      return issue(profile, false);
     },
   });
 }
