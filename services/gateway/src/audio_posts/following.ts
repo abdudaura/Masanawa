@@ -104,6 +104,9 @@ export function createFollowingService(repository: FollowingRepository) {
           (input.authorKind !== "human" && input.authorKind !== "masana")) {
         throw new FollowingError("VALIDATION", "Invalid creator");
       }
+      // Stable validated primitives remain narrowed inside the repository callback.
+      const authorId = input.authorId;
+      const authorKind = input.authorKind;
       const limit = input.limit === undefined ? 20 : input.limit;
       if (!Number.isSafeInteger(limit) || (limit as number) < 1 ||
           (limit as number) > 30 ||
@@ -113,7 +116,7 @@ export function createFollowingService(repository: FollowingRepository) {
       }
       const page = await readFollowingPage(() => repository.creatorFeed({
         tenantId: actor.tenantId, viewerId: actor.accountId,
-        authorId: input.authorId, authorKind: input.authorKind,
+        authorId, authorKind,
         limit: limit as number, cursor: (input.cursor as string | null | undefined) ?? null,
       }));
       if (!page || !Array.isArray(page.items) ||
