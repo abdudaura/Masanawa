@@ -1188,6 +1188,29 @@
       "heartbeat_at": "2026-10-10T17:18:00+01:00",
       "expires_at": "2026-10-10T17:23:00+01:00",
       "notes": "Exact file families only; AF00 retains app composition, central migration registry, shared routes and protected CI. No external automation or live provider changes."
+    },
+    {
+      "claim_id": "l-masana-profiles-20261010-gpt6-1723",
+      "owner": "GPT-6 L-MASANA profiles",
+      "scope": "L-MASANA fan profile discovery/follow, approved revision staff editing, staging seeding, PG, Gateway, Flutter UI, Admin and verification; AF00 shared composition reserved",
+      "paths": [
+        "packages/masana/**",
+        "services/gateway/src/modules/masana/**",
+        "services/worker/src/jobs/masana/**",
+        "adapters/storage/postgres/src/masana/**",
+        "apps/mobile/lib/src/features/masana/**",
+        "apps/admin_mobile/lib/src/features/masana/**",
+        "apps/mobile/test/features/masana/**",
+        "apps/admin_mobile/test/features/masana/**",
+        "tests/e2e/J18/**",
+        "docs/workstreams/l-masana-profiles-20261010-gpt6.md"
+      ],
+      "branch": "lane/l-masana-profiles-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "claimed_at": "2026-10-10T16:23:42Z",
+      "heartbeat_at": "2026-10-10T16:23:42Z",
+      "expires_at": "2026-10-10T16:28:42Z",
+      "notes": "No overlapping active lane; preserve existing identity.characters and AF00 app/router/migration roots; use new masana namespace only."
     }
   ],
   "history": [
