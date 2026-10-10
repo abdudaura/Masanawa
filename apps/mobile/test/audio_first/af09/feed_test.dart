@@ -52,7 +52,7 @@ class FakePosts implements AudioPostTransport {
     commentWrites++;
     final record = AudioPostComment(
       postId: postId, commentId: 'comment-$commentWrites',
-      authorAccountId: 'user-a', body: body,
+      isMine: true, body: body,
       createdAt: DateTime.utc(2026, 10, 10), removed: false);
     storedComments.insert(0, record);
     return record;
