@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'audio_post_composer_screen.dart';
@@ -49,6 +51,33 @@ class PublishedTalksDestination extends StatefulWidget {
 
 class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
   final ValueNotifier<int> _receiptRefresh = ValueNotifier<int>(0);
+  // Child routes live on AF00's Navigator but belong to this account/session.
+  // Close them when the root replaces the auth/transport binding.
+  final Set<Route<void>> _featureRoutes = <Route<void>>{};
+
+  void _pushFeatureRoute(Route<void> route) {
+    _featureRoutes.add(route);
+    unawaited(Navigator.of(context).push<void>(route).whenComplete(() {
+      _featureRoutes.remove(route);
+    }));
+  }
+
+  @override
+  void didUpdateWidget(covariant PublishedTalksDestination oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.accountId != widget.accountId ||
+        oldWidget.transport != widget.transport ||
+        oldWidget.isCurrentAccount != widget.isCurrentAccount ||
+        !_authorized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final navigator = Navigator.of(context);
+        for (final route in _featureRoutes.toList().reversed) {
+          if (route.isActive) navigator.removeRoute(route);
+        }
+      });
+    }
+  }
   bool get _authorized => widget.accountId.trim().isNotEmpty &&
       widget.isCurrentAccount(widget.accountId);
 
@@ -62,7 +91,7 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
     final playback = widget.playback;
     if (!_authorized || playback == null || !playback.isAuthorized ||
         post.status != 'published') return;
-    Navigator.of(context).push<void>(MaterialPageRoute<void>(
+    _pushFeatureRoute(MaterialPageRoute<void>(
       builder: (_) => AudioPostDetailScreen(
         key: ValueKey('creator-talk-route-${post.postId}'),
         post: post,
@@ -77,7 +106,7 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
     final transport = widget.creatorTransport;
     if (!_authorized || transport == null) return;
     final accountId = widget.accountId;
-    Navigator.of(context).push<void>(MaterialPageRoute<void>(
+    _pushFeatureRoute(MaterialPageRoute<void>(
       builder: (_) => CreatorProfileScreen(
         key: ValueKey('creator-route-$accountId-$authorKind-$authorId'),
         transport: transport,
@@ -95,7 +124,7 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
     if (!_authorized) return;
     final accountId = widget.accountId;
     final transport = widget.transport;
-    Navigator.of(context).push<void>(MaterialPageRoute<void>(
+    _pushFeatureRoute(MaterialPageRoute<void>(
       builder: (_) => AudioPostComposerScreen(
         key: ValueKey('composer-route-$accountId'),
         transport: transport,
