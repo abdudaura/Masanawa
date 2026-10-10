@@ -58,6 +58,8 @@ export interface AudioPostRepository {
   /** Only published, unblocked, unremoved posts visible to viewer. */
   publicFeed(input: { tenantId: string; viewerId: string | null; cursor: string | null; limit: number }): Promise<PublicFeedPage>;
   mine(input: { tenantId: string; accountId: string; limit: number }): Promise<AudioPostRecord[]>;
+  /** Hide an owned post from public feeds atomically; repeated owner deletion is safe. */
+  removeOwn(input: { tenantId: string; accountId: string; postId: string }): Promise<AudioPostRecord | null>;
   /** Worker/verified moderation only; atomic expected revision and status. */
   settle(input: { tenantId: string; postId: string; expectedRevision: number; status: "published" | "failed" }): Promise<AudioPostRecord>;
   /** Ensure visibility/account authorization in same transaction as reaction write. */
