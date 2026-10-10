@@ -369,7 +369,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     },
     {
       "id": "DB-A02",
@@ -378,7 +378,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     },
     {
       "id": "DB-A03",
@@ -387,7 +387,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     },
     {
       "id": "DB-A04",
@@ -396,7 +396,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     },
     {
       "id": "DB-A05",
@@ -405,7 +405,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     },
     {
       "id": "DB-A06",
@@ -414,7 +414,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     },
     {
       "id": "DB-A07",
@@ -423,7 +423,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     },
     {
       "id": "DB-A08",
@@ -432,7 +432,7 @@
         "recovery",
         "security"
       ],
-      "tier": "feature"
+      "tier": "release"
     }
   ]
 }
