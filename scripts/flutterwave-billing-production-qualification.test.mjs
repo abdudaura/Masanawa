@@ -1,7 +1,35 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { validateProductionQualificationInputs } from "./flutterwave-billing-production-qualification.mjs";
+
+test("importing the production qualifier is side-effect free, while CLI preflight still fails closed", () => {
+  const moduleUrl = new URL(
+    "./flutterwave-billing-production-qualification.mjs",
+    import.meta.url,
+  );
+  const env = { FLUTTERWAVE_QUALIFICATION_TARGETS_JSON: "" };
+  const imported = spawnSync(
+    process.execPath,
+    ["--input-type=module", "--eval", `await import(${JSON.stringify(moduleUrl.href)})`],
+    { encoding: "utf8", env, timeout: 5000 },
+  );
+  assert.equal(imported.status, 0, imported.stderr);
+  assert.equal(imported.stdout, "");
+  assert.equal(imported.stderr, "");
+
+  // An explicit CLI call without real Cable/Electricity targets must still
+  // block production qualification before contacting any provider.
+  const executed = spawnSync(
+    process.execPath,
+    [fileURLToPath(moduleUrl)],
+    { encoding: "utf8", env, timeout: 5000 },
+  );
+  assert.equal(executed.status, 2, executed.stderr);
+  assert.match(executed.stderr, /FLUTTERWAVE_QUALIFICATION_TARGETS_JSON is required/u);
+});
 
 test("production runner never invokes payment or refund scripts", async () => {
   const source = await readFile(
