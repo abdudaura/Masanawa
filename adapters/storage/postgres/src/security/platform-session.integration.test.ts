@@ -85,6 +85,52 @@ describeDatabase("customer platform sessions PostgreSQL acceptance", () => {
     expect(identityRows.rows[0]).toEqual({ tenants: "1", users: "1" });
   });
 
+  it("admits multiple email-only and SMS-only users while contacts remain unique per tenant", async () => {
+    const repository = createPostgresPlatformSessionRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const createdAt = new Date().toISOString();
+    const people = await Promise.all([
+      repository.createProfile({
+        tenantId, channel: "email", identifier: `nullable-a-${tenantId.slice(-8)}@example.com`,
+        name: "Email Customer A", locale: "en-NG", createdAt,
+      }),
+      repository.createProfile({
+        tenantId, channel: "email", identifier: `nullable-b-${tenantId.slice(-8)}@example.com`,
+        name: "Email Customer B", locale: "en-NG", createdAt,
+      }),
+      repository.createProfile({
+        tenantId, channel: "sms", identifier: "+2348012345601",
+        name: "Phone Customer A", locale: "en-NG", createdAt,
+      }),
+      repository.createProfile({
+        tenantId, channel: "sms", identifier: "+2348012345602",
+        name: "Phone Customer B", locale: "en-NG", createdAt,
+      }),
+    ]);
+    expect(new Set(people.map((profile) => profile.userId)).size).toBe(4);
+    expect(people.slice(0, 2).map((profile) => profile.phone)).toEqual([null, null]);
+    expect(people.slice(2).map((profile) => profile.email)).toEqual([null, null]);
+
+    const total = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM security.platform_user_profiles WHERE tenant_id=$1`,
+      [tenantId],
+    );
+    expect(total.rows[0]?.count).toBe("4");
+
+    // Real contact values must remain unique even though missing values are allowed.
+    for (const [email, phone] of [
+      [people[0]!.email, null],
+      [null, people[2]!.phone],
+    ] as const) {
+      await expect(pool.query(
+        `INSERT INTO security.platform_user_profiles
+           (tenant_id,user_id,display_name,email,phone,locale,created_at,updated_at)
+         VALUES ($1,$2,'Duplicate',$3,$4,'en-NG',$5,$5)`,
+        [tenantId,createCanonicalId("user"),email,phone,createdAt],
+      )).rejects.toMatchObject({ code: "23505" });
+    }
+  });
+
   it("bounds OTP attempts and stores only the HMAC evidence", async () => {
     const repository = createPostgresPlatformSessionRepository(pool);
     const tenantId = createCanonicalId("tenant");
