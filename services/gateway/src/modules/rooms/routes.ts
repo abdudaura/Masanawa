@@ -68,6 +68,11 @@ export function registerRoomsRoutes(app:FastifyInstance,ports:RoomsRoutePorts):v
    try{return {items:await ports.repository.lessons(await guard(req,"rooms.read"),id(req))};
    }catch(e){return respondError(e,reply);}
  });
+ app.get("/v1/admin/rooms",async(req,reply)=>{
+   try{const a=await guard(req,"rooms.staff");requireRoomStaff(a.roles);
+     return {items:await ports.repository.staffRooms(a)};
+   }catch(e){return respondError(e,reply);}
+ });
  app.get("/v1/admin/rooms/questions",async(req,reply)=>{
    try{const a=await guard(req,"rooms.staff");requireRoomStaff(a.roles);
      return {items:await ports.repository.staffQueue(a)};
@@ -83,9 +88,7 @@ export function registerRoomsRoutes(app:FastifyInstance,ports:RoomsRoutePorts):v
  });
  app.post("/v1/admin/rooms/:id/publish",async(req,reply)=>{
    try{const a=await guard(req,"rooms.staff");requireRoomStaff(a.roles);
-     const source=await ports.repository.get(a,id(req));
-     // Drafts are intentionally private in the public repository projection;
-     // AF00 wires a staff-only read when enabling this command.
+     const source=await ports.repository.staffRoom(a,id(req));
      if(!source)throw new RoomError(409,"staff_draft_read_required");
      const eligible=await ports.isApprovedMasana(a.tenantId,source.teacherCharacterId);
      await ports.repository.publish(a,id(req),eligible);return {published:true};

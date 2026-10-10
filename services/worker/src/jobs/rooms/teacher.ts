@@ -1,13 +1,6 @@
 /** Durable Room question processor; never grants subscriptions or auto-publishes unreviewed AI answers. */
-export interface TeacherJob {
- outboxId:string;tenantId:string;questionId:string;roomId:string;fence:number;
-}
-export interface TeacherQueue {
- claim(workerId:string):Promise<TeacherJob|null>;
- /** An answer is a DRAFT. Staff review is required for public visibility. */
- draft(job:TeacherJob,answer:string|null):Promise<void>;
- fail(job:TeacherJob,reason:"temporary_failure"|"budget_exhausted"):Promise<void>;
-}
+import type {TeacherJob,TeacherQueue} from "@masanawa/rooms/teacher";
+export type {TeacherJob,TeacherQueue} from "@masanawa/rooms/teacher";
 export interface RoomAnswerModel {
  generate(input:{tenantId:string;roomId:string;questionId:string}):Promise<string|null>;
 }

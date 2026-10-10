@@ -60,6 +60,16 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
     [a.tenantId,id,a.userId]);
    return r.rows.length?parsePreview(r.rows[0]):null;
  },
+ async staffRooms(a){
+   requireRoomStaff(a.roles);
+   const r=await pool.query("SELECT * FROM rooms.rooms WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100",[a.tenantId]);
+   return r.rows.map(parsePreview);
+ },
+ async staffRoom(a,id){
+   requireRoomStaff(a.roles);assertRoom(id);
+   const r=await pool.query("SELECT * FROM rooms.rooms WHERE tenant_id=$1 AND room_id=$2",[a.tenantId,id]);
+   return r.rows.length?parsePreview(r.rows[0]):null;
+ },
  async create(a,input){
    requireRoomStaff(a.roles);
    if(!/^[a-z0-9-]{3,90}$/.test(input.slug)||input.title.trim().length<3||input.title.length>140)

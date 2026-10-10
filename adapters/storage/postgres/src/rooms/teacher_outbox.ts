@@ -1,6 +1,6 @@
 import {randomUUID} from "node:crypto";
 import type {Pool} from "pg";
-import type {TeacherJob,TeacherQueue} from "../../../../../services/worker/src/jobs/rooms/teacher.js";
+import type {TeacherJob,TeacherQueue} from "@masanawa/rooms/teacher";
 async function transaction<T>(pool:Pool,fn:(q:any)=>Promise<T>):Promise<T>{
  const q=await pool.connect();try{await q.query("BEGIN");const r=await fn(q);await q.query("COMMIT");return r;}
  catch(e){await q.query("ROLLBACK");throw e;}finally{q.release();}
