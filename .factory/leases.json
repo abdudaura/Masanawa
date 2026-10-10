@@ -1139,6 +1139,23 @@
       "heartbeat_at": "2026-10-10T16:12:36.964Z",
       "expires_at": "2026-10-10T16:17:36.964Z",
       "notes": "No site scraping or video rehosting; permissions-gated external official links; feature source may be integrated non-deploying only after review; no provider automation."
+    },
+    {
+      "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
+      "owner": "GPT-6 / R0 Flutter compiler recovery coordination AF00 #616",
+      "scope": "Only three Dart compile-stopper source paths from real Mobile Build logs: remove accidental duplicated text and broken regex, avoid override getter shadow collision. No new Gift routes or actual live payments.",
+      "paths": [
+        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
+        "apps/mobile/lib/src/localization/locale_preference.dart"
+      ],
+      "branch": "lane/r0-flutter-compiler-20261010-gpt6",
+      "source_pr": 460,
+      "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
+      "claimed_at": "2026-10-10T16:12:51.215Z",
+      "heartbeat_at": "2026-10-10T16:12:51.215Z",
+      "expires_at": "2026-10-10T16:17:51.215Z",
+      "notes": "R0 AF00 notified via #616 comment 6099540291; source strictly preserves retired Talk semantics but eliminates compilation blockers."
     }
   ],
   "history": [
