@@ -40,7 +40,7 @@ Status: **PARTIAL_IMPLEMENTATION / DRAFT / NOT DEPLOYED**. This is a bounded imp
 | --- | --- | --- |
 | GitHub exact-path claim/readback | PASS (registry) | `factory/claims` readback after claim commit; no active path overlap on claim |
 | Source and widget test text readback | PASS (bytes) | Fetched the committed files back from feature branch after both writes |
-| Flutter widget regressions | **NOT_RUN** | Flutter and Dart executables absent in this runtime. Run `cd apps/mobile && flutter test test/activity_screen_test.dart test/audio_first/af14/activity_recovery_test.dart` |
+| GitHub Actions at handoff SHA | **BLOCKED/FAILURE (zero reported steps)** | Foundation CI run `38013883817` job `114099793175` and Mobile Build run `38013883787` job `114099793066` concluded failure but API returned `steps: null`; not executable Dart test results. Vercel status also failed with account build-rate-limit upgrade link; do not treat as source regression without logs. |\n| Flutter widget regressions | **NOT_RUN** | Flutter and Dart executables absent in this runtime. Run `cd apps/mobile && flutter test test/activity_screen_test.dart test/audio_first/af14/activity_recovery_test.dart` |
 | Flutter analyzer/build | **NOT_RUN** | Flutter/Dart toolchain unavailable. Run `cd apps/mobile && flutter analyze lib/src/screens/activity/activity_screen.dart test/audio_first/af14/activity_recovery_test.dart` and qualified build |
 | Two-account invitation/provider/real readback | **NOT_RUN** | No provisioned live test identities or authenticated Gateway + database |
 | Android device/notification/deep-link | **NOT_RUN** | No connected device or local owner's APK; AF00 integration needed |
