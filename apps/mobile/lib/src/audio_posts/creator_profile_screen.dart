@@ -4,6 +4,7 @@ import 'audio_post_transport.dart';
 import 'creator_profile_transport.dart';
 import 'following_transport.dart';
 import 'follow_button.dart';
+import 'audio_post_report_action.dart';
 
 /// Displays only canonical creator data supplied by AF07 and visible Talks.
 /// AF00 composes navigation; media remains bound to the authorized player.
@@ -12,7 +13,7 @@ class CreatorProfileScreen extends StatefulWidget {
     super.key, required this.transport, required this.accountId,
     required this.isCurrentAccount, required this.authorId,
     required this.authorKind, this.displayName, this.following,
-    this.onOpenPost,
+    this.onOpenPost, this.reportTransport,
   });
   final CreatorProfileTransport transport;
   final String accountId;
@@ -22,6 +23,8 @@ class CreatorProfileScreen extends StatefulWidget {
   final String? displayName;
   final CreatorFollowingTransport? following;
   final ValueChanged<AudioPost>? onOpenPost;
+  /// Only shown when AF00 provided the canonical authenticated TalkSafety API.
+  final PublishedAudioReportTransport? reportTransport;
 
   @override
   State<CreatorProfileScreen> createState() => _CreatorProfileState();
@@ -150,12 +153,25 @@ class _CreatorProfileState extends State<CreatorProfileScreen> {
                   ListTile(
                     key: ValueKey('creator-post-' + post.postId),
                     title: Text(post.title),
-                    subtitle: Text(
-                      (post.durationMs / 1000).ceil().toString() + ' seconds · ' +
-                      post.likeCount.toString() + ' likes · ' +
-                      post.commentCount.toString() + ' comments' +
-                      (post.listenCount == null
-                        ? '' : ' · ${post.listenCount} listens'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          (post.durationMs / 1000).ceil().toString() + ' seconds · ' +
+                          post.likeCount.toString() + ' likes · ' +
+                          post.commentCount.toString() + ' comments' +
+                          (post.listenCount == null
+                            ? '' : ' · ${post.listenCount} listens'),
+                        ),
+                        if (widget.reportTransport != null &&
+                            post.status == 'published')
+                          AudioPostReportAction(
+                            key: ValueKey('creator-report-' + post.postId),
+                            postId: post.postId,
+                            transport: widget.reportTransport!,
+                            isAuthorized: () => mounted && _authorized,
+                          ),
+                      ],
                     ),
                     trailing: widget.onOpenPost == null ? null :
                       const Icon(Icons.chevron_right),
