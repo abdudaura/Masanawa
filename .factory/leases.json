@@ -412,23 +412,6 @@
       "released_at": "2026-10-10T05:27:16.875Z"
     },
     {
-      "claim_id": "chat-p04-source-continuation-20261010-gpt6-0713",
-      "owner": "GPT-6 / CHAT-P04 existing PR #612",
-      "scope": "Continue CHAT-P04 first-text, bounded voice latency/trace and cancellation recovery source only; AF00 shared composition excluded",
-      "paths": [
-        "services/gateway/src/agent_conversation.ts",
-        "services/gateway/src/agent_conversation.test.ts",
-        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
-      ],
-      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 612,
-      "claimed_at": "2026-10-10T06:16:44.001Z",
-      "heartbeat_at": "2026-10-10T06:24:05.221Z",
-      "expires_at": "2026-10-10T06:29:05.221Z",
-      "notes": "Progress source+regression 88dc9c9; remaining active work implementing privacy-safe correlated latency spans before final handoff. No extra root files."
-    },
-    {
       "claim_id": "af09-609-talks-tab-cache-20261010-gpt6-0624",
       "owner": "AF09 existing PR #609 / GPT-6 Talks cached-navigation continuation",
       "scope": "CHAT-P01 retain per-tab in-memory published Talks pages, tab/scroll position, background refresh and account-fenced invalidation; no Gateway/root/native or media changes",
@@ -2459,6 +2442,28 @@
       "source_head": "8d9468139d31cc3612ccb74e3fe7d5235c129dda",
       "released_at": "2026-10-10T06:01:58.937Z",
       "release_reason": "Privacy regression and exact-head feature PR #612 handoff; outstanding CHAT-P04 source and tests not completed"
+    },
+    {
+      "claim_id": "chat-p04-source-continuation-20261010-gpt6-0713",
+      "owner": "GPT-6 / CHAT-P04 existing PR #612",
+      "scope": "Continue CHAT-P04 first-text, bounded voice latency/trace and cancellation recovery source only; AF00 shared composition excluded",
+      "paths": [
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/agent_conversation.test.ts",
+        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
+      ],
+      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 612,
+      "claimed_at": "2026-10-10T06:16:44.001Z",
+      "heartbeat_at": "2026-10-10T06:24:05.221Z",
+      "expires_at": "2026-10-10T06:29:05.221Z",
+      "notes": "Progress source+regression 88dc9c9; remaining active work implementing privacy-safe correlated latency spans before final handoff. No extra root files.",
+      "released_at": "2026-10-10T06:28:14.034Z",
+      "release_reason": "Same existing PR #612 final source HEAD ffebf082052dcf570cc031c11a5ac16d7b369ee3: settled-text TTS cap, abort/late PCM, synchronous provider recovery, sanitized correlated stage timing with expanded Vitest; repo tests NOT_RUN (Node22, no Node24/pnpm/checkout/Flutter/PG, private clone DNS); 11 structural readback flags matched, no AF00 #600 filename overlap. PR body/workstream checklist updated and AF00 #600 bounded handoff comment 6094617197 edited to exact head. CHAT-P04 tracing provider-internal/p50p95, model cancel/retry, P02 receipts, Gwani P01 drafts, root integration still source missing. No safe integrated SHA, no local pull.",
+      "source_head_sha": "ffebf082052dcf570cc031c11a5ac16d7b369ee3",
+      "integration_head_sha": null,
+      "test_state": "NOT_RUN repository Vitest/TS/Flutter/PG; structural source readback only; CI #457 quota exhausted"
     }
   ]
 }
