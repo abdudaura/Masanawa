@@ -79,7 +79,7 @@ function fixture() {
     },
     now:()=>time,
   });
-  const propose=(requestId="retry-key", arguments_={target:"safe"})=>service.propose({
+  const propose=(requestId="retry-key", arguments_: Readonly<Record<string, unknown>>={target:"safe"})=>service.propose({
     actor:account,requestId,scope:"private-assistant",capabilityId:"talks.create",
     capabilityVersion:1,arguments:arguments_,
   });
