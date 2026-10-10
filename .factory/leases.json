@@ -1170,8 +1170,8 @@
       "branch": "lane/l-social-verified-links-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T17:18:00+01:00",
-      "heartbeat_at": "2026-10-10T16:34:38.575Z",
-      "expires_at": "2026-10-10T16:39:38.575Z",
+      "heartbeat_at": "2026-10-10T16:45:55.542Z",
+      "expires_at": "2026-10-10T16:50:55.542Z",
       "notes": "Exact file families only; AF00 retains app composition, central migration registry, shared routes and protected CI. No external automation or live provider changes."
     },
     {
