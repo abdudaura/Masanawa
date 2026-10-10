@@ -646,8 +646,8 @@
       "source_pr": 460,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:54:42.350Z",
-      "heartbeat_at": "2026-10-10T08:56:09.333Z",
-      "expires_at": "2026-10-10T09:01:09.333Z",
+      "heartbeat_at": "2026-10-10T09:01:43.334Z",
+      "expires_at": "2026-10-10T09:06:43.334Z",
       "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
     },
     {
@@ -673,8 +673,8 @@
       "source_pr": 600,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:54:42.350Z",
-      "heartbeat_at": "2026-10-10T08:59:03.029Z",
-      "expires_at": "2026-10-10T09:04:03.029Z",
+      "heartbeat_at": "2026-10-10T09:01:43.334Z",
+      "expires_at": "2026-10-10T09:06:43.334Z",
       "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
     },
     {
