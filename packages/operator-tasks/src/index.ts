@@ -378,3 +378,15 @@ export function createOperatorTaskService(input: Readonly<{
     },
   });
 }
+
+// One public package entry point; internal persistence/recovery modules remain
+// behind server-only interfaces and are never exposed as separate HTTP routes.
+export { createPostgresOperatorTaskRepository } from "./postgres.js";
+export { createPostgresRecoveryJournal, createStatusOnlyRecovery } from "./recovery.js";
+export type {
+  RecoveryOperation,
+  RecoveryVerifiedReadback,
+  RecoveryStatusSource,
+  RecoveryJournal,
+  RecoveryBatchResult,
+} from "./recovery.js";
