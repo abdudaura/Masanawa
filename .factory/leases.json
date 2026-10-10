@@ -1131,18 +1131,20 @@
     {
       "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
       "owner": "GPT-6 / R0 Flutter compiler recovery coordination AF00 #616",
-      "scope": "Only three Dart compile-stopper source paths from real Mobile Build logs: remove accidental duplicated text and broken regex, avoid override getter shadow collision. No new Gift routes or actual live payments.",
+      "scope": "R0 consumer and Android Admin Flutter build unblock: 5 exact source paths only; preserve user finance and excluded features frozen, no app root/nav/gateway/SQL.",
       "paths": [
         "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
         "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
-        "apps/mobile/lib/src/localization/locale_preference.dart"
+        "apps/mobile/lib/src/localization/locale_preference.dart",
+        "apps/admin_mobile/lib/src/screens/platform_pages.dart",
+        "apps/admin_mobile/lib/src/core/admin_auth_api.dart"
       ],
       "branch": "lane/r0-flutter-compiler-20261010-gpt6",
       "source_pr": 460,
       "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
       "claimed_at": "2026-10-10T16:12:51.215Z",
-      "heartbeat_at": "2026-10-10T16:19:23.313Z",
-      "expires_at": "2026-10-10T16:24:23.313Z",
+      "heartbeat_at": "2026-10-10T16:21:45.655Z",
+      "expires_at": "2026-10-10T16:26:45.655Z",
       "notes": "PR #623 Mobile Build 38066841365 has analyzed and tested (both fail due outstanding warnings/widget debt), currently Android release APK and admin debug APK compiling. Foundation CI 38066841357 TS PASS, Vitest inherited failures; no deploy."
     },
     {
