@@ -87,6 +87,12 @@ export interface AudioPostComment {
 }
 
 /** Public comments never reveal another account's internal identity key. */
+/** Bounded, keyset-paginated public comment listing. Cursor is only a scoped comment ID. */
+export interface PublicAudioPostCommentPage {
+  items: PublicAudioPostComment[];
+  nextCursor: string | null;
+}
+
 export interface PublicAudioPostComment {
   postId: string;
   commentId: string;
@@ -109,7 +115,7 @@ export interface AudioPostRepository {
   /** Only the viewer's persisted saves, filtered through public visibility. */
   saved(input: { tenantId: string; viewerId: string; limit: number }): Promise<AudioPostRecord[]>;
   /** Only comments on visible published posts; removal tombstones are hidden. */
-  listComments(input: { tenantId: string; viewerId: string; postId: string; limit: number }): Promise<AudioPostComment[]>;
+  listComments(input: { tenantId: string; viewerId: string; postId: string; limit: number; beforeCommentId?: string | null }): Promise<AudioPostComment[]>;
   /** Atomic published-post + visibility check, replay-safe request key. */
   addComment(input: { tenantId: string; viewerId: string; postId: string; commentId: string; requestId: string; body: string; createdAt: string }): Promise<AudioPostComment>;
   /** Only authenticated comment author may remove; repeated removal is idempotent. */
