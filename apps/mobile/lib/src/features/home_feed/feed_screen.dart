@@ -107,7 +107,7 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
             return Card(key:ValueKey(post.id),margin:const EdgeInsets.symmetric(vertical:5,horizontal:8),
               child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
                 TextButton.icon(onPressed:widget.onMasanaProfile==null?null:()=>widget.onMasanaProfile!(post.authorMasanaId),
-                  icon:const Icon(Icons.verified_outlined),label:Text(post.authorMasanaId)),
+                  icon:const Icon(Icons.verified_outlined),label:Text(post.authorName??post.authorMasanaId)),
                 if(post.body.isNotEmpty)Text(post.body,style:Theme.of(context).textTheme.bodyLarge),
                 if(post.mediaIds.isNotEmpty)Wrap(spacing:8,children:post.mediaIds.map((id)=>ActionChip(
                   avatar:Icon(post.kind=='audio'?Icons.play_circle_outline:Icons.image_outlined),
