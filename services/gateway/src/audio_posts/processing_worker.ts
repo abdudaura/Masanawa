@@ -1,23 +1,13 @@
+import type { AudioPostProcessingQueue } from "@masanawa/contracts";
+export type { PendingAudioPost, PendingPage, AudioPostProcessingQueue } from "@masanawa/contracts";
 /** AF09: trusted background processing for durable, unpublished audio posts.
  * Gateway/worker composition must supply the existing verified moderation service;
  * this worker NEVER accepts an authenticated customer HTTP request or media URL.
  */
 export type ProcessingResult = "published" | "failed";
-export interface PendingAudioPost {
-  tenantId: string;
-  postId: string;
-  revision: number;
-  createdAt: string;
-}
-export interface PendingPage {
-  items: PendingAudioPost[];
-  nextCursor: string | null;
-}
-export interface AudioPostProcessingQueue {
-  listPending(input: { tenantId: string; cursor: string | null; limit: number }): Promise<PendingPage>;
-  /** Non-blocking cross-process lock; returns null if another worker owns post. */
-  withLease<T>(input: { tenantId: string; postId: string }, work: () => Promise<T>): Promise<T | null>;
-}
+
+
+
 export interface AudioPostSettler {
   settle(input: { tenantId: string; postId: string; expectedRevision: number }): Promise<{ status: string }>;
 }
