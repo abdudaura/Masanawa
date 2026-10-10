@@ -1377,9 +1377,11 @@
       "branch": "lane/l-chat-j03-masana-text-20261010-gpt6-1747",
       "base_sha": "b7a34059751271a07096e6ae4be07efa98bf1c3d",
       "claimed_at": "2026-10-10T16:44:51.455Z",
-      "heartbeat_at": "2026-10-10T16:44:51.455Z",
-      "expires_at": "2026-10-10T16:49:51.455Z",
-      "notes": "No parallel chat journal, no human DM, no clone contact; same @masanawa/agents sessions. Feature code only. AF00 retains shared composition and deployment."
+      "heartbeat_at": "2026-10-10T16:51:37.118Z",
+      "expires_at": "2026-10-10T16:56:37.118Z",
+      "notes": "No parallel chat journal, no human DM, no clone contact; same @masanawa/agents sessions. Feature code only. AF00 retains shared composition and deployment.",
+      "source_pr": 635,
+      "source_head": "0769394ee6256846e8169686967b0f30ee1bcb0f"
     }
   ],
   "history": [
