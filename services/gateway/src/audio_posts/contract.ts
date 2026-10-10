@@ -50,6 +50,18 @@ export interface PublicFeedPage {
   nextCursor: string | null;
 }
 
+/** Durable comments: author IDs are server-derived, never supplied in a body. */
+export interface AudioPostComment {
+  tenantId: string;
+  postId: string;
+  commentId: string;
+  authorAccountId: string;
+  requestId: string;
+  body: string;
+  createdAt: string;
+  removed: boolean;
+}
+
 export interface AudioPostRepository {
   /** Unique constraint on tenant + account + requestId; conflicting payload rejected. */
   createOnce(intent: NewAudioPost): Promise<AudioPostRecord>;
@@ -62,6 +74,12 @@ export interface AudioPostRepository {
   removeOwn(input: { tenantId: string; accountId: string; postId: string }): Promise<AudioPostRecord | null>;
   /** Only the viewer's persisted saves, filtered through public visibility. */
   saved(input: { tenantId: string; viewerId: string; limit: number }): Promise<AudioPostRecord[]>;
+  /** Only comments on visible published posts; removal tombstones are hidden. */
+  listComments(input: { tenantId: string; viewerId: string; postId: string; limit: number }): Promise<AudioPostComment[]>;
+  /** Atomic published-post + visibility check, replay-safe request key. */
+  addComment(input: { tenantId: string; viewerId: string; postId: string; commentId: string; requestId: string; body: string; createdAt: string }): Promise<AudioPostComment>;
+  /** Only authenticated comment author may remove; repeated removal is idempotent. */
+  removeOwnComment(input: { tenantId: string; viewerId: string; postId: string; commentId: string }): Promise<boolean>;
   /** Worker/verified moderation only; atomic expected revision and status. */
   settle(input: { tenantId: string; postId: string; expectedRevision: number; status: "published" | "failed" }): Promise<AudioPostRecord>;
   /** Ensure visibility/account authorization in same transaction as reaction write. */
