@@ -11,6 +11,11 @@ Factory: https://github.com/Baatiku/Software-Factory-starter-kit
 
 Read fresh main CONTINUE-HERE.md, AGENTS.md, docs/NEXT-WAVE-DELIVERY-20261010.md
 and the latest accessible Factory SKILL.md/AGENTS.md/relevant references.
+Treat CHAT-P01–P05 and GWANI-P01 in the delivery document as required pending
+chat-speed, receipt, reply-reference and billing-continuity work. Inspect current
+source and claim unstarted essential items as well as existing unfinished work.
+Lane labels are not live owner claims. Keep same-milestone work in its PR; use
+a coherent feature PR for a different milestone without a competing integrator.
 Then read only the feature contracts, screen states, recovery inputs and AF lane
 needed for your chosen milestone. Preserve all confirmed product requirements.
 
