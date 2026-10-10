@@ -265,8 +265,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               'Device permission only · delivery not verified',
                 ),
                 value: MobilePushService.instance.configured &&
+                    _notificationController.accountId == _notificationAccountId &&
                     _notificationController.enabled,
                 onChanged: !MobilePushService.instance.configured ||
+                        _notificationController.accountId != _notificationAccountId ||
                         !_notificationController.canChange
                     ? null
                     : (value) => unawaited(_toggleNotifications(value)),
@@ -277,7 +279,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   key: const Key('settings-notifications-retry'),
                   leading: const Icon(Icons.refresh),
                   title: const Text('Retry notification status'),
-                  onTap: _notificationController.canChange
+                  onTap: _notificationController.canRefresh
                       ? () => unawaited(_notificationController.refresh())
                       : null,
                 ),
