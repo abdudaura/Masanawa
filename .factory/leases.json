@@ -162,24 +162,6 @@
       "integration_head_sha": null
     },
     {
-      "claim_id": "af09-609-feed-warm-cache-20261010-gpt6",
-      "owner": "AF09 PR #609 / GPT-6 feed warm/offline recovery",
-      "scope": "Keep authenticated Published Talks feed visible during refresh and warm reentry with bounded, account-fenced encrypted snapshots; no root shell, auth, routes, provider or financial authority",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_cache.dart",
-        "apps/mobile/test/audio_first/af09/feed_cache_test.dart",
-        "docs/workstreams/AF09-feed-cache-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T03:36:34.664Z",
-      "heartbeat_at": "2026-10-10T03:36:34.664Z",
-      "expires_at": "2026-10-10T03:41:34.664Z",
-      "notes": "Published Talks CHAT-P01 partial, same PR; previously expired playback-journey ownership preserved; no claim to other active AF09 draft/receipt windows."
-    },
-    {
       "claim_id": "af09-609-following-precision-20261010-gpt6-0435",
       "owner": "AF09 existing PR #609 / GPT-6 continuation",
       "scope": "Preserve exact PostgreSQL microsecond ordering and safe keyset pagination for Following and creator published Talks, service validation and executable adapter regressions; no shared AF00 files",
@@ -1766,6 +1748,28 @@
       "source_head": "d85f7b59e19926ddb3f2fd928f491a531cc618b1",
       "test_state": "GitHub blob readback + 9/10 initial structural assertions; Dart test class position corrected; full Node/Flutter/PG NOT_RUN/BLOCKED (Node22 no private checkout/pnpm/Dart/Flutter/PG), GitHub CI zero-step",
       "release_reason": "Feature-source receipt recovery increment committed and bounded AF00 composition request sent; entire Published Talks milestone remains PARTIAL, not source-complete/integrated"
+    },
+    {
+      "claim_id": "af09-609-feed-warm-cache-20261010-gpt6",
+      "owner": "AF09 PR #609 / GPT-6 feed warm/offline recovery",
+      "scope": "Keep authenticated Published Talks feed visible during refresh and warm reentry with bounded, account-fenced encrypted snapshots; no root shell, auth, routes, provider or financial authority",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_cache.dart",
+        "apps/mobile/test/audio_first/af09/feed_cache_test.dart",
+        "docs/workstreams/AF09-feed-cache-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:36:34.664Z",
+      "heartbeat_at": "2026-10-10T03:36:34.664Z",
+      "expires_at": "2026-10-10T03:41:34.664Z",
+      "notes": "Published Talks CHAT-P01 partial, same PR; previously expired playback-journey ownership preserved; no claim to other active AF09 draft/receipt windows.",
+      "released_at": "2026-10-10T03:42:03.507Z",
+      "source_head": "8cf9c2987e34b6c60608a340fe90b0f0b00c6cc3",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "release_reason": "Same PR #609 warm/offline account-fenced secure Talks snapshot and 5 authored widget tests; GitHub source readback 11/11 structural checks; Flutter/Dart/Android NOT_RUN (no runner/clone DNS). AF09 customer milestone remains PARTIAL, AF00 shared integration and AF05/15 media missing; exact-sha handoff in docs/workstreams/AF09-feed-cache-20261010.md."
     }
   ]
 }
