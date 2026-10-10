@@ -5,6 +5,14 @@ import { createGatewayApp } from "../../app.js";
 describe("R0 legacy route freeze", () => {
   it.each([
     ["GET", "/talks"],
+    ["GET", "/agent/twins"],
+    ["GET", "/creator/onboarding"],
+    ["POST", "/creator/onboarding/confirm"],
+    ["POST", "/whatsapp/webhook"],
+    ["POST", "/telegram/webhook"],
+    ["POST", "/v1/channels/telegram"],
+    ["GET", "/v1/admin/commission-policy"],
+    ["GET", "/v1/admin/linked-whatsapp"],
     ["POST", "/talks/new"],
     ["GET", "/talks/abc/live/media-token"],
     ["POST", "/v1/twins/abc/gifts"],
@@ -27,6 +35,12 @@ describe("R0 legacy route freeze", () => {
   it.each([
     ["GET", "/healthz"],
     ["GET", "/v1/masana"],
+    ["GET", "/v1/masana/a/social-links"],
+    ["GET", "/v1/wallet/msn/quotes"],
+    ["POST", "/v1/crypto/conversions/orders"],
+    ["POST", "/v1/crypto/withdrawals/orders"],
+    ["GET", "/v1/p2p/offers"],
+    ["POST", "/v1/p2p/orders/id/mark-paid"],
     ["GET", "/v1/masana/a"],
     ["POST", "/v1/masana/a/follow"],
     ["POST", "/v1/chats/masana-id/messages"],
