@@ -132,12 +132,18 @@ class _ComposerState extends State<AudioPostComposerScreen> {
         requestId: requestId, assetId: assetId, title: title,
       );
       if (!mounted || !_authorized || generation != _generation) return;
-      if ((post.status != 'processing' && post.status != 'published') ||
-          post.title != title) throw const FormatException('Invalid publish receipt');
+      if (post.title != title ||
+          (post.status != 'processing' && post.status != 'published' &&
+           post.status != 'failed' && post.status != 'removed')) {
+        throw const FormatException('Invalid publish receipt');
+      }
+      // Terminal moderation/revocation results are confirmed states, not
+      // network-uncertain failures that the client should retry forever.
       setState(() => _receipt = post);
-      // A navigation callback cannot turn an acknowledged server receipt into
-      // a second publish attempt or erase the durable success state.
-      try { widget.onPublished?.call(post); } catch (_) { /* receipt retained */ }
+      if (post.status == 'processing' || post.status == 'published') {
+        // Navigation errors must not invalidate an acknowledged receipt.
+        try { widget.onPublished?.call(post); } catch (_) { /* receipt retained */ }
+      }
     } catch (_) {
       if (mounted && _authorized && generation == _generation) {
         setState(() => _message =
@@ -203,9 +209,12 @@ class _ComposerState extends State<AudioPostComposerScreen> {
           if (_message != null)
             Text(_message!, key: const ValueKey('talk-error')),
           if (_receipt != null)
-            Text(_receipt!.status == 'published' ? 'Talk published.' :
-              'Talk received; it is processing and is not public yet.',
-              key: const ValueKey('talk-receipt')),
+            Text(switch (_receipt!.status) {
+              'published' => 'Talk published.',
+              'processing' => 'Talk received; it is processing and is not public yet.',
+              'failed' => 'Talk was not approved. Check My Talks before recording again.',
+              _ => 'This publish attempt refers to a removed Talk.',
+            }, key: const ValueKey('talk-receipt')),
           const SizedBox(height: 14),
           FilledButton.icon(
             key: const ValueKey('talk-publish'),
