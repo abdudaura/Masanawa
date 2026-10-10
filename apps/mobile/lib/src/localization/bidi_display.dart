@@ -10,10 +10,13 @@ abstract final class BidiDisplay {
   static const _ltrIsolate = '\u2066';
   static const _popDirectionIsolate = '\u2069';
 
-  // Untrusted Unicode bidirectional controls can obscure the displayed
-  // identity. Strip them from the display projection before applying an LRI.
+  // Strip Unicode Bidi_Control characters from the *display projection* before
+  // wrapping it in our own balanced LRI/PDI pair. Besides the explicit
+  // overrides/isolates, the implicit marks ALM (U+061C), LRM (U+200E) and
+  // RLM (U+200F) also affect ordering, including inside an outer isolate.
+  // Do not modify the authoritative identifier sent to services.
   static final _embeddedControls = RegExp(
-    '[\u202A-\u202E\u2066-\u2069]',
+    '[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]',
   );
 
   static String identifier(
