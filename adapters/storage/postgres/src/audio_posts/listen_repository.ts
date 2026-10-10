@@ -1,15 +1,10 @@
 import type { Pool, PoolClient } from "pg";
 
-/** AF09 durable qualified-listen counter. AF00 allocates append-only SQL.
- * This adapter is the only authority for per-viewer/day uniqueness; a media
- * GET, ticket request or card impression never increments a play.
- */
-export interface TalkListenStore {
-  open(input: { tenantId: string; postId: string; viewerId: string; revision: number; durationMs: number }): Promise<string>;
-  complete(input: { tenantId: string; postId: string; viewerId: string; listenId: string; playedMs: number;
-    canView: (authorAccountId: string) => Promise<boolean> }): Promise<{ counted: boolean; listenCount: number }>;
-}
+import type { TalkListenStore } from "../../../../../services/gateway/src/audio_posts/playback.js";
 
+/** AF09 durable qualified-listen adapter. AF00 allocates append-only SQL.
+ * A ticket request or card impression never increments a counter.
+ */
 async function withTransaction<T>(pool: Pool, work: (db: PoolClient) => Promise<T>): Promise<T> {
   const db = await pool.connect();
   try {
