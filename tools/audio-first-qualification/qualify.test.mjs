@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,rm,symlink,mkdir} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -60,4 +60,38 @@ test('device evidence needs a hashed APK proof, not just a user supplied APK str
  const device={id:'UX-A05',boundaries:['device'],tier:'release'};
  const clip=rec({journeyId:'UX-A05',result:'PASS_REAL',environment:{mode:'real',physicalDevice:true,deviceOS:'Android 12'},apkSha256:'a'.repeat(64),boundaries:['device'],proofs:[{path:'run.log',sha256:'b'.repeat(64)}],review:{reviewer:'QA',reference:'QA-1234'}});
  assert.ok(checkRecord(clip,device,sha).some(x=>x.includes('APK')));
+});
+
+
+test('real evidence rejects symlinked internal file and symlinked parent even with correct hash',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'af13-internal-link-'));
+ try{
+  await mkdir(path.join(dir,'actual'));
+  await writeFile(path.join(dir,'actual','proof.txt'),'evidence');
+  await symlink(path.join(dir,'actual','proof.txt'),path.join(dir,'file-link.txt'));
+  await symlink(path.join(dir,'actual'),path.join(dir,'dir-link'));
+  const digest=createHash('sha256').update('evidence').digest('hex');
+  const record=(proofPath)=>rec({result:'PASS_REAL',environment:{mode:'real',databaseRef:'db-staging',providerRef:'provider-test'},boundaries:mat.journeys[0].boundaries,proofs:[{path:proofPath,sha256:digest}],review:{reviewer:'QA reviewer',reference:'qa-case-0001'}});
+  assert.deepEqual((await verifyProofs([record('actual/proof.txt')],dir)).errors,[]);
+  for(const link of ['file-link.txt','dir-link/proof.txt']){
+    const v=await verifyProofs([record(link)],dir);
+    assert.equal(v.verified.size,0);
+    assert.ok(v.errors.length>0);
+    assert.equal(v.errors.join(' ').includes(link),false,'must not print untrusted proof paths');
+    assert.equal(assess(mat,[record(link)],sha,v.verified).readiness,'INVALID');
+  }
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('uppercase digest compatibility and empty proof fail-closed',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'af13-proof-case-'));
+ try{
+  await writeFile(path.join(dir,'proof.txt'),'reviewed-redacted-data');
+  await writeFile(path.join(dir,'empty.txt'),'');
+  const digest=createHash('sha256').update('reviewed-redacted-data').digest('hex').toUpperCase();
+  const fixture=(proofPath,hash)=>rec({result:'PASS_REAL',environment:{mode:'real',databaseRef:'db-staging',providerRef:'provider-test'},boundaries:mat.journeys[0].boundaries,proofs:[{path:proofPath,sha256:hash}],review:{reviewer:'QA reviewer',reference:'qa-case-0002'}});
+  assert.deepEqual((await verifyProofs([fixture('proof.txt',digest)],dir)).errors,[]);
+  const empty=await verifyProofs([fixture('empty.txt',createHash('sha256').update('').digest('hex'))],dir);
+  assert.equal(empty.verified.size,0);assert.ok(empty.errors.length>0);
+ }finally{await rm(dir,{recursive:true,force:true});}
 });
