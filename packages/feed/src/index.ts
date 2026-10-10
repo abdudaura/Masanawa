@@ -2,7 +2,7 @@
 export type PostKind = "text"|"image"|"audio";
 export type FeedMode = "for_you"|"following";
 export type Actor = {kind:"fan"|"masana"|"staff"; tenantId:string; id:string; permissions?:readonly string[]; approved?:boolean};
-export interface Post {id:string; tenantId:string; authorMasanaId:string;kind:PostKind;body:string;media:readonly string[];transcript:string|null;publishedAt:string;likeCount:number;commentCount:number;viewerLiked:boolean;viewerSaved:boolean}
+export interface Post {id:string; tenantId:string; authorMasanaId:string;authorName?:string;kind:PostKind;body:string;media:readonly string[];transcript:string|null;publishedAt:string;likeCount:number;commentCount:number;viewerLiked:boolean;viewerSaved:boolean}
 export interface Comment {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string}
 export interface Publish {authorMasanaId:string;kind:PostKind;body:string;media?:readonly string[];transcript?:string|null;idempotencyKey:string}
 export class FeedError extends Error {constructor(readonly status:number,readonly code:string){super(code)}}
