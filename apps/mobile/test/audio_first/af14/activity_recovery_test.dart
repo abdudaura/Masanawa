@@ -40,6 +40,7 @@ class _RecoveryTransport implements TalkActivityTransport {
   bool failReadbackAfterDecision = false;
   String currentTitle = 'A Talk invitation';
   Completer<void>? decisionGate;
+  Completer<void>? firstLoadGate;
   int loadCalls = 0;
   int decisionCalls = 0;
 
@@ -49,12 +50,16 @@ class _RecoveryTransport implements TalkActivityTransport {
     int limit = 60,
   }) async {
     loadCalls += 1;
+    final capturedTitle = currentTitle;
+    final gate = firstLoadGate;
+    firstLoadGate = null;
+    if (gate != null) await gate.future;
     if (failLoad) throw StateError('SECRET_TRANSPORT_DIAGNOSTIC');
     return [
       TalkActivityItem(
         id: 'invitation-1',
         kind: TalkActivityKind.talkInvitation,
-        title: currentTitle,
+        title: capturedTitle,
         detail: 'Invitation details',
         createdAt: DateTime(2026, 10, 9),
         talkId: 'talk-123',
@@ -219,6 +224,31 @@ void main() {
 
     expect(find.text('Sign in to view Activity.'), findsOneWidget);
     expect(find.text('A Talk invitation'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('late prior-account HTTP list cannot overwrite newer account',
+      (tester) async {
+    final initialRead = Completer<void>();
+    final transport = _RecoveryTransport()
+      ..firstLoadGate = initialRead
+      ..currentTitle = 'Delayed private activity for A';
+    await tester.pumpWidget(_app(transport));
+    await tester.pump();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ActivityScreen)),
+    );
+    transport.currentTitle = 'Private activity for B';
+    (container.read(sessionProvider.notifier) as _RecoverySession)
+        .switchTo('user-b');
+    await tester.pump();
+    initialRead.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Private activity for B'), findsOneWidget);
+    expect(find.text('Delayed private activity for A'), findsNothing);
+    expect(transport.loadCalls, greaterThanOrEqualTo(2));
     expect(tester.takeException(), isNull);
   });
 
