@@ -69,17 +69,24 @@ class MasanaChatController extends ChangeNotifier {
   String? _sessionId;
   bool _busy = false, _disposed = false, _restored = false;
   int _generation = 0;
+  Future<void>? _restorePending;
+  Future<void> _writeTail = Future<void>.value();
   String? error;
   bool get busy => _busy;
   List<MasanaChatTurn> get turns => List.unmodifiable(_turns);
   void _notify() { if (!_disposed) notifyListeners(); }
 
-  Future<void> restore() async {
-    if (_restored || _disposed) return;
+  // Coalesce initial load: two synchronous callers must never overwrite a
+  // freshly queued bubble with a second stale storage read.
+  Future<void> restore() {
+    if (_restored || _disposed) return Future<void>.value();
+    return _restorePending ??= _loadSaved();
+  }
+  Future<void> _loadSaved() async {
+    final generation = _generation;
     try {
       final saved = await drafts.read(accountId, characterId);
-      if (_disposed) return;
-      _restored = true;
+      if (_disposed || generation != _generation) return;
       final session = saved?['sessionId'];
       if (session is String && session.startsWith('character-session_')) {
         _sessionId = session;
@@ -92,11 +99,15 @@ class MasanaChatController extends ChangeNotifier {
           if (item != null) _turns.add(item);
         }
       }
+      _restored = true;
       _notify();
       unawaited(_drain());
     } catch (_) {
+      if (_disposed || generation != _generation) return;
       error = 'Saved messages could not be read. Please retry.';
       _notify();
+    } finally {
+      _restorePending = null;
     }
   }
   Future<void> send(String raw) async {
@@ -122,12 +133,18 @@ class MasanaChatController extends ChangeNotifier {
     await _persist();
     unawaited(_drain());
   }
+  // Serialize physical writes. Otherwise concurrent enqueue and completion
+  // snapshots can finish out of order and silently lose an outbox entry.
   Future<bool> _persist() async {
+    final snapshot = <String, dynamic>{
+      'sessionId': _sessionId,
+      'turns': _turns.map((v) => v.toJson()).toList(growable:false),
+    };
+    final write = _writeTail.then((_) =>
+        drafts.write(accountId, characterId, snapshot));
+    _writeTail = write.then<void>((_) {}, onError: (Object _, StackTrace __) {});
     try {
-      await drafts.write(accountId, characterId, {
-        'sessionId': _sessionId,
-        'turns': _turns.map((v) => v.toJson()).toList(growable:false),
-      });
+      await write;
       return true;
     } catch (_) {
       error = 'Offline messages cannot be saved on this device.';
@@ -178,6 +195,9 @@ class MasanaChatController extends ChangeNotifier {
     _generation++;
     final session = _sessionId;
     _turns.clear(); _sessionId = null;
+    // Drain earlier queued snapshot writes before deletion: a delayed save
+    // must never resurrect messages after an account switch.
+    await _writeTail;
     await drafts.clear(accountId, characterId);
     if (session != null) {
       try { await api.close(characterId,session); } catch (_) { /* expires */ }
