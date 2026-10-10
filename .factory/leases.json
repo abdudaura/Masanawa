@@ -370,6 +370,28 @@
       "heartbeat_at": "2026-10-10T05:13:33.187Z",
       "expires_at": "2026-10-10T05:18:33.187Z",
       "notes": "User explicitly took over integration and CI coordination; AF09 feature path edits remain on existing PR609; no overwrite. Inspect deployment triggers, main and PR heads and do not fake CI evidence."
+    },
+    {
+      "claim_id": "af00-600-source-migration-20261010-gpt6-0520",
+      "owner": "AF00 owner-directed root integration / GPT-6 continued",
+      "scope": "Reclaim after prior AF00 claim expired without live collisions; finish additive numbered source migration, root Flutter route, single integration record and central CI blocker, preserve other PR work and no production deploy",
+      "paths": [
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/worker/src/main.ts",
+        "docs/workstreams/AF00-integration-20261010.md",
+        "packages/talks/migrations/0015_published_audio_posts.sql",
+        "apps/mobile/test/twin_home_shell_test.dart"
+      ],
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 600,
+      "claimed_at": "2026-10-10T05:19:01.295Z",
+      "heartbeat_at": "2026-10-10T05:19:01.295Z",
+      "expires_at": "2026-10-10T05:24:01.295Z",
+      "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files."
     }
   ],
   "history": [
