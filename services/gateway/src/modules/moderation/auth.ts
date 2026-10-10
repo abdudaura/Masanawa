@@ -31,7 +31,8 @@ export function createModerationAuthority(input:ModerationIdentityAdapters):Case
    if(header.startsWith("Bearer msw_agent_")){
     if(!input.gwaniPrincipal)throw new CaseError("moderation.unauthorized",401);
     const principal=await input.gwaniPrincipal.authorizeService(header);
-    if(!principal)throw new CaseError("moderation.unauthorized",401);
+    if(!principal||principal.userId!=="masana-gwani")
+      throw new CaseError("moderation.unauthorized",401);
     return Object.freeze({tenantId:principal.tenantId,userId:principal.userId,
       roles:[] as readonly string[],kind:"gwani" as const});
    }
