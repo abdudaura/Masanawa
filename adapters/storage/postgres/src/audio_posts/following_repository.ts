@@ -11,6 +11,8 @@ type PostRow = {
   title: string; duration_ms: number; status: AudioPostRecord["status"];
   revision: number; created_at: Date | string; published_at: Date | string | null;
   like_count?: number | string; comment_count?: number | string;
+  /** Exact six-digit timestamp returned as SQL text; pg Date truncates microseconds. */
+  cursor_time: string;
 };
 const postColumns = "p.tenant_id,p.post_id,p.author_id,p.author_account_id,p.author_kind,p.asset_id,p.request_id,p.title,p.duration_ms,p.status,p.revision,p.created_at,p.published_at" +
   // One canonical reaction/comment authority, matching Discover/Saved/My Talks.
@@ -18,6 +20,7 @@ const postColumns = "p.tenant_id,p.post_id,p.author_id,p.author_account_id,p.aut
   "WHERE r2.tenant_id=p.tenant_id AND r2.post_id=p.post_id AND r2.kind='like') AS like_count" +
   ",(SELECT COUNT(*)::int FROM social.audio_post_comments c " +
   "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count";
+const cursorStampSql = "to_char(p.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS cursor_time";
 const toDate = (value: string | Date): string =>
   value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 function record(r: PostRow): AudioPostRecord {
@@ -31,18 +34,40 @@ function record(r: PostRow): AudioPostRecord {
     likeCount: Number(r.like_count ?? 0), commentCount: Number(r.comment_count ?? 0),
   };
 }
+// Opaque cursor retains the full PostgreSQL microseconds; do not parse pg's
+// Date instance for a keyset boundary or pages can silently skip newer rows.
+const stampRe = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$/;
+const idRe = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/;
+function validStamp(stamp: string): boolean {
+  if (!stampRe.test(stamp)) return false;
+  const parsed = Date.parse(stamp);
+  if (!Number.isFinite(parsed)) return false;
+  // Reject normalized invalid dates while permitting the three extra micros.
+  return new Date(parsed).toISOString().slice(0, 23) === stamp.slice(0, 23);
+}
 function cursor(r: PostRow): string {
-  return String(new Date(r.created_at).getTime()) + ":" + r.post_id;
+  if (!validStamp(r.cursor_time) || !idRe.test(r.post_id)) {
+    throw Error("audio_posts.invalid_following_row");
+  }
+  return Buffer.from(JSON.stringify([r.cursor_time, r.post_id])).toString("base64url");
 }
 function parseCursor(value: string | null): { created: string; id: string } | null {
   if (value === null) return null;
-  const match = /^(\d{13}):([a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127})$/.exec(value);
-  if (!match) throw Error("audio_posts.invalid_following_cursor");
-  const ms = Number(match[1]);
-  if (!Number.isSafeInteger(ms) || !Number.isFinite(new Date(ms).getTime())) {
+  if (typeof value !== "string" || value.length < 12 || value.length > 256 ||
+      !/^[A-Za-z0-9_-]+$/.test(value)) throw Error("audio_posts.invalid_following_cursor");
+  try {
+    const raw = Buffer.from(value, "base64url");
+    if (raw.toString("base64url") !== value) throw Error("noncanonical");
+    const parsed: unknown = JSON.parse(raw.toString("utf8"));
+    if (!Array.isArray(parsed) || parsed.length !== 2 ||
+        typeof parsed[0] !== "string" || typeof parsed[1] !== "string" ||
+        !validStamp(parsed[0]) || !idRe.test(parsed[1])) {
+      throw Error("malformed");
+    }
+    return { created: parsed[0], id: parsed[1] };
+  } catch {
     throw Error("audio_posts.invalid_following_cursor");
   }
-  return { created: new Date(ms).toISOString(), id: match[2]! };
 }
 async function transactional<T>(pool: Pool, work: (db: PoolClient) => Promise<T>): Promise<T> {
   const db = await pool.connect();
@@ -119,11 +144,11 @@ export function createPostgresFollowingRepository(
       const seek = parseCursor(from);
       const batchSize = Math.min(limit * 3, 90);
       const rows = await pool.query<PostRow>(
-        "SELECT " + postColumns + " FROM social.audio_posts p " +
+        "SELECT " + postColumns + "," + cursorStampSql + " FROM social.audio_posts p " +
         "WHERE p.tenant_id=$1 AND p.author_id=$2 AND p.author_kind=$3 " +
         "AND p.status='published' AND ($4::timestamptz IS NULL OR " +
-        "(date_trunc('milliseconds',p.created_at),p.post_id)<($4::timestamptz,$5::text)) " +
-        "ORDER BY date_trunc('milliseconds',p.created_at) DESC,p.post_id DESC LIMIT $6",
+        "(p.created_at,p.post_id)<($4::timestamptz,$5::text)) " +
+        "ORDER BY p.created_at DESC,p.post_id DESC LIMIT $6",
         [tenantId, authorId, authorKind, seek?.created ?? null, seek?.id ?? null, batchSize],
       );
       const visible: AudioPostRecord[] = [];
@@ -145,14 +170,14 @@ export function createPostgresFollowingRepository(
       const seek = parseCursor(from);
       const batchSize = Math.min(limit * 3, 90);
       const rows = await pool.query<PostRow>(
-        "SELECT " + postColumns + " FROM social.audio_posts p " +
+        "SELECT " + postColumns + "," + cursorStampSql + " FROM social.audio_posts p " +
         "JOIN social.audio_post_follows f ON f.tenant_id=p.tenant_id " +
         "AND f.author_id=p.author_id AND f.author_kind=p.author_kind " +
         "AND f.follower_account_id=$2 " +
         "WHERE p.tenant_id=$1 AND p.status='published' " +
         "AND ($3::timestamptz IS NULL OR " +
-        "(date_trunc('milliseconds',p.created_at),p.post_id)<($3::timestamptz,$4::text)) " +
-        "ORDER BY date_trunc('milliseconds',p.created_at) DESC,p.post_id DESC LIMIT $5",
+        "(p.created_at,p.post_id)<($3::timestamptz,$4::text)) " +
+        "ORDER BY p.created_at DESC,p.post_id DESC LIMIT $5",
         [tenantId, viewerId, seek?.created ?? null, seek?.id ?? null, batchSize],
       );
       const visible: AudioPostRecord[] = [];
