@@ -715,7 +715,9 @@
       "claimed_at": "2026-10-10T08:56:34.839Z",
       "heartbeat_at": "2026-10-10T09:09:35.288Z",
       "expires_at": "2026-10-10T09:14:35.288Z",
-      "notes": "Workflow independent checks committed c06a077+4b8fdab, real Foundation typecheck+provider/build PASS, Vitest remaining 17 due crypto and stochastic test. Reuse exact owned workflow paths for bounded PR-only concurrency; do not cancel main."
+      "notes": "Workflow independent checks committed c06a077+4b8fdab, real Foundation typecheck+provider/build PASS, Vitest remaining 17 due crypto and stochastic test. Reuse exact owned workflow paths for bounded PR-only concurrency; do not cancel main.",
+      "released_at": "2026-10-10T09:15:59.907Z",
+      "release_reason": "Reviewed stale same-PR workflow claim after 6-minute inactivity; source and actual CI log inspected, owner-requested policy is one-line nonfatal informational lints; no previous changes overwritten and all executable warnings/errors retained."
     },
     {
       "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
@@ -885,6 +887,21 @@
       "heartbeat_at": "2026-10-10T09:11:59.983Z",
       "expires_at": "2026-10-10T09:16:59.983Z",
       "notes": "Existing #460 PR comment #6095999780, real Foundation CI run 38040330645 last suite setup ERROR 42P07; no production migration/wallet changes."
+    },
+    {
+      "claim_id": "af13-460-flutter-fatal-info-policy-gpt6-20261010",
+      "owner": "GPT-6 / continue existing AF13 CI recovery PR #460",
+      "scope": "Treat informational Flutter lints as diagnostics, preserve fatal warning/error checks and execute widget/APK/web irrespective of analyzer outcome",
+      "paths": [
+        ".github/workflows/mobile-build.yml"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:15:59.907Z",
+      "heartbeat_at": "2026-10-10T09:15:59.907Z",
+      "expires_at": "2026-10-10T09:20:59.907Z",
+      "notes": "Reviewed old AF13 claim expiration 09:14:35Z and 09:09:35Z last heartbeat; real Flutter analyzer 0 error/0 warning with 457 info-only. Switch only Analyze to flutter analyze --no-fatal-infos, keep all warnings fatal; run actual workflow at exact head."
     }
   ],
   "history": [
