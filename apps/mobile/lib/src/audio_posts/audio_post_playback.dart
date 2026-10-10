@@ -260,7 +260,11 @@ class AudioPostPlaybackController extends ChangeNotifier {
       _notify();
     } catch (_) {
       // Never surface signed URLs, request headers or native exception bodies.
-      if (!isAuthorized || requestGeneration != _generation) return;
+      if (!isAuthorized || requestGeneration != _generation ||
+          api.accessToken != authorizationAtStart) {
+        await _retireStaleRequest(requestGeneration);
+        return;
+      }
       _loading = false;
       _playing = false;
       _error = 'Audio unavailable. Reconnect or retry.';
