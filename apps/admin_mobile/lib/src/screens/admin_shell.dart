@@ -5,6 +5,7 @@ import '../theme/masanawa_theme.dart';
 import 'platform_pages.dart';
 import 'whatsapp_channel_page.dart';
 import 'admin_agents_page.dart';
+import '../operator_admin/operator_agents_page.dart';
 import 'decision_center_page.dart';
 
 class AdminShell extends StatefulWidget {
@@ -29,6 +30,7 @@ class _AdminShellState extends State<AdminShell> {
     _AdminSection('Overview', Icons.dashboard_outlined),
     _AdminSection('Users', Icons.people_outline),
     _AdminSection('Admin Agents', Icons.support_agent_outlined),
+    _AdminSection('Agent Operations', Icons.security_outlined),
     _AdminSection('Decision Center', Icons.psychology_alt_outlined),
     _AdminSection('Agents', Icons.smart_toy_outlined),
     _AdminSection('Skills', Icons.extension_outlined),
@@ -46,6 +48,7 @@ class _AdminShellState extends State<AdminShell> {
         OverviewPage(api: widget.api),
         UsersAdminPage(api: widget.api),
         AdminAgentsPage(api: widget.api),
+        OperatorAgentsPage(admin: widget.api),
         const DecisionCenterPage(),
         AgentsPage(api: widget.api),
         SkillsPage(api: widget.api),

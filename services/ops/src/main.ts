@@ -26,6 +26,7 @@ import {
   createAgentAdminService,
   type AgentAdminAuthorizer,
 } from "./agent_admin.js";
+import { createOperatorAgentControl } from "./operator_admin/agent_control.js";
 import {
   createOpsApp,
   type OpsAppOptions,
@@ -144,11 +145,22 @@ export async function startOpsService(
         })
       : undefined);
 
+  // U27 is disabled by default. A verified Ops admin authorizer is mandatory;
+  // a consumer session, model or unconfigured deployment cannot install routes.
+  const composedOperatorControl = options.appOptions?.operatorAgentControl ??
+    (composedAgentAdmin && options.agentAdminAuthorizer
+      ? createOperatorAgentControl({
+          admin: composedAgentAdmin,
+          authorizer: options.agentAdminAuthorizer,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(composedAgentAdmin ? { agentAdmin: composedAgentAdmin } : {}),
+      ...(composedOperatorControl ? { operatorAgentControl: composedOperatorControl } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
