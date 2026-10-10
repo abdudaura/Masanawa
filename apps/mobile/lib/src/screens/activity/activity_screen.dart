@@ -25,7 +25,9 @@ class ActivityScreen extends ConsumerStatefulWidget {
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   TalkActivityFilter _filter = TalkActivityFilter.all;
   String? _busyInvitationId;
+  String? _busyReadId;
   int _actionEpoch = 0;
+  int _principalEpoch = 0;
 
   String? _userId(SessionState? session) =>
       session is SessionSignedIn ? session.user.id : null;
@@ -84,6 +86,40 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       if (isCurrentActor()) {
         setState(() => _busyInvitationId = null);
       }
+    }
+  }
+
+  Future<void> _markRead(TalkActivityItem item) async {
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn ||
+        _busyReadId != null ||
+        !item.unread ||
+        item.id.trim().isEmpty) {
+      return;
+    }
+    final actorUserId = session.user.id;
+    final principalEpoch = _principalEpoch;
+    bool isCurrentActor() =>
+        mounted &&
+        principalEpoch == _principalEpoch &&
+        _userId(ref.read(sessionProvider)) == actorUserId;
+
+    setState(() => _busyReadId = item.id);
+    try {
+      await ref.read(talkActivityTransportProvider).markRead(activityId: item.id);
+      if (!isCurrentActor()) return;
+      // Read acknowledgements are authoritative server writes. Refresh all
+      // filter projections rather than painting an unconfirmed local receipt.
+      for (final filter in TalkActivityFilter.values) {
+        ref.invalidate(talkActivityProvider(filter));
+      }
+    } catch (_) {
+      if (!isCurrentActor()) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not mark as read. Try again.')),
+      );
+    } finally {
+      if (isCurrentActor()) setState(() => _busyReadId = null);
     }
   }
 
@@ -151,7 +187,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         // Any in-flight action belongs to the prior principal. Do not let its
         // eventual completion re-enable or mutate the next account's UI.
         _actionEpoch++;
-        if (mounted) setState(() => _busyInvitationId = null);
+        _principalEpoch++;
+        if (mounted) {
+          setState(() {
+            _busyInvitationId = null;
+            _busyReadId = null;
+          });
+        }
       }
     });
     final session = ref.watch(sessionProvider);
@@ -218,6 +260,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         item: item,
                         canOpen: _canOpen(item),
                         busy: _busyInvitationId == item.id,
+                        markingRead: _busyReadId == item.id,
+                        onMarkRead:
+                            item.unread ? () => _markRead(item) : null,
                         onTap: _canOpen(item) ? () => _open(item) : null,
                         onAccept: actionableInvitation
                             ? () => _respondToInvitation(item, accept: true)
@@ -278,6 +323,8 @@ class _ActivityItemTile extends StatelessWidget {
     required this.item,
     required this.canOpen,
     this.busy = false,
+    this.markingRead = false,
+    this.onMarkRead,
     this.onTap,
     this.onAccept,
     this.onDecline,
@@ -286,6 +333,8 @@ class _ActivityItemTile extends StatelessWidget {
   final TalkActivityItem item;
   final bool canOpen;
   final bool busy;
+  final bool markingRead;
+  final VoidCallback? onMarkRead;
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
@@ -426,6 +475,20 @@ class _ActivityItemTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onMarkRead != null) ...[
+                IconButton(
+                  key: ValueKey('activity-mark-read-' + item.id),
+                  tooltip: 'Mark as read',
+                  onPressed: markingRead ? null : onMarkRead,
+                  icon: markingRead
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.mark_email_read_outlined),
+                ),
+              ],
               if (canOpen) ...[
                 const SizedBox(width: 4),
                 Icon(Icons.chevron_right_rounded, color: u.textMuted, size: 20),
