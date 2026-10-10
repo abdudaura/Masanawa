@@ -17,6 +17,9 @@ const alwaysRetired = [
   /^\/(?:whatsapp|telegram|customer\/channels)(?:\/|$)/,
   /^\/v1\/(?:channels|admin\/linked-whatsapp|admin\/commission-polic(?:y|ies))(?:\/|$)/,
   /^\/v1\/(?:customer-channels|linked-whatsapp|channel-bridge)(?:\/|$)/,
+  // Actual legacy Gateway webhooks (not /v1-prefixed): the old bridge must
+  // never accept incoming personal-WhatsApp/Telegram events after R0.
+  /^\/channels\/(?:whatsapp|telegram)(?:\/|$)/,
 ];
 
 const retiredWrites = [
