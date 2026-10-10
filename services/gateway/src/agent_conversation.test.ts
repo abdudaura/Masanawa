@@ -366,7 +366,7 @@ describe("Alpha conversation service", () => {
       strategy: {
         async execute() {
           return {
-            reply: "model-private <masanawa_action>{\\"type\\":\\"billing.quote\\"}</masanawa_action>",
+            reply: 'model-private <masanawa_action>{"type":"billing.quote"}</masanawa_action>',
             parts: [],
           };
         },
