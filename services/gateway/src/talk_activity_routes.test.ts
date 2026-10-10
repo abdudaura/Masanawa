@@ -6,6 +6,10 @@ import type { TalkActivityRepository } from "./talk_activity/model.js";
 
 function repository(): TalkActivityRepository {
   return {
+    async markRead(input) {
+      return input.tenantId === "tenant_1" &&
+        input.userId === "user_1" && input.activityId === "activity_1";
+    },
     async list(input) {
       return [
         {
@@ -104,6 +108,45 @@ describe("Talk Activity API", () => {
         unread: true,
       },
     ]);
+  });
+
+  it("rejects unauthenticated activity read mutations before storage", async () => {
+    const response = await createApp().inject({
+      method: "POST",
+      url: "/activity/activity_1/read",
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("marks only the signed-in account's activity as read", async () => {
+    const response = await createApp().inject({
+      method: "POST",
+      url: "/activity/activity_1/read",
+      headers: { authorization: "Bearer customer" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ id: "activity_1", unread: false });
+  });
+
+  it("conceals another customer's or missing activity ID", async () => {
+    const response = await createApp().inject({
+      method: "POST",
+      url: "/activity/activity_foreign/read",
+      headers: { authorization: "Bearer customer" },
+    });
+    expect(response.statusCode).toBe(404);
+    expect(response.body).not.toContain("user_1");
+    expect(response.body).not.toContain("tenant_1");
+  });
+
+  it("rejects malformed read paths instead of accepting unexpected fields", async () => {
+    const response = await createApp().inject({
+      method: "POST",
+      url: "/activity/activity_1/read",
+      headers: { authorization: "Bearer customer" },
+      payload: { userId: "someone_else" },
+    });
+    expect([400, 415]).toContain(response.statusCode);
   });
 
   it("keeps money labels display-only and does not expose ledger internals", async () => {
