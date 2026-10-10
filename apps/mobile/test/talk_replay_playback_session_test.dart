@@ -6,6 +6,7 @@ import 'package:masanawa/src/talks/talk_replay_playback.dart';
 class _Transport implements TalkReplayPlaybackTransport {
   int loads = 0;
   bool fail = false;
+  DateTime? expiry;
 
   @override
   Future<TalkReplayPlaybackCredentials> load(String talkId) async {
@@ -13,7 +14,7 @@ class _Transport implements TalkReplayPlaybackTransport {
     if (fail) throw StateError('unavailable');
     return TalkReplayPlaybackCredentials(
       url: 'https://signed.example/replay-$loads.ogg',
-      expiresAt: DateTime(2026, 10, 7, 12),
+      expiresAt: expiry ?? DateTime.now().toUtc().add(const Duration(minutes: 5)),
       contentType: 'audio/ogg',
     );
   }
@@ -33,6 +34,9 @@ class _Player implements TalkReplayAudioPlayer {
   int closes = 0;
   String? lastUrl;
   Duration? lastSeek;
+  Completer<void>? holdPlay;
+  Completer<void>? holdSeek;
+  Completer<void>? startedSeek;
 
   @override
   Stream<Duration> get positions => positionsController.stream;
@@ -58,6 +62,7 @@ class _Player implements TalkReplayAudioPlayer {
   Future<void> play() async {
     plays += 1;
     statesController.add(TalkReplayPlayerState.playing);
+    if (holdPlay != null) await holdPlay!.future;
   }
 
   @override
@@ -70,6 +75,8 @@ class _Player implements TalkReplayAudioPlayer {
   Future<void> seek(Duration position) async {
     lastSeek = position;
     positionsController.add(position);
+    startedSeek?.complete();
+    if (holdSeek != null) await holdSeek!.future;
   }
 
   @override
@@ -87,6 +94,7 @@ void main() {
     final transport = _Transport();
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -115,6 +123,7 @@ void main() {
     final transport = _Transport();
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -135,6 +144,7 @@ void main() {
     final transport = _Transport()..fail = true;
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -156,6 +166,7 @@ void main() {
     final transport = _Transport();
     final player = _Player();
     final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
       talkId: 'talk-1',
       transport: transport,
       player: player,
@@ -186,4 +197,385 @@ void main() {
       throwsFormatException,
     );
   });
+  test('paused expired playback reacquires server permission and seeks to saved position', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 5));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    await session.seekTo(.5);
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.paused);
+    clock = clock.add(const Duration(minutes: 6));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+
+    await session.toggle();
+
+    expect(transport.loads, 2);
+    expect(player.loads, 2);
+    expect(player.lastSeek, const Duration(minutes: 1));
+    expect(player.plays, 2);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.playing);
+    await session.close();
+  });
+
+  test('server revocation after signed link expiry fails closed without replaying cached URL', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 2));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 4));
+    transport.fail = true;
+
+    await session.toggle();
+
+    expect(transport.loads, 2);
+    expect(player.plays, 1);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    transport.fail = false;
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    await session.retry();
+    expect(player.plays, 2);
+    await session.close();
+  });
+
+  test('expired credentials are never handed to the audio player', () async {
+    final clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()..expiry = clock.add(const Duration(seconds: 10));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.loads, 0);
+    expect(player.plays, 0);
+    await session.close();
+  });
+
+  test('seek on expired authorization refreshes but never autoplays a paused recording', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 2));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
+      talkId: 'talk-1', transport: transport, player: player,
+      now: () => clock,
+    );
+    await session.toggle();
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 4));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    await session.seekTo(.25);
+    expect(transport.loads, 2);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(player.plays, 1);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.paused);
+    await session.close();
+  });
+
+  test('playback does not lock pause while the audio player future is pending', () async {
+    final transport = _Transport();
+    final player = _Player()..holdPlay = Completer<void>();
+    final session = TalkReplayPlaybackSession(
+      canAccess: () => true,
+      talkId: 'talk-1', transport: transport, player: player,
+    );
+    await session.toggle();
+    await session.toggle();
+    expect(player.pauses, 1);
+    player.holdPlay!.complete();
+    await session.close();
+  });
+
+  test('only HTTPS credential URLs without embedded user information or fragments are accepted', () {
+    for (final url in [
+      'http://signed.example/replay.ogg',
+      'https://user:pass@signed.example/replay.ogg',
+      'https://signed.example/replay.ogg#fragment',
+      'file:///recording.ogg',
+    ]) {
+      expect(
+        () => TalkReplayPlaybackCredentials.fromJson({
+          'url': url,
+          'expiresAt': '2026-10-07T12:00:00Z',
+          'contentType': 'audio/ogg',
+        }),
+        throwsFormatException,
+      );
+    }
+  });
+
+  test('revocation during refreshed paused seek never republishes a signed replay link', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    var authorized = true;
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 5));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private',
+      transport: transport,
+      player: player,
+      now: () => clock,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    await session.seekTo(.5);
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 6));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.25);
+    await player.startedSeek!.future;
+    authorized = false; // Account switch while native player is seeking.
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 2);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.plays, 1);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    await session.close();
+  });
+
+  test('signature expiry during refreshed paused seek fails without cached playback', () async {
+    var clock = DateTime.utc(2026, 10, 7, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 5));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private',
+      transport: transport,
+      player: player,
+      now: () => clock,
+      canAccess: () => true,
+    );
+    await session.toggle();
+    await session.seekTo(.5);
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 6));
+    transport.expiry = clock.add(const Duration(minutes: 5));
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.25);
+    await player.startedSeek!.future;
+    clock = clock.add(const Duration(minutes: 5)); // Signed link expires mid-seek.
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 2);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.plays, 1);
+    await session.close();
+  });
+
+  test('account switch revokes even a still-valid cached replay link', () async {
+    var authorized = true;
+    final transport = _Transport();
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private', transport: transport, player: player,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    await session.toggle();
+    expect(player.plays, 1);
+    authorized = false;
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.plays, 1);
+    expect(transport.loads, 1);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    await session.close();
+  });
+
+  test('account revoked during pending credential fetch cannot load or play its result', () async {
+    var authorized = true;
+    final release = Completer<void>();
+    final transport = _DelayedTransport(release);
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'talk-private', transport: transport, player: player,
+      canAccess: () => authorized,
+    );
+    final pending = session.toggle();
+    authorized = false;
+    release.complete();
+    await pending;
+    expect(player.loads, 0);
+    expect(player.plays, 0);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+
+  test('cached private seek fails closed when account switches mid-native seek', () async {
+    var authorized = true;
+    final player = _Player();
+    final transport = _Transport();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: transport,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    await session.toggle(); // Paused with a still-valid cached link.
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.75);
+    await player.startedSeek!.future;
+    authorized = false;
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 1); // No refreshed link can hide the race.
+    expect(player.lastSeek, const Duration(seconds: 90));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    player.positionsController.add(const Duration(seconds: 95));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+  test('cached private seek fails closed when URL expires mid-native seek', () async {
+    var clock = DateTime.utc(2026, 10, 9, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 3));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: transport,
+      now: () => clock,
+      canAccess: () => true,
+    );
+    await session.toggle();
+    await session.toggle();
+    player.holdSeek = Completer<void>();
+    player.startedSeek = Completer<void>();
+
+    final pending = session.seekTo(.25);
+    await player.startedSeek!.future;
+    clock = clock.add(const Duration(minutes: 4));
+    player.holdSeek!.complete();
+    await pending;
+
+    expect(transport.loads, 1);
+    expect(player.lastSeek, const Duration(seconds: 30));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(2));
+    await session.close();
+  });
+
+  test('native player progress stops and pauses on account revocation', () async {
+    var authorized = true;
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: _Transport(),
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.playing);
+    authorized = false;
+    player.positionsController.add(const Duration(seconds: 20));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(1));
+
+    // Even a late playing callback cannot resurrect private playback.
+    player.statesController.add(TalkReplayPlayerState.playing);
+    player.durationsController.add(const Duration(minutes: 9));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+  test('native duration and state events stop replay after URL expiry', () async {
+    var clock = DateTime.utc(2026, 10, 9, 10);
+    final transport = _Transport()
+      ..expiry = clock.add(const Duration(minutes: 2));
+    final player = _Player();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      player: player,
+      transport: transport,
+      now: () => clock,
+      canAccess: () => true,
+    );
+    await session.toggle();
+    clock = clock.add(const Duration(minutes: 3));
+    player.durationsController.add(const Duration(minutes: 5));
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    expect(player.pauses, greaterThanOrEqualTo(1));
+    player.statesController.add(TalkReplayPlayerState.playing);
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+
+  test('revoked native state tolerates a synchronously destroyed audio player', () async {
+    var authorized = true;
+    final player = _ThrowingPausePlayer();
+    final session = TalkReplayPlaybackSession(
+      talkId: 'private-talk',
+      transport: _Transport(),
+      player: player,
+      canAccess: () => authorized,
+    );
+    await session.toggle();
+    authorized = false;
+    // The recorder/audio focus may already be disposed on account switch.
+    // A native synchronous pause failure must not escape a stream callback.
+    expect(
+      () => player.statesController.add(TalkReplayPlayerState.playing),
+      returnsNormally,
+    );
+    expect(session.snapshot.status, TalkReplayPlaybackStatus.failed);
+    await session.close();
+  });
+
+}
+
+class _DelayedTransport implements TalkReplayPlaybackTransport {
+  _DelayedTransport(this.release);
+  final Completer<void> release;
+
+  @override
+  Future<TalkReplayPlaybackCredentials> load(String talkId) async {
+    await release.future;
+    return TalkReplayPlaybackCredentials(
+      url: 'https://signed.example/protected.ogg',
+      expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      contentType: 'audio/ogg',
+    );
+  }
+}
+
+class _ThrowingPausePlayer extends _Player {
+  @override
+  Future<void> pause() {
+    throw StateError('native player disposed');
+  }
 }
