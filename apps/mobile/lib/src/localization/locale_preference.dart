@@ -1,4 +1,3 @@
-import 'dart:core' as core;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -98,7 +97,6 @@ final class LocalePreferenceController extends ChangeNotifier {
     }
   }
 
-  @core.override
   void dispose() {
     _disposed = true;
     super.dispose();
