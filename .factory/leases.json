@@ -350,24 +350,6 @@
       "source_head_sha": "d9e87a3d193c96c3d2bbe2bc67e1683da9305127",
       "integration_head_sha": null,
       "test_state": "Source blob readback and structural one-class assertions only; pnpm/flutter/psql unavailable (127), Git clone DNS failure (128); actual repo tests NOT_RUN."
-    },
-    {
-      "claim_id": "af09-609-processing-checkpoint-gpt6-0603",
-      "owner": "AF09 existing PR #609 / GPT-6 checkpoint continuation 0603",
-      "scope": "Add real PostgreSQL CAS tenant cursor checkpoint and bounded one-shot scheduling bridge for the existing AF09 post worker, with isolated tests. AF00 allocates migration/startup. No duplicate queue or timer.",
-      "paths": [
-        "services/gateway/src/audio_posts/processing_checkpoint.ts",
-        "services/gateway/src/audio_posts/processing_checkpoint.test.mjs",
-        "adapters/storage/postgres/src/audio_posts/checkpoint_schema.proposal.sql",
-        "docs/workstreams/AF09-processing-checkpoint-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T05:03:52.488Z",
-      "heartbeat_at": "2026-10-10T05:03:52.488Z",
-      "expires_at": "2026-10-10T05:08:52.488Z",
-      "notes": "Fresh source paths only. No AF00 Gateway/worker root/migrations or AF05/AF15 media."
     }
   ],
   "history": [
@@ -2297,6 +2279,28 @@
       "released_at": "2026-10-10T05:01:07.664Z",
       "release_reason": "Same-PR AF09 Talk capture/preview/trim + private upload stable ID + composer/destination binding + six authored widget regressions; 27/27 exact blob source-structure checks; Flutter full suite blocked, all AF00/05/15 source and integration open.",
       "source_head_sha": "ef9ed8e240bbea4d67053c87c064d496863fccff",
+      "integration_head_sha": null
+    },
+    {
+      "claim_id": "af09-609-processing-checkpoint-gpt6-0603",
+      "owner": "AF09 existing PR #609 / GPT-6 checkpoint continuation 0603",
+      "scope": "Add real PostgreSQL CAS tenant cursor checkpoint and bounded one-shot scheduling bridge for the existing AF09 post worker, with isolated tests. AF00 allocates migration/startup. No duplicate queue or timer.",
+      "paths": [
+        "services/gateway/src/audio_posts/processing_checkpoint.ts",
+        "services/gateway/src/audio_posts/processing_checkpoint.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/checkpoint_schema.proposal.sql",
+        "docs/workstreams/AF09-processing-checkpoint-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T05:03:52.488Z",
+      "heartbeat_at": "2026-10-10T05:03:52.488Z",
+      "expires_at": "2026-10-10T05:08:52.488Z",
+      "notes": "Fresh source paths only. No AF00 Gateway/worker root/migrations or AF05/AF15 media.",
+      "released_at": "2026-10-10T05:08:12.900Z",
+      "release_reason": "AF09 existing PR #609 source tested: durable PG cursor + bounded dispatch bridge + 7/7 actual Node22 isolated mocked cases matched GitHub source/test blobs; AF00 migration/startup and root composition missing.",
+      "source_head_sha": "502f865ccefc14b85e26beef378f92206865405a",
       "integration_head_sha": null
     }
   ]
