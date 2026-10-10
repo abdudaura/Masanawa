@@ -132,6 +132,26 @@ describe("gateway service bootstrap", () => {
     expect(denied.statusCode).toBe(401);
   });
 
+  it("rejects retired product routes with 410 while keeping current services alive", async () => {
+    const app = createGatewayApp();
+    apps.push(app);
+    for (const url of ["/talks", "/agent/twins", "/creator/onboarding", "/v1/wallet/transfers", "/v1/channels/telegram"]) {
+      const response = await app.inject({ method: "GET", url });
+      expect(response.statusCode, url).toBe(410);
+      expect(response.json()).toEqual({
+        error: {
+          code: "feature_retired",
+          message: "This feature is no longer available.",
+        },
+      });
+    }
+    const health = await app.inject({ method: "GET", url: "/healthz" });
+    expect(health.statusCode).toBe(200);
+    // New financial and verified-social APIs are not part of the freeze.
+    const escrow = await app.inject({ method: "GET", url: "/v1/p2p/offers" });
+    expect(escrow.statusCode).not.toBe(410);
+  });
+
   it("fails readiness closed when a probe throws", async () => {
     const app = createGatewayApp({
       readinessChecks: [
