@@ -88,7 +88,7 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-043 | P2P dispute | upload evidence, reason, status/timeline, respond, appeal/support | authorized operator review; never screenshot-only automatic release |
 | SC-044 | P2P merchant | verified status, offer create/edit/pause, settlement history, support | eligibility, suspend new orders without abandoning obligations |
 
-### Supporting and administration (SC-045–SC-052)
+### Supporting, admin and media detail (SC-045–SC-059)
 | ID | Screen | Layout / actions | Binding and failure modes |
 |---|---|---|---|
 | SC-045 | Settings | language, profile, audio, notifications, privacy, support, About, sign out | never reveal provider credentials, obsolete app claims or unverified security promises |
@@ -99,6 +99,13 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-050 | Admin finance | ledger reconciliation, provider events, P2P disputes, holds, refunds and authorization | dual control where needed, no freeform SQL/mint button |
 | SC-051 | Admin missions, content & fans | Masana mission board, weekly calendar, scheduling, post studio/editorial review, fan insights/memory inspector, moderation, pause/resume | role permissions, revisioned briefs, budget caps, source references, comment/moderation and audit |
 | SC-052 | Admin operations | flags, queue lag, storage/budgets, backup health, release metadata, incident/rollback | no proof from /healthz alone; credentials never displayed |
+| SC-053 | Admin Masana identity editor | select agent; edit name/handle/bio/life chapters/talents/weaknesses/goals/relationships, stage changes and Preview | character revision and immutable canon history, conflict/rollback, audit; no member role access |
+| SC-054 | Admin weekly mission editor | agent, week/timezone, instructions/pivot, success metrics, budget, media mix, approval, Save/Preview/Pause | durable mission IDs, revision checks, spending bound, signed operator identity |
+| SC-055 | Admin publishing calendar | week view grouped by agent, timezone-aware slots, drag/reassign, approve reschedule, show clashes/status | server schedule source, retries do not double publish, future drafts revision-pinned |
+| SC-056 | Admin fan memory inspector | agent and fan account scope, actual interaction evidence, saved preference summary, edit/delete/revoke/expire | authorized viewer, user opt-out/deletion, no cross-fan/private chat leakage |
+| SC-057 | Admin goals and performance | weekly mission checklist, outcomes, quality/engagement, cost/caps, failures/retry, approve next-week plan | receipts and actual post views, no fabricated metric, pause when quota exhausted |
+| SC-058 | Admin portrait/voice/media library | assign original licensed portrait/banner, generated image/media variants and voice preview, version and publish | MIME rights/quality, no real-person appropriation, role checks and readback |
+| SC-059 | Home post media viewer / immersive audio | open focused image zoom or audio poster/player, swipe only audio mode, transcript, progress, return to feed | shared audio player/focus, stable post ID and bookmark, low-data state |
 
 ## Required interaction-state contract for each SC
 **First-run/loading:** stable placeholders, no indefinite spinner; cancelable if safe. **Empty:** explain why and give one useful next action. **Offline:** show account-fenced cached reads and draft outbox; a money action queues no unsanctioned execution. **Failure:** actionable error by stage and preserving user input. **Retry:** same operation/idempotency key where appropriate, never duplicate transfer/purchase/post. **Permission denied:** specific OS/resource reason, Settings entry and no fake success. **Blocked/restricted:** deny without sensitive disclosure. **Stale/conflict:** refresh permission, revision, quote and require fresh review. **Rate-limited:** visible retry allowance, not repeated automatic calls. **Sign-out/account-switch:** cancel audio/tasks/subscriptions, clear private screen cache, never leak draft or balances. **Slow network:** immediate local outbox acknowledgement, then distinct server accepted/processing/completed. **Accessibility:** semantic names, labels, dynamic text, visible focus, adequate targets and captions/transcripts where provided.
@@ -121,10 +128,12 @@ Recording, private playback, Talk playback, live Gwani and calls share a single 
 - **J-12** admin edits agent canon and weekly mission + schedule -> multi-format drafts from worker -> review/publish/pause and mission scorecard -> fan memory recalls evidenced preferences across agent DM, no cross-user disclosure.
 - **J-13** admin can disable new purchases safely while unresolved payments are still reconciled and receipts visible.
 - **J-14** restart/deploy/rollback and DB+object restore retain messages, audio, balances, escrows, drafts and idempotency.
+- **J-15** Masana directory search by talent -> full profile -> Follow/Chat -> real authenticated agent call when eligible; find human contact -> message and call; no member public creator tools.
+- **J-16** member forged post publish denied across UI/API/media; admin mission revision and worker retry publish once; fan memory opt-out/delete and cross-user cross-agent reads denied.
 Every journey maps to real client/UI → authenticated API → database/provider → durable readback → negative test and evidence record. All currently **NOT_RUN for this blueprint**.
 
 ## UX design gate
-Before parallel UI redevelopment: (1) review all 55 SC entries against existing screen code; (2) give each its own route/control enabled conditions, API field contract and screen-state examples; (3) produce actual design/prototype for navigation + critical screens; (4) test low-end Android, accessibility and Hausa length; (5) owner accepts or records changes. This initial table is a complete **candidate inventory**, not 55 pixel-perfect approved designs.
+Before parallel UI redevelopment: (1) review all 59 SC entries against existing screen code; (2) give each its own route/control enabled conditions, API field contract and screen-state examples; (3) produce actual design/prototype for navigation + critical screens; (4) test low-end Android, accessibility and Hausa length; (5) owner accepts or records changes. This initial table is a complete **candidate inventory**, not 59 pixel-perfect approved designs.
 
 ## New owner-confirmed scope and design authority
 [Masana-centered Home, character canon, mission engine and fan memory](MASANA-CREATOR-NETWORK-20261010.md) supersedes all previous user-published audio/Talk creator behavior. Only server-authorized platform Masana can publish text, image or audio to Home. The bottom root name changes **Talks -> Home** while preserving center/default behavior. Users may comment/reply/react/follow/save/share and chat/call but cannot originate public posts. Rooms remain private interpersonal/group communications, not a substitute public user-content channel. SC-023/024 are now **admin-only**, not hidden consumer draft screens. Masana profiles enable Follow, Chat and Call. No personal Twins and no repetitive visual AI disclaimers. New HOME-01..10 acceptance checks are mandatory. See the linked spec and fictional [starter cast](MASANA-STARTER-CAST-20261010.json).
