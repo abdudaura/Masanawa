@@ -49,10 +49,10 @@ function credits(value: number): number {
   return value;
 }
 
-function timestamp(value: string): string {
+function timestamp(value: string, label = "createdAt"): string {
   const parsed = new Date(value);
   if (!value || Number.isNaN(parsed.getTime())) {
-    throw new TypeError("createdAt is invalid");
+    throw new TypeError(`${label} is invalid`);
   }
   return parsed.toISOString();
 }
@@ -145,7 +145,7 @@ export function reverseCreditTransfer(input: {
   ) {
     throw new TypeError("Original transfer receipt is invalid");
   }
-  const originalCompletedAt = timestamp(input.original.completedAt);
+  const originalCompletedAt = timestamp(input.original.completedAt, "completedAt");
   if (Date.parse(originalCompletedAt) < Date.parse(originalAdmission.createdAt)) {
     throw new RangeError("Original transfer completion predates admission");
   }
@@ -153,7 +153,7 @@ export function reverseCreditTransfer(input: {
   if (reversalRequestId === originalAdmission.requestId) {
     throw new TypeError("Reversal must use a new request ID");
   }
-  const reversedAt = timestamp(input.reversedAt);
+  const reversedAt = timestamp(input.reversedAt, "reversedAt");
   if (Date.parse(reversedAt) < Date.parse(originalCompletedAt)) {
     throw new RangeError("Reversal predates original completion");
   }
