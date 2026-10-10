@@ -92,3 +92,70 @@ Merge into the **one reviewed non-deploying integration baseline** only after ex
 Without adding a competing library, `AudioPostRepository.saved` now joins existing `social.audio_post_reactions` to published posts in the current tenant and validates each result against the canonical visibility callback (blocked/private authors fail closed). The server session resolves the viewer in `GET /audio-posts/saved`; another user's saves are not a public signal. The Flutter `Saved` view reads that server list and `Unsave` sends `enabled:false` to the original idempotent reaction endpoint before removing the local item. The UI deliberately does not expose an inert Following tab. A fresh device/integration check still must qualify cross-tenant, block/unblock, reaction persistence and retention.
 
 Source commits: saved contract `705041548a9d787263091aa37dd6b0e7146dfdc2`, service `d43d98d80a57001b4be81371d7594b874cbbff82`, repository `649de11d835bfdc0fefc0396b79b0bf0824107b7`, route `82754de6a8816981f6430b1ad339cad4d57f9ecc`, transport `d5ca569aa23d2839adf14aa76f595cf4f685733b`, screen `3ccb5459140c33933ec07c8492ff0a28491ca5cd`, server tests `bd239da33484af0d3ea9fc44ba53f303583b09ab`, widget tests `9cb53fb34f94dc1e77bd3acbd9f889992e3ae1de`. Final handoff/source HEAD is the most recent commit on PR #609; reread it before integration. No CI runtime source test was performed.
+
+
+## Continuation: durable published-Talk comments (2026-10-10)
+
+**Parent milestone:** Published audio Talks, existing PR #609; comments are part of the
+customer journey, not a separate integration branch. This AF09 continuation
+extends the same feature-owned contract, service, Fastify routes, PostgreSQL
+adapter, Flutter feed/transport and their tests. The separate AF09
+`processing_worker.ts` / `processing_queue.ts` ownership is preserved.
+
+**Implemented in source (not yet integrated/qualified):**
+- `GET /audio-posts/:postId/comments`: server session, tenant and canonical
+  blocked-author visibility, published-only post, latest 50 comments.
+- `POST /audio-posts/:postId/comments`: validated 1–400 character plain-text
+  body, server-account author, request-key idempotency and conflict rejection,
+  status 201 on authenticated publication. Request body accepts only
+  `requestId` and `body`.
+- `DELETE /audio-posts/:postId/comments/:commentId`: author-only tombstone,
+  idempotent removal acknowledgment; no client moderator privilege.
+- Feed inline comments panel: loading/empty/error/retry, comment composer,
+  author deletion, account-change response fencing and replay-safe retries.
+  Fixed original dynamic `const Padding` empty-state expression.
+- Added backend negative cases for non-published, removed, cross-tenant,
+  spoofed author, duplicate keys and removal; Flutter widget cases for
+  send/remove/offline retry. Authored tests have **not** run in this
+  GitHub-only source environment.
+
+**Append-only SQL proposal requiring AF00 review/allocation/installation:**
+
+```sql
+CREATE TABLE social.audio_post_comments (
+  tenant_id text NOT NULL,
+  post_id text NOT NULL,
+  comment_id text NOT NULL,
+  author_account_id text NOT NULL,
+  request_id text NOT NULL,
+  body text NOT NULL CHECK (char_length(body) <= 400),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  removed boolean NOT NULL DEFAULT false,
+  PRIMARY KEY (tenant_id, post_id, comment_id),
+  UNIQUE (tenant_id, post_id, author_account_id, request_id),
+  FOREIGN KEY (tenant_id, post_id)
+    REFERENCES social.audio_posts (tenant_id, post_id)
+);
+CREATE INDEX audio_post_comments_recent
+  ON social.audio_post_comments
+  (tenant_id, post_id, created_at DESC, comment_id DESC)
+  WHERE removed = false;
+```
+
+**Activation blocked until** AF00 registers the audited migration,
+auth/session/visibility source, approved worker/composition and Talks route;
+AF05/AF15 provide verified record/upload, signed playback and retention.
+The user cannot publish/play a real audio Talk merely because this
+source is present in PR #609. Require executable source checks at exact
+PR SHA, disposable PostgreSQL two-account + concurrency execution, Flutter
+analyzer/widget tests and deployment-trigger review before safe integration.
+Do not merge to auto-deploying main from this partial source.
+
+**Runner assignment:** AF13 or an AF00 runner with checkout/Node 24/pnpm/Dart/
+Flutter/PostgreSQL executes `pnpm install --frozen-lockfile`,
+`pnpm --filter @masanawa/gateway test`, `pnpm -r typecheck`,
+`cd apps/mobile && flutter analyze && flutter test test/audio_first/af09/feed_test.dart`,
+and PG migration/negative cases, reporting exact SHA and command output.
+This window can inspect GitHub source and run local Node 22 commands, but has
+no repository checkout (DNS `git ls-remote` fails) and no pnpm, Dart, Flutter
+or PostgreSQL runner. Do not call unexecuted test files PASS.
