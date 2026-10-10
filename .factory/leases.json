@@ -418,6 +418,22 @@
       "heartbeat_at": "2026-10-10T07:48:31.704Z",
       "expires_at": "2026-10-10T07:53:31.704Z",
       "notes": "Foundation Vitest 38035472618: 41 tests fail in common beforeEach due eight missing expected migration identifiers; keep strict list."
+    },
+    {
+      "claim_id": "af14-604-uncertain-invitation-retry-20261010-gpt6",
+      "owner": "GPT-6 / AF14 existing Activity PR #604 continuation",
+      "scope": "Prevent uncertain invitation mutation from repeat submission until authenticated authoritative refresh; preserve account switch, HTTP read acknowledgement, source and tests",
+      "paths": [
+        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
+        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart"
+      ],
+      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
+      "source_pr": 604,
+      "base_sha": "0244a2f4ffcff2a13372e89a160f221d460fc2d5",
+      "claimed_at": "2026-10-10T07:48:00Z",
+      "heartbeat_at": "2026-10-10T07:48:00Z",
+      "expires_at": "2026-10-10T07:53:00Z",
+      "notes": "Continuing #604 bounded connected invitation UI and widget-negative test; no AF00 shared root, backend, auth, finance or deployment edits."
     }
   ],
   "history": [
