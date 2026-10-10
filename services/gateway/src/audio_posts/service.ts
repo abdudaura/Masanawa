@@ -133,6 +133,11 @@ export function createAudioPostService(deps: {
     return repository.mine({ tenantId: actor.tenantId, accountId: actor.accountId, limit: 50 });
   };
 
+  const saved = async (actor: PostActor) => {
+    assertActor(actor);
+    return repository.saved({ tenantId: actor.tenantId, viewerId: actor.accountId, limit: 50 });
+  };
+
   const removeOwn = async (actor: PostActor, postId: string) => {
     assertActor(actor);
     safeId(postId, "post");
@@ -158,5 +163,5 @@ export function createAudioPostService(deps: {
       postId: input.postId, kind: input.kind, enabled: input.enabled,
     });
   };
-  return Object.freeze({ publish, settle, feed, mine, removeOwn, reaction });
+  return Object.freeze({ publish, settle, feed, mine, saved, removeOwn, reaction });
 }
