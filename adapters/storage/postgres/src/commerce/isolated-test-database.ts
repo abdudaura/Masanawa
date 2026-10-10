@@ -34,7 +34,26 @@ export async function createIsolatedPostgresTestDatabase(connectionString: strin
         await pool.end();
       } finally {
         try {
-          await admin.query(`DROP DATABASE IF EXISTS "${databaseName}" WITH (FORCE)`);
+          // Pool.end() may settle before the server has fully removed its
+          // backend processes. FORCE would terminate those sessions, causing
+          // Vitest uncaught PG 57P01 errors after otherwise passing tests.
+          // Never hide a leaked client by forcibly terminating it.
+          let idle = false;
+          for (let attempt = 0; attempt < 40; attempt++) {
+            const sessions = await admin.query<{ count: string }>(
+              "SELECT count(*)::text AS count FROM pg_stat_activity WHERE datname = $1",
+              [databaseName],
+            );
+            if (Number(sessions.rows[0]?.count) === 0) {
+              idle = true;
+              break;
+            }
+            await new Promise<void>((resolve) => setTimeout(resolve, 50));
+          }
+          if (!idle) {
+            throw new Error("Isolated PostgreSQL test database still has active connections");
+          }
+          await admin.query(`DROP DATABASE IF EXISTS "${databaseName}"`);
         } finally {
           await admin.end();
         }
