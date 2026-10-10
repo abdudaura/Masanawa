@@ -14,17 +14,17 @@ describe("YouTube cost and activation gates",()=>{
     expect(()=>createPostgresYouTubeQuota({} as Pool,{maxDailyUnits:10001})).toThrow();
   });
   it("reserves quota with one global UTC-day atomic query",async()=>{
-    const query=vi.fn(async()=>({rowCount:1}));
+    const query=vi.fn(async(_sql:string,_params:unknown[])=>({rowCount:1}));
     const quota=createPostgresYouTubeQuota({query} as unknown as Pool,{maxDailyUnits:500});
     expect(await quota.reserve("tenant-A",1)).toBe(true);
     expect(query).toHaveBeenCalledTimes(1);
-    const [sql,params]=query.mock.calls[0] as [string,unknown[]];
+    const [sql,params]=query.mock.calls[0]!;
     expect(sql).toContain("ON CONFLICT (utc_day) DO UPDATE");
     expect(sql).toContain("clock_timestamp()");
     expect(params).toEqual([1,500]);
   });
   it("fails closed without budget or on invalid requested units",async()=>{
-    const query=vi.fn(async()=>({rowCount:0}));
+    const query=vi.fn(async(_sql:string,_params:unknown[])=>({rowCount:0}));
     const quota=createPostgresYouTubeQuota({query} as unknown as Pool,{maxDailyUnits:5});
     expect(await quota.reserve("tenant-A",1)).toBe(false);
     expect(await quota.reserve("tenant-A",6)).toBe(false);
