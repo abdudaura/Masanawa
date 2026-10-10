@@ -1,36 +1,20 @@
-# Continue Masanawa
+# Masanawa — start here (current rebuild)
 
-Updated 2026-10-09. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
+**Product direction locked 2026-10-10.** Rebuild inside the existing [weavewellindustrieslimited/masanawa](https://github.com/weavewellindustrieslimited/masanawa) monorepo (formerly abdudaura/Masanawa), executing docs/rebuild/DELIVERY.md R0 → R1 → lanes → R-CLEAN → R-RELEASE, using tested reusable code and a clean feature-first design. Do not follow old branch planning, readme history, deleted plans or stale PR descriptions as product instructions.
 
-## Immediate delivery correction — 2026-10-10
+## Reading order (only)
+1. [AGENTS.md](AGENTS.md) — product constraints, safety, claims and testing.
+2. [Product master blueprint](docs/rebuild/BLUEPRINT.md) — **what to build and what not to build**.
+3. [Screen and journey registry](docs/rebuild/SCREENS.md) — all mobile/admin interactions and states.
+4. [Architecture and data](docs/rebuild/ARCHITECTURE.md) — modules, DB, APIs, workers and provider restrictions.
+5. [Delivery milestones and test gates](docs/rebuild/DELIVERY.md) — source recovery, owners, tasks, validation/merges.
+6. [Single window prompt](docs/rebuild/WINDOW-PROMPT.md) — use when opening additional development windows.
+7. [Seed profiles](docs/rebuild/SEED-MASANA.json) and [sample content](docs/rebuild/SEED-CONTENT.json) for the **12** professional Masana; fixture only until a verified staging seed runs.
 
-Read [outcome-first dispatch](docs/NEXT-WAVE-DELIVERY-20261010.md) FIRST and use [the replacement reusable prompt](docs/REUSABLE-IMPLEMENTATION-PROMPT.md). Stop unrestricted micro-fix selection and duplicate evidence/cleanup tools. Complete substantive customer milestones, continue existing PRs and integrate tested code on one reviewed safe baseline. The AF JSON is an allocation template, not live completion status; inspect current claims/PRs/handoffs. Read only relevant feature references after this short dispatch.
+## The platform
+**Chats / Rooms / Home / Gwani / Wallet**; Home **Feed | Videos**. Chats/calls are fan-to-Masana **only**, Rooms platform-created and professionally led, Home original Feed Masana-only, Videos sourced from eligible external channels/official embeds, Gwani moderation/support and practical services, Wallet + independent Billing/Crypto. No user publishing, human-to-human chat/calls, user Rooms, personal Twins or clone economy. Staff Android Admin manages Masana identity/skills/photos/voices, media/posts, global Rooms/free-paid plans, scheduled weekly missions, fans/memory, external video channels, Gwani cases, Wallet and operations.
 
-## Read in this order
+## First window action — source progress must not be blocked by tests
+Audit latest `main`, `integration/rebuild`, open PRs, claims and the canonical blueprint. **Immediately begin the first unclaimed source-complete lane journey in your exact files**, even when AF00 is still working R0/R1 or old CI, PostgreSQL, provider, Flutter or Android checks are failing/unavailable. Dependencies block only shared composition or live activation; they **do not block independent feature implementation**. Do not create another integrator or duplicate backend. Follow DELIVERY §1A (owner-approved 2026-10-10): AF00 promptly combines reviewed, source-complete, fail-closed work into non-deploying `integration/rebuild` with truthful carried verification debt. Full green integration/device/financial tests are due before release, **not before coding**. CI/runner unavailable is BLOCKED/NOT_RUN, not PASS. The old app is a donor, not product authority. No production deployment, real-money activation or destructive data operation without separate qualification.
 
-1. [Contributor rules](AGENTS.md) and [coordination](docs/MULTI-WINDOW-WORK.md).
-2. [Current owner decisions](docs/AUDIO-FIRST-PRODUCT-20261009.md).
-3. [Screen specifications](docs/AUDIO-FIRST-SCREEN-SPECS.md), [wallet/P2P contract](docs/MSN-WALLET-P2P-CONTRACT.md), [cross-slice contracts](docs/AUDIO-FIRST-INTEGRATION-CONTRACTS.md).
-4. [Recovery and supersession map](docs/AUDIO-FIRST-RECOVERY-20261009.md).
-5. [Window allocation](docs/AUDIO-FIRST-WINDOW-PLAN-20261009.md), then use exactly one [copyable lane prompt](docs/AUDIO-FIRST-WINDOW-PROMPTS-20261009.md).
-6. [Completeness audit and unresolved gates](docs/AUDIO-FIRST-COMPLETENESS-AUDIT-20261009.md).
-7. [Whole-app source findings and Settings](docs/WHOLE-APP-SOURCE-AUDIT-20261009.md), [database/storage operations](docs/BACKEND-STORAGE-OPERATIONS-20261009.md) and [screen inventory](docs/WHOLE-APP-SCREEN-INVENTORY-20261009.json).
-8. [Acceptance journeys](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md) and relevant existing domain references.
-
-## Current direction
-
-Talks are published audio posts, not endless live sessions. New chat opens **Masana & Contacts**; real people remain distinct from AI personas. Gwani is the private service destination, with progressive floating billing choices and the existing text/voice composer addressing one durable task. MSN is the platform currency; confirmed fiat funding buys MSN automatically. Crypto can be held or converted with MSN where qualified. P2P exchanges MSN only against counterparty fiat, with escrow; there is no direct platform fiat withdrawal. Rooms are audio-focused groups. Masana can publish scheduled, disclosed AI audio and be followed.
-
-Confirmed bottom navigation: **Chats · Rooms · Talks · Gwani · Wallet**. **Talks is the centre and default tab** on ordinary authenticated app launch. The former Assistant consumer label is **Gwani**. Calls stay nested in Chats; there is no Calls/Contacts/Agents bottom tab. The three-minute audio-post cap remains a reversible design default.
-
-## Recover before implementing
-
-The owner reports locally fixed source and a built APK. That local source, commit/dirty diff and artifact are **not yet available to this window**. AF00 must preserve and reconcile them before replacing affected screens. GitHub main observed at `5e758673ae91082520b21b3153da53791ae2cbf3`; use fresh refs when starting.
-
-Existing drafts include #497 integration, #576 MSN, #575/#578 calls, #468/#508 contacts and #529/#530 chat polish. They are recovery inputs, not proof of completion. Inspect exact heads and unique changes, then test and integrate in dependency order. See recovery map for every old R/C/U/F lane; none is silently marked DONE.
-
-## Delivery
-
-One lane per window, isolated checkout, exact-path claim visible before edits. Start dependency-ready waves, not all lanes at once. Shared composition/migration/router/export files have one integrator. Promptly merge compatible completed code with relevant executable proof into a safe target; keep production release separately gated. Missing external verification is recorded precisely, not used to park all tested code forever.
-
-No runtime, provider, escrow, Android-device, local-build or deployment verification is established by this documentation update.
+**Status:** documents prescribe the rebuild, not proof that source/runtime/DB have already been converted. No product-ready claim until actual integrated tests and real APK/authorization checks.
