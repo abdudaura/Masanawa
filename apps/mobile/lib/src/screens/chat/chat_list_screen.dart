@@ -11,6 +11,16 @@ import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../ui/components/masanawa_wordmark.dart';
 
+/// Account fence for actions that finish after a modal or another async gap.
+/// A signed-in session may rotate tokens without changing its owner, but
+/// another owner's thread must never receive the delayed action.
+bool chatActionBelongsToSession(SessionState initial, SessionState current) {
+  if (initial is SessionSignedIn) {
+    return current is SessionSignedIn && current.user.id == initial.user.id;
+  }
+  return identical(initial, current);
+}
+
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
 
@@ -173,12 +183,10 @@ class ChatListScreen extends ConsumerWidget {
     // action to another account's thread with the same Character ID.
     bool sameAccount() {
       if (!context.mounted) return false;
-      final currentSession = ref.read(sessionProvider);
-      if (openingSession is SessionSignedIn) {
-        return currentSession is SessionSignedIn &&
-            currentSession.user.id == openingSession.user.id;
-      }
-      return identical(currentSession, openingSession);
+      return chatActionBelongsToSession(
+        openingSession,
+        ref.read(sessionProvider),
+      );
     }
 
     if (!sameAccount()) return;
