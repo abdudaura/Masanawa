@@ -6,6 +6,7 @@ import type {
   PersonaProfileView,
   TalkProfileRepository,
 } from "./model.js";
+import { normalizePublicBio, normalizePublicDisplayName } from "./profile_text_validation.js";
 
 export interface TalkProfileAuthorizer {
   authorize(input: Readonly<{
@@ -130,12 +131,12 @@ export function createTalkProfileService(input: Readonly<{
     async createSelf(request) {
       const viewer = await identity(request.authorizationHeader);
       const handle = normalizeHandle(request.handle);
-      const displayName = request.displayName.trim().replace(/\s+/gu, " ");
-      const bio = request.bio.trim();
-      if (displayName.length < 2 || displayName.length > 80) {
+      const displayName = normalizePublicDisplayName(request.displayName);
+      if (displayName === null) {
         throw new TalkProfileError("profiles.display_name_invalid", 400);
       }
-      if (bio.length > 300) {
+      const bio = normalizePublicBio(request.bio);
+      if (bio === null) {
         throw new TalkProfileError("profiles.bio_invalid", 400);
       }
       try {
@@ -161,13 +162,14 @@ export function createTalkProfileService(input: Readonly<{
       const viewer = await identity(request.authorizationHeader);
       const displayName = request.displayName === undefined
         ? undefined
-        : request.displayName.trim().replace(/\s+/gu, " ");
-      if (displayName !== undefined &&
-          (displayName.length < 2 || displayName.length > 80)) {
+        : normalizePublicDisplayName(request.displayName);
+      if (displayName === null) {
         throw new TalkProfileError("profiles.display_name_invalid", 400);
       }
-      const bio = request.bio === undefined ? undefined : request.bio.trim();
-      if (bio !== undefined && bio.length > 300) {
+      const bio = request.bio === undefined
+        ? undefined
+        : normalizePublicBio(request.bio);
+      if (bio === null) {
         throw new TalkProfileError("profiles.bio_invalid", 400);
       }
       if (displayName === undefined && bio === undefined &&
