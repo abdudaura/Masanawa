@@ -395,6 +395,24 @@
       "heartbeat_at": "2026-10-10T07:37:56.513Z",
       "expires_at": "2026-10-10T07:42:56.513Z",
       "notes": "Existing registry claims for AF09 locale/talk replay test not touched. Execute CI exact head after commit; preserve customer semantics and typed negative controls."
+    },
+    {
+      "claim_id": "u02-580-recovery-binding-20261010-gpt6-unique",
+      "owner": "GPT-6 Masanawa U02 continuation / task recovery",
+      "scope": "Existing PR #580 status-only outcome validation, SQL operation/capability fencing and regression checks. No shared Gateway composition, financial authority, migration or deployments.",
+      "paths": [
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/recovery.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 580,
+      "source_head": "027225d9939f0e482b10e41b08493b99358147be",
+      "claimed_at": "2026-10-10T07:41:47.344Z",
+      "heartbeat_at": "2026-10-10T07:41:47.344Z",
+      "expires_at": "2026-10-10T07:46:47.344Z",
+      "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths."
     }
   ],
   "history": [
