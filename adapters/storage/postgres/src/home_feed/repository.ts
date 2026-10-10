@@ -3,14 +3,14 @@ import type {Pool} from "pg";
 type Row=Record<string,unknown>;
 type Cursor={at:string;id:string}|null;
 function item(r:Row){
- return {id:String(r.id),tenantId:String(r.tenant_id),authorMasanaId:String(r.author_masana_id),
+ return {id:String(r.id),tenantId:String(r.tenant_id),authorMasanaId:String(r.author_masana_id),authorName:String(r.author_name??r.author_masana_id),
   kind:String(r.kind) as "text"|"image"|"audio",body:String(r.body),media:r.media_ids as string[],transcript:r.transcript===null?null:String(r.transcript),
   publishedAt:new Date(String(r.published_at)).toISOString(),likeCount:Number(r.like_count??0),commentCount:Number(r.comment_count??0),
   viewerLiked:Boolean(r.viewer_liked),viewerSaved:Boolean(r.viewer_saved)};
 }
 function comment(r:Row){return {id:String(r.id),postId:String(r.post_id),body:String(r.body),state:String(r.state),
  createdAt:new Date(String(r.created_at)).toISOString()};}
-const projection=`p.*, (SELECT count(*)::int FROM feed.likes l WHERE l.tenant_id=p.tenant_id AND l.post_id=p.id) AS like_count,
+const projection=`p.*, (SELECT r.profile->>'displayName' FROM masana.character_revisions r WHERE r.tenant_id=p.tenant_id AND r.character_id=p.author_masana_id AND r.state='approved' LIMIT 1) AS author_name, (SELECT count(*)::int FROM feed.likes l WHERE l.tenant_id=p.tenant_id AND l.post_id=p.id) AS like_count,
  (SELECT count(*)::int FROM feed.comments c WHERE c.tenant_id=p.tenant_id AND c.post_id=p.id AND c.state='visible') AS comment_count,
  EXISTS(SELECT 1 FROM feed.likes l WHERE l.tenant_id=p.tenant_id AND l.post_id=p.id AND l.fan_id=$2) AS viewer_liked,
  EXISTS(SELECT 1 FROM feed.saves s WHERE s.tenant_id=p.tenant_id AND s.post_id=p.id AND s.fan_id=$2) AS viewer_saved`;
