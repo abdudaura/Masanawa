@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import type { PostActor } from "./contract.js";
+import { toPublicAudioPost } from "./contract.js";
 import type { createAudioPostService } from "./service.js";
 import { AudioPostError } from "./service.js";
 
@@ -28,7 +29,7 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       const current = await actor(request.headers.authorization);
       const post = await deps.service.publish(current, request.body);
       reply.code(post.status === "processing" ? 202 : 200);
-      return post;
+      return toPublicAudioPost(post);
     } catch (error) { return fail(reply, error); }
   });
   app.get("/audio-posts", async (request, reply) => {
@@ -99,7 +100,8 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       if (typeof params.postId !== "string") {
         throw new AudioPostError("VALIDATION", "Invalid post ID");
       }
-      return await deps.service.removeOwn(await actor(request.headers.authorization), params.postId);
+      const removed = await deps.service.removeOwn(await actor(request.headers.authorization), params.postId);
+      return toPublicAudioPost(removed);
     } catch (error) { return fail(reply, error); }
   });
   app.put("/audio-posts/:postId/reaction", async (request, reply) => {
