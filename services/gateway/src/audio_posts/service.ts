@@ -1,5 +1,6 @@
 import type {
   AudioPostModeration, AudioAssetAuthority, AudioPostRecord, AudioPostRepository,
+  AudioPostComment, PublicAudioPostComment,
   PostActor, PublicFeedPage, VerifiedAudioAsset,
 } from "./contract.js";
 
@@ -182,13 +183,19 @@ export function createAudioPostService(deps: {
     }
     throw error;
   };
+  const commentView = (item: AudioPostComment, viewerId: string): PublicAudioPostComment => ({
+    postId: item.postId, commentId: item.commentId, body: item.body,
+    createdAt: item.createdAt, removed: item.removed,
+    isMine: item.authorAccountId === viewerId,
+  });
   const comments = async (actor: PostActor, postId: string) => {
     assertActor(actor);
     safeId(postId, "post");
     try {
-      return await repository.listComments({
+      const items = await repository.listComments({
         tenantId: actor.tenantId, viewerId: actor.accountId, postId, limit: 50,
       });
+      return items.map(item => commentView(item, actor.accountId));
     } catch (error) { return commentError(error); }
   };
   const comment = async (actor: PostActor, postId: string, body: unknown) => {
@@ -204,10 +211,11 @@ export function createAudioPostService(deps: {
     const requestId = safeId(payload.requestId, "request", 96);
     const text = commentText(payload.body);
     try {
-      return await repository.addComment({
+      const record = await repository.addComment({
         tenantId: actor.tenantId, viewerId: actor.accountId, postId,
         commentId: safeId(newId(), "comment"), requestId, body: text, createdAt: now(),
       });
+      return commentView(record, actor.accountId);
     } catch (error) { return commentError(error); }
   };
   const removeOwnComment = async (actor: PostActor, postId: string, commentId: string) => {
