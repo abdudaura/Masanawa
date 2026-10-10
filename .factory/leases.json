@@ -725,7 +725,7 @@
     {
       "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
       "owner": "GPT-6 AF06 continuing existing PR #497 chat lifecycle repair",
-      "scope": "AF00 #600: reviewed non-overlapping integration of exact passed AF13 #460 source+test at f2d1115 to close 78 real Vitest/PG/contract failures; exclude workflow, mobile and numbered migration collisions",
+      "scope": "AF00/AF09 integration repair: move canonical Published Audio Record/Following repository types into packages/contracts; preserve Gateway re-exports and adapter imports, fixing real adapter inward-dependency violation without loosening architecture tests",
       "paths": [
         "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
         "apps/mobile/test/chat/chat_action_account_test.dart",
@@ -786,15 +786,19 @@
         "services/gateway/src/talk_safety/replay_bridge.test.ts",
         "services/gateway/src/twin_production_runtime.test.ts",
         "test/architecture/environment-contracts.test.ts",
-        "tests/contracts/public-api-lifecycle.test.ts"
+        "tests/contracts/public-api-lifecycle.test.ts",
+        "packages/contracts/src/audio-posts.ts",
+        "packages/contracts/src/index.ts",
+        "services/gateway/src/audio_posts/contract.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 600,
       "claimed_at": "2026-10-10T08:58:13.359Z",
-      "heartbeat_at": "2026-10-10T09:24:33.399Z",
-      "expires_at": "2026-10-10T09:29:33.399Z",
-      "notes": "Source AF13 exact SHA f2d111533f6f122d9a328ccf9798e525c1a13b03 Foundation CI 38040560645 254 files 1359 Vitest PASS, provider qualification 18/18 PASS, Typecheck + Build PASS. All target paths on current #600 equal main or absent; no overwrite. Non-prod integration, no spending, no production deploy."
+      "heartbeat_at": "2026-10-10T09:27:12.915Z",
+      "expires_at": "2026-10-10T09:32:12.915Z",
+      "notes": "Layer breach reproduced at #600 exact Vitest run 38040972085: storage/postgres following_repository.ts imports services/gateway. Move types only; do not add duplicated authority or bypass architecture guard; requires same-sha Typecheck + test. No migrations, providers or production behavior."
     },
     {
       "claim_id": "af13-460-security-migration-manifest-gpt6-20261010",
