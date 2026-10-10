@@ -410,22 +410,6 @@
       "expires_at": "2026-10-10T05:29:45.184Z",
       "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files. Source integrated to pinned root 28386c3617dc6d89ea14994d3e5aae397e95eab5; GitHub PR 600 comment 6094203574; central Actions runner-zero-steps incident remains. Remaining source AF00 AF05 AF15 AF10.",
       "released_at": "2026-10-10T05:27:16.875Z"
-    },
-    {
-      "claim_id": "chat-p04-gwani-text-before-audio-20261010-gpt6",
-      "owner": "GPT-6 / CHAT-P04 bounded Gateway conversation stream",
-      "scope": "CHAT-P04 emit committed redacted final Gwani text on existing NDJSON stream before slow audio; preserve billing authorization and current route authority; tests and finite handoff",
-      "paths": [
-        "services/gateway/src/agent_conversation.ts",
-        "services/gateway/src/agent_conversation.test.ts",
-        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
-      ],
-      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "claimed_at": "2026-10-10T05:53:43.360Z",
-      "heartbeat_at": "2026-10-10T05:53:43.360Z",
-      "expires_at": "2026-10-10T05:58:43.360Z",
-      "notes": "Other AF00 root/route/finance/mobile paths deliberately excluded; does not claim GWANI-P01 draft continuity complete."
     }
   ],
   "history": [
@@ -2402,6 +2386,26 @@
       "test_state": "10/10 GitHub exact-source structural checks PASS, Flutter/Dart/PG/Node repository execution NOT_RUN",
       "integration_head_sha": null,
       "release_reason": "Four creator Talk reporting/widget files and finite 14-row AF09 milestone handoff published on existing PR #609; AF00 #600 source composition transfer posted; parent milestone remains PARTIAL_IMPLEMENTATION. No verified end-to-end, safe integration SHA or local pull."
+    },
+    {
+      "claim_id": "chat-p04-gwani-text-before-audio-20261010-gpt6",
+      "owner": "GPT-6 / CHAT-P04 bounded Gateway conversation stream",
+      "scope": "CHAT-P04 emit committed redacted final Gwani text on existing NDJSON stream before slow audio; preserve billing authorization and current route authority; tests and finite handoff",
+      "paths": [
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/agent_conversation.test.ts",
+        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
+      ],
+      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T05:53:43.360Z",
+      "heartbeat_at": "2026-10-10T05:53:43.360Z",
+      "expires_at": "2026-10-10T05:58:43.360Z",
+      "notes": "Other AF00 root/route/finance/mobile paths deliberately excluded; does not claim GWANI-P01 draft continuity complete.",
+      "source_pr": 612,
+      "source_head": "04d8ceb5ed1b5e7fcfd67d3f5b90b1d0380be86b",
+      "released_at": "2026-10-10T05:57:51.844Z",
+      "release_reason": "Bounded source + regression authored on draft PR #612, exact-head handoff and AF00 transfer; customer CHAT-P04 still partial, tests and integration pending."
     }
   ]
 }
