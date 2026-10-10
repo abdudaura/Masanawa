@@ -142,28 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "masanawa-msn576-wallet-readback-20261010-0320",
-      "owner": "GPT-6 continuing #576 / AF03 client, bounded handoff to AF00/AF01",
-      "scope": "MSN balance exact authenticated readback into existing crypto-first Wallet screen; no balance mutation, shared root, Gateway composer, migrations or payout enablement; extend readback to canonical Wallet home while preserving legacy Credits as distinct liabilities",
-      "paths": [
-        "apps/mobile/lib/src/finance/crypto_wallet_screen.dart",
-        "apps/mobile/lib/src/finance/msn_balance_transport.dart",
-        "apps/mobile/lib/src/finance/msn_balance_card.dart",
-        "apps/mobile/test/finance/msn_balance_transport_test.dart",
-        "apps/mobile/test/finance/msn_balance_card_test.dart",
-        "docs/workstreams/msn-crypto-primary-wallet-20261009.md",
-        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart"
-      ],
-      "branch": "work/msn-crypto-primary-wallet-20261009-gpt6",
-      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
-      "source_pr": 576,
-      "source_head": "fe0e5b504a7aba41f19d464270ae5fd8cce8d642",
-      "claimed_at": "2026-10-10T03:20:16.455Z",
-      "heartbeat_at": "2026-10-10T03:27:05.531Z",
-      "expires_at": "2026-10-10T03:32:05.531Z",
-      "notes": "Concrete source: MSN typed authenticated Dio read, session-reactive crypto Wallet card, exact decimal formatting, stale-account fencing, auth/404/offline/retry + tests. Gateway composition requires AF00/AF01 bounded transfer; Dart/Flutter unavailable in this runner. Home Wallet path checked unclaimed on live registry at 2026-10-10T03:27:05.531Z; only additions, no Cr ledger rename."
-    },
-    {
       "claim_id": "af09-609-creator-profile-20261010-gpt6-0423",
       "owner": "AF09 #609 continuing creator profile customer journey (GPT-6 window 0423)",
       "scope": "Implement canonical public creator Talks listing, profile client and follow entry without duplicating identity or changing protected Gateway/root composition",
@@ -1670,6 +1648,30 @@
       "notes": "Continuing existing #604; Activity 404/malformed response source and 6 transport tests committed; handoff documentation and finite parent-milestone checklist.",
       "released_at": "2026-10-10T03:24:03.424Z",
       "release_reason": "Existing AF14 PR #604 source HEAD 0244a2f4ffcff2a13372e89a160f221d460fc2d5. Committed 14 connected paths incl backend atomic read, mobile mark-read, transport, tests and finite parent checklist. 13/13 source readback checks only; Flutter/Node24/pnpm/Vitest/PG/device NOT_RUN; PR draft and unmerged, AF00 #600 notified comment 6093267330. No local pull/release. Transfer remaining source to AF08/AF14 and one AF00 integrator."
+    },
+    {
+      "claim_id": "masanawa-msn576-wallet-readback-20261010-0320",
+      "owner": "GPT-6 continuing #576 / AF03 client, bounded handoff to AF00/AF01",
+      "scope": "MSN balance exact authenticated readback into existing crypto-first Wallet screen; no balance mutation, shared root, Gateway composer, migrations or payout enablement; extend readback to canonical Wallet home while preserving legacy Credits as distinct liabilities",
+      "paths": [
+        "apps/mobile/lib/src/finance/crypto_wallet_screen.dart",
+        "apps/mobile/lib/src/finance/msn_balance_transport.dart",
+        "apps/mobile/lib/src/finance/msn_balance_card.dart",
+        "apps/mobile/test/finance/msn_balance_transport_test.dart",
+        "apps/mobile/test/finance/msn_balance_card_test.dart",
+        "docs/workstreams/msn-crypto-primary-wallet-20261009.md",
+        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart"
+      ],
+      "branch": "work/msn-crypto-primary-wallet-20261009-gpt6",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 576,
+      "source_head": "aa88511f4add1bbcf9e213283088fea5a6b0561b",
+      "claimed_at": "2026-10-10T03:20:16.455Z",
+      "heartbeat_at": "2026-10-10T03:27:05.531Z",
+      "expires_at": "2026-10-10T03:32:05.531Z",
+      "notes": "Concrete source: MSN typed authenticated Dio read, session-reactive crypto Wallet card, exact decimal formatting, stale-account fencing, auth/404/offline/retry + tests. Gateway composition requires AF00/AF01 bounded transfer; Dart/Flutter unavailable in this runner. Home Wallet path checked unclaimed on live registry at 2026-10-10T03:27:05.531Z; only additions, no Cr ledger rename.",
+      "released_at": "2026-10-10T03:31:18.325Z",
+      "release_reason": "Source changes and finite checklist committed to continuing PR #576@aa88511; static source readback 13/13, Flutter/TS/PG tests NOT_RUN. AF00 bounded Gateway composition requested on #497 comment 6093319806; AF01 financial settlement remains necessary. Not a closed customer milestone, never a local pull gate."
     }
   ]
 }
