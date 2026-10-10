@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/features/videos/video_models.dart';
-import 'package:mobile/src/features/videos/videos_screen.dart';
+import 'package:masanawa/src/features/videos/video_models.dart';
+import 'package:masanawa/src/features/videos/videos_screen.dart';
 
 void main() {
   testWidgets('shows loading without imaginary videos', (tester) async {
