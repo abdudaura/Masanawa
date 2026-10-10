@@ -60,38 +60,78 @@ abstract class TalkPublishAttemptStore {
   Future<void> clear(String accountId, String requestId);
 }
 
-/// A single encrypted device-local recovery slot. Never store raw audio,
-/// signed URLs or bearer credentials. Wrong-account reads disclose nothing.
+/// Account-isolated encrypted recovery slots. A failed/unknown publish for
+/// account A must not disappear when account B publishes on the same device.
+/// Keys encode an opaque account ID only for namespacing, not authorization;
+/// FlutterSecureStorage encrypts the *value*. No raw audio or tokens are saved.
 class SecureTalkPublishAttemptStore implements TalkPublishAttemptStore {
   SecureTalkPublishAttemptStore({FlutterSecureStorage? storage})
       : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
-  static const _key = 'masanawa.talks.pending-publish.v1';
+  // Read-once legacy migration preserves attempts from the earlier single-slot
+  // implementation without overwriting another account's pending request.
+  static const _legacyKey = 'masanawa.talks.pending-publish.v1';
+  static const _scopedPrefix = 'masanawa.talks.pending-publish.v2.';
 
-  Future<PendingTalkPublish?> _readAny() async {
-    final raw = await _storage.read(key: _key);
-    if (raw == null) return null;
-    return PendingTalkPublish.fromJson(jsonDecode(raw));
+  static String _keyFor(String accountId) {
+    if (accountId.trim().isEmpty || accountId.length > 256) {
+      throw const FormatException('Invalid Talk recovery account');
+    }
+    return '$_scopedPrefix${base64Url.encode(utf8.encode(accountId))}';
+  }
+
+  static PendingTalkPublish _decode(String raw) =>
+      PendingTalkPublish.fromJson(jsonDecode(raw));
+
+  Future<PendingTalkPublish?> _legacy() async {
+    final raw = await _storage.read(key: _legacyKey);
+    return raw == null ? null : _decode(raw);
   }
 
   @override
   Future<PendingTalkPublish?> read(String accountId) async {
-    final saved = await _readAny();
-    return saved?.accountId == accountId ? saved : null;
+    final key = _keyFor(accountId);
+    final raw = await _storage.read(key: key);
+    if (raw != null) {
+      final saved = _decode(raw);
+      // Even corrupted/mis-scoped encrypted state cannot cross account fences.
+      if (saved.accountId != accountId) {
+        throw const FormatException('Talk recovery account mismatch');
+      }
+      return saved;
+    }
+    final old = await _legacy();
+    if (old == null || old.accountId != accountId) return null;
+    // Never delete the legacy attempt until the per-account write succeeds.
+    await _storage.write(key: key, value: jsonEncode(old.toJson()));
+    await _storage.delete(key: _legacyKey);
+    return old;
   }
 
   @override
   Future<void> write(PendingTalkPublish attempt) async {
     if (!attempt.isValid) throw const FormatException('Invalid Talk attempt');
-    await _storage.write(key: _key, value: jsonEncode(attempt.toJson()));
+    await _storage.write(
+      key: _keyFor(attempt.accountId), value: jsonEncode(attempt.toJson()));
   }
 
   @override
   Future<void> clear(String accountId, String requestId) async {
-    final saved = await _readAny();
-    if (saved?.accountId == accountId && saved?.requestId == requestId) {
-      await _storage.delete(key: _key);
+    final key = _keyFor(accountId);
+    final raw = await _storage.read(key: key);
+    if (raw != null) {
+      final saved = _decode(raw);
+      if (saved.accountId != accountId) {
+        throw const FormatException('Talk recovery account mismatch');
+      }
+      if (saved.requestId == requestId) await _storage.delete(key: key);
+    }
+    // Clear an old slot only for its own account+request. Account B cannot
+    // erase A's pending attempt, even when the old client left a legacy slot.
+    final old = await _legacy();
+    if (old?.accountId == accountId && old?.requestId == requestId) {
+      await _storage.delete(key: _legacyKey);
     }
   }
 }
