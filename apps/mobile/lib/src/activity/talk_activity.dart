@@ -82,6 +82,8 @@ class TalkActivityItem {
 }
 
 abstract interface class TalkActivityTransport {
+  Future<void> markRead({required String activityId});
+
   Future<List<TalkActivityItem>> load({
     required TalkActivityFilter filter,
     int limit = 60,
