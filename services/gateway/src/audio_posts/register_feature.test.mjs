@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { registerPublishedAudioFeatureRoutes } from './register_feature.ts';
+import { registerPublishedAudioFeatureRoutes } from './register_feature.js';
 
 const actor = { tenantId:'tenant1', accountId:'alice', authorId:'alice', authorKind:'human' };
 const post = { tenantId:'tenant1', postId:'post1', authorId:'alice',
