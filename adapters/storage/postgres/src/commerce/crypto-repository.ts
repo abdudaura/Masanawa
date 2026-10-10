@@ -179,9 +179,9 @@ async function accountBalance(
   input: { tenantId: TenantId; userId: UserId; asset: string; network: string | null },
 ): Promise<string> {
   const result = await client.query<{ balance: string }>(
-    `SELECT COALESCE(SUM(
+    `SELECT trim_scale(COALESCE(SUM(
          CASE direction WHEN 'credit' THEN amount ELSE -amount END
-       ),0)::text AS balance
+       ),0))::text AS balance
        FROM commerce.crypto_ledger_entries
       WHERE tenant_id=$1 AND user_id=$2 AND asset=$3
         AND network IS NOT DISTINCT FROM $4`,
@@ -195,7 +195,7 @@ async function aggregateLiability(
   input: { tenantId: TenantId; asset: string; network: string | null },
 ): Promise<string> {
   const result = await client.query<{ liability: string }>(
-    `SELECT COALESCE(SUM(GREATEST(user_balance, 0)), 0)::text AS liability
+    `SELECT trim_scale(COALESCE(SUM(GREATEST(user_balance, 0)), 0))::text AS liability
        FROM (
          SELECT user_id,
                 COALESCE(SUM(
@@ -216,7 +216,7 @@ async function platformAggregateLiability(
   input: { asset: string; network: string | null },
 ): Promise<string> {
   const result = await client.query<{ liability: string }>(
-    `SELECT COALESCE(SUM(GREATEST(user_balance, 0)), 0)::text AS liability
+    `SELECT trim_scale(COALESCE(SUM(GREATEST(user_balance, 0)), 0))::text AS liability
        FROM (
          SELECT tenant_id, user_id,
                 COALESCE(SUM(
