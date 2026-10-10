@@ -60,6 +60,8 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _pendingCommentRequest = null;
       _pendingCommentBody = null;
       _commentText.clear();
+      _sendingComment = false;
+      _loadingComments = false;
       _removingComments.clear();
       _removing.clear();
       _loading = true;
@@ -180,7 +182,12 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   Future<void> _toggleComments(String postId) async {
     if (!_authorized) return;
     if (_openCommentsPostId == postId) {
-      setState(() { _openCommentsPostId = null; ++_commentsGeneration; });
+      setState(() {
+        _openCommentsPostId = null;
+        ++_commentsGeneration;
+        _sendingComment = false;
+        _loadingComments = false;
+      });
       return;
     }
     setState(() {
