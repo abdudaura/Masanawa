@@ -115,6 +115,9 @@ describe("U02 durable status-only recovery", () => {
       { ...valid, operationId: "another_operation" },
       { ...valid, capabilityId: "another.capability" },
       { ...valid, outcome: { status: "confirmed", receiptRef: 123 } } as never,
+      { ...valid, outcome: { status: "confirmed", receiptRef: "forged\nreceipt" } },
+      { ...valid, outcome: { status: "rejected", code: "DENIED\nFORGED" } },
+      { ...valid, outcome: { status: "rejected", code: "" } },
       { ...valid, outcome: { status: "bogus", receiptRef: "ledger:valid_1" } } as never,
     ];
     for (const result of unbound) {
@@ -209,7 +212,11 @@ describe("U02 PostgreSQL service principal CAS recovery repository", () => {
       now: "2026-10-10T00:10:00Z",
     })).toBe("settled");
     const update = db.statements.find(s => s.sql.includes("UPDATE operator_tasks.tasks SET phase=$5"));
-    expect(update?.sql).toContain("version=$9 AND phase='reconciling'");
+    expect(update?.sql).toContain("version=$9 AND phase='reconciling' AND capability_id=$10");
+    expect(update?.params[9]).toBe(operation.capabilityId);
+    const selected = db.statements.find(s => s.sql.includes("SELECT phase,version"));
+    expect(selected?.sql).toContain("operation_id=$4 AND capability_id=$5 FOR UPDATE");
+    expect(selected?.params[4]).toBe(operation.capabilityId);
     expect(update?.params.slice(0,4)).toEqual([
       operation.tenantId,operation.userId,operation.taskId,operation.operationId,
     ]);
@@ -221,6 +228,11 @@ describe("U02 PostgreSQL service principal CAS recovery repository", () => {
     const db = database(), journal = createPostgresRecoveryJournal(db.pool);
     expect(await journal.settle({
       operation, outcome: { status: "confirmed", receiptRef: "forged\nreceipt" },
+      now: "2026-10-10T00:10:00Z",
+    })).toBe("unknown");
+    expect(db.statements).toHaveLength(0);
+    expect(await journal.settle({
+      operation, outcome: { status: "rejected", code: "PAYMENT_FAILED\nFORGED" },
       now: "2026-10-10T00:10:00Z",
     })).toBe("unknown");
     expect(db.statements).toHaveLength(0);
