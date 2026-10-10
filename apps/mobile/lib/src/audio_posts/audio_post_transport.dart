@@ -111,7 +111,13 @@ abstract class AudioPostTransport {
   /// Remove only the currently authenticated user's own post. Idempotent.
   Future<AudioPost> removeMine({required String postId});
 }
-class GatewayAudioPostTransport implements AudioPostTransport {
+/// Optional contract for checking the server receipt of a durable publish key.
+abstract class AudioPostReceiptLookup {
+  /// Null means the authenticated account has no post for this request key.
+  Future<AudioPost?> receiptByRequest({required String requestId});
+}
+
+class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptLookup {
   GatewayAudioPostTransport(this.api);
   final ApiClient api;
 
