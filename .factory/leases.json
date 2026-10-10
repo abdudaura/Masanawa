@@ -154,11 +154,11 @@
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
       "source_pr": 609,
-      "source_head": "cc229a48c3b00ebaed3c23c30968946d0e89ac45",
+      "source_head": "9a77dc3bb73fe5e5f3f0476750b0da4f38b564c5",
       "claimed_at": "2026-10-10T03:06:12.498Z",
-      "heartbeat_at": "2026-10-10T03:06:12.498Z",
-      "expires_at": "2026-10-10T03:11:12.498Z",
-      "notes": "Same PR, own only listed paths. Requires current-blob recheck before each write; AF00/AF05/AF15 untouched."
+      "heartbeat_at": "2026-10-10T03:10:45.315Z",
+      "expires_at": "2026-10-10T03:15:45.315Z",
+      "notes": "Code commits f5f3b24,fd0861b,e58c10d,9a77dc3 for encrypted store/composer/tests/account fences. Prepare finite milestone handoff, no Flutter runner."
     }
   ],
   "history": [
