@@ -189,6 +189,27 @@
       "heartbeat_at": "2026-10-10T03:16:53.958Z",
       "expires_at": "2026-10-10T03:21:53.958Z",
       "notes": "Do not touch shared task worker/route/financial/migration/integration files; source + unit regressions + finite parent handoff."
+    },
+    {
+      "claim_id": "masanawa-msn576-wallet-readback-20261010-0320",
+      "owner": "GPT-6 continuing #576 / AF03 client, bounded handoff to AF00/AF01",
+      "scope": "MSN balance exact authenticated readback into existing crypto-first Wallet screen; no balance mutation, shared root, Gateway composer, migrations or payout enablement",
+      "paths": [
+        "apps/mobile/lib/src/finance/crypto_wallet_screen.dart",
+        "apps/mobile/lib/src/finance/msn_balance_transport.dart",
+        "apps/mobile/lib/src/finance/msn_balance_card.dart",
+        "apps/mobile/test/finance/msn_balance_transport_test.dart",
+        "apps/mobile/test/finance/msn_balance_card_test.dart",
+        "docs/workstreams/msn-crypto-primary-wallet-20261009.md"
+      ],
+      "branch": "work/msn-crypto-primary-wallet-20261009-gpt6",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 576,
+      "source_head": "c3d821e5dad6a8405d5efa0cd4a450ac4ce1a775",
+      "claimed_at": "2026-10-10T03:20:16.455Z",
+      "heartbeat_at": "2026-10-10T03:20:16.455Z",
+      "expires_at": "2026-10-10T03:25:16.455Z",
+      "notes": "Original #576 source lease was released; this exact client-only continuation preserves it. Gateway route /v1/wallet/msn remains unmounted; AF00 composition transfer required."
     }
   ],
   "history": [
