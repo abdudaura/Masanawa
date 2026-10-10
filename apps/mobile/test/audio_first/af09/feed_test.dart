@@ -213,8 +213,8 @@ void main() {
     ]);
     await tester.pumpAndSettle();
     expect(find.text('Private prior-account content'), findsNothing);
-    await tester.tap(find.text('Comments'));
     source.commentsHandler = (_) async => [];
+    await tester.tap(find.text('Comments'));
     await tester.pumpAndSettle();
     expect(find.text('Private prior-account content'), findsNothing);
   });
