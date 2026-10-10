@@ -3,21 +3,8 @@
  * this worker NEVER accepts an authenticated customer HTTP request or media URL.
  */
 export type ProcessingResult = "published" | "failed";
-export interface PendingAudioPost {
-  tenantId: string;
-  postId: string;
-  revision: number;
-  createdAt: string;
-}
-export interface PendingPage {
-  items: PendingAudioPost[];
-  nextCursor: string | null;
-}
-export interface AudioPostProcessingQueue {
-  listPending(input: { tenantId: string; cursor: string | null; limit: number }): Promise<PendingPage>;
-  /** Non-blocking cross-process lock; returns null if another worker owns post. */
-  withLease<T>(input: { tenantId: string; postId: string }, work: () => Promise<T>): Promise<T | null>;
-}
+import type { AudioPostProcessingQueue, PendingAudioPost } from "@masanawa/contracts";
+export type { PendingAudioPost, PendingPage, AudioPostProcessingQueue } from "@masanawa/contracts";
 export interface AudioPostSettler {
   settle(input: { tenantId: string; postId: string; expectedRevision: number }): Promise<{ status: string }>;
 }
