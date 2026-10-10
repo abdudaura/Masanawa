@@ -34,6 +34,9 @@ export interface AudioPostRecord {
   revision: number;
   createdAt: string;
   publishedAt: string | null;
+  /** Derived from persisted reactions and non-removed comments, never the client. */
+  likeCount?: number;
+  commentCount?: number;
 }
 
 export interface NewAudioPost {
@@ -48,6 +51,27 @@ export interface NewAudioPost {
 export interface PublicFeedPage {
   items: AudioPostRecord[];
   nextCursor: string | null;
+}
+
+/** Explicit wire shape: do not expose author account, tenant, asset or request keys. */
+export type PublicAudioPost = Pick<AudioPostRecord,
+  "postId" | "authorId" | "authorKind" | "title" | "durationMs" |
+  "status" | "revision" | "createdAt" | "publishedAt"
+> & { likeCount: number; commentCount: number };
+
+export interface PublicAudioFeedPage {
+  items: PublicAudioPost[];
+  nextCursor: string | null;
+}
+
+/** Shared projection for Discover, Saved, My Talks and AF09 Following routes. */
+export function toPublicAudioPost(post: AudioPostRecord): PublicAudioPost {
+  return {
+    postId: post.postId, authorId: post.authorId, authorKind: post.authorKind,
+    title: post.title, durationMs: post.durationMs, status: post.status,
+    revision: post.revision, createdAt: post.createdAt, publishedAt: post.publishedAt,
+    likeCount: post.likeCount ?? 0, commentCount: post.commentCount ?? 0,
+  };
 }
 
 /** Durable comments: author IDs are server-derived, never supplied in a body. */
