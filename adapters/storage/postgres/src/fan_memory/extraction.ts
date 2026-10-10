@@ -60,7 +60,7 @@ export function createPostgresFanExtractionPort(pool:Pool,checkMessage:SourceMes
      memoryRecordId:createCanonicalId("memory-record"),
      memoryRevisionId:createCanonicalId("memory-revision"),
      memoryType:"preference",scope:{kind:"relationship",relationshipId:parseCanonicalId("relationship",r)},
-     createdAt:now,content:i.content,payload:{category:i.category},confidence:i.confidence,
+     createdAt:now,content:i.content,payload:{category:i.category,fanMemoryV1:true},confidence:i.confidence,
      extractionMethod:"fan-memory-idle-v1",observedAt:now,expiresAt:until,
      evidence:[{sourceKind:"message",sourceReference:i.messageId,
        sourceContentHash:i.sourceHash,observedAt:now}]
