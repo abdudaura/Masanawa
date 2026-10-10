@@ -12,11 +12,16 @@
 const RETIRED_PATHS: readonly RegExp[] = [
   /^\/(?:v1\/)?(?:talks?|twins?|clones?|creator|owner-access)(?:\/|$)/i,
   /^\/(?:v1\/)?(?:human(?:-|_)?dm|human(?:-|_)?calls?|contacts?)(?:\/|$)/i,
-  /^\/agent\/twins(?:\/|$)/i,
+  /^\/agent\/twins?(?:\/|$)/i,
   /^\/v1\/(?:wallet\/transfers|twins?\/|gifts?\/|paid-voice\/)/i,
   /^\/v1\/admin\/(?:twins?|clones?|owner-access|commission-polic(?:y|ies)|linked-whatsapp|whatsapp)(?:\/|$)/i,
   /^\/(?:v1\/)?(?:customer\/channels|customer-channels|whatsapp|telegram)(?:\/|$)/i,
   /^\/v1\/(?:channels|channel-bridge|linked-whatsapp)(?:\/|$)/i,
+  // Actual registered legacy endpoints not covered by the broad /talks and /twins rules.
+  /^\/v1\/my-twin(?:\/|$)/i,
+  /^\/me\/talks(?:\/|$)/i,
+  /^\/(?:v1\/)?channels\/(?:whatsapp|telegram)(?:\/|$)/i,
+  /^\/admin\/channels\/(?:whatsapp|telegram)(?:\/|$)/i,
 ];
 
 export function isRetiredLegacySurface(url: string): boolean {
