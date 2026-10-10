@@ -80,7 +80,9 @@ function repository(): TalkAiSeatRepository {
     async confirm({ quoteId }) {
       return {
         requestId: createCanonicalId("request"),
-        status: quoteId.endsWith("0") ? "admitted" : "pending_host",
+        // The route test expects the sponsor approval workflow. Never derive
+        // this mock outcome from a randomly generated quote ID suffix.
+        status: "pending_host" as const,
         displayName: "Gwani",
       };
     },
