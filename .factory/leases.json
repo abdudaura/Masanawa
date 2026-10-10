@@ -403,16 +403,17 @@
       "paths": [
         "packages/operator-tasks/src/recovery.ts",
         "packages/operator-tasks/src/recovery.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md"
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "pnpm-lock.yaml"
       ],
       "branch": "work/recovery-02-u02-task-journal-20261009",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 580,
       "source_head": "027225d9939f0e482b10e41b08493b99358147be",
       "claimed_at": "2026-10-10T07:41:47.344Z",
-      "heartbeat_at": "2026-10-10T07:41:47.344Z",
-      "expires_at": "2026-10-10T07:46:47.344Z",
-      "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths."
+      "heartbeat_at": "2026-10-10T07:45:33.093Z",
+      "expires_at": "2026-10-10T07:50:33.093Z",
+      "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths.; AF00 bounded transfer requested on PR #600 comment 6095247924 after 2h inactive AF00 registry claim; emergency non-deploying CI failure repair limited to additive operator-tasks pnpm frozen importer, confirmed existing packages/versions. User directs finish tests; no shared CI workflow changes."
     },
     {
       "claim_id": "af13-pr460-gateway-declaration-typing-20261010",
