@@ -337,4 +337,97 @@ describe("Alpha conversation service", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+
+  it("streams only settled billing text before slow audio and survives stream disconnect", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const trace: string[] = [];
+    let releaseAudio!: () => void;
+    const audioPending = new Promise<void>((resolve) => { releaseAudio = resolve; });
+    const sessions: CharacterSessionRepository = {
+      async create() { return session; },
+      async read() { return session; },
+      async updateBindings() { throw new Error("not used"); },
+      async close() { return session; },
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create() { return {} as never; },
+      async read() { throw new Error("not used"); },
+      async finish(input) {
+        trace.push(`run:${input.outcome.state}`);
+        return {} as never;
+      },
+    };
+    const service = createAgentConversationService({
+      sessions,
+      runs,
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: {
+        async execute() {
+          return {
+            reply: "model-private <masanawa_action>{\\"type\\":\\"billing.quote\\"}</masanawa_action>",
+            parts: [],
+          };
+        },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() {
+          return { reply: "Your quote is ready. Confirm before any purchase.", parts: [] };
+        },
+      },
+      nativeAudio: {
+        async render() {
+          trace.push("audio:started");
+          await audioPending;
+          trace.push("audio:finished");
+          return { dataBase64: "YQ==", mimeType: "audio/pcm", durationMs: 1 };
+        },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const request = {
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy airtime",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    };
+    const settledText = "Your quote is ready. Confirm before any purchase.";
+    const pending = service.turn({
+      ...request,
+      onTextDelta: (delta) => { trace.push(`text:${delta}`); },
+    });
+    try {
+      await vi.waitFor(() => expect(trace).toContain("audio:started"));
+      expect(trace).toContain("run:completed");
+      expect(trace.filter((entry) => entry.startsWith("text:"))).toEqual([
+        `text:${settledText}`,
+      ]);
+      expect(trace.indexOf(`text:${settledText}`)).toBeLessThan(
+        trace.indexOf("audio:started"),
+      );
+      expect(trace).not.toContain("audio:finished");
+      expect(trace.join(" ")).not.toContain("model-private");
+      expect(trace.join(" ")).not.toContain("masanawa_action");
+    } finally {
+      releaseAudio();
+    }
+    const response = await pending;
+    expect(response.reply).toBe(settledText);
+
+    // The streaming socket can close after the canonical turn is settled:
+    // callback transport errors must not convert a completed bill into failure.
+    const disconnected = await service.turn({
+      ...request,
+      requestId: createCanonicalId("request"),
+      onTextDelta: () => { throw new Error("client went away"); },
+    });
+    expect(disconnected.reply).toBe(settledText);
+    expect(trace.filter((entry) => entry === "run:failed")).toHaveLength(0);
+  });
+
 });
