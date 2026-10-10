@@ -101,7 +101,7 @@ export function createS3MediaCleanupDeleter(input: MediaCleanupS3Config): Immuta
             ", SignedHeaders=" + signedHeaders + ", Signature=" + signature,
         },
       });
-      if (response.ok) return "deleted";
+      if (response.status === 200 || response.status === 204) return "deleted";
       // An ambiguous 404 may be a missing bucket or wrong credentials. Do not
       // mark the tombstone complete without an explicit S3 object-absence code.
       if (response.status === 404 &&
