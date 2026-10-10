@@ -2,7 +2,7 @@
 
 ```text
 Continue rebuilding Masanawa: https://github.com/abdudaura/Masanawa
-Read current AGENTS.md, CONTINUE-HERE.md and docs/rebuild/{BLUEPRINT,SCREENS,ARCHITECTURE,DELIVERY}.md.
+Until PR #615 merges, read AGENTS.md, CONTINUE-HERE.md and docs/rebuild/{BLUEPRINT,SCREENS,ARCHITECTURE,DELIVERY}.md from branch planning/masanawa-blueprint-v1-20261010, NOT main's old guides. After merge read those same files on fresh main.
 
 This is a Masana-only fan platform: Chats (fan↔Masana only), global Masana-led Rooms (free/paid), Home Feed|Videos, Gwani support/moderation, Wallet/Bills/Crypto. No human chats/calls, user posts/Rooms, Twins or old Talks stages. Preserve and reuse old code; old product guides are deleted.
 
@@ -12,5 +12,7 @@ Run and fix applicable TypeScript, Vitest, PostgreSQL18, Flutter and Android bui
 
 Before ending, report closed items, exact PR/head/merge SHA, test commands/results, remaining blockers and next owner/action. Do not stop at a patch or leave fixable failures.
 ```
+
+**Until PR #615 is safely merged to main, copy the prompt above INCLUDING the explicit planning branch instruction.** This avoids reopening obsolete instructions from main. Do not merge if current source CI has unsolved errors or main push would trigger an unreviewed data-bearing Railway deployment.
 
 Window IDs: use a unique automatic identifier; claim exact paths in `factory/claims`. One AF00 source integrator, approximately 4–6 real independent implementers; share existing tests/CI rather than creating new evidence-only branches. Product-specific research and quality guidance is in the four documents above. No other window prompt is authoritative.
