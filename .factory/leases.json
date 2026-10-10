@@ -226,6 +226,24 @@
       "source_head_sha": "b8d9694ea87b873cf28755f1c5b264a02c5f6b82",
       "integration_head_sha": null,
       "test_state": "Github exact blob readback and 9/9 source predicates only; 6 Flutter cases AUTHORED NOT_RUN; required Node24/pnpm12/Flutter/Dart/PG/Android unavailable."
+    },
+    {
+      "claim_id": "af09-609-pending-tenant-dispatch-gpt6-0540",
+      "owner": "AF09 existing PR #609 / GPT-6 tenant-dispatch source continuation 0540",
+      "scope": "Implement bounded fair PostgreSQL tenant discovery and worker sweep dispatch for persistent published audio processing. No second queue, migration or AF00 worker registration.",
+      "paths": [
+        "services/gateway/src/audio_posts/processing_scheduler.ts",
+        "services/gateway/src/audio_posts/processing_scheduler.test.mjs",
+        "docs/workstreams/AF09-processing-dispatch-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "source_head": "6b1160f0130ddaf045f5ab7b23e5cf73a60d4a25",
+      "claimed_at": "2026-10-10T04:41:35.214Z",
+      "heartbeat_at": "2026-10-10T04:41:35.214Z",
+      "expires_at": "2026-10-10T04:46:35.214Z",
+      "notes": "AF09 new-path isolated scheduling adapter + negative tests, AF00 composes into canonical worker runtime after review; no protected files."
     }
   ],
   "history": [
