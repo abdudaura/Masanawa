@@ -1,7 +1,8 @@
 import Fastify from "fastify";
 import {describe,it,expect} from "vitest";
 import {registerMasanaSocialRoutes} from "./routes.js";
-import {createMasanaSocialService,type SocialStore,type TrustedStaffActor} from "./service.js";
+import {createMasanaSocialService,type TrustedStaffActor} from "./service.js";
+import type {SocialStore} from "@masanawa/masana-social";
 const base = {identityId:"soc-a",tenantId:"t-a",characterId:"masana-a",
   provider:"whatsapp" as const,providerAccountId:"2348012345678",handle:"+2348012345678",
   publicUrl:"https://wa.me/2348012345678",verifiedAt:null,publishState:"draft" as const,
