@@ -128,7 +128,7 @@ describe("U02 durable status-only recovery", () => {
   });
 
   it("requires a matching operation envelope even for an honest rejection", async () => {
-    const settled = vi.fn(async () => "unknown" as const);
+    const settled = vi.fn(async (_input: Parameters<RecoveryJournal["settle"]>[0]) => "unknown" as const);
     const worker = createStatusOnlyRecovery({
       journal: { claim: async () => [operation], settle: settled },
       status: { readback: async () => ({
