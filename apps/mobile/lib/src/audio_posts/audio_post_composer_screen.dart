@@ -73,7 +73,11 @@ class _ComposerState extends State<AudioPostComposerScreen> {
   void didUpdateWidget(covariant AudioPostComposerScreen old) {
     super.didUpdateWidget(old);
     if (old.accountId != widget.accountId || old.transport != widget.transport) {
-      setState(_clear);
+      // didUpdateWidget already schedules rebuild; avoid notifying an old
+      // TextEditingController listener while the account switch is building.
+      _title.removeListener(_refresh);
+      _clear();
+      _title.addListener(_refresh);
     }
   }
   @override
@@ -131,7 +135,9 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       if ((post.status != 'processing' && post.status != 'published') ||
           post.title != title) throw const FormatException('Invalid publish receipt');
       setState(() => _receipt = post);
-      widget.onPublished?.call(post);
+      // A navigation callback cannot turn an acknowledged server receipt into
+      // a second publish attempt or erase the durable success state.
+      try { widget.onPublished?.call(post); } catch (_) { /* receipt retained */ }
     } catch (_) {
       if (mounted && _authorized && generation == _generation) {
         setState(() => _message =
