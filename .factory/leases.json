@@ -739,6 +739,21 @@
       "heartbeat_at": "2026-10-10T09:00:51.596Z",
       "expires_at": "2026-10-10T09:05:51.596Z",
       "notes": "Actual CI 38039668485: 25 foundation test failures cascading solely from 31-vs-30 migrations; old exact-path lease expired >1h; preserve previous #460 source and tests."
+    },
+    {
+      "claim_id": "af13-460-independent-check-architecture-test-20261010-gpt6",
+      "owner": "GPT-6 / AF13 existing CI recovery PR #460",
+      "scope": "Repair real test-topology regression caused by independent Foundation/Mobile workflow check conditions, preserving structural verification and failure semantics",
+      "paths": [
+        "test/architecture/test-topology.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "4b8fdab2f33d4fa0cc3963b8f24b373526b574b2",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:01:20.854Z",
+      "heartbeat_at": "2026-10-10T09:01:20.854Z",
+      "expires_at": "2026-10-10T09:06:20.854Z",
+      "notes": "Observed real GitHub Actions run 38039685306: test-topology.test.ts expects exact old YAML and fails after legitimate if: !cancelled. Update test to require independent steps with correct run and guards."
     }
   ],
   "history": [
