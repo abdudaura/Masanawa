@@ -1251,6 +1251,22 @@
       "heartbeat_at": "2026-10-10T16:29:51.835Z",
       "expires_at": "2026-10-10T16:34:51.835Z",
       "notes": "No production activation; source implementation on nondeploying integration; await AF00 composition and R1 authorized identity."
+    },
+    {
+      "claim_id": "l-video-youtube-websub-j14-20261010-gpt6-1730",
+      "owner": "GPT-6 L-VIDEO/J14 complementary YouTube sync",
+      "scope": "YouTube official WebSub authenticated notifier and uploads-playlist reconciliation; bridge existing #624 canonical external_videos store via injection only; no duplicate catalog, migrations, or AF00 composition",
+      "paths": [
+        "services/gateway/src/modules/youtube_websub/**",
+        "services/worker/src/jobs/youtube_websub/**",
+        "tests/e2e/J14/**"
+      ],
+      "branch": "lane/l-video-youtube-websub-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "claimed_at": "2026-10-10T16:30:45.836Z",
+      "heartbeat_at": "2026-10-10T16:30:45.836Z",
+      "expires_at": "2026-10-10T16:35:45.836Z",
+      "notes": "Non-overlap verified with #624 J15 claim; source under J14 paths only; no runtime activation/provider keys."
     }
   ],
   "history": [
