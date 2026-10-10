@@ -83,7 +83,8 @@ export function createPhonePasswordAuthService(input: Readonly<{
       accessExpiresIn: accessTtlSeconds,
       user: Object.freeze({
         id: profile.userId, name: profile.name,
-        phone: profile.phone, email: profile.email, locale: profile.locale,
+        phone: profile.phone ?? (profile as PlatformAuthProfile & { unverifiedPhone?: string | null }).unverifiedPhone ?? null,
+        email: profile.email, locale: profile.locale,
         status: "ACTIVE" as const, role: "CITIZEN" as const,
         isNewUser: false, communityId: null, stateId: null,
         createdAt: profile.createdAt,
