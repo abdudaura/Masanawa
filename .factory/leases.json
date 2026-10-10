@@ -628,6 +628,41 @@
       "heartbeat_at": "2026-10-10T08:54:18.845Z",
       "expires_at": "2026-10-10T08:59:18.845Z",
       "notes": "Existing PR #460 CI run 38037792873 proved two test fixture mismatches. Preserve Wallet-only shell and fail-closed canonical billing financial authority."
+    },
+    {
+      "claim_id": "af13-ci-460-env-api-contract-20261010-gpt6",
+      "owner": "GPT-6 AF13 #460 unclaimed CI failures",
+      "scope": "Complete failing environment registry and explicit HTTP compatibility paths. Preserve live billing and crypto owners.",
+      "paths": [
+        "config/production-env.json",
+        "docs/API-LIFECYCLE.json",
+        "tests/contracts/public-api-lifecycle.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "source_pr": 460,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T08:54:42.350Z",
+      "heartbeat_at": "2026-10-10T08:54:42.350Z",
+      "expires_at": "2026-10-10T08:59:42.350Z",
+      "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
+    },
+    {
+      "claim_id": "af00-600-flutter-security-migration-20261010-gpt6",
+      "owner": "GPT-6 AF00 user-directed protected source completion in existing PR #600",
+      "scope": "Append-only contact uniqueness migration plus Flutter warnings and regression tests, preserving AF00 navigation.",
+      "paths": [
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "packages/security/migrations/0103_platform_profile_contact_uniqueness.sql",
+        "adapters/storage/postgres/src/identity/account-deletion.integration.test.ts"
+      ],
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "source_pr": 600,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T08:54:42.350Z",
+      "heartbeat_at": "2026-10-10T08:54:42.350Z",
+      "expires_at": "2026-10-10T08:59:42.350Z",
+      "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
     }
   ],
   "history": [
