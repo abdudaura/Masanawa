@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'audio_post_transport.dart';
+import 'audio_post_draft_store.dart';
 
 /// AF05 must provide a server-verified uploaded asset; the Gateway independently
 /// rechecks ownership, codec, size and duration on every publish operation.
@@ -24,7 +25,7 @@ class AudioPostComposerScreen extends StatefulWidget {
   const AudioPostComposerScreen({
     super.key, required this.transport, required this.accountId,
     required this.isCurrentAccount, this.acquireVerifiedAudio,
-    this.onPublished, this.newRequestId,
+    this.onPublished, this.newRequestId, this.attemptStore,
   });
   final AudioPostTransport transport;
   final String accountId;
@@ -32,6 +33,7 @@ class AudioPostComposerScreen extends StatefulWidget {
   final AcquireVerifiedPostAudio? acquireVerifiedAudio;
   final ValueChanged<AudioPost>? onPublished;
   final String Function()? newRequestId;
+  final TalkPublishAttemptStore? attemptStore;
   @override
   State<AudioPostComposerScreen> createState() => _ComposerState();
 }
@@ -41,7 +43,10 @@ class _ComposerState extends State<AudioPostComposerScreen> {
   VerifiedPostAudio? _audio;
   AudioPost? _receipt;
   String? _requestId, _message;
+  final TalkPublishAttemptStore _defaultStore = SecureTalkPublishAttemptStore();
+  TalkPublishAttemptStore get _store => widget.attemptStore ?? _defaultStore;
   bool _acquiring = false, _sending = false, _attempted = false;
+  bool _restoring = true, _restoreFailed = false, _saving = false;
   int _generation = 0;
   bool get _authorized => widget.accountId.trim().isNotEmpty &&
       widget.isCurrentAccount(widget.accountId);
@@ -51,7 +56,8 @@ class _ComposerState extends State<AudioPostComposerScreen> {
         !RegExp(r'[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]').hasMatch(t);
   }
   bool get _canPublish => _authorized && _audio?.isPlausible == true &&
-      _validTitle && !_acquiring && !_sending && _receipt == null;
+      _validTitle && !_restoring && !_restoreFailed && !_saving &&
+      !_acquiring && !_sending && _receipt == null;
   String _makeKey() => widget.newRequestId?.call() ?? (
     'talk-' + DateTime.now().microsecondsSinceEpoch.toRadixString(36) +
     '-' + Random.secure().nextInt(0x7fffffff).toRadixString(36)
@@ -61,23 +67,59 @@ class _ComposerState extends State<AudioPostComposerScreen> {
   void initState() {
     super.initState();
     _title.addListener(_refresh);
+    _restorePending();
   }
   void _refresh() { if (mounted) setState(() {}); }
+
+  /// Recovered drafts never auto-submit. A user may retry the same key.
+  Future<void> _restorePending() async {
+    final generation = ++_generation;
+    final accountId = widget.accountId;
+    _restoring = true;
+    _restoreFailed = false;
+    try {
+      final pending = await _store.read(accountId);
+      if (!mounted || generation != _generation || !_authorized) return;
+      setState(() {
+        _restoring = false;
+        if (pending != null) {
+          _title.text = pending.title;
+          _audio = VerifiedPostAudio(
+            assetId: pending.assetId, durationMs: pending.durationMs);
+          _requestId = pending.requestId;
+          _attempted = true;
+          _message = 'An earlier publish attempt is unconfirmed. Check My Talks, '
+              'then retry using the same request ID or discard it.';
+        }
+      });
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _restoring = false;
+        _restoreFailed = true;
+        _message = 'Secure publish recovery is unavailable. '
+            'Retry recovery before publishing a new Talk.';
+      });
+    }
+  }
   void _clear() {
     ++_generation;
     _audio = null; _receipt = null; _requestId = null; _message = null;
     _attempted = false; _acquiring = false; _sending = false;
+    _restoring = false; _restoreFailed = false; _saving = false;
     _title.clear();
   }
   @override
   void didUpdateWidget(covariant AudioPostComposerScreen old) {
     super.didUpdateWidget(old);
-    if (old.accountId != widget.accountId || old.transport != widget.transport) {
+    if (old.accountId != widget.accountId || old.transport != widget.transport ||
+        old.attemptStore != widget.attemptStore) {
       // didUpdateWidget already schedules rebuild; avoid notifying an old
       // TextEditingController listener while the account switch is building.
       _title.removeListener(_refresh);
       _clear();
       _title.addListener(_refresh);
+      _restorePending();
     }
   }
   @override
@@ -88,7 +130,8 @@ class _ComposerState extends State<AudioPostComposerScreen> {
     super.dispose();
   }
   Future<void> _record() async {
-    if (!_authorized || _acquiring || _attempted || widget.acquireVerifiedAudio == null) return;
+    if (!_authorized || _restoring || _restoreFailed || _saving ||
+        _acquiring || _attempted || widget.acquireVerifiedAudio == null) return;
     final generation = ++_generation;
     setState(() { _acquiring = true; _message = null; });
     try {
@@ -126,8 +169,17 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       setState(() => _message = 'Invalid request ID. Cannot publish.');
       return;
     }
-    setState(() { _sending = true; _attempted = true; _message = null; });
+    final accountId = widget.accountId;
+    final attempt = PendingTalkPublish(
+      accountId: accountId, requestId: requestId, assetId: assetId,
+      durationMs: _audio!.durationMs, title: title,
+    );
+    // Never contact the server until a retry-safe key survives app restart.
+    setState(() { _saving = true; _message = null; });
     try {
+      await _store.write(attempt);
+      if (!mounted || !_authorized || generation != _generation) return;
+      setState(() { _saving = false; _sending = true; _attempted = true; });
       final post = await widget.transport.publish(
         requestId: requestId, assetId: assetId, title: title,
       );
@@ -137,24 +189,26 @@ class _ComposerState extends State<AudioPostComposerScreen> {
            post.status != 'failed' && post.status != 'removed')) {
         throw const FormatException('Invalid publish receipt');
       }
-      // Terminal moderation/revocation results are confirmed states, not
-      // network-uncertain failures that the client should retry forever.
+      // Keep the server receipt even if cleanup cannot remove the saved key.
       setState(() => _receipt = post);
+      try { await _store.clear(accountId, requestId); } catch (_) { /* safe replay */ }
       if (post.status == 'processing' || post.status == 'published') {
-        // Navigation errors must not invalidate an acknowledged receipt.
         try { widget.onPublished?.call(post); } catch (_) { /* receipt retained */ }
       }
     } catch (_) {
       if (mounted && _authorized && generation == _generation) {
-        setState(() => _message =
-            'Publication is unconfirmed. Retry uses the same request ID.');
+        setState(() => _message = _attempted
+          ? 'Publication is unconfirmed. Retry uses the same request ID.'
+          : 'Could not save secure publish recovery. No request was sent. Retry.');
       }
     } finally {
-      if (mounted && generation == _generation) setState(() => _sending = false);
+      if (mounted && generation == _generation) {
+        setState(() { _saving = false; _sending = false; });
+      }
     }
   }
   Future<void> _discard() async {
-    if (_sending) return;
+    if (_sending || _saving || _restoring) return;
     if (_attempted) {
       final yes = await showDialog<bool>(context: context,
         builder: (dialog) => AlertDialog(
@@ -169,7 +223,16 @@ class _ComposerState extends State<AudioPostComposerScreen> {
         ));
       if (yes != true || !mounted || !_authorized) return;
     }
-    if (mounted) setState(_clear);
+    try {
+      if (_requestId != null) {
+        await _store.clear(widget.accountId, _requestId!);
+      }
+      if (mounted && _authorized) setState(_clear);
+    } catch (_) {
+      if (mounted && _authorized) {
+        setState(() => _message = 'Could not clear secure recovery. Retry discard.');
+      }
+    }
   }
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -185,6 +248,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
           OutlinedButton.icon(
             key: const ValueKey('talk-record'),
             onPressed: widget.acquireVerifiedAudio == null || _attempted ||
+                _restoring || _restoreFailed || _saving ||
                 _acquiring || _sending || _receipt != null ? null : _record,
             icon: const Icon(Icons.mic_outlined),
             label: Text(_acquiring ? 'Preparing audio…' :
@@ -200,14 +264,23 @@ class _ComposerState extends State<AudioPostComposerScreen> {
             controller: _title,
             maxLength: 100,
             maxLines: 2,
-            readOnly: _attempted || _sending || _receipt != null,
+            readOnly: _attempted || _restoring || _restoreFailed ||
+                _saving || _sending || _receipt != null,
             decoration: const InputDecoration(
               labelText: 'Title', border: OutlineInputBorder(),
               hintText: 'What is this audio Talk about?',
             ),
           ),
+          if (_restoring)
+            const LinearProgressIndicator(key: ValueKey('talk-restoring')),
           if (_message != null)
             Text(_message!, key: const ValueKey('talk-error')),
+          if (_restoreFailed)
+            TextButton(
+              key: const ValueKey('talk-retry-recovery'),
+              onPressed: _restorePending,
+              child: const Text('Retry secure recovery'),
+            ),
           if (_receipt != null)
             Text(switch (_receipt!.status) {
               'published' => 'Talk published.',
@@ -219,17 +292,17 @@ class _ComposerState extends State<AudioPostComposerScreen> {
           FilledButton.icon(
             key: const ValueKey('talk-publish'),
             onPressed: _canPublish ? _publish : null,
-            icon: _sending ? const SizedBox(
+            icon: _sending || _saving ? const SizedBox(
               width: 16, height: 16,
               child: CircularProgressIndicator(strokeWidth: 2)) :
               const Icon(Icons.publish_outlined),
-            label: Text(_sending ? 'Submitting…' :
+            label: Text(_saving ? 'Saving retry…' : _sending ? 'Submitting…' :
                 _attempted ? 'Retry publication' : 'Publish Talk'),
           ),
           if (_audio != null || _attempted || _receipt != null)
             TextButton(
               key: const ValueKey('talk-discard'),
-              onPressed: _sending ? null : _discard,
+              onPressed: _sending || _saving || _restoring ? null : _discard,
               child: Text(_receipt != null ? 'New Talk' : 'Discard draft'),
             ),
         ],
