@@ -280,8 +280,41 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
   });
 }
 
+/**
+ * Crypto ledger reasons are an accounting boundary, not free-form provider text.
+ * Keep this exhaustive mapping in sync with the canonical reason union.
+ */
+const cryptoLedgerReasonDirections: Readonly<
+  Record<CryptoLedgerEntry["reason"], "credit" | "debit" | "either">
+> = Object.freeze({
+  "provider-deposit": "credit",
+  "provider-refund": "debit",
+  "withdrawal-reserve": "debit",
+  "withdrawal-release": "credit",
+  "withdrawal-fee-reserve": "debit",
+  "withdrawal-fee-release": "credit",
+  "conversion-debit": "debit",
+  "conversion-credit": "credit",
+  "conversion-release": "credit",
+  "fiat-purchase-credit": "credit",
+  "fiat-purchase-refund": "debit",
+  "adjustment": "either",
+});
+
 export function normalizeCryptoLedgerEntry(input: CryptoLedgerEntry): CryptoLedgerEntry {
   if (input.schemaVersion !== 1) throw new TypeError("crypto.ledger.schema.invalid");
+  const direction = input.direction;
+  if (direction !== "credit" && direction !== "debit") {
+    throw new TypeError("crypto.ledger.direction.invalid");
+  }
+  const reason = input.reason;
+  if (!Object.prototype.hasOwnProperty.call(cryptoLedgerReasonDirections, reason)) {
+    throw new TypeError("crypto.ledger.reason.invalid");
+  }
+  const expectedDirection = cryptoLedgerReasonDirections[reason];
+  if (expectedDirection !== "either" && expectedDirection !== direction) {
+    throw new TypeError("crypto.ledger.reason_direction.invalid");
+  }
   return Object.freeze({
     schemaVersion: 1,
     tenantId: parseCanonicalId("tenant", input.tenantId),
@@ -290,8 +323,8 @@ export function normalizeCryptoLedgerEntry(input: CryptoLedgerEntry): CryptoLedg
     asset: normalizeCryptoAsset(input.asset),
     network: normalizeCryptoNetwork(input.network),
     amount: normalizeCryptoAmount(input.amount),
-    direction: input.direction === "credit" ? "credit" : input.direction === "debit" ? "debit" : (() => { throw new TypeError("crypto.ledger.direction.invalid"); })(),
-    reason: input.reason,
+    direction,
+    reason,
     requestId: parseCanonicalId("request", input.requestId),
     providerReference: optional(input.providerReference, "crypto.provider_reference.invalid", 128),
     createdAt: toInstant(input.createdAt),
