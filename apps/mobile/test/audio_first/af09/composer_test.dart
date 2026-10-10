@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_composer_screen.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
 import 'package:masanawa/src/audio_posts/audio_post_draft_store.dart';
+import 'package:masanawa/src/audio_posts/audio_post_capture_sheet.dart';
 
 class FakeAttempts implements TalkPublishAttemptStore {
   PendingTalkPublish? pending;
@@ -54,13 +55,15 @@ class PostsFake implements AudioPostTransport {
 
 Widget composer(PostsFake posts, String account, {
   AcquireVerifiedPostAudio? record,
+  UploadVerifiedTalkAudio? upload,
   void Function(AudioPost)? published,
   TalkPublishAttemptStore? store,
   bool Function(String)? isCurrent,
 }) => MaterialApp(home: AudioPostComposerScreen(
   transport: posts, accountId: account,
   isCurrentAccount: isCurrent ?? (id) => id == account,
-  acquireVerifiedAudio: record, onPublished: published,
+  acquireVerifiedAudio: record, uploadVerifiedAudio: upload,
+  onPublished: published,
   newRequestId: () => 'stable-attempt-1',
   attemptStore: store ?? FakeAttempts(),
 ));
@@ -91,6 +94,27 @@ void main() {
     expect(record.onPressed, isNull);
     expect(publish.onPressed, isNull);
     expect(find.textContaining('not configured in this build'), findsOneWidget);
+    expect(posts.sends, 0);
+  });
+
+  testWidgets('optional canonical private uploader opens real capture instead of fake asset',
+      (tester) async {
+    final posts = PostsFake();
+    await tester.pumpWidget(composer(posts, 'user-a',
+      upload: ({required localPath, required startMs, required endMs}) async =>
+        VerifiedPostAudio(assetId: 'server-receipt', durationMs: endMs - startMs)));
+    await tester.pumpAndSettle();
+    final record = tester.widget<OutlinedButton>(
+      find.byKey(const ValueKey('talk-record')));
+    expect(record.onPressed, isNotNull);
+    expect(find.textContaining('not configured in this build'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('talk-record')));
+    await tester.pumpAndSettle();
+    expect(find.text('Record a Talk'), findsOneWidget);
+    expect(posts.sends, 0);
+    await tester.tap(find.text('Discard and close'));
+    await tester.pumpAndSettle();
+    expect(find.text('Record a Talk'), findsNothing);
     expect(posts.sends, 0);
   });
 
