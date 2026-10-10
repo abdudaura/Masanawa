@@ -83,6 +83,22 @@
       "claimed_at": "2026-10-10T01:19:59.149Z",
       "heartbeat_at": "2026-10-10T01:19:59.149Z",
       "expires_at": "2026-10-10T01:24:59.149Z"
+    },
+    {
+      "claim_id": "masanawa-01-af15-media-batch-guards-20261010",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "Harden existing tombstone media deletion executor against late drain and malformed claim payload; focused regression suite; no new authority/migration/wiring",
+      "paths": [
+        "services/worker/src/durable_operations/media_cleanup.ts",
+        "services/worker/src/durable_operations/media_cleanup.test.ts",
+        "docs/workstreams/AF15-media-batch-guards-20261010.md"
+      ],
+      "branch": "work/af15-media-batch-guards-20261010-masanawa01",
+      "base_sha": "a0fddc155c98e427f2952e2c044ca2225e42dc63",
+      "claimed_at": "2026-10-10T01:21:10.410Z",
+      "heartbeat_at": "2026-10-10T01:21:10.410Z",
+      "expires_at": "2026-10-10T01:26:10.410Z",
+      "notes": "Fresh main f381f077; start from previously reviewed nondeploy AF15 integration commit a0fddc. Preserve release #595 and active AF15 orphan-cleanup lease, no worker main/schema/provider edits."
     }
   ],
   "history": [
