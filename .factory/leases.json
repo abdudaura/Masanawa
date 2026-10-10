@@ -154,8 +154,8 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "claimed_at": "2026-10-10T03:31:51.051Z",
-      "heartbeat_at": "2026-10-10T03:31:51.051Z",
-      "expires_at": "2026-10-10T03:36:51.051Z",
+      "heartbeat_at": "2026-10-10T03:35:02.358Z",
+      "expires_at": "2026-10-10T03:40:02.358Z",
       "notes": "Account-isolated encrypted storage only; existing composer uses TalkPublishAttemptStore unchanged."
     },
     {
