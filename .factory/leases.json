@@ -341,7 +341,12 @@
       "claimed_at": "2026-10-10T07:36:47.542Z",
       "heartbeat_at": "2026-10-10T07:47:06.687Z",
       "expires_at": "2026-10-10T07:52:06.687Z",
-      "notes": "Specific path claim, reuse existing PR #612, enforce no raw machine directives in done/persisted reply, add negative regression, execute hosted Foundation CI. AF00 root integration unchanged."
+      "notes": "Specific path claim, reuse existing PR #612, enforce no raw machine directives in done/persisted reply, add negative regression, execute hosted Foundation CI. AF00 root integration unchanged.",
+      "released_at": "2026-10-10T07:49:30.046Z",
+      "release_reason": "Same existing PR #612: final/durable directive fence and split-chunk streaming source + three authored regressions. Actions actually executed Node24/pnpm12 install/typecheck but common baseline TS2459 failed and prevented Vitest; #460 subsequently typechecked but full test suite failed. Source not qualified or integrated; AF00 root holds composition; CHAT-P04, P02 and GWANI-P01 incomplete.",
+      "source_head_sha": "6d832e1a238cb5b473a62fbdfc33c72f9982fe5a",
+      "integration_head_sha": null,
+      "test_state": "BLOCKED: #612 Foundation 38035392965 TS2459; targeted Vitest/PG/Flutter NOT_RUN. #460 Foundation 38035472618 typecheck PASS, suite FAIL, provider/build SKIPPED."
     },
     {
       "claim_id": "af13-pr460-gateway-mocks-20261010-gpt6-0740",
