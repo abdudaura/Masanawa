@@ -67,7 +67,10 @@ function assess(matrix,records,sha,verifiedProofs=new Set()){
   const count=Object.fromEntries([...kinds].map(s=>[s,journeys.filter(j=>j.result===s).length]));
   const required=journeys.filter(j=>j.tier==="release");
   const readiness=failures.length?"INVALID":required.some(j=>j.result==="FAIL")?"FAIL":required.some(j=>j.result!=="PASS_REAL")?"BLOCKED":"REVIEW_REQUIRED";
-  return {valid:failures.length===0,readiness,errors:failures,summary:{total:journeys.length,release:required.length,counts:count},jexport async function verifyProofs(records,root){
+  return {valid:failures.length===0,readiness,errors:failures,summary:{total:journeys.length,release:required.length,counts:count},journeys};
+}
+export {checkMatrix,checkRecord,assess};
+export async function verifyProofs(records,root){
   const verified=new Set(), errors=[];
   // The proof root is operator-selected, not derived from evidence JSON.
   const base=await fs.realpath(root);
@@ -86,10 +89,6 @@ function assess(matrix,records,sha,verifiedProofs=new Set()){
         // Never echo arbitrary evidence paths or attacker-supplied text.
         errors.push('missing, unsafe, changed or mismatched proof');
       }
-    }
-  }
-  return {verified,errors};
-}ble proof');}
     }
   }
   return {verified,errors};
