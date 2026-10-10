@@ -1027,22 +1027,6 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
-    },
-    {
-      "claim_id": "masanawa-blueprint-four-screen-redesign-20261010",
-      "owner": "BLUEPRINT-UX-01 / owner-requested researched UX options",
-      "scope": "Propose audio Discover/Following, cover art, blue brand, chat composer and independent billing/crypto screens (no source changes)",
-      "paths": [
-        "docs/blueprint-v1/TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md",
-        "docs/blueprint-v1/README.md"
-      ],
-      "branch": "planning/masanawa-blueprint-v1-20261010",
-      "base_sha": "b731251e4ddbbd91bf15850f3fa072ecb58a6a9f",
-      "source_pr": 615,
-      "claimed_at": "2026-10-10T11:57:44.129Z",
-      "heartbeat_at": "2026-10-10T11:57:44.129Z",
-      "expires_at": "2026-10-10T12:02:44.129Z",
-      "notes": "Proposal only, awaiting user approval; no changing production router/composer/migrations/financial code."
     }
   ],
   "history": [
@@ -3439,6 +3423,26 @@
       "released_at": "2026-10-10T11:48:46.077Z",
       "source_head": "b731251e4ddbbd91bf15850f3fa072ecb58a6a9f",
       "release_reason": "Owner-driven scope removal on existing draft blueprint PR #615: 52 screens, 14 journeys, no Twin product screens, AI badge copy removed, 16 identified legacy feature groups. Documentation source only; runtime retirement and tests remain NOT_RUN; AF00/AF01/AF09 notified on #600/#576/#609."
+    },
+    {
+      "claim_id": "masanawa-blueprint-four-screen-redesign-20261010",
+      "owner": "BLUEPRINT-UX-01 / owner-requested researched UX options",
+      "scope": "Propose audio Discover/Following, cover art, blue brand, chat composer and independent billing/crypto screens (no source changes)",
+      "paths": [
+        "docs/blueprint-v1/TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md",
+        "docs/blueprint-v1/README.md"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "base_sha": "b731251e4ddbbd91bf15850f3fa072ecb58a6a9f",
+      "source_pr": 615,
+      "claimed_at": "2026-10-10T11:57:44.129Z",
+      "heartbeat_at": "2026-10-10T11:57:44.129Z",
+      "expires_at": "2026-10-10T12:02:44.129Z",
+      "notes": "Proposal only, awaiting user approval; no changing production router/composer/migrations/financial code.",
+      "released_at": "2026-10-10T12:02:05.002Z",
+      "source_head": "1ce9618ac7d992926e58fa27d853351bbd9a87fe",
+      "integration_head_sha": null,
+      "release_reason": "Blueprint PR615 research/design options added and README updated. Static 7 docs/52 SC/14 journeys/5 decisions checked; no source/runtime tests or merges. AF00/AF09/AF01 notified in PR #600/#609/#576; owner design approval still required."
     }
   ]
 }
