@@ -1284,7 +1284,10 @@
       "expires_at": "2026-10-10T16:48:15.776Z",
       "notes": "Continuing original J12 branch & its five committed changes after reviewing branch at 86041e2 and creating #633; fixing worker expired-lease exhaustion, tests, and source integration. Exact paths unchanged. No main/live migration/production changes.",
       "source_pr": 633,
-      "source_head": "86041e270a0570306eea275e78dec1433f8df786"
+      "source_head": "f541a49fa6bc28e39d52dec26b6a374378ff95c4",
+      "released_at": "2026-10-10T16:46:28.247Z",
+      "release_reason": "PR #633 source merged to nondeploying integration/rebuild at f7f8ae38ab65cb9ba2ff46103f27185ce8a3f2b8; source head f541a49fa6bc28e39d52dec26b6a374378ff95c4. Actual executable checks NOT_RUN/queued, Feed/PG/main composition AF00 (#616 comment 6099839468). Source merged, release not qualified.",
+      "integration_head_sha": "f7f8ae38ab65cb9ba2ff46103f27185ce8a3f2b8"
     },
     {
       "claim_id": "l-feed-j06-core-20261010-gpt6-1734",
