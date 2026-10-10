@@ -114,9 +114,13 @@ export function createAudioPostPlaybackService(deps: PublishedTalkPlaybackDeps) 
             revision: first.revision, durationMs: first.durationMs,
           });
         } catch {
-          throw new TalkPlaybackError("CAPABILITY_UNAVAILABLE");
+          // Listening analytics are not a media permission boundary. A broken
+          // optional counter must never prevent already-authorized playback,
+          // and no unverified view grant is returned when admission fails.
+          listenSessionId = undefined;
         }
-        // Session can rotate while the DB grants a listen: never return ticket.
+        // Even if the counter is unavailable, recheck auth and publication
+        // after the asynchronous attempt before returning the signed ticket.
         let current: PostActor;
         try { current = await input.currentActor(); }
         catch { throw new TalkPlaybackError("AUTH_REQUIRED"); }
