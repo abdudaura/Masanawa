@@ -99,6 +99,30 @@ class _FakeAudioOutput implements PublishedTalkAudioOutput {
 }
 
 void main() {
+  testWidgets('account replacement closes an older creator route',
+      (tester) async {
+    final posts = _AudioPosts();
+    final creators = _Creators();
+    Widget root(String account) => MaterialApp(
+      home: PublishedTalksDestination(
+        accountId: account, isCurrentAccount: (id) => id == account,
+        transport: posts, creatorTransport: creators,
+        attemptStore: _MemoryAttemptStore(),
+      ),
+    );
+    await tester.pumpWidget(root('alice'));
+    await tester.pumpAndSettle();
+    final creator = find.byKey(const ValueKey('talk-creator-post1'));
+    await tester.ensureVisible(creator);
+    await tester.tap(creator);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('creator-profile-list')), findsOneWidget);
+    await tester.pumpWidget(root('bob'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('creator-profile-list')), findsNothing);
+    expect(find.byKey(const ValueKey('audio-post-discover')), findsOneWidget);
+  });
+
   testWidgets('creator Talk opens controllable playback with same AF09 ticket',
       (tester) async {
     final output = _FakeAudioOutput();
