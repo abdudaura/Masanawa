@@ -56,8 +56,10 @@ Widget composer(PostsFake posts, String account, {
   AcquireVerifiedPostAudio? record,
   void Function(AudioPost)? published,
   TalkPublishAttemptStore? store,
+  bool Function(String)? isCurrent,
 }) => MaterialApp(home: AudioPostComposerScreen(
-  transport: posts, accountId: account, isCurrentAccount: (id) => id == account,
+  transport: posts, accountId: account,
+  isCurrentAccount: isCurrent ?? (id) => id == account,
   acquireVerifiedAudio: record, onPublished: published,
   newRequestId: () => 'stable-attempt-1',
   attemptStore: store ?? FakeAttempts(),
@@ -517,5 +519,37 @@ testWidgets('moderation failure is recovered as terminal, not an invitation to r
   expect(callbacks, ['processing']);
 });
 
+
+
+testWidgets('revoked session during status lookup clears spinner but never accepts late result', (tester) async {
+  final posts = ReceiptPostsFake();
+  var authorized = true;
+  await tester.pumpWidget(composer(posts, 'user-a',
+    isCurrent: (accountId) => authorized && accountId == 'user-a',
+    record: () async => const VerifiedPostAudio(assetId: 'ready-a', durationMs: 30000)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Private A');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  final pending = Completer<AudioPost?>();
+  posts.onLookup = () => pending.future;
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pump();
+  authorized = false;
+  pending.complete(AudioPost(
+    postId: 'post-one', authorId: 'owner', authorKind: 'human',
+    title: 'Private A', durationMs: 30000, status: 'published', revision: 1,
+    createdAt: DateTime.utc(2026, 10, 10)));
+  await tester.pumpAndSettle();
+  authorized = true;
+  await tester.pump();
+  expect(find.text('Talk published.'), findsNothing);
+  expect(find.textContaining('Talk received; it is processing'), findsOneWidget);
+  expect(tester.widget<TextButton>(
+    find.byKey(const ValueKey('talk-check-status'))).onPressed, isNotNull);
+  expect(posts.sends, 1);
+});
 
 }
