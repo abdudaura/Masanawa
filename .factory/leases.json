@@ -110,32 +110,6 @@
       "claimed_at": "2026-10-10T01:48:31Z",
       "heartbeat_at": "2026-10-10T01:57:39Z",
       "expires_at": "2026-10-10T02:02:39Z"
-    },
-    {
-      "claim_id": "masanawa-u02-milestone-20261010",
-      "owner": "MASANAWA-U02-CONTINUATION-20261010",
-      "scope": "Existing U02/RECOVERY-02 connected durable status-only recovery source and real tests; preserve original #520/#580 and AF00 composition ownership",
-      "paths": [
-        "docs/workstreams/recovery-02-u02-20261009.md",
-        "packages/operator-tasks/package.json",
-        "packages/operator-tasks/src/index.test.ts",
-        "packages/operator-tasks/src/index.ts",
-        "packages/operator-tasks/src/postgres.execution.test.mjs",
-        "packages/operator-tasks/src/postgres.ts",
-        "packages/operator-tasks/src/recovery.test.ts",
-        "packages/operator-tasks/src/recovery.ts",
-        "services/gateway/src/operator_tasks/routes.test.ts",
-        "services/gateway/src/operator_tasks/routes.ts"
-      ],
-      "branch": "work/recovery-02-u02-task-journal-20261009",
-      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
-      "source_pr": 580,
-      "source_head": "bed641dd2caf357f9d2bba644d5143a60e899658",
-      "claimed_at": "2026-10-10T01:51:35.780Z",
-      "heartbeat_at": "2026-10-10T01:52:02.732Z",
-      "expires_at": "2026-10-10T01:57:02.732Z",
-      "notes": "Reviewed stale transfer recorded in PR comment 6092382298; prior source never removed.",
-      "pr": "https://github.com/Baatiku/masanawa/pull/580"
     }
   ],
   "history": [
@@ -1003,6 +977,34 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/596",
       "integration_head_sha": "811dd40492e7a5f155031b9fb0a0a1efa36ad151",
       "release_reason": "Existing PR #596 repaired malformed qualifier at eb628bc85; 4 source/test Git blobs match remote exactly, Node22.16 native 16/16 PASS, syntax checks PASS, handoff and PR updated; awaiting AF00 designated safe nondeploying unified integration baseline, actual device/DB/provider/restore not run. No new branch or deployment."
+    },
+    {
+      "claim_id": "masanawa-u02-milestone-20261010",
+      "owner": "MASANAWA-U02-CONTINUATION-20261010",
+      "scope": "Existing U02/RECOVERY-02 connected durable status-only recovery source and real tests; preserve original #520/#580 and AF00 composition ownership",
+      "paths": [
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "packages/operator-tasks/package.json",
+        "packages/operator-tasks/src/index.test.ts",
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/postgres.execution.test.mjs",
+        "packages/operator-tasks/src/postgres.ts",
+        "packages/operator-tasks/src/recovery.test.ts",
+        "packages/operator-tasks/src/recovery.ts",
+        "services/gateway/src/operator_tasks/routes.test.ts",
+        "services/gateway/src/operator_tasks/routes.ts"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "36e412b59f080048a034aa0cffd697276e19f9ba",
+      "source_pr": 580,
+      "source_head": "bed641dd2caf357f9d2bba644d5143a60e899658",
+      "claimed_at": "2026-10-10T01:51:35.780Z",
+      "heartbeat_at": "2026-10-10T01:52:02.732Z",
+      "expires_at": "2026-10-10T01:57:02.732Z",
+      "notes": "Reviewed stale transfer recorded in PR comment 6092382298; prior source never removed.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/580",
+      "released_at": "2026-10-10T01:57:48.532Z",
+      "release_reason": "Source recovery tranche on original PR #580 delivered at 64a8462de00229ce7b3be66175c40b0c74958715; authored 8 Vitest cases NOT_RUN (Node24+pnpm/private checkout/PG18 unavailable); AF00/AF13 executable qualification and U01/U04/F11/F18 composition are next. No merge, main or production change."
     }
   ]
 }
