@@ -144,6 +144,23 @@
       "claimed_at": "2026-10-10T01:34:27Z",
       "heartbeat_at": "2026-10-10T01:34:27Z",
       "expires_at": "2026-10-10T01:39:27Z"
+    },
+    {
+      "claim_id": "masanawa01-af01-fiat-onramp-paid-20261010-e",
+      "owner": "MASANAWA-01 / AF01 onramp paid guard",
+      "scope": "AF01 binding: block underpaid finished fiat purchase in refresh/readback/IPN; no new ledger, provider, or commerce contract",
+      "paths": [
+        "services/gateway/src/financial_service.ts",
+        "services/gateway/src/financial_audio_first/onramp_paid_guard.ts",
+        "services/gateway/src/financial_audio_first/onramp_paid_guard.test.mjs",
+        "docs/workstreams/AF01-fiat-onramp-paid-guard-20261010.md"
+      ],
+      "branch": "work/af01-fiat-onramp-paid-guard-20261010-masanawa01-e",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "",
+      "claimed_at": "2026-10-10T01:36:55Z",
+      "heartbeat_at": "2026-10-10T01:36:55Z",
+      "expires_at": "2026-10-10T01:41:55Z"
     }
   ],
   "history": [
