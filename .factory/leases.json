@@ -257,6 +257,23 @@
       "heartbeat_at": "2026-10-10T04:24:29.040Z",
       "expires_at": "2026-10-10T04:29:29.040Z",
       "notes": "Independent AF09 composer+widget tests. Does not touch 0517 creator navigation or 0519 comment pagination source."
+    },
+    {
+      "claim_id": "af09-609-comments-sheet-gpt6-0527",
+      "owner": "AF09 existing #609 — GPT-6 2026-10-10 0527 comments sheet",
+      "scope": "Add account-fenced published Talk comment sheet consuming canonical auth API and bounded cursor paging, with retry-safe writes; request bounded feed mount transfer from current AF09 owner",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_comments_sheet.dart",
+        "apps/mobile/test/audio_first/af09/comments_sheet_test.dart",
+        "docs/workstreams/AF09-comments-sheet-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:26:58.819Z",
+      "heartbeat_at": "2026-10-10T04:26:58.819Z",
+      "expires_at": "2026-10-10T04:31:58.819Z",
+      "notes": "No edits to concurrent feed/destination/transport/routes/SQL/shared migrations; existing PR only."
     }
   ],
   "history": [
