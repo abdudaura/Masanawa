@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {checkMatrix,checkCanonicalMatrix,checkRecord,assess,verifyProofs} from './qualify.mjs';
+import {checkMatrix,checkCanonicalMatrix,checkRecord,assess,verifyProofs,readBoundedJson} from './qualify.mjs';
 const sha='f381f077c485c04261459b77a42c215d3ce3a14b';
 const mat={schemaVersion:1,contract:'AF-v1',journeys:[{id:'WF-A01',boundaries:['auth','database','provider'],tier:'release'}]};
 const rec=(patch={})=>({journeyId:'WF-A01',result:'NOT_RUN',codeSha:sha,executedAt:new Date().toISOString(),boundaries:[],environment:{mode:'not_run'},...patch});
@@ -40,7 +40,7 @@ test('real proof requires verified checksum AND review remains necessary',async(
  try{
   const content='redacted DB/provider result';await writeFile(path.join(dir,'proof.txt'),content);
   const digest=createHash('sha256').update(content).digest('hex');
-  const real=rec({result:'PASS_REAL',environment:{mode:'real',databaseRef:'disposable-db',providerRef:'provider-staging'},boundaries:['auth','database','provider'],proofs:[{path:'proof.txt',sha256:digest}],review:{reviewer:'Independent QA',reference:'approved-evidence-001'}});
+  const real=rec({result:'PASS_REAL',environment:{mode:'real',databaseRef:'disposable-db',providerRef:'provider-staging'},boundaries:['auth','database','provider'],proofs:[{path:'proof.txt',sha256:digest}],review:{reviewer:'Independent QA',reference:'approved-evidence-001'},execution:{steps:2,command:'node --test reviewed-boundaries.test.mjs',assertions:['db-readback','provider-idempotency']}});
   const v=await verifyProofs([real],dir);
   assert.deepEqual(v.errors,[]);
   const q=assess(mat,[real],sha,v.verified);assert.equal(q.valid,true);assert.equal(q.readiness,'REVIEW_REQUIRED');
@@ -131,4 +131,28 @@ test('all eight DB restore and operations gates are mandatory to review release'
  assert.equal(report.readiness,'BLOCKED');
  assert.equal(report.summary.release,35);
  assert.equal(report.journeys.filter(j=>j.id.startsWith('DB-')&&j.result==='NOT_RUN').length,8);
+});
+
+
+test('PASS_REAL requires actual execution command, nonzero steps, assertions and recent UTC time',()=>{
+ const good=rec({result:'PASS_REAL',boundaries:mat.journeys[0].boundaries,environment:{mode:'real',databaseRef:'isolated-db',providerRef:'staging-provider'},proofs:[{path:'redacted.log',sha256:'a'.repeat(64)}],review:{reviewer:'reviewer',reference:'evidence-ref'},execution:{steps:3,command:'node --test integration.test.mjs',assertions:['authoritative-db-readback']}});
+ assert.deepEqual(checkRecord(good,mat.journeys[0],sha),[]);
+ for(const execution of [{...good.execution,steps:0},{...good.execution,assertions:[]},{...good.execution,command:''},undefined]){
+   assert.ok(checkRecord({...good,execution},mat.journeys[0],sha).some(x=>x.includes('executed command')));
+ }
+ for(const executedAt of ['2020-01-01T00:00:00Z','2030-01-01T00:00:00+01:00','not-a-date']){
+   assert.ok(checkRecord({...good,executedAt},mat.journeys[0],sha).some(x=>x.includes('recent UTC')));
+ }
+});
+test('qualification input parser refuses oversized, empty and nonregular files',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'af13-bounded-json-'));
+ try{
+   await writeFile(path.join(dir,'small.json'),JSON.stringify({schemaVersion:1}));
+   assert.deepEqual(await readBoundedJson(path.join(dir,'small.json')),{schemaVersion:1});
+   await writeFile(path.join(dir,'large.json'),' '.repeat(512*1024+1));
+   await assert.rejects(readBoundedJson(path.join(dir,'large.json')),/oversized/);
+   await writeFile(path.join(dir,'empty.json'),'');
+   await assert.rejects(readBoundedJson(path.join(dir,'empty.json')),/empty/);
+   await assert.rejects(readBoundedJson(dir),/unsafe/);
+ }finally{await rm(dir,{recursive:true,force:true});}
 });
