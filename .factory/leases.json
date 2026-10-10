@@ -135,23 +135,6 @@
       "notes": "Follow service/routes/PG adapter/Flutter UI/tests and handoff on existing #609. 3/3 blob-matched Node smoke and isolated tsc pass, full runners pending. Reviewing exact head and handing off."
     },
     {
-      "claim_id": "af09-publish-composer-20261010-window0316",
-      "owner": "Masanawa AF09 composer continuation window0316; existing PR #609",
-      "scope": "Implement actual publish composer UI using canonical verified AF05 media selection and existing AF09 server transport, with offline/permission/retry/idempotence and widget tests. No worker/comment/feed/router/migration changes.",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
-        "apps/mobile/test/audio_first/af09/composer_test.dart",
-        "docs/workstreams/AF09-composer-20261010-window0316.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:20:39.453Z",
-      "heartbeat_at": "2026-10-10T02:26:07.650Z",
-      "expires_at": "2026-10-10T02:31:07.650Z",
-      "notes": "Existing PR #609: verified publish composer + six authored Flutter tests + SHA-specific handoff committed; reviewing terminal moderation status and exact-head checks."
-    },
-    {
       "claim_id": "masanawa01-af14-activity-account-fence-20261010",
       "owner": "MASANAWA-01 / AF14 continuing existing PR #604",
       "scope": "Connect customer Activity projection and invitation actions to signed-in account boundary; prevent stale Activity rows and old-account mutation outcomes after switch; extend real widget contracts, not new backend authority",
@@ -1179,6 +1162,27 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/523",
       "released_at": "2026-10-10T02:26:00Z",
       "release_reason": "Published existing PR #523 task-history canonical U02 projection and route-read source; exact task_history source/tests Git blobs match local files, isolated strict tsc PASS and native node --test 7/7 PASS. Full Gateway/U02 PG/Flutter/combined checks NOT_RUN and AF00 safe baseline not elected; no merge, no deployment. Released U04 paths to one root integrator after SHA-specific handoff."
+    },
+    {
+      "claim_id": "af09-publish-composer-20261010-window0316",
+      "owner": "Masanawa AF09 composer continuation window0316; existing PR #609",
+      "scope": "Implement actual publish composer UI using canonical verified AF05 media selection and existing AF09 server transport, with offline/permission/retry/idempotence and widget tests. No worker/comment/feed/router/migration changes.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-composer-20261010-window0316.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:20:39.453Z",
+      "heartbeat_at": "2026-10-10T02:26:07.650Z",
+      "expires_at": "2026-10-10T02:31:07.650Z",
+      "notes": "Existing PR #609: verified publish composer + six authored Flutter tests + SHA-specific handoff committed; reviewing terminal moderation status and exact-head checks.",
+      "source_head": "3e3bc0a392a81251a4274a5b87afb088482cb65e",
+      "released_at": "2026-10-10T02:29:04.048Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "release_reason": "AF09 verified-audio post composer plus 7 authored Flutter widget regression cases committed in same PR #609; commit 182cf7f655c2086e19a1e9d209a5baec4c932f71, final handoff commit 4c41553c11c590c022a1eb359bf622fb3b34405b. GitHub source readback structural only. Flutter analyzer/widget and combined Node/PG/real media not run: no Flutter/Dart or compatible checkout; GitHub Actions no reported steps, Vercel quota rate-limited. AF00 must mount on safe baseline, AF05 supply media, AF13/AF00 run executable tests. PARTIAL_IMPLEMENTATION, not merged/released."
     }
   ]
 }
