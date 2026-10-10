@@ -117,8 +117,9 @@ export function createPostgresFollowingRepository(
         "AND f.author_id=p.author_id AND f.author_kind=p.author_kind " +
         "AND f.follower_account_id=$2 " +
         "WHERE p.tenant_id=$1 AND p.status='published' " +
-        "AND ($3::timestamptz IS NULL OR (p.created_at,p.post_id)<($3::timestamptz,$4::text)) " +
-        "ORDER BY p.created_at DESC,p.post_id DESC LIMIT $5",
+        "AND ($3::timestamptz IS NULL OR " +
+        "(date_trunc('milliseconds',p.created_at),p.post_id)<($3::timestamptz,$4::text)) " +
+        "ORDER BY date_trunc('milliseconds',p.created_at) DESC,p.post_id DESC LIMIT $5",
         [tenantId, viewerId, seek?.created ?? null, seek?.id ?? null, batchSize],
       );
       const visible: AudioPostRecord[] = [];
