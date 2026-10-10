@@ -142,24 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "masanawa-af15-599-continuation-20261010-v2",
-      "owner": "MASANAWA-AF15 PR599 canonical source continuation",
-      "scope": "Add concrete version-pinned S3 delete adapter and tests to existing canonical worker cleanup without activating runtime",
-      "paths": [
-        "services/worker/src/durable_operations/media_cleanup_s3.ts",
-        "services/worker/src/durable_operations/media_cleanup_s3.test.ts",
-        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
-      ],
-      "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
-      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
-      "source_pr": 599,
-      "source_head": "4d8b2c97c35a753e074d8367f9abfdac5c7ddf2c",
-      "claimed_at": "2026-10-10T02:59:18.620Z",
-      "heartbeat_at": "2026-10-10T02:59:18.620Z",
-      "expires_at": "2026-10-10T03:04:18.620Z",
-      "notes": "Prior claim was published/read back but lost from the shared registry following concurrent updates; no conflicting exact-path owners found on refresh. This new bounded claim does not authorize AF00 composition, migration, or production delete."
-    },
-    {
       "claim_id": "af13-596-unique-proof-reconciliation-20261010",
       "owner": "AF13 #596 continuing qualification reconciliation",
       "scope": "Adopt unique PASS_REAL executed-step/command/recency and bounded-input controls from merged alternatives #592/#594 into elected canonical #596 qualifier; actual connected tests; no duplicate tool or runtime modifications.",
@@ -1496,6 +1478,27 @@
       "expires_at": "2026-10-10T03:01:26Z",
       "released_at": "2026-10-10T03:00:49Z",
       "release_reason": "PR #596 exact head c9da52c9bbd5da1a3313cc18d8b734b97624f919; source canonical matrix pin + eight mandatory DB release gates; 10/10 GitHub structural checks; 6/6 isolated Node simulation only; full native suite NOT_RUN; exact owner/path source closure table in AF13 ledger and PR comment 6093089066. Next AF00 designate deployment-audited common nondeploying target and qualify/import; AF15 connect media/DB lifecycle and run real restore; do not pull locally before missing remote source and composition closes."
+    },
+    {
+      "claim_id": "masanawa-af15-599-continuation-20261010-v2",
+      "owner": "MASANAWA-AF15 PR599 canonical source continuation",
+      "scope": "Add concrete version-pinned S3 delete adapter and tests to existing canonical worker cleanup without activating runtime",
+      "paths": [
+        "services/worker/src/durable_operations/media_cleanup_s3.ts",
+        "services/worker/src/durable_operations/media_cleanup_s3.test.ts",
+        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
+      ],
+      "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 599,
+      "source_head": "7faf624dfd62a6fdec6f40a7f74fb1b4e51d1790",
+      "claimed_at": "2026-10-10T02:59:18.620Z",
+      "heartbeat_at": "2026-10-10T02:59:18.620Z",
+      "expires_at": "2026-10-10T03:04:18.620Z",
+      "notes": "Prior claim was published/read back but lost from the shared registry following concurrent updates; no conflicting exact-path owners found on refresh. This new bounded claim does not authorize AF00 composition, migration, or production delete.",
+      "released_at": "2026-10-10T03:03:11.571Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/599",
+      "release_reason": "Same PR canonical runner/S3 adapter and tests committed; exact remote readback; ten V8 transformed-source runtime probes PASSED on canonical runner; workspace Vitest/TS/full PostgreSQL/S3 NOT_RUN due inaccessible private repo and missing pnpm; Foundation CI zero steps. Migration+PG adapter+worker composition+domain references MISSING. AF00 bounded transfer required before safe integration; deletion remains disabled."
     }
   ]
 }
