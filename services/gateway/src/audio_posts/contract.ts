@@ -62,6 +62,16 @@ export interface AudioPostComment {
   removed: boolean;
 }
 
+/** Public comments never reveal another account's internal identity key. */
+export interface PublicAudioPostComment {
+  postId: string;
+  commentId: string;
+  body: string;
+  createdAt: string;
+  removed: boolean;
+  isMine: boolean;
+}
+
 export interface AudioPostRepository {
   /** Unique constraint on tenant + account + requestId; conflicting payload rejected. */
   createOnce(intent: NewAudioPost): Promise<AudioPostRecord>;
