@@ -1,0 +1,133 @@
+# Masanawa v1 — Architecture, canonical contracts, provider economics and release gates
+Status: **PROPOSED**, 2026-10-10. This document is not verified executable source and must not change existing runtime providers or financial authority without reviewed migration.
+
+## Architecture decision: modular monolith first
+Preserve working boundaries and contract packages inside existing monorepo rather than greenfield microservices.
+```text
+Android Flutter member app    Flutter admin app    (small optional web/ops)
+            \                     |                  /
+                   HTTPS/WebSocket/WSS
+                  authenticated API Gateway
+   +---------+---------+---------+-------+---------+
+   | Identity| Chat &  | Audio & | Agent | Ledger, |
+   | sessions| presence| social  | Tasks | Commerce|
+   +---------+---------+---------+-------+---------+
+                   domain services / workers
+         PostgreSQL canonical state + outbox/jobs
+               object storage / media refs
+     external adapters (Gemini, Flutterwave, NOWPayments,
+              Telegram, eligible WhatsApp, push)
+   static-egress DigitalOcean relay ONLY for requirements
+```
+Existing workspaces (`apps/mobile`, `apps/admin_mobile`, `apps/web`, `apps/ops`, `services/gateway`, `services/worker`, `packages/*`, `adapters/storage/postgres`, `adapters/crypto/nowpayments`, `database/*`) are inventory starting points, not guaranteed operational endpoints. No direct mobile write to provider, ledger or database. Server holds credentials. Avoid introducing a new wallet/chat/agent backend without a demonstrated need.
+
+### Source-of-truth hierarchy
+1. PostgreSQL transactional tables + append-only financial ledger, outbox, operation journal.
+2. Authenticated server contracts and authorization decisions.
+3. Device-local private cache and outbox as *projections* with deterministic sync; never settlement truth.
+4. Models suggest actions but cannot execute spend/delete/publish or authority escalations without policy + consent.
+5. External payment/provider statuses are verified, reconciled and linked to internal durable operation IDs.
+
+## Canonical identities and data types
+Keep distinct opaque identifiers: `AccountId`, `DeviceId`, `HumanConversationId`, `AgentConversationId`, `PersonaId`, `RoomId`, `AudioPostId`, `MediaId`, `TaskId`, `OperationId`, `QuoteId`, `LedgerTransactionId`. Directory entry is a typed union human/persona; a phone, display name or handle is not a stable financial recipient. Make all external input shape-validated and versioned.
+
+All writes: actor from auth session; operation ID; idempotency key bound to payload+actor; resource expected revision for conflicts; canonical timestamps; typed error; immutable correlated audit ID; explicit state transition. Avoid silently converting old Cr/fiat into MSN, IDs or legacy Talk objects.
+
+### Model contract snippets — illustrative proposals only
+```ts
+type Money = { assetId: string; atomicAmount: string; precision: number };
+type Ack = {
+  operationId: string;
+  stage: "queued"|"accepted"|"processing"|"completed"|"failed"|"outcome_uncertain";
+  resourceRevision: string; correlationId: string;
+};
+type DomainError =
+  "AUTH_REQUIRED"|"FORBIDDEN"|"VALIDATION"|"RATE_LIMITED"|
+  "REVISION_CONFLICT"|"QUOTE_EXPIRED"|"INSUFFICIENT_FUNDS"|
+  "CAPABILITY_UNAVAILABLE"|"NETWORK_RETRY"|"OUTCOME_UNCERTAIN";
+type PurchaseDraft = {
+  taskId:string; revision:string; service:string|null;
+  selectedOptions:Record<string,string>; missingFields:string[];
+  quoteId?:string; status:string;
+};
+```
+Use current [integration contracts](../AUDIO-FIRST-INTEGRATION-CONTRACTS.md) and [wallet contract](../MSN-WALLET-P2P-CONTRACT.md) as review authority; don't duplicate schema exports. These samples explain invariants, **not new compulsory wire JSON**.
+
+## Modular responsibilities and strict invariants
+| Domain | Authoritative responsibilities | Forbidden shortcuts | Key cross-boundary tests |
+|---|---|---|---|
+| Identity | email/phone paths, verified ownership evidence, recovery, session and device revocation, scoped access | numeric PIN treated as SMS verification or sole payment approval | account switch, guessed PIN, revoked token |
+| Chat | messages, receipts, attachments, reaction/reply, durable outbox, sent/read semantics | waiting for AI generation to acknowledge accepted user message | lost ACK, offline retry, second-device message readback |
+| Agent tasks | persona/skill configuration, quotas, budgets, quote drafts, gateway model invocation | model text becoming provider payment instructions/financial completion | repeated fields, approval replay, delayed model/audio |
+| Audio/Talks | single audio-focus owner, media upload/process/publish, counters/follows/comments/moderation | treating card fetch as listened playback, automatic publishing empty generated audio | recording permission, output route, duplicate publish, blocked fetch |
+| Rooms | member roles, invites, persistent audio notes, role revocation | media URL reusable after removal, live Room capability claimed without test | outsider deny, owner transfer, room recovery |
+| Money | exact-amount double-entry ledger, funding, quote, authorization, MSN issuance/redemption, internal transfers, settlement receipts | extra chat wallet, float amounts, provider redirect = confirmed payment | double credit/debit, replay, failed provider, rollback |
+| P2P | order offers, atomic reserve, claim, verified release, disputes and staffed resolution | screenshot-only release, freeing reserved funds after paid claim | paid vs expire race, freeze on dispute |
+| Crypto | asset/network allowlists, custody addresses, deposit confirmations, conversion and withdrawals | unsupported network or unverified payout claims | invalid memo/network, reorg, payout reconciliation |
+| Channels | account linking, approved WhatsApp + Telegram webhook, media, consent, normalized chat/task state | shadow personal-account automation or untrusted inbound instructions | signature, dedupe, opt-out, cross-account ID |
+| Twin/creator | one twin/account, clone configuration, budget and commission event linkage | commissions without completed attributable transactions | refund reversal, insufficient credit fallback |
+| Ops/admin | RBAC, approval, case/ticket management, incident controls, quotas, audit and backoffice | showing provider keys, raw transcripts or unrestricted ledger edits | role spoof, operator action audit, rollback |
+
+## Authentication, privacy, AI safety
+- Authenticated identity is server-derived; verify caller permissions **per resource** and media fetch. Multi-account switching cancels subscriptions/outbox ownership and locally encrypted private projections.
+- Separate human and AI identity UI; disclose generated audio and synthetic voice. Do not promise end-to-end encryption unless actually designed and verified.
+- Trusted tool boundaries: incoming messages, agent prompts, documents and retrieved pages are untrusted. Tool ACLs, typed argument validation, service catalog allowlists, task budgets and consent challenge enforce every side effect.
+- Validate webhook signatures on raw payload and fetch authoritative provider transaction status; record dedupe, retry limits and reconciliation.
+- Least privilege service accounts and runtime DB roles; secret store not Flutter/PR/log; private object URLs short-lived, revocable according to expiry/access; malware/size/codec validation.
+- Retention schedule: public Talks, DM audio, drafts, deleted/replaced media, blocked content, account deletion, dispute/financial evidence, system logs; balance legal needs against minimization.
+- Safety and abuse controls: account enumeration/OTP/PIN rate limits, spam and harassment reports, public content moderation, vulnerable-user protections, transaction velocity and limits, administrative separation of duties.
+- Launch eligibility for MSN/P2P/crypto is contingent on regional regulatory advice and actual provider approvals; this document is not legal advice.
+
+## Durable state machines
+**Chat message:** LOCAL_QUEUED -> SENDING -> SERVER_ACCEPTED -> DELIVERED_TO_PEER (human when supported) -> READ_BY_PEER. Separate agent PROCESSING -> COMPLETED/FAILED. Timeouts from SERVER_ACCEPTED must **look up status**, not resubmit a new task blindly.
+
+**Purchase:** DRAFT -> NEEDS_INPUT -> QUOTED -> AWAITING_AUTHORIZATION -> EXECUTING -> CHECKING_STATUS -> COMPLETED | FAILED | CANCELLED. A temporary unknown result remains uncertain with same operation ID.
+
+**Talk post:** LOCAL_DRAFT -> UPLOADING -> PROCESSING -> PUBLISHED | FAILED | REMOVED; retry with canonical publication ID and outbox lease.
+
+**P2P:** reserve seller MSN atomically -> awaiting fiat -> claimed -> authorized verified release OR dispute -> resolution/return. No automatic release on screenshot or unchecked timer.
+
+**Agent commission:** eligible paid operation -> settle in canonical ledger -> attributable commission pending -> available subject to policy; refund/chargeback triggers linked compensating event.
+
+**Workers:** persisted queue, occurrence key, atomic lease, heartbeat, bounded retry/dead-letter, operator pause, restart recovery, idempotent output and error telemetry. Avoid a second scheduler.
+
+## Platform and stack evaluation (provisional)
+- **Keep Flutter**: current code/assets/test investment; dual Android apps; one UI/contract repository abstraction. Evaluate native voice/mic isolation and Shorebird/release policy before changing.
+- **Keep TypeScript Gateway + Postgres**: extensive existing services/types, tested ledger patterns; avoid mandatory microservice decomposition. Node 24 and pnpm 12 from root package pins; document Flutter/Android/PG versions from exact checked build environment before qualification.
+- **Railway**: currently used; simple deployments. Monthly Hobby minimum $5 including resource usage [1]. Audit direct Git-triggered Railway deploys and migration-on-start before merging to main.
+- **DigitalOcean**: preserve the single $4 fixed-egress relay if needed and proven; published 512MiB shared CPU price $4/mo [2]. Do not multiply droplets without load evidence.
+- **Neon vs current DB**: Neon free announced 1GB/project in Oct 2026 [3]; possible staging/pilot candidate, **not** license to move financial ledger without backed-up restore, cost/connection and provider comparison. Keep data portable: vanilla Postgres SQL, migrations, pg_dump and staged restore.
+- **Gemini**: Gemini 3.8 Live priced at published token/minute rates [4]; choose model through capability/voice QA per locale and budget. A text fallback remains available if voice provider fails; ordinary audio notes independent.
+- **Flutterwave**: Nigerian bills APIs require KYC, funded source balance, server IP whitelisting [5]; partner/market-specific availability must be checked. Reuse canonical purchase and onramp adapters.
+- **NOWPayments**: retain existing adapter; never assume approved withdrawals, custody or networks from code presence. Qualification uses account credentials privately, sandbox/low-value limits and supported webhook signatures.
+
+## Three-scale costs and caps — deliberately transparent assumptions
+These are **planning illustrations**, not a bill estimate or real measured spend.
+| Scenario | Illustrative assumptions | Known baseline | Unpriced usage requiring measurements |
+|---|---|---|---|
+| Internal development | Railway Hobby, 1 minimum fixed-IP relay, Neon Free only if eligible | $5 + $4 = **$9/mo** before consumption overages | storage/backup, Railway compute/network, push/SMS, Gemini tokens, provider charges |
+| Pilot | Same base, 100 daily active people, 500 text tasks/day, 100 live voice min/day, 2GB media/day | **$9/mo base** only (not total) | ~3,000 live voice input/output minutes/month. At $0.005 + $0.018/min [4] an artificial fully-active audio-both-sides estimate is ~$69 **before context/text and other charges**; media egress may dominate |
+| Growth | 1,000 daily active people, 5,000 tasks/day, 1,000 live voice min/day, 20GB media/day | base no longer representative | voice illustrative ~$690 for 30,000 min; dedicated compute, queue, storage, egress, backups, operational support required |
+
+**Sensitivity:** audio rates are input/output independent, reprocessed session context changes cost, and not every input minute produces output minute. Store actual model token usage per task and enforce max duration, context compaction, per-user quota, task budget and global hard-stop. Current price page shows 3.8 Live audio ~$0.005 input/min and ~$0.018 output/min [4]. Vendor prices/quotas may change; review at deployment. Flutterwave processing fees/provider margins and merchant P2P liquidity are distinct variables. Media bytes/user/day × retention days and external egress are mandatory in cost dashboard. Do not infer profitability without real prices and operational risk.
+
+## Portability and reversible choices
+Single canonical SQL schema, schema migration checksums, encrypted nightly backups in controlled storage, actual off-account restore exercise, adapters with explicit capability flags, provider-neutral media references, replaceable text/voice model interface, one financial authority. Version any disruptive API changes and dual-read/dual-write migrations with reconciliation. Never mutate applied SQL in place.
+
+## Performance targets (candidate SLOs, benchmark before adoption)
+Warm tab render cached content without network wait; separate cold/warm metrics on low-end Tecno-class Android. Define P50/P95 message server ACK and first AI text separately; provider purchase outcome can remain pending. Keep network retries bounded and preserve drafts. Audio permission-to-local playback test before Live API test. Target 99.5% nonfinancial API availability for pilot only after measuring capacity; money correctness and no duplicate debit take priority over speed. Alert on backlog, unreconciled transfers, stuck media, error rates, costs, credit runout.
+
+## Acceptance and release gates
+1. **Design:** approved roles/scope/SC control-level specs, device wireframes, decision records and current stack TCO; factory structural design check passes but is not proof.
+2. **Source:** each slice has API/db/client/adapters/tests, aligned contracts and exact file owner; known TypeScript/Vitest/Dart/SQL failures fixed; PR review and real executed commands at head SHA.
+3. **Integration:** one non-deploying unified SHA, migrations/ports/routes wired, PG18 fresh+upgrade tests and release APK type/analyzer/tests; inspect CI and Railway deploy hooks. Automated CI zero-step means BLOCKED, never PASS.
+4. **External:** second-device chat/audio/calls, authorized provider tests with redacted evidence, cross-account denial, crypto/fiat reconciliation, wallet P2P race negatives, Telegram/WhatsApp official endpoints, real admin ops, low-data/no-permission behavior.
+5. **Release:** signed APK and pinned package/cert/hash, environment/config readiness, feature flags, recovery/backups plus **restored DB and media**, rollback rehearsal, regional eligibility signoff, monitoring and cost controls. A health HTTP 200 or successful build is insufficient.
+
+Sources retrieved 2026-10-10:
+[1] https://docs.railway.com/pricing/plans
+[2] https://www.digitalocean.com/pricing/droplets
+[3] https://neon.com/blog/neon-free-plan-1-gb-per-project
+[4] https://ai.google.dev/gemini-api/docs/pricing
+[5] https://developer.flutterwave.com/docs/bill-payment
+Source/current agreements: ../AUDIO-FIRST-INTEGRATION-CONTRACTS.md, ../MSN-WALLET-P2P-CONTRACT.md, ../BACKEND-STORAGE-OPERATIONS-20261009.md, ../FLUTTER-RELEASE-AND-SHOREBIRD-POLICY.md.
