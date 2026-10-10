@@ -1231,15 +1231,16 @@
         "services/worker/src/jobs/admin_operations/**",
         "adapters/storage/postgres/src/admin_operations/**",
         "apps/admin_mobile/lib/src/features/operations/**",
-        "tests/e2e/J19/**"
+        "tests/e2e/J19/**",
+        "apps/admin_mobile/test/features/operations/**"
       ],
       "branch": "lane/l-admin-j19-ops-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:29:51.835Z",
-      "heartbeat_at": "2026-10-10T16:43:47.182Z",
-      "expires_at": "2026-10-10T16:48:47.182Z",
+      "heartbeat_at": "2026-10-10T16:47:27.276Z",
+      "expires_at": "2026-10-10T16:52:27.276Z",
       "notes": "No production activation; source implementation on nondeploying integration; await AF00 composition and R1 authorized identity.",
-      "source_head": "35f008aa48a776d38a0400ae6fd1bb582012a94d",
+      "source_head": "586d59b81bff84e591f564b8206555b1c2020834",
       "source_pr": 629
     },
     {
