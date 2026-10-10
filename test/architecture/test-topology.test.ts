@@ -107,7 +107,13 @@ describe("test topology", () => {
       path.resolve(".github/workflows/mobile-build.yml"),
       "utf8",
     );
-    expect(mobile).toContain("- name: Analyze\n        run: flutter analyze");
+    // Informational lints remain visible, but do not block real build/tests;
+    // compilation errors and analyzer warnings must still fail this step.
+    expect(mobile).toMatch(
+      /- name: Analyze\n(?:\s*#.*\n)*\s*run: flutter analyze --no-fatal-infos/u,
+    );
+    expect(mobile).not.toContain("--no-fatal-warnings");
+    expect(mobile).not.toContain("flutter analyze || true");
     expect(mobile).toMatch(
       /- name: Test\n(?:\s*#.*\n)*\s*if: \$\{\{ !cancelled\(\) \}\}\n\s*run: flutter test/u,
     );
