@@ -1027,24 +1027,6 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
-    },
-    {
-      "claim_id": "blueprint-v1-20261010-independent",
-      "owner": "BLUEPRINT-01 / Masanawa product design",
-      "scope": "Additive master blueprint v0.1 proposal, no runtime changes or supersession; owner review required",
-      "paths": [
-        "docs/blueprint-v1/README.md",
-        "docs/blueprint-v1/PRODUCT-UX.md",
-        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
-        "docs/blueprint-v1/RECOVERY-DELIVERY.md",
-        "docs/blueprint-v1/RESEARCH-DECISIONS.md"
-      ],
-      "branch": "planning/masanawa-blueprint-v1-20261010",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "claimed_at": "2026-10-10T11:12:37.086Z",
-      "heartbeat_at": "2026-10-10T11:12:37.086Z",
-      "expires_at": "2026-10-10T11:17:37.086Z",
-      "notes": "Independent new docs only; draft PR, never deploy/merge until product review. Existing owners/code paths unaffected."
     }
   ],
   "history": [
@@ -3396,6 +3378,28 @@
       "source_head_sha": "a8ee47c830e1b5f6b30d1e03064e6bea96c35859",
       "integration_head_sha": "a8ee47c830e1b5f6b30d1e03064e6bea96c35859",
       "test_state": "Exact-head Foundation run 38042069108 Typecheck PASS, Vitest in progress, build pending as of release; Flutter 38042069089 analyze PASS, tests in progress; NOT VERIFIED E2E; no main merge or deployment."
+    },
+    {
+      "claim_id": "blueprint-v1-20261010-independent",
+      "owner": "BLUEPRINT-01 / Masanawa product design",
+      "scope": "Additive master blueprint v0.1 proposal, no runtime changes or supersession; owner review required",
+      "paths": [
+        "docs/blueprint-v1/README.md",
+        "docs/blueprint-v1/PRODUCT-UX.md",
+        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
+        "docs/blueprint-v1/RECOVERY-DELIVERY.md",
+        "docs/blueprint-v1/RESEARCH-DECISIONS.md"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T11:12:37.086Z",
+      "heartbeat_at": "2026-10-10T11:12:37.086Z",
+      "expires_at": "2026-10-10T11:17:37.086Z",
+      "notes": "Independent new docs only; draft PR, never deploy/merge until product review. Existing owners/code paths unaffected.",
+      "released_at": "2026-10-10T11:19:18.512Z",
+      "release_reason": "Planning-only 5 new Markdown documents at draft PR #615, head 4b37ca96b75b61b664c2fe0ace4a1dbebeed87b1. Static screen ID/link checks only; owner approval and source/runtime tests remain NOT_RUN. No runtime paths changed.",
+      "source_pr": 615,
+      "source_head": "4b37ca96b75b61b664c2fe0ace4a1dbebeed87b1"
     }
   ]
 }
