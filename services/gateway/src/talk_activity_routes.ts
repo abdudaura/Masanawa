@@ -6,6 +6,25 @@ export function registerTalkActivityRoutes(
   app: FastifyInstance,
   service: TalkActivityService,
 ): void {
+  app.post(
+    "/activity/:activityId/read",
+    {
+      schema: {
+        params: Type.Object(
+          { activityId: Type.String({ minLength: 1, maxLength: 160 }) },
+          { additionalProperties: false },
+        ),
+      },
+    },
+    async (request) => {
+      const { activityId } = request.params as { activityId: string };
+      return service.markRead({
+        authorizationHeader: request.headers.authorization,
+        activityId,
+      });
+    },
+  );
+
   app.get(
     "/activity",
     {

@@ -90,6 +90,21 @@ export function createPostgresTalkActivityRepository(
   pool: TalkActivitySqlPool,
 ): TalkActivityRepository {
   return Object.freeze<TalkActivityRepository>({
+    async markRead(input) {
+      // One tenant+recipient-fenced write; repeated calls are idempotent.
+      // No prior unscoped existence read or activity ownership inference.
+      const result = await pool.query<{ activity_id: string }>(
+        `UPDATE talks.activity
+            SET unread = false
+          WHERE tenant_id = $1
+            AND user_id = $2
+            AND activity_id = $3
+        RETURNING activity_id`,
+        [input.tenantId, input.userId, input.activityId],
+      );
+      return result.rows.length > 0;
+    },
+
     async list(input) {
       const kinds = categoryPredicate(input.filter);
       const result = await pool.query<ActivityRow>(
@@ -124,7 +139,8 @@ export function createPostgresTalkActivityRepository(
               amount_label = EXCLUDED.amount_label,
               requires_action = EXCLUDED.requires_action,
               action_label = EXCLUDED.action_label,
-              unread = EXCLUDED.unread
+              -- Replayed delivery must not resurrect an acknowledged read.
+              unread = talks.activity.unread AND EXCLUDED.unread
         WHERE talks.activity.user_id = EXCLUDED.user_id
           AND talks.activity.kind = EXCLUDED.kind
         RETURNING ${columns}`,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../activity/talk_activity.dart';
 import '../../state/talk_activity_state.dart';
+import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
@@ -24,21 +25,61 @@ class ActivityScreen extends ConsumerStatefulWidget {
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   TalkActivityFilter _filter = TalkActivityFilter.all;
   String? _busyInvitationId;
+  String? _busyReadId;
+  // Timeout after an invitation decision is an UNKNOWN outcome, not a retry
+  // invitation. Require a deliberate, successful server read before retrying.
+  final Set<String> _uncertainInvitationIds = <String>{};
+  int _actionEpoch = 0;
+  int _principalEpoch = 0;
+
+  String? _userId(SessionState? session) =>
+      session is SessionSignedIn ? session.user.id : null;
 
   Future<void> _respondToInvitation(
     TalkActivityItem item, {
     required bool accept,
   }) async {
     final talkId = item.talkId?.trim();
-    if (_busyInvitationId != null || talkId == null || talkId.isEmpty) return;
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn ||
+        _busyInvitationId != null ||
+        _uncertainInvitationIds.contains(item.id) ||
+        talkId == null ||
+        talkId.isEmpty) {
+      return;
+    }
+    final actorUserId = session.user.id;
+    final epoch = ++_actionEpoch;
+    bool isCurrentActor() =>
+        mounted &&
+        _actionEpoch == epoch &&
+        _userId(ref.read(sessionProvider)) == actorUserId;
     setState(() => _busyInvitationId = item.id);
     try {
-      await ref
-          .read(talkActivityTransportProvider)
-          .respondToInvitation(talkId: talkId, accept: accept);
-      ref.invalidate(talkActivityProvider(_filter));
-      await ref.read(talkActivityProvider(_filter).future);
-      if (!mounted) return;
+      // A timeout after sending a response is not proof that the server
+      // rejected it. Refresh authoritative activity before allowing a retry.
+      try {
+        await ref
+            .read(talkActivityTransportProvider)
+            .respondToInvitation(talkId: talkId, accept: accept);
+      } catch (_) {
+        if (!isCurrentActor()) return;
+        setState(() => _uncertainInvitationIds.add(item.id));
+        _invalidateInvitationFilters();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not confirm the response. Refresh Activity before trying again.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (!isCurrentActor()) return;
+      // A successful mutation stays successful even if the following list
+      // read fails. The provider owns the retryable read error state.
+      _invalidateInvitationFilters();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -46,19 +87,78 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           ),
         ),
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t update this invitation.')),
-      );
     } finally {
-      if (mounted) setState(() => _busyInvitationId = null);
+      if (isCurrentActor()) {
+        setState(() => _busyInvitationId = null);
+      }
     }
   }
 
+  Future<void> _markRead(TalkActivityItem item) async {
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn ||
+        _busyReadId != null ||
+        !item.unread ||
+        item.id.trim().isEmpty) {
+      return;
+    }
+    final actorUserId = session.user.id;
+    final principalEpoch = _principalEpoch;
+    bool isCurrentActor() =>
+        mounted &&
+        principalEpoch == _principalEpoch &&
+        _userId(ref.read(sessionProvider)) == actorUserId;
+
+    setState(() => _busyReadId = item.id);
+    try {
+      await ref.read(talkActivityTransportProvider).markRead(activityId: item.id);
+      if (!isCurrentActor()) return;
+      // Read acknowledgements are authoritative server writes. Refresh all
+      // filter projections rather than painting an unconfirmed local receipt.
+      for (final filter in TalkActivityFilter.values) {
+        ref.invalidate(talkActivityProvider(filter));
+      }
+    } catch (_) {
+      if (!isCurrentActor()) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not mark as read. Try again.')),
+      );
+    } finally {
+      if (isCurrentActor()) setState(() => _busyReadId = null);
+    }
+  }
+
+  void _invalidateInvitationFilters() {
+    // Invitations are projected into All and Talks, irrespective of the
+    // currently selected filter when the mutation finishes.
+    ref.invalidate(talkActivityProvider(TalkActivityFilter.all));
+    ref.invalidate(talkActivityProvider(TalkActivityFilter.talks));
+  }
+
   Future<void> _refresh() async {
-    ref.invalidate(talkActivityProvider(_filter));
-    await ref.read(talkActivityProvider(_filter).future);
+    final filter = _filter;
+    final actorUserId = _userId(ref.read(sessionProvider));
+    final principalEpoch = _principalEpoch;
+    ref.invalidate(talkActivityProvider(filter));
+    try {
+      await ref.read(talkActivityProvider(filter).future);
+      // A Money/Social filter does not establish whether a Talk invitation
+      // was accepted. Confirm the account's All projection before unlocking.
+      if (_uncertainInvitationIds.isNotEmpty && filter != TalkActivityFilter.all) {
+        ref.invalidate(talkActivityProvider(TalkActivityFilter.all));
+        await ref.read(talkActivityProvider(TalkActivityFilter.all).future);
+      }
+      if (mounted &&
+          _principalEpoch == principalEpoch &&
+          _userId(ref.read(sessionProvider)) == actorUserId &&
+          _uncertainInvitationIds.isNotEmpty) {
+        setState(_uncertainInvitationIds.clear);
+      }
+    } catch (_) {
+      // Keep the retryable, redacted error within the watched provider.
+      // RefreshIndicator and retry-button callbacks must not leak a Future
+      // exception or expose a raw transport error to the customer.
+    }
   }
 
   void _open(TalkActivityItem item) {
@@ -101,6 +201,22 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<SessionState>(sessionProvider, (previous, next) {
+      if (_userId(previous) != _userId(next)) {
+        // Any in-flight action belongs to the prior principal. Do not let its
+        // eventual completion re-enable or mutate the next account's UI.
+        _actionEpoch++;
+        _principalEpoch++;
+        if (mounted) {
+          setState(() {
+            _busyInvitationId = null;
+            _busyReadId = null;
+            _uncertainInvitationIds.clear();
+          });
+        }
+      }
+    });
+    final session = ref.watch(sessionProvider);
     final u = context.masanawa;
     final activity = ref.watch(talkActivityProvider(_filter));
 
@@ -120,12 +236,19 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refresh,
-              child: activity.when(
+              child: session is! SessionSignedIn
+                  ? const _ActivityState(
+                      icon: Icons.lock_outline_rounded,
+                      title: 'Sign in to view Activity.',
+                      subtitle: 'Your invitations and updates are private.',
+                    )
+                  : activity.when(
                 loading: () => const _ActivityLoading(),
                 error: (_, __) => _ActivityState(
                   icon: Icons.wifi_off_rounded,
                   title: 'Couldn’t refresh Activity.',
-                  subtitle: 'Pull down to try again.',
+                  subtitle: 'Check your connection and try again.',
+                  onRetry: _refresh,
                 ),
                 data: (items) {
                   if (items.isEmpty) {
@@ -157,6 +280,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         item: item,
                         canOpen: _canOpen(item),
                         busy: _busyInvitationId == item.id,
+                        decisionUncertain: _uncertainInvitationIds.contains(item.id),
+                        onRefreshUncertain: _refresh,
+                        markingRead: _busyReadId == item.id,
+                        onMarkRead:
+                            item.unread ? () => _markRead(item) : null,
                         onTap: _canOpen(item) ? () => _open(item) : null,
                         onAccept: actionableInvitation
                             ? () => _respondToInvitation(item, accept: true)
@@ -217,6 +345,10 @@ class _ActivityItemTile extends StatelessWidget {
     required this.item,
     required this.canOpen,
     this.busy = false,
+    this.decisionUncertain = false,
+    this.onRefreshUncertain,
+    this.markingRead = false,
+    this.onMarkRead,
     this.onTap,
     this.onAccept,
     this.onDecline,
@@ -225,6 +357,10 @@ class _ActivityItemTile extends StatelessWidget {
   final TalkActivityItem item;
   final bool canOpen;
   final bool busy;
+  final bool decisionUncertain;
+  final VoidCallback? onRefreshUncertain;
+  final bool markingRead;
+  final VoidCallback? onMarkRead;
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
@@ -309,13 +445,13 @@ class _ActivityItemTile extends StatelessWidget {
                         children: [
                           OutlinedButton(
                             key: ValueKey('activity-invite-decline-' + item.id),
-                            onPressed: busy ? null : onDecline,
+                            onPressed: busy || decisionUncertain ? null : onDecline,
                             child: const Text('Decline'),
                           ),
                           const SizedBox(width: 8),
                           FilledButton(
                             key: ValueKey('activity-invite-accept-' + item.id),
-                            onPressed: busy ? null : onAccept,
+                            onPressed: busy || decisionUncertain ? null : onAccept,
                             child: busy
                                 ? const SizedBox(
                                     width: 16,
@@ -327,6 +463,17 @@ class _ActivityItemTile extends StatelessWidget {
                                 : const Text('Accept'),
                           ),
                         ],
+                      ),
+                    ],
+                    if (decisionUncertain &&
+                        onAccept != null &&
+                        onDecline != null &&
+                        onRefreshUncertain != null) ...[
+                      const SizedBox(height: 4),
+                      TextButton(
+                        key: ValueKey('activity-invite-refresh-' + item.id),
+                        onPressed: onRefreshUncertain,
+                        child: const Text('Refresh Activity to retry'),
                       ),
                     ],
                     const SizedBox(height: 6),
@@ -365,6 +512,20 @@ class _ActivityItemTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onMarkRead != null) ...[
+                IconButton(
+                  key: ValueKey('activity-mark-read-' + item.id),
+                  tooltip: 'Mark as read',
+                  onPressed: markingRead ? null : onMarkRead,
+                  icon: markingRead
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.mark_email_read_outlined),
+                ),
+              ],
               if (canOpen) ...[
                 const SizedBox(width: 4),
                 Icon(Icons.chevron_right_rounded, color: u.textMuted, size: 20),
@@ -407,11 +568,13 @@ class _ActivityState extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onRetry,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -437,6 +600,17 @@ class _ActivityState extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(color: u.textMuted, fontSize: 13, height: 1.35),
         ),
+        if (onRetry != null) ...[
+          const SizedBox(height: 16),
+          Center(
+            child: OutlinedButton.icon(
+              key: const ValueKey('activity-retry'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+          ),
+        ],
       ],
     );
   }

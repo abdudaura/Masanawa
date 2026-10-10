@@ -85,6 +85,67 @@ describe("Postgres Talk Activity repository", () => {
     expect(activity).not.toHaveProperty("ledgerEntryId");
   });
 
+  it("atomically fences read acknowledgment by tenant, user and activity ID", async () => {
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const pool: TalkActivitySqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, values });
+        return {
+          rowCount: 1,
+          rows: [{ activity_id: "activity_a" }] as unknown as Row[],
+        };
+      },
+    };
+    const result = await createPostgresTalkActivityRepository(pool).markRead({
+      tenantId: "tenant_a",
+      userId: "user_a",
+      activityId: "activity_a",
+    });
+    expect(result).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.text).toMatch(/UPDATE talks\.activity/);
+    expect(calls[0]?.text).toContain("tenant_id = $1");
+    expect(calls[0]?.text).toContain("user_id = $2");
+    expect(calls[0]?.text).toContain("activity_id = $3");
+    expect(calls[0]?.text).toContain("SET unread = false");
+    expect(calls[0]?.values).toEqual(["tenant_a", "user_a", "activity_a"]);
+  });
+
+  it("does not confirm foreign or absent read acknowledgments", async () => {
+    const pool: TalkActivitySqlPool = {
+      async query<Row>() {
+        return { rowCount: 0, rows: [] as Row[] };
+      },
+    };
+    expect(await createPostgresTalkActivityRepository(pool).markRead({
+      tenantId: "tenant_a",
+      userId: "user_a",
+      activityId: "activity_foreign",
+    })).toBe(false);
+  });
+
+  it("does not make acknowledged activity unread again on duplicate delivery", async () => {
+    let insertSql = "";
+    const pool: TalkActivitySqlPool = {
+      async query<Row>(text: string) {
+        insertSql = text;
+        return { rowCount: 1, rows: [row({ unread: false })] as unknown as Row[] };
+      },
+    };
+    const saved = await createPostgresTalkActivityRepository(pool).append({
+      tenantId: "tenant_a",
+      userId: "user_a",
+      activityId: "activity_a",
+      kind: "talk_invitation",
+      title: "Invitation",
+      detail: "Join this Talk",
+      createdAt: "2026-10-07T09:00:00.000Z",
+      unread: true,
+    });
+    expect(saved.unread).toBe(false);
+    expect(insertSql).toContain("talks.activity.unread AND EXCLUDED.unread");
+  });
+
   it("rejects idempotency-key reuse across another user or kind", async () => {
     const pool: TalkActivitySqlPool = {
       async query<Row>() {

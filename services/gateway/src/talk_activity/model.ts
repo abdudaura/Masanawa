@@ -52,6 +52,11 @@ export interface TalkActivityItem {
 }
 
 export interface TalkActivityRepository {
+  markRead(input: Readonly<{
+    tenantId: string;
+    userId: string;
+    activityId: string;
+  }>): Promise<boolean>;
   list(input: Readonly<{
     tenantId: string;
     userId: string;
