@@ -13,7 +13,7 @@ void main(){
   testWidgets('visible link-only state and controlled launch', (tester) async{
     Uri? opened;
     await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaSocialLinks(
-      loadLinks:()async=>[social],
+      characterId:'masana-1',loadLinks:()async=>[social],
       openLink:(uri)async {opened=uri;return true;}
     ))));
     await tester.pumpAndSettle();
@@ -25,7 +25,7 @@ void main(){
   testWidgets('offline error offers real retry', (tester) async{
     var attempts=0;
     await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaSocialLinks(
-      loadLinks:()async {attempts++;if(attempts==1)throw StateError('offline');return [social];},
+      characterId:'masana-1',loadLinks:()async {attempts++;if(attempts==1)throw StateError('offline');return [social];},
     ))));
     await tester.pumpAndSettle();
     expect(find.text('Retry'),findsOneWidget);
