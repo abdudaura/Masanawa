@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import type { TalkId } from "./talk-live.js";
 import {
   createTalkReplaySession,
   isReplayPubliclyVisible,
   transitionTalkReplaySession,
-  type TalkId,
   type TalkRecordingId,
   type TalkRecordingSegmentId,
   type TalkReplayPolicy,
