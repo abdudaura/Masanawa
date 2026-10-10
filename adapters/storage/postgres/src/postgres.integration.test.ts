@@ -223,6 +223,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0100_platform_sessions.sql",
       "security/0101_customer_channels.sql",
       "security/0102_customer_channel_delivery.sql",
+      "security/0103_platform_nullable_contact_uniqueness.sql",
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
       "world/0003_world_routines_story_arcs.sql",
