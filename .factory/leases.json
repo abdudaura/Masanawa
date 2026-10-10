@@ -67,6 +67,22 @@
       "heartbeat_at": "2026-10-09T10:32:38.247Z",
       "expires_at": "2026-10-09T10:37:38.247Z",
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
+    },
+    {
+      "claim_id": "masanawa01-af15-orphan-20261010-0119",
+      "owner": "MASANAWA-01",
+      "scope": "AF15 safe orphan cleanup adapter and native unit tests",
+      "paths": [
+        "adapters/storage/object_lifecycle/orphan_cleanup.ts",
+        "adapters/storage/object_lifecycle/orphan_cleanup.test.mjs",
+        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
+      ],
+      "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "",
+      "claimed_at": "2026-10-10T01:19:59.149Z",
+      "heartbeat_at": "2026-10-10T01:19:59.149Z",
+      "expires_at": "2026-10-10T01:24:59.149Z"
     }
   ],
   "history": [
