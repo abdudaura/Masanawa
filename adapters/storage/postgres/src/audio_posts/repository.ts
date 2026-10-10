@@ -77,6 +77,22 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
     [tenantId,accountId,limit]);
    return r.rows.map(map);
   },
+  async removeOwn({tenantId,accountId,postId}) {
+   return transaction(pool, async db => {
+    // Only the authenticated owning account can mutate or even read this row.
+    // FOR UPDATE serializes repeat/delete/moderation races on the same post.
+    const found = await db.query<Row>(
+     "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND post_id=$2 AND author_account_id=$3 FOR UPDATE",
+     [tenantId,postId,accountId]);
+    if (!found.rows[0]) return null;
+    if (found.rows[0].status === "removed") return map(found.rows[0]);
+    const updated = await db.query<Row>(
+     "UPDATE social.audio_posts SET status='removed',revision=revision+1,published_at=NULL WHERE tenant_id=$1 AND post_id=$2 AND author_account_id=$3 RETURNING " + columns,
+     [tenantId,postId,accountId]);
+    if (!updated.rows[0]) throw new Error("audio_posts.remove_conflict");
+    return map(updated.rows[0]);
+   });
+  },
   async settle({tenantId,postId,expectedRevision,status}) {
    const r = await pool.query<Row>(
     "UPDATE social.audio_posts SET status=$4,revision=revision+1,published_at=CASE WHEN $4='published' THEN NOW() ELSE NULL END WHERE tenant_id=$1 AND post_id=$2 AND revision=$3 AND status='processing' RETURNING " + columns,
