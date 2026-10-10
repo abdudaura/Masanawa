@@ -12,11 +12,26 @@ const MAX_REAL_EVIDENCE_AGE_MS=30*24*60*60*1000;
 
 // #594 bounded inputs: do not load an attacker-sized manifest before rejecting it.
 export async function readBoundedJson(file){
-  const info=await fs.stat(file);
-  if(!info.isFile()||info.size<1||info.size>MAX_QUALIFICATION_JSON_BYTES)throw Error('Qualification JSON input is empty, unsafe or oversized');
-  const bytes=await fs.readFile(file);
-  if(bytes.byteLength>MAX_QUALIFICATION_JSON_BYTES)throw Error('Qualification JSON input exceeds limit');
-  return JSON.parse(bytes.toString('utf8'));
+  const handle=await fs.open(file,'r');
+  try{
+    const before=await handle.stat();
+    if(!before.isFile()||before.size<1||before.size>MAX_QUALIFICATION_JSON_BYTES)throw Error('Qualification JSON input is empty, unsafe or oversized');
+    // Bound the bytes actually read, not just a racy path-based stat.
+    const chunks=[];
+    let total=0;
+    while(total<=MAX_QUALIFICATION_JSON_BYTES){
+      const block=Buffer.allocUnsafe(Math.min(65536,MAX_QUALIFICATION_JSON_BYTES-total+1));
+      const {bytesRead}=await handle.read(block,0,block.length,null);
+      if(!bytesRead)break;
+      total+=bytesRead;
+      if(total>MAX_QUALIFICATION_JSON_BYTES)throw Error('Qualification JSON input exceeds limit');
+      chunks.push(block.subarray(0,bytesRead));
+    }
+    const after=await handle.stat();
+    if(!total||before.dev!==after.dev||before.ino!==after.ino||
+       before.mtimeMs!==after.mtimeMs||after.size!==total)throw Error('Qualification JSON input changed during read');
+    return JSON.parse(Buffer.concat(chunks,total).toString('utf8'));
+  }finally{await handle.close();}
 }
 function checkMatrix(matrix){
   const faults=[];
