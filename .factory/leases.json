@@ -807,11 +807,14 @@
       "branch": "work/af01-billing-settlement-readback-20261009-masanawa01",
       "source_pr": 590,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_head": "d471920fafb979c06b76414c31e508cf485240d4",
+      "source_head": "1b083178e401fef506b47a022a40665e5ea874ee",
       "claimed_at": "2026-10-10T09:04:43.930Z",
       "heartbeat_at": "2026-10-10T09:04:43.930Z",
       "expires_at": "2026-10-10T09:09:43.930Z",
-      "notes": "Fresh live claim, PR comment #6095944848; actual Foundation CI PG18 test run #38037792873"
+      "notes": "Fresh live claim, PR comment #6095944848; actual Foundation CI PG18 test run #38037792873",
+      "released_at": "2026-10-10T09:07:52.464Z",
+      "test_state": "CI real run 38040160449 Typecheck FAIL pre-existing agents TalkId import; billing Vitest skipped",
+      "release_reason": "Two AF01 existing PR #590 billing test regressions updated, source readback; real CI failed prior shared typecheck. Exact handoff PR #590 comment 6095968761; AF13 #460 canonical CI test import and AF00 #600 protected unified merge own next executed run. No merge or deployment."
     },
     {
       "claim_id": "af13-460-ai-seat-id-random-test-20261010-gpt6-1006",
