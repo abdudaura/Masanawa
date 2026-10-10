@@ -1,0 +1,12 @@
+{
+  "name": "@masanawa/masana-missions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {"types":"./src/index.ts","production":"./dist/index.js","default":"./src/index.ts"},
+    "./ports": {"types":"./src/ports.ts","production":"./dist/ports.js","default":"./src/ports.ts"}
+  },
+  "scripts": {"typecheck":"tsc -p tsconfig.json","build":"tsc -p tsconfig.build.json"},
+  "devDependencies": {"vitest":"5.0.3"}
+}
