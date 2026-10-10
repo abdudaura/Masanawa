@@ -11,6 +11,9 @@ export type CleanupCandidate = Readonly<{
   kind: MediaKind;
   leaseToken: string;
   referenceRevision: number;
+  /** Authoritative metadata ages; repository must atomically recheck these and holds. */
+  createdAtMs: number;
+  retainUntilMs: number;
 }>;
 
 export type CleanupPreflight =
@@ -42,6 +45,7 @@ export interface CleanupBatchResult {
   readonly blocked: number;
   readonly leaseLost: number;
   readonly quarantined: number;
+  readonly dryRun: boolean;
 }
 
 const TENANT = /^tenant_[A-Za-z0-9-]{12,100}$/u;
@@ -56,6 +60,8 @@ const KINDS: ReadonlySet<string> = new Set<MediaKind>([
 export function validCleanupCandidate(value: CleanupCandidate): boolean {
   if (!TENANT.test(value.tenantId) || !TOKEN.test(value.leaseToken) ||
       !Number.isSafeInteger(value.referenceRevision) || value.referenceRevision < 1 ||
+      !Number.isSafeInteger(value.createdAtMs) || value.createdAtMs < 1 ||
+      !Number.isSafeInteger(value.retainUntilMs) || value.retainUntilMs < 1 ||
       !KINDS.has(value.kind) || typeof value.objectKey !== "string" ||
       value.objectKey.length > 512 || value.objectKey.length < 5 ||
       value.objectKey.startsWith("/") || value.objectKey.endsWith("/") ||
@@ -80,16 +86,25 @@ export async function runMediaCleanupBatch(input: Readonly<{
   workerId: string;
   max: number;
   nowMs: number;
+  /** Deletion is disabled without an exact boolean opt-in. */
+  allowDelete?: boolean;
+  /** Minimum object age: 24 hours by default, never below one hour. */
+  minAgeMs?: number;
   repository: MediaCleanupRepository;
   storage: ImmutableObjectDeleter;
   shouldStop?: () => boolean;
 }>): Promise<CleanupBatchResult> {
-  if (!TOKEN.test(input.workerId) || !Number.isSafeInteger(input.nowMs) || input.nowMs < 0 ||
+  const minAgeMs = input.minAgeMs ?? 86_400_000;
+  if (!TOKEN.test(input.workerId) || !Number.isSafeInteger(input.nowMs) || input.nowMs < minAgeMs ||
+      !Number.isSafeInteger(minAgeMs) || minAgeMs < 3_600_000 || minAgeMs > 365 * 86_400_000 ||
       !Number.isSafeInteger(input.max) || input.max < 1 || input.max > 50) {
     throw new TypeError("media_cleanup.invalid_batch_options");
   }
+  // Dry-run does not claim/tombstone or access storage: claiming has DB side effects.
+  const zero = { claimed: 0, deleted: 0, absent: 0, blocked: 0, leaseLost: 0, quarantined: 0 };
+  if (input.allowDelete !== true) return { ...zero, dryRun: true };
   // A real repository must claim/tombstone before this API can be called.
-  if (input.shouldStop?.()) return { claimed: 0, deleted: 0, absent: 0, blocked: 0, leaseLost: 0, quarantined: 0 };
+  if (input.shouldStop?.()) return { ...zero, dryRun: false };
   const candidates = await input.repository.claim({ workerId: input.workerId, nowMs: input.nowMs, max: input.max });
   // Reject structurally corrupt responses before touching *any* provider object.
   // Per-object invalid keys are still quarantined by the normal loop.
@@ -97,17 +112,31 @@ export async function runMediaCleanupBatch(input: Readonly<{
       candidates.some(candidate => candidate === null || typeof candidate !== "object" || Array.isArray(candidate))) {
     throw new Error("media_cleanup.invalid_claim_response");
   }
-  const seen = new Set<string>();
+  // Detect duplicate claims across the full batch before any irreversible action.
+  const identities = new Set<string>();
+  for (const c of candidates) {
+    if (!validCleanupCandidate(c)) continue; // the normal loop quarantines invalid rows
+    const identity = `${c.tenantId}\u0000${c.objectKey}\u0000${c.objectVersion ?? ""}`;
+    if (identities.has(identity)) throw new Error("media_cleanup.duplicate_claim_response");
+    identities.add(identity);
+  }
   let deleted = 0, absent = 0, blocked = 0, leaseLost = 0, quarantined = 0;
   for (const candidate of candidates) {
     if (input.shouldStop?.()) break; // remaining candidates retain durable leases for recovery
-    const identity = `${candidate.tenantId}\u0000${candidate.objectKey}\u0000${candidate.objectVersion ?? ""}`;
-    if (!validCleanupCandidate(candidate) || seen.has(identity)) {
+    if (!validCleanupCandidate(candidate)) {
       quarantined++;
       await input.repository.stop(candidate, "invalid");
       continue;
     }
-    seen.add(identity);
+    // Even a repository bug cannot advance a too-young or retained candidate.
+    // The atomic repository preflight must independently revalidate age, holds
+    // and reference state against live DB rows before any provider deletion.
+    if (candidate.createdAtMs > input.nowMs - minAgeMs ||
+        candidate.retainUntilMs > input.nowMs) {
+      blocked++;
+      await input.repository.stop(candidate, "blocked");
+      continue;
+    }
     let preflight: CleanupPreflight;
     try { preflight = await input.repository.preflight(candidate); }
     catch { quarantined++; await input.repository.stop(candidate, "uncertain"); continue; }
@@ -146,5 +175,5 @@ export async function runMediaCleanupBatch(input: Readonly<{
       await input.repository.stop(candidate, "completed-but-unrecorded");
     }
   }
-  return { claimed: candidates.length, deleted, absent, blocked, leaseLost, quarantined };
+  return { claimed: candidates.length, deleted, absent, blocked, leaseLost, quarantined, dryRun: false };
 }

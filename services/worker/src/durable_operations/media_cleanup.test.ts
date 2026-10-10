@@ -13,6 +13,8 @@ const valid: CleanupCandidate = {
   objectVersion: null,
   leaseToken: "claimed_token_123456789",
   referenceRevision: 7,
+  createdAtMs: Date.parse("2026-10-01T00:00:00Z"),
+  retainUntilMs: Date.parse("2026-10-02T00:00:00Z"),
 };
 const ready: CleanupPreflight = { state: "ready", referenceRevision: 7, activeReferences: 0, activeHolds: 0, immutable: true };
 
@@ -28,7 +30,7 @@ function rig(candidates: CleanupCandidate[] = [valid]) {
   };
   const run = () => runMediaCleanupBatch({
     workerId: "worker_instance_12345678", max: 10, nowMs: Date.now(),
-    repository, storage,
+    repository, storage, allowDelete: true,
   });
   return { repository, storage, run };
 }
@@ -140,7 +142,7 @@ describe("AF15 durable media deletion boundary", () => {
       return ready;
     });
     const result = await runMediaCleanupBatch({
-      workerId: "worker_instance_12345678", nowMs: 0, max: 1,
+      workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1, allowDelete: true,
       repository: r.repository, storage: r.storage, shouldStop: () => stopping,
     });
     expect(result).toMatchObject({ claimed: 1, deleted: 0, absent: 0 });
@@ -158,7 +160,7 @@ describe("AF15 durable media deletion boundary", () => {
       return "deleted";
     });
     const result = await runMediaCleanupBatch({
-      workerId: "worker_instance_12345678", nowMs: 0, max: 1,
+      workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1, allowDelete: true,
       repository: r.repository, storage: r.storage, shouldStop: () => stopping,
     });
     expect(result).toMatchObject({ claimed: 1, deleted: 1 });
@@ -167,13 +169,57 @@ describe("AF15 durable media deletion boundary", () => {
 
   it("stops on drain without claiming or starting subsequent deletes", async () => {
     const r = rig([valid]);
-    expect(await runMediaCleanupBatch({ workerId: "worker_instance_12345678", nowMs: 0, max: 2, repository: r.repository, storage: r.storage, shouldStop: () => true })).toMatchObject({ claimed: 0 });
+    expect(await runMediaCleanupBatch({ workerId: "worker_instance_12345678", nowMs: Date.now(), max: 2, allowDelete: true, repository: r.repository, storage: r.storage, shouldStop: () => true })).toMatchObject({ claimed: 0 });
     expect(r.repository.claim).not.toHaveBeenCalled();
   });
 
   it("does not delete a duplicate claimed object twice", async () => {
     const r = rig([valid, { ...valid, leaseToken: "another_token_12345678" }]);
-    expect(await r.run()).toMatchObject({ claimed: 2, deleted: 1, quarantined: 1 });
-    expect(r.storage.deleteExact).toHaveBeenCalledOnce();
+    await expect(r.run()).rejects.toThrow(/duplicate_claim_response/);
+    expect(r.storage.deleteExact).not.toHaveBeenCalled();
   });
+
+  it("defaults to a nonmutating dry-run, including nonboolean truthy opt-in", async () => {
+    for (const optIn of [undefined, 1 as unknown as boolean, "true" as unknown as boolean]) {
+      const r = rig();
+      expect(await runMediaCleanupBatch({
+        workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1,
+        repository: r.repository, storage: r.storage, allowDelete: optIn,
+      })).toMatchObject({ dryRun: true, claimed: 0, deleted: 0 });
+      expect(r.repository.claim).not.toHaveBeenCalled();
+      expect(r.storage.deleteExact).not.toHaveBeenCalled();
+    }
+  });
+
+  it("denies young and retained objects without any storage side effect", async () => {
+    for (const patch of [
+      { createdAtMs: Date.now() - 1000 },
+      { retainUntilMs: Date.now() + 86_400_000 },
+    ]) {
+      const c = { ...valid, ...patch };
+      const r = rig([c]);
+      expect(await r.run()).toMatchObject({ blocked: 1, deleted: 0 });
+      expect(r.repository.preflight).not.toHaveBeenCalled();
+      expect(r.storage.deleteExact).not.toHaveBeenCalled();
+      expect(r.repository.stop).toHaveBeenCalledWith(c, "blocked");
+    }
+  });
+
+  it("refuses unsafe time policy and malformed authoritative timestamps", async () => {
+    const r = rig();
+    await expect(runMediaCleanupBatch({
+      workerId: "worker_instance_12345678", nowMs: Date.now(), max: 1,
+      repository: r.repository, storage: r.storage, allowDelete: true, minAgeMs: 1000,
+    })).rejects.toThrow(/invalid_batch_options/);
+    expect(r.repository.claim).not.toHaveBeenCalled();
+    for (const bad of [
+      { ...valid, createdAtMs: Number.NaN },
+      { ...valid, retainUntilMs: 0 },
+    ]) {
+      const f = rig([bad]);
+      expect(await f.run()).toMatchObject({ quarantined: 1, deleted: 0 });
+      expect(f.storage.deleteExact).not.toHaveBeenCalled();
+    }
+  });
+
 });
