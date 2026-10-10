@@ -1389,7 +1389,11 @@
       "claimed_at": "2026-10-10T16:58:58.175Z",
       "heartbeat_at": "2026-10-10T17:02:48.905Z",
       "expires_at": "2026-10-10T17:07:48.905Z",
-      "notes": "Continuation after #624/#627 source merged; no root or shared ownership."
+      "notes": "Continuation after #624/#627 source merged; no root or shared ownership.",
+      "released_at": "2026-10-10T17:03:53.891Z",
+      "source_head_sha": "d4508d00bd81be0f22f84d0f4949e11ae2f18b31",
+      "integration_head_sha": null,
+      "release_reason": "Source handoff in #637 and #616, checked exact source SHA; back-end PG/audit, admin UI and negative tests committed. AF00 owns root wiring/merge. GitHub checks queued, no verified PG/Flutter, shared frozen pnpm lock mismatch from other lane. No production activation."
     }
   ],
   "history": [
