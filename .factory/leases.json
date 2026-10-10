@@ -199,6 +199,25 @@
       "heartbeat_at": "2026-10-10T03:36:34.664Z",
       "expires_at": "2026-10-10T03:41:34.664Z",
       "notes": "Published Talks CHAT-P01 partial, same PR; previously expired playback-journey ownership preserved; no claim to other active AF09 draft/receipt windows."
+    },
+    {
+      "claim_id": "af09-609-following-precision-20261010-gpt6-0435",
+      "owner": "AF09 existing PR #609 / GPT-6 continuation",
+      "scope": "Preserve exact PostgreSQL microsecond ordering and safe keyset pagination for Following and creator published Talks, service validation and executable adapter regressions; no shared AF00 files",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository_pagination.test.mjs",
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/following.test.mjs",
+        "docs/workstreams/AF09-following-precision-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T03:38:19.320Z",
+      "heartbeat_at": "2026-10-10T03:38:19.320Z",
+      "expires_at": "2026-10-10T03:43:19.320Z",
+      "notes": "Use one feature PR, distinct from active feed-cache/receipt/draft claims. No root composition changes."
     }
   ],
   "history": [
