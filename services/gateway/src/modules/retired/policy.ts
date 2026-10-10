@@ -21,7 +21,9 @@ const alwaysRetired = [
 
 const retiredWrites = [
   /^\/v1\/(?:audio-posts|member-posts|user-posts)(?:\/|$)/,
-  /^\/v1\/(?:posts|rooms)(?:\/|$)/,
+  // A fan cannot CREATE a root post or Room; legitimate Masana post
+  // reactions/comments and joined-Room questions are separate routes.
+  /^\/v1\/(?:posts|rooms)\/?$/,
   /^\/v1\/wallet\/(?:transfers|gifts)(?:\/|$)/,
 ];
 
