@@ -24,7 +24,7 @@ Absence of competitor features has **not** been verified: differentiation is a p
 ## Decision register — DEC-04 and DEC-05 confirmed removals; others remain provisional
 | ID | Decision | Recommendation | Why not assume |
 |---|---|---|---|
-| DEC-01 | Overall identity | Audio-first social + trusted AI services + wallet, not a universal agent marketplace | Positioning controls all tabs |
+| DEC-01 | Overall identity | Audio-first social + practical Gwani services + Wallet, not an agent marketplace | Positioning controls all tabs |
 | DEC-02 | Root navigation | Retain confirmed Chats / Rooms / Talks / Gwani / Wallet; Talks center/default | Changing again causes large routing migration |
 | DEC-03 | First release scope | Finish all core source in phases; qualify riskier money/calls before enabling | Not every built feature can be exposed at once |
 | DEC-04 | **No personal Twins / clones — CONFIRMED REMOVE** | Eliminate personal-agent creation, profiles, directory, public links, owner-access sessions and onboarding | Product-scope decision is final; preserve any existing data/obligations during source retirement |
