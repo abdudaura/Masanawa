@@ -56,3 +56,20 @@ The same verified actor/tenant and creator-profile/block policy must be used for
 - **NOT_RUN/BLOCKED:** Full `pnpm` workspace/test/TS7 check because checkout, Node24 and pnpm12 are unavailable in this container; Flutter/Dart, PostgreSQL and Android tools unavailable. GitHub Actions reports failing no-step jobs for the original PR, and Vercel reports a free-plan rate limit. No production provider/device/rollback test ran.
 
 **Source status:** Follow service + repository + routes + client transport/widgets and tests are committed in the **existing #609 branch**. Routes, schema and widgets are **not yet composed**; do not advertise the user-facing Following tab as functioning end to end or merge to auto-deploying main. Next action: AF00 schema/composition and capable runner execution while AF09 continues recorder, comments, playback and creator journey on this same PR.
+
+
+## Same-PR continuation — Following readback matches Discover (2026-10-10)
+
+**Parent:** published audio Talks (UI-04, UX-A08/UX-A09), **same PR #609**, not an additional integration branch. **Claim:** `af09-609-following-projection-20261010-gpt6` read back on the existing `factory/claims` registry before edits; no AF00/shared path modified. Base `main@c7f7280e640d3098be3e26f05149a0d66085441b`, reviewed shared source checkpoint `46f1232440bab1b803c1cad7c6dc278190996c5d` (refresh this changing PR head again before tests or merge).
+
+The Following PostgreSQL query now uses the same persisted, tenant-scoped like/non-removed-comment counts as Discover and Saved; returned records carry counts rather than silently zeroing following engagement. The Following service applies the existing **`toPublicAudioPost` projection** before sending the HTTP feed, excluding `tenantId`, `authorAccountId`, `assetId`, and `requestId`; no new identity, reaction or comment authority was created. Author kind still distinguishes Masana audio. Existing count/visibility policy and idempotent follow relation remain unchanged.
+
+Source on this **same branch/PR**:
+- `services/gateway/src/audio_posts/following.ts` (canonical public projection)
+- `adapters/storage/postgres/src/audio_posts/following_repository.ts` (persisted count readback)
+- `services/gateway/src/audio_posts/following.test.mjs` (privacy, count and Masana regressions)
+- This handoff only.
+
+**Evidence:** GitHub committed source/blob readback performed on the changed code. New Node regression tests are **AUTHORED, NOT_RUN**; no claim of passing `pnpm` workspace/TypeScript 7 tests, PostgreSQL migrations, real Fastify, Flutter/analyzer, device, signed playback or E2E. Available isolated environment: Node 22.16.0 and global tsc 5.8.3; no GitHub DNS/clone, Node24/pnpm12 lockfile runner, Flutter/Dart, or PostgreSQL. The source `following.ts` now imports the shared value projection from compiled `contract.js`, so the former ad-hoc Node22 direct TS strip-type smoke is no longer a valid standalone runner without a build/module resolver; execute the package's real Vitest/TypeScript project instead, not a mock reenactment.
+
+**Remaining milestone/owners:** AF00 must allocate/install reviewed append-only schema; bind authenticated Following routes and existing AF08 tenant/visibility policy in Gateway, mount the AF09 composer/feeds on the *single audited non-deploying* baseline, reconcile owner's local source/APK and test combined source SHA. AF05/AF15 must provide actual record→upload→signed-play with single-focus media authority; AF09 playback continuation on this same PR owns its client widget paths. AF13 or a capable Node24/pnpm12 + Flutter/PostgreSQL runner must check out **latest exact #609 head**, run `pnpm install --frozen-lockfile && pnpm -r typecheck && pnpm exec vitest run services/gateway/src/audio_posts/following.test.mjs`, `cd apps/mobile && flutter pub get && flutter analyze && flutter test test/audio_first/af09/following_test.dart`, and disposable PostgreSQL two-account/follow-count/visibility tests; report logs and repair actual failures before source merge. No main/production merge or audio customer journey qualification claimed here.
