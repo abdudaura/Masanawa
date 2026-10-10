@@ -725,7 +725,7 @@
     {
       "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
       "owner": "GPT-6 AF06 continuing existing PR #497 chat lifecycle repair",
-      "scope": "Adopt tested, non-overlapping AF13 #460 Gateway fixture/test contract repairs into AF00 #600 integration baseline while preserving 19 pristine files; coherent TypeScript remediation for actual CI errors",
+      "scope": "AF00 #600 typed contract closure: finish audio-post cursor exactOptionalPropertyTypes, canonical TalkRepository detail participant readback and tested AF13 CustomerChannelBridge fixtures",
       "paths": [
         "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
         "apps/mobile/test/chat/chat_action_account_test.dart",
@@ -750,15 +750,18 @@
         "services/gateway/src/talk_search/postgres_repository.test.ts",
         "services/gateway/src/talks/postgres_repository.test.ts",
         "services/gateway/src/talks/replay_visibility.test.ts",
-        "services/gateway/src/talks/service.test.ts"
+        "services/gateway/src/talks/service.test.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/talks/model.ts",
+        "services/gateway/src/customer_channel_routes.test.ts"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 600,
       "claimed_at": "2026-10-10T08:58:13.359Z",
-      "heartbeat_at": "2026-10-10T09:14:21.669Z",
-      "expires_at": "2026-10-10T09:19:21.669Z",
-      "notes": "Compare Git trees: all 19 targets on current AF00 #600 equal main, #460 versions changed. Copy exact blob pointers atomically to #600 via expected-head fast-forward; no production changes. CI Typecheck PASS on #460 run 38040059676, Vitest pending/failing crypto separately."
+      "heartbeat_at": "2026-10-10T09:18:33.010Z",
+      "expires_at": "2026-10-10T09:23:33.010Z",
+      "notes": "Three independent exact-path source corrections on existing integration PR600; gateway tsconfig/package owned by a different AF00 window so do not edit them."
     },
     {
       "claim_id": "af13-460-security-migration-manifest-gpt6-20261010",
