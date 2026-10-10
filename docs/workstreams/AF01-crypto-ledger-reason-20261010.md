@@ -45,3 +45,28 @@ The `CryptoLedgerEntry.reason` union already enumerated 12 types but runtime nor
 ## Contracts / dependencies / next merge
 
 Uses existing `CryptoLedgerEntry` v1 and existing PostgreSQL `postLedger` admission. No new contracts or SQL. Depends on AF00 canonical integration ownership, while remaining independent of ongoing AF01 onramp guard and #576. Run the real package Vitest+TypeScript suites on **the immutable PR head**, check all 12 reason mapping directions against live adapter source, and reconcile changes from #576/#605. Once checks pass, integrate to a **non-deploying shared integration branch**; do not merge to main until Git-connected deployments and migration triggers are audited. Keep provider/device/DB qualification as separate release gates. No force push, deploy, refund, funding or provider execution permitted by this handoff.
+
+
+## Continuation — 2026-10-10: exact PostgreSQL decimal readback (existing PR #607)
+
+**Coordinated claim:** `af01-607-crypto-decimal-api-precision-20261010-gpt6` on `factory/claims@c50343e0112fc72ffc7e0c9168efc5bc46c89f3f`; bounded to `adapters/storage/postgres/src/commerce/crypto-repository.ts`, its existing `crypto-repository.integration.test.ts`, and this handoff only. No concurrent active path claim at acquisition. No migration, ledger posting, provider mutation or mobile UI change.
+
+**Demonstrated blocker:** Executed Foundation CI on existing PR #460 (`38036434565`) surfaced 14 real PostgreSQL test failures: exact decimal amount strings returned PostgreSQL `NUMERIC` storage scale (e.g. `100.000000000000000000`) rather than the compact canonical expected value (`100`). The existing read methods cast `SUM(NUMERIC)` directly to text. Tests caught a response contract mismatch; it is not an accounting arithmetic error.
+
+**Source repair `9be66b7d620d88055921407ec856a9f3f4f3fce3`:** in the existing commerce crypto adapter, format only three SQL read projections using PostgreSQL `trim_scale(numeric)::text`: account balance, tenant liability and platform liability. This preserves exact decimal arithmetic and precision, including fractional amounts. No JavaScript float conversions, balance adjustments or schema changes.
+
+**Regression commit `ce55646473ceec7e07c33d70108faf5616eb8fe0`:** one new real-PG integration case funds `30.125`, asserts exact compact balance and tenant liability, reserves `0.125`, then asserts `30` for both. Existing 14 failing amount-format checks remain unmodified, serving as the primary regression gate.
+
+**Real Actions execution:** GitHub Foundation CI run [38036730419](https://github.com/abdudaura/masanawa/actions/runs/38036730419) on **exact** `ce55646473ceec7e07c33d70108faf5616eb8fe0` started a real Node24/pnpm12/PG18 runner: checkout, setup and install succeeded. `pnpm typecheck` **FAIL** due to an *unrelated baseline source issue*: `packages/agents/src/talk-replay.test.ts:6:8 TS2459 TalkId not exported`. The runner's sequential `pnpm test:ci`, provider tooling and build steps were **SKIPPED / NOT_RUN**, never PASS. PR #460 carries a candidate TalkId correction but has independent real test failures; U02 #580 also owns the overlapping test path. Do not duplicate that ownership into this AF01 PR. PostgreSQL decimal checks on this commit remain **NOT_RUN**. `trim_scale` requires actual PostgreSQL validation; readback of SQL text is structural, not that validation.
+
+**Finite closure checklist (AF01 scoped continuation, not complete wallet milestone):**
+- [x] Recover existing finance PR and record exact non-overlapping source/test claim.
+- [x] Fix compact lossless numeric balance and liability readback without changing posting authority.
+- [x] Commit preserved integration assertions plus explicit fractional regression.
+- [x] Trigger executable GitHub Actions and inspect the precise prerequisite failure.
+- [ ] AF13/U02 resolve shared `TalkId` typecheck failure on the **single safe integration baseline**; then execute the focused PostgreSQL test `pnpm exec vitest run adapters/storage/postgres/src/commerce/crypto-repository.integration.test.ts` against isolated PG18 and `pnpm typecheck`.
+- [ ] Fix any remaining real numeric/ledger regressions; re-run Foundation CI, including full `pnpm test:ci` and build, at an exact combined SHA.
+- [ ] AF00 review this PR's finance-path diff, preserve ongoing #576/#590/#605 work, and merge tested compatible source to the one verified **non-deploying** baseline.
+- [ ] Run authenticated client/ledger/API, live provider reconciliation and Android tests before financial activation; existing platform MSN/P2P milestones remain separate incomplete acceptance items.
+
+**Safety:** Not merged, not deployed, no provider funds moved, no production DB touched and no ownership of shared CI / main branch assumed.
