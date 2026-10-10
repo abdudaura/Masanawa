@@ -6,8 +6,12 @@ export function registerFanMemoryRoutes(app:FastifyInstance,deps:{
 }):void {
  const svc=createFanMemoryService(deps.store);
  function error(reply:any,e:unknown){
-  return reply.code(e instanceof FanMemoryError?e.status:503).send({
-   error:e instanceof FanMemoryError?e.code:"memory_unavailable"});
+  const code=e instanceof FanMemoryError?e.status:
+    e&&typeof e==="object"&&"statusCode" in e &&
+    (e.statusCode===401||e.statusCode===403)?e.statusCode:503;
+  return reply.code(code).send({
+   error:e instanceof FanMemoryError?e.code:
+    code===401?"fan_login_required":code===403?"fan_permission_denied":"memory_unavailable"});
  }
  app.get("/v1/me/memory",async(r,reply)=>{
   try{
