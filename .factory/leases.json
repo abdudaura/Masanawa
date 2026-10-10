@@ -179,6 +179,24 @@
       "claimed_at": "2026-10-10T03:13:35.896Z",
       "heartbeat_at": "2026-10-10T03:13:35.896Z",
       "expires_at": "2026-10-10T03:18:35.896Z"
+    },
+    {
+      "claim_id": "gpt6-u02-post-auth-expiry-20261010-0415",
+      "owner": "GPT-6 U02 Gwani task approval continuation",
+      "scope": "Same PR #580: deny expired one-use approval after slow canonical domain authorization but before durable execution admission, with regression; preserve U01/U04/AF00 ownership",
+      "paths": [
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md"
+      ],
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "source_pr": 580,
+      "source_head": "74c6c3ce8f767daa6a9a0df18f11e630be0c15e2",
+      "claimed_at": "2026-10-10T03:15:06.838Z",
+      "heartbeat_at": "2026-10-10T03:15:06.838Z",
+      "expires_at": "2026-10-10T03:20:06.838Z",
+      "notes": "Do not touch shared task worker/route/financial/migration/integration files; source + unit regressions + finite parent handoff."
     }
   ],
   "history": [
