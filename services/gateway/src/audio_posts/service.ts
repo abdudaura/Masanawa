@@ -171,6 +171,30 @@ export function createAudioPostService(deps: {
     return posts.map(toPublicAudioPost);
   };
 
+  // Small account-scoped history pages avoid silently hiding posts after 50.
+  const libraryPage = async (actor: PostActor, input: {
+    kind: "mine" | "saved"; cursor?: unknown; limit?: unknown;
+  }): Promise<PublicAudioFeedPage> => {
+    assertActor(actor);
+    const limit = input.limit === undefined ? 20 : input.limit;
+    if (!Number.isSafeInteger(limit) || (limit as number) < 1 || (limit as number) > 30 ||
+        (input.cursor != null && (typeof input.cursor !== "string" ||
+          !/^[A-Za-z0-9_-]{1,256}$/.test(input.cursor)))) {
+      throw new AudioPostError("VALIDATION", "Invalid library page");
+    }
+    const cursor = (input.cursor as string | null | undefined) ?? null;
+    const page = input.kind === "mine"
+      ? await repository.minePage?.({tenantId:actor.tenantId,accountId:actor.accountId,
+          cursor,limit:limit as number}).catch(mapRepositoryError)
+      : await repository.savedPage?.({tenantId:actor.tenantId,viewerId:actor.accountId,
+          cursor,limit:limit as number}).catch(mapRepositoryError);
+    if (!page || !Array.isArray(page.items) ||
+        (page.nextCursor !== null && typeof page.nextCursor !== "string")) {
+      throw new AudioPostError("CAPABILITY_UNAVAILABLE", "Audio library pagination unavailable");
+    }
+    return {items:page.items.map(toPublicAudioPost),nextCursor:page.nextCursor};
+  };
+
   const removeOwn = async (actor: PostActor, postId: string) => {
     assertActor(actor);
     safeId(postId, "post");
@@ -272,5 +296,5 @@ export function createAudioPostService(deps: {
     if (!removed) throw new AudioPostError("NOT_FOUND", "Comment not found");
     return { removed: true };
   };
-  return Object.freeze({ publish, settle, feed, receiptByRequest, mine, saved, removeOwn, reaction, comments, commentsPage, comment, removeOwnComment });
+  return Object.freeze({ publish, settle, feed, receiptByRequest, mine, saved, libraryPage, removeOwn, reaction, comments, commentsPage, comment, removeOwnComment });
 }
