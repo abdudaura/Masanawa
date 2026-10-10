@@ -754,6 +754,22 @@
       "heartbeat_at": "2026-10-10T09:01:20.854Z",
       "expires_at": "2026-10-10T09:06:20.854Z",
       "notes": "Observed real GitHub Actions run 38039685306: test-topology.test.ts expects exact old YAML and fails after legitimate if: !cancelled. Update test to require independent steps with correct run and guards."
+    },
+    {
+      "claim_id": "af01-460-twin-credit-replay-race-gpt6-20261010",
+      "owner": "GPT-6 / user-directed bounded AF01 creator-ledger CI repair on PR #460",
+      "scope": "Repair exact two-key credit receipt concurrency race while preserving immutable distinct-request ledger reference conflict and production financial authority",
+      "paths": [
+        "adapters/storage/postgres/src/commerce/twin-economy.ts",
+        "adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:02:06.775Z",
+      "heartbeat_at": "2026-10-10T09:02:06.775Z",
+      "expires_at": "2026-10-10T09:07:06.775Z",
+      "notes": "Real PG18 CI 38039668485 unique ledger entry violation. Coordination published to active AF01 PR #607 comment 6095925134. No crypto, migrations, ledger postings or provider writes."
     }
   ],
   "history": [
