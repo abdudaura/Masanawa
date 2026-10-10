@@ -159,3 +159,18 @@ and PG migration/negative cases, reporting exact SHA and command output.
 This window can inspect GitHub source and run local Node 22 commands, but has
 no repository checkout (DNS `git ls-remote` fails) and no pnpm, Dart, Flutter
 or PostgreSQL runner. Do not call unexecuted test files PASS.
+
+**Comment privacy and moderation:** Public comment payloads expose only
+`postId/commentId/body/createdAt/removed/isMine`, not commenter internal
+`authorAccountId`. A canonical per-account comment rate limit and review
+policy are still required from the Gateway/AF13 safety owner before
+production activation; a post's audio moderation does not automatically
+moderate arbitrary comments. Do not bypass that gate.
+
+**CI inspection at PR revision on 2026-10-10:** GitHub Foundation CI
+run `38017064116` job `114109584409` and Mobile Build run
+`38017064130` job `114109584597` returned failure with **zero
+reported job steps**. Neither constitutes source/test execution. The
+local environment reports Node `v22.16.0`, no checkout (GitHub DNS
+unavailable), pnpm, Flutter/Dart or PostgreSQL. Source readback and
+structural inspection are not PASS_REAL.
