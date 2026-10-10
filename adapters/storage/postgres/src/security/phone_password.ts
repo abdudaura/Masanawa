@@ -30,7 +30,7 @@ function profile(row: IdentityRow): PlatformAuthProfile {
     email: row.email,
     phone: row.phone,
     locale: row.locale,
-    createdAt: new Date(row.created_at).toISOString(),
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString(),
   });
 }
 
