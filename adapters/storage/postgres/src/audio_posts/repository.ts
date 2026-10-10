@@ -194,7 +194,7 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
    // Otherwise a full hidden page causes repeated rows or missing continuation.
    return { items, nextCursor: more && position ? makeCursor(position.stamp, position.id) : null };
   },
-  async listComments({tenantId,viewerId,postId,limit}) {
+  async listComments({tenantId,viewerId,postId,limit,beforeCommentId}) {
    return transaction(pool, async db => {
     const r = await db.query<Row>(
      "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND post_id=$2 AND status='published' FOR SHARE",
@@ -202,10 +202,23 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
     if (!r.rows[0] || !await visibility.canView({tenantId,viewerId,authorAccountId:r.rows[0].author_account_id})) {
      throw new Error("audio_posts.not_visible");
     }
+    // Resolve the cursor only after post visibility, and in the same tenant/post.
+    // Compare SQL timestamps directly: JavaScript Date drops PG microseconds.
+    if (beforeCommentId) {
+     const anchor = await db.query<{comment_id:string}>(
+      "SELECT comment_id FROM social.audio_post_comments WHERE tenant_id=$1 AND post_id=$2 AND comment_id=$3",
+      [tenantId,postId,beforeCommentId]);
+     if (!anchor.rows[0]) throw new Error("audio_posts.invalid_comment_cursor");
+    }
     const comments = await db.query<CommentRow>(
-     "SELECT " + commentColumns + " FROM social.audio_post_comments WHERE tenant_id=$1 AND post_id=$2 AND removed=false " +
+     "SELECT " + commentColumns + " FROM social.audio_post_comments " +
+     "WHERE tenant_id=$1 AND post_id=$2 AND removed=false " +
+     (beforeCommentId
+      ? "AND (created_at,comment_id) < (SELECT created_at,comment_id FROM social.audio_post_comments " +
+        "WHERE tenant_id=$1 AND post_id=$2 AND comment_id=$4) "
+      : "") +
      "ORDER BY created_at DESC,comment_id DESC LIMIT $3",
-     [tenantId,postId,limit]);
+     beforeCommentId ? [tenantId,postId,limit,beforeCommentId] : [tenantId,postId,limit]);
     return comments.rows.map(mapComment);
    });
   },
