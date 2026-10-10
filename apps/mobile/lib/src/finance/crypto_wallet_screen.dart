@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/network/api_client.dart';
+import '../core/providers.dart';
+import '../agents/masanawa_transport.dart';
+import 'msn_balance_card.dart';
+import 'msn_balance_transport.dart';
 import '../core/request_id.dart';
 import '../theme/masanawa_theme.dart';
 import '../tokens/masanawa_tokens.dart';
@@ -373,6 +377,7 @@ class CryptoWalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(cryptoWalletProvider);
+    final sessionClient = ref.watch(apiClientProvider);
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
@@ -411,6 +416,15 @@ class CryptoWalletScreen extends ConsumerWidget {
                     ? null
                     : () =>
                         ref.read(cryptoWalletProvider.notifier).refreshBalance(),
+              ),
+              const SizedBox(height: 10),
+              MsnBalanceCard(
+                sessionIdentity: sessionClient.accessToken,
+                transport: GatewayMsnBalanceTransport(
+                  dio: sessionClient.dio,
+                  baseUrl: kAgentBaseUrl,
+                  readAccessToken: () => ref.read(apiClientProvider).accessToken,
+                ),
               ),
               const SizedBox(height: 14),
               Row(
