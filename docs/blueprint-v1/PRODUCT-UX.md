@@ -32,7 +32,7 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 | SC-003 | Sign in / register -> SC-005 or home | email/phone, numeric-secret input for phone choice, show/hide, validation, Submit, Switch method, Recovery | masked auth errors; bounded rate limits, no phone-ownership inference |
 | SC-004 | Recovery / verify -> SC-003 | list eligible verified methods, recovery input, resend cooldown, device/session revocation confirmation | cannot recover using unverified phone number only; expired/invalid evidence states |
 | SC-005 | Name/profile setup -> home | display name, optional avatar, language, Save/Skip; no forced contacts access | server-owned account ID, save/readback, rejected avatar and retry |
-| SC-006 | My profile -> SC-007 / SC-029 | avatar, handle, bio, language, My Talks, My Twin, Settings, Activity | own profile projections only; no public wallet details |
+| SC-006 | My profile -> SC-007 / SC-048 | avatar, handle, bio, language, My Talks, My Twin, Settings, Activity | own profile projections only; no public wallet details |
 | SC-007 | Edit profile/avatar -> SC-006 | edit name/bio/avatar, crop, delete image, Save/Cancel | permission, upload size/type validation, late upload cancellation |
 | SC-008 | Account/security -> SC-004, SC-034 | sessions, verified identities, change credentials, sign out other devices, block list | reauth, stale session and revoke; no secret logging |
 
