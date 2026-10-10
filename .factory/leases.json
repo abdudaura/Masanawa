@@ -516,15 +516,16 @@
         "services/gateway/src/audio_posts/processing_worker.ts",
         "adapters/storage/postgres/src/audio_posts/following_repository.ts",
         "adapters/storage/postgres/src/audio_posts/listen_repository.ts",
-        "adapters/storage/postgres/src/audio_posts/processing_queue.ts"
+        "adapters/storage/postgres/src/audio_posts/processing_queue.ts",
+        "adapters/storage/postgres/src/audio_posts/repository.ts"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "source_pr": 609,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:01:28.377Z",
-      "heartbeat_at": "2026-10-10T08:04:02.815Z",
-      "expires_at": "2026-10-10T08:09:02.815Z",
-      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit.",
+      "heartbeat_at": "2026-10-10T08:06:41.885Z",
+      "expires_at": "2026-10-10T08:11:41.885Z",
+      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit. Executed Foundation run 38036528676 reduced TS6059 build errors 4→1; repository.ts is the sole remaining AF09 import; 3 new canonical contract tests pass (overall Vitest 1247 pass/85 fail/22 skip).",
       "source_head_sha": "1bef47c22f90769de7a9c3c02e7a5dcb09182813"
     },
     {
