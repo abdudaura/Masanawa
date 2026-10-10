@@ -132,6 +132,23 @@
       "heartbeat_at": "2026-10-10T02:20:09.487Z",
       "expires_at": "2026-10-10T02:25:09.487Z",
       "notes": "New separate exact paths only; recover existing PR as single milestone. AF00 owns actual migration and composition."
+    },
+    {
+      "claim_id": "af09-publish-composer-20261010-window0316",
+      "owner": "Masanawa AF09 composer continuation window0316; existing PR #609",
+      "scope": "Implement actual publish composer UI using canonical verified AF05 media selection and existing AF09 server transport, with offline/permission/retry/idempotence and widget tests. No worker/comment/feed/router/migration changes.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-composer-20261010-window0316.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:20:39.453Z",
+      "heartbeat_at": "2026-10-10T02:20:39.453Z",
+      "expires_at": "2026-10-10T02:25:39.456Z",
+      "notes": "First source action: new independent Flutter composer and tests, same PR #609; AF05 verified recording callback dependency."
     }
   ],
   "history": [
