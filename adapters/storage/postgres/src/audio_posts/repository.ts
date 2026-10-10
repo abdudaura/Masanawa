@@ -1,0 +1,137 @@
+import type { Pool, PoolClient } from "pg";
+import type {
+ AudioPostRecord, AudioPostRepository, NewAudioPost, PublicFeedPage,
+} from "../../../../../services/gateway/src/audio_posts/contract.js";
+
+/** Canonical profile/block/moderation authority supplied by Gateway composition.
+ * Must fail closed when unavailable. Not a new blocklist database.
+ */
+export interface PostVisibility {
+  canView(input: { tenantId: string; viewerId: string; authorAccountId: string }): Promise<boolean>;
+}
+type Row = {
+ tenant_id: string; post_id: string; author_id: string; author_account_id: string;
+ author_kind: "human" | "masana"; asset_id: string; request_id: string;
+ title: string; duration_ms: number; status: AudioPostRecord["status"];
+ revision: number; created_at: Date | string; published_at: Date | string | null;
+};
+function date(value: Date | string): string {
+ return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+function map(row: Row): AudioPostRecord {
+ return {
+  tenantId: row.tenant_id, postId: row.post_id, authorId: row.author_id,
+  authorAccountId: row.author_account_id, authorKind: row.author_kind,
+  assetId: row.asset_id, requestId: row.request_id, title: row.title,
+  durationMs: Number(row.duration_ms), status: row.status, revision: Number(row.revision),
+  createdAt: date(row.created_at), publishedAt: row.published_at ? date(row.published_at) : null,
+ };
+}
+async function transaction<T>(pool: Pool, fn: (db: PoolClient) => Promise<T>): Promise<T> {
+ const db = await pool.connect();
+ try { await db.query("BEGIN"); const result = await fn(db); await db.query("COMMIT"); return result; }
+ catch (err) { await db.query("ROLLBACK"); throw err; }
+ finally { db.release(); }
+}
+const columns = "tenant_id,post_id,author_id,author_account_id,author_kind,asset_id,request_id,title,duration_ms,status,revision,created_at,published_at";
+const cursor = (post: AudioPostRecord) => Date.parse(post.createdAt) + ":" + post.postId;
+function parseCursor(raw: string | null): { stamp: number; id: string } | null {
+ if (raw === null) return null;
+ const at = raw.indexOf(":");
+ const stamp = Number(raw.slice(0, at)); const id = raw.slice(at + 1);
+ if (at < 1 || !Number.isSafeInteger(stamp) || stamp <= 0 ||
+     !/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(id)) throw new Error("audio_posts.invalid_cursor");
+ return { stamp, id };
+}
+export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVisibility): AudioPostRepository {
+ return {
+  async createOnce(input: NewAudioPost) {
+   return transaction(pool, async db => {
+    const a = input.actor;
+    await db.query(
+     `INSERT INTO social.audio_posts (${columns})
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'processing',0,$10,NULL)
+      ON CONFLICT (tenant_id,author_account_id,request_id) DO NOTHING`,
+     [a.tenantId,input.postId,a.authorId,a.accountId,a.authorKind,input.asset.assetId,
+      input.requestId,input.title,input.asset.durationMs,input.createdAt]);
+    const r = await db.query<Row>(
+     "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND author_account_id=$2 AND request_id=$3 FOR SHARE",
+     [a.tenantId,a.accountId,input.requestId]);
+    if (!r.rows[0]) throw new Error("audio_posts.create_missing");
+    return map(r.rows[0]);
+   });
+  },
+  async byRequest(tenantId, accountId, requestId) {
+   const r = await pool.query<Row>(
+    "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND author_account_id=$2 AND request_id=$3",
+    [tenantId,accountId,requestId]);
+   return r.rows[0] ? map(r.rows[0]) : null;
+  },
+  async byId(tenantId, postId) {
+   const r = await pool.query<Row>("SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND post_id=$2",
+    [tenantId,postId]);
+   return r.rows[0] ? map(r.rows[0]) : null;
+  },
+  async mine({tenantId, accountId, limit}) {
+   const r = await pool.query<Row>(
+    "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND author_account_id=$2 ORDER BY created_at DESC,post_id DESC LIMIT $3",
+    [tenantId,accountId,limit]);
+   return r.rows.map(map);
+  },
+  async settle({tenantId,postId,expectedRevision,status}) {
+   const r = await pool.query<Row>(
+    "UPDATE social.audio_posts SET status=$4,revision=revision+1,published_at=CASE WHEN $4='published' THEN NOW() ELSE NULL END WHERE tenant_id=$1 AND post_id=$2 AND revision=$3 AND status='processing' RETURNING " + columns,
+    [tenantId,postId,expectedRevision,status]);
+   if (!r.rows[0]) throw new Error("audio_posts.settle_conflict");
+   return map(r.rows[0]);
+  },
+  async publicFeed({tenantId,viewerId,cursor:token,limit}): Promise<PublicFeedPage> {
+   // Scan bounded pages, applying the canonical account visibility policy before returning.
+   // Cursor advances across filtered items, so blocked posts cannot loop the feed.
+   if (!viewerId) throw new Error("audio_posts.viewer_required");
+   let position = parseCursor(token);
+   const items: AudioPostRecord[] = [];
+   let more = true, scanned = 0;
+   while (items.length < limit && more && scanned < 240) {
+    const r = await pool.query<Row>(
+      "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND status='published' " +
+      "AND ($2::timestamptz IS NULL OR (created_at,post_id) < ($2::timestamptz,$3)) " +
+      "ORDER BY created_at DESC,post_id DESC LIMIT 30",
+      [tenantId,position ? new Date(position.stamp).toISOString() : null,position?.id ?? ""]);
+    if (!r.rows.length) { more = false; break; }
+    for (const row of r.rows) {
+     const post = map(row);
+     position = {stamp:Date.parse(post.createdAt),id:post.postId};
+     scanned++;
+     if (await visibility.canView({
+       tenantId,viewerId,authorAccountId:post.authorAccountId,
+     })) items.push(post);
+     if (items.length === limit || scanned >= 240) break;
+    }
+    if (r.rows.length < 30) more = false;
+   }
+   return { items, nextCursor: more && items.length ? cursor(items[items.length - 1]) : null };
+  },
+  async setReaction({tenantId,viewerId,postId,kind,enabled}) {
+   return transaction(pool, async db => {
+    const r = await db.query<Row>(
+     "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND post_id=$2 AND status='published' FOR SHARE",
+     [tenantId,postId]);
+    const post = r.rows[0];
+    if (!post || !await visibility.canView({tenantId,viewerId,authorAccountId:post.author_account_id})) {
+      throw new Error("audio_posts.not_visible");
+    }
+    if (enabled) {
+     await db.query(
+      "INSERT INTO social.audio_post_reactions(tenant_id,post_id,account_id,kind) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING",
+      [tenantId,postId,viewerId,kind]);
+    } else {
+     await db.query(
+      "DELETE FROM social.audio_post_reactions WHERE tenant_id=$1 AND post_id=$2 AND account_id=$3 AND kind=$4",
+      [tenantId,postId,viewerId,kind]);
+    }
+    return {enabled};
+   });
+  },
+ };
+}
