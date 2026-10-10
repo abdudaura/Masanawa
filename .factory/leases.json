@@ -614,7 +614,11 @@
       "claimed_at": "2026-10-10T08:50:37.823Z",
       "heartbeat_at": "2026-10-10T08:56:56.350Z",
       "expires_at": "2026-10-10T09:01:56.350Z",
-      "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR; actual CI 38039308614 typecheck blocker: wrong TalkId import; using pre-existing correct #580 source readback, no production code change; actual runner typecheck at 7d00ecd: typed UUID test fixture mismatch; copying established existing #460/#580 repair; real CI 38039545183 progressed past agents and adapter TS; blocked at unrelated Gateway test typings owned in existing #460; branch 02f signed decimal repair undergoing CI"
+      "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR; actual CI 38039308614 typecheck blocker: wrong TalkId import; using pre-existing correct #580 source readback, no production code change; actual runner typecheck at 7d00ecd: typed UUID test fixture mismatch; copying established existing #460/#580 repair; real CI 38039545183 progressed past agents and adapter TS; blocked at unrelated Gateway test typings owned in existing #460; branch 02f signed decimal repair undergoing CI",
+      "released_at": "2026-10-10T09:02:18.908Z",
+      "release_reason": "Existing PR #607 source repaired at 02f15223e17ea21e011788abd5e7f6cce24a6b4f; real CI ran but failed on shared Gateway compilation; full Vitest/PG18/Flutter/APK skipped/unverified. Exact-head source and exact failures documented in PR comment 6095926563. AF13 #460 and AF00 #600 own continuing combined CI and integration; no merge, no deployment.",
+      "integration_head_sha": null,
+      "test_state": "real Foundation CI typecheck FAIL; targeted crypto PostgreSQL and Vitest BLOCKED by unrelated Gateway compilation"
     },
     {
       "claim_id": "af13-460-financial-tests-gpt6-20261010-0954",
