@@ -182,7 +182,21 @@
       "claimed_at": "2026-10-10T03:43:56.801Z",
       "heartbeat_at": "2026-10-10T03:47:21.887Z",
       "expires_at": "2026-10-10T03:52:21.887Z",
-      "notes": "PostgreSQL adapter and 10 regression tests committed to existing PR #599; reviewing exact source and finite handoff. No migration/startup/provider enabled."
+      "notes": "PostgreSQL adapter and 10 regression tests committed to existing PR #599; reviewing exact source and finite handoff. No migration/startup/provider enabled.",
+      "released_at": "2026-10-10T03:52:09.798Z",
+      "release_reason": "Same PR #599 PostgreSQL adapter, 10 authored tests and unnumbered DDL source committed. Exact-path AF00 #600 transfer comment 6093480335; no schema/install/startup/production activation. Source blob structural readback only; no eligible checkout/Node24/pnpm/PG/S3 runner. Milestone partial.",
+      "source_commits": [
+        "8b46c23afefa014852dc084003212d53d2adaffd",
+        "cebb6e0ffc79aecb732f6de26ee023d44d273d28",
+        "0939ec69fbcf9d3cf04e8f897a4335cc8d3ad27f",
+        "6c71b361936c0cf13fa24b1e065c5f93bf91ccd0",
+        "96969213b9670693f9fc4a47bfe63de71df4292f",
+        "b69f3a86ad7dce646829af74499830f8e9e3fb04",
+        "d85c911b30859ddbe1168c7eeea27cb4348612ef"
+      ],
+      "integration_head_sha": null,
+      "source_head_sha": "d85c911b30859ddbe1168c7eeea27cb4348612ef",
+      "test_state": "GitHub CI zero-step BLOCKED; exact blob structural readbacks only. Node/Vitest/PG/S3 NOT_RUN."
     },
     {
       "claim_id": "af09-609-report-feed-mount-gpt6-20261010",
