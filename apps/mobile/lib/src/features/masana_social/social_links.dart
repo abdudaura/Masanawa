@@ -42,7 +42,8 @@ class MasanaSocialApi {
   }
 }
 class MasanaSocialLinks extends StatefulWidget {
-  const MasanaSocialLinks({super.key,required this.loadLinks,this.openLink});
+  const MasanaSocialLinks({super.key,required this.characterId,required this.loadLinks,this.openLink});
+  final String characterId;
   final Future<List<MasanaSocialLink>> Function() loadLinks;
   final Future<bool> Function(Uri)? openLink;
   @override State<MasanaSocialLinks> createState()=>_MasanaSocialLinksState();
@@ -51,6 +52,10 @@ class _MasanaSocialLinksState extends State<MasanaSocialLinks> {
   late Future<List<MasanaSocialLink>> future;
   String? notice;
   @override void initState(){super.initState();_reload();}
+  @override void didUpdateWidget(covariant MasanaSocialLinks oldWidget){
+    super.didUpdateWidget(oldWidget);
+    if(oldWidget.characterId!=widget.characterId){_reload();}
+  }
   void _reload(){setState((){notice=null;future=widget.loadLinks();});}
   Future<void> _open(MasanaSocialLink link) async {
     final uri=link.approvedUri;
