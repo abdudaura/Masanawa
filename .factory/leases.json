@@ -1041,7 +1041,11 @@
       "claimed_at": "2026-10-10T15:43:00.083Z",
       "heartbeat_at": "2026-10-10T15:43:00.083Z",
       "expires_at": "2026-10-10T15:48:00.083Z",
-      "notes": "All claims inspected; none active as of 2026-10-10 15:40Z; existing #460 path contains the verified fix. Do not reintroduce old Talk product behavior."
+      "notes": "All claims inspected; none active as of 2026-10-10 15:40Z; existing #460 path contains the verified fix. Do not reintroduce old Talk product behavior.",
+      "released_at": "2026-10-10T15:48:10.653Z",
+      "release_reason": "Closed duplicate PR #617 without merge after readback proved identical correction already integrated in AF00-owned integration/rebuild at f6716991557370606217aa138d99ff96b99565ad, matching file blob 5424c2d6. Remaining CI and R0 integration belong to AF00.",
+      "integration_head_sha": "f6716991557370606217aa138d99ff96b99565ad",
+      "source_head_sha": "2d21b66f6d7cdab95294ef8b73f40b9f7ecbd51e"
     }
   ],
   "history": [
