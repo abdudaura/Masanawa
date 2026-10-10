@@ -313,14 +313,15 @@
         "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
         "apps/mobile/test/audio_first/af09/feed_test.dart",
         "docs/workstreams/AF09-library-pagination-20261010.md",
-        "services/gateway/src/audio_posts/register_feature.test.mjs"
+        "services/gateway/src/audio_posts/register_feature.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/repository_pagination.test.mjs"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T04:59:05.236Z",
-      "heartbeat_at": "2026-10-10T05:01:55.434Z",
-      "expires_at": "2026-10-10T05:06:55.434Z",
+      "heartbeat_at": "2026-10-10T05:02:30.178Z",
+      "expires_at": "2026-10-10T05:07:30.178Z",
       "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff.; route-pack assertions must be adjusted from 18 to 20 for new additive routes; prior route owner released."
     },
     {
