@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'audio_post_composer_screen.dart';
 import 'audio_post_draft_store.dart';
+import 'audio_post_detail_screen.dart';
 import 'audio_post_feed_screen.dart';
 import 'audio_post_playback.dart';
 import 'audio_post_report_action.dart';
@@ -57,6 +58,21 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
     super.dispose();
   }
 
+  void _openCreatorPost(AudioPost post) {
+    final playback = widget.playback;
+    if (!_authorized || playback == null || !playback.isAuthorized ||
+        post.status != 'published') return;
+    Navigator.of(context).push<void>(MaterialPageRoute<void>(
+      builder: (_) => AudioPostDetailScreen(
+        key: ValueKey('creator-talk-route-${post.postId}'),
+        post: post,
+        playback: playback,
+        accountId: widget.accountId,
+        isCurrentAccount: widget.isCurrentAccount,
+      ),
+    ));
+  }
+
   void _openCreator(String authorId, String authorKind) {
     final transport = widget.creatorTransport;
     if (!_authorized || transport == null) return;
@@ -70,6 +86,7 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
         isCurrentAccount: widget.isCurrentAccount,
         authorId: authorId,
         authorKind: authorKind,
+        onOpenPost: widget.playback == null ? null : _openCreatorPost,
       ),
     ));
   }
