@@ -489,4 +489,33 @@ testWidgets('account switch during status lookup ignores prior-account result', 
 });
 
 
+
+testWidgets('moderation failure is recovered as terminal, not an invitation to retry POST', (tester) async {
+  final posts = ReceiptPostsFake();
+  final callbacks = <String>[];
+  await tester.pumpWidget(composer(posts, 'user-a',
+    record: () async => const VerifiedPostAudio(assetId: 'ready-a', durationMs: 30000),
+    published: (post) => callbacks.add(post.status)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Story');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  posts.serverReceipt = AudioPost(
+    postId: 'post-one', authorId: 'owner', authorKind: 'human',
+    title: 'Story', durationMs: 30000, status: 'failed', revision: 1,
+    createdAt: DateTime.utc(2026, 10, 10));
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pumpAndSettle();
+  expect(find.textContaining('not approved'), findsOneWidget);
+  expect(find.byKey(const ValueKey('talk-check-status')), findsNothing);
+  expect(tester.widget<FilledButton>(
+    find.byKey(const ValueKey('talk-publish'))).onPressed, isNull);
+  expect(posts.sends, 1);
+  expect(posts.lookups, 1);
+  expect(callbacks, ['processing']);
+});
+
+
 }
