@@ -148,4 +148,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(posts.sends, 1);
   });
+  testWidgets('failed moderation is a terminal confirmed outcome, not uncertain retry', (tester) async {
+    final posts = PostsFake();
+    var navigations = 0;
+    posts.onSend = () async => AudioPost(
+      postId: 'denied', authorId: 'owner', authorKind: 'human',
+      title: 'Blocked content', durationMs: 20000, status: 'failed',
+      revision: 1, createdAt: DateTime.utc(2026, 10, 10),
+    );
+    await tester.pumpWidget(composer(posts, 'user-a',
+      record: () async => const VerifiedPostAudio(assetId: 'owned', durationMs: 20000),
+      published: (_) => navigations++));
+    await tester.tap(find.byKey(const ValueKey('talk-record')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Blocked content');
+    await tester.tap(find.byKey(const ValueKey('talk-publish')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('not approved'), findsOneWidget);
+    expect(find.textContaining('unconfirmed'), findsNothing);
+    expect(posts.sends, 1);
+    expect(navigations, 0);
+    expect(tester.widget<FilledButton>(
+      find.byKey(const ValueKey('talk-publish'))).onPressed, isNull);
+  });
+
 }
