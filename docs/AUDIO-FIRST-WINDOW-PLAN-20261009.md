@@ -2,6 +2,10 @@
 
 Status: planning allocation; no feature path is claimed by this document. Current local source/APK is unavailable here. Main snapshot: `5e758673ae91082520b21b3153da53791ae2cbf3`. Refresh refs and recover before editing.
 
+## Dispatch override — 2026-10-10
+
+Use [outcome-first delivery](NEXT-WAVE-DELIVERY-20261010.md) and [replacement prompt](REUSABLE-IMPLEMENTATION-PROMPT.md). Existing IDs/paths retain their ownership purpose. PLANNED_UNCLAIMED here is a template value, not permission to repeat active/released PR work. Continue substantive customer milestones; a small guard or structural evidence tool does not complete a lane. Dependency waves limit required contracts; they do not block independent domain implementation until all of AF00 is done.
+
 ## Launch in waves
 
 AF00 is the one continuing integrator. First reconcile the owner's local changes and #497 without discarding any source. It can publish narrow contract baselines and ready paths while local-only comparisons remain blocked; other windows may inspect/recover isolated modules, but must not replace unseen local screens.
