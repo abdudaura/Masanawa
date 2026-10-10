@@ -983,12 +983,15 @@
       ],
       "branch": "work/shared-ci-recovery-work-20261008",
       "source_pr": 460,
-      "source_head": "7930b0ebd2440d1f93534d425faa283748fcae08",
+      "source_head": "06d30813b39e8681da30793d0b4e448a14ebd07c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T09:22:21.205Z",
       "heartbeat_at": "2026-10-10T09:26:15.208Z",
       "expires_at": "2026-10-10T09:31:15.208Z",
-      "notes": "Reproduced real flutter tests failed in #38040798435; PR comment #6096078619; no protected UI source edits; wallet offline widget missing custom app theme, real Flutter failure #38040798435, PR comment 6096088541; Agent directory stale-presence test expected object identity despite explicit unknown privacy; comment 6096107488"
+      "notes": "Reproduced real flutter tests failed in #38040798435; PR comment #6096078619; no protected UI source edits; wallet offline widget missing custom app theme, real Flutter failure #38040798435, PR comment 6096088541; Agent directory stale-presence test expected object identity despite explicit unknown privacy; comment 6096107488",
+      "released_at": "2026-10-10T09:28:12.589Z",
+      "test_state": "Mobile 38041397626 / Foundation 38041397617 IN_PROGRESS on exact head; prior Mobile 38040798435 11 failed; prior Foundation 38040560645 PASS_REAL at f2d11153 baseline only",
+      "release_reason": "Three exact path Flutter test repairs committed, existing PR #460 handoff comment 6096122450. No qualified integrated mobile or APK yet; AF00 owns full composition and claimed shell/mobile fixes; no merge/provider/deploy."
     },
     {
       "claim_id": "af13-460-agent-presence-malformed-truth-gpt6-1024",
