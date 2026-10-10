@@ -600,10 +600,10 @@ void main() {
 
   testWidgets('returning to Discover retains the viewed page while refreshing',
       (tester) async {
-    final source = FakePosts()
-      ..discoverHandler = (_) async => AudioPostPage(
-          items: [post('warm')], nextCursor: null)
-      ..savedHandler = () async => [post('saved')];
+    final source = FakePosts();
+    source.discoverHandler = (_) async =>
+        AudioPostPage(items: [post('warm')], nextCursor: null);
+    source.savedHandler = () async => [post('saved')];
     await tester.pumpWidget(screen(source, 'user-a'));
     await tester.pumpAndSettle();
     expect(find.text('Published audio warm'), findsOneWidget);
@@ -628,10 +628,10 @@ void main() {
 
   testWidgets('account switch clears remembered Talks tabs and late responses',
       (tester) async {
-    final source = FakePosts()
-      ..discoverHandler = (_) async => AudioPostPage(
-          items: [post('private-alice')], nextCursor: null)
-      ..savedHandler = () async => [post('saved-alice')];
+    final source = FakePosts();
+    source.discoverHandler = (_) async =>
+        AudioPostPage(items: [post('private-alice')], nextCursor: null);
+    source.savedHandler = () async => [post('saved-alice')];
     await tester.pumpWidget(screen(source, 'alice'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Saved').first);
