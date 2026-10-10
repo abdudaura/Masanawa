@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { Pool } from "pg";
+import { createPostgresPool } from "@masanawa/postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createPostgresRecoveryJournal } from "../../packages/operator-tasks/src/recovery.js";
 
@@ -13,8 +13,8 @@ const suite = connectionString ? describe : describe.skip;
  * or unrelated parallel suite's operator task records can be touched.
  */
 suite("U02 durable recovery — disposable PostgreSQL acceptance", () => {
-  let admin: Pool;
-  let pool: Pool;
+  let admin: ReturnType<typeof createPostgresPool>;
+  let pool: ReturnType<typeof createPostgresPool>;
   let databaseName: string;
   const at = "2026-10-10T08:00:00.000Z";
   const before = "2026-10-10T07:59:00.000Z";
@@ -28,11 +28,11 @@ suite("U02 durable recovery — disposable PostgreSQL acceptance", () => {
       throw new Error("U02_DISPOSABLE_LOCAL_POSTGRES_REQUIRED");
     }
     databaseName = `u02_recovery_${randomUUID().replace(/-/gu, "").slice(0, 20)}`;
-    admin = new Pool({ connectionString, max: 2 });
+    admin = createPostgresPool({ connectionString, applicationName: "u02-recovery-test-admin", max: 2 });
     await admin.query(`CREATE DATABASE "${databaseName}"`);
     const isolated = new URL(connectionString);
     isolated.pathname = `/${databaseName}`;
-    pool = new Pool({ connectionString: isolated.toString(), max: 5 });
+    pool = createPostgresPool({ connectionString: isolated.toString(), applicationName: "u02-recovery-test", max: 5 });
     const sql = await readFile(new URL("../../packages/operator-tasks/migrations/0010_operator_tasks_isolated.sql", import.meta.url), "utf8");
     await pool.query(sql);
   }, 60_000);
