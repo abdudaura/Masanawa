@@ -244,6 +244,32 @@
       "heartbeat_at": "2026-10-10T04:41:35.214Z",
       "expires_at": "2026-10-10T04:46:35.214Z",
       "notes": "AF09 new-path isolated scheduling adapter + negative tests, AF00 composes into canonical worker runtime after review; no protected files."
+    },
+    {
+      "claim_id": "af09-609-listens-20261010-gpt6-0553",
+      "owner": "AF09 existing PR #609 GPT-6 listening count continuation",
+      "scope": "Complete durable bounded listened-media plays using existing authorized ticket, PG view/lookup and actual player-progress events; AF00 retains unique migration, Gateway composition, root and CI.",
+      "paths": [
+        "services/gateway/src/audio_posts/playback.ts",
+        "services/gateway/src/audio_posts/listen_count.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/listen_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/listen_repository.test.mjs",
+        "services/gateway/src/audio_posts/contract.ts",
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
+        "apps/mobile/test/audio_first/af09/listen_count_test.dart",
+        "docs/workstreams/AF09-listen-counts-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:43:27.388Z",
+      "heartbeat_at": "2026-10-10T04:43:27.388Z",
+      "expires_at": "2026-10-10T04:48:27.388Z",
+      "notes": "Continue #609; no duplicate media provider, production SQL migration or AF00 auth/router composition. Requires bounded AF00 migration/schema and route wiring."
     }
   ],
   "history": [
