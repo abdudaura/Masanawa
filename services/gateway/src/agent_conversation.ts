@@ -62,6 +62,26 @@ function authorizedPresentation(reply: string, parts: readonly unknown[]) {
   });
 }
 
+// A stalled streaming client must not hold a canonical agent turn indefinitely.
+// Delivery is best-effort; authoritative readback uses the durable turn receipt.
+const TEXT_DELTA_ACK_TIMEOUT_MS = 1_500;
+async function deliverTextDelta(
+  callback: (delta: string) => void | Promise<void>,
+  delta: string,
+): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race<boolean>([
+      Promise.resolve().then(() => callback(delta)).then(() => true, () => false),
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), TEXT_DELTA_ACK_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 function uncertainSettlement(): PlatformError {
   return new PlatformError({
     code: "agents.turn_settlement_uncertain",
@@ -381,10 +401,10 @@ export function createAgentConversationService(input: {
                   delta = delta.slice(0, boundary);
                 }
                 if (!delta || rawCallbackDisconnected || request.signal?.aborted) return;
-                try {
-                  await request.onTextDelta!(delta);
+                const delivered = await deliverTextDelta(request.onTextDelta!, delta);
+                if (delivered) {
                   if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
-                } catch {
+                } else {
                   rawCallbackDisconnected = true;
                 }
               }
@@ -477,11 +497,12 @@ export function createAgentConversationService(input: {
             ? (unresolvedDirective ? reply : heldRawSuffix)
             : reply;
           if (settledDelta) {
-            try {
-              await request.onTextDelta(settledDelta);
+            const delivered = await deliverTextDelta(request.onTextDelta, settledDelta);
+            if (delivered) {
               if (firstTextMs === undefined) firstTextMs = elapsed(turnStarted);
-            } catch {
-              // Delivery is recoverable from canonical turn history.
+            } else {
+              // A slow/disconnected client must recover from canonical history.
+              rawCallbackDisconnected = true;
             }
           }
         }
