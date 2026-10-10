@@ -123,14 +123,15 @@
         "adapters/storage/postgres/src/audio_posts/following_repository.ts",
         "apps/mobile/lib/src/audio_posts/following_transport.dart",
         "apps/mobile/lib/src/audio_posts/follow_button.dart",
-        "docs/workstreams/AF09-following-20261010.md"
+        "docs/workstreams/AF09-following-20261010.md",
+        "apps/mobile/test/audio_first/af09/following_test.dart"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
       "source_pr": 609,
       "claimed_at": "2026-10-10T02:20:09.487Z",
-      "heartbeat_at": "2026-10-10T02:24:04.165Z",
-      "expires_at": "2026-10-10T02:29:04.165Z",
+      "heartbeat_at": "2026-10-10T02:25:20.750Z",
+      "expires_at": "2026-10-10T02:30:20.750Z",
       "notes": "PR #609 source commits through Flutter Following transport; active work on isolated follow UI/test paths only, no owner overlap."
     },
     {
