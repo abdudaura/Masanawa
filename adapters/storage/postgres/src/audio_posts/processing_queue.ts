@@ -9,7 +9,7 @@ type PendingRow = {
 };
 // PostgreSQL TIMESTAMPTZ has microsecond precision. pg's default Date parser
 // truncates it to milliseconds; that loses keyset rows sharing a millisecond.
-const microsecondUtc = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$/;
+const microsecondUtc = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 function asDate(raw: Date | string): string {
   if (typeof raw === "string") {
     if (!microsecondUtc.test(raw) || !Number.isFinite(Date.parse(raw))) {
