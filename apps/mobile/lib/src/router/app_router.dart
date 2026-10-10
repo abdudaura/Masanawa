@@ -236,7 +236,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           onOpenCrypto: () => context.push('/crypto'),
         ),
       ),
+      // Register matching routes as well as the global aliases: go_router
+      // resolves a location before applying top-level redirect logic.
+      GoRoute(path: '/chat', redirect: (_, __) => '/home?tab=gwani'),
       GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=chats'),
+      GoRoute(path: '/messages', redirect: (_, __) => '/home?tab=chats'),
+      GoRoute(path: '/rooms', redirect: (_, __) => '/home?tab=rooms'),
+      GoRoute(path: '/talks', redirect: (_, __) => '/home'),
+      GoRoute(path: '/gwani', redirect: (_, __) => '/home?tab=gwani'),
+      GoRoute(path: '/assistant', redirect: (_, __) => '/home?tab=gwani'),
       GoRoute(
         path: '/chat/:id',
         builder: (context, state) {
