@@ -97,22 +97,6 @@
       "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated. Add explicit owner-approved tab translations to all 6 existing ARB catalogs; generated localization is build-time derived."
     },
     {
-      "claim_id": "masanawa01-af05-pcm-bridge-guard-20261010",
-      "owner": "MASANAWA-01 / AF05 native playback boundary",
-      "scope": "Bound live PCM MethodChannel rate/frame admission and verify no malformed data crosses Android bridge",
-      "paths": [
-        "apps/mobile/lib/src/core/live_pcm_audio.dart",
-        "apps/mobile/test/audio_first/af05/live_pcm_audio_bridge_test.dart",
-        "docs/workstreams/AF05-pcm-bridge-guard-20261010.md"
-      ],
-      "branch": "work/af05-pcm-native-bridge-guard-20261010-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-10T01:28:38.285Z",
-      "heartbeat_at": "2026-10-10T01:28:38.285Z",
-      "expires_at": "2026-10-10T01:33:38.285Z",
-      "notes": "No overlapping active exact path lease; preserve PR #591 live session modifications, no shared native/manifest/router changes."
-    },
-    {
       "claim_id": "masanawa01-af13-evidence-path-guard-20261010",
       "owner": "MASANAWA-01 / AF13 evidence security",
       "scope": "Isolated security qualification of real evidence artifact path and symlink traversal without touching AF13 qualifier owned by prior PR.",
@@ -765,6 +749,25 @@
       "source_head": "59644bde324ebc04b24426ae120450289ed20f10",
       "released_at": "2026-10-10T01:29:33.062Z",
       "release_reason": "Committed source+negative tests and SHA-specific handoff to draft PR #601 (base integration/af15-media-cleanup-20261009); 10/10 local unit tests and strict TS passed; Gateway DB/signer routing remains AF00 integration, no production release."
+    },
+    {
+      "claim_id": "masanawa01-af05-pcm-bridge-guard-20261010",
+      "owner": "MASANAWA-01 / AF05 native playback boundary",
+      "scope": "Bound live PCM MethodChannel rate/frame admission and verify no malformed data crosses Android bridge",
+      "paths": [
+        "apps/mobile/lib/src/core/live_pcm_audio.dart",
+        "apps/mobile/test/audio_first/af05/live_pcm_audio_bridge_test.dart",
+        "docs/workstreams/AF05-pcm-bridge-guard-20261010.md"
+      ],
+      "branch": "work/af05-pcm-native-bridge-guard-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:28:38.285Z",
+      "heartbeat_at": "2026-10-10T01:28:38.285Z",
+      "expires_at": "2026-10-10T01:33:38.285Z",
+      "notes": "No overlapping active exact path lease; preserve PR #591 live session modifications, no shared native/manifest/router changes.",
+      "released_at": "2026-10-10T01:29:59.594Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/602",
+      "release_reason": "AF05 source, 5 authored Dart tests and handoff committed at 52bd5d2ab0e85bd3f5570d7d3744ee01d3068513. Flutter SDK unavailable, tests NOT_RUN; PR #602 draft for executable verification and safe integration."
     }
   ]
 }
