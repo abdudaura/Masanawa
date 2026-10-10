@@ -67,6 +67,11 @@ class GatewayMsnBalanceTransport implements MsnBalanceTransport {
       if (value == null) {
         throw const ApiException('MSN balance is unavailable');
       }
+      // The shared Dio client may rotate the bearer or switch users while
+      // awaiting the response. Never accept a different principal's readback.
+      if (_readAccessToken()?.trim() != token) {
+        throw const ApiException('MSN session changed', statusCode: 401);
+      }
       try {
         return MsnBalance.fromJson(value);
       } on FormatException {
