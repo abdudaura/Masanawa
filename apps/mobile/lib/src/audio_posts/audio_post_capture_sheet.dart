@@ -13,6 +13,8 @@ import 'audio_post_media_contract.dart';
 /// only a verified owned-ready media receipt. This screen cannot mint asset IDs.
 typedef UploadVerifiedTalkAudio = Future<VerifiedPostAudio> Function({
   required String localPath,
+  /// Stable across outcome-uncertain retries, scoped by the server actor.
+  required String uploadRequestId,
   required int startMs,
   required int endMs,
 });
@@ -109,7 +111,8 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
   _Stage _stage = _Stage.idle;
   Stopwatch? _clock;
   Timer? _ticker;
-  String? _path, _error;
+  String? _path, _error, _uploadRequestId;
+  bool _uploadAttempted = false;
   int _duration = 0, _start = 0, _end = 0, _generation = 0;
   bool _busy = false;
   bool get _authorized => widget.accountId.isNotEmpty &&
@@ -166,6 +169,7 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
       });
       setState(() => _stage = _Stage.recording);
     } catch (_) {
+      try { await _rec.stop(); } catch (_) {}
       await _delete(candidate);
       if (mounted) setState(() => _error = 'Cannot start recording. Check microphone access.');
     } finally {
@@ -212,8 +216,13 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
         });
         return;
       }
+      if (actual != _path) await _delete(_path);
       setState(() {
         _path = actual;
+        _uploadRequestId = 'talk-media-' +
+            DateTime.now().microsecondsSinceEpoch.toRadixString(36) + '-' +
+            Random.secure().nextInt(0x7fffffff).toRadixString(36);
+        _uploadAttempted = false;
         _duration = elapsed;
         _start = 0; _end = elapsed;
         _stage = _Stage.preview;
@@ -235,14 +244,19 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
   }
 
   Future<void> _upload() async {
-    final path = _path, upload = widget.upload;
+    final path = _path, upload = widget.upload, requestId = _uploadRequestId;
     if (_busy || !_authorized || !_validTrim || path == null ||
-        upload == null || _stage != _Stage.preview) return;
+        upload == null || requestId == null || _stage != _Stage.preview) return;
     final generation = ++_generation;
-    setState(() { _busy = true; _stage = _Stage.uploading; _error = null; });
+    setState(() {
+      _busy = true; _uploadAttempted = true;
+      _stage = _Stage.uploading; _error = null;
+    });
     try {
       await _player.stop();
-      final verified = await upload(localPath: path, startMs: _start, endMs: _end);
+      final verified = await upload(
+        localPath: path, uploadRequestId: requestId,
+        startMs: _start, endMs: _end);
       if (!mounted || generation != _generation || !_authorized) return;
       if (!verified.isPlausible ||
           (verified.durationMs - (_end - _start)).abs() > 1000) {
@@ -272,6 +286,8 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
     }
     final path = _path;
     _path = null;
+    _uploadRequestId = null;
+    _uploadAttempted = false;
     await _delete(path);
     if (mounted) {
       setState(() {
@@ -340,7 +356,7 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
             Slider(
               value: _start.toDouble(),
               min: 0, max: max(1, _duration).toDouble(),
-              onChanged: disabled ? null : (value) {
+              onChanged: disabled || _uploadAttempted ? null : (value) {
                 if (value.round() + 1000 > _end) return;
                 setState(() => _start = value.round());
                 unawaited(_player.stop());
@@ -349,7 +365,7 @@ class _TalkCaptureSheetState extends State<TalkCaptureSheet> {
             Slider(
               value: _end.toDouble(),
               min: 0, max: max(1, _duration).toDouble(),
-              onChanged: disabled ? null : (value) {
+              onChanged: disabled || _uploadAttempted ? null : (value) {
                 if (value.round() - _start < 1000) return;
                 setState(() => _end = value.round());
                 unawaited(_player.stop());
