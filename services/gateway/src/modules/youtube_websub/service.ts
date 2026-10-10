@@ -20,6 +20,9 @@ export interface YouTubeWebSubStore {
    * tenant+operation key. Return false on already-seen events.
    * Do not enqueue a second job when a webhook is replayed.
    */
+  confirmVerifiedLease(input: {
+    callbackToken: string; tenantId: string; sourceId: string; leaseSeconds: number;
+  }): Promise<boolean>;
   enqueueReconciliation(input: {
     tenantId: string; sourceId: string; channelId: string;
     operationKey: string; eventBodySha256: string;
@@ -76,6 +79,11 @@ export function createYouTubeWebSubService(store: YouTubeWebSubStore) {
         !challenge || challenge.length > 2048 || (lease !== null && !/^[1-9]\d{0,8}$/u.test(lease))) {
         throw new YouTubeWebhookError(400, "invalid_challenge");
       }
+      const confirmed = await store.confirmVerifiedLease({
+        callbackToken:token, tenantId:sub.tenantId, sourceId:sub.sourceId,
+        leaseSeconds:Math.min(lease === null ? 432000 : Number(lease),604800),
+      });
+      if (!confirmed) throw new YouTubeWebhookError(409,"subscription_not_pending");
       return challenge;
     },
     /** Reject unauthenticated Atom before any enqueue. Atom is not trusted as a source of truth. */

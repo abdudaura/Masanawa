@@ -25,6 +25,8 @@ export function createYouTubeHubSubscriber(input: {
   callbackBaseUrl: string;
   allowedCallbackHost: string;
   fetchImpl?: typeof fetch;
+  /** Durable pending record must exist BEFORE the hub's callback challenge. */
+  markLeaseRequested: (tenantId:string,sourceId:string)=>Promise<void>;
 }) {
   let base: URL;
   try { base = new URL(input.callbackBaseUrl); }
@@ -49,6 +51,7 @@ export function createYouTubeHubSubscriber(input: {
         "hub.secret":source.signatureSecret,
         "hub.lease_seconds":"432000",
       });
+      await input.markLeaseRequested(source.tenantId,source.sourceId);
       let response:Response;
       try {
         response=await fetchImpl(HUB_URL,{

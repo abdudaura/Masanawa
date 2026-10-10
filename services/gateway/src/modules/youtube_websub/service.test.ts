@@ -7,17 +7,19 @@ const secret = "s".repeat(40);
 const subscription = {tenantId:"tenant1",sourceId:"video-source1",channelId:channel,signatureSecret:secret,enabled:true,authorized:true};
 function harness(overrides: Partial<typeof subscription> = {}) {
   const seen = new Set<string>();
-  let enqueued = 0;
+  let enqueued = 0, confirmed = 0;
   const store: YouTubeWebSubStore = {
     findByCallbackToken: async () => ({...subscription,...overrides}),
+    confirmVerifiedLease:async()=>{confirmed++;return true;},
     enqueueReconciliation: async x => { if (seen.has(x.operationKey)) return false;seen.add(x.operationKey);enqueued++;return true; },
   };
-  return {handler:createYouTubeWebSubService(store),queued:()=>enqueued};
+  return {handler:createYouTubeWebSubService(store),queued:()=>enqueued,confirmed:()=>confirmed};
 }
 describe("YouTube WebSub provider admission", () => {
   it("answers exact channel-specific challenge", async () => {
-    const {handler} = harness();
+    const {handler,confirmed} = harness();
     await expect(handler.verifyChallenge(token, {"hub.mode":"subscribe","hub.topic":youtubeTopic(channel),"hub.challenge":"hello","hub.lease_seconds":"86400"})).resolves.toBe("hello");
+    expect(confirmed()).toBe(1);
   });
   it("rejects cross-channel challenge and disabled source", async () => {
     const {handler}=harness();

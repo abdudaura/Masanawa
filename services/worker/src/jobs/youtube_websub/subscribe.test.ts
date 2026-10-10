@@ -7,7 +7,8 @@ describe("official YouTube WebSub lease renewal",()=>{
   it("requests the fixed official hub with a server-configured callback",async()=>{
     const fetchImpl=vi.fn(async(_url:unknown,_options:unknown)=>({ok:true}));
     const c=createYouTubeHubSubscriber({callbackBaseUrl:"https://gateway.example.test/",
-      allowedCallbackHost:"gateway.example.test",fetchImpl:fetchImpl as unknown as typeof fetch});
+      allowedCallbackHost:"gateway.example.test",fetchImpl:fetchImpl as unknown as typeof fetch,
+      markLeaseRequested:async()=>{}});
     await expect(c.requestLease(source)).resolves.toEqual({requested:true,verified:false});
     const [url,options]=fetchImpl.mock.calls[0]!;
     expect(url).toBe("https://pubsubhubbub.appspot.com/subscribe");
@@ -18,16 +19,17 @@ describe("official YouTube WebSub lease renewal",()=>{
   it("denies manual or unqualified sources before network access",async()=>{
     const fetchImpl=vi.fn();
     const c=createYouTubeHubSubscriber({callbackBaseUrl:"https://gateway.example.test/",
-      allowedCallbackHost:"gateway.example.test",fetchImpl:fetchImpl as unknown as typeof fetch});
+      allowedCallbackHost:"gateway.example.test",fetchImpl:fetchImpl as unknown as typeof fetch,
+      markLeaseRequested:async()=>{}});
     await expect(c.requestLease({...source,apiQualified:false})).rejects.toMatchObject({code:"not_authorized"});
     expect(fetchImpl).not.toHaveBeenCalled();
   });
   it("rejects private networks, external redirect URLs and callback credentials",()=>{
-    expect(()=>createYouTubeHubSubscriber({callbackBaseUrl:"http://gateway.example.test/",allowedCallbackHost:"gateway.example.test"}))
+    expect(()=>createYouTubeHubSubscriber({callbackBaseUrl:"http://gateway.example.test/",allowedCallbackHost:"gateway.example.test",markLeaseRequested:async()=>{}}))
       .toThrow("invalid_source");
-    expect(()=>createYouTubeHubSubscriber({callbackBaseUrl:"https://gateway.example.test.evil.test/",allowedCallbackHost:"gateway.example.test"}))
+    expect(()=>createYouTubeHubSubscriber({callbackBaseUrl:"https://gateway.example.test.evil.test/",allowedCallbackHost:"gateway.example.test",markLeaseRequested:async()=>{}}))
       .toThrow("invalid_source");
-    expect(()=>createYouTubeHubSubscriber({callbackBaseUrl:"https://user:pass@gateway.example.test/",allowedCallbackHost:"gateway.example.test"}))
+    expect(()=>createYouTubeHubSubscriber({callbackBaseUrl:"https://user:pass@gateway.example.test/",allowedCallbackHost:"gateway.example.test",markLeaseRequested:async()=>{}}))
       .toThrow("invalid_source");
   });
 });
