@@ -135,26 +135,6 @@
       "notes": "Follow service/routes/PG adapter/Flutter UI/tests and handoff on existing #609. 3/3 blob-matched Node smoke and isolated tsc pass, full runners pending. Reviewing exact head and handing off."
     },
     {
-      "claim_id": "masanawa01-af14-activity-account-fence-20261010",
-      "owner": "MASANAWA-01 / AF14 continuing existing PR #604",
-      "scope": "Connect customer Activity projection and invitation actions to signed-in account boundary; prevent stale Activity rows and old-account mutation outcomes after switch; extend real widget contracts, not new backend authority",
-      "paths": [
-        "apps/mobile/lib/src/state/talk_activity_state.dart",
-        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
-        "apps/mobile/test/activity_screen_test.dart",
-        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
-        "docs/workstreams/AF14-activity-recovery-20261010.md"
-      ],
-      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
-      "source_pr": 604,
-      "source_head": "88ec3f0e27692f1d4967d286f4b848508ff87d55",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-10T02:24:51.404Z",
-      "heartbeat_at": "2026-10-10T02:28:00.109Z",
-      "expires_at": "2026-10-10T02:33:00.109Z",
-      "notes": "Existing PR #604 head 39c77b643d653d3787b7e3ef512efa1206a2f4df; source + seven widget regressions (3 existing, 4 new) now committed/read back. Preparing immutable handoff and cross-PR reconciliation; Flutter toolchain absent."
-    },
-    {
       "claim_id": "af09-playback-access-20261010-gpt6e",
       "owner": "MASANAWA-AF09-PLAYBACK-20261010 / existing PR #609",
       "scope": "Connected authenticated published Talk playback-ticket API using canonical AF15 media grant, tenant visibility and publication-revision fencing; no new media signer/player/route composition",
@@ -1200,6 +1180,30 @@
       "released_at": "2026-10-10T02:29:04.048Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "release_reason": "AF09 verified-audio post composer plus 7 authored Flutter widget regression cases committed in same PR #609; commit 182cf7f655c2086e19a1e9d209a5baec4c932f71, final handoff commit 4c41553c11c590c022a1eb359bf622fb3b34405b. GitHub source readback structural only. Flutter analyzer/widget and combined Node/PG/real media not run: no Flutter/Dart or compatible checkout; GitHub Actions no reported steps, Vercel quota rate-limited. AF00 must mount on safe baseline, AF05 supply media, AF13/AF00 run executable tests. PARTIAL_IMPLEMENTATION, not merged/released."
+    },
+    {
+      "claim_id": "masanawa01-af14-activity-account-fence-20261010",
+      "owner": "MASANAWA-01 / AF14 continuing existing PR #604",
+      "scope": "Connect customer Activity projection and invitation actions to signed-in account boundary; prevent stale Activity rows and old-account mutation outcomes after switch; extend real widget contracts, not new backend authority",
+      "paths": [
+        "apps/mobile/lib/src/state/talk_activity_state.dart",
+        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
+        "apps/mobile/test/activity_screen_test.dart",
+        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
+        "docs/workstreams/AF14-activity-recovery-20261010.md"
+      ],
+      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
+      "source_pr": 604,
+      "source_head": "88ec3f0e27692f1d4967d286f4b848508ff87d55",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T02:24:51.404Z",
+      "heartbeat_at": "2026-10-10T02:28:00.109Z",
+      "expires_at": "2026-10-10T02:33:00.109Z",
+      "notes": "Existing PR #604 head 39c77b643d653d3787b7e3ef512efa1206a2f4df; source + seven widget regressions (3 existing, 4 new) now committed/read back. Preparing immutable handoff and cross-PR reconciliation; Flutter toolchain absent.",
+      "released_at": "2026-10-10T02:30:08.635Z",
+      "release_reason": "Continued original #604 to 981d6245b414c871b964a1e25270cc281fd7f95d; authenticated Activity provider and actor-epoch fencing + 7 new authored widget regressions, existing 7 fixtures updated. Source readback verified; Flutter/Dart absent, private git checkout DNS blocked, real/test device checks NOT_RUN. Draft PR body and immutable handoff updated; AF00/AF14 Flutter-capable integrator owns exact-SHA execution/merge gate. No production changes.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/604",
+      "head_sha": "981d6245b414c871b964a1e25270cc281fd7f95d"
     }
   ]
 }
