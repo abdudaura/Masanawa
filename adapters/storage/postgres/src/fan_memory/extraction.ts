@@ -14,10 +14,13 @@ interface ExtractionPort {
 export type SourceMessageFence=(client:PoolClient,tenant:string,relationship:string,
  messageId:string,sourceHash:string)=>Promise<boolean>;
 
-export function createPostgresFanExtractionPort(pool:Pool,checkMessage:SourceMessageFence):ExtractionPort{
+export type ApprovedMasana=(c:PoolClient,tenant:string,character:string)=>Promise<boolean>;
+export function createPostgresFanExtractionPort(pool:Pool,checkMessage:SourceMessageFence,approvedMasana:ApprovedMasana):ExtractionPort{
  return {
  async enabled(t:string,r:string):Promise<boolean>{
-  const q=await pool.query(`SELECT 1 FROM identity.relationships rel
+  const c=await pool.connect();
+  try{
+  const q=await c.query<{character_id:string}>(`SELECT rel.character_id FROM identity.relationships rel
    JOIN identity.users fan ON fan.tenant_id=rel.tenant_id AND fan.user_id=rel.user_id
    JOIN identity.characters character ON character.tenant_id=rel.tenant_id
      AND character.character_id=rel.character_id
@@ -25,7 +28,8 @@ export function createPostgresFanExtractionPort(pool:Pool,checkMessage:SourceMes
      AND consent.relationship_id=rel.relationship_id
    WHERE rel.tenant_id=$1 AND rel.relationship_id=$2 AND rel.state='active'
      AND fan.state='active' AND character.state='active' AND consent.enabled=true`,
-   [t,r]);return q.rowCount===1;
+   [t,r]);return !!q.rows[0]&&await approvedMasana(c,t,q.rows[0].character_id);
+  }finally{c.release();}
  },
  async commit(t:string,r:string,items:readonly Candidate[],ttlDays:180):Promise<number>{
   if(ttlDays!==180||items.length>8)throw new Error("Fan memory policy mismatch");
@@ -33,7 +37,7 @@ export function createPostgresFanExtractionPort(pool:Pool,checkMessage:SourceMes
    await c.query("BEGIN");
    // Lock consent through the entire canonical memory insert; a concurrent
    // disable waits, and a disable that won the race refuses all model outputs.
-   const consent=await c.query(`SELECT 1 FROM memory.fan_controls control
+   const consent=await c.query<{character_id:string}>(`SELECT rel.character_id FROM memory.fan_controls control
     JOIN identity.relationships rel ON rel.tenant_id=control.tenant_id
      AND rel.relationship_id=control.relationship_id
     JOIN identity.users fan ON fan.tenant_id=rel.tenant_id AND fan.user_id=rel.user_id
@@ -42,7 +46,9 @@ export function createPostgresFanExtractionPort(pool:Pool,checkMessage:SourceMes
     WHERE control.tenant_id=$1 AND control.relationship_id=$2
      AND control.enabled=true AND rel.state='active' AND fan.state='active'
      AND character.state='active' FOR UPDATE OF control`,[t,r]);
-   if(consent.rowCount!==1){await c.query("ROLLBACK");return 0;}
+   if(!consent.rows[0]||!await approvedMasana(c,t,consent.rows[0].character_id)){
+    await c.query("ROLLBACK");return 0;
+   }
    let count=0;
    for(const i of items){
     if(!await checkMessage(c,t,r,i.messageId,i.sourceHash))continue;
