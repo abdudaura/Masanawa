@@ -36,7 +36,7 @@ function record(r: PostRow): AudioPostRecord {
 }
 // Opaque cursor retains the full PostgreSQL microseconds; do not parse pg's
 // Date instance for a keyset boundary or pages can silently skip newer rows.
-const stampRe = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$/;
+const stampRe = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 const idRe = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/;
 function validStamp(stamp: string): boolean {
   if (!stampRe.test(stamp)) return false;
