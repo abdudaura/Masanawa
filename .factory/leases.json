@@ -245,7 +245,9 @@
       "heartbeat_at": "2026-10-10T04:30:22.205Z",
       "expires_at": "2026-10-10T04:35:22.205Z",
       "notes": "No edits to concurrent feed/destination/transport/routes/SQL/shared migrations; existing PR only. Previous owner AF09-0517 released at 2026-10-10T04:29:26.879Z; CAS exact-path continuation, same PR source, preserve all edits. Shared AF00 shell/router unchanged."
-    },
+    }
+  ],
+  "history": [
     {
       "claim_id": "af09-609-playback-sequencing-gpt6-0531",
       "owner": "AF09 existing PR #609 / GPT-6 playback sequencing continuation",
@@ -261,10 +263,13 @@
       "claimed_at": "2026-10-10T04:30:47.006Z",
       "heartbeat_at": "2026-10-10T04:30:47.006Z",
       "expires_at": "2026-10-10T04:35:47.006Z",
-      "notes": "Feature-local player and exact-path regression only; no AF00 shell, media signer, migration, or active comments/creator/composer files."
-    }
-  ],
-  "history": [
+      "notes": "Feature-local player and exact-path regression only; no AF00 shell, media signer, migration, or active comments/creator/composer files.",
+      "released_at": "2026-10-10T04:35:07.710Z",
+      "release_reason": "Same existing PR #609 serialized media start/stop, signed-ticket expiry, auth stale loading recovery; four authored regression cases. Committed/readback-verified; no Dart/Flutter runner, private checkout or PG. AF00 shared composition/AF05+AF15 media/AF13 tests still missing. PR #609 comment #6093816363.",
+      "source_head": "6b1160f0130ddaf045f5ab7b23e5cf73a60d4a25",
+      "integration_head_sha": null,
+      "test_state": "GitHub structural readback only; Flutter, Node24/pnpm12, PostgreSQL, device/provider NOT_RUN/BLOCKED"
+    },
     {
       "claim_id": "af09-609-creator-navigation-20261010-gpt6-0517",
       "owner": "AF09 PR #609 / GPT-6 creator-navigation continuation",
