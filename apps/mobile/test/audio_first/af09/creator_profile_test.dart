@@ -57,6 +57,23 @@ void main() {
     expect(find.text('A real Talk'), findsOneWidget);
   });
 
+  testWidgets('refresh failure preserves previously loaded creator posts', (tester) async {
+    final client = FakeCreatorProfile()
+      ..result = AudioPostPage(items: [post()], nextCursor: null);
+    await tester.pumpWidget(MaterialApp(home: CreatorProfileScreen(
+      transport: client, accountId: 'bob', isCurrentAccount: (_) => true,
+      authorId: 'alice', authorKind: 'human',
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('A real Talk'), findsOneWidget);
+    client.failure = StateError('offline');
+    await tester.drag(find.byKey(const ValueKey('creator-profile-list')),
+      const Offset(0, 350));
+    await tester.pumpAndSettle();
+    expect(find.text('A real Talk'), findsOneWidget);
+    expect(find.byKey(const ValueKey('creator-profile-error')), findsOneWidget);
+  });
+
   testWidgets('account switch clears previous visible data', (tester) async {
     final client = FakeCreatorProfile()
       ..result = AudioPostPage(items: [post()], nextCursor: null);
