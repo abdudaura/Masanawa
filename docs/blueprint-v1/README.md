@@ -10,14 +10,16 @@ Personal Twins/clones, their paid access, skills/pricing/wallet credit, referral
 Stop implementation drift: one product charter, complete actor/screen inventory, canonical service boundaries, cost/operational constraints, recovery strategy, finite vertical slices, and evidence-based release gates. This is a **design reset with selective source reuse**, not permission to discard working code.
 
 ## Contents
-1. [Product and UX](PRODUCT-UX.md): scope, actors, detailed screen contracts, journeys and common states.
-2. [Architecture and economics](ARCHITECTURE-ECONOMICS.md): logical design, data/API invariants, providers, risks, cost scenarios and release requirements.
-3. [Recovery and delivery](RECOVERY-DELIVERY.md): actual observed repository risks, reuse criteria, PR triage and phase gates.
-4. [Research and decisions](RESEARCH-DECISIONS.md): peer patterns, official evidence, confirmed exclusions and remaining owner decisions.
-5. [Legacy scope cleanup](LEGACY-SCOPE-CLEANUP.md): exact-source removal inventory, historical obligation retention, PR and test gates.
-7. [Masana character-led creator network](MASANA-CREATOR-NETWORK-20261010.md): owner-approved no-member-posting scope, mixed-media Home, fan memory, detailed agent pages and admin missions.
-8. [Fictional Masana starter cast](MASANA-STARTER-CAST-20261010.json): 12 fictional professional character bibles, image creation briefs, voice and post examples.
-6. [Talks, composer, blue branding and commerce UX design options](TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md): researched recommendations, current-source regressions, full controls/states/contracts, proposed acceptance tests, and approval gate.
+1. [Product and UX](PRODUCT-UX.md): current 67-screen register, 16 cross-boundary journeys and all states.
+2. [Masana Rooms, Admin and Architecture](MASANA-ROOMS-ADMIN-ARCHITECTURE-20261010.md): **latest owner-authoritative product rules**, global profession Rooms, subscriptions, Gwani moderation, video and clean structure.
+3. [Masana Creator Network](MASANA-CREATOR-NETWORK-20261010.md): Home, agent identities, fans, weekly missions and memory.
+4. [Starter Cast](MASANA-STARTER-CAST-20261010.json): 12 detailed fictional professionals and profession Rooms; media reference briefs only.
+5. [Staged Sample Posts](MASANA-SEED-POSTS-20261010.json): 24 complete original sample posts, 12 lesson welcome notices, 12 first-Q&A fixtures and video storyboards.
+6. [Architecture and Economics](ARCHITECTURE-ECONOMICS.md): data authority, stack/economics, security, provider and release rules.
+7. [Recovery and Delivery](RECOVERY-DELIVERY.md): preserve and sort source/PRs, source recovery and test gates.
+8. [Research and Decisions](RESEARCH-DECISIONS.md): sourced comparisons, owner decisions and unresolved cost checks.
+9. [Legacy Scope Cleanup](LEGACY-SCOPE-CLEANUP.md): historical source/deprecation with data retention.
+10. [Earlier Talks, Composer, Branding & Commerce UX](TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md): composer/blue/commerce recommendations; historic Talks options superseded.
 
 ## Evidence and confidence
 - **Observed at named SHA:** monorepo has Flutter consumer/admin, web/ops scaffolding, TypeScript backend, PostgreSQL adapters, and test code; the consumer router still includes older four-tab assumptions. Other branches contain ongoing fixes and must be reconciled.
