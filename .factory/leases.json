@@ -575,20 +575,6 @@
       "heartbeat_at": "2026-10-10T08:16:36.741Z",
       "expires_at": "2026-10-10T08:21:36.741Z",
       "notes": "Real Foundation 38036434565: four commerce suites setup FAIL relation offers already exists on common database. Independent DB per file via admin URL and disposable PG18 CREATE DATABASE; cleanup mandatory.; Scope correction: place shared test helper under adapter package to resolve pg dependency strictly under pnpm; remove original test/support helper.; Post-commit real CI queued while other windows use runner; awaiting latest exact-SHA checks."
-    },
-    {
-      "claim_id": "af09-609-revert-unproductive-test-serialization-20261010-gpt6",
-      "owner": "GPT-6 AF09 continuing existing PR #609 exact-head CI evidence",
-      "scope": "Revert unproductive global serial Vitest configuration after exact-head full-suite failure count unchanged",
-      "paths": [
-        "vitest.config.ts"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T08:20:33.592Z",
-      "heartbeat_at": "2026-10-10T08:20:33.592Z",
-      "expires_at": "2026-10-10T08:25:33.592Z",
-      "notes": "AF13 #460 comment 6095620769 and AF09 #609 comment 6095621139, exact previous run 38037083541 85 FAIL unchanged. Revert only one config change. No migrations."
     }
   ],
   "history": [
@@ -2901,6 +2887,25 @@
       "release_reason": "Source repaired on existing PR #609 exact head 1374149bd7378227b7a77138e0fa2a6fb6eb1991. Executed previous head: pnpm build PASS; provider qualification unit tests PASS, privacy contract 3 tests PASS; root TypeScript/Vitest and Flutter FAIL. Current serial PG CI 38037083541 queued; AF13 PR460 active owns shared suite and AF00 PR600 owns composition. Exact finite checklist with SHAs and owners PR #609 comment 6095602467. No main merge, no Railway deploy; pending gates are genuine, no local pull.",
       "integration_head_sha": null,
       "test_state": "GitHub Foundation build PASS and provider tooling PASS on c7e1ff6; new latest-head serial Foundation 38037083541 QUEUED. Typecheck 74 errors and mixed Vitest 85 fails on previous concurrent run, Flutter analyze/test FAIL, Android latest unverified; NO FULL PASS."
+    },
+    {
+      "claim_id": "af09-609-revert-unproductive-test-serialization-20261010-gpt6",
+      "owner": "GPT-6 AF09 continuing existing PR #609 exact-head CI evidence",
+      "scope": "Revert unproductive global serial Vitest configuration after exact-head full-suite failure count unchanged",
+      "paths": [
+        "vitest.config.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T08:20:33.592Z",
+      "heartbeat_at": "2026-10-10T08:20:33.592Z",
+      "expires_at": "2026-10-10T08:25:33.592Z",
+      "notes": "AF13 #460 comment 6095620769 and AF09 #609 comment 6095621139, exact previous run 38037083541 85 FAIL unchanged. Revert only one config change. No migrations.",
+      "released_at": "2026-10-10T08:21:36.674Z",
+      "release_reason": "Reverted serial Vitest trial after run 38037083541 produced identical 85 failures /1247 pass /22 skip. Current existing PR #609 head 48f232c59430e242ba99c7ce8eef84856ca758fb. Build and provider tooling PASS on prior tested c7e1ff6, current SHA workflows 38037563461/38037563431 queued; root remaining failures AF13 #460, root AF00 #600. Exact comment 6095628834; no merge/deploy.",
+      "source_head_sha": "48f232c59430e242ba99c7ce8eef84856ca758fb",
+      "integration_head_sha": null,
+      "test_state": "Test suite 85 FAIL (serial & parallel), root typecheck FAIL, Flutter analyze/test FAIL; build and provider tooling PASS on previous exact SHA; latest CI QUEUED"
     }
   ]
 }
