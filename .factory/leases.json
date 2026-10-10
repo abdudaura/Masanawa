@@ -97,23 +97,6 @@
       "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated. Add explicit owner-approved tab translations to all 6 existing ARB catalogs; generated localization is build-time derived. Source/test checkpoint through c185bf70; original four-tab assertions superseded, all six locales updated; 20 exact-head static checks passed; Flutter runtime not available."
     },
     {
-      "claim_id": "masanawa01-af14-notification-state-20261010",
-      "owner": "MASANAWA-01 / AF14 notification-state",
-      "scope": "Integrate truthful notification enable/disable state, serialize mutations, fence old account responses and expose OS-versus-registration failures without changing shared push transport",
-      "paths": [
-        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
-        "apps/mobile/lib/src/account_preferences/notification_switch_controller.dart",
-        "apps/mobile/test/audio_first/af14/notification_switch_controller_test.dart",
-        "docs/workstreams/AF14-notification-state-20261010.md"
-      ],
-      "branch": "work/af14-notification-state-20261010-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "pr": "",
-      "claimed_at": "2026-10-10T01:34:27Z",
-      "heartbeat_at": "2026-10-10T01:37:19Z",
-      "expires_at": "2026-10-10T01:42:19Z"
-    },
-    {
       "claim_id": "masanawa01-af01-fiat-onramp-paid-20261010-e",
       "owner": "MASANAWA-01 / AF01 onramp paid guard",
       "scope": "AF01 binding: block underpaid finished fiat purchase in refresh/readback/IPN; no new ledger, provider, or commerce contract",
@@ -862,6 +845,25 @@
       "notes": "Exact activity screen, isolated AF14 widget tests and handoff only; other active claims inspected; no shared Gateway/financial/nav/migration/native/CI files.",
       "released_at": "2026-10-10T01:38:17.644Z",
       "release_reason": "PR #604 draft handoff @ 88ec3f0e27692f1d4967d286f4b848508ff87d55; source and 3 Flutter widget tests authored; GitHub text readback PASS; Flutter/analyze/device/provider NOT_RUN; CI jobs steps null; no deployment or merge; preserve #497 integration."
+    },
+    {
+      "claim_id": "masanawa01-af14-notification-state-20261010",
+      "owner": "MASANAWA-01 / AF14 notification-state",
+      "scope": "Integrate truthful notification enable/disable state, serialize mutations, fence old account responses and expose OS-versus-registration failures without changing shared push transport",
+      "paths": [
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/lib/src/account_preferences/notification_switch_controller.dart",
+        "apps/mobile/test/audio_first/af14/notification_switch_controller_test.dart",
+        "docs/workstreams/AF14-notification-state-20261010.md"
+      ],
+      "branch": "work/af14-notification-state-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "https://github.com/Baatiku/masanawa/pull/606",
+      "claimed_at": "2026-10-10T01:34:27Z",
+      "heartbeat_at": "2026-10-10T01:37:19Z",
+      "expires_at": "2026-10-10T01:42:19Z",
+      "released_at": "2026-10-10T01:39:27Z",
+      "release_reason": "SHA-specific handoff committed at 19d29dd2a8da0ddcb7008c311f04c001669a5fc7 in draft PR #606; implementation source bounded, Flutter execution and #587/#497 reconciliation pending"
     }
   ]
 }
