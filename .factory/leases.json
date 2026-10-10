@@ -113,28 +113,6 @@
       "notes": "Continuing existing AF09 #609 after comment journey. Exact claimed files only: public feed response privacy/data contract + social counts; no worker, Following, composer, root, migration or native edits. Latest PR head must be rechecked before updates."
     },
     {
-      "claim_id": "af09-following-journey-20261010-gpt6d",
-      "owner": "AF09 independent Following journey continuation of existing PR #609",
-      "scope": "Authenticated post-derived follow/unfollow, tenant-fenced following feed, Flutter follow controls; coordinate AF00 migration/router wiring; no changes to concurrently claimed AF09 post/comment files",
-      "paths": [
-        "services/gateway/src/audio_posts/following.ts",
-        "services/gateway/src/audio_posts/following_routes.ts",
-        "services/gateway/src/audio_posts/following.test.mjs",
-        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
-        "apps/mobile/lib/src/audio_posts/following_transport.dart",
-        "apps/mobile/lib/src/audio_posts/follow_button.dart",
-        "docs/workstreams/AF09-following-20261010.md",
-        "apps/mobile/test/audio_first/af09/following_test.dart"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:20:09.487Z",
-      "heartbeat_at": "2026-10-10T02:28:46.491Z",
-      "expires_at": "2026-10-10T02:33:46.491Z",
-      "notes": "Follow service/routes/PG adapter/Flutter UI/tests and handoff on existing #609. 3/3 blob-matched Node smoke and isolated tsc pass, full runners pending. Reviewing exact head and handing off."
-    },
-    {
       "claim_id": "af09-playback-access-20261010-gpt6e",
       "owner": "MASANAWA-AF09-PLAYBACK-20261010 / existing PR #609",
       "scope": "Connected authenticated published Talk playback-ticket API using canonical AF15 media grant, tenant visibility and publication-revision fencing; no new media signer/player/route composition",
@@ -1225,6 +1203,31 @@
       "release_reason": "Continued original #604 to 981d6245b414c871b964a1e25270cc281fd7f95d; authenticated Activity provider and actor-epoch fencing + 7 new authored widget regressions, existing 7 fixtures updated. Source readback verified; Flutter/Dart absent, private git checkout DNS blocked, real/test device checks NOT_RUN. Draft PR body and immutable handoff updated; AF00/AF14 Flutter-capable integrator owns exact-SHA execution/merge gate. No production changes.",
       "pr": "https://github.com/Baatiku/masanawa/pull/604",
       "head_sha": "981d6245b414c871b964a1e25270cc281fd7f95d"
+    },
+    {
+      "claim_id": "af09-following-journey-20261010-gpt6d",
+      "owner": "AF09 independent Following journey continuation of existing PR #609",
+      "scope": "Authenticated post-derived follow/unfollow, tenant-fenced following feed, Flutter follow controls; coordinate AF00 migration/router wiring; no changes to concurrently claimed AF09 post/comment files",
+      "paths": [
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/following_routes.ts",
+        "services/gateway/src/audio_posts/following.test.mjs",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "apps/mobile/lib/src/audio_posts/following_transport.dart",
+        "apps/mobile/lib/src/audio_posts/follow_button.dart",
+        "docs/workstreams/AF09-following-20261010.md",
+        "apps/mobile/test/audio_first/af09/following_test.dart"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:20:09.487Z",
+      "heartbeat_at": "2026-10-10T02:28:46.491Z",
+      "expires_at": "2026-10-10T02:33:46.491Z",
+      "notes": "Follow service/routes/PG adapter/Flutter UI/tests and handoff on existing #609. 3/3 blob-matched Node smoke and isolated tsc pass, full runners pending. Reviewing exact head and handing off.",
+      "released_at": "2026-10-10T02:30:32.255Z",
+      "integration_head_sha": "2c5cce79aa51ded3856a9699d35f6cea609d243e",
+      "release_reason": "Continued original PR #609 with eight non-overlapping Following paths; 3/3 executable Node smoke on byte-identical following.ts and isolated tsc PASS, authored full Node/Flutter tests NOT_RUN; AF00 composition and migration, qualified checkout/runners and release gates pending. Detailed handoff on #609; no main/production merge."
     }
   ]
 }
