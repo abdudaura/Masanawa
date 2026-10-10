@@ -34,6 +34,18 @@ async function transaction<T>(pool: Pool, fn: (db: PoolClient) => Promise<T>): P
  finally { db.release(); }
 }
 const columns = "tenant_id,post_id,author_id,author_account_id,author_kind,asset_id,request_id,title,duration_ms,status,revision,created_at,published_at";
+type CommentRow = {
+ tenant_id: string; post_id: string; comment_id: string; author_account_id: string;
+ request_id: string; body: string; created_at: Date | string; removed: boolean;
+};
+const commentColumns = "tenant_id,post_id,comment_id,author_account_id,request_id,body,created_at,removed";
+function mapComment(row: CommentRow) {
+ return {
+  tenantId: row.tenant_id, postId: row.post_id, commentId: row.comment_id,
+  authorAccountId: row.author_account_id, requestId: row.request_id,
+  body: row.body, createdAt: date(row.created_at), removed: row.removed,
+ };
+}
 const qualifiedColumns = columns.split(",").map(column => "p." + column).join(",");
 function parseCursor(raw: string | null): { stamp: number; id: string } | null {
  if (raw === null) return null;
@@ -150,6 +162,50 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
    // Advance past the last *scanned* row, including hidden authors.
    // Otherwise a full hidden page causes repeated rows or missing continuation.
    return { items, nextCursor: more && position ? position.stamp + ":" + position.id : null };
+  },
+  async listComments({tenantId,viewerId,postId,limit}) {
+   return transaction(pool, async db => {
+    const r = await db.query<Row>(
+     "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND post_id=$2 AND status='published' FOR SHARE",
+     [tenantId,postId]);
+    if (!r.rows[0] || !await visibility.canView({tenantId,viewerId,authorAccountId:r.rows[0].author_account_id})) {
+     throw new Error("audio_posts.not_visible");
+    }
+    const comments = await db.query<CommentRow>(
+     "SELECT " + commentColumns + " FROM social.audio_post_comments WHERE tenant_id=$1 AND post_id=$2 AND removed=false " +
+     "ORDER BY created_at DESC,comment_id DESC LIMIT $3",
+     [tenantId,postId,limit]);
+    return comments.rows.map(mapComment);
+   });
+  },
+  async addComment({tenantId,viewerId,postId,commentId,requestId,body,createdAt}) {
+   return transaction(pool, async db => {
+    const r = await db.query<Row>(
+     "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND post_id=$2 AND status='published' FOR SHARE",
+     [tenantId,postId]);
+    if (!r.rows[0] || !await visibility.canView({tenantId,viewerId,authorAccountId:r.rows[0].author_account_id})) {
+     throw new Error("audio_posts.not_visible");
+    }
+    await db.query(
+     "INSERT INTO social.audio_post_comments(tenant_id,post_id,comment_id,author_account_id,request_id,body,created_at,removed) " +
+     "VALUES($1,$2,$3,$4,$5,$6,$7,false) ON CONFLICT (tenant_id,post_id,author_account_id,request_id) DO NOTHING",
+     [tenantId,postId,commentId,viewerId,requestId,body,createdAt]);
+    const found = await db.query<CommentRow>(
+     "SELECT " + commentColumns + " FROM social.audio_post_comments " +
+     "WHERE tenant_id=$1 AND post_id=$2 AND author_account_id=$3 AND request_id=$4",
+     [tenantId,postId,viewerId,requestId]);
+    const row = found.rows[0];
+    if (!row) throw new Error("audio_posts.comment_create_missing");
+    if (row.body !== body || row.removed) throw new Error("audio_posts.comment_conflict");
+    return mapComment(row);
+   });
+  },
+  async removeOwnComment({tenantId,viewerId,postId,commentId}) {
+   const r = await pool.query<{comment_id:string}>(
+    "UPDATE social.audio_post_comments SET removed=true,body='' " +
+    "WHERE tenant_id=$1 AND post_id=$2 AND comment_id=$3 AND author_account_id=$4 RETURNING comment_id",
+    [tenantId,postId,commentId,viewerId]);
+   return r.rows.length > 0;
   },
   async setReaction({tenantId,viewerId,postId,kind,enabled}) {
    return transaction(pool, async db => {
