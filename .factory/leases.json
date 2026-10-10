@@ -1259,13 +1259,14 @@
         "packages/external-videos/migrations/0002_youtube_sources.sql",
         "adapters/storage/postgres/src/external_videos/youtube_source.ts",
         "adapters/storage/postgres/src/external_videos/youtube_source.test.ts",
-        "packages/external-videos/migrations/0002_youtube_websub.sql"
+        "packages/external-videos/migrations/0002_youtube_websub.sql",
+        "packages/external-videos/migrations/0003_youtube_quota.sql"
       ],
       "branch": "lane/l-video-youtube-websub-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "claimed_at": "2026-10-10T16:30:45.836Z",
-      "heartbeat_at": "2026-10-10T16:49:52.735Z",
-      "expires_at": "2026-10-10T16:54:52.735Z",
+      "heartbeat_at": "2026-10-10T16:50:09.380Z",
+      "expires_at": "2026-10-10T16:55:09.380Z",
       "notes": "J15 #624 merged and released claim. Extend J14 to additive 0002 migration only; retain immutable 0001. No live activation.",
       "source_head": "667aa446f0c1975b838f6b0f5fcc56c046a754d0",
       "source_pr": 627
