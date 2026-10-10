@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   type RankedTalk,
-  type TalkRankingCandidate,
   diversifyRankedTalks,
   rankTalksForExplore,
   scoreTalkForExplore,
