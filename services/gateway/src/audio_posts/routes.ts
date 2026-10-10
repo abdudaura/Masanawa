@@ -56,8 +56,8 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       if (typeof params.requestId !== "string") {
         throw new AudioPostError("VALIDATION", "Invalid publish request ID");
       }
-      return await deps.service.receiptByRequest(
-        await actor(request.headers.authorization), params.requestId);
+      return { receipt: await deps.service.receiptByRequest(
+        await actor(request.headers.authorization), params.requestId) };
     } catch (error) { return fail(reply, error); }
   });
   app.get("/audio-posts/mine", async (request, reply) => {
