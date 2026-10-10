@@ -23,7 +23,7 @@ function fixture() {
       if (storedHash) throw new Error("auth.phone.duplicate");
       storedHash = request.passwordHash;
       user = Object.freeze({
-        tenantId, userId: createCanonicalId("user"), phone: request.phone, email: null,
+        tenantId, userId: createCanonicalId("user"), phone: null, unverifiedPhone: request.phone, email: null,
         name: request.name, locale: request.locale, createdAt: request.at,
       });
       return user;
@@ -54,12 +54,12 @@ describe("AF08 phone numeric-password account (no phone ownership proof)", () =>
   it("persists one account credential and issues the canonical session with unverified phone", async () => {
     const f = fixture();
     const created = await f.service.register({ phone, password, name: "First User" });
-    expect(created.user).toMatchObject({ name: "First User", phone, email: null, phoneVerified: false });
+    expect(created.user).toMatchObject({ name: "First User", phone: null, unverifiedPhone: phone, email: null, phoneVerified: false, isNewUser: true });
     expect(f.hash()).toMatch(/^scrypt:v1:/);
     expect(f.hash()).not.toContain(password);
     expect(f.issued()).toBe(1);
     await expect(f.service.login({ phone, password })).resolves.toMatchObject({
-      user: { phone, phoneVerified: false },
+      user: { phone: null, unverifiedPhone: phone, phoneVerified: false, isNewUser: false },
     });
     expect(f.issued()).toBe(2);
     expect(await verifyNumericPassword(password, f.hash(), pepper)).toBe(true);
