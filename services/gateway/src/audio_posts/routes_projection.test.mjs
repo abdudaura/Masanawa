@@ -46,7 +46,7 @@ function fixture(overrides = {}) {
   async function request(method, path, params = {}, body = {}) {
     const handler = handlers.get(method + " " + path);
     assert.equal(typeof handler, "function", "route should be registered");
-    const reply = {statusCode:200,code(value){this.statusCode=value;return this}};
+    const reply = {statusCode:200,code(value){this.statusCode=value;return this},send(value){return value}};
     const response = await handler({
       headers:{authorization:"Bearer session-token"},params,body,
     },reply);
