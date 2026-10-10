@@ -33,12 +33,29 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     if (_busyInvitationId != null || talkId == null || talkId.isEmpty) return;
     setState(() => _busyInvitationId = item.id);
     try {
-      await ref
-          .read(talkActivityTransportProvider)
-          .respondToInvitation(talkId: talkId, accept: accept);
-      ref.invalidate(talkActivityProvider(_filter));
-      await ref.read(talkActivityProvider(_filter).future);
+      // A timeout after sending a response is not proof that the server
+      // rejected it. Refresh authoritative activity before allowing a retry.
+      try {
+        await ref
+            .read(talkActivityTransportProvider)
+            .respondToInvitation(talkId: talkId, accept: accept);
+      } catch (_) {
+        if (!mounted) return;
+        _invalidateInvitationFilters();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not confirm the response. Refresh Activity before trying again.',
+            ),
+          ),
+        );
+        return;
+      }
+
       if (!mounted) return;
+      // A successful mutation stays successful even if the following list
+      // read fails. The provider owns the retryable read error state.
+      _invalidateInvitationFilters();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -46,19 +63,28 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           ),
         ),
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t update this invitation.')),
-      );
     } finally {
       if (mounted) setState(() => _busyInvitationId = null);
     }
   }
 
+  void _invalidateInvitationFilters() {
+    // Invitations are projected into All and Talks, irrespective of the
+    // currently selected filter when the mutation finishes.
+    ref.invalidate(talkActivityProvider(TalkActivityFilter.all));
+    ref.invalidate(talkActivityProvider(TalkActivityFilter.talks));
+  }
+
   Future<void> _refresh() async {
-    ref.invalidate(talkActivityProvider(_filter));
-    await ref.read(talkActivityProvider(_filter).future);
+    final filter = _filter;
+    ref.invalidate(talkActivityProvider(filter));
+    try {
+      await ref.read(talkActivityProvider(filter).future);
+    } catch (_) {
+      // Keep the retryable, redacted error within the watched provider.
+      // RefreshIndicator and retry-button callbacks must not leak a Future
+      // exception or expose a raw transport error to the customer.
+    }
   }
 
   void _open(TalkActivityItem item) {
@@ -125,7 +151,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 error: (_, __) => _ActivityState(
                   icon: Icons.wifi_off_rounded,
                   title: 'Couldn’t refresh Activity.',
-                  subtitle: 'Pull down to try again.',
+                  subtitle: 'Check your connection and try again.',
+                  onRetry: _refresh,
                 ),
                 data: (items) {
                   if (items.isEmpty) {
@@ -407,11 +434,13 @@ class _ActivityState extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onRetry,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -437,6 +466,17 @@ class _ActivityState extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(color: u.textMuted, fontSize: 13, height: 1.35),
         ),
+        if (onRetry != null) ...[
+          const SizedBox(height: 16),
+          Center(
+            child: OutlinedButton.icon(
+              key: const ValueKey('activity-retry'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+          ),
+        ],
       ],
     );
   }
