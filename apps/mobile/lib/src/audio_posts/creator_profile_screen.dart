@@ -30,7 +30,7 @@ class CreatorProfileScreen extends StatefulWidget {
 class _CreatorProfileState extends State<CreatorProfileScreen> {
   List<AudioPost> _posts = const [];
   String? _next, _error;
-  bool _loading = true, _loadingMore = false;
+  bool _loading = true, _loadingMore = false, _retryMore = false;
   int _generation = 0;
   bool get _authorized => widget.accountId.isNotEmpty &&
       widget.isCurrentAccount(widget.accountId);
@@ -68,7 +68,9 @@ class _CreatorProfileState extends State<CreatorProfileScreen> {
     setState(() {
       _error = null;
       if (more) _loadingMore = true;
-      else { _loading = true; _posts = const []; _next = null; }
+      // Keep visible posts during refresh and transient outages. The account
+      // change path clears them first, so old-account data cannot appear.
+      else { _loading = true; _next = null; }
     });
     try {
       final page = await widget.transport.posts(
@@ -87,10 +89,14 @@ class _CreatorProfileState extends State<CreatorProfileScreen> {
           ...page.items.where((p) => seen.add(p.postId)),
         ]);
         _next = page.nextCursor;
+        _retryMore = false;
       });
     } catch (_) {
       if (mounted && _authorized && current == _generation) {
-        setState(() => _error = 'Could not load this creator’s Talks. Retry when connected.');
+        setState(() {
+          _retryMore = more;
+          _error = 'Could not load this creator’s Talks. Retry when connected.';
+        });
       }
     } finally {
       if (mounted && current == _generation) {
@@ -134,7 +140,7 @@ class _CreatorProfileState extends State<CreatorProfileScreen> {
                     key: const ValueKey('creator-profile-error'),
                     title: Text(_error!),
                     trailing: TextButton(
-                      onPressed: () => _load(more: _posts.isNotEmpty),
+                      onPressed: () => _load(more: _retryMore),
                       child: const Text('Retry'),
                     ),
                   ),
