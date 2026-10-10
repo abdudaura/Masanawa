@@ -109,9 +109,9 @@
       "source_pr": 609,
       "source_head": "094aeabcf8c7e6161201c80bf796b4df46ee2932",
       "claimed_at": "2026-10-10T02:06:00.614Z",
-      "heartbeat_at": "2026-10-10T02:06:00.614Z",
-      "expires_at": "2026-10-10T02:11:00.614Z",
-      "notes": "Continuing released AF09 exact-file claim; root/router/migration remain AF00; no competing integration branch."
+      "heartbeat_at": "2026-10-10T02:09:14.621Z",
+      "expires_at": "2026-10-10T02:14:14.621Z",
+      "notes": "PR #609 direct continuation: owner-only remove operation, PostgreSQL CAS row lock, Flutter My Talks and negative tests committed; no shared routing/migrations touched. Source execution pending."
     }
   ],
   "history": [
