@@ -370,6 +370,23 @@
       "claimed_at": "2026-10-10T04:59:47.587Z",
       "heartbeat_at": "2026-10-10T04:59:47.587Z",
       "expires_at": "2026-10-10T05:04:47.587Z"
+    },
+    {
+      "claim_id": "af09-609-playback-compile-recovery-gpt6-0600",
+      "owner": "AF09 existing PR #609 / GPT-6 playback compile source recovery 0600",
+      "scope": "Repair demonstrably malformed published audio playback Dart source and preserve native progress, auth fences, playback sequencing and listen receipts; authored focused widget/parser regressions",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
+        "docs/workstreams/AF09-playback-compile-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T05:00:00.000Z",
+      "heartbeat_at": "2026-10-10T05:00:00.000Z",
+      "expires_at": "2026-10-10T05:05:00.000Z",
+      "notes": "No composer/feed/library/social SQL/AF00 root/native/provider changes; existing PR only."
     }
   ],
   "history": [
