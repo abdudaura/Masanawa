@@ -185,24 +185,6 @@
       "notes": "PostgreSQL adapter and 10 regression tests committed to existing PR #599; reviewing exact source and finite handoff. No migration/startup/provider enabled."
     },
     {
-      "claim_id": "af09-609-response-projection-20261010-gpt6-0445",
-      "owner": "AF09 #609 continuation — GPT-6 response projection",
-      "scope": "Close actual published-audio publish/delete metadata leak at authenticated Gateway response boundary and add negative regression tests; same PR, no shared composition",
-      "paths": [
-        "services/gateway/src/audio_posts/routes.ts",
-        "services/gateway/src/audio_posts/routes_projection.test.mjs",
-        "docs/workstreams/AF09-response-projection-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "source_head": "3b2782183c3044c5e3637c03a19c9b2da653e44e",
-      "claimed_at": "2026-10-10T03:48:26.298Z",
-      "heartbeat_at": "2026-10-10T03:48:26.298Z",
-      "expires_at": "2026-10-10T03:53:26.298Z",
-      "notes": "No AF00 Gateway composition/worker/migrations, AF05 media, AF08 auth, nor active AF09 report/feed claims. Explicit projection of publish/remove HTTP receipts using existing canonical toPublicAudioPost."
-    },
-    {
       "claim_id": "af09-609-report-feed-mount-gpt6-20261010",
       "owner": "AF09 existing PR #609 report UI composition / GPT-6",
       "scope": "Mount existing canonical published-audio report action on visible published Talk cards, account-session fenced and without changing playback/cache. Do not touch AF00 shared shell/routes.",
@@ -1857,6 +1839,27 @@
       "release_reason": "Existing PR #609 source commits 5 + handoff 73f2cc7, Github blob readback. Nine new Node regressions authored NOT_RUN: Node24/pnpm12/private checkout, real PG and Flutter unavailable. Missing AF00 composition/AF05 media; no local pull or milestone completion.",
       "source_head": "73f2cc73d22fa1f6303afa91c8032b40961808c8",
       "integration_head_sha": null
+    },
+    {
+      "claim_id": "af09-609-response-projection-20261010-gpt6-0445",
+      "owner": "AF09 #609 continuation — GPT-6 response projection",
+      "scope": "Close actual published-audio publish/delete metadata leak at authenticated Gateway response boundary and add negative regression tests; same PR, no shared composition",
+      "paths": [
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/routes_projection.test.mjs",
+        "docs/workstreams/AF09-response-projection-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "48503da27b11d7ded876f96966ee22f1e870b8b0",
+      "claimed_at": "2026-10-10T03:48:26.298Z",
+      "heartbeat_at": "2026-10-10T03:48:26.298Z",
+      "expires_at": "2026-10-10T03:53:26.298Z",
+      "notes": "No AF00 Gateway composition/worker/migrations, AF05 media, AF08 auth, nor active AF09 report/feed claims. Explicit projection of publish/remove HTTP receipts using existing canonical toPublicAudioPost.",
+      "released_at": "2026-10-10T03:52:04.009Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "release_reason": "Close AF09-13 publish/delete raw-record disclosure with canonical public projection, four regression cases authored and static JS-body parse pass. Node24/pnpm/Flutter/PG NOT_RUN; core Talks milestone missing AF00/AF05/AF15 source and unified integration. Handoff docs/workstreams/AF09-response-projection-20261010.md; coordination posted on PRs #609/#600."
     }
   ]
 }
