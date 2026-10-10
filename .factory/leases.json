@@ -84,22 +84,6 @@
       "heartbeat_at": "2026-10-10T01:24:16.021Z",
       "expires_at": "2026-10-10T01:29:16.021Z",
       "notes": "Prior claim expired with source branch still equal to main@f381f077c485c04261459b77a42c215d3ce3a14b, no prior source to overwrite. Resumed same exact paths; preserve parallel media-batch branch."
-    },
-    {
-      "claim_id": "masanawa-01-af15-media-batch-guards-20261010",
-      "owner": "MASANAWA-01 / AF15",
-      "scope": "Harden existing tombstone media deletion executor against late drain and malformed claim payload; focused regression suite; no new authority/migration/wiring",
-      "paths": [
-        "services/worker/src/durable_operations/media_cleanup.ts",
-        "services/worker/src/durable_operations/media_cleanup.test.ts",
-        "docs/workstreams/AF15-media-batch-guards-20261010.md"
-      ],
-      "branch": "work/af15-media-batch-guards-20261010-masanawa01",
-      "base_sha": "a0fddc155c98e427f2952e2c044ca2225e42dc63",
-      "claimed_at": "2026-10-10T01:21:10.410Z",
-      "heartbeat_at": "2026-10-10T01:21:10.410Z",
-      "expires_at": "2026-10-10T01:26:10.410Z",
-      "notes": "Fresh main f381f077; start from previously reviewed nondeploy AF15 integration commit a0fddc. Preserve release #595 and active AF15 orphan-cleanup lease, no worker main/schema/provider edits."
     }
   ],
   "history": [
@@ -678,6 +662,27 @@
       "expires_at": "2026-10-09T22:11:35Z",
       "released_at": "2026-10-09T22:08:13Z",
       "release_reason": "Exact-path AF13 source/test/handoff committed to PR #596 at HEAD 0729f1d8a504d6e84e508abf35e6fcdaf99292dd; ready for source review; 10/10 native Node tests and 15/15 core probes passed; CI zero-step and Vercel quota block main integration; no deployment/provider/device E2E. AF00 next integrates to safe non-deploying target."
+    },
+    {
+      "claim_id": "masanawa-01-af15-media-batch-guards-20261010",
+      "owner": "MASANAWA-01 / AF15",
+      "scope": "Harden existing tombstone media deletion executor against late drain and malformed claim payload; focused regression suite; no new authority/migration/wiring",
+      "paths": [
+        "services/worker/src/durable_operations/media_cleanup.ts",
+        "services/worker/src/durable_operations/media_cleanup.test.ts",
+        "docs/workstreams/AF15-media-batch-guards-20261010.md"
+      ],
+      "branch": "work/af15-media-batch-guards-20261010-masanawa01",
+      "base_sha": "a0fddc155c98e427f2952e2c044ca2225e42dc63",
+      "claimed_at": "2026-10-10T01:21:10.410Z",
+      "heartbeat_at": "2026-10-10T01:21:10.410Z",
+      "expires_at": "2026-10-10T01:26:10.410Z",
+      "notes": "Fresh main f381f077; start from previously reviewed nondeploy AF15 integration commit a0fddc. Preserve release #595 and active AF15 orphan-cleanup lease, no worker main/schema/provider edits.",
+      "head_sha": "fd61a43895450ce66d0b0f7967d9e46a3428d31a",
+      "integrated_sha": "390024d21997419cc23333e73ec88362e418319c",
+      "pr": "https://github.com/Baatiku/masanawa/pull/598",
+      "released_at": "2026-10-10T01:24:59.313Z",
+      "release_reason": "Merged to NONPRODUCTION integration/af15-media-cleanup-20261009 at 390024d21997419cc23333e73ec88362e418319c. Exact merged blob SHA checked source 2b465... test 8b0ad...; local strict tsc PASS, exact byte-matched source Node22 21/21 simulated probes PASS. Repo Vitest and real PG/S3/worker/restart/restore NOT_RUN, NOT live or deployed."
     }
   ]
 }
