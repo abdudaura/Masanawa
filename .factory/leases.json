@@ -108,23 +108,6 @@
       "notes": "Continued existing #609 to b62119bc331292712b0d77ce86d5a2cceeb39d09: playback client+feed+6 tests+handoff, exact-path source readback PASS structural; Flutter NOT_RUN. Finishing QA and handoff."
     },
     {
-      "claim_id": "af09-609-processing-pagination-gpt6-0342",
-      "owner": "AF09 existing PR #609 processing queue continuation (GPT-6 window 0342)",
-      "scope": "Repair demonstrated microsecond keyset pagination loss that can indefinitely skip pending audio publication after timestamp collisions. Continue existing worker/PG queue and its tests; no duplicate queue, shared worker registration or migrations.",
-      "paths": [
-        "adapters/storage/postgres/src/audio_posts/processing_queue.ts",
-        "services/gateway/src/audio_posts/processing_worker.test.mjs",
-        "docs/workstreams/AF09-processing-pagination-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:47:39.921Z",
-      "heartbeat_at": "2026-10-10T02:47:39.921Z",
-      "expires_at": "2026-10-10T02:52:39.921Z",
-      "notes": "Prior processing source claim released in registry; inspect exact worker head; PG cursor source/test only; no changes to current AF09 playback/following owners."
-    },
-    {
       "claim_id": "af09-609-processing-recovery-20261010-gpt6-f",
       "owner": "AF09 existing PR #609 processing-recovery continuation / GPT-6",
       "scope": "Improve canonical audio-post processor stale-conflict/race classification and actual authored negative tests; avoid other active processing queue/test owners; same PR, no new helper/branch.",
@@ -160,6 +143,26 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "af09-609-processing-pagination-gpt6-0342",
+      "owner": "AF09 existing PR #609 processing queue continuation (GPT-6 window 0342)",
+      "scope": "Repair demonstrated microsecond keyset pagination loss that can indefinitely skip pending audio publication after timestamp collisions. Continue existing worker/PG queue and its tests; no duplicate queue, shared worker registration or migrations.",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/processing_queue.ts",
+        "services/gateway/src/audio_posts/processing_worker.test.mjs",
+        "docs/workstreams/AF09-processing-pagination-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:47:39.921Z",
+      "heartbeat_at": "2026-10-10T02:47:39.921Z",
+      "expires_at": "2026-10-10T02:52:39.921Z",
+      "notes": "Prior processing source claim released in registry; inspect exact worker head; PG cursor source/test only; no changes to current AF09 playback/following owners.",
+      "released_at": "2026-10-10T02:53:13.238Z",
+      "integration_head_sha": "6eeed31ba3dc9775d22eda3bcaa0558ff3ab5e9f",
+      "release_reason": "Continued original PR #609, queue microsecond keyset precision fix and two source Node regressions committed; 4/4 exact-blob V8 mocked-PG checks PASS_SIMULATED. Full Node24/pnpm TS/Vitest, real PostgreSQL, Flutter/device NOT_RUN; AF13/AF00 exact-head execution and AF00 single safe baseline/composition required. Not production merged."
+    },
     {
       "claim_id": "masanawa01-af01-crypto-ledger-reason-20261010-g",
       "owner": "MASANAWA-01 / AF01 ledger integrity",
