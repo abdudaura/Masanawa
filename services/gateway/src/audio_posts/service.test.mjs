@@ -221,7 +221,12 @@ test("comments persist under the published post, replay once, and remain author-
  assert.equal(first.commentId,again.commentId);
  const read=await f.service.comments(second,post.postId);
  assert.equal(read.length,1);
- assert.equal(read[0].authorAccountId,'user2');
+ assert.equal(read[0].isMine,true);
+ assert.equal(Object.hasOwn(read[0],'authorAccountId'),false);
+ assert.equal(first.isMine,true);
+ assert.equal(Object.hasOwn(first,'authorAccountId'),false);
+ const otherView=await f.service.comments(actor,post.postId);
+ assert.equal(otherView[0].isMine,false);
  await assert.rejects(f.service.comment(second,post.postId,{requestId:'req1',body:'Edited'}),e=>e.code==='CONFLICT');
  await assert.rejects(f.service.removeOwnComment(actor,post.postId,first.commentId),e=>e.code==='NOT_FOUND');
  assert.deepEqual(await f.service.removeOwnComment(second,post.postId,first.commentId),{removed:true});
