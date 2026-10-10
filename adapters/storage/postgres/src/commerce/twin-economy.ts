@@ -158,7 +158,10 @@ export function createPostgresTwinRuntimeRepository(
            tenant_id,request_id,kind,sender_user_id,recipient_user_id,
            character_id,amount_credits,ledger_entry_id,completed_at
          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-         ON CONFLICT (tenant_id,request_id) DO NOTHING`,
+         -- Both request_id and ledger_entry_id are immutable unique keys.
+         -- Concurrent exact replays can race on either index; readback below
+         -- distinguishes a valid replay from a conflicting ledger reuse.
+         ON CONFLICT DO NOTHING`,
         [
           input.tenantId,
           input.requestId,
