@@ -243,15 +243,19 @@
         "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
         "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
         "apps/mobile/test/audio_first/af09/listen_count_test.dart",
-        "docs/workstreams/AF09-listen-counts-20261010.md"
+        "docs/workstreams/AF09-listen-counts-20261010.md",
+        "apps/mobile/lib/src/audio_posts/audio_post_detail_screen.dart",
+        "apps/mobile/lib/src/audio_posts/creator_profile_screen.dart",
+        "apps/mobile/test/audio_first/af09/detail_test.dart",
+        "apps/mobile/test/audio_first/af09/creator_profile_test.dart"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T04:43:27.388Z",
-      "heartbeat_at": "2026-10-10T04:43:27.388Z",
-      "expires_at": "2026-10-10T04:48:27.388Z",
-      "notes": "Continue #609; no duplicate media provider, production SQL migration or AF00 auth/router composition. Requires bounded AF00 migration/schema and route wiring."
+      "heartbeat_at": "2026-10-10T04:46:34.158Z",
+      "expires_at": "2026-10-10T04:51:34.158Z",
+      "notes": "AF09 feed remains owned by removal-recovery owner; requested bounded count display handoff, no contested edit."
     },
     {
       "claim_id": "af09-609-removal-recovery-gpt6-0549",
