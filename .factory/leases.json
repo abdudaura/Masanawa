@@ -1027,27 +1027,6 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
-    },
-    {
-      "claim_id": "masanawa-rebuild-source-cleanup-audit-20261010",
-      "owner": "SOURCE-CLEAN-01 / owner requested repo code reduction",
-      "scope": "Analyze full main source tree, commit exact removal manifest and delete only confirmed empty unreferenced placeholder package directories on existing PR615; no runtime routes/live DB altered",
-      "paths": [
-        "docs/rebuild/SOURCE-CLEANUP.md",
-        "docs/rebuild/SOURCE-CLEANUP-MANIFEST.json",
-        "packages/decisions/.gitkeep",
-        "packages/perception/.gitkeep",
-        "packages/proactivity/.gitkeep",
-        "packages/testing/.gitkeep",
-        "docs/provenance/.gitkeep",
-        "docs/rebuild/DELIVERY.md",
-        "docs/rebuild/WINDOW-PROMPT.md"
-      ],
-      "branch": "planning/masanawa-blueprint-v1-20261010",
-      "claimed_at": "2026-10-10T13:58:04.803Z",
-      "heartbeat_at": "2026-10-10T14:01:20.595Z",
-      "expires_at": "2026-10-10T14:16:20.595Z",
-      "notes": "Temporary source audit. Do not delete wired-in Twin/LiveTalk/financial code until new v2 bindings and execution tests verify safe removal."
     }
   ],
   "history": [
@@ -3637,6 +3616,31 @@
       "released_at": "2026-10-10T13:47:08.949Z",
       "source_head": "1ee0b5ed6b49fc8fd994948f582358e6fe7e6566",
       "release_reason": "119 obsolete guide/archive files deleted in PR615 proposed branch; 4 root/index replacements + 5 canonical rebuild Markdown files + 2 seed JSONs created. Static 43 consumer screens, 18 admin, 17 journeys, 12 agent+Rooms, 24 posts PASS. GitHub run 38056564479 failed TS2459 in existing talk-replay.test.ts; Test/Build skipped, source fix in existing PR460. Railway branch main Git-linked; no merge/deploy/source/runtime changes. Windows must use PR615 branch guide until safe merge."
+    },
+    {
+      "claim_id": "masanawa-rebuild-source-cleanup-audit-20261010",
+      "owner": "SOURCE-CLEAN-01 / owner requested repo code reduction",
+      "scope": "Analyze full main source tree, commit exact removal manifest and delete only confirmed empty unreferenced placeholder package directories on existing PR615; no runtime routes/live DB altered",
+      "paths": [
+        "docs/rebuild/SOURCE-CLEANUP.md",
+        "docs/rebuild/SOURCE-CLEANUP-MANIFEST.json",
+        "packages/decisions/.gitkeep",
+        "packages/perception/.gitkeep",
+        "packages/proactivity/.gitkeep",
+        "packages/testing/.gitkeep",
+        "docs/provenance/.gitkeep",
+        "docs/rebuild/DELIVERY.md",
+        "docs/rebuild/WINDOW-PROMPT.md"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "claimed_at": "2026-10-10T13:58:04.803Z",
+      "heartbeat_at": "2026-10-10T14:01:20.595Z",
+      "expires_at": "2026-10-10T14:16:20.595Z",
+      "notes": "Temporary source audit. Do not delete wired-in Twin/LiveTalk/financial code until new v2 bindings and execution tests verify safe removal.",
+      "released_at": "2026-10-10T14:03:16.377Z",
+      "source_pr": 615,
+      "source_head": "4951c7a50546ce0a8421267a6012242eb52b30d9",
+      "release_reason": "Audited 1354 main source/build/test paths with machine-readable candidates, retired four confirmed empty stub package dirs; full obsolete wired source removal NOT done. Updated DELIVERY and reusable prompt. Exact head Foundation CI 38058011835 executed and failed TS2459 in packages/agents/src/talk-replay.test.ts; Vitest/provider/build skipped; existing PR460 has import correction. No live DB/source routes/financial writes/deploy. Future M0->M5 owners must replace/retire full source and test."
     }
   ]
 }
