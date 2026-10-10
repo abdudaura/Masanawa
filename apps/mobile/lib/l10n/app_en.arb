@@ -417,5 +417,21 @@
         "type": "String"
       }
     }
-  }
+  },
+  "navChats": "Chats",
+  "navRooms": "Rooms",
+  "navTalks": "Talks",
+  "navGwani": "Gwani",
+  "roomsPendingTitle": "Rooms are not available yet",
+  "roomsPendingDetail": "Audio groups will appear here when the Rooms service is ready.",
+  "talksPendingTitle": "Audio posts are not available yet",
+  "talksPendingDetail": "Published voice posts will appear here when the Talks service is ready.",
+  "@navChats": {"description": "Consumer root tab label"},
+  "@navRooms": {"description": "Consumer root tab label"},
+  "@navTalks": {"description": "Consumer root tab label"},
+  "@navGwani": {"description": "Consumer root tab label"},
+  "@roomsPendingTitle": {"description": "Truthful unavailable state for the pending audio-first service"},
+  "@roomsPendingDetail": {"description": "Truthful unavailable state for the pending audio-first service"},
+  "@talksPendingTitle": {"description": "Truthful unavailable state for the pending audio-first service"},
+  "@talksPendingDetail": {"description": "Truthful unavailable state for the pending audio-first service"}
 }
