@@ -101,7 +101,7 @@ void main() {
       (tester) async {
     final posts = PostsFake();
     await tester.pumpWidget(composer(posts, 'user-a',
-      upload: ({required localPath, required startMs, required endMs}) async =>
+      upload: ({required localPath, required uploadRequestId, required startMs, required endMs}) async =>
         VerifiedPostAudio(assetId: 'server-receipt', durationMs: endMs - startMs)));
     await tester.pumpAndSettle();
     final record = tester.widget<OutlinedButton>(
