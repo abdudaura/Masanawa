@@ -417,5 +417,227 @@
         "type": "String"
       }
     }
+  },
+  "billingRecent": "Recent bills",
+  "@billingRecent": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingRefreshHistory": "Refresh history",
+  "@billingRefreshHistory": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingNoPayments": "No bill payments yet",
+  "@billingNoPayments": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingRecipientLabel": "Recipient",
+  "@billingRecipientLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingServiceAmountLabel": "Service",
+  "@billingServiceAmountLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingFeeLabel": "Fee",
+  "@billingFeeLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingTotalLabel": "Total",
+  "@billingTotalLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusLabel": "Status",
+  "@billingStatusLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingProviderRef": "Provider ref",
+  "@billingProviderRef": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingTokenLabel": "Token / code",
+  "@billingTokenLabel": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingRefundedInfo": "The verified payment was refunded.",
+  "@billingRefundedInfo": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingSuccess": "Bill completed successfully.",
+  "@billingSuccess": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusQuoted": "Quote ready",
+  "@billingStatusQuoted": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusAwaiting": "Awaiting payment",
+  "@billingStatusAwaiting": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusFunded": "Payment verified",
+  "@billingStatusFunded": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusProcessing": "Processing",
+  "@billingStatusProcessing": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusCompleted": "Completed",
+  "@billingStatusCompleted": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusRefundProcessing": "Refund processing",
+  "@billingStatusRefundProcessing": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusRefunded": "Refunded",
+  "@billingStatusRefunded": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusExpired": "Expired",
+  "@billingStatusExpired": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusFailed": "Failed",
+  "@billingStatusFailed": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusAwaitingFunds": "Awaiting funds",
+  "@billingStatusAwaitingFunds": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingStatusUnknown": "Status unavailable",
+  "@billingStatusUnknown": {
+    "description": "Billing receipt and server-authoritative status presentation; do not alter amounts, codes, references, or payment authority."
+  },
+  "billingTitle": "Bills & payments",
+  "@billingTitle": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingNew": "New bill",
+  "@billingNew": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingPayTitle": "Pay a bill",
+  "@billingPayTitle": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingInstructions": "Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.",
+  "@billingInstructions": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingCategory": "Category",
+  "@billingCategory": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingProvider": "Provider",
+  "@billingProvider": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingService": "Service",
+  "@billingService": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingPhone": "Phone number",
+  "@billingPhone": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingRecipient": "Customer / meter / smartcard number",
+  "@billingRecipient": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingAmount": "Amount (NGN)",
+  "@billingAmount": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingVariableHelp": "Enter the provider-supported amount.",
+  "@billingVariableHelp": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingFixedHelp": "Fixed by the provider.",
+  "@billingFixedHelp": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingReview": "Review quote",
+  "@billingReview": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingConfirmWallet": "Confirm {amount} from wallet",
+  "@billingConfirmWallet": {
+    "description": "Display authorized exact NGN amount verbatim; do not calculate or convert.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billingAddFunds": "Add {amount}",
+  "@billingAddFunds": {
+    "description": "Display authorized exact NGN amount verbatim; do not calculate or convert.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "billingTransferInstructions": "Transfer the exact amount below. Masanawa will continue this bill automatically after the transfer is verified.",
+  "@billingTransferInstructions": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingExpires": "Expires:",
+  "@billingExpires": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingRefresh": "Refresh status",
+  "@billingRefresh": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingAnother": "Pay another bill",
+  "@billingAnother": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingUnavailable": "Billing is unavailable right now.",
+  "@billingUnavailable": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingProvidersUnavailable": "Could not load providers.",
+  "@billingProvidersUnavailable": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingServicesUnavailable": "Could not load services.",
+  "@billingServicesUnavailable": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingSelectionRequired": "Choose a category, provider and service.",
+  "@billingSelectionRequired": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingInvalidDetails": "Enter valid recipient details and amount.",
+  "@billingInvalidDetails": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingQuoteFailed": "Could not create this quote.",
+  "@billingQuoteFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingPurchaseFailed": "Could not complete this purchase from your wallet.",
+  "@billingPurchaseFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingRefreshFailed": "Could not refresh status.",
+  "@billingRefreshFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingDetailsFailed": "Could not load bill details.",
+  "@billingDetailsFailed": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingSignInAgain": "Your session has expired. Sign in again.",
+  "@billingSignInAgain": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
+  },
+  "billingExpiredTryAgain": "This quote has expired. Request a new quote.",
+  "@billingExpiredTryAgain": {
+    "description": "Billing form, eligibility, quote or recovery presentation. Provider and financial authority remain server-owned."
   }
 }
