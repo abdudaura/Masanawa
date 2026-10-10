@@ -43,7 +43,11 @@ describe("Masana fresh PG18 migration and authority guards", () => {
           && file.endsWith("0002_character_ownership.sql")) continue;
         await client.query(await readFile(root + file, "utf8"));
       }
-      await client.query(await readFile(root + "packages/masana/migrations/0001_masana_profiles.sql", "utf8"));
+      // On an already-upgraded disposable database, reuse the installed schema.
+      const masanaPresent=(await client.query<{name:string|null}>(
+        "SELECT to_regclass('masana.character_revisions')::text AS name")).rows[0]?.name;
+      if (!masanaPresent)
+        await client.query(await readFile(root + "packages/masana/migrations/0001_masana_profiles.sql", "utf8"));
       const uid = randomUUID().replace(/-/g, "").slice(0,16);
       const tenant = "tenant_masana_test_" + uid;
       const character = "masana-test-" + uid;
