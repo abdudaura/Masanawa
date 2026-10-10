@@ -1141,9 +1141,9 @@
       "source_pr": 460,
       "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
       "claimed_at": "2026-10-10T16:12:51.215Z",
-      "heartbeat_at": "2026-10-10T16:17:19.789Z",
-      "expires_at": "2026-10-10T16:22:19.789Z",
-      "notes": "PR #623 head 483199fa8a57c80b520c644e5964fcbed370f5a4, Mobile Build 38066841365 and Foundation 38066841357 running, no root/router/financial edits."
+      "heartbeat_at": "2026-10-10T16:19:23.313Z",
+      "expires_at": "2026-10-10T16:24:23.313Z",
+      "notes": "PR #623 Mobile Build 38066841365 has analyzed and tested (both fail due outstanding warnings/widget debt), currently Android release APK and admin debug APK compiling. Foundation CI 38066841357 TS PASS, Vitest inherited failures; no deploy."
     },
     {
       "claim_id": "l-rooms-free-question-lifecycle-20261010-gpt6",
