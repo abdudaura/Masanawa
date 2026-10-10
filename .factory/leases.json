@@ -704,7 +704,7 @@
     {
       "claim_id": "af13-460-independent-real-ci-20261010-gpt6-0955",
       "owner": "GPT-6 / owner-directed AF13 shared CI recovery (bounded AF00 workflow transfer)",
-      "scope": "Enable independent real backend/Flutter tests and builds after prior failures while keeping overall job red, reusing reviewed AF09 CI pattern; no paid service or deployment",
+      "scope": "Enable independent real backend/Flutter tests and builds after prior failures while keeping overall job red, reusing reviewed AF09 CI pattern; no paid service or deployment; follow-up: cancel obsolete PR checks only, preserve main non-cancel policy to reduce unqualified runner spending",
       "paths": [
         ".github/workflows/foundation-ci.yml",
         ".github/workflows/mobile-build.yml"
@@ -713,9 +713,9 @@
       "base_sha": "512fa4b9613fad9b5de8feebca49be562f2464e8",
       "source_pr": 460,
       "claimed_at": "2026-10-10T08:56:34.839Z",
-      "heartbeat_at": "2026-10-10T08:56:34.839Z",
-      "expires_at": "2026-10-10T09:01:34.839Z",
-      "notes": "AF00 #600 owns root app; this is a bounded exact-path workflow repair under direct owner request. Already present in AF09 #609, now copied to current CI recovery PR. No rerun considered pass without steps."
+      "heartbeat_at": "2026-10-10T09:09:35.288Z",
+      "expires_at": "2026-10-10T09:14:35.288Z",
+      "notes": "Workflow independent checks committed c06a077+4b8fdab, real Foundation typecheck+provider/build PASS, Vitest remaining 17 due crypto and stochastic test. Reuse exact owned workflow paths for bounded PR-only concurrency; do not cancel main."
     },
     {
       "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
