@@ -612,6 +612,22 @@
       "heartbeat_at": "2026-10-10T08:53:05.560Z",
       "expires_at": "2026-10-10T08:58:05.560Z",
       "notes": "Reviewed released prior claim and PR comment 6095841705; fixes live pg18 source regression in existing AF01 PR; actual CI 38039308614 typecheck blocker: wrong TalkId import; using pre-existing correct #580 source readback, no production code change"
+    },
+    {
+      "claim_id": "af13-460-financial-tests-gpt6-20261010-0954",
+      "owner": "GPT-6 / AF13 existing CI recovery PR #460",
+      "scope": "Restore executable hosted checkout TTL regression and verified-funding precondition coverage; test files only, do not alter billing/ledger production authority",
+      "paths": [
+        "services/gateway/src/billing_checkout.test.ts",
+        "services/gateway/src/financial_billing.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T08:54:18.845Z",
+      "heartbeat_at": "2026-10-10T08:54:18.845Z",
+      "expires_at": "2026-10-10T08:59:18.845Z",
+      "notes": "Existing PR #460 CI run 38037792873 proved two test fixture mismatches. Preserve Wallet-only shell and fail-closed canonical billing financial authority."
     }
   ],
   "history": [
