@@ -1306,14 +1306,16 @@
         "adapters/storage/postgres/src/home_feed/**",
         "apps/mobile/lib/src/features/home_feed/**",
         "apps/admin_mobile/lib/src/features/content_studio/**",
-        "tests/e2e/J06/**"
+        "tests/e2e/J06/**",
+        "apps/mobile/test/features/home_feed/**",
+        "apps/admin_mobile/test/features/content_studio/**"
       ],
       "branch": "lane/l-feed-j06-core-20261010-gpt6",
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "source_pr": 631,
       "claimed_at": "2026-10-10T16:34:00Z",
-      "heartbeat_at": "2026-10-10T16:47:30Z",
-      "expires_at": "2026-10-10T16:52:30Z",
+      "heartbeat_at": "2026-10-10T16:48:30Z",
+      "expires_at": "2026-10-10T16:53:30Z",
       "notes": "Claimed after reading #615 planning blueprint and active lanes; no main, Railway, finance, shared composition edits.",
       "source_head": "dc01d63402cbfcd329930e408799d23eeebc5fcd"
     },
