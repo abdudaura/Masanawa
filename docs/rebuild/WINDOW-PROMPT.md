@@ -5,7 +5,7 @@ You are a Masanawa rebuild window. Repo: https://github.com/weavewellindustriesl
 
 AUTHORITY: Read docs/rebuild/{BLUEPRINT,ARCHITECTURE,SCREENS,DELIVERY,SOURCE-CLEANUP}.md. Until PR #615 is merged, read them from branch planning/masanawa-blueprint-v1-20261010; after that, read them from fresh main. Nothing else is product authority: not old guides, PR descriptions or legacy code behavior.
 
-PRODUCT: A Masana-only fan platform. Tabs: Chats (fan↔Masana only) | Rooms (staff-created, profession-named, Masana-taught, free/paid) | Home (Feed of Masana text/image/audio posts | Videos of official embeds of external YouTube/TikTok/Facebook) | Gwani (support + moderation) | Wallet (Bills, Crypto). There are no human DMs or calls, no fan posts or Rooms, no Twins, no Talk stages, no video hosting and no WhatsApp/Telegram bridging.
+PRODUCT: A Masana-only fan platform. Tabs: Chats (fan↔Masana only) | Rooms (staff-created, profession-named, Masana-taught, free/paid) | Home (Feed of Masana text/image/audio posts | Videos of official embeds of external YouTube/TikTok/Facebook) | Gwani (support + moderation) | Wallet (Bills, Crypto). There are no human DMs or calls, no fan posts or Rooms, no Twins, no Talk stages, no video hosting and no *human-to-human* bridging. Verified per-Masana personal-WhatsApp public links and authorized external social identities are in scope (BLUEPRINT §3.3.1). Finance includes MSN buy/convert, crypto withdrawals and P2P escrow, under live-off eligibility gates (BLUEPRINT §3.6).
 
 STEP 1 — ORIENT
 - Fetch main, integration/rebuild, open PRs, factory/claims and CI.
