@@ -575,6 +575,20 @@
       "heartbeat_at": "2026-10-10T08:16:36.741Z",
       "expires_at": "2026-10-10T08:21:36.741Z",
       "notes": "Real Foundation 38036434565: four commerce suites setup FAIL relation offers already exists on common database. Independent DB per file via admin URL and disposable PG18 CREATE DATABASE; cleanup mandatory.; Scope correction: place shared test helper under adapter package to resolve pg dependency strictly under pnpm; remove original test/support helper.; Post-commit real CI queued while other windows use runner; awaiting latest exact-SHA checks."
+    },
+    {
+      "claim_id": "af09-609-revert-unproductive-test-serialization-20261010-gpt6",
+      "owner": "GPT-6 AF09 continuing existing PR #609 exact-head CI evidence",
+      "scope": "Revert unproductive global serial Vitest configuration after exact-head full-suite failure count unchanged",
+      "paths": [
+        "vitest.config.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T08:20:33.592Z",
+      "heartbeat_at": "2026-10-10T08:20:33.592Z",
+      "expires_at": "2026-10-10T08:25:33.592Z",
+      "notes": "AF13 #460 comment 6095620769 and AF09 #609 comment 6095621139, exact previous run 38037083541 85 FAIL unchanged. Revert only one config change. No migrations."
     }
   ],
   "history": [
