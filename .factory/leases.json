@@ -720,19 +720,21 @@
     {
       "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
       "owner": "GPT-6 AF06 continuing existing PR #497 chat lifecycle repair",
-      "scope": "Existing AF00 PR #600 source integration: adopt scoped chat async session fencing and tested TypeScript TalkId import correction from existing AF13 PR #460",
+      "scope": "Continue existing AF00 #600 actual failing TypeScript source: adopt canonical AF09 creator-feed typed narrowing and align account-deletion test fixture string type; preserve backend authorization",
       "paths": [
         "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
         "apps/mobile/test/chat/chat_action_account_test.dart",
-        "packages/agents/src/talk-replay.test.ts"
+        "packages/agents/src/talk-replay.test.ts",
+        "services/gateway/src/audio_posts/following.ts",
+        "adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 600,
       "claimed_at": "2026-10-10T08:58:13.359Z",
-      "heartbeat_at": "2026-10-10T09:05:55.625Z",
-      "expires_at": "2026-10-10T09:10:55.625Z",
-      "notes": "Source import repair is already in PR #460 and passed its workspace typecheck; adopt only 1-file independent diff to unblock AF00 baseline, no changes to financial migration/source."
+      "heartbeat_at": "2026-10-10T09:10:29.825Z",
+      "expires_at": "2026-10-10T09:15:29.825Z",
+      "notes": "Exact SHA errors from Actions #38040201841; both owned paths free. No money or root compositional behavior changes. Existing #600, test triggered after push."
     },
     {
       "claim_id": "af13-460-security-migration-manifest-gpt6-20261010",
