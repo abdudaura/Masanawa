@@ -1,7 +1,5 @@
 import type { Pool, PoolClient } from "pg";
-import type {
-  AudioPostProcessingQueue, PendingAudioPost,
-} from "../../../../../services/gateway/src/audio_posts/processing_worker.js";
+import type { AudioPostProcessingQueue, PendingAudioPost } from "@masanawa/contracts";
 
 type PendingRow = {
   tenant_id: string; post_id: string; revision: number;
