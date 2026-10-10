@@ -97,22 +97,6 @@
       "notes": "Fresh AF00 claim after inspecting #497/#493/#586; expired historical file owners retained; avoid unsupplied owner's local APK; no release. All three file paths are exclusive for this window, with one named test and handoff. Source commits 8745c5d,476179d,a7aa88f; expand to existing route/widget regression tests because their four-tab assertions must be migrated. Add explicit owner-approved tab translations to all 6 existing ARB catalogs; generated localization is build-time derived. Source/test checkpoint through c185bf70; original four-tab assertions superseded, all six locales updated; 20 exact-head static checks passed; Flutter runtime not available."
     },
     {
-      "claim_id": "masanawa01-af14-activity-recovery-20261010-d",
-      "owner": "MASANAWA-01 / AF14 Activity recovery",
-      "scope": "Fix Activity invitation response/readback truthfulness and retryable failed-loading state with Flutter widget regressions; preserve #497/#587 and owner local APK; no router or financial edits.",
-      "paths": [
-        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
-        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
-        "docs/workstreams/AF14-activity-recovery-20261010.md"
-      ],
-      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "claimed_at": "2026-10-10T01:34:02.408Z",
-      "heartbeat_at": "2026-10-10T01:34:02.408Z",
-      "expires_at": "2026-10-10T01:39:02.408Z",
-      "notes": "Exact activity screen, isolated AF14 widget tests and handoff only; other active claims inspected; no shared Gateway/financial/nav/migration/native/CI files."
-    },
-    {
       "claim_id": "masanawa01-af14-notification-state-20261010",
       "owner": "MASANAWA-01 / AF14 notification-state",
       "scope": "Integrate truthful notification enable/disable state, serialize mutations, fence old account responses and expose OS-versus-registration failures without changing shared push transport",
@@ -860,6 +844,24 @@
       "released_at": "2026-10-10T01:33:38.981Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/601",
       "release_reason": "12/12 Node simulated tests plus strict TypeScript PASS on matching committed bytes; PR #601 merged to non-production integration/af15-media-cleanup-20261009@6f8133aa0ffe89ecd4c69b790f074fa1ca2014bc. AF00 route/DB/signer remain pending; no production activation."
+    },
+    {
+      "claim_id": "masanawa01-af14-activity-recovery-20261010-d",
+      "owner": "MASANAWA-01 / AF14 Activity recovery",
+      "scope": "Fix Activity invitation response/readback truthfulness and retryable failed-loading state with Flutter widget regressions; preserve #497/#587 and owner local APK; no router or financial edits.",
+      "paths": [
+        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
+        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
+        "docs/workstreams/AF14-activity-recovery-20261010.md"
+      ],
+      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:34:02.408Z",
+      "heartbeat_at": "2026-10-10T01:34:02.408Z",
+      "expires_at": "2026-10-10T01:39:02.408Z",
+      "notes": "Exact activity screen, isolated AF14 widget tests and handoff only; other active claims inspected; no shared Gateway/financial/nav/migration/native/CI files.",
+      "released_at": "2026-10-10T01:38:17.644Z",
+      "release_reason": "PR #604 draft handoff @ 88ec3f0e27692f1d4967d286f4b848508ff87d55; source and 3 Flutter widget tests authored; GitHub text readback PASS; Flutter/analyze/device/provider NOT_RUN; CI jobs steps null; no deployment or merge; preserve #497 integration."
     }
   ]
 }
