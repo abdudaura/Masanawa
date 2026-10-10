@@ -410,6 +410,23 @@
       "expires_at": "2026-10-10T05:29:45.184Z",
       "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files. Source integrated to pinned root 28386c3617dc6d89ea14994d3e5aae397e95eab5; GitHub PR 600 comment 6094203574; central Actions runner-zero-steps incident remains. Remaining source AF00 AF05 AF15 AF10.",
       "released_at": "2026-10-10T05:27:16.875Z"
+    },
+    {
+      "claim_id": "chat-p04-source-continuation-20261010-gpt6-0713",
+      "owner": "GPT-6 / CHAT-P04 existing PR #612",
+      "scope": "Continue CHAT-P04 first-text, bounded voice latency/trace and cancellation recovery source only; AF00 shared composition excluded",
+      "paths": [
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/agent_conversation.test.ts",
+        "docs/workstreams/CHAT-P04-authorized-text-stream-20261010.md"
+      ],
+      "branch": "work/chat-p04-authorized-text-before-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 612,
+      "claimed_at": "2026-10-10T06:16:44.001Z",
+      "heartbeat_at": "2026-10-10T06:16:44.001Z",
+      "expires_at": "2026-10-10T06:21:44.001Z",
+      "notes": "Continuing prior released #612 source with exact path authority; no new branch. Do not seize Gateway route, mobile/finance or AF00 integrations."
     }
   ],
   "history": [
