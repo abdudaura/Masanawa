@@ -178,7 +178,11 @@
       "claimed_at": "2026-10-10T03:43:02.107Z",
       "heartbeat_at": "2026-10-10T03:43:02.107Z",
       "expires_at": "2026-10-10T03:48:02.107Z",
-      "notes": "Exact-path additive AF09 source; AF00 must register bounded route+feed action via protected existing files after source qualification"
+      "notes": "Exact-path additive AF09 source; AF00 must register bounded route+feed action via protected existing files after source qualification",
+      "released_at": "2026-10-10T03:48:10.268Z",
+      "release_reason": "Published Audio report adapter + canonical safety reuse + frontend confirmation + 7 backend and 3 Flutter tests authored, handoff on same PR #609. Source readback only, no actual runner. Source not mounted: AF00 route/migration/shell and existing AF09 feed owner to connect action; AF05/15 media; AF13 executable checks.",
+      "source_head": "826c9c865bfc8e118381e1bf05d87cbd6ba94389",
+      "integration_head_sha": null
     },
     {
       "claim_id": "af15-599-postgres-adapter-gpt6-20261010-0444",
