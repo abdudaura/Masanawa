@@ -123,6 +123,23 @@
       "claimed_at": "2026-10-10T02:43:12.070Z",
       "heartbeat_at": "2026-10-10T02:43:12.070Z",
       "expires_at": "2026-10-10T02:48:12.070Z"
+    },
+    {
+      "claim_id": "af09-609-processing-pagination-gpt6-0342",
+      "owner": "AF09 existing PR #609 processing queue continuation (GPT-6 window 0342)",
+      "scope": "Repair demonstrated microsecond keyset pagination loss that can indefinitely skip pending audio publication after timestamp collisions. Continue existing worker/PG queue and its tests; no duplicate queue, shared worker registration or migrations.",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/processing_queue.ts",
+        "services/gateway/src/audio_posts/processing_worker.test.mjs",
+        "docs/workstreams/AF09-processing-pagination-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:47:39.921Z",
+      "heartbeat_at": "2026-10-10T02:47:39.921Z",
+      "expires_at": "2026-10-10T02:52:39.921Z",
+      "notes": "Prior processing source claim released in registry; inspect exact worker head; PG cursor source/test only; no changes to current AF09 playback/following owners."
     }
   ],
   "history": [
