@@ -156,11 +156,11 @@
       "branch": "work/msn-crypto-primary-wallet-20261009-gpt6",
       "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
       "source_pr": 576,
-      "source_head": "c3d821e5dad6a8405d5efa0cd4a450ac4ce1a775",
+      "source_head": "fe0e5b504a7aba41f19d464270ae5fd8cce8d642",
       "claimed_at": "2026-10-10T03:20:16.455Z",
-      "heartbeat_at": "2026-10-10T03:20:16.455Z",
-      "expires_at": "2026-10-10T03:25:16.455Z",
-      "notes": "Original #576 source lease was released; this exact client-only continuation preserves it. Gateway route /v1/wallet/msn remains unmounted; AF00 composition transfer required."
+      "heartbeat_at": "2026-10-10T03:24:48.806Z",
+      "expires_at": "2026-10-10T03:29:48.806Z",
+      "notes": "Concrete source: MSN typed authenticated Dio read, session-reactive crypto Wallet card, exact decimal formatting, stale-account fencing, auth/404/offline/retry + tests. Gateway composition requires AF00/AF01 bounded transfer; Dart/Flutter unavailable in this runner."
     },
     {
       "claim_id": "af09-609-creator-profile-20261010-gpt6-0423",
