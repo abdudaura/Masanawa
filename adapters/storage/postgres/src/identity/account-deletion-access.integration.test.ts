@@ -15,7 +15,8 @@ describeDatabase("R12 identity-privacy access revocation", () => {
   let pool: Pool;
   const tenantId = createCanonicalId("tenant");
   let userId = createCanonicalId("user");
-  let requestId = randomUUID();
+  // Repository-issued IDs are strings, not necessarily UUID-template literals.
+  let requestId: string = randomUUID();
   let accessHash = "a".repeat(64);
   const createdAt = new Date().toISOString();
 
