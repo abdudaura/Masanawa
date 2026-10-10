@@ -6,11 +6,13 @@ import 'masana_repository.dart';
 class MasanaProfileScreen extends StatefulWidget {
  const MasanaProfileScreen({super.key,required this.characterId,required this.accountKey,
   required this.repository,this.onChat,this.onCall,this.onRoom,this.onSignIn,
-  this.voiceQualified=false});
+  this.voiceQualified=false,this.socialLinksBuilder});
  final String characterId,accountKey;
  final MasanaRepository repository;
  final VoidCallback? onChat,onCall,onRoom,onSignIn;
  final bool voiceQualified;
+ /// Inject the separately-owned L-SOCIAL links widget, scoped to this Masana.
+ final Widget Function(String characterId)? socialLinksBuilder;
  @override State<MasanaProfileScreen> createState()=>_MasanaProfileScreenState();
 }
 class _MasanaProfileScreenState extends State<MasanaProfileScreen> {
@@ -66,6 +68,9 @@ class _MasanaProfileScreenState extends State<MasanaProfileScreen> {
     ]),
     if(error!=null)Text(error!,style:TextStyle(color:theme.colorScheme.error)),
     const SizedBox(height:14),Text(p.biography),
+    if(widget.socialLinksBuilder!=null)
+      KeyedSubtree(key:ValueKey('social-${p.characterId}'),
+        child:widget.socialLinksBuilder!(p.characterId)),
     ExpansionTile(title:const Text('Life story'),children:[
       Padding(padding:const EdgeInsets.all(12),child:Text(p.story))]),
     for(final label in ['talents','languages','goals'])
