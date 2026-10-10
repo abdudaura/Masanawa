@@ -63,7 +63,7 @@ function checkRecord(record,journey,sha){
     if(journey.boundaries.includes("device")&&!(Array.isArray(record.proofs)&&record.proofs.some(p=>p?.kind==="apk"&&p.sha256===record.apkSha256)))errors.push("APK must be a hashed proof artifact, not an unverified string");
     if(!record.review||typeof record.review.reviewer!=="string"||record.review.reviewer.length<2||typeof record.review.reference!=="string"||record.review.reference.length<4)errors.push("independent review reference required");
   }
-  const prose=[record.reason,record.observation,record.review?.reviewer,record.review?.reference].filter(x=>typeof x==="string").join(" ");
+  const prose=[record.reason,record.observation,record.review?.reviewer,record.review?.reference,record.execution?.command,...(Array.isArray(record.execution?.assertions)?record.execution.assertions:[])].filter(x=>typeof x==="string").join(" ");
   if(/(?:\bBearer\s+\S{12,}|-----BEGIN\s+(?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:ghp_|github_pat_)[A-Za-z0-9_]{15,}|\b[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b)/i.test(prose)||/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(prose))errors.push("unredacted secret or account identifier in evidence");
   return errors;
 }
