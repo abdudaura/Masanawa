@@ -125,6 +125,32 @@ void main() {
     expect(playback.playing, false);
   });
 
+  testWidgets('same-account session rotation also invalidates pending media tickets',
+      (tester) async {
+    final api = client()..accessToken = 'old-session';
+    final output = RecordingOutput();
+    final waiting = Completer<Object?>();
+    final playback = AudioPostPlaybackController(
+      api: api, accountId: 'account-a',
+      isCurrentAccount: (id) => id == 'account-a',
+      expectedMediaHost: 'media.example.test', output: output, nowMs: () => 1000,
+      ticketRequest: (_) => waiting.future,
+    );
+    addTearDown(playback.dispose);
+    await tester.pumpWidget(MaterialApp(home: AudioPostFeedScreen(
+      transport: OnePostTransport(api), accountId: 'account-a',
+      isCurrentAccount: (_) => true, playback: playback,
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-listen-talk-01')));
+    await tester.pump();
+    api.accessToken = 'new-session';
+    waiting.complete(ticket());
+    await tester.pumpAndSettle();
+    expect(output.starts, 0);
+    expect(playback.playing, false);
+  });
+
   testWidgets('unavailable or untrusted tickets never start media and permit retry',
       (tester) async {
     final api = client();
