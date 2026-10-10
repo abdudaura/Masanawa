@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_feed_screen.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
+import 'package:masanawa/src/audio_posts/following_transport.dart';
 
 AudioPost post(String id, {int likes = 0, int comments = 0}) => AudioPost(
   postId: id, authorId: 'author-a', authorKind: 'human',
@@ -74,13 +75,93 @@ class FakePosts implements AudioPostTransport {
     if (kind == 'save') saves++; else likes++;
   }
 }
-Widget screen(FakePosts source, String account, {bool Function(String)? current}) =>
+class FakeCreatorFollowing implements CreatorFollowingTransport {
+  bool followed = false;
+  int statusReads = 0, followWrites = 0, feedReads = 0;
+  List<AudioPost> posts = [];
+  Future<AudioPostPage> Function(String?)? followingHandler;
+  @override
+  Future<CreatorFollowReceipt> status({required String postId}) async {
+    statusReads++;
+    return CreatorFollowReceipt(
+      authorId: 'author-a', authorKind: 'human', following: followed);
+  }
+  @override
+  Future<CreatorFollowReceipt> set({
+    required String postId, required bool enabled,
+  }) async {
+    followWrites++;
+    followed = enabled;
+    return CreatorFollowReceipt(
+      authorId: 'author-a', authorKind: 'human', following: enabled);
+  }
+  @override
+  Future<AudioPostPage> following({String? cursor}) {
+    feedReads++;
+    return followingHandler?.call(cursor) ??
+        Future.value(AudioPostPage(items: posts, nextCursor: null));
+  }
+}
+Widget screen(FakePosts source, String account, {
+  bool Function(String)? current,
+  CreatorFollowingTransport? following,
+}) =>
   MaterialApp(home: AudioPostFeedScreen(
-    transport: source, accountId: account,
+    transport: source, followingTransport: following, accountId: account,
     isCurrentAccount: current ?? (id) => id == account,
   ));
 
 void main() {
+  testWidgets('Following uses existing authenticated feed and per-post follow receipts',
+      (tester) async {
+    final source = FakePosts();
+    final following = FakeCreatorFollowing()..posts = [post('followed')];
+    await tester.pumpWidget(screen(source, 'user-a', following: following));
+    await tester.pumpAndSettle();
+    expect(find.text('Follow'), findsOneWidget);
+    await tester.tap(find.text('Follow'));
+    await tester.pumpAndSettle();
+    expect(following.followWrites, 1);
+    expect(following.followed, true);
+    await tester.tap(find.text('Following').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio followed'), findsOneWidget);
+    expect(find.text('Comments'), findsOneWidget);
+    expect(following.feedReads, 1);
+    await tester.tap(find.text('Discover'));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio one'), findsOneWidget);
+  });
+
+  testWidgets('late Following results cannot cross an account switch',
+      (tester) async {
+    final previous = Completer<AudioPostPage>();
+    String active = 'old';
+    final source = FakePosts();
+    final following = FakeCreatorFollowing()
+      ..followingHandler = (_) => active == 'old'
+        ? previous.future
+        : Future.value(AudioPostPage(items: [post('new-followed')], nextCursor: null));
+    await tester.pumpWidget(screen(source, 'old', following: following));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Following').first);
+    await tester.pump();
+    active = 'new';
+    await tester.pumpWidget(screen(source, 'new', following: following));
+    await tester.pumpAndSettle();
+    previous.complete(AudioPostPage(items: [post('old-private')], nextCursor: null));
+    await tester.pumpAndSettle();
+    expect(find.text('Published audio new-followed'), findsOneWidget);
+    expect(find.text('Published audio old-private'), findsNothing);
+  });
+
+  testWidgets('Following is not advertised when its authenticated API is unavailable',
+      (tester) async {
+    await tester.pumpWidget(screen(FakePosts(), 'user-a'));
+    await tester.pumpAndSettle();
+    expect(find.text('Following'), findsNothing);
+  });
+
   testWidgets('published feed loads authenticated posts, no fake playback',
       (tester) async {
     final source = FakePosts();
