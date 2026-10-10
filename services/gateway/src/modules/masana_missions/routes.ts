@@ -24,6 +24,12 @@ function path(req:FastifyRequest):string{
 }
 function problem(err:unknown,reply:any){
   if(err instanceof MissionError)return reply.code(err.status).send({code:err.code});
+  // The shared staff-authority port returns verified auth failures. Preserve typed
+  // admission status while redacting provider/session internals from clients.
+  const authStatus = (err !== null && typeof err === "object" &&
+    "statusCode" in err) ? (err as {statusCode?:unknown}).statusCode : undefined;
+  if(authStatus===401)return reply.code(401).send({code:"authentication_required"});
+  if(authStatus===403)return reply.code(403).send({code:"staff_role_required"});
   const code=(err as {code?:string})?.code;
   if(code==="23505")return reply.code(409).send({code:"duplicate_mission_or_slot"});
   if(code==="23503"||code==="23514"||code==="22008")
