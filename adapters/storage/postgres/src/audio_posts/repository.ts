@@ -83,6 +83,43 @@ function makeCursor(stamp: string, id: string): string {
  }
  return Buffer.from(JSON.stringify([stamp, id])).toString("base64url");
 }
+/** Account-fenced history paging; SQL timestamps retain PG microseconds. */
+async function readLibraryPage(pool: Pool, visibility: PostVisibility, input: {
+ tenantId: string; accountId: string; cursor: string | null; limit: number; saved: boolean;
+}): Promise<PublicFeedPage> {
+ let position = parseCursor(input.cursor);
+ const items: AudioPostRecord[] = [];
+ let scanned = 0, more = true;
+ while (items.length < input.limit && more && scanned < 240) {
+  const r = await pool.query<Row & { cursor_time: string }>(
+   "SELECT " + countColumns +
+   `,to_char(p.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_time` +
+   " FROM social.audio_posts p " +
+   (input.saved ? "JOIN social.audio_post_reactions r ON r.tenant_id=p.tenant_id AND r.post_id=p.post_id " : "") +
+   "WHERE p.tenant_id=$1 AND " +
+   (input.saved ? "r.account_id=$2 AND r.kind='save' AND p.status='published' " :
+                  "p.author_account_id=$2 ") +
+   "AND ($3::timestamptz IS NULL OR (p.created_at,p.post_id) < ($3::timestamptz,$4)) " +
+   "ORDER BY p.created_at DESC,p.post_id DESC LIMIT 30",
+   [input.tenantId,input.accountId,position?.stamp ?? null,position?.id ?? ""]);
+  if (!r.rows.length) { more = false; break; }
+  let consumed = 0;
+  for (const row of r.rows) {
+   consumed++; scanned++;
+   if (typeof row.cursor_time !== "string" || !microsecondUtc.test(row.cursor_time)) {
+    throw new Error("audio_posts.invalid_feed_timestamp");
+   }
+   const post = map(row);
+   position = {stamp:row.cursor_time,id:post.postId};
+   if (!input.saved || await visibility.canView({
+    tenantId:input.tenantId,viewerId:input.accountId,authorAccountId:post.authorAccountId,
+   })) items.push(post);
+   if (items.length >= input.limit || scanned >= 240) break;
+  }
+  if (r.rows.length < 30 && consumed === r.rows.length) more = false;
+ }
+ return {items,nextCursor:more && position ? makeCursor(position.stamp,position.id) : null};
+}
 export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVisibility): AudioPostRepository {
  return {
   async createOnce(input: NewAudioPost) {
