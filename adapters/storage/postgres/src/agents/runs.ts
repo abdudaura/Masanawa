@@ -249,7 +249,7 @@ async function loadRun(
         AND user_id = $3
         AND character_id = $4
         AND relationship_id = $5
-      ${write ? "FOR UPDATE" : "FOR SHARE"}`,
+      ${write ? "FOR UPDATE" : ""}`,
     [
       scope.tenantId,
       request.agentRunId,
@@ -423,7 +423,10 @@ export function createPostgresAgentRunRepository(
           await admit(client, request, "read", run.trace);
           return run;
         },
-        { isolation: "repeatable read", readOnly: true },
+        // Authority revocation fencing acquires FOR SHARE on policy state.
+        // PostgreSQL forbids row locks in READ ONLY transactions, even when
+        // the AgentRun itself is queried without a lock.
+        { isolation: "repeatable read" },
       );
     },
 

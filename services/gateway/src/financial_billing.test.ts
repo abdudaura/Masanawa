@@ -392,9 +392,14 @@ describe("BillingFinancialService catalog authority", () => {
       flutterwaveSecretKey: "secret", flutterwaveWebhookHash: "hash", flutterwaveWebhookUrl: "https://example.com/webhooks/flutterwave",
       providerClient: new FlutterwaveBillsClient({secretKey: "secret", transport: {async request() {calls++; throw new Error("must not call provider"); }}}),
     };
-    const request = {authorizationHeader: "Bearer test", requestId: "billing-request", billerCode: "B", itemCode: "I", itemName: "Bill", customerId: "Customer", amount: "100", catalogAmount: "100"};
+    const request = {authorizationHeader: "Bearer test", requestId: "billing-request", quoteId: "quote-confirmed", quoteRevision: 1, billerCode: "B", itemCode: "I", itemName: "Bill", customerId: "Customer", amount: "100", catalogAmount: "100"};
+    // Both prerequisites are independently enforced before provider requests:
+    // a valid quote cannot bypass missing funding, and available funding
+    // cannot authorize a purchase with missing/invalid quote identity.
     await expect(createBillingFinancialService(base).purchase(request)).rejects.toThrow("funding_unavailable");
-    await expect(createBillingFinancialService({...base, billingFunding: {async reserveConfirmedBill() {}, async settleBill() {}}}).purchase(request)).rejects.toThrow("confirmed_quote_required");
+    await expect(createBillingFinancialService({...base, billingFunding: {async reserveConfirmedBill() {}, async settleBill() {}}}).purchase({
+      ...request, quoteId: "", quoteRevision: 0,
+    })).rejects.toThrow("confirmed_quote_required");
     expect(calls).toBe(0);
   });
 

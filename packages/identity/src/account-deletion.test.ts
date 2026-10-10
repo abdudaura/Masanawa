@@ -27,6 +27,7 @@ describe("account deletion lifecycle", () => {
     });
     expect(() => transitionAccountDeletion(waiting, {
       target: "processing", expectedRevision: 3, now: timestamp,
+      outstandingObligations: ["pending payout"],
     })).toThrow("account_deletion.outstanding_obligations");
     const processing = transitionAccountDeletion(waiting, {
       target: "processing", expectedRevision: 3, now: timestamp,

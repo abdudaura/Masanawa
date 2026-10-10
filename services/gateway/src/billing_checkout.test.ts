@@ -639,21 +639,17 @@ describe("billing checkout", () => {
       customerId: "+2348012345678",
       amount: "100",
     });
-    const quotedDoc = quoted.document as {
-      id: string;
-      revision: number;
-      nodes: Array<{ action?: string; token?: string }>;
-    };
-    const start = quotedDoc.nodes.find((node) => node.action === "billing.checkout.start")!;
+    // The customer shell now advertises a wallet-confirm action, not a
+    // legacy hosted-checkout button. Exercise the existing authorized hosted
+    // checkout API directly to retain the payment-grace regression coverage.
     at = "2026-10-04T20:00:30.000Z";
-    const checkoutExecution = await service.executeShellAction({
+    const checkout = await service.startCheckout({
       authorizationHeader: "Bearer session",
-      documentId: quotedDoc.id,
-      revision: quotedDoc.revision,
-      actionId: "billing.checkout.start",
-      token: start.token!,
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
     });
-    const checkoutDoc = checkoutExecution.document as {
+    expect(checkout.phase).toBe("checkout");
+    const checkoutDoc = checkout.document as {
       id: string;
       revision: number;
       expiresAt: string;
