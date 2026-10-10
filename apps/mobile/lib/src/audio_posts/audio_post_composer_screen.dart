@@ -83,7 +83,10 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       setState(() {
         _restoring = false;
         if (pending != null) {
+          // TextEditingController listeners must not schedule nested setState.
+          _title.removeListener(_refresh);
           _title.text = pending.title;
+          _title.addListener(_refresh);
           _audio = VerifiedPostAudio(
             assetId: pending.assetId, durationMs: pending.durationMs);
           _requestId = pending.requestId;
@@ -192,6 +195,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       // Keep the server receipt even if cleanup cannot remove the saved key.
       setState(() => _receipt = post);
       try { await _store.clear(accountId, requestId); } catch (_) { /* safe replay */ }
+      if (!mounted || !_authorized || generation != _generation) return;
       if (post.status == 'processing' || post.status == 'published') {
         try { widget.onPublished?.call(post); } catch (_) { /* receipt retained */ }
       }
@@ -209,6 +213,9 @@ class _ComposerState extends State<AudioPostComposerScreen> {
   }
   Future<void> _discard() async {
     if (_sending || _saving || _restoring) return;
+    final generation = _generation;
+    final accountId = widget.accountId;
+    final requestId = _requestId;
     if (_attempted) {
       final yes = await showDialog<bool>(context: context,
         builder: (dialog) => AlertDialog(
@@ -221,15 +228,16 @@ class _ComposerState extends State<AudioPostComposerScreen> {
               child: const Text('Discard')),
           ],
         ));
-      if (yes != true || !mounted || !_authorized) return;
+      if (yes != true || !mounted || !_authorized || generation != _generation) return;
     }
     try {
-      if (_requestId != null) {
-        await _store.clear(widget.accountId, _requestId!);
+      if (requestId != null) {
+        await _store.clear(accountId, requestId);
       }
-      if (mounted && _authorized) setState(_clear);
+      if (mounted && _authorized && generation == _generation &&
+          widget.accountId == accountId) setState(_clear);
     } catch (_) {
-      if (mounted && _authorized) {
+      if (mounted && _authorized && generation == _generation) {
         setState(() => _message = 'Could not clear secure recovery. Retry discard.');
       }
     }
