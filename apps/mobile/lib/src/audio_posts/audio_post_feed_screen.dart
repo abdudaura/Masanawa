@@ -193,8 +193,6 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                         Wrap(spacing: 8, children: [
                           ChoiceChip(label: const Text('Discover'), selected: !_mine && !_saved,
                             onSelected: _authorized ? (_) => _selectFeed() : null),
-                          ChoiceChip(label: const Text('Following'), selected: false,
-                            onSelected: null),
                           ChoiceChip(label: const Text('Saved'), selected: _saved,
                             onSelected: _authorized ? (_) => _selectFeed(saved: true) : null),
                           ChoiceChip(label: const Text('My Talks'), selected: _mine,
