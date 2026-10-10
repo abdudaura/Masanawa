@@ -186,6 +186,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(output.starts, 0);
     expect(playback.playing, false);
+    expect(playback.loading, false);
   });
 
   testWidgets('unavailable or untrusted tickets never start media and permit retry',
@@ -288,6 +289,8 @@ void main() {
     expect(output.stopsDuringStart, 0);
     expect(output.events.last, 'stop');
     expect(playback.playing, isFalse);
+    expect(playback.loading, isFalse);
+    expect(playback.activePostId, isNull);
     playback.dispose();
   });
 
