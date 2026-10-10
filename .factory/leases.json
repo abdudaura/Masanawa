@@ -1083,9 +1083,9 @@
       "source_pr": 460,
       "base_sha": "b31d054ab2c7de6ecfa165fda8c10ab45656ad86",
       "claimed_at": "2026-10-10T15:59:23.076Z",
-      "heartbeat_at": "2026-10-10T16:07:22.932Z",
-      "expires_at": "2026-10-10T16:12:22.932Z",
-      "notes": "Head 77fc802456d016f5a81a5ac498184943a3fb8046 in #620; real Foundation CI run 38066326638 in progress; test-only 7 paths, AF00 coordinated via #616, no live DB."
+      "heartbeat_at": "2026-10-10T16:09:22.527Z",
+      "expires_at": "2026-10-10T16:14:22.527Z",
+      "notes": "PR #620 exact head 77fc802456d016f5a81a5ac498184943a3fb8046; Foundation CI 38066326638 Typecheck PASS, Vitest RUNNING; no production SQL changes."
     },
     {
       "claim_id": "r0-owner-source-first-unblock-20261010-gpt6",
