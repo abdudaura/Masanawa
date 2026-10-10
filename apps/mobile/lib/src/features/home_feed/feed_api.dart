@@ -31,11 +31,20 @@ class FeedPage {
     (body['items'] as List<dynamic>? ?? const []).map((p)=>FeedPost.fromJson(Map<String,dynamic>.from(p as Map))).toList(),
     body['nextCursor'] as String?);
 }
+class FeedComment {
+  const FeedComment({required this.id,required this.body,required this.state,required this.createdAt});
+  final String id,body,state;
+  final DateTime createdAt;
+  factory FeedComment.fromJson(Map<String,dynamic> json)=>FeedComment(
+    id:json['id'] as String,body:json['body'] as String,state:json['state'] as String,
+    createdAt:DateTime.parse(json['createdAt'] as String));
+}
 abstract class FeedApi {
   Future<FeedPage> list({required String mode,String? cursor});
   Future<void> like(String postId,bool enabled);
   Future<void> save(String postId,bool enabled);
   Future<void> comment(String postId,String body,String idempotencyKey);
+  Future<List<FeedComment>> comments(String postId);
 }
 /// Uses the app's existing Dio (base URL, TLS policies) rather than a second network stack.
 class DioFeedApi implements FeedApi {
@@ -69,4 +78,11 @@ class DioFeedApi implements FeedApi {
     await _dio.post<void>('/v1/posts/${Uri.encodeComponent(id)}/comments',
       data:{'body':body},options:await _options(key:key,authRequired:true));
   }
+  @override
+  Future<List<FeedComment>> comments(String id) async {
+    final result=await _dio.get<List<dynamic>>('/v1/posts/${Uri.encodeComponent(id)}/comments',
+      options:await _options());
+    return (result.data??const []).map((v)=>FeedComment.fromJson(Map<String,dynamic>.from(v as Map))).toList();
+  }
+
 }
