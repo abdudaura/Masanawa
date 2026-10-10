@@ -22,6 +22,16 @@ describe("J06 Masana-only Feed",()=>{
   await expect(s.publish(staff,{authorMasanaId:"masana",kind:"image",body:"photo",media:["https://evil.example/image"],idempotencyKey:"request-005"})).rejects.toMatchObject({code:"invalid_media_reference"});
   await expect(s.publish(staff,{authorMasanaId:"masana",kind:"audio",body:"clip",media:["media_abcdefgh"],idempotencyKey:"request-006"})).rejects.toMatchObject({code:"audio_transcript_required"});
  });
+ it("denies media ownership unless canonical library confirms the Masana and tenant",async()=>{
+  const db=mock(),staff={kind:"staff" as const,tenantId:"tenant",id:"staff",permissions:["content_editor"]};
+  const input={authorMasanaId:"masana",kind:"image" as const,body:"Cover",media:["media_abcdefgh"],idempotencyKey:"request-media-001"};
+  const denied=new FeedService(db,async()=>true);
+  await expect(denied.publish(staff,input)).rejects.toMatchObject({code:"media_not_approved"});
+  expect(db.publish).not.toHaveBeenCalled();
+  const admitted=new FeedService(db,async()=>true,async(tenant,id,media)=>tenant==="tenant"&&id==="masana"&&media==="media_abcdefgh");
+  await admitted.publish(staff,input);
+  expect(db.publish).toHaveBeenCalledTimes(1);
+ });
  it("requires auth on following and rejects malformed cursors",async()=>{
   const s=new FeedService(mock(),async()=>true);
   await expect(s.list("tenant",null,"following")).rejects.toMatchObject({status:401});
