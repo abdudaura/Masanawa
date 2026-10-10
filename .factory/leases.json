@@ -1027,28 +1027,6 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
-    },
-    {
-      "claim_id": "masanawa-persona-only-rooms-admin-pivot-20261010",
-      "owner": "BLUEPRINT / current owner pivot",
-      "scope": "Only existing PR #615 blueprint documents and 10+ non-runtime mock seed fixtures",
-      "paths": [
-        "docs/blueprint-v1/README.md",
-        "docs/blueprint-v1/PRODUCT-UX.md",
-        "docs/blueprint-v1/MASANA-CREATOR-NETWORK-20261010.md",
-        "docs/blueprint-v1/MASANA-STARTER-CAST-20261010.json",
-        "docs/blueprint-v1/RESEARCH-DECISIONS.md",
-        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
-        "docs/blueprint-v1/RECOVERY-DELIVERY.md",
-        "docs/blueprint-v1/TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md",
-        "docs/blueprint-v1/MASANA-ROOMS-ADMIN-ARCHITECTURE-20261010.md",
-        "docs/blueprint-v1/MASANA-SEED-POSTS-20261010.json"
-      ],
-      "branch": "planning/masanawa-blueprint-v1-20261010",
-      "claimed_at": "2026-10-10T12:50:06.981Z",
-      "heartbeat_at": "2026-10-10T12:50:06.981Z",
-      "expires_at": "2026-10-10T12:55:06.981Z",
-      "notes": "No runtime edits, no duplicate feature PR. AF00/AF09/admin owner notification on handoff."
     }
   ],
   "history": [
@@ -3489,6 +3467,32 @@
       "source_pr": 615,
       "source_head": "a449c2346d496ae4804f65a65f01801b4ed6d325",
       "release_reason": "Owner-approved product pivot documented in blueprint PR #615. 9 docs, 59 candidate screens, 16 journeys, 8 fictional personas and concept portrait ZIP generated locally. Static checks passed; no runtime tests/deployment/source removal. Existing PRs #600/#609/#497 notified."
+    },
+    {
+      "claim_id": "masanawa-persona-only-rooms-admin-pivot-20261010",
+      "owner": "BLUEPRINT / current owner pivot",
+      "scope": "Only existing PR #615 blueprint documents and 10+ non-runtime mock seed fixtures",
+      "paths": [
+        "docs/blueprint-v1/README.md",
+        "docs/blueprint-v1/PRODUCT-UX.md",
+        "docs/blueprint-v1/MASANA-CREATOR-NETWORK-20261010.md",
+        "docs/blueprint-v1/MASANA-STARTER-CAST-20261010.json",
+        "docs/blueprint-v1/RESEARCH-DECISIONS.md",
+        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
+        "docs/blueprint-v1/RECOVERY-DELIVERY.md",
+        "docs/blueprint-v1/TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md",
+        "docs/blueprint-v1/MASANA-ROOMS-ADMIN-ARCHITECTURE-20261010.md",
+        "docs/blueprint-v1/MASANA-SEED-POSTS-20261010.json"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "claimed_at": "2026-10-10T12:50:06.981Z",
+      "heartbeat_at": "2026-10-10T12:50:06.981Z",
+      "expires_at": "2026-10-10T12:55:06.981Z",
+      "notes": "No runtime edits, no duplicate feature PR. AF00/AF09/admin owner notification on handoff.",
+      "released_at": "2026-10-10T13:05:45.545Z",
+      "source_pr": 615,
+      "source_head": "25891e8d2c5ed3122339175e427ea2c93d7f8527",
+      "release_reason": "PR615 design changes only: 67 SC, 16 J, 12 fictional Masana, 12 rooms, 24 staging demo posts, 12 room intros/QAs and future video. Static PASS after correction; no runtime source changes; TS/Flutter/PG/Android/provider NOT_RUN. Source owners notified on #600,#609,#578,#530,#606; full local/source recovery required."
     }
   ]
 }
