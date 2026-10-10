@@ -665,6 +665,22 @@
       "heartbeat_at": "2026-10-10T08:56:09.333Z",
       "expires_at": "2026-10-10T09:01:09.333Z",
       "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
+    },
+    {
+      "claim_id": "af08-460-nullable-profile-uniqueness-gpt6-20261010",
+      "owner": "GPT-6 / user-directed AF08 bounded recovery on existing #460",
+      "scope": "Restore ability to onboard multiple email-only and SMS-only customers per tenant by correcting nullable uniqueness; add real PostgreSQL negative regression coverage. No existing migration altered or production DB touched.",
+      "paths": [
+        "packages/security/migrations/0103_platform_nullable_contact_uniqueness.sql",
+        "adapters/storage/postgres/src/security/platform-session.integration.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T08:56:19.494Z",
+      "heartbeat_at": "2026-10-10T08:56:19.494Z",
+      "expires_at": "2026-10-10T09:01:19.494Z",
+      "notes": "User directed repair of all CI errors. AF00 owns global composition; this patch is append-only security migration and test only, no protected migration manifest edits. CI run 38037792873 three account-deletion tests failed on NULLS NOT DISTINCT profile contact indexes."
     }
   ],
   "history": [
