@@ -24,6 +24,15 @@ function fixture() {
       else followed.delete(key);
       return { authorId: creator.authorId, authorKind: creator.authorKind, following: followed.has(key) };
     },
+    async statusFromVisiblePost({ tenantId, accountId, postId }) {
+      const creator = creators.get(postId);
+      if (!creator || creator.tenantId !== tenantId || !creator.published ||
+          creator.accountId === accountId || accountId === "blocked") return null;
+      return {
+        authorId: creator.authorId, authorKind: creator.authorKind,
+        following: followed.has([tenantId, accountId, creator.authorKind, creator.authorId].join("/")),
+      };
+    },
     async feed({ tenantId, viewerId, limit, cursor }) {
       const ids = [...followed].filter(key => key.startsWith(tenantId + "/" + viewerId + "/"));
       return {
@@ -104,4 +113,16 @@ test("invalid repository follow receipts fail closed as unavailable capability",
   await assert.rejects(service.set(bob, { postId: "talk1", enabled: true }), e =>
     e.code === "CAPABILITY_UNAVAILABLE");
   await assert.rejects(service.feed(bob), e => e.code === "CAPABILITY_UNAVAILABLE");
+});
+
+test("persisted follow status is account-scoped, permits unfollow after remount", async () => {
+  const f = fixture();
+  assert.equal((await f.service.status(bob, "talk1")).following, false);
+  await f.service.set(bob, { postId: "talk1", enabled: true });
+  assert.equal((await f.service.status(bob, "talk1")).following, true);
+  const anotherViewer = { ...bob, accountId: "charlie", authorId: "charlie" };
+  assert.equal((await f.service.status(anotherViewer, "talk1")).following, false);
+  await f.service.set(bob, { postId: "talk1", enabled: false });
+  assert.equal((await f.service.status(bob, "talk1")).following, false);
+  await assert.rejects(f.service.status(bob, "talk4"), e => e.code === "NOT_FOUND");
 });
