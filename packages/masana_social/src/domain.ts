@@ -73,8 +73,9 @@ export function publicLink(identity: SocialIdentity): PublicSocialLink | null {
     const url = approvedPublicUrl(identity.provider, identity.providerAccountId, identity.publicUrl);
     return {
       provider: identity.provider, handle: identity.handle, publicUrl: url,
-      mode: identity.mode,
-      availability: identity.mode === "verified_automation_eligible" ? "available" :
+      mode: identity.provider === "whatsapp" ? "profile_link_only" : identity.mode,
+      availability: identity.provider === "whatsapp" ? "link_only" :
+        identity.mode === "verified_automation_eligible" ? "available" :
         identity.mode === "manual_operator" ? "manual_operator" : "link_only",
     };
   } catch { return null; }
