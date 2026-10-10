@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'audio_post_composer_screen.dart';
+import 'audio_post_capture_sheet.dart';
 import 'audio_post_draft_store.dart';
 import 'audio_post_detail_screen.dart';
 import 'audio_post_feed_screen.dart';
@@ -27,6 +28,7 @@ class PublishedTalksDestination extends StatefulWidget {
     this.reportTransport,
     this.playback,
     this.acquireVerifiedAudio,
+    this.uploadVerifiedAudio,
     this.attemptStore,
   });
 
@@ -42,6 +44,8 @@ class PublishedTalksDestination extends StatefulWidget {
   final AudioPostPlaybackController? playback;
   /// Must return an AF15 server-verified asset; no local-only recordings.
   final AcquireVerifiedPostAudio? acquireVerifiedAudio;
+  /// AF05/AF15 private verified upload, never a client-created asset reference.
+  final UploadVerifiedTalkAudio? uploadVerifiedAudio;
   final TalkPublishAttemptStore? attemptStore;
 
   @override
@@ -133,6 +137,7 @@ class _PublishedTalksDestinationState extends State<PublishedTalksDestination> {
         accountId: accountId,
         isCurrentAccount: widget.isCurrentAccount,
         acquireVerifiedAudio: widget.acquireVerifiedAudio,
+        uploadVerifiedAudio: widget.uploadVerifiedAudio,
         attemptStore: widget.attemptStore,
         onPublished: (_) {
           // Refresh server-authoritative feed while preserving feed tab/scroll
