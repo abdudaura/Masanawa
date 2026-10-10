@@ -2,9 +2,11 @@
 
 ```text
 Continue rebuilding Masanawa: https://github.com/abdudaura/Masanawa
-Until PR #615 merges, read AGENTS.md, CONTINUE-HERE.md and docs/rebuild/{BLUEPRINT,SCREENS,ARCHITECTURE,DELIVERY}.md from branch planning/masanawa-blueprint-v1-20261010, NOT main's old guides. After merge read those same files on fresh main.
+Until PR #615 merges, read AGENTS.md, CONTINUE-HERE.md and docs/rebuild/{BLUEPRINT,SCREENS,ARCHITECTURE,DELIVERY,SOURCE-CLEANUP}.md from branch planning/masanawa-blueprint-v1-20261010, NOT main's old guides. After merge read those same files on fresh main.
 
 This is a Masana-only fan platform: Chats (fan↔Masana only), global Masana-led Rooms (free/paid), Home Feed|Videos, Gwani support/moderation, Wallet/Bills/Crypto. No human chats/calls, user posts/Rooms, Twins or old Talks stages. Preserve and reuse old code; old product guides are deleted.
+
+FIRST inspect docs/rebuild/SOURCE-CLEANUP-MANIFEST.json; verify obsolete code inbound imports, public routes, schemas, local Windows changes and open PR ownership. Clean the actual application by retiring replaced features, tests and dependencies safely, not just hiding their UI; preserve applied SQL and financial history.
 
 Refresh main, active PRs/claims, local/APK recovery and CI; coordinate with AF00. Continue the highest-priority unclosed complete milestone and existing PR rather than creating duplicate branches. Implement Flutter UI + backend/API + Postgres/migrations + workers + integrations + negative tests end to end.
 
