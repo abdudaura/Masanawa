@@ -47,6 +47,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
   TalkPublishAttemptStore get _store => widget.attemptStore ?? _defaultStore;
   bool _acquiring = false, _sending = false, _attempted = false;
   bool _restoring = true, _restoreFailed = false, _saving = false;
+  bool _checkingStatus = false;
   int _generation = 0;
   bool get _authorized => widget.accountId.trim().isNotEmpty &&
       widget.isCurrentAccount(widget.accountId);
@@ -109,6 +110,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
     ++_generation;
     _audio = null; _receipt = null; _requestId = null; _message = null;
     _attempted = false; _acquiring = false; _sending = false;
+    _checkingStatus = false;
     _restoring = false; _restoreFailed = false; _saving = false;
     _title.clear();
   }
@@ -221,8 +223,57 @@ class _ComposerState extends State<AudioPostComposerScreen> {
       }
     }
   }
+  /// A 202 receipt means the post is accepted, not publicly available yet.
+  /// Read the existing server receipt only; never submit a second publish here.
+  Future<void> _checkPublishStatus() async {
+    final receipt = _receipt;
+    final requestId = _requestId;
+    if (!_authorized || _checkingStatus || _saving || _sending || _acquiring ||
+        receipt?.status != 'processing' || requestId == null ||
+        widget.transport is! AudioPostReceiptLookup) return;
+    final generation = _generation;
+    final accountId = widget.accountId;
+    setState(() { _checkingStatus = true; _message = null; });
+    try {
+      final latest = await (widget.transport as AudioPostReceiptLookup)
+          .receiptByRequest(requestId: requestId);
+      if (!mounted || generation != _generation || !_authorized ||
+          widget.accountId != accountId || _requestId != requestId) return;
+      // Only the authenticated request's exact post can advance this receipt.
+      // Absence/offline/malformed responses cannot turn an acknowledged
+      // publication back into a missing post or trigger another charge/upload.
+      if (latest == null || latest.postId != receipt!.postId ||
+          latest.title != receipt.title ||
+          latest.durationMs != receipt.durationMs ||
+          latest.authorId != receipt.authorId ||
+          latest.authorKind != receipt.authorKind ||
+          latest.revision < receipt.revision) {
+        throw const FormatException('Inconsistent publication status');
+      }
+      setState(() {
+        _receipt = latest;
+        _message = latest.status == 'processing'
+            ? 'Still processing. Check again later.'
+            : null;
+      });
+      if (latest.status == 'published') {
+        try { widget.onPublished?.call(latest); } catch (_) { /* receipt retained */ }
+      }
+    } catch (_) {
+      if (mounted && generation == _generation && _authorized) {
+        setState(() => _message =
+            'Could not confirm the latest status. Your Talk was already '
+            'received; reconnect and check again without reposting.');
+      }
+    } finally {
+      if (mounted && generation == _generation && _authorized) {
+        setState(() => _checkingStatus = false);
+      }
+    }
+  }
+
   Future<void> _discard() async {
-    if (_sending || _saving || _restoring) return;
+    if (_sending || _saving || _restoring || _checkingStatus) return;
     final generation = _generation;
     final accountId = widget.accountId;
     final requestId = _requestId;
@@ -306,6 +357,18 @@ class _ComposerState extends State<AudioPostComposerScreen> {
               'failed' => 'Talk was not approved. Check My Talks before recording again.',
               _ => 'This publish attempt refers to a removed Talk.',
             }, key: const ValueKey('talk-receipt')),
+          if (_receipt?.status == 'processing' &&
+              widget.transport is AudioPostReceiptLookup)
+            TextButton.icon(
+              key: const ValueKey('talk-check-status'),
+              onPressed: _authorized && !_checkingStatus && !_sending && !_saving
+                  ? _checkPublishStatus : null,
+              icon: _checkingStatus
+                  ? const SizedBox(width: 16, height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.refresh),
+              label: Text(_checkingStatus ? 'Checking status…' : 'Check publication status'),
+            ),
           const SizedBox(height: 14),
           FilledButton.icon(
             key: const ValueKey('talk-publish'),
@@ -320,7 +383,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
           if (_audio != null || _attempted || _receipt != null)
             TextButton(
               key: const ValueKey('talk-discard'),
-              onPressed: _sending || _saving || _restoring ? null : _discard,
+              onPressed: _sending || _saving || _restoring || _checkingStatus ? null : _discard,
               child: Text(_receipt != null ? 'New Talk' : 'Discard draft'),
             ),
         ],
