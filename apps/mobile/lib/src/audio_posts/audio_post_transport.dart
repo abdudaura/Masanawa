@@ -64,6 +64,8 @@ abstract class AudioPostTransport {
     required String requestId, required String assetId, required String title,
   });
   Future<void> react({required String postId, required String kind, required bool enabled});
+  /// Remove only the currently authenticated user's own post. Idempotent.
+  Future<AudioPost> removeMine({required String postId});
 }
 class GatewayAudioPostTransport implements AudioPostTransport {
   GatewayAudioPostTransport(this.api);
@@ -111,6 +113,19 @@ class GatewayAudioPostTransport implements AudioPostTransport {
     );
     if (response.data is! Map) throw const FormatException('Invalid publish result');
     return AudioPost.fromJson((response.data as Map).cast<String, dynamic>());
+  }
+
+  @override
+  Future<AudioPost> removeMine({required String postId}) async {
+    final response = await api.dio.delete<dynamic>(
+      '/audio-posts/${Uri.encodeComponent(postId)}',
+    );
+    if (response.data is! Map) throw const FormatException('Invalid deletion receipt');
+    final removed = AudioPost.fromJson((response.data as Map).cast<String, dynamic>());
+    if (removed.postId != postId || removed.status != 'removed') {
+      throw const FormatException('Post removal not confirmed');
+    }
+    return removed;
   }
 
   @override
