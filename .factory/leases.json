@@ -697,6 +697,21 @@
       "heartbeat_at": "2026-10-10T08:56:34.839Z",
       "expires_at": "2026-10-10T09:01:34.839Z",
       "notes": "AF00 #600 owns root app; this is a bounded exact-path workflow repair under direct owner request. Already present in AF09 #609, now copied to current CI recovery PR. No rerun considered pass without steps."
+    },
+    {
+      "claim_id": "af06-pr497-chat-list-async-action-lifecycle-20261010085813",
+      "owner": "GPT-6 AF06 continuing existing PR #497 chat lifecycle repair",
+      "scope": "Repair observed Flutter analyzer async-context warning and prevent destructive stale chat action after route unmount; do not change other root/financial files",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart"
+      ],
+      "branch": "work/work-lane-consolidation-20261008",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 497,
+      "claimed_at": "2026-10-10T08:58:13.359Z",
+      "heartbeat_at": "2026-10-10T08:58:13.359Z",
+      "expires_at": "2026-10-10T09:03:13.359Z",
+      "notes": "Own one source path, no router/localization/migration edits. Run Mobile Build workflow triggered by push, inspect results. Existing #497 only."
     }
   ],
   "history": [
