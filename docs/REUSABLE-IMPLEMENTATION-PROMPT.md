@@ -55,6 +55,18 @@ customer milestone still has implementable missing source. Continue that work.
 If genuinely blocked, preserve precise handoff and claim an independent critical
 milestone rather than invent a new helper.
 
+Before ending, update the parent milestone's finite closure checklist under
+docs/NEXT-WAVE-DELIVERY-20261010.md: exact source item/paths, implementation
+owner/commit, remaining source, integration SHA and separate execution result.
+Close implementable source and composition HERE before the owner pulls locally.
+An absent runner defers only its execution checks; never missing code, routes,
+migrations, adapters or conflicts. Continue the next essential open checklist
+item, or explicitly transfer it in this same PR if the session must end.
+AF00 publishes one integration target and delegates bounded composition.
+Do not ask for local pull until all required source is implemented and integrated;
+provide exact capability blockers and local test/build commands without claiming
+unrun checks passed. Preserve and later reconcile the owner's unseen local fixes.
+
 Report: customer journey now supported, source still missing, exact commands
 and actual results, base/head/PR, integration target/status and precise activation
 gaps. A partial patch, placeholder destination or passing evidence checker is
