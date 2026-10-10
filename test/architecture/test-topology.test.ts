@@ -89,9 +89,34 @@ describe("test topology", () => {
       "utf8",
     );
     expect(workflow).toContain("- name: Typecheck\n        run: pnpm typecheck");
-    expect(workflow).toContain("- name: Test\n        run: pnpm test:ci");
-    expect(workflow).toContain("- name: Build\n        run: pnpm build");
+    // Test/provider/build execute even after a failed independent check; the
+    // job's earlier failure still remains visible and cannot turn green.
+    // Comments between a step label and its guard must not defeat coverage.
+    expect(workflow).toMatch(
+      /- name: Test\n(?:\s*#.*\n)*\s*if: \$\{\{ !cancelled\(\) \}\}\n\s*run: pnpm test:ci/u,
+    );
+    expect(workflow).toMatch(
+      /- name: Provider qualification tooling tests\n(?:\s*#.*\n)*\s*if: \$\{\{ !cancelled\(\) \}\}\n\s*run: >-/u,
+    );
+    expect(workflow).toMatch(
+      /- name: Build\n(?:\s*#.*\n)*\s*if: \$\{\{ !cancelled\(\) \}\}\n\s*run: pnpm build/u,
+    );
     expect(workflow).not.toContain("run: pnpm check");
+
+    const mobile = fs.readFileSync(
+      path.resolve(".github/workflows/mobile-build.yml"),
+      "utf8",
+    );
+    expect(mobile).toContain("- name: Analyze\n        run: flutter analyze");
+    expect(mobile).toMatch(
+      /- name: Test\n(?:\s*#.*\n)*\s*if: \$\{\{ !cancelled\(\) \}\}\n\s*run: flutter test/u,
+    );
+    expect(mobile).toMatch(
+      /- name: Phone \(production APK\)\n(?:\s*#.*\n)*\s*if: \$\{\{ !cancelled\(\) \}\}\n\s*run: flutter build apk --release/u,
+    );
+    expect(mobile).toMatch(
+      /- name: Web \(release\)\n(?:\s*#.*\n)*\s*if: \$\{\{ !cancelled\(\) \}\}\n\s*run: flutter build web --release/u,
+    );
   });
 
   it("requires real security/recovery/load/chaos evidence, not sentinels", () => {
