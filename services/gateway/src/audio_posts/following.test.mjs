@@ -38,7 +38,7 @@ function fixture() {
       return {
         items: ids.slice(0, limit).map((key, i) => ({
           tenantId, postId: "visible" + i, authorId: key.split("/").at(-1),
-          authorAccountId: "hiddenAccount", authorKind: "human",
+          authorAccountId: "hiddenAccount", authorKind: key.split("/")[2],
           assetId: "privateStorageKey", requestId: "privateRequest",
           title: "Audio from followed creator", durationMs: 15000,
           status: "published", revision: 1,
@@ -154,4 +154,13 @@ test("Following applies shared safe public projection with persisted engagement 
   assert.equal(JSON.stringify(page).includes("privateStorageKey"), false);
   assert.equal(JSON.stringify(page).includes("hiddenAccount"), false);
   assert.equal(JSON.stringify(page).includes("privateRequest"), false);
+});
+
+test("Following keeps Masana posts disclosed as AI without leaking creator account identity", async () => {
+  const f = fixture();
+  await f.service.set(bob, { postId: "talk2", enabled: true });
+  const page = await f.service.feed(bob);
+  assert.equal(page.items[0].authorId, "persona7");
+  assert.equal(page.items[0].authorKind, "masana");
+  assert.equal("authorAccountId" in page.items[0], false);
 });
