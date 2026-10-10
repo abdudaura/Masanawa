@@ -146,6 +146,16 @@ export function createAudioPostService(deps: {
     return { items: page.items.map(toPublicAudioPost), nextCursor: page.nextCursor };
   };
 
+  // Recovery after a lost publish response: a read-only, authenticated lookup
+  // of the exact durable idempotency key, scoped to the session's account and
+  // tenant. A missing key reveals nothing about another account's post.
+  const receiptByRequest = async (actor: PostActor, requestId: string) => {
+    assertActor(actor);
+    safeId(requestId, "request", 96);
+    const post = await repository.byRequest(actor.tenantId, actor.accountId, requestId);
+    return post ? toPublicAudioPost(post) : null;
+  };
+
   const mine = async (actor: PostActor) => {
     assertActor(actor);
     const posts = await repository.mine({ tenantId: actor.tenantId, accountId: actor.accountId, limit: 50 });
