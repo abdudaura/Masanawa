@@ -3,6 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/audio_posts/audio_post_composer_screen.dart';
 import 'package:masanawa/src/audio_posts/audio_post_transport.dart';
+import 'package:masanawa/src/audio_posts/audio_post_draft_store.dart';
+
+class FakeAttempts implements TalkPublishAttemptStore {
+  PendingTalkPublish? pending;
+  bool failRead = false, failWrite = false, failClear = false;
+  int writes = 0;
+  @override
+  Future<PendingTalkPublish?> read(String accountId) async {
+    if (failRead) throw StateError('secure storage offline');
+    return pending?.accountId == accountId ? pending : null;
+  }
+  @override
+  Future<void> write(PendingTalkPublish next) async {
+    if (failWrite) throw StateError('cannot encrypt');
+    writes++;
+    pending = next;
+  }
+  @override
+  Future<void> clear(String accountId, String requestId) async {
+    if (failClear) throw StateError('cannot clear');
+    if (pending?.accountId == accountId && pending?.requestId == requestId) {
+      pending = null;
+    }
+  }
+}
 
 class PostsFake implements AudioPostTransport {
   int sends = 0;
@@ -30,10 +55,12 @@ class PostsFake implements AudioPostTransport {
 Widget composer(PostsFake posts, String account, {
   AcquireVerifiedPostAudio? record,
   void Function(AudioPost)? published,
+  TalkPublishAttemptStore? store,
 }) => MaterialApp(home: AudioPostComposerScreen(
   transport: posts, accountId: account, isCurrentAccount: (id) => id == account,
   acquireVerifiedAudio: record, onPublished: published,
   newRequestId: () => 'stable-attempt-1',
+  attemptStore: store ?? FakeAttempts(),
 ));
 
 void main() {
@@ -170,6 +197,96 @@ void main() {
     expect(navigations, 0);
     expect(tester.widget<FilledButton>(
       find.byKey(const ValueKey('talk-publish'))).onPressed, isNull);
+  });
+
+  testWidgets('unknown network result survives restart and keeps request key', (tester) async {
+    final store = FakeAttempts();
+    final posts = PostsFake()..onSend = () async => throw StateError('timeout');
+    await tester.pumpWidget(composer(posts, 'user-a', store: store,
+      record: () async => const VerifiedPostAudio(assetId: 'ready-a', durationMs: 6000)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-record')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('talk-title')), 'A durable story');
+    await tester.tap(find.byKey(const ValueKey('talk-publish')));
+    await tester.pumpAndSettle();
+    expect(posts.sends, 1);
+    expect(store.pending?.requestId, 'stable-attempt-1');
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pumpWidget(composer(posts, 'user-a', store: store));
+    await tester.pumpAndSettle();
+    expect(find.text('A durable story'), findsOneWidget);
+    expect(find.textContaining('earlier publish attempt is unconfirmed'), findsOneWidget);
+    expect(tester.widget<TextField>(find.byKey(const ValueKey('talk-title'))).readOnly, isTrue);
+    posts.onSend = null;
+    await tester.tap(find.byKey(const ValueKey('talk-publish')));
+    await tester.pumpAndSettle();
+    expect(posts.sends, 2);
+    expect(posts.requestId, 'stable-attempt-1');
+    expect(store.pending, isNull);
+    expect(find.byKey(const ValueKey('talk-receipt')), findsOneWidget);
+  });
+
+  testWidgets('secure write failure never sends or loses editable draft', (tester) async {
+    final store = FakeAttempts()..failWrite = true;
+    final posts = PostsFake();
+    await tester.pumpWidget(composer(posts, 'user-a', store: store,
+      record: () async => const VerifiedPostAudio(assetId: 'ready', durationMs: 2000)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-record')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Safe title');
+    await tester.tap(find.byKey(const ValueKey('talk-publish')));
+    await tester.pumpAndSettle();
+    expect(posts.sends, 0);
+    expect(find.textContaining('No request was sent'), findsOneWidget);
+    expect(tester.widget<TextField>(find.byKey(const ValueKey('talk-title'))).readOnly, isFalse);
+    store.failWrite = false;
+    await tester.tap(find.byKey(const ValueKey('talk-publish')));
+    await tester.pumpAndSettle();
+    expect(posts.sends, 1);
+    expect(store.pending, isNull);
+  });
+
+  testWidgets('wrong account cannot access saved attempt and recovered attempt can be discarded', (tester) async {
+    final store = FakeAttempts()..pending = const PendingTalkPublish(
+      accountId: 'user-a', requestId: 'saved-key', assetId: 'saved-a',
+      durationMs: 4000, title: 'Private saved draft');
+    final posts = PostsFake();
+    await tester.pumpWidget(composer(posts, 'user-b', store: store));
+    await tester.pumpAndSettle();
+    expect(find.text('Private saved draft'), findsNothing);
+    expect(find.textContaining('earlier publish attempt'), findsNothing);
+    expect(store.pending?.accountId, 'user-a');
+    await tester.pumpWidget(composer(posts, 'user-a', store: store));
+    await tester.pumpAndSettle();
+    expect(find.text('Private saved draft'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('talk-discard')));
+    await tester.pumpAndSettle();
+    expect(find.text('Discard publish attempt?'), findsOneWidget);
+    await tester.tap(find.text('Discard').last);
+    await tester.pumpAndSettle();
+    expect(store.pending, isNull);
+    expect(posts.sends, 0);
+    expect(find.text('Private saved draft'), findsNothing);
+  });
+
+  testWidgets('unavailable secure recovery blocks new sends until read succeeds', (tester) async {
+    final store = FakeAttempts()..failRead = true;
+    final posts = PostsFake();
+    await tester.pumpWidget(composer(posts, 'user-a', store: store,
+      record: () async => const VerifiedPostAudio(assetId: 'a', durationMs: 2000)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('talk-retry-recovery')), findsOneWidget);
+    expect(tester.widget<OutlinedButton>(
+      find.byKey(const ValueKey('talk-record'))).onPressed, isNull);
+    expect(posts.sends, 0);
+    store.failRead = false;
+    await tester.tap(find.byKey(const ValueKey('talk-retry-recovery')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('talk-retry-recovery')), findsNothing);
+    expect(tester.widget<OutlinedButton>(
+      find.byKey(const ValueKey('talk-record'))).onPressed, isNotNull);
   });
 
 }
