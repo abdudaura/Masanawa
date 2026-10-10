@@ -127,11 +127,12 @@ Widget screen(FakePosts source, String account, {
   bool Function(String)? current,
   CreatorFollowingTransport? following,
   PublishedAudioReportTransport? reporting,
+  Listenable? refresh,
 }) =>
   MaterialApp(home: AudioPostFeedScreen(
     transport: source, followingTransport: following, accountId: account,
     isCurrentAccount: current ?? (id) => id == account,
-    reportTransport: reporting,
+    reportTransport: reporting, refreshSignal: refresh,
   ));
 
 void main() {
@@ -386,6 +387,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Status: removed'), findsNothing);
     expect(find.text('Published audio mine'), findsNothing);
+  });
+
+  testWidgets('feed refresh during removal never leaves a disabled Remove button',
+      (tester) async {
+    final pending = Completer<AudioPost>();
+    final signal = ValueNotifier<int>(0);
+    final source = FakePosts()
+      ..mineHandler = (() async => [post('mine')])
+      ..removeHandler = (_) => pending.future;
+    await tester.pumpWidget(screen(source, 'user-a', refresh: signal));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('My Talks'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove Talk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove').last);
+    await tester.pump();
+    signal.value++;
+    await tester.pumpAndSettle();
+    pending.complete(AudioPost(
+      postId: 'mine', authorId: 'author-a', authorKind: 'human',
+      title: 'Published audio mine', durationMs: 22000,
+      status: 'removed', revision: 2, createdAt: DateTime.utc(2026, 10, 10),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Checking…'), findsNothing);
+    final button = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Remove Talk'));
+    expect(button.onPressed, isNotNull);
+    signal.dispose();
   });
 
   testWidgets('failed deletion stays available to retry', (tester) async {
