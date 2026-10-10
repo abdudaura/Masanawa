@@ -406,9 +406,10 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 600,
       "claimed_at": "2026-10-10T05:19:01.295Z",
-      "heartbeat_at": "2026-10-10T05:24:45.184Z",
+      "heartbeat_at": "2026-10-10T05:27:16.875Z",
       "expires_at": "2026-10-10T05:29:45.184Z",
-      "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files."
+      "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files. Source integrated to pinned root 28386c3617dc6d89ea14994d3e5aae397e95eab5; GitHub PR 600 comment 6094203574; central Actions runner-zero-steps incident remains. Remaining source AF00 AF05 AF15 AF10.",
+      "released_at": "2026-10-10T05:27:16.875Z"
     }
   ],
   "history": [
