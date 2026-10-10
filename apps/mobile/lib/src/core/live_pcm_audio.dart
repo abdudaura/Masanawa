@@ -11,7 +11,16 @@ class LivePcmAudio {
 
   static const MethodChannel _channel = MethodChannel('masanawa/live_pcm');
 
+  // PCM16 mono frames: bound untrusted provider output before a platform call.
+  // The native AudioTrack bridge accepts standard speech output rates.
+  static const int _minSampleRate = 8000;
+  static const int _maxSampleRate = 48000;
+  static const int _maxFrameBytes = 256 * 1024;
+
   static Future<bool> start({int sampleRate = 24000}) async {
+    if (sampleRate < _minSampleRate || sampleRate > _maxSampleRate) {
+      return false;
+    }
     try {
       return await _channel.invokeMethod<bool>(
             'start',
@@ -27,6 +36,10 @@ class LivePcmAudio {
 
   static Future<bool> write(Uint8List bytes) async {
     if (bytes.isEmpty) return true;
+    // Misaligned PCM16 or a huge chunk must never enter the native AudioTrack.
+    if (bytes.lengthInBytes.isOdd || bytes.lengthInBytes > _maxFrameBytes) {
+      return false;
+    }
     try {
       return await _channel.invokeMethod<bool>('write', {'bytes': bytes}) ?? false;
     } on MissingPluginException {
