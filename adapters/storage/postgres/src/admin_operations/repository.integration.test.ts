@@ -4,6 +4,7 @@ import type { Pool } from "pg";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { createIsolatedPostgresTestDatabase } from "../commerce/isolated-test-database.js";
 import { createPostgresOperationsRepository, createPostgresProductJobFlags } from "./repository.js";
+import { runMigrations } from "../migrations.js";
 
 const uri=process.env.MASANAWA_TEST_DATABASE_URL;
 const suite=uri?describe:describe.skip;
@@ -14,6 +15,9 @@ suite("J19 PostgreSQL18 flags, idempotency and tenant-scoped audit",()=>{
   isolated=await createIsolatedPostgresTestDatabase(uri!);pool=isolated.pool;
   const version=await pool.query<{server_version_num:string}>("SHOW server_version_num");
   expect(Number(version.rows[0]?.server_version_num)).toBeGreaterThanOrEqual(180000);
+  // Reuse canonical events audit schema before the feature-local flags.
+  await runMigrations(pool,[{owner:"events",directory:fileURLToPath(
+    new URL("../../../../../packages/events/migrations",import.meta.url))}]);
   // Feature SQL source is isolated and does not modify the shared numbered migration registry.
   const sql=readFileSync(fileURLToPath(new URL("./schema.sql",import.meta.url)),"utf8");
   await pool.query(sql);
@@ -30,12 +34,17 @@ suite("J19 PostgreSQL18 flags, idempotency and tenant-scoped audit",()=>{
   const audit=await repo.audit(input.tenantId,20);
   expect(audit).toHaveLength(1);
   expect(audit[0]?.actorId).toBe(input.actorId);
+  expect(audit[0]?.action).toBe("admin_ops.flag_change");
   expect((await createPostgresProductJobFlags(pool).read({tenantId:input.tenantId,family:"imports"}))).toBe(false);
  });
  it("denies cross-tenant readback and rejects idempotency-key changes",async()=>{
   const repo=createPostgresOperationsRepository(pool);
   expect(await repo.audit("tenant_B",20)).toEqual([]);
   await expect(repo.setFlag({...input,reason:"Different request reason",expectedRevision:0})).rejects.toThrow("admin_ops.conflict");
+ });
+ it("same idempotency key cannot mutate a different flag",async()=>{
+  const repo=createPostgresOperationsRepository(pool);
+  await expect(repo.setFlag({...input,name:"teaching"})).rejects.toThrow("admin_ops.conflict");
  });
  it("conflicting parallel revisions leave only one committed outcome",async()=>{
   const repo=createPostgresOperationsRepository(pool);

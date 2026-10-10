@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createCanonicalId } from "@masanawa/contracts";
 import type { Pool, PoolClient } from "pg";
 // Deliberately structural: the canonical module adapter is wired by AF00 to avoid a
 // cross-project TypeScript build dependency before workspace contracts are registered.
@@ -29,7 +29,14 @@ export function createPostgresOperationsRepository(pool:Pool): OperationsReposit
   },
   async setFlag(input){
    return transaction(pool,async client=>{
-    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))",[`ops:${input.tenantId}:${input.name}:${input.actorId}`]);
+    // Acquire idempotency lock before flag lock: same-key/different-flag races
+    // now deterministically report a conflict rather than an unhandled SQL 23505.
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))",[
+      `ops:req:${input.tenantId}:${input.actorId}:${input.idempotencyKey}`
+    ]);
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))",[
+      `ops:flag:${input.tenantId}:${input.name}`
+    ]);
     // Unique request keys are scoped per staff actor. Disallow reusing a key for a different request.
     const prior=await client.query<{flag_name:string;requested_enabled:boolean;expected_revision:string;reason:string;result_revision:string}>(
       "SELECT flag_name,requested_enabled,expected_revision,reason,result_revision FROM admin_operations.flag_requests WHERE tenant_id=$1 AND actor_id=$2 AND request_key=$3 FOR UPDATE",
@@ -49,13 +56,32 @@ export function createPostgresOperationsRepository(pool:Pool): OperationsReposit
     const next=await client.query<Row>("UPDATE admin_operations.flags SET enabled=$3,revision=revision+1,changed_by=$4,changed_at=NOW() WHERE tenant_id=$1 AND flag_name=$2 RETURNING flag_name,enabled,revision,changed_at",[input.tenantId,input.name,input.enabled,input.actorId]);
     const updated=next.rows[0];if(!updated) throw new OperationsStorageError("unavailable");
     await client.query("INSERT INTO admin_operations.flag_requests(tenant_id,actor_id,request_key,flag_name,expected_revision,requested_enabled,reason,result_revision) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",[input.tenantId,input.actorId,input.idempotencyKey,input.name,input.expectedRevision,input.enabled,input.reason,updated.revision]);
-    await client.query("INSERT INTO admin_operations.audit(tenant_id,event_id,actor_id,action,subject,details) VALUES($1,$2,$3,$4,$5,$6::jsonb)",[input.tenantId,randomUUID(),input.actorId,"flag.change",input.name,JSON.stringify({before:row.enabled,after:input.enabled,reason:input.reason,revision:updated.revision})]);
+    // Reuse the canonical immutable audit journal; no second audit authority.
+    await client.query(
+      `INSERT INTO events.audit_events(
+         audit_event_id,tenant_id,event_type,schema_version,aggregate_type,
+         aggregate_id,occurred_at,actor,correlation_id,sensitivity,payload)
+       VALUES($1,$2,$3,1,$4,$5,clock_timestamp(),$6::jsonb,$7,'restricted',$8::jsonb)`,
+      [createCanonicalId("audit-event"),input.tenantId,"admin_ops.flag_change",
+       "admin_feature_flag",input.name,JSON.stringify({userId:input.actorId}),
+       createCanonicalId("correlation"),
+       JSON.stringify({before:row.enabled,after:input.enabled,reason:input.reason,
+         revision:updated.revision,idempotencyKey:input.idempotencyKey})]
+    );
     return fromRow(updated);
    });
   },
   async audit(tenantId,limit) {
-   const result=await pool.query<{event_id:string;action:string;actor_id:string;created_at:Date|string;subject:string}>("SELECT event_id,action,actor_id,created_at,subject FROM admin_operations.audit WHERE tenant_id=$1 ORDER BY created_at DESC,event_id DESC LIMIT $2",[tenantId,limit]);
-   return result.rows.map(row=>({eventId:row.event_id,action:row.action,actorId:row.actor_id,at:new Date(row.created_at).toISOString(),subject:row.subject} satisfies AuditRecord));
+   const result=await pool.query<{audit_event_id:string;event_type:string;actor_id:string|null;recorded_at:Date|string;aggregate_id:string}>(
+     `SELECT audit_event_id,event_type,actor->>'userId' AS actor_id,
+         recorded_at,aggregate_id
+       FROM events.audit_events
+       WHERE tenant_id=$1 AND aggregate_type='admin_feature_flag'
+       ORDER BY recorded_at DESC,audit_event_id DESC LIMIT $2`,
+     [tenantId,limit]);
+   return result.rows.map(row=>({eventId:row.audit_event_id,action:row.event_type,
+     actorId:row.actor_id??"unknown",at:new Date(row.recorded_at).toISOString(),
+     subject:row.aggregate_id} satisfies AuditRecord));
   }
  };
 }

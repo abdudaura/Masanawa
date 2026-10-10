@@ -10,17 +10,7 @@ CREATE TABLE IF NOT EXISTS admin_operations.flags (
  changed_at timestamptz,
  PRIMARY KEY(tenant_id,flag_name)
 );
-CREATE TABLE IF NOT EXISTS admin_operations.audit (
- tenant_id text NOT NULL,
- event_id uuid NOT NULL,
- actor_id text NOT NULL,
- action text NOT NULL,
- subject text NOT NULL,
- details jsonb NOT NULL DEFAULT '{}'::jsonb,
- created_at timestamptz NOT NULL DEFAULT NOW(),
- PRIMARY KEY(tenant_id,event_id)
-);
-CREATE INDEX IF NOT EXISTS admin_operations_audit_tenant_time ON admin_operations.audit(tenant_id,created_at DESC);
+-- Audit changes go to the existing events.audit_events table.
 CREATE TABLE IF NOT EXISTS admin_operations.flag_requests (
  tenant_id text NOT NULL,
  actor_id text NOT NULL,
