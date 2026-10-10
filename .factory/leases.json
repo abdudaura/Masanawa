@@ -239,6 +239,24 @@
       "claimed_at": "2026-10-10T04:22:31.829Z",
       "heartbeat_at": "2026-10-10T04:22:31.829Z",
       "expires_at": "2026-10-10T04:27:31.829Z"
+    },
+    {
+      "claim_id": "af09-609-publish-status-20261010-gpt6-0521",
+      "owner": "AF09 PR #609 / GPT-6 publish-status continuation",
+      "scope": "Connect authenticated publish receipt lookup to composer processing-status refresh and account-safe terminal readback, no second publish or AF00 root edits",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-publish-status-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "0cdc3e1b5d32142177837c5341d70ccbca510e10",
+      "claimed_at": "2026-10-10T04:24:29.040Z",
+      "heartbeat_at": "2026-10-10T04:24:29.040Z",
+      "expires_at": "2026-10-10T04:29:29.040Z",
+      "notes": "Independent AF09 composer+widget tests. Does not touch 0517 creator navigation or 0519 comment pagination source."
     }
   ],
   "history": [
