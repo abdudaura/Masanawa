@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createIsolatedPostgresTestDatabase } from "../../../../../test/support/isolated-postgres.js";
 import { createCanonicalId, nowInstant, toInstant } from "@masanawa/contracts";
 import type { CommerceFulfillmentAdmission, CommerceLedgerTransfer, CommerceQuote } from "@masanawa/commerce";
 import { runMigrations } from "../migrations.js";
@@ -11,13 +12,15 @@ const describeDatabase = connectionString ? describe : describe.skip;
 
 describeDatabase("commerce paid fulfillment PostgreSQL acceptance", () => {
   let pool: Pool;
+  let isolated: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>> | undefined;
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    isolated = await createIsolatedPostgresTestDatabase(connectionString!);
+    pool = isolated.pool;
     await runMigrations(pool, [{ owner: "commerce", directory: fileURLToPath(
       new URL("../../../../../packages/commerce/migrations", import.meta.url),
     ) }]);
   });
-  afterAll(async () => { await pool?.end(); });
+  afterAll(async () => { await isolated?.close(); });
 
   async function fixture(fallback = false, customerCredits = 100, floatCredits = 50) {
     const repository = createPostgresCommerceRepository(pool);
