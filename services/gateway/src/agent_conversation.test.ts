@@ -431,10 +431,13 @@ describe("Alpha conversation service", () => {
     expect(disconnected.reply).toBe(settledText);
     expect(trace.filter((entry) => entry === "run:failed")).toHaveLength(0);
     expect(timings).toHaveLength(2);
+    // First text is measured only when the client actually accepts delivery;
+    // a disconnected transport must not fabricate a successful first-text time.
+    expect(timings[0]?.firstTextMs).toBeGreaterThanOrEqual(0);
+    expect(timings[1]?.firstTextMs).toBeUndefined();
     for (const timing of timings) {
       expect(timing).toMatchObject({ event: "agent.turn.latency", outcome: "completed" });
       expect(timing.totalMs).toBeGreaterThanOrEqual(0);
-      expect(timing.firstTextMs).toBeGreaterThanOrEqual(0);
       expect(timing.stagesMs).toHaveProperty("authorization");
       expect(timing.stagesMs).toHaveProperty("sessionRead");
       expect(timing.stagesMs).toHaveProperty("model");
