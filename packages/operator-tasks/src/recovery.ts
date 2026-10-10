@@ -17,9 +17,22 @@ export interface RecoveryOperation {
   readonly capabilityId: string;
   readonly version: number;
 }
+/**
+ * Domain receipt readback MUST echo the durable operation identity, not merely
+ * a bare success code. The canonical adapter checks its own backing record;
+ * this worker independently rejects accidental cross-user/operation results.
+ */
+export interface RecoveryVerifiedReadback {
+  readonly tenantId: string;
+  readonly userId: string;
+  readonly taskId: string;
+  readonly operationId: string;
+  readonly capabilityId: string;
+  readonly outcome: OperatorDomainOutcome;
+}
 export interface RecoveryStatusSource {
-  /** MUST be read-only and verify the exact operation/tenant/owner domain receipt. */
-  readback(operation: RecoveryOperation): Promise<OperatorDomainOutcome>;
+  /** Read-only authoritative receipt; NEVER a quote, submit or re-execute API. */
+  readback(operation: RecoveryOperation): Promise<RecoveryVerifiedReadback>;
 }
 export interface RecoveryJournal {
   claim(input: Readonly<{ before: string; now: string; limit: number }>): Promise<readonly RecoveryOperation[]>;
@@ -53,6 +66,24 @@ function validReceipt(ref: string): boolean {
 }
 function safeCode(code: string): string {
   return /^[A-Z][A-Z0-9_]{1,63}$/u.test(code) ? code : "DOMAIN_STATUS_UNAVAILABLE";
+}
+/** A verified domain record must bind a result to the *claimed* operation. */
+function boundOutcome(
+  operation: RecoveryOperation,
+  result: RecoveryVerifiedReadback,
+): OperatorDomainOutcome {
+  if (!result || result.tenantId !== operation.tenantId ||
+      result.userId !== operation.userId || result.taskId !== operation.taskId ||
+      result.operationId !== operation.operationId ||
+      result.capabilityId !== operation.capabilityId ||
+      !result.outcome || typeof result.outcome !== "object") {
+    return { status: "unknown" };
+  }
+  const outcome = result.outcome;
+  if (outcome.status === "unknown") return { status: "unknown" };
+  if (outcome.status === "confirmed" && typeof outcome.receiptRef === "string") return outcome;
+  if (outcome.status === "rejected" && typeof outcome.code === "string") return outcome;
+  return { status: "unknown" };
 }
 
 async function inTransaction<T>(pool: Pool, work: (client: PoolClient) => Promise<T>): Promise<T> {
@@ -204,7 +235,8 @@ export function createStatusOnlyRecovery(input: Readonly<{
           const deadline = new Promise<never>((_resolve, reject) => {
             timer = setTimeout(() => reject(new Error("RECOVERY_LOOKUP_TIMEOUT")), timeoutMs);
           });
-          outcome = await Promise.race([input.status.readback(operation), deadline]);
+          const readback = await Promise.race([input.status.readback(operation), deadline]);
+          outcome = boundOutcome(operation, readback);
         } catch {
           outcome = { status: "unknown" };
         } finally {
