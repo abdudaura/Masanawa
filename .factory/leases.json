@@ -1141,9 +1141,9 @@
       "source_pr": 460,
       "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
       "claimed_at": "2026-10-10T16:12:51.215Z",
-      "heartbeat_at": "2026-10-10T16:12:51.215Z",
-      "expires_at": "2026-10-10T16:17:51.215Z",
-      "notes": "R0 AF00 notified via #616 comment 6099540291; source strictly preserves retired Talk semantics but eliminates compilation blockers."
+      "heartbeat_at": "2026-10-10T16:17:19.789Z",
+      "expires_at": "2026-10-10T16:22:19.789Z",
+      "notes": "PR #623 head 483199fa8a57c80b520c644e5964fcbed370f5a4, Mobile Build 38066841365 and Foundation 38066841357 running, no root/router/financial edits."
     },
     {
       "claim_id": "l-rooms-free-question-lifecycle-20261010-gpt6",
