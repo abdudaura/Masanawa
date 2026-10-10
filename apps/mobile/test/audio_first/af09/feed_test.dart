@@ -353,7 +353,7 @@ void main() {
       (tester) async {
     var reads = 0;
     final source = FakePosts()
-      ..removeHandler = (_) async => throw StateError('response lost')
+      ..removeHandler = ((_) async => throw StateError('response lost'))
       ..mineHandler = (() async {
         reads++;
         return [reads == 1 ? post('mine') : AudioPost(
@@ -381,7 +381,7 @@ void main() {
       (tester) async {
     var reads = 0;
     final source = FakePosts()
-      ..removeHandler = (_) async => throw StateError('network timeout')
+      ..removeHandler = ((_) async => throw StateError('network timeout'))
       ..mineHandler = (() async {
         reads++;
         if (reads == 1) return [post('mine')];
@@ -415,7 +415,7 @@ void main() {
     final oldReadback = Completer<List<AudioPost>>();
     var reads = 0;
     final source = FakePosts()
-      ..removeHandler = (_) async => throw StateError('timeout')
+      ..removeHandler = ((_) async => throw StateError('timeout'))
       ..mineHandler = (() {
         reads++;
         return reads == 1 ? Future.value([post('mine')]) : oldReadback.future;
