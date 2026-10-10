@@ -1,7 +1,7 @@
 import type {
   AudioPostModeration, AudioAssetAuthority, AudioPostRecord, AudioPostRepository,
   AudioPostComment, PublicAudioPostComment,
-  PostActor, PublicFeedPage, VerifiedAudioAsset,
+  PostActor, PublicAudioFeedPage, toPublicAudioPost, VerifiedAudioAsset,
 } from "./contract.js";
 
 export class AudioPostError extends Error {
@@ -116,7 +116,7 @@ export function createAudioPostService(deps: {
 
   const feed = async (input: {
     tenantId: string; viewerId: string | null; cursor?: string | null; limit?: number;
-  }): Promise<PublicFeedPage> => {
+  }): Promise<PublicAudioFeedPage> => {
     safeId(input.tenantId, "tenant");
     if (input.viewerId !== null) safeId(input.viewerId, "viewer");
     const limit = input.limit ?? 20;
@@ -124,19 +124,22 @@ export function createAudioPostService(deps: {
       throw new AudioPostError("VALIDATION", "Invalid feed page size");
     }
     if (input.cursor !== undefined && input.cursor !== null) safeId(input.cursor, "cursor", 256);
-    return repository.publicFeed({
+    const page = await repository.publicFeed({
       tenantId: input.tenantId, viewerId: input.viewerId, limit, cursor: input.cursor ?? null,
     });
+    return { items: page.items.map(toPublicAudioPost), nextCursor: page.nextCursor };
   };
 
   const mine = async (actor: PostActor) => {
     assertActor(actor);
-    return repository.mine({ tenantId: actor.tenantId, accountId: actor.accountId, limit: 50 });
+    const posts = await repository.mine({ tenantId: actor.tenantId, accountId: actor.accountId, limit: 50 });
+    return posts.map(toPublicAudioPost);
   };
 
   const saved = async (actor: PostActor) => {
     assertActor(actor);
-    return repository.saved({ tenantId: actor.tenantId, viewerId: actor.accountId, limit: 50 });
+    const posts = await repository.saved({ tenantId: actor.tenantId, viewerId: actor.accountId, limit: 50 });
+    return posts.map(toPublicAudioPost);
   };
 
   const removeOwn = async (actor: PostActor, postId: string) => {
