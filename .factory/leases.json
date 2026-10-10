@@ -384,11 +384,14 @@
       ],
       "branch": "work/window-end-to-end-closure-ci-20261010",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": null,
+      "source_pr": 614,
       "claimed_at": "2026-10-10T07:01:59.921Z",
-      "heartbeat_at": "2026-10-10T07:03:05.631Z",
-      "expires_at": "2026-10-10T07:08:05.631Z",
-      "notes": "Reviewed transfer: original #460 base predates AGENTS and reusable prompt; updating #460 risks add/add conflict and repeated technical debt. The dedicated owner-directed window lifecycle policy PR will be a coherent governance change on fresh main (not integrator/helper)."
+      "heartbeat_at": "2026-10-10T07:12:32.988Z",
+      "expires_at": "2026-10-10T07:17:32.988Z",
+      "notes": "Owner-directed policy PR #614 4 docs from current main; posted guidance to existing PRs #600/#609/#612/#460/#576/#497 and issue #457; actual CI evidence logged. Historical #460 source preserved.",
+      "source_head_sha": "32b2e6c0987cb8b232174434d0712c40e657a737",
+      "integration_head_sha": null,
+      "test_state": "GitHub source/readback 4/4 structural only; Foundation CI 38033356630 executed and failed known unrelated main TS2459; Test/Build skipped; no safe main merge (Railway gateway Git main checkSuites:false)"
     }
   ],
   "history": [
