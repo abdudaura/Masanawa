@@ -181,9 +181,9 @@
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
       "claimed_at": "2026-10-10T03:23:31.027Z",
-      "heartbeat_at": "2026-10-10T03:23:31.027Z",
-      "expires_at": "2026-10-10T03:28:31.027Z",
-      "notes": "Existing PR #609 only. AF00 owns shared app/route registration and canonical profile resolver; AF05/15 private media. No DB migration changes."
+      "heartbeat_at": "2026-10-10T03:29:13.272Z",
+      "expires_at": "2026-10-10T03:34:13.272Z",
+      "notes": "Same #609 source pushed at 5d695aa9; refreshing UI retry/source correctness before final handoff."
     }
   ],
   "history": [
