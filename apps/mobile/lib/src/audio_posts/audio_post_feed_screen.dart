@@ -63,6 +63,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   final Map<String, _TalkViewSnapshot> _tabSnapshots = {};
   final Map<String, double> _tabOffsets = {};
   final ScrollController _scroll = ScrollController();
+  String? _pendingOffsetTab;
   String get _tabKey => _mine ? 'mine' : _saved ? 'saved' :
       _following ? 'following' : 'discover';
 
@@ -73,8 +74,11 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   }
 
   void _restoreTabOffset(String tab) {
+    _pendingOffsetTab = tab;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_authorized || _tabKey != tab || !_scroll.hasClients) return;
+      if (!mounted || !_authorized || _tabKey != tab ||
+          _pendingOffsetTab != tab || !_scroll.hasClients) return;
+      _pendingOffsetTab = null;
       final target = _tabOffsets[tab] ?? 0.0;
       _scroll.jumpTo(target.clamp(0.0, _scroll.position.maxScrollExtent)
           .toDouble());
@@ -232,6 +236,12 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       });
       _tabSnapshots[_tabKey] = _TalkViewSnapshot(
         _items, _next, _fromSnapshot, _freshDiscoverRead);
+      // A tab with no prior rows had no attached ListView when the initial
+      // restore ran. Apply its saved offset (usually zero) after first render;
+      // background refreshes of an already visible tab never jump.
+      if (!more && _pendingOffsetTab == _tabKey) {
+        _restoreTabOffset(_tabKey);
+      }
       if (!_mine && !_saved && !_following && _authorized) {
         // Best-effort presentation cache; failures never suppress live results.
         unawaited(_cache.write(widget.accountId, _items).catchError((Object _) {}));
