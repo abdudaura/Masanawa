@@ -114,26 +114,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "masanawa01-af13-qualifier-guard-integration-20261010",
-      "owner": "MASANAWA-01 / AF13 qualifier integration",
-      "scope": "Integrate existing released #603 bounded symlink-safe evidence guard into #596 acceptance qualifier, preserve one authoritative read-only release gate, execute negative cases; no runtime, CI, provider or production mutations.",
-      "paths": [
-        "tools/audio-first-qualification/qualify.mjs",
-        "tools/audio-first-qualification/qualify.test.mjs",
-        "tests/security/audio_first/evidence_path_guard.mjs",
-        "tests/security/audio_first/evidence_path_guard.test.mjs",
-        "docs/workstreams/AF13-evidence-ledger-20261009.md"
-      ],
-      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "source_pr": 596,
-      "source_head": "0729f1d8a504d6e84e508abf35e6fcdaf99292dd",
-      "claimed_at": "2026-10-10T01:44:07.822Z",
-      "heartbeat_at": "2026-10-10T01:46:46.711Z",
-      "expires_at": "2026-10-10T01:51:46.711Z",
-      "notes": "Source integration commits e24534c4,3c9cc601,9577e38b,ee83f79e committed and fetched; 5/5 native Node tests on separately reconstructed mirror, exact PR bytes not yet run. Preparing SHA-specific handoff."
-    },
-    {
       "claim_id": "af09-20261010-audio-posts-gpt6",
       "owner": "AF09-20261010-0150-gpt6",
       "scope": "AF09 publish-once persistent audio-post service, authenticated routes and client feed transport; no shared root or media recorder paths",
@@ -950,6 +930,29 @@
       "released_at": "2026-10-10T01:44:37.170Z",
       "pr": "https://github.com/Baatiku/masanawa/pull/608",
       "release_reason": "Owner-directed docs-only delivery correction merged c7f7280; runtime unchanged, 30 links and16 lane/prompt references checked."
+    },
+    {
+      "claim_id": "masanawa01-af13-qualifier-guard-integration-20261010",
+      "owner": "MASANAWA-01 / AF13 qualifier integration",
+      "scope": "Integrate existing released #603 bounded symlink-safe evidence guard into #596 acceptance qualifier, preserve one authoritative read-only release gate, execute negative cases; no runtime, CI, provider or production mutations.",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "tests/security/audio_first/evidence_path_guard.mjs",
+        "tests/security/audio_first/evidence_path_guard.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 596,
+      "source_head": "0729f1d8a504d6e84e508abf35e6fcdaf99292dd",
+      "claimed_at": "2026-10-10T01:44:07.822Z",
+      "heartbeat_at": "2026-10-10T01:46:46.711Z",
+      "expires_at": "2026-10-10T01:51:46.711Z",
+      "notes": "Source integration commits e24534c4,3c9cc601,9577e38b,ee83f79e committed and fetched; 5/5 native Node tests on separately reconstructed mirror, exact PR bytes not yet run. Preparing SHA-specific handoff.",
+      "released_at": "2026-10-10T01:49:38.377Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/596",
+      "release_reason": "Connected existing AF13 qualifier #596 to released #603 evidence path guard; source/test changes and SHA-specific handoff at 097ffaee159c734b5200674ff07abe41735aab4a. 5/5 native harness tests on reconstructed logic only, exact-head 17 Node tests NOT_RUN; PARTIAL_IMPLEMENTATION, AF00 common baseline review assigned."
     }
   ]
 }
