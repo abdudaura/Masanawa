@@ -671,14 +671,18 @@
         "apps/mobile/lib/src/social/own_profile_transport.dart",
         "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
         "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart"
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "apps/mobile/test/owner_access_http_transport_test.dart",
+        "apps/mobile/test/talk_direct_twin_http_transport_test.dart",
+        "apps/mobile/test/twin_directory_http_transport_test.dart",
+        "apps/mobile/test/talk_screen_test.dart"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "source_pr": 600,
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "claimed_at": "2026-10-10T08:54:42.350Z",
-      "heartbeat_at": "2026-10-10T09:01:43.334Z",
-      "expires_at": "2026-10-10T09:06:43.334Z",
+      "heartbeat_at": "2026-10-10T09:05:06.871Z",
+      "expires_at": "2026-10-10T09:10:06.871Z",
       "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
     },
     {
