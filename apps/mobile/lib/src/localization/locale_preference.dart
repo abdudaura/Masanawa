@@ -97,7 +97,7 @@ final class LocalePreferenceController extends ChangeNotifier {
     }
   }
 
-  @override
+  // The public `override` preference getter shadows the annotation name.
   void dispose() {
     _disposed = true;
     super.dispose();
