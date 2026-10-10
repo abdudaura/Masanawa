@@ -248,5 +248,5 @@ export function createAudioPostService(deps: {
     if (!removed) throw new AudioPostError("NOT_FOUND", "Comment not found");
     return { removed: true };
   };
-  return Object.freeze({ publish, settle, feed, mine, saved, removeOwn, reaction, comments, comment, removeOwnComment });
+  return Object.freeze({ publish, settle, feed, receiptByRequest, mine, saved, removeOwn, reaction, comments, comment, removeOwnComment });
 }
