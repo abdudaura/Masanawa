@@ -13,7 +13,7 @@ const alwaysRetired = [
   /^\/admin\/channels\/whatsapp(?:\/|$)/,
   // Legacy user/creator entry points use both root and /v1 namespaces.
   // The replacement per-Masana Social Accounts API is under /v1/admin/masana.
-  /^\/(?:agent\/twins|creator\/onboarding)(?:\/|$)/,
+  /^\/(?:agent\/twins|creator)(?:\/|$)/,
   /^\/(?:whatsapp|telegram|customer\/channels)(?:\/|$)/,
   /^\/v1\/(?:channels|admin\/linked-whatsapp|admin\/commission-polic(?:y|ies))(?:\/|$)/,
   /^\/v1\/(?:customer-channels|linked-whatsapp|channel-bridge)(?:\/|$)/,
