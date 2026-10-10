@@ -62,22 +62,27 @@ class AudioPostReportAction extends StatelessWidget {
     required this.postId,
     required this.transport,
     this.enabled = true,
+    this.isAuthorized,
   });
   final String postId;
   final PublishedAudioReportTransport transport;
   final bool enabled;
+  /// Live session predicate. A report dialog must not outlive its account.
+  final bool Function()? isAuthorized;
 
   @override
   Widget build(BuildContext context) => TextButton.icon(
-    onPressed: !enabled ? null : () async {
+    onPressed: !enabled || (isAuthorized != null && !isAuthorized!()) ? null : () async {
       final success = await showDialog<bool>(
         context: context,
         builder: (_) => _PublishedAudioReportDialog(
           postId: postId,
           transport: transport,
+          isAuthorized: isAuthorized,
         ),
       );
-      if (context.mounted && success == true) {
+      if (context.mounted && success == true &&
+          (isAuthorized == null || isAuthorized!())) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Report received for review.')),
         );
@@ -92,9 +97,11 @@ class _PublishedAudioReportDialog extends StatefulWidget {
   const _PublishedAudioReportDialog({
     required this.postId,
     required this.transport,
+    this.isAuthorized,
   });
   final String postId;
   final PublishedAudioReportTransport transport;
+  final bool Function()? isAuthorized;
 
   @override
   State<_PublishedAudioReportDialog> createState() =>
@@ -126,6 +133,10 @@ class _PublishedAudioReportDialogState extends State<_PublishedAudioReportDialog
 
   Future<void> _submit() async {
     if (_sending) return;
+    if (widget.isAuthorized != null && !widget.isAuthorized!()) {
+      setState(() => _error = 'Account changed. Close this report and reopen it.');
+      return;
+    }
     final detail = _detail.text.trim();
     if (detail.length > 400) {
       setState(() => _error = 'Details must be 400 characters or fewer.');
@@ -147,7 +158,14 @@ class _PublishedAudioReportDialogState extends State<_PublishedAudioReportDialog
         clientRequestId: requestKey,
         detail: detail.isEmpty ? null : detail,
       );
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted && (widget.isAuthorized == null || widget.isAuthorized!())) {
+        Navigator.of(context).pop(true);
+      } else if (mounted) {
+        setState(() {
+          _sending = false;
+          _error = 'Account changed. Close this report and reopen it.';
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
