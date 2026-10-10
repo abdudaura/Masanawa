@@ -423,7 +423,10 @@ export function createPostgresAgentRunRepository(
           await admit(client, request, "read", run.trace);
           return run;
         },
-        { isolation: "repeatable read", readOnly: true },
+        // Authority revocation fencing acquires FOR SHARE on policy state.
+        // PostgreSQL forbids row locks in READ ONLY transactions, even when
+        // the AgentRun itself is queried without a lock.
+        { isolation: "repeatable read" },
       );
     },
 
