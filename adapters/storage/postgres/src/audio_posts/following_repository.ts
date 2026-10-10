@@ -29,7 +29,7 @@ function cursor(r: PostRow): string {
 }
 function parseCursor(value: string | null): { created: string; id: string } | null {
   if (value === null) return null;
-  const match = /^(\\d{13}):([a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127})$/.exec(value);
+  const match = /^(\d{13}):([a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127})$/.exec(value);
   if (!match) throw Error("audio_posts.invalid_following_cursor");
   const ms = Number(match[1]);
   if (!Number.isSafeInteger(ms) || !Number.isFinite(new Date(ms).getTime())) {
