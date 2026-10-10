@@ -8,16 +8,6 @@
       "types": "./src/index.ts",
       "production": "./dist/index.js",
       "default": "./src/index.ts"
-    },
-    "./postgres": {
-      "types": "./src/postgres.ts",
-      "production": "./dist/postgres.js",
-      "default": "./src/postgres.ts"
-    },
-    "./recovery": {
-      "types": "./src/recovery.ts",
-      "production": "./dist/recovery.js",
-      "default": "./src/recovery.ts"
     }
   },
   "scripts": {
