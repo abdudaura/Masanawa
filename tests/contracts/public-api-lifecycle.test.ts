@@ -208,9 +208,6 @@ describe("public API lifecycle", () => {
     }
 
     expect(offenders).toEqual([]);
-    // An exception must disappear once its last legacy route is migrated.
-    // This disallows permanently growing an unused compatibility registry.
-    expect([...observedLegacy].sort()).toEqual(lifecycle.http.compatibilityUnversionedPaths);
   });
 
   it("versions service routes and audits every exact legacy unversioned exception", () => {
@@ -252,6 +249,8 @@ describe("public API lifecycle", () => {
     }
 
     expect(offenders).toEqual([]);
+    // Retire each compatibility entry after its last legacy route is removed.
+    expect([...observedLegacy].sort()).toEqual(lifecycle.http.compatibilityUnversionedPaths);
   });
 
   it("requires every source deprecation to be registered and auditable", () => {
