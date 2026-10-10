@@ -14,7 +14,7 @@ export interface SocialDeliveryGate {
   readPermission(job:SocialDeliveryJob):Promise<DeliveryPermission|null>;
   /** Atomic existing events journal lease keyed by tenant+provider+eventId. */
   claim(job:SocialDeliveryJob):Promise<"acquired"|"duplicate"|"busy">;
-  finish(job:SocialDeliveryJob,outcome:"blocked"|"sent"|"retry",reason?:string):Promise<void>;
+  finish(job:SocialDeliveryJob,outcome:"blocked"|"sent"|"held_unknown",reason?:string):Promise<void>;
 }
 export interface SocialAuthorizedTransport {
   send(job:SocialDeliveryJob):Promise<void>;
@@ -22,7 +22,7 @@ export interface SocialAuthorizedTransport {
 export async function runSocialDelivery(
   job:SocialDeliveryJob, gate:SocialDeliveryGate,
   transport:SocialAuthorizedTransport | null,now=new Date(),
-):Promise<"blocked"|"duplicate"|"busy"|"sent"|"retry"> {
+):Promise<"blocked"|"duplicate"|"busy"|"sent"|"held_unknown"> {
   if(!job.tenantId || !job.identityId || !job.characterId ||
       !job.externalFanHash || !job.eventId || !job.idempotencyKey) return "blocked";
   const lease=await gate.claim(job);
@@ -39,7 +39,7 @@ export async function runSocialDelivery(
   }catch{
     // Unknown provider outcome MUST be reconciled by provider event ID. Never
     // blindly resubmit a payout or social message after ambiguous timeout.
-    await gate.finish(job,"retry","unknown_provider_outcome_reconcile");
-    return "retry";
+    await gate.finish(job,"held_unknown","unknown_provider_outcome_reconcile");
+    return "held_unknown";
   }
 }
