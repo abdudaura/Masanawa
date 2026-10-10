@@ -519,6 +519,9 @@ importers:
       '@masanawa/nowpayments':
         specifier: workspace:*
         version: link:../../adapters/crypto/nowpayments
+      '@masanawa/operator-tasks':
+        specifier: workspace:*
+        version: link:../../packages/operator-tasks
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
