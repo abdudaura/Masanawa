@@ -97,6 +97,17 @@ class AudioPostPage {
   final String? nextCursor;
 }
 
+class AudioPostCommentPage {
+  const AudioPostCommentPage({required this.items, required this.nextCursor});
+  final List<AudioPostComment> items;
+  final String? nextCursor;
+}
+
+/// Separate capability so existing clients and test transports remain compatible.
+abstract class AudioPostCommentPager {
+  Future<AudioPostCommentPage> commentsPage({required String postId, String? cursor});
+}
+
 abstract class AudioPostTransport {
   Future<AudioPostPage> discover({String? cursor});
   Future<List<AudioPost>> mine();
@@ -117,7 +128,7 @@ abstract class AudioPostReceiptLookup {
   Future<AudioPost?> receiptByRequest({required String requestId});
 }
 
-class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptLookup {
+class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptLookup, AudioPostCommentPager {
   GatewayAudioPostTransport(this.api);
   final ApiClient api;
 
@@ -217,6 +228,40 @@ class GatewayAudioPostTransport implements AudioPostTransport, AudioPostReceiptL
       }
       return comment;
     }));
+  }
+  @override
+  Future<AudioPostCommentPage> commentsPage({
+    required String postId, String? cursor,
+  }) async {
+    final response = await api.dio.get<dynamic>(
+      '/audio-posts/${Uri.encodeComponent(postId)}/comments/page',
+      queryParameters: {if (cursor != null) 'cursor': cursor},
+    );
+    final raw = response.data;
+    if (raw is! Map) throw const FormatException('Invalid comments page');
+    final data = raw.cast<String, dynamic>();
+    final items = data['items'];
+    final next = data['nextCursor'];
+    if (items is! List || (next != null && (next is! String || next.isEmpty))) {
+      throw const FormatException('Invalid comments cursor');
+    }
+    final seen = <String>{};
+    final result = <AudioPostComment>[];
+    for (final item in items) {
+      if (item is! Map) throw const FormatException('Invalid comment');
+      final comment = AudioPostComment.fromJson(item.cast<String, dynamic>());
+      if (comment.postId != postId || comment.removed ||
+          !seen.add(comment.commentId)) {
+        throw const FormatException('Comment belongs to another Talk or is repeated');
+      }
+      result.add(comment);
+    }
+    if (result.length > 50 || (next != null &&
+        (result.isEmpty || result.last.commentId != next))) {
+      throw const FormatException('Invalid comment page boundary');
+    }
+    return AudioPostCommentPage(items: List.unmodifiable(result),
+      nextCursor: next as String?);
   }
   @override
   Future<AudioPostComment> comment({
