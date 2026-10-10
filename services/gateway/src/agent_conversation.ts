@@ -44,16 +44,35 @@ function assertConversationSessionOpen(session: {
   }
 }
 
+const UNCERTAIN_AGENT_RESULT =
+  "I couldn't verify that result. Check your recent activity before trying again.";
+
+/**
+ * Fail closed for unresolved model directives at every reply/readback surface.
+ * This is presentation filtering, not payment execution or retry authority.
+ */
+function authorizedPresentation(reply: string, parts: readonly unknown[]) {
+  const normalized = reply.trim();
+  if (!normalized) throw new Error("empty strategy reply");
+  const unresolvedDirective = /<\s*\/?\s*masanawa_/iu.test(normalized);
+  return Object.freeze({
+    reply: unresolvedDirective ? UNCERTAIN_AGENT_RESULT : normalized,
+    parts: unresolvedDirective ? ([] as readonly unknown[]) : parts,
+    unresolvedDirective,
+  });
+}
+
 function replayTurn(command: MobileTurnCommand) {
   if (
     command.state === "completed" &&
     command.reply !== null &&
     command.agentRunId !== null
   ) {
+    const safe = authorizedPresentation(command.reply, command.parts);
     return Object.freeze({
-      reply: command.reply,
+      reply: safe.reply,
       agentRunId: command.agentRunId,
-      parts: command.parts,
+      parts: safe.parts,
     });
   }
   if (command.state === "failed") {
@@ -400,15 +419,9 @@ export function createAgentConversationService(input: {
               })) ??
               generated;
         stagesMs.postInference = elapsed(postStart);
-        const rawReply = result.reply.trim();
-        if (!rawReply) throw new Error("empty strategy reply");
-        // Unresolved machine directives must not reach history, the final
-        // NDJSON response, or native audio, even if a processor declines them.
-        const unresolvedDirective = /<\s*\/?\s*masanawa_/iu.test(rawReply);
-        const reply = unresolvedDirective
-          ? "I couldn't verify that result. Check your recent activity before trying again."
-          : rawReply;
-        const parts = unresolvedDirective ? [] : result.parts;
+        // Same boundary for durable text, model replay and media replies.
+        const { reply, parts, unresolvedDirective } =
+          authorizedPresentation(result.reply, result.parts);
 
         const persistStart = performance.now();
         await input.runs.finish({
@@ -617,8 +630,8 @@ export function createAgentConversationService(input: {
             characterId: admission.scope.characterId,
             modelReply: generated.reply,
           })) ?? generated;
-        const reply = result.reply.trim();
-        if (!reply) throw new Error("empty strategy reply");
+        const { reply, parts } =
+          authorizedPresentation(result.reply, result.parts);
 
         await input.runs.finish({
           authority: admission.authority,
@@ -633,7 +646,7 @@ export function createAgentConversationService(input: {
             requestId: request.requestId,
             agentRunId,
             reply,
-            parts: result.parts,
+            parts,
           });
           await input.mobileShell.appendEvent({
             scope: admission.scope,
@@ -643,7 +656,7 @@ export function createAgentConversationService(input: {
               requestId: request.requestId,
               agentRunId,
               reply,
-              parts: [...result.parts],
+              parts: [...parts],
             },
           });
         }
@@ -659,7 +672,7 @@ export function createAgentConversationService(input: {
         return Object.freeze({
           reply,
           agentRunId,
-          parts: result.parts,
+          parts,
           ...(audio
             ? {
                 audioBase64: audio.dataBase64,
@@ -809,8 +822,8 @@ export function createAgentConversationService(input: {
             characterId: admission.scope.characterId,
             modelReply: generated.reply,
           })) ?? generated;
-        const reply = result.reply.trim();
-        if (!reply) throw new Error("empty strategy reply");
+        const { reply, parts } =
+          authorizedPresentation(result.reply, result.parts);
 
         await input.runs.finish({
           authority: admission.authority,
@@ -824,7 +837,7 @@ export function createAgentConversationService(input: {
             requestId: request.requestId,
             agentRunId,
             reply,
-            parts: result.parts,
+            parts,
           });
           await input.mobileShell.appendEvent({
             scope: admission.scope,
@@ -834,7 +847,7 @@ export function createAgentConversationService(input: {
               requestId: request.requestId,
               agentRunId,
               reply,
-              parts: [...result.parts],
+              parts: [...parts],
             },
           });
         }
@@ -843,7 +856,7 @@ export function createAgentConversationService(input: {
         return Object.freeze({
           reply,
           agentRunId,
-          parts: result.parts,
+          parts,
           ...(audio
             ? {
                 audioBase64: audio.dataBase64,
