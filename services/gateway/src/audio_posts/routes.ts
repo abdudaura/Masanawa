@@ -56,6 +56,31 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
     try { return await deps.service.saved(await actor(request.headers.authorization)); }
     catch (error) { return fail(reply, error); }
   });
+  app.get("/audio-posts/:postId/comments", async (request, reply) => {
+    try {
+      const params = request.params as { postId?: unknown };
+      if (typeof params.postId !== "string") throw new AudioPostError("VALIDATION", "Invalid post");
+      return await deps.service.comments(await actor(request.headers.authorization), params.postId);
+    } catch (error) { return fail(reply, error); }
+  });
+  app.post("/audio-posts/:postId/comments", async (request, reply) => {
+    try {
+      const params = request.params as { postId?: unknown };
+      if (typeof params.postId !== "string") throw new AudioPostError("VALIDATION", "Invalid post");
+      const result = await deps.service.comment(await actor(request.headers.authorization), params.postId, request.body);
+      reply.code(201);
+      return result;
+    } catch (error) { return fail(reply, error); }
+  });
+  app.delete("/audio-posts/:postId/comments/:commentId", async (request, reply) => {
+    try {
+      const params = request.params as { postId?: unknown; commentId?: unknown };
+      if (typeof params.postId !== "string" || typeof params.commentId !== "string") {
+        throw new AudioPostError("VALIDATION", "Invalid comment identifier");
+      }
+      return await deps.service.removeOwnComment(await actor(request.headers.authorization), params.postId, params.commentId);
+    } catch (error) { return fail(reply, error); }
+  });
   app.delete("/audio-posts/:postId", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
