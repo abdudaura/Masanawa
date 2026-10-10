@@ -553,7 +553,17 @@
       "claimed_at": "2026-10-10T08:05:35.359Z",
       "heartbeat_at": "2026-10-10T08:05:35.359Z",
       "expires_at": "2026-10-10T08:10:35.359Z",
-      "notes": "Limited finance-owned database readback and existing PG integration tests; no API/migration/worker/production change; AF00 owns integration. CI sample: 14 numeric text cases returned 100.000000000000000000 rather than 100 in PR460 run 38036434565."
+      "notes": "Limited finance-owned database readback and existing PG integration tests; no API/migration/worker/production change; AF00 owns integration. CI sample: 14 numeric text cases returned 100.000000000000000000 rather than 100 in PR460 run 38036434565.",
+      "source_head_sha": "ed8dc29f25b6d116c2194b7ee8491511fc60144c",
+      "source_commits": [
+        "9be66b7d620d88055921407ec856a9f3f4f3fce3",
+        "ce55646473ceec7e07c33d70108faf5616eb8fe0",
+        "ed8dc29f25b6d116c2194b7ee8491511fc60144c"
+      ],
+      "released_at": "2026-10-10T08:09:24.328Z",
+      "release_reason": "Source and PG integration tests committed and verified by remote blob readback; real Node24/pnpm12/PG18 Foundation run 38036730419 failed independent baseline TalkId TS2459 at Typecheck. Subsequent test stages skipped/unverified. AF13/U02 shared blocker; AF00 nondeploying integration after executed PG. No finance release.",
+      "integration_head_sha": null,
+      "test_state": "FAIL_PREREQUISITE_TS2459; PG tests NOT_RUN"
     },
     {
       "claim_id": "af13-pr460-agentrun-read-only-pg18-20261010-gpt6",
