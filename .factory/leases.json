@@ -90,29 +90,6 @@
       "expires_at": "2026-10-10T01:41:55Z"
     },
     {
-      "claim_id": "af09-comment-thread-20261010-gpt6c",
-      "owner": "AF09 continuation existing PR #609",
-      "scope": "Connected Published Talks comments API/DB/Flutter with bounded account fencing, and fix feed compile errors. Continue prior released AF09 paths; independent worker remains owned by another claim.",
-      "paths": [
-        "adapters/storage/postgres/src/audio_posts/repository.ts",
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "docs/workstreams/AF09-published-audio-core-20261010.md",
-        "services/gateway/src/audio_posts/contract.ts",
-        "services/gateway/src/audio_posts/routes.ts",
-        "services/gateway/src/audio_posts/service.test.mjs",
-        "services/gateway/src/audio_posts/service.ts"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:19:01.736Z",
-      "heartbeat_at": "2026-10-10T02:29:01.915Z",
-      "expires_at": "2026-10-10T02:34:01.915Z",
-      "notes": "Continuing existing AF09 #609 after comment journey. Exact claimed files only: public feed response privacy/data contract + social counts; no worker, Following, composer, root, migration or native edits. Latest PR head must be rechecked before updates."
-    },
-    {
       "claim_id": "af09-playback-access-20261010-gpt6e",
       "owner": "MASANAWA-AF09-PLAYBACK-20261010 / existing PR #609",
       "scope": "Connected authenticated published Talk playback-ticket API using canonical AF15 media grant, tenant visibility and publication-revision fencing; no new media signer/player/route composition",
@@ -1228,6 +1205,33 @@
       "released_at": "2026-10-10T02:30:32.255Z",
       "integration_head_sha": "2c5cce79aa51ded3856a9699d35f6cea609d243e",
       "release_reason": "Continued original PR #609 with eight non-overlapping Following paths; 3/3 executable Node smoke on byte-identical following.ts and isolated tsc PASS, authored full Node/Flutter tests NOT_RUN; AF00 composition and migration, qualified checkout/runners and release gates pending. Detailed handoff on #609; no main/production merge."
+    },
+    {
+      "claim_id": "af09-comment-thread-20261010-gpt6c",
+      "owner": "AF09 continuation existing PR #609",
+      "scope": "Connected Published Talks comments API/DB/Flutter with bounded account fencing, and fix feed compile errors. Continue prior released AF09 paths; independent worker remains owned by another claim.",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-published-audio-core-20261010.md",
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "services/gateway/src/audio_posts/service.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:19:01.736Z",
+      "heartbeat_at": "2026-10-10T02:29:01.915Z",
+      "expires_at": "2026-10-10T02:34:01.915Z",
+      "notes": "Continuing existing AF09 #609 after comment journey. Exact claimed files only: public feed response privacy/data contract + social counts; no worker, Following, composer, root, migration or native edits. Latest PR head must be rechecked before updates.",
+      "released_at": "2026-10-10T02:32:08.199Z",
+      "release_reason": "Continuing PR #609 comment path committed and GitHub-readback checked; no executable repository test runner; CI job reports zero steps, SQL migration and AF00 bindings absent. Exact-head blocker/owner/action recorded in PR comment 6092779199; NO MERGE to main.",
+      "source_head": "75a0fa1710614db769e1ab46f734fd4986ec8cad",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609"
     }
   ]
 }
