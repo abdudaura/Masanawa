@@ -149,26 +149,6 @@
       "heartbeat_at": "2026-10-10T02:20:39.453Z",
       "expires_at": "2026-10-10T02:25:39.456Z",
       "notes": "First source action: new independent Flutter composer and tests, same PR #609; AF05 verified recording callback dependency."
-    },
-    {
-      "claim_id": "u04-canonical-task-history-20261010-0321",
-      "owner": "U04-CONTINUE-20261010-0312",
-      "scope": "Continue existing U04 PR #523: server-authorized canonical U02 task-history/readback projection and negative tests; root Gateway composition remains AF00-owned",
-      "paths": [
-        "services/gateway/src/operator_actions/task_history.ts",
-        "services/gateway/src/operator_actions/task_history.test.ts",
-        "services/gateway/src/operator_actions/read_service.ts",
-        "services/gateway/src/operator_actions/read_service.test.ts",
-        "docs/workstreams/recovery-01-u04-20261009.md"
-      ],
-      "branch": "work/u04-scoped-service-adapters-20261009-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 523,
-      "source_head": "254f10551874b63688b58dfd7cc91cba0c847fc6",
-      "claimed_at": "2026-10-10T02:21:50Z",
-      "heartbeat_at": "2026-10-10T02:21:50Z",
-      "expires_at": "2026-10-10T02:26:50Z",
-      "notes": "Late registry discovery: PR comment 6092617981 preceded source edits and identified exact paths. CAS registry published after the initial source edits; no competing active claims found. Node22 focused test 7/7 PASS and isolated strict tsc PASS for exact task_history blobs; full Gateway tests blocked by no checkout/pnpm. No shared composition/money/router/migration edits."
     }
   ],
   "history": [
@@ -1155,6 +1135,29 @@
       "notes": "Created and executed new processing worker and Postgres adapter locally: Node22.16 node --experimental-strip-types --test 10/10 PASS; preparing SHA-matched existing PR source commit",
       "released_at": "2026-10-10T02:19:40.057Z",
       "release_reason": "Same PR #609, exact source head 931f5efbb7e94162be3d76a613a7608078f0dacf; three new files source/10 native Node simulated-PG tests PASS, exact GitHub SHA matches; isolated worker strict tsc PASS. PR handoff comment 6092645150. No app/worker runtime integration, no safe target or production merge; AF00/AF05/AF09/AF13 assigned."
+    },
+    {
+      "claim_id": "u04-canonical-task-history-20261010-0321",
+      "owner": "U04-CONTINUE-20261010-0312",
+      "scope": "Continue existing U04 PR #523: server-authorized canonical U02 task-history/readback projection and negative tests; root Gateway composition remains AF00-owned",
+      "paths": [
+        "services/gateway/src/operator_actions/task_history.ts",
+        "services/gateway/src/operator_actions/task_history.test.ts",
+        "services/gateway/src/operator_actions/read_service.ts",
+        "services/gateway/src/operator_actions/read_service.test.ts",
+        "docs/workstreams/recovery-01-u04-20261009.md"
+      ],
+      "branch": "work/u04-scoped-service-adapters-20261009-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 523,
+      "source_head": "e675f87134cbb560483677306e503165377e1b51",
+      "claimed_at": "2026-10-10T02:21:50Z",
+      "heartbeat_at": "2026-10-10T02:21:50Z",
+      "expires_at": "2026-10-10T02:26:50Z",
+      "notes": "Late registry discovery: PR comment 6092617981 preceded source edits and identified exact paths. CAS registry published after the initial source edits; no competing active claims found. Node22 focused test 7/7 PASS and isolated strict tsc PASS for exact task_history blobs; full Gateway tests blocked by no checkout/pnpm. No shared composition/money/router/migration edits.",
+      "pr": "https://github.com/Baatiku/masanawa/pull/523",
+      "released_at": "2026-10-10T02:26:00Z",
+      "release_reason": "Published existing PR #523 task-history canonical U02 projection and route-read source; exact task_history source/tests Git blobs match local files, isolated strict tsc PASS and native node --test 7/7 PASS. Full Gateway/U02 PG/Flutter/combined checks NOT_RUN and AF00 safe baseline not elected; no merge, no deployment. Released U04 paths to one root integrator after SHA-specific handoff."
     }
   ]
 }
