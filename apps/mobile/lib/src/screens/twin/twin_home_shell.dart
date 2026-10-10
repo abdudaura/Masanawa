@@ -348,13 +348,13 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         0 => const ChatListScreen(),
         1 => _unavailableAudioDestination(
           icon: Icons.groups_outlined,
-          title: 'Rooms are not available yet',
-          explanation: 'Audio groups will appear here when the Rooms service is ready.',
+          title: AppLocalizations.of(context).roomsPendingTitle,
+          explanation: AppLocalizations.of(context).roomsPendingDetail,
         ),
         2 => _unavailableAudioDestination(
           icon: Icons.graphic_eq_rounded,
-          title: 'Audio posts are not available yet',
-          explanation: 'Published voice posts will appear here when the Talks service is ready.',
+          title: AppLocalizations.of(context).talksPendingTitle,
+          explanation: AppLocalizations.of(context).talksPendingDetail,
         ),
         3 => _privateTalk(),
         4 => _wallet(),
@@ -386,7 +386,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       appBar: (_index == 0 || _index == 3) ? null : AppBar(
         toolbarHeight: 48,
         title: Text(
-          _index == 1 ? 'Rooms' : _index == 2 ? 'Talks' : strings.wallet,
+          _index == 1 ? strings.navRooms : _index == 2 ? strings.navTalks : strings.wallet,
         ),
         actions: [
           IconButton(
@@ -429,31 +429,31 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _selectTab,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            selectedIcon: Icon(Icons.chat_bubble_rounded),
-            label: 'Chats',
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: const Icon(Icons.chat_bubble_rounded),
+            label: strings.navChats,
           ),
           NavigationDestination(
-            icon: Icon(Icons.groups_outlined),
-            selectedIcon: Icon(Icons.groups_rounded),
-            label: 'Rooms',
+            icon: const Icon(Icons.groups_outlined),
+            selectedIcon: const Icon(Icons.groups_rounded),
+            label: strings.navRooms,
           ),
           NavigationDestination(
-            icon: Icon(Icons.graphic_eq_outlined),
-            selectedIcon: Icon(Icons.graphic_eq_rounded),
-            label: 'Talks',
+            icon: const Icon(Icons.graphic_eq_outlined),
+            selectedIcon: const Icon(Icons.graphic_eq_rounded),
+            label: strings.navTalks,
           ),
           NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy_rounded),
-            label: 'Gwani',
+            icon: const Icon(Icons.smart_toy_outlined),
+            selectedIcon: const Icon(Icons.smart_toy_rounded),
+            label: strings.navGwani,
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-            label: 'Wallet',
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: const Icon(Icons.account_balance_wallet_rounded),
+            label: strings.wallet,
           ),
         ],
       ),
