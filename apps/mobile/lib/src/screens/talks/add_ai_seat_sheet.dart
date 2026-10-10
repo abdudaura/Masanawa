@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../state/talk_ai_seat_state.dart';
+import '../../state/session_state.dart';
 import '../../talks/talk_ai_seat.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -11,6 +13,8 @@ Future<TalkAiSeatRequest?> showAddAiSeatSheet(
   BuildContext context, {
   required String talkId,
   required bool isHost,
+  TalkAiPersonaKind initialKind = TalkAiPersonaKind.expert,
+  bool onlyOwnedTwin = false,
 }) {
   return showModalBottomSheet<TalkAiSeatRequest>(
     context: context,
@@ -21,6 +25,8 @@ Future<TalkAiSeatRequest?> showAddAiSeatSheet(
       child: AddAiSeatSheet(
         talkId: talkId,
         isHost: isHost,
+        initialKind: initialKind,
+        onlyOwnedTwin: onlyOwnedTwin,
       ),
     ),
   );
@@ -31,10 +37,14 @@ class AddAiSeatSheet extends ConsumerStatefulWidget {
     super.key,
     required this.talkId,
     required this.isHost,
+    this.initialKind = TalkAiPersonaKind.expert,
+    this.onlyOwnedTwin = false,
   });
 
   final String talkId;
   final bool isHost;
+  final TalkAiPersonaKind initialKind;
+  final bool onlyOwnedTwin;
 
   @override
   ConsumerState<AddAiSeatSheet> createState() => _AddAiSeatSheetState();
@@ -52,11 +62,32 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   bool _loadingQuote = false;
   bool _confirming = false;
   String? _error;
+  String? _openingAccountId;
+  int _authRevision = 0;
+
+  String? _activeAccountId() {
+    final session = ref.read(sessionProvider);
+    return session is SessionSignedIn && session.user.isActive
+        ? session.user.id
+        : null;
+  }
+
+  bool _sameAccount(int revision) =>
+      mounted &&
+      revision == _authRevision &&
+      _openingAccountId != null &&
+      _activeAccountId() == _openingAccountId;
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _openingAccountId = _activeAccountId();
+    _tabs = TabController(
+      length: widget.onlyOwnedTwin ? 1 : 2,
+      vsync: this,
+      initialIndex: widget.onlyOwnedTwin ||
+              widget.initialKind == TalkAiPersonaKind.expert ? 0 : 1,
+    );
     _tabs.addListener(() {
       if (!_tabs.indexIsChanging) setState(() {});
     });
@@ -71,7 +102,8 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   }
 
   Future<void> _select(TalkAiSeatCandidate candidate) async {
-    if (_loadingQuote) return;
+    final revision = _authRevision;
+    if (_loadingQuote || !_sameAccount(revision)) return;
     setState(() {
       _loadingQuote = true;
       _error = null;
@@ -83,7 +115,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
             mode:
                 widget.isHost ? TalkAiSeatMode.hostAdd : TalkAiSeatMode.sponsor,
           );
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       if (quote.personaId != candidate.personaId ||
           quote.kind != candidate.kind ||
           quote.quoteId.trim().isEmpty ||
@@ -111,12 +143,12 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         });
       }
     } catch (_) {
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       setState(() {
         _error = 'Couldn’t prepare this Seat right now.';
       });
     } finally {
-      if (mounted) setState(() => _loadingQuote = false);
+      if (_sameAccount(revision)) setState(() => _loadingQuote = false);
     }
   }
 
@@ -127,8 +159,10 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
   }
 
   Future<void> _confirm() async {
+    final revision = _authRevision;
     final quote = _quote;
-    if (quote == null || _confirming || _loadingQuote) return;
+    if (quote == null || _confirming || _loadingQuote ||
+        !_sameAccount(revision)) return;
     if (_terminalQuote) {
       setState(() => _error = 'This request has ended. Get a new quote to continue.');
       return;
@@ -146,7 +180,7 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
             talkId: widget.talkId,
             quoteId: quote.quoteId,
           );
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       if (request.status == TalkAiSeatRequestStatus.expired ||
           request.status == TalkAiSeatRequestStatus.declined ||
           request.status == TalkAiSeatRequestStatus.unknown) {
@@ -164,17 +198,48 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
       }
       Navigator.of(context).pop(request);
     } catch (_) {
-      if (!mounted) return;
+      if (!_sameAccount(revision)) return;
       setState(() {
         _error = 'Couldn’t verify this Seat request. Check the Talk or retry this same quote; don’t start a new purchase.';
       });
     } finally {
-      if (mounted) setState(() => _confirming = false);
+      if (_sameAccount(revision)) setState(() => _confirming = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // A quoted or even in-flight charge belongs to the account which opened
+    // this picker. Never present its details or outcome under another login.
+    ref.listen<String?>(
+      sessionProvider.select((session) =>
+          session is SessionSignedIn && session.user.isActive
+              ? session.user.id
+              : null),
+      (previous, next) {
+        if (!mounted || next == _openingAccountId) return;
+        _quoteExpiryTimer?.cancel();
+        setState(() {
+          _authRevision++;
+          _quote = null;
+          _selectedCandidate = null;
+          _quoteExpired = false;
+          _terminalQuote = false;
+          _loadingQuote = false;
+          _confirming = false;
+          _error = 'Account changed. Reopen Add AI to get a new quote.';
+        });
+        // A standalone sheet embedded in test/demo navigation has no modal to
+        // dismiss; the actual payment-capable modal is closed after the frame.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final route = ModalRoute.of(context);
+          if (route is ModalBottomSheetRoute && route.isCurrent) {
+            Navigator.of(context).pop();
+          }
+        });
+      },
+    );
     final u = context.masanawa;
     final quote = _quote;
     if (quote != null) {
@@ -213,10 +278,9 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
         ),
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: 'Experts'),
-            Tab(text: 'Twins'),
-          ],
+          tabs: widget.onlyOwnedTwin
+              ? const [Tab(text: 'My Twin')]
+              : const [Tab(text: 'Experts'), Tab(text: 'Twins')],
         ),
       ),
       body: Column(
@@ -277,12 +341,17 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
                     ref.invalidate(talkAiSeatCatalogProvider(widget.talkId)),
               ),
               data: (all) {
-                final kind = _tabs.index == 0
-                    ? TalkAiPersonaKind.expert
-                    : TalkAiPersonaKind.twin;
+                final kind = widget.onlyOwnedTwin
+                    ? TalkAiPersonaKind.twin
+                    : _tabs.index == 0
+                        ? TalkAiPersonaKind.expert
+                        : TalkAiPersonaKind.twin;
                 final query = _search.text.trim().toLowerCase();
                 final items = all.where((candidate) {
                   if (candidate.kind != kind) return false;
+                  if (widget.onlyOwnedTwin && !candidate.isOwnedByViewer) {
+                    return false;
+                  }
                   if (query.isEmpty) return true;
                   return candidate.displayName.toLowerCase().contains(query) ||
                       candidate.subtitle.toLowerCase().contains(query) ||
@@ -299,11 +368,32 @@ class _AddAiSeatSheetState extends ConsumerState<AddAiSeatSheet>
                     title: query.isEmpty
                         ? kind == TalkAiPersonaKind.expert
                             ? 'No Experts available yet.'
-                            : 'No Twins available yet.'
+                            : widget.onlyOwnedTwin
+                                ? 'No verified owned Twin is available.'
+                                : 'No Twins available yet.'
                         : 'No matches found.',
                     subtitle: query.isEmpty
-                        ? 'Available AI personas will appear here.'
+                        ? kind == TalkAiPersonaKind.twin
+                            ? 'Create a Twin, then return to this Talk to request a Seat.'
+                            : 'Available AI personas will appear here.'
                         : 'Try a different name or topic.',
+                    action: query.isNotEmpty
+                        ? 'Clear search'
+                        : kind == TalkAiPersonaKind.twin
+                            ? 'Create My Twin'
+                            : 'Refresh list',
+                    onAction: () {
+                      if (query.isNotEmpty) {
+                        _search.clear();
+                        setState(() {});
+                      } else if (kind == TalkAiPersonaKind.twin) {
+                        final router = GoRouter.of(context);
+                        Navigator.of(context).pop();
+                        router.push('/my-twin');
+                      } else {
+                        ref.invalidate(talkAiSeatCatalogProvider(widget.talkId));
+                      }
+                    },
                   );
                 }
 

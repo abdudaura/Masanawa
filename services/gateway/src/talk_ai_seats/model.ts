@@ -28,6 +28,8 @@ export interface TalkAiSeatCandidateView {
   readonly avatarUrl?: string;
   readonly topics: readonly string[];
   readonly isAvailable: boolean;
+  /** Server-verified: caller owns this Twin. Never inferred on the client. */
+  readonly isOwnedByViewer: boolean;
 }
 
 export interface TalkAiSeatQuoteView {

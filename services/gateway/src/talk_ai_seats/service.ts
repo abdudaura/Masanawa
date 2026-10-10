@@ -119,34 +119,71 @@ function priceFor(
     : policy.twinPriceCredits;
 }
 
+/**
+ * Only explicit public domain failures may cross the HTTP boundary. PostgreSQL,
+ * commerce adapters and background dispatchers may throw errors containing SQL,
+ * connection details or provider payloads; never turn arbitrary error.message or
+ * error.code into a customer-visible error or infer status from substrings.
+ *
+ * Keep existing canonical codes where possible. Internal revision messages are
+ * deliberately converted to stable machine codes without exposing raw text.
+ */
+const PUBLIC_REPOSITORY_FAILURES: Readonly<
+  Record<string, Readonly<{ code: string; statusCode: number }>>
+> = Object.freeze({
+  "talks.not_found": { code: "talks.not_found", statusCode: 404 },
+  "talks.persona_not_found": { code: "talks.persona_not_found", statusCode: 404 },
+  "talks.ai_seat_quote_not_found": { code: "talks.ai_seat_quote_not_found", statusCode: 404 },
+  "talks.host_forbidden": { code: "talks.host_forbidden", statusCode: 403 },
+  "commerce.insufficient_balance": { code: "commerce.insufficient_balance", statusCode: 409 },
+  "talks.not_live": { code: "talks.not_live", statusCode: 409 },
+  "talks.persona_unavailable": { code: "talks.persona_unavailable", statusCode: 409 },
+  "talks.canonical_missing": { code: "talks.canonical_missing", statusCode: 409 },
+  "talks.host_identity_changed": { code: "talks.host_identity_changed", statusCode: 409 },
+  "talks.ai_commerce_required": { code: "talks.ai_commerce_required", statusCode: 503 },
+  "AI Seat quote revision conflict": { code: "talks.ai_seat_quote_revision_conflict", statusCode: 409 },
+  "Talk live revision conflict": { code: "talks.live_revision_conflict", statusCode: 409 },
+  // Exact error messages emitted by the canonical commerce AI Seat state machine.
+  // Preserve actionable conflict/permission semantics without echoing internals.
+  "AI Seat quote has expired": { code: "talks.ai_seat_quote_expired", statusCode: 409 },
+  "AI Seat authorization has expired": { code: "talks.ai_seat_authorization_expired", statusCode: 409 },
+  "AI Seat quote is terminal": { code: "talks.ai_seat_quote_terminal", statusCode: 409 },
+  "AI Seat quote is already confirmed": { code: "talks.ai_seat_quote_already_confirmed", statusCode: 409 },
+  "AI Seat is not awaiting admission": { code: "talks.ai_seat_not_awaiting_admission", statusCode: 409 },
+  "AI Seat is not awaiting a Host decision": { code: "talks.ai_seat_not_awaiting_host_decision", statusCode: 409 },
+  "AI Seat quote has not expired": { code: "talks.ai_seat_quote_not_expired", statusCode: 409 },
+  "Only the quoted payer may confirm the AI Seat purchase": { code: "talks.ai_seat_payer_forbidden", statusCode: 403 },
+  "Only the human Talk Host may admit an AI Seat": { code: "talks.host_forbidden", statusCode: 403 },
+  "Only the human Talk Host may decline an AI Seat": { code: "talks.host_forbidden", statusCode: 403 },
+});
+
 function mapRepositoryError(error: unknown): never {
+  // Service-created errors (validated request and runtime dispatch) already
+  // have explicit public codes. All repository/provider errors are untrusted.
   if (error instanceof TalkAiSeatError) throw error;
-  const code =
+
+  const externalCode =
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
-    typeof (error as { readonly code?: unknown }).code === "string"
-      ? (error as { readonly code: string }).code
-      : error instanceof Error
-        ? error.message
-        : "talks.ai_seat_failed";
-  const statusCode =
-    code === "talks.not_found" ||
-    code === "talks.persona_not_found" ||
-    code === "talks.ai_seat_quote_not_found"
-      ? 404
-      : code === "talks.host_forbidden"
-        ? 403
-        : code === "commerce.insufficient_balance"
-          ? 409
-          : code === "talks.not_live" ||
-              code === "talks.persona_unavailable" ||
-              code.includes("capacity") ||
-              code.includes("expired") ||
-              code.includes("revision")
-            ? 409
-            : 400;
-  throw new TalkAiSeatError(code, statusCode);
+    typeof error.code === "string"
+      ? error.code
+      : undefined;
+  const externalMessage = error instanceof Error ? error.message : undefined;
+  for (const key of [externalCode, externalMessage]) {
+    if (key === undefined || !Object.hasOwn(PUBLIC_REPOSITORY_FAILURES, key)) {
+      continue;
+    }
+    const failure = PUBLIC_REPOSITORY_FAILURES[key];
+    if (failure !== undefined) {
+      throw new TalkAiSeatError(failure.code, failure.statusCode);
+    }
+  }
+
+  // Unknown SQLSTATEs, provider errors and free-form messages are operational
+  // failures, not malformed customer requests. The response is intentionally
+  // opaque and retryable; retain the original cause only in private telemetry.
+  throw new TalkAiSeatError("talks.ai_seat_failed", 503);
 }
 
 function message(
@@ -233,6 +270,8 @@ export function createTalkAiSeatService(input: Readonly<{
             ...(row.avatarUrl === null ? {} : { avatarUrl: row.avatarUrl }),
             topics: row.topics,
             isAvailable: row.isAvailable,
+            isOwnedByViewer: row.kind === "twin" &&
+              row.twinOwnerUserId === viewer.userId,
           }),
         ),
       );
