@@ -60,7 +60,6 @@ class _RoomsScreenState extends State<RoomsScreen>{
        if(mounted)load();
       });
     })))
-   )
   ]),
  );
 }
