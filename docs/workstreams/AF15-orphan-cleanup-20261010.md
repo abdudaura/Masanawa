@@ -45,3 +45,36 @@ Status: **PARTIAL_IMPLEMENTATION; source changes authored, runtime/real adapter/
 
 ### Exact-version provider adapter continuation
 The adapter never enumerates buckets and refuses cross-tenant/mutable keys before signing. DELETE pins VersionId when provided; provider 404 without explicit absence code remains **uncertain** rather than confirming a purge. Fake HTTP/response-based Vitest cases are authored, NOT_RUN in full worker checkout. The adapter has **no runtime registration**; this does not activate background deletes. Run `pnpm --filter @masanawa/worker-service typecheck` and `pnpm exec vitest run services/worker/src/durable_operations/media_cleanup.test.ts services/worker/src/durable_operations/media_cleanup_s3.test.ts` against the exact head on a capable source runner. AF00 must revalidate versioned object-store support and access rights before any activation.
+
+## 2026-10-10 continuation — real PostgreSQL cleanup authority source, same PR #599
+
+**Window:** AF15-GPT6-0444; live exact-path CAS claim `af15-599-postgres-adapter-gpt6-20261010-0444`. This continuation edits only AF15-owned adapter/test/schema-proposal files and this handoff. It does **not** add a second executor, call S3, edit the migration registry/startup, change financial authority or enable any cleanup job. The code runs behind the existing `MediaCleanupRepository` contract consumed by `runMediaCleanupBatch`.
+
+**Connected source increment:** `services/worker/src/durable_operations/media_cleanup_pg.ts` uses atomic `UPDATE ... FROM (SELECT FOR UPDATE SKIP LOCKED)`, PostgreSQL-generated unpredictable lease tokens and DB-clock retention/age checks; it excludes live reference and hold rows, requires explicit `delete_approved`, `link_guard_installed`, `domain_refs_reconciled` and immutable-version or SHA-256-key evidence. It retains lease fencing through preflight/completion, checks provider uncertainty by quarantining rather than automatically retrying, and refuses destructive writes for malformed client identities. `media_cleanup_pg.test.mjs` contains 10 Node assertions for eligibility, malformed claims, two-account/tenant-bound parameters, blocked/expired leases, holds, ref counts, completion and database failures. **These tests are authored, not executed against the exact private GitHub source in this window.**
+
+`services/worker/src/durable_operations/media_cleanup_pg_schema.sql` provides **unallocated, unapplied** append-only DDL for AF00 migration review. It creates `ops.media_cleanup_objects`, `ops.media_cleanup_references`, `ops.media_cleanup_holds`, and a parent-row locking link/hold trigger. The table's approval and full-domain-reconciliation booleans default **false** and no SQL sets them true. **The schema alone is not safe activation:** all current and historical avatar/chat/Room/Talk/financial-evidence references must be reconciled into the canonical tables, app producers must atomically register/unlink refs and holds, and only restricted audited roles may attest coverage. AF01 must approve financial holds. A request to link to non-active/tombstoned media must fail before a durable external reference is recorded.
+
+| Required source item (exact paths) | Closure state / commit | Owner and next action |
+| --- | --- | --- |
+| Canonical executor and S3 version adapter `services/worker/src/durable_operations/media_cleanup.ts`, `media_cleanup_s3.ts` | IMPLEMENTED_UNVERIFIED; prior existing #599 commits, unchanged here | AF15/AF13 execute existing negative and provider tests; deletion disabled |
+| PostgreSQL claim/preflight/complete/stop `services/worker/src/durable_operations/media_cleanup_pg.ts` | IMPLEMENTED_UNVERIFIED; current #599 head contains source | AF15 authored, AF13 executable Node24/PG verification |
+| DB guard DDL `services/worker/src/durable_operations/media_cleanup_pg_schema.sql` | IMPLEMENTED_UNVERIFIED as **proposal**, NOT migrated | AF00 review and allocate append-only migration under canonical `database/**` authority; test fresh and upgraded PG18 |
+| Claim/lease regression `services/worker/src/durable_operations/media_cleanup_pg.test.mjs` | AUTHORED_NOT_RUN; current #599 head contains 10 cases | AF13/AF00 run on exact commit with emitted JS and disposable PostgreSQL |
+| Account and domain references; escrow/legal holds; permission/revocation; deletion attestation | **MISSING SOURCE/BINDINGS** | AF01 financial, AF06 private chat, AF09 published Talks, AF14 avatars, AF15 media; AF00 coordinate DB/API transfers; keep `domain_refs_reconciled=false` |
+| Shared worker startup/scheduler/drain, dependency/config/readiness validation in `services/worker/src/main.ts` | **MISSING COMPOSITION** | AF00 bounded protected-path handoff; register disabled-by-default only after DB/hold/media authority |
+| Qualified unified reviewed non-deploying integration SHA, owner-local fixes | **NOT INTEGRATED / owner-local source unseen** | AF00 verify deploy triggers and compose once after exact-head executable checks; do not request owner local pull |
+
+**Actual environment:** git remote checkout attempt `git ls-remote https://github.com/Baatiku/masanawa.git HEAD` failed `Could not resolve host: github.com`. Node `v22.16.0` and globally installed TypeScript are available, but this does not provide a private repository checkout. No `pnpm`, `psql`, Flutter or Dart was installed; source unit/Vitest/typecheck, migration race/restore and real S3/versioned-object checks **BLOCKED/NOT_RUN**, not PASS. GitHub file readback checks integrity/structure only.
+
+**Exact replayable test commands, execution owner AF13 with AF00 migration coordination:** checkout PR #599 at its final exact HEAD using a capable authenticated runner, then:
+```bash
+corepack pnpm install --frozen-lockfile
+pnpm --filter @masanawa/worker-service typecheck
+pnpm exec vitest run services/worker/src/durable_operations/media_cleanup.test.ts services/worker/src/durable_operations/media_cleanup_s3.test.ts
+# For authored .mjs tests, compile the source files to JS first and run at the emitted path.
+node --test <emitted-path>/media_cleanup_pg.test.mjs
+# AF00: apply reviewed numbered copy of media_cleanup_pg_schema.sql to disposable PG18;
+# test concurrent claim/lease, reference insert/hold race, uncertain delete, crash/restart,
+# the false-default attestation and an existing-data migration rehearsal.
+```
+Do not infer a PG/Vitest PASS from the 10 authored test cases, or count S3 mock behavior as real object-store proof. The actual PR head and source blob SHAs must be re-read after concurrent changes. **Milestone remains PARTIAL_IMPLEMENTATION; next critical executable source is AF00 schema allocation + AF15/domain reference bindings, not another cleanup helper.**
