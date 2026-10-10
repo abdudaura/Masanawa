@@ -1,6 +1,7 @@
 // AF13 read-only evidence qualification. This NEVER authorizes deployment.
 // Usage: node tools/audio-first-qualification/qualify.mjs --matrix tools/audio-first-qualification/journeys.json --evidence <redacted-json> --sha <exact-40-char-SHA> --proof-root <directory>
 import fs from 'node:fs/promises';
+import { constants as openFlags } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -12,7 +13,7 @@ const MAX_REAL_EVIDENCE_AGE_MS=30*24*60*60*1000;
 
 // #594 bounded inputs: do not load an attacker-sized manifest before rejecting it.
 export async function readBoundedJson(file){
-  const handle=await fs.open(file,'r');
+  const handle=await fs.open(file,openFlags.O_RDONLY | (openFlags.O_NONBLOCK ?? 0) | (openFlags.O_NOFOLLOW ?? 0));
   try{
     const before=await handle.stat();
     if(!before.isFile()||before.size<1||before.size>MAX_QUALIFICATION_JSON_BYTES)throw Error('Qualification JSON input is empty, unsafe or oversized');
