@@ -20,6 +20,8 @@ class AudioPostFeedScreen extends StatefulWidget {
     this.playback,
     this.cache,
     this.onCreatePost,
+    this.onOpenCreator,
+    this.refreshSignal,
     this.reportTransport,
   });
   final AudioPostTransport transport;
@@ -34,6 +36,10 @@ class AudioPostFeedScreen extends StatefulWidget {
   /// Encrypted account-fenced snapshots are best-effort, never authorizing API writes.
   final PublishedTalkFeedCache? cache;
   final VoidCallback? onCreatePost;
+  /// AF09 feature navigation, only when a canonical creator feed is available.
+  final void Function(String authorId, String authorKind)? onOpenCreator;
+  /// Explicit server refresh after a compose receipt without resetting scroll/tab.
+  final Listenable? refreshSignal;
   /// Only mounted when AF00 registered the canonical TalkSafety-backed route.
   final PublishedAudioReportTransport? reportTransport;
 
@@ -63,6 +69,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   void initState() {
     super.initState();
     _cache = widget.cache ?? SecurePublishedTalkFeedCache();
+    widget.refreshSignal?.addListener(_refreshFromReceipt);
     _load();
   }
 
@@ -81,6 +88,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   @override
   void didUpdateWidget(covariant AudioPostFeedScreen old) {
     super.didUpdateWidget(old);
+    if (old.refreshSignal != widget.refreshSignal) {
+      old.refreshSignal?.removeListener(_refreshFromReceipt);
+      widget.refreshSignal?.addListener(_refreshFromReceipt);
+    }
     if (old.accountId != widget.accountId || old.transport != widget.transport ||
         old.followingTransport != widget.followingTransport ||
         old.playback != widget.playback || old.cache != widget.cache) {
@@ -116,7 +127,11 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     }
   }
   @override
+  void _refreshFromReceipt() {
+    if (mounted && _authorized) unawaited(_load());
+  }
   void dispose() {
+    widget.refreshSignal?.removeListener(_refreshFromReceipt);
     ++_generation;
     ++_commentsGeneration;
     if (widget.playback != null) unawaited(widget.playback!.stop());
@@ -541,8 +556,22 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                   Row(children: [
                                     const Icon(Icons.record_voice_over_outlined),
                                     const SizedBox(width: 8),
-                                    Expanded(child: Text(post.authorId,
-                                      maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                    Expanded(child: widget.onOpenCreator == null ||
+                                            post.status != 'published'
+                                        ? Text(post.authorId, maxLines: 1,
+                                            overflow: TextOverflow.ellipsis)
+                                        : TextButton(
+                                            key: ValueKey('talk-creator-${post.postId}'),
+                                            onPressed: _authorized
+                                                ? () => widget.onOpenCreator!(
+                                                    post.authorId, post.authorKind)
+                                                : null,
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(post.authorId, maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis),
+                                            ),
+                                          )),
                                     if (post.authorKind == 'masana')
                                       const Text('AI', semanticsLabel: 'AI-created audio'),
                                   ]),
