@@ -10,6 +10,15 @@
 - `apps/mobile/test/audio_first/af09/report_action_test.dart`, commit `18c7785fbe64fc94b6022b5f8c4385df273552c2`: authored permission-rotation tests before and during asynchronous submission, including withholding stale success.
 - Existing canonical `services/gateway/src/audio_posts/reporting.ts` and `audio_post_report_action.dart` transport are reused, **not duplicated**. AF00 still must mount the authenticated server report route, register canonical moderator target resolution for `published-audio:<postId>`, and inject the client transport into the five-tab Talks shell. The UI alone is not a working customer report endpoint.
 
+## Second essential source correction — Following pagination was rejecting valid timestamps
+
+Fresh source inspection found `adapters/storage/postgres/src/audio_posts/following_repository.ts` had a **double-escaped regular-expression literal** `/^\\\\d{4}.../` for the SQL microsecond timestamp. Unlike Discover's corresponding `/^\\d{4}.../`, the original Following matcher evaluated `2026-10-10T02:51:54.123789Z` as **false**. This rejects real encoded cursors and raises `audio_posts.invalid_following_row` when the Following or creator listing needs a continuation token. It is a demonstrated customer-listing blocker, not a speculative helper.
+
+- Fix committed **`e80da36fb4592f6a83fceca037d32932a2159b9d`**, blob `b7bf5bb2d876d0b32831cfeb6bcd506e56e8ad41`: change *only* that regex literal to the correct single-escaped `\\d` and `\\.` tokens, preserving cursor format, tenant/visibility filter and full six-digit SQL timestamp.
+- Existing same-PR `adapters/storage/postgres/src/audio_posts/following_repository_pagination.test.mjs` already has actual Following/creator same-millisecond pagination, malformed cursor, hidden-author and invalid-row cases authored. No duplicate test runner/source authority was created. Tests remain **AUTHORED_NOT_RUN** because the checkout/dependencies/TypeScript/PG are unavailable.
+- **Executed source-derived JS regex check:** pre-fix source pattern rejected a valid timestamp; post-fix pattern passed **10/10** explicit acceptance/negative timestamp cases read from the committed blob. This is a narrow real JavaScript regexp evaluation, **not** a repository Node package test, PostgreSQL query, source compiler, Flutter test or E2E result.
+- AF13/qualified AF00 runner next command at the **latest combined #609 SHA**: `node --experimental-strip-types --test adapters/storage/postgres/src/audio_posts/following_repository_pagination.test.mjs`, plus actual PostgreSQL microsecond pagination, tenant/filter and cursor-boundary checks. Correct only on observed failures; keep no false PASS.
+
 ## Finite parent-milestone source checklist
 
 | ID | Required implementable source and exact boundary | Owner | Source state on PR #609 | Separate execution/integration |
@@ -27,13 +36,14 @@
 | AF09-11 | Talks nav to feed, creator and composer and transport injection `apps/mobile/lib/src/screens/twin/twin_home_shell.dart` / root router | AF00 | MISSING shared shell composition | Flutter widget/APK NOT_RUN |
 | AF09-12 | Full two-account capture→upload→publish→feed→listen/follow/comment/report/delete, fail/retry/restore | AF09/AF05/AF13 + AF00 | MISSING connected source across owners | End-to-end NOT_RUN |
 | AF09-13 | Review one demonstrably non-deploying integration target, reconcile #497 and local-only fixes; publish unified source SHA | AF00 | NOT INTEGRATED; no safe target elected | Deployment audit and integrated SHA checks NOT_RUN |
+| AF09-15 | Correct Following/creator exact microsecond cursor admission, `adapters/storage/postgres/src/audio_posts/following_repository.ts` | AF09, this claim | SOURCE_CHECKED_ISOLATED at `e80da36f` (10/10 source-derived regex cases) | Existing pagination repository tests and real PG NOT_RUN |
 | AF09-14 | Preserve account-fenced secure attempt and server receipt reconciliation, `audio_post_draft_store.dart` and `services/gateway/src/audio_posts/{service,routes}.ts` | AF09 | IMPLEMENTED_UNVERIFIED | Restart/account-race tests AUTHORED NOT_RUN |
 
 **Owner pre-pull rule:** AF00 appends this finite checklist into current `docs/NEXT-WAVE-DELIVERY-20261010.md` when rebasing/integrating; the older PR #609 branch does not yet contain that newer main-only document. Do not create a duplicate competing global delivery authority. No local pull until required source (not just test execution) is completed and unified. An absent runner never defers Gateway routes, DB schema, native/media bindings or shell hookup.
 
 ## Exact check evidence and execution transfer
 
-**Executed:** GitHub source blob readback of all four changed files and 14/14 deterministic static source predicates. This is **source inspection only**, not an executable Flutter test result and not evidence of E2E. No dependency/mock billing/provider was called. No main/deployment change.
+**Executed:** GitHub source blob readback of all five changed files and 14/14 deterministic static report UI predicates; 10/10 source-derived JS regexp timestamp cases on the corrected Following matcher. This is **source inspection only**, not an executable Flutter test result and not evidence of E2E. No dependency/mock billing/provider was called. No main/deployment change.
 
 **Observed runner:** Node `v22.16.0` and TypeScript `5.8.3`; `pnpm`, Dart/Flutter, PostgreSQL and Docker executables unavailable, no private git checkout. `git ls-remote https://github.com/Baatiku/masanawa.git refs/heads/main` → `Could not resolve host: github.com`. Root expects Node `>=24 <25`, pnpm 12, TS7. The following remain **BLOCKED / NOT_RUN**:
 
