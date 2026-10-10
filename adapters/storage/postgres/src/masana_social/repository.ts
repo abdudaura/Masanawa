@@ -17,7 +17,13 @@ function decode(x:SocialRow):SocialIdentity{
 }
 const columns=`i.tenant_id,i.identity_id,i.character_id,i.provider,i.provider_account_id,
  i.handle,i.public_url,i.verified_at,i.publish_state,i.revision,
- c.connection_mode,c.paused`;
+ CASE WHEN i.provider='whatsapp' AND c.connection_mode='verified_automation_eligible'
+      THEN 'profile_link_only'
+      WHEN c.connection_mode='verified_automation_eligible'
+       AND (c.authorization_ref IS NULL OR c.permission_expiry IS NULL OR c.permission_expiry <= now())
+      THEN 'profile_link_only'
+      ELSE c.connection_mode END AS connection_mode,
+ c.paused`;
 function issue(code:"SOCIAL_NOT_FOUND"|"SOCIAL_REVISION_CONFLICT"|"SOCIAL_NOT_VERIFIED"|"SOCIAL_REVOKED"){
  return Object.assign(new Error(code),{code});
 }
