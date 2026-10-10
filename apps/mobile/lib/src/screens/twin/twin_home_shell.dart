@@ -8,6 +8,9 @@ import '../../agents/agent_directory.dart';
 import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/agent_directory_state.dart';
+import '../../audio_posts/audio_post_destination.dart';
+import '../../audio_posts/audio_post_transport.dart';
+import '../../core/providers.dart';
 import '../../state/session_state.dart';
 import '../../state/talk_social_profile_state.dart';
 import '../../social/profile_header.dart';
@@ -19,6 +22,12 @@ import '../talks/talk_home_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'my_twin_screen.dart';
 import 'shell_tab.dart';
+
+// Reuse one authenticated ApiClient and stable transport while the shell
+// rebuilds; replacing the transport on each frame would reset pagination.
+final _publishedPostsTransportProvider = Provider<GatewayAudioPostTransport>(
+  (ref) => GatewayAudioPostTransport(ref.watch(apiClientProvider)),
+);
 
 /// Filters the server-provided roster by presentation data only. A search
 /// result never grants AI Seat eligibility, a role or a service capability.
@@ -320,7 +329,34 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   void _openYou() => context.push('/you');
 
-  // AF09/AF10 own durable audio posts and rooms. Neither API exists in
+  // The published Talks service is distinct from the historical live-session
+  // product. The Gateway transport uses the canonical signed-in access token.
+  // Private media upload/playback, Following and reporting stay disabled until
+  // their authoritative backend bindings are registered, not fake-adapted.
+  Widget _publishedTalks() {
+    final session = ref.watch(sessionProvider);
+    if (session is! SessionSignedIn) {
+      return _unavailableAudioDestination(
+        icon: Icons.graphic_eq_rounded,
+        title: AppLocalizations.of(context).talksPendingTitle,
+        explanation: AppLocalizations.of(context).talksPendingDetail,
+      );
+    }
+    final accountId = session.user.id;
+    return PublishedTalksDestination(
+      key: ValueKey('published-talks-' + accountId),
+      accountId: accountId,
+      transport: ref.watch(_publishedPostsTransportProvider),
+      isCurrentAccount: (id) {
+        final current = ref.read(sessionProvider);
+        return current is SessionSignedIn && current.user.id == id;
+      },
+    );
+  }
+
+  // AF10 Rooms remains unavailable until its own durable room API exists.
+  // AF09 posts are never represented by the historic live-session feed.
+
   // current main. Do not repackage the historic live-session feed as posts.
   Widget _unavailableAudioDestination({
     required IconData icon,
@@ -351,11 +387,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           title: AppLocalizations.of(context).roomsPendingTitle,
           explanation: AppLocalizations.of(context).roomsPendingDetail,
         ),
-        2 => _unavailableAudioDestination(
-          icon: Icons.graphic_eq_rounded,
-          title: AppLocalizations.of(context).talksPendingTitle,
-          explanation: AppLocalizations.of(context).talksPendingDetail,
-        ),
+        2 => _publishedTalks(),
         3 => _privateTalk(),
         4 => _wallet(),
         _ => const SizedBox.shrink(),
