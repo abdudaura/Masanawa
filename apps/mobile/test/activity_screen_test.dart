@@ -8,6 +8,25 @@ import 'package:masanawa/src/screens/activity/activity_screen.dart';
 import 'package:masanawa/src/state/talk_activity_state.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
+const testPerson = AuthUser(
+  id: 'person-a', name: 'Test Person',
+  locale: 'en-NG', status: 'ACTIVE', role: 'CITIZEN',
+  isNewUser: false, createdAt: '2026-10-09T00:00:00Z',
+);
+
+class ActivityTestSession extends SessionController {
+  @override
+  SessionState build() => const SessionSignedIn(
+    testPerson,
+    AuthTokens(
+      accessToken: 'test',
+      refreshToken: 'test',
+      accessExpiresIn: 900,
+      user: testPerson,
+    ),
+  );
+}
+
 class _ActivityTransport implements TalkActivityTransport {
   final List<TalkActivityFilter> loads = [];
   final List<({String talkId, bool accept})> decisions = [];
@@ -111,6 +130,7 @@ Widget _app({
 }) {
   return ProviderScope(
     overrides: [
+      sessionProvider.overrideWith(ActivityTestSession.new),
       talkActivityTransportProvider.overrideWithValue(transport),
     ],
     child: MaterialApp(
