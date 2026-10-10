@@ -830,6 +830,24 @@
       "heartbeat_at": "2026-10-10T09:06:50.277Z",
       "expires_at": "2026-10-10T09:11:50.277Z",
       "notes": "Real run 38040059676, 1 Talk AI Seat test fails on quoteId.endsWith('0') stochastic branch. Update only mock to deterministic pending_host; no production or provider behavior changed."
+    },
+    {
+      "claim_id": "af13-460-adopt-af01-607-crypto-source-20261010-gpt6-1007",
+      "owner": "GPT-6 / user-directed AF13 existing CI recovery with released AF01 #607 source",
+      "scope": "Non-deploying adoption of exact AF01 crypto decimal precision, canonical ledger reason guard, tests; no manual financial edits, main merge, provider operation or new branch",
+      "paths": [
+        "adapters/storage/postgres/src/commerce/crypto-repository.ts",
+        "adapters/storage/postgres/src/commerce/crypto-repository.integration.test.ts",
+        "packages/commerce/src/crypto.ts",
+        "packages/commerce/src/crypto.test.ts"
+      ],
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "base_sha": "8dd1824da7512d6923f3c2421f5f516e86810228",
+      "source_pr": 460,
+      "claimed_at": "2026-10-10T09:07:57.251Z",
+      "heartbeat_at": "2026-10-10T09:07:57.251Z",
+      "expires_at": "2026-10-10T09:12:57.251Z",
+      "notes": "AF01 claim af01-607-live-pg18-crypto-normalization-gpt6-20261010-0951 released 09:02:18 UTC. Four current CI blobs matched main exactly. Copy four full source blobs from #607 at 02f15223e17ea21e011788abd5e7f6cce24a6b4f; execute actual PG18 Vitest at new CI SHA."
     }
   ],
   "history": [
