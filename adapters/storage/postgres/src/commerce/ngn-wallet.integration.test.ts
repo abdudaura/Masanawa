@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createIsolatedPostgresTestDatabase } from "../../../../../test/support/isolated-postgres.js";
 import { createCanonicalId } from "@masanawa/contracts";
 import { runMigrations } from "../migrations.js";
 import { createPostgresNgnWalletRepository } from "./ngn-wallet.js";
@@ -10,8 +11,10 @@ const describeDatabase = connectionString ? describe : describe.skip;
 
 describeDatabase("R05 quote-scoped NGN funding creation", () => {
   let pool: Pool;
+  let isolated: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>> | undefined;
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    isolated = await createIsolatedPostgresTestDatabase(connectionString!);
+    pool = isolated.pool;
     await runMigrations(pool, [{
       owner: "commerce",
       directory: fileURLToPath(
@@ -20,7 +23,7 @@ describeDatabase("R05 quote-scoped NGN funding creation", () => {
     }]);
   });
   afterAll(async () => {
-    await pool?.end();
+    await isolated?.close();
   });
 
   function inputFor(owner: { tenantId: string; userId: string; quoteId: string },
