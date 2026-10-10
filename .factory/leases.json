@@ -199,35 +199,6 @@
       "test_state": "GitHub CI zero-step BLOCKED; exact blob structural readbacks only. Node/Vitest/PG/S3 NOT_RUN."
     },
     {
-      "claim_id": "af09-609-publish-status-20261010-gpt6-0521",
-      "owner": "AF09 PR #609 / GPT-6 publish-status continuation",
-      "scope": "Connect authenticated publish receipt lookup to composer processing-status refresh and account-safe terminal readback, no second publish or AF00 root edits",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
-        "apps/mobile/test/audio_first/af09/composer_test.dart",
-        "docs/workstreams/AF09-publish-status-recovery-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "source_head": "0cdc3e1b5d32142177837c5341d70ccbca510e10",
-      "claimed_at": "2026-10-10T04:24:29.040Z",
-      "heartbeat_at": "2026-10-10T04:24:29.040Z",
-      "expires_at": "2026-10-10T04:29:29.040Z",
-      "notes": "Independent AF09 composer+widget tests. Does not touch 0517 creator navigation or 0519 comment pagination source.",
-      "released_at": "2026-10-10T04:29:42.421Z",
-      "release_reason": "Source on same PR #609: authenticated post-acceptance composer status readback without retry POST; six authored widget tests; 9/9 source checks only. Flutter/Dart/Node24/pnpm/PG/device E2E BLOCKED/NOT_RUN; still MISSING AF00 migration/routes/worker/shell integration, AF05/15 media and one safe SHA. Handoff docs/workstreams/AF09-publish-status-recovery-20261010.md and PR comments #609 6093774218 / #600 6093774416.",
-      "source_commits": [
-        "4e6513fa5ad3328992dfca99e67ae81623c44175",
-        "ad537a61a9e08043570f35b995fc1c0b887802f9",
-        "e6bf896bdfc7d5a87e048ea2d783cfa6bafbb016",
-        "fba38e53d7d21aaf5d7ccef83755fef616c8dcd3"
-      ],
-      "source_head_sha": "b8d9694ea87b873cf28755f1c5b264a02c5f6b82",
-      "integration_head_sha": null,
-      "test_state": "Github exact blob readback and 9/9 source predicates only; 6 Flutter cases AUTHORED NOT_RUN; required Node24/pnpm12/Flutter/Dart/PG/Android unavailable."
-    },
-    {
       "claim_id": "af09-609-route-composition-gpt6-0544",
       "owner": "AF09 #609 existing feature PR / GPT-6 continuing window 0544",
       "scope": "Close disconnected AF09 route composition by one feature-owned registration boundary for post, follows, playback and canonical report; AF00 retains app/main and actor/media/DB composition",
@@ -268,29 +239,6 @@
       "release_reason": "Six-table feature-owned executable SQL + disposable PostgreSQL negative test authored, blob-readback and V8 stripped-module syntax only; AF00 numbered migration and real Gateway/worker/shell composition MISSING, AF05/15 media MISSING; no runtime Node/PG/Flutter execution; PR #609 comment 6093966267, AF00 #600 comment 6093963040. Milestone incomplete, not integrated, no local pull.",
       "source_head": "c91d9c1d39abcb4342dfac06ab5e8c98b6a59bea",
       "integration_head_sha": null
-    },
-    {
-      "claim_id": "af09-609-playback-compile-recovery-gpt6-0600",
-      "owner": "AF09 existing PR #609 / GPT-6 playback compile source recovery 0600",
-      "scope": "Repair demonstrably malformed published audio playback Dart source and preserve native progress, auth fences, playback sequencing and listen receipts; authored focused widget/parser regressions; append bounded AF09 exact-SHA closure to parent delivery checklist",
-      "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
-        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
-        "docs/workstreams/AF09-playback-compile-recovery-20261010.md",
-        "docs/NEXT-WAVE-DELIVERY-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T05:00:00.000Z",
-      "heartbeat_at": "2026-10-10T05:02:25.045Z",
-      "expires_at": "2026-10-10T05:07:25.049Z",
-      "notes": "No composer/feed/library/social SQL/AF00 root/native/provider changes; existing PR only.",
-      "released_at": "2026-10-10T05:05:09.316Z",
-      "release_reason": "Same existing PR #609 playback Dart compile corruption repaired at 9858560b; validated UUID regression source at e1c032ed; finite 14-row closure d9e87a3d; readback structural only, Node/Flutter/PG actual suites NOT_RUN. No central main document add/add edit. AF00 #600 bounded transfer comment 6094037572; AF09 #609 checkpoint comment 6094036160. Remaining source and integration not complete; do not request local pull.",
-      "source_head_sha": "d9e87a3d193c96c3d2bbe2bc67e1683da9305127",
-      "integration_head_sha": null,
-      "test_state": "Source blob readback and structural one-class assertions only; pnpm/flutter/psql unavailable (127), Git clone DNS failure (128); actual repo tests NOT_RUN."
     },
     {
       "claim_id": "af00-600-owner-directed-unified-source-20261010-gpt6-0518",
@@ -353,24 +301,25 @@
       "released_at": "2026-10-10T05:27:16.875Z"
     },
     {
-      "claim_id": "af09-609-multitab-persistence-20261010-gpt6-0648",
-      "owner": "AF09 existing PR #609 / GPT-6 source-completion continuation",
-      "scope": "CHAT-P01 persistent account-fenced Following/Saved/My Talks cache; preserve previous feed edits",
+      "claim_id": "af09-609-ci-analyzer-recovery-20261010-0730-gpt6",
+      "owner": "GPT-6 / AF09 existing PR #609 executable CI recovery",
+      "scope": "Repair actual GitHub Actions TypeScript/Flutter analyzer failures on the existing source branch; retain financial logic, AF00 composition untouched.",
       "paths": [
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_cache.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/test/audio_first/af09/feed_cache_test.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
         "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "docs/workstreams/AF09-multitab-cache-20261010.md"
+        "packages/agents/src/talk-replay.test.ts",
+        "apps/mobile/lib/src/localization/locale_preference.dart",
+        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart"
       ],
       "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 609,
-      "source_head": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
-      "claimed_at": "2026-10-10T06:49:04.769Z",
-      "heartbeat_at": "2026-10-10T06:49:04.769Z",
-      "expires_at": "2026-10-10T06:54:04.769Z",
-      "notes": "Reviewed existing #609 source and explicit stale transfer in PR comment 6094811024; AF00 protected paths excluded"
+      "claimed_at": "2026-10-10T07:31:14.901Z",
+      "heartbeat_at": "2026-10-10T07:31:14.901Z",
+      "expires_at": "2026-10-10T07:36:14.901Z",
+      "notes": "Visible reviewed stale transfer in PR #609 comment 6095139105; GitHub Actions real compiler output at exact old head; no main change."
     }
   ],
   "history": [
@@ -2518,6 +2467,84 @@
       "test_state": "GitHub source/readback 4/4 structural only; Foundation CI 38033356630 executed and failed known unrelated main TS2459; Test/Build skipped; no safe main merge (Railway gateway Git main checkSuites:false)",
       "released_at": "2026-10-10T07:13:18.210Z",
       "release_reason": "New owner-directed work-to-merge policy source complete in PR #614 head 32b2e6c0987cb8b232174434d0712c40e657a737: AGENTS/CONTINUE/MULTI-WINDOW/REUSABLE. Structural readback succeeded (not repo tests). Foundation #614 run 38033356630 executed and failed pre-existing TalkId TS2459; #460 CI run 37743948779 executed and failed Gateway typecheck fixture errors; #460 Mobile 37743948782 analyzed and exited 1 with 390 analyzer diagnostics; #609 Mobile 38032335846 source errors. Actual suite Test/Build/APK remain skipped. Root production Railway main is auto Git-connected checkSuites:false; gateway start runs pnpm migrate, so unsafe to merge policy to main without AF00 reversible gate. Policy broadcast to PRs #600/#609/#612/#460/#576/#497; test queue in issue #457. Merge SHA NONE; no local pull/production action. AF00 next: safe gate/integration; AF13 source runner; domain owners fix errors in existing PRs."
+    },
+    {
+      "claim_id": "af09-609-publish-status-20261010-gpt6-0521",
+      "owner": "AF09 PR #609 / GPT-6 publish-status continuation",
+      "scope": "Connect authenticated publish receipt lookup to composer processing-status refresh and account-safe terminal readback, no second publish or AF00 root edits",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/test/audio_first/af09/composer_test.dart",
+        "docs/workstreams/AF09-publish-status-recovery-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "source_head": "0cdc3e1b5d32142177837c5341d70ccbca510e10",
+      "claimed_at": "2026-10-10T04:24:29.040Z",
+      "heartbeat_at": "2026-10-10T04:24:29.040Z",
+      "expires_at": "2026-10-10T04:29:29.040Z",
+      "notes": "Independent AF09 composer+widget tests. Does not touch 0517 creator navigation or 0519 comment pagination source.",
+      "released_at": "2026-10-10T04:29:42.421Z",
+      "release_reason": "Source on same PR #609: authenticated post-acceptance composer status readback without retry POST; six authored widget tests; 9/9 source checks only. Flutter/Dart/Node24/pnpm/PG/device E2E BLOCKED/NOT_RUN; still MISSING AF00 migration/routes/worker/shell integration, AF05/15 media and one safe SHA. Handoff docs/workstreams/AF09-publish-status-recovery-20261010.md and PR comments #609 6093774218 / #600 6093774416.",
+      "source_commits": [
+        "4e6513fa5ad3328992dfca99e67ae81623c44175",
+        "ad537a61a9e08043570f35b995fc1c0b887802f9",
+        "e6bf896bdfc7d5a87e048ea2d783cfa6bafbb016",
+        "fba38e53d7d21aaf5d7ccef83755fef616c8dcd3"
+      ],
+      "source_head_sha": "b8d9694ea87b873cf28755f1c5b264a02c5f6b82",
+      "integration_head_sha": null,
+      "test_state": "Github exact blob readback and 9/9 source predicates only; 6 Flutter cases AUTHORED NOT_RUN; required Node24/pnpm12/Flutter/Dart/PG/Android unavailable.",
+      "recovered_at": "2026-10-10T07:31:14.901Z",
+      "recovery_reason": "Reviewed expired overlap for exact-path CI compiler recovery in continuing PR #609; source preserved, coordination comment 6095139105; not an owner-completed milestone."
+    },
+    {
+      "claim_id": "af09-609-playback-compile-recovery-gpt6-0600",
+      "owner": "AF09 existing PR #609 / GPT-6 playback compile source recovery 0600",
+      "scope": "Repair demonstrably malformed published audio playback Dart source and preserve native progress, auth fences, playback sequencing and listen receipts; authored focused widget/parser regressions; append bounded AF09 exact-SHA closure to parent delivery checklist",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
+        "docs/workstreams/AF09-playback-compile-recovery-20261010.md",
+        "docs/NEXT-WAVE-DELIVERY-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T05:00:00.000Z",
+      "heartbeat_at": "2026-10-10T05:02:25.045Z",
+      "expires_at": "2026-10-10T05:07:25.049Z",
+      "notes": "No composer/feed/library/social SQL/AF00 root/native/provider changes; existing PR only.",
+      "released_at": "2026-10-10T05:05:09.316Z",
+      "release_reason": "Same existing PR #609 playback Dart compile corruption repaired at 9858560b; validated UUID regression source at e1c032ed; finite 14-row closure d9e87a3d; readback structural only, Node/Flutter/PG actual suites NOT_RUN. No central main document add/add edit. AF00 #600 bounded transfer comment 6094037572; AF09 #609 checkpoint comment 6094036160. Remaining source and integration not complete; do not request local pull.",
+      "source_head_sha": "d9e87a3d193c96c3d2bbe2bc67e1683da9305127",
+      "integration_head_sha": null,
+      "test_state": "Source blob readback and structural one-class assertions only; pnpm/flutter/psql unavailable (127), Git clone DNS failure (128); actual repo tests NOT_RUN.",
+      "recovered_at": "2026-10-10T07:31:14.901Z",
+      "recovery_reason": "Reviewed expired overlap for exact-path CI compiler recovery in continuing PR #609; source preserved, coordination comment 6095139105; not an owner-completed milestone."
+    },
+    {
+      "claim_id": "af09-609-multitab-persistence-20261010-gpt6-0648",
+      "owner": "AF09 existing PR #609 / GPT-6 source-completion continuation",
+      "scope": "CHAT-P01 persistent account-fenced Following/Saved/My Talks cache; preserve previous feed edits",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_cache.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/test/audio_first/af09/feed_cache_test.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-multitab-cache-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
+      "source_pr": 609,
+      "source_head": "86c9b7a25e1dccb4d901d57136ab535c5b7d6ec1",
+      "claimed_at": "2026-10-10T06:49:04.769Z",
+      "heartbeat_at": "2026-10-10T06:49:04.769Z",
+      "expires_at": "2026-10-10T06:54:04.769Z",
+      "notes": "Reviewed existing #609 source and explicit stale transfer in PR comment 6094811024; AF00 protected paths excluded",
+      "recovered_at": "2026-10-10T07:31:14.901Z",
+      "recovery_reason": "Reviewed expired overlap for exact-path CI compiler recovery in continuing PR #609; source preserved, coordination comment 6095139105; not an owner-completed milestone."
     }
   ]
 }
