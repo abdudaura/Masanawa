@@ -16,11 +16,12 @@ interface CredentialRow {
   display_name: string;
   email: string | null;
   phone: string | null;
+  unverified_phone: string | null;
   locale: string;
   created_at: Date | string;
 }
 type IdentityRow = Pick<CredentialRow,
-  "tenant_id" | "user_id" | "display_name" | "email" | "phone" | "locale" | "created_at">;
+  "tenant_id" | "user_id" | "display_name" | "email" | "phone" | "unverified_phone" | "locale" | "created_at">;
 
 function profile(row: IdentityRow): PlatformAuthProfile {
   return Object.freeze({
@@ -29,6 +30,7 @@ function profile(row: IdentityRow): PlatformAuthProfile {
     name: row.display_name,
     email: row.email,
     phone: row.phone,
+    unverifiedPhone: row.unverified_phone,
     locale: row.locale,
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString(),
   });
@@ -75,6 +77,7 @@ export function createPostgresPhonePasswordCredentials(pool: Pool) {
             `auth:password:${input.tenantId}:${input.phone}`,
           ]);
           await requireTenant(client, input.tenantId, input.at);
+          // Verified phone ownership remains separate from this unverified credential.
           // An existing OTP-proven account with this number must never be claimed
           // by first-time unverified password registration.
           const existing = await client.query<{ user_id: string }>(
@@ -93,9 +96,9 @@ export function createPostgresPhonePasswordCredentials(pool: Pool) {
           });
           const result = await client.query<IdentityRow>(
             `INSERT INTO security.platform_user_profiles
-             (tenant_id,user_id,display_name,email,phone,locale,created_at,updated_at)
-             VALUES ($1,$2,$3,NULL,$4,$5,$6,$6)
-             RETURNING tenant_id,user_id,display_name,email,phone,locale,created_at`,
+             (tenant_id,user_id,display_name,email,phone,unverified_phone,locale,created_at,updated_at)
+             VALUES ($1,$2,$3,NULL,NULL,$4,$5,$6,$6)
+             RETURNING tenant_id,user_id,display_name,email,phone,unverified_phone,locale,created_at`,
             [input.tenantId, userId, input.name, input.phone, input.locale, input.at],
           );
           await client.query(
@@ -122,10 +125,10 @@ export function createPostgresPhonePasswordCredentials(pool: Pool) {
       return withTransaction(pool, async (client) => {
         const result = await client.query<CredentialRow>(
           `SELECT c.password_hash,c.failed_attempts,c.locked_until,
-                  p.tenant_id,p.user_id,p.display_name,p.email,p.phone,p.locale,p.created_at
+                  p.tenant_id,p.user_id,p.display_name,p.email,p.phone,p.unverified_phone,p.locale,p.created_at
              FROM security.platform_phone_password_credentials c
              JOIN security.platform_user_profiles p
-               ON p.tenant_id=c.tenant_id AND p.user_id=c.user_id AND p.phone=c.phone
+               ON p.tenant_id=c.tenant_id AND p.user_id=c.user_id AND p.unverified_phone=c.phone
              JOIN identity.users u
                ON u.tenant_id=c.tenant_id AND u.user_id=c.user_id
              JOIN identity.tenants t ON t.tenant_id=c.tenant_id
