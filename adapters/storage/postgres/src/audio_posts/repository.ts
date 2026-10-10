@@ -1,7 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import type {
  AudioPostRecord, AudioPostRepository, NewAudioPost, PublicFeedPage,
-} from "../../../../../services/gateway/src/audio_posts/contract.js";
+} from "@masanawa/contracts";
 
 /** Canonical profile/block/moderation authority supplied by Gateway composition.
  * Must fail closed when unavailable. Not a new blocklist database.
