@@ -91,13 +91,13 @@ Compact, one-handed, WhatsApp-familiar composition. Masanawa blue brand accent a
 ### Supporting and administration (SC-045–SC-052)
 | ID | Screen | Layout / actions | Binding and failure modes |
 |---|---|---|---|
-| SC-045 | Settings | language, profile, audio, notifications, privacy, support, About, sign out | never reveal AI/provider secrets, old app claims, or unproven security |
+| SC-045 | Settings | language, profile, audio, notifications, privacy, support, About, sign out | never reveal provider credentials, obsolete app claims or unverified security promises |
 | SC-046 | Permissions/privacy | mic/notification/contacts toggles with rationale; block list and data preferences | separate OS permission from server preferences and feature eligibility |
 | SC-047 | Help/account lifecycle | ticket, report abuse, export/delete account, pending deletion | preserve open transactions and legally retained records; safe reauthentication |
 | SC-048 | Admin home (separate Android app) | health summary, pending incidents, queue failures, search, role-scoped quick actions | production vs staging visible, no shared consumer privileged session |
 | SC-049 | Admin users/agents/channels | users/platform agents/skills, Masana schedule/approvals, WhatsApp/Telegram state, device and consent | least privilege, audit, per-provider redaction and rollback |
 | SC-050 | Admin finance | ledger reconciliation, provider events, P2P disputes, holds, refunds and authorization | dual control where needed, no freeform SQL/mint button |
-| SC-051 | Admin content/support | reported Talks/Rooms/users, scheduled post review, pause/resume, tickets | , source/provenance, moderation redress and event history |
+| SC-051 | Admin content/support | reported Talks/Rooms/users, scheduled post review, pause/resume, tickets | source references, moderation review and event history |
 | SC-052 | Admin operations | flags, queue lag, storage/budgets, backup health, release metadata, incident/rollback | no proof from /healthz alone; credentials never displayed |
 
 ## Required interaction-state contract for each SC
