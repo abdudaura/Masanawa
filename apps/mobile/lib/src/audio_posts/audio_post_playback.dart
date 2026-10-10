@@ -49,9 +49,18 @@ abstract interface class PublishedTalkAudioOutput {
 /// One player per active feed, never one player per Talk/card.
 /// Android/media focus must be coordinated with private calls by AF05.
 class JustAudioTalkOutput implements PublishedTalkAudioOutput {
-  JustAudioTalkOutput({AudioPlayer? player}) : _player = player ?? AudioPlayer();
+  JustAudioTalkOutput({AudioPlayer? player}) : _player = player ?? AudioPlayer() {
+    _stateSubscription = _player.playerStateStream.listen((state) {
+      if (!_disposed && state.processingState == ProcessingState.completed) {
+        onCompleted?.call();
+      }
+    });
+  }
 
   final AudioPlayer _player;
+  late final StreamSubscription<PlayerState> _stateSubscription;
+  VoidCallback? onCompleted;
+  VoidCallback? onUnavailable;
   bool _disposed = false;
 
   @override
@@ -70,7 +79,7 @@ class JustAudioTalkOutput implements PublishedTalkAudioOutput {
         (_) {},
         onError: (Object error, StackTrace trace) {
           // No private media URLs or server error bodies in logs.
-          // The player stream notifies its owning media integration.
+          onUnavailable?.call();
           unawaited(_player.stop());
         },
       ));
@@ -93,6 +102,7 @@ class JustAudioTalkOutput implements PublishedTalkAudioOutput {
     if (_disposed) return;
     await stop();
     _disposed = true;
+    await _stateSubscription.cancel();
     await _player.dispose();
   }
 }
@@ -111,7 +121,13 @@ class AudioPostPlaybackController extends ChangeNotifier {
     int Function()? nowMs,
   }) : _output = output ?? JustAudioTalkOutput(),
        _ticketRequest = ticketRequest,
-       _nowMs = nowMs ?? _systemNow;
+       _nowMs = nowMs ?? _systemNow {
+    if (_output is JustAudioTalkOutput) {
+      final native = _output as JustAudioTalkOutput;
+      native.onCompleted = _finishPlayback;
+      native.onUnavailable = _failPlayback;
+    }
+  }
 
   final ApiClient api;
   final String accountId;
@@ -137,6 +153,22 @@ class AudioPostPlaybackController extends ChangeNotifier {
       accountId.trim().isNotEmpty && isCurrentAccount(accountId) && !_closed;
 
   void _notify() { if (!_closed) notifyListeners(); }
+
+  void _finishPlayback() {
+    if (_closed || !_playing) return;
+    _playing = false;
+    _activePostId = null;
+    _notify();
+    unawaited(_output.stop());
+  }
+
+  void _failPlayback() {
+    if (_closed || !_playing) return;
+    _playing = false;
+    _error = 'Audio stopped. Retry to listen.';
+    _notify();
+    unawaited(_output.stop());
+  }
 
   Future<void> play(AudioPost post) async {
     if (!isAuthorized || post.status != 'published' ||
