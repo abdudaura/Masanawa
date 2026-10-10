@@ -374,7 +374,7 @@
     {
       "claim_id": "af00-600-source-migration-20261010-gpt6-0520",
       "owner": "AF00 owner-directed root integration / GPT-6 continued",
-      "scope": "Reclaim after prior AF00 claim expired without live collisions; finish additive numbered source migration, root Flutter route, single integration record and central CI blocker, preserve other PR work and no production deploy; adopt reviewed read-only AF13 #596 qualification authority with pinned source (no release permission); adopt AF08 #597 neutral native splash and Flutter launch consistent with /home, no production",
+      "scope": "Reclaim after prior AF00 claim expired without live collisions; finish additive numbered source migration, root Flutter route, single integration record and central CI blocker, preserve other PR work and no production deploy; adopt reviewed read-only AF13 #596 qualification authority with pinned source (no release permission); adopt AF08 #597 neutral native splash and Flutter launch consistent with /home, no production; pinned AF05 #602 PCM guard nonmain source only",
       "paths": [
         "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
         "apps/mobile/lib/src/router/app_router.dart",
@@ -397,14 +397,17 @@
         "apps/mobile/android/app/src/main/res/values/colors.xml",
         "apps/mobile/lib/src/screens/splash/splash_screen.dart",
         "apps/mobile/test/audio_first/af08/neutral_launch_test.dart",
-        "docs/workstreams/AF08-neutral-launch-20261009.md"
+        "docs/workstreams/AF08-neutral-launch-20261009.md",
+        "apps/mobile/lib/src/core/live_pcm_audio.dart",
+        "apps/mobile/test/audio_first/af05/live_pcm_audio_bridge_test.dart",
+        "docs/workstreams/AF05-pcm-bridge-guard-20261010.md"
       ],
       "branch": "work/af00-root-navigation-20261010-masanawa01-c",
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "source_pr": 600,
       "claimed_at": "2026-10-10T05:19:01.295Z",
-      "heartbeat_at": "2026-10-10T05:23:46.741Z",
-      "expires_at": "2026-10-10T05:28:46.741Z",
+      "heartbeat_at": "2026-10-10T05:24:45.184Z",
+      "expires_at": "2026-10-10T05:29:45.184Z",
       "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files."
     }
   ],
