@@ -355,6 +355,21 @@
       "heartbeat_at": "2026-10-10T04:59:05.236Z",
       "expires_at": "2026-10-10T05:04:05.236Z",
       "notes": "New backend+Flutter additive pagination; avoid other AF09 capture/composer/AF00 paths; exact-head source/tests and release handoff."
+    },
+    {
+      "claim_id": "af09-609-capture-destination-gpt6-0559",
+      "owner": "AF09 PR #609 / GPT-6 capture destination contract continuation",
+      "scope": "Route optional canonical verified uploader from feature-local PublishedTalksDestination into already updated composer; tests must confirm no fake publish. No AF00 shared shell edit.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_destination.dart",
+        "apps/mobile/test/audio_first/af09/destination_test.dart"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:59:47.587Z",
+      "heartbeat_at": "2026-10-10T04:59:47.587Z",
+      "expires_at": "2026-10-10T05:04:47.587Z"
     }
   ],
   "history": [
