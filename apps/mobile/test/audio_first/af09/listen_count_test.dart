@@ -121,4 +121,20 @@ void main() {
     expect(requests,[_session,_session]);
     expect(player.listenCountFor('post-a'),5);
   });
+  test('public listenCount parser accepts old servers but refuses inflated or corrupt counts', () {
+    final fields = <String, dynamic>{
+      'postId':'post-a','authorId':'creator-a','authorKind':'human',
+      'title':'Recorded audio','durationMs':12000,'status':'published',
+      'revision':2,'createdAt':'2026-10-10T00:00:00.000Z',
+      'likeCount':1,'commentCount':2,
+    };
+    expect(AudioPost.fromJson(fields).listenCount,0);
+    expect(AudioPost.fromJson({...fields,'listenCount':4}).listenCount,4);
+    for(final bad in [-1,3.5,'10',null]) {
+      // Null remains backward-compatible with an absent pre-migration value.
+      if(bad==null)continue;
+      expect(()=>AudioPost.fromJson({...fields,'listenCount':bad}),throwsFormatException);
+    }
+  });
+
 }
