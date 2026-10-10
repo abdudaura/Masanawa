@@ -182,6 +182,19 @@ class AudioPostPlaybackController extends ChangeNotifier {
     unawaited(_runMedia(_output.stop).catchError((Object _) {}));
   }
 
+  Future<void> _retireStaleRequest(int requestGeneration) async {
+    // A new request already owns media and the visible player state.
+    if (requestGeneration != _generation) return;
+    try { await _runMedia(_output.stop); }
+    catch (_) { /* do not leak native or private-media details */ }
+    if (_closed || requestGeneration != _generation) return;
+    _loading = false;
+    _playing = false;
+    _activePostId = null;
+    _error = null;
+    _notify();
+  }
+
   Future<void> play(AudioPost post) async {
     if (!isAuthorized || post.status != 'published' ||
         !RegExp(r'^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$').hasMatch(post.postId)) {
@@ -203,17 +216,27 @@ class AudioPostPlaybackController extends ChangeNotifier {
     try {
       await _runMedia(_output.stop);
       if (!isAuthorized || requestGeneration != _generation ||
-          api.accessToken != authorizationAtStart) return;
+          api.accessToken != authorizationAtStart) {
+        await _retireStaleRequest(requestGeneration);
+        return;
+      }
       final payload = _ticketRequest != null
           ? await _ticketRequest(post.postId)
           : (await api.dio.get<dynamic>(
               '/audio-posts/' + Uri.encodeComponent(post.postId) + '/playback',
             )).data;
       if (!isAuthorized || requestGeneration != _generation ||
-          api.accessToken != authorizationAtStart) return;
+          api.accessToken != authorizationAtStart) {
+        await _retireStaleRequest(requestGeneration);
+        return;
+      }
       final ticket = PublishedTalkTicket.parse(
         payload, expectedHost: expectedMediaHost, nowMs: _nowMs());
-      if (!isAuthorized || requestGeneration != _generation) return;
+      if (!isAuthorized || requestGeneration != _generation ||
+          api.accessToken != authorizationAtStart) {
+        await _retireStaleRequest(requestGeneration);
+        return;
+      }
       await _runMedia(() async {
         // A newer stop/play can be queued while waiting on the media ticket.
         if (!isAuthorized || requestGeneration != _generation ||
@@ -229,9 +252,7 @@ class AudioPostPlaybackController extends ChangeNotifier {
           api.accessToken != authorizationAtStart) {
         // A newer play/stop owns its own queued cleanup. Never stop that
         // newer playback from an earlier request's stale continuation.
-        if (requestGeneration == _generation) {
-          await _runMedia(_output.stop);
-        }
+        await _retireStaleRequest(requestGeneration);
         return;
       }
       _loading = false;
