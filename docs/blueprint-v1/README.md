@@ -15,6 +15,7 @@ Stop implementation drift: one product charter, complete actor/screen inventory,
 3. [Recovery and delivery](RECOVERY-DELIVERY.md): actual observed repository risks, reuse criteria, PR triage and phase gates.
 4. [Research and decisions](RESEARCH-DECISIONS.md): peer patterns, official evidence, confirmed exclusions and remaining owner decisions.
 5. [Legacy scope cleanup](LEGACY-SCOPE-CLEANUP.md): exact-source removal inventory, historical obligation retention, PR and test gates.
+6. [Talks, composer, blue branding and commerce UX design options](TALKS-CHAT-COMMERCE-UX-OPTIONS-20261010.md): researched recommendations, current-source regressions, full controls/states/contracts, proposed acceptance tests, and approval gate.
 
 ## Evidence and confidence
 - **Observed at named SHA:** monorepo has Flutter consumer/admin, web/ops scaffolding, TypeScript backend, PostgreSQL adapters, and test code; the consumer router still includes older four-tab assumptions. Other branches contain ongoing fixes and must be reconciled.
