@@ -307,6 +307,23 @@
       "release_reason": "Feature-owned complete 18-route registration source, three authored Node regressions, blob readback and stripped-import V8 syntax parse; parent milestone source still missing AF00 Gateway/migration/worker/shell and AF05/AF15 media; tests blocked by Node24/pnpm12/checkout/PG/Flutter; exact handoff #609 comment 6093929958, AF00 request #600 comment 6093927801. No integration SHA, no local pull.",
       "source_head": "636abf8939b16e8aa214527584062a7544b9257b",
       "integration_head_sha": null
+    },
+    {
+      "claim_id": "af09-609-capture-handoff-gpt6-0551",
+      "owner": "AF09 PR #609 / GPT-6 capture-to-verified-private-upload handoff 0551",
+      "scope": "Implement real record/pause/preview/trim UI and an explicit AF05/AF15 verified private upload callback. No native bridge, permanent storage, migration, Gateway, routing, or fake asset on offline/failure.",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_capture_sheet.dart",
+        "apps/mobile/test/audio_first/af09/capture_sheet_test.dart",
+        "docs/workstreams/AF09-capture-handoff-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:50:56.006Z",
+      "heartbeat_at": "2026-10-10T04:50:56.006Z",
+      "expires_at": "2026-10-10T04:55:56.006Z",
+      "notes": "Scope is only new feature-layer Flutter files; AF05 owns native recording infrastructure and AF15 owns canonical media authority. AF00 owns composer injection/shell."
     }
   ],
   "history": [
