@@ -5,6 +5,7 @@ import {
   createStatusOnlyRecovery,
   type RecoveryJournal,
   type RecoveryOperation,
+  type RecoveryVerifiedReadback,
 } from "./recovery.js";
 import type { OperatorDomainOutcome } from "./index.js";
 
@@ -13,11 +14,17 @@ const operation: RecoveryOperation = Object.freeze({
   operationId: "operation_1", capabilityId: "talks.publish", version: 4,
 });
 
+function bound(outcome: OperatorDomainOutcome): RecoveryVerifiedReadback {
+  return { tenantId: operation.tenantId, userId: operation.userId,
+    taskId: operation.taskId, operationId: operation.operationId,
+    capabilityId: operation.capabilityId, outcome };
+}
+
 function setup(
   outcome: OperatorDomainOutcome = { status: "unknown" },
   settle: "settled" | "stale" | "unknown" = "settled",
 ) {
-  const readback = vi.fn(async () => outcome);
+  const readback = vi.fn(async () => bound(outcome));
   const claim = vi.fn(async () => [operation]);
   const persist = vi.fn(async () => settle);
   const journal: RecoveryJournal = { claim, settle: persist };
@@ -89,6 +96,48 @@ describe("U02 durable status-only recovery", () => {
     expect(await stalled.runOnce()).toMatchObject({ unknown: 1 });
     expect(journal.settle).toHaveBeenCalledTimes(2);
     expect(vi.mocked(journal.settle).mock.calls[1]?.[0].outcome).toEqual({ status: "unknown" });
+  });
+
+  it("does not credit another person's or another task's authoritative receipt", async () => {
+    const checked: OperatorDomainOutcome[] = [];
+    const journal: RecoveryJournal = {
+      claim: async () => [operation],
+      settle: vi.fn(async ({ outcome }) => { checked.push(outcome); return "unknown" as const; }),
+    };
+    const valid = bound({ status: "confirmed", receiptRef: "ledger:valid_1" });
+    const unbound = [
+      { ...valid, tenantId: "another_tenant" },
+      { ...valid, userId: "another_user" },
+      { ...valid, taskId: "another_task" },
+      { ...valid, operationId: "another_operation" },
+      { ...valid, capabilityId: "another.capability" },
+      { ...valid, outcome: { status: "confirmed", receiptRef: 123 } } as never,
+      { ...valid, outcome: { status: "bogus", receiptRef: "ledger:valid_1" } } as never,
+    ];
+    for (const result of unbound) {
+      const worker = createStatusOnlyRecovery({
+        journal, status: { readback: async () => result },
+        now: () => new Date("2026-10-10T00:10:00.000Z"),
+      });
+      expect(await worker.runOnce()).toMatchObject({
+        confirmed: 0, rejected: 0, unknown: 1,
+      });
+    }
+    expect(checked).toHaveLength(unbound.length);
+    expect(checked.every(outcome => outcome.status === "unknown")).toBe(true);
+  });
+
+  it("requires a matching operation envelope even for an honest rejection", async () => {
+    const settled = vi.fn(async () => "unknown" as const);
+    const worker = createStatusOnlyRecovery({
+      journal: { claim: async () => [operation], settle: settled },
+      status: { readback: async () => ({
+        ...bound({ status: "rejected", code: "DENIED" }), operationId: "wrong_operation",
+      }) },
+      now: () => new Date("2026-10-10T00:10:00.000Z"),
+    });
+    expect(await worker.runOnce()).toMatchObject({ rejected: 0, unknown: 1 });
+    expect(settled.mock.calls[0]?.[0].outcome).toEqual({ status: "unknown" });
   });
 
   it("rejects missing/unsafe worker bounds", () => {
