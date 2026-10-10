@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "updated": "2026-10-09",
   "snapshotBaseSha": "5e758673ae91082520b21b3153da53791ae2cbf3",
   "status": "PLANNED",
@@ -459,5 +459,9 @@
   ],
   "defaultTab": "talks",
   "centerTab": "talks",
-  "auditBaseSha": "44d75253cd9196db395662187a10aaaf39cc31c1"
+  "auditBaseSha": "44d75253cd9196db395662187a10aaaf39cc31c1",
+  "dispatchPolicy": "docs/NEXT-WAVE-DELIVERY-20261010.md",
+  "reusablePrompt": "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
+  "statusSemantics": "Allocation template only. Actual active ownership and completion require refreshed factory/claims, PR heads/files/handoffs and executed evidence; partial patches do not exhaust AF lanes.",
+  "taskSelection": "Complete existing substantive customer milestone before new helper/hardening work; dependencies block exact contracts only."
 }

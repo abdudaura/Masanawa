@@ -2,6 +2,10 @@
 
 Updated 2026-10-09. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
 
+## Immediate delivery correction — 2026-10-10
+
+Read [outcome-first dispatch](docs/NEXT-WAVE-DELIVERY-20261010.md) FIRST and use [the replacement reusable prompt](docs/REUSABLE-IMPLEMENTATION-PROMPT.md). Stop unrestricted micro-fix selection and duplicate evidence/cleanup tools. Complete substantive customer milestones, continue existing PRs and integrate tested code on one reviewed safe baseline. The AF JSON is an allocation template, not live completion status; inspect current claims/PRs/handoffs. Read only relevant feature references after this short dispatch.
+
 ## Read in this order
 
 1. [Contributor rules](AGENTS.md) and [coordination](docs/MULTI-WINDOW-WORK.md).
