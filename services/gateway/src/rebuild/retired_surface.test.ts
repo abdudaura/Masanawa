@@ -6,6 +6,20 @@ describe("R0 retired product boundary", () => {
     "/talks",
     "/talks/talk_123/seat",
     "/v1/talks",
+    "/me/talks",
+    "/agent/twin/profile",
+    "/agent/twin/profile/customize/preview",
+    "/agent/twin/owner-access/quote",
+    "/agent/twin/owner-access/request",
+    "/agent/twin/voice/start",
+    "/v1/my-twin",
+    "/v1/my-twin/discoverability",
+    "/channels/whatsapp/webhook",
+    "/channels/telegram/webhook",
+    "/admin/channels/whatsapp/status",
+    "/admin/channels/whatsapp/qr",
+    "/admin/channels/whatsapp/reset",
+    "/admin/channels/telegram/status",
     "/v1/twins",
     "/agent/twins",
     "/creator/onboarding/confirm",
@@ -47,6 +61,9 @@ describe("R0 retired product boundary", () => {
 
   it("honors route boundaries, not permissive substring search", () => {
     expect(isRetiredLegacySurface("/talkshows")).toBe(false);
+    expect(isRetiredLegacySurface("/admin/channels/whatsapp-v2")).toBe(false);
+    expect(isRetiredLegacySurface("/agent/twinship")).toBe(false);
+    expect(isRetiredLegacySurface("/v1/my-twinkle")).toBe(false);
     expect(isRetiredLegacySurface("/v1/creator-studio")).toBe(false);
     expect(isRetiredLegacySurface("/v1/masana/twins-specialist")).toBe(false);
   });
