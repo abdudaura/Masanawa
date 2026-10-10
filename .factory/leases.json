@@ -112,6 +112,22 @@
       "claimed_at": "2026-10-10T01:36:55Z",
       "heartbeat_at": "2026-10-10T01:36:55Z",
       "expires_at": "2026-10-10T01:41:55Z"
+    },
+    {
+      "claim_id": "masanawa01-af01-crypto-ledger-reason-20261010-g",
+      "owner": "MASANAWA-01 / AF01 ledger integrity",
+      "scope": "Fail closed on unsupported crypto ledger reason and impossible debit/credit reason direction; add regression tests without new ledger or DB migration",
+      "paths": [
+        "packages/commerce/src/crypto.ts",
+        "packages/commerce/src/crypto.test.ts",
+        "docs/workstreams/AF01-crypto-ledger-reason-20261010.md"
+      ],
+      "branch": "work/af01-crypto-ledger-reason-20261010-masanawa01-g",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "claimed_at": "2026-10-10T01:40:26.479Z",
+      "heartbeat_at": "2026-10-10T01:40:26.479Z",
+      "expires_at": "2026-10-10T01:45:26.479Z",
+      "notes": "Separated from AF01 active onramp and transfer-guard #605; existing crypto ledger admission normalizer in use by Postgres adapter. Strictly scoped source/tests; no shared composition."
     }
   ],
   "history": [
