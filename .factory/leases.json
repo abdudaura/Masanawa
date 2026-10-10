@@ -216,6 +216,27 @@
       "heartbeat_at": "2026-10-10T04:21:01.884Z",
       "expires_at": "2026-10-10T04:26:01.884Z",
       "notes": "AF09 feature-local UI wiring only; AF00 root/router/migrations and AF05/AF15 media untouched. New paths do not overlap active paths; prior feed claims are in history."
+    },
+    {
+      "claim_id": "af09-609-comments-backend-paging-gpt6-0519",
+      "owner": "AF09 #609 continuation — comments pagination / GPT-6",
+      "scope": "Source: bounded older-comments pagination using existing PG visibility, authenticated Gateway and Flutter transport; UI feed screen owned by separate 0517 claimant and will receive bounded integration request, no protected composition",
+      "paths": [
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/service.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "services/gateway/src/audio_posts/comments_pagination.test.mjs",
+        "apps/mobile/test/audio_first/af09/comments_pagination_test.dart",
+        "docs/workstreams/AF09-comments-pagination-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:22:31.829Z",
+      "heartbeat_at": "2026-10-10T04:22:31.829Z",
+      "expires_at": "2026-10-10T04:27:31.829Z"
     }
   ],
   "history": [
