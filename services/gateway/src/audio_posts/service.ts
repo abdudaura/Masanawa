@@ -133,6 +133,17 @@ export function createAudioPostService(deps: {
     return repository.mine({ tenantId: actor.tenantId, accountId: actor.accountId, limit: 50 });
   };
 
+  const removeOwn = async (actor: PostActor, postId: string) => {
+    assertActor(actor);
+    safeId(postId, "post");
+    const removed = await repository.removeOwn({
+      tenantId: actor.tenantId, accountId: actor.accountId, postId,
+    });
+    // Same response for missing and another account's post: no existence leak.
+    if (!removed) throw new AudioPostError("NOT_FOUND", "Audio post not found");
+    return removed;
+  };
+
   const reaction = async (actor: PostActor, input: {
     postId: string; kind: "like" | "save"; enabled: boolean;
   }) => {
@@ -147,5 +158,5 @@ export function createAudioPostService(deps: {
       postId: input.postId, kind: input.kind, enabled: input.enabled,
     });
   };
-  return Object.freeze({ publish, settle, feed, mine, reaction });
+  return Object.freeze({ publish, settle, feed, mine, removeOwn, reaction });
 }
