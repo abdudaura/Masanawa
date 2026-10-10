@@ -211,7 +211,7 @@ void main() {
 
     final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(nav.selectedIndex, 2);
-    expect(nav.destinations.map((d) => d.label).toList(),
+    expect(nav.destinations.cast<NavigationDestination>().map((d) => d.label).toList(),
       ['Chats', 'Rooms', 'Talks', 'Gwani', 'Wallet']);
     expect(find.text('Audio posts are not available yet'), findsOneWidget);
     // The historic live feed must not masquerade as new published audio posts.
@@ -274,7 +274,7 @@ void main() {
     await tester.pumpWidget(_app(uiLocale: const Locale('ar')));
     await tester.pumpAndSettle();
     final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(nav.destinations.map((d) => d.label).toList(),
+    expect(nav.destinations.cast<NavigationDestination>().map((d) => d.label).toList(),
       ['الدردشات', 'الغرف', 'التسجيلات', 'Gwani', 'المحفظة']);
     expect(nav.selectedIndex, 2);
     expect(Directionality.of(tester.element(find.byType(NavigationBar))),
