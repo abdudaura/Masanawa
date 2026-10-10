@@ -1267,6 +1267,26 @@
       "heartbeat_at": "2026-10-10T16:30:45.836Z",
       "expires_at": "2026-10-10T16:35:45.836Z",
       "notes": "Non-overlap verified with #624 J15 claim; source under J14 paths only; no runtime activation/provider keys."
+    },
+    {
+      "claim_id": "l-missions-j12-publish-once-20261010-gpt6-1730",
+      "owner": "GPT-6 / L-MISSIONS J12 source",
+      "scope": "Mission weekly schedule, staff API, PostgreSQL source, lease/retry/publish-once worker, Android Admin and J12 negative tests; no shared/production files",
+      "paths": [
+        "packages/masana_missions/**",
+        "services/gateway/src/modules/masana_missions/**",
+        "services/worker/src/jobs/masana_missions/**",
+        "adapters/storage/postgres/src/masana_missions/**",
+        "apps/admin_mobile/lib/src/features/missions/**",
+        "tests/e2e/J12/**",
+        "docs/workstreams/l-missions-publish-once-20261010-gpt6.md"
+      ],
+      "branch": "lane/l-missions-publish-once-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "claimed_at": "2026-10-10T16:31:05.547Z",
+      "heartbeat_at": "2026-10-10T16:31:05.547Z",
+      "expires_at": "2026-10-10T16:36:05.547Z",
+      "notes": "Feature-owned paths only, AF00 owns shared migration/route/worker composition; no live run/financial access."
     }
   ],
   "history": [
