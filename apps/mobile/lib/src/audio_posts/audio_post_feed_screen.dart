@@ -143,6 +143,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _restoreTabOffset(_tabKey);
       _fromSnapshot = false;
       _freshDiscoverRead = false;
+      _loadingMore = false;
       _message = null;
       _reacting.clear();
       _commentsSession.value++;
@@ -180,6 +181,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _next = previous?.nextCursor;
       _fromSnapshot = previous?.fromDisk ?? false;
       _freshDiscoverRead = previous?.isFresh ?? false;
+      _loadingMore = false;
       _message = null;
     });
     _restoreTabOffset(nextTab);
