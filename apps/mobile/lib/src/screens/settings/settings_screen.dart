@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../account_preferences/notification_switch_controller.dart';
 import '../../core/mobile_push.dart';
 import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
@@ -24,18 +25,50 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _notifications = false;
+  late final NotificationSwitchController _notificationController;
+  String? _notificationAccountId;
   String? _savingDefaultAgentId;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_refreshNotificationState());
+    _notificationController = NotificationSwitchController(
+      readEnabled: MobilePushService.instance.notificationEnabled,
+      requestPermission: MobilePushService.instance.requestPermission,
+      unregister: MobilePushService.instance.unregister,
+    )..addListener(_rebuildNotificationState);
   }
 
-  Future<void> _refreshNotificationState() async {
-    final enabled = await MobilePushService.instance.notificationEnabled();
-    if (mounted) setState(() => _notifications = enabled);
+  void _rebuildNotificationState() {
+    if (mounted) setState(() {});
+  }
+
+  void _bindNotificationAccount(String? accountId) {
+    if (_notificationAccountId == accountId) return;
+    _notificationAccountId = accountId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _notificationAccountId != accountId) return;
+      unawaited(_notificationController.bind(accountId));
+    });
+  }
+
+  Future<void> _toggleNotifications(bool value) async {
+    final account = _notificationAccountId;
+    final confirmed = await _notificationController.change(value);
+    if (!mounted || _notificationAccountId != account) return;
+    final message = _notificationController.error;
+    if (!confirmed && message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _notificationController.removeListener(_rebuildNotificationState);
+    _notificationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,6 +76,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final u = context.masanawa;
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
+    _bindNotificationAccount(user?.id);
     final name = user?.name ?? 'Citizen';
     final contact = user?.phone ?? user?.email ?? 'No contact saved';
     final directory = ref.watch(agentDirectoryProvider);
@@ -219,45 +253,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _Card(
             children: [
               SwitchListTile(
+                key: const Key('settings-notifications'),
                 secondary: Icon(Icons.notifications_outlined, color: u.brand),
                 title: const Text('Notifications'),
                 subtitle: Text(
-                  MobilePushService.instance.configured
-                      ? 'Replies, requests and updates'
-                      : 'Not available in this build',
+                  !MobilePushService.instance.configured
+                      ? 'Not available in this build'
+                      : _notificationController.loading
+                          ? 'Checking device notification status…'
+                          : _notificationController.error ??
+                              'This device · permission and push registration',
                 ),
-                value:
-                    MobilePushService.instance.configured && _notifications,
-                onChanged: !MobilePushService.instance.configured
+                value: MobilePushService.instance.configured &&
+                    _notificationController.enabled,
+                onChanged: !MobilePushService.instance.configured ||
+                        !_notificationController.canChange
                     ? null
-                    : (value) async {
-                        if (value) {
-                          final allowed = await MobilePushService.instance
-                              .requestPermission();
-                          if (!mounted) return;
-                          setState(() => _notifications = allowed);
-                          if (allowed) {
-                            await ref
-                                .read(agentDirectoryProvider.notifier)
-                                .refresh();
-                            await _refreshNotificationState();
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Notifications are disabled. You can enable them in system settings.',
-                                ),
-                              ),
-                            );
-                          }
-                        } else {
-                          await MobilePushService.instance.unregister();
-                          if (mounted) {
-                            setState(() => _notifications = false);
-                          }
-                        }
-                      },
+                    : (value) => unawaited(_toggleNotifications(value)),
               ),
+              if (MobilePushService.instance.configured &&
+                  _notificationController.error != null) ...[
+                ListTile(
+                  key: const Key('settings-notifications-retry'),
+                  leading: const Icon(Icons.refresh),
+                  title: const Text('Retry notification status'),
+                  onTap: _notificationController.canChange
+                      ? () => unawaited(_notificationController.refresh())
+                      : null,
+                ),
+              ],
               const Divider(height: 1),
               ListTile(
                 leading: Icon(Icons.delete_outline, color: u.brand),
