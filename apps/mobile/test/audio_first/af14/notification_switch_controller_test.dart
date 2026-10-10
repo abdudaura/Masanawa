@@ -78,7 +78,7 @@ void main() {
         requests++;
         return pendingPermission.future;
       },
-      unregister: () async => enabled = false,
+      unregister: () async { enabled = false; },
     );
     await controller.bind('user_a');
     final first = controller.change(true);
