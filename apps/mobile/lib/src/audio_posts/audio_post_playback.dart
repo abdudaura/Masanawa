@@ -218,6 +218,11 @@ class AudioPostPlaybackController extends ChangeNotifier {
         // A newer stop/play can be queued while waiting on the media ticket.
         if (!isAuthorized || requestGeneration != _generation ||
             api.accessToken != authorizationAtStart) return;
+        // A previous native start can hold the media queue long enough for
+        // this short-lived AF15 ticket to expire after initial validation.
+        if (_nowMs() + 5000 >= ticket.expiresAtMs) {
+          throw const FormatException('Expired audio ticket');
+        }
         await _output.start(ticket.url);
       });
       if (!isAuthorized || requestGeneration != _generation ||
