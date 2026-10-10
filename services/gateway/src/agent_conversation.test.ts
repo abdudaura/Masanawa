@@ -776,4 +776,71 @@ describe("Alpha conversation service", () => {
     expect(deltas).toEqual(["Emoji ", "<3"]);
   });
 
+  it("persists only a safe recovery message when a processor misses a directive", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const completed: Array<{ reply: string; parts: readonly unknown[] }> = [];
+    const eventPayloads: Array<Readonly<Record<string, unknown>>> = [];
+    const output: string[] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      mobileShell: {
+        async claimTurn() { return { state: "created" }; },
+        async appendEvent(event: { payload: Readonly<Record<string, unknown>> }) {
+          eventPayloads.push(event.payload);
+          return {};
+        },
+        async completeTurn(value: { reply: string; parts: readonly unknown[] }) {
+          completed.push({ reply: value.reply, parts: value.parts });
+          return {};
+        },
+        async failTurn() { throw new Error("must not fail settled run"); },
+      } as never,
+      strategy: {
+        async execute() {
+          return {
+            reply: 'Unprocessed <masanawa_action>{"amount":123}</masanawa_action>',
+            parts: [{ internal: "never publish" }],
+          };
+        },
+      },
+      billingAssistant: {
+        systemInstructions: [],
+        async beforeInference() { return null; },
+        async afterInference() { return null; },
+      },
+      sessionDurationMs: 60_000,
+    });
+    const response = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "buy airtime",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      onTextDelta: (delta) => { output.push(delta); },
+    });
+    expect(completed).toEqual([{ reply: response.reply, parts: [] }]);
+    expect(response.parts).toEqual([]);
+    expect(output).toEqual([response.reply]);
+    expect(eventPayloads[eventPayloads.length - 1]).toMatchObject({
+      reply: response.reply,
+      parts: [],
+    });
+    expect(JSON.stringify({ completed, eventPayloads })).not.toContain("masanawa_action");
+    expect(JSON.stringify({ completed, eventPayloads })).not.toContain("never publish");
+  });
+
 });
