@@ -93,7 +93,13 @@ export interface TalkRepository {
     tenantId: string;
     talkId: string;
     viewerUserId: string;
-  }>): Promise<Readonly<{ talk: TalkRecord; commentCount: number }> | null>;
+  }>): Promise<Readonly<{
+    talk: TalkRecord;
+    commentCount: number;
+    // Preserve the already-persisted projection returned by the PostgreSQL adapter.
+    // This is legacy readback only; R0 disables new Talk stages and publishing.
+    participants?: readonly TalkParticipantPreview[];
+  }> | null>;
   updateMetadata(input: Readonly<{
     tenantId: string;
     talkId: string;
