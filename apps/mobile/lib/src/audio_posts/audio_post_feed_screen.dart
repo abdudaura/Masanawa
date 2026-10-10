@@ -26,9 +26,10 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   List<AudioPost> _items = const [];
   String? _next;
   String? _message;
-  bool _loading = true, _loadingMore = false;
+  bool _loading = true, _loadingMore = false, _mine = false;
   int _generation = 0;
   final Set<String> _reacting = {};
+  final Set<String> _removing = {};
   bool get _authorized =>
     widget.accountId.trim().isNotEmpty && widget.isCurrentAccount(widget.accountId);
 
@@ -46,6 +47,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _next = null;
       _message = null;
       _reacting.clear();
+      _removing.clear();
       _loading = true;
       _load();
     }
@@ -55,8 +57,13 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
     ++_generation;
     super.dispose();
   }
+  void _switchFeed(bool mine) {
+    if (_mine == mine) return;
+    setState(() => _mine = mine);
+    _load();
+  }
   Future<void> _load({bool more = false}) async {
-    if (!_authorized || (more && (_next == null || _loadingMore))) {
+    if (!_authorized || (more && (_mine || _next == null || _loadingMore))) {
       if (mounted) setState(() => _loading = false);
       return;
     }
@@ -67,13 +74,15 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       _message = null;
     });
     try {
-      final page = await widget.transport.discover(cursor: more ? _next : null);
+      final page = _mine
+          ? AudioPostPage(items: await widget.transport.mine(), nextCursor: null)
+          : await widget.transport.discover(cursor: more ? _next : null);
       if (!mounted || sequence != _generation || !_authorized) return;
       final seen = more ? _items.map((e) => e.postId).toSet() : <String>{};
       setState(() {
         _items = List.unmodifiable([
           if (more) ..._items,
-          ...page.items.where((e) => e.status == 'published' && seen.add(e.postId)),
+          ...page.items.where((e) => (_mine || e.status == 'published') && seen.add(e.postId)),
         ]);
         _next = page.nextCursor;
         _loading = false;
@@ -86,6 +95,42 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
         _loadingMore = false;
         _message = 'Could not load audio Talks. Check your connection and retry.';
       });
+    }
+  }
+  Future<void> _remove(AudioPost post) async {
+    if (!_authorized || !_mine || _removing.contains(post.postId) ||
+        post.status == 'removed') return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove this Talk?'),
+        content: const Text('It will no longer appear in public feeds. Stored audio follows the retention policy.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Remove')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || !_authorized || !_mine) return;
+    setState(() => _removing.add(post.postId));
+    try {
+      final removed = await widget.transport.removeMine(postId: post.postId);
+      if (!mounted || !_authorized || !_mine) return;
+      setState(() => _items = List.unmodifiable(_items.map(
+        (p) => p.postId == removed.postId ? removed : p,
+      )));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Talk removed from public feeds.')),
+      );
+    } catch (_) {
+      if (!mounted || !_authorized || !_mine) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not remove Talk. Please retry.')),
+      );
+    } finally {
+      if (mounted) setState(() => _removing.remove(post.postId));
     }
   }
   Future<void> _react(AudioPost post, String kind) async {
@@ -136,6 +181,13 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 40),
                       children: [
+                        Wrap(spacing: 8, children: [
+                          ChoiceChip(label: const Text('Discover'), selected: !_mine,
+                            onSelected: _authorized ? (_) => _switchFeed(false) : null),
+                          ChoiceChip(label: const Text('My Talks'), selected: _mine,
+                            onSelected: _authorized ? (_) => _switchFeed(true) : null),
+                        ]),
+                        const SizedBox(height: 8),
                         if (_message != null)
                           ListTile(
                             title: Text(_message!),
@@ -151,7 +203,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                               children: [
                                 Icon(Icons.graphic_eq, size: 48),
                                 SizedBox(height: 14),
-                                Text('No published audio Talks yet.'),
+                                Text(_mine ? 'No Talks in your library yet.' : 'No published audio Talks yet.'),
                                 SizedBox(height: 6),
                                 Text('New audio posts will appear here.'),
                               ],
@@ -177,10 +229,18 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                   Text(post.title, style: Theme.of(context).textTheme.titleMedium),
                                   const SizedBox(height: 6),
                                   Text('${(post.durationMs / 1000).round()} seconds'),
+                                  if (_mine) Text('Status: ${post.status}'),
                                   const SizedBox(height: 10),
                                   Wrap(spacing: 8, children: [
+                                    if (_mine && post.status != 'removed')
+                                      TextButton.icon(
+                                        onPressed: _removing.contains(post.postId) ? null : () => _remove(post),
+                                        icon: const Icon(Icons.delete_outline),
+                                        label: Text(_removing.contains(post.postId) ? 'Removing…' : 'Remove Talk'),
+                                      ),
                                     OutlinedButton.icon(
-                                      onPressed: widget.onPlayAuthorized == null ? null : () async {
+                                      onPressed: widget.onPlayAuthorized == null || post.status != 'published'
+                                        ? null : () async {
                                         try { await widget.onPlayAuthorized!(post); }
                                         catch (_) {
                                           if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -192,13 +252,13 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                       label: const Text('Listen'),
                                     ),
                                     TextButton.icon(
-                                      onPressed: _reacting.contains(post.postId + 'like')
+                                      onPressed: post.status != 'published' || _reacting.contains(post.postId + 'like')
                                           ? null : () => _react(post, 'like'),
                                       icon: const Icon(Icons.favorite_border),
                                       label: const Text('Like'),
                                     ),
                                     TextButton.icon(
-                                      onPressed: _reacting.contains(post.postId + 'save')
+                                      onPressed: post.status != 'published' || _reacting.contains(post.postId + 'save')
                                           ? null : () => _react(post, 'save'),
                                       icon: const Icon(Icons.bookmark_border),
                                       label: const Text('Save'),
