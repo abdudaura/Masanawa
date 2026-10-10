@@ -14,6 +14,7 @@ type Row = {
  author_kind: "human" | "masana"; asset_id: string; request_id: string;
  title: string; duration_ms: number; status: AudioPostRecord["status"];
  revision: number; created_at: Date | string; published_at: Date | string | null;
+ like_count?: number | string; comment_count?: number | string;
 };
 function date(value: Date | string): string {
  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -25,6 +26,7 @@ function map(row: Row): AudioPostRecord {
   assetId: row.asset_id, requestId: row.request_id, title: row.title,
   durationMs: Number(row.duration_ms), status: row.status, revision: Number(row.revision),
   createdAt: date(row.created_at), publishedAt: row.published_at ? date(row.published_at) : null,
+  likeCount: Number(row.like_count ?? 0), commentCount: Number(row.comment_count ?? 0),
  };
 }
 async function transaction<T>(pool: Pool, fn: (db: PoolClient) => Promise<T>): Promise<T> {
@@ -47,6 +49,11 @@ function mapComment(row: CommentRow) {
  };
 }
 const qualifiedColumns = columns.split(",").map(column => "p." + column).join(",");
+const countColumns = qualifiedColumns +
+  ",(SELECT COUNT(*)::int FROM social.audio_post_reactions r2 " +
+  "WHERE r2.tenant_id=p.tenant_id AND r2.post_id=p.post_id AND r2.kind='like') AS like_count" +
+  ",(SELECT COUNT(*)::int FROM social.audio_post_comments c " +
+  "WHERE c.tenant_id=p.tenant_id AND c.post_id=p.post_id AND c.removed=false) AS comment_count";
 function parseCursor(raw: string | null): { stamp: number; id: string } | null {
  if (raw === null) return null;
  const at = raw.indexOf(":");
@@ -86,14 +93,14 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
   },
   async mine({tenantId, accountId, limit}) {
    const r = await pool.query<Row>(
-    "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND author_account_id=$2 ORDER BY created_at DESC,post_id DESC LIMIT $3",
+    "SELECT " + countColumns + " FROM social.audio_posts p WHERE p.tenant_id=$1 AND p.author_account_id=$2 ORDER BY p.created_at DESC,p.post_id DESC LIMIT $3",
     [tenantId,accountId,limit]);
    return r.rows.map(map);
   },
   async saved({tenantId,viewerId,limit}) {
    // A save is an account-private preference, not a global count or grant.
    const r = await pool.query<Row>(
-    "SELECT " + qualifiedColumns + " FROM social.audio_posts p " +
+    "SELECT " + countColumns + " FROM social.audio_posts p " +
     "JOIN social.audio_post_reactions r ON r.tenant_id=p.tenant_id AND r.post_id=p.post_id " +
     "WHERE p.tenant_id=$1 AND r.account_id=$2 AND r.kind='save' AND p.status='published' " +
     "ORDER BY p.created_at DESC,p.post_id DESC LIMIT $3",
@@ -139,9 +146,9 @@ export function createPostgresAudioPostRepository(pool: Pool, visibility: PostVi
    let more = true, scanned = 0;
    while (items.length < limit && more && scanned < 240) {
     const r = await pool.query<Row>(
-      "SELECT " + columns + " FROM social.audio_posts WHERE tenant_id=$1 AND status='published' " +
-      "AND ($2::timestamptz IS NULL OR (created_at,post_id) < ($2::timestamptz,$3)) " +
-      "ORDER BY created_at DESC,post_id DESC LIMIT 30",
+      "SELECT " + countColumns + " FROM social.audio_posts p WHERE p.tenant_id=$1 AND p.status='published' " +
+      "AND ($2::timestamptz IS NULL OR (p.created_at,p.post_id) < ($2::timestamptz,$3)) " +
+      "ORDER BY p.created_at DESC,p.post_id DESC LIMIT 30",
       [tenantId,position ? new Date(position.stamp).toISOString() : null,position?.id ?? ""]);
     if (!r.rows.length) { more = false; break; }
     let consumed = 0;
