@@ -69,11 +69,13 @@ class ReceiptPostsFake extends PostsFake implements AudioPostReceiptLookup {
   int lookups = 0;
   AudioPost? serverReceipt;
   bool lookupOffline = false;
+  Future<AudioPost?> Function()? onLookup;
   @override
   Future<AudioPost?> receiptByRequest({required String requestId}) async {
     lookups++;
     if (lookupOffline) throw StateError('receipt lookup offline');
     if (requestId != 'stable-attempt-1') throw StateError('unexpected key');
+    if (onLookup != null) return onLookup!();
     return serverReceipt;
   }
 }
@@ -374,5 +376,117 @@ testWidgets('confirmed absence permits replay with the original request key', (t
   expect(posts.requestId, 'stable-attempt-1');
   expect(store.pending, isNull);
 });
+
+
+testWidgets('accepted processing Talk can become published by receipt lookup without repost', (tester) async {
+  final posts = ReceiptPostsFake();
+  final store = FakeAttempts();
+  final statuses = <String>[];
+  await tester.pumpWidget(composer(posts, 'user-a', store: store,
+    record: () async => const VerifiedPostAudio(assetId: 'ready-a', durationMs: 30000),
+    published: (post) => statuses.add(post.status)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Story');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  expect(find.byKey(const ValueKey('talk-check-status')), findsOneWidget);
+  expect(statuses, ['processing']);
+  posts.serverReceipt = AudioPost(
+    postId: 'post-one', authorId: 'owner', authorKind: 'human',
+    title: 'Story', durationMs: 30000, status: 'published', revision: 1,
+    createdAt: DateTime.utc(2026, 10, 10));
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pumpAndSettle();
+  expect(posts.lookups, 1);
+  expect(posts.sends, 1);
+  expect(statuses, ['processing', 'published']);
+  expect(find.text('Talk published.'), findsOneWidget);
+  expect(find.byKey(const ValueKey('talk-check-status')), findsNothing);
+  expect(store.pending, isNull);
+});
+
+testWidgets('checking a still-processing Talk does not duplicate the publish', (tester) async {
+  final posts = ReceiptPostsFake();
+  await tester.pumpWidget(composer(posts, 'user-a',
+    record: () async => const VerifiedPostAudio(assetId: 'ready-a', durationMs: 30000)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Story');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  final pending = Completer<AudioPost?>();
+  posts.onLookup = () => pending.future;
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pump();
+  expect(tester.widget<TextButton>(find.byKey(const ValueKey('talk-check-status'))).onPressed, isNull);
+  pending.complete(AudioPost(
+    postId: 'post-one', authorId: 'owner', authorKind: 'human',
+    title: 'Story', durationMs: 30000, status: 'processing', revision: 0,
+    createdAt: DateTime.utc(2026, 10, 10)));
+  await tester.pumpAndSettle();
+  expect(find.textContaining('Still processing'), findsOneWidget);
+  expect(posts.sends, 1);
+  expect(posts.lookups, 1);
+});
+
+testWidgets('offline, absent or mismatched status never overwrites accepted receipt', (tester) async {
+  final posts = ReceiptPostsFake();
+  await tester.pumpWidget(composer(posts, 'user-a',
+    record: () async => const VerifiedPostAudio(assetId: 'ready-a', durationMs: 30000)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Story');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  posts.lookupOffline = true;
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pumpAndSettle();
+  expect(find.textContaining('without reposting'), findsOneWidget);
+  expect(find.textContaining('Talk received; it is processing'), findsOneWidget);
+  posts.lookupOffline = false;
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pumpAndSettle();
+  expect(find.textContaining('without reposting'), findsOneWidget);
+  posts.serverReceipt = AudioPost(
+    postId: 'another-account', authorId: 'owner', authorKind: 'human',
+    title: 'Story', durationMs: 30000, status: 'published', revision: 1,
+    createdAt: DateTime.utc(2026, 10, 10));
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pumpAndSettle();
+  expect(find.textContaining('Talk received; it is processing'), findsOneWidget);
+  expect(posts.sends, 1);
+  expect(posts.lookups, 3);
+});
+
+testWidgets('account switch during status lookup ignores prior-account result', (tester) async {
+  final posts = ReceiptPostsFake();
+  await tester.pumpWidget(composer(posts, 'user-a',
+    record: () async => const VerifiedPostAudio(assetId: 'ready-a', durationMs: 30000)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('talk-record')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const ValueKey('talk-title')), 'Private A');
+  await tester.tap(find.byKey(const ValueKey('talk-publish')));
+  await tester.pumpAndSettle();
+  final pending = Completer<AudioPost?>();
+  posts.onLookup = () => pending.future;
+  await tester.tap(find.byKey(const ValueKey('talk-check-status')));
+  await tester.pump();
+  await tester.pumpWidget(composer(posts, 'user-b'));
+  pending.complete(AudioPost(
+    postId: 'post-one', authorId: 'owner', authorKind: 'human',
+    title: 'Private A', durationMs: 30000, status: 'published', revision: 1,
+    createdAt: DateTime.utc(2026, 10, 10)));
+  await tester.pumpAndSettle();
+  expect(find.text('Private A'), findsNothing);
+  expect(find.text('Talk published.'), findsNothing);
+  expect(find.byKey(const ValueKey('talk-check-status')), findsNothing);
+  expect(posts.sends, 1);
+});
+
 
 }
