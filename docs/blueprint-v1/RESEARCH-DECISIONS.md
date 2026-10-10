@@ -4,35 +4,35 @@ Status: **RESEARCHED INITIAL PASS / OWNER REVIEW PENDING**, 2026-10-10.
 ## What established products teach us
 | Reference | Verified pattern | Adopt | Avoid / differentiation |
 |---|---|---|---|
-| WhatsApp | Lock voice recording, preview, seek, resume/delete/send before publishing [1] | Familiar one-field composer; send when text exists, mic otherwise; draft safety | Separate clone/agent controls crowding the composer |
-| Telegram | Voice trimming and channel DMs [2]; groups, voice sessions, bots with explicit permissions [3] | Media preview, simple role/permission controls, discreet AI labeling | Building a Telegram-sized universal app or unsupported personal-account automation |
+| WhatsApp | Lock voice recording, preview, seek, resume/delete/send before publishing [1] | Familiar one-field composer; send when text exists, mic otherwise; draft safety | Extra avatar/pricing controls crowding the composer |
+| Telegram | Voice trimming and channel DMs [2]; groups, voice sessions, bots with explicit permissions [3] | Media preview, simple role/permission controls, clear contextual agent names and actions | Building a Telegram-sized universal app or unsupported personal-account automation |
 | Spotify creator ecosystem | Following, comments, creator discovery and consumption metrics [4]; 30-second podcast-play definition [5] | Follow/Discover, real play thresholds, user-owned draft library | Recommendation-optimization or endless public live sessions at first release |
 | Google Android guidance | Offline-first reading with local data source and queued critical writes [6] | Instant cached lists, account-fenced outbox, reliable receipts/status | Pretending queued money instructions are successfully paid |
-| Existing Masanawa | Audio-first Talks + service Gwani + wallet/chat/rooms with reusable foundations [7] | Distinctive accessible spoken utility, AI persona disclosure, service menus + typed/voice entry | Duplicated purchase/ledger engines, extra bottom tabs, fake automatic payment completion |
+| Existing Masanawa | Audio-first Talks + service Gwani + wallet/chat/rooms with reusable foundations [7] | Distinctive accessible spoken utility, service menus + typed/voice entry | Duplicated purchase/ledger engines, extra bottom tabs, fake automatic payment completion |
 
 Absence of competitor features has **not** been verified: differentiation is a proposed product strategy, not a monopoly claim. Do not copy third-party copyrighted UI assets.
 
-## Feature classification (proposed)
+## Feature classification (scope removal confirmed, other details proposed)
 **CORE SOURCE, qualified before exposing:** email/phone auth and recovery; Chats/Contacts/Masana directory; recorded voice notes; accessible Tabs; published Talks + social actions; durable Rooms; Gwani task/quote/receipt; ledger-backed Wallet history/transfers/funding/conversion; safe settings/profile/admin/operations; Telegram/WhatsApp ingress where official authorization exists; coherent content moderation and account/privacy deletion.
 
-**DELIBERATE DIFFERENTIATION:** voice-first Gwani with quick-reply menus and a durable editable task; platform AI personalities clearly disclosed; per-user personal AI twin, funded task execution and auditable commissions after ledger qualification; AI-generated scheduled audio with sources and budget ceilings.
+**DELIBERATE DIFFERENTIATION:** voice-first Gwani with quick-reply menus and a durable editable task; distinct platform agent personalities; scheduled Masana audio with quality review, editorial sources and budget ceilings.
 
-**LATER / independently gated:** live Rooms and video calls, externally monetized third-party clones at scale, advanced teaching/learning and agent marketplaces, extra social ranking algorithms, arbitrary unsupported crypto networks.
+**LATER / independently gated:** live Rooms and video calls, deeper teaching/learning features, extra social ranking algorithms, arbitrary unsupported crypto networks.
 
-**EXCLUDE:** a second wallet/ledger; client-side financial authority; spendable fiat sub-wallet; platform fiat cashout without approved product change; crypto-to-fiat P2P without separate qualification; screenshot-only escrow release; generic browser TTS masquerading as real-time voice; user-facing developer tokens; fabricated phone verification; user personas impersonating humans.
+**EXCLUDE:** a second wallet/ledger; client-side financial authority; spendable fiat sub-wallet; platform fiat cashout without approved product change; crypto-to-fiat P2P without separate qualification; screenshot-only escrow release; generic browser TTS masquerading as real-time voice; user-facing developer tokens; fabricated phone verification; unnecessary AI badges and trust disclaimers.
 
-## Decisions requiring owner approval
+## Decision register — DEC-04 and DEC-05 confirmed removals; others remain provisional
 | ID | Decision | Recommendation | Why not assume |
 |---|---|---|---|
 | DEC-01 | Overall identity | Audio-first social + trusted AI services + wallet, not a universal agent marketplace | Positioning controls all tabs |
 | DEC-02 | Root navigation | Retain confirmed Chats / Rooms / Talks / Gwani / Wallet; Talks center/default | Changing again causes large routing migration |
 | DEC-03 | First release scope | Finish all core source in phases; qualify riskier money/calls before enabling | Not every built feature can be exposed at once |
-| DEC-04 | User twin | One per account, guided setup, platform handles most choices | Earnings and access semantics still need detailed contract |
-| DEC-05 | Commission | Platform owns tariff/margin; clear commission ledger with refund reversals | Current percentages, reserves, payout restrictions unsettled |
+| DEC-04 | **No personal Twins / clones — CONFIRMED REMOVE** | Eliminate personal-agent creation, profiles, directory, public links, owner-access sessions and onboarding | Product-scope decision is final; preserve any existing data/obligations during source retirement |
+| DEC-05 | **No Twin economy — CONFIRMED REMOVE** | Remove Twin credit, pricing, referrals, attribution, commissions and earnings UI/APIs | Reconcile historical financial postings before deactivating old schemas and processors |
 | DEC-06 | MSN asset | Internal exact-unit ledger with documented backing, mint/burn and rates | Financial and compliance consequences |
 | DEC-07 | P2P | Approved merchants only; pause activation pending settlement/dispute/regulatory review | Screenshots are not bank proof |
 | DEC-08 | Provider setup | Retain Flutterwave and NOWPayments adapters, qualify live account/region/network per function | Adapter existence ≠ account capability |
-| DEC-09 | App administration | Android admin first; narrow web ops as auxiliary | Admin/security needs role-specific capability review |
+| DEC-09 | App administration | Android admin first; narrow web ops as auxiliary; platform agents managed centrally only | Admin/security needs role-specific capability review |
 | DEC-10 | Channels | Official Telegram Bot API and approved WhatsApp business integration, permission-aware | Personal WhatsApp automation may be fragile or non-compliant |
 | DEC-11 | Voice | Gemini Live for real-time Gwani where qualified; independent device voice-note path | Model/device/audio-focus and continuous cost constraints |
 | DEC-12 | Deployment | Continue Railway gateway only after trigger review; retain fixed-IP DigitalOcean relay if Flutterwave needs it | Reversible and existing whitelist |
@@ -64,3 +64,6 @@ Absence of competitor features has **not** been verified: differentiation is a p
 [13] https://ai.google.dev/gemini-api/docs/pricing
 
 Research was retrieved 2026-10-10. Vendor schedules can change. Estimates require measured workload assumptions, independent account eligibility checks and total-cost review before provider moves.
+
+## Presentation policy — owner confirmed
+Use normal character names, photos, useful roles and navigation. No repeated 'AI agent' badges, warnings, synthetic-voice disclaimers or anti-AI trust commentary in normal interactions. Remove the blanket 'human versus AI' labeling requirement from screen designs. Backend character/account IDs and role authorization are ordinary data integrity concerns, not a reason for visual banners. If a jurisdiction or distribution platform explicitly requires provenance for a particular experience, handle that narrow requirement separately rather than applying generic labels everywhere.
