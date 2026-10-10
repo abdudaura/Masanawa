@@ -273,7 +273,19 @@
       "claimed_at": "2026-10-10T04:44:58.732Z",
       "heartbeat_at": "2026-10-10T04:44:58.732Z",
       "expires_at": "2026-10-10T04:49:58.732Z",
-      "notes": "Shared AF09 PR; independent feed paths currently unclaimed in CAS; connect real My Talks delete readback and Dart widgets. Guard old account/session. No protected root/API source."
+      "notes": "Shared AF09 PR; independent feed paths currently unclaimed in CAS; connect real My Talks delete readback and Dart widgets. Guard old account/session. No protected root/API source.",
+      "released_at": "2026-10-10T04:49:15.847Z",
+      "release_reason": "Same existing #609: My Talks uncertain delete readback + explicit status recovery and four authored Flutter regressions. Source blobs read back; 10/10 structural checks only. Dart/Flutter, pnpm/PG, device/provider tests not run. AF00 root integration remains missing; no local pull.",
+      "source_commits": [
+        "353feab8b9b71c185b23f1c537a562b259790a68",
+        "f39db8ed08d2dd0099c24dee7f75e2899cefc092",
+        "03849addd8c1948d64cd23af2fefd796aa03fe2e",
+        "97a706f77999bafadf5f8279510d86d7d5e43c5c",
+        "3d34f38a636323b5f8fe54f990e76999cb9d5fef"
+      ],
+      "source_head_sha": "3d34f38a636323b5f8fe54f990e76999cb9d5fef",
+      "integration_head_sha": null,
+      "test_state": "10/10 source-structure predicates only; 4 widget tests authored NOT_RUN. No Flutter/Dart/Node24/pnpm/PG/Android/provider E2E."
     },
     {
       "claim_id": "af09-609-route-composition-gpt6-0544",
