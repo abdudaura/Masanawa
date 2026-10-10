@@ -52,6 +52,10 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
     try { return await deps.service.mine(await actor(request.headers.authorization)); }
     catch (error) { return fail(reply, error); }
   });
+  app.get("/audio-posts/saved", async (request, reply) => {
+    try { return await deps.service.saved(await actor(request.headers.authorization)); }
+    catch (error) { return fail(reply, error); }
+  });
   app.delete("/audio-posts/:postId", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
