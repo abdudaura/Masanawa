@@ -76,7 +76,7 @@ function fixture() {
   },
   async setReaction({tenantId,viewerId,postId,kind,enabled}) {
    const r=rows.get(postId);
-   if(!r||r.tenantId!==tenantId||r.status!=="published"||viewerId==="blocked")throw Error("not_visible");
+   if(!r||r.tenantId!==tenantId||r.status!=="published"||viewerId==="blocked")throw Error("audio_posts.not_visible");
    if(kind==='save'){
     const key=[tenantId,viewerId,postId].join('/');
     if(enabled) saves.add(key); else saves.delete(key);
@@ -90,7 +90,7 @@ function fixture() {
   moderation:{async approve(){decisions++;return true}},
   newId:()=> "post"+(++id),now:()=> "2026-10-10T00:00:00.000Z",
  });
- return {service,rows,get counters(){return {lookups,verifications,decisions}}};
+ return {service,repo,rows,get counters(){return {lookups,verifications,decisions}}};
 }
 const input={requestId:"request1",assetId:"asset1",title:"A first audio post"};
 
@@ -278,4 +278,47 @@ test("public DTOs conceal storage and caller identifiers but retain persisted so
     assert.equal(Object.hasOwn(list[0], "assetId"), false);
     assert.equal(Object.hasOwn(list[0], "authorAccountId"), false);
   }
+});
+
+test("reaction on processing, removed, blocked or foreign post is neutral not-found, not HTTP 500", async () => {
+  const f = fixture();
+  const post = await f.service.publish(actor, input);
+  const like = {postId: post.postId, kind: "like", enabled: true};
+  const denied = error => error instanceof AudioPostError && error.code === "NOT_FOUND";
+  await assert.rejects(f.service.reaction(second, like), denied);
+  await f.service.settle({tenantId: actor.tenantId, postId: post.postId, expectedRevision: 0});
+  await assert.rejects(f.service.reaction({...second, accountId: "blocked"}, like), denied);
+  await assert.rejects(f.service.reaction({...second, tenantId: "tenantOther"}, like), denied);
+  await f.service.removeOwn(actor, post.postId);
+  await assert.rejects(f.service.reaction(second, like), denied);
+});
+
+test("malformed repository feed cursor is a typed validation response", async () => {
+  const f = fixture();
+  f.repo.publicFeed = async () => {throw Error("audio_posts.invalid_cursor");};
+  await assert.rejects(
+    f.service.feed({tenantId: actor.tenantId, viewerId: second.accountId, cursor: "42:somePost"}),
+    error => error instanceof AudioPostError && error.code === "VALIDATION",
+  );
+});
+
+test("real repository and database failures are not mistaken for denied or malformed data", async () => {
+  const f = fixture();
+  const outage = new Error("database is temporarily unavailable");
+  f.repo.publicFeed = async () => {throw outage;};
+  await assert.rejects(
+    f.service.feed({tenantId: actor.tenantId, viewerId: second.accountId}),
+    error => error === outage,
+  );
+  f.repo.setReaction = async () => {throw outage;};
+  await assert.rejects(f.service.reaction(second, {postId: "post1",kind: "save",enabled:true}),
+    error => error === outage);
+});
+
+test("lookalike error messages cannot spoof a canonical repository denial", async () => {
+  const f = fixture();
+  const unknown = new Error("not_visible");
+  f.repo.setReaction = async () => {throw unknown;};
+  await assert.rejects(f.service.reaction(second, {postId:"post1",kind:"like",enabled:false}),
+    error => error === unknown);
 });
