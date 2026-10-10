@@ -142,23 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "masanawa-af13-canonical-matrix-cont-20261010",
-      "owner": "MASANAWA-AF13-CONT-20261010",
-      "scope": "AF13 existing PR #596 canonical acceptance integrity and connected test",
-      "paths": [
-        "docs/workstreams/AF13-evidence-ledger-20261009.md",
-        "tools/audio-first-qualification/journeys.json",
-        "tools/audio-first-qualification/qualify.mjs",
-        "tools/audio-first-qualification/qualify.test.mjs"
-      ],
-      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
-      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
-      "pr": "https://github.com/Baatiku/masanawa/pull/596",
-      "claimed_at": "2026-10-10T02:53:59Z",
-      "heartbeat_at": "2026-10-10T02:56:26Z",
-      "expires_at": "2026-10-10T03:01:26Z"
-    },
-    {
       "claim_id": "masanawa-af15-599-continuation-20261010-v2",
       "owner": "MASANAWA-AF15 PR599 canonical source continuation",
       "scope": "Add concrete version-pinned S3 delete adapter and tests to existing canonical worker cleanup without activating runtime",
@@ -1476,6 +1459,25 @@
       "release_reason": "Same PR #609 committed Following public projection/count source and privacy/Masana regressions, exact blob readback and PASS_ISOLATED canonical projection only. Full pnpm/Vitest/Flutter/PG blocked and zero-step CI; handoff and owners in PR comment 6092971540. No unverified main merge or production deployment.",
       "pr": "https://github.com/Baatiku/masanawa/pull/609",
       "source_head": "28c2cfd3e743cc4612516149c093d280fbee24ed"
+    },
+    {
+      "claim_id": "masanawa-af13-canonical-matrix-cont-20261010",
+      "owner": "MASANAWA-AF13-CONT-20261010",
+      "scope": "AF13 existing PR #596 canonical acceptance integrity and connected test",
+      "paths": [
+        "docs/workstreams/AF13-evidence-ledger-20261009.md",
+        "tools/audio-first-qualification/journeys.json",
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "6bbb689fd65d977984be2487e6a6bd56aaf83001",
+      "pr": "https://github.com/Baatiku/masanawa/pull/596",
+      "claimed_at": "2026-10-10T02:53:59Z",
+      "heartbeat_at": "2026-10-10T02:56:26Z",
+      "expires_at": "2026-10-10T03:01:26Z",
+      "released_at": "2026-10-10T03:00:49Z",
+      "release_reason": "PR #596 exact head c9da52c9bbd5da1a3313cc18d8b734b97624f919; source canonical matrix pin + eight mandatory DB release gates; 10/10 GitHub structural checks; 6/6 isolated Node simulation only; full native suite NOT_RUN; exact owner/path source closure table in AF13 ledger and PR comment 6093089066. Next AF00 designate deployment-audited common nondeploying target and qualify/import; AF15 connect media/DB lifecycle and run real restore; do not pull locally before missing remote source and composition closes."
     }
   ]
 }
