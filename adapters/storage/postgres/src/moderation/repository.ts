@@ -79,6 +79,14 @@ export function createPostgresCaseRepository(pool:Pool){
     await c.query(`INSERT INTO moderation.case_events(tenant_id,event_id,case_id,actor_id,kind,detail)
       VALUES($1,$2,$3,$4,$5,$6)`,[tenantId,`evt_${actionId}_${expectedVersion+1}`,caseId,reviewerId,
        approve?"action_approved":"action_rejected",nextState]);
+    if(finalApproval){
+     await c.query(
+      "INSERT INTO events.outbox(outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload) "+
+      "VALUES($1,$2,$3,'moderation.action.approved',1,'moderation.action',$4,$5,'moderation.action.apply',$6::jsonb) "+
+      "ON CONFLICT(outbox_event_id) DO NOTHING",
+      ["outbox-event_"+actionId,tenantId,"event_"+actionId,actionId,"correlation_"+actionId,
+       JSON.stringify({actionId,caseId,tenantId})]);
+    }
     return action(updated.rows[0]!);
    });
   },
