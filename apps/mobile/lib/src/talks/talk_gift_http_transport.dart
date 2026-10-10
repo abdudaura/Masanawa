@@ -77,8 +77,7 @@ class GatewayTalkGiftTransport implements TalkGiftTransport {
     // Persist prior to POST; a storage failure must never send a new debit.
     final saved = await store.read(userId: owner, fingerprint: fingerprint);
     if (saved != null &&
-        !RegExp(r'^(pending|completed):talk-gift-[0-9]+(?:-[0-9]+){3}$'
-            .hasMatch(saved)) {
+        !RegExp(r'^(pending|completed):talk-gift-[0-9]+(?:-[0-9]+){3}            .hasMatch(saved)) {
       throw const FormatException('Gift recovery state is invalid');
     }
     if (saved != null && saved.startsWith('pending:')) {
@@ -182,7 +181,8 @@ class GatewayTalkGiftTransport implements TalkGiftTransport {
     await _markCompleted(fingerprint, requestId);
     return receipt;
   }
-})
+}
+)
             .hasMatch(saved)) {
       throw const FormatException('Gift recovery state is invalid');
     }
