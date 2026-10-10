@@ -12,6 +12,11 @@ class OperationsApi {
         headers: {'Authorization': 'Bearer ${await _accessToken()}'},
       );
 
+  Future<OperationsOverview> overview() async {
+    final result=await _dio.get<dynamic>('/v1/admin/ops/overview',options:await _auth());
+    return OperationsOverview.fromJson(Map<String,dynamic>.from(result.data as Map));
+  }
+
   Future<List<OperationFlag>> flags() async {
     final result = await _dio.get<dynamic>(
       '/v1/admin/ops/flags',
@@ -118,5 +123,32 @@ class AuditEvent {
   factory AuditEvent.fromJson(Map<String,dynamic> v)=>AuditEvent(
     action:v['action'] as String,actorId:v['actorId'] as String,
     at:v['at'] as String,subject:v['subject'] as String,
+  );
+}
+
+class OperationsOverview {
+  const OperationsOverview({required this.pendingJobs, required this.activeJobLeases,
+    required this.deadLetters,required this.openFinancialReconciliation,
+    this.oldestPendingSeconds,this.roomAnswerAgeSeconds,this.externalSyncLagSeconds,
+    this.entitlementErrors,this.budgetWarnings});
+  final int pendingJobs;
+  final int activeJobLeases;
+  final int deadLetters;
+  final int openFinancialReconciliation;
+  final int? oldestPendingSeconds;
+  final int? roomAnswerAgeSeconds;
+  final int? externalSyncLagSeconds;
+  final int? entitlementErrors;
+  final int? budgetWarnings;
+  factory OperationsOverview.fromJson(Map<String,dynamic> j)=>OperationsOverview(
+    pendingJobs:(j['pendingJobs'] as num).toInt(),
+    activeJobLeases:(j['activeJobLeases'] as num).toInt(),
+    deadLetters:(j['deadLetters'] as num).toInt(),
+    openFinancialReconciliation:(j['openFinancialReconciliation'] as num).toInt(),
+    oldestPendingSeconds:(j['oldestPendingSeconds'] as num?)?.toInt(),
+    roomAnswerAgeSeconds:(j['roomAnswerAgeSeconds'] as num?)?.toInt(),
+    externalSyncLagSeconds:(j['externalSyncLagSeconds'] as num?)?.toInt(),
+    entitlementErrors:(j['entitlementErrors'] as num?)?.toInt(),
+    budgetWarnings:(j['budgetWarnings'] as num?)?.toInt(),
   );
 }

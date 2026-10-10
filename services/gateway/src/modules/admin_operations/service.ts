@@ -37,6 +37,19 @@ export interface OperationsRepository {
   setFlag(input: FlagMutation & { tenantId: string; actorId: string }): Promise<FlagSnapshot>;
   audit(tenantId: string, limit: number): Promise<readonly AuditRecord[]>;
 }
+/** All numbers are tenant-scoped measurements; null means not instrumented. */
+export interface OperationsOverview {
+  readonly pendingJobs: number;
+  readonly activeJobLeases: number;
+  readonly deadLetters: number;
+  readonly oldestPendingSeconds: number | null;
+  readonly openFinancialReconciliation: number;
+  readonly roomAnswerAgeSeconds: number | null;
+  readonly externalSyncLagSeconds: number | null;
+  readonly entitlementErrors: number | null;
+  readonly budgetWarnings: number | null;
+}
+export interface OverviewMetricsSource {read(tenantId:string):Promise<OperationsOverview>;}
 export interface StaffSummary { readonly userId: string; readonly roles: readonly StaffRole[]; readonly mfaVerified: boolean; }
 export interface StaffDirectory {
   list(tenantId: string): Promise<readonly StaffSummary[]>;
@@ -46,6 +59,7 @@ export class OperationsError extends Error {
   constructor(readonly code: "unauthorized" | "forbidden" | "invalid" | "conflict" | "unavailable", readonly status: number) {super(code);}
 }
 export interface OperationsService {
+  overview(auth:string|undefined):Promise<OperationsOverview>;
   flags(auth: string | undefined): Promise<readonly FlagSnapshot[]>;
   preview(auth: string | undefined, name: OperationsFlag, enabled: boolean): Promise<{ current: FlagSnapshot; proposed: boolean; requiresReleaseApproval: boolean }>;
   setFlag(auth: string | undefined, change: FlagMutation): Promise<FlagSnapshot>;
@@ -72,11 +86,19 @@ function verifiedMutation(change: FlagMutation): void {
 export function createOperationsService(deps: {
   authorizer: OperationsAuthorizer;
   repo: OperationsRepository;
+  metrics?: OverviewMetricsSource;
   staff?: StaffDirectory;
   /** False unless AF00 confirms rollback, release, staff review and provider permissions. */
   allowEnable?: (principal: StaffPrincipal, flag: OperationsFlag) => Promise<boolean>;
 }): OperationsService {
   return {
+    async overview(auth) {
+      const p=await deps.authorizer.resolve(auth);
+      // Any verified staff role may read aggregates; never reveal case identities or money.
+      if(!p.tenantId || !p.userId || p.roles.length===0) throw new OperationsError("forbidden",403);
+      if(!deps.metrics) throw new OperationsError("unavailable",503);
+      return deps.metrics.read(p.tenantId);
+    },
     async flags(auth) {
       const p=requirePrincipal(await deps.authorizer.resolve(auth),"ops_admin");
       return deps.repo.listFlags(p.tenantId);

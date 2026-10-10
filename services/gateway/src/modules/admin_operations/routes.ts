@@ -11,6 +11,7 @@ export function registerAdminOperationsRoutes(app: FastifyInstance, operations: 
       void reply.send(error);
     }
   });
+  scope.get("/v1/admin/ops/overview", async request => operations.overview(request.headers.authorization));
   scope.get("/v1/admin/ops/flags", async request => operations.flags(request.headers.authorization));
   app.get<{Querystring:{name:string;enabled:string}}>("/v1/admin/ops/flags/preview", async request => {
     const {name,enabled}=request.query;
