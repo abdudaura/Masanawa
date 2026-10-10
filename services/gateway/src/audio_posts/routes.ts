@@ -76,6 +76,22 @@ export function registerAudioPostRoutes(app: FastifyInstance, deps: {
       return await deps.service.comments(await actor(request.headers.authorization), params.postId);
     } catch (error) { return fail(reply, error); }
   });
+  // Additive versioned cursor endpoint: old GET /comments keeps returning a list.
+  // Never admit client tenant/account fields or reveal deleted/blocked posts.
+  app.get("/audio-posts/:postId/comments/page", async (request, reply) => {
+    try {
+      const params = request.params as { postId?: unknown };
+      const query = (request.query ?? {}) as Record<string, unknown>;
+      if (typeof params.postId !== "string" ||
+          Object.keys(query).some(k => k !== "cursor") ||
+          (query.cursor !== undefined && typeof query.cursor !== "string")) {
+        throw new AudioPostError("VALIDATION", "Invalid comment cursor");
+      }
+      return await deps.service.commentsPage(
+        await actor(request.headers.authorization), params.postId,
+        query.cursor as string | undefined);
+    } catch (error) { return fail(reply, error); }
+  });
   app.post("/audio-posts/:postId/comments", async (request, reply) => {
     try {
       const params = request.params as { postId?: unknown };
