@@ -147,6 +147,21 @@
       "claimed_at": "2026-10-10T02:43:12.070Z",
       "heartbeat_at": "2026-10-10T02:43:12.070Z",
       "expires_at": "2026-10-10T02:48:12.070Z"
+    },
+    {
+      "claim_id": "owner-prepull-completion-policy-20261010-root",
+      "owner": "Root owner-directed delivery coordination",
+      "scope": "Enforce complete remote source before local pull; finite milestone checklists and integration closure",
+      "paths": [
+        "AGENTS.md",
+        "docs/NEXT-WAVE-DELIVERY-20261010.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md"
+      ],
+      "branch": "docs/prepull-completion-20261010",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "claimed_at": "2026-10-10T02:45:12.090Z",
+      "heartbeat_at": "2026-10-10T02:45:12.090Z",
+      "expires_at": "2026-10-10T02:50:12.090Z"
     }
   ],
   "history": [
