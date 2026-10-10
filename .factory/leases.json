@@ -1355,16 +1355,17 @@
         "adapters/storage/postgres/src/masana_chat/**",
         "services/worker/src/jobs/masana_chat/**",
         "apps/mobile/lib/src/features/masana_chat/**",
-        "tests/e2e/J03/**"
+        "tests/e2e/J03/**",
+        "apps/mobile/test/features/masana_chat/**"
       ],
       "branch": "lane/l-chat-j03-masana-text-20261010-gpt6-1747",
       "base_sha": "b7a34059751271a07096e6ae4be07efa98bf1c3d",
       "claimed_at": "2026-10-10T16:44:51.455Z",
-      "heartbeat_at": "2026-10-10T16:51:37.118Z",
-      "expires_at": "2026-10-10T16:56:37.118Z",
+      "heartbeat_at": "2026-10-10T16:57:00.414Z",
+      "expires_at": "2026-10-10T17:02:00.414Z",
       "notes": "No parallel chat journal, no human DM, no clone contact; same @masanawa/agents sessions. Feature code only. AF00 retains shared composition and deployment.",
       "source_pr": 635,
-      "source_head": "0769394ee6256846e8169686967b0f30ee1bcb0f"
+      "source_head": "29a0ce23cdb07ccf2097d929e5b3137a1a88199e"
     },
     {
       "claim_id": "l-missions-j12-auth-negative-followup-20261010-gpt6",
