@@ -245,6 +245,23 @@
       "heartbeat_at": "2026-10-10T04:30:22.205Z",
       "expires_at": "2026-10-10T04:35:22.205Z",
       "notes": "No edits to concurrent feed/destination/transport/routes/SQL/shared migrations; existing PR only. Previous owner AF09-0517 released at 2026-10-10T04:29:26.879Z; CAS exact-path continuation, same PR source, preserve all edits. Shared AF00 shell/router unchanged."
+    },
+    {
+      "claim_id": "af09-609-playback-sequencing-gpt6-0531",
+      "owner": "AF09 existing PR #609 / GPT-6 playback sequencing continuation",
+      "scope": "Ensure rapid Talk start/stop/switch never overlaps native media operations or restarts stale audio; preserve canonical AF05 audio focus and AF15 signed-ticket authority",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
+        "docs/workstreams/AF09-playback-race-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T04:30:47.006Z",
+      "heartbeat_at": "2026-10-10T04:30:47.006Z",
+      "expires_at": "2026-10-10T04:35:47.006Z",
+      "notes": "Feature-local player and exact-path regression only; no AF00 shell, media signer, migration, or active comments/creator/composer files."
     }
   ],
   "history": [
