@@ -29,7 +29,7 @@ export function decodeCursor(value?:string):{at:string;id:string}|null{
 }
 export class FeedService {
  constructor(private readonly repo:Repository,private readonly approvedMasana:(tenant:string,id:string)=>Promise<boolean>,
-  private readonly approvedMedia:(tenant:string,masana:string,mediaId:string)=>Promise<boolean>=async()=>false){}
+  private readonly approvedMedia:(tenant:string,masana:string,mediaId:string)=>Promise<boolean> = async () => false){}
  async list(tenant:string,viewer:string|null,mode:FeedMode,cursor?:string){
   requireId(tenant);if(viewer)requireId(viewer);
   if(mode!=="for_you"&&mode!=="following")throw new FeedError(422,"invalid_mode");
