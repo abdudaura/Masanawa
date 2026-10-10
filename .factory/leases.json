@@ -1317,6 +1317,28 @@
       "heartbeat_at": "2026-10-10T16:36:24.615Z",
       "expires_at": "2026-10-10T16:41:24.615Z",
       "notes": "Do not create a second push system; use existing events outbox; no production migration or main; AF00 register routes/migration/router."
+    },
+    {
+      "claim_id": "l-missions-fan-memory-j11-20261010-gpt6",
+      "owner": "GPT-6 / L-MISSIONS J11 fan consent, review and deletion",
+      "scope": "J11 per-Masana fan-memory consent+repository+API+Flutter/Admin+worker source; AF00 owns composition, existing memory records/tombstone authority reused",
+      "paths": [
+        "packages/fan-memory/**",
+        "services/gateway/src/modules/fan_memory/**",
+        "services/worker/src/jobs/fan_memory/**",
+        "adapters/storage/postgres/src/fan_memory/**",
+        "apps/mobile/lib/src/features/fans_memory/**",
+        "apps/admin_mobile/lib/src/features/fans_memory/**",
+        "tests/e2e/J11/**"
+      ],
+      "branch": "lane/l-missions-fan-memory-j11-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "source_pr": null,
+      "source_head": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "claimed_at": "2026-10-10T16:39:29.161Z",
+      "heartbeat_at": "2026-10-10T16:39:29.161Z",
+      "expires_at": "2026-10-10T16:44:29.161Z",
+      "notes": "No shared router/composition/migration registry. Preserve canonical memory repository/approval, no duplicate ledger or memory database. Recheck before editing."
     }
   ],
   "history": [
