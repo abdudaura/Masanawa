@@ -130,9 +130,12 @@ void main() {
     await tester.tap(find.text('Preview selection'));
     await tester.pump();
     expect(player.previews, 1);
+    await tester.tap(find.text('Delete and re-record'));
+    await tester.pumpAndSettle();
+    expect(find.text('Record'), findsOneWidget);
+    expect(await File(rec.path!).exists(), false);
     await tester.tap(find.text('Discard and close'));
     await tester.pumpAndSettle();
-    expect(await File(rec.path!).exists(), false);
   });
 
   testWidgets('uncertain upload retains the same file for retry, verified success cleans it',
