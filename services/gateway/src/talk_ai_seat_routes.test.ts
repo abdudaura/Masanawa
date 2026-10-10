@@ -77,7 +77,7 @@ function repository(): TalkAiSeatRepository {
         },
       };
     },
-    async confirm({ quoteId }) {
+    async confirm() {
       return {
         requestId: createCanonicalId("request"),
         // The route test expects the sponsor approval workflow. Never derive
