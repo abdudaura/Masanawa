@@ -69,23 +69,6 @@
       "notes": "Continue actual original source; no shared composer/router/migration/financial/native/manifests/CI edits. Execute original tests, repair demonstrated behavior, strict type verification."
     },
     {
-      "claim_id": "masanawa01-af15-orphan-20261010-0119",
-      "owner": "MASANAWA-01 / AF15 continuation",
-      "scope": "AF15 original owner resumed unchanged branch, safe bounded orphan cleanup against authoritative conditional purge, direct Node negative tests; no shared worker composition, DB migration or provider writes",
-      "paths": [
-        "adapters/storage/object_lifecycle/orphan_cleanup.ts",
-        "adapters/storage/object_lifecycle/orphan_cleanup.test.mjs",
-        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
-      ],
-      "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "pr": "",
-      "claimed_at": "2026-10-10T01:23:01.856Z",
-      "heartbeat_at": "2026-10-10T01:24:16.021Z",
-      "expires_at": "2026-10-10T01:29:16.021Z",
-      "notes": "Prior claim expired with source branch still equal to main@f381f077c485c04261459b77a42c215d3ce3a14b, no prior source to overwrite. Resumed same exact paths; preserve parallel media-batch branch."
-    },
-    {
       "claim_id": "masanawa01-af00-root-navigation-20261010-c",
       "owner": "MASANAWA-01 / AF00 root integrator",
       "scope": "Reconcile legacy four-tab root with confirmed Chats Rooms Talks Gwani Wallet order, Talks centre/default, typed aliasing and no hidden voice.",
@@ -719,6 +702,25 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/598",
       "released_at": "2026-10-10T01:24:59.313Z",
       "release_reason": "Merged to NONPRODUCTION integration/af15-media-cleanup-20261009 at 390024d21997419cc23333e73ec88362e418319c. Exact merged blob SHA checked source 2b465... test 8b0ad...; local strict tsc PASS, exact byte-matched source Node22 21/21 simulated probes PASS. Repo Vitest and real PG/S3/worker/restart/restore NOT_RUN, NOT live or deployed."
+    },
+    {
+      "claim_id": "masanawa01-af15-orphan-20261010-0119",
+      "owner": "MASANAWA-01 / AF15 continuation",
+      "scope": "AF15 original owner resumed unchanged branch, safe bounded orphan cleanup against authoritative conditional purge, direct Node negative tests; no shared worker composition, DB migration or provider writes",
+      "paths": [
+        "adapters/storage/object_lifecycle/orphan_cleanup.ts",
+        "adapters/storage/object_lifecycle/orphan_cleanup.test.mjs",
+        "docs/workstreams/AF15-orphan-cleanup-20261010.md"
+      ],
+      "branch": "work/af15-orphan-cleanup-20261010-masanawa01",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "https://github.com/Baatiku/masanawa/pull/599",
+      "claimed_at": "2026-10-10T01:23:01.856Z",
+      "heartbeat_at": "2026-10-10T01:24:16.021Z",
+      "expires_at": "2026-10-10T01:29:16.021Z",
+      "notes": "Prior claim expired with source branch still equal to main@f381f077c485c04261459b77a42c215d3ce3a14b, no prior source to overwrite. Resumed same exact paths; preserve parallel media-batch branch.",
+      "released_at": "2026-10-10T01:27:00.396Z",
+      "release_reason": "Scoped source and 12 native Node + standalone strict TS tests checkpointed in draft #599; exact blobs match local tests. Canonical AF15 media runner #595/#598 exists; preserve prototype, DO NOT MERGE duplicate executor. Transfer unique orphan retention gates into canonical adapter after reviewed claim."
     }
   ]
 }
