@@ -1283,28 +1283,6 @@
       "release_reason": "J06 source-only PR #631 merged to nondeploying integration. Frozen PNPM install FAIL missing importer; TypeScript/PG/Vitest/Flutter/Android full checks not verified. AF00 owns shared composition. No production change."
     },
     {
-      "claim_id": "l-missions-fan-memory-j11-20261010-gpt6",
-      "owner": "GPT-6 / L-MISSIONS J11 fan consent, review and deletion",
-      "scope": "J11 per-Masana fan-memory consent+repository+API+Flutter/Admin+worker source; AF00 owns composition, existing memory records/tombstone authority reused",
-      "paths": [
-        "packages/fan-memory/**",
-        "services/gateway/src/modules/fan_memory/**",
-        "services/worker/src/jobs/fan_memory/**",
-        "adapters/storage/postgres/src/fan_memory/**",
-        "apps/mobile/lib/src/features/fans_memory/**",
-        "apps/admin_mobile/lib/src/features/fans_memory/**",
-        "tests/e2e/J11/**"
-      ],
-      "branch": "lane/l-missions-fan-memory-j11-20261010-gpt6",
-      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
-      "source_pr": null,
-      "source_head": "6a326f494579f276d5063a8cfa72c17fb5f0b8ea",
-      "claimed_at": "2026-10-10T16:39:29.161Z",
-      "heartbeat_at": "2026-10-10T16:58:49.656Z",
-      "expires_at": "2026-10-10T17:03:49.656Z",
-      "notes": "No shared router/composition/migration registry. Preserve canonical memory repository/approval, no duplicate ledger or memory database. Recheck before editing."
-    },
-    {
       "claim_id": "l-chat-j03-masana-text-20261010-gpt6-1747",
       "owner": "GPT-6 / L-CHAT J03 Masana-only text",
       "scope": "Fan-to-platform Masana-only text gateway admission, canonical session reuse, existing PG projection, safe turn recovery worker, Flutter stable local outbox and negative J03 tests; AF00 composes main/router/worker",
@@ -4142,6 +4120,29 @@
       "integration_head_sha": "ff1649da5e13b8a25db7dae4fc95c7b657312cac",
       "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/630",
       "release_reason": "L-MASANA PR #630 source-only squash merged safely into NONdeploying integration/rebuild at ff1649da5e13b8a25db7dae4fc95c7b657312cac; source head 8f112555fa40df24093f276688a89b101a19cdc2. 23 claimed files, no runtime root/migration/pnpm lock/main/production/financial data changed. Source testing NOT PASS: GitHub workflow reported advisory success but pnpm frozen install FAIL packages/masana importer, TS SKIPPED, Vitest/PG NOT_RUN; Flutter/Admin/Android exact-head unverified. AF00 sole owner of shared composition and tests; 12 licensed Masana/Rooms/24 posts missing for J18. Released exact-file claim after source merge."
+    },
+    {
+      "claim_id": "l-missions-fan-memory-j11-20261010-gpt6",
+      "owner": "GPT-6 / L-MISSIONS J11 fan consent, review and deletion",
+      "scope": "J11 per-Masana fan-memory consent+repository+API+Flutter/Admin+worker source; AF00 owns composition, existing memory records/tombstone authority reused",
+      "paths": [
+        "packages/fan-memory/**",
+        "services/gateway/src/modules/fan_memory/**",
+        "services/worker/src/jobs/fan_memory/**",
+        "adapters/storage/postgres/src/fan_memory/**",
+        "apps/mobile/lib/src/features/fans_memory/**",
+        "apps/admin_mobile/lib/src/features/fans_memory/**",
+        "tests/e2e/J11/**"
+      ],
+      "branch": "lane/l-missions-fan-memory-j11-20261010-gpt6",
+      "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "source_pr": 634,
+      "source_head": "938e27f93754367b984ebe0d3b754f5e6f72cfd6",
+      "claimed_at": "2026-10-10T16:39:29.161Z",
+      "heartbeat_at": "2026-10-10T16:58:49.656Z",
+      "expires_at": "2026-10-10T17:03:49.656Z",
+      "notes": "No shared router/composition/migration registry. Preserve canonical memory repository/approval, no duplicate ledger or memory database. Recheck before editing. SHA-specific J11 PR #634 draft handed to AF00 on PR #616; not merged/verified. Reserved paths released for subsequent authorized integrator work.",
+      "released_at": "2026-10-10T17:04:44.177Z"
     }
   ]
 }
