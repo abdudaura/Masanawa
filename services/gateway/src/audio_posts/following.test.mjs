@@ -1,0 +1,107 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createFollowingService, FollowingError } from "./following.ts";
+
+const alice = Object.freeze({ tenantId: "tenantA", accountId: "alice", authorId: "alice", authorKind: "human" });
+const bob = Object.freeze({ tenantId: "tenantA", accountId: "bob", authorId: "bob", authorKind: "human" });
+const clone = Object.freeze({ tenantId: "tenantA", accountId: "cloneOwner", authorId: "persona7", authorKind: "masana" });
+
+function fixture() {
+  const followed = new Set();
+  const creators = new Map([
+    ["talk1", { tenantId: "tenantA", authorId: "alice", accountId: "alice", authorKind: "human", published: true }],
+    ["talk2", { tenantId: "tenantA", authorId: "persona7", accountId: "cloneOwner", authorKind: "masana", published: true }],
+    ["talk3", { tenantId: "tenantB", authorId: "other", accountId: "other", authorKind: "human", published: true }],
+    ["talk4", { tenantId: "tenantA", authorId: "hidden", accountId: "hidden", authorKind: "human", published: false }],
+  ]);
+  const repository = {
+    async setFromVisiblePost({ tenantId, accountId, postId, enabled }) {
+      const creator = creators.get(postId);
+      if (!creator || creator.tenantId !== tenantId || !creator.published ||
+          creator.accountId === accountId || accountId === "blocked") return null;
+      const key = [tenantId, accountId, creator.authorKind, creator.authorId].join("/");
+      if (enabled) followed.add(key);
+      else followed.delete(key);
+      return { authorId: creator.authorId, authorKind: creator.authorKind, following: followed.has(key) };
+    },
+    async feed({ tenantId, viewerId, limit, cursor }) {
+      const ids = [...followed].filter(key => key.startsWith(tenantId + "/" + viewerId + "/"));
+      return {
+        items: ids.slice(0, limit).map((key, i) => ({ postId: "visible" + i, creator: key })),
+        nextCursor: cursor ?? null,
+      };
+    },
+  };
+  return { service: createFollowingService(repository), followed, creators };
+}
+
+test("follow is idempotent and unfollow removes only the actor's creator relation", async () => {
+  const f = fixture();
+  assert.deepEqual(await f.service.set(bob, { postId: "talk1", enabled: true }), {
+    authorId: "alice", authorKind: "human", following: true,
+  });
+  await f.service.set(bob, { postId: "talk1", enabled: true });
+  assert.equal(f.followed.size, 1);
+  assert.equal((await f.service.feed(bob)).items.length, 1);
+  await f.service.set(bob, { postId: "talk1", enabled: false });
+  assert.equal(f.followed.size, 0);
+  assert.equal((await f.service.feed(bob)).items.length, 0);
+});
+
+test("following a Masana preserves the creator kind without treating it as a person", async () => {
+  const f = fixture();
+  assert.deepEqual(await f.service.set(bob, { postId: "talk2", enabled: true }), {
+    authorId: "persona7", authorKind: "masana", following: true,
+  });
+});
+
+test("self-follow, hidden, foreign tenant and nonexistent posts all return neutral 404", async () => {
+  const f = fixture();
+  for (const [actor, postId] of [[alice, "talk1"], [bob, "talk3"], [bob, "talk4"], [bob, "missing"], [{ ...bob, accountId: "blocked" }, "talk1"]]) {
+    await assert.rejects(f.service.set(actor, { postId, enabled: true }), e =>
+      e instanceof FollowingError && e.code === "NOT_FOUND");
+  }
+  assert.equal(f.followed.size, 0);
+});
+
+test("another tenant or another viewer cannot read someone else's follows", async () => {
+  const f = fixture();
+  await f.service.set(bob, { postId: "talk1", enabled: true });
+  assert.equal((await f.service.feed({ ...bob, tenantId: "tenantB" })).items.length, 0);
+  assert.equal((await f.service.feed(clone)).items.length, 0);
+});
+
+test("reject invalid IDs, actor context, nonboolean states and malformed page cursors", async () => {
+  const f = fixture();
+  for (const postId of ["", "a/b", "../talk", " ".repeat(4)]) {
+    await assert.rejects(f.service.set(bob, { postId, enabled: true }), e => e.code === "VALIDATION");
+  }
+  for (const enabled of ["true", 1, null]) {
+    await assert.rejects(f.service.set(bob, { postId: "talk1", enabled }), e => e.code === "VALIDATION");
+  }
+  await assert.rejects(f.service.set({ ...bob, accountId: "" }, { postId: "talk1", enabled: true }),
+    e => e.code === "FORBIDDEN");
+  for (const input of [{ limit: 31 }, { limit: -1 }, { limit: 0 }, { limit: 1.2 },
+    { cursor: "bad" }, { cursor: "1700000000000:bad/path" }]) {
+    await assert.rejects(f.service.feed(bob, input), e => e.code === "VALIDATION");
+  }
+});
+
+test("repository or visibility outage never fabricates a successful follow receipt", async () => {
+  const service = createFollowingService({
+    setFromVisiblePost: async () => { throw Error("policy_unavailable"); },
+    feed: async () => { throw Error("db_unavailable"); },
+  });
+  await assert.rejects(service.set(bob, { postId: "talk1", enabled: true }), /policy_unavailable/);
+  await assert.rejects(service.feed(bob), /db_unavailable/);
+});
+
+test("invalid repository follow receipts fail closed as unavailable capability", async () => {
+  const service = createFollowingService({
+    setFromVisiblePost: async () => ({ authorId: "alice", authorKind: "human", following: "yes" }),
+    feed: async () => ({ items: null, nextCursor: null }),
+  });
+  await assert.rejects(service.set(bob, { postId: "talk1", enabled: true }), e =>
+    e.code === "CAPABILITY_UNAVAILABLE");
+  await assert.rejects(service.feed(bob), e => e.code === "CAPABILITY_UNAVAILABLE");
+});
