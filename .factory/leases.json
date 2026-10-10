@@ -142,35 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "masanawa01-af14-activity-http-truth-20261010",
-      "owner": "MASANAWA-01 / AF14 continuing #604",
-      "scope": "Continue existing #604 with account-scoped durable mark-read through existing Talk Activity service/Postgres/API/Flutter UI and tests; no new migration/route composer or authority. Preserve original invitation/account-fence work.",
-      "paths": [
-        "apps/mobile/lib/src/activity/talk_activity_http_transport.dart",
-        "apps/mobile/test/audio_first/af14/activity_http_transport_test.dart",
-        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
-        "apps/mobile/lib/src/state/talk_activity_state.dart",
-        "apps/mobile/test/activity_screen_test.dart",
-        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
-        "docs/workstreams/AF14-activity-recovery-20261010.md",
-        "services/gateway/src/talk_activity/model.ts",
-        "services/gateway/src/talk_activity/service.ts",
-        "services/gateway/src/talk_activity/postgres_repository.ts",
-        "services/gateway/src/talk_activity/postgres_repository.test.ts",
-        "services/gateway/src/talk_activity_routes.ts",
-        "services/gateway/src/talk_activity_routes.test.ts",
-        "apps/mobile/lib/src/activity/talk_activity.dart"
-      ],
-      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "source_pr": 604,
-      "source_head": "981d6245b414c871b964a1e25270cc281fd7f95d",
-      "claimed_at": "2026-10-10T03:13:35.896Z",
-      "heartbeat_at": "2026-10-10T03:16:31.549Z",
-      "expires_at": "2026-10-10T03:21:31.549Z",
-      "notes": "Continuing existing #604; Activity 404/malformed response source and 6 transport tests committed; handoff documentation and finite parent-milestone checklist."
-    },
-    {
       "claim_id": "masanawa-msn576-wallet-readback-20261010-0320",
       "owner": "GPT-6 continuing #576 / AF03 client, bounded handoff to AF00/AF01",
       "scope": "MSN balance exact authenticated readback into existing crypto-first Wallet screen; no balance mutation, shared root, Gateway composer, migrations or payout enablement",
@@ -1667,6 +1638,37 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/611",
       "head_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "release_reason": "Two existing delivery/prompt docs exact-readback validated and merged; six pending acceptance items; no source implementation/performance pass claimed."
+    },
+    {
+      "claim_id": "masanawa01-af14-activity-http-truth-20261010",
+      "owner": "MASANAWA-01 / AF14 continuing #604",
+      "scope": "Continue existing #604 with account-scoped durable mark-read through existing Talk Activity service/Postgres/API/Flutter UI and tests; no new migration/route composer or authority. Preserve original invitation/account-fence work.",
+      "paths": [
+        "apps/mobile/lib/src/activity/talk_activity_http_transport.dart",
+        "apps/mobile/test/audio_first/af14/activity_http_transport_test.dart",
+        "apps/mobile/lib/src/screens/activity/activity_screen.dart",
+        "apps/mobile/lib/src/state/talk_activity_state.dart",
+        "apps/mobile/test/activity_screen_test.dart",
+        "apps/mobile/test/audio_first/af14/activity_recovery_test.dart",
+        "docs/workstreams/AF14-activity-recovery-20261010.md",
+        "services/gateway/src/talk_activity/model.ts",
+        "services/gateway/src/talk_activity/service.ts",
+        "services/gateway/src/talk_activity/postgres_repository.ts",
+        "services/gateway/src/talk_activity/postgres_repository.test.ts",
+        "services/gateway/src/talk_activity_routes.ts",
+        "services/gateway/src/talk_activity_routes.test.ts",
+        "apps/mobile/lib/src/activity/talk_activity.dart"
+      ],
+      "branch": "work/af14-activity-recovery-20261010-masanawa01-d",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "source_pr": 604,
+      "source_head": "981d6245b414c871b964a1e25270cc281fd7f95d",
+      "claimed_at": "2026-10-10T03:13:35.896Z",
+      "heartbeat_at": "2026-10-10T03:16:31.549Z",
+      "expires_at": "2026-10-10T03:21:31.549Z",
+      "notes": "Continuing existing #604; Activity 404/malformed response source and 6 transport tests committed; handoff documentation and finite parent-milestone checklist.",
+      "released_at": "2026-10-10T03:24:03.424Z",
+      "release_reason": "Existing AF14 PR #604 source HEAD 0244a2f4ffcff2a13372e89a160f221d460fc2d5. Committed 14 connected paths incl backend atomic read, mobile mark-read, transport, tests and finite parent checklist. 13/13 source readback checks only; Flutter/Node24/pnpm/Vitest/PG/device NOT_RUN; PR draft and unmerged, AF00 #600 notified comment 6093267330. No local pull/release. Transfer remaining source to AF08/AF14 and one AF00 integrator."
     }
   ]
 }
