@@ -964,7 +964,9 @@
       "claimed_at": "2026-10-10T09:20:26.617Z",
       "heartbeat_at": "2026-10-10T09:20:26.617Z",
       "expires_at": "2026-10-10T09:25:26.617Z",
-      "notes": "Run 38040798427 Typecheck PASS, 253 files/1358 tests pass, only test-topology fails since mobile workflow changed command; exact source file last c8efac8. Fix narrow test to expect --no-fatal-infos while keeping errors/warnings fatal, run real Foundation."
+      "notes": "Run 38040798427 Typecheck PASS, 253 files/1358 tests pass, only test-topology fails since mobile workflow changed command; exact source file last c8efac8. Fix narrow test to expect --no-fatal-infos while keeping errors/warnings fatal, run real Foundation.",
+      "released_at": "2026-10-10T09:24:49.534Z",
+      "release_reason": "Test-topology compatibility repair committed 8977d4f; source predicate verified against current workflow, full CI re-execution in Actions."
     },
     {
       "claim_id": "af13-460-profile-widget-frame-gpt6-20261010",
@@ -996,7 +998,9 @@
       "claimed_at": "2026-10-10T09:23:56.629Z",
       "heartbeat_at": "2026-10-10T09:23:56.629Z",
       "expires_at": "2026-10-10T09:28:56.629Z",
-      "notes": "Real Mobile run 38040798435: malformed 123 expects offline but model explicitly fails closed to unknown; preserve status unverified. Other window claimed profile/wallet tests, do not edit them."
+      "notes": "Real Mobile run 38040798435: malformed 123 expects offline but model explicitly fails closed to unknown; preserve status unverified. Other window claimed profile/wallet tests, do not edit them.",
+      "released_at": "2026-10-10T09:24:49.534Z",
+      "release_reason": "Malformed-presence truthful unknown+label+cache regression committed 392072d; GitHub Flutter execution underway, no blanket acceptance."
     }
   ],
   "history": [
