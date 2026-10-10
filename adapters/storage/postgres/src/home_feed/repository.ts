@@ -17,7 +17,8 @@ const projection=`p.*, (SELECT count(*)::int FROM feed.likes l WHERE l.tenant_id
 export class PgHomeFeedRepository {
  constructor(private readonly pool:Pool){}
  async list(tenant:string,viewer:string|null,mode:"for_you"|"following",before:Cursor,limit:number) {
-  const rows=await this.pool.query(`SELECT ${projection} FROM feed.posts p WHERE p.tenant_id=$1 AND p.state='published'
+  const rows=await this.pool.query(`SELECT ${projection} FROM feed.posts p WHERE p.tenant_id=$1 AND p.state='published' AND EXISTS (SELECT 1 FROM masana.character_revisions m
+    WHERE m.tenant_id=p.tenant_id AND m.character_id=p.author_masana_id AND m.state='approved')
    AND ($3::text='for_you' OR EXISTS (
      SELECT 1 FROM masana.follows f WHERE f.tenant_id=p.tenant_id AND f.fan_user_id=$2 AND f.character_id=p.author_masana_id))
    AND ($4::timestamptz IS NULL OR (p.published_at,p.id)<($4::timestamptz,$5::uuid))
@@ -26,7 +27,8 @@ export class PgHomeFeedRepository {
   return rows.rows.map(item);
  }
  async find(tenant:string,viewer:string|null,id:string){
-  const rows=await this.pool.query(`SELECT ${projection} FROM feed.posts p WHERE p.tenant_id=$1 AND p.id=$3::uuid AND p.state='published'`,[tenant,viewer,id]);
+  const rows=await this.pool.query(`SELECT ${projection} FROM feed.posts p WHERE p.tenant_id=$1 AND p.id=$3::uuid AND p.state='published' AND EXISTS (SELECT 1 FROM masana.character_revisions m
+    WHERE m.tenant_id=p.tenant_id AND m.character_id=p.author_masana_id AND m.state='approved')`,[tenant,viewer,id]);
   return rows.rows[0]?item(rows.rows[0]):null;
  }
  async publish(tenant:string,publisher:string,v:{authorMasanaId:string;kind:string;body:string;media:readonly string[];transcript:string|null;idempotencyKey:string}){
