@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { validateProductionQualificationInputs } from "./flutterwave-billing-production-qualification.mjs";
 
 test("production runner never invokes payment or refund scripts", async () => {
@@ -68,4 +70,26 @@ test("production preflight rejects malformed qualification target JSON", () => {
       }),
     /not valid JSON/u,
   );
+});
+
+test("module import is side-effect free without real qualification targets", () => {
+  const file = new URL("./flutterwave-billing-production-qualification.mjs", import.meta.url);
+  const child = spawnSync(process.execPath, [
+    "--input-type=module", "-e", "await import(process.argv[1])", file.href,
+  ], {
+    env: { ...process.env, FLUTTERWAVE_QUALIFICATION_TARGETS_JSON: "" },
+    encoding: "utf8",
+  });
+  assert.equal(child.status, 0, child.stderr);
+  assert.equal(child.stderr, "");
+});
+
+test("direct production CLI still fails closed without real qualification targets", () => {
+  const file = fileURLToPath(new URL("./flutterwave-billing-production-qualification.mjs", import.meta.url));
+  const child = spawnSync(process.execPath, [file], {
+    env: { ...process.env, FLUTTERWAVE_QUALIFICATION_TARGETS_JSON: "" },
+    encoding: "utf8",
+  });
+  assert.equal(child.status, 2, child.stderr);
+  assert.match(child.stderr, /FLUTTERWAVE_QUALIFICATION_TARGETS_JSON is required/);
 });
