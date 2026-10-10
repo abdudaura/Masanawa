@@ -1067,27 +1067,6 @@
       "integration_head_sha": null
     },
     {
-      "claim_id": "r0-pg18-foundation-isolation-20261010-gpt6-1659",
-      "owner": "GPT-6 / R0 PG18 foundation recovery coordination with AF00 #616",
-      "scope": "R0 PostgreSQL18 real migration acceptance and isolated commerce suite (tests/helper only), reused exactly from existing AF13 #460; no immutable financial migrations or production DB touches",
-      "paths": [
-        "adapters/storage/postgres/src/postgres.integration.test.ts",
-        "adapters/storage/postgres/src/commerce/isolated-test-database.ts",
-        "adapters/storage/postgres/src/commerce/billing-funding.integration.test.ts",
-        "adapters/storage/postgres/src/commerce/billing-runtime.integration.test.ts",
-        "adapters/storage/postgres/src/commerce/ngn-wallet.integration.test.ts",
-        "adapters/storage/postgres/src/commerce/settlement.integration.test.ts",
-        "adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts"
-      ],
-      "branch": "lane/r0-pg18-foundation-20261010-gpt6",
-      "source_pr": 460,
-      "base_sha": "b31d054ab2c7de6ecfa165fda8c10ab45656ad86",
-      "claimed_at": "2026-10-10T15:59:23.076Z",
-      "heartbeat_at": "2026-10-10T16:09:22.527Z",
-      "expires_at": "2026-10-10T16:14:22.527Z",
-      "notes": "PR #620 exact head 77fc802456d016f5a81a5ac498184943a3fb8046; Foundation CI 38066326638 Typecheck PASS, Vitest RUNNING; no production SQL changes."
-    },
-    {
       "claim_id": "r0-owner-source-first-unblock-20261010-gpt6",
       "owner": "GPT-6 / owner-directed source-first instruction on canonical PR #615; AF00 informed on #600",
       "scope": "Owner explicitly permits independent implementation and non-deploying source integration despite unavailable/unrelated tests; preserve production, security and finance release gates. Documentation only, no code or CI changes.",
@@ -3797,6 +3776,34 @@
       "source_pr": 615,
       "source_head": "4951c7a50546ce0a8421267a6012242eb52b30d9",
       "release_reason": "Audited 1354 main source/build/test paths with machine-readable candidates, retired four confirmed empty stub package dirs; full obsolete wired source removal NOT done. Updated DELIVERY and reusable prompt. Exact head Foundation CI 38058011835 executed and failed TS2459 in packages/agents/src/talk-replay.test.ts; Vitest/provider/build skipped; existing PR460 has import correction. No live DB/source routes/financial writes/deploy. Future M0->M5 owners must replace/retire full source and test."
+    },
+    {
+      "claim_id": "r0-pg18-foundation-isolation-20261010-gpt6-1659",
+      "owner": "GPT-6 / R0 PG18 foundation recovery coordination with AF00 #616",
+      "scope": "R0 PostgreSQL18 real migration acceptance and isolated commerce suite (tests/helper only), reused exactly from existing AF13 #460; no immutable financial migrations or production DB touches",
+      "paths": [
+        "adapters/storage/postgres/src/postgres.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/isolated-test-database.ts",
+        "adapters/storage/postgres/src/commerce/billing-funding.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/billing-runtime.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/ngn-wallet.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/settlement.integration.test.ts",
+        "adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts"
+      ],
+      "branch": "lane/r0-pg18-foundation-20261010-gpt6",
+      "source_pr": 460,
+      "base_sha": "b31d054ab2c7de6ecfa165fda8c10ab45656ad86",
+      "claimed_at": "2026-10-10T15:59:23.076Z",
+      "heartbeat_at": "2026-10-10T16:09:22.527Z",
+      "expires_at": "2026-10-10T16:14:22.527Z",
+      "notes": "PR #620 exact head 77fc802456d016f5a81a5ac498184943a3fb8046; Foundation CI 38066326638 Typecheck PASS, Vitest RUNNING; no production SQL changes.",
+      "released_at": "2026-10-10T16:16:36.993Z",
+      "release_reason": "PR #620 merged into nondeploying integration/rebuild after exact-head PG suite checks; unrelated repository-wide Vitest failures remain",
+      "source_commits": [
+        "914944ac3eb51d4e49ad0e7f47f85341c47b09b7"
+      ],
+      "integration_head_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
+      "test_state": "PARTIAL: 7 PostgreSQL test/helper paths all pass in full Vitest; overall 1368 passed/41 failed; TypeScript/build/tooling PASS"
     }
   ]
 }
