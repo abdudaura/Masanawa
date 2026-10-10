@@ -1346,6 +1346,24 @@
       "heartbeat_at": "2026-10-10T16:39:29.161Z",
       "expires_at": "2026-10-10T16:44:29.161Z",
       "notes": "No shared router/composition/migration registry. Preserve canonical memory repository/approval, no duplicate ledger or memory database. Recheck before editing."
+    },
+    {
+      "claim_id": "l-chat-j03-masana-text-20261010-gpt6-1747",
+      "owner": "GPT-6 / L-CHAT J03 Masana-only text",
+      "scope": "Fan-to-platform Masana-only text gateway admission, canonical session reuse, existing PG projection, safe turn recovery worker, Flutter stable local outbox and negative J03 tests; AF00 composes main/router/worker",
+      "paths": [
+        "services/gateway/src/modules/masana_chat/**",
+        "adapters/storage/postgres/src/masana_chat/**",
+        "services/worker/src/jobs/masana_chat/**",
+        "apps/mobile/lib/src/features/masana_chat/**",
+        "tests/e2e/J03/**"
+      ],
+      "branch": "lane/l-chat-j03-masana-text-20261010-gpt6-1747",
+      "base_sha": "b7a34059751271a07096e6ae4be07efa98bf1c3d",
+      "claimed_at": "2026-10-10T16:44:51.455Z",
+      "heartbeat_at": "2026-10-10T16:44:51.455Z",
+      "expires_at": "2026-10-10T16:49:51.455Z",
+      "notes": "No parallel chat journal, no human DM, no clone contact; same @masanawa/agents sessions. Feature code only. AF00 retains shared composition and deployment."
     }
   ],
   "history": [
