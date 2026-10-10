@@ -1,6 +1,7 @@
 import type {Pool,PoolClient} from "pg";
-import type {CaseRecord,CaseEvent,ActionRecord,CaseTarget,CaseCategory,CaseState,ActionKind} from "@masanawa/moderation";
+import type {CaseRecord,CaseEvent,ActionRecord,CaseTarget,CaseCategory,CaseState,ActionKind,AppealRecord} from "@masanawa/moderation";
 import {CaseError,decisionRequiredApprovals} from "@masanawa/moderation";
+import {createPostgresAppealReview} from "./appeals.js";
 type CaseRow={tenant_id:string;case_id:string;reporter_user_id:string;target_kind:CaseTarget;target_id:string;category:CaseCategory;details:string;state:CaseState;version:number;created_at:Date;updated_at:Date;sla_due_at:Date;client_request_id:string};
 type EventRow={event_id:string;case_id:string;actor_id:string;kind:string;detail:string;created_at:Date};
 type ActionRow={tenant_id:string;action_id:string;case_id:string;target_kind:CaseTarget;target_id:string;kind:ActionKind;state:ActionRecord["state"];reason:string;proposed_by:string;approved_by:string|null;second_approved_by:string|null;expires_at:Date|null;version:number};
@@ -36,7 +37,12 @@ export function createPostgresCaseRepository(pool:Pool){
     const row=rs.rows[0];if(!row)return null;
     const events=await c.query<EventRow>(`SELECT * FROM moderation.case_events WHERE tenant_id=$1 AND case_id=$2 ORDER BY created_at,event_id`,[tenantId,caseId]);
     const actions=await c.query<ActionRow>(`SELECT * FROM moderation.actions WHERE tenant_id=$1 AND case_id=$2 ORDER BY created_at,action_id`,[tenantId,caseId]);
-    return {...mapped(row),events:events.rows.map(event),actions:actions.rows.map(action)};
+    const appeals=await c.query<{tenant_id:string;appeal_id:string;case_id:string;appellant_user_id:string;reason:string;state:AppealRecord["state"];reviewed_by:string|null;second_reviewed_by:string|null;version:number;created_at:Date}>(
+       "SELECT * FROM moderation.appeals WHERE tenant_id=$1 AND case_id=$2 ORDER BY created_at,appeal_id",[tenantId,caseId]);
+    return {...mapped(row),events:events.rows.map(event),actions:actions.rows.map(action),
+      appeals:appeals.rows.map(a=>({tenantId:a.tenant_id,appealId:a.appeal_id,caseId:a.case_id,appellantUserId:a.appellant_user_id,
+       reason:a.reason,state:a.state,reviewedBy:a.reviewed_by,secondReviewedBy:a.second_reviewed_by,version:a.version,
+       createdAt:a.created_at.toISOString()}))};
    });
   },
   async list(tenantId:string,reporterId:string|null,limit:number){
@@ -90,6 +96,7 @@ export function createPostgresCaseRepository(pool:Pool){
     return action(updated.rows[0]!);
    });
   },
+  resolveAppeal:createPostgresAppealReview(pool),
   async appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string){
    await transaction(pool,async c=>{
     const rs=await c.query<CaseRow>(`SELECT * FROM moderation.cases WHERE tenant_id=$1 AND case_id=$2 FOR UPDATE`,[tenantId,caseId]);
