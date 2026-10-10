@@ -197,7 +197,7 @@ class _ComposerState extends State<AudioPostComposerScreen> {
         requestId: requestId, assetId: assetId, title: title,
       );
       if (!mounted || !_authorized || generation != _generation) return;
-      if (post.title != title || post.durationMs != attempt.durationMs ||
+      if (post.title != title ||
           (post.status != 'processing' && post.status != 'published' &&
            post.status != 'failed' && post.status != 'removed')) {
         throw const FormatException('Invalid publish receipt');
