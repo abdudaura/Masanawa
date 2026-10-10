@@ -143,7 +143,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   }
   Future<void> _load({bool more = false}) async {
     if (!more && widget.playback != null) unawaited(widget.playback!.stop());
-    if (!_authorized || (more && (_mine || _saved || _next == null || _loadingMore))) {
+    if (!_authorized || (more && ((_mine || _saved) && widget.transport is! AudioPostLibraryPager || _next == null || _loadingMore))) {
       if (mounted) setState(() => _loading = false);
       return;
     }
@@ -162,9 +162,13 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       final page = _following
           ? await widget.followingTransport!.following(cursor: more ? _next : null)
           : _mine
-          ? AudioPostPage(items: await widget.transport.mine(), nextCursor: null)
+          ? (widget.transport is AudioPostLibraryPager
+              ? await (widget.transport as AudioPostLibraryPager).minePage(cursor: more ? _next : null)
+              : AudioPostPage(items: await widget.transport.mine(), nextCursor: null))
           : _saved
-            ? AudioPostPage(items: await widget.transport.saved(), nextCursor: null)
+            ? (widget.transport is AudioPostLibraryPager
+                ? await (widget.transport as AudioPostLibraryPager).savedPage(cursor: more ? _next : null)
+                : AudioPostPage(items: await widget.transport.saved(), nextCursor: null))
             : await widget.transport.discover(cursor: more ? _next : null);
       if (!mounted || sequence != _generation || !_authorized) return;
       final seen = more ? _items.map((e) => e.postId).toSet() : <String>{};
