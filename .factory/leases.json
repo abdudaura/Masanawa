@@ -112,6 +112,24 @@
       "heartbeat_at": "2026-10-10T02:41:41.762Z",
       "expires_at": "2026-10-10T02:46:41.762Z",
       "notes": "Phone numeric-password service + PG adapter + route + Dart form authored on existing PR #588. Separated verified phone vs unverified self-declared. 4/4 exact-blob Node policy tests PASS_REAL; workspace Vitest/tsc/PG/Flutter BLOCKED; AF00 migration/composition gated. Completing SHA-specific handoff."
+    },
+    {
+      "claim_id": "af09-609-playback-journey-20261010-gpt6-0338",
+      "owner": "AF09 existing PR #609 playback-client continuation",
+      "scope": "Connect authenticated AF09 ticketed audio to a single just_audio player and account-fenced Talks feed; retain AF05/AF15 playback authority and AF00 composition ownership",
+      "paths": [
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/test/audio_first/af09/playback_widget_test.dart",
+        "docs/workstreams/AF09-playback-client-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "claimed_at": "2026-10-10T02:42:45.541Z",
+      "heartbeat_at": "2026-10-10T02:42:45.541Z",
+      "expires_at": "2026-10-10T02:47:45.541Z",
+      "notes": "Continuing existing PR #609 only; no migration/router/auth/root/production edits. AF05 shared audio focus still integration dependency. Selected from cleared AF09 path scopes."
     }
   ],
   "history": [
