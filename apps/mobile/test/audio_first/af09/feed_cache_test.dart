@@ -33,6 +33,15 @@ class MemoryFeedCache implements PublishedTalkFeedCache {
   }
 }
 
+
+class _DelayedAccountCache extends MemoryFeedCache {
+  _DelayedAccountCache(this.oldRead);
+  final Completer<List<AudioPost>?> oldRead;
+  @override
+  Future<List<AudioPost>?> read(String accountId) =>
+      accountId == 'alice' ? oldRead.future : super.read(accountId);
+}
+
 class FakeFeedTransport implements AudioPostTransport {
   Future<AudioPostPage> Function(String?)? onDiscover;
   int discoverCount = 0;
@@ -159,5 +168,26 @@ void main() {
     expect(find.text('Talk alice-late'), findsNothing);
     expect(cache.cleared, contains('alice'));
     expect(cache.data.containsKey('alice'), isFalse);
+  });
+
+  testWidgets('late secure-cache read cannot overwrite a switched account',
+      (tester) async {
+    final diskRead = Completer<List<AudioPost>?>();
+    final cache = _DelayedAccountCache(diskRead);
+    final network = Completer<AudioPostPage>();
+    final source = FakeFeedTransport()..onDiscover = (_) => network.future;
+    await tester.pumpWidget(feed(source, cache, 'alice'));
+    await tester.pump();
+    expect(find.text('Talk alice-private'), findsNothing);
+    source.onDiscover = (_) async =>
+        AudioPostPage(items: [item('bob-authoritative')], nextCursor: null);
+    await tester.pumpWidget(feed(source, cache, 'bob'));
+    await tester.pumpAndSettle();
+    diskRead.complete([item('alice-private')]);
+    network.complete(AudioPostPage(items: [item('alice-from-network')], nextCursor: null));
+    await tester.pumpAndSettle();
+    expect(find.text('Talk alice-private'), findsNothing);
+    expect(find.text('Talk alice-from-network'), findsNothing);
+    expect(find.text('Talk bob-authoritative'), findsOneWidget);
   });
 }
