@@ -1027,26 +1027,6 @@
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
       "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
-    },
-    {
-      "claim_id": "masanawa-external-video-home-20261010",
-      "owner": "BLUEPRINT-VIDEO-01",
-      "scope": "Update existing PR615 docs only: Home Feed/Videos external managed channels, backend/DB/worker design and provider feasibility",
-      "paths": [
-        "docs/blueprint-v1/HOME-EXTERNAL-VIDEOS-20261010.md",
-        "docs/blueprint-v1/PRODUCT-UX.md",
-        "docs/blueprint-v1/README.md",
-        "docs/blueprint-v1/RESEARCH-DECISIONS.md",
-        "docs/blueprint-v1/MASANA-ROOMS-ADMIN-ARCHITECTURE-20261010.md",
-        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
-        "docs/blueprint-v1/RECOVERY-DELIVERY.md"
-      ],
-      "branch": "planning/masanawa-blueprint-v1-20261010",
-      "claimed_at": "2026-10-10T13:18:05.795Z",
-      "heartbeat_at": "2026-10-10T13:18:05.795Z",
-      "expires_at": "2026-10-10T13:23:05.795Z",
-      "source_pr": 615,
-      "notes": "Planning only, no runtime, DB or provider writes. Reuse existing PR #615."
     }
   ],
   "history": [
@@ -3513,6 +3493,29 @@
       "source_pr": 615,
       "source_head": "25891e8d2c5ed3122339175e427ea2c93d7f8527",
       "release_reason": "PR615 design changes only: 67 SC, 16 J, 12 fictional Masana, 12 rooms, 24 staging demo posts, 12 room intros/QAs and future video. Static PASS after correction; no runtime source changes; TS/Flutter/PG/Android/provider NOT_RUN. Source owners notified on #600,#609,#578,#530,#606; full local/source recovery required."
+    },
+    {
+      "claim_id": "masanawa-external-video-home-20261010",
+      "owner": "BLUEPRINT-VIDEO-01",
+      "scope": "Update existing PR615 docs only: Home Feed/Videos external managed channels, backend/DB/worker design and provider feasibility",
+      "paths": [
+        "docs/blueprint-v1/HOME-EXTERNAL-VIDEOS-20261010.md",
+        "docs/blueprint-v1/PRODUCT-UX.md",
+        "docs/blueprint-v1/README.md",
+        "docs/blueprint-v1/RESEARCH-DECISIONS.md",
+        "docs/blueprint-v1/MASANA-ROOMS-ADMIN-ARCHITECTURE-20261010.md",
+        "docs/blueprint-v1/ARCHITECTURE-ECONOMICS.md",
+        "docs/blueprint-v1/RECOVERY-DELIVERY.md"
+      ],
+      "branch": "planning/masanawa-blueprint-v1-20261010",
+      "claimed_at": "2026-10-10T13:18:05.795Z",
+      "heartbeat_at": "2026-10-10T13:18:05.795Z",
+      "expires_at": "2026-10-10T13:23:05.795Z",
+      "source_pr": 615,
+      "notes": "Planning only, no runtime, DB or provider writes. Reuse existing PR #615.",
+      "released_at": "2026-10-10T13:23:38.153Z",
+      "source_head": "e8ff639fb32e52cabdb8b18d249f085caf5889bd",
+      "release_reason": "Blueprint-only Home Feed/Videos design: 71 SC / 17 journeys / 12 agent /24 sample static checks; no runtime TypeScript/Flutter/Postgres/provider tests. Notified PR600/609/606. Safe integration and owner design review pending."
     }
   ]
 }
