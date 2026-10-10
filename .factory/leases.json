@@ -150,6 +150,27 @@
       "heartbeat_at": "2026-10-10T02:29:39.354Z",
       "expires_at": "2026-10-10T02:34:39.354Z",
       "notes": "No existing claimed AF09 service/feed/repository paths, AF05/AF15 signer, AF00 router/migrations or app native code touched; new separated paths in same PR."
+    },
+    {
+      "claim_id": "masanawa01-af08-phone-password-20261010-pr588-continuation",
+      "owner": "MASANAWA-01 / AF08 continuation PR #588",
+      "scope": "Canonical phone numeric-password registration/login service, bounded password policy and PostgreSQL adapter preserving OTP/email identity; AF00 owns shared routes/migration/mobile integration",
+      "paths": [
+        "services/gateway/src/auth_audio_first/phone_password_policy.ts",
+        "services/gateway/src/auth_audio_first/phone_password_policy.test.mjs",
+        "services/gateway/src/auth_audio_first/phone_password.ts",
+        "services/gateway/src/auth_audio_first/phone_password.test.ts",
+        "adapters/storage/postgres/src/security/phone_password.ts",
+        "docs/workstreams/AF08-auth-revocation-delivery-20261009.md"
+      ],
+      "branch": "work/af08-auth-revocation-delivery-20261009-masanawa01",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 588,
+      "source_head": "ec372e0e89ea3dcf815b2511e66bb92f548327d6",
+      "claimed_at": "2026-10-10T02:30:11.792Z",
+      "heartbeat_at": "2026-10-10T02:30:11.792Z",
+      "expires_at": "2026-10-10T02:35:11.792Z",
+      "notes": "Continue existing PR and no app/root/export/migration writes. Independent phone password code + tests; pending AF00 composer/migration transfer and AF08 UI."
     }
   ],
   "history": [
