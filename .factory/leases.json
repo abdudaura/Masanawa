@@ -136,24 +136,6 @@
       "expires_at": "2026-10-10T01:57:02.732Z",
       "notes": "Reviewed stale transfer recorded in PR comment 6092382298; prior source never removed.",
       "pr": "https://github.com/Baatiku/masanawa/pull/580"
-    },
-    {
-      "claim_id": "gpt6-af13-qualifier-integration-fix-20261010",
-      "owner": "GPT-6 / AF13 existing PR #596 continuation",
-      "scope": "Repair exact SyntaxError in canonical AF13 qualifier and execute native Node tests; no competing engine, migration, runtime or deploy",
-      "paths": [
-        "tools/audio-first-qualification/qualify.mjs",
-        "tools/audio-first-qualification/qualify.test.mjs",
-        "docs/workstreams/AF13-evidence-ledger-20261009.md"
-      ],
-      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 596,
-      "source_head": "097ffaee159c734b5200674ff07abe41735aab4a",
-      "claimed_at": "2026-10-10T01:51:56.152Z",
-      "heartbeat_at": "2026-10-10T01:51:56.152Z",
-      "expires_at": "2026-10-10T01:56:56.152Z",
-      "notes": "Fresh recovery after prior AF13 claim released 2026-10-10T01:49:38Z. Existing #596 qualifier syntactically malformed at assess/verifyProofs splice. Exact source fix and native tests in continuing PR."
     }
   ],
   "history": [
@@ -999,6 +981,28 @@
       "notes": "No active CAS claims; #520 last updated 2026-10-08T23:59:41Z. Preserve authentic branch lineage; no shared Gateway composer, root router, native, finance, migration or dependency changes.",
       "released_at": "2026-10-10T01:51:35.780Z",
       "release_reason": "Reviewed stale continuation by owner direction; original PR and SHA preserved, scope transferred on same PR #580 after branch/claim inspection."
+    },
+    {
+      "claim_id": "gpt6-af13-qualifier-integration-fix-20261010",
+      "owner": "GPT-6 / AF13 existing PR #596 continuation",
+      "scope": "Repair exact SyntaxError in canonical AF13 qualifier and execute native Node tests; no competing engine, migration, runtime or deploy",
+      "paths": [
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md"
+      ],
+      "branch": "work/af13-evidence-ledger-20261009-masanawa01",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 596,
+      "source_head": "097ffaee159c734b5200674ff07abe41735aab4a",
+      "claimed_at": "2026-10-10T01:51:56.152Z",
+      "heartbeat_at": "2026-10-10T01:51:56.152Z",
+      "expires_at": "2026-10-10T01:56:56.152Z",
+      "notes": "Fresh recovery after prior AF13 claim released 2026-10-10T01:49:38Z. Existing #596 qualifier syntactically malformed at assess/verifyProofs splice. Exact source fix and native tests in continuing PR.",
+      "released_at": "2026-10-10T01:55:09.509Z",
+      "pr": "https://github.com/Baatiku/masanawa/pull/596",
+      "integration_head_sha": "811dd40492e7a5f155031b9fb0a0a1efa36ad151",
+      "release_reason": "Existing PR #596 repaired malformed qualifier at eb628bc85; 4 source/test Git blobs match remote exactly, Node22.16 native 16/16 PASS, syntax checks PASS, handoff and PR updated; awaiting AF00 designated safe nondeploying unified integration baseline, actual device/DB/provider/restore not run. No new branch or deployment."
     }
   ]
 }
