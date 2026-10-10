@@ -53,6 +53,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Answer ready'), findsOneWidget);
   });
+  testWidgets('same transport must not display previous fan rows after logout', (tester) async {
+    final t = FakeTransport('u1');
+    await tester.pumpWidget(MaterialApp(home: FanNotificationsScreen(transport: t)));
+    await tester.pumpAndSettle();
+    expect(find.text('Answer ready'), findsOneWidget);
+    t.active = false;
+    await tester.pumpWidget(MaterialApp(home: FanNotificationsScreen(transport: t)));
+    await tester.pumpAndSettle();
+    expect(find.text('Answer ready'), findsNothing);
+    expect(find.text('Sign in to see your notifications.'), findsOneWidget);
+  });
   testWidgets('account change clears old fan data before a new read', (tester) async {
     final original = FakeTransport('u1');
     await tester.pumpWidget(MaterialApp(home: FanNotificationsScreen(transport: original)));
