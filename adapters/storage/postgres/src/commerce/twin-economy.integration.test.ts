@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createIsolatedPostgresTestDatabase } from "./isolated-test-database.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
 import { runMigrations } from "../migrations.js";
@@ -10,9 +11,11 @@ const describeDatabase = connectionString ? describe : describe.skip;
 
 describeDatabase("Twin economy PostgreSQL acceptance", () => {
   let pool: Pool;
+  let isolated: Awaited<ReturnType<typeof createIsolatedPostgresTestDatabase>> | undefined;
 
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    isolated = await createIsolatedPostgresTestDatabase(connectionString!);
+    pool = isolated.pool;
     await runMigrations(pool, [{
       owner: "commerce",
       directory: fileURLToPath(
@@ -22,7 +25,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
   });
 
   afterAll(async () => {
-    await pool?.end();
+    await isolated?.close();
   });
 
   it("persists one immutable Credit transfer receipt and accepts only exact replay", async () => {
