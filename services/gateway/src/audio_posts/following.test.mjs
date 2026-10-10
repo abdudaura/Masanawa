@@ -164,3 +164,39 @@ test("Following keeps Masana posts disclosed as AI without leaking creator accou
   assert.equal(page.items[0].authorKind, "masana");
   assert.equal("authorAccountId" in page.items[0], false);
 });
+
+
+test("opaque PostgreSQL precision cursor is forwarded unchanged by both feed services", async () => {
+  const stamp = "2026-10-10T02:51:54.123789Z";
+  const cursor = Buffer.from(JSON.stringify([stamp, "postA"])).toString("base64url");
+  const received = [];
+  const repository = {
+    feed: async args => { received.push(args); return { items: [], nextCursor: null }; },
+    creatorFeed: async args => { received.push(args); return { items: [], nextCursor: null }; },
+  };
+  const service = createFollowingService(repository);
+  await service.feed(bob, { cursor, limit: 3 });
+  await service.creatorFeed(bob, { authorId: "alice", authorKind: "human", cursor, limit: 2 });
+  assert.equal(received[0].cursor, cursor);
+  assert.equal(received[1].cursor, cursor);
+  assert.equal(received[0].viewerId, "bob");
+  assert.equal(received[1].tenantId, "tenantA");
+  await assert.rejects(service.feed(bob, { cursor: "1700000000000:postA" }),
+    e => e.code === "VALIDATION");
+});
+test("invalid persisted page cursors return typed 400, corrupt rows typed 503", async () => {
+  const service = createFollowingService({
+    feed: async () => { throw Error("audio_posts.invalid_following_cursor"); },
+    creatorFeed: async () => { throw Error("audio_posts.invalid_following_row"); },
+  });
+  await assert.rejects(service.feed(bob), e =>
+    e instanceof FollowingError && e.code === "VALIDATION");
+  await assert.rejects(service.creatorFeed(bob, { authorId: "alice", authorKind: "human" }), e =>
+    e instanceof FollowingError && e.code === "CAPABILITY_UNAVAILABLE");
+});
+test("real repository outages are not disguised as malformed cursor errors", async () => {
+  const service = createFollowingService({
+    feed: async () => { throw Error("pg_connection_lost"); },
+  });
+  await assert.rejects(service.feed(bob), /pg_connection_lost/);
+});
