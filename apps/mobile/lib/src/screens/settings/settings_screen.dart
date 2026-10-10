@@ -262,7 +262,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : _notificationController.loading
                           ? 'Checking device notification status…'
                           : _notificationController.error ??
-                              'This device · permission and push registration',
+                              'Device permission only · delivery not verified',
                 ),
                 value: MobilePushService.instance.configured &&
                     _notificationController.enabled,
