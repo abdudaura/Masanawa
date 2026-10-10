@@ -1,0 +1,219 @@
+import { describe,expect,it,vi } from "vitest";
+import { createHash } from "node:crypto";
+import {mkdtemp,mkdir,writeFile,readFile,rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join,dirname} from "node:path";
+import { createPrivateVoiceNoteService,VoiceNoteError } from "./service.js";
+import type { VoiceNoteRepository, PrivateVoiceObjectStore, VoiceStaged } from "./model.js";
+import { validOpus } from "./ogg_opus_test_fixture.js";
+
+const tenantId="tenant_test",userId="user_alice";
+const conversationId="00000000-0000-4000-8000-000000000001";
+const messageId="00000000-0000-4000-8000-000000000002";
+const bytes=validOpus();
+function fixture(){
+ let grant=true,record:VoiceStaged|undefined;
+ const note={messageId,conversationId,clientRequestId:"requestABC1234",
+  senderUserId:userId,sequence:"12",createdAt:new Date().toISOString(),
+  deletedAt:null,durationMs:1000,sizeBytes:bytes.length,mimeType:"audio/ogg" as const};
+ const repository={
+  stage:vi.fn(async(value:VoiceStaged)=>grant?(record??=value):"forbidden" as const),
+  attach:vi.fn(async()=>grant?note:"forbidden" as const),
+  find:vi.fn(async()=>grant&&record?{...note,objectKey:record.objectKey,
+   sha256:record.sha256}:null),
+  list:vi.fn(async()=>grant?[note]:null),
+  remove:vi.fn(async()=>grant),
+  stale:vi.fn<VoiceNoteRepository["stale"]>(async()=>[]),
+  deleted:vi.fn(async()=>{}),
+ } satisfies VoiceNoteRepository;
+ const objects={
+  put:vi.fn<PrivateVoiceObjectStore["put"]>(async()=>{}),get:vi.fn<PrivateVoiceObjectStore["get"]>(async()=>bytes),
+  delete:vi.fn<PrivateVoiceObjectStore["delete"]>(async()=>{}),
+ } satisfies PrivateVoiceObjectStore;
+ const authorizer={authorize:vi.fn(async()=>({tenantId,userId}) as never)};
+ const service=createPrivateVoiceNoteService({
+  authorizer,
+  repository,objects,
+ });
+ return {service,repository,objects,authorizer,note,deny(){grant=false},get record(){return record}};
+}
+describe("C04 private human voice-note mutation and access contracts",()=>{
+ it("sends with authoritative identity and same request key after uncertainty",async()=>{
+  const v=fixture();
+  const request={authorizationHeader:"Bearer valid",conversationId,
+    clientRequestId:"requestABC1234",ogg:bytes};
+  expect(await v.service.send(request)).toMatchObject({messageId,senderUserId:userId});
+  expect(await v.service.send(request)).toMatchObject({messageId});
+  expect(v.repository.stage).toHaveBeenCalledTimes(2);
+  expect(v.repository.attach).toHaveBeenCalledTimes(2);
+  expect(v.objects.put).toHaveBeenCalledWith(v.record?.objectKey,bytes);
+  expect(v.record?.sha256).toBe(createHash("sha256").update(bytes).digest("hex"));
+ });
+ it("rejects invalid bytes without staging or uploading",async()=>{
+  const v=fixture();
+  await expect(v.service.send({authorizationHeader:undefined,conversationId,
+    clientRequestId:"requestABC1234",ogg:Buffer.from("bad")})).rejects.toBeInstanceOf(VoiceNoteError);
+  expect(v.objects.put).not.toHaveBeenCalled();
+  expect(v.repository.stage).not.toHaveBeenCalled();
+ });
+ it("rechecks both sender permission and reader permission after revocation",async()=>{
+  const v=fixture();
+  await v.service.send({authorizationHeader:"x",conversationId,
+    clientRequestId:"requestABC1234",ogg:bytes});
+  v.objects.get.mockClear();
+  v.deny();
+  await expect(v.service.read({authorizationHeader:"x",messageId}))
+    .rejects.toMatchObject({statusCode:404});
+  await expect(v.service.send({authorizationHeader:"x",conversationId,
+    clientRequestId:"requestABC1234",ogg:bytes})).rejects.toMatchObject({statusCode:404});
+  expect(v.objects.get).not.toHaveBeenCalled();
+ });
+ it("never returns corrupt stored bytes",async()=>{
+  const v=fixture();
+  await v.service.send({authorizationHeader:"x",conversationId,
+    clientRequestId:"requestABC1234",ogg:bytes});
+  v.objects.get.mockResolvedValueOnce(Buffer.alloc(bytes.length));
+  await expect(v.service.read({authorizationHeader:"x",messageId}))
+    .rejects.toMatchObject({statusCode:503});
+ });
+ it("does not mark private media erased when S3 deletion is uncertain",async()=>{
+  const v=fixture();
+  v.repository.stale.mockResolvedValueOnce([{objectKey:"dm-voice/test-object"}]);
+  v.objects.delete.mockRejectedValueOnce(new Error("provider timeout"));
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:0,failed:1});
+  expect(v.repository.deleted).toHaveBeenCalledWith("dm-voice/test-object",false);
+  v.repository.stale.mockResolvedValueOnce([{objectKey:"dm-voice/test-object"}]);
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:1,failed:0});
+  expect(v.repository.deleted).toHaveBeenCalledWith("dm-voice/test-object",true);
+ });
+ it("rejects malformed cursor and bounds without touching repository",async()=>{
+  const v=fixture();
+  await expect(v.service.list({authorizationHeader:"x",conversationId,before:"9223372036854775808"}))
+    .rejects.toMatchObject({statusCode:400});
+  expect(v.repository.list).not.toHaveBeenCalled();
+ });
+ it("does not attach or claim success when uploaded object readback is corrupt or missing",async()=>{
+  for(const missing of [false,true]) {
+   const v=fixture();
+   if(missing)v.objects.get.mockRejectedValueOnce(new Error("provider missing"));
+   else v.objects.get.mockResolvedValueOnce(Buffer.alloc(bytes.length));
+   await expect(v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes}))
+    .rejects.toMatchObject({statusCode:503});
+   expect(v.repository.attach).not.toHaveBeenCalled();
+  }
+ });
+ it("snapshots exact validated bytes before asynchronous staging",async()=>{
+  const v=fixture(),mutable=Buffer.from(bytes),stage=v.repository.stage.getMockImplementation()!;
+  v.repository.stage.mockImplementationOnce(async value=>{mutable.fill(0);return stage(value)});
+  await v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:mutable});
+  expect(v.objects.put.mock.calls[0]?.[1]).toEqual(bytes);
+  expect(mutable).toEqual(Buffer.alloc(bytes.length));
+ });
+ it("revoked session after staging prevents private storage writes",async()=>{
+  const v=fixture(),stage=v.repository.stage.getMockImplementation()!;
+  v.repository.stage.mockImplementationOnce(async value=>{
+   const result=await stage(value);v.authorizer.authorize.mockRejectedValue(new VoiceNoteError("revoked",401));return result;
+  });
+  await expect(v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes})).rejects.toMatchObject({statusCode:401});
+  expect(v.objects.put).not.toHaveBeenCalled();expect(v.repository.attach).not.toHaveBeenCalled();
+ });
+ it("revocation during upload readback prevents attachment",async()=>{
+  const v=fixture();v.objects.get.mockImplementationOnce(async()=>{
+   v.authorizer.authorize.mockRejectedValue(new VoiceNoteError("revoked",401));return bytes;
+  });
+  await expect(v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes})).rejects.toMatchObject({statusCode:401});
+  expect(v.repository.attach).not.toHaveBeenCalled();
+ });
+ it("revocation or changed account while fetching audio prevents bytes returning",async()=>{
+  for(const changed of [false,true]) {
+   const v=fixture();await v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes});
+   v.objects.get.mockImplementationOnce(async()=>{
+    if(changed)v.authorizer.authorize.mockResolvedValue({tenantId,userId:"user_bob"} as never);
+    else v.authorizer.authorize.mockRejectedValue(new VoiceNoteError("revoked",401));return bytes;
+   });
+   await expect(v.service.read({authorizationHeader:"x",messageId})).rejects.toMatchObject({statusCode:401});
+  }
+ });
+ it("revocation during list query prevents private history metadata returning",async()=>{
+  const v=fixture();v.repository.list.mockImplementationOnce(async()=>{
+   v.authorizer.authorize.mockRejectedValue(new VoiceNoteError("revoked",401));return [v.note];
+  });
+  await expect(v.service.list({authorizationHeader:"x",conversationId})).rejects.toMatchObject({statusCode:401});
+ });
+ it("session loss after attachment refuses a receipt without pretending the send was undone",async()=>{
+  const v=fixture();v.repository.attach.mockImplementationOnce(async()=>{
+   v.authorizer.authorize.mockRejectedValue(new VoiceNoteError("revoked",401));return v.note;
+  });
+  await expect(v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes})).rejects.toMatchObject({statusCode:401});
+  expect(v.repository.attach).toHaveBeenCalledTimes(1);expect(v.record).toBeDefined();
+ });
+ it("malformed stored checksum and mismatched media duration are safe corruption failures",async()=>{
+  for(const patch of [{sha256:"invalid"},{durationMs:2000}]) {
+   const v=fixture();await v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes});
+   const find=v.repository.find.getMockImplementation()!;
+   v.repository.find.mockImplementationOnce(async()=>({...await find(),...patch}) as never);
+   await expect(v.service.read({authorizationHeader:"x",messageId})).rejects.toMatchObject({code:"messages.voice.storage_corrupt",statusCode:503});
+  }
+ });
+ it("serves a validated private byte snapshot even when the storage buffer changes during authorization",async()=>{
+  const v=fixture();
+  await v.service.send({authorizationHeader:"x",conversationId,clientRequestId:"requestABC1234",ogg:bytes});
+  const mutable=Buffer.from(bytes),find=v.repository.find.getMockImplementation()!;
+  v.objects.get.mockResolvedValueOnce(mutable);
+  let lookups=0;
+  v.repository.find.mockImplementation(async request=>{
+    const result=await find(request);
+    // Emulate a buffer pool reusing the provider's backing bytes while the
+    // service awaits its second authorized SQL membership check.
+    if(++lookups===2)mutable.fill(0);
+    return result;
+  });
+  const played=await v.service.read({authorizationHeader:"x",messageId});
+  expect(played).toEqual(bytes);
+  expect(played).not.toBe(mutable);
+  expect(mutable).toEqual(Buffer.alloc(bytes.length));
+ });
+ it("continues deleting other objects when a failed S3 delete cannot release its SQL claim",async()=>{
+  const v=fixture(),first="dm-voice/failure",second="dm-voice/other";
+  v.repository.stale.mockResolvedValueOnce([{objectKey:first},{objectKey:second}]);
+  v.objects.delete.mockRejectedValueOnce(new Error("S3 timed out"));
+  v.repository.deleted.mockImplementation(async(key,success)=>{
+    if(key===first&&!success)throw new Error("database unavailable while releasing lease");
+  });
+  expect(await v.service.collectGarbage(2)).toEqual({deleted:1,failed:1});
+  expect(v.objects.delete).toHaveBeenCalledTimes(2);
+  expect(v.repository.deleted).toHaveBeenCalledWith(first,false);
+  expect(v.repository.deleted).toHaveBeenCalledWith(second,true);
+  // The repository retries a stuck deleting-state claim after 15 minutes.
+  v.repository.stale.mockResolvedValueOnce([{objectKey:first}]);
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:1,failed:0});
+  expect(v.repository.deleted).toHaveBeenCalledWith(first,true);
+ });
+ it("does not overwrite uncertain SQL erasure finalization with deleted(false)",async()=>{
+  const v=fixture(),key="dm-voice/uncertain-erasure";
+  v.repository.stale.mockResolvedValueOnce([{objectKey:key}]);
+  v.repository.deleted.mockRejectedValueOnce(new Error("SQL commit acknowledgement lost"));
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:0,failed:1});
+  expect(v.objects.delete).toHaveBeenCalledWith(key);
+  expect(v.repository.deleted).toHaveBeenCalledTimes(1);
+  expect(v.repository.deleted).toHaveBeenCalledWith(key,true);
+  // An idempotent S3 retry is safe regardless of whether the SQL commit
+  // succeeded. No fabricated erasure status is returned to the worker.
+  v.repository.stale.mockResolvedValueOnce([{objectKey:key}]);
+  expect(await v.service.collectGarbage(1)).toEqual({deleted:1,failed:0});
+  expect(v.repository.deleted).toHaveBeenCalledTimes(2);
+  expect(v.repository.deleted).not.toHaveBeenCalledWith(key,false);
+ });
+ it("writes and verifies actual private files and rejects later filesystem corruption",async()=>{
+  const root=await mkdtemp(join(tmpdir(),'masanawa-f17-voice-'));
+  try {
+   const v=fixture();
+   v.objects.put.mockImplementation(async(key,data)=>{const file=join(root,key);await mkdir(dirname(file),{recursive:true});await writeFile(file,data)});
+   v.objects.get.mockImplementation(async(key,max)=>{const data=await readFile(join(root,key));if(data.length>max)throw new Error('oversize');return data});
+   await v.service.send({authorizationHeader:'x',conversationId,clientRequestId:'requestABC1234',ogg:bytes});
+   expect(await v.service.read({authorizationHeader:'x',messageId})).toEqual(bytes);
+   await writeFile(join(root,v.record!.objectKey),Buffer.alloc(bytes.length));
+   await expect(v.service.read({authorizationHeader:'x',messageId})).rejects.toMatchObject({code:'messages.voice.storage_corrupt',statusCode:503});
+  }finally{await rm(root,{recursive:true,force:true})}
+ });
+});
