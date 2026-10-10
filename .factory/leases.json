@@ -499,6 +499,30 @@
       "heartbeat_at": "2026-10-10T08:00:41.580Z",
       "expires_at": "2026-10-10T08:05:41.580Z",
       "notes": "Real Actions 38035943605 analyzer failed with 8 warning issues. Other three protected AF00 paths require a bounded transfer."
+    },
+    {
+      "claim_id": "af09-609-canonical-contract-build-20261010-0802-gpt6",
+      "owner": "GPT-6 AF09 continuing existing PR #609 after AF00 bounded stale-path recovery",
+      "scope": "Fix real four cross-package TypeScript rootDir build failures by canonical shared contract extraction, without routes/migrations",
+      "paths": [
+        "packages/contracts/src/index.ts",
+        "packages/contracts/src/audio-posts.ts",
+        "packages/contracts/src/audio-posts.test.ts",
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/following.ts",
+        "services/gateway/src/audio_posts/playback.ts",
+        "services/gateway/src/audio_posts/processing_worker.ts",
+        "adapters/storage/postgres/src/audio_posts/following_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/listen_repository.ts",
+        "adapters/storage/postgres/src/audio_posts/processing_queue.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "source_pr": 609,
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "claimed_at": "2026-10-10T08:01:28.377Z",
+      "heartbeat_at": "2026-10-10T08:01:28.377Z",
+      "expires_at": "2026-10-10T08:06:28.377Z",
+      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch."
     }
   ],
   "history": [
