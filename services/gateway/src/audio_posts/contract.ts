@@ -1,7 +1,7 @@
-/** Audio posts are not legacy live Talk sessions. All IDs are typed by route. */
-export type AudioPostStatus = "processing" | "published" | "failed" | "removed";
-export type AudioAuthorKind = "human" | "masana";
+import type { AudioPostStatus, AudioAuthorKind, AudioPostRecord, PublicFeedPage } from "@masanawa/contracts";
+export type { AudioPostStatus, AudioAuthorKind, AudioPostRecord, PublicFeedPage } from "@masanawa/contracts";
 
+/** Audio posts are not legacy live Talk sessions. All IDs are typed by route. */
 export interface PostActor {
   tenantId: string;
   accountId: string;
@@ -20,27 +20,6 @@ export interface VerifiedAudioAsset {
   state: "ready";
 }
 
-export interface AudioPostRecord {
-  tenantId: string;
-  postId: string;
-  authorId: string;
-  authorAccountId: string;
-  authorKind: AudioAuthorKind;
-  assetId: string;
-  requestId: string;
-  title: string;
-  durationMs: number;
-  status: AudioPostStatus;
-  revision: number;
-  createdAt: string;
-  publishedAt: string | null;
-  /** Derived from persisted reactions and non-removed comments, never the client. */
-  likeCount?: number;
-  commentCount?: number;
-  /** One authorized, qualified listen per viewer/post/day; not card impressions. */
-  listenCount?: number;
-}
-
 export interface NewAudioPost {
   actor: PostActor;
   postId: string;
@@ -48,11 +27,6 @@ export interface NewAudioPost {
   title: string;
   asset: VerifiedAudioAsset;
   createdAt: string;
-}
-
-export interface PublicFeedPage {
-  items: AudioPostRecord[];
-  nextCursor: string | null;
 }
 
 /** Explicit wire shape: do not expose author account, tenant, asset or request keys. */

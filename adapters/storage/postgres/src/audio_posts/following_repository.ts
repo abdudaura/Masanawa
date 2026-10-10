@@ -1,6 +1,5 @@
 import type { Pool, PoolClient } from "pg";
-import type { AudioPostRecord, PublicFeedPage } from "../../../../../services/gateway/src/audio_posts/contract.js";
-import type { FollowingRepository } from "../../../../../services/gateway/src/audio_posts/following.js";
+import type { AudioPostRecord, PublicFeedPage, FollowingRepository } from "@masanawa/contracts";
 import type { PostVisibility } from "./repository.js";
 
 /** Uses the same creator IDs as audio_posts; AF00 owns installing the SQL proposal. */
