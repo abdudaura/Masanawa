@@ -121,6 +121,7 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
   void dispose() {
     widget.refreshSignal?.removeListener(_refreshFromReceipt);
     ++_generation;
+    _commentsSession.value++;
     if (widget.playback != null) unawaited(widget.playback!.stop());
     _commentsSession.dispose();
     super.dispose();
