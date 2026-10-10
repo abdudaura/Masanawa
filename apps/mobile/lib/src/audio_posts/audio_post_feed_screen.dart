@@ -5,6 +5,7 @@ import 'audio_post_playback.dart';
 import 'audio_post_feed_cache.dart';
 import 'follow_button.dart';
 import 'following_transport.dart';
+import 'audio_post_report_action.dart';
 
 /// AF09 published audio-post feed. Legacy live Talks remain separate resources.
 /// AF00 mounts this at the Talks destination; AF05 supplies authorized playback.
@@ -19,6 +20,7 @@ class AudioPostFeedScreen extends StatefulWidget {
     this.playback,
     this.cache,
     this.onCreatePost,
+    this.reportTransport,
   });
   final AudioPostTransport transport;
   /// Optional until AF00 has registered the authenticated Following routes.
@@ -32,6 +34,8 @@ class AudioPostFeedScreen extends StatefulWidget {
   /// Encrypted account-fenced snapshots are best-effort, never authorizing API writes.
   final PublishedTalkFeedCache? cache;
   final VoidCallback? onCreatePost;
+  /// Only mounted when AF00 registered the canonical TalkSafety-backed route.
+  final PublishedAudioReportTransport? reportTransport;
 
   @override
   State<AudioPostFeedScreen> createState() => _AudioPostFeedScreenState();
@@ -400,6 +404,20 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
       ],
     );
   }
+  Widget _reportAction(AudioPost post) {
+    final expectedAccount = widget.accountId;
+    final transport = widget.reportTransport!;
+    return AudioPostReportAction(
+      key: ValueKey('talk-report-${post.postId}'),
+      postId: post.postId,
+      transport: transport,
+      enabled: _authorized,
+      isAuthorized: () => mounted && widget.accountId == expectedAccount &&
+          identical(widget.reportTransport, transport) &&
+          widget.isCurrentAccount(expectedAccount),
+    );
+  }
+
   Widget _listenButton(AudioPost post) {
     final playback = widget.playback;
     if (playback != null) {
@@ -556,6 +574,9 @@ class _AudioPostFeedScreenState extends State<AudioPostFeedScreen> {
                                         label: Text(_removing.contains(post.postId) ? 'Removing…' : 'Remove Talk'),
                                       ),
                                     _listenButton(post),
+                                    if (!_mine && post.status == 'published' &&
+                                        widget.reportTransport != null)
+                                      _reportAction(post),
                                     if (post.status == 'published')
                                       TextButton.icon(
                                         onPressed: () => _toggleComments(post.postId),
