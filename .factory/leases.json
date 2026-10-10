@@ -142,23 +142,6 @@
       "notes": "Parent milestone Published audio Talks. AF00 remains integration owner; AF09 queue pagination owner handles processing_queue.ts and processing_worker.test.mjs."
     },
     {
-      "claim_id": "af09-609-feed-pagination-20261010-gpt6-0252",
-      "owner": "AF09 PR #609 feed correctness continuation GPT-6",
-      "scope": "Repair published Talks Discover keyset microsecond precision so two posts in one millisecond are not skipped. Continue current PR, no second branch; no AF00 composition/AF05 media files.",
-      "paths": [
-        "adapters/storage/postgres/src/audio_posts/repository.ts",
-        "adapters/storage/postgres/src/audio_posts/repository_pagination.test.mjs",
-        "docs/workstreams/AF09-feed-pagination-20261010.md"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
-      "source_pr": 609,
-      "claimed_at": "2026-10-10T02:52:42.205Z",
-      "heartbeat_at": "2026-10-10T02:52:42.205Z",
-      "expires_at": "2026-10-10T02:57:42.205Z",
-      "notes": "Non-overlap with live AF09 playback/feed UI and worker/queue claims. Next commit adapter cursor fix, mock Pg regression and finite milestone checklist/handoff."
-    },
-    {
       "claim_id": "masanawa-af13-canonical-matrix-cont-20261010",
       "owner": "MASANAWA-AF13-CONT-20261010",
       "scope": "AF13 existing PR #596 canonical acceptance integrity and connected test",
@@ -193,6 +176,27 @@
     }
   ],
   "history": [
+    {
+      "claim_id": "af09-609-feed-pagination-20261010-gpt6-0252",
+      "owner": "AF09 PR #609 feed correctness continuation GPT-6",
+      "scope": "Repair published Talks Discover keyset microsecond precision so two posts in one millisecond are not skipped. Continue current PR, no second branch; no AF00 composition/AF05 media files.",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "adapters/storage/postgres/src/audio_posts/repository_pagination.test.mjs",
+        "docs/workstreams/AF09-feed-pagination-20261010.md"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "c7f7280e640d3098be3e26f05149a0d66085441b",
+      "source_pr": 609,
+      "claimed_at": "2026-10-10T02:52:42.205Z",
+      "heartbeat_at": "2026-10-10T02:52:42.205Z",
+      "expires_at": "2026-10-10T02:57:42.205Z",
+      "notes": "Non-overlap with live AF09 playback/feed UI and worker/queue claims. Next commit adapter cursor fix, mock Pg regression and finite milestone checklist/handoff.",
+      "released_at": "2026-10-10T02:57:28.057Z",
+      "integration_head_sha": "fc3aa9ab12a86c8d0eba635eda46d28cce8d2c2c",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "release_reason": "Source fix + 3 authored adapter mock tests + finite checklist in existing PR #609. Blob readbacks PASS structural; runner NOT_RUN. AF00/AF05 missing composition/media; existing draft remains partial. No branch/unsafe merge."
+    },
     {
       "claim_id": "masanawa01-af01-crypto-ledger-reason-20261010-g",
       "owner": "MASANAWA-01 / AF01 ledger integrity",
