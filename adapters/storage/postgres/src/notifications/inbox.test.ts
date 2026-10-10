@@ -15,15 +15,15 @@ describe("C08 Postgres account fencing", () => {
     const query = vi.fn().mockResolvedValue({ rowCount: 0, rows: [] });
     const db = createPostgresInboxRepository({ query } as never);
     expect(await db.acknowledge({ tenantId: "t1", fanUserId: "u1" }, "ntf_2")).toBe(false);
-    expect(query.mock.calls[0][0]).toContain("fan_user_id = $2 AND notification_id = $3");
-    expect(query.mock.calls[0][1]).toEqual(["t1", "u1", "ntf_2"]);
+    expect(query.mock.calls[0]![0]).toContain("fan_user_id = $2 AND notification_id = $3");
+    expect(query.mock.calls[0]![1]).toEqual(["t1", "u1", "ntf_2"]);
   });
   it("inserts idempotently on tenant/fan/event without queuing push", async () => {
     const query = vi.fn().mockResolvedValue({ rowCount: 1 });
     const db = createPostgresInboxRepository({ query } as never);
     await db.deliver({ tenantId: "t", fanUserId: "u", eventId: "evt1",
       kind: "room_answer", targetKind: "room", targetId: "room1", title: "Answered", body: "See Room" });
-    expect(query.mock.calls[0][0]).toContain("ON CONFLICT (tenant_id, fan_user_id, source_event_id) DO NOTHING");
+    expect(query.mock.calls[0]![0]).toContain("ON CONFLICT (tenant_id, fan_user_id, source_event_id) DO NOTHING");
   });
   it("rejects identity and invalid cursor before IO", async () => {
     const query = vi.fn();
