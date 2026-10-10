@@ -88,28 +88,6 @@
       "claimed_at": "2026-10-10T01:36:55Z",
       "heartbeat_at": "2026-10-10T01:36:55Z",
       "expires_at": "2026-10-10T01:41:55Z"
-    },
-    {
-      "claim_id": "af09-20261010-audio-posts-gpt6",
-      "owner": "AF09-20261010-0150-gpt6",
-      "scope": "AF09 publish-once persistent audio-post service, authenticated routes and client feed transport; no shared root or media recorder paths",
-      "paths": [
-        "adapters/storage/postgres/src/audio_posts/repository.ts",
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "docs/workstreams/AF09-published-audio-core-20261010.md",
-        "services/gateway/src/audio_posts/contract.ts",
-        "services/gateway/src/audio_posts/routes.ts",
-        "services/gateway/src/audio_posts/service.test.mjs",
-        "services/gateway/src/audio_posts/service.ts"
-      ],
-      "branch": "work/af09-published-audio-20261010-gpt6",
-      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
-      "pr": "",
-      "claimed_at": "2026-10-10T01:48:31Z",
-      "heartbeat_at": "2026-10-10T01:57:39Z",
-      "expires_at": "2026-10-10T02:02:39Z"
     }
   ],
   "history": [
@@ -1005,6 +983,30 @@
       "pr": "https://github.com/Baatiku/masanawa/pull/580",
       "released_at": "2026-10-10T01:57:48.532Z",
       "release_reason": "Source recovery tranche on original PR #580 delivered at 64a8462de00229ce7b3be66175c40b0c74958715; authored 8 Vitest cases NOT_RUN (Node24+pnpm/private checkout/PG18 unavailable); AF00/AF13 executable qualification and U01/U04/F11/F18 composition are next. No merge, main or production change."
+    },
+    {
+      "claim_id": "af09-20261010-audio-posts-gpt6",
+      "owner": "AF09-20261010-0150-gpt6",
+      "scope": "AF09 publish-once persistent audio-post service, authenticated routes and client feed transport; no shared root or media recorder paths",
+      "paths": [
+        "adapters/storage/postgres/src/audio_posts/repository.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_transport.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "docs/workstreams/AF09-published-audio-core-20261010.md",
+        "services/gateway/src/audio_posts/contract.ts",
+        "services/gateway/src/audio_posts/routes.ts",
+        "services/gateway/src/audio_posts/service.test.mjs",
+        "services/gateway/src/audio_posts/service.ts"
+      ],
+      "branch": "work/af09-published-audio-20261010-gpt6",
+      "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
+      "pr": "https://github.com/Baatiku/masanawa/pull/609",
+      "claimed_at": "2026-10-10T01:48:31Z",
+      "heartbeat_at": "2026-10-10T01:57:39Z",
+      "expires_at": "2026-10-10T02:02:39Z",
+      "released_at": "2026-10-10T02:00:31Z",
+      "release_reason": "Published AF09 audio-post source and authored tests at PR #609 HEAD 094aeabcf8c7e6161201c80bf796b4df46ee2932; immutable handoff records typecheck/Flutter/PG/AF00 composition gaps; release exact files for reviewed continuation."
     }
   ]
 }
