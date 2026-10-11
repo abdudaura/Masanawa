@@ -39,9 +39,11 @@ export async function registerHomeFeedRoutes(app:FastifyInstance,o:FeedRoutesOpt
   if(sort!=="newest"&&sort!=="oldest")return rep.code(422).send({code:"invalid_sort"});
   return o.service.comments(tenant,str(object(req.params).id),viewer,str(q.before)||undefined,sort);
  }));
+ // Direct staff publishing must never bypass A05/A06 editorial review.
  app.post("/v1/admin/feed/posts",async(req,rep)=>run(req,rep,async({actor})=>{
-  const a=member(actor),b=object(req.body);
-  return o.service.publish(a,{authorMasanaId:str(b.authorMasanaId),kind:str(b.kind) as "text"|"image"|"audio",body:str(b.body),media:Array.isArray(b.media)?b.media.filter(x=>typeof x==="string") as string[]:[],transcript:typeof b.transcript==="string"?b.transcript:null,idempotencyKey:str(req.headers["idempotency-key"])});
+  const a=member(actor);
+  if(a.kind!=="staff"||!a.permissions?.includes("content_editor"))return rep.code(403).send({code:"editorial_permission_denied"});
+  return rep.code(410).send({code:"use_editorial_review_workflow"});
  }));
  app.put("/v1/posts/:id/like",async(req,rep)=>run(req,rep,async({actor})=>o.service.like(member(actor),str(object(req.params).id),view(object(req.body).enabled))));
  app.put("/v1/posts/:id/save",async(req,rep)=>run(req,rep,async({actor})=>o.service.save(member(actor),str(object(req.params).id),view(object(req.body).enabled))));
