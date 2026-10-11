@@ -1553,9 +1553,11 @@
       "source_pr": 628,
       "source_head": "67fae3498fd6bedc3eb58b54ea6311960241cce3",
       "claimed_at": "2026-10-11T04:07:50.311Z",
-      "heartbeat_at": "2026-10-11T04:17:15.979Z",
+      "heartbeat_at": "2026-10-11T04:19:57.983Z",
       "expires_at": "2026-10-11T04:22:15.979Z",
-      "notes": "Disjoint J13 appeal retry sub-scope. AF00 owns package importer/root migration registry and composition. Never merge to main."
+      "notes": "Disjoint J13 appeal retry sub-scope. AF00 owns package importer/root migration registry and composition. Never merge to main.",
+      "released_at": "2026-10-11T04:19:57.983Z",
+      "release_reason": "J13 appeal retry source across Flutter/Gateway/PG tests committed to existing draft #628 at 67fae3498fd6bedc3eb58b54ea6311960241cce3. AF00 handoff #616 comments 6105290645/6105346011 and #628 comment 6105355340. Foundation exact-head 38110882966 install FAIL lockfile; TS SKIPPED, Vitest/PG BLOCKED; 18 unrelated provider-tooling tests PASS. Mobile 38110882952 install+admin analyze/widgets pass but consumer analyze/test FAIL, Android builds underway. Not integrated/released, no financial/production changes."
     },
     {
       "claim_id": "l-shell-c09-device-security-20261011-gpt6",
