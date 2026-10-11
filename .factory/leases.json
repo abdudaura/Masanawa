@@ -2153,21 +2153,6 @@
       "test_state": "BLOCKED/NOT_RUN: GH Actions 38121683155/38121683156 zero-step job failures; TypeScript, Vitest, PostgreSQL18, Flutter, Android no available runner"
     },
     {
-      "claim_id": "l-chat-c10-gwani-inbox-isolation-20261011-gpt6-0847",
-      "owner": "GPT-6 L-CHAT/C10",
-      "scope": "Finish C10 fan-private Chats source by excluding Gwani from duplicate Chats inbox using server-authoritative support character ID, authorization-negative repository tests; only two exact paths in existing PR #641. AF00 retains root composition and release.",
-      "paths": [
-        "adapters/storage/postgres/src/masana_chat/inbox.ts",
-        "adapters/storage/postgres/src/masana_chat/inbox.test.ts"
-      ],
-      "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
-      "base_sha": "51b2e21bb1c4544137cef66c23c741d62b39f98c",
-      "claimed_at": "2026-10-11T07:47:27.098Z",
-      "heartbeat_at": "2026-10-11T07:47:27.098Z",
-      "expires_at": "2026-10-11T07:52:27.098Z",
-      "notes": "Disjoint from C10 screen/test claim and AF00 protected paths; no production routes/migrations/finance."
-    },
-    {
       "claim_id": "l-video-c29-client-closure-20261011-gpt6-0850",
       "owner": "GPT-6 L-VIDEO/C27-C29",
       "scope": "Repair canonical official-video consumer end-to-end: valid Dio catalog/availability, mandatory fail-closed provider play admission, account-change safety, cursor/negative Flutter regression; reuse existing gateway/PG/recovery; AF00 owns protected router/composition.",
@@ -5148,6 +5133,26 @@
       "released_at": "2026-10-11T07:06:09.386Z",
       "release_reason": "Source PR #660 at b94e40bb371d48830fea016e18e12597c4290e43 pinned, disjoint C18 call-history source and tests. J04 #643 dependency unmerged, AF00 #616 informed. GitHub Actions jobs failed zero steps; source exact-blob standalone TypeScript and 2 Node compiled contract tests pass, Vitest/PG18/Flutter/Android NOT_RUN. AF00 protected composition and safe nondeploying integration pending; no main/production activation.",
       "integration_head_sha": null
+    },
+    {
+      "claim_id": "l-chat-c10-gwani-inbox-isolation-20261011-gpt6-0847",
+      "owner": "GPT-6 L-CHAT/C10",
+      "scope": "Finish C10 fan-private Chats source by excluding Gwani from duplicate Chats inbox using server-authoritative support character ID, authorization-negative repository tests; only two exact paths in existing PR #641. AF00 retains root composition and release.",
+      "paths": [
+        "adapters/storage/postgres/src/masana_chat/inbox.ts",
+        "adapters/storage/postgres/src/masana_chat/inbox.test.ts"
+      ],
+      "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
+      "base_sha": "51b2e21bb1c4544137cef66c23c741d62b39f98c",
+      "claimed_at": "2026-10-11T07:47:27.098Z",
+      "heartbeat_at": "2026-10-11T07:47:27.098Z",
+      "expires_at": "2026-10-11T07:52:27.098Z",
+      "notes": "Disjoint from C10 screen/test claim and AF00 protected paths; no production routes/migrations/finance.",
+      "released_at": "2026-10-11T07:50:36.835Z",
+      "source_pr": 641,
+      "source_head": "9efd3059133cea45dc1739b463d35c1374ac30a6",
+      "integration_head_sha": "cca5e27d74c1bde232e49e7be9cf31f47021849d",
+      "release_reason": "C10 reserved Gwani isolation source and test reviewed; #641 squash-merged to non-deploying integration. Exact-SHA CI jobs all failed zero steps; AF00 #616 handoff comment 6106844717; full qualification/root composition pending."
     }
   ]
 }
