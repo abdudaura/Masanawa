@@ -13,6 +13,7 @@ export interface DraftInput {
 }
 export interface EditorialRepository {
  create(tenant:string,editor:string,draft:Required<DraftInput>):Promise<EditorialPost>;
+ update(tenant:string,id:string,editor:string,revision:number,draft:Required<DraftInput>):Promise<EditorialPost>;
  get(tenant:string,id:string):Promise<EditorialPost|null>;
  list(tenant:string,states:readonly EditorialState[],limit:number):Promise<readonly EditorialPost[]>;
  change(tenant:string,post:string,actor:string,expectedRevision:number,
@@ -36,8 +37,7 @@ export class EditorialReviewService {
  constructor(private readonly repo:EditorialRepository,
   private readonly approvedMasana:(tenant:string,id:string)=>Promise<boolean>,
   private readonly approvedMedia:(tenant:string,masana:string,media:string)=>Promise<boolean>){}
- async create(actor:Actor,input:DraftInput):Promise<EditorialPost>{
-  staff(actor,"content_editor");validKey(input.idempotencyKey);
+ private async validateDraft(actor:Actor,input:DraftInput):Promise<Required<DraftInput>>{
   if(!identifier.test(input.authorMasanaId))fail("invalid_masana");
   if(!["text","image","audio"].includes(input.kind))fail("invalid_post_kind");
   const body=input.body.trim(),media=input.media??[],transcript=input.transcript??null;
@@ -49,8 +49,21 @@ export class EditorialReviewService {
     fail("invalid_draft");
   if(!await this.approvedMasana(actor.tenantId,input.authorMasanaId))fail("masana_not_approved",403);
   for(const ref of media)if(!await this.approvedMedia(actor.tenantId,input.authorMasanaId,ref))fail("media_not_approved",403);
-  return this.repo.create(actor.tenantId,actor.id,{authorMasanaId:input.authorMasanaId,
-   kind:input.kind,body,media,transcript,idempotencyKey:input.idempotencyKey});
+  return {authorMasanaId:input.authorMasanaId,kind:input.kind,body,media,transcript,idempotencyKey:input.idempotencyKey};
+ }
+ async create(actor:Actor,input:DraftInput):Promise<EditorialPost>{
+  staff(actor,"content_editor");validKey(input.idempotencyKey);
+  return this.repo.create(actor.tenantId,actor.id,await this.validateDraft(actor,input));
+ }
+ async update(actor:Actor,id:string,revision:number,input:DraftInput):Promise<EditorialPost>{
+  staff(actor,"content_editor");validKey(input.idempotencyKey);
+  if(!uuid.test(id))fail("invalid_post_id");
+  if(!Number.isSafeInteger(revision)||revision<0)fail("invalid_revision");
+  const existing=await this.repo.get(actor.tenantId,id);
+  if(!existing)fail("editorial_not_found",404);
+  if(existing!.state!=="draft"||existing!.createdBy!==actor.id)fail("draft_owner_required",403);
+  if(input.authorMasanaId!==existing!.authorMasanaId)fail("immutable_draft_author");
+  return this.repo.update(actor.tenantId,id,actor.id,revision,await this.validateDraft(actor,input));
  }
  async get(actor:Actor,id:string){staff(actor,"content_editor");if(!uuid.test(id))fail("invalid_post_id");
   const item=await this.repo.get(actor.tenantId,id);if(!item)fail("editorial_not_found",404);return item!}
