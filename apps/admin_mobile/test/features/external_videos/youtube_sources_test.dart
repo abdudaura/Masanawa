@@ -28,7 +28,7 @@ void main(){
     final nextRequest = Completer<List<YouTubeSourceRecord>>();
     var newLoads = 0;
     final oldSource = YouTubeSourceRecord(
-      id:'old-source', channelId:'UC${'X'*22}', channelName:'Previous account channel',
+      id:'old-source', channelId:'UCXXXXXXXXXXXXXXXXXXXXXX', channelName:'Previous account channel',
       targetRegion:'NG', enabled:true, syncMode:'manual',
     );
     Widget screen(String account) => MaterialApp(home:YouTubeSourcesScreen(
@@ -67,7 +67,7 @@ void main(){
     ));
     await tester.pumpWidget(screen('old'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).at(0),'UC${'X'*22}');
+    await tester.enterText(find.byType(TextField).at(0),'UCXXXXXXXXXXXXXXXXXXXXXX');
     await tester.enterText(find.byType(TextField).at(1),'Private draft');
     await tester.tap(find.text('Register paused source'));
     await tester.pump();
