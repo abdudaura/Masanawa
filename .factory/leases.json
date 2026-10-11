@@ -2329,6 +2329,30 @@
         "tests/contracts/public-api-lifecycle.test.ts"
       ],
       "scope": "OWNER CORRECTION supersedes legacy preservation: remove obsolete consumer creator/clone onboarding workflows and route/UI wiring; preserve canonical auth/data and chat reliability; push corrected checkpoint."
+    },
+    {
+      "claim_id": "status-masana-authorization-20261011-codex",
+      "owner": "Codex STATUS implementation window",
+      "scope": "Canonical Status feed authorization and recovery; previous overlapping feed owners explicitly released",
+      "paths": [
+        "packages/feed/src/index.ts",
+        "packages/feed/src/index.test.ts",
+        "packages/feed/src/review.ts",
+        "adapters/storage/postgres/src/home_feed/repository.ts",
+        "adapters/storage/postgres/src/home_feed/repository.test.ts",
+        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
+        "apps/mobile/test/features/home_feed/feed_screen_test.dart",
+        "tests/e2e/J06/status_authorization.test.mjs",
+        "docs/workstreams/STATUS-masana-authorization-20261011.md"
+      ],
+      "branch": "lane/status-masana-authorization-20261011",
+      "base_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
+      "source_head": "60ad20912beb767b987c165725851bae674b5bd2",
+      "source_pr": 671,
+      "claimed_at": "2026-10-11T20:44:30.844Z",
+      "heartbeat_at": "2026-10-11T20:44:30.844Z",
+      "expires_at": "2026-10-11T20:49:30.844Z",
+      "notes": "Exact-path workstream claim pushed/read back at d316f84 before source edits. Existing released feed source preserved. 9 Node source unit/mock SQL tests PASS_SIMULATED, Flutter/PG/workspace checks blocked. No protected composition or deploy. Registry update via connector blob-SHA CAS; shell proxy unavailable."
     }
   ],
   "history": [
