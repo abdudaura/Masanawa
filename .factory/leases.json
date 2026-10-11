@@ -2343,16 +2343,18 @@
         "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
         "apps/mobile/test/features/home_feed/feed_screen_test.dart",
         "tests/e2e/J06/status_authorization.test.mjs",
-        "docs/workstreams/STATUS-masana-authorization-20261011.md"
+        "docs/workstreams/STATUS-masana-authorization-20261011.md",
+        "adapters/storage/postgres/src/home_feed/review_repository.ts",
+        "adapters/storage/postgres/src/home_feed/review_repository.test.ts"
       ],
       "branch": "lane/status-masana-authorization-20261011",
       "base_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
-      "source_head": "60ad20912beb767b987c165725851bae674b5bd2",
+      "source_head": "9b01f5e99289ab493370fafe510d1ba6f118a821",
       "source_pr": 671,
       "claimed_at": "2026-10-11T20:44:30.844Z",
-      "heartbeat_at": "2026-10-11T20:44:30.844Z",
-      "expires_at": "2026-10-11T20:49:30.844Z",
-      "notes": "Exact-path workstream claim pushed/read back at d316f84 before source edits. Existing released feed source preserved. 9 Node source unit/mock SQL tests PASS_SIMULATED, Flutter/PG/workspace checks blocked. No protected composition or deploy. Registry update via connector blob-SHA CAS; shell proxy unavailable."
+      "heartbeat_at": "2026-10-11T20:46:52.789Z",
+      "expires_at": "2026-10-11T20:51:52.790Z",
+      "notes": "Expanded claim pushed/read back at 855c82d before editorial SQL edits. 11 executable Node source units/mock SQL contracts PASS_SIMULATED; original syntax error reproduced and fixed. #671 preserves canonical feed authority. Flutter/PG/full checkout unavailable; coordinator shell/Gateway composition still required."
     }
   ],
   "history": [
