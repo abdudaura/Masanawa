@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'rooms_admin_client.dart';
+import 'rooms_plans_client.dart';
+import 'rooms_plans_screen.dart';
 const _blue=Color(0xFF1E63D6);
 class RoomsAdminScreen extends StatefulWidget {
  const RoomsAdminScreen({super.key,required this.client});
@@ -71,8 +73,17 @@ class _RoomsAdminScreenState extends State<RoomsAdminScreen>{
     if(rooms.isEmpty)const ListTile(title:Text('No Rooms to review')),
     for(final r in rooms)ListTile(title:Text(r['professionTitle'] as String? ?? 'Room'),
      subtitle:Text(r['state'] as String? ?? 'unknown'),
-     trailing:r['state']=='draft'?TextButton(onPressed:busy?null:()=>publish(r['roomId'] as String),
-      child:const Text('Publish')):null),
+     trailing:Row(mainAxisSize:MainAxisSize.min,children:[
+      if(r['state']=='draft')TextButton(onPressed:busy?null:()=>publish(r['roomId'] as String),
+       child:const Text('Publish')),
+      if(widget.client is HttpRoomsAdminClient)IconButton(
+       tooltip:'Manage plans',
+       onPressed:busy?null:()=>Navigator.push<void>(context,MaterialPageRoute(
+        builder:(_)=>RoomPlansAdminScreen(
+         roomId:r['roomId'] as String,
+         client:HttpRoomPlansAdminClient((widget.client as HttpRoomsAdminClient).dio)))),
+       icon:const Icon(Icons.payments_outlined)),
+     ])),
     const Divider(),Text('Question review',style:Theme.of(context).textTheme.titleLarge),
     if(questions.isEmpty)const ListTile(title:Text('No pending questions')),
     for(final q in questions)Card(child:Column(children:[
