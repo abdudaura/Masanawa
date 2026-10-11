@@ -1584,11 +1584,12 @@
       "branch": "lane/l-shell-c09-device-security-20261011-gpt6",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:10:10.855Z",
-      "heartbeat_at": "2026-10-11T04:34:37.464Z",
-      "expires_at": "2026-10-11T04:39:37.464Z",
-      "notes": "Feature-only no production migration, no financial write, AF00 composition needed.",
+      "heartbeat_at": "2026-10-11T04:36:08.386Z",
+      "expires_at": "2026-10-11T04:36:08.386Z",
+      "notes": "Feature-only no production migration, no financial write, AF00 composition needed. Handoff: source PR644 draft unmerged; AF00 owns root composition and migration ordering; 38111341676 consumer analyze/test failed, APK still running at 04:36Z, admin pass; 38111341673 foundation inner job install/test/build failed (lock importers).",
       "source_pr": 644,
-      "source_head": "319006d50ea599bc313229ebf11d56c08e7f8522"
+      "source_head": "319006d50ea599bc313229ebf11d56c08e7f8522",
+      "released_at": "2026-10-11T04:36:08.386Z"
     },
     {
       "claim_id": "l-masana-a04-draft-rehearsal-20261011-gpt6-0513",
