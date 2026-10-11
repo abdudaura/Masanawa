@@ -1,7 +1,7 @@
 """stdlib-only contract negatives, usable without LiveKit/provider credentials."""
 import json
 import unittest
-from contract import MasanaCallDispatch
+from contract import MasanaCallDispatch, qualified_gemini_voice
 
 VALID = {
   "schemaVersion": 1, "tenantId": "tenant-a",
@@ -16,6 +16,12 @@ class TestDispatch(unittest.TestCase):
         parsed.assert_room(VALID["roomName"])
         with self.assertRaises(ValueError):
             parsed.assert_room("other-room")
+
+    def test_voice_profile_must_be_server_qualified(self):
+        self.assertEqual(qualified_gemini_voice("profile-1", '{"profile-1":"Bodi"}'), "Bodi")
+        for mapping in ("{}", '{"profile-1":"../../bad"}', "null", "not-json"):
+            with self.subTest(mapping=mapping), self.assertRaises(ValueError):
+                qualified_gemini_voice("profile-1", mapping)
 
     def test_denied_version_and_malformed_or_wrong_character(self):
         for patch in ({"schemaVersion": 2}, {"tenantId": ""},
