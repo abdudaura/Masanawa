@@ -14,6 +14,7 @@ export async function mayNotifyFollower(
     const r=await db.query<{allowed:boolean}>([
       "SELECT EXISTS(",
       "SELECT 1 FROM masana.follows f",
+      "JOIN identity.users u ON u.tenant_id=f.tenant_id AND u.user_id=f.fan_user_id AND u.state='active'",
       "JOIN masana.character_revisions r ON r.tenant_id=f.tenant_id",
       " AND r.character_id=f.character_id AND r.state='approved'",
       "JOIN identity.characters c ON c.tenant_id=f.tenant_id",
