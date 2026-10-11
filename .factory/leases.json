@@ -278,7 +278,9 @@
       "claimed_at": "2026-10-10T05:13:33.187Z",
       "heartbeat_at": "2026-10-10T05:13:33.187Z",
       "expires_at": "2026-10-10T05:18:33.187Z",
-      "notes": "User explicitly took over integration and CI coordination; AF09 feature path edits remain on existing PR609; no overwrite. Inspect deployment triggers, main and PR heads and do not fake CI evidence."
+      "notes": "User explicitly took over integration and CI coordination; AF09 feature path edits remain on existing PR609; no overwrite. Inspect deployment triggers, main and PR heads and do not fake CI evidence.",
+      "released_at": "2026-10-11T10:22:03.756271+00:00",
+      "release_reason": "Owner explicitly confirmed on 2026-10-11 no other window is working and appointed current cloud agent in charge. Preserve existing PR source and recover #612 exact head 46af99e50dedd5a1596ffb5795086410ef4ff859; no reset or deletion."
     },
     {
       "claim_id": "af00-600-source-migration-20261010-gpt6-0520",
@@ -706,7 +708,9 @@
       "claimed_at": "2026-10-10T08:54:42.350Z",
       "heartbeat_at": "2026-10-10T09:16:20.971Z",
       "expires_at": "2026-10-10T09:21:20.971Z",
-      "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation."
+      "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation.",
+      "released_at": "2026-10-11T10:22:03.756271+00:00",
+      "release_reason": "Owner explicitly confirmed on 2026-10-11 no other window is working and appointed current cloud agent in charge. Preserve existing PR source and recover #612 exact head 46af99e50dedd5a1596ffb5795086410ef4ff859; no reset or deletion."
     },
     {
       "claim_id": "af08-460-nullable-profile-uniqueness-gpt6-20261010",
@@ -1046,7 +1050,9 @@
       "claimed_at": "2026-10-10T09:46:40.804Z",
       "heartbeat_at": "2026-10-10T09:51:14.918Z",
       "expires_at": "2026-10-10T09:56:14.918Z",
-      "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited."
+      "notes": "Latest CI demonstrated 1 test failure due false `firstTextMs` expectation on disconnected sockets; corrected test at 46af99e. Await exact-head GitHub CI before merge to AF00 baseline. No protected paths edited.",
+      "released_at": "2026-10-11T10:22:03.756271+00:00",
+      "release_reason": "Owner explicitly confirmed on 2026-10-11 no other window is working and appointed current cloud agent in charge. Preserve existing PR source and recover #612 exact head 46af99e50dedd5a1596ffb5795086410ef4ff859; no reset or deletion."
     },
     {
       "claim_id": "r0-ts2459-recovery-20261010-gpt6-1642",
@@ -1104,7 +1110,7 @@
       "expires_at": "2026-10-10T16:23:43.202Z",
       "notes": "Review and preserve latest canonical instructions; single owner AF00 retains shared code, production deploy/financial/migration writes. Do not block implementation on R0/R1 or existing red baseline checks.",
       "released_at": "2026-10-10T16:14:59.252Z",
-      "release_reason": "Canonical PR #615 current head 3a8e735b7e911ca6ba4bcf78210c0453a47f136d; DELIVERY §1A + AGENTS + CONTINUE-HERE + WINDOW-PROMPT verified by four-file source readback and 6 policy assertions. No app/DB/CI/production changes; AF00 and four lane PRs notified. New owner rule authorizes work now, only production safety blocked.",
+      "release_reason": "Canonical PR #615 current head 3a8e735b7e911ca6ba4bcf78210c0453a47f136d; DELIVERY \u00a71A + AGENTS + CONTINUE-HERE + WINDOW-PROMPT verified by four-file source readback and 6 policy assertions. No app/DB/CI/production changes; AF00 and four lane PRs notified. New owner rule authorizes work now, only production safety blocked.",
       "integration_head_sha": "3a8e735b7e911ca6ba4bcf78210c0453a47f136d"
     },
     {
@@ -1823,7 +1829,7 @@
     },
     {
       "claim_id": "l-fin-c54-billing-receipt-20261011-gpt6-0550",
-      "owner": "L-FIN/C54 — GPT-6",
+      "owner": "L-FIN/C54 \u2014 GPT-6",
       "scope": "C54 tenant-private read-only canonical billing receipt detail; no ledger writes, provider activation, duplicate wallet, AF00 root or migration registry",
       "paths": [
         "apps/mobile/lib/src/features/wallet/billing_receipt.dart",
@@ -2173,7 +2179,7 @@
       "source_pr": 664,
       "source_head": "2180744c780499989ddc85533e6c21b040ed1cdb",
       "released_at": "2026-10-11T07:54:31.385Z",
-      "release_reason": "Six-path C27–C29 source PR #664 head 2180744c safely squash-merged into nondeploying integration/rebuild as fb20e76d5c4027068c32ebdf35e27009babdc863. Authenticated Dio repository Dart parse repaired, missing checker fails closed, negative/widget tests authored. CI on merged head 38123045044/38123045083 all 3 jobs FAILED with 0 steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; AF00 composition and J14/J15 real device/providers pending; NO main/prod/payment changes.",
+      "release_reason": "Six-path C27\u2013C29 source PR #664 head 2180744c safely squash-merged into nondeploying integration/rebuild as fb20e76d5c4027068c32ebdf35e27009babdc863. Authenticated Dio repository Dart parse repaired, missing checker fails closed, negative/widget tests authored. CI on merged head 38123045044/38123045083 all 3 jobs FAILED with 0 steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; AF00 composition and J14/J15 real device/providers pending; NO main/prod/payment changes.",
       "integration_head_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863"
     },
     {
@@ -2283,6 +2289,31 @@
       "release_reason": "Owner-directed AF00 J02 shell/migration-source integration: PR #667 six exact paths merged into non-deploying integration; head c0b191c, merge e334900. Authenticated client components composed; legacy nav denied. J02/J10 Flutter widget+PG manifest tests AUTHORED but NOT_RUN (GitHub check/admin/build zero steps; local git DNS/Node24/pnpm/PG18/Flutter/Android missing). New Gateway/worker/Rooms/Gwani/finance integration and release remain open. AF00 handoff #616 comment 6107971561.",
       "integration_head_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
       "source_head": "c0b191c44a0d3c1acdaa8d00e7e34ef6e5f0b402"
+    },
+    {
+      "claim_id": "cloud-chat-p02-20261011",
+      "owner": "Codex cloud / user-appointed sole implementer and integrator",
+      "scope": "Continue recovered #612: durable early server receipts, local outbox, account-fenced recovery, actual request reply linkage; no production deployment or paid execution",
+      "paths": [
+        "services/gateway/src/agent_conversation.ts",
+        "services/gateway/src/agent_conversation.test.ts",
+        "services/gateway/src/agent_conversation_contract.ts",
+        "services/gateway/src/agent_conversation_route.test.ts",
+        "services/gateway/src/app.ts",
+        "apps/mobile/lib/src/state/ai_chat_state.dart",
+        "apps/mobile/lib/src/agents/agent_session.dart",
+        "apps/mobile/lib/src/agents/masanawa_transport.dart",
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "apps/mobile/test/agents/agent_receipt_transport_test.dart",
+        "apps/mobile/test/state/ai_chat_outbox_test.dart",
+        "docs/workstreams/CHAT-P02-cloud-continuation-20261011.md"
+      ],
+      "branch": "continue-chat-reliability-20261011",
+      "base_sha": "46af99e50dedd5a1596ffb5795086410ef4ff859",
+      "claimed_at": "2026-10-11T10:22:03.756271+00:00",
+      "heartbeat_at": "2026-10-11T10:22:03.756271+00:00",
+      "expires_at": "2026-10-11T10:27:03.756271+00:00",
+      "notes": "Owner takeover explicitly authorized in chat. GitHub API unavailable; publish registry using native authenticated Git and fast-forward compare-and-swap. Preserve source PR branches and deployment gates."
     }
   ],
   "history": [
@@ -4047,7 +4078,7 @@
     },
     {
       "claim_id": "af09-609-response-projection-20261010-gpt6-0445",
-      "owner": "AF09 #609 continuation — GPT-6 response projection",
+      "owner": "AF09 #609 continuation \u2014 GPT-6 response projection",
       "scope": "Close actual published-audio publish/delete metadata leak at authenticated Gateway response boundary and add negative regression tests; same PR, no shared composition",
       "paths": [
         "services/gateway/src/audio_posts/routes.ts",
@@ -4068,7 +4099,7 @@
     },
     {
       "claim_id": "af09-609-comments-backend-paging-gpt6-0519",
-      "owner": "AF09 #609 continuation — comments pagination / GPT-6",
+      "owner": "AF09 #609 continuation \u2014 comments pagination / GPT-6",
       "scope": "Source: bounded older-comments pagination using existing PG visibility, authenticated Gateway and Flutter transport; UI feed screen owned by separate 0517 claimant and will receive bounded integration request, no protected composition",
       "paths": [
         "services/gateway/src/audio_posts/contract.ts",
@@ -4094,7 +4125,7 @@
     },
     {
       "claim_id": "af09-609-comments-sheet-gpt6-0527",
-      "owner": "AF09 existing #609 — GPT-6 2026-10-10 0527 comments sheet",
+      "owner": "AF09 existing #609 \u2014 GPT-6 2026-10-10 0527 comments sheet",
       "scope": "Add account-fenced published Talk comment sheet consuming canonical auth API and bounded cursor paging, with retry-safe writes; request bounded feed mount transfer from current AF09 owner; after released claim AF09-0517, mount new sheet in exact-path feed and preserve current behavior",
       "paths": [
         "apps/mobile/lib/src/audio_posts/audio_post_comments_sheet.dart",
@@ -4589,7 +4620,7 @@
       "claimed_at": "2026-10-10T08:01:28.377Z",
       "heartbeat_at": "2026-10-10T08:15:02.391Z",
       "expires_at": "2026-10-10T08:20:02.391Z",
-      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit. Executed Foundation run 38036528676 reduced TS6059 build errors 4→1; repository.ts is the sole remaining AF09 import; 3 new canonical contract tests pass (overall Vitest 1247 pass/85 fail/22 skip). Safe no-provider-work test import fix explicitly coordinated AF01 PR590 comment 6095528568, AF13 PR460 comment 6095528951 and AF09 PR609 comment 6095529270. Postgres Vitest shared schema race; exact bounded `vitest.config.ts` transfer AF13 #460 6095558419, AF00 #600 6095558791 and AF09 #609 6095559090; trial fileParallelism false, no skipped tests. Hosted build PASS and provider tooling PASS run 38036869594. Root typecheck/test still FAIL; Vitest fileParallelism:false exact-head run 38037083541 queued, mobile independent job 38037083542 running. No merge.",
+      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit. Executed Foundation run 38036528676 reduced TS6059 build errors 4\u21921; repository.ts is the sole remaining AF09 import; 3 new canonical contract tests pass (overall Vitest 1247 pass/85 fail/22 skip). Safe no-provider-work test import fix explicitly coordinated AF01 PR590 comment 6095528568, AF13 PR460 comment 6095528951 and AF09 PR609 comment 6095529270. Postgres Vitest shared schema race; exact bounded `vitest.config.ts` transfer AF13 #460 6095558419, AF00 #600 6095558791 and AF09 #609 6095559090; trial fileParallelism false, no skipped tests. Hosted build PASS and provider tooling PASS run 38036869594. Root typecheck/test still FAIL; Vitest fileParallelism:false exact-head run 38037083541 queued, mobile independent job 38037083542 running. No merge.",
       "source_head_sha": "1374149bd7378227b7a77138e0fa2a6fb6eb1991",
       "released_at": "2026-10-10T08:18:05.053Z",
       "release_reason": "Source repaired on existing PR #609 exact head 1374149bd7378227b7a77138e0fa2a6fb6eb1991. Executed previous head: pnpm build PASS; provider qualification unit tests PASS, privacy contract 3 tests PASS; root TypeScript/Vitest and Flutter FAIL. Current serial PG CI 38037083541 queued; AF13 PR460 active owns shared suite and AF00 PR600 owns composition. Exact finite checklist with SHAs and owners PR #609 comment 6095602467. No main merge, no Railway deploy; pending gates are genuine, no local pull.",
@@ -4929,7 +4960,7 @@
     {
       "claim_id": "l-rooms-free-question-lifecycle-20261010-gpt6",
       "owner": "GPT-6 / L-ROOMS free question implementation",
-      "scope": "L-ROOMS/free J07–J08: room discovery, join, durable ask, worker answer queue and staff review; paid Play Billing excluded until verified. AF00 retains all root entrypoints, migration registry, release.",
+      "scope": "L-ROOMS/free J07\u2013J08: room discovery, join, durable ask, worker answer queue and staff review; paid Play Billing excluded until verified. AF00 retains all root entrypoints, migration registry, release.",
       "paths": [
         "packages/rooms/**",
         "services/gateway/src/modules/rooms/**",
