@@ -2065,7 +2065,10 @@
       "expires_at": "2026-10-11T07:04:07.978Z",
       "notes": "No source_admin path (#657). No main / provider enable. Separate AF00 composition.",
       "source_pr": 659,
-      "source_head": "176a7babdd5ee80d86b91fdc62c51cceee694330"
+      "source_head": "176a7babdd5ee80d86b91fdc62c51cceee694330",
+      "released_at": "2026-10-11T07:02:11.787Z",
+      "integration_head_sha": "3b3eb3969ad323083d11cd1bf57fbe06439443c8",
+      "release_reason": "C29/J14 12-path source reviewed and merged PR #659 into non-deploying integration/rebuild SHA 3b3eb3969ad323083d11cd1bf57fbe06439443c8. Merged SHA GitHub Foundation check job and mobile/admin jobs FAIL before any steps; TS/Vitest/PG18/Flutter/Android BLOCKED/NOT_RUN. AF00 protected app/router/Admin composition remains absent and explicitly handed off in PR #616; not E2E, not production."
     },
     {
       "claim_id": "l-chat-c18-history-20261011-gpt6-disjoint",
