@@ -42,7 +42,8 @@ describe("admin YouTube source authority",()=>{
      .rejects.toMatchObject({status:403});
    expect(h.store.list).not.toHaveBeenCalled();
    await h.service.list(staff);
-   expect(h.store.list).toHaveBeenCalledExactlyOnceWith("t1");
+   expect(h.store.list).toHaveBeenCalledTimes(1);
+   expect(h.store.list).toHaveBeenCalledWith("t1");
  });
  it("rejects malformed source IDs or user-supplied authority before pause",async()=>{
    const h=harness();
