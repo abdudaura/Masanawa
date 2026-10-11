@@ -2082,13 +2082,14 @@
         "services/gateway/src/modules/admin_operations/routes.ts",
         "services/gateway/src/modules/admin_operations/routes.test.ts",
         "adapters/storage/postgres/src/admin_operations/metrics.test.ts",
-        "services/worker/src/jobs/admin_operations/gate.test.ts"
+        "services/worker/src/jobs/admin_operations/gate.test.ts",
+        "services/worker/src/jobs/admin_operations/gate.ts"
       ],
       "branch": "lane/l-admin-j19-ops-continuity-20261011-gpt6-0803",
       "base_sha": "3b3eb3969ad323083d11cd1bf57fbe06439443c8",
       "claimed_at": "2026-10-11T07:09:03.048Z",
-      "heartbeat_at": "2026-10-11T07:09:03.048Z",
-      "expires_at": "2026-10-11T07:14:03.048Z",
+      "heartbeat_at": "2026-10-11T07:10:37.019Z",
+      "expires_at": "2026-10-11T07:15:37.020Z",
       "notes": "Nondeploying integration only; no financial ledger edits or enabling controls"
     }
   ],
