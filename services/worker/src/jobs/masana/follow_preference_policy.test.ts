@@ -9,6 +9,7 @@ describe("C46 send-time follow and mute policy",()=>{
     expect(sql).toContain("f.fan_user_id=$2");
     expect(sql).toContain("r.state='approved'");
     expect(sql).toContain("o.kind='platform'");
+    expect(sql).toContain("u.state='active'");
     expect(sql).toContain("coalesce(p.muted,false)=false");
     expect(args).toEqual(["tenant_one","fan_a","masana_a"]);
   });
