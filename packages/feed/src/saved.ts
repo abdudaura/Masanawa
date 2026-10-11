@@ -26,7 +26,8 @@ function decode(value?:string):SavedCursor|null {
   try {
     const v:unknown=JSON.parse(Buffer.from(value,"base64url").toString("utf8"));
     if(!Array.isArray(v)||v.length!==3||typeof v[0]!=="string"||
-      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$/.test(v[0])||\n      !Number.isFinite(Date.parse(v[0]))||(v[1]!=="post"&&v[1]!=="video")||
+      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$/.test(v[0])||
+      !Number.isFinite(Date.parse(v[0]))||(v[1]!=="post"&&v[1]!=="video")||
       typeof v[2]!=="string"||!uuid.test(v[2]))throw Error("invalid");
     return {at:v[0],kind:v[1],id:v[2]};
   } catch {throw new SavedError(422,"invalid_cursor");}
