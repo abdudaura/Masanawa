@@ -38,6 +38,14 @@ CHAT-P03 partial: canonical assistant history carries `replyToKey=user:<requestI
 
 Gift and profile routes now reject unexpected raw body fields before Fastify can strip them and execute an operation. Existing auth, financial, account-deletion and replay contracts remain authoritative.
 
+## Latest continuation update: API compatibility resolved
+
+The owner requested additional work after the first pushed handoff. Gateway now exposes `/v1` aliases while retaining installed-client URLs, with the same owning plugin scope, hooks, schemas and handlers. Review caught and fixed child-plugin hook bypass in the first implementation; regression tests prove denied access on both forms and private/no-store responses. Creator onboarding normalizes the alias URL before rejecting forged top-level and nested fields. Agent retry keys remain preserved on both forms. Exactly72 additional legacy method/path contracts are inventoried; source checks include generic registrations and `routes` receivers and reject stale inventory entries. A randomized AI-seat confirmation fixture was made deterministic.
+
+Latest executed evidence: **full backend suite1,256 passed,145 skipped,0 failures** (235 passed files,21 skipped); Gateway typecheck **PASS**; Gateway plus dependency build **PASS**; focused alias/onboarding/agent/bootstrap suites **42 passed**. After strengthening the source inventory scanner, its five contract tests also passed. Mobile evidence below is unchanged and still limited; no production deployment or device qualification occurred.
+
+The older validation paragraph below describes the previous checkpoint. Its route-lifecycle blocker is now resolved. Read `git log` for the new source commit and latest pushed head.
+
 ## Executed validation and limits
 
 Prior executed results (final broad rerun results are recorded below if available):
@@ -69,7 +77,7 @@ The old cloud workspace has pnpm at `/workspace/.onboarding-tools/node_modules/.
 ## Next work, in order
 
 1. Verify the pushed branch and fresh status, then finish the exact mobile tests/analyzer under an official compatible bundle. Keep limited-engine evidence clearly labeled. Diagnose genuine source failures instead of assuming another window handles them.
-2. Repair the legacy route API lifecycle mismatch through a reviewed compatibility/versioning design. Preserve current clients and auth; if adding versioned aliases, normalize versioned agent route recognition so `x-request-id` idempotency does not regress. Add executable route tests, then rerun the full suite.
+2. API lifecycle mismatch is resolved in this branch. Verify the existing alias/onboarding/agent tests on the new checkout. Retain legacy clients during migration; new clients should use `/v1`. Any future prefixed Fastify plugins need explicit alias prefix/scope tests before integration. Do not remove legacy URLs without reviewed client migration.
 3. Complete remaining CHAT-P02/P03/P04/P05 checklist work: canonical linked tool/result/transaction provenance, bounded model/tool execution with ambiguity-safe recovery, bounded history/caches, and event-driven wallet refresh. Do not blindly fail and respend an already authorized ambiguous operation.
 4. Reconcile the existing PR #616 rebuilt app/source into one tested safe integration baseline. Do not wholesale replace this branch without reviewing overlapping chat, auth, financial and migration authority.
 5. Implement GWANI-P01 connected durable purchase collection, starting with airtime: authorized tenant/user/character/relationship-scoped draft, stable ID/revision, partially collected fields, corrections, explicit quote binding, and continuity across text/menu/voice/session rotation. Reuse canonical commerce validation, quote, consent, funding and ledger contracts. A corrected draft must invalidate old signed consent at every confirmation path; clearing a pointer alone leaves an old quote actionable. Never mutate processing spend. Existing MSN migration/settlement work in PR #576 needs reconciliation; do not relabel old NGN balances or claim paid completion.
