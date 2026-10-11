@@ -2090,8 +2090,8 @@
       "branch": "lane/l-admin-j19-ops-continuity-20261011-gpt6-0803",
       "base_sha": "3b3eb3969ad323083d11cd1bf57fbe06439443c8",
       "claimed_at": "2026-10-11T07:09:03.048Z",
-      "heartbeat_at": "2026-10-11T07:14:01.066Z",
-      "expires_at": "2026-10-11T07:19:01.066Z",
+      "heartbeat_at": "2026-10-11T07:16:42.843Z",
+      "expires_at": "2026-10-11T07:21:42.843Z",
       "notes": "Nondeploying integration only; no financial ledger edits or enabling controls"
     }
   ],
