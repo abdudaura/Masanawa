@@ -36,9 +36,36 @@ describe("C26 canonical public search", () => {
   it("never trusts a forged authorization header", async () => {
     const { app, search } = await setup();
     const res = await app.inject({ url: "/v1/search?q=math", headers: { authorization: "Bearer forged" } });
-    expect(res.statusCode).not.toBe(200);
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toEqual({ code: "search_auth_denied" });
     expect(search).not.toHaveBeenCalled();
     await app.close();
+  });
+  it("fails closed on optional-session outages and missing trusted tenant", async () => {
+    const app = Fastify();
+    const search = vi.fn();
+    registerSearchRoutes(app, {
+      store: { search } as unknown as SearchStore,
+      resolveReader: async () => { throw new Error("session database down"); },
+      enabled: () => true,
+    });
+    const unavailable = await app.inject({ url: "/v1/search?q=math" });
+    expect(unavailable.statusCode).toBe(503);
+    expect(unavailable.json()).toEqual({ code: "search_session_unavailable" });
+    expect(search).not.toHaveBeenCalled();
+    await app.close();
+
+    const noTenantApp = Fastify();
+    registerSearchRoutes(noTenantApp, {
+      store: { search } as unknown as SearchStore,
+      resolveReader: async () => ({ tenantId: "" }),
+      enabled: () => true,
+    });
+    const noTenant = await noTenantApp.inject({ url: "/v1/search?q=math" });
+    expect(noTenant.statusCode).toBe(403);
+    expect(noTenant.json()).toEqual({ code: "tenant_unavailable" });
+    expect(search).not.toHaveBeenCalled();
+    await noTenantApp.close();
   });
   it("a disabled search never resolves a session or queries storage", async () => {
     const app = Fastify(), search = vi.fn(), resolveReader = vi.fn();
