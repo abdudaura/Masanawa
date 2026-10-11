@@ -1792,11 +1792,14 @@
       "branch": "lane/l-feed-c26-unified-search-20261011-gpt6-0535",
       "base_sha": "9256ada27b33ed286edaa3ba42835972575a25fd",
       "source_pr": 648,
-      "source_head": "a313a1da7ce43a098d032414b5f6f82dc43b5961",
+      "source_head": "e505a9e4ff7eb7f9a902a28f89c107a2f3bc2e37",
       "claimed_at": "2026-10-11T04:49:52.021Z",
       "heartbeat_at": "2026-10-11T04:49:52.021Z",
       "expires_at": "2026-10-11T04:54:52.021Z",
-      "notes": "Original C26 lease released 2026-10-11T04:42:47Z; original PR head checked and coordination note added on #648 before bounded continuation. AF00 retains registration, lockfile and merge/deploy."
+      "notes": "Original C26 lease released 2026-10-11T04:42:47Z; original PR head checked and coordination note added on #648 before bounded continuation. AF00 retains registration, lockfile and merge/deploy.",
+      "released_at": "2026-10-11T04:54:27.541Z",
+      "release_reason": "Source refinements merged to nondeploying integration via #648 at e505a9e4ff7eb7f9a902a28f89c107a2f3bc2e37. Exact integration SHA 7d817a87cda31e761a9de42724739ec41244d1a2. Remaining AF00 composition #625 Rooms schema and shared importer, project/unit/PG18/Flutter/Android checks FAIL/NOT_RUN; never main.",
+      "integration_head_sha": "7d817a87cda31e761a9de42724739ec41244d1a2"
     },
     {
       "claim_id": "l-fin-c54-billing-receipt-20261011-gpt6-0550",
