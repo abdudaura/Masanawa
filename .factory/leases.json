@@ -1469,7 +1469,12 @@
       "heartbeat_at": "2026-10-11T04:02:17.552Z",
       "expires_at": "2026-10-11T04:07:17.552Z",
       "notes": "Feature-owned paths; AF00 composes; forward-only SQL under existing registered masana migration root; no production or finance changes.",
-      "source_head": "1d98521334526186c73a612d00b2c253f9dddf33"
+      "source_head": "214f6992d35b2b32da1e8c30cad9a6b4ecd88f2a",
+      "source_pr": 641,
+      "released_at": "2026-10-11T04:07:34.578Z",
+      "release_reason": "C10 full feature-owned source committed to draft PR #641, targeted non-deploying integration/rebuild; PG preferences/read, API, Flutter UI, en/ha localization, J03 widget repair, unit/widget/PG18 source. Two authored C10 Flutter widget tests PASS at prior 5b1fbbf SHA; newest 214f699 Mobile run 38110459729 pending. Foundation CI run 38110459757 advisory green BUT job fail because frozen pnpm lock missing packages/feed importer; TS/Vitest/PG18 and Android not verified. AF00 protected root/migration/client composition and SHA-specific full tests still required, no integration merge and no production.",
+      "test_state": "PARTIAL_PASS_AND_BLOCKED",
+      "integration_head_sha": null
     },
     {
       "claim_id": "l-chat-j04-masana-calls-20261011-gpt6-0455",
