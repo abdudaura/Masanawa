@@ -1635,9 +1635,11 @@
       "branch": "lane/l-video-a14-recovery-20261011-gpt6-0515",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:17:52.129Z",
-      "heartbeat_at": "2026-10-11T04:17:52.129Z",
-      "expires_at": "2026-10-11T04:22:52.129Z",
-      "notes": "New additive 0004 migration source only. Existing canonical external_videos items/audit, no new pipeline or hosted video. Never main/live."
+      "heartbeat_at": "2026-10-11T04:20:48.901Z",
+      "expires_at": "2026-10-11T04:25:48.901Z",
+      "notes": "New additive 0004 migration source only. Existing canonical external_videos items/audit, no new pipeline or hosted video. Never main/live.",
+      "source_pr": 646,
+      "source_head": "0f7d64fcafcd6abbeacfdb65a559d6015d82e769"
     },
     {
       "claim_id": "l-feed-c25-saved-library-20261011-gpt6-0520",
