@@ -1607,14 +1607,15 @@
         "apps/admin_mobile/lib/src/features/masana/rehearsal_api.dart",
         "apps/admin_mobile/lib/src/features/masana/masana_studio_screen.dart",
         "apps/admin_mobile/test/features/masana/rehearsal_screen_test.dart",
-        "tests/e2e/J18/rehearsals.test.mjs"
+        "tests/e2e/J18/rehearsals.test.mjs",
+        "adapters/storage/postgres/src/masana/rehearsal.integration.test.ts"
       ],
       "branch": "lane/l-masana-a04-rehearsal-20261011-gpt6-0513",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:12:53.843Z",
-      "heartbeat_at": "2026-10-11T04:18:30.676Z",
-      "expires_at": "2026-10-11T04:23:30.676Z",
-      "source_head": "7617fcbf3345c9574c216d53966e4c4a5d4e38d9"
+      "heartbeat_at": "2026-10-11T04:22:29.463Z",
+      "expires_at": "2026-10-11T04:27:29.463Z",
+      "source_head": "aec3cf954b561d14ecd2e08492125ade4b7b0358"
     },
     {
       "claim_id": "l-video-a14-recovery-20261011-gpt6-0515",
