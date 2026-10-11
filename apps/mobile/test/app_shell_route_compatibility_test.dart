@@ -1,37 +1,43 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/src/app/masanawa_consumer_shell.dart';
 import 'package:masanawa/src/router/app_router.dart';
-import 'package:masanawa/src/screens/twin/shell_tab.dart';
 
 void main() {
-  test('R17 routes only approved root tabs to indices', () {
-    expect(shellRootTabIndex(null), 0);
-    expect(shellRootTabIndex('home'), 0);
-    expect(shellRootTabIndex('agents'), 1);
-    expect(shellRootTabIndex('wallet'), 2);
-    expect(shellRootTabIndex('talk'), 3);
+  test('J02 canonical five-tab destinations are ordered with Home in centre', () {
+    expect(MasanawaTab.values, [
+      MasanawaTab.chats,
+      MasanawaTab.rooms,
+      MasanawaTab.home,
+      MasanawaTab.gwani,
+      MasanawaTab.wallet,
+    ]);
+    expect(shellRootTabIndex(null), MasanawaTab.home.index);
+    expect(shellRootTabIndex('home'), 2);
+    expect(shellRootTabIndex('chats'), 0);
+    expect(shellRootTabIndex('rooms'), 1);
+    expect(shellRootTabIndex('gwani'), 3);
+    expect(shellRootTabIndex('wallet'), 4);
   });
 
-  test('R17 canonical route targets round-trip through tab parser', () {
-    for (final tab in MasanawaRootTab.values) {
+  test('J02 routes round-trip without old Talk/Twin tab aliases', () {
+    for (final tab in MasanawaTab.values) {
       final uri = Uri.parse(tab.location);
-      final restored = MasanawaRootTab.fromQuery(
-        uri.queryParameters['tab'],
-      );
-      expect(restored, tab);
       expect(uri.path, '/home');
+      expect(MasanawaTab.parse(uri.queryParameters['tab']), tab);
       expect(shellRootTabIndex(uri.queryParameters['tab']), tab.index);
     }
-    expect(MasanawaRootTab.fromQuery('create'), MasanawaRootTab.home);
-    expect(MasanawaRootTab.fromQuery('activity'), MasanawaRootTab.home);
+    expect(MasanawaTab.parse('talk'), MasanawaTab.home);
+    expect(MasanawaTab.parse('agents'), MasanawaTab.home);
+    expect(MasanawaTab.parse('twin'), MasanawaTab.home);
+    expect(MasanawaTab.parse('create'), MasanawaTab.home);
   });
 
-  test('R17 old shell links retain their original destination', () {
-    expect(legacyShellDestination('create'), '/talk/create');
-    expect(legacyShellDestination('activity'), '/activity');
-    expect(legacyShellDestination('you'), '/you');
-    expect(legacyShellDestination('agents'), isNull);
-    expect(legacyShellDestination('wallet'), isNull);
+  test('J10 legacy create/activity requests never redirect into old product', () {
+    expect(legacyShellDestination('create'), '/home');
+    expect(legacyShellDestination('activity'), '/home');
+    expect(legacyShellDestination('you'), '/account');
     expect(legacyShellDestination('talk'), isNull);
+    expect(legacyShellDestination('agents'), isNull);
     expect(legacyShellDestination(null), isNull);
   });
 }
