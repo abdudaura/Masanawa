@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/features/videos/video_models.dart';
@@ -58,8 +59,11 @@ void main() {
   testWidgets('C29: stale checks cannot reopen player after widget replacement',
       (tester) async {
     final pending = <void Function(bool)>[];
-    Future<bool> delayed(String _) =>
-      Future<bool>((complete) => pending.add(complete));
+    Future<bool> delayed(String _) {
+      final pendingCheck = Completer<bool>();
+      pending.add(pendingCheck.complete);
+      return pendingCheck.future;
+    }
     await tester.pumpWidget(player(delayed));
     await tester.tap(find.text('Play official video'));
     await tester.pump();
