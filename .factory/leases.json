@@ -2126,7 +2126,7 @@
       "heartbeat_at": "2026-10-11T07:29:00.000Z",
       "expires_at": "2026-10-11T07:34:00.000Z",
       "notes": "Prior A04 lease released; port branch source only. AF00 retains root, runtime and qualification.",
-      "released_at": "2026-10-11T07:35:00.000Z",
+      "released_at": "2026-10-11T07:34:24.355Z",
       "release_reason": "Exact 14-path A04 source port #663 committed and merged safely into non-deploying integration/rebuild; 13 original blobs + current Admin Studio additive action. Worker routes/migration source integrated but AF00 shared composition, PostgreSQL, Flutter, Android qualification remain NOT_RUN/BLOCKED. Original #645 preserved and handoff comments on #616/#645.",
       "source_head": "aa1c3c96c72908b8b58d1fff1ca21e981e3225c5",
       "integration_head_sha": "8301c8de87d94645ec5d350298b32e22ebf2ab63",
