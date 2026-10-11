@@ -31,7 +31,7 @@ function requireStaff(actor:VideoPrincipal):{tenantId:string;actorId:string}{
 }
 export function createYouTubeSourceAdminService(store:AdminYouTubeSourceStore){
   return {
-    list(actor:VideoPrincipal){
+    async list(actor:VideoPrincipal){
       const a=requireStaff(actor);
       return store.list(a.tenantId);
     },
