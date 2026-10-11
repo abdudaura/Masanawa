@@ -1873,30 +1873,6 @@
       "source_head": "20a46a8ae9d01976b5aecdae4934f8be0bf91c11"
     },
     {
-      "claim_id": "l-shell-c06-privacy-notices-20261011-gpt6",
-      "owner": "GPT-6 L-SHELL / C06",
-      "scope": "C06 fan notification delivery choices and Account privacy hub; extend canonical C08 notifications, reuse J11 fan memory; no duplicate outbox, push sender, auth/ledger or AF00 composition.",
-      "paths": [
-        "packages/notifications/migrations/0002_delivery_preferences.sql",
-        "adapters/storage/postgres/src/notifications/delivery_preferences.ts",
-        "adapters/storage/postgres/src/notifications/delivery_preferences.test.ts",
-        "services/gateway/src/modules/notifications/delivery_preferences_routes.ts",
-        "services/gateway/src/modules/notifications/delivery_preferences_routes.test.ts",
-        "services/worker/src/jobs/notifications/delivery_preferences.ts",
-        "services/worker/src/jobs/notifications/delivery_preferences.test.ts",
-        "apps/mobile/lib/src/features/account/privacy_settings_repository.dart",
-        "apps/mobile/lib/src/features/account/privacy_settings_screen.dart",
-        "apps/mobile/test/features/account/privacy_settings_screen_test.dart",
-        "tests/e2e/J16/privacy_preferences/ACCEPTANCE.md"
-      ],
-      "branch": "lane/l-shell-c06-privacy-notices-20261011-gpt6",
-      "base_sha": "eaf840667e63cbe61981f8ff7a377c02e04091da",
-      "claimed_at": "2026-10-11T05:02:40.190Z",
-      "heartbeat_at": "2026-10-11T05:02:40.190Z",
-      "expires_at": "2026-10-11T05:07:40.190Z",
-      "notes": "Source-only, existing inbox persists all events; delivery preferences only gate optional push. Exact paths, default-OFF gateway registration."
-    },
-    {
       "claim_id": "l-rooms-c39-discussion-20261011-gpt6-0603",
       "owner": "L-ROOMS C39 continuation GPT-6 window",
       "scope": "C39 moderated fan discussion under Room lessons/questions, staff review, one canonical Rooms PG owner and events.outbox; preserve existing J07/J08/AF00 composition and money",
@@ -4833,6 +4809,36 @@
       "released_at": "2026-10-11T04:23:49.287Z",
       "integration_head_sha": "ed655bd71c3b8b215ff93d5069c58db86cbee6a8",
       "release_reason": "J15/A14 12-file source merged into nondeploying integration/rebuild. Foundation CI 38111260185 install FAIL (packages/feed missing frozen lockfile importer); TS skipped, Vitest/PG not run; Admin Flutter analyze/widget PASS at exact PR head, consumer analyze FAIL, APK pending. Provider withdrawal default OFF; root migration/worker composition AF00. No main/production deployment."
+    },
+    {
+      "claim_id": "l-shell-c06-privacy-notices-20261011-gpt6",
+      "owner": "GPT-6 L-SHELL / C06",
+      "scope": "C06 fan notification delivery choices and Account privacy hub; extend canonical C08 notifications, reuse J11 fan memory; no duplicate outbox, push sender, auth/ledger or AF00 composition.",
+      "paths": [
+        "packages/notifications/migrations/0002_delivery_preferences.sql",
+        "adapters/storage/postgres/src/notifications/delivery_preferences.ts",
+        "adapters/storage/postgres/src/notifications/delivery_preferences.test.ts",
+        "services/gateway/src/modules/notifications/delivery_preferences_routes.ts",
+        "services/gateway/src/modules/notifications/delivery_preferences_routes.test.ts",
+        "services/worker/src/jobs/notifications/delivery_preferences.ts",
+        "services/worker/src/jobs/notifications/delivery_preferences.test.ts",
+        "apps/mobile/lib/src/features/account/privacy_settings_repository.dart",
+        "apps/mobile/lib/src/features/account/privacy_settings_screen.dart",
+        "apps/mobile/test/features/account/privacy_settings_screen_test.dart",
+        "tests/e2e/J16/privacy_preferences/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-shell-c06-privacy-notices-20261011-gpt6",
+      "base_sha": "eaf840667e63cbe61981f8ff7a377c02e04091da",
+      "claimed_at": "2026-10-11T05:02:40.190Z",
+      "heartbeat_at": "2026-10-11T05:02:40.190Z",
+      "expires_at": "2026-10-11T05:07:40.190Z",
+      "notes": "Source-only, existing inbox persists all events; delivery preferences only gate optional push. Exact paths, default-OFF gateway registration.",
+      "source_head": "3db867ad8c44de10a551f7b97e1d96b4babf7e54",
+      "source_pr": 654,
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/654",
+      "integration_head_sha": null,
+      "released_at": "2026-10-11T05:09:08.139Z",
+      "release_reason": "11-path C06 account privacy/optional-push source committed at 3db867ad8c44de10a551f7b97e1d96b4babf7e54; draft PR #654; AF00 #616 handoff comment 6105685489. Default-off, no live/provider/finance writes. Exact-head Foundation CI 38113777364 check job FAILED zero steps; Mobile CI 38113777292 admin/build jobs FAILED zero steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED. AF00 only owns migration registration, canonical auth+pool/flag composition, existing push policy hook, C05 route. Nondeploying integration pending review; no main/production merge."
     }
   ]
 }
