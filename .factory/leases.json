@@ -2166,6 +2166,25 @@
       "heartbeat_at": "2026-10-11T07:47:27.098Z",
       "expires_at": "2026-10-11T07:52:27.098Z",
       "notes": "Disjoint from C10 screen/test claim and AF00 protected paths; no production routes/migrations/finance."
+    },
+    {
+      "claim_id": "l-video-c29-client-closure-20261011-gpt6-0850",
+      "owner": "GPT-6 L-VIDEO/C27-C29",
+      "scope": "Repair canonical official-video consumer end-to-end: valid Dio catalog/availability, mandatory fail-closed provider play admission, account-change safety, cursor/negative Flutter regression; reuse existing gateway/PG/recovery; AF00 owns protected router/composition.",
+      "paths": [
+        "apps/mobile/lib/src/features/videos/video_repository.dart",
+        "apps/mobile/lib/src/features/videos/official_video_player_screen.dart",
+        "apps/mobile/lib/src/features/videos/videos_screen.dart",
+        "apps/mobile/test/features/videos/videos_screen_test.dart",
+        "apps/mobile/test/features/videos/video_availability_test.dart",
+        "apps/mobile/test/features/videos/video_repository_test.dart"
+      ],
+      "branch": "lane/l-video-c29-closure-20261011-gpt6-0850",
+      "base_sha": "8301c8de87d94645ec5d350298b32e22ebf2ab63",
+      "claimed_at": "2026-10-11T07:49:37.290Z",
+      "heartbeat_at": "2026-10-11T07:49:37.290Z",
+      "expires_at": "2026-10-11T07:54:37.290Z",
+      "notes": "Default off until AF00 binds authenticated VideoRepository; no main, live provider, or financial change."
     }
   ],
   "history": [
