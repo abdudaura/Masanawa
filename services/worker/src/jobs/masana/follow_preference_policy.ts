@@ -11,7 +11,7 @@ export async function mayNotifyFollower(
   input:{tenantId:string;fanId:string;characterId:string}
 ):Promise<boolean> {
   try {
-    const r=await db.query<{allowed:boolean}>([
+    const r=await db.query([
       "SELECT EXISTS(",
       "SELECT 1 FROM masana.follows f",
       "JOIN identity.users u ON u.tenant_id=f.tenant_id AND u.user_id=f.fan_user_id AND u.state='active'",
