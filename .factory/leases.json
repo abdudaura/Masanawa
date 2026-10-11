@@ -1460,15 +1460,16 @@
         "tests/e2e/J03/chats_list.md",
         "apps/mobile/lib/l10n/app_en.arb",
         "apps/mobile/lib/l10n/app_ha.arb",
-        "apps/mobile/test/features/masana_chat/masana_chat_screen_test.dart"
+        "apps/mobile/test/features/masana_chat/masana_chat_screen_test.dart",
+        "adapters/storage/postgres/src/masana_chat/inbox.integration.test.ts"
       ],
       "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
       "claimed_at": "2026-10-11T03:50:50.130Z",
-      "heartbeat_at": "2026-10-11T04:01:05.433Z",
-      "expires_at": "2026-10-11T04:06:05.433Z",
+      "heartbeat_at": "2026-10-11T04:02:17.552Z",
+      "expires_at": "2026-10-11T04:07:17.552Z",
       "notes": "Feature-owned paths; AF00 composes; forward-only SQL under existing registered masana migration root; no production or finance changes.",
-      "source_head": "f4ec1c2bf5734e3f671b3629c8b747f5d95dc062"
+      "source_head": "1d98521334526186c73a612d00b2c253f9dddf33"
     },
     {
       "claim_id": "l-chat-j04-masana-calls-20261011-gpt6-0455",
