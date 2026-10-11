@@ -21,6 +21,7 @@ export interface RoomsRepository {
 export interface RoomSubscriptionsRepository {
  listPlans(tenantId:string,roomId:string):Promise<import("./subscriptions.js").RoomPriceVersion[]>;
  myEntitlements(tenantId:string,userId:string):Promise<import("./subscriptions.js").RoomEntitlement[]>;
+ findHistoricalPrice(tenantId:string,roomId:string,planId:string,version:number):Promise<import("./subscriptions.js").RoomPriceVersion|null>;
  createPlan(tenantId:string,roomId:string,period:"month"|"year"):Promise<string>;
  addPrice(tenantId:string,planId:string,input:{
   amountMinor:string;currency:string;storeProductId:string;effectiveAt:string;
