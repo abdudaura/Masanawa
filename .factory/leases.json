@@ -2173,8 +2173,8 @@
       "source_pr": 664,
       "source_head": "2180744c780499989ddc85533e6c21b040ed1cdb",
       "released_at": "2026-10-11T07:54:31.385Z",
-      "release_reason": "Six-path C27-C29 Dart/client regression repair source in draft #664, AF00 handoff #616 comment 6106873973. New code source readback verified. Exact-head Foundation CI 38122884550 and Mobile 38122884536 have all jobs failed zero steps; TypeScript/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; no checked out monorepo/Flutter/PG SDK. Protected router composition and actual provider/device tests absent. Nondeploying integration NOT MERGED; no main/provider/database change.",
-      "integration_head_sha": null
+      "release_reason": "Six-path C27–C29 source PR #664 head 2180744c safely squash-merged into nondeploying integration/rebuild as fb20e76d5c4027068c32ebdf35e27009babdc863. Authenticated Dio repository Dart parse repaired, missing checker fails closed, negative/widget tests authored. CI on merged head 38123045044/38123045083 all 3 jobs FAILED with 0 steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; AF00 composition and J14/J15 real device/providers pending; NO main/prod/payment changes.",
+      "integration_head_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863"
     }
   ],
   "history": [
