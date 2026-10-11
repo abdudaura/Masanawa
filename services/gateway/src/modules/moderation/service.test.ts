@@ -78,10 +78,29 @@ describe("J13 fan report → moderator decision → appeal",()=>{
   const h=harness();
   await expect(h.service.reviewAppeal("fan",record.caseId,appeal.appealId,
    {uphold:true,expectedVersion:1})).rejects.toMatchObject({statusCode:403});
-  await expect(h.service.appeal("stranger",record.caseId,"reconsider")).rejects.toMatchObject({statusCode:404});
+  await expect(h.service.appeal("stranger",record.caseId,{reason:"reconsider",clientRequestId:"retry_1"})).rejects.toMatchObject({statusCode:404});
   const value=await h.service.reviewAppeal("mod",record.caseId,appeal.appealId,
    {uphold:true,expectedVersion:1});
   expect(value).toEqual(appeal);
   expect(h.resolveAppeal).toHaveBeenCalledWith(record.tenantId,record.caseId,appeal.appealId,mod.userId,true,1);
  });
+ it("requires fan-scoped retry keys and delegates idempotent replay to the same repository",async()=>{
+  const h=harness();
+  await expect(h.service.appeal("fan",record.caseId,{reason:"reconsider",clientRequestId:"retry_1"}))
+   .rejects.toMatchObject({code:"moderation.appeal_not_ready"});
+  h.find.mockResolvedValueOnce({...record,state:"actioned",events:[],actions:[],appeals:[]});
+  await expect(h.service.appeal("fan",record.caseId,{reason:"reconsider",clientRequestId:""}))
+   .rejects.toMatchObject({statusCode:400});
+  expect(h.appendAppeal).not.toHaveBeenCalled();
+  h.find.mockResolvedValueOnce({...record,state:"actioned",events:[],actions:[],appeals:[]});
+  await expect(h.service.appeal("fan",record.caseId,{reason:"reconsider",clientRequestId:"retry_1"}))
+   .resolves.toMatchObject({accepted:true});
+  expect(h.appendAppeal).toHaveBeenCalledWith("tenant_demo","case_demo",
+   "appeal_deterministic","fan1","reconsider","retry_1");
+  h.find.mockResolvedValueOnce({...record,state:"appealed",events:[],actions:[],appeals:[]});
+  await expect(h.service.appeal("fan",record.caseId,{reason:"reconsider",clientRequestId:"retry_1"}))
+   .resolves.toMatchObject({accepted:true});
+  expect(h.appendAppeal).toHaveBeenCalledTimes(2); // repository owns replay suppression
+ });
+
 });
