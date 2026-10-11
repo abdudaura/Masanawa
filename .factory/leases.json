@@ -1788,6 +1788,26 @@
       "heartbeat_at": "2026-10-11T04:49:52.021Z",
       "expires_at": "2026-10-11T04:54:52.021Z",
       "notes": "Original C26 lease released 2026-10-11T04:42:47Z; original PR head checked and coordination note added on #648 before bounded continuation. AF00 retains registration, lockfile and merge/deploy."
+    },
+    {
+      "claim_id": "l-fin-c54-billing-receipt-20261011-gpt6-0550",
+      "owner": "L-FIN/C54 — GPT-6",
+      "scope": "C54 tenant-private read-only canonical billing receipt detail; no ledger writes, provider activation, duplicate wallet, AF00 root or migration registry",
+      "paths": [
+        "services/gateway/src/modules/finance/billing_receipt.ts",
+        "services/gateway/src/modules/finance/billing_receipt.test.ts",
+        "adapters/storage/postgres/src/commerce/billing-receipt-read.ts",
+        "adapters/storage/postgres/src/commerce/billing-receipt-read.test.ts",
+        "apps/mobile/lib/src/features/wallet/billing_receipt_screen.dart",
+        "apps/mobile/test/features/wallet/billing_receipt_screen_test.dart",
+        "tests/e2e/J05/billing-receipt/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-fin-c54-billing-receipt-20261011-gpt6-0550",
+      "base_sha": "9256ada27b33ed286edaa3ba42835972575a25fd",
+      "claimed_at": "2026-10-11T04:52:40.457Z",
+      "heartbeat_at": "2026-10-11T04:52:40.457Z",
+      "expires_at": "2026-10-11T04:57:40.457Z",
+      "notes": "Existing commerce.billing_fulfillments only; client C54 receipt deep-link callback owned by AF00; no new worker needed."
     }
   ],
   "history": [
