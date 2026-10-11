@@ -54,4 +54,15 @@ describe("J06 HTTP cannot publish as fan or leak across tenant",()=>{
   await app.close();
  });
 
+ it("C22 refuses non-string parent rather than creating a different root comment",async()=>{
+  const app=Fastify(),comment=vi.fn();
+  await registerHomeFeedRoutes(app,{service:{comment} as never,
+   principal:async()=>({kind:"fan",tenantId:"tenant",id:"trusted_fan"}),
+   tenant:()=>"tenant",isNewAccount:async()=>false,enabled:()=>true});
+  const r=await app.inject({method:"POST",url:"/v1/posts/381026c2-9d56-47b1-b73d-1784e24e41e2/comments",
+   headers:{"idempotency-key":"key-reply-001"},payload:{body:"Reply",parentId:{foreign:"id"}}});
+  expect(r.statusCode).toBe(422);expect(comment).not.toHaveBeenCalled();
+  await app.close();
+ });
+
 });
