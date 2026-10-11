@@ -45,8 +45,8 @@ export function createFollowingStore(db: Db) {
           "WHERE f.tenant_id=$1 AND f.fan_user_id=$2",
           "AND ($3='' OR r.profile->>'displayName' ILIKE '%'||$3||'%'",
           "  OR r.profile->>'profession' ILIKE '%'||$3||'%'",
-          "  OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(COALESCE(r.profile->'talents','[]'::jsonb)) AS interest",
-          "    WHERE interest ILIKE '%'||$3||'%'))",
+          "  OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(COALESCE(r.profile->'talents','[]'::jsonb)) AS skill(value)",
+          "    WHERE skill.value ILIKE '%'||$3||'%'))",
           "AND ($4='' OR r.profile->'languages' @> to_jsonb(ARRAY[$4]::text[]))",
           "AND ($5::text IS NULL OR f.character_id > $5)",
           "ORDER BY f.character_id ASC LIMIT $6"
