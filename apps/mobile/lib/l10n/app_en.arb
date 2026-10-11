@@ -342,7 +342,6 @@
     "description": "Accessible status for the selected app UI language option"
   },
   "platformAgentsTab": "Masanawa Agents",
-  "twinsTab": "Twins",
   "searchPlatformAgents": "Search Masanawa Agents",
   "clearAgentSearch": "Clear agent search",
   "agentsLoadFailed": "Could not load agents. Try again.",
@@ -350,15 +349,7 @@
   "noMatchingAgents": "No agents match your search.",
   "gwaniUnavailableRetry": "Gwani is unavailable. Try again shortly.",
   "gwaniUnavailableNow": "Gwani is unavailable right now.",
-  "privateTwinTalkUnavailable": "Private Talk with {name} is not available yet.",
-  "viewTwinProfile": "View profile",
   "searchTalks": "Search Talks",
-  "searchPublicTwins": "Search public Twins",
-  "clearTwinSearch": "Clear search",
-  "myTwin": "My Twin",
-  "publicTwin": "Public Twin",
-  "noPublicTwins": "No public Twins found.",
-  "publicTwinsLoadFailed": "Could not load public Twins. Try again.",
   "loadMore": "Load more",
   "statusAvailable": "Available",
   "statusListening": "Listening…",
@@ -369,9 +360,6 @@
   "statusWorkingTasks": "{count, plural, =1{Working · 1 task} other{Working · {count} tasks}}",
   "@platformAgentsTab": {
     "description": "Root navigation/public Twin discovery UI: platformAgentsTab"
-  },
-  "@twinsTab": {
-    "description": "Root navigation/public Twin discovery UI: twinsTab"
   },
   "@searchPlatformAgents": {
     "description": "Root navigation/public Twin discovery UI: searchPlatformAgents"
@@ -394,37 +382,8 @@
   "@gwaniUnavailableNow": {
     "description": "Root navigation/public Twin discovery UI: gwaniUnavailableNow"
   },
-  "@privateTwinTalkUnavailable": {
-    "description": "Unavailable private Twin session. Interpolate exact user-authored Twin name, not a provider identifier.",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "@viewTwinProfile": {
-    "description": "Root navigation/public Twin discovery UI: viewTwinProfile"
-  },
   "@searchTalks": {
     "description": "Root navigation/public Twin discovery UI: searchTalks"
-  },
-  "@searchPublicTwins": {
-    "description": "Root navigation/public Twin discovery UI: searchPublicTwins"
-  },
-  "@clearTwinSearch": {
-    "description": "Root navigation/public Twin discovery UI: clearTwinSearch"
-  },
-  "@myTwin": {
-    "description": "Root navigation/public Twin discovery UI: myTwin"
-  },
-  "@publicTwin": {
-    "description": "Root navigation/public Twin discovery UI: publicTwin"
-  },
-  "@noPublicTwins": {
-    "description": "Root navigation/public Twin discovery UI: noPublicTwins"
-  },
-  "@publicTwinsLoadFailed": {
-    "description": "Root navigation/public Twin discovery UI: publicTwinsLoadFailed"
   },
   "@loadMore": {
     "description": "Root navigation/public Twin discovery UI: loadMore"
@@ -452,18 +411,6 @@
     "placeholders": {
       "count": {
         "type": "int"
-      }
-    }
-  },
-  "twinShareText": "Talk with {name} on Masanawa: {url}",
-  "@twinShareText": {
-    "description": "Explicit share message for a public user-owned Twin; preserve exact name and canonical URL unchanged",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      },
-      "url": {
-        "type": "String"
       }
     }
   }

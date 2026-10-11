@@ -275,9 +275,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get platformAgentsTab => 'وكلاء Masanawa';
 
   @override
-  String get twinsTab => 'التوائم';
-
-  @override
   String get searchPlatformAgents => 'ابحث عن وكلاء Masanawa';
 
   @override
@@ -299,34 +296,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get gwaniUnavailableNow => 'Gwani غير متاح الآن.';
 
   @override
-  String privateTwinTalkUnavailable(String name) {
-    return 'المحادثة الخاصة مع $name غير متاحة بعد.';
-  }
-
-  @override
-  String get viewTwinProfile => 'عرض الملف الشخصي';
-
-  @override
   String get searchTalks => 'البحث في المحادثات';
-
-  @override
-  String get searchPublicTwins => 'البحث عن التوائم العامة';
-
-  @override
-  String get clearTwinSearch => 'مسح البحث';
-
-  @override
-  String get myTwin => 'توأمي';
-
-  @override
-  String get publicTwin => 'توأم عام';
-
-  @override
-  String get noPublicTwins => 'لم يتم العثور على توائم عامة.';
-
-  @override
-  String get publicTwinsLoadFailed =>
-      'تعذّر تحميل التوائم العامة. حاول مجددًا.';
 
   @override
   String get loadMore => 'تحميل المزيد';
@@ -361,10 +331,5 @@ class AppLocalizationsAr extends AppLocalizations {
       one: 'يعمل · مهمة واحدة',
     );
     return '$_temp0';
-  }
-
-  @override
-  String twinShareText(String name, String url) {
-    return 'تحدث مع $name على Masanawa: $url';
   }
 }

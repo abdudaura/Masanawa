@@ -278,9 +278,6 @@ class AppLocalizationsHa extends AppLocalizations {
   String get platformAgentsTab => 'Wakilan Masanawa';
 
   @override
-  String get twinsTab => 'Tagwayen AI';
-
-  @override
   String get searchPlatformAgents => 'Nemo wakilan Masanawa';
 
   @override
@@ -303,34 +300,7 @@ class AppLocalizationsHa extends AppLocalizations {
   String get gwaniUnavailableNow => 'Ba a samun Gwani a yanzu.';
 
   @override
-  String privateTwinTalkUnavailable(String name) {
-    return 'Ba a samun hira ta sirri da $name a yanzu.';
-  }
-
-  @override
-  String get viewTwinProfile => 'Duba bayanan martaba';
-
-  @override
   String get searchTalks => 'Nemo hirarraki';
-
-  @override
-  String get searchPublicTwins => 'Nemo tagwayen AI na jama\'a';
-
-  @override
-  String get clearTwinSearch => 'Share bincike';
-
-  @override
-  String get myTwin => 'Tagwayena';
-
-  @override
-  String get publicTwin => 'Tagwayen AI na jama\'a';
-
-  @override
-  String get noPublicTwins => 'Ba a sami tagwayen AI na jama\'a ba.';
-
-  @override
-  String get publicTwinsLoadFailed =>
-      'Ba a iya ɗauko tagwayen AI na jama\'a ba. Sake gwadawa.';
 
   @override
   String get loadMore => 'Ƙara nunawa';
@@ -362,10 +332,5 @@ class AppLocalizationsHa extends AppLocalizations {
       one: 'Yana aiki · aiki 1',
     );
     return '$_temp0';
-  }
-
-  @override
-  String twinShareText(String name, String url) {
-    return 'Yi hira da $name a Masanawa: $url';
   }
 }

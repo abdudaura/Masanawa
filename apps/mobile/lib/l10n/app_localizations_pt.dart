@@ -278,9 +278,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get platformAgentsTab => 'Agentes Masanawa';
 
   @override
-  String get twinsTab => 'Gêmeos';
-
-  @override
   String get searchPlatformAgents => 'Buscar agentes Masanawa';
 
   @override
@@ -304,34 +301,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get gwaniUnavailableNow => 'Gwani não está disponível agora.';
 
   @override
-  String privateTwinTalkUnavailable(String name) {
-    return 'A conversa privada com $name ainda não está disponível.';
-  }
-
-  @override
-  String get viewTwinProfile => 'Ver perfil';
-
-  @override
   String get searchTalks => 'Buscar conversas';
-
-  @override
-  String get searchPublicTwins => 'Buscar gêmeos públicos';
-
-  @override
-  String get clearTwinSearch => 'Limpar busca';
-
-  @override
-  String get myTwin => 'Meu gêmeo';
-
-  @override
-  String get publicTwin => 'Gêmeo público';
-
-  @override
-  String get noPublicTwins => 'Nenhum gêmeo público encontrado.';
-
-  @override
-  String get publicTwinsLoadFailed =>
-      'Não foi possível carregar gêmeos públicos. Tente novamente.';
 
   @override
   String get loadMore => 'Carregar mais';
@@ -363,10 +333,5 @@ class AppLocalizationsPt extends AppLocalizations {
       one: 'Trabalhando · 1 tarefa',
     );
     return '$_temp0';
-  }
-
-  @override
-  String twinShareText(String name, String url) {
-    return 'Converse com $name no Masanawa: $url';
   }
 }

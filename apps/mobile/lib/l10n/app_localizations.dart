@@ -574,12 +574,6 @@ abstract class AppLocalizations {
   /// **'Masanawa Agents'**
   String get platformAgentsTab;
 
-  /// Root navigation/public Twin discovery UI: twinsTab
-  ///
-  /// In en, this message translates to:
-  /// **'Twins'**
-  String get twinsTab;
-
   /// Root navigation/public Twin discovery UI: searchPlatformAgents
   ///
   /// In en, this message translates to:
@@ -622,59 +616,11 @@ abstract class AppLocalizations {
   /// **'Gwani is unavailable right now.'**
   String get gwaniUnavailableNow;
 
-  /// Unavailable private Twin session. Interpolate exact user-authored Twin name, not a provider identifier.
-  ///
-  /// In en, this message translates to:
-  /// **'Private Talk with {name} is not available yet.'**
-  String privateTwinTalkUnavailable(String name);
-
-  /// Root navigation/public Twin discovery UI: viewTwinProfile
-  ///
-  /// In en, this message translates to:
-  /// **'View profile'**
-  String get viewTwinProfile;
-
   /// Root navigation/public Twin discovery UI: searchTalks
   ///
   /// In en, this message translates to:
   /// **'Search Talks'**
   String get searchTalks;
-
-  /// Root navigation/public Twin discovery UI: searchPublicTwins
-  ///
-  /// In en, this message translates to:
-  /// **'Search public Twins'**
-  String get searchPublicTwins;
-
-  /// Root navigation/public Twin discovery UI: clearTwinSearch
-  ///
-  /// In en, this message translates to:
-  /// **'Clear search'**
-  String get clearTwinSearch;
-
-  /// Root navigation/public Twin discovery UI: myTwin
-  ///
-  /// In en, this message translates to:
-  /// **'My Twin'**
-  String get myTwin;
-
-  /// Root navigation/public Twin discovery UI: publicTwin
-  ///
-  /// In en, this message translates to:
-  /// **'Public Twin'**
-  String get publicTwin;
-
-  /// Root navigation/public Twin discovery UI: noPublicTwins
-  ///
-  /// In en, this message translates to:
-  /// **'No public Twins found.'**
-  String get noPublicTwins;
-
-  /// Root navigation/public Twin discovery UI: publicTwinsLoadFailed
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load public Twins. Try again.'**
-  String get publicTwinsLoadFailed;
 
   /// Root navigation/public Twin discovery UI: loadMore
   ///
@@ -723,12 +669,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Working · 1 task} other{Working · {count} tasks}}'**
   String statusWorkingTasks(int count);
-
-  /// Explicit share message for a public user-owned Twin; preserve exact name and canonical URL unchanged
-  ///
-  /// In en, this message translates to:
-  /// **'Talk with {name} on Masanawa: {url}'**
-  String twinShareText(String name, String url);
 }
 
 class _AppLocalizationsDelegate

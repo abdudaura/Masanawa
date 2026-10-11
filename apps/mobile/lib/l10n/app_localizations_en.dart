@@ -276,9 +276,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get platformAgentsTab => 'Masanawa Agents';
 
   @override
-  String get twinsTab => 'Twins';
-
-  @override
   String get searchPlatformAgents => 'Search Masanawa Agents';
 
   @override
@@ -301,33 +298,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gwaniUnavailableNow => 'Gwani is unavailable right now.';
 
   @override
-  String privateTwinTalkUnavailable(String name) {
-    return 'Private Talk with $name is not available yet.';
-  }
-
-  @override
-  String get viewTwinProfile => 'View profile';
-
-  @override
   String get searchTalks => 'Search Talks';
-
-  @override
-  String get searchPublicTwins => 'Search public Twins';
-
-  @override
-  String get clearTwinSearch => 'Clear search';
-
-  @override
-  String get myTwin => 'My Twin';
-
-  @override
-  String get publicTwin => 'Public Twin';
-
-  @override
-  String get noPublicTwins => 'No public Twins found.';
-
-  @override
-  String get publicTwinsLoadFailed => 'Could not load public Twins. Try again.';
 
   @override
   String get loadMore => 'Load more';
@@ -359,10 +330,5 @@ class AppLocalizationsEn extends AppLocalizations {
       one: 'Working · 1 task',
     );
     return '$_temp0';
-  }
-
-  @override
-  String twinShareText(String name, String url) {
-    return 'Talk with $name on Masanawa: $url';
   }
 }

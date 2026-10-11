@@ -70,16 +70,10 @@ void main() {
     for (final code in ['en', 'ha', 'ar', 'fr', 'es', 'pt']) {
       final strings = await AppLocalizations.delegate.load(Locale(code));
       expect(strings.agentsLoadFailed.trim(), isNotEmpty);
-      expect(strings.publicTwinsLoadFailed.trim(), isNotEmpty);
+      expect(strings.noMatchingAgents.trim(), isNotEmpty);
       expect(strings.retry.trim(), isNotEmpty);
-      expect(strings.privateTwinTalkUnavailable('Amina Twin'),
-          contains('Amina Twin'));
-      final share = strings.twinShareText(
-        'Amina Twin', 'https://masanawa.com/t/abc',
-      );
-      expect(share, contains('Amina Twin'));
-      expect(share, contains('https://masanawa.com/t/abc'));
-
+      expect(strings.otpSentTo('user@example.com'),
+          contains('user@example.com'));
     }
   });
 }
