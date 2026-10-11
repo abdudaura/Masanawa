@@ -12,6 +12,7 @@ function harness(qualified=true,enabled=true) {
     markActive:vi.fn(async()=>true),
     finish:vi.fn(async()=>true),
     get:vi.fn(async()=>null),
+    findByRequest:vi.fn(async()=>null),
   };
   const provider={
     dispatch:vi.fn(async()=>{}),
@@ -69,6 +70,37 @@ describe("J04 API admission + fail-closed LiveKit dispatch",()=>{
       expect(h.store.finish).toHaveBeenCalledWith(expect.objectContaining({
         tenantId:"tenant-a",fanUserId:"fan-a",state:"failed",
       }));
+      expect(h.provider.token).not.toHaveBeenCalled();
+    }finally{await h.app.close();}
+  });
+  it("replays a lost call response using the same fan request without redispatch",async()=>{
+    const h=harness();
+    h.store.create.mockResolvedValueOnce(false);
+    h.store.findByRequest.mockResolvedValueOnce({
+      callId:"call_0199f0d0-0000-7000-8000-000000000009",
+      tenantId:"tenant-a",fanUserId:"fan-a",characterId:id,
+      roomName:"masana-existing",state:"active",
+      expiresAt:new Date(Date.now()+600000).toISOString(),
+    } as never);
+    try {
+      const r=await h.app.inject({method:"POST",url:"/v1/calls",
+        headers:{authorization:"Bearer fan"},payload:{characterId:id,requestId:reqId}});
+      expect(r.statusCode).toBe(200);
+      expect(r.json().callId).toBe("call_0199f0d0-0000-7000-8000-000000000009");
+      expect(h.store.findByRequest).toHaveBeenCalledWith({
+        tenantId:"tenant-a",fanUserId:"fan-a",characterId:id,requestId:reqId,
+      });
+      expect(h.provider.token).toHaveBeenCalledOnce();
+      expect(h.provider.dispatch).not.toHaveBeenCalled();
+    }finally{await h.app.close();}
+  });
+  it("never recovers a different fan request id or issues a token",async()=>{
+    const h=harness();
+    h.store.create.mockResolvedValueOnce(false);
+    try {
+      const r=await h.app.inject({method:"POST",url:"/v1/calls",
+        headers:{authorization:"Bearer fan"},payload:{characterId:id,requestId:reqId}});
+      expect(r.statusCode).toBe(409);
       expect(h.provider.token).not.toHaveBeenCalled();
     }finally{await h.app.close();}
   });
