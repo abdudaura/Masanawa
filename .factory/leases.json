@@ -2039,6 +2039,31 @@
       "release_reason": "PR #658 correction merged source into nondeploying integration at 4f2b7ab93c8a5b1414775d6cae969616c7319500; exact GitHub blob 2533e2ab matches local compiled source; node:test 4/4 + narrow tsc PASS; repo Vitest/PG18/Flutter/Android BLOCKED. AF00 handoff on #616; no main deploy.",
       "source_head": "a711267c00335c2f5b1b0ace0a5569ec6949e9ed",
       "integration_head_sha": "4f2b7ab93c8a5b1414775d6cae969616c7319500"
+    },
+    {
+      "claim_id": "l-video-c29-availability-20261011-gpt6-0755",
+      "owner": "L-VIDEO C29/GPT-6",
+      "scope": "C29/J14 approved provider-video availability recheck, fail-closed withdrawal verification, tenant-scoped read, original embed fallback and tests; reuse existing catalogs/PG/outbox/Admin. AF00 retains app/router/migration-root ownership.",
+      "paths": [
+        "services/gateway/src/modules/external_videos/routes.ts",
+        "services/gateway/src/modules/external_videos/service.ts",
+        "services/gateway/src/modules/external_videos/routes.test.ts",
+        "adapters/storage/postgres/src/external_videos/repository.ts",
+        "adapters/storage/postgres/src/external_videos/repository.integration.test.ts",
+        "services/worker/src/jobs/youtube_websub/reconcile.ts",
+        "services/worker/src/jobs/youtube_websub/reconcile.test.ts",
+        "apps/mobile/lib/src/features/videos/video_repository.dart",
+        "apps/mobile/lib/src/features/videos/videos_screen.dart",
+        "apps/mobile/lib/src/features/videos/official_video_player_screen.dart",
+        "apps/mobile/test/features/videos/video_availability_test.dart",
+        "tests/e2e/J14/youtube_sync.e2e.test.ts"
+      ],
+      "branch": "lane/l-video-c29-availability-20261011-gpt6-0755",
+      "base_sha": "cfb7ea71ed926ef5ba00274c5b2855673be9236a",
+      "claimed_at": "2026-10-11T06:53:40.960Z",
+      "heartbeat_at": "2026-10-11T06:53:40.960Z",
+      "expires_at": "2026-10-11T06:58:40.958Z",
+      "notes": "No source_admin path (#657). No main / provider enable. Separate AF00 composition."
     }
   ],
   "history": [
