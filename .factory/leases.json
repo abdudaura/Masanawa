@@ -2295,8 +2295,10 @@
       "owner": "Codex cloud / user-appointed sole implementer and integrator",
       "scope": "Continue recovered #612: durable early server receipts, local outbox, account-fenced recovery, actual request reply linkage; no production deployment or paid execution",
       "paths": [
+        "adapters/storage/postgres/src/agents/mobile-shell.ts",
         "adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts",
         "apps/mobile/lib/src/agents/agent_session.dart",
+        "apps/mobile/lib/src/agents/agent_shell.dart",
         "apps/mobile/lib/src/agents/masanawa_transport.dart",
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
         "apps/mobile/lib/src/state/ai_chat_state.dart",
@@ -2305,6 +2307,7 @@
         "apps/mobile/test/agents/agent_receipt_transport_test.dart",
         "apps/mobile/test/state/ai_chat_outbox_test.dart",
         "docs/workstreams/CHAT-P02-cloud-continuation-20261011.md",
+        "packages/agents/src/mobile-shell.ts",
         "packages/agents/src/talk-replay.test.ts",
         "services/gateway/src/agent_conversation.test.ts",
         "services/gateway/src/agent_conversation.ts",
@@ -2337,10 +2340,9 @@
       "branch": "continue-chat-reliability-20261011",
       "base_sha": "46af99e50dedd5a1596ffb5795086410ef4ff859",
       "claimed_at": "2026-10-11T10:22:03.756271+00:00",
-      "heartbeat_at": "2026-10-11T10:29:47.325529+00:00",
-      "expires_at": "2026-10-11T10:51:43Z",
-      "notes": "User-appointed sole integration owner; backend 43 tests and 2 real PostgreSQL receipt tests pass. Mobile restart/account/persistence fixes under executable Flutter validation; compiler source prerequisites repaired, remaining third-party declarations and 5 test failures being closed.",
-      "last_heartbeat_at": "2026-10-11T10:36:43Z"
+      "heartbeat_at": "2026-10-11T10:37:27Z",
+      "expires_at": "2026-10-11T10:52:27Z",
+      "notes": "Sole owner continuation: add canonical server reply provenance to durable history, preserving scoped request identity; mobile test runner being extracted from verified OCI SDK layers; remaining gift-route execution rejection and stale fixture regressions being repaired."
     }
   ],
   "history": [
