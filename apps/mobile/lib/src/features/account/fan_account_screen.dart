@@ -130,7 +130,7 @@ class _FanAccountScreenState extends State<FanAccountScreen> {
     return _AccountLoadState.error;
   }
 
-  Widget _message(IconData icon, String title, {bool signIn = false}) {
+  Widget _message(IconData icon, String title, {bool signIn = false, bool setup = false}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -140,8 +140,9 @@ class _FanAccountScreenState extends State<FanAccountScreen> {
           Text(title, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           OutlinedButton(
-            onPressed: signIn ? widget.onSignIn : _load,
-            child: Text(signIn ? _t('Sign in', 'Shiga') : _t('Retry', 'Sake gwadawa')),
+            onPressed: signIn ? widget.onSignIn : setup ? widget.onCompleteSetup : _load,
+            child: Text(signIn ? _t('Sign in', 'Shiga') : setup ?
+                _t('Complete setup', 'Kammala saiti') : _t('Retry', 'Sake gwadawa')),
           ),
         ]),
       ),
@@ -261,7 +262,8 @@ class _FanAccountScreenState extends State<FanAccountScreen> {
             _t('Sign in to view your private account.', 'Shiga don ganin asusunka na sirri.'),
             signIn: true),
         _AccountLoadState.missing => _message(Icons.person_add_alt_outlined,
-            _t('Account setup is incomplete.', 'Ba a kammala saitin asusu ba.')),
+            _t('Account setup is incomplete.', 'Ba a kammala saitin asusu ba.'),
+            setup: true),
         _AccountLoadState.disabled => _message(Icons.pause_circle_outline,
             _t('Account information is temporarily unavailable.', 'An dakatar da bayanan asusu na ɗan lokaci.')),
         _AccountLoadState.stale => _message(Icons.sync_problem_outlined,
