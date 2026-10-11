@@ -4,6 +4,7 @@ import type {DraftInput,EditorialAction,EditorialState,EditorialPost} from "@mas
 
 type EditorialPort={
  create(actor:Actor,input:DraftInput):Promise<EditorialPost>;
+ update(actor:Actor,id:string,revision:number,input:DraftInput):Promise<EditorialPost>;
  get(actor:Actor,id:string):Promise<EditorialPost>;
  list(actor:Actor,states?:readonly EditorialState[]):Promise<readonly EditorialPost[]>;
  change(actor:Actor,id:string,action:EditorialAction,revision:number,key:string,scheduledAt?:string|null):Promise<EditorialPost>;
@@ -43,6 +44,18 @@ export async function registerAdminFeedReviewRoutes(app:FastifyInstance,o:AdminR
    return Promise.reject(Object.assign(new Error("invalid_media"),{status:422,code:"invalid_media"}));
   return o.service.create(actor,{authorMasanaId:string(b.authorMasanaId),kind:string(b.kind) as DraftInput["kind"],
    body:string(b.body),media:media as string[]|undefined,transcript:b.transcript==null?null:string(b.transcript),
+   idempotencyKey:string(req.headers["idempotency-key"])});
+ }));
+ app.patch("/v1/admin/feed/posts/:id/draft",async(req,rep)=>guard(req,rep,actor=>{
+  const b=obj(req.body);
+  const media=b.media,revision=b.expectedRevision;
+  if(typeof revision!=="number"||!Number.isSafeInteger(revision)||revision<0
+    ||(media!==undefined&&(!Array.isArray(media)||media.some(x=>typeof x!=="string"))))
+    return Promise.reject(Object.assign(new Error("invalid_draft_edit"),{status:422,code:"invalid_draft_edit"}));
+  return o.service.update(actor,string(obj(req.params).id),revision,{
+   authorMasanaId:string(b.authorMasanaId),kind:string(b.kind) as DraftInput["kind"],
+   body:string(b.body),media:media as string[]|undefined,
+   transcript:b.transcript==null?null:string(b.transcript),
    idempotencyKey:string(req.headers["idempotency-key"])});
  }));
  app.get("/v1/admin/feed/review",async(req,rep)=>guard(req,rep,actor=>{
