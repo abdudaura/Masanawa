@@ -1493,10 +1493,10 @@
       "branch": "lane/l-chat-j04-masana-calls-20261011-gpt6-0455",
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
       "claimed_at": "2026-10-11T03:56:43.641Z",
-      "heartbeat_at": "2026-10-11T04:09:51.373Z",
-      "expires_at": "2026-10-11T04:14:51.373Z",
+      "heartbeat_at": "2026-10-11T04:12:20.880Z",
+      "expires_at": "2026-10-11T04:17:20.880Z",
       "notes": "Canonical /v1/calls source under own module, AF00 to compose root; provider and full device checks are release-gated.",
-      "source_head": "9fb0de14ac6da7e83707d5f8bcac7e51b56c4b8d",
+      "source_head": "71aeb12fdcf7ea014c179b0041cca96e08816580",
       "source_pr": 643
     },
     {
