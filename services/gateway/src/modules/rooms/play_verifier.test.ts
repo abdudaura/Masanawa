@@ -8,7 +8,7 @@ const base={subscriptionState:"SUBSCRIPTION_STATE_ACTIVE",
  externalAccountIdentifiers:{obfuscatedExternalAccountId:"test_binding"}};
 describe("Google Play v2 subscription authority",()=>{
  it("reads only official endpoint and extracts provider-authenticated account/period",async()=>{
-  const http=vi.fn(async()=>new Response(JSON.stringify(base),{status:200}));
+  const http=vi.fn(async (_resource:string|URL,_init?:RequestInit)=>new Response(JSON.stringify(base),{status:200}));
   const verifier=createGooglePlaySubscriptionVerifier({
    packageName:"com.masanawa.app",getAccessToken:async()=>"test_server_access_token_12345",http:http as typeof fetch});
   const got=await verifier.verify(purchaseToken);
@@ -18,14 +18,14 @@ describe("Google Play v2 subscription authority",()=>{
   expect(http.mock.calls[0]?.[0]).not.toContain("some-other-host");
  });
  it("denies unverified, malformed, multiple or missing line items",async()=>{
-  const http=vi.fn(async()=>new Response(JSON.stringify({...base,lineItems:[]}),{status:200}));
+  const http=vi.fn(async (_resource:string|URL,_init?:RequestInit)=>new Response(JSON.stringify({...base,lineItems:[]}),{status:200}));
   const verifier=createGooglePlaySubscriptionVerifier({
    packageName:"com.masanawa.app",getAccessToken:async()=>"test_server_access_token_12345",http:http as typeof fetch});
   await expect(verifier.verify(purchaseToken)).rejects.toThrow("play_unsupported_multiple_items");
   await expect(verifier.verify("short")).rejects.toThrow("invalid_purchase_token");
  });
  it("uses provider acknowledge endpoint and never persists a client state",async()=>{
-  const http=vi.fn(async()=>new Response("",{status:200}));
+  const http=vi.fn(async (_resource:string|URL,_init?:RequestInit)=>new Response("",{status:200}));
   const verifier=createGooglePlaySubscriptionVerifier({
    packageName:"com.masanawa.app",getAccessToken:async()=>"test_server_access_token_12345",http:http as typeof fetch});
   await verifier.acknowledge(purchaseToken,"maths_monthly");
