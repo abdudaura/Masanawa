@@ -1611,6 +1611,31 @@
       "heartbeat_at": "2026-10-11T04:11:24.513Z",
       "expires_at": "2026-10-11T04:16:24.513Z",
       "notes": "Feature-only no production migration, no financial write, AF00 composition needed."
+    },
+    {
+      "claim_id": "l-masana-a04-draft-rehearsal-20261011-gpt6-0513",
+      "owner": "L-MASANA A04 / GPT-6",
+      "scope": "A04 staff-only draft Masana rehearsal with no-live execution, tenant-safe PG/audit/outbox, status UI and worker provider port, J18 tests; AF00 composes root",
+      "paths": [
+        "packages/masana/migrations/0004_rehearsals.sql",
+        "packages/masana/src/rehearsal.ts",
+        "packages/masana/src/rehearsal.test.ts",
+        "adapters/storage/postgres/src/masana/rehearsal.ts",
+        "services/gateway/src/modules/masana/rehearsal_routes.ts",
+        "services/gateway/src/modules/masana/rehearsal_routes.test.ts",
+        "services/worker/src/jobs/masana/rehearsals.ts",
+        "services/worker/src/jobs/masana/rehearsals.test.ts",
+        "apps/admin_mobile/lib/src/features/masana/rehearsal_screen.dart",
+        "apps/admin_mobile/lib/src/features/masana/rehearsal_api.dart",
+        "apps/admin_mobile/lib/src/features/masana/masana_studio_screen.dart",
+        "apps/admin_mobile/test/features/masana/rehearsal_screen_test.dart",
+        "tests/e2e/J18/rehearsals.test.mjs"
+      ],
+      "branch": "lane/l-masana-a04-rehearsal-20261011-gpt6-0513",
+      "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
+      "claimed_at": "2026-10-11T04:12:53.843Z",
+      "heartbeat_at": "2026-10-11T04:12:53.843Z",
+      "expires_at": "2026-10-11T04:17:53.843Z"
     }
   ],
   "history": [
