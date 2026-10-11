@@ -5,8 +5,8 @@ type FeedPort={
  detail(t:string,v:string|null,id:string):Promise<unknown>;
  publish(a:Actor,p:{authorMasanaId:string;kind:"text"|"image"|"audio";body:string;media?:string[];transcript?:string|null;idempotencyKey:string}):Promise<unknown>;
  like(a:Actor,id:string,e:boolean):Promise<unknown>;save(a:Actor,id:string,e:boolean):Promise<unknown>;
- comment(a:Actor,id:string,text:string,key:string,newAccount:boolean):Promise<unknown>;
- comments(t:string,id:string,v:string|null,b?:string):Promise<unknown>;
+ comment(a:Actor,id:string,text:string,key:string,newAccount:boolean,parentId?:string|null):Promise<unknown>;
+ comments(t:string,id:string,v:string|null,b?:string,sort?:"newest"|"oldest"):Promise<unknown>;
 };
 export interface FeedRoutesOptions {
  readonly service:FeedPort;
@@ -34,7 +34,11 @@ export async function registerHomeFeedRoutes(app:FastifyInstance,o:FeedRoutesOpt
   return o.service.list(tenant,viewer,mode,str(q.cursor)||undefined);
  }));
  app.get("/v1/posts/:id",async(req,rep)=>run(req,rep,async({tenant,viewer})=>o.service.detail(tenant,viewer,str(object(req.params).id))));
- app.get("/v1/posts/:id/comments",async(req,rep)=>run(req,rep,async({tenant,viewer})=>o.service.comments(tenant,str(object(req.params).id),viewer,str(object(req.query).before)||undefined)));
+ app.get("/v1/posts/:id/comments",async(req,rep)=>run(req,rep,async({tenant,viewer})=>{
+  const q=object(req.query),sort=q.sort===undefined?"newest":str(q.sort);
+  if(sort!=="newest"&&sort!=="oldest")return rep.code(422).send({code:"invalid_sort"});
+  return o.service.comments(tenant,str(object(req.params).id),viewer,str(q.before)||undefined,sort);
+ }));
  app.post("/v1/admin/feed/posts",async(req,rep)=>run(req,rep,async({actor})=>{
   const a=member(actor),b=object(req.body);
   return o.service.publish(a,{authorMasanaId:str(b.authorMasanaId),kind:str(b.kind) as "text"|"image"|"audio",body:str(b.body),media:Array.isArray(b.media)?b.media.filter(x=>typeof x==="string") as string[]:[],transcript:typeof b.transcript==="string"?b.transcript:null,idempotencyKey:str(req.headers["idempotency-key"])});
@@ -43,6 +47,6 @@ export async function registerHomeFeedRoutes(app:FastifyInstance,o:FeedRoutesOpt
  app.put("/v1/posts/:id/save",async(req,rep)=>run(req,rep,async({actor})=>o.service.save(member(actor),str(object(req.params).id),view(object(req.body).enabled))));
  app.post("/v1/posts/:id/comments",async(req,rep)=>run(req,rep,async({actor})=>{
   const a=member(actor),b=object(req.body);
-  return o.service.comment(a,str(object(req.params).id),str(b.body),str(req.headers["idempotency-key"]),await o.isNewAccount(req));
+  return o.service.comment(a,str(object(req.params).id),str(b.body),str(req.headers["idempotency-key"]),await o.isNewAccount(req),typeof b.parentId==="string"?b.parentId:null);
  }));
 }
