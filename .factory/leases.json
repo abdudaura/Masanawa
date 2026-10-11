@@ -2169,7 +2169,12 @@
       "claimed_at": "2026-10-11T07:49:37.290Z",
       "heartbeat_at": "2026-10-11T07:49:37.290Z",
       "expires_at": "2026-10-11T07:54:37.290Z",
-      "notes": "Default off until AF00 binds authenticated VideoRepository; no main, live provider, or financial change."
+      "notes": "Default off until AF00 binds authenticated VideoRepository; no main, live provider, or financial change.",
+      "source_pr": 664,
+      "source_head": "2180744c780499989ddc85533e6c21b040ed1cdb",
+      "released_at": "2026-10-11T07:54:31.385Z",
+      "release_reason": "Six-path C27-C29 Dart/client regression repair source in draft #664, AF00 handoff #616 comment 6106873973. New code source readback verified. Exact-head Foundation CI 38122884550 and Mobile 38122884536 have all jobs failed zero steps; TypeScript/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; no checked out monorepo/Flutter/PG SDK. Protected router composition and actual provider/device tests absent. Nondeploying integration NOT MERGED; no main/provider/database change.",
+      "integration_head_sha": null
     }
   ],
   "history": [
