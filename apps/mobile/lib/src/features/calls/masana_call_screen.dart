@@ -45,6 +45,7 @@ class _MasanaCallScreenState extends State<MasanaCallScreen> {
   MasanaCallMedia? media;
   String? callId, error;
   bool muted=false, speakerOn=false, starting=false;
+  late final String _requestId=MasanaCallApi.makeRequestId();
   DateTime? connectedAt, deadline;
   Timer? ticker;
   int seconds=0;
@@ -62,7 +63,7 @@ class _MasanaCallScreenState extends State<MasanaCallScreen> {
       }
       if(!mounted) return;
       _set(next:MasanaCallPhase.connecting);
-      final ticket=await widget.api.start(widget.characterId,MasanaCallApi.makeRequestId());
+      final ticket=await widget.api.start(widget.characterId,_requestId);
       callId=ticket.callId; deadline=ticket.expiresAt;
       if(!mounted) {await widget.api.end(ticket.callId);return;}
       if(!ticket.expiresAt.isAfter(DateTime.now())) throw StateError('Call expired');
