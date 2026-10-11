@@ -12,6 +12,7 @@ interface CallStore {
   markActive(input:CallActor & {callId:string}):Promise<boolean>;
   finish(input:CallActor & {callId:string;state:"ended"|"failed";failureCode?:string}):Promise<boolean>;
   get(input:CallActor & {callId:string}):Promise<CallRecord|null>;
+  findByRequest(input:CallActor & {characterId:string;requestId:string}):Promise<CallRecord|null>;
 }
 
 /** Exact tenant + fan fencing; caller never supplies actor identity. */
@@ -45,8 +46,8 @@ export function createPostgresMasanaCallStore(db: Pick<Pool,"query">): CallStore
     },
     async markActive(input): Promise<boolean> {
       const r=await db.query([
-        "UPDATE masana.call_sessions SET state='active',started_at=now()",
-        "WHERE tenant_id=$1 AND fan_user_id=$2 AND call_id=$3 AND state='connecting'",
+        "UPDATE masana.call_sessions SET state='active',started_at=coalesce(started_at,now())",
+        "WHERE tenant_id=$1 AND fan_user_id=$2 AND call_id=$3 AND state IN ('connecting','active')",
         "AND expires_at > now() RETURNING call_id",
       ].join(" "),[input.tenantId,input.fanUserId,input.callId]);
       return r.rows.length===1;
@@ -72,6 +73,19 @@ export function createPostgresMasanaCallStore(db: Pick<Pool,"query">): CallStore
         "FROM masana.call_sessions",
         "WHERE tenant_id=$1 AND fan_user_id=$2 AND call_id=$3",
       ].join(" "),[input.tenantId,input.fanUserId,input.callId]);
+      return r.rows[0]??null;
+    },
+    async findByRequest(input): Promise<CallRecord|null> {
+      const r=await db.query<CallRecord>([
+        'SELECT call_id AS "callId",tenant_id AS "tenantId",',
+        'fan_user_id AS "fanUserId",character_id AS "characterId",',
+        'room_name AS "roomName",state,expires_at AS "expiresAt"',
+        "FROM masana.call_sessions",
+        "WHERE tenant_id=$1 AND fan_user_id=$2 AND character_id=$3 AND request_id=$4",
+        "AND state IN ('connecting','active') AND expires_at>now()",
+      ].join(" "),[
+        input.tenantId,input.fanUserId,input.characterId,input.requestId,
+      ]);
       return r.rows[0]??null;
     },
     async claimExpired(limit): Promise<readonly {callId:string;roomName:string}[]> {
