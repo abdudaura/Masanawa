@@ -2,7 +2,7 @@ import {describe,it,expect,vi} from "vitest";
 import {createMasanaLiveKitDispatch} from "./livekit_dispatch.js";
 describe("J04 LiveKit dispatch transport",()=>{
   const setup=(enabled=true)=>{
-    const fetchImpl=vi.fn(async()=>({ok:true,status:200} as Response));
+    const fetchImpl=vi.fn(async (_url:string, _options:RequestInit)=>({ok:true,status:200} as Response));
     const provider=createMasanaLiveKitDispatch({
       url:"wss://lk.example",apiKey:"key",apiSecret:"secret-with-required-length",
       enabled:async()=>enabled,fetchImpl:fetchImpl as unknown as typeof fetch,
