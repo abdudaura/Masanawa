@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/chat/chat_format.dart';
+import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
@@ -23,12 +24,16 @@ class _SignedOutSessionController extends SessionController {
   SessionState build() => const SessionSignedOut();
 }
 
-ProviderContainer _container() => ProviderContainer(
-  overrides: [
-    apiClientProvider.overrideWithValue(_FailingClient()),
+ProviderContainer _container() {
+  final client = _FailingClient();
+  return ProviderContainer(overrides: [
+    apiClientProvider.overrideWithValue(client),
+    agentTransportProvider.overrideWithValue(PreviewAgentTransport(
+      sendPreview: (message, characterId) => client.aiChat(message, masana: characterId),
+    )),
     sessionProvider.overrideWith(_SignedOutSessionController.new),
-  ],
-);
+  ]);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -399,6 +399,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String delta)? onTextDelta,
+    void Function(AgentTurnReceipt)? onAccepted,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
     String? requestId,
   }) async {
@@ -407,7 +408,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     _turnTokens[binding.characterId] = token;
 
     try {
-      if (onTextDelta != null) {
+      if (onTextDelta != null || onAccepted != null) {
         var streamedText = '';
         Map<String, dynamic>? done;
         await for (final event in _client.postStream(
@@ -417,11 +418,18 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
           requestId: requestId,
         )) {
           final type = event['type'];
+          if (type == 'accepted') {
+            final receipt = requestId == null
+                ? null
+                : AgentTurnReceipt.fromEvent(event, requestId);
+            if (receipt != null) onAccepted?.call(receipt);
+            continue;
+          }
           if (type == 'delta') {
             final delta = event['text'];
             if (delta is String && delta.isNotEmpty) {
               streamedText += delta;
-              onTextDelta(delta);
+              onTextDelta?.call(delta);
             }
             continue;
           }
@@ -433,7 +441,20 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
             continue;
           }
           if (type == 'error') {
-            throw const ApiException('Agent streaming turn failed');
+            final code = event['code'];
+            // Preserve only public recovery codes; never display server internals.
+            throw ApiException(
+              'Agent streaming turn failed',
+              code:
+                  const {
+                    'agents.turn_pending',
+                    'agents.turn_settlement_uncertain',
+                    'agents.session_closed',
+                    'agents.session_not_found',
+                  }.contains(code)
+                  ? code as String
+                  : 'turn_failed',
+            );
           }
           if (type == 'done') done = event;
         }

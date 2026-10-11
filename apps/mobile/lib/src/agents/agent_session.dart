@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 import '../chat/message_parts.dart';
 
@@ -63,6 +64,30 @@ class AgentTurnResult {
   final int? audioDurationMs;
 }
 
+/// Server acknowledgment of canonical command custody, never human delivery/read.
+@immutable
+class AgentTurnReceipt {
+  const AgentTurnReceipt({required this.requestId, required this.state});
+  final String requestId;
+  final String state;
+
+  static AgentTurnReceipt? fromEvent(
+    Map<String, dynamic> event,
+    String expectedRequestId,
+  ) {
+    final requestId = event['requestId'];
+    final state = event['state'];
+    if (requestId is! String ||
+        requestId != expectedRequestId ||
+        !RegExp(
+          r'^request_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+        ).hasMatch(requestId) ||
+        !const {'pending', 'completed', 'failed'}.contains(state))
+      return null;
+    return AgentTurnReceipt(requestId: requestId, state: state as String);
+  }
+}
+
 abstract class AgentTransport {
   Future<AgentSessionBinding> openSession(String characterId);
 
@@ -70,6 +95,7 @@ abstract class AgentTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String delta)? onTextDelta,
+    void Function(AgentTurnReceipt)? onAccepted,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
     String? requestId,
   });
@@ -115,6 +141,7 @@ class PreviewAgentTransport implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String delta)? onTextDelta,
+    void Function(AgentTurnReceipt)? onAccepted,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
     String? requestId,
   }) async {

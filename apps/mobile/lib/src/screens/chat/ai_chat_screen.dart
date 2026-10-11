@@ -3494,13 +3494,46 @@ class _ChatBubble extends StatelessWidget {
                       ],
                       if (isUser) ...[
                         const SizedBox(width: 3),
+                        if ({
+                          'queued',
+                          'sending',
+                          'accepted',
+                          'processing',
+                          'delivered',
+                        }.contains(message.deliveryStatus))
+                          Flexible(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 3),
+                              child: Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  switch (message.deliveryStatus) {
+                                    'queued' => 'Queued on device',
+                                    'accepted' => 'Accepted by server',
+                                    'processing' => 'Processing',
+                                    'delivered' => 'Completed',
+                                    _ => 'Sending',
+                                  },
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: u.textMuted,
+                                    fontSize: 10.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         Icon(
                           switch (message.deliveryStatus) {
-                            'sending' || 'uploading' || 'processing' =>
-                              Icons.schedule,
+                            'sending' ||
+                            'uploading' ||
+                            'processing' ||
+                            'accepted' => Icons.schedule,
                             'queued' => Icons.cloud_off_outlined,
                             'failed' => Icons.error_outline,
                             'stopped' => Icons.stop_circle_outlined,
+                            'delivered' => Icons.check,
                             _ => Icons.done_all,
                           },
                           size: 14,

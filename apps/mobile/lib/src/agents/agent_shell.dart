@@ -62,6 +62,7 @@ class AgentHistoryMessage {
     required this.parts,
     required this.createdAt,
     this.agentRunId,
+    this.replyToKey,
   });
   final String key;
   final String direction;
@@ -70,6 +71,9 @@ class AgentHistoryMessage {
   final List<Map<String, dynamic>> parts;
   final DateTime createdAt;
   final String? agentRunId;
+
+  /// Canonical server history key of this assistant reply's initiating message.
+  final String? replyToKey;
 
   factory AgentHistoryMessage.fromJson(Map<String, dynamic> json) =>
       AgentHistoryMessage(
@@ -85,6 +89,7 @@ class AgentHistoryMessage {
             DateTime.tryParse(json['createdAt'] as String? ?? '') ??
                 DateTime.fromMillisecondsSinceEpoch(0),
         agentRunId: json['agentRunId'] as String?,
+        replyToKey: json['replyToKey'] as String?,
       );
 }
 

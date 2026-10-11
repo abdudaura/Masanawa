@@ -92,6 +92,7 @@ class AiChatMessage {
     this.deliveryStatus = 'sent',
     this.uploadProgress,
     this.requestId,
+    this.transportPrompt,
   });
 
   final String id;
@@ -109,6 +110,7 @@ class AiChatMessage {
   final String deliveryStatus;
   final double? uploadProgress;
   final String? requestId;
+  final String? transportPrompt;
 
   List<ChatAttachment> get allAttachments => [
     if (attachment != null) attachment!,
@@ -128,6 +130,7 @@ class AiChatMessage {
     String? deliveryStatus,
     double? uploadProgress,
     String? requestId,
+    String? transportPrompt,
   }) => AiChatMessage(
     id: id,
     isUser: isUser,
@@ -144,6 +147,7 @@ class AiChatMessage {
     deliveryStatus: deliveryStatus ?? this.deliveryStatus,
     uploadProgress: uploadProgress ?? this.uploadProgress,
     requestId: requestId ?? this.requestId,
+    transportPrompt: transportPrompt ?? this.transportPrompt,
   );
 
   Map<String, dynamic> toJson() => {
@@ -163,6 +167,7 @@ class AiChatMessage {
     if (deliveryStatus != 'sent') 'deliveryStatus': deliveryStatus,
     if (uploadProgress != null) 'uploadProgress': uploadProgress,
     if (requestId != null) 'requestId': requestId,
+    if (transportPrompt != null) 'transportPrompt': transportPrompt,
   };
 
   factory AiChatMessage.fromJson(Map<String, dynamic> json) => AiChatMessage(
@@ -192,6 +197,7 @@ class AiChatMessage {
     deliveryStatus: json['deliveryStatus'] as String? ?? 'sent',
     uploadProgress: (json['uploadProgress'] as num?)?.toDouble(),
     requestId: json['requestId'] as String?,
+    transportPrompt: json['transportPrompt'] as String?,
   );
 }
 
@@ -370,7 +376,10 @@ class AiChatController extends Notifier<AiChatState> {
   final Map<String, int> _threadGenerations = {};
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _flushingQueue = false;
-  final Map<String, StreamSubscription<AgentShellEvent>> _eventSubscriptions = {};
+  final Set<String> _activeDispatches = {};
+  Future<void> _saveQueue = Future<void>.value();
+  final Map<String, StreamSubscription<AgentShellEvent>> _eventSubscriptions =
+      {};
   final Map<String, String> _eventCursors = {};
   final Map<String, ShellActionCoordinator> _actionCoordinators = {};
   final Map<String, EncryptedShellActionJournal> _actionJournals = {};
@@ -425,7 +434,7 @@ class AiChatController extends Notifier<AiChatState> {
       _eventSubscriptions.clear();
       _actionCoordinators.clear();
       _eventCursors.clear();
-      state = state.copyWith(shellConfigs: {});
+      state = state.copyWith(shellConfigs: {}, sendingIn: {});
     });
     return const AiChatState();
   }
@@ -516,8 +525,26 @@ class AiChatController extends Notifier<AiChatState> {
         byKey['${message.isUser ? 'user' : 'assistant'}:$requestId'] = message;
       }
     }
+    // Allocate stable IDs for both directions first: server history need not
+    // deliver the initiating user message before its assistant reply.
+    final idsByKey = <String, String>{
+      for (final entry in byKey.entries) entry.key: entry.value.id,
+    };
+    for (final item in history) {
+      if ((item.direction == 'user' || item.direction == 'assistant') &&
+          item.key == '${item.direction}:${item.requestId}') {
+        idsByKey[item.key] = byKey[item.key]?.id ?? 'server-${item.key}';
+      }
+    }
     for (final item in history) {
       final existing = byKey[item.key];
+      final expectedSource = 'user:${item.requestId}';
+      final replySource =
+          item.direction == 'assistant' &&
+              item.key == 'assistant:${item.requestId}' &&
+              (item.replyToKey == null || item.replyToKey == expectedSource)
+          ? idsByKey[expectedSource]
+          : null;
       final parsedParts = [
         for (final raw in item.parts)
           AgentMessagePart.fromJson(raw),
@@ -525,18 +552,34 @@ class AiChatController extends Notifier<AiChatState> {
       final restored = AiChatMessage(
         id: existing?.id ?? 'server-${item.key}',
         isUser: item.direction == 'user',
-        text: item.text,
+        text: item.direction == 'user' && existing != null
+            ? existing.text
+            : item.text,
         createdAt: item.createdAt,
         attachment: existing?.attachment,
         attachments: existing?.attachments ?? const [],
-        parts: parsedParts.isEmpty ? (existing?.parts ?? const []) : parsedParts,
-        replyToId: existing?.replyToId,
+        parts: parsedParts.isEmpty
+            ? (existing?.parts ?? const [])
+            : parsedParts,
+        replyToId: item.direction == 'assistant'
+            ? replySource
+            : existing?.replyToId,
         replyPreview: existing?.replyPreview,
         reaction: existing?.reaction,
         editedAt: existing?.editedAt,
         deleted: existing?.deleted ?? false,
-        deliveryStatus: 'delivered',
+        deliveryStatus:
+            item.direction == 'user' &&
+                !history.any(
+                  (m) =>
+                      m.direction == 'assistant' &&
+                      m.requestId == item.requestId,
+                ) &&
+                existing?.deliveryStatus != 'delivered'
+            ? 'accepted'
+            : 'delivered',
         requestId: item.requestId,
+        transportPrompt: existing?.transportPrompt,
       );
       byKey[item.key] = restored;
     }
@@ -560,23 +603,62 @@ class AiChatController extends Notifier<AiChatState> {
     AgentShellTransport transport,
   ) async {
     final generation = _connectionGeneration;
+    final cacheGeneration = _cacheGeneration;
     final thread = threadOf(characterId);
     final threadGeneration = _threadGenerations[characterId] ?? 0;
+    var requeued = false;
     for (final message in thread.messages.where(
       (m) => m.isUser &&
           m.requestId != null &&
-          {'sending', 'queued', 'processing', 'failed'}.contains(m.deliveryStatus),
+          {
+            'sending',
+            'queued',
+            'accepted',
+            'processing',
+            'failed',
+          }.contains(m.deliveryStatus),
     )) {
+      final active = _activeDispatches.contains(
+        '$cacheGeneration:$generation:$characterId:${message.id}',
+      );
+      if (active &&
+          threadOf(characterId).messages.any(
+            (m) =>
+                !m.isUser &&
+                m.requestId == message.requestId &&
+                m.deliveryStatus == 'streaming',
+          ))
+        continue;
       try {
-        final status = await transport.turnStatus(characterId, message.requestId!);
-        if (_disposed || generation != _connectionGeneration ||
-            threadGeneration != (_threadGenerations[characterId] ?? 0)) return;
+        final status = await transport.turnStatus(
+          characterId,
+          message.requestId!,
+        );
+        if (_disposed ||
+            generation != _connectionGeneration ||
+            cacheGeneration != _cacheGeneration ||
+            threadGeneration != (_threadGenerations[characterId] ?? 0))
+          return;
         if (status.state == 'completed') {
           _setDelivery(characterId, message.id, 'delivered');
-          final assistantExists = threadOf(characterId).messages.any(
+          final assistants = threadOf(characterId).messages.where(
             (m) => !m.isUser && m.requestId == message.requestId,
           );
-          if (!assistantExists) {
+          if (assistants.isNotEmpty &&
+              assistants.first.deliveryStatus != 'delivered') {
+            await _finalizeAiStream(
+              characterId,
+              assistants.first.id,
+              status.reply ?? '',
+              parts: [
+                for (final raw in status.parts) AgentMessagePart.fromJson(raw),
+              ],
+              agentRunId: status.agentRunId,
+              requestId: message.requestId,
+              replyToId: message.id,
+              releaseSending: false,
+            );
+          } else if (assistants.isEmpty) {
             await _appendAi(
               characterId,
               status.reply ?? '',
@@ -585,14 +667,55 @@ class AiChatController extends Notifier<AiChatState> {
               ],
               agentRunId: status.agentRunId,
               requestId: message.requestId,
+              replyToId: message.id,
+              releaseSending: false,
             );
           }
         } else if (status.state == 'pending') {
           _setDelivery(characterId, message.id, 'processing');
+          if (!active) {
+            for (final assistant in threadOf(characterId).messages.where(
+              (m) =>
+                  !m.isUser &&
+                  m.requestId == message.requestId &&
+                  m.deliveryStatus == 'streaming',
+            )) {
+              _setDelivery(characterId, assistant.id, 'processing');
+            }
+          }
         } else if (status.state == 'failed') {
           _setDelivery(characterId, message.id, 'failed');
+        } else if (status.state == 'missing' &&
+            message.deliveryStatus == 'sending') {
+          // A process restart before server claim must not strand a sent bubble.
+          // Reuse the persisted request and prompt; an ambiguous HTTP failure
+          // never supplies this authoritative absence proof.
+          _removeStreamingPlaceholders(
+            characterId,
+            requestId: message.requestId,
+          );
+          _setDelivery(characterId, message.id, 'queued');
+          requeued = true;
         }
       } catch (_) {}
+    }
+    if (requeued &&
+        !_disposed &&
+        generation == _connectionGeneration &&
+        cacheGeneration == _cacheGeneration &&
+        threadGeneration == (_threadGenerations[characterId] ?? 0)) {
+      try {
+        await _save(requirePersistence: true);
+      } catch (_) {
+        // A storage failure is not permission to dispatch an unpersisted retry.
+        return;
+      }
+      if (!_disposed &&
+          generation == _connectionGeneration &&
+          cacheGeneration == _cacheGeneration &&
+          threadGeneration == (_threadGenerations[characterId] ?? 0)) {
+        unawaited(_flushQueuedMessages());
+      }
     }
   }
 
@@ -829,35 +952,74 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<void> _enqueueMessage(
     String characterId,
-    AiChatMessage message,
-  ) async {
+    AiChatMessage message, {
+    bool requirePersistence = false,
+  }) async {
     final thread = threadOf(characterId);
     state = state.copyWith(
       threads: {
         ...state.threads,
         characterId: thread.copyWith(
-          messages: [...thread.messages, message.copyWith(deliveryStatus: 'queued')],
+          messages: thread.messages.any((m) => m.id == message.id)
+              ? [
+                  for (final m in thread.messages)
+                    if (m.id == message.id)
+                      message.copyWith(deliveryStatus: 'queued')
+                    else
+                      m,
+                ]
+              : [
+                  ...thread.messages,
+                  message.copyWith(deliveryStatus: 'queued'),
+                ],
           updatedAt: DateTime.now(),
         ),
       },
     );
-    await _save();
+    await _save(requirePersistence: requirePersistence);
   }
 
   Future<void> _flushQueuedMessages() async {
     if (_flushingQueue || _disposed) return;
     _flushingQueue = true;
+    final connectionGeneration = _connectionGeneration;
+    final cacheGeneration = _cacheGeneration;
+    final ownerId = _cacheOwnerId;
+    bool current() =>
+        !_disposed &&
+        connectionGeneration == _connectionGeneration &&
+        cacheGeneration == _cacheGeneration &&
+        ownerId == _cacheOwnerId;
     try {
       for (final entry in state.threads.entries.toList()) {
+        if (!current()) return;
         final characterId = entry.key;
+        final threadGeneration = _threadGenerations[characterId] ?? 0;
+        if (state.sendingIn.contains(characterId)) continue;
         final queued = entry.value.messages
             .where((m) => m.isUser && m.deliveryStatus == 'queued')
             .toList();
         for (final message in queued) {
-          if (_disposed) return;
+          if (!current() ||
+              threadGeneration != (_threadGenerations[characterId] ?? 0))
+            return;
           if (await _offlineNow()) return;
+          if (!current() ||
+              threadGeneration != (_threadGenerations[characterId] ?? 0))
+            return;
+          final live = state.threads[characterId]?.messages.where(
+            (m) =>
+                m.id == message.id && m.isUser && m.deliveryStatus == 'queued',
+          );
+          if (live == null ||
+              live.isEmpty ||
+              state.sendingIn.contains(characterId))
+            continue;
           _setDelivery(characterId, message.id, 'sending');
-          await _dispatchUserMessage(characterId, message, retry: true);
+          await _dispatchUserMessage(characterId, live.first, retry: true);
+          if (!current() ||
+              threadGeneration != (_threadGenerations[characterId] ?? 0))
+            return;
         }
       }
     } finally {
@@ -1040,6 +1202,8 @@ class AiChatController extends Notifier<AiChatState> {
     final text = rawText.trim();
     if (text.isEmpty || state.sendingIn.contains(characterId)) return;
     final threadGeneration = _threadGenerations[characterId] ?? 0;
+    final connectionGeneration = _connectionGeneration;
+    final cacheGeneration = _cacheGeneration;
     final message = AiChatMessage(
       id: _newId(),
       isUser: true,
@@ -1047,23 +1211,54 @@ class AiChatController extends Notifier<AiChatState> {
       createdAt: DateTime.now(),
       replyToId: replyToId,
       replyPreview: replyPreview,
-      deliveryStatus: 'sending',
+      deliveryStatus: 'queued',
       requestId: createRequestId(),
-    );
-    final offline = await _offlineNow();
-    if (_disposed ||
-        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
-      return;
-    }
-    if (offline) {
-      await _enqueueMessage(characterId, message);
-      return;
-    }
-    await _dispatchUserMessage(
-      characterId,
-      message,
       transportPrompt: transportPrompt,
     );
+    // Insert immediately and persist before connectivity/session/network awaits.
+    // Reserve this thread so connectivity flushing cannot dispatch it twice.
+    state = state.copyWith(sendingIn: {...state.sendingIn, characterId});
+    try {
+      await _enqueueMessage(characterId, message, requirePersistence: true);
+    } catch (_) {
+      if (!_disposed &&
+          cacheGeneration == _cacheGeneration &&
+          threadGeneration == (_threadGenerations[characterId] ?? 0)) {
+        _setDelivery(characterId, message.id, 'failed');
+        state = state.copyWith(
+          sendingIn: {...state.sendingIn}..remove(characterId),
+        );
+        await _appendAi(
+          characterId,
+          'Your message could not be saved on this device. Please try again.',
+          parts: [
+            AgentMessagePart(
+              kind: AgentMessagePartKind.status,
+              status: 'failed',
+              referenceId: message.id,
+              actionLabel: 'Retry',
+            ),
+          ],
+        );
+      }
+      return;
+    }
+    bool current() =>
+        !_disposed &&
+        cacheGeneration == _cacheGeneration &&
+        connectionGeneration == _connectionGeneration &&
+        threadGeneration == (_threadGenerations[characterId] ?? 0);
+    if (!current()) return;
+    final offline = await _offlineNow();
+    if (!current()) return;
+    if (offline) {
+      state = state.copyWith(
+        sendingIn: {...state.sendingIn}..remove(characterId),
+      );
+      return;
+    }
+    _setDelivery(characterId, message.id, 'sending');
+    await _dispatchUserMessage(characterId, message, retry: true);
   }
 
   Future<void> sendAttachment(
@@ -1149,34 +1344,59 @@ class AiChatController extends Notifier<AiChatState> {
     String? transportPrompt,
   }) async {
     final connectionGeneration = _connectionGeneration;
+    final cacheGeneration = _cacheGeneration;
     final threadGeneration = _threadGenerations[characterId] ?? 0;
+    if (state.sendingIn.contains(characterId) &&
+        threadOf(characterId).messages.any(
+          (m) =>
+              m.id == userMsg.id &&
+              {'accepted', 'processing'}.contains(m.deliveryStatus),
+        ))
+      return;
+    bool current() =>
+        !_disposed &&
+        cacheGeneration == _cacheGeneration &&
+        connectionGeneration == _connectionGeneration &&
+        threadGeneration == (_threadGenerations[characterId] ?? 0);
+    final dispatchKey =
+        '$cacheGeneration:$connectionGeneration:$characterId:${userMsg.id}';
+    if (!_activeDispatches.add(dispatchKey)) return;
     final thread = threadOf(characterId);
     state = state.copyWith(
       threads: {
         ...state.threads,
         characterId: thread.copyWith(
-          messages: retry ? thread.messages : [...thread.messages, userMsg],
+          messages: retry || thread.messages.any((m) => m.id == userMsg.id)
+              ? thread.messages
+              : [...thread.messages, userMsg],
           updatedAt: DateTime.now(),
         ),
       },
       sendingIn: {...state.sendingIn, characterId},
     );
-    await _save();
-    if (_disposed || threadGeneration != (_threadGenerations[characterId] ?? 0))
-      return;
+    var accepted = false;
+    var processingStarted = false;
     try {
+      await _save(requirePersistence: userMsg.allAttachments.isEmpty);
+      if (!current()) return;
       final attachment = userMsg.attachment;
       final attachmentSet = userMsg.attachments;
       final hasMedia = attachment != null || attachmentSet.isNotEmpty;
-      final streamMessageId =
-          !hasMedia ? _beginAiStream(characterId) : null;
+      final streamMessageId = !hasMedia
+          ? _beginAiStream(
+              characterId,
+              replyToId: userMsg.id,
+              requestId: userMsg.requestId,
+            )
+          : null;
       final visiblePrompt = userMsg.replyPreview?.trim().isNotEmpty == true
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
       final promptText =
-          transportPrompt?.trim().isNotEmpty == true
-              ? transportPrompt!.trim()
-              : visiblePrompt;
+          (transportPrompt ?? userMsg.transportPrompt)?.trim().isNotEmpty ==
+              true
+          ? (transportPrompt ?? userMsg.transportPrompt)!.trim()
+          : visiblePrompt;
       final mediaCaption = promptText;
       var livePcmStarted = false;
       DateTime? livePcmStartedAt;
@@ -1184,20 +1404,36 @@ class AiChatController extends Notifier<AiChatState> {
           ? await _sendViaTransport(
               characterId,
               promptText,
+              onAccepted: (receipt) {
+                if (!current() || receipt.requestId != userMsg.requestId)
+                  return;
+                accepted = true;
+                _setDelivery(
+                  characterId,
+                  userMsg.id,
+                  receipt.state == 'failed' ? 'failed' : 'accepted',
+                );
+              },
               onTextDelta: (delta) {
+                if (!current()) return;
+                if (accepted && !processingStarted) {
+                  processingStarted = true;
+                  _setDelivery(characterId, userMsg.id, 'processing');
+                }
                 if (streamMessageId != null) {
                   _appendAiDelta(characterId, streamMessageId, delta);
                 }
               },
               requestId: userMsg.requestId,
               onAudioPcmChunk: (chunk) async {
+                if (!current()) return;
                 if (!livePcmStarted) {
                   livePcmStarted = await LivePcmAudio.start(sampleRate: 24000);
                   if (livePcmStarted) {
                     livePcmStartedAt = DateTime.now();
                   }
                 }
-                if (livePcmStarted) {
+                if (livePcmStarted && current()) {
                   await LivePcmAudio.write(chunk);
                 }
               },
@@ -1230,13 +1466,7 @@ class AiChatController extends Notifier<AiChatState> {
           ),
         );
       }
-      if (_disposed ||
-          threadGeneration != (_threadGenerations[characterId] ?? 0)) {
-        return;
-      }
-      if (connectionGeneration != _connectionGeneration) {
-        throw const ApiException('Connection changed');
-      }
+      if (!current()) return;
       _updateMessage(
         characterId,
         userMsg.id,
@@ -1251,6 +1481,7 @@ class AiChatController extends Notifier<AiChatState> {
         final path =
             '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
         await File(path).writeAsBytes(audio, flush: true);
+        if (!current()) return;
         replyAudio = ChatAttachment(
           kind: 'voice',
           path: path,
@@ -1268,6 +1499,7 @@ class AiChatController extends Notifier<AiChatState> {
           attachment: replyAudio,
           agentRunId: result.agentRunId,
           requestId: userMsg.requestId,
+          replyToId: userMsg.id,
         );
       } else {
         await _appendAi(
@@ -1277,21 +1509,38 @@ class AiChatController extends Notifier<AiChatState> {
           attachment: replyAudio,
           agentRunId: result.agentRunId,
           requestId: userMsg.requestId,
+          replyToId: userMsg.id,
         );
       }
     } catch (error) {
       unawaited(LivePcmAudio.stop());
-      if (_disposed ||
-          threadGeneration != (_threadGenerations[characterId] ?? 0)) {
-        return;
-      }
+      if (!current()) return;
       if (error is ApiException &&
           (error.statusCode == 401 ||
               error.statusCode == 403 ||
               error.statusCode == 404)) {
         _bindings.remove(characterId);
       }
-      _removeStreamingPlaceholders(characterId);
+      _removeStreamingPlaceholders(characterId, requestId: userMsg.requestId);
+      final needsReconciliation =
+          accepted ||
+          (error is ApiException &&
+              {
+                'agents.turn_pending',
+                'agents.turn_settlement_uncertain',
+              }.contains(error.code));
+      if (needsReconciliation) {
+        // An interrupted reply is not permission to execute spending again.
+        _setDelivery(characterId, userMsg.id, 'processing');
+        state = state.copyWith(
+          sendingIn: {...state.sendingIn}..remove(characterId),
+        );
+        await _save();
+        if (!current()) return;
+        final shell = _shellTransport;
+        if (shell != null) await _reconcilePendingTurns(characterId, shell);
+        return;
+      }
       _setDelivery(characterId, userMsg.id, 'failed');
       final feedback = AgentFeedback.fromError(error, conversation: true);
       await _appendAi(
@@ -1306,6 +1555,13 @@ class AiChatController extends Notifier<AiChatState> {
           ),
         ],
       );
+    } finally {
+      _activeDispatches.remove(dispatchKey);
+      if (current()) {
+        state = state.copyWith(
+          sendingIn: {...state.sendingIn}..remove(characterId),
+        );
+      }
     }
   }
 
@@ -1464,8 +1720,12 @@ class AiChatController extends Notifier<AiChatState> {
 
   bool _isStaleSessionError(Object error) =>
       error is ApiException &&
+      !{
+        'agents.turn_pending',
+        'agents.turn_settlement_uncertain',
+      }.contains(error.code) &&
       (error.statusCode == 404 ||
-          error.statusCode == 409 ||
+          (error.statusCode == 409 && error.code == null) ||
           error.code == 'agents.session_not_found' ||
           error.code == 'agents.session_closed');
 
@@ -1473,28 +1733,58 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     String prompt, {
     void Function(String delta)? onTextDelta,
+    void Function(AgentTurnReceipt)? onAccepted,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
     String? requestId,
   }) async {
+    final connectionGeneration = _connectionGeneration;
+    final cacheGeneration = _cacheGeneration;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
+    bool current() =>
+        !_disposed &&
+        connectionGeneration == _connectionGeneration &&
+        cacheGeneration == _cacheGeneration &&
+        threadGeneration == (_threadGenerations[characterId] ?? 0);
+    var accepted = false;
     final transport = ref.read(agentTransportProvider);
     final hadCachedBinding = _bindings.containsKey(characterId);
     var binding = await _bindingFor(characterId, transport);
+    if (!current()) throw const ApiException('Conversation changed');
     try {
       return await transport.sendTurn(
         binding: binding,
         text: prompt,
         onTextDelta: onTextDelta,
+        onAccepted: onAccepted == null
+            ? null
+            : (receipt) {
+                if (!current()) return;
+                accepted = true;
+                onAccepted?.call(receipt);
+              },
         onAudioPcmChunk: onAudioPcmChunk,
         requestId: requestId,
       );
     } catch (error) {
-      if (!hadCachedBinding || !_isStaleSessionError(error)) rethrow;
+      if (!current() ||
+          accepted ||
+          !hadCachedBinding ||
+          !_isStaleSessionError(error))
+        rethrow;
       _bindings.remove(characterId);
       binding = await _bindingFor(characterId, transport);
+      if (!current()) throw const ApiException('Conversation changed');
       return transport.sendTurn(
         binding: binding,
         text: prompt,
         onTextDelta: onTextDelta,
+        onAccepted: onAccepted == null
+            ? null
+            : (receipt) {
+                if (!current()) return;
+                accepted = true;
+                onAccepted?.call(receipt);
+              },
         onAudioPcmChunk: onAudioPcmChunk,
         requestId: requestId,
       );
@@ -1535,7 +1825,11 @@ class AiChatController extends Notifier<AiChatState> {
     return binding;
   }
 
-  String _beginAiStream(String characterId) {
+  String _beginAiStream(
+    String characterId, {
+    String? replyToId,
+    String? requestId,
+  }) {
     final thread = threadOf(characterId);
     final id = _newId();
     final isOpen = state.openThreadId == characterId;
@@ -1545,6 +1839,8 @@ class AiChatController extends Notifier<AiChatState> {
       text: '',
       createdAt: DateTime.now(),
       deliveryStatus: 'streaming',
+      replyToId: replyToId,
+      requestId: requestId,
     );
     state = state.copyWith(
       threads: {
@@ -1581,6 +1877,8 @@ class AiChatController extends Notifier<AiChatState> {
     ChatAttachment? attachment,
     String? agentRunId,
     String? requestId,
+    String? replyToId,
+    bool releaseSending = true,
   }) async {
     if (_disposed) return;
     _updateMessage(
@@ -1592,6 +1890,7 @@ class AiChatController extends Notifier<AiChatState> {
         attachment: attachment,
         deliveryStatus: 'delivered',
         requestId: requestId,
+        replyToId: replyToId,
       ),
       persist: false,
     );
@@ -1604,21 +1903,31 @@ class AiChatController extends Notifier<AiChatState> {
           agentRunId: agentRunId,
         ),
       },
-      sendingIn: {...state.sendingIn}..remove(characterId),
+      sendingIn: releaseSending
+          ? ({...state.sendingIn}..remove(characterId))
+          : state.sendingIn,
     );
     await _save();
   }
 
-  void _removeStreamingPlaceholders(String characterId) {
+  void _removeStreamingPlaceholders(String characterId, {String? requestId}) {
     final thread = threadOf(characterId);
     final removed = thread.messages
-        .where((message) =>
-            !message.isUser && message.deliveryStatus == 'streaming')
+        .where(
+          (message) =>
+              !message.isUser &&
+              message.deliveryStatus == 'streaming' &&
+              (requestId == null || message.requestId == requestId),
+        )
         .length;
     if (removed == 0) return;
     final messages = thread.messages
-        .where((message) =>
-            message.isUser || message.deliveryStatus != 'streaming')
+        .where(
+          (message) =>
+              message.isUser ||
+              message.deliveryStatus != 'streaming' ||
+              (requestId != null && message.requestId != requestId),
+        )
         .toList();
     final isOpen = state.openThreadId == characterId;
     state = state.copyWith(
@@ -1639,6 +1948,8 @@ class AiChatController extends Notifier<AiChatState> {
     ChatAttachment? attachment,
     String? agentRunId,
     String? requestId,
+    String? replyToId,
+    bool releaseSending = true,
   }) async {
     if (_disposed) return;
     final thread = threadOf(characterId);
@@ -1652,6 +1963,7 @@ class AiChatController extends Notifier<AiChatState> {
       createdAt: DateTime.now(),
       deliveryStatus: 'delivered',
       requestId: requestId,
+      replyToId: replyToId,
     );
     state = state.copyWith(
       threads: {
@@ -1663,7 +1975,9 @@ class AiChatController extends Notifier<AiChatState> {
           agentRunId: agentRunId,
         ),
       },
-      sendingIn: {...state.sendingIn}..remove(characterId),
+      sendingIn: releaseSending
+          ? ({...state.sendingIn}..remove(characterId))
+          : state.sendingIn,
     );
     await _save();
   }
@@ -2116,16 +2430,47 @@ class AiChatController extends Notifier<AiChatState> {
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _save({bool requirePersistence = false}) async {
     final ownerId = _cacheOwnerId;
-    if (ownerId == null || ownerId.isEmpty) return;
-    try {
+    // Only the explicitly noncanonical preview may send without an account cache.
+    if (ownerId == null || ownerId.isEmpty) {
+      if (requirePersistence &&
+          ref.read(agentTransportProvider) is! PreviewAgentTransport) {
+        throw const FileSystemException('Sign in before sending a message');
+      }
+      return;
+    }
+    final generation = _cacheGeneration;
+    final snapshot = jsonEncode(
+      state.threads.values.map((t) => t.toJson()).toList(),
+    );
+    final task = _saveQueue.then((_) async {
       final file = await _threadsFile(ownerId);
-      if (file == null) return;
-      final list = state.threads.values.map((t) => t.toJson()).toList();
-      await file.writeAsString(jsonEncode(list));
-    } catch (_) {
-      // Local cache is best-effort. Server session/run truth is canonical.
+      if (_disposed ||
+          generation != _cacheGeneration ||
+          ownerId != _cacheOwnerId)
+        return;
+      if (file == null)
+        throw const FileSystemException('Conversation storage unavailable');
+      final temporary = File('${file.path}.pending');
+      await temporary.writeAsString(snapshot, flush: true);
+      if (_disposed ||
+          generation != _cacheGeneration ||
+          ownerId != _cacheOwnerId) {
+        if (await temporary.exists()) await temporary.delete();
+        return;
+      }
+      await temporary.rename(file.path);
+    });
+    _saveQueue = task.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    if (requirePersistence) {
+      await task;
+    } else {
+      try {
+        await task;
+      } catch (_) {
+        // Non-outbox presentation updates remain best effort.
+      }
     }
   }
 }

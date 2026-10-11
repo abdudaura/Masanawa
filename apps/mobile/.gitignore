@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/lib/l10n/app_localizations*.dart
+/l10n_untranslated.json
 
 # Symbolication related
 app.*.symbols
