@@ -1520,14 +1520,18 @@
         "apps/mobile/test/features/masana_social/telegram_connection_screen_test.dart",
         "apps/admin_mobile/test/features/masana_social/telegram_connection_page_test.dart",
         "apps/mobile/lib/src/features/masana_social/social_links.dart",
-        "apps/mobile/test/features/masana_social/social_links_test.dart"
+        "apps/mobile/test/features/masana_social/social_links_test.dart",
+        "services/gateway/src/modules/masana_social/telegram_admin.ts",
+        "services/gateway/src/modules/masana_social/telegram_admin.test.ts",
+        "adapters/storage/postgres/src/masana_social/telegram_admin.ts",
+        "packages/masana_social/src/telegram_admin_ports.ts"
       ],
       "branch": "lane/l-social-verified-links-20261010-gpt6",
       "source_pr": 626,
       "source_head": "711dbfc896af6947c1866a695c383ecbef8436cc",
       "claimed_at": "2026-10-11T03:58:18.951Z",
-      "heartbeat_at": "2026-10-11T04:08:17.158Z",
-      "expires_at": "2026-10-11T04:13:17.158Z",
+      "heartbeat_at": "2026-10-11T04:08:48.535Z",
+      "expires_at": "2026-10-11T04:13:48.535Z",
       "notes": "Disjoint J22 additions on existing #626 social authority; AF00 retains composition and deployment. 5-minute lease; no shared file or old data edits. Renewed for security recovery after inspecting live competing paths."
     },
     {
