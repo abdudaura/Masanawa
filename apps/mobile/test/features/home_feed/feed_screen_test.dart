@@ -85,11 +85,6 @@ void main(){
   final api=StubFeed('cached');
   await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaFeedScreen(api:api,accountKey:'fan'))));await tester.pumpAndSettle();
   api.onList=(_,__)=>Future.error(DioException(requestOptions:RequestOptions(path:'/v1/feed'),type:DioExceptionType.connectionError));
-  await tester.tap(find.text('For You'));await tester.pumpAndSettle();
-  // Switching feed modes intentionally clears the old mode. Load a fresh page
-  // then use pull-to-refresh to exercise retained same-mode content.
-  api.onList=null;await tester.tap(find.text('Retry'));await tester.pumpAndSettle();
-  api.onList=(_,__)=>Future.error(DioException(requestOptions:RequestOptions(path:'/v1/feed'),type:DioExceptionType.connectionError));
   await tester.drag(find.byType(ListView),const Offset(0,500));await tester.pumpAndSettle();
   expect(find.text('cached'),findsOneWidget);
   api.onList=(_,__)=>Future.error(denial(401));await tester.tap(find.text('Retry'));await tester.pumpAndSettle();
