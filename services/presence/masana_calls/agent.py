@@ -6,7 +6,7 @@ from livekit.agents import Agent, AgentServer, AgentSession, JobContext, cli, ro
 from livekit.agents.llm import ChatContext, ChatMessage, StopResponse
 from livekit.plugins import google
 
-from contract import MasanaCallDispatch
+from contract import MasanaCallDispatch, qualified_gemini_voice
 from runtime import MasanaCallRuntime, MasanaVoiceContext
 
 log = logging.getLogger("masanawa-calls")
@@ -49,10 +49,11 @@ async def entrypoint(ctx: JobContext) -> None:
         key = os.getenv("MASANAWA_GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not key:
             raise RuntimeError("gemini_unconfigured")
+        voice = qualified_gemini_voice(initial.voice_id, os.getenv("MASANAWA_CALLS_GEMINI_VOICE_PROFILES_JSON", "{}"))
         model = os.getenv("MASANAWA_CALLS_GEMINI_LIVE_MODEL", "gemini-3.1-flash-live-preview")
         await ctx.connect()
         session = AgentSession(llm=google.beta.realtime.RealtimeModel(
-            model=model, voice=initial.voice_id, api_key=key
+            model=model, voice=voice, api_key=key
         ))
         await session.start(
             room=ctx.room, agent=QualifiedMasanaAgent(dispatch, store, initial),
