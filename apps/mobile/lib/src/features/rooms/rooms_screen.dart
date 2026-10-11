@@ -1,3 +1,5 @@
+import 'room_discussion_api.dart';
+import 'room_discussion_screen.dart';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -16,10 +18,13 @@ String roomError(Object e){
  return 'Could not load. Check the network and retry.';
 }
 class RoomsScreen extends StatefulWidget {
- const RoomsScreen({super.key,required this.client,this.subscriptionsClient,this.billingStore});
+ const RoomsScreen({super.key,required this.client,this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport});
  final RoomsClient client;
  final RoomSubscriptionsClient? subscriptionsClient;
  final RoomBillingStore? billingStore;
+ final RoomDiscussionApi? discussionApi;
+ final String? discussionAccountScope;
+ final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
  @override State<RoomsScreen> createState()=>_RoomsScreenState();
 }
 class _RoomsScreenState extends State<RoomsScreen>{
@@ -62,7 +67,9 @@ class _RoomsScreenState extends State<RoomsScreen>{
       trailing:Icon(r.joined?Icons.check_circle_outline:Icons.chevron_right,color:masanaBlue),
       onTap:()async{
        await Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>RoomHomeScreen(client:widget.client,id:r.id,
-        subscriptionsClient:widget.subscriptionsClient,billingStore:widget.billingStore)));
+        subscriptionsClient:widget.subscriptionsClient,billingStore:widget.billingStore,
+        discussionApi:widget.discussionApi,discussionAccountScope:widget.discussionAccountScope,
+        onDiscussionReport:widget.onDiscussionReport)));
        if(mounted)load();
       });
     })))
@@ -71,10 +78,13 @@ class _RoomsScreenState extends State<RoomsScreen>{
 }
 class RoomHomeScreen extends StatefulWidget {
  const RoomHomeScreen({super.key,required this.client,required this.id,
-  this.subscriptionsClient,this.billingStore});
+  this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport});
  final RoomsClient client;final String id;
  final RoomSubscriptionsClient? subscriptionsClient;
  final RoomBillingStore? billingStore;
+ final RoomDiscussionApi? discussionApi;
+ final String? discussionAccountScope;
+ final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
  @override State<RoomHomeScreen> createState()=>_RoomHomeScreenState();
 }
 class _RoomHomeScreenState extends State<RoomHomeScreen>{
@@ -165,7 +175,10 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
        ButtonSegment(value:0,label:Text('Lessons')),ButtonSegment(value:1,label:Text('Questions')),
        ButtonSegment(value:2,label:Text('Discussion'))],
        selected:{tab},onSelectionChanged:(selection)=>setState(()=>tab=selection.first)),
-     Expanded(child:tab==2?const Center(child:Text('Moderated discussion is not available yet.')):
+     Expanded(child:tab==2?(widget.discussionApi==null||widget.discussionAccountScope==null?
+       const Center(child:Text('Discussion is not available yet.')):
+       RoomDiscussionScreen(roomId:widget.id,api:widget.discussionApi!,
+        accountScope:widget.discussionAccountScope!,onReport:widget.onDiscussionReport)):
        tab==0?(lessons.isEmpty?const Center(child:Text('Lessons coming soon')):
        ListView.builder(itemCount:lessons.length,itemBuilder:(_,i)=>ListTile(title:Text(lessons[i])))):
        RefreshIndicator(onRefresh:load,child:ListView(children:[
