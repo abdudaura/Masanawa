@@ -44,7 +44,7 @@ describe("C46 authorized private Following API",()=>{
     expect(bad.statusCode).toBe(400);
     expect(calls).toEqual([]);
     const ok=await server.inject({method:"PUT",url:"/v1/me/following/masana_a/mute",
-      headers,payload:{muted:false,tenantId:undefined}});
+      headers,payload:{muted:false,tenantId:"forged"}});
     expect(ok.statusCode).toBe(400);
     expect(calls).toEqual([]);
     const mute=await server.inject({method:"PUT",url:"/v1/me/following/masana_a/mute",
