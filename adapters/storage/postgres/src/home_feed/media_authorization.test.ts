@@ -3,7 +3,7 @@ import type {Pool} from "pg";
 import {PgFeedMediaAuthorization} from "./media_authorization.js";
 describe("J06/C23 canonical media authorization",()=>{
   it("looks up only a matching published post and approved Masana within the same tenant",async()=>{
-    const query=vi.fn(async()=>({rows:[{author_masana_id:"masana",kind:"audio",transcript:"Hello"}]}));
+    const query=vi.fn(async (_sql:string,_args:unknown[])=>({rows:[{author_masana_id:"masana",kind:"audio",transcript:"Hello"}]}));
     const source=new PgFeedMediaAuthorization({query} as unknown as Pool);
     const result=await source.find("tenantA","381026c2-9d56-47b1-b73d-1784e24e41e2","media_abcdefgh");
     expect(result?.kind).toBe("audio");
