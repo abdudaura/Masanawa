@@ -24,8 +24,12 @@ export function registerExternalVideoRoutes(app: FastifyInstance, deps: {
   app.get("/v1/admin/video-items", async (request, reply) => {
     try {
       const principal = await deps.resolvePrincipal(request);
-      const items = await service.list(principal, request.query as Record<string, unknown>, false);
-      return { items };
+      const query = request.query as Record<string, unknown>;
+      const items = await service.list(principal, query, false);
+      // Same stable (created_at, item_id) cursor as the public catalog.
+      // A full page may have a successor; an empty extra fetch ends the scan.
+      const limit = query.limit === undefined ? 20 : Number(query.limit);
+      return { items, nextCursor: items.length === limit ? items.at(-1)?.id ?? null : null };
     } catch (err) { const r = replyError(err); return reply.code(r.status).send(r.body); }
   });
   app.post("/v1/admin/video-items", async (request, reply) => {
