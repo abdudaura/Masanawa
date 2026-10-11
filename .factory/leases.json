@@ -2288,6 +2288,25 @@
       ],
       "scope": "Owner requests resolve actual PR669 blockers; narrow shared dependency and baseline Admin compiler repair",
       "source_pr": 669
+    },
+    {
+      "base_sha": "a8e1c84cebcec9604a6b7c9cbdafc6ba6c2b036d",
+      "branch": "docs/development-main-policy-20261011",
+      "claim_id": "3b5689c0-baa3-4133-b96c-6dcf136e2898",
+      "claimed_at": "2026-10-11T20:52:37Z",
+      "expires_at": "2026-10-11T20:57:37Z",
+      "heartbeat_at": "2026-10-11T20:52:37Z",
+      "owner": "development-main-policy-20261011-cloud",
+      "paths": [
+        "AGENTS.md",
+        "CONTINUE-HERE.md",
+        "docs/MULTI-WINDOW-WORK.md",
+        "docs/NEXT-WAVE-DELIVERY-20261010.md",
+        "docs/REUSABLE-IMPLEMENTATION-PROMPT.md",
+        "docs/workstreams/development-main-policy-20261011.md"
+      ],
+      "pr": "",
+      "scope": "development-main-policy"
     }
   ],
   "history": [
