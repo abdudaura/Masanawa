@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { Pool } from "pg";
+import { Pool, type QueryResultRow } from "pg";
 import { describe, expect, it } from "vitest";
 import { createMasanaInboxRepository } from "./inbox.js";
 
@@ -26,7 +26,9 @@ describe("C10 PostgreSQL 18 private Masana inbox integration", () => {
   pgIt("keeps one canonical journal, isolates fans and applies pin/read CAS", async () => {
     const db = new Pool({ connectionString: databaseUrl });
     const client = await db.connect();
-    const query = client.query.bind(client);
+    const query = <T extends QueryResultRow = QueryResultRow>(
+      sql: string, params?: unknown[],
+    ) => client.query<T>(sql, params);
     try {
       await query("BEGIN");
       const version = await query<{server_version_num:string}>("SHOW server_version_num");
