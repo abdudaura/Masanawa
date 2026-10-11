@@ -187,6 +187,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
         }));
         messages.push(Object.freeze({
           key: `assistant:${c.requestId}`, direction: "assistant" as const, requestId: c.requestId,
+          replyToKey: `user:${c.requestId}`,
           text: c.reply ?? "", parts: c.parts, agentRunId: c.agentRunId, createdAt: c.updatedAt,
         }));
       }

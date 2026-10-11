@@ -41,6 +41,7 @@ export type MobileTurnClaim =
 
 export interface MobileHistoryMessage {
   readonly key: string;
+  readonly replyToKey?: string;
   readonly direction: "user" | "assistant";
   readonly requestId: RequestId;
   readonly text: string;
