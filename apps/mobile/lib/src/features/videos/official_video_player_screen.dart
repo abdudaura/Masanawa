@@ -27,6 +27,7 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
     with WidgetsBindingObserver {
   WebViewController? controller;
   bool playing = false, loading = false, unavailable = false, opening = false;
+  bool allowInitialHtmlNavigation = false;
   late OfficialVideoEmbed? approvedEmbed;
 
   String t(String en, String ha) =>
@@ -81,6 +82,7 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
       return;
     }
     setState(() { loading = true; playing = true; });
+    allowInitialHtmlNavigation = true;
     final web = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
@@ -88,6 +90,15 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
         onNavigationRequest: (navigation) {
           // Never navigate the top-level WebView to arbitrary untrusted links.
           // The provider iframe owns its controls, logo and third-party JS.
+          if (navigation.isMainFrame &&
+              navigation.url.startsWith('data:text/html') &&
+              allowInitialHtmlNavigation) {
+            // loadHtmlString may use a data: top frame on Android. Only the
+            // first locally generated document is permitted; provider-triggered
+            // later top-level data: redirects must not be admitted.
+            allowInitialHtmlNavigation = false;
+            return NavigationDecision.navigate;
+          }
           if (!navigation.isMainFrame ||
               navigation.url == 'about:blank' ||
               navigation.url == 'https://masanawa.com/') {
@@ -97,6 +108,7 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
           return NavigationDecision.prevent;
         },
         onPageFinished: (_) {
+          allowInitialHtmlNavigation = false;
           if (mounted) setState(() => loading = false);
         },
         onWebResourceError: (error) {
