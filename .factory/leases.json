@@ -1871,6 +1871,30 @@
       "expires_at": "2026-10-11T05:07:23.424Z",
       "notes": "Scoped original new paths only, verified no overlap in active claims; no production writes, no financial code.",
       "source_head": "7a3230d19304b6b00ec3e9a5cece9ac5c8a3cc78"
+    },
+    {
+      "claim_id": "l-shell-c06-privacy-notices-20261011-gpt6",
+      "owner": "GPT-6 L-SHELL / C06",
+      "scope": "C06 fan notification delivery choices and Account privacy hub; extend canonical C08 notifications, reuse J11 fan memory; no duplicate outbox, push sender, auth/ledger or AF00 composition.",
+      "paths": [
+        "packages/notifications/migrations/0002_delivery_preferences.sql",
+        "adapters/storage/postgres/src/notifications/delivery_preferences.ts",
+        "adapters/storage/postgres/src/notifications/delivery_preferences.test.ts",
+        "services/gateway/src/modules/notifications/delivery_preferences_routes.ts",
+        "services/gateway/src/modules/notifications/delivery_preferences_routes.test.ts",
+        "services/worker/src/jobs/notifications/delivery_preferences.ts",
+        "services/worker/src/jobs/notifications/delivery_preferences.test.ts",
+        "apps/mobile/lib/src/features/account/privacy_settings_repository.dart",
+        "apps/mobile/lib/src/features/account/privacy_settings_screen.dart",
+        "apps/mobile/test/features/account/privacy_settings_screen_test.dart",
+        "tests/e2e/J16/privacy_preferences/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-shell-c06-privacy-notices-20261011-gpt6",
+      "base_sha": "eaf840667e63cbe61981f8ff7a377c02e04091da",
+      "claimed_at": "2026-10-11T05:02:40.190Z",
+      "heartbeat_at": "2026-10-11T05:02:40.190Z",
+      "expires_at": "2026-10-11T05:07:40.190Z",
+      "notes": "Source-only, existing inbox persists all events; delivery preferences only gate optional push. Exact paths, default-OFF gateway registration."
     }
   ],
   "history": [
