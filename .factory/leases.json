@@ -1692,6 +1692,24 @@
       "heartbeat_at": "2026-10-11T04:34:53.828Z",
       "expires_at": "2026-10-11T04:39:53.828Z",
       "notes": "All brand-new feature-local paths; AF00 owns shared router/registries/migration roots and merging. No production activation."
+    },
+    {
+      "claim_id": "l-shell-c09-fail-closed-recovery-20261011-gpt6-0535",
+      "owner": "GPT-6 C09 completion / AF00 handoff",
+      "scope": "Continue existing C09 PR #644; default-off gateway admission + explicit Flutter unavailable state and negative tests, using existing canonical session/migrations; no shared root, finance or live activation",
+      "paths": [
+        "services/gateway/src/modules/account/device_sessions.ts",
+        "services/gateway/src/modules/account/device_sessions.test.ts",
+        "apps/mobile/lib/src/features/account/device_security_screen.dart",
+        "apps/mobile/test/features/account/device_security_screen_test.dart"
+      ],
+      "branch": "lane/l-shell-c09-device-security-20261011-gpt6",
+      "base_sha": "319006d50ea599bc313229ebf11d56c08e7f8522",
+      "claimed_at": "2026-10-11T04:38:49.967Z",
+      "heartbeat_at": "2026-10-11T04:38:49.967Z",
+      "expires_at": "2026-10-11T04:43:49.967Z",
+      "source_pr": 644,
+      "notes": "Single existing C09 source authority; AF00 owns composition and integration/CI lock. Changes only 4 feature files; no production activation."
     }
   ],
   "history": [
