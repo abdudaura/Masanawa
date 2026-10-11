@@ -1,4 +1,7 @@
 import { createHmac } from "node:crypto";
+import Fastify from "fastify";
+import { registerExternalVideoRoutes } from "../../../services/gateway/src/modules/external_videos/routes.js";
+import { applyVerifiedVideoWithdrawal } from "../../../services/worker/src/jobs/external_videos/recovery.js";
 import { describe, expect, it } from "vitest";
 import { createYouTubeWebSubService, type YouTubeWebSubStore } from "../../../services/gateway/src/modules/youtube_websub/service.js";
 import { createYouTubeReconciler, processYouTubeOutbox, type YouTubeSyncSource } from "../../../services/worker/src/jobs/youtube_websub/reconcile.js";
@@ -86,5 +89,63 @@ describe("J14 signed notification → existing outbox → verified pending metad
     await expect(j.deliver()).rejects.toMatchObject({code:"unauthorized_source"});
     expect(j.calls()).toBe(0);
     expect(j.publicCatalog).toHaveLength(0);
+  });
+});
+
+describe("J14/C29 official withdrawal → canonical catalog → player admission",()=>{
+  it("revokes playback after verified provider removal, without cross-tenant disclosure",async()=>{
+    const itemId="11111111-1111-4111-8111-111111111111";
+    const tenantId="tenant-c29", otherTenant="tenant-foreign";
+    const providerVideoId="abcDE12_-34";
+    let state:"approved"|"unavailable"="approved";
+    const item={
+      id:itemId,tenantId,provider:"youtube" as const,providerVideoId,
+      sourceUrl:"https://www.youtube.com/watch?v="+providerVideoId,
+      title:"Verified source",channelName:"Original Publisher",
+      reviewState:"approved" as const,verifiedAt:new Date().toISOString(),
+      createdAt:new Date().toISOString(),
+    };
+    const store={
+      async submit(){return item;},
+      async review(){return null;},
+      async list(){return [];},
+      async isApproved(input:{tenantId:string;id:string}){
+        return input.tenantId===tenantId && input.id===itemId && state==="approved";
+      },
+    };
+    const app=Fastify();
+    registerExternalVideoRoutes(app,{
+      store,
+      resolvePrincipal:async request=>({
+        tenantId:request.headers["x-test-foreign"]?otherTenant:tenantId,
+        actorId:null,staffRoles:[],
+      }),
+    });
+    const url="/v1/videos/"+itemId+"/availability";
+    expect((await app.inject({method:"GET",url})).json()).toEqual({available:true});
+    expect((await app.inject({method:"GET",url,headers:{"x-test-foreign":"yes"}})).json())
+      .toEqual({available:false});
+    let calls=0;
+    const result=await applyVerifiedVideoWithdrawal({
+      tenantId,itemId,provider:"youtube",providerVideoId,
+    },{
+      enabled:true,
+      verifyOfficialWithdrawal:async()=>{calls++;return {
+        provider:"youtube",providerVideoId,status:"officially_removed",
+        evidenceReference:"official-youtube-removal-check-123",
+      };},
+      reviewStore:{review:async input=>{
+        if(input.tenantId!==tenantId || input.id!==itemId ||
+          input.expectedState!=="approved" || state!=="approved") return null;
+        state="unavailable";
+        return {reviewState:"unavailable"};
+      }},
+    });
+    expect(result).toBe("unavailable");
+    expect(calls).toBe(1);
+    expect((await app.inject({method:"GET",url})).json()).toEqual({available:false});
+    expect((await app.inject({method:"GET",url,headers:{"x-test-foreign":"yes"}})).json())
+      .toEqual({available:false});
+    await app.close();
   });
 });
