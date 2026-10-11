@@ -9,9 +9,7 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
  function create() {
   const app=Fastify();apps.push(app);
   const mock:OperationsService={
-   overview:async()=>({pendingJobs:0,activeJobLeases:0,deadLetters:0,oldestPendingSeconds:null,
-     openFinancialReconciliation:0,roomAnswerAgeSeconds:null,externalSyncLagSeconds:null,
-     entitlementErrors:null,budgetWarnings:null}),
+   overview:async()=>{throw new OperationsError("forbidden",403)},
    flags:async()=>{throw new OperationsError("forbidden",403)},
    preview:async()=>{throw new OperationsError("forbidden",403)},
    setFlag:async()=>{throw new OperationsError("forbidden",403)},
@@ -63,11 +61,11 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
   expect(reply.statusCode).toBe(403);
   expect(reply.json()).toEqual({code:"admin_ops.forbidden"});
  });
- it("ops overview denies fan access via scoped error handler",async()=>{
+ it("ops overview returns typed 403 for a denied principal",async()=>{
   const app=create();
   const reply=await app.inject({method:"GET",url:"/v1/admin/ops/overview"});
-  expect(reply.statusCode).toBe(200);
-  expect(reply.json().pendingJobs).toBe(0);
+  expect(reply.statusCode).toBe(403);
+  expect(reply.json()).toEqual({code:"admin_ops.forbidden"});
  });
  it("denies unknown staff roles through live HTTP",async()=>{
   const app=create();const reply=await app.inject({method:"GET",url:"/v1/admin/staff"});
