@@ -1,5 +1,14 @@
 import type {Pool} from "pg";
-import type {EditorialPost,EditorialRepository,EditorialAction,EditorialState,DraftInput} from "@masanawa/feed";
+// Structural projection of the canonical @masanawa/feed editorial contract.
+// Keep PostgreSQL free of an undeclared workspace dependency. AF00 will
+// validate assignability when composing the canonical service with this port.
+type EditorialState="draft"|"in_review"|"scheduled"|"published"|"hidden"|"removed";
+type EditorialAction="submit"|"revise"|"approve"|"schedule"|"take_down";
+type DraftInput={authorMasanaId:string;kind:"text"|"image"|"audio";body:string;
+ media:readonly string[];transcript:string|null;idempotencyKey:string};
+type EditorialPost={id:string;tenantId:string;authorMasanaId:string;kind:"text"|"image"|"audio";
+ body:string;media:readonly string[];transcript:string|null;state:EditorialState;revision:number;
+ createdBy:string;scheduledAt:string|null;updatedAt:string};
 
 /** One transactional PostgreSQL authority: feed.posts and an immutable revision audit.
  * Registered by AF00 only after the forward-only feed migration is qualified.
@@ -15,7 +24,7 @@ function model(r:Row):EditorialPost{
 }
 function fail(code:string,status=409):never{throw Object.assign(new Error(code),{code,status})}
 const selection="tenant_id,id,author_masana_id,kind,body,media_ids,transcript,state,review_revision,published_by,scheduled_at,updated_at";
-export class PgEditorialReviewRepository implements EditorialRepository {
+export class PgEditorialReviewRepository {
  constructor(private readonly pool:Pool){}
  async create(tenant:string,editor:string,input:Required<DraftInput>):Promise<EditorialPost>{
   const client=await this.pool.connect();
