@@ -2345,13 +2345,15 @@
         "services/gateway/src/modules/rooms/membership_routes.test.mjs",
         "apps/mobile/lib/src/features/rooms/room_membership_client.dart",
         "apps/mobile/lib/src/features/rooms/room_membership_screen.dart",
-        "docs/workstreams/AF10-membership-invites-20261011.md"
+        "docs/workstreams/AF10-membership-invites-20261011.md",
+        "apps/mobile/test/features/rooms/room_membership_client_test.dart",
+        "apps/mobile/test/features/rooms/room_membership_screen_test.dart"
       ],
       "branch": "lane/rooms-membership-invites-20261011",
       "base_sha": "172b5bf9a8a1b94a475b5a053d42795e396182b3",
       "claimed_at": "2026-10-11T20:20:51.819Z",
-      "heartbeat_at": "2026-10-11T20:26:52.122Z",
-      "expires_at": "2026-10-11T20:31:52.122Z"
+      "heartbeat_at": "2026-10-11T20:31:46.723Z",
+      "expires_at": "2026-10-11T20:36:46.723Z"
     }
   ],
   "history": [
