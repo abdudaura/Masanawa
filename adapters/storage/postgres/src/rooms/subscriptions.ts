@@ -24,6 +24,15 @@ export function createPgRoomSubscriptions(pool:Pool):RoomSubscriptionsRepository
    const seen=new Set<string>();
    return r.rows.filter(x=>!seen.has(x.plan_id)&&Boolean(seen.add(x.plan_id))).map(price);
   },
+  async findHistoricalPrice(tenantId,roomId,planId,version){
+   const r=await pool.query(`SELECT p.* FROM rooms.price_versions p
+    JOIN rooms.plans l ON l.tenant_id=p.tenant_id AND l.plan_id=p.plan_id
+    JOIN rooms.rooms room ON room.tenant_id=l.tenant_id AND room.room_id=l.room_id
+    WHERE l.tenant_id=$1 AND l.room_id=$2 AND l.plan_id=$3 AND p.version=$4
+      AND l.state='active' AND room.state='published' AND p.effective_at<=now()`,
+    [tenantId,roomId,planId,version]);
+   return r.rows.length?price(r.rows[0]):null;
+  },
   async myEntitlements(tenantId,userId){
    const r=await pool.query(`SELECT * FROM rooms.entitlements WHERE tenant_id=$1 AND user_id=$2
     ORDER BY updated_at DESC LIMIT 100`,[tenantId,userId]);
