@@ -13,11 +13,14 @@ interface CallStore {
   finish(input:CallActor & {callId:string;state:"ended"|"failed";failureCode?:string}):Promise<boolean>;
   get(input:CallActor & {callId:string}):Promise<CallRecord|null>;
   findByRequest(input:CallActor & {characterId:string;requestId:string}):Promise<CallRecord|null>;
+  stopConfirmed(input:CallActor & {callId:string}):Promise<void>;
 }
 
 /** Exact tenant + fan fencing; caller never supplies actor identity. */
 export function createPostgresMasanaCallStore(db: Pick<Pool,"query">): CallStore & {
   claimExpired(limit: number): Promise<readonly {callId:string;roomName:string}[]>;
+  claimPendingStops(limit:number):Promise<readonly {tenantId:string;callId:string;roomName:string}[]>;
+  ackStop(input:{tenantId:string;callId:string}):Promise<void>;
 } {
   return Object.freeze({
     async qualified(input: CallActor & {characterId:string}): Promise<boolean> {
@@ -87,6 +90,33 @@ export function createPostgresMasanaCallStore(db: Pick<Pool,"query">): CallStore
         input.tenantId,input.fanUserId,input.characterId,input.requestId,
       ]);
       return r.rows[0]??null;
+    },
+    async stopConfirmed(input):Promise<void> {
+      await db.query([
+        "UPDATE masana.call_sessions SET provider_stop_pending=false",
+        "WHERE tenant_id=$1 AND fan_user_id=$2 AND call_id=$3",
+        "AND state IN ('ended','failed','expired')",
+      ].join(" "),[input.tenantId,input.fanUserId,input.callId]);
+    },
+    async ackStop(input):Promise<void> {
+      await db.query([
+        "UPDATE masana.call_sessions SET provider_stop_pending=false",
+        "WHERE tenant_id=$1 AND call_id=$2",
+        "AND state IN ('ended','failed','expired')",
+      ].join(" "),[input.tenantId,input.callId]);
+    },
+    async claimPendingStops(limit):Promise<readonly {tenantId:string;callId:string;roomName:string}[]> {
+      const r=await db.query<{tenantId:string;callId:string;roomName:string}>([
+        "WITH due AS (SELECT tenant_id,call_id FROM masana.call_sessions",
+        "WHERE provider_stop_pending AND state IN ('ended','failed','expired')",
+        "AND (stop_last_attempt_at IS NULL OR stop_last_attempt_at < now()-interval '30 seconds')",
+        "ORDER BY stop_last_attempt_at NULLS FIRST LIMIT $1 FOR UPDATE SKIP LOCKED)",
+        "UPDATE masana.call_sessions s",
+        "SET stop_last_attempt_at=now(),stop_attempts=stop_attempts+1",
+        "FROM due d WHERE s.tenant_id=d.tenant_id AND s.call_id=d.call_id",
+        'RETURNING s.tenant_id AS "tenantId",s.call_id AS "callId",s.room_name AS "roomName"',
+      ].join(" "),[limit]);
+      return r.rows;
     },
     async claimExpired(limit): Promise<readonly {callId:string;roomName:string}[]> {
       const r=await db.query<{callId:string;roomName:string}>([
