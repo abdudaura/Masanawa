@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/features/rooms/rooms_client.dart';
 import 'package:masanawa/src/features/rooms/rooms_screen.dart';
 
 class PaidRooms implements RoomsClient, RoomSubscriptionClient {
  int joins=0,verifications=0,purchases=0;
- bool subscribed=false,failVerify=false;
+ bool subscribed=false,failVerify=false,previousMember=false;
  final price=const RoomPrice(planId:'room-plan_math',version:1,
   amountMinor:'39900',currency:'NGN',storeProductId:'maths_monthly',
   effectiveAt:'2026-10-11T00:00:00Z');
  @override Future<List<RoomInfo>> list({required bool joined,String query='',String language=''})async=>
   [const RoomInfo('room_math','Mathematics','masana_math','en',5,true,false)];
  @override Future<RoomInfo> room(String id)async=>
-  RoomInfo(id,'Mathematics','masana_math','en',5,true,joins>0);
- @override Future<List<RoomQuestion>> questions(String id)async=>[];
+  RoomInfo(id,'Mathematics','masana_math','en',5,true,joins>0||previousMember);
+ @override Future<List<RoomQuestion>> questions(String id)async{
+  if(previousMember&&!subscribed){throw DioException(
+    requestOptions:RequestOptions(path:'/v1/rooms/$id/questions'),
+    response:Response(requestOptions:RequestOptions(path:'/v1/rooms/$id/questions'),statusCode:403));}
+  return [];
+ }
  @override Future<List<String>> lessons(String id)async=>[];
  @override Future<RoomQuestion> ask(String id,String text,String key)async=>
   throw UnimplementedError();
@@ -71,6 +77,19 @@ void main(){
   await tester.tap(find.text('Subscribe or join Room'));await tester.pumpAndSettle();
   await tester.tap(find.text('Join subscribed Room'));await tester.pumpAndSettle();
   expect(c.joins,1);expect(c.purchases,0);expect(c.verifications,0);
+ });
+ testWidgets('expired paid Room member sees renewal instead of inaccessible loading error',(tester)async{
+  final c=PaidRooms()..previousMember=true;
+  await tester.pumpWidget(MaterialApp(home:RoomHomeScreen(client:c,id:'room_math',
+   playCheckout:(_)async=>'provider_purchase_token')));
+  await tester.pumpAndSettle();
+  expect(find.text('Renew subscription'),findsOneWidget);
+  expect(find.textContaining('A verified subscription is required'),findsOneWidget);
+  expect(find.text('Ask your teacher'),findsNothing);
+  await tester.tap(find.text('Renew subscription'));await tester.pumpAndSettle();
+  await tester.tap(find.textContaining('NGN 39900'));await tester.pumpAndSettle();
+  expect(c.verifications,1);expect(c.joins,1);
+  expect(find.text('Leave Room'),findsOneWidget);
  });
  test('expiry or suspended payment never permits offline access',(){
   expect(const RoomSubscription('room_math','plan',1,'on_hold','2035-01-01T00:00:00Z')
