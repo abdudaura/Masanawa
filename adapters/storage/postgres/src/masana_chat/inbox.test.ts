@@ -27,6 +27,7 @@ describe("C10 tenant-private canonical chat inbox", () => {
     expect(sql).toContain("s.tenant_id=$1 AND s.user_id=$2");
     expect(sql).toContain("r.state='approved'");
     expect(sql).toContain("o.kind='platform'");
+    expect(sql).toContain("u.state='active'");
     expect(values).toEqual(["tenant-a","fan-a","teacher"]);
   });
   it("fails closed on invalid query or missing caller tenant", async () => {

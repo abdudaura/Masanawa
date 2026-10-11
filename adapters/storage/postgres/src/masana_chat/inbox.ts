@@ -24,6 +24,8 @@ const eligibleSession = `EXISTS (
     AND c.character_id=s.character_id AND c.state='active'
   JOIN identity.character_ownership o ON o.tenant_id=s.tenant_id
     AND o.character_id=s.character_id AND o.kind='platform'
+  JOIN identity.users u ON u.tenant_id=s.tenant_id
+    AND u.user_id=s.user_id AND u.state='active'
   WHERE s.tenant_id=$1 AND s.user_id=$2 AND s.character_id=$3
 )`;
 function boundedScope(scope: FanInboxScope): void {
@@ -78,6 +80,8 @@ export function createMasanaInboxRepository(db: Pick<Pool, "query">) {
               AND u.updated_at > COALESCE(p.last_read_at,to_timestamp(0))
           )::text AS unread_count
         FROM latest l
+        JOIN identity.users u ON u.tenant_id=$1
+          AND u.user_id=$2 AND u.state='active'
         JOIN masana.character_revisions r ON r.tenant_id=$1
           AND r.character_id=l.character_id AND r.state='approved'
         JOIN identity.characters c ON c.tenant_id=$1
