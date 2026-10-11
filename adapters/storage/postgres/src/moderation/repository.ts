@@ -139,6 +139,8 @@ export function createPostgresCaseRepository(pool:Pool){
    });
   },
   async appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string,clientRequestId:string){
+   if(typeof clientRequestId!=="string"||!clientRequestId.trim()||clientRequestId.length>128||/[\u0000-\u001f]/u.test(clientRequestId))
+    throw new CaseError("moderation.idempotency_key.invalid",400);
    await transaction(pool,async c=>{
     // Serialize retries and concurrent appeal submissions through the existing case lock.
     const rs=await c.query<CaseRow>(
