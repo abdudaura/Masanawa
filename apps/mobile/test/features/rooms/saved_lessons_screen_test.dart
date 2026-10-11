@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/features/rooms/saved_lessons_client.dart';
 import 'package:masanawa/src/features/rooms/saved_lessons_screen.dart';
+import 'package:masanawa/src/features/rooms/rooms_client.dart';
+import 'package:masanawa/src/features/rooms/rooms_screen.dart';
 
 class FakeSaves implements SavedLessonsClient {
  bool current=true,offline=false,forbidden=false;
@@ -20,7 +22,36 @@ class FakeSaves implements SavedLessonsClient {
   removals++;items.removeWhere((v)=>v.id==lessonId);
  }
 }
+class JoinedRoom implements RoomsClient {
+ @override Future<List<RoomInfo>> list({required bool joined,String query='',String language=''})async=>[];
+ @override Future<RoomInfo> room(String id)async=>
+  const RoomInfo('room_math','Mathematics','masana_math','en',1,false,true);
+ @override Future<void> join(String id)async{}
+ @override Future<void> leave(String id)async{}
+ @override Future<RoomQuestion> ask(String id,String text,String key)async=>
+  const RoomQuestion('room-question_1','Question text','queued',null);
+ @override Future<List<RoomQuestion>> questions(String id)async=>[];
+ @override Future<List<RoomLesson>> lessons(String id)async=>
+  [const RoomLesson('room-lesson_12345678','Introduction to algebra','lesson')];
+}
+class TrackingSaves extends FakeSaves {
+ int saved=0;
+ @override Future<void> save(String roomId,String lessonId)async{saved++;}
+}
 void main(){
+ testWidgets('C38 joins existing Room lessons, saves and opens private saved list',(tester)async{
+  final saves=TrackingSaves();
+  await tester.pumpWidget(MaterialApp(home:RoomHomeScreen(client:JoinedRoom(),
+   id:'room_math',savedLessonsClient:saves,savedLessonsAccountKey:'fanA')));
+  await tester.pumpAndSettle();
+  expect(find.text('Introduction to algebra'),findsOneWidget);
+  await tester.tap(find.byTooltip('Save lesson'));await tester.pump();
+  expect(saves.saved,1);
+  await tester.tap(find.byTooltip('Saved lessons'));await tester.pumpAndSettle();
+  expect(find.text('Saved lessons'),findsOneWidget);
+  expect(find.byTooltip('Remove saved lesson'),findsOneWidget);
+ });
+
  testWidgets('C38 renders only authenticated saved lessons and removes with server readback',(tester)async{
   final api=FakeSaves();
   await tester.pumpWidget(MaterialApp(home:SavedRoomLessonsScreen(
