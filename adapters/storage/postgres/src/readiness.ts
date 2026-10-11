@@ -69,6 +69,18 @@ export function platformProductMigrationRoots(): readonly MigrationRoot[] {
         new URL("../../../../packages/talks/migrations/", import.meta.url),
       ),
     }),
+    // Canonical rebuild's new, feature-owned forward-only SQL sources.
+    // Explicit repository paths avoid circular package dependencies on the
+    // domain packages; runMigrations still checks immutable owner/name hashes.
+    ...(["masana", "masana-missions", "feed", "external-videos"] as const).map(
+      (owner): MigrationRoot => Object.freeze({
+        owner,
+        directory: fileURLToPath(new URL(
+          `../../../../packages/${owner === "masana-missions" ? "masana_missions" : owner}/migrations/`,
+          import.meta.url,
+        )),
+      }),
+    ),
   ]);
 }
 
