@@ -20,7 +20,7 @@ const roomId='room_example';
 const token='a'.repeat(43);
 // Query-port fake exercises the real repository and canonical admission functions.
 // These are unit tests, not PostgreSQL concurrency/migration evidence.
-function setup({state='published',plan='free',membership='active',role='moderator',targetRole='member',targetState='active',invite={invite_id:'invite-one',unexpired:true},entitled=true,failAudit=false}={}){
+function setup({state='published',plan='free',membership='active',role='moderator',targetRole='member',targetState='active',invite={invite_id:'invite-one',unexpired:true},entitled=true,failAudit=false,inviteCount=0}={}){
  const calls=[];let committed=false;let released=false;
  const q={async query(sql,args=[]){
   calls.push({sql,args});
@@ -31,7 +31,7 @@ function setup({state='published',plan='free',membership='active',role='moderato
   if(sql.startsWith('SELECT state FROM rooms.memberships'))return {rows:membership?[{state:membership}]:[]};
   if(sql.startsWith('SELECT role'))return {rows:[{role}]};
   if(sql.startsWith('SELECT *,expires_at'))return {rows:invite?[invite]:[]};
-  if(sql.startsWith('SELECT count'))return {rows:[{n:0}]};
+  if(sql.startsWith('SELECT count'))return {rows:[{n:inviteCount}]};
   if(sql.includes('INSERT INTO rooms.membership_invites'))return {rows:[{invite_id:args[2],expires_at:new Date(Date.now()+86400000)}]};
   if(sql.startsWith('UPDATE rooms.memberships SET role='))return {rows:membership==='active'?[{}]:[]};
   if(sql.startsWith('UPDATE rooms.membership_invites SET revoked_at'))return {rows:invite?[{}]:[]};
@@ -111,4 +111,21 @@ test('revocation is tenant/room scoped and unavailable token cannot be redeemed'
  const write=s.calls.find(c=>c.sql.startsWith('UPDATE rooms.membership_invites'));
  assert.deepEqual(write.args,[mod.tenantId,roomId,'invite-one']);
  await denied(setup({invite:{revoked_at:new Date()}}).repo.accept(fan,roomId,token),'invite_unavailable');
+});
+test('invitation quota denies before insert and rollback leaves request retryable',async()=>{
+ const s=setup({inviteCount:20});await denied(s.repo.issue(mod,roomId),'room_invite_limit');
+ assert(!s.calls.some(c=>c.sql.startsWith('INSERT')));assert(!s.committed());assert(s.released());
+ assert.match((await setup({inviteCount:19}).repo.issue(mod,roomId)).token,/^[A-Za-z0-9_-]{43}$/);
+});
+test('verified tenant/account fence scopes room, membership and token lookup',async()=>{
+ const other={tenantId:'tenant-b',userId:'fan-b',roles:[]};
+ const s=setup();await s.repo.accept(other,roomId,token);
+ const room=s.calls.find(c=>c.sql.includes('FROM rooms.rooms'));
+ const member=s.calls.find(c=>c.sql.startsWith('SELECT state FROM rooms.memberships'));
+ const invite=s.calls.find(c=>c.sql.startsWith('SELECT *,expires_at'));
+ assert.deepEqual(room.args,['tenant-b',roomId]);
+ assert.deepEqual(member.args,['tenant-b',roomId,'fan-b']);
+ assert.deepEqual(invite.args.slice(0,2),['tenant-b',roomId]);
+ assert.match(invite.sql,/tenant_id=\$1 AND room_id=\$2 AND token_hash=\$3/);
+ assert(!JSON.stringify(s.calls).includes(token));
 });
