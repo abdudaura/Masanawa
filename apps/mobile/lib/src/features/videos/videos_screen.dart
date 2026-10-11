@@ -29,14 +29,15 @@ class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
   String t(String en, String ha) => widget.languageCode == 'ha' ? ha : en;
   @override void initState() {
     super.initState();
-    future = widget.load();
+    future = widget.enabled ? widget.load() : Future.value(<ExternalVideo>[]);
   }
   @override void didUpdateWidget(covariant ExternalVideosScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.load != widget.load ||
-        oldWidget.accountKey != widget.accountKey) {
+        oldWidget.accountKey != widget.accountKey ||
+        oldWidget.enabled != widget.enabled) {
       filter = null;
-      future = widget.load();
+      future = widget.enabled ? widget.load() : Future.value(<ExternalVideo>[]);
       error = null;
     }
   }
