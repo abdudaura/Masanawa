@@ -236,21 +236,26 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
 class _RoomsIntegrationGate extends StatelessWidget {
   const _RoomsIntegrationGate();
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Rooms')),
-    body: Center(child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.school_outlined, size: 48),
-        const SizedBox(height: 12),
-        const Text('Rooms are not available yet.',
-          textAlign: TextAlign.center),
-        const SizedBox(height: 8),
-        const Text('Joining, lessons and paid subscriptions will be enabled only after the server verifies your access.',
-          textAlign: TextAlign.center),
-      ]),
-    )),
-  );
+  Widget build(BuildContext context) {
+    final ha = Localizations.localeOf(context).languageCode == 'ha';
+    return Scaffold(
+      appBar: AppBar(title: Text(ha ? 'Dakuna' : 'Rooms')),
+      body: Center(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.school_outlined, size: 48),
+          const SizedBox(height: 12),
+          Text(ha ? 'Ba a bude Dakuna ba tukuna.' :
+            'Rooms are not available yet.', textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text(ha
+            ? 'Za a kunna shiga, darussa da biyan kudin daki ne kawai bayan uwar garke ta tabbatar da izini.'
+            : 'Joining, lessons and paid subscriptions will be enabled only after the server verifies your access.',
+            textAlign: TextAlign.center),
+        ]),
+      )),
+    );
+  }
 }
 
 class _GwaniLanding extends StatefulWidget {
