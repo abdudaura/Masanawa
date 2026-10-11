@@ -6,11 +6,13 @@ import 'feed_comments_sheet.dart';
 /// Feature-local C21 screen. AF00 wires this in the sole Home center shell.
 class MasanaFeedScreen extends StatefulWidget {
   const MasanaFeedScreen({super.key,required this.api,required this.accountKey,
-    this.onMasanaProfile,this.onOpenMedia,this.onReport,this.enabled=true});
+    this.onMasanaProfile,this.onOpenMedia,this.onOpenPostMedia,this.onReport,this.enabled=true});
   final FeedApi api;
   final String accountKey;
   final ValueChanged<String>? onMasanaProfile;
   final ValueChanged<String>? onOpenMedia;
+  /// Preferred C23 callback preserves post scope for signed-media authorization.
+  final void Function(FeedPost post,String mediaId)? onOpenPostMedia;
   final ValueChanged<String>? onReport;
   final bool enabled;
   @override State<MasanaFeedScreen> createState()=>_MasanaFeedScreenState();
@@ -103,7 +105,8 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
                 if(post.mediaIds.isNotEmpty)Wrap(spacing:8,children:post.mediaIds.map((id)=>ActionChip(
                   avatar:Icon(post.kind=='audio'?Icons.play_circle_outline:Icons.image_outlined),
                   label:Text(post.kind=='audio'?t('Play audio','Kunna sauti'):t('View image','Duba hoto')),
-                  onPressed:widget.onOpenMedia==null?null:()=>widget.onOpenMedia!(id))).toList()),
+                  onPressed:widget.onOpenPostMedia!=null?()=>widget.onOpenPostMedia!(post,id):
+                    widget.onOpenMedia==null?null:()=>widget.onOpenMedia!(id))).toList()),
                 Wrap(spacing:4,children:[
                   TextButton.icon(onPressed:()=>action(post,like:true),icon:Icon(post.liked?Icons.favorite:Icons.favorite_border),
                     label:Text('${post.likeCount}')),
