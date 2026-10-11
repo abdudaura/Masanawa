@@ -2092,7 +2092,12 @@
       "claimed_at": "2026-10-11T07:09:03.048Z",
       "heartbeat_at": "2026-10-11T07:16:42.843Z",
       "expires_at": "2026-10-11T07:21:42.843Z",
-      "notes": "Nondeploying integration only; no financial ledger edits or enabling controls"
+      "notes": "Nondeploying integration only; no financial ledger edits or enabling controls",
+      "source_pr": 662,
+      "source_head": "156f5a82c2881069a6d64a0bfad903bc414b69f2",
+      "released_at": "2026-10-11T07:18:41.384Z",
+      "release_reason": "11 exact-path source files, full J19 A01/A18 client+domain hardening and scoped worker executable proof; AF00 protected composition and workspace/PG18/Flutter/Android evidence pending; handoff #662 and #616 at pinned HEAD; no main merge/deployment",
+      "integration_head_sha": null
     }
   ],
   "history": [
