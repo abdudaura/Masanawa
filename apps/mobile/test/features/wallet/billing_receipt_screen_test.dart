@@ -26,15 +26,33 @@ const _pending = BillReceipt(
 void main() {
   test('fail closed on malformed receipt identity, status and data', () {
     final valid = <String, Object?>{
-      'kind': 'billing-receipt', 'reference': 'bill-1',
-      'status': 'processing', 'title': 'Electricity',
-      'summary': 'Checking', 'canRefresh': true,
-      'rows': [<String, String>{'label': 'Reference', 'value': 'bill-1'}],
+      'fulfillmentReference': 'bill-1',
+      'billerCode': 'ELEC', 'itemCode': 'E01',
+      'itemName': 'Electricity', 'customerId': 'meter-12',
+      'customerName': null, 'amount': '100.00', 'currency': 'NGN',
+      'revision': 1, 'state': 'dispatching',
+      'providerReference': null, 'providerStatus': null,
+      'lastEvidenceAt': null, 'deliveryCode': null,
     };
     expect(BillReceipt.fromJson(valid).finalStatus, false);
-    expect(() => BillReceipt.fromJson({...valid, 'kind': 'human-payment'}), throwsFormatException);
-    expect(() => BillReceipt.fromJson({...valid, 'status': 'paid'}), throwsFormatException);
-    expect(() => BillReceipt.fromJson({...valid, 'rows': [42]}), throwsFormatException);
+    expect(BillReceipt.fromJson(valid).status, BillReceiptStatus.processing);
+    expect(() => BillReceipt.fromJson({...valid, 'currency': 'USD'}),
+        throwsFormatException);
+    expect(() => BillReceipt.fromJson({...valid, 'state': 'paid'}),
+        throwsFormatException);
+    expect(() => BillReceipt.fromJson({...valid, 'amount': 100.0}),
+        throwsFormatException);
+    expect(() => BillReceipt.fromJson({...valid, 'fulfillmentReference': '../tenant'}),
+        throwsFormatException);
+    final verified = BillReceipt.fromJson({
+      ...valid, 'state': 'succeeded', 'deliveryCode': 'PIN-1234',
+    });
+    expect(verified.finalStatus, true);
+    expect(verified.rows.any((e) => e.label == 'Delivery code'), true);
+    final notVerified = BillReceipt.fromJson({
+      ...valid, 'state': 'manual_review', 'deliveryCode': 'PIN-1234',
+    });
+    expect(notVerified.rows.any((e) => e.label == 'Delivery code'), false);
     expect(validBillReference('../tenant'), false);
   });
 
