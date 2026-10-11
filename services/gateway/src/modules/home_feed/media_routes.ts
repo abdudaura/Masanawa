@@ -1,5 +1,10 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
-import type {PublishedPostMedia} from "../../../../../adapters/storage/postgres/src/home_feed/media_authorization.js";
+/** Feature port uses the structural PostgreSQL projection; never imports adapter
+ * source across Gateway's production build rootDir. */
+export interface PublishedPostMedia {
+  tenantId:string;postId:string;mediaId:string;authorMasanaId:string;
+  kind:"image"|"audio";transcript:string|null;
+}
 
 /** Signer MUST perform its own tenant/author/media permission and rights check against
  * the canonical object store; this route never accepts a user-provided object key/URL. */
