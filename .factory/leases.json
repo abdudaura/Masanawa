@@ -1693,7 +1693,11 @@
       "expires_at": "2026-10-11T04:45:37.291Z",
       "notes": "All brand-new feature-local paths; AF00 owns shared router/registries/migration roots and merging. No production activation.",
       "source_pr": 648,
-      "source_head": "9089b31270f3dbdbf38c13b1c98e8d2c33bae400"
+      "source_head": "a313a1da7ce43a098d032414b5f6f82dc43b5961",
+      "released_at": "2026-10-11T04:42:47.339Z",
+      "integration_head_sha": null,
+      "test_state": "PARTIAL: 3/3 C26 Flutter widget tests PASS on prior f91e7f28383ed2934ab370c6614c6d438962192a, full mobile workflow canceled and global analyzer FAILED; latest exact-head run 38112411542 pending; Foundation 38112411537 install FAIL, TS SKIPPED, Vitest/build FAILED; PG18/Android/provider not verified.",
+      "release_reason": "Disjoint read-only C26 source delivered in draft PR #648, AF00 composition communicated on PR #616 comments 6105509597/6105526913. Source branch reviewable; not merged or released; default-off until canonical auth/SQL root/router integration and pinned validation. No live schema, finance, Railway main changes."
     },
     {
       "claim_id": "l-shell-c09-fail-closed-recovery-20261011-gpt6-0535",
