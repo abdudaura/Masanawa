@@ -89,11 +89,11 @@ export class PgHomeFeedRepository {
   if(row.post_id!==post||row.body!==body||(row.parent_comment_id??null)!==(parentId??null))throw Object.assign(new Error("idempotency_conflict"),{status:409,code:"idempotency_conflict"});
   return comment(row) as {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string;parentId:string|null};
  }
- async comments(tenant:string,post:string,viewer:string|null,before:string|null,limit:number){
-  const rows=await this.pool.query(`SELECT c.id,c.post_id,c.body,c.state,c.created_at FROM feed.comments c
+ async comments(tenant:string,post:string,viewer:string|null,before:string|null,limit:number,sort:"newest"|"oldest"="newest"){
+  const rows=await this.pool.query(`SELECT c.id,c.post_id,c.body,c.state,c.created_at,c.parent_comment_id FROM feed.comments c
    WHERE c.tenant_id=$1 AND c.post_id=$2::uuid AND (c.state='visible' OR (c.state='pending' AND c.fan_id=$3))
-   AND ($4::uuid IS NULL OR (c.created_at,c.id)<(SELECT c2.created_at,c2.id FROM feed.comments c2 WHERE c2.tenant_id=$1 AND c2.id=$4::uuid))
-   ORDER BY c.created_at DESC,c.id DESC LIMIT $5`,[tenant,post,viewer,before,limit]);
-  return rows.rows.map(r=>comment(r) as {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string});
+   AND ($4::uuid IS NULL OR (CASE WHEN $6::text='newest' THEN (c.created_at,c.id)<(SELECT c2.created_at,c2.id FROM feed.comments c2 WHERE c2.tenant_id=$1 AND c2.post_id=$2::uuid AND c2.id=$4::uuid) ELSE (c.created_at,c.id)>(SELECT c2.created_at,c2.id FROM feed.comments c2 WHERE c2.tenant_id=$1 AND c2.post_id=$2::uuid AND c2.id=$4::uuid) END))
+   ORDER BY CASE WHEN $6::text='newest' THEN c.created_at END DESC, CASE WHEN $6::text='oldest' THEN c.created_at END ASC, CASE WHEN $6::text='newest' THEN c.id END DESC, CASE WHEN $6::text='oldest' THEN c.id END ASC LIMIT $5`,[tenant,post,viewer,before,limit,sort]);
+  return rows.rows.map(r=>comment(r) as {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string;parentId:string|null});
  }
 }
