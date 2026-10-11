@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'masana_chat_controller.dart';
 
 /// Single compact composer; fan cannot message another fan or create a Room.
 class MasanaChatScreen extends StatefulWidget {
   const MasanaChatScreen({
     super.key, required this.controller, required this.displayName,
-    this.onAttach, this.onRecordVoice, this.voiceQualified = false,
+    this.onAttach, this.onRecordVoice, this.onReportMessage,
+    this.voiceQualified = false,
   });
   final MasanaChatController controller;
   final String displayName;
   final VoidCallback? onAttach, onRecordVoice;
+  /// Use the existing Gwani moderation case journey, never a new report API.
+  final Future<void> Function(String requestId, String body)? onReportMessage;
   final bool voiceQualified;
   @override
   State<MasanaChatScreen> createState() => _MasanaChatScreenState();
 }
 class _MasanaChatScreenState extends State<MasanaChatScreen> {
   final _composer=TextEditingController();
+  final _composerFocus=FocusNode();
   @override
   void initState() {
     super.initState();
@@ -25,10 +30,56 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
   }
   void _changed() { if(mounted) setState((){}); }
   @override
+  void didUpdateWidget(covariant MasanaChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller.removeListener(_changed);
+      widget.controller.addListener(_changed);
+      _composer.clear();
+      widget.controller.restore();
+    }
+  }
+  void _notice(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+  Future<void> _action(String action, MasanaChatTurn turn) async {
+    if (action == 'copy') {
+      await Clipboard.setData(ClipboardData(text: turn.text));
+      _notice('Copied');
+    } else if (action == 'reply') {
+      final quote=turn.text.replaceAll(RegExp(r'[\r\n]+'), ' ');
+      _composer.text='> ' + (quote.length > 180
+        ? quote.substring(0, 180) + '…' : quote) + '\n\n';
+      _composer.selection=TextSelection.collapsed(offset:_composer.text.length);
+      _composerFocus.requestFocus();
+    } else if (action == 'hide') {
+      final confirmed=await showDialog<bool>(context:context,builder:(dialogContext)=>
+        AlertDialog(
+          title:const Text('Remove this message for me?'),
+          content:const Text('It will be hidden from your chat. Service records are retained.'),
+          actions:[
+            TextButton(onPressed:()=>Navigator.pop(dialogContext,false),
+              child:const Text('Cancel')),
+            TextButton(onPressed:()=>Navigator.pop(dialogContext,true),
+              child:const Text('Remove')),
+          ]));
+      if(confirmed!=true || !mounted) return;
+      final owner=widget.controller;
+      final ok=await owner.hideSentTurn(turn.requestId);
+      if(!mounted || !identical(owner,widget.controller)) return;
+      _notice(ok?'Message hidden for you':'Message not removed. Retry when connected.');
+    } else if (action == 'report' && widget.onReportMessage!=null) {
+      try { await widget.onReportMessage!(turn.requestId,turn.text); }
+      catch (_) { _notice('Could not open Gwani report. Try again.'); }
+    }
+  }
+  @override
   void dispose() {
     widget.controller.removeListener(_changed);
     _composer.removeListener(_changed);
     _composer.dispose();
+    _composerFocus.dispose();
     super.dispose();
   }
   @override
@@ -52,7 +103,22 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
               return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
                 Align(alignment:Alignment.centerRight,
                   child:Card(child:Padding(
-                    padding:const EdgeInsets.all(12),child:Text(m.text)))),
+                    padding:const EdgeInsets.all(12),
+                    child:Column(mainAxisSize:MainAxisSize.min,
+                      crossAxisAlignment:CrossAxisAlignment.end,children:[
+                        Text(m.text),
+                        if(m.state==ChatSendState.sent)
+                          PopupMenuButton<String>(
+                            tooltip:'Message actions',
+                            onSelected:(value)=>_action(value,m),
+                            itemBuilder:(context)=>[
+                              const PopupMenuItem(value:'reply',child:Text('Reply')),
+                              const PopupMenuItem(value:'copy',child:Text('Copy')),
+                              const PopupMenuItem(value:'hide',child:Text('Remove for me')),
+                              if(widget.onReportMessage!=null)
+                                const PopupMenuItem(value:'report',child:Text('Report to Gwani')),
+                            ]),
+                      ])))),
                 if(m.state==ChatSendState.failed)
                   Align(alignment:Alignment.centerRight,
                     child:TextButton.icon(
@@ -72,7 +138,7 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
             IconButton(
               tooltip:'Attach a file',onPressed:widget.onAttach,
               icon:const Icon(Icons.add_circle_outline)),
-            Expanded(child:TextField(controller:_composer,maxLines:5,minLines:1,
+            Expanded(child:TextField(controller:_composer,focusNode:_composerFocus,maxLines:5,minLines:1,
               decoration:const InputDecoration(
                 hintText:'Message',border:OutlineInputBorder()))),
             IconButton(
