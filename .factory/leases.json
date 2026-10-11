@@ -2222,14 +2222,15 @@
         "apps/admin_mobile/lib/src/features/content_studio/review_queue_page.dart",
         "apps/admin_mobile/test/features/content_studio/editorial_review_test.dart",
         "services/worker/src/jobs/home_feed/publish_scheduled.ts",
-        "services/worker/src/jobs/home_feed/publish_scheduled.test.ts"
+        "services/worker/src/jobs/home_feed/publish_scheduled.test.ts",
+        "packages/feed/src/index.ts"
       ],
       "branch": "lane/l-feed-a05-a06-editorial-review-20261011-gpt6-0907",
       "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
       "source_pr": null,
       "claimed_at": "2026-10-11T08:10:40.507Z",
-      "heartbeat_at": "2026-10-11T08:15:29.421Z",
-      "expires_at": "2026-10-11T08:20:29.421Z",
+      "heartbeat_at": "2026-10-11T08:17:51.538Z",
+      "expires_at": "2026-10-11T08:22:51.538Z",
       "notes": "All paths exact and non-overlapping; AF00 owns migration registration / gateway and worker composition. Old direct staff publishing will fail closed."
     }
   ],
