@@ -34,3 +34,4 @@ export function requireFan(userId:string|null):string {
   if(!userId) throw new RoomError(401,"authentication_required");
   return userId;
 }
+export * from "./subscriptions.js";
