@@ -1,35 +1,76 @@
-# STATUS lane — Masana authorization and display
+# STATUS — Masana publishing/feed authorization and display recovery
 
-Owner: Codex STATUS implementation window, 2026-10-11 UTC.
+Owner: Codex STATUS implementation window. Date: 2026-10-11 UTC.
+PR: https://github.com/weavewellindustrieslimited/masanawa/pull/671
 Branch: lane/status-masana-authorization-20261011
-Base: integration/rebuild e33490013c54a9dc3a86c8fcb526a01634df3992.
-Fresh main inspected: a8e1c84cebcec9604a6b7c9cbdafc6ba6c2b036d (merged #668).
+Base: integration/rebuild @ e33490013c54a9dc3a86c8fcb526a01634df3992
+Implemented and executed source HEAD: 9b01f5e99289ab493370fafe510d1ba6f118a821
+Main inspected before and after implementation: a8e1c84cebcec9604a6b7c9cbdafc6ba6c2b036d, including merged #668.
+Final handoff commit changes documentation only; the PR branch supplies its exact current head.
 
-## Exact paths claimed before implementation
+## Ownership / preservation
+Exact-path workstream claim pushed and read back at d316f84 before implementation; editorial validator addition at aa8260d; final editorial SQL addition at 855c82d. Registry factory/claims claim status-masana-authorization-20261011-codex; blob-SHA CAS connector updates preserve every prior record. Prior overlapping feed claims are explicitly released, #631 and #666 are closed, their source is reused. No stale unreleased ownership was seized. No force push, merge, provider call, production migration or deploy performed. User's unseen local changes remain unreconciled and untouched.
+
+## Changed paths
 - packages/feed/src/index.ts
 - packages/feed/src/index.test.ts
+- packages/feed/src/review.ts
 - adapters/storage/postgres/src/home_feed/repository.ts
 - adapters/storage/postgres/src/home_feed/repository.test.ts
+- adapters/storage/postgres/src/home_feed/review_repository.ts
+- adapters/storage/postgres/src/home_feed/review_repository.test.ts
 - apps/mobile/lib/src/features/home_feed/feed_screen.dart
 - apps/mobile/test/features/home_feed/feed_screen_test.dart
 - tests/e2e/J06/status_authorization.test.mjs
 - docs/workstreams/STATUS-masana-authorization-20261011.md
 
-Prior feed claims l-feed-j06-core, l-feed-c22-post-detail and l-feed-a05-a06-editorial are explicitly released in factory/claims; #631 and #666 are closed and their useful source is preserved in this baseline. No active exact-path owner found. This is a bounded continuation of that canonical feed, not a new subsystem. All protected composition, routing/shell, catalogs, migrations, manifests, lockfiles, calls and financial source remain with the coordinator.
+No financial, auth authority, shared shell/router, Gateway composition, localization catalogs, migration registration, manifest/lockfile or prohibited call source changed.
 
-## Milestone / finite closure
-- IN_PROGRESS: feed/list/detail/reactions/comments recheck approved active platform Masana in canonical SQL; reject staff direct-publish bypass, retain independent editorial review and Masana service identity.
-- IN_PROGRESS: Status display denies late requests on disable/account replacement, recovers pagination and failed actions without stale data or blocked retry.
-- MISSING / coordinator: five_tab_shell.dart Status currently mounts TalkHomeScreen and offers /talk/create. Replace with authenticated canonical MasanaFeedScreen, remove human composer; use current-account API/key and existing media/profile/report contracts. Exact shared path transfer requested through this record, no authority assumed.
-- NOT_RUN: executable source/authorization tests; Flutter/PG/source compilation pending capability check.
-- NOT INTEGRATED / NOT PRODUCTION VERIFIED.
+## Connected source / finite closure (J06, C21, A05/A06)
+| Item | Owner / paths | Source | Executed result |
+| --- | --- | --- | --- |
+| Masana-only direct publication; reject fan, staff bypass, spoofed/unapproved identity and invalid text/media | STATUS / feed index | IMPLEMENTED_UNVERIFIED, 9b01f5e99289ab493370fafe510d1ba6f118a821 | PASS_SIMULATED Node source units |
+| Reuse independent staff draft/review authority; repair blocking validator syntax | STATUS / review.ts | IMPLEMENTED_UNVERIFIED | Before repair runtime parser FAIL reproduced; fixed source parser and independent-review unit PASS |
+| Feed/detail/comment read and reaction/comment insert recheck approved active platform author in tenant | STATUS / feed repository | IMPLEMENTED_UNVERIFIED | PASS_SIMULATED SQL-contract/mocked-pool cases; real PG NOT_RUN |
+| Final immediate approval, scheduling and due publication SQL recheck current author eligibility | STATUS / review repository | IMPLEMENTED_UNVERIFIED | PASS_SIMULATED denial/rollback/no-audit tests; real PG races NOT_RUN |
+| Feed disable/account replacement invalidate responses, reset pagination and clear projections; revoked session clears posts; offline refresh retains same-account content; reactions serialize/rollback/retry; pagination error retry; short lists refresh | STATUS / feed_screen.dart | IMPLEMENTED_UNVERIFIED | 8 total Flutter widget cases authored, NOT_RUN |
+| Preserve #668 five tabs; mount actual Masana Status and remove human composer | coordinating window / apps/mobile/lib/src/shell/five_tab_shell.dart | MISSING on inspected main | NOT_RUN; exact transfer request below |
+| Authenticate and bind canonical feed/editorial repositories/author+media verifiers, register existing routes/migrations, nested media/profile/report destinations | coordinating window / protected composition | NOT VERIFIED / must inspect current source | NOT_RUN |
+| Full workspace, PG18, Flutter and device qualification | coordinator / qualified runner | Pending execution | BLOCKED, exact requirements below |
 
-Contracts: existing @masanawa/feed, PgHomeFeedRepository, editorial review (#666), FeedApi and MasanaFeedScreen; no new schema, publisher, queue, auth or storage authority. Next action: implement owned authorization + display recovery and execute available meaningful tests. PR and exact head/test evidence appended at delivery.
+This completes the owned authorization/recovery increment. Full Status journey remains PARTIAL_IMPLEMENTATION until protected shell/API bindings and actual qualification are completed. No release claim.
 
-## Dependency-ready scope expansion before edit
-- packages/feed/src/review.ts: repair observed unmatched parenthesis in validateDraft; index.ts re-exports this source, so canonical feed cannot load otherwise. Existing tests are preserved. Prior #666 ownership is released; no shared-file edit.
+## Executed evidence
+Environment: isolated source snapshot fetched through authenticated GitHub connector; Node v24.19.0, pnpm 11.25.0 available. It is not a full repository checkout.
+- `node --experimental-transform-types tests/e2e/J06/status_authorization.test.mjs`: **11/11 PASS_SIMULATED**, source unit tests plus mocked PostgreSQL query contracts, no real database or device E2E. Source hook only resolves emitted .js specifiers to existing .ts files; it never rewrites the implementation.
+- Node `stripTypeScriptTypes(readFileSync(path), {mode:'transform'})` on all 7 changed TypeScript source/test files: **PASS syntax transform**, not TypeScript typecheck.
+- `node --experimental-transform-types /tmp/status-review-before.ts` using preserved original review.ts from the base snapshot: **FAIL reproduced**, ERR_INVALID_TYPESCRIPT_SYNTAX at the unmatched parenthesis in validateDraft; corrected source successfully loads in the 11-test suite.
+- `git diff --check`: **PASS**.
+- GitHub exact-source readback for all 10 source/test paths at 9b01f5e99289ab493370fafe510d1ba6f118a821: matched the executed local snapshot byte for byte. This is source integrity evidence, not runtime E2E.
+- `git clone https://github.com/weavewellindustrieslimited/masanawa.git /workspace/masanawa`: **BLOCKED**, configured proxy port 8080 unreachable. No proxy bypass attempted.
+- `pnpm --filter @masanawa/feed typecheck` in the isolated snapshot: printed **No projects found**, NOT_RUN despite exit code 0. Full manifests/dependencies are absent; no compilation pass claimed.
+- `command -v flutter`, `command -v dart`, `command -v psql`: absent. Flutter analyzer/widgets/APK and actual PG18 qualification **NOT_RUN/BLOCKED**.
+- Exact-source CI Foundation 38173645321 and Mobile Build 38173645324 were in progress at observation; inspect actual job steps/results before integration. No CI pass claimed. Combined Vercel status failed with build-rate-limit; this is not a test failure.
 
-## Publishing continuation — exact paths added before edits
-- adapters/storage/postgres/src/home_feed/review_repository.ts
-- adapters/storage/postgres/src/home_feed/review_repository.test.ts
-The existing scheduled publisher rechecks author eligibility in its verifier, but its final SQL CAS rechecks only revision approval. Extend the same canonical identity predicate to immediate approval/scheduling and due release so deactivation/ownership transfer cannot race the final publication write. No new job or migration.
+## Bounded repository-visible transfer request to coordinating window
+Requested shared path: **apps/mobile/lib/src/shell/five_tab_shell.dart** (owner retains authority; this lane has NOT edited it).
+1. Retain #668 Chats · Status · Wallet · Calls · Rooms, Chats launch default, Wallet and calls behavior.
+2. Replace Status's current TalkHomeScreen with existing `MasanaFeedScreen` and `DioFeedApi(existingAuthenticatedDio)`; supply a canonical current-account key, enable state and existing approved-media/profile/report bindings.
+3. Remove Status `FloatingActionButton` “New status” pointing at `/talk/create`. Humans cannot publish consumer Status. Staff publish only through existing independent A05/A06 editorial workflow; approved Masana service identities use the canonical service.
+4. Clear/pop nested post/comment/media screens on logout/account replacement. Passing a frozen prior-account key into a pushed route is not account replacement.
+5. If adopting this feature from integration into main, keep #668 shell/source intact and transplant these 11 scoped paths only; do not merge the unrelated historical integration tree over main. This PR targets the coordinator's existing non-deploying integration/rebuild, never auto-merge main.
+
+Protected Gateway/worker/migration binding remains with coordinating window. Before enabling, verify principal comes solely from canonical server session; approvedMasana and scheduled verifier resolve tenant + approved revision + active platform-owned canonical identity; media resolver validates current rights/ownership; register existing routes once and retain their kill switches. No new publisher, queue, media registry, auth store or financial ledger is introduced here.
+
+## Integration / qualification next action
+1. Coordinator reviews PR #671 and claims the bounded shell composition; inspect current integration head and actual shared-source ownership. Cherry-pick/merge only after applicable source checks; this window has not merged it.
+2. In a full dependency-installed checkout at source HEAD, run:
+   - `node --experimental-transform-types tests/e2e/J06/status_authorization.test.mjs`
+   - `pnpm exec vitest run packages/feed/src/index.test.ts packages/feed/src/review.test.ts adapters/storage/postgres/src/home_feed/repository.test.ts adapters/storage/postgres/src/home_feed/review_repository.test.ts services/gateway/src/modules/home_feed/routes.test.ts tests/e2e/J06/feed-journey.test.ts`
+   - `pnpm --filter @masanawa/feed typecheck` and affected Postgres/Gateway/worker workspace checks.
+   - `cd apps/mobile && flutter analyze && flutter test test/features/home_feed/feed_screen_test.dart`
+3. On disposable PG18, qualify existing feed 0001–0004 and Masana identity schemas fresh/upgrade; verify real active/platform revocation, cross-tenant denial, duplicate publishing/reactions, independent review, scheduled release, publication races and rollback. No production SQL now.
+4. At composed unified SHA run the signed-in Status journey and disabled/offline/account-switch recovery on representative Android. Required capabilities: supported repository-pinned Flutter/Dart, full dependencies, Android SDK/runner and test device; signed release build/signing remains a separate coordinator release requirement and was not inspected/verified here.
+5. Record integrated SHA and actual tests, then separately qualify production/media/provider/security/release. No production verification, signing, Mac/iOS, credential or device claim is established by this source increment.
+
+Next implementable action is coordinator-owned Status shell/API composition, not another feed subsystem. Remaining lane source is explicitly transferred to that continuing window through this PR and handoff.
