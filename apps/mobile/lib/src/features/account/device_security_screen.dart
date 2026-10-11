@@ -16,7 +16,9 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
   String? revoking;
   int generation=0;
   String t(String en,String ha)=>Localizations.localeOf(context).languageCode=='ha'?ha:en;
-  @override void initState(){super.initState();refresh();}
+  @override void initState(){super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) { if(mounted)refresh(); });
+  }
   @override void didUpdateWidget(covariant DeviceSecurityScreen old){
     super.didUpdateWidget(old);
     if(!identical(old.transport,widget.transport)||
@@ -101,7 +103,7 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
                 t('Signed-in device','Na’urar da ta shiga')),
               subtitle:Text('${t('Last active','An yi aiki')}: ${d.lastSeenAt.toLocal()}'),
               trailing:d.current?Text(t('Current','Yanzu')):
-                revoking==d.id?const CircularProgressIndicator():
+                revoking==d.id?const SizedBox.square(dimension:20,\n                  child:CircularProgressIndicator(strokeWidth:2)):
                 TextButton(onPressed:revoking==null&&!offline?()=>revoke(d):null,
                   child:Text(t('Sign out','Fita'))),
             );

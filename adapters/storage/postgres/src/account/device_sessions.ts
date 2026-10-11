@@ -28,7 +28,7 @@ export function createPgFanDeviceSessionStore(pool: Pool): FanDeviceSessionStore
                AND authenticated.access_hash=$3 AND authenticated.revoked_at IS NULL
                AND authenticated.access_expires_at>now() AND authenticated.refresh_expires_at>now()
            )
-         ORDER BY created_at DESC,device_id DESC LIMIT 30`,
+         ORDER BY (access_hash=$3) DESC,created_at DESC,device_id DESC LIMIT 30`,
         [actor.tenantId,actor.fanUserId,currentAccessHash]);
       // Unlike a valid empty list, revoked/rotated credentials must fail closed.
       const current=rows.rows.some(r=>r.current);
@@ -42,6 +42,8 @@ export function createPgFanDeviceSessionStore(pool: Pool): FanDeviceSessionStore
       if(!hex.test(currentAccessHash))return "unauthorized";
       return withTransaction(pool,async client=>{
         // Lock current session against refresh rotation and concurrent revoke.
+        // Serializes replay with the same bearer, so checking the audit below
+        // and writing it are atomic even for concurrent duplicate requests.
         const active=await client.query<{device_id:string}>(`
           SELECT device_id FROM security.platform_sessions
            WHERE tenant_id=$1 AND user_id=$2 AND access_hash=$3
