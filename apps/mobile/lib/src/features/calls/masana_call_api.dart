@@ -25,7 +25,7 @@ class MasanaCallApi {
   static String makeRequestId() {
     final random=Random.secure();
     final bytes=List<int>.generate(16,(_)=>random.nextInt(256));
-    return 'request_' + bytes.map((b)=>b.toRadixString(16).padLeft(2,'0')).join();
+    return 'request_${bytes.map((b)=>b.toRadixString(16).padLeft(2,'0')).join()}';
   }
   Future<MasanaCallTicket> start(String characterId,String requestId) async {
     final response=await dio.post<Map<String,dynamic>>('/v1/calls',
@@ -35,13 +35,13 @@ class MasanaCallApi {
     return MasanaCallTicket.fromJson(data);
   }
   Future<void> connected(String callId) async {
-    await dio.post<void>('/v1/calls/' + Uri.encodeComponent(callId) + '/connected');
+    await dio.post<void>('/v1/calls/${Uri.encodeComponent(callId)}/connected');
   }
   Future<void> end(String callId) async {
-    await dio.post<void>('/v1/calls/' + Uri.encodeComponent(callId) + '/end');
+    await dio.post<void>('/v1/calls/${Uri.encodeComponent(callId)}/end');
   }
   Future<String> state(String callId) async {
-    final response=await dio.get<Map<String,dynamic>>('/v1/calls/' + Uri.encodeComponent(callId));
+    final response=await dio.get<Map<String,dynamic>>('/v1/calls/${Uri.encodeComponent(callId)}');
     return (response.data?['state'] as String?) ?? 'unknown';
   }
 }
