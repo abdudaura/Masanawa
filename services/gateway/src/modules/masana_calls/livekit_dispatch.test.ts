@@ -32,6 +32,12 @@ describe("J04 LiveKit dispatch transport",()=>{
     await provider.stop({callId:"call-a",roomName:"masana-a"});
     expect(fetchImpl.mock.calls[0]![0]).toContain("/RoomService/DeleteRoom");
   });
+  it("still tears down existing room after emergency new-call shutoff",async()=>{
+    const {provider,fetchImpl}=setup(false);
+    await provider.stop({callId:"call-a",roomName:"masana-a"});
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(fetchImpl.mock.calls[0]![0]).toContain("RoomService/DeleteRoom");
+  });
   it("refuses provider activity behind default-off flag",async()=>{
     const {provider,fetchImpl}=setup(false);
     await expect(provider.dispatch({tenantId:"t",callId:"a",characterId:"c",roomName:"r"})).rejects.toThrow();
