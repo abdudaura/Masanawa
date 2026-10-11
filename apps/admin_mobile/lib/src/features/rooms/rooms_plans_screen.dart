@@ -27,8 +27,8 @@ class _RoomPlansAdminScreenState extends State<RoomPlansAdminScreen> {
   }
   return 'The operation did not complete. Review the details and retry.';
  }
- Future<void> refresh()async{
-  if(busy)return;
+ Future<void> refresh({bool force=false})async{
+  if(busy&&!force)return;
   setState((){loading=true;failure=null;});
   try{final found=await widget.client.prices(widget.roomId);
    if(mounted)setState((){prices=found;loading=false;});
@@ -39,7 +39,7 @@ class _RoomPlansAdminScreenState extends State<RoomPlansAdminScreen> {
   try{
    final id=await widget.client.createPlan(widget.roomId,period);
    if(mounted)setState((){plan.text=id;notice='Draft ${period} plan created. Add a Play product price.';});
-   if(mounted)await refresh();
+   if(mounted)await refresh(force:true);
   }catch(e){if(mounted)setState(()=>failure=message(e));}
   finally{if(mounted)setState(()=>busy=false);}
  }
@@ -55,7 +55,7 @@ class _RoomPlansAdminScreenState extends State<RoomPlansAdminScreen> {
     amountMinor:minor.text.trim(),currency:currency,storeProductId:sku.text.trim(),
     effectiveAt:DateTime.now().toUtc().toIso8601String());
    if(mounted)setState(()=>notice='Created immutable price version ${record.version}. Existing buyers retain their previous terms.');
-   if(mounted)await refresh();
+   if(mounted)await refresh(force:true);
   }catch(e){if(mounted)setState(()=>failure=message(e));}
   finally{if(mounted)setState(()=>busy=false);}
  }
