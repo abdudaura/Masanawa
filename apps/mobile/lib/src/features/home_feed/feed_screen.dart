@@ -129,6 +129,7 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
           Text(t('No Status updates yet','Babu labarai tukuna')),
           TextButton(onPressed:refresh,child:Text(t('Refresh','Sabunta')))]))
         :RefreshIndicator(onRefresh:refresh,child:ListView.builder(
+          physics:const AlwaysScrollableScrollPhysics(),
           itemCount:items.length+(cursor==null?0:1),
           itemBuilder:(ctx,i){
             if(i==items.length)return Center(child:TextButton(onPressed:fetchingMore?null:nextPage,child:Text(t('Load more','Kara nunawa'))));
