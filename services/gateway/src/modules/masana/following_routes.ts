@@ -1,6 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import type { MasanaAuth } from "./service.js";
-import type { FollowingInput, FollowingPage } from "../../../../../adapters/storage/postgres/src/masana/following.js";
+interface FollowingInput {
+  tenantId:string; fanId:string; q:string; language:string;
+  cursor:string|null; limit:number;
+}
+interface FollowingPage {
+  items:readonly unknown[];
+  nextCursor:string|null;
+}
 
 export interface FollowingStore {
   list(input:FollowingInput):Promise<FollowingPage>;
