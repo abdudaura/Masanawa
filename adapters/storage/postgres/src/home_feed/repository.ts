@@ -9,7 +9,7 @@ function item(r:Row){
   viewerLiked:Boolean(r.viewer_liked),viewerSaved:Boolean(r.viewer_saved)};
 }
 function comment(r:Row){return {id:String(r.id),postId:String(r.post_id),body:String(r.body),state:String(r.state),
- createdAt:new Date(String(r.created_at)).toISOString()};}
+ createdAt:new Date(String(r.created_at)).toISOString(),parentId:r.parent_comment_id==null?null:String(r.parent_comment_id)};}
 const projection=`p.*, (SELECT r.profile->>'displayName' FROM masana.character_revisions r WHERE r.tenant_id=p.tenant_id AND r.character_id=p.author_masana_id AND r.state='approved' LIMIT 1) AS author_name, (SELECT count(*)::int FROM feed.likes l WHERE l.tenant_id=p.tenant_id AND l.post_id=p.id) AS like_count,
  (SELECT count(*)::int FROM feed.comments c WHERE c.tenant_id=p.tenant_id AND c.post_id=p.id AND c.state='visible') AS comment_count,
  EXISTS(SELECT 1 FROM feed.likes l WHERE l.tenant_id=p.tenant_id AND l.post_id=p.id AND l.fan_id=$2) AS viewer_liked,
@@ -63,14 +63,14 @@ export class PgHomeFeedRepository {
   else await this.pool.query("DELETE FROM feed.saves WHERE tenant_id=$1 AND fan_id=$2 AND post_id=$3::uuid",[tenant,fan,id]);
   return enabled;
  }
- async comment(tenant:string,fan:string,post:string,body:string,key:string,pending:boolean){
+ async comment(tenant:string,fan:string,post:string,body:string,key:string,pending:boolean,parentId:string|null=null){
   const rows=await this.pool.query(`WITH inserted AS (
-   INSERT INTO feed.comments(tenant_id,post_id,fan_id,body,state,idempotency_key)
-   SELECT $1,p.id,$2,$4,$5,$6 FROM feed.posts p WHERE p.tenant_id=$1 AND p.id=$3::uuid AND p.state='published'
+   INSERT INTO feed.comments(tenant_id,post_id,fan_id,body,state,idempotency_key,parent_comment_id)
+   SELECT $1,p.id,$2,$4,$5,$6,$7::uuid FROM feed.posts p WHERE p.tenant_id=$1 AND p.id=$3::uuid AND p.state='published' AND ($7::uuid IS NULL OR EXISTS (SELECT 1 FROM feed.comments parent WHERE parent.tenant_id=$1 AND parent.post_id=p.id AND parent.id=$7::uuid AND parent.state='visible' AND parent.parent_comment_id IS NULL))
    ON CONFLICT(tenant_id,fan_id,idempotency_key) DO UPDATE
    SET idempotency_key=EXCLUDED.idempotency_key
-   WHERE feed.comments.post_id=EXCLUDED.post_id AND feed.comments.body=EXCLUDED.body
-   RETURNING id,post_id,body,state,created_at
+   WHERE feed.comments.post_id=EXCLUDED.post_id AND feed.comments.body=EXCLUDED.body AND feed.comments.parent_comment_id IS NOT DISTINCT FROM EXCLUDED.parent_comment_id
+   RETURNING id,post_id,body,state,created_at,parent_comment_id
   ), queued AS (
    INSERT INTO events.outbox(outbox_event_id,tenant_id,event_id,event_type,schema_version,
      aggregate_type,aggregate_id,correlation_id,destination,payload)
@@ -83,11 +83,11 @@ export class PgHomeFeedRepository {
    FROM inserted i WHERE i.state='pending'
    ON CONFLICT DO NOTHING RETURNING outbox_event_id
   )
-  SELECT * FROM inserted`,[tenant,fan,post,body,pending?"pending":"visible",key]);
+  SELECT * FROM inserted`,[tenant,fan,post,body,pending?"pending":"visible",key,parentId]);
   const row=rows.rows[0] as Row|undefined;
   if(!row)throw Object.assign(new Error("idempotency_conflict_or_post_unavailable"),{status:409,code:"idempotency_conflict"});
-  if(row.post_id!==post||row.body!==body)throw Object.assign(new Error("idempotency_conflict"),{status:409,code:"idempotency_conflict"});
-  return comment(row) as {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string};
+  if(row.post_id!==post||row.body!==body||(row.parent_comment_id??null)!==(parentId??null))throw Object.assign(new Error("idempotency_conflict"),{status:409,code:"idempotency_conflict"});
+  return comment(row) as {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string;parentId:string|null};
  }
  async comments(tenant:string,post:string,viewer:string|null,before:string|null,limit:number){
   const rows=await this.pool.query(`SELECT c.id,c.post_id,c.body,c.state,c.created_at FROM feed.comments c
