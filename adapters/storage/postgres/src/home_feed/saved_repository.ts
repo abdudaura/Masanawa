@@ -5,7 +5,7 @@ import type {SavedCursor,SavedItem,SavedRepository} from "../../../../../package
 export class PgSavedLibraryRepository implements SavedRepository {
   constructor(private readonly pool:Pool){}
   async list(tenant:string,fan:string,before:SavedCursor|null,limit:number):Promise<readonly SavedItem[]> {
-    const sql=String.raw\`WITH saved_items AS (
+    const sql=String.raw`WITH saved_items AS (
       SELECT 'post'::text AS kind, s.post_id AS id, s.created_at AS saved_at,
         jsonb_build_object('id',p.id,'authorMasanaId',p.author_masana_id,
           'authorName',COALESCE((SELECT r.profile->>'displayName'
@@ -35,7 +35,7 @@ export class PgSavedLibraryRepository implements SavedRepository {
     )
     SELECT kind,id,saved_at,payload FROM saved_items
     WHERE ($3::timestamptz IS NULL OR (saved_at,kind,id)<($3::timestamptz,$4::text,$5::uuid))
-    ORDER BY saved_at DESC,kind DESC,id DESC LIMIT $6\`;
+    ORDER BY saved_at DESC,kind DESC,id DESC LIMIT $6`;
     const result=await this.pool.query<{
       kind:"post"|"video";id:string;saved_at:Date|string;payload:Record<string,unknown>;
     }>(sql,[tenant,fan,before?.at??null,before?.kind??null,before?.id??null,limit]);
@@ -47,18 +47,18 @@ export class PgSavedLibraryRepository implements SavedRepository {
   async setVideoSaved(tenant:string,fan:string,id:string,enabled:boolean):Promise<boolean>{
     if(enabled){
       const result=await this.pool.query(
-        \`INSERT INTO feed.saved_videos(tenant_id,fan_id,video_id)
+        `INSERT INTO feed.saved_videos(tenant_id,fan_id,video_id)
          SELECT $1,$2,i.item_id FROM external_videos.items i
          WHERE i.tenant_id=$1 AND i.item_id=$3::uuid AND i.review_state='approved'
            AND i.verified_at IS NOT NULL AND i.verification_reference IS NOT NULL
-         ON CONFLICT DO NOTHING RETURNING video_id\`,[tenant,fan,id]);
+         ON CONFLICT DO NOTHING RETURNING video_id`,[tenant,fan,id]);
       if(result.rowCount)return true;
       const already=await this.pool.query(
-        \`SELECT 1 FROM feed.saved_videos s JOIN external_videos.items i
+        `SELECT 1 FROM feed.saved_videos s JOIN external_videos.items i
           ON i.tenant_id=s.tenant_id AND i.item_id=s.video_id
           WHERE s.tenant_id=$1 AND s.fan_id=$2 AND s.video_id=$3::uuid
             AND i.review_state='approved' AND i.verified_at IS NOT NULL
-            AND i.verification_reference IS NOT NULL\`,[tenant,fan,id]);
+            AND i.verification_reference IS NOT NULL`,[tenant,fan,id]);
       return Boolean(already.rowCount);
     }
     await this.pool.query("DELETE FROM feed.saved_videos WHERE tenant_id=$1 AND fan_id=$2 AND video_id=$3::uuid",[tenant,fan,id]);
