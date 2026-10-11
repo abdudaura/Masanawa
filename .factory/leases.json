@@ -2289,6 +2289,28 @@
       "release_reason": "Owner-directed AF00 J02 shell/migration-source integration: PR #667 six exact paths merged into non-deploying integration; head c0b191c, merge e334900. Authenticated client components composed; legacy nav denied. J02/J10 Flutter widget+PG manifest tests AUTHORED but NOT_RUN (GitHub check/admin/build zero steps; local git DNS/Node24/pnpm/PG18/Flutter/Android missing). New Gateway/worker/Rooms/Gwani/finance integration and release remain open. AF00 handoff #616 comment 6107971561.",
       "integration_head_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
       "source_head": "c0b191c44a0d3c1acdaa8d00e7e34ef6e5f0b402"
+    },
+    {
+      "claim_id": "cloud-api-v1-20261011",
+      "owner": "Codex cloud / user-appointed sole integrator",
+      "scope": "Add versioned gateway aliases preserving legacy clients, auth, schema and retry keys; exact legacy compatibility inventory and final executable checks",
+      "paths": [
+        "services/gateway/src/api_versioning.ts",
+        "services/gateway/src/api_versioning.test.ts",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/app.test.ts",
+        "services/gateway/src/agent_conversation_route.test.ts",
+        "docs/API-LIFECYCLE.json",
+        "docs/API-LIFECYCLE.md",
+        "tests/contracts/public-api-lifecycle.test.ts",
+        "CONTINUE-CLOUD-20261011.md"
+      ],
+      "branch": "continue-chat-reliability-20261011",
+      "base_sha": "5597abdb1aea1587fbecd72840602794c5d04d7c",
+      "claimed_at": "2026-10-11T10:51:51Z",
+      "heartbeat_at": "2026-10-11T10:51:51Z",
+      "expires_at": "2026-10-11T11:06:51Z",
+      "notes": "Owner requests continuing before remaining quota ends. Implement canonical /v1 aliases with same handlers, scoped auth and validation; explicitly retain inventoried legacy routes instead of blanket route policy exemption. Push checkpoint before handoff."
     }
   ],
   "history": [
