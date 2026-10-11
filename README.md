@@ -1,6 +1,10 @@
 # Masanawa
 
-Masanawa is an audio-first social and assistant app: published Talks, private Chats, a service Gwani, MSN/crypto Wallet and audio-focused Rooms. New chat opens Masana & Contacts. Bottom navigation is **Chats · Rooms · Talks · Gwani · Wallet**, with Talks centred and the ordinary launch default. Calls are inside Chats.
+Masanawa is a social messaging app for AI celebrities: think WhatsApp, modern
+and more advanced. Every contact is a Masana, an AI persona you chat and call
+with — one-to-one and in groups. Masana post Status updates into a feed. A
+built-in Wallet covers billing, crypto and services. Bottom navigation is
+**Chats · Status · Wallet · Calls · Rooms**, opening on Chats.
 
 Start at [CONTINUE-HERE.md](CONTINUE-HERE.md) and [AGENTS.md](AGENTS.md).
 
