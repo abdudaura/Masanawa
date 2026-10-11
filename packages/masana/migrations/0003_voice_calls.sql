@@ -10,6 +10,9 @@ CREATE TABLE masana.call_sessions (
   state text NOT NULL DEFAULT 'connecting'
     CHECK (state IN ('connecting','active','ended','failed','expired')),
   failure_code text,
+  provider_stop_pending boolean NOT NULL DEFAULT true,
+  stop_attempts integer NOT NULL DEFAULT 0 CHECK (stop_attempts >= 0),
+  stop_last_attempt_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   started_at timestamptz,
   ended_at timestamptz,
@@ -30,6 +33,8 @@ CREATE UNIQUE INDEX masana_one_live_fan_call
 CREATE INDEX masana_call_expiry
   ON masana.call_sessions(expires_at,tenant_id,call_id)
   WHERE state IN ('connecting','active');
+CREATE INDEX masana_pending_room_stop ON masana.call_sessions(state,stop_last_attempt_at)
+  WHERE provider_stop_pending AND state IN ('ended','failed','expired');
 CREATE INDEX masana_call_history
   ON masana.call_sessions(tenant_id,fan_user_id,created_at DESC);
 CREATE OR REPLACE FUNCTION masana.admit_platform_voice_call()
