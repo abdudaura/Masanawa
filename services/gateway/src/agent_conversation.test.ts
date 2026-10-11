@@ -13,6 +13,8 @@ import type {
   CharacterSession,
   CharacterSessionRepository,
   CharacterSessionScope,
+  MobileShellRepository,
+  MobileTurnCommand,
 } from "@masanawa/agents";
 import {
   emptyCharacterSessionBindings,
@@ -1174,4 +1176,148 @@ describe("Alpha conversation service", () => {
     expect(shellMarkedFailed).toBe(false);
   });
 
+});
+
+describe("durable agent request receipts", () => {
+  function receiptFixture(options: {
+    startEventFails?: boolean;
+    claimFails?: boolean;
+    authorizeFails?: boolean;
+    durable?: boolean;
+    execute?: AgentStrategy["execute"];
+  } = {}) {
+    const f = fixture();
+    const session = sessionFor(f);
+    const commands = new Map<string, MobileTurnCommand>();
+    let executions = 0;
+    const shell: MobileShellRepository = {
+      async claimTurn(command) {
+        if (options.claimFails) throw new Error("database unavailable");
+        const existing = commands.get(command.requestId);
+        if (existing) return { state: "existing", command: existing };
+        const stored = {
+          ...command, state: "pending", reply: null, parts: [],
+          agentRunId: null, failureCode: null, createdAt: f.at, updatedAt: f.at,
+        } as MobileTurnCommand;
+        commands.set(command.requestId, stored);
+        return { state: "created", command: stored };
+      },
+      async completeTurn(command) {
+        const stored = { ...commands.get(command.requestId)!, ...command, state: "completed" } as MobileTurnCommand;
+        commands.set(command.requestId, stored);
+        return stored;
+      },
+      async failTurn(command) {
+        const stored = { ...commands.get(command.requestId)!, ...command, state: "failed" } as MobileTurnCommand;
+        commands.set(command.requestId, stored);
+        return stored;
+      },
+      async appendEvent(event) {
+        if (options.startEventFails && event.type === "turn.started") throw new Error("event write unavailable");
+        return {} as never;
+      },
+      async readTurn(input) { return commands.get(input.requestId) ?? null; },
+      async listHistory() { return []; },
+      async listEvents() { return []; },
+      async claimAction() { throw new Error("unused"); },
+      async settleAction() { throw new Error("unused"); },
+      async readAction() { return null; },
+    };
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; },
+        async read() { return session; },
+        async updateBindings() { throw new Error("not used"); },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish() { return {} as never; },
+      },
+      authorizer: { async authorize() {
+        if (options.authorizeFails) throw new Error("unauthorized");
+        return f.admission;
+      } },
+      strategy: { async execute(command) {
+        executions++;
+        return options.execute ? options.execute(command) : { reply: "Stored reply", parts: [] };
+      } },
+      ...(options.durable === false ? {} : { mobileShell: shell }),
+      sessionDurationMs: 60_000,
+      onTurnTiming() {},
+    });
+    const request = {
+      authorizationHeader: "Bearer test",
+      characterId: f.scope.characterId,
+      characterSessionId: session.characterSessionId,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      text: "hello",
+    };
+    return { service, request, commands, executions: () => executions };
+  }
+
+  it("acknowledges stored custody before a blocked model finishes and replays without another execution", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const f = receiptFixture({ execute: async () => {
+      await gate;
+      return { reply: "Stored reply", parts: [] };
+    } });
+    const receipts: unknown[] = [];
+    const pending = f.service.turn({
+      ...f.request,
+      onAccepted(receipt) {
+        expect(f.commands.get(receipt.requestId)?.state).toBe("pending");
+        receipts.push(receipt);
+      },
+    });
+    try {
+      await vi.waitFor(() => expect(f.executions()).toBe(1));
+      expect(receipts).toEqual([{ requestId: f.request.requestId, state: "pending" }]);
+      expect(f.commands.get(f.request.requestId)?.reply).toBeNull();
+    } finally { release(); }
+    await pending;
+    const replay = await f.service.turn({ ...f.request, onAccepted: receipt => { receipts.push(receipt); } });
+    expect(replay.reply).toBe("Stored reply");
+    expect(receipts[1]).toEqual({ requestId: f.request.requestId, state: "completed" });
+    expect(f.executions()).toBe(1);
+  });
+
+  it.each([{ claimFails: true }, { authorizeFails: true }, { durable: false }])(
+    "never invents durable acceptance when custody is unavailable: %j",
+    async options => {
+      const f = receiptFixture(options);
+      const receipts: unknown[] = [];
+      await f.service.turn({ ...f.request, onAccepted: receipt => { receipts.push(receipt); } }).catch(() => undefined);
+      expect(receipts).toEqual([]);
+    },
+  );
+
+  it("a failed receipt observer cannot fail or delay canonical execution", async () => {
+    const f = receiptFixture();
+    const response = await f.service.turn({
+      ...f.request,
+      onAccepted() { throw new Error("disconnected client"); },
+    });
+    expect(response.reply).toBe("Stored reply");
+    expect(f.commands.get(f.request.requestId)?.state).toBe("completed");
+  });
+
+  it.each(["text", "media", "media-set"] as const)(
+    "an auxiliary start-event failure cannot strand an accepted %s request",
+    async kind => {
+      const f = receiptFixture({ startEventFails: true });
+      const result = kind === "text"
+        ? await f.service.turn(f.request)
+        : kind === "media"
+          ? await f.service.mediaTurn({ ...f.request, caption: "", mimeType: "image/jpeg", dataBase64: "YWJj" })
+          : await f.service.mediaSetTurn({ ...f.request, caption: "", media: [{ mimeType: "image/jpeg", dataBase64: "YWJj" }, { mimeType: "image/jpeg", dataBase64: "ZGVm" }] });
+      expect(result.reply).toBe("Stored reply");
+      expect(f.commands.get(f.request.requestId)?.state).toBe("completed");
+      expect(f.executions()).toBe(1);
+    },
+  );
 });

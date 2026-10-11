@@ -318,6 +318,16 @@ export function createAgentConversationService(input: {
           payloadHash: hashTurnPayload(text),
         });
         stagesMs.commandClaim = elapsed(claimStart);
+        // The command is already in canonical custody. Notify the transport
+        // before model/tool execution, without making it part of settlement.
+        if (request.onAccepted && !request.signal?.aborted) {
+          try {
+            void Promise.resolve(request.onAccepted(Object.freeze({
+              requestId: request.requestId,
+              state: claim.state === "created" ? "pending" : claim.command.state,
+            }))).catch(() => undefined);
+          } catch { /* A disconnected observer cannot change durable custody. */ }
+        }
         if (claim.state === "existing") {
           const replay = replayTurn(claim.command);
           emitTiming("completed");
@@ -328,7 +338,7 @@ export function createAgentConversationService(input: {
           characterSessionId,
           type: "turn.started",
           payload: { requestId: request.requestId, kind: "text" },
-        });
+        }).catch(() => undefined);
       }
 
       const agentRunId = createCanonicalId("agent-run");
@@ -621,7 +631,7 @@ export function createAgentConversationService(input: {
           characterSessionId,
           type: "turn.started",
           payload: { requestId: request.requestId, kind: "media" },
-        });
+        }).catch(() => undefined);
       }
 
       const agentRunId = createCanonicalId("agent-run");
@@ -819,7 +829,7 @@ export function createAgentConversationService(input: {
           characterSessionId,
           type: "turn.started",
           payload: { requestId: request.requestId, kind: "media-set" },
-        });
+        }).catch(() => undefined);
       }
 
       const agentRunId = createCanonicalId("agent-run");

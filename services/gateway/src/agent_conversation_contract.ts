@@ -32,6 +32,12 @@ export interface AgentConversationAuthorizer {
   }): Promise<AgentConversationAdmission>;
 }
 
+/** Durable server custody only; this is never a human delivery/read receipt. */
+export interface AgentTurnReceipt {
+  readonly requestId: RequestId;
+  readonly state: "pending" | "completed" | "failed";
+}
+
 export interface AgentConversationService {
   open(input: {
     readonly authorizationHeader: string | undefined;
@@ -48,6 +54,7 @@ export interface AgentConversationService {
     readonly surface?: AgentConversationSurface;
     readonly representation?: AgentConversationRepresentation;
     readonly onTextDelta?: (delta: string) => void | Promise<void>;
+    readonly onAccepted?: (receipt: AgentTurnReceipt) => void;
     readonly onAudioPcmChunk?: (dataBase64: string) => void | Promise<void>;
     readonly signal?: AbortSignal;
   }): Promise<{

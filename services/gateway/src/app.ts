@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
-import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
+import { isCanonicalId, nowInstant, parseCanonicalId, PlatformError } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
 import { registerCloneOnboardingRoutes } from "./clone_onboarding_routes.js";
@@ -341,6 +341,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   });
 
   app.addHook("onRequest", async (request, reply) => {
+    const inboundRequestId = request.headers["x-request-id"];
     const correlation = admitTelemetryCorrelation({
       carrier: {
         ...(request.headers.traceparent !== undefined
@@ -354,7 +355,22 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           : {}),
       },
     });
-    const headers = injectCorrelationHeaders(correlation);
+    const isAgentTurn = request.method === "POST" && [
+      "/agent/sessions/:characterSessionId/turn",
+      "/agent/sessions/:characterSessionId/turn-stream",
+      "/agent/sessions/:characterSessionId/media-turn",
+      "/agent/sessions/:characterSessionId/media-set-turn",
+    ].includes(request.routeOptions.url ?? "");
+    // Public telemetry IDs remain server-issued. Conversation request keys
+    // identify an account-fenced durable command, so retries must preserve them.
+    // The authorizer and repository supply authority, never this caller key.
+    const headers: Record<string, string> = {
+      ...injectCorrelationHeaders(correlation),
+      ...(isAgentTurn && typeof inboundRequestId === "string" &&
+          isCanonicalId("request", inboundRequestId)
+        ? { "x-request-id": inboundRequestId }
+        : {}),
+    };
 
     request.headers.traceparent = headers.traceparent;
     request.headers["x-request-id"] = headers["x-request-id"];
@@ -1011,6 +1027,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
               "correlation",
               request.headers["x-correlation-id"] as string,
             ),
+            onAccepted: (receipt) => {
+              emit({ type: "accepted", ...receipt });
+            },
             onTextDelta: async (delta) => {
               if (delta) emit({ type: "delta", text: delta });
             },
@@ -1027,8 +1046,16 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             signal: controller.signal,
           });
           emit({ type: "done", ...resultBody(result) });
-        } catch {
-          emit({ type: "error", code: "turn_failed" });
+        } catch (error) {
+          // Preserve the safe recovery contract without sending diagnostics,
+          // provider output or arbitrary exception messages to the client.
+          const recoveryCode = error instanceof PlatformError && [
+            "agents.turn_pending",
+            "agents.turn_settlement_uncertain",
+            "agents.session_closed",
+            "agents.session_not_found",
+          ].includes(error.code) ? error.code : "turn_failed";
+          emit({ type: "error", code: recoveryCode });
         } finally {
           finished = true;
           reply.raw.off("close", abort);
