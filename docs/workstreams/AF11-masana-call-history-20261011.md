@@ -20,6 +20,21 @@ Bounded AF00 composition transfer, owner has assigned this window full ownership
 `services/gateway/src/app.ts`, `services/gateway/src/main.ts`.
 No auth, ledger, native audio, existing migration or deployment edits.
 
+Owner-directed continuation (2026-10-11): native reporting and group calls are now
+authorized. Bounded native/composition transfer to this coordinating window:
+`apps/mobile/lib/src/core/live_voice_session.dart`,
+`apps/mobile/lib/src/agents/agent_shell.dart`,
+`apps/mobile/lib/src/agents/masanawa_transport.dart`,
+`apps/mobile/lib/src/screens/chat/ai_chat_screen.dart`,
+`apps/mobile/test/live_voice_session_test.dart`,
+`apps/mobile/test/call_lifecycle_reporter_test.dart`.
+Group backend allocation: `services/gateway/src/group_calls/**`,
+`packages/agents/migrations/0008_masana_group_calls.sql`.
+Group mobile allocation: `apps/mobile/lib/src/calls/group_*.dart`,
+`apps/mobile/test/group_call*.dart`. Root retains main/app/router composition and
+Calls entry point. Other windows retain Status/Rooms/Quality source.
+Design contract: `docs/superpowers/specs/2026-10-11-masana-native-and-group-calls-design.md`.
+
 Mobile continuation claim: `apps/mobile/lib/src/calls/**`,
 `apps/mobile/lib/src/screens/calls/calls_screen.dart`,
 `apps/mobile/test/call_history_transport_test.dart`,
