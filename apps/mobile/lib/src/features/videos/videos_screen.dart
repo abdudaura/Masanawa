@@ -13,6 +13,7 @@ typedef VideoOpener = Future<bool> Function(Uri);
 class ExternalVideosScreen extends StatefulWidget {
   const ExternalVideosScreen({
     required this.load, this.loadPage, this.open, this.embedBuilder,
+    this.checkAvailability,
     this.accountKey = '', this.enabled = true, this.languageCode = 'en',
     super.key,
   });
@@ -20,6 +21,8 @@ class ExternalVideosScreen extends StatefulWidget {
   final VideoPageLoader? loadPage;
   final VideoOpener? open;
   final VideoEmbedBuilder? embedBuilder;
+  /// Parent injects VideoRepository.isApproved using its authenticated Dio.
+  final Future<bool> Function(String id)? checkAvailability;
   final String accountKey;
   final bool enabled;
   final String languageCode;
@@ -107,6 +110,7 @@ class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
       builder: (_) => OfficialVideoPlayerScreen(
         video: video, embedBuilder: widget.embedBuilder,
         open: widget.open, languageCode: widget.languageCode,
+        checkAvailability: widget.checkAvailability,
       ),
     ));
   }

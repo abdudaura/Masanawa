@@ -42,6 +42,12 @@ describe("YouTube official source reconciliation",()=>{
     expect(x.events).toEqual(["unavailable"]);
     expect(x.catalog.stagePending).not.toHaveBeenCalled();
   });
+  it("retries incomplete official responses without falsely taking down approved video",async()=>{
+    const x=harness();x.api.videos.mockResolvedValueOnce([]);
+    await expect(x.reconciler.reconcile(source)).rejects.toMatchObject({code:"incomplete_provider_response"});
+    expect(x.catalog.markUnavailable).not.toHaveBeenCalled();
+    expect(x.catalog.stagePending).not.toHaveBeenCalled();
+  });
   it("does not call provider when quota reservation fails",async()=>{
     const x=harness();x.quota.reserve.mockResolvedValueOnce(false);
     await expect(x.reconciler.reconcile(source)).rejects.toMatchObject({code:"quota_exhausted"});

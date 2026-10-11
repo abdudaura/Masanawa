@@ -21,6 +21,11 @@ export function registerExternalVideoRoutes(app: FastifyInstance, deps: {
       return { items, nextCursor: items.length === 20 ? items.at(-1)?.id ?? null : null };
     } catch (err) { const r = replyError(err); return reply.code(r.status).send(r.body); }
   });
+  app.get<{Params:{id:string}}>("/v1/videos/:id/availability", async (request, reply) => {
+    try {
+      return await service.availability(await deps.resolvePrincipal(request), request.params.id);
+    } catch (err) { const r = replyError(err); return reply.code(r.status).send(r.body); }
+  });
   app.get("/v1/admin/video-items", async (request, reply) => {
     try {
       const principal = await deps.resolvePrincipal(request);

@@ -24,7 +24,7 @@ export interface YouTubeCatalogSink {
   markUnavailable(input: {tenantId:string; sourceId:string;providerVideoId:string}):Promise<void>;
 }
 export class YouTubeSyncError extends Error {
-  constructor(readonly code: "unauthorized_source" | "quota_exhausted" | "invalid_source") { super(code); }
+  constructor(readonly code: "unauthorized_source" | "quota_exhausted" | "invalid_source" | "incomplete_provider_response") { super(code); }
 }
 const channel = /^UC[A-Za-z0-9_-]{22}$/u;
 function eligible(video: YouTubeVideoMetadata, expectedChannel: string, region: string): boolean {
@@ -63,7 +63,11 @@ export function createYouTubeReconciler(deps: {api:YouTubeDataApi;quota:YouTubeQ
           const byId=new Map(videos.map(v=>[v.id,v]));
           for(const id of page.ids) {
             const detail=byId.get(id);
-            if(!detail || !eligible(detail,source.channelId,source.targetRegion)) {
+            // A missing videos.list row is ambiguous (partial provider response,
+            // transient outage, deletion). Never hide a previously approved item
+            // without explicit official eligibility evidence; retry via outbox.
+            if(!detail) throw new YouTubeSyncError("incomplete_provider_response");
+            if(!eligible(detail,source.channelId,source.targetRegion)) {
               await deps.catalog.markUnavailable({tenantId:source.tenantId,sourceId:source.sourceId,providerVideoId:id});
               unavailable++;
             } else {

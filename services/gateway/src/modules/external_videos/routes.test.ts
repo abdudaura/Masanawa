@@ -23,6 +23,10 @@ describe("J15 video HTTP authorization boundary", () => {
           saved[index] = changed;
           return changed;
         },
+        async isApproved(input) {
+          return saved.some(v => v.tenantId === input.tenantId &&
+            v.id === input.id && v.reviewState === "approved" && v.verifiedAt !== null);
+        },
         async list(input) {
           return saved.filter(v => v.tenantId === input.tenantId &&
             (!input.publicOnly || v.reviewState === "approved")).slice(0, input.limit);
@@ -35,6 +39,8 @@ describe("J15 video HTTP authorization boundary", () => {
     const accepted = await app.inject({method:"POST",url:"/v1/admin/video-items",headers:{"x-test-staff":"yes"},payload:item});
     expect(accepted.statusCode).toBe(201);
     const id = accepted.json().id as string;
+    const availabilityUrl = `/v1/videos/${id}/availability`;
+    expect((await app.inject({method:"GET",url:availabilityUrl})).json()).toEqual({available:false});
     expect((await app.inject({method:"GET",url:"/v1/videos"})).json().items).toEqual([]);
     const unverified = await app.inject({method:"PATCH",url:`/v1/admin/video-items/${id}/review`,
       headers:{"x-test-staff":"yes"}, payload:{state:"approved",verificationReference:null}});
@@ -43,10 +49,14 @@ describe("J15 video HTTP authorization boundary", () => {
       headers:{"x-test-staff":"yes"}, payload:{state:"approved",verificationReference:"verified-provider-player-123"}});
     expect(approved.statusCode).toBe(200);
     expect((await app.inject({method:"GET",url:"/v1/videos"})).json().items).toHaveLength(1);
+    expect((await app.inject({method:"GET",url:availabilityUrl})).json()).toEqual({available:true});
     const hidden = await app.inject({method:"PATCH",url:`/v1/admin/video-items/${id}/review`,
       headers:{"x-test-staff":"yes"}, payload:{state:"hidden",verificationReference:null}});
     expect(hidden.statusCode).toBe(200);
     expect((await app.inject({method:"GET",url:"/v1/videos"})).json().items).toEqual([]);
+    expect((await app.inject({method:"GET",url:availabilityUrl})).json()).toEqual({available:false});
+    expect((await app.inject({method:"GET",url:"/v1/videos/invalid/availability"})).statusCode).toBe(400);
+    expect((await app.inject({method:"GET",url:"/v1/videos/11111111-1111-4111-8111-111111111111/availability"})).json()).toEqual({available:false});
     const reopen = await app.inject({method:"PATCH",url:`/v1/admin/video-items/${id}/review`,
       headers:{"x-test-staff":"yes"},payload:{state:"pending",expectedState:"hidden",verificationReference:null}});
     expect(reopen.statusCode).toBe(200);
