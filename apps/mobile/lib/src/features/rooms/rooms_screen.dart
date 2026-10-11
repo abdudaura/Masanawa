@@ -76,15 +76,29 @@ class RoomHomeScreen extends StatefulWidget {
 class _RoomHomeScreenState extends State<RoomHomeScreen>{
  final question=TextEditingController();
  RoomInfo? info;List<RoomQuestion> items=[];List<String> lessons=[];
- bool loading=true,busy=false;Object? error;int tab=0;String? pendingKey;
+ bool loading=true,busy=false,paidAccessBlocked=false;Object? error;int tab=0;String? pendingKey;
  @override void initState(){super.initState();load();}
  @override void dispose(){question.dispose();super.dispose();}
  Future<void> load()async{
   setState((){loading=true;error=null;});
   try{final room=await widget.client.room(widget.id);
-   final qs=room.joined?await widget.client.questions(widget.id):<RoomQuestion>[];
-   final ls=room.joined?await widget.client.lessons(widget.id):<String>[];
-   if(mounted)setState((){info=room;items=qs;lessons=ls;loading=false;});
+   List<RoomQuestion> qs=[];
+   List<String> ls=[];
+   bool subscriptionBlocked=false;
+   if(room.joined){
+    try{
+     qs=await widget.client.questions(widget.id);
+     ls=await widget.client.lessons(widget.id);
+    }on DioException catch(e){
+     // Membership is not entitlement. Expired/held paid users must still see
+     // the Room preview and regain access through verified Play checkout.
+     if(room.paid&&e.response?.statusCode==403){subscriptionBlocked=true;}
+     else{rethrow;}
+    }
+   }
+   if(mounted)setState((){
+    info=room;items=qs;lessons=ls;paidAccessBlocked=subscriptionBlocked;loading=false;
+   });
   }catch(e){if(mounted)setState((){error=e;loading=false;});}
  }
  Future<void> membership()async{
@@ -136,9 +150,10 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
      Text(info!.title,style:Theme.of(context).textTheme.titleLarge),
      Text('Teacher: ${info!.teacher} · ${info!.members} members'),
      if(info!.paid)const Text('Paid lessons need a verified Google Play subscription.'),
-     FilledButton(onPressed:busy?null:(info!.paid&&!info!.joined?paidJoin:membership),
-      child:Text(info!.joined?'Leave Room':info!.paid?'Subscribe or join Room':'Join free Room'))])),
-    if(info!.joined)...[
+     FilledButton(onPressed:busy?null:(info!.paid&&(paidAccessBlocked||!info!.joined)?paidJoin:membership),
+      child:Text(paidAccessBlocked?'Renew subscription':
+       info!.joined?'Leave Room':info!.paid?'Subscribe or join Room':'Join free Room'))])),
+    if(info!.joined&&!paidAccessBlocked)...[
      SegmentedButton<int>(segments:const [
        ButtonSegment(value:0,label:Text('Lessons')),ButtonSegment(value:1,label:Text('Questions')),
        ButtonSegment(value:2,label:Text('Discussion'))],
@@ -156,7 +171,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
         decoration:const InputDecoration(hintText:'Ask your teacher',border:OutlineInputBorder()))),
        IconButton(icon:const Icon(Icons.send,color:masanaBlue),onPressed:busy?null:ask,tooltip:'Send question'),
      ]))),
-    ]else Expanded(child:Center(child:Text(info!.paid?'Subscribe or join to access lessons and questions':'Join to see lessons and ask questions'))),
+    ]else Expanded(child:Center(child:Text(info!.paid?'A verified subscription is required to access lessons and questions':'Join to see lessons and ask questions'))),
    ])
  );
 }
