@@ -29,12 +29,15 @@ export function createMasanaRehearsalStore(pool:Pool) {
   return x.rows[0]??null;
  },
  async claim(tenantId:string,runId:string):Promise<Job|null>{
+  // A formerly valid draft may be approved before its queued event is leased.
+  // Persist an explicit terminal result; never leave the Staff UI permanently queued.
+  await pool.query("UPDATE masana.rehearsal_runs q SET state='failed',error_code='draft_no_longer_available',lease_token=NULL,lease_until=NULL,updated_at=now() WHERE q.tenant_id=$1 AND q.run_id=$2 AND (q.state='queued' OR (q.state='running' AND q.lease_until<now())) AND NOT EXISTS (SELECT 1 FROM masana.character_revisions r WHERE r.tenant_id=q.tenant_id AND r.character_id=q.character_id AND r.revision=q.revision AND r.state='draft')",[tenantId,runId]);
   const token='lease_'+randomUUID();
   const x=await pool.query("UPDATE masana.rehearsal_runs q SET state='running',attempt=q.attempt+1,lease_token=$3,lease_until=now()+interval '90 seconds',updated_at=now() FROM masana.character_revisions r WHERE q.tenant_id=$1 AND q.run_id=$2 AND r.tenant_id=q.tenant_id AND r.character_id=q.character_id AND r.revision=q.revision AND r.state='draft' AND q.attempt<3 AND (q.state='queued' OR(q.state='running' AND q.lease_until<now())) RETURNING q.tenant_id,q.run_id,q.character_id,q.revision,q.mode,q.prompt,q.attempt,q.lease_token,r.profile",[tenantId,runId,token]);
   const v=x.rows[0];return v?{tenantId:v.tenant_id,runId:v.run_id,characterId:v.character_id,revision:Number(v.revision),mode:v.mode,prompt:v.prompt,attempt:Number(v.attempt),leaseToken:v.lease_token,draftProfile:v.profile}:null;
  },
  async complete(i:Job,preview:{summary:string;previewText:string;audioMediaId?:string}){
-  const r=await pool.query("UPDATE masana.rehearsal_runs SET state='succeeded',preview=$4::jsonb,lease_token=NULL,lease_until=NULL,error_code=NULL,updated_at=now() WHERE tenant_id=$1 AND run_id=$2 AND lease_token=$3 AND state='running' AND lease_until>=now()",[i.tenantId,i.runId,i.leaseToken,JSON.stringify(preview)]);
+  const r=await pool.query("UPDATE masana.rehearsal_runs SET state='succeeded',preview=$4::jsonb,lease_token=NULL,lease_until=NULL,error_code=NULL,updated_at=now() WHERE tenant_id=$1 AND run_id=$2 AND lease_token=$3 AND state='running' AND lease_until>=now() AND EXISTS (SELECT 1 FROM masana.character_revisions r WHERE r.tenant_id=masana.rehearsal_runs.tenant_id AND r.character_id=masana.rehearsal_runs.character_id AND r.revision=masana.rehearsal_runs.revision AND r.state='draft')",[i.tenantId,i.runId,i.leaseToken,JSON.stringify(preview)]);
   return r.rowCount===1;
  },
  async fail(i:Job,code:'runner_unavailable'|'voice_not_qualified'|'rehearsal_failed'){
