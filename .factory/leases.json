@@ -1666,11 +1666,14 @@
       ],
       "branch": "lane/l-video-c28-official-player-20261011-gpt6",
       "source_pr": 638,
-      "source_head": "7ca9ff115f7896e5ec8b0b28a0058ff583b70d33",
+      "source_head": "20af89ab65a80c05d5a88a6767d67c21200c5b2e",
       "claimed_at": "2026-10-11T04:21:12.312Z",
       "heartbeat_at": "2026-10-11T04:31:57.664Z",
       "expires_at": "2026-10-11T04:36:57.664Z",
-      "notes": "Recovered expired L-VIDEO claim after source/head audit and PR #638 comment 6105383405; exact paths only."
+      "notes": "Recovered expired L-VIDEO claim after source/head audit and PR #638 comment 6105383405; exact paths only.",
+      "released_at": "2026-10-11T04:33:20.846Z",
+      "release_reason": "PR #638 source-only merged into non-deploying integration/rebuild; exact Video branch head 20af89ab65a80c05d5a88a6767d67c21200c5b2e; merge 9256ada27b33ed286edaa3ba42835972575a25fd. Current head runner CI consumer analyze/test fail; root pnpm install fails missing feed importer. AF00 owns root composition and rerun, no main deployment.",
+      "integration_head_sha": "9256ada27b33ed286edaa3ba42835972575a25fd"
     }
   ],
   "history": [
