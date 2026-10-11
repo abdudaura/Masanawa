@@ -12,11 +12,14 @@
       "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
       "base_sha": "8301c8de87d94645ec5d350298b32e22ebf2ab63",
       "source_pr": 641,
-      "source_head": "214f6992d35b2b32da1e8c30cad9a6b4ecd88f2a",
+      "source_head": "51b2e21bb1c4544137cef66c23c741d62b39f98c",
       "claimed_at": "2026-10-11T07:40:58.687Z",
       "heartbeat_at": "2026-10-11T07:40:58.687Z",
       "expires_at": "2026-10-11T07:45:58.687Z",
-      "notes": "Read #641 head + expired lease and posted takeover handoff; edit only two exact C10 files; no AF00 or live money."
+      "notes": "Read #641 head + expired lease and posted takeover handoff; edit only two exact C10 files; no AF00 or live money.",
+      "released_at": "2026-10-11T07:44:45.073Z",
+      "release_reason": "C10 existing PR #641 source repaired on exact two claimed files, HEAD 51b2e21; 5 widget cases authored, actual GitHub check/admin/mobile jobs FAIL with zero steps, full TS/Vitest/PG18/Flutter/Android blocked; AF00 handoff comments #641/#616; source ready for review, not merged or released.",
+      "integration_head_sha": null
     },
     {
       "claim_id": "recovery-03-u05-memory-20261009",
