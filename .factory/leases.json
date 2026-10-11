@@ -1372,6 +1372,26 @@
       "source_head_sha": "d4508d00bd81be0f22f84d0f4949e11ae2f18b31",
       "integration_head_sha": null,
       "release_reason": "Source handoff in #637 and #616, checked exact source SHA; back-end PG/audit, admin UI and negative tests committed. AF00 owns root wiring/merge. GitHub checks queued, no verified PG/Flutter, shared frozen pnpm lock mismatch from other lane. No production activation."
+    },
+    {
+      "claim_id": "l-video-c28-c29-player-20261011-gpt6",
+      "owner": "GPT-6 L-VIDEO C28/C29 official embeds",
+      "scope": "Continue existing merged J14/J15 external video catalog with real official provider embed playback and graceful fallback; no duplicate backend/DB/provider authority",
+      "paths": [
+        "apps/mobile/lib/src/features/videos/official_video_player_screen.dart",
+        "apps/mobile/lib/src/features/videos/video_embed_policy.dart",
+        "apps/mobile/lib/src/features/videos/videos_screen.dart",
+        "apps/mobile/lib/src/features/videos/video_models.dart",
+        "apps/mobile/test/features/videos/official_video_player_test.dart",
+        "apps/mobile/test/features/videos/videos_screen_test.dart",
+        "apps/mobile/pubspec.yaml"
+      ],
+      "branch": "lane/l-video-c28-official-player-20261011-gpt6",
+      "base_sha": "ebd3b81599866aee488ed6ef9d2e791f73a8d798",
+      "claimed_at": "2026-10-11T03:23:39.707Z",
+      "heartbeat_at": "2026-10-11T03:23:39.707Z",
+      "expires_at": "2026-10-11T03:28:39.707Z",
+      "notes": "Read main, planning #615, integration and merged #624/#627/#637; only Flutter consumer video feature and dependency. Reuse canonical catalog API; request AF00 shared Home composition. No live provider activation."
     }
   ],
   "history": [
