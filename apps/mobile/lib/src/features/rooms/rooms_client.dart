@@ -12,6 +12,18 @@ class RoomQuestion {
  factory RoomQuestion.fromJson(Map<String,dynamic> j)=>RoomQuestion(j['questionId'] as String,
   j['body'] as String,j['state'] as String,j['answer'] as String?);
 }
+class RoomLesson {
+ const RoomLesson(this.id,this.body,this.kind);
+ final String id,body,kind;
+ factory RoomLesson.fromJson(Map<String,dynamic> value) {
+  final id=value['lessonId'],body=value['body'],kind=value['kind'];
+  if(id is! String || !id.startsWith('room-lesson_') ||
+     body is! String || (kind!='lesson' && kind!='announcement')) {
+   throw const FormatException('Invalid Room lesson');
+  }
+  return RoomLesson(id,body,kind as String);
+ }
+}
 abstract class RoomsClient {
  Future<List<RoomInfo>> list({required bool joined,String query='',String language=''});
  Future<RoomInfo> room(String id);
@@ -19,7 +31,7 @@ abstract class RoomsClient {
  Future<void> leave(String id);
  Future<RoomQuestion> ask(String id,String text,String key);
  Future<List<RoomQuestion>> questions(String id);
- Future<List<String>> lessons(String id);
+ Future<List<RoomLesson>> lessons(String id);
 }
 class HttpRoomsClient implements RoomsClient {
  const HttpRoomsClient(this.http);
@@ -43,10 +55,10 @@ class HttpRoomsClient implements RoomsClient {
    final r=await http.get<Map<String,dynamic>>('${path(id)}/questions');
    return (r.data?['items'] as List<dynamic>? ?? []).map((j)=>RoomQuestion.fromJson(j as Map<String,dynamic>)).toList();
  }
- @override Future<List<String>> lessons(String id)async{
+ @override Future<List<RoomLesson>> lessons(String id)async{
    final r=await http.get<Map<String,dynamic>>('${path(id)}/lessons');
    return (r.data?['items'] as List<dynamic>? ?? [])
-     .map((j)=>(j as Map<String,dynamic>)['body'] as String).toList();
+     .map((j)=>RoomLesson.fromJson(Map<String,dynamic>.from(j as Map))).toList();
  }
 
 }

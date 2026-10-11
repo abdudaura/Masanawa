@@ -13,7 +13,7 @@ class FakeRooms implements RoomsClient {
  @override Future<RoomQuestion> ask(String id,String text,String key)async=>
   const RoomQuestion('room-question_1','Can I learn algebra?','queued',null);
  @override Future<List<RoomQuestion>> questions(String id)async=>[];
- @override Future<List<String>> lessons(String id)async=>[];
+ @override Future<List<RoomLesson>> lessons(String id)async=>[];
 }
 void main(){
  testWidgets('fan sees professional Rooms but cannot create one',(tester)async{

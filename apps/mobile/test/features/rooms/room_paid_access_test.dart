@@ -24,7 +24,7 @@ class FakeRooms implements RoomsClient {
   }
   return [];
  }
- @override Future<List<String>> lessons(String id)async=>[];
+ @override Future<List<RoomLesson>> lessons(String id)async=>[];
  @override Future<RoomQuestion> ask(String id,String text,String key)async=>throw UnimplementedError();
 }
 class FakePlans implements RoomSubscriptionsClient {
