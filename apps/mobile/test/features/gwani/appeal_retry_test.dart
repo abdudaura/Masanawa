@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/features/gwani/cases_api.dart';
-import 'package:masanawa_mobile/src/features/gwani/cases_screen.dart';
+import 'package:masanawa/src/features/gwani/cases_api.dart';
+import 'package:masanawa/src/features/gwani/cases_screen.dart';
 
 void main() {
   test('J13 appeal command always sends the idempotency key', () async {
@@ -57,6 +57,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(
         home: GwaniCasesScreen(api: GwaniCasesApi(dio))));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('spam').last);
     await tester.tap(find.text('spam').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'reconsider');
