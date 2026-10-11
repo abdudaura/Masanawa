@@ -1554,6 +1554,30 @@
       "heartbeat_at": "2026-10-11T04:04:00Z",
       "expires_at": "2026-10-11T04:09:00Z",
       "notes": "Non-deploying integration/rebuild only; no shared app/router/main/migration registry, financial data, provider writes"
+    },
+    {
+      "claim_id": "l-gwani-j13-appeal-replay-20261011-gpt6-0507",
+      "owner": "L-GWANI J13 scoped continuation (ChatGPT/GPT-6)",
+      "scope": "Complete J13 fan appeal idempotent retry contract, request replay and staff evidence, reusing #628 canonical cases/appeals and no second ledger/queue",
+      "paths": [
+        "packages/moderation/migrations/0002_appeal_idempotency.sql",
+        "services/gateway/src/modules/moderation/service.ts",
+        "services/gateway/src/modules/moderation/routes.ts",
+        "services/gateway/src/modules/moderation/service.test.ts",
+        "adapters/storage/postgres/src/moderation/repository.ts",
+        "adapters/storage/postgres/src/moderation/repository.integration.test.ts",
+        "apps/mobile/lib/src/features/gwani/cases_api.dart",
+        "apps/mobile/lib/src/features/gwani/cases_screen.dart",
+        "apps/mobile/test/features/gwani/appeal_retry_test.dart",
+        "tests/e2e/J13/README.md"
+      ],
+      "branch": "lane/l-gwani-cases-j13-20261010-gpt6",
+      "source_pr": 628,
+      "source_head": "e735bdd3df929da1b646ae9913465e367f06aa47",
+      "claimed_at": "2026-10-11T04:07:50.311Z",
+      "heartbeat_at": "2026-10-11T04:07:50.311Z",
+      "expires_at": "2026-10-11T04:12:50.311Z",
+      "notes": "Disjoint J13 appeal retry sub-scope. AF00 owns package importer/root migration registry and composition. Never merge to main."
     }
   ],
   "history": [
