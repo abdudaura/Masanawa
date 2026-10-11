@@ -1,6 +1,16 @@
 import type { Pool } from "pg";
-import type { SearchHit, SearchKind, SearchPage, SearchQuery, SearchStore } from
-  "../../../../../services/gateway/src/modules/search/contract.js";
+// Local structural port prevents a Gateway→PostgreSQL package dependency cycle.
+export type SearchKind = "masana" | "rooms" | "posts" | "videos";
+export interface SearchHit {
+  readonly kind: SearchKind; readonly id: string; readonly title: string;
+  readonly subtitle: string; readonly sourceUrl?: string;
+}
+export interface SearchPage { readonly items: readonly SearchHit[]; readonly nextCursor: string | null; }
+export interface SearchQuery {
+  readonly tenantId: string; readonly kind: SearchKind; readonly q: string;
+  readonly cursor: string | null; readonly limit: number;
+}
+export interface SearchStore { search(query: SearchQuery): Promise<SearchPage>; }
 
 /** No separate search index, external search service, migration or user table. */
 type ReadPool = Pick<Pool, "query">;
