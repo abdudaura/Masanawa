@@ -2229,8 +2229,8 @@
       "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
       "source_pr": null,
       "claimed_at": "2026-10-11T08:10:40.507Z",
-      "heartbeat_at": "2026-10-11T08:17:51.538Z",
-      "expires_at": "2026-10-11T08:22:51.538Z",
+      "heartbeat_at": "2026-10-11T08:21:14.629Z",
+      "expires_at": "2026-10-11T08:26:14.629Z",
       "notes": "All paths exact and non-overlapping; AF00 owns migration registration / gateway and worker composition. Old direct staff publishing will fail closed."
     }
   ],
