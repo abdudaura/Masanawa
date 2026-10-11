@@ -1615,7 +1615,11 @@
       "claimed_at": "2026-10-11T04:12:53.843Z",
       "heartbeat_at": "2026-10-11T04:22:29.463Z",
       "expires_at": "2026-10-11T04:27:29.463Z",
-      "source_head": "aec3cf954b561d14ecd2e08492125ade4b7b0358"
+      "source_head": "b52a14e547ab7d1f07ff07a2c1c42d366ab8f821",
+      "released_at": "2026-10-11T04:27:09.335Z",
+      "release_reason": "A04 feature-local source PR #645 exact head b52a14e547ab7d1f07ff07a2c1c42d366ab8f821; AF00 #616 comment 6105401495 and follow-up 6105419166 for shared composition. No merge or production. Exact-head Android Admin analyze/widgets PASS (Mobile Build 38111414037), Foundation check job failed frozen-lockfile missing packages/feed, PG18/Vitest/TypeScript not run, consumer analyze failed unrelated, APK not qualified. A04 default-off. Scoped source audit 16/16 static assertions.",
+      "source_pr": 645,
+      "integration_head_sha": null
     },
     {
       "claim_id": "l-feed-c25-saved-library-20261011-gpt6-0520",
