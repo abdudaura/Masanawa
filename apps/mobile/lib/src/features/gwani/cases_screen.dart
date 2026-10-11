@@ -194,15 +194,24 @@ class _GwaniCaseDetailState extends State<_GwaniCaseDetail> {
   final _appeal = TextEditingController();
   bool _sending = false;
   String? _error;
+  String? _pendingAppealRequestId;
   @override
   void dispose() { _appeal.dispose(); super.dispose(); }
   Future<void> _sendAppeal() async {
     if (_sending || _appeal.text.trim().isEmpty) return;
+    // Reuse the same key when the server may have accepted a lost response.
+    _pendingAppealRequestId ??= 'appeal_${DateTime.now().microsecondsSinceEpoch}_${Random.secure().nextInt(1 << 30)}';
     setState(() { _sending = true; _error = null; });
     try {
-      await widget.api.appeal(widget.caseId, _appeal.text.trim());
+      await widget.api.appeal(widget.caseId, _appeal.text.trim(),
+          clientRequestId: _pendingAppealRequestId!);
       if (!mounted) return;
-      setState(() { _sending = false; _details = widget.api.detail(widget.caseId); });
+      setState(() {
+        _sending = false;
+        _pendingAppealRequestId = null;
+        _appeal.clear();
+        _details = widget.api.detail(widget.caseId);
+      });
     } catch (_) {
       if (mounted) setState(() { _sending = false; _error = 'Unable to appeal. Please retry.'; });
     }
@@ -236,6 +245,7 @@ class _GwaniCaseDetailState extends State<_GwaniCaseDetail> {
             ),
           if (['actioned', 'dismissed', 'closed'].contains(state)) ...[
             TextField(controller: _appeal, maxLength: 2000, maxLines: 3,
+                onChanged: (_) => _pendingAppealRequestId = null,
                 decoration: const InputDecoration(labelText: 'Why should this be reconsidered?')),
             if (_error != null) Text(_error!),
             FilledButton(onPressed: _sending ? null : _sendAppeal, child: const Text('Submit appeal')),
