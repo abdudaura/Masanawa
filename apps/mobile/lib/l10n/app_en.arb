@@ -417,5 +417,29 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatC10Title": "Chats",
+  "@chatC10Title": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Search": "Search Masana or profession",
+  "@chatC10Search": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Retry": "Retry",
+  "@chatC10Retry": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Unauthorized": "Sign in to see your chats",
+  "@chatC10Unauthorized": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Disabled": "Chats are temporarily unavailable",
+  "@chatC10Disabled": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Offline": "Offline — showing saved chats",
+  "@chatC10Offline": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10LoadError": "Could not load chats. Retry.",
+  "@chatC10LoadError": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10PinError": "Pin not saved. Refresh and retry.",
+  "@chatC10PinError": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Empty": "No Masana conversations yet",
+  "@chatC10Empty": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Discover": "Find Masana",
+  "@chatC10Discover": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Pin": "Pin chat",
+  "@chatC10Pin": {"description": "L-CHAT C10 private Masana Chats list"},
+  "chatC10Unpin": "Unpin chat",
+  "@chatC10Unpin": {"description": "L-CHAT C10 private Masana Chats list"}
 }

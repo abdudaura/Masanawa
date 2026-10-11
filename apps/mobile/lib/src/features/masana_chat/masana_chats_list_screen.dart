@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'masana_chats_list_api.dart';
 
 /// C10: no fan phonebook and no person-to-person messaging entry point.
@@ -72,15 +73,15 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
         _denied=status==401||status==403;
         _retired=status==410;
         _offline=status==null;
-        _error=_denied?'Sign in to see your chats'
-          :_retired?'Chats are temporarily unavailable'
-          :_offline?'Offline — showing saved chats'
-          :'Could not load chats. Retry.';
+        _error=_denied?'auth'
+          :_retired?'retired'
+          :_offline?'offline'
+          :'load';
         if(_denied||_retired) _chats=[]; // never reveal stale account data
       });
     } catch (_) {
       if(_current(n)) setState(() {
-        _loading=false;_error='Could not load chats. Retry.';
+        _loading=false;_error='load';
       });
     }
   }
@@ -103,7 +104,7 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
       unawaited(_refresh());
     } catch (_) {
       if(mounted) setState(() {
-        _error='Pin not saved. Refresh and retry.';
+        _error='pin';
       });
     }
   }
@@ -115,33 +116,37 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    final isHausa=Localizations.localeOf(context).languageCode=='ha';
-    String copy(String en,String ha)=>isHausa?ha:en;
+    final tr=AppLocalizations.of(context);
+    String errorCopy(String code)=>switch(code){
+      'auth'=>tr.chatC10Unauthorized,
+      'retired'=>tr.chatC10Disabled,
+      'offline'=>tr.chatC10Offline,
+      'pin'=>tr.chatC10PinError,
+      _=>tr.chatC10LoadError,
+    };
     return Scaffold(
-      appBar:AppBar(title:Text(copy('Chats','Hirarraki'))),
+      appBar:AppBar(title:Text(tr.chatC10Title)),
       body:Column(children:[
         Padding(padding:const EdgeInsets.fromLTRB(12,8,12,4),
           child:TextField(controller:_search,onChanged:_scheduleSearch,
             decoration:InputDecoration(
               prefixIcon:const Icon(Icons.search),
-              hintText:copy('Search Masana or profession',
-                'Nemi Masana ko sana\'a'),
+              hintText:tr.chatC10Search,
               border:const OutlineInputBorder()))),
         if(_error!=null) MaterialBanner(
-          content:Text(_error!),actions:[
+          content:Text(errorCopy(_error!)),actions:[
             TextButton(onPressed:_refresh,
-              child:Text(copy('Retry','Sake gwadawa')))]),
+              child:Text(tr.chatC10Retry))]),
         Expanded(child:_loading
           ? const Center(child:CircularProgressIndicator())
           : _chats.isEmpty
             ? Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
                 const Icon(Icons.forum_outlined,size:48),
                 const SizedBox(height:12),
-                Text(copy('No Masana conversations yet',
-                  'Babu hirarrakin Masana tukuna')),
+                Text(tr.chatC10Empty),
                 const SizedBox(height:8),
                 TextButton(onPressed:widget.onDiscover,
-                  child:Text(copy('Find Masana','Nemi Masana'))),
+                  child:Text(tr.chatC10Discover)),
               ]))
             : RefreshIndicator(onRefresh:_refresh,
               child:ListView.builder(
@@ -166,8 +171,8 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
                           style:const TextStyle(fontSize:12))),
                       IconButton(
                         tooltip:chat.pinned
-                          ?copy('Unpin chat','Cire makala')
-                          :copy('Pin chat','Makala hira'),
+                          ?tr.chatC10Unpin
+                          :tr.chatC10Pin,
                         onPressed:()=>_togglePin(chat),
                         icon:Icon(chat.pinned?Icons.push_pin:Icons.push_pin_outlined)),
                     ]),

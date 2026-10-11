@@ -92,5 +92,17 @@
   "statusOffline": "Ba ya kan layi",
   "statusUnverified": "Ba a tabbatar da halinsa ba",
   "statusWorkingTasks": "{count, plural, =1{Yana aiki · aiki 1} other{Yana aiki · ayyuka {count}}}",
-  "twinShareText": "Yi hira da {name} a Masanawa: {url}"
+  "twinShareText": "Yi hira da {name} a Masanawa: {url}",
+  "chatC10Title": "Hirarraki",
+  "chatC10Search": "Nemi Masana ko sana'a",
+  "chatC10Retry": "Sake gwadawa",
+  "chatC10Unauthorized": "Shiga don ganin hirarrakinka",
+  "chatC10Disabled": "Hirarraki ba su samuwa a yanzu",
+  "chatC10Offline": "Babu intanet — ana nuna hirarrakin da aka adana",
+  "chatC10LoadError": "An kasa ɗauko hirarraki. Sake gwadawa.",
+  "chatC10PinError": "Ba a ajiye makala ba. Sake ɗaukowa.",
+  "chatC10Empty": "Babu hirarrakin Masana tukuna",
+  "chatC10Discover": "Nemi Masana",
+  "chatC10Pin": "Makala hira",
+  "chatC10Unpin": "Cire makala"
 }
