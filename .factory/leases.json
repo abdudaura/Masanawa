@@ -2098,6 +2098,34 @@
       "released_at": "2026-10-11T07:18:41.384Z",
       "release_reason": "11 exact-path source files, full J19 A01/A18 client+domain hardening and scoped worker executable proof; AF00 protected composition and workspace/PG18/Flutter/Android evidence pending; handoff #662 and #616 at pinned HEAD; no main merge/deployment",
       "integration_head_sha": null
+    },
+    {
+      "claim_id": "l-masana-a04-port-existing-20261011-gpt6-0830",
+      "owner": "GPT-6 L-MASANA A04 source recovery",
+      "scope": "Exact-file recovery of PR #645 A04 draft-only Masana rehearsal onto current non-deploying integration baseline, preserving newer Admin Studio screen; no AF00 root composition, no live worker or migrations.",
+      "paths": [
+        "adapters/storage/postgres/src/masana/rehearsal.integration.test.ts",
+        "adapters/storage/postgres/src/masana/rehearsal.ts",
+        "apps/admin_mobile/lib/src/features/masana/masana_studio_screen.dart",
+        "apps/admin_mobile/lib/src/features/masana/rehearsal_api.dart",
+        "apps/admin_mobile/lib/src/features/masana/rehearsal_screen.dart",
+        "apps/admin_mobile/test/features/masana/rehearsal_screen_test.dart",
+        "packages/masana/migrations/0004_rehearsals.sql",
+        "packages/masana/src/rehearsal.test.ts",
+        "packages/masana/src/rehearsal.ts",
+        "services/gateway/src/modules/masana/rehearsal_routes.test.ts",
+        "services/gateway/src/modules/masana/rehearsal_routes.ts",
+        "services/worker/src/jobs/masana/rehearsals.test.ts",
+        "services/worker/src/jobs/masana/rehearsals.ts",
+        "tests/e2e/J18/rehearsals.test.mjs"
+      ],
+      "branch": "lane/l-masana-a04-port-20261011-gpt6-0830",
+      "base_sha": "7add44c0dd1305b00fbc99aaf98207280b1bab22",
+      "source_pr": 645,
+      "claimed_at": "2026-10-11T07:29:00.000Z",
+      "heartbeat_at": "2026-10-11T07:29:00.000Z",
+      "expires_at": "2026-10-11T07:34:00.000Z",
+      "notes": "Prior A04 lease released; port branch source only. AF00 retains root, runtime and qualification."
     }
   ],
   "history": [
