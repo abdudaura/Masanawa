@@ -40,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Message actions').first);
     await tester.pumpAndSettle();
-    expect(find.text('Reply'),findsWidgets);
+    expect(find.text('Reply'),findsOneWidget);
     expect(find.text('Remove for me'),findsNothing);
     expect(api.hidden,isEmpty);
   });
