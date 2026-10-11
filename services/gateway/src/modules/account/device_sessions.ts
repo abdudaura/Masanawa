@@ -6,6 +6,8 @@ export interface FanDeviceRoutesDeps {
   /** AF00 passes the canonical customer session authorizer (never query/body identity). */
   readonly authorize: (header:string|undefined)=>Promise<FanDevicePrincipal|null>;
   readonly store: FanDeviceSessionStore;
+  /** Default-off until AF00 qualifies migration, auth composition and rollout. */
+  readonly enabled?: () => boolean;
 }
 function accessHash(header:string|undefined):string|null {
   const token=/^Bearer (msw_access_[A-Za-z0-9_-]{40,80})$/iu.exec(header?.trim()??"")?.[1];
@@ -24,6 +26,7 @@ export function registerFanDeviceRoutes(app:FastifyInstance,deps:FanDeviceRoutes
     } catch {return null;}
   }
   app.get("/v1/account/devices",async(req,reply)=>{
+    if (!deps.enabled?.()) return reply.code(503).send({code:"feature_disabled"});
     const current=await actor(req.headers.authorization);
     if(!current)return reply.code(401).send({code:"unauthorized"});
     const items=await deps.store.list(current.identity,current.hash);
@@ -31,6 +34,7 @@ export function registerFanDeviceRoutes(app:FastifyInstance,deps:FanDeviceRoutes
     return {items};
   });
   app.post("/v1/account/devices/:deviceId/revoke",async(req,reply)=>{
+    if (!deps.enabled?.()) return reply.code(503).send({code:"feature_disabled"});
     const current=await actor(req.headers.authorization);
     if(!current)return reply.code(401).send({code:"unauthorized"});
     const id=(req.params as {deviceId?:unknown}).deviceId;
