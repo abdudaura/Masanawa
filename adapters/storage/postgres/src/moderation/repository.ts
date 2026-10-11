@@ -138,16 +138,35 @@ export function createPostgresCaseRepository(pool:Pool){
     return mapped(next.rows[0]!);
    });
   },
-  async appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string){
+  async appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string,clientRequestId:string){
    await transaction(pool,async c=>{
-    const rs=await c.query<CaseRow>(`SELECT * FROM moderation.cases WHERE tenant_id=$1 AND case_id=$2 FOR UPDATE`,[tenantId,caseId]);
-    if(rs.rows[0]?.reporter_user_id!==actorId)throw new CaseError("moderation.not_found",404);
-    if(!["actioned","dismissed","closed"].includes(rs.rows[0].state))throw new CaseError("moderation.appeal_not_ready",409);
-    const existing=await c.query(`SELECT appeal_id FROM moderation.appeals WHERE tenant_id=$1 AND case_id=$2 AND state IN ('pending','under_review')`,[tenantId,caseId]);
-    if(existing.rowCount)throw new CaseError("moderation.appeal_pending",409);
-    await c.query(`INSERT INTO moderation.appeals(tenant_id,appeal_id,case_id,appellant_user_id,reason) VALUES($1,$2,$3,$4,$5)`,[tenantId,appealId,caseId,actorId,reason]);
-    await c.query(`UPDATE moderation.cases SET state='appealed',version=version+1,updated_at=now() WHERE tenant_id=$1 AND case_id=$2`,[tenantId,caseId]);
-    await c.query(`INSERT INTO moderation.case_events(tenant_id,event_id,case_id,actor_id,kind,detail) VALUES($1,$2,$3,$4,'appealed','')`,[tenantId,"evt_"+appealId,caseId,actorId]);
+    // Serialize retries and concurrent appeal submissions through the existing case lock.
+    const rs=await c.query<CaseRow>(
+     "SELECT * FROM moderation.cases WHERE tenant_id=$1 AND case_id=$2 FOR UPDATE",[tenantId,caseId]);
+    const rec=rs.rows[0];
+    if(!rec||rec.reporter_user_id!==actorId)throw new CaseError("moderation.not_found",404);
+    const replay=await c.query<{reason:string}>(
+     "SELECT reason FROM moderation.appeals WHERE tenant_id=$1 AND case_id=$2 AND appellant_user_id=$3 AND client_request_id=$4",
+     [tenantId,caseId,actorId,clientRequestId]);
+    if(replay.rows[0]){
+     if(replay.rows[0].reason!==reason)throw new CaseError("moderation.idempotency_conflict",409);
+     return; // no second appeal, event, case transition or reversal
+    }
+    if(!["actioned","dismissed","closed"].includes(rec.state))
+     throw new CaseError("moderation.appeal_not_ready",409);
+    const pending=await c.query(
+     "SELECT 1 FROM moderation.appeals WHERE tenant_id=$1 AND case_id=$2 AND state IN ('pending','under_review')",
+     [tenantId,caseId]);
+    if(pending.rowCount)throw new CaseError("moderation.appeal_pending",409);
+    await c.query(
+     "INSERT INTO moderation.appeals(tenant_id,appeal_id,case_id,appellant_user_id,reason,client_request_id) VALUES($1,$2,$3,$4,$5,$6)",
+     [tenantId,appealId,caseId,actorId,reason,clientRequestId]);
+    await c.query(
+     "UPDATE moderation.cases SET state='appealed',version=version+1,updated_at=now() WHERE tenant_id=$1 AND case_id=$2",
+     [tenantId,caseId]);
+    await c.query(
+     "INSERT INTO moderation.case_events(tenant_id,event_id,case_id,actor_id,kind,detail) VALUES($1,$2,$3,$4,'appealed','')",
+     [tenantId,"evt_"+appealId,caseId,actorId]);
    });
   }
  };
