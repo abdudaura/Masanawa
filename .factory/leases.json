@@ -1715,6 +1715,30 @@
       "released_at": "2026-10-11T04:41:19.895Z",
       "source_head": "6bc44fac1bf323dffc82353bc85db8da5864e027",
       "release_reason": "Existing #644 continued with default-off gateway gate, fail-closed API test and Flutter disabled/retry UI test. AF00 #616 comment 6105514731. Foundation 38112287139 actual install FAIL missing lockfile importers; TS skipped; Mobile 38112287135 in progress as of release. No safe integration/main merge yet, no live DB or finance mutation. Retain PR for AF00 review."
+    },
+    {
+      "claim_id": "l-shell-j01-fan-setup-20261011-gpt6-0540",
+      "owner": "L-SHELL J01 GPT-6 C04",
+      "scope": "C04 fan setup, 18+ attestation and one-time Masana disclosure, safe optional avatar, interests/language, follow suggestions via canonical Masana directory, DB/REST/Flutter/test source; feature-local only, no shared router or session authority.",
+      "paths": [
+        "packages/identity/migrations/0007_fan_setup.sql",
+        "packages/identity/src/fan_setup.ts",
+        "packages/identity/src/fan_setup.test.ts",
+        "adapters/storage/postgres/src/account/fan_setup.ts",
+        "adapters/storage/postgres/src/account/fan_setup.test.ts",
+        "services/gateway/src/modules/account/fan_setup_routes.ts",
+        "services/gateway/src/modules/account/fan_setup_routes.test.ts",
+        "apps/mobile/lib/src/features/account/fan_setup_repository.dart",
+        "apps/mobile/lib/src/features/account/fan_setup_screen.dart",
+        "apps/mobile/test/features/account/fan_setup_screen_test.dart",
+        "tests/e2e/J01/fan_setup/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-shell-c04-fan-setup-20261011-gpt6-0540",
+      "base_sha": "9256ada27b33ed286edaa3ba42835972575a25fd",
+      "claimed_at": "2026-10-11T04:41:53.965Z",
+      "heartbeat_at": "2026-10-11T04:41:53.965Z",
+      "expires_at": "2026-10-11T04:46:53.965Z",
+      "notes": "No overlap with C09 or AF00. New identity migration source; AF00 retains root composition/registry/feature flag. No live auth provider, financial or production changes."
     }
   ],
   "history": [
