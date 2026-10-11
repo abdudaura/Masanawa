@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'video_models.dart';
@@ -71,6 +72,10 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
   void play() {
     final embed = approvedEmbed;
     if (embed == null || unavailable) return;
+    if (kIsWeb && widget.embedBuilder == null) {
+      unawaited(openAtSource());
+      return;
+    }
     if (widget.embedBuilder != null) {
       setState(() { playing = true; loading = false; });
       return;
@@ -84,9 +89,8 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
           // Never navigate the top-level WebView to arbitrary untrusted links.
           // The provider iframe owns its controls, logo and third-party JS.
           if (!navigation.isMainFrame ||
-              navigation.url.startsWith('about:') ||
-              navigation.url.startsWith('data:') ||
-              navigation.url.startsWith('https://masanawa.com/')) {
+              navigation.url == 'about:blank' ||
+              navigation.url == 'https://masanawa.com/') {
             return NavigationDecision.navigate;
           }
           unawaited(openAtSource());
