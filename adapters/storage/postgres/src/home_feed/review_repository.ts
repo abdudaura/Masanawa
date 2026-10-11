@@ -23,6 +23,14 @@ function model(r:Row):EditorialPost{
   updatedAt:new Date(String(r.updated_at)).toISOString()};
 }
 function fail(code:string,status=409):never{throw Object.assign(new Error(code),{code,status})}
+function sameReplay(row:Row|undefined,post:string,action:string,payload:Record<string,unknown>):boolean{
+ if(!row)return false;
+ if(String(row.post_id)!==post||row.action!==action)fail("editorial_idempotency_conflict");
+ const saved=row.request_payload as Record<string,unknown>|null;
+ if(!saved||Object.entries(payload).some(([key,value])=>JSON.stringify(saved[key])!==JSON.stringify(value)))
+  fail("editorial_idempotency_conflict");
+ return true;
+}
 const selection="tenant_id,id,author_masana_id,kind,body,media_ids,transcript,state,review_revision,published_by,scheduled_at,updated_at";
 export class PgEditorialReviewRepository {
  constructor(private readonly pool:Pool){}
@@ -57,10 +65,11 @@ export class PgEditorialReviewRepository {
   const client=await this.pool.connect();
   try{
    await client.query("BEGIN");
-   const replay=await client.query(`SELECT post_id,action FROM feed.editorial_events
+   const payload={expectedRevision:revision,authorMasanaId:input.authorMasanaId,kind:input.kind,
+    body:input.body,media:input.media,transcript:input.transcript};
+   const replay=await client.query(`SELECT post_id,action,request_payload FROM feed.editorial_events
       WHERE tenant_id=$1 AND actor_id=$2 AND idempotency_key=$3`,[tenant,editor,input.idempotencyKey]);
-   if(replay.rowCount){
-    if(String(replay.rows[0].post_id)!==id||replay.rows[0].action!=="edit")fail("editorial_idempotency_conflict");
+   if(sameReplay(replay.rows[0] as Row|undefined,id,"edit",payload)){
     const current=await client.query(`SELECT ${selection} FROM feed.posts WHERE tenant_id=$1 AND id=$2::uuid`,[tenant,id]);
     if(!current.rows[0])fail("editorial_not_found",404);
     await client.query("COMMIT");return model(current.rows[0] as Row);
@@ -69,6 +78,12 @@ export class PgEditorialReviewRepository {
      WHERE tenant_id=$1 AND id=$2::uuid FOR UPDATE`,[tenant,id]);
    const previous=found.rows[0] as Row|undefined;
    if(!previous)fail("editorial_not_found",404);
+   // Concurrent duplicate request may commit while waiting on this row lock.
+   const afterLock=await client.query(`SELECT post_id,action,request_payload FROM feed.editorial_events
+      WHERE tenant_id=$1 AND actor_id=$2 AND idempotency_key=$3`,[tenant,editor,input.idempotencyKey]);
+   if(sameReplay(afterLock.rows[0] as Row|undefined,id,"edit",payload)){
+    await client.query("COMMIT");return model(previous);
+   }
    if(previous.published_by!==editor||previous.state!=="draft")fail("draft_owner_required",403);
    if(previous.author_masana_id!==input.authorMasanaId)fail("immutable_draft_author");
    if(Number(previous.review_revision)!==revision)fail("editorial_stale_revision");
@@ -78,9 +93,9 @@ export class PgEditorialReviewRepository {
      RETURNING ${selection}`,[tenant,id,revision,input.kind,input.body,input.media,input.transcript]);
    if(!changed.rows[0])fail("editorial_stale_revision");
    await client.query(`INSERT INTO feed.editorial_events
-     (tenant_id,post_id,revision,previous_state,next_state,actor_id,action,idempotency_key)
-     VALUES($1,$2,$3,'draft','draft',$4,'edit',$5)`,
-     [tenant,id,revision+1,editor,input.idempotencyKey]);
+     (tenant_id,post_id,revision,previous_state,next_state,actor_id,action,idempotency_key,request_payload)
+     VALUES($1,$2,$3,'draft','draft',$4,'edit',$5,$6::jsonb)`,
+     [tenant,id,revision+1,editor,input.idempotencyKey,JSON.stringify(payload)]);
    await client.query("COMMIT");return model(changed.rows[0] as Row);
   }catch(e){await client.query("ROLLBACK");throw e}finally{client.release()}
  }
@@ -100,10 +115,10 @@ export class PgEditorialReviewRepository {
   try{
    await client.query("BEGIN");
    // Treat exact replay as a read. An unrelated reused key cannot perform another action.
-   const replay=await client.query(`SELECT post_id,action FROM feed.editorial_events
+   const payload={expectedRevision,scheduledAt};
+   const replay=await client.query(`SELECT post_id,action,request_payload FROM feed.editorial_events
      WHERE tenant_id=$1 AND actor_id=$2 AND idempotency_key=$3`,[tenant,actor,key]);
-   if(replay.rowCount){
-    if(String(replay.rows[0].post_id)!==post||replay.rows[0].action!==action)fail("editorial_idempotency_conflict");
+   if(sameReplay(replay.rows[0] as Row|undefined,post,action,payload)){
     const same=await client.query(`SELECT ${selection} FROM feed.posts WHERE tenant_id=$1 AND id=$2::uuid`,[tenant,post]);
     if(!same.rows[0])fail("editorial_not_found",404);
     await client.query("COMMIT");return model(same.rows[0] as Row);
@@ -112,6 +127,11 @@ export class PgEditorialReviewRepository {
     WHERE tenant_id=$1 AND id=$2::uuid FOR UPDATE`,[tenant,post]);
    const before=found.rows[0] as Row|undefined;
    if(!before)fail("editorial_not_found",404);
+   const afterLock=await client.query(`SELECT post_id,action,request_payload FROM feed.editorial_events
+     WHERE tenant_id=$1 AND actor_id=$2 AND idempotency_key=$3`,[tenant,actor,key]);
+   if(sameReplay(afterLock.rows[0] as Row|undefined,post,action,payload)){
+    await client.query("COMMIT");return model(before);
+   }
    if(Number(before.review_revision)!==expectedRevision)fail("editorial_stale_revision");
    const old=String(before.state);
    const transitions:Record<EditorialAction,readonly string[]>={
@@ -131,9 +151,9 @@ export class PgEditorialReviewRepository {
     RETURNING ${selection}`,[tenant,post,state,revision,scheduledAt,actor,expectedRevision]);
    if(!changed.rows[0])fail("editorial_stale_revision");
    await client.query(`INSERT INTO feed.editorial_events
-    (tenant_id,post_id,revision,previous_state,next_state,actor_id,action,idempotency_key)
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
-    [tenant,post,revision,old,state,actor,action,key]);
+    (tenant_id,post_id,revision,previous_state,next_state,actor_id,action,idempotency_key,request_payload)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)`,
+    [tenant,post,revision,old,state,actor,action,key,JSON.stringify(payload)]);
    await client.query("COMMIT");return model(changed.rows[0] as Row);
   }catch(e){await client.query("ROLLBACK");throw e}finally{client.release()}
  }
