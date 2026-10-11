@@ -8,6 +8,8 @@ export interface RoomSubscriptionPorts {
  readonly authorize:(header:string|undefined,capability:"rooms.read"|"rooms.join"|"rooms.staff")=>Promise<RoomActor>;
  readonly play:PlaySubscriptionVerifier;
  readonly playPackageName:string;
+ /** Server-generated stable Google Billing obfuscated external account binding. */
+ readonly purchaseAccountBinding:(tenantId:string,userId:string)=>string;
  /** Must remain off until Google Play, RTDN, device and policy qualification. */
  readonly paymentsEnabled:()=>boolean;
  /** Signature, issuer and audience must be verified by trusted server configuration. */
@@ -35,7 +37,8 @@ export function registerRoomSubscriptionRoutes(app:FastifyInstance,p:RoomSubscri
  app.get("/v1/rooms/:id/plans",async(req,reply)=>{
   try{
    const a=await actor(req,"rooms.read");
-   return {prices:await p.repository.listPlans(a.tenantId,pathId(req,"id")),storeEnabled:p.paymentsEnabled()};
+   return {prices:await p.repository.listPlans(a.tenantId,pathId(req,"id")),storeEnabled:p.paymentsEnabled(),
+    buyerBinding:a.userId?p.purchaseAccountBinding(a.tenantId,a.userId):null};
   }catch(e){return failure(e,reply);}
  });
  app.get("/v1/subscriptions",async(req,reply)=>{
@@ -59,7 +62,8 @@ export function registerRoomSubscriptionRoutes(app:FastifyInstance,p:RoomSubscri
    const price=choices.find(x=>x.planId===planId&&x.version===revision);
    if(!price)throw new RoomError(409,"price_version_stale");
    const verified=await p.play.verify(token);
-   if(verified.packageName!==p.playPackageName||verified.storeProductId!==price.storeProductId)
+   if(verified.packageName!==p.playPackageName||verified.storeProductId!==price.storeProductId||
+      verified.obfuscatedAccountId!==p.purchaseAccountBinding(a.tenantId,a.userId))
     throw new RoomError(403,"purchase_product_mismatch");
    const state=authorizedState(verified);
    if(state!=="active"&&state!=="grace")throw new RoomError(409,"purchase_not_entitled");
