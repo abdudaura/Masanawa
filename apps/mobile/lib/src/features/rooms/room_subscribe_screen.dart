@@ -26,7 +26,7 @@ class _RoomSubscribeScreenState extends State<RoomSubscribeScreen> {
  }
  @override void dispose(){listener?.cancel();super.dispose();}
  Future<void> load()async{
-  setState(()=>{loading=true,failure=null});
+  setState(() {loading=true;failure=null;});
   try{
    final opts=await widget.client.options(widget.roomId);
    if(!mounted)return;
@@ -52,7 +52,7 @@ class _RoomSubscribeScreenState extends State<RoomSubscribeScreen> {
    setState(()=>failure='Google Play could not complete your purchase.');return;
   }
   if(processing)return;
-  setState(()=>{processing=true,failure=null,notice='Verifying purchase with Google Play…'});
+  setState(() {processing=true;failure=null;notice='Verifying purchase with Google Play…';});
   try{
    final price=selected;
    if(price==null||event.token.isEmpty)throw const FormatException('Missing purchase data');
@@ -64,7 +64,7 @@ class _RoomSubscribeScreenState extends State<RoomSubscribeScreen> {
    // Acknowledge/complete local store only after server acceptance. Server also
    // acknowledges via Play Developer API; both operations are idempotent.
    await widget.store.complete(event);
-   if(mounted)setState(()=>{entitlement=verified,notice='Subscription verified. You can enter the Room.'});
+   if(mounted)setState(() {entitlement=verified;notice='Subscription verified. You can enter the Room.';});
   }catch(_){
    if(mounted)setState(()=>failure='Purchase is not verified. Your payment will not be charged twice by retrying verification.');
   }finally{if(mounted)setState(()=>processing=false);}
@@ -73,14 +73,14 @@ class _RoomSubscribeScreenState extends State<RoomSubscribeScreen> {
   final p=product,opts=options;
   if(p==null||opts==null||!acceptedTerms||processing||!opts.storeEnabled||
     opts.buyerBinding==null)return;
-  setState(()=>{processing=true,failure=null,notice='Opening Google Play…'});
+  setState(() {processing=true;failure=null;notice='Opening Google Play…';});
   try{await widget.store.buy(p,opts.buyerBinding!);}
   catch(_){if(mounted)setState(()=>failure='Could not open Google Play. Try again.');}
   finally{if(mounted)setState(()=>processing=false);}
  }
  Future<void> restore()async{
   if(processing||options?.storeEnabled!=true)return;
-  setState(()=>{processing=true,failure=null,notice='Checking Google Play for existing subscriptions…'});
+  setState(() {processing=true;failure=null;notice='Checking Google Play for existing subscriptions…';});
   try{await widget.store.restore();}
   catch(_){if(mounted)setState(()=>failure='Restore failed. Please retry while online.');}
   finally{if(mounted)setState(()=>processing=false);}
