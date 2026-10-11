@@ -2,6 +2,23 @@
   "schema_version": 1,
   "active": [
     {
+      "claim_id": "l-chat-c10-screen-fence-20261011-gpt6-0836",
+      "owner": "GPT-6 / C10 source repair",
+      "scope": "Existing #641 exact-path Flutter compile and account-switch asynchronous mutation repair; add widget regressions; AF00 retains shared compositions",
+      "paths": [
+        "apps/mobile/lib/src/features/masana_chat/masana_chats_list_screen.dart",
+        "apps/mobile/test/features/masana_chat/masana_chats_list_test.dart"
+      ],
+      "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
+      "base_sha": "8301c8de87d94645ec5d350298b32e22ebf2ab63",
+      "source_pr": 641,
+      "source_head": "214f6992d35b2b32da1e8c30cad9a6b4ecd88f2a",
+      "claimed_at": "2026-10-11T07:40:58.687Z",
+      "heartbeat_at": "2026-10-11T07:40:58.687Z",
+      "expires_at": "2026-10-11T07:45:58.687Z",
+      "notes": "Read #641 head + expired lease and posted takeover handoff; edit only two exact C10 files; no AF00 or live money."
+    },
+    {
       "claim_id": "recovery-03-u05-memory-20261009",
       "owner": "RECOVERY-03",
       "scope": "U05 #522 actual backend tests/typing, consent-revocation read fence, strict HTTP authority boundary and expiry validation",
