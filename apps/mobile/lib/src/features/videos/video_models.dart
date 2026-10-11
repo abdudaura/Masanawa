@@ -39,3 +39,33 @@ class ExternalVideo {
     );
   }
 }
+
+
+/// One verified server page; opaque cursors are never fabricated by the app.
+class VideoCatalogPage {
+  const VideoCatalogPage({required this.items, required this.nextCursor});
+  final List<ExternalVideo> items;
+  final String? nextCursor;
+
+  factory VideoCatalogPage.fromJson(Map<String, dynamic> data) {
+    final rawItems = data['items'];
+    if (rawItems is! List) {
+      throw const FormatException('Invalid video catalog');
+    }
+    final items = rawItems.map((entry) {
+      if (entry is! Map) {
+        throw const FormatException('Invalid video item');
+      }
+      return ExternalVideo.fromJson(Map<String, dynamic>.from(entry));
+    }).toList(growable: false);
+    final rawCursor = data['nextCursor'];
+    if (rawCursor != null &&
+        (rawCursor is! String || rawCursor.isEmpty ||
+         items.isEmpty || rawCursor != items.last.id)) {
+      throw const FormatException('Invalid video catalog cursor');
+    }
+    return VideoCatalogPage(
+      items: items, nextCursor: rawCursor as String?,
+    );
+  }
+}

@@ -67,4 +67,53 @@ void main() {
     expect(find.text('Videos are currently unavailable'), findsOneWidget);
     expect(calls, 0);
   });
+  test('page metadata requires approved items and a matching cursor', () {
+    final first = ExternalVideo.fromJson(data);
+    final page = VideoCatalogPage.fromJson({
+      'items': [data], 'nextCursor': first.id,
+    });
+    expect(page.items.single.sourceUrl, first.sourceUrl);
+    expect(page.nextCursor, first.id);
+    expect(() => VideoCatalogPage.fromJson({
+      'items': [data], 'nextCursor': 'foreign-cursor',
+    }), throwsFormatException);
+    expect(() => VideoCatalogPage.fromJson({
+      'items': [{...data, 'reviewState': 'pending'}],
+      'nextCursor': null,
+    }), throwsFormatException);
+  });
+
+  testWidgets('catalog page load, dedupe and account switch erase prior page',
+      (tester) async {
+    final one = ExternalVideo.fromJson(data);
+    final two = ExternalVideo.fromJson({
+      ...data, 'id': '2', 'title': 'Physics',
+    });
+    var firstPageCalls = 0;
+    Future<List<ExternalVideo>> first({String? provider}) async => [one];
+    Future<VideoCatalogPage> pages({String? provider, String? before}) async {
+      if (before == null) {
+        firstPageCalls++;
+        return VideoCatalogPage(items: [one], nextCursor: one.id);
+      }
+      return VideoCatalogPage(items: [one, two], nextCursor: null);
+    }
+    Widget build(String account) => MaterialApp(home: Scaffold(body:
+      ExternalVideosScreen(
+        accountKey: account, load: first, loadPage: pages,
+      )));
+    await tester.pumpWidget(build('a'));
+    await tester.pumpAndSettle();
+    expect(find.text('Load more'), findsOneWidget);
+    await tester.tap(find.text('Load more'));
+    await tester.pumpAndSettle();
+    expect(find.text('Physics'), findsOneWidget);
+    expect(find.text('Maths'), findsOneWidget);
+    expect(find.text('Load more'), findsNothing);
+    await tester.pumpWidget(build('b'));
+    await tester.pumpAndSettle();
+    expect(firstPageCalls, 2);
+    expect(find.text('Physics'), findsNothing);
+    expect(find.text('Load more'), findsOneWidget);
+  });
 }
