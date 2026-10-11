@@ -9,12 +9,17 @@ typedef YouTubeSourcePauser=Future<void> Function(String);
 /// PAUSED + manual) and pause existing sources. No button or client flag can
 /// grant automatic synchronization or activate missing provider credentials.
 class YouTubeSourcesScreen extends StatefulWidget {
-  const YouTubeSourcesScreen({required this.load,required this.create,required this.pause,super.key});
-  YouTubeSourcesScreen.fromApi({required YouTubeSourcesApi api,super.key})
+  const YouTubeSourcesScreen({required this.load,required this.create,required this.pause,
+    this.accountKey='',this.enabled=true,super.key});
+  YouTubeSourcesScreen.fromApi({required YouTubeSourcesApi api,
+    this.accountKey='',this.enabled=true,super.key})
     : load=api.list,create=api.create,pause=api.pause;
   final YouTubeSourceLoader load;
   final YouTubeSourceCreator create;
   final YouTubeSourcePauser pause;
+  /// Injected by the authenticated Admin shell; never derived from an editable field.
+  final String accountKey;
+  final bool enabled;
   @override State<YouTubeSourcesScreen> createState()=>_YouTubeSourcesScreenState();
 }
 class _YouTubeSourcesScreenState extends State<YouTubeSourcesScreen> {
@@ -22,11 +27,36 @@ class _YouTubeSourcesScreenState extends State<YouTubeSourcesScreen> {
   late Future<List<YouTubeSourceRecord>> data;
   bool busy=false;
   String? error;
-  @override void initState(){super.initState();data=widget.load();}
+  int generation=0;
+  bool current(int g,String account) =>
+    mounted && generation==g && widget.accountKey==account && widget.enabled;
+  @override void initState(){
+    super.initState();
+    data=widget.enabled?widget.load():Future.value(<YouTubeSourceRecord>[]);
+  }
+  @override void didUpdateWidget(covariant YouTubeSourcesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if(oldWidget.accountKey!=widget.accountKey ||
+       oldWidget.enabled!=widget.enabled ||
+       oldWidget.load!=widget.load ||
+       oldWidget.create!=widget.create ||
+       oldWidget.pause!=widget.pause) {
+      // A pending request or confirmation belongs to the previous principal.
+      // Discard its view, draft and completion callbacks before rendering.
+      generation++;
+      id.clear();channel.clear();region.text='NG';
+      busy=false;error=null;
+      data=widget.enabled?widget.load():Future.value(<YouTubeSourceRecord>[]);
+    }
+  }
   @override void dispose(){id.dispose();channel.dispose();region.dispose();super.dispose();}
-  void reload()=>setState(()=>data=widget.load());
+  void reload()=>setState((){
+    generation++;busy=false;error=null;
+    data=widget.enabled?widget.load():Future.value(<YouTubeSourceRecord>[]);
+  });
   Future<void> submit() async {
-    if(busy)return;
+    if(busy||!widget.enabled)return;
+    final currentGeneration=generation, account=widget.accountKey;
     final channelId=id.text.trim();
     final name=channel.text.trim();
     final country=region.text.trim().toUpperCase();
@@ -38,13 +68,18 @@ class _YouTubeSourcesScreenState extends State<YouTubeSourcesScreen> {
     setState((){busy=true;error=null;});
     try {
       await widget.create(channelId,name,country);
-      if(!mounted)return;
+      if(!current(currentGeneration,account))return;
       id.clear();channel.clear();reload();
-    } catch(_) {if(mounted)setState(()=>error='Could not register channel. Check your permission and connection.');}
-    finally {if(mounted)setState(()=>busy=false);}
+    } catch(_) {
+      if(current(currentGeneration,account))setState(
+        ()=>error='Could not register channel. Check your permission and connection.');
+    } finally {
+      if(current(currentGeneration,account))setState(()=>busy=false);
+    }
   }
   Future<void> stop(YouTubeSourceRecord source) async {
-    if(busy)return;
+    if(busy||!widget.enabled)return;
+    final currentGeneration=generation, account=widget.accountKey;
     final ok=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(
       title:const Text('Pause YouTube source?'),
       content:Text('Stop new synchronization for ${source.channelName}. Existing approved videos remain under staff review.'),
@@ -53,13 +88,24 @@ class _YouTubeSourcesScreenState extends State<YouTubeSourcesScreen> {
         FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Pause')),
       ],
     ));
-    if(ok!=true||!mounted)return;
+    if(ok!=true||!current(currentGeneration,account))return;
     setState((){busy=true;error=null;});
-    try {await widget.pause(source.id);if(mounted)reload();}
-    catch(_){if(mounted)setState(()=>error='Could not pause source. Refresh or retry.');}
-    finally{if(mounted)setState(()=>busy=false);}
+    try {
+      await widget.pause(source.id);
+      if(current(currentGeneration,account))reload();
+    } catch(_) {
+      if(current(currentGeneration,account))setState(
+        ()=>error='Could not pause source. Refresh or retry.');
+    } finally {
+      if(current(currentGeneration,account))setState(()=>busy=false);
+    }
   }
-  @override Widget build(BuildContext context)=>Scaffold(
+  @override Widget build(BuildContext context) {
+    if(!widget.enabled)return Scaffold(
+      appBar:AppBar(title:const Text('YouTube channels')),
+      body:const Center(child:Text('Video source administration is unavailable')),
+    );
+    return Scaffold(
     appBar:AppBar(title:const Text('YouTube channels'),actions:[
       IconButton(tooltip:'Refresh channels',onPressed:reload,icon:const Icon(Icons.refresh)),
     ]),
@@ -95,4 +141,5 @@ class _YouTubeSourcesScreenState extends State<YouTubeSourcesScreen> {
       }),
     ]),
   );
+  }
 }
