@@ -1,0 +1,13 @@
+diff --git a/pkg/whatsapp_rust_bridge.d.ts b/pkg/whatsapp_rust_bridge.d.ts
+index ef7c279d2e41f7085c8c5a29b1063bbc6bc23ad0..cbffce9724523be4680b2f9c85c6d5d66177ce3f 100644
+--- a/pkg/whatsapp_rust_bridge.d.ts
++++ b/pkg/whatsapp_rust_bridge.d.ts
+@@ -7,6 +7,8 @@ export interface BinaryNode {
+     content?: BinaryNode[] | string | Uint8Array;
+ }
+ 
++export type EncodingNode = BinaryNode;
++
+ 
+ 
+ export interface ILogger {

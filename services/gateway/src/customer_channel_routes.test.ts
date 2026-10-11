@@ -2,10 +2,12 @@ import { createHmac } from "node:crypto";
 import Fastify from "fastify";
 import { describe, expect, it, vi } from "vitest";
 import { registerCustomerChannelRoutes } from "./customer_channel_routes.js";
+import type { CustomerChannelInbound } from "./customer_channel_bridge.js";
 
 function bridge() {
   return {
-    handle: vi.fn(async () => ({
+    handle: vi.fn(async (_request: CustomerChannelInbound) => ({
+      handled: true,
       duplicate: false,
       reply: "",
       shouldDeliver: false,
@@ -294,13 +296,14 @@ describe("customer channel webhook routes", () => {
     const app = Fastify();
     const channelBridge = bridge();
     channelBridge.handle.mockResolvedValueOnce({
+      handled: true,
       duplicate: false,
       reply: "I found several public Twins. Tell me the name or @ID you want:\n1. Aisha Bello (@aisha-one)\n2. Aisha Musa (@aisha-two)",
       shouldDeliver: true,
       requestContact: false,
     });
     const fetchMock = vi.fn(
-      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      async (_input: Request | URL | string, _init?: RequestInit) =>
         new Response(JSON.stringify({ ok: true, result: {} }), {
           status: 200,
           headers: { "content-type": "application/json" },

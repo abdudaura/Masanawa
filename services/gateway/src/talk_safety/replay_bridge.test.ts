@@ -1,6 +1,7 @@
 import { describe,expect,it } from "vitest";
 import {
   createTalkReplaySession,
+  transitionTalkReplaySession,
   type TalkReplaySession,
 } from "@masanawa/agents";
 import { toInstant } from "@masanawa/contracts";
@@ -12,7 +13,7 @@ import {
 import type { TalkSafetyService } from "./service.js";
 
 function replay():TalkReplaySession{
-  return createTalkReplaySession({
+  const recording = createTalkReplaySession({
     tenantId:"tenant_1" as never,
     talkId:"talk_1" as never,
     recordingId:"recording_1" as never,
@@ -21,6 +22,9 @@ function replay():TalkReplaySession{
     publicationPreference:"publish",
     startedAt:toInstant("2026-10-07T10:00:00.000Z"),
   });
+  return transitionTalkReplaySession(recording, {
+    type: "live_finalized", expectedRevision: recording.revision, reason: "host_ended",
+  }, toInstant("2026-10-07T10:30:00.000Z")).session;
 }
 
 describe("Talk safety replay bridge",()=>{
@@ -35,7 +39,7 @@ describe("Talk safety replay bridge",()=>{
           };
         }
         if(text.includes("UPDATE talks.replay_sessions")){
-          expect(values?.[2]).toBe(1);
+          expect(values?.[2]).toBe(2);
           const next=JSON.parse(String(values?.[7])) as TalkReplaySession;
           expect(next.publicationState).toBe("blocked");
           current=next;
@@ -51,7 +55,7 @@ describe("Talk safety replay bridge",()=>{
       now:"2026-10-07T11:00:00.000Z",
     })).resolves.toBe(true);
     expect(current.publicationState).toBe("blocked");
-    expect(current.revision).toBe(2);
+    expect(current.revision).toBe(3);
   });
 
   it("is idempotent when canonical replay is already blocked",async()=>{
@@ -106,7 +110,7 @@ describe("Talk safety replay bridge",()=>{
         if(text.includes("UPDATE talks.replay_sessions")){
           updateAttempts+=1;
           if(updateAttempts===1){
-            current={...current,revision:2} as TalkReplaySession;
+            current={...current,revision:current.revision + 1} as TalkReplaySession;
             return {rowCount:0,rows:[] as unknown as Row[]};
           }
           current=JSON.parse(String(values?.[7])) as TalkReplaySession;

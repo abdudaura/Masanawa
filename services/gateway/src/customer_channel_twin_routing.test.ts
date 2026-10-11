@@ -54,6 +54,7 @@ describe("channel Twin routing",()=>{
   it("switches a WhatsApp user to a unique public Twin and persists the Character",async()=>{
     const x=base();
     const twinDirectory = {
+      async resolve(){return null;},
       async search(){return [{
         characterId:x.twin,publicId:"aisha",displayName:"Aisha",headline:"",avatarUrl:null,
         representationLabel:"AI twin" as const,ownerPresence:"not-present" as const,textChatMode:"free" as const,
@@ -113,6 +114,7 @@ describe("channel Twin routing",()=>{
     const x=base();
     const other=createCanonicalId("character");
     const twinDirectory={
+      async resolve(){return null;},
       async search(){return [
         {characterId:x.twin,publicId:"aisha-one",displayName:"Aisha Bello",headline:"",avatarUrl:null,representationLabel:"AI twin" as const,ownerPresence:"not-present" as const,textChatMode:"free" as const},
         {characterId:other,publicId:"aisha-two",displayName:"Aisha Musa",headline:"",avatarUrl:null,representationLabel:"AI twin" as const,ownerPresence:"not-present" as const,textChatMode:"free" as const},

@@ -10,7 +10,7 @@ function recordingPool() {
     calls,
     pool: {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 0, rows: [] as Row[] };
       },
     },
@@ -32,7 +32,9 @@ describe("Talk safety enforcement integration", () => {
     expect(sql).toContain("se.target_kind = 'talk'");
     expect(sql).toContain("se.target_id = t.talk_id");
     expect(sql).toContain("se.visibility IN ('restricted','blocked')");
-    expect(sql.indexOf("safety_enforcement")).toBeLessThan(sql.indexOf("ORDER BY"));
+    const outerOrder = sql.indexOf("ORDER BY CASE WHEN state");
+    expect(outerOrder).toBeGreaterThan(-1);
+    expect(sql.indexOf("safety_enforcement")).toBeLessThan(outerOrder);
   });
 
   it("lets the Host privately resolve a safety-hidden Talk detail while public viewers cannot", async () => {
@@ -44,9 +46,19 @@ describe("Talk safety enforcement integration", () => {
     });
 
     const sql = calls[0]?.text ?? "";
-    expect(sql).toContain("t.host_user_id = $3");
-    expect(sql).toContain("OR NOT EXISTS");
-    expect(sql).toContain("se.target_kind = 'talk'");
+    const normalized = sql.replace(/\s+/gu, " ");
+    expect(normalized).toContain("t.host_user_id = $3 OR ( NOT EXISTS (");
+    expect(normalized).toContain("FROM talks.safety_preferences sp");
+    expect(normalized).toContain("sp.tenant_id = t.tenant_id");
+    expect(normalized).toContain("sp.viewer_user_id = $3");
+    expect(normalized).toContain("sp.subject_user_id = t.host_user_id");
+    expect(normalized).toContain("AND (sp.blocked OR sp.muted) ) AND NOT EXISTS (");
+    expect(normalized).toContain("FROM talks.safety_enforcement se");
+    expect(normalized).toContain("se.tenant_id = t.tenant_id");
+    expect(normalized).toContain("se.target_kind = 'talk'");
+    expect(normalized).toContain("se.target_id = t.talk_id");
+    expect(normalized).toContain("se.visibility IN ('restricted','blocked') ) ) )");
+    expect(calls[0]?.values).toEqual(["tenant-a", "talk-a", "user-host"]);
   });
 
   it("prevents new public comments on safety-restricted or blocked Talks", async () => {

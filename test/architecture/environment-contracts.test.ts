@@ -15,7 +15,10 @@ function walk(root: string): string[] {
   if (!fs.existsSync(root)) return [];
   return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(root, entry.name);
-    if (entry.isDirectory()) return walk(full);
+    if (entry.isDirectory()) {
+      if (["node_modules", "dist", ".next", ".dart_tool", "build", "coverage"].includes(entry.name)) return [];
+      return walk(full);
+    }
     return entry.isFile() ? [full] : [];
   });
 }
@@ -28,7 +31,7 @@ describe("production environment contracts", () => {
     expect(registry.schemaVersion).toBe(1);
     expect(entries.size).toBe(registry.variables.length);
     for (const entry of registry.variables) {
-      expect(entry.name).toMatch(/^(?:MASANAWA_[A-Z0-9_]+|CREDENTIAL_[A-Z0-9_]+|FLUTTERWAVE_[A-Z0-9_]+|GEMINI_[A-Z0-9_]+|NOWPAYMENTS_[A-Z0-9_]+|RAILWAY_[A-Z0-9_]+|SUPABASE_[A-Z0-9_]+|NODE_ENV|HOST|PORT|DATABASE_URL|RESEND_API_KEY|NEXT_PUBLIC_OPS_API_BASE_URL)$/u);
+      expect(entry.name).toMatch(/^(?:MASANAWA_[A-Z0-9_]+|CREDENTIAL_[A-Z0-9_]+|FLUTTERWAVE_[A-Z0-9_]+|GEMINI_[A-Z0-9_]+|NOWPAYMENTS_[A-Z0-9_]+|RAILWAY_[A-Z0-9_]+|SUPABASE_[A-Z0-9_]+|LIVEKIT_(?:API_KEY|API_SECRET|URL)|NODE_ENV|HOST|PORT|DATABASE_URL|RESEND_API_KEY|NEXT_PUBLIC_OPS_API_BASE_URL)$/u);
       expect(entry.owner.trim()).not.toBe("");
       expect(entry.description.trim()).not.toBe("");
       expect(["public", "secret"]).toContain(entry.classification);

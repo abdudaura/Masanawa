@@ -761,6 +761,7 @@ describe("Twin production runtime composition", () => {
     expect(Object.isFrozen(runtime)).toBe(true);
     expect(Object.keys(runtime).sort()).toEqual([
       "commissionAdmin",
+      "creditGift",
       "creditTransfer",
       "gifts",
       "monetization",
@@ -771,6 +772,7 @@ describe("Twin production runtime composition", () => {
       "ownerAccessOffering",
       "paidFeatureTrialAdmin",
       "paidVoice",
+      "providerValuationAdmin",
       "twinActivity",
       "twinAttribution",
       "twinDirectory",

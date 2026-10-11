@@ -22,6 +22,16 @@ export function registerTalkGiftRoutes(
   app.post(
     "/talks/:talkId/gifts",
     {
+      preValidation: async (request, reply) => {
+        // Fastify's default validator strips extra keys; reject them before validation.
+        const body = request.body;
+        if (body !== null && typeof body === "object" && !Array.isArray(body)) {
+          const allowed = ["requestId", "catalogItemId", "amountCredits"];
+          if (Object.keys(body).some((key) => !allowed.includes(key))) {
+            return reply.code(400).send({ message: "talks.gift.invalid_request" });
+          }
+        }
+      },
       schema: {
         params: Type.Object(
           { talkId: Type.String({ minLength: 1, maxLength: 160 }) },

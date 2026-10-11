@@ -9,7 +9,7 @@ describe("Postgres Talk safety repository",()=>{
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:TalkSafetySqlPool={
       async query<Row>(text:string,values?:unknown[]){
-        call={text,values};
+        call={ text, ...(values === undefined ? {} : { values }) };
         return {
           rowCount:1,
           rows:[{
@@ -33,7 +33,7 @@ describe("Postgres Talk safety repository",()=>{
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:TalkSafetySqlPool={
       async query<Row>(text:string,values?:unknown[]){
-        call={text,values};
+        call={ text, ...(values === undefined ? {} : { values }) };
         return {
           rowCount:1,
           rows:[{user_id:"user-host"}] as unknown as Row[],
@@ -54,7 +54,7 @@ describe("Postgres Talk safety repository",()=>{
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:TalkSafetySqlPool={
       async query<Row>(text:string,values?:unknown[]){
-        call={text,values};
+        call={ text, ...(values === undefined ? {} : { values }) };
         return {
           rowCount:1,
           rows:[{

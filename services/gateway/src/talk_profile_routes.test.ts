@@ -33,10 +33,10 @@ function repo(initiallyMissing = false): TalkProfileRepository {
       if (userId !== "user_am" && userId !== "user_viewer") return null;
       if (userId === "user_viewer" && !hasOwnProfile) return null;
       return {
-        handle: "amina",
-        displayName: "Amina",
-        bio: "Host",
-        avatarUrl: null,
+        handle,
+        displayName,
+        bio: biography,
+        avatarUrl,
         followerCount: following ? 11 : 10,
         followingCount: 2,
         isFollowing: following,
@@ -317,6 +317,39 @@ describe("Talk social profile API", () => {
     }
     await server.close();
   });
+
+  it.each(["userId", "tenantId", "avatarUrl"])(
+    "rejects injected %s before mutating or creating an owner profile",
+    async (field) => {
+      const server = app();
+      const edited = await server.inject({
+        method: "PATCH", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload: { displayName: "Imposter", [field]: "client-authority" },
+      });
+      expect(edited.statusCode).toBe(400);
+      const unchanged = await server.inject({
+        method: "GET", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+      });
+      expect(unchanged.json()).toMatchObject({ displayName: "Amina", bio: "Host" });
+      await server.close();
+
+      const missing = app(true);
+      const created = await missing.inject({
+        method: "PUT", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+        payload: { handle: "imposter", displayName: "Imposter", bio: "", [field]: "client-authority" },
+      });
+      expect(created.statusCode).toBe(400);
+      const stillMissing = await missing.inject({
+        method: "GET", url: "/profiles/me",
+        headers: { authorization: "Bearer viewer" },
+      });
+      expect(stillMissing.statusCode).toBe(404);
+      await missing.close();
+    },
+  );
 
   it("creates an owner profile once with authenticated tenancy", async () => {
     const server = app(true);

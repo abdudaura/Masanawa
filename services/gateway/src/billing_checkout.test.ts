@@ -644,16 +644,20 @@ describe("billing checkout", () => {
       revision: number;
       nodes: Array<{ action?: string; token?: string }>;
     };
-    const start = quotedDoc.nodes.find((node) => node.action === "billing.checkout.start")!;
+    const confirm = quotedDoc.nodes.find((node) => node.action === "billing.wallet.confirm")!;
+    expect(confirm).toBeDefined();
     at = "2026-10-04T20:00:30.000Z";
-    const checkoutExecution = await service.executeShellAction({
+    const confirmed = await service.verifyWalletConfirmAction({
       authorizationHeader: "Bearer session",
       documentId: quotedDoc.id,
       revision: quotedDoc.revision,
-      actionId: "billing.checkout.start",
-      token: start.token!,
+      actionId: "billing.wallet.confirm",
+      token: confirm.token!,
     });
-    const checkoutDoc = checkoutExecution.document as {
+    const checkout = await service.startCheckout({
+      authorizationHeader: "Bearer session", ...confirmed,
+    });
+    const checkoutDoc = checkout.document as {
       id: string;
       revision: number;
       expiresAt: string;

@@ -77,7 +77,10 @@ function sourceFiles(root: string): string[] {
   if (!fs.existsSync(root)) return [];
   return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(root, entry.name);
-    if (entry.isDirectory()) return sourceFiles(full);
+    if (entry.isDirectory()) {
+      if (["node_modules", "dist", ".next", ".dart_tool", "build", "coverage"].includes(entry.name)) return [];
+      return sourceFiles(full);
+    }
     return entry.isFile() && /\.(?:ts|tsx|mts|cts|js|mjs|cjs)$/u.test(entry.name)
       ? [full]
       : [];

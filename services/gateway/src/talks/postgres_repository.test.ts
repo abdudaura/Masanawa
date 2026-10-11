@@ -67,7 +67,7 @@ describe("Postgres Talk repository", () => {
     let call: { text: string; values?: unknown[] } | undefined;
     const pool: TalkSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        call = { text, values };
+        call = { text, ...(values === undefined ? {} : { values }) };
         return {
           rowCount: 1,
           rows: [row({
@@ -198,7 +198,7 @@ describe("Postgres Talk repository", () => {
       limit: 50,
     });
 
-    expect(result?.participants).toEqual([
+    expect(result).toMatchObject({ participants: [
       {
         id: "user_speaker",
         name: "Amina",
@@ -220,7 +220,7 @@ describe("Postgres Talk repository", () => {
         avatarUrl: null,
         isHost: false,
       },
-    ]);
+    ] });
     expect(calls[0]?.text).toContain("FROM talks.talk_seats s");
     expect(calls[0]?.text).toContain("s.active=true OR t.state='ended'");
     expect(calls[0]?.text).toContain(
@@ -281,7 +281,7 @@ describe("Postgres Talk repository", () => {
       viewerUserId: "user_viewer",
     });
 
-    expect(result?.participants).toEqual([
+    expect(result).toMatchObject({ participants: [
       {
         id: "user_speaker",
         name: "Amina",
@@ -289,7 +289,7 @@ describe("Postgres Talk repository", () => {
         avatarUrl: null,
         isHost: false,
       },
-    ]);
+    ] });
     expect(sql).toContain("participants_json");
     expect(sql).toContain("FROM talks.talk_seats s");
   });

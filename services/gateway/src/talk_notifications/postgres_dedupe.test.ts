@@ -9,7 +9,7 @@ describe("Postgres Talk push dedupe", () => {
     const calls: Array<{text:string;values?:unknown[]}> = [];
     const pool:TalkPushDedupeSqlPool = {
       async query<Row>(text:string, values?:unknown[]) {
-        calls.push({text,values});
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount:1,
           rows:[{dedupe_key:"talk-push:v1:t:u:event-1"}] as unknown as Row[],
@@ -55,7 +55,7 @@ describe("Postgres Talk push dedupe", () => {
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:TalkPushDedupeSqlPool = {
       async query<Row>(text:string,values?:unknown[]) {
-        call={text,values};
+        call={ text, ...(values === undefined ? {} : { values }) };
         return {
           rowCount:2,
           rows:[

@@ -39,11 +39,11 @@ describe("R18 owner-scoped private S3 avatar writes", () => {
     );
     expect(init.method).toBe("PUT");
     expect(init.redirect).toBe("error");
-    expect(init.body).toEqual(bytes);
-    expect(init.headers["content-type"]).toBe("image/webp");
-    expect(init.headers["x-amz-content-sha256"]).toBe(digest);
-    expect(init.headers["x-amz-date"]).toBe("20261008T060000Z");
-    expect(init.headers.authorization).toMatch(
+    expect(Buffer.from(await new Response(init.body).arrayBuffer())).toEqual(bytes);
+    expect(new Headers(init.headers).get("content-type")).toBe("image/webp");
+    expect(new Headers(init.headers).get("x-amz-content-sha256")).toBe(digest);
+    expect(new Headers(init.headers).get("x-amz-date")).toBe("20261008T060000Z");
+    expect(new Headers(init.headers).get("authorization")).toMatch(
       /^AWS4-HMAC-SHA256 Credential=EXAMPLEACCESS\/20261008\/ams3\/s3\/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=[0-9a-f]{64}$/u,
     );
     expect(init.headers).not.toHaveProperty("x-amz-acl");
@@ -81,10 +81,10 @@ describe("R18 owner-scoped private S3 avatar writes", () => {
     const [url, init] = mock.mock.calls[0]!;
     expect(url.toString()).toContain(`/${owner.userId}/sha256-${digest}.webp`);
     expect(init.method).toBe("DELETE");
-    expect(init.headers["x-amz-content-sha256"]).toBe(
+    expect(new Headers(init.headers).get("x-amz-content-sha256")).toBe(
       createHash("sha256").update("").digest("hex"),
     );
-    expect(init.headers.authorization).toMatch(/SignedHeaders=host;x-amz-content-sha256;x-amz-date/u);
+    expect(new Headers(init.headers).get("authorization")).toMatch(/SignedHeaders=host;x-amz-content-sha256;x-amz-date/u);
   });
 
   it("rejects untrusted S3 or public CDN configuration", () => {

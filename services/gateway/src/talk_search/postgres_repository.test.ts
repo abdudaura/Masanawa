@@ -9,7 +9,7 @@ describe("Postgres Talk search repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkSearchSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 0, rows: [] as Row[] };
       },
     };
@@ -37,7 +37,7 @@ describe("Postgres Talk search repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkSearchSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
           rows: [{
@@ -70,7 +70,7 @@ describe("Postgres Talk search repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkSearchSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return { rowCount: 0, rows: [] as Row[] };
       },
     };

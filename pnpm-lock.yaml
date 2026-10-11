@@ -162,6 +162,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@whiskeysockets/baileys@7.0.0-rc14': 2c9d53cd9206375e8284826845b9a743aba1d00f62ce075111ac9ad603e44bf0
+  whatsapp-rust-bridge@0.5.4: 07346e8b9cc2f9186a112dd434073e354e9e43ef69b0b45fb41e135a0caf7c82
+
 importers:
 
   .:
@@ -519,7 +523,7 @@ importers:
         version: link:../../packages/telemetry
       '@whiskeysockets/baileys':
         specifier: 7.0.0-rc14
-        version: 7.0.0-rc14(sharp@0.35.5(@types/node@24.13.6))
+        version: 7.0.0-rc14(patch_hash=2c9d53cd9206375e8284826845b9a743aba1d00f62ce075111ac9ad603e44bf0)(sharp@0.35.5(@types/node@24.13.6))
       fastify:
         specifier: 5.12.5
         version: 5.12.5
@@ -539,6 +543,9 @@ importers:
       '@types/qrcode':
         specifier: ^1.5.5
         version: 1.5.6
+      '@types/ws':
+        specifier: 8.18.2
+        version: 8.18.2
       vitest:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
@@ -1067,6 +1074,9 @@ packages:
 
   '@types/react@19.3.0':
     resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -2314,6 +2324,10 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 24.13.6
+
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
 
@@ -2385,7 +2399,7 @@ snapshots:
 
   '@vitest/spy@5.0.3': {}
 
-  '@whiskeysockets/baileys@7.0.0-rc14(sharp@0.35.5(@types/node@24.13.6))':
+  '@whiskeysockets/baileys@7.0.0-rc14(patch_hash=2c9d53cd9206375e8284826845b9a743aba1d00f62ce075111ac9ad603e44bf0)(sharp@0.35.5(@types/node@24.13.6))':
     dependencies:
       '@cacheable/node-cache': 1.7.6
       '@hapi/boom': 9.1.4
@@ -2397,7 +2411,7 @@ snapshots:
       pino: 9.14.0
       protobufjs: 7.6.6
       sharp: 0.35.5(@types/node@24.13.6)
-      whatsapp-rust-bridge: 0.5.4
+      whatsapp-rust-bridge: 0.5.4(patch_hash=07346e8b9cc2f9186a112dd434073e354e9e43ef69b0b45fb41e135a0caf7c82)
       ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
@@ -3078,7 +3092,7 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
-  whatsapp-rust-bridge@0.5.4: {}
+  whatsapp-rust-bridge@0.5.4(patch_hash=07346e8b9cc2f9186a112dd434073e354e9e43ef69b0b45fb41e135a0caf7c82): {}
 
   which-module@2.0.1: {}
 

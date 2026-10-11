@@ -72,7 +72,7 @@ function app(input: Readonly<{
         },
       },
       executor,
-      catalogSource: input.catalogSource,
+      ...(input.catalogSource === undefined ? {} : { catalogSource: input.catalogSource }),
       activity: {
         async append(event) {
           if (input.activityFail) throw new Error('activity unavailable');
@@ -143,6 +143,24 @@ describe("Talk Host gift route", () => {
     expect(response.statusCode).toBe(400);
     expect(executions).toHaveLength(0);
   });
+
+  it.each(["recipientUserId", "senderUserId", "tenantId", "currency", "price", "unexpected"])(
+    "rejects unexpected gift field %s before executing the ledger",
+    async (field) => {
+      const { server, executions, activity } = app();
+      const response = await server.inject({
+        method: "POST", url: "/talks/talk_12345678/gifts",
+        headers: { authorization: "Bearer viewer" },
+        payload: {
+          requestId: "gift-injection", catalogItemId: "heart", amountCredits: 100,
+          [field]: "client-authority",
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(executions).toHaveLength(0);
+      expect(activity).toHaveLength(0);
+    },
+  );
 
   it("forbids gifting your own Talk", async () => {
     const { server, executions } = app({ viewerUserId: "host_1" });
