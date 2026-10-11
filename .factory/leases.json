@@ -2330,6 +2330,7 @@
         "services/gateway/src/financial_billing.test.ts",
         "services/gateway/src/main.test.ts",
         "services/gateway/src/profile_avatar/s3_store.test.ts",
+        "services/gateway/src/profile_avatar/s3_store.ts",
         "services/gateway/src/talk_ai_seats/moderation_bridge.test.ts",
         "services/gateway/src/talk_ai_worker/worker.test.ts",
         "services/gateway/src/talk_direct_twin/postgres_repository.test.ts",
@@ -2361,9 +2362,9 @@
       "branch": "continue-chat-reliability-20261011",
       "base_sha": "46af99e50dedd5a1596ffb5795086410ef4ff859",
       "claimed_at": "2026-10-11T10:22:03.756271+00:00",
-      "heartbeat_at": "2026-10-11T10:43:40Z",
-      "expires_at": "2026-10-11T11:03:40Z",
-      "notes": "Root owns package compiler repairs: preserve skipLibCheck:false, define required platform types for isomorphic dependencies, fix two faulty published declarations and add WS declaration dependency. App lock out of sync with declared localization deps, resolving under required Dart3.12.2; native release qualification remains separate."
+      "heartbeat_at": "2026-10-11T10:46:30Z",
+      "expires_at": "2026-10-11T11:06:30Z",
+      "notes": "Dependency declarations fixed with2pinned patches, WS types and standard platform API declarations; remaining avatar Buffer body interoperability requires owned ArrayBuffer preserving checksum/body bytes. Mobile source analyzer7files0errors; exact-bundle testsblocked, compatible olderengine limitedchecksongoing."
     }
   ],
   "history": [
