@@ -1,5 +1,5 @@
 import type { Pool, PoolClient } from "pg";
-import type { FanSetupProfile, FanSetupUpdate, FanInterest } from "../../../../../packages/identity/src/fan_setup.js";
+import type { FanSetupProfile, FanSetupUpdate, FanInterest } from "@masanawa/identity";
 
 export class FanSetupStoreError extends Error {
   constructor(readonly code: "fan_not_found" | "revision_conflict") { super(code); }

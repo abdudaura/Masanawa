@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { FAN_DISCLOSURE_VERSION, FanSetupValidationError, parseFanSetupUpdate } from "../../../../../packages/identity/src/fan_setup.js";
-import type { FanSetupProfile, FanSetupUpdate } from "../../../../../packages/identity/src/fan_setup.js";
+import { FAN_DISCLOSURE_VERSION, FanSetupValidationError, parseFanSetupUpdate } from "@masanawa/identity";
+import type { FanSetupProfile, FanSetupUpdate } from "@masanawa/identity";
 
 export type FanSetupActor = Readonly<{tenantId:string; userId:string}>;
 export type FanSetupDependencies = {
