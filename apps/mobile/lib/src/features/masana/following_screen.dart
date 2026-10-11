@@ -41,7 +41,10 @@ class _MasanaFollowingState extends State<MasanaFollowingScreen> {
       if(!mounted||stamp!=epoch)return;
       final status=e is DioException?e.response?.statusCode:null;
       setState((){loading=false;denied=status==401||status==403;disabled=status==410;
-        offline=people.isNotEmpty;
+        // Authorization loss is never an offline-cache exception. Clear private
+        // fan data before the next frame instead of displaying stale records.
+        if(denied||disabled){people=[];cursor=null;busy.clear();offline=false;}
+        else {offline=people.isNotEmpty;}
         error=denied?t('Please sign in again.','Sake shiga.')
           :disabled?t('Following unavailable.','Ba a samun wadanda ake bi.')
           :t('Could not load Following. Retry.','An kasa dauko jerin bi. Sake gwadawa.');});
