@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/mobile_push.dart';
+import '../../features/account/device_security_client.dart';
+import '../../features/account/device_security_screen.dart';
 import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
@@ -218,6 +220,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 16),
           _Card(
             children: [
+              ListTile(
+                key: const Key('settings-device-security'),
+                leading: Icon(Icons.phonelink_lock_outlined, color: u.brand),
+                title: const Text('Device security'),
+                subtitle: const Text('Review and sign out other signed-in devices'),
+                onTap: user == null ? null : () {
+                  // The existing ApiClient provides the sole authenticated Dio
+                  // interceptor and refresh-token coordination. No second login.
+                  final api = ref.read(apiClientProvider);
+                  final transport = DioFanDevicesTransport(
+                    api.dio,
+                    ownerAccountId: user.id,
+                    currentAccountId: () {
+                      final current = ref.read(sessionProvider);
+                      return current is SessionSignedIn ? current.user.id : null;
+                    },
+                    authorizationHeader: () async {
+                      final token = ref.read(apiClientProvider).accessToken;
+                      return token == null || token.isEmpty ? null : 'Bearer $token';
+                    },
+                  );
+                  Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => DeviceSecurityScreen(transport: transport),
+                  ));
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Card(
+            children: [
               SwitchListTile(
                 secondary: Icon(Icons.notifications_outlined, color: u.brand),
                 title: const Text('Notifications'),
@@ -277,14 +310,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 leading: Icon(Icons.info_outline, color: u.brand),
                 title: const Text('About Masanawa'),
-                subtitle: const Text('Live Talks, AI Experts, Twins and services'),
+                subtitle: const Text('Masana, professional Rooms and services'),
                 onTap: () => showAboutDialog(
                   context: context,
                   applicationName: 'Masanawa',
                   applicationVersion: '1.0.0',
                   children: const [
                     Text(
-                      'Join human-hosted live Talks, bring Masanawa Experts and Twins into conversations, and use Billing and Crypto privately.',
+                      'Follow Masana professionals, learn in global Rooms, chat with Masana, and use Billing and Crypto privately.',
                     ),
                   ],
                 ),
