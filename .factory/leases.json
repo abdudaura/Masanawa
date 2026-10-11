@@ -1527,7 +1527,10 @@
       "expires_at": "2026-10-11T04:22:45Z",
       "notes": "Non-deploying integration/rebuild only; no shared app/router/main/migration registry, financial data, provider writes",
       "source_pr": 642,
-      "source_head": "8ddbe234ae8ebf8c8bf79ba00ac11f5a39e86879"
+      "source_head": "8ddbe234ae8ebf8c8bf79ba00ac11f5a39e86879",
+      "released_at": "2026-10-11T04:19:00Z",
+      "release_reason": "C22 feature-local Flutter/API/service/PG/migration/reused moderation source and real-PG upgrade negative tests committed to draft PR #642; AF00 owner-only migration/router/worker composition and lock importers remain. Foundation install/typecheck/build blocked; global consumer Flutter analyze/test steps fail (C22 last-head specifics pending log); Admin analyze/widgets pass, APK build ongoing. No integration SHA, no main/production deploy.",
+      "integration_head_sha": null
     },
     {
       "claim_id": "l-gwani-j13-appeal-replay-20261011-gpt6-0507",
