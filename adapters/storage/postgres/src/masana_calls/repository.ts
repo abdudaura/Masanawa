@@ -1,5 +1,18 @@
 import type { Pool } from "pg";
-import type { CallActor, CallRecord, CallStore } from "../../../../../../services/gateway/src/modules/masana_calls/service.js";
+// Structural contract matches J04 gateway service without linking the Gateway into storage.
+interface CallActor { tenantId:string; fanUserId:string }
+interface CallRecord {
+  callId:string; tenantId:string; fanUserId:string; characterId:string;
+  roomName:string; state:"connecting"|"active"|"ended"|"expired"|"failed";
+  expiresAt:string;
+}
+interface CallStore {
+  qualified(input:CallActor & {characterId:string}):Promise<boolean>;
+  create(input:CallActor & {callId:string;characterId:string;requestId:string;roomName:string;expiresAt:string}):Promise<boolean>;
+  markActive(input:CallActor & {callId:string}):Promise<boolean>;
+  finish(input:CallActor & {callId:string;state:"ended"|"failed";failureCode?:string}):Promise<boolean>;
+  get(input:CallActor & {callId:string}):Promise<CallRecord|null>;
+}
 
 /** Exact tenant + fan fencing; caller never supplies actor identity. */
 export function createPostgresMasanaCallStore(db: Pick<Pool,"query">): CallStore & {
