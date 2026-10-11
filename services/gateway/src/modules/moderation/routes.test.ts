@@ -6,11 +6,11 @@ import {registerModerationRoutes} from "./routes.js";
 const fan:Actor={tenantId:"tenant_j13",userId:"fan_j13",kind:"fan",roles:[]};
 const mod:Actor={tenantId:"tenant_j13",userId:"staff_j13",kind:"staff",roles:["moderator"]};
 const stranger:Actor={tenantId:"tenant_j13",userId:"fan_stranger",kind:"fan",roles:[]};
-function fixture(){
+function fixture(state: 'open' | 'dismissed' = 'open'){
  const fastify=Fastify();
  const opened={tenantId:"tenant_j13",caseId:"case_j13",reporterUserId:"fan_j13",
   targetKind:"comment" as const,targetId:"comment_j13",category:"spam" as const,
-  details:"Spam",state:"open" as const,version:1,
+  details:"Spam",state,version:1,
   slaDueAt:"2026-10-11T00:00:00Z",createdAt:"2026-10-10T00:00:00Z",updatedAt:"2026-10-10T00:00:00Z"};
  const repo:CaseRepository={
   create:async request=>({...opened,caseId:request.caseId}),
@@ -72,4 +72,20 @@ describe("J13 real Fastify routes (authority and HTTP error surface)",()=>{
     category:"spam",details:"Spam",clientRequestId:"request_other"}});
   expect(denial.statusCode).toBe(404);
  });
+ it("requires a retry token on an eligible fan appeal and denies forged actor",async()=>{
+  const app=fixture("dismissed");apps.push(app);
+  const incomplete=await app.inject({method:"POST",url:"/v1/cases/case_j13/appeal",
+   headers:{authorization:"Bearer fan"},payload:{reason:"Please reconsider"}});
+  expect(incomplete.statusCode).toBe(400);
+  const foreign=await app.inject({method:"POST",url:"/v1/cases/case_j13/appeal",
+   headers:{authorization:"Bearer stranger"},
+   payload:{reason:"Please reconsider",clientRequestId:"appeal-key"}});
+  expect(foreign.statusCode).toBe(404);
+  const accepted=await app.inject({method:"POST",url:"/v1/cases/case_j13/appeal",
+   headers:{authorization:"Bearer fan"},
+   payload:{reason:"Please reconsider",clientRequestId:"appeal-key"}});
+  expect(accepted.statusCode).toBe(200);
+  expect(accepted.json()).toMatchObject({accepted:true});
+ });
+
 });
