@@ -1393,7 +1393,9 @@
       "expires_at": "2026-10-11T03:42:54.538Z",
       "notes": "PR #638 follow-up real GitHub Flutter mobile run #38108849170 after repairing three C28 video widget tests from prior run #38108432124 (433 pass/14 fail, three in scope). No root/finance/DB edits.",
       "source_pr": 638,
-      "source_head": "17840c20af0662460bc7d82c5e18a554a7853b3e"
+      "source_head": "17840c20af0662460bc7d82c5e18a554a7853b3e",
+      "released_at": "2026-10-11T04:21:12.312Z",
+      "release_reason": "Expired legacy five-minute lease recovered after inspecting PR #638 exact head 17840c20af0662460bc7d82c5e18a554a7853b3e and posting handoff comment #6105383405; original implementation preserved."
     },
     {
       "claim_id": "l-rooms-paid-access-j08-20261011-gpt6-0439",
@@ -1665,6 +1667,28 @@
       "heartbeat_at": "2026-10-11T04:20:22.928Z",
       "expires_at": "2026-10-11T04:25:22.928Z",
       "notes": "Non-deploying source only; AF00 owns shared router, migration registration, package importers, staff/tenant principal; L-VIDEO owns C27 Save action insertion; no existing history deleted."
+    },
+    {
+      "claim_id": "l-video-c27-c29-source-recovery-20261011-gpt6-0422",
+      "owner": "L-VIDEO C27-C29 continuation / GPT-6",
+      "scope": "Complete existing PR #638 video consumer source, validate matching J15 contract and executable Flutter/Android checks; no shared AF00 composition or new authority",
+      "paths": [
+        "apps/mobile/lib/src/features/videos/official_video_player_screen.dart",
+        "apps/mobile/lib/src/features/videos/video_embed_policy.dart",
+        "apps/mobile/lib/src/features/videos/video_models.dart",
+        "apps/mobile/lib/src/features/videos/videos_screen.dart",
+        "apps/mobile/lib/src/features/videos/video_repository.dart",
+        "apps/mobile/test/features/videos/official_video_player_test.dart",
+        "apps/mobile/test/features/videos/videos_screen_test.dart",
+        "apps/mobile/pubspec.yaml"
+      ],
+      "branch": "lane/l-video-c28-official-player-20261011-gpt6",
+      "source_pr": 638,
+      "source_head": "17840c20af0662460bc7d82c5e18a554a7853b3e",
+      "claimed_at": "2026-10-11T04:21:12.312Z",
+      "heartbeat_at": "2026-10-11T04:21:12.312Z",
+      "expires_at": "2026-10-11T04:26:12.312Z",
+      "notes": "Recovered expired L-VIDEO claim after source/head audit and PR #638 comment 6105383405; exact paths only."
     }
   ],
   "history": [
