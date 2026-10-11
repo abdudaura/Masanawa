@@ -15,7 +15,8 @@
     "typebox": "1.3.34",
     "@masanawa/telemetry": "workspace:*",
     "@masanawa/node-runtime": "workspace:*",
-    "@masanawa/postgres": "workspace:*"
+    "@masanawa/postgres": "workspace:*",
+    "@masanawa/moderation": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"
