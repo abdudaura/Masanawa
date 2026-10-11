@@ -1576,14 +1576,15 @@
         "apps/mobile/lib/src/features/gwani/cases_api.dart",
         "apps/mobile/lib/src/features/gwani/cases_screen.dart",
         "apps/mobile/test/features/gwani/appeal_retry_test.dart",
-        "tests/e2e/J13/README.md"
+        "tests/e2e/J13/README.md",
+        "services/gateway/src/modules/moderation/routes.test.ts"
       ],
       "branch": "lane/l-gwani-cases-j13-20261010-gpt6",
       "source_pr": 628,
       "source_head": "8b7ac2bc666f2ee66ee4b4cb95784469026ef089",
       "claimed_at": "2026-10-11T04:07:50.311Z",
-      "heartbeat_at": "2026-10-11T04:12:24.919Z",
-      "expires_at": "2026-10-11T04:17:24.919Z",
+      "heartbeat_at": "2026-10-11T04:12:57.148Z",
+      "expires_at": "2026-10-11T04:17:57.148Z",
       "notes": "Disjoint J13 appeal retry sub-scope. AF00 owns package importer/root migration registry and composition. Never merge to main."
     },
     {
