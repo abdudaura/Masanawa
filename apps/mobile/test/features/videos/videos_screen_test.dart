@@ -63,7 +63,6 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: Scaffold(body:
       ExternalVideosScreen(load: loaded, enabled: false))));
     expect(find.text('Videos are currently unavailable'), findsOneWidget);
-    // Existing constructor eagerly constructs its future, but activation is disabled.
-    expect(calls, 1);
+    expect(calls, 0);
   });
 }
