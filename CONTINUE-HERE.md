@@ -2,7 +2,18 @@
 
 Updated 2026-10-11. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
 
-## Immediate delivery correction — 2026-10-10
+## Current development policy — 2026-10-11
+
+**Merge scoped, tested development work into main.** The owner authorizes routine
+CI/CD on main during development. A build/deployment trigger is not a reason to
+park source in an integration branch or ask again for merge approval. Run checks
+relevant to the change; record unrelated existing failures and missing runners.
+Keep auth/privacy, Wallet safeguards, secrets and destructive-data protections.
+Older integration-only and whole-product-before-handoff rules are superseded.
+Read only the instructions/contracts needed for the task; the list below is a
+reference map, not mandatory repeated reading before every change.
+
+## Delivery context — 2026-10-10
 
 Read [outcome-first dispatch](docs/NEXT-WAVE-DELIVERY-20261010.md) FIRST and use [the replacement reusable prompt](docs/REUSABLE-IMPLEMENTATION-PROMPT.md). Stop unrestricted micro-fix selection and duplicate evidence/cleanup tools. Complete substantive customer milestones, continue existing PRs and integrate tested code on one reviewed safe baseline. The AF JSON is an allocation template, not live completion status; inspect current claims/PRs/handoffs. Read only relevant feature references after this short dispatch.
 
@@ -40,6 +51,6 @@ Existing drafts include #497 integration, #576 MSN, #575/#578 calls, #468/#508 c
 
 ## Delivery
 
-One lane per window, isolated checkout, exact-path claim visible before edits. Start dependency-ready waves, not all lanes at once. Shared composition/migration/router/export files have one integrator. Promptly merge compatible completed code with relevant executable proof into a safe target; keep production release separately gated. Missing external verification is recorded precisely, not used to park all tested code forever.
+One lane per window, isolated checkout, exact-path claim visible before edits. Start dependency-ready waves, not all lanes at once. Shared composition/migration/router/export files have one integrator. Promptly merge compatible completed code into main with relevant executable proof. Routine development CI/CD is authorized; release qualification is a separate claim. Missing external verification is recorded precisely, not used to park all tested code forever.
 
 No runtime, provider, escrow, Android-device, local-build or deployment verification is established by this documentation update.
