@@ -1,6 +1,14 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
-import type {Actor} from "@masanawa/feed";
-import type {DraftInput,EditorialAction,EditorialState,EditorialPost} from "@masanawa/feed";
+// Wire DTOs are structural projections, not another domain authority.
+// AF00 injects @masanawa/feed's canonical EditorialReviewService.
+type Actor={kind:"fan"|"staff"|"masana";tenantId:string;id:string;permissions?:readonly string[];approved?:boolean};
+type EditorialAction="submit"|"revise"|"approve"|"schedule"|"take_down";
+type EditorialState="draft"|"in_review"|"scheduled"|"published"|"hidden"|"removed";
+type DraftInput={authorMasanaId:string;kind:"text"|"image"|"audio";body:string;
+ media?:readonly string[];transcript?:string|null;idempotencyKey:string};
+type EditorialPost={id:string;tenantId:string;authorMasanaId:string;kind:"text"|"image"|"audio";
+ body:string;media:readonly string[];transcript:string|null;state:EditorialState;revision:number;
+ createdBy:string;scheduledAt:string|null;updatedAt:string};
 
 type EditorialPort={
  create(actor:Actor,input:DraftInput):Promise<EditorialPost>;
