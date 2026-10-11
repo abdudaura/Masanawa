@@ -2260,16 +2260,17 @@
         "tests/e2e/J06/status_authorization.test.mjs",
         "docs/workstreams/STATUS-masana-authorization-20261011.md",
         "adapters/storage/postgres/src/home_feed/review_repository.ts",
-        "adapters/storage/postgres/src/home_feed/review_repository.test.ts"
+        "adapters/storage/postgres/src/home_feed/review_repository.test.ts",
+        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart"
       ],
       "branch": "lane/status-masana-authorization-20261011",
       "base_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
-      "source_head": "9b01f5e99289ab493370fafe510d1ba6f118a821",
+      "source_head": "16973d1e0ef81aae52218720a57bb48119a05b7d",
       "source_pr": 671,
       "claimed_at": "2026-10-11T20:44:30.844Z",
-      "heartbeat_at": "2026-10-11T20:46:52.789Z",
-      "expires_at": "2026-10-11T20:51:52.790Z",
-      "notes": "Expanded claim pushed/read back at 855c82d before editorial SQL edits. 11 executable Node source units/mock SQL contracts PASS_SIMULATED; original syntax error reproduced and fixed. #671 preserves canonical feed authority. Flutter/PG/full checkout unavailable; coordinator shell/Gateway composition still required."
+      "heartbeat_at": "2026-10-11T20:50:32.359Z",
+      "expires_at": "2026-10-11T20:55:32.359Z",
+      "notes": "Actual CI reveals missing ')' in C23 signed media Slider; exact path claimed/read back ad98a44, fixed16973d1. Node11pass simulated, lockfile importer stops workspace TS/PG, shared router stale MyTwinRouteScreen remains coordinator; latest Flutter runner requested automatically by substantive push, waiting actual results."
     },
     {
       "claim_id": "rooms-ci-closure-20261011-cloud",
