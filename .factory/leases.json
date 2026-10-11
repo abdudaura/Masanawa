@@ -1638,6 +1638,31 @@
       "heartbeat_at": "2026-10-11T04:17:52.129Z",
       "expires_at": "2026-10-11T04:22:52.129Z",
       "notes": "New additive 0004 migration source only. Existing canonical external_videos items/audit, no new pipeline or hosted video. Never main/live."
+    },
+    {
+      "claim_id": "l-feed-c25-saved-library-20261011-gpt6-0520",
+      "owner": "L-FEED/C25 ChatGPT GPT-6",
+      "scope": "C25 unified saved Masana posts and approved external videos, reuse feed.saves; read-only failed/stale/offline fallback and account switching; feature-local API/PG/migration/UI/negative tests",
+      "paths": [
+        "packages/feed/src/saved.ts",
+        "packages/feed/src/saved.test.ts",
+        "packages/feed/migrations/0003_saved_videos.sql",
+        "adapters/storage/postgres/src/home_feed/saved_repository.ts",
+        "adapters/storage/postgres/src/home_feed/saved_repository.test.ts",
+        "services/gateway/src/modules/home_feed/saved_routes.ts",
+        "services/gateway/src/modules/home_feed/saved_routes.test.ts",
+        "apps/mobile/lib/src/features/home_feed/saved_api.dart",
+        "apps/mobile/lib/src/features/home_feed/saved_screen.dart",
+        "apps/mobile/test/features/home_feed/saved_screen_test.dart",
+        "tests/e2e/J06/saved_library.md"
+      ],
+      "branch": "lane/l-feed-c25-saved-20261011-gpt6-0520",
+      "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
+      "source_pr": null,
+      "claimed_at": "2026-10-11T04:20:22.928Z",
+      "heartbeat_at": "2026-10-11T04:20:22.928Z",
+      "expires_at": "2026-10-11T04:25:22.928Z",
+      "notes": "Non-deploying source only; AF00 owns shared router, migration registration, package importers, staff/tenant principal; L-VIDEO owns C27 Save action insertion; no existing history deleted."
     }
   ],
   "history": [
