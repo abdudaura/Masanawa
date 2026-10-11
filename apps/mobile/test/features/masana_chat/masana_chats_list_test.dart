@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/l10n/app_localizations.dart';
 import 'package:masanawa/src/features/masana_chat/masana_chats_list_api.dart';
 import 'package:masanawa/src/features/masana_chat/masana_chats_list_screen.dart';
 
@@ -28,7 +29,10 @@ void main(){
     (tester)async{
     final api=InboxFake();
     String? opened;
-    await tester.pumpWidget(MaterialApp(home:MasanaChatsListScreen(
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates:AppLocalizations.localizationsDelegates,
+      supportedLocales:AppLocalizations.supportedLocales,
+      home:MasanaChatsListScreen(
       accountId:'fan-a',inbox:api,
       onOpen:(id,name)=>opened='$id/$name')));
     await tester.pumpAndSettle();
@@ -45,7 +49,10 @@ void main(){
   });
   testWidgets('account switch reads a distinct secure cache key', (tester)async{
     final api=InboxFake();
-    Widget screen(String id)=>MaterialApp(home:MasanaChatsListScreen(
+    Widget screen(String id)=>MaterialApp(
+      localizationsDelegates:AppLocalizations.localizationsDelegates,
+      supportedLocales:AppLocalizations.supportedLocales,
+      home:MasanaChatsListScreen(
       accountId:id,inbox:api,onOpen:(_,__){}));
     await tester.pumpWidget(screen('fan-a'));await tester.pumpAndSettle();
     await tester.pumpWidget(screen('fan-b'));await tester.pumpAndSettle();
