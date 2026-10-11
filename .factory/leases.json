@@ -1937,9 +1937,10 @@
       "base_sha": "3951d976948cfba787a7a311d0cfecf5fff7da82",
       "source_head": "3951d976948cfba787a7a311d0cfecf5fff7da82",
       "claimed_at": "2026-10-11T05:20:26.423Z",
-      "heartbeat_at": "2026-10-11T05:20:26.423Z",
-      "expires_at": "2026-10-11T05:25:26.423Z",
-      "notes": "New stacked path-only C38 branch. Previous C39 claim released; no edits to C39 paths beyond compatible existing room UI. No live data/provider/production writes."
+      "heartbeat_at": "2026-10-11T05:24:39.130Z",
+      "expires_at": "2026-10-11T05:29:39.130Z",
+      "notes": "New stacked path-only C38 branch. Previous C39 claim released; no edits to C39 paths beyond compatible existing room UI. No live data/provider/production writes.",
+      "source_head_sha": "69b750f7f6d31417b4d1bf7bbcb25f78cc3b84f7"
     }
   ],
   "history": [
