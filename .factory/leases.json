@@ -1806,10 +1806,7 @@
       "owner": "L-FIN/C54 — GPT-6",
       "scope": "C54 tenant-private read-only canonical billing receipt detail; no ledger writes, provider activation, duplicate wallet, AF00 root or migration registry",
       "paths": [
-        "services/gateway/src/modules/finance/billing_receipt.ts",
-        "services/gateway/src/modules/finance/billing_receipt.test.ts",
-        "adapters/storage/postgres/src/commerce/billing-receipt-read.ts",
-        "adapters/storage/postgres/src/commerce/billing-receipt-read.test.ts",
+        "apps/mobile/lib/src/features/wallet/billing_receipt.dart",
         "apps/mobile/lib/src/features/wallet/billing_receipt_screen.dart",
         "apps/mobile/test/features/wallet/billing_receipt_screen_test.dart",
         "tests/e2e/J05/billing-receipt/ACCEPTANCE.md"
@@ -1817,9 +1814,10 @@
       "branch": "lane/l-fin-c54-billing-receipt-20261011-gpt6-0550",
       "base_sha": "9256ada27b33ed286edaa3ba42835972575a25fd",
       "claimed_at": "2026-10-11T04:52:40.457Z",
-      "heartbeat_at": "2026-10-11T04:52:40.457Z",
-      "expires_at": "2026-10-11T04:57:40.457Z",
-      "notes": "Existing commerce.billing_fulfillments only; client C54 receipt deep-link callback owned by AF00; no new worker needed."
+      "heartbeat_at": "2026-10-11T04:56:10.600Z",
+      "expires_at": "2026-10-11T05:01:10.600Z",
+      "notes": "C54 client reuses existing canonical billed purchase route, PG store, receipt projection and webhook worker. New client, tests, J05 acceptance. AF00 root wiring not touched.",
+      "source_head": "0c014f26099851297e78aa948fce14365cf2b0d8"
     },
     {
       "claim_id": "l-shell-c05-account-20261011-gpt6-0556",
