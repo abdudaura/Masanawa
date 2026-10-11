@@ -17,6 +17,7 @@ export interface VerifiedPlaySubscription {
  readonly packageName:string;readonly storeProductId:string;
  readonly subscriptionState:string;readonly periodEnd:string;
  readonly orderId:string|null;readonly acknowledged:boolean;
+ readonly obfuscatedAccountId:string|null;
 }
 export interface PlaySubscriptionVerifier {
  verify(token:string):Promise<VerifiedPlaySubscription>;
