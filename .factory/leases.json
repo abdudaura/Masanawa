@@ -2306,14 +2306,16 @@
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
         "apps/mobile/test/agents/agent_receipt_transport_test.dart",
         "apps/mobile/test/state/ai_chat_outbox_test.dart",
-        "docs/workstreams/CHAT-P02-cloud-continuation-20261011.md"
+        "docs/workstreams/CHAT-P02-cloud-continuation-20261011.md",
+        "apps/mobile/test/agent_recovery_test.dart",
+        "apps/mobile/test/agent_turn_receipt_transport_test.dart"
       ],
       "branch": "continue-chat-reliability-20261011",
       "base_sha": "46af99e50dedd5a1596ffb5795086410ef4ff859",
       "claimed_at": "2026-10-11T10:22:03.756271+00:00",
-      "heartbeat_at": "2026-10-11T10:22:03.756271+00:00",
-      "expires_at": "2026-10-11T10:27:03.756271+00:00",
-      "notes": "Owner takeover explicitly authorized in chat. GitHub API unavailable; publish registry using native authenticated Git and fast-forward compare-and-swap. Preserve source PR branches and deployment gates."
+      "heartbeat_at": "2026-10-11T10:29:47.325529+00:00",
+      "expires_at": "2026-10-11T10:34:47.325529+00:00",
+      "notes": "Concrete work: Gateway service 30/30 and HTTP/probe 13/13 tests pass. Durable onAccepted receipt, preserved canonical retry key, safe pending/uncertain stream errors and best-effort start events implemented. Mobile outbox/receipts under active independent review; correcting 4 P1 restart/account-switch/persistence defects. Flutter runner image removed after resource limit. No production or paid execution."
     }
   ],
   "history": [
