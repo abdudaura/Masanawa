@@ -1394,6 +1394,38 @@
       "notes": "Read main, planning #615, integration and merged #624/#627/#637; only Flutter consumer video feature and dependency. Reuse canonical catalog API; request AF00 shared Home composition. No live provider activation.",
       "source_pr": 638,
       "source_head": "98ac7016e2abda8d24643b489f03a7c9411204e2"
+    },
+    {
+      "claim_id": "l-rooms-paid-j08-20261011-gpt6",
+      "owner": "GPT-6 / L-ROOMS/paid J08",
+      "scope": "Continue existing PR #625: verified Google Play Room subscription purchase, paid content entitlement, immutable price versions, RTDN audit and Android UI; no parallel Room package/provider or shared composition",
+      "paths": [
+        "packages/rooms/src/subscriptions.ts",
+        "packages/rooms/src/subscriptions.test.ts",
+        "packages/rooms/src/ports.ts",
+        "packages/rooms/migrations/0002_room_subscriptions.sql",
+        "adapters/storage/postgres/src/rooms/subscriptions.ts",
+        "adapters/storage/postgres/src/rooms/repository.ts",
+        "services/gateway/src/modules/rooms/subscription_routes.ts",
+        "services/gateway/src/modules/rooms/subscription_routes.test.ts",
+        "services/gateway/src/modules/rooms/routes.ts",
+        "services/worker/src/jobs/rooms/subscriptions.ts",
+        "services/worker/src/jobs/rooms/subscriptions.test.ts",
+        "apps/mobile/lib/src/features/rooms/room_subscriptions_client.dart",
+        "apps/mobile/lib/src/features/rooms/room_subscribe_screen.dart",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/admin_mobile/lib/src/features/rooms/rooms_plans_client.dart",
+        "apps/admin_mobile/lib/src/features/rooms/rooms_plans_screen.dart",
+        "tests/e2e/J08/README.md"
+      ],
+      "branch": "lane/l-rooms-free-questions-20261010-gpt6",
+      "base_sha": "d3e2fcda445565c83363f2b57822bc08e985a7a4",
+      "claimed_at": "2026-10-11T03:34:54.299Z",
+      "heartbeat_at": "2026-10-11T03:34:54.299Z",
+      "expires_at": "2026-10-11T03:39:54.299Z",
+      "notes": "Existing PR #625 continuation, J07 preserved. AF00 owns root composition/CI/lockfile/staging and release. No live Play activation.",
+      "source_pr": 625,
+      "source_head": "d3e2fcda445565c83363f2b57822bc08e985a7a4"
     }
   ],
   "history": [
