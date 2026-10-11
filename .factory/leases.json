@@ -1523,11 +1523,11 @@
       "branch": "lane/l-feed-c22-post-detail-20261011-gpt6-0500",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:00:15Z",
-      "heartbeat_at": "2026-10-11T04:13:20Z",
-      "expires_at": "2026-10-11T04:18:20Z",
+      "heartbeat_at": "2026-10-11T04:17:45Z",
+      "expires_at": "2026-10-11T04:22:45Z",
       "notes": "Non-deploying integration/rebuild only; no shared app/router/main/migration registry, financial data, provider writes",
       "source_pr": 642,
-      "source_head": "92b356bd359020e13fa7fa4bde2e70207c9fd7f7"
+      "source_head": "8ddbe234ae8ebf8c8bf79ba00ac11f5a39e86879"
     },
     {
       "claim_id": "l-gwani-j13-appeal-replay-20261011-gpt6-0507",
