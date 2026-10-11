@@ -1762,8 +1762,7 @@
         "adapters/storage/postgres/src/home_feed/media_authorization.test.ts",
         "apps/mobile/lib/src/features/home_feed/feed_media_api.dart",
         "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
-        "apps/mobile/lib/src/features/home_feed/feed_api.dart",
-        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_media_action.dart",
         "apps/mobile/test/features/home_feed/feed_media_screen_test.dart",
         "tests/e2e/J06/media_viewer/ACCEPTANCE.md"
       ],
@@ -1772,7 +1771,13 @@
       "claimed_at": "2026-10-11T04:44:12.484Z",
       "heartbeat_at": "2026-10-11T04:44:12.484Z",
       "expires_at": "2026-10-11T04:49:12.484Z",
-      "notes": "Read #615 planning authority, #616 AF00, J06 #631 and C22 #642. Reuse canonical feed.posts and approved media signer; no shared route/DB registry changes."
+      "notes": "Read #615 planning authority, #616 AF00, J06 #631 and C22 #642. Reuse canonical feed.posts and approved media signer; no shared route/DB registry changes.",
+      "source_pr": 650,
+      "source_head": "ed3eee3824844cac18ce9a85aa121e26702e1f53",
+      "integration_head_sha": null,
+      "test_state": "Exact-head Foundation underlying check FAIL, Mobile consumer and Admin jobs FAIL/zero-step details unavailable; pnpm frozen lockfile missing packages/feed importer on earlier C23 job; TS/Vitest/PG18/Flutter/Android E2E NOT QUALIFIED",
+      "released_at": "2026-10-11T04:53:48.822Z",
+      "release_reason": "Isolated source PR #650 drafted, full C23 feature-local media viewer and authorization source with tests, root/signer composition owned by AF00 #616, no production activation. Initial shared Feed files restored to integration baseline, no collision with C22 #642. No merge SHA; source unverified; AF00 requested to review and integrate."
     },
     {
       "claim_id": "l-feed-c26-search-source-review-20261011-gpt6-0549",
