@@ -1,5 +1,12 @@
-import type { DeliveryActor, DeliveryKind } from "../../../../../adapters/storage/postgres/src/notifications/delivery_preferences.js";
-import {isDeliveryKind} from "../../../../../adapters/storage/postgres/src/notifications/delivery_preferences.js";
+import type { NotificationKind } from "./inbox_projection.js";
+// Reuse C08's canonical six kinds. This gate never touches its durable inbox.
+type DeliveryKind = NotificationKind;
+interface DeliveryActor {tenantId:string;fanUserId:string}
+const allowedKinds: readonly string[] = [
+  "comment_reply","room_answer","followed_post","subscription","wallet","case_update",
+];
+const isDeliveryKind = (kind: unknown): kind is DeliveryKind =>
+  typeof kind === "string" && allowedKinds.includes(kind);
 
 /**
  * Eligibility check ONLY for an OPTIONAL external push sender. The existing

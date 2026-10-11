@@ -1,6 +1,15 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import type { DeliveryPreferences, DeliveryActor } from "../../../../../adapters/storage/postgres/src/notifications/delivery_preferences.js";
-import { isDeliveryKind } from "../../../../../adapters/storage/postgres/src/notifications/delivery_preferences.js";
+// Structural port to the existing notifications PG adapter; do not import its
+// source into the Gateway rootDir or create a second preferences authority.
+const kinds = ["comment_reply","room_answer","followed_post","subscription","wallet","case_update"] as const;
+type DeliveryKind = (typeof kinds)[number];
+interface DeliveryActor { tenantId: string; fanUserId: string }
+interface DeliveryPreferences {
+  list(actor: DeliveryActor): Promise<Array<{kind:DeliveryKind;enabled:boolean}>>;
+  set(actor:DeliveryActor, choice:{kind:DeliveryKind;enabled:boolean}):Promise<{kind:DeliveryKind;enabled:boolean}>;
+}
+const isDeliveryKind = (kind: unknown): kind is DeliveryKind =>
+  typeof kind === "string" && (kinds as readonly string[]).includes(kind);
 
 export interface DeliveryPrincipal extends DeliveryActor { signedIn: true }
 /** Default disabled until AF00 injects the canonical session, pool and migration-gated flag. */
