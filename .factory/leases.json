@@ -1416,16 +1416,23 @@
         "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
         "apps/admin_mobile/lib/src/features/rooms/rooms_plans_client.dart",
         "apps/admin_mobile/lib/src/features/rooms/rooms_plans_screen.dart",
-        "tests/e2e/J08/README.md"
+        "tests/e2e/J08/README.md",
+        "services/gateway/src/modules/rooms/play_verifier.ts",
+        "services/gateway/src/modules/rooms/play_verifier.test.ts",
+        "packages/rooms/src/index.ts",
+        "apps/mobile/pubspec.yaml",
+        "apps/mobile/lib/src/features/rooms/room_billing_store.dart",
+        "apps/mobile/test/features/rooms/room_subscribe_screen_test.dart",
+        "apps/admin_mobile/test/features/rooms/rooms_plans_screen_test.dart"
       ],
       "branch": "lane/l-rooms-free-questions-20261010-gpt6",
       "base_sha": "d3e2fcda445565c83363f2b57822bc08e985a7a4",
       "claimed_at": "2026-10-11T03:34:54.299Z",
-      "heartbeat_at": "2026-10-11T03:34:54.299Z",
-      "expires_at": "2026-10-11T03:39:54.299Z",
+      "heartbeat_at": "2026-10-11T03:43:01.268Z",
+      "expires_at": "2026-10-11T03:48:01.268Z",
       "notes": "Existing PR #625 continuation, J07 preserved. AF00 owns root composition/CI/lockfile/staging and release. No live Play activation.",
       "source_pr": 625,
-      "source_head": "d3e2fcda445565c83363f2b57822bc08e985a7a4"
+      "source_head": "64ee489035676b4af4bd5c1ba4cab84dd19aaf90"
     },
     {
       "claim_id": "l-rooms-paid-access-j08-20261011-gpt6-0439",
