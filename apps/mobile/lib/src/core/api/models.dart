@@ -64,6 +64,64 @@ class OtpVerifyRequest {
       };
 }
 
+/// Password auth (U-auth-pw). The 6-digit device password replaces SMS OTP
+/// for phone login; email keeps real OTP. The server owns registration and
+/// device trust; the client fails closed when these endpoints are absent.
+class AccountStatusResponse {
+  const AccountStatusResponse({required this.registered, required this.deviceKnown});
+
+  factory AccountStatusResponse.fromJson(Map<String, dynamic> json) =>
+      AccountStatusResponse(
+        registered: json['registered'] as bool? ?? false,
+        deviceKnown: json['deviceKnown'] as bool? ?? false,
+      );
+
+  final bool registered;
+  final bool deviceKnown;
+}
+
+class PasswordVerifyRequest {
+  const PasswordVerifyRequest({
+    required this.phone,
+    required this.deviceId,
+    required this.password,
+  });
+
+  final String phone;
+  final String deviceId;
+  final String password;
+
+  Map<String, dynamic> toJson() => {
+        'phone': phone,
+        'deviceId': deviceId,
+        'password': password,
+      };
+}
+
+class PasswordSetupRequest {
+  const PasswordSetupRequest({
+    required this.phone,
+    required this.deviceId,
+    required this.password,
+    required this.name,
+    this.email,
+  });
+
+  final String phone;
+  final String deviceId;
+  final String password;
+  final String name;
+  final String? email;
+
+  Map<String, dynamic> toJson() => {
+        'phone': phone,
+        'deviceId': deviceId,
+        'password': password,
+        'name': name,
+        if (email != null) 'email': email,
+      };
+}
+
 class AuthUser {
   const AuthUser({
     required this.id,

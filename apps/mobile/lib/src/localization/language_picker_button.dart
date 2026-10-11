@@ -31,7 +31,7 @@ class _LanguagePickerButtonState extends State<LanguagePickerButton> {
     if (_saving) return;
     final controller = LocalePreferenceScope.of(context);
     final strings = AppLocalizations.of(context);
-    final currentCode = controller.override?.languageCode ?? _deviceChoice;
+    final currentCode = controller.localeOverride?.languageCode ?? _deviceChoice;
 
     final picked = await showModalBottomSheet<String>(
       context: context,

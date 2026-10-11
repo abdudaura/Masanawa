@@ -8,44 +8,46 @@ import '../screens/billing/billing_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
+import '../screens/onboarding/password_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/person_profile_screen.dart';
 import '../screens/profile/persona_profile_screen.dart';
-import '../screens/settings/clone_setup_screen.dart';
 import '../screens/search/talk_search_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
-import '../screens/twin/twin_home_shell.dart';
+import '../screens/chat/masana_list_screen.dart';
 import '../screens/twin/shell_tab.dart';
-import '../screens/you/my_talks_screen.dart';
-import '../screens/you/you_screen.dart';
-import '../screens/you/saved_talks_screen.dart';
+import '../shell/five_tab_shell.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
 import '../talks/talk_models.dart';
 
-/// The approved four root destinations. These are navigation indices only,
+/// The five canonical root destinations. These are navigation indices only,
 /// not a pricing, identity or task-authority contract.
 int shellRootTabIndex(String? tab) =>
     MasanawaRootTab.fromQuery(tab).index;
 
-/// Old shell links must not be reinterpreted as different current tabs.
+/// Retired shell links land on their closest current tab.
 String? legacyShellDestination(String? tab) => switch (tab) {
       'create' => '/talk/create',
       'activity' => '/activity',
-      'you' => '/you',
+      'agents' => '/home?tab=chats',
+      'wallet' => '/home?tab=wallet',
+      'talk' => '/home?tab=status',
+      'home' => '/home?tab=chats',
       _ => null,
     };
 
-/// Production router for the human-hosted Talk product.
+/// Production router for the audio-first product.
 ///
-/// Root shell: Home · Agents · Wallet · Talk; legacy entry points stay valid.
-/// Home contains Explore / Live Talks.
+/// Canonical root shell: Chats · Rooms · Talks · Gwani · Wallet (Talks
+/// default). The legacy Home · Agents · Wallet · Talk entries below stay
+/// valid as redirects until the shell migration unit removes them.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -53,8 +55,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
 
       if (path == '/splash') return null;
-      if (path == '/chat' || path == '/chats') return '/home?tab=talk';
-      if (path == '/agents' || path == '/masana') return '/home?tab=agents';
+      if (path == '/chat' || path == '/chats') return '/home?tab=chats';
+      if (path == '/agents') return '/home?tab=chats';
 
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
@@ -81,7 +83,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final protected = path == '/home' ||
           path == '/activity' ||
-          path == '/you' ||
           path == '/search' ||
           path == '/chats' ||
           path.startsWith('/chat/') ||
@@ -93,17 +94,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/agents' ||
           path == '/masana' ||
           path == '/settings' ||
-          path == '/my-twin' ||
-          path == '/my-talks' ||
-          path == '/saved-talks' ||
           path == '/wallet' ||
           path == '/billing' ||
           path == '/crypto' ||
-          path == '/clone' ||
           path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
 
-      // Legacy shell deep links must retain their previous action.
+      // Retired shell deep links land on their closest current tab.
       if (path == '/home') {
         final oldDestination = legacyShellDestination(
           state.uri.queryParameters['tab']);
@@ -118,13 +115,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const PhoneLoginScreen(),
       ),
       GoRoute(path: '/otp', builder: (_, _) => const OtpScreen()),
+      GoRoute(
+        path: '/password',
+        builder: (_, state) => PasswordScreen(
+          phone: state.uri.queryParameters['phone'] ?? '',
+          setup: state.uri.queryParameters['setup'] == '1',
+        ),
+      ),
       GoRoute(path: '/name', builder: (_, _) => const NameScreen()),
       GoRoute(
         path: '/home',
         builder: (_, state) {
           final index = shellRootTabIndex(
             state.uri.queryParameters['tab']);
-          return TwinHomeShell(initialIndex: index);
+          return FiveTabShell(initialIndex: index);
         },
       ),
       GoRoute(
@@ -133,19 +137,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           onOpenTalk: (id) => context.push('/talk/' + Uri.encodeComponent(id)),
           onOpenProfile: (handle) => context.push(
             '/u/' + Uri.encodeComponent(handle)),
-        ),
-      ),
-      GoRoute(
-        path: '/you',
-        builder: (context, _) => YouScreen(
-          onOpenProfile: () => context.push('/profile'),
-          onOpenMyTalks: () => context.push('/my-talks'),
-          onOpenMyTwin: () => context.push('/my-twin'),
-          onOpenSaved: () => context.push('/saved-talks'),
-          onOpenWallet: () => context.push('/wallet'),
-          onOpenBills: () => context.push('/billing'),
-          onOpenCrypto: () => context.push('/crypto'),
-          onOpenSettings: () => context.push('/settings'),
         ),
       ),
       GoRoute(
@@ -203,35 +194,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/my-talks',
-        builder: (context, _) => MyTalksScreen(
-          onOpenTalk: (talk) => context.push(
-            '/talk/' + Uri.encodeComponent(talk.id),
-            extra: talk,
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/saved-talks',
-        builder: (context, _) => SavedTalksScreen(
-          onOpenTalk: (talk) => context.push(
-            '/talk/' + Uri.encodeComponent(talk.id),
-            extra: talk,
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/my-twin',
-        builder: (_, _) => const MyTwinRouteScreen(),
-      ),
-      GoRoute(
         path: '/wallet',
         builder: (context, _) => WalletScreen(
           onBuyBills: () => context.push('/billing'),
           onOpenCrypto: () => context.push('/crypto'),
         ),
       ),
-      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=talk'),
+      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=chats'),
       GoRoute(
         path: '/chat/:id',
         builder: (context, state) {
@@ -269,8 +238,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
         ),
       ),
-      GoRoute(path: '/agents', redirect: (_, __) => '/home?tab=agents'),
-      GoRoute(path: '/masana', redirect: (_, __) => '/home?tab=agents'),
+      GoRoute(path: '/agents', redirect: (_, __) => '/home?tab=chats'),
+      GoRoute(path: '/masana', builder: (_, _) => const MasanaListScreen()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/billing',
@@ -279,7 +248,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/crypto', builder: (_, _) => const CryptoWalletScreen()),
-      GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const EditProfileScreen()),
     ],
   );
@@ -325,7 +293,7 @@ class _TwinLinkResolverScreenState
         setState(() {
           _resolving = false;
           _error =
-              'This Twin is private or the share link is no longer available.';
+              'This Masana is private or the share link is no longer available.';
         });
         return;
       }
@@ -334,7 +302,7 @@ class _TwinLinkResolverScreenState
       if (!mounted) return;
       setState(() {
         _resolving = false;
-        _error = 'Could not open this Twin right now.';
+        _error = 'Could not open this Masana right now.';
       });
     }
   }
@@ -347,7 +315,7 @@ class _TwinLinkResolverScreenState
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Open Twin')),
+      appBar: AppBar(title: const Text('Open Masana')),
       body: SafeArea(
         minimum: const EdgeInsets.all(24),
         child: Center(
@@ -359,7 +327,7 @@ class _TwinLinkResolverScreenState
                 const Icon(Icons.link_off_outlined, size: 42),
                 const SizedBox(height: 16),
                 Text(
-                  _error ?? 'This Twin link is unavailable.',
+                  _error ?? 'This Masana link is unavailable.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),

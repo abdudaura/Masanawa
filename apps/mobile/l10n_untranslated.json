@@ -1,0 +1,71 @@
+{
+  "ar": [
+    "chats",
+    "status",
+    "calls",
+    "rooms",
+    "passwordCreateTitle",
+    "passwordConfirmTitle",
+    "passwordCreateSubtitle",
+    "passwordEnterTitle",
+    "passwordEnterSubtitle",
+    "passwordMismatch",
+    "passwordSignIn"
+  ],
+
+  "es": [
+    "chats",
+    "status",
+    "calls",
+    "rooms",
+    "passwordCreateTitle",
+    "passwordConfirmTitle",
+    "passwordCreateSubtitle",
+    "passwordEnterTitle",
+    "passwordEnterSubtitle",
+    "passwordMismatch",
+    "passwordSignIn"
+  ],
+
+  "fr": [
+    "chats",
+    "status",
+    "calls",
+    "rooms",
+    "passwordCreateTitle",
+    "passwordConfirmTitle",
+    "passwordCreateSubtitle",
+    "passwordEnterTitle",
+    "passwordEnterSubtitle",
+    "passwordMismatch",
+    "passwordSignIn"
+  ],
+
+  "ha": [
+    "chats",
+    "status",
+    "calls",
+    "rooms",
+    "passwordCreateTitle",
+    "passwordConfirmTitle",
+    "passwordCreateSubtitle",
+    "passwordEnterTitle",
+    "passwordEnterSubtitle",
+    "passwordMismatch",
+    "passwordSignIn"
+  ],
+
+  "pt": [
+    "chats",
+    "status",
+    "calls",
+    "rooms",
+    "passwordCreateTitle",
+    "passwordConfirmTitle",
+    "passwordCreateSubtitle",
+    "passwordEnterTitle",
+    "passwordEnterSubtitle",
+    "passwordMismatch",
+    "passwordSignIn"
+  ]
+}

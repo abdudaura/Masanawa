@@ -108,7 +108,7 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
           theme: buildMasanawaTheme(brightness: Brightness.light),
           // R01: never follow the device into an unrequested dark theme.
           themeMode: ThemeMode.light,
-          locale: _localePreference.override,
+          locale: _localePreference.localeOverride,
           supportedLocales: MasanawaLocalization.supportedLocales,
           localizationsDelegates: MasanawaLocalization.delegates,
           localeListResolutionCallback: (deviceLocales, supportedLocales) =>

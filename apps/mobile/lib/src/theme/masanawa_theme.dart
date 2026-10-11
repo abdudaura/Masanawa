@@ -23,6 +23,10 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
     required this.surfaceCard,
     required this.surfaceMuted,
     required this.structuralBorder,
+    required this.bubbleOut,
+    required this.chatBg,
+    required this.tickRead,
+    required this.chatNotice,
   });
 
   final Color brand;
@@ -39,6 +43,10 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
   final Color surfaceCard;
   final Color surfaceMuted;
   final Color structuralBorder;
+  final Color bubbleOut;
+  final Color chatBg;
+  final Color tickRead;
+  final Color chatNotice;
 
   static MasanawaColors light() => _from(MasanawaTokens.light);
 
@@ -61,6 +69,10 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
       surfaceCard: hex(t.surfaceCard),
       surfaceMuted: hex(t.surfaceMuted),
       structuralBorder: hex(t.structuralBorder),
+      bubbleOut: hex(t.bubbleOut),
+      chatBg: hex(t.chatBg),
+      tickRead: hex(t.tickRead),
+      chatNotice: hex(t.chatNotice),
     );
   }
 
@@ -80,6 +92,10 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
     Color? surfaceCard,
     Color? surfaceMuted,
     Color? structuralBorder,
+    Color? bubbleOut,
+    Color? chatBg,
+    Color? tickRead,
+    Color? chatNotice,
   }) {
     return MasanawaColors(
       brand: brand ?? this.brand,
@@ -96,6 +112,10 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
       surfaceCard: surfaceCard ?? this.surfaceCard,
       surfaceMuted: surfaceMuted ?? this.surfaceMuted,
       structuralBorder: structuralBorder ?? this.structuralBorder,
+      bubbleOut: bubbleOut ?? this.bubbleOut,
+      chatBg: chatBg ?? this.chatBg,
+      tickRead: tickRead ?? this.tickRead,
+      chatNotice: chatNotice ?? this.chatNotice,
     );
   }
 
@@ -118,6 +138,10 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
       surfaceCard: l(surfaceCard, other.surfaceCard),
       surfaceMuted: l(surfaceMuted, other.surfaceMuted),
       structuralBorder: l(structuralBorder, other.structuralBorder),
+      bubbleOut: l(bubbleOut, other.bubbleOut),
+      chatBg: l(chatBg, other.chatBg),
+      tickRead: l(tickRead, other.tickRead),
+      chatNotice: l(chatNotice, other.chatNotice),
     );
   }
 }

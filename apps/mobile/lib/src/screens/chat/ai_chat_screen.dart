@@ -796,12 +796,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                       await Clipboard.setData(ClipboardData(text: link));
                       if (sheetContext.mounted) {
                         ScaffoldMessenger.of(sheetContext).showSnackBar(
-                          const SnackBar(content: Text('Twin link copied')),
+                          const SnackBar(content: Text('Masana link copied')),
                         );
                       }
                     },
                     icon: const Icon(Icons.copy_rounded),
-                    label: const Text('Copy Twin link'),
+                    label: const Text('Copy Masana link'),
                   ),
                 ],
               ],
@@ -809,13 +809,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
         ),
       );
-      if (mounted) context.go('/my-twin');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Your personal Masana is ready.')),
+        );
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'I could not finish the Twin yet. Keep this chat and try again.',
+            'I could not finish it yet. Keep this chat and try again.',
           ),
         ),
       );
@@ -960,25 +964,24 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         if (didPop) setState(() => _showEmoji = false);
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).brightness == Brightness.light
-            ? const Color(0xFFEFEAE2)
-            : u.surfaceBg,
+        backgroundColor: u.chatBg,
         appBar: AppBar(
-          backgroundColor: u.brandStrong,
-          foregroundColor: Colors.white,
+          backgroundColor: u.surfaceCard,
+          foregroundColor: u.textPrimary,
           elevation: 0,
           leadingWidth: 40,
           leading: widget.embeddedInShell
               ? IconButton(
-                  tooltip: 'Agents',
+                  tooltip: 'New chat',
                   icon: const Icon(Icons.smart_toy_outlined),
-                  onPressed: widget.onOpenAgents,
+                  onPressed:
+                      widget.onOpenAgents ?? () => context.push('/masana'),
                 )
               : IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.canPop()
                       ? context.pop()
-                      : context.go('/home?tab=talk'),
+                      : context.go('/home?tab=chats'),
                 ),
           title: _selectedMessageIds.isNotEmpty
               ? Text('${_selectedMessageIds.length} selected')
@@ -1000,7 +1003,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               : InkWell(
             onTap: widget.embeddedInShell
                 ? widget.onOpenAgents
-                : () => context.push('/agents'),
+                : () => context.push('/masana'),
             child: Row(
               children: [
                 CircleAvatar(
@@ -3380,11 +3383,7 @@ class _ChatBubble extends StatelessWidget {
                 maxWidth: MediaQuery.of(context).size.width * 0.82,
               ),
               decoration: BoxDecoration(
-                color: isUser
-                    ? (Theme.of(context).brightness == Brightness.light
-                        ? const Color(0xFFD9FDD3)
-                        : const Color(0xFF005C4B))
-                    : u.surfaceCard,
+                color: isUser ? u.bubbleOut : u.surfaceCard,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(14),
                   topRight: const Radius.circular(14),
@@ -3501,6 +3500,8 @@ class _ChatBubble extends StatelessWidget {
                             'queued' => Icons.cloud_off_outlined,
                             'failed' => Icons.error_outline,
                             'stopped' => Icons.stop_circle_outlined,
+                            'sent' => Icons.done,
+                            'read' => Icons.done_all,
                             _ => Icons.done_all,
                           },
                           size: 14,
@@ -3508,6 +3509,8 @@ class _ChatBubble extends StatelessWidget {
                               ? u.emergency
                               : message.deliveryStatus == 'queued'
                               ? u.warning
+                              : message.deliveryStatus == 'read'
+                              ? u.tickRead
                               : u.textMuted,
                         ),
                       ],

@@ -17,6 +17,7 @@ class OnboardingScaffold extends StatelessWidget {
     this.subtitle,
     this.canGoBack = false,
     this.backDestination,
+    this.showLogo = true,
   });
 
   final Widget child;
@@ -26,6 +27,10 @@ class OnboardingScaffold extends StatelessWidget {
 
   /// Exact route to go back to (e.g. `/phone-login` from the OTP screen).
   final String? backDestination;
+
+  /// WhatsApp auth screens carry no logo; keep it true only for branded
+  /// interstitials outside the sign-in flow.
+  final bool showLogo;
 
   @override
   Widget build(BuildContext context) {
@@ -82,11 +87,12 @@ class OnboardingScaffold extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Center(
-                                  child: MasanawaLogo(
-                                    height: compact ? 64 : 80,
+                                if (showLogo)
+                                  Center(
+                                    child: MasanawaLogo(
+                                      height: compact ? 64 : 80,
+                                    ),
                                   ),
-                                ),
                                 if (title != null) ...[
                                   SizedBox(height: compact ? 20 : 28),
                                   Text(

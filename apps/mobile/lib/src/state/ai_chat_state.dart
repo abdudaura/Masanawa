@@ -1162,6 +1162,7 @@ class AiChatController extends Notifier<AiChatState> {
       sendingIn: {...state.sendingIn, characterId},
     );
     await _save();
+    _setDelivery(characterId, userMsg.id, 'sent');
     if (_disposed || threadGeneration != (_threadGenerations[characterId] ?? 0))
       return;
     try {
@@ -1557,6 +1558,8 @@ class AiChatController extends Notifier<AiChatState> {
       },
     );
     _save();
+    // The recipient opened the thread: anything we sent has now arrived.
+    _markUserMessages(characterId, {'sending', 'sent'}, 'delivered');
     return id;
   }
 
@@ -1606,6 +1609,8 @@ class AiChatController extends Notifier<AiChatState> {
       },
       sendingIn: {...state.sendingIn}..remove(characterId),
     );
+    // A finished reply proves the recipient read our messages.
+    _markUserMessages(characterId, {'delivered'}, 'read');
     await _save();
   }
 
@@ -1665,6 +1670,8 @@ class AiChatController extends Notifier<AiChatState> {
       },
       sendingIn: {...state.sendingIn}..remove(characterId),
     );
+    // A delivered reply proves the recipient read our messages.
+    _markUserMessages(characterId, {'delivered'}, 'read');
     await _save();
   }
 
@@ -1884,6 +1891,18 @@ class AiChatController extends Notifier<AiChatState> {
 
   void _setDelivery(String characterId, String messageId, String status) {
     _updateMessage(characterId, messageId, (m) => m.copyWith(deliveryStatus: status));
+  }
+
+  /// Advances the user's own messages through receipt stages, mirroring a
+  /// server-acknowledged → delivered → read pipeline. Only messages still in
+  /// one of [from] move; failed, queued and stopped messages are untouched.
+  void _markUserMessages(String characterId, Set<String> from, String to) {
+    final thread = threadOf(characterId);
+    for (final m in thread.messages) {
+      if (m.isUser && !m.deleted && from.contains(m.deliveryStatus)) {
+        _setDelivery(characterId, m.id, to);
+      }
+    }
   }
 
   void _updateMessage(

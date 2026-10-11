@@ -305,7 +305,7 @@ void main() {
           ],
           child: MaterialApp(
             theme: buildMasanawaTheme(brightness: Brightness.light),
-            home: const AgentListScreen(),
+            home: const MasanaListScreen(),
           ),
         ),
       );
@@ -319,7 +319,7 @@ void main() {
       await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
       expect(find.text('Amina'), findsOneWidget);
-      expect(find.text('1 agent'), findsOneWidget);
+      expect(find.text('1 Masana'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -19,6 +20,9 @@ const _kAccess = 'auth_access_token';
 const _kRefresh = 'auth_refresh_token';
 const _kUser = 'auth_user';
 const _kExpiry = 'auth_access_expires_in';
+// Stable install identifier for "known device" password skipping. It must
+// survive logout (see _clear), otherwise every login looks like a new device.
+const _kDeviceId = 'auth_device_id';
 
 sealed class SessionState {
   const SessionState();
@@ -62,6 +66,28 @@ class SessionNameRequired extends SessionState {
   final String identifier;
   final String code;
   final String? message;
+}
+
+/// 6-digit device password gate for phone login. `setup` is true when the
+/// number is not registered yet (the user creates a password, then a name).
+/// Email keeps real OTP and never lands here.
+class SessionPasswordRequired extends SessionState {
+  const SessionPasswordRequired(this.identifier, {required this.setup});
+  final String identifier;
+  final bool setup;
+}
+
+/// Registration continues on the profile step. The password lives in memory
+/// only and is sent once by [finishPasswordSetup]; it is never persisted.
+class SessionRegisterProfile extends SessionState {
+  const SessionRegisterProfile({
+    required this.phone,
+    required this.password,
+    this.email,
+  });
+  final String phone;
+  final String password;
+  final String? email;
 }
 
 class SessionSignedIn extends SessionState {
@@ -183,6 +209,151 @@ class SessionController extends Notifier<SessionState> {
   }) {
     if (state is SessionError) {
       state = SessionAwaitingOtp(channel, identifier, resendInSeconds);
+    }
+  }
+
+  /// Returns a failed password attempt to the gate so the user can retry.
+  void clearPasswordError({required String phone, required bool setup}) {
+    if (state is SessionError) {
+      state = SessionPasswordRequired(phone, setup: setup);
+    }
+  }
+
+  Future<String> _deviceId() async {
+    final existing = await _storage.read(key: _kDeviceId);
+    if (existing != null && existing.isNotEmpty) return existing;
+    final rand = Random.secure();
+    final id = List<int>.generate(16, (_) => rand.nextInt(256))
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    await _storage.write(key: _kDeviceId, value: id);
+    return id;
+  }
+
+  /// Phone login without SMS OTP. Unregistered numbers go to password setup;
+  /// known devices restore directly; anything else asks the 6-digit password.
+  /// Email keeps real OTP and never enters this path.
+  Future<void> startPhoneLogin(String phone) async {
+    try {
+      final deviceId = await _deviceId();
+      final status = await ref
+          .read(apiClientProvider)
+          .authAccountStatus(phone: phone, deviceId: deviceId);
+      if (!status.registered) {
+        state = SessionPasswordRequired(phone, setup: true);
+        return;
+      }
+      if (status.deviceKnown) {
+        try {
+          final tokens = await ref
+              .read(apiClientProvider)
+              .deviceRestore(phone: phone, deviceId: deviceId);
+          await _persist(tokens);
+          state = SessionSignedIn(tokens.user, tokens);
+          return;
+        } catch (_) {
+          // A failed restore is not a verdict: the password check below is
+          // strictly stronger, so fall through to it instead of failing.
+        }
+      }
+      state = SessionPasswordRequired(phone, setup: false);
+    } catch (e) {
+      final err = e is ApiException
+          ? e
+          : const ApiException('Could not start sign-in');
+      state = SessionError(
+        err.message,
+        code: err.code,
+        channel: OtpChannel.sms,
+        identifier: phone,
+      );
+    }
+  }
+
+  Future<void> verifyPassword({
+    required String phone,
+    required String password,
+  }) async {
+    try {
+      final deviceId = await _deviceId();
+      final tokens = await ref.read(apiClientProvider).passwordVerify(
+            phone: phone,
+            deviceId: deviceId,
+            password: password,
+          );
+      await _persist(tokens);
+      state = SessionSignedIn(tokens.user, tokens);
+    } catch (e) {
+      final err = e is ApiException
+          ? e
+          : const ApiException('Could not verify password');
+      // Accounts created before passwords existed have no credential yet;
+      // they create one instead of failing.
+      if (err.code == 'PASSWORD_NOT_SET') {
+        state = SessionPasswordRequired(phone, setup: true);
+        return;
+      }
+      state = SessionError(
+        err.message,
+        code: err.code,
+        channel: OtpChannel.sms,
+        identifier: phone,
+      );
+    }
+  }
+
+  /// Carries a freshly created password into the profile step. The password
+  /// stays in memory; [finishPasswordSetup] sends it exactly once.
+  void beginPasswordSetup({
+    required String phone,
+    required String password,
+    String? email,
+  }) {
+    state = SessionRegisterProfile(
+      phone: phone,
+      password: password,
+      email: email,
+    );
+  }
+
+  /// Profile step shared by both channels: OTP sign-ups verify their code,
+  /// password sign-ups create the account. Email sign-ups also supply the
+  /// phone number here, so every account leaves with phone + name.
+  Future<void> submitProfile({
+    required String name,
+    String? phone,
+    String? email,
+    String? code,
+  }) async {
+    final current = state;
+    try {
+      if (current is SessionRegisterProfile) {
+        final deviceId = await _deviceId();
+        final tokens = await ref.read(apiClientProvider).passwordSetup(
+              phone: current.phone,
+              deviceId: deviceId,
+              password: current.password,
+              name: name,
+              email: current.email,
+            );
+        await _persist(tokens);
+        state = SessionSignedIn(tokens.user, tokens);
+        return;
+      }
+      if (current is SessionNameRequired) {
+        await verifyOtp(
+          code ?? current.code,
+          phone: current.channel == OtpChannel.sms ? current.identifier : phone,
+          email:
+              current.channel == OtpChannel.email ? current.identifier : email,
+          name: name,
+        );
+        return;
+      }
+    } catch (e) {
+      final err =
+          e is ApiException ? e : const ApiException('Could not save profile');
+      state = SessionError(err.message, code: err.code);
     }
   }
 

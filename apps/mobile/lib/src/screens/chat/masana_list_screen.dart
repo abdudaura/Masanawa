@@ -9,10 +9,10 @@ import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../theme/masanawa_theme.dart';
 
-/// Server-driven agent roster. No Character names, roles or capabilities are
+/// Server-driven Masana roster. No persona names, roles or capabilities are
 /// compiled into the app; admin configuration can change without a release.
-class AgentListScreen extends ConsumerWidget {
-  const AgentListScreen({super.key});
+class MasanaListScreen extends ConsumerWidget {
+  const MasanaListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,13 +27,13 @@ class AgentListScreen extends ConsumerWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/chats'),
+              context.canPop() ? context.pop() : context.go('/home?tab=chats'),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Agents',
+              'Masana',
               style: TextStyle(
                 color: u.textPrimary,
                 fontSize: 18,
@@ -43,7 +43,7 @@ class AgentListScreen extends ConsumerWidget {
             Text(
               directory.loading && directory.agents.isEmpty
                   ? 'Loading…'
-                  : '${directory.agents.length} ${directory.agents.length == 1 ? 'agent' : 'agents'}${directory.loading ? ' · refreshing…' : ''}',
+                  : '${directory.agents.length} Masana${directory.loading ? ' · refreshing…' : ''}',
               style: TextStyle(color: u.textMuted, fontSize: 12.5),
             ),
           ],
@@ -80,7 +80,7 @@ class AgentListScreen extends ConsumerWidget {
               Icon(Icons.groups_outlined, size: 52, color: u.brand),
               const SizedBox(height: 16),
               Text(
-                directory.error ?? 'No agents are available right now.',
+                directory.error ?? 'No Masana are available right now.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: u.textPrimary,
@@ -151,7 +151,7 @@ class AgentListScreen extends ConsumerWidget {
                     horizontal: 14,
                     vertical: 7,
                   ),
-                  leading: _AgentAvatar(agent: agent),
+                  leading: _MasanaAvatar(agent: agent),
                   title: Text(
                     agent.displayName,
                     style: TextStyle(
@@ -186,8 +186,8 @@ class AgentListScreen extends ConsumerWidget {
   }
 }
 
-class _AgentAvatar extends StatelessWidget {
-  const _AgentAvatar({required this.agent});
+class _MasanaAvatar extends StatelessWidget {
+  const _MasanaAvatar({required this.agent});
 
   final AgentDirectoryEntry agent;
 
