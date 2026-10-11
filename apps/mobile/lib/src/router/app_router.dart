@@ -35,9 +35,8 @@ int shellRootTabIndex(String? tab) => MasanawaTab.parse(tab).index;
 
 /// Old shell links must not be reinterpreted as different current tabs.
 String? legacyShellDestination(String? tab) => switch (tab) {
-      'create' => '/talk/create',
-      'activity' => '/activity',
-      'you' => '/you',
+      'create' || 'activity' => '/home',
+      'you' => '/account',
       _ => null,
     };
 
@@ -54,6 +53,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (path == '/agents' || path == '/masana') return '/masana/discover';
       if (path == '/rooms') return '/home?tab=rooms';
       if (path == '/you') return '/account';
+      if (path == '/activity') return '/home';
       if (path == '/search') return '/masana/discover';
       // Preserve ledger/history, never re-enable retired live Talk/Twin roles.
       if (path == '/clone' || path == '/my-twin' ||
