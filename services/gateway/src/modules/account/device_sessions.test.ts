@@ -5,7 +5,7 @@ import {registerFanDeviceRoutes} from "./device_sessions.js";
 
 const token=mintPlatformSessionToken("access"),header="Bearer "+token;
 const id="4eadd05d-d474-4fd0-848f-8c5791db63f6";
-function setup() {
+function setup(enabled = true) {
   const app=Fastify();
   const store:FanDeviceSessionStore={
     list:vi.fn(async()=>[{id,startedAt:new Date().toISOString(),lastSeenAt:new Date().toISOString(),
@@ -13,10 +13,32 @@ function setup() {
     revoke:vi.fn(async()=>"revoked")
   };
   const authorize=vi.fn(async(h:string|undefined)=>h===header?{tenantId:"ten",fanUserId:"fan"}:null);
-  registerFanDeviceRoutes(app,{authorize,store});
+  registerFanDeviceRoutes(app,{authorize,store,enabled:()=>enabled});
   return {app,store,authorize};
 }
 describe("C09 trusted device-security routes",()=>{
+  it("fails closed by default on both routes before accessing sessions",async()=>{
+    const app=Fastify();
+    const authorize=vi.fn(async()=>({tenantId:"ten",fanUserId:"fan"}));
+    const store:FanDeviceSessionStore={
+      list:vi.fn(async()=>[]),
+      revoke:vi.fn(async()=>"revoked")
+    };
+    registerFanDeviceRoutes(app,{authorize,store});
+    for (const [method,url] of [
+      ["GET","/v1/account/devices"],
+      ["POST",`/v1/account/devices/${id}/revoke`]
+    ] as const) {
+      const response=await app.inject({method,url,headers:{authorization:header},
+        ...(method==="POST"?{payload:{idempotencyKey:"revoke-key-001"}}:{})});
+      expect(response.statusCode).toBe(503);
+      expect(response.json()).toEqual({code:"feature_disabled"});
+    }
+    expect(authorize).not.toHaveBeenCalled();
+    expect(store.list).not.toHaveBeenCalled();
+    expect(store.revoke).not.toHaveBeenCalled();
+    await app.close();
+  });
   it("never accepts forged tenant/user headers or unauthenticated requests",async()=>{
     const {app,store}=setup();
     const r=await app.inject({method:"GET",url:"/v1/account/devices",
