@@ -31,4 +31,26 @@ describe("admin YouTube source authority",()=>{
    await h.service.pause(staff,"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
    expect(h.store.pause).toHaveBeenCalledWith({tenantId:"t1",actorId:"staff_1",id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"});
  });
+ it("fences listing, including blank principals, before reaching storage",async()=>{
+   const h=harness();
+   await expect(h.service.list({...staff,staffRoles:[]})).rejects.toMatchObject({status:403});
+   await expect(h.service.list({...staff,tenantId:" "}))
+     .rejects.toMatchObject({status:403});
+   await expect(h.service.list({...staff,tenantId:"tenant\\nother"}))
+     .rejects.toMatchObject({status:403});
+   await expect(h.service.list({...staff,actorId:" "}))
+     .rejects.toMatchObject({status:403});
+   expect(h.store.list).not.toHaveBeenCalled();
+   await h.service.list(staff);
+   expect(h.store.list).toHaveBeenCalledExactlyOnceWith("t1");
+ });
+ it("rejects malformed source IDs or user-supplied authority before pause",async()=>{
+   const h=harness();
+   await expect(h.service.pause(staff,"------------------------------------"))
+     .rejects.toMatchObject({status:422,code:"invalid_source_id"});
+   await expect(h.service.pause({...staff,staffRoles:[]},"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"))
+     .rejects.toMatchObject({status:403});
+   expect(h.store.pause).not.toHaveBeenCalled();
+ });
+
 });
