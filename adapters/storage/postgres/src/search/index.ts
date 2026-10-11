@@ -42,7 +42,8 @@ function statement(kind: SearchKind): string {
         "AND ($3::text IS NULL OR rm.room_id > $3) " +
         "ORDER BY rm.room_id ASC LIMIT $4";
     case "posts":
-      return "SELECT p.id::text AS id, left(p.body,120) AS title, " +
+      return "SELECT p.id::text AS id, COALESCE(NULLIF(left(btrim(p.body),120), ''), " +
+        "CASE p.kind WHEN 'audio' THEN 'Audio post' WHEN 'image' THEN 'Image post' ELSE 'Post' END) AS title, " +
         "(mr.profile->>'displayName') AS subtitle " +
         "FROM feed.posts p JOIN masana.character_revisions mr " +
         "ON mr.tenant_id=p.tenant_id AND mr.character_id=p.author_masana_id AND mr.state='approved' " +
