@@ -51,6 +51,8 @@ void main() {
     await tester.tap(find.text('Play official video'));
     await tester.pump();
     expect(find.text('Provider iframe'), findsOneWidget);
+    await tester.ensureVisible(find.text('Open in youtube'));
+    await tester.pump();
     await tester.tap(find.text('Open in youtube'));
     await tester.pump();
     expect(opened, video.sourceUrl);
