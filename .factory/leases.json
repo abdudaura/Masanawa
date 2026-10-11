@@ -2200,6 +2200,33 @@
       "expires_at": "2026-10-11T08:14:25.246Z",
       "notes": "Bounded C13 source, no shared migration registry, gateway app, router, provider or ledger changes.",
       "source_head": "72f6f74f5658cd3e859ddab590b2fd202670681a"
+    },
+    {
+      "claim_id": "l-feed-a05-a06-editorial-20261011-gpt6-0907",
+      "owner": "GPT-6 / L-FEED A05 A06 editorial vertical",
+      "scope": "Reuse canonical feed.posts to implement authorized draft, review, scheduling and takedown across Flutter Admin/TS/Fastify/PG/worker; no activation or shared composition.",
+      "paths": [
+        "packages/feed/migrations/0004_editorial_review.sql",
+        "packages/feed/src/review.ts",
+        "packages/feed/src/review.test.ts",
+        "adapters/storage/postgres/src/home_feed/review_repository.ts",
+        "adapters/storage/postgres/src/home_feed/review_repository.test.ts",
+        "services/gateway/src/modules/home_feed/admin_review_routes.ts",
+        "services/gateway/src/modules/home_feed/admin_review_routes.test.ts",
+        "services/gateway/src/modules/home_feed/routes.ts",
+        "apps/admin_mobile/lib/src/features/content_studio/content_studio_page.dart",
+        "apps/admin_mobile/lib/src/features/content_studio/review_queue_page.dart",
+        "apps/admin_mobile/test/features/content_studio/editorial_review_test.dart",
+        "services/worker/src/jobs/home_feed/publish_scheduled.ts",
+        "services/worker/src/jobs/home_feed/publish_scheduled.test.ts"
+      ],
+      "branch": "lane/l-feed-a05-a06-editorial-review-20261011-gpt6-0907",
+      "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
+      "source_pr": null,
+      "claimed_at": "2026-10-11T08:10:40.507Z",
+      "heartbeat_at": "2026-10-11T08:10:40.507Z",
+      "expires_at": "2026-10-11T08:15:40.507Z",
+      "notes": "All paths exact and non-overlapping; AF00 owns migration registration / gateway and worker composition. Old direct staff publishing will fail closed."
     }
   ],
   "history": [
