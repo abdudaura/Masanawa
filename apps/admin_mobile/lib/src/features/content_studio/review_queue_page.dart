@@ -83,7 +83,7 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
     try{
       final options=await auth();
       if(!mounted||generation!=gen)return;
-      options.headers?['Idempotency-Key']='review-${DateTime.now().microsecondsSinceEpoch}';
+      options.headers!['Idempotency-Key']='review-${DateTime.now().microsecondsSinceEpoch}';
       await sourceDio.post<void>('/v1/admin/feed/posts/$id/transition',options:options,
         data:{'action':operation,'expectedRevision':revision,
           if(due!=null)'scheduledAt':due.toUtc().toIso8601String()});
