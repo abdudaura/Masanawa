@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/l10n/app_localizations.dart';
@@ -22,6 +23,18 @@ class InboxFake implements MasanaInboxAccess {
   }
   @override Future<void> markRead(String id) async {
     scopes.add('read:$id');
+  }
+}
+class DelayedInboxFake extends InboxFake {
+  final pendingPin=Completer<int>();
+  final pendingRead=Completer<void>();
+  @override Future<int> pin(String id,bool pinned,int revision) {
+    scopes.add('pin:$revision:$pinned');
+    return pendingPin.future;
+  }
+  @override Future<void> markRead(String id) {
+    scopes.add('read:$id');
+    return pendingRead.future;
   }
 }
 void main(){
@@ -59,4 +72,66 @@ void main(){
     expect(api.scopes,contains('cache:fan-a'));
     expect(api.scopes,contains('cache:fan-b'));
   });
+
+  testWidgets('C10 discovery control compiles and opens Masana search',
+    (tester)async{
+    final api=InboxFake();
+    var discoverCount=0;
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates:AppLocalizations.localizationsDelegates,
+      supportedLocales:AppLocalizations.supportedLocales,
+      home:MasanaChatsListScreen(
+        accountId:'fan-a',inbox:api,onOpen:(_,__) {},
+        onDiscover:()=>discoverCount++)));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Find Masana'),findsOneWidget);
+    await tester.tap(find.byTooltip('Find Masana'));
+    await tester.pump();
+    expect(discoverCount,1);
+  });
+  testWidgets('C10 cannot apply stale pin completion to a new account',
+    (tester)async{
+    final api=DelayedInboxFake();
+    Widget screen(String id)=>MaterialApp(
+      localizationsDelegates:AppLocalizations.localizationsDelegates,
+      supportedLocales:AppLocalizations.supportedLocales,
+      home:MasanaChatsListScreen(
+        accountId:id,inbox:api,onOpen:(_,__) {}));
+    await tester.pumpWidget(screen('fan-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Pin chat'));
+    await tester.pump();
+    await tester.pumpWidget(screen('fan-b'));
+    await tester.pumpAndSettle();
+    final fanBLoads=api.scopes.where(
+      (s)=>s.startsWith('load:fan-b:')).length;
+    api.pendingPin.complete(1);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Pin chat'),findsOneWidget);
+    expect(find.byTooltip('Unpin chat'),findsNothing);
+    expect(api.scopes.where(
+      (s)=>s.startsWith('load:fan-b:')).length,fanBLoads);
+  });
+  testWidgets('C10 late read receipt cannot refresh a different account',
+    (tester)async{
+    final api=DelayedInboxFake();
+    Widget screen(String id)=>MaterialApp(
+      localizationsDelegates:AppLocalizations.localizationsDelegates,
+      supportedLocales:AppLocalizations.supportedLocales,
+      home:MasanaChatsListScreen(
+        accountId:id,inbox:api,onOpen:(_,__) {}));
+    await tester.pumpWidget(screen('fan-a'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gwana'));
+    await tester.pump();
+    await tester.pumpWidget(screen('fan-b'));
+    await tester.pumpAndSettle();
+    final fanBLoads=api.scopes.where(
+      (s)=>s.startsWith('load:fan-b:')).length;
+    api.pendingRead.complete();
+    await tester.pumpAndSettle();
+    expect(api.scopes.where(
+      (s)=>s.startsWith('load:fan-b:')).length,fanBLoads);
+  });
+
 }
