@@ -1618,33 +1618,6 @@
       "source_head": "aec3cf954b561d14ecd2e08492125ade4b7b0358"
     },
     {
-      "claim_id": "l-video-a14-recovery-20261011-gpt6-0515",
-      "owner": "L-VIDEO A14/J15 / GPT-6",
-      "scope": "Complete existing official video review recovery across staff UI, authenticated API, tenant-scoped PostgreSQL CAS/audit, worker safe demotion and negative tests; shared registries/composition reserved for AF00",
-      "paths": [
-        "services/gateway/src/modules/external_videos/service.ts",
-        "services/gateway/src/modules/external_videos/service.test.ts",
-        "services/gateway/src/modules/external_videos/routes.test.ts",
-        "adapters/storage/postgres/src/external_videos/repository.ts",
-        "adapters/storage/postgres/src/external_videos/repository.integration.test.ts",
-        "packages/external-videos/migrations/0004_video_recovery.sql",
-        "services/worker/src/jobs/external_videos/recovery.ts",
-        "services/worker/src/jobs/external_videos/recovery.test.ts",
-        "apps/admin_mobile/lib/src/features/external_videos/video_admin_api.dart",
-        "apps/admin_mobile/lib/src/features/external_videos/video_curation_screen.dart",
-        "apps/admin_mobile/test/features/external_videos/video_recovery_test.dart",
-        "tests/e2e/J15/recovery.md"
-      ],
-      "branch": "lane/l-video-a14-recovery-20261011-gpt6-0515",
-      "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
-      "claimed_at": "2026-10-11T04:17:52.129Z",
-      "heartbeat_at": "2026-10-11T04:20:48.901Z",
-      "expires_at": "2026-10-11T04:25:48.901Z",
-      "notes": "New additive 0004 migration source only. Existing canonical external_videos items/audit, no new pipeline or hosted video. Never main/live.",
-      "source_pr": 646,
-      "source_head": "0f7d64fcafcd6abbeacfdb65a559d6015d82e769"
-    },
-    {
       "claim_id": "l-feed-c25-saved-library-20261011-gpt6-0520",
       "owner": "L-FEED/C25 ChatGPT GPT-6",
       "scope": "C25 unified saved Masana posts and approved external videos, reuse feed.saves; read-only failed/stale/offline fallback and account switching; feature-local API/PG/migration/UI/negative tests",
@@ -4565,6 +4538,36 @@
       "expires_at": "2026-10-11T04:19:34.665Z",
       "notes": "Disjoint J22 additions on existing #626 social authority; AF00 retains composition and deployment. 5-minute lease; no shared file or old data edits. Renewed for security recovery after inspecting live competing paths. Source commit and test-owned handoff on PR #626 and AF00 #616 (comments 6105348293/6105348070). Safe non-deploying merge and root composition belong to AF00. Tests on exact SHA are not qualified due missing lockfile importer and mobile workflow still running.",
       "released_at": "2026-10-11T04:16:42.048Z"
+    },
+    {
+      "claim_id": "l-video-a14-recovery-20261011-gpt6-0515",
+      "owner": "L-VIDEO A14/J15 / GPT-6",
+      "scope": "Complete existing official video review recovery across staff UI, authenticated API, tenant-scoped PostgreSQL CAS/audit, worker safe demotion and negative tests; shared registries/composition reserved for AF00",
+      "paths": [
+        "services/gateway/src/modules/external_videos/service.ts",
+        "services/gateway/src/modules/external_videos/service.test.ts",
+        "services/gateway/src/modules/external_videos/routes.test.ts",
+        "adapters/storage/postgres/src/external_videos/repository.ts",
+        "adapters/storage/postgres/src/external_videos/repository.integration.test.ts",
+        "packages/external-videos/migrations/0004_video_recovery.sql",
+        "services/worker/src/jobs/external_videos/recovery.ts",
+        "services/worker/src/jobs/external_videos/recovery.test.ts",
+        "apps/admin_mobile/lib/src/features/external_videos/video_admin_api.dart",
+        "apps/admin_mobile/lib/src/features/external_videos/video_curation_screen.dart",
+        "apps/admin_mobile/test/features/external_videos/video_recovery_test.dart",
+        "tests/e2e/J15/recovery.md"
+      ],
+      "branch": "lane/l-video-a14-recovery-20261011-gpt6-0515",
+      "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
+      "claimed_at": "2026-10-11T04:17:52.129Z",
+      "heartbeat_at": "2026-10-11T04:20:48.901Z",
+      "expires_at": "2026-10-11T04:25:48.901Z",
+      "notes": "New additive 0004 migration source only. Existing canonical external_videos items/audit, no new pipeline or hosted video. Never main/live.",
+      "source_pr": 646,
+      "source_head": "0f7d64fcafcd6abbeacfdb65a559d6015d82e769",
+      "released_at": "2026-10-11T04:23:49.287Z",
+      "integration_head_sha": "ed655bd71c3b8b215ff93d5069c58db86cbee6a8",
+      "release_reason": "J15/A14 12-file source merged into nondeploying integration/rebuild. Foundation CI 38111260185 install FAIL (packages/feed missing frozen lockfile importer); TS skipped, Vitest/PG not run; Admin Flutter analyze/widget PASS at exact PR head, consumer analyze FAIL, APK pending. Provider withdrawal default OFF; root migration/worker composition AF00. No main/production deployment."
     }
   ]
 }
