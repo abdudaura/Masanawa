@@ -2019,6 +2019,22 @@
       "source_head": "72e11b92a1cfd923c7bdec881f0f2dd91940a346",
       "integration_head_sha": null,
       "test_state": "BLOCKED / NOT_RUN; zero-step CI (runs 38115933487 and 38115933507)"
+    },
+    {
+      "claim_id": "l-video-a13-async-list-contract-20261011-gpt6-0743",
+      "owner": "L-VIDEO / GPT-6 source review",
+      "scope": "Fix actually discovered A13 synchronous list denial vs async Fastify/Vitest contract and malformed control-character negative test; no shared composition/DB/worker/finance changes.",
+      "paths": [
+        "services/gateway/src/modules/youtube_websub/source_admin.ts",
+        "services/gateway/src/modules/youtube_websub/source_admin.test.ts"
+      ],
+      "branch": "lane/l-video-a13-async-list-contract-20261011-gpt6-0743",
+      "base_sha": "cfb7ea71ed926ef5ba00274c5b2855673be9236a",
+      "source_pr": 657,
+      "claimed_at": "2026-10-11T06:49:17.499Z",
+      "heartbeat_at": "2026-10-11T06:49:17.499Z",
+      "expires_at": "2026-10-11T06:54:17.499Z",
+      "notes": "Existing PR #657 source merged to isolated integration; bounded follow-up only on two feature-owned files. Follow-on PR to integration/rebuild."
     }
   ],
   "history": [
