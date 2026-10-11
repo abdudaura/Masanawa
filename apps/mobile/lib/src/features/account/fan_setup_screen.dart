@@ -183,7 +183,7 @@ class _FanSetupScreenState extends State<FanSetupScreen> {
      if(!loadingSuggestions&&suggestions.isEmpty)Text(t('none')),
      for(final value in suggestions)ListTile(
       title:Text(value.name),subtitle:Text(value.profession),
-      trailing:OutlinedButton(key:Key('fan-follow-' + value.characterId),
+      trailing:OutlinedButton(key:Key('fan-follow-${value.characterId}'),
        onPressed:followed.contains(value.characterId)?null:()=>follow(value),
        child:Text(t(followed.contains(value.characterId)?'following':'follow')))),
      FilledButton(key:const Key('fan-finish'),onPressed:widget.onComplete,
