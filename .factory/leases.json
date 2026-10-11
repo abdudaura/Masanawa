@@ -1611,9 +1611,11 @@
       "branch": "lane/l-shell-c09-device-security-20261011-gpt6",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:10:10.855Z",
-      "heartbeat_at": "2026-10-11T04:11:24.513Z",
-      "expires_at": "2026-10-11T04:16:24.513Z",
-      "notes": "Feature-only no production migration, no financial write, AF00 composition needed."
+      "heartbeat_at": "2026-10-11T04:14:42.536Z",
+      "expires_at": "2026-10-11T04:19:42.536Z",
+      "notes": "Feature-only no production migration, no financial write, AF00 composition needed.",
+      "source_pr": 644,
+      "source_head": "1e0dcbb0bd6614b1a647a9cb2e3ee1633d585fd0"
     },
     {
       "claim_id": "l-masana-a04-draft-rehearsal-20261011-gpt6-0513",
