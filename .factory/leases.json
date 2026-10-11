@@ -1961,7 +1961,12 @@
       "base_sha": "a69300264cdfa1a8a64f49efc21a308df13fb691",
       "claimed_at": "2026-10-11T05:28:39.595Z",
       "heartbeat_at": "2026-10-11T05:28:39.595Z",
-      "expires_at": "2026-10-11T05:33:39.595Z"
+      "expires_at": "2026-10-11T05:33:39.595Z",
+      "released_at": "2026-10-11T05:29:30.914Z",
+      "source_head_sha": "172b5bf9a8a1b94a475b5a053d42795e396182b3",
+      "integration_head_sha": null,
+      "test_state": "source regression authored only, executable Flutter/Android blocked, GitHub checks zero-step failures",
+      "release_reason": "C38 reused same PR #655 to enforce route accountKey == client owner key and default-deny mismatch on read/write, test source added; no shared app/router/auth/financial edits; exact head 172b5bf9; no test toolchain or merge."
     }
   ],
   "history": [
