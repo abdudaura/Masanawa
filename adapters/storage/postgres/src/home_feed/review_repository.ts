@@ -1,4 +1,4 @@
-import type {Pool,PoolClient} from "pg";
+import type {Pool} from "pg";
 import type {EditorialPost,EditorialRepository,EditorialAction,EditorialState,DraftInput} from "@masanawa/feed";
 
 /** One transactional PostgreSQL authority: feed.posts and an immutable revision audit.
@@ -42,6 +42,37 @@ export class PgEditorialReviewRepository implements EditorialRepository {
       [tenant,r.id,editor,input.idempotencyKey]);
    }
    await client.query("COMMIT");return model(r);
+  }catch(e){await client.query("ROLLBACK");throw e}finally{client.release()}
+ }
+ async update(tenant:string,id:string,editor:string,revision:number,input:Required<DraftInput>):Promise<EditorialPost>{
+  const client=await this.pool.connect();
+  try{
+   await client.query("BEGIN");
+   const replay=await client.query(`SELECT post_id,action FROM feed.editorial_events
+      WHERE tenant_id=$1 AND actor_id=$2 AND idempotency_key=$3`,[tenant,editor,input.idempotencyKey]);
+   if(replay.rowCount){
+    if(String(replay.rows[0].post_id)!==id||replay.rows[0].action!=="edit")fail("editorial_idempotency_conflict");
+    const current=await client.query(`SELECT ${selection} FROM feed.posts WHERE tenant_id=$1 AND id=$2::uuid`,[tenant,id]);
+    if(!current.rows[0])fail("editorial_not_found",404);
+    await client.query("COMMIT");return model(current.rows[0] as Row);
+   }
+   const found=await client.query(`SELECT ${selection} FROM feed.posts
+     WHERE tenant_id=$1 AND id=$2::uuid FOR UPDATE`,[tenant,id]);
+   const previous=found.rows[0] as Row|undefined;
+   if(!previous)fail("editorial_not_found",404);
+   if(previous.published_by!==editor||previous.state!=="draft")fail("draft_owner_required",403);
+   if(previous.author_masana_id!==input.authorMasanaId)fail("immutable_draft_author");
+   if(Number(previous.review_revision)!==revision)fail("editorial_stale_revision");
+   const changed=await client.query(`UPDATE feed.posts SET kind=$4,body=$5,media_ids=$6,
+     transcript=$7,updated_at=now(),review_revision=review_revision+1
+     WHERE tenant_id=$1 AND id=$2::uuid AND review_revision=$3
+     RETURNING ${selection}`,[tenant,id,revision,input.kind,input.body,input.media,input.transcript]);
+   if(!changed.rows[0])fail("editorial_stale_revision");
+   await client.query(`INSERT INTO feed.editorial_events
+     (tenant_id,post_id,revision,previous_state,next_state,actor_id,action,idempotency_key)
+     VALUES($1,$2,$3,'draft','draft',$4,'edit',$5)`,
+     [tenant,id,revision+1,editor,input.idempotencyKey]);
+   await client.query("COMMIT");return model(changed.rows[0] as Row);
   }catch(e){await client.query("ROLLBACK");throw e}finally{client.release()}
  }
  async get(tenant:string,id:string):Promise<EditorialPost|null>{
