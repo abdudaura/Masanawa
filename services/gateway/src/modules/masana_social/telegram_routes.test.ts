@@ -1,7 +1,7 @@
 import {describe,it,expect,vi} from "vitest";
 import Fastify from "fastify";
 import {registerTelegramIngressRoutes} from "./telegram_routes.js";
-import type {TelegramInboxStore} from "@masanawa/masana-social";
+import type {TelegramInboxStore,TelegramPrivateContentStore} from "@masanawa/masana-social";
 const secret="Official_test_secret_with_40_characters_1234";
 const fanKey="separate_32byte_fan_hash_key_for_tests_123456";
 const update=(text:string)=>({update_id:45,message:{text,
@@ -9,8 +9,8 @@ const update=(text:string)=>({update_id:45,message:{text,
 function make({enabled=true,approved=true,consent=true}={}){
  const bot={tenantId:"tenant_one",identityId:"social_valididentity123",
   characterId:"masana_a",consentVersion:"telegram-consent-v1"};
- const admit=vi.fn(async()=> "queued" as const);
- const put=vi.fn(async()=> "private:encrypted/source/45");
+ const admit=vi.fn(async (..._args:Parameters<TelegramInboxStore["admit"]>)=> "queued" as const);
+ const put=vi.fn(async (..._args:Parameters<TelegramPrivateContentStore["put"]>)=> "private:encrypted/source/45");
  const inbox={
   authorizedBot:vi.fn(async()=>approved?bot:null),
   isConsented:vi.fn(async()=>consent),
