@@ -63,4 +63,29 @@ describe("A06 PostgreSQL transactional authorization invariants",()=>{
   expect(query).toHaveBeenNthCalledWith(1,expect.stringContaining("WHERE tenant_id=$1"),["tenant",["draft"],50]);
   expect(query).toHaveBeenNthCalledWith(2,expect.stringContaining("tenant_id=$1"),expect.arrayContaining(["tenant"]));
  });
+ it("rechecks active platform author in the final publication CAS and rolls back denial",async()=>{
+  const query=vi.fn(async(sql:string)=>{
+   if(sql.includes("FROM feed.editorial_events"))return {rowCount:0,rows:[]};
+   if(sql.includes("FOR UPDATE"))return {rowCount:1,rows:[row]};
+   return {rowCount:0,rows:[]};
+  });
+  const db=new PgEditorialReviewRepository({connect:async()=>({query,release:()=>{}})} as never);
+  await expect(db.change("tenant",post,"reviewer",1,"approve","review-key-live",null)).rejects.toMatchObject({status:409});
+  const update=query.mock.calls.find(([sql])=>sql.startsWith("UPDATE feed.posts"))?.[0];
+  expect(update).toContain("c.state='active'");expect(update).toContain("o.kind='platform'");
+  expect(update).toContain("cr.state='approved'");expect(update).toContain("cr.tenant_id=feed.posts.tenant_id");
+  expect(query.mock.calls.some(([sql])=>sql==="ROLLBACK")).toBe(true);
+  expect(query.mock.calls.some(([sql])=>sql.startsWith("INSERT INTO feed.editorial_events"))).toBe(false);
+ });
+ it("scheduled release denial commits no audit and preserves the queued post",async()=>{
+  const query=vi.fn(async(_sql:string)=>({rowCount:0,rows:[]}));
+  const db=new PgEditorialReviewRepository({connect:async()=>({query,release:()=>{}})} as never);
+  expect(await db.releaseScheduled("tenant",post,1,new Date("2026-10-12T10:00:00Z"))).toBe(false);
+  const update=query.mock.calls.find(([sql])=>sql.startsWith("UPDATE feed.posts"))?.[0];
+  expect(update).toContain("c.state='active'");expect(update).toContain("o.kind='platform'");
+  expect(update).toContain("cr.tenant_id=feed.posts.tenant_id");
+  expect(query.mock.calls.some(([sql])=>sql.startsWith("INSERT INTO feed.editorial_events"))).toBe(false);
+ });
+
 });
+

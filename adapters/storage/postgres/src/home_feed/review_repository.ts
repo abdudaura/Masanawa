@@ -31,6 +31,11 @@ function sameReplay(row:Row|undefined,post:string,action:string,payload:Record<s
   fail("editorial_idempotency_conflict");
  return true;
 }
+const eligibleAuthor=`EXISTS (SELECT 1 FROM masana.character_revisions cr
+ JOIN identity.characters c USING(tenant_id,character_id)
+ JOIN identity.character_ownership o USING(tenant_id,character_id)
+ WHERE cr.tenant_id=feed.posts.tenant_id AND cr.character_id=feed.posts.author_masana_id
+   AND cr.state='approved' AND c.state='active' AND o.kind='platform')`;
 const selection="tenant_id,id,author_masana_id,kind,body,media_ids,transcript,state,review_revision,published_by,scheduled_at,updated_at";
 export class PgEditorialReviewRepository {
  constructor(private readonly pool:Pool){}
@@ -148,6 +153,7 @@ export class PgEditorialReviewRepository {
       reviewed_at=CASE WHEN $3 IN ('scheduled','published') THEN now() ELSE reviewed_at END,
       published_at=CASE WHEN $3='published' THEN now() ELSE published_at END
     WHERE tenant_id=$1 AND id=$2::uuid AND review_revision=$7
+      AND ($3 NOT IN ('published','scheduled') OR ${eligibleAuthor})
     RETURNING ${selection}`,[tenant,post,state,revision,scheduledAt,actor,expectedRevision]);
    if(!changed.rows[0])fail("editorial_stale_revision");
    await client.query(`INSERT INTO feed.editorial_events
@@ -172,8 +178,7 @@ export class PgEditorialReviewRepository {
       published_at=$4,updated_at=$4,review_revision=review_revision+1
     WHERE tenant_id=$1 AND id=$2::uuid AND review_revision=$3 AND state='scheduled'
       AND scheduled_at<=$4 AND reviewed_by IS NOT NULL
-      AND EXISTS (SELECT 1 FROM masana.character_revisions cr
-        WHERE cr.tenant_id=feed.posts.tenant_id AND cr.character_id=feed.posts.author_masana_id AND cr.state='approved')
+      AND ${eligibleAuthor}
     RETURNING review_revision`,[tenant,post,revision,at.toISOString()]);
    if(r.rowCount){
     await client.query(`INSERT INTO feed.editorial_events
@@ -185,3 +190,4 @@ export class PgEditorialReviewRepository {
   }catch(e){await client.query("ROLLBACK");throw e}finally{client.release()}
  }
 }
+

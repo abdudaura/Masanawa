@@ -16,6 +16,7 @@ registerHooks({resolve(specifier,context,next){
 }});
 const {FeedService,EditorialReviewService}=await import('../../../packages/feed/src/index.ts');
 const {PgHomeFeedRepository}=await import('../../../adapters/storage/postgres/src/home_feed/repository.ts');
+const {PgEditorialReviewRepository}=await import('../../../adapters/storage/postgres/src/home_feed/review_repository.ts');
 const id='381026c2-9d56-47b1-b73d-1784e24e41e2';
 const input={authorMasanaId:'masana',kind:'text',body:' Status ',idempotencyKey:'status-request-001'};
 const masana={kind:'masana',tenantId:'tenant',id:'masana',approved:true};
@@ -103,4 +104,30 @@ test('repository direct publication requires canonical author identity and refus
  for(const clause of ['a.tenant_id=$1','a.character_id=$3','$2=$3',"a.state='active'","o.kind='platform'","m.state='approved'"]){
   assert.ok(sql.includes(clause),clause);
  }
+});
+
+function editorialEligibility(sql){
+ for(const clause of ["cr.state='approved'","c.state='active'","o.kind='platform'",
+  'cr.tenant_id=feed.posts.tenant_id','cr.character_id=feed.posts.author_masana_id'])assert.ok(sql.includes(clause),clause);
+}
+test('immediate editorial approval checks author eligibility in final SQL CAS and rolls back denied publication',async()=>{
+ const calls=[];
+ const query=async(sql,args)=>{
+  calls.push([sql,args]);
+  if(sql.includes('FOR UPDATE'))return {rowCount:1,rows:[{id,tenant_id:'tenant',author_masana_id:'masana',
+   state:'in_review',review_revision:1,published_by:'author'}]};
+  return {rowCount:0,rows:[]};
+ };
+ const repo=new PgEditorialReviewRepository({connect:async()=>({query,release(){}})});
+ await assert.rejects(repo.change('tenant',id,'reviewer',1,'approve','approve-request-002',null),{status:409});
+ editorialEligibility(calls.find(([sql])=>sql.startsWith('UPDATE feed.posts'))[0]);
+ assert.ok(calls.some(([sql])=>sql==='ROLLBACK'));
+ assert.ok(!calls.some(([sql])=>sql.startsWith('INSERT INTO feed.editorial_events')));
+});
+test('scheduled release retains queued post and emits no publication audit on live author denial',async()=>{
+ const calls=[],repo=new PgEditorialReviewRepository({connect:async()=>({
+  query:async(sql,args)=>{calls.push([sql,args]);return {rowCount:0,rows:[]};},release(){}})});
+ assert.equal(await repo.releaseScheduled('tenant',id,1,new Date('2026-10-12T10:00:00Z')),false);
+ editorialEligibility(calls.find(([sql])=>sql.startsWith('UPDATE feed.posts'))[0]);
+ assert.ok(!calls.some(([sql])=>sql.startsWith('INSERT INTO feed.editorial_events')));
 });
