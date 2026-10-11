@@ -22,6 +22,7 @@ describe("C46 private Following PostgreSQL adapter", () => {
     expect(sql).toContain("r.state='approved'");
     expect(sql).toContain("jsonb_array_elements_text");
     expect(sql).toContain("o.kind='platform'");
+    expect(sql).toContain("u.state='active'");
     expect(sql).toContain("c.state='active'");
     expect(sql).toContain("f.character_id > $5");
     expect(args).toEqual(["tenant_one","fan_one","Teacher","ha","masana_start",2]);
