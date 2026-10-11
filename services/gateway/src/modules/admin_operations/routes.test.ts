@@ -9,6 +9,9 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
  function create() {
   const app=Fastify();apps.push(app);
   const mock:OperationsService={
+   overview:async()=>({pendingJobs:0,activeJobLeases:0,deadLetters:0,oldestPendingSeconds:null,
+     openFinancialReconciliation:0,roomAnswerAgeSeconds:null,externalSyncLagSeconds:null,
+     entitlementErrors:null,budgetWarnings:null}),
    flags:async()=>{throw new OperationsError("forbidden",403)},
    preview:async()=>{throw new OperationsError("forbidden",403)},
    setFlag:async()=>{throw new OperationsError("forbidden",403)},
@@ -29,6 +32,9 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
   const app=Fastify();apps.push(app);
   const call=vi.fn(async()=>({name:"calls" as const,enabled:false,revision:1,updatedAt:null}));
   registerAdminOperationsRoutes(app,{
+    overview:async()=>({pendingJobs:0,activeJobLeases:0,deadLetters:0,oldestPendingSeconds:null,
+      openFinancialReconciliation:0,roomAnswerAgeSeconds:null,externalSyncLagSeconds:null,
+      entitlementErrors:null,budgetWarnings:null}),
     flags:async()=>[],preview:async()=>{throw new OperationsError("forbidden",403)},
     setFlag:async(_auth,mutation)=>call(mutation),audit:async()=>[],staff:async()=>[]
   });
@@ -50,6 +56,18 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
   const reply=await app.inject({method:"GET",url:"/v1/admin/ops/flags/preview?name=unknown&enabled=maybe"});
   expect(reply.statusCode).toBe(400);
   expect(reply.json()).toEqual({code:"admin_ops.invalid"});
+ });
+ it("staff audit errors use the scoped typed 403 handler",async()=>{
+  const app=create();
+  const reply=await app.inject({method:"GET",url:"/v1/admin/staff/audit?limit=30"});
+  expect(reply.statusCode).toBe(403);
+  expect(reply.json()).toEqual({code:"admin_ops.forbidden"});
+ });
+ it("ops overview denies fan access via scoped error handler",async()=>{
+  const app=create();
+  const reply=await app.inject({method:"GET",url:"/v1/admin/ops/overview"});
+  expect(reply.statusCode).toBe(200);
+  expect(reply.json().pendingJobs).toBe(0);
  });
  it("denies unknown staff roles through live HTTP",async()=>{
   const app=create();const reply=await app.inject({method:"GET",url:"/v1/admin/staff"});

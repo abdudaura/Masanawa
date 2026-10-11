@@ -29,7 +29,7 @@ export function registerAdminOperationsRoutes(app: FastifyInstance, operations: 
       name:name as OperationsFlag,enabled,expectedRevision,idempotencyKey,reason
     });
   });
-  app.get<{Querystring:{limit?:string}}>("/v1/admin/staff/audit", async request => {
+  scope.get<{Querystring:{limit?:string}}>("/v1/admin/staff/audit", async request => {
     const limit=request.query.limit===undefined?30:Number(request.query.limit);
     return operations.audit(request.headers.authorization,limit);
   });

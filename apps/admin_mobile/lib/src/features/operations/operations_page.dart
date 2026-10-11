@@ -12,8 +12,20 @@ class OperationsPage extends StatefulWidget {
 class _OperationsPageState extends State<OperationsPage> {
   late Future<List<OperationFlag>> _loading = widget.api.flags();
   bool _busy=false;
+  // The host replaces the feature API when the signed-in staff account changes.
+  // Do not retain flags, actions or loading results from the previous principal.
+  @override
+  void didUpdateWidget(covariant OperationsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.api, widget.api)) {
+      _busy=false;
+      _loading=widget.api.flags();
+    }
+  }
   void _refresh()=>setState(()=>_loading=widget.api.flags());
   Future<void> _setDisabled(OperationFlag flag) async {
+    final sourceApi=widget.api;
+    bool sameAccount() => mounted && identical(widget.api,sourceApi);
     final text=TextEditingController();
     try {
       final ok=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
@@ -25,35 +37,35 @@ class _OperationsPageState extends State<OperationsPage> {
         actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),
           FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Review change'))],
       ));
-      if(ok!=true||!mounted)return;
+      if(ok!=true || !sameAccount())return;
       if(text.text.trim().length<12) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Explain the change in at least 12 characters.')));
         return;
       }
       setState(()=>_busy=true);
-      final preview=await widget.api.preview(flag,false);
-      if(!mounted)return;
+      final preview=await sourceApi.preview(flag,false);
+      if(!sameAccount())return;
       final approved=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
         title:const Text('Confirm kill switch'),
         content:Text('${preview.current.name}: ${preview.current.enabled ? "Enabled" : "Disabled"} → Disabled. This action is audited.'),
         actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Back')),
           FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Confirm'))],
       ));
-      if(approved==true){
+      if(approved==true && sameAccount()){
         final key='ops-${DateTime.now().microsecondsSinceEpoch}';
-        await widget.api.update(preview.current,false,text.text.trim(),key);
-        if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Change saved and audited.')));
-        _refresh();
+        await sourceApi.update(preview.current,false,text.text.trim(),key);
+        if(sameAccount())ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Change saved and audited.')));
+        if(sameAccount())_refresh();
       }
     } on DioException catch(e) {
-      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(
+      if(sameAccount())ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(
         e.response?.statusCode==403?'Permission or MFA required':e.response?.statusCode==409?'Changed by another operator. Refresh and retry.':'Unable to save. Check connection and retry.',
       )));
     } catch (_) {
-      if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Change could not be confirmed. Refresh before retrying.')));
+      if(sameAccount())ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Change could not be confirmed. Refresh before retrying.')));
     } finally {
       text.dispose();
-      if(mounted)setState(()=>_busy=false);
+      if(sameAccount())setState(()=>_busy=false);
     }
   }
   @override Widget build(BuildContext context)=>Scaffold(

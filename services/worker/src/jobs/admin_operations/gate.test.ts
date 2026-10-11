@@ -12,6 +12,12 @@ describe("R1/J19 agent job activation gate",()=>{
  it("honors explicitly disabled verified flags",async()=>{
   expect(await admitAdminJob({read:async()=>false},"tenant-1","paid_joins")).toEqual({admitted:false,reason:"disabled"});
  });
+ it("denies malformed truthy adapter values and disallowed families",async()=>{
+  expect(await admitAdminJob({read:async()=>("true" as unknown as boolean)},"tenant-1","posting"))
+    .toEqual({admitted:false,reason:"disabled"});
+  expect(await admitAdminJob({read:async()=>true},"tenant-1","legacy_talk" as never))
+    .toEqual({admitted:false,reason:"unavailable"});
+ });
  it("allows only an explicitly enabled, successfully resolved flag",async()=>{
   expect(await admitAdminJob({read:async()=>true},"tenant-1","calls")).toEqual({admitted:true,reason:"enabled"});
  });
