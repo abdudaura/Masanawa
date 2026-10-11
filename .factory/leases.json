@@ -1488,6 +1488,32 @@
       "heartbeat_at": "2026-10-11T03:56:43.641Z",
       "expires_at": "2026-10-11T04:01:43.641Z",
       "notes": "Canonical /v1/calls source under own module, AF00 to compose root; provider and full device checks are release-gated."
+    },
+    {
+      "claim_id": "l-social-telegram-j22-20261011-gpt6-0500",
+      "owner": "L-SOCIAL J22 Telegram / GPT-6",
+      "scope": "J22 officially authorized Telegram bot inbound, character+fan scoped consent, provider message admission, outbox delivery and admin/fan states; new exact paths only; no WhatsApp session automation, old messaging, shared root or live activation",
+      "paths": [
+        "packages/masana_social/src/telegram.ts",
+        "packages/masana_social/src/telegram.test.ts",
+        "packages/masana_social/src/telegram_ports.ts",
+        "packages/masana_social/migrations/0002_telegram_inbound.sql",
+        "adapters/storage/postgres/src/masana_social/telegram.ts",
+        "services/gateway/src/modules/masana_social/telegram_routes.ts",
+        "services/gateway/src/modules/masana_social/telegram_routes.test.ts",
+        "services/worker/src/jobs/masana_social/telegram.ts",
+        "services/worker/src/jobs/masana_social/telegram.test.ts",
+        "apps/admin_mobile/lib/src/features/masana_social/telegram_connection_page.dart",
+        "apps/mobile/lib/src/features/masana_social/telegram_connection_screen.dart",
+        "tests/e2e/J22/README.md"
+      ],
+      "branch": "lane/l-social-verified-links-20261010-gpt6",
+      "source_pr": 626,
+      "source_head": "711dbfc896af6947c1866a695c383ecbef8436cc",
+      "claimed_at": "2026-10-11T03:58:18.951Z",
+      "heartbeat_at": "2026-10-11T03:58:18.951Z",
+      "expires_at": "2026-10-11T04:03:18.951Z",
+      "notes": "Disjoint J22 additions on existing #626 social authority; AF00 retains composition and deployment. 5-minute lease; no shared file or old data edits."
     }
   ],
   "history": [
