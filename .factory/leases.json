@@ -2030,11 +2030,15 @@
       ],
       "branch": "lane/l-video-a13-async-list-contract-20261011-gpt6-0743",
       "base_sha": "cfb7ea71ed926ef5ba00274c5b2855673be9236a",
-      "source_pr": 657,
+      "source_pr": 658,
       "claimed_at": "2026-10-11T06:49:17.499Z",
       "heartbeat_at": "2026-10-11T06:49:17.499Z",
       "expires_at": "2026-10-11T06:54:17.499Z",
-      "notes": "Existing PR #657 source merged to isolated integration; bounded follow-up only on two feature-owned files. Follow-on PR to integration/rebuild."
+      "notes": "Existing PR #657 source merged to isolated integration; bounded follow-up only on two feature-owned files. Follow-on PR to integration/rebuild.",
+      "released_at": "2026-10-11T06:51:32.898Z",
+      "release_reason": "PR #658 correction merged source into nondeploying integration at 4f2b7ab93c8a5b1414775d6cae969616c7319500; exact GitHub blob 2533e2ab matches local compiled source; node:test 4/4 + narrow tsc PASS; repo Vitest/PG18/Flutter/Android BLOCKED. AF00 handoff on #616; no main deploy.",
+      "source_head": "a711267c00335c2f5b1b0ace0a5569ec6949e9ed",
+      "integration_head_sha": "4f2b7ab93c8a5b1414775d6cae969616c7319500"
     }
   ],
   "history": [
