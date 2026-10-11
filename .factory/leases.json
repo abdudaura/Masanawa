@@ -1477,9 +1477,14 @@
       "branch": "lane/l-admin-staff-a19-403-recovery-20261011-gpt6",
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
       "claimed_at": "2026-10-11T03:48:02.508Z",
-      "heartbeat_at": "2026-10-11T03:49:52.523Z",
+      "heartbeat_at": "2026-10-11T03:53:55.407Z",
       "expires_at": "2026-10-11T03:54:52.523Z",
-      "notes": "CI 38108849170: Admin analyze PASS, 11/12 widget tests, A19 failure."
+      "notes": "CI 38108849170: Admin analyze PASS, 11/12 widget tests, A19 failure.",
+      "released_at": "2026-10-11T03:53:55.407Z",
+      "release_reason": "PR #640 complete scoped A19 source and four test files, head 8966de6afbb563418b6059430e095d46611e3a95; exact-head Mobile/CI running; integration and production not claimed; AF00 handoff #616 comment 6105174322; unresolved lockfile shared issue #616 comment 6105184074.",
+      "source_pr": 640,
+      "source_head": "8966de6afbb563418b6059430e095d46611e3a95",
+      "integration_head_sha": null
     },
     {
       "claim_id": "l-chat-c10-inbox-20261011-gpt6-0450",
