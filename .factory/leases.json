@@ -2269,14 +2269,15 @@
         "apps/mobile/lib/src/app/masanawa_consumer_shell.dart",
         "apps/mobile/test/rebuild/masanawa_consumer_shell_test.dart",
         "adapters/storage/postgres/src/readiness.ts",
-        "adapters/storage/postgres/src/readiness.test.ts"
+        "adapters/storage/postgres/src/readiness.test.ts",
+        "apps/mobile/test/app_shell_route_compatibility_test.dart"
       ],
       "branch": "lane/af00-shell-composition-20261011-gpt6",
       "base_sha": "027f07b4411c3973d0587749b08675135396bbd7",
       "source_pr": null,
       "claimed_at": "2026-10-11T10:01:26.613Z",
-      "heartbeat_at": "2026-10-11T10:01:26.613Z",
-      "expires_at": "2026-10-11T10:06:26.613Z",
+      "heartbeat_at": "2026-10-11T10:06:05.329Z",
+      "expires_at": "2026-10-11T10:11:05.329Z",
       "notes": "Explicit current owner directive. AF00-only paths, no competing fresh lease, all changes on new branch to nondeploying integration. Open #616 handoff; disabled Rooms until #625 package imports qualify."
     }
   ],
