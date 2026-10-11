@@ -2199,7 +2199,11 @@
       "heartbeat_at": "2026-10-11T08:09:25.246Z",
       "expires_at": "2026-10-11T08:14:25.246Z",
       "notes": "Bounded C13 source, no shared migration registry, gateway app, router, provider or ledger changes.",
-      "source_head": "72f6f74f5658cd3e859ddab590b2fd202670681a"
+      "source_head": "a43725c09ff6a4ba4b0a43de0b266fbec062a25f",
+      "source_pr": 665,
+      "integration_head_sha": null,
+      "released_at": "2026-10-11T08:12:41.029Z",
+      "release_reason": "Feature-local C13 source/API/forward-only PG schema/inbox readback/Flutter source and test source committed as draft PR #665, head a43725c09ff6a4ba4b0a43de0b266fbec062a25f. Protected AF00 PG registry/auth/router/worker composition NOT done; canonical Gwani message case target missing; TS/Vitest/PG18/Flutter/Android BLOCKED unexecuted (no repo checkout or toolchains); final-head Actions 38123853799 and 38123853841 jobs FAILED with zero steps. NOT MERGED, NOT DEPLOYED. Handoff comment #616 6107012794; L-GWANI #628 6106978957."
     },
     {
       "claim_id": "l-feed-a05-a06-editorial-20261011-gpt6-0907",
