@@ -4,7 +4,7 @@ const character="character_0199f0d0-0000-7000-8000-000000000003";
 const turn="request_0199f0d0-0000-7000-8000-000000000002";
 describe("C13 owned message hides", () => {
   it("binds a completed journal turn to verified fan+tenant and keeps journal immutable", async () => {
-    const query = vi.fn(async () => ({rows:[{owned:true}]}));
+    const query = vi.fn(async (_sql: string, _params: unknown[]) => ({rows:[{owned:true}]}));
     const store = createMasanaMessageActionStore({query} as never);
     expect(await store.hideOwnedSentTurn({tenantId:"tenant-a",fanUserId:"fan-a"},character,turn))
       .toBe(true);
@@ -17,7 +17,7 @@ describe("C13 owned message hides", () => {
     expect(params).toEqual(["tenant-a","fan-a",character,turn]);
   });
   it("keeps a foreign/noncompleted turn indistinguishable from a missing turn", async () => {
-    const query = vi.fn(async () => ({rows:[{owned:false}]}));
+    const query = vi.fn(async (_sql: string, _params: unknown[]) => ({rows:[{owned:false}]}));
     expect(await createMasanaMessageActionStore({query} as never)
       .hideOwnedSentTurn({tenantId:"tenant-a",fanUserId:"fan-a"},character,turn))
       .toBe(false);

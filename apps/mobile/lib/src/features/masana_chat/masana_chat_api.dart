@@ -27,6 +27,11 @@ class MasanaChatApi {
     if (reply is! String) throw const FormatException('Invalid reply');
     return reply;
   }
+  /// Only server-verified fan-owned sent messages can be hidden.
+  Future<void> hideSentTurn(String characterId, String requestId) async {
+    await dio.post<void>('/v1/masana/' + Uri.encodeComponent(characterId) +
+      '/chat/turns/' + Uri.encodeComponent(requestId) + '/hide');
+  }
   Future<void> close(String characterId, String sessionId) async {
     await dio.post<void>(_base(characterId) + '/' +
         Uri.encodeComponent(sessionId) + '/close');

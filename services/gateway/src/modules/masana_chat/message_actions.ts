@@ -1,7 +1,10 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { parseCanonicalId } from "@masanawa/contracts";
 import type { MasanaChatActor, MasanaChatEligibility } from "./routes.js";
-import type { MasanaMessageActionStore } from "../../../../../../adapters/storage/postgres/src/masana_chat/message_actions.js";
+/** Structural port; no cross-workspace source import or second data layer. */
+export interface MasanaMessageActionStore {
+  hideOwnedSentTurn(actor: MasanaChatActor, characterId: string, requestId: string): Promise<boolean>;
+}
 
 /** Feature-local C13 route pack. AF00 owns its unique registration and auth wiring. */
 export interface MasanaMessageActionDependencies {
