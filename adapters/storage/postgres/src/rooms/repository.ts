@@ -27,10 +27,18 @@ async function lookupRoom(q:Queryable,tenantId:string,id:string,lock=false){
  if(!r.rows.length)throw new RoomError(404,"room_not_found");
  return r.rows[0];
 }
-const requirePublishedFree=(row:any)=>{
+/** Every restricted paid read/join rechecks the server-verified, unexpired Play entitlement. */
+async function requirePublishedEligible(q:Queryable,a:RoomActor,row:any):Promise<void>{
  if(row.state!=="published")throw new RoomError(404,"room_not_found");
- if(row.plan_mode!=="free")throw new RoomError(403,"subscription_not_verified");
-};
+ if(row.plan_mode==="free")return;
+ if(row.plan_mode!=="paid")throw new RoomError(403,"room_plan_invalid");
+ const userId=requireFan(a.userId);
+ const verified=await q.query(`SELECT 1 FROM rooms.entitlements
+   WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3
+   AND state IN ('active','grace') AND period_end>now()`,
+   [a.tenantId,row.room_id,userId]);
+ if(!verified.rows.length)throw new RoomError(403,"subscription_not_verified");
+}
 async function requireMember(q:Queryable,a:RoomActor,id:string,lock=false){
  const u=requireFan(a.userId);
  const r=await q.query("SELECT state FROM rooms.memberships WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3"+(lock?" FOR UPDATE":""),[a.tenantId,id,u]);
@@ -96,7 +104,7 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
  async join(a,id){
    assertRoom(id);const userId=requireFan(a.userId);
    await transaction(pool,async q=>{
-     const room=await lookupRoom(q,a.tenantId,id,true);requirePublishedFree(room);
+     const room=await lookupRoom(q,a.tenantId,id,true);await requirePublishedEligible(q,a,room);
      const prev=await q.query("SELECT state FROM rooms.memberships WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3 FOR UPDATE",[a.tenantId,id,userId]);
      if(prev.rows[0]?.state==="banned")throw new RoomError(403,"room_banned");
      await q.query(`INSERT INTO rooms.memberships(tenant_id,room_id,user_id) VALUES ($1,$2,$3)
@@ -112,7 +120,7 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    const body=validateQuestion(raw);validateIdempotencyKey(key);
    return transaction(pool,async q=>{
      const room=await lookupRoom(q,a.tenantId,id);
-     requirePublishedFree(room);await requireMember(q,a,id,true);
+     await requirePublishedEligible(q,a,room);await requireMember(q,a,id,true);
      const duplicate=await q.query(`SELECT question_id,room_id,body,state,queued_at,NULL::text AS answer
        FROM rooms.questions WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3 AND idempotency_key=$4`,
        [a.tenantId,id,userId,key]);
@@ -135,7 +143,7 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    });
  },
  async questions(a,id){
-   assertRoom(id);const room=await lookupRoom(pool,a.tenantId,id);requirePublishedFree(room);
+   assertRoom(id);const room=await lookupRoom(pool,a.tenantId,id);await requirePublishedEligible(pool,a,room);
    await requireMember(pool,a,id);
    const res=await pool.query(`SELECT q.question_id,q.room_id,q.body,q.state,q.queued_at,
      CASE WHEN ans.state='approved' THEN ans.body ELSE NULL END AS answer
@@ -189,7 +197,7 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
    });
  },
  async lessons(a,id){
-   const room=await lookupRoom(pool,a.tenantId,id);requirePublishedFree(room);
+   const room=await lookupRoom(pool,a.tenantId,id);await requirePublishedEligible(pool,a,room);
    await requireMember(pool,a,id);
    const r=await pool.query(`SELECT lesson_id,body,kind FROM rooms.lessons
      WHERE tenant_id=$1 AND room_id=$2 AND state='published' AND (publish_at IS NULL OR publish_at<=now())
