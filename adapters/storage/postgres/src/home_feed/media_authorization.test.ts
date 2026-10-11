@@ -12,6 +12,8 @@ describe("J06/C23 canonical media authorization",()=>{
     expect(sql).toContain("p.state='published'");
     expect(sql).toContain("ANY(p.media_ids)");
     expect(sql).toContain("m.state='approved'");
+    expect(sql).toContain("o.kind='platform'");
+    expect(sql).toContain("c.state='active'");
     expect(args).toEqual(["tenantA","381026c2-9d56-47b1-b73d-1784e24e41e2","media_abcdefgh"]);
   });
   it("returns no grant for unpublished or foreign media",async()=>{
