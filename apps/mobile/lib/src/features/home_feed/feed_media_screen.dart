@@ -82,7 +82,9 @@ class _FeedMediaScreenState extends State<FeedMediaScreen>
       if(current.expiresAt.isBefore(DateTime.now().add(const Duration(seconds:10)))){await load();return;}
       await player.setUrl(current.url.toString());
       if(!mounted||ticket!=generation){await player.stop();return;}
-      await player.play();
+      unawaited(player.play().catchError((Object _) {
+        if(mounted&&ticket==generation)setState(()=>error=tr('Audio playback failed. Try again.','An kasa kunna sauti. Sake gwadawa.'));
+      }));
     }catch(_){
       if(mounted&&ticket==generation)setState(()=>
         error=tr('Audio playback failed. Try again.','An kasa kunna sauti. Sake gwadawa.'));
@@ -128,8 +130,8 @@ class _FeedMediaScreenState extends State<FeedMediaScreen>
                 StreamBuilder<Duration>(stream:player.positionStream,builder:(ctx,snapshot){
                   final total=player.duration??Duration.zero;
                   final position=snapshot.data??Duration.zero;
-                  final max=total.inMilliseconds.toDouble().clamp(1.0,double.infinity);
-                  return Slider(value:position.inMilliseconds.toDouble().clamp(0.0,max),
+                  final max=total.inMilliseconds.toDouble().clamp(1.0,double.infinity).toDouble();
+                  return Slider(value:position.inMilliseconds.toDouble().clamp(0.0,max).toDouble(),
                     max:max,onChanged:widget.onBeforeAudio==null?null:
                       (value)=>unawaited(player.seek(Duration(milliseconds:value.round())));
                 }),
