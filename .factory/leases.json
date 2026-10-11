@@ -2012,7 +2012,13 @@
       "claimed_at": "2026-10-11T05:43:17.203Z",
       "heartbeat_at": "2026-10-11T05:46:36.262Z",
       "expires_at": "2026-10-11T05:51:36.262Z",
-      "notes": "Recover source against #656 integration, approved design, existing youtube_websub + existing PG adapter. AF00 owns composition."
+      "notes": "Recover source against #656 integration, approved design, existing youtube_websub + existing PG adapter. AF00 owns composition.",
+      "released_at": "2026-10-11T05:48:39.031Z",
+      "release_reason": "Source change and negative-test coverage committed as draft PR #657; six exact paths, no router/CI/migration edits. GitHub Actions inner check/admin/build failed with zero steps/no runner; local pnpm, PG18, Flutter, Android runner unavailable. AF00 bounded composition and non-deploying integration review requested on #616; no PASS claims or production release.",
+      "source_pr": 657,
+      "source_head": "72e11b92a1cfd923c7bdec881f0f2dd91940a346",
+      "integration_head_sha": null,
+      "test_state": "BLOCKED / NOT_RUN; zero-step CI (runs 38115933487 and 38115933507)"
     }
   ],
   "history": [
