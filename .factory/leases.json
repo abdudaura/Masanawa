@@ -4833,12 +4833,12 @@
       "heartbeat_at": "2026-10-11T05:02:40.190Z",
       "expires_at": "2026-10-11T05:07:40.190Z",
       "notes": "Source-only, existing inbox persists all events; delivery preferences only gate optional push. Exact paths, default-OFF gateway registration.",
-      "source_head": "3db867ad8c44de10a551f7b97e1d96b4babf7e54",
+      "source_head": "4c3f65ec727292a4bed25e9f341cbf5a7ada0d8f",
       "source_pr": 654,
       "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/654",
       "integration_head_sha": null,
       "released_at": "2026-10-11T05:09:08.139Z",
-      "release_reason": "11-path C06 account privacy/optional-push source committed at 3db867ad8c44de10a551f7b97e1d96b4babf7e54; draft PR #654; AF00 #616 handoff comment 6105685489. Default-off, no live/provider/finance writes. Exact-head Foundation CI 38113777364 check job FAILED zero steps; Mobile CI 38113777292 admin/build jobs FAILED zero steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED. AF00 only owns migration registration, canonical auth+pool/flag composition, existing push policy hook, C05 route. Nondeploying integration pending review; no main/production merge."
+      "release_reason": "11-path C06 account privacy/optional-push source committed at 3db867ad8c44de10a551f7b97e1d96b4babf7e54; draft PR #654; AF00 #616 handoff comment 6105685489. Default-off, no live/provider/finance writes. Exact-head Foundation CI 38113777364 check job FAILED zero steps; Mobile CI 38113777292 admin/build jobs FAILED zero steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED. AF00 only owns migration registration, canonical auth+pool/flag composition, existing push policy hook, C05 route. Nondeploying integration pending review; no main/production merge. Post-release disjoint merge base refresh: latest source branch head 4c3f65ec727292a4bed25e9f341cbf5a7ada0d8f merges integration/rebuild@88a0848 (C04/C05), same 11 paths; CI on merge SHA pending."
     }
   ]
 }
