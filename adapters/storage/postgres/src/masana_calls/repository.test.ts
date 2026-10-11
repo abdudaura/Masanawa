@@ -21,6 +21,16 @@ describe("J04 call PostgreSQL authorization and lifecycle",()=>{
       expect(call[1]?.slice(0,3)).toEqual(["tenant-a","fan-a","call-a"]);
     }
   });
+  it("leases and acknowledges pending shutdown by tenant and call only",async()=>{
+    const query=vi.fn(async (_sql:string,_params:unknown[])=>({rows:[]}));
+    const store=createPostgresMasanaCallStore({query} as never);
+    await store.claimPendingStops(20);
+    expect(query.mock.calls[0]![0]).toContain("SKIP LOCKED");
+    expect(query.mock.calls[0]![0]).toContain("provider_stop_pending");
+    await store.ackStop({tenantId:"tenant-a",callId:"call-a"});
+    expect(query.mock.calls[1]![1]).toEqual(["tenant-a","call-a"]);
+    expect(query.mock.calls[1]![0]).toContain("provider_stop_pending=false");
+  });
   it("claims expired calls atomically and avoids duplicate stop",async()=>{
     const query=vi.fn(async (_sql:string,_params:unknown[])=>({rows:[{callId:"call-a",roomName:"masana-a"}]}));
     const store=createPostgresMasanaCallStore({query} as never);
