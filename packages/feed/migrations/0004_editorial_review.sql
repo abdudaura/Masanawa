@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS feed.editorial_events (
  next_state text NOT NULL,
  actor_id text NOT NULL,
  action text NOT NULL,
+ request_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
  idempotency_key text NOT NULL,
  recorded_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY (tenant_id,event_id),
