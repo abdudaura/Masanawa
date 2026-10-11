@@ -22,7 +22,7 @@ class _FeedPostDetailState extends State<FeedPostDetailScreen> {
   final input=TextEditingController();
   FeedPost? post;
   List<FeedComment> comments=[];
-  String? error,replyTo,pendingBody,pendingKey;
+  String? error,replyTo,pendingBody,pendingKey,pendingParent;
   String sort='newest';
   bool loading=true,sending=false,offline=false,denied=false;
   int generation=0;
@@ -33,7 +33,7 @@ class _FeedPostDetailState extends State<FeedPostDetailScreen> {
     super.didUpdateWidget(old);
     if(old.accountKey!=widget.accountKey||old.initialPost.id!=widget.initialPost.id){
       generation++;post=null;comments=[];error=null;replyTo=null;
-      pendingBody=null;pendingKey=null;input.clear();refresh();
+      pendingBody=null;pendingKey=null;pendingParent=null;sending=false;input.clear();refresh();
     }else if(!old.enabled&&widget.enabled){refresh();}
   }
   @override void dispose(){generation++;input.dispose();super.dispose();}
@@ -63,14 +63,15 @@ class _FeedPostDetailState extends State<FeedPostDetailScreen> {
     if(sending||post==null||!widget.enabled)return;
     final body=input.text.trim();
     if(body.isEmpty||body.length>1000)return;
-    final key=pendingBody==body&&pendingKey!=null?pendingKey!:
+    final key=pendingBody==body&&pendingParent==replyTo&&pendingKey!=null?pendingKey!:
       'c22-'+DateTime.now().microsecondsSinceEpoch.toString();
-    final ticket=generation,parent=replyTo;
-    setState((){sending=true;pendingBody=body;pendingKey=key;error=null;});
+    final ticket=generation,parent=replyTo,account=widget.accountKey;
+    setState((){sending=true;pendingBody=body;pendingParent=parent;pendingKey=key;error=null;});
     try{
       await widget.sendComment(post!.id,body,key,parent);
       if(!mounted||ticket!=generation)return;
-      input.clear();pendingBody=null;pendingKey=null;replyTo=null;
+      input.clear();pendingBody=null;pendingParent=null;pendingKey=null;replyTo=null;
+      setState(()=>sending=false);
       await refresh();
       if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:
         Text(t('Sent. Review may be required.','An aika. Ana iya duba sharhin.'))));
@@ -82,7 +83,7 @@ class _FeedPostDetailState extends State<FeedPostDetailScreen> {
     }catch(_){
       if(mounted&&ticket==generation)setState(()=>error=
         t('Could not send. Retry keeps the same request.','An kasa aikawa. Sake gwadawa ba zai maimaita ba.'));
-    }finally{if(mounted&&ticket==generation)setState(()=>sending=false);}
+    }finally{if(mounted&&account==widget.accountKey)setState(()=>sending=false);}
   }
   Widget commentRow(FeedComment c){
     final reply=c.parentId!=null;
