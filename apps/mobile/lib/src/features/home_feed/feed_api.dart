@@ -32,12 +32,13 @@ class FeedPage {
     body['nextCursor'] as String?);
 }
 class FeedComment {
-  const FeedComment({required this.id,required this.body,required this.state,required this.createdAt});
+  const FeedComment({required this.id,required this.body,required this.state,required this.createdAt,this.parentId});
   final String id,body,state;
+  final String? parentId;
   final DateTime createdAt;
   factory FeedComment.fromJson(Map<String,dynamic> json)=>FeedComment(
     id:json['id'] as String,body:json['body'] as String,state:json['state'] as String,
-    createdAt:DateTime.parse(json['createdAt'] as String));
+    createdAt:DateTime.parse(json['createdAt'] as String),parentId:json['parentId'] as String?);
 }
 abstract class FeedApi {
   Future<FeedPage> list({required String mode,String? cursor});
@@ -83,6 +84,23 @@ class DioFeedApi implements FeedApi {
     final result=await _dio.get<List<dynamic>>('/v1/posts/${Uri.encodeComponent(id)}/comments',
       options:await _options());
     return (result.data??const []).map((v)=>FeedComment.fromJson(Map<String,dynamic>.from(v as Map))).toList();
+  }
+
+  /// Reuse J06's authenticated Dio; never construct a second transport or session.
+  Future<FeedPost> detail(String id) async {
+    final r=await _dio.get<Map<String,dynamic>>('/v1/posts/${Uri.encodeComponent(id)}',
+      options:await _options());
+    return FeedPost.fromJson(r.data??const <String,dynamic>{});
+  }
+  Future<List<FeedComment>> thread(String id,String sort) async {
+    final r=await _dio.get<List<dynamic>>('/v1/posts/${Uri.encodeComponent(id)}/comments',
+      queryParameters:{'sort':sort},options:await _options());
+    return (r.data??const []).map((v)=>FeedComment.fromJson(Map<String,dynamic>.from(v as Map))).toList();
+  }
+  Future<void> sendThreadComment(String id,String body,String key,String? parentId) async {
+    await _dio.post<void>('/v1/posts/${Uri.encodeComponent(id)}/comments',
+      data:{'body':body,if(parentId!=null)'parentId':parentId},
+      options:await _options(key:key,authRequired:true));
   }
 
 }
