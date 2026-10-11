@@ -1585,6 +1585,34 @@
       "heartbeat_at": "2026-10-11T04:07:50.311Z",
       "expires_at": "2026-10-11T04:12:50.311Z",
       "notes": "Disjoint J13 appeal retry sub-scope. AF00 owns package importer/root migration registry and composition. Never merge to main."
+    },
+    {
+      "claim_id": "l-shell-c09-device-security-20261011-gpt6",
+      "owner": "L-SHELL C09 / GPT-6",
+      "lane": "L-SHELL",
+      "scope": "C09 fan device session list and remote revoke through existing security.platform_sessions authority; tenant+fan scoped SQL, trusted Gateway, Flutter/negative tests. No alternate auth, existing access/refresh is sole authority; AF00 root composition/flags/migration registry exclusively.",
+      "paths": [
+        "packages/account/migrations/0001_fan_devices.sql",
+        "packages/account/src/device_sessions.ts",
+        "packages/account/src/device_sessions.test.ts",
+        "packages/account/package.json",
+        "packages/account/tsconfig.json",
+        "packages/account/tsconfig.build.json",
+        "adapters/storage/postgres/src/account/device_sessions.ts",
+        "adapters/storage/postgres/src/account/device_sessions.integration.test.ts",
+        "services/gateway/src/modules/account/device_sessions.ts",
+        "services/gateway/src/modules/account/device_sessions.test.ts",
+        "apps/mobile/lib/src/features/account/device_security_client.dart",
+        "apps/mobile/lib/src/features/account/device_security_screen.dart",
+        "apps/mobile/test/features/account/device_security_screen_test.dart",
+        "tests/e2e/J01/device_security.md"
+      ],
+      "branch": "lane/l-shell-c09-device-security-20261011-gpt6",
+      "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
+      "claimed_at": "2026-10-11T04:10:10.855Z",
+      "heartbeat_at": "2026-10-11T04:10:10.855Z",
+      "expires_at": "2026-10-11T04:15:10.855Z",
+      "notes": "Feature-only no production migration, no financial write, AF00 composition needed."
     }
   ],
   "history": [
