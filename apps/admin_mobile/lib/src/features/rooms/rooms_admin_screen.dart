@@ -1,3 +1,5 @@
+import 'room_discussion_client.dart';
+import 'room_discussion_moderation_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'rooms_admin_client.dart';
@@ -5,8 +7,10 @@ import 'rooms_plans_client.dart';
 import 'rooms_plans_screen.dart';
 const _blue=Color(0xFF1E63D6);
 class RoomsAdminScreen extends StatefulWidget {
- const RoomsAdminScreen({super.key,required this.client});
+ const RoomsAdminScreen({super.key,required this.client,this.discussionApi,this.accountScope});
  final RoomsAdminClient client;
+ final RoomDiscussionModerationApi? discussionApi;
+ final String? accountScope;
  @override State<RoomsAdminScreen> createState()=>_RoomsAdminScreenState();
 }
 class _RoomsAdminScreenState extends State<RoomsAdminScreen>{
@@ -84,6 +88,11 @@ class _RoomsAdminScreenState extends State<RoomsAdminScreen>{
          client:HttpRoomPlansAdminClient((widget.client as HttpRoomsAdminClient).dio)))),
        icon:const Icon(Icons.payments_outlined)),
      ])),
+    if(widget.discussionApi!=null&&widget.accountScope!=null)ListTile(
+      leading:const Icon(Icons.forum_outlined),title:const Text('Moderate Room discussion'),
+      subtitle:const Text('Review held replies before publication'),
+      onTap:()=>Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>
+       RoomDiscussionModerationScreen(api:widget.discussionApi!,accountScope:widget.accountScope!)))),
     const Divider(),Text('Question review',style:Theme.of(context).textTheme.titleLarge),
     if(questions.isEmpty)const ListTile(title:Text('No pending questions')),
     for(final q in questions)Card(child:Column(children:[
