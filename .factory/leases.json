@@ -1668,8 +1668,8 @@
       "source_pr": 638,
       "source_head": "7ca9ff115f7896e5ec8b0b28a0058ff583b70d33",
       "claimed_at": "2026-10-11T04:21:12.312Z",
-      "heartbeat_at": "2026-10-11T04:29:21.156Z",
-      "expires_at": "2026-10-11T04:34:21.156Z",
+      "heartbeat_at": "2026-10-11T04:31:57.664Z",
+      "expires_at": "2026-10-11T04:36:57.664Z",
       "notes": "Recovered expired L-VIDEO claim after source/head audit and PR #638 comment 6105383405; exact paths only."
     }
   ],
