@@ -31,13 +31,12 @@ class _MasanaSavedScreenState extends State<MasanaSavedScreen> {
     super.didUpdateWidget(oldWidget);
     if(oldWidget.accountKey!=widget.accountKey||oldWidget.api!=widget.api){
       generation++;
-      items=[];cursor=null;error=null;offline=false;permissionDenied=false;working.clear();
+      items=[];cursor=null;error=null;offline=false;permissionDenied=false;more=false;working.clear();
       WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)refresh();});
     }else if(!oldWidget.enabled&&widget.enabled){
       WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)refresh();});
     }
   }
-  bool get isOffline=>false;
   Future<void> refresh() async {
     if(!widget.enabled||widget.accountKey.isEmpty)return;
     final ticket=++generation;
@@ -143,31 +142,34 @@ class _MasanaSavedScreenState extends State<MasanaSavedScreen> {
 
 /// Add to C27 provider cards through L-VIDEO coordination. No new video player.
 class SavedVideoToggle extends StatefulWidget {
-  const SavedVideoToggle({super.key,required this.api,required this.videoId,
+  const SavedVideoToggle({super.key,required this.api,required this.accountKey,required this.videoId,
     required this.initiallySaved});
   final SavedLibraryApi api;
-  final String videoId;
+  final String accountKey,videoId;
   final bool initiallySaved;
   @override State<SavedVideoToggle> createState()=>_SavedVideoToggleState();
 }
 class _SavedVideoToggleState extends State<SavedVideoToggle> {
   late bool saved;
   bool busy=false;
+  int generation=0;
   @override void initState(){super.initState();saved=widget.initiallySaved;}
   @override void didUpdateWidget(covariant SavedVideoToggle old){
     super.didUpdateWidget(old);
-    if(old.videoId!=widget.videoId||old.api!=widget.api){saved=widget.initiallySaved;busy=false;}
+    if(old.videoId!=widget.videoId||old.api!=widget.api||old.accountKey!=widget.accountKey){
+      generation++;saved=widget.initiallySaved;busy=false;
+    }
   }
   @override Widget build(BuildContext context)=>IconButton(
     tooltip:saved?'Remove saved video':'Save video',
     icon:Icon(saved?Icons.bookmark:Icons.bookmark_border),
     onPressed:busy?null:()async {
-      final next=!saved;
+      final next=!saved,ticket=generation;
       setState(()=>busy=true);
       try {await widget.api.saveVideo(widget.videoId,next);
-        if(mounted)setState(()=>saved=next);
-      }catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(
+        if(mounted&&ticket==generation)setState(()=>saved=next);
+      }catch(_){if(mounted&&ticket==generation)ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content:Text('Could not update saved video. Retry.')));}
-      finally {if(mounted)setState(()=>busy=false);}
+      finally {if(mounted&&ticket==generation)setState(()=>busy=false);}
     });
 }
