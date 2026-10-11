@@ -13,11 +13,15 @@ typedef ExternalVideoOpener = Future<bool> Function(Uri url);
 class OfficialVideoPlayerScreen extends StatefulWidget {
   const OfficialVideoPlayerScreen({
     required this.video, this.embedBuilder, this.open,
+    this.checkAvailability,
     this.languageCode = 'en', super.key,
   });
   final ExternalVideo video;
   final VideoEmbedBuilder? embedBuilder;
   final ExternalVideoOpener? open;
+  /// A current server approval check (not a locally cached catalog bit).
+  /// Optional only until AF00 composes the canonical signed-in repository.
+  final Future<bool> Function(String id)? checkAvailability;
   final String languageCode;
   @override State<OfficialVideoPlayerScreen> createState() =>
       _OfficialVideoPlayerScreenState();
@@ -28,6 +32,8 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
   WebViewController? controller;
   bool playing = false, loading = false, unavailable = false, opening = false;
   bool allowInitialHtmlNavigation = false;
+  bool checkingAvailability = false, verificationFailed = false;
+  int availabilityEpoch = 0;
   late OfficialVideoEmbed? approvedEmbed;
 
   String t(String en, String ha) =>
@@ -48,7 +54,11 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
   @override void didUpdateWidget(covariant OfficialVideoPlayerScreen old) {
     super.didUpdateWidget(old);
     if (old.video.id != widget.video.id ||
-        old.video.sourceUrl != widget.video.sourceUrl) {
+        old.video.sourceUrl != widget.video.sourceUrl ||
+        old.checkAvailability != widget.checkAvailability) {
+      availabilityEpoch++;
+      checkingAvailability = false;
+      verificationFailed = false;
       controller = null;
       playing = false;
       loading = false;
@@ -65,12 +75,44 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
 
   @override void didChangeAppLifecycleState(AppLifecycleState state) {
     // Discard the player on app background/calls; it must never keep audio alive.
-    if (state != AppLifecycleState.resumed && mounted && playing) {
-      setState(() { playing = false; controller = null; loading = false; });
+    if (state != AppLifecycleState.resumed && mounted) {
+      availabilityEpoch++;
+      setState(() {
+        playing = false; controller = null; loading = false;
+        checkingAvailability = false;
+      });
     }
   }
 
   void play() {
+    if (approvedEmbed == null || unavailable || checkingAvailability || playing) return;
+    final check = widget.checkAvailability;
+    if (check == null) {
+      // Legacy, server-verified catalog compatibility only. AF00 must supply
+      // the fresh authenticated status callback before release qualification.
+      _startVerifiedPlayer();
+      return;
+    }
+    unawaited(_verifyAndPlay(check));
+  }
+
+  Future<void> _verifyAndPlay(Future<bool> Function(String) check) async {
+    final epoch = ++availabilityEpoch;
+    setState(() { checkingAvailability = true; verificationFailed = false; });
+    bool available;
+    try {
+      available = await check(widget.video.id);
+    } catch (_) {
+      if (!mounted || epoch != availabilityEpoch) return;
+      setState(() { checkingAvailability = false; verificationFailed = true; });
+      return;
+    }
+    if (!mounted || epoch != availabilityEpoch) return;
+    setState(() { checkingAvailability = false; unavailable = !available; });
+    if (available) _startVerifiedPlayer();
+  }
+
+  void _startVerifiedPlayer() {
     final embed = approvedEmbed;
     if (embed == null || unavailable) return;
     if (kIsWeb && widget.embedBuilder == null) {
@@ -160,6 +202,7 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
   }
 
   @override void dispose() {
+    availabilityEpoch++;
     WidgetsBinding.instance.removeObserver(this);
     controller = null;
     super.dispose();
@@ -172,14 +215,20 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
       body: SafeArea(child: ListView(children: [
         AspectRatio(aspectRatio: 16 / 9, child: ColoredBox(
           color: Colors.black,
-          child: unavailable || embed == null
-            ? Center(child: Text(t('Video unavailable here. Open at source.',
-                'Ba a samun bidiyon nan. Bude daga asali.'),
+          child: unavailable || embed == null || verificationFailed
+            ? Center(child: Text(verificationFailed
+                ? t('Could not check video availability. Retry when online.',
+                    'Ba a iya tabbatar da bidiyo ba. Sake gwadawa idan akwai intanet.')
+                : t('Video unavailable here. Open at source.',
+                    'Ba a samun bidiyon nan. Bude daga asali.'),
                 style: const TextStyle(color: Colors.white)))
             : !playing
               ? Center(child: FilledButton.icon(
-                  onPressed: play, icon: const Icon(Icons.play_arrow),
-                  label: Text(t('Play official video', 'Kunna bidiyon asali'))))
+                  onPressed: checkingAvailability ? null : play,
+                  icon: const Icon(Icons.play_arrow),
+                  label: Text(checkingAvailability
+                    ? t('Checking availability…', 'Ana duba samuwar bidiyo…')
+                    : t('Play official video', 'Kunna bidiyon asali'))))
               : Stack(children: [
                   Positioned.fill(child: widget.embedBuilder?.call(embed.embed) ??
                       (controller == null ? const SizedBox.shrink()
@@ -211,9 +260,10 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
               }),
               icon: const Icon(Icons.stop_circle_outlined),
               label: Text(t('Stop', 'Dakatar'))),
-            if (unavailable) TextButton.icon(
+            if (unavailable || verificationFailed) TextButton.icon(
               onPressed: () => setState(() {
                 unavailable = embed == null;
+                verificationFailed = false;
                 loading = false;
               }),
               icon: const Icon(Icons.refresh), label: Text(t('Retry', 'Sake gwadawa'))),
