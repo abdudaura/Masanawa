@@ -6,9 +6,10 @@ import 'rehearsal_screen.dart';
 /// A02/A03. Root Admin drawer and staff JWT/RBAC composition belong to AF00.
 /// A04 live rehearsal is disabled until the canonical sandbox is connected.
 class MasanaStudioScreen extends StatefulWidget {
- const MasanaStudioScreen({super.key,required this.repository,required this.accountKey});
+ const MasanaStudioScreen({super.key,required this.repository,required this.accountKey,this.enableRehearsal=false});
  final MasanaStudioRepository repository;
  final String accountKey;
+ final bool enableRehearsal; // AF00 flips only after live-off Gateway/worker composition is verified.
  @override State<MasanaStudioScreen> createState()=>_MasanaStudioScreenState();
 }
 class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
@@ -114,7 +115,7 @@ class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
      onTap:saving||r.state!='draft'?null:()=>edit(r),
      trailing:r.state=='draft'?Row(mainAxisSize:MainAxisSize.min,children:[
       IconButton(tooltip:'Rehearse draft',icon:const Icon(Icons.science_outlined),
-       onPressed:saving||widget.repository is! GatewayMasanaStudioRepository?null:()=>Navigator.of(context).push(
+       onPressed:saving||!widget.enableRehearsal||widget.repository is! GatewayMasanaStudioRepository?null:()=>Navigator.of(context).push(
         MaterialPageRoute<void>(builder:(_)=>MasanaRehearsalScreen(
          repository:GatewayMasanaRehearsalRepository((widget.repository as GatewayMasanaStudioRepository).dio),
          characterId:r.characterId,revision:r.revision,accountKey:widget.accountKey)))),
