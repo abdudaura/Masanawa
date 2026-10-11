@@ -2175,6 +2175,30 @@
       "released_at": "2026-10-11T07:54:31.385Z",
       "release_reason": "Six-path C27–C29 source PR #664 head 2180744c safely squash-merged into nondeploying integration/rebuild as fb20e76d5c4027068c32ebdf35e27009babdc863. Authenticated Dio repository Dart parse repaired, missing checker fails closed, negative/widget tests authored. CI on merged head 38123045044/38123045083 all 3 jobs FAILED with 0 steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; AF00 composition and J14/J15 real device/providers pending; NO main/prod/payment changes.",
       "integration_head_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863"
+    },
+    {
+      "claim_id": "l-chat-c13-masana-message-actions-20261011-gpt6-0900",
+      "owner": "GPT-6 / L-CHAT C13 message actions",
+      "scope": "Complete C13 local quote/copy, verified owner-only hide, report into canonical Gwani case entry. Existing agents journal, sessions and moderation worker remain authorities. AF00 protected registration only.",
+      "paths": [
+        "packages/masana/migrations/0006_message_hides.sql",
+        "adapters/storage/postgres/src/masana_chat/message_actions.ts",
+        "adapters/storage/postgres/src/masana_chat/message_actions.test.ts",
+        "adapters/storage/postgres/src/masana_chat/inbox.ts",
+        "services/gateway/src/modules/masana_chat/message_actions.ts",
+        "services/gateway/src/modules/masana_chat/message_actions.test.ts",
+        "apps/mobile/lib/src/features/masana_chat/masana_chat_api.dart",
+        "apps/mobile/lib/src/features/masana_chat/masana_chat_controller.dart",
+        "apps/mobile/lib/src/features/masana_chat/masana_chat_screen.dart",
+        "apps/mobile/test/features/masana_chat/masana_chat_actions_test.dart",
+        "tests/e2e/J03/C13_MESSAGE_ACTIONS.md"
+      ],
+      "branch": "lane/l-chat-c13-message-actions-20261011-gpt6",
+      "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
+      "claimed_at": "2026-10-11T08:00:48.341Z",
+      "heartbeat_at": "2026-10-11T08:00:48.341Z",
+      "expires_at": "2026-10-11T08:05:48.341Z",
+      "notes": "Bounded C13 source, no shared migration registry, gateway app, router, provider or ledger changes."
     }
   ],
   "history": [
