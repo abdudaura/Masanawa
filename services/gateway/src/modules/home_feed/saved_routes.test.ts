@@ -17,9 +17,8 @@ describe("C25 authenticated saved routes",()=>{
     expect((await app.inject({method:"GET",url:"/v1/saved?cursor[]=bad"})).statusCode).toBe(422);
     const response=await app.inject({method:"PUT",url:"/v1/videos/dddddddd-dddd-4ddd-8ddd-dddddddddddd/save",
       payload:{enabled:"yes"}});
-    // The service is authoritative for the boolean check; inspect the forwarded value.
-    expect(response.statusCode).toBe(200);
-    expect(saveVideo).toHaveBeenLastCalledWith(actor,"dddddddd-dddd-4ddd-8ddd-dddddddddddd","yes");
+    expect(response.statusCode).toBe(422);
+    expect(saveVideo).not.toHaveBeenCalled();
     expect(list).not.toHaveBeenCalled();
     await app.close();
   });
