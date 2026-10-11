@@ -6,6 +6,7 @@ import 'package:masanawa/src/features/rooms/rooms_client.dart';
 import 'package:masanawa/src/features/rooms/rooms_screen.dart';
 
 class FakeSaves implements SavedLessonsClient {
+ @override String get accountKey=>'fanA';
  bool current=true,offline=false,forbidden=false;
  int reads=0,removals=0;
  List<SavedRoomLesson> items=[
@@ -75,6 +76,15 @@ void main(){
   expect(find.text('Introduction to algebra'),findsNothing);
   expect(find.textContaining('Sign in again'),findsOneWidget);
   expect(api.removals,0);
+ });
+ testWidgets('C38 mismatched UI identity cannot display another owner\'s saved lessons',(tester)async{
+  final api=FakeSaves();
+  await tester.pumpWidget(MaterialApp(home:SavedRoomLessonsScreen(
+    client:api,roomId:'room_math',accountKey:'fanB')));
+  await tester.pumpAndSettle();
+  expect(find.text('Introduction to algebra'),findsNothing);
+  expect(find.textContaining('Sign in again'),findsOneWidget);
+  expect(api.reads,0);
  });
  testWidgets('C38 offline failure gives retry without cached protected lesson',(tester)async{
   final api=FakeSaves()..offline=true;

@@ -14,7 +14,7 @@ class _SavedRoomLessonsScreenState extends State<SavedRoomLessonsScreen> {
  bool loading=true,working=false;
  String? message;
  int epoch=0;
- bool get active=>widget.accountKey.isNotEmpty&&widget.client.isCurrentAccount;
+ bool get active=>widget.accountKey.isNotEmpty&&widget.accountKey==widget.client.accountKey&&widget.client.isCurrentAccount;
  @override void initState(){super.initState();load();}
  @override void didUpdateWidget(covariant SavedRoomLessonsScreen oldWidget){
   super.didUpdateWidget(oldWidget);

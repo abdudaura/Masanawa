@@ -155,7 +155,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
  }
  Future<void> bookmark(RoomLesson lesson)async{
   final client=widget.savedLessonsClient;
-  if(busy||client==null||!client.isCurrentAccount||paidAccessBlocked)return;
+  if(busy||client==null||!client.isCurrentAccount||widget.savedLessonsAccountKey!=client.accountKey||paidAccessBlocked)return;
   setState(()=>busy=true);
   try{
    await client.save(widget.id,lesson.id);
@@ -169,7 +169,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
  void openSaved(){
   final client=widget.savedLessonsClient;
   final key=widget.savedLessonsAccountKey;
-  if(client==null||key==null||!client.isCurrentAccount||!info!.joined||paidAccessBlocked)return;
+  if(client==null||key==null||key!=client.accountKey||!client.isCurrentAccount||!info!.joined||paidAccessBlocked)return;
   Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>
    SavedRoomLessonsScreen(client:client,roomId:widget.id,accountKey:key)));
  }
@@ -187,7 +187,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
   appBar:AppBar(title:Text(info?.title??'Room'),backgroundColor:masanaBlue,foregroundColor:Colors.white,
    actions:widget.savedLessonsClient==null?null:[IconButton(
     key:const Key('room-saved-lessons'),tooltip:'Saved lessons',
-    onPressed:info?.joined==true&&!paidAccessBlocked?openSaved:null,
+    onPressed:info?.joined==true&&!paidAccessBlocked&&widget.savedLessonsAccountKey==widget.savedLessonsClient?.accountKey?openSaved:null,
     icon:const Icon(Icons.bookmarks_outlined))]),
   body:loading?const Center(child:CircularProgressIndicator()):
    error!=null?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
@@ -215,7 +215,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
         title:Text(lessons[i].body),
         trailing:widget.savedLessonsClient==null?null:IconButton(
          tooltip:'Save lesson',icon:const Icon(Icons.bookmark_add_outlined),
-         onPressed:busy||!widget.savedLessonsClient!.isCurrentAccount?null:()=>bookmark(lessons[i]))))):
+         onPressed:busy||!widget.savedLessonsClient!.isCurrentAccount||widget.savedLessonsAccountKey!=widget.savedLessonsClient!.accountKey?null:()=>bookmark(lessons[i]))))):
        RefreshIndicator(onRefresh:load,child:ListView(children:[
         if(items.isEmpty)const ListTile(title:Text('Ask the first question.')),
         for(final q in items)ListTile(title:Text(q.body),

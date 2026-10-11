@@ -15,6 +15,7 @@ class SavedRoomLesson {
  }
 }
 abstract class SavedLessonsClient {
+ String get accountKey;
  bool get isCurrentAccount;
  Future<List<SavedRoomLesson>> list(String roomId);
  Future<void> save(String roomId,String lessonId);
