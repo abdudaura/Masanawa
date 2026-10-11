@@ -76,9 +76,15 @@ function requirePrincipal(p: StaffPrincipal, role: StaffRole, mfa = false): Staf
 }
 function validFlag(name: string): name is OperationsFlag {return FLAG_NAMES.some(value=>value===name);}
 function verifiedMutation(change: FlagMutation): void {
-  if (!validFlag(change.name) || typeof change.enabled !== "boolean" ||
+  // HTTP payloads are untrusted at runtime even if TypeScript calls are typed.
+  // Guard every value before invoking methods such as trim() or accepting a
+  // coerced numeric idempotency key, otherwise malformed JSON can become a 500.
+  if (!change || typeof change !== "object" || !validFlag(change.name) ||
+      typeof change.enabled !== "boolean" ||
       !Number.isSafeInteger(change.expectedRevision) || change.expectedRevision < 0 ||
+      typeof change.idempotencyKey !== "string" ||
       !/^[a-zA-Z0-9._:-]{8,128}$/u.test(change.idempotencyKey) ||
+      typeof change.reason !== "string" ||
       change.reason.trim().length < 12 || change.reason.length > 500) {
     throw new OperationsError("invalid",400);
   }

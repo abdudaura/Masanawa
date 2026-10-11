@@ -32,6 +32,14 @@ describe("J19 admin operations authority",()=>{
   const x=setup(["ops_admin"]);
   await expect(x.service.setFlag("Bearer token",{...mutation,idempotencyKey:"bad",reason:"short"})).rejects.toBeInstanceOf(OperationsError);
  });
+ it("rejects non-string reason and idempotency key before database access",async()=>{
+  const x=setup(["ops_admin"]);
+  await expect(x.service.setFlag("Bearer token",{...mutation,reason:42 as unknown as string}))
+    .rejects.toMatchObject({code:"invalid",status:400});
+  await expect(x.service.setFlag("Bearer token",{...mutation,idempotencyKey:12345678 as unknown as string}))
+    .rejects.toMatchObject({code:"invalid",status:400});
+  expect(x.repo.setFlag).not.toHaveBeenCalled();
+ });
  it("requires super_admin MFA for staff and audit",async()=>{
   const x=setup(["ops_admin"]);
   await expect(x.service.staff("Bearer token")).rejects.toMatchObject({status:403});

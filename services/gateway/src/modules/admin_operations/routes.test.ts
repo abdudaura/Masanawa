@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import { vi } from "vitest";
 import { describe, it, expect, afterEach } from "vitest";
-import { OperationsError, type OperationsService } from "./service.js";
+import { OperationsError, createOperationsService, type OperationsService } from "./service.js";
 import { registerAdminOperationsRoutes } from "./routes.js";
 const apps:ReturnType<typeof Fastify>[]=[];
 afterEach(async()=>{await Promise.all(apps.splice(0).map(x=>x.close()));});
@@ -9,6 +9,7 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
  function create() {
   const app=Fastify();apps.push(app);
   const mock:OperationsService={
+   overview:async()=>{throw new OperationsError("forbidden",403)},
    flags:async()=>{throw new OperationsError("forbidden",403)},
    preview:async()=>{throw new OperationsError("forbidden",403)},
    setFlag:async()=>{throw new OperationsError("forbidden",403)},
@@ -29,6 +30,9 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
   const app=Fastify();apps.push(app);
   const call=vi.fn(async()=>({name:"calls" as const,enabled:false,revision:1,updatedAt:null}));
   registerAdminOperationsRoutes(app,{
+    overview:async()=>({pendingJobs:0,activeJobLeases:0,deadLetters:0,oldestPendingSeconds:null,
+      openFinancialReconciliation:0,roomAnswerAgeSeconds:null,externalSyncLagSeconds:null,
+      entitlementErrors:null,budgetWarnings:null}),
     flags:async()=>[],preview:async()=>{throw new OperationsError("forbidden",403)},
     setFlag:async(_auth,mutation)=>call(mutation),audit:async()=>[],staff:async()=>[]
   });
@@ -50,6 +54,31 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
   const reply=await app.inject({method:"GET",url:"/v1/admin/ops/flags/preview?name=unknown&enabled=maybe"});
   expect(reply.statusCode).toBe(400);
   expect(reply.json()).toEqual({code:"admin_ops.invalid"});
+ });
+ it("staff audit errors use the scoped typed 403 handler",async()=>{
+  const app=create();
+  const reply=await app.inject({method:"GET",url:"/v1/admin/staff/audit?limit=30"});
+  expect(reply.statusCode).toBe(403);
+  expect(reply.json()).toEqual({code:"admin_ops.forbidden"});
+ });
+ it("ops overview returns typed 403 for a denied principal",async()=>{
+  const app=create();
+  const reply=await app.inject({method:"GET",url:"/v1/admin/ops/overview"});
+  expect(reply.statusCode).toBe(403);
+  expect(reply.json()).toEqual({code:"admin_ops.forbidden"});
+ });
+ it("rejects malformed JSON with typed 400 without invoking canonical database mutation",async()=>{
+  const app=Fastify();apps.push(app);
+  const mutate=vi.fn(async()=>({name:"posting" as const,enabled:false,revision:1,updatedAt:null}));
+  registerAdminOperationsRoutes(app,createOperationsService({
+    authorizer:{resolve:async()=>({tenantId:"tenant_a",userId:"staff_a",roles:["ops_admin"],mfaVerified:true})},
+    repo:{listFlags:async()=>[],setFlag:mutate,audit:async()=>[]}
+  }));
+  const reply=await app.inject({method:"PUT",url:"/v1/admin/ops/flags/posting",
+    payload:{enabled:false,expectedRevision:0,idempotencyKey:"valid-key-12",reason:42}});
+  expect(reply.statusCode).toBe(400);
+  expect(reply.json()).toEqual({code:"admin_ops.invalid"});
+  expect(mutate).not.toHaveBeenCalled();
  });
  it("denies unknown staff roles through live HTTP",async()=>{
   const app=create();const reply=await app.inject({method:"GET",url:"/v1/admin/staff"});

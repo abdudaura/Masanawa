@@ -9,6 +9,13 @@ class OperationsOverviewPage extends StatefulWidget {
 }
 class _OperationsOverviewPageState extends State<OperationsOverviewPage> {
  late Future<OperationsOverview> _future=widget.api.overview();
+ @override
+ void didUpdateWidget(covariant OperationsOverviewPage oldWidget) {
+   super.didUpdateWidget(oldWidget);
+   // FutureBuilder may retain old data while a new future is loading; its
+   // pending state below deliberately hides those old tenant aggregates.
+   if (!identical(oldWidget.api,widget.api)) _future=widget.api.overview();
+ }
  void _retry()=>setState(()=>_future=widget.api.overview());
  @override Widget build(BuildContext context)=>Scaffold(
   appBar:AppBar(title:const Text('Platform overview'),actions:[

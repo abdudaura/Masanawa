@@ -14,7 +14,9 @@ export interface AdminJobAdmission {
 export async function admitAdminJob(reader:JobFlagReader|undefined, tenantId:string, family:AdminJobFamily):Promise<AdminJobAdmission> {
   if(!reader || !tenantId.trim() || !["posting","teaching","imports","calls","paid_joins"].includes(family)) return {admitted:false,reason:"unavailable"};
   try {
-    return (await reader.read({tenantId,family}))
+    // A malformed adapter response is NOT authorization to enqueue work.
+    const enabled=await reader.read({tenantId,family});
+    return enabled === true
       ? {admitted:true,reason:"enabled"}
       : {admitted:false,reason:"disabled"};
   } catch {
