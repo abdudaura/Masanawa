@@ -1451,8 +1451,8 @@
       "base_sha": "b8155985f50c5065e3845a7530fe79bc5624f6be",
       "source_pr": 625,
       "claimed_at": "2026-10-11T03:40:26.393Z",
-      "heartbeat_at": "2026-10-11T03:40:26.393Z",
-      "expires_at": "2026-10-11T03:45:26.393Z",
+      "heartbeat_at": "2026-10-11T03:44:19.185Z",
+      "expires_at": "2026-10-11T03:49:19.185Z",
       "notes": "Continue SAME #625 PR, after readback/CAS. Implement join/read/write paid admission, purchase/display/retry pending through existing paid APIs; no production payments or live migration."
     }
   ],
