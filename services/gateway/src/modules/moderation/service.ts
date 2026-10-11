@@ -7,7 +7,7 @@ export interface CaseRepository {
  list(tenantId:string,reporterId:string|null,limit:number):Promise<readonly CaseRecord[]>;
  propose(action:ActionRecord,expectedCaseVersion:number):Promise<ActionRecord>;
  review(tenantId:string,caseId:string,actionId:string,reviewerId:string,approve:boolean,expectedVersion:number):Promise<ActionRecord>;
- appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string):Promise<void>;
+ appeal(tenantId:string,caseId:string,appealId:string,actorId:string,reason:string,clientRequestId:string):Promise<void>;
  resolveAppeal(tenantId:string,caseId:string,appealId:string,actorId:string,uphold:boolean,expectedVersion:number):Promise<AppealRecord>;
  dismiss(tenantId:string,caseId:string,actorId:string,reason:string,expectedVersion:number):Promise<CaseRecord>;
 }
@@ -101,11 +101,13 @@ export function createCaseService(options:{repository:CaseRepository;authority:C
    if(!Number.isSafeInteger(version)||version<1)throw new CaseError("moderation.version.invalid",400);
    return repo.resolveAppeal(who.tenantId,required(caseId,"caseId",128),required(appealId,"appealId",128),who.userId,input.uphold,version);
   },
-  async appeal(header:string|undefined,caseId:string,reason:unknown){
+  async appeal(header:string|undefined,caseId:string,input:{reason:unknown;clientRequestId:unknown}){
    const {who,rec}=await owned(header,caseId);
    if(who.kind!=="fan"||rec.reporterUserId!==who.userId)throw new CaseError("moderation.fan_required",403);
-   if(!["actioned","dismissed","closed"].includes(rec.state))throw new CaseError("moderation.appeal_not_ready",409);
-   await repo.appeal(who.tenantId,rec.caseId,"appeal_"+id(),who.userId,required(reason,"reason",2000));
+   if(!["actioned","dismissed","closed","appealed","investigating"].includes(rec.state))throw new CaseError("moderation.appeal_not_ready",409);
+   // Repository checks a matching retry before enforcing current case state.
+   await repo.appeal(who.tenantId,rec.caseId,"appeal_"+id(),who.userId,
+    required(input.reason,"reason",2000),required(input.clientRequestId,"clientRequestId",128));
    return {accepted:true};
   }
  });
