@@ -1482,13 +1482,14 @@
         "services/worker/src/jobs/masana_calls/**",
         "apps/mobile/lib/src/features/calls/**",
         "apps/mobile/test/features/calls/**",
-        "tests/e2e/J04/**"
+        "tests/e2e/J04/**",
+        "services/presence/masana_calls/**"
       ],
       "branch": "lane/l-chat-j04-masana-calls-20261011-gpt6-0455",
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
       "claimed_at": "2026-10-11T03:56:43.641Z",
-      "heartbeat_at": "2026-10-11T04:02:14.026Z",
-      "expires_at": "2026-10-11T04:07:14.026Z",
+      "heartbeat_at": "2026-10-11T04:04:04.542Z",
+      "expires_at": "2026-10-11T04:09:04.542Z",
       "notes": "Canonical /v1/calls source under own module, AF00 to compose root; provider and full device checks are release-gated.",
       "source_head": "f99cd2f770f00ead40ca2563a0ea87bf76de1dd4"
     },
