@@ -2151,6 +2151,21 @@
       "source_head": "aa1c3c96c72908b8b58d1fff1ca21e981e3225c5",
       "integration_head_sha": "8301c8de87d94645ec5d350298b32e22ebf2ab63",
       "test_state": "BLOCKED/NOT_RUN: GH Actions 38121683155/38121683156 zero-step job failures; TypeScript, Vitest, PostgreSQL18, Flutter, Android no available runner"
+    },
+    {
+      "claim_id": "l-chat-c10-gwani-inbox-isolation-20261011-gpt6-0847",
+      "owner": "GPT-6 L-CHAT/C10",
+      "scope": "Finish C10 fan-private Chats source by excluding Gwani from duplicate Chats inbox using server-authoritative support character ID, authorization-negative repository tests; only two exact paths in existing PR #641. AF00 retains root composition and release.",
+      "paths": [
+        "adapters/storage/postgres/src/masana_chat/inbox.ts",
+        "adapters/storage/postgres/src/masana_chat/inbox.test.ts"
+      ],
+      "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
+      "base_sha": "51b2e21bb1c4544137cef66c23c741d62b39f98c",
+      "claimed_at": "2026-10-11T07:47:27.098Z",
+      "heartbeat_at": "2026-10-11T07:47:27.098Z",
+      "expires_at": "2026-10-11T07:52:27.098Z",
+      "notes": "Disjoint from C10 screen/test claim and AF00 protected paths; no production routes/migrations/finance."
     }
   ],
   "history": [
