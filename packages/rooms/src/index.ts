@@ -35,3 +35,4 @@ export function requireFan(userId:string|null):string {
   return userId;
 }
 export * from "./subscriptions.js";
+export * from "./discussion.js";

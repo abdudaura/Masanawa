@@ -3,10 +3,10 @@ import type {Pool,PoolClient} from "pg";
 import {RoomError,validateQuestion,validateIdempotencyKey,requireFan,requireRoomStaff} from "@masanawa/rooms";
 import type {RoomActor,RoomsRepository} from "@masanawa/rooms/ports";
 import type {RoomPreview,RoomQuestion} from "@masanawa/rooms";
-type Queryable=Pick<PoolClient,"query">;
+export type Queryable=Pick<PoolClient,"query">;
 const newId=(prefix:string)=>prefix+randomUUID();
 const uuidRoom=(id:string)=>/^room_[a-zA-Z0-9_-]{3,100}$/.test(id);
-const assertRoom=(id:string)=>{if(!uuidRoom(id))throw new RoomError(422,"invalid_room");};
+export const assertRoom=(id:string)=>{if(!uuidRoom(id))throw new RoomError(422,"invalid_room");};
 const parsePreview=(r:any):RoomPreview=>({
  roomId:r.room_id,slug:r.slug,professionTitle:r.profession_title,
  teacherCharacterId:r.teacher_character_id,language:r.language,
@@ -22,13 +22,13 @@ async function transaction<T>(pool:Pool, fn:(client:PoolClient)=>Promise<T>):Pro
    await client.query("BEGIN");const result=await fn(client);await client.query("COMMIT");return result;
  }catch(e){await client.query("ROLLBACK");throw e;}finally{client.release();}
 }
-async function lookupRoom(q:Queryable,tenantId:string,id:string,lock=false){
+export async function lookupRoom(q:Queryable,tenantId:string,id:string,lock=false){
  const r=await q.query("SELECT * FROM rooms.rooms WHERE tenant_id=$1 AND room_id=$2"+(lock?" FOR UPDATE":""),[tenantId,id]);
  if(!r.rows.length)throw new RoomError(404,"room_not_found");
  return r.rows[0];
 }
 /** Every restricted paid read/join rechecks the server-verified, unexpired Play entitlement. */
-async function requirePublishedEligible(q:Queryable,a:RoomActor,row:any):Promise<void>{
+export async function requirePublishedEligible(q:Queryable,a:RoomActor,row:any):Promise<void>{
  if(row.state!=="published")throw new RoomError(404,"room_not_found");
  if(row.plan_mode==="free")return;
  if(row.plan_mode!=="paid")throw new RoomError(403,"room_plan_invalid");
@@ -39,7 +39,7 @@ async function requirePublishedEligible(q:Queryable,a:RoomActor,row:any):Promise
    [a.tenantId,row.room_id,userId]);
  if(!verified.rows.length)throw new RoomError(403,"subscription_not_verified");
 }
-async function requireMember(q:Queryable,a:RoomActor,id:string,lock=false){
+export async function requireMember(q:Queryable,a:RoomActor,id:string,lock=false){
  const u=requireFan(a.userId);
  const r=await q.query("SELECT state FROM rooms.memberships WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3"+(lock?" FOR UPDATE":""),[a.tenantId,id,u]);
  if(!r.rows.length||r.rows[0].state!=="active")throw new RoomError(403,"room_membership_required");
