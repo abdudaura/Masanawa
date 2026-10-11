@@ -3,7 +3,7 @@ import {createRoomSubscriptionJob} from "./subscriptions.js";
 import type {RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
 const purchaseToken="room_token_that_is_long_enough_012345";
 function build({enabled=true,owner="t1",period="2030-01-01T00:00:00Z"}={}){
- const applyNotification=vi.fn(async()=>"linked" as const);
+ const applyNotification=vi.fn(async (_input:Parameters<RoomSubscriptionsRepository['applyNotification']>[0])=>"linked" as const);
  const repo={ownerForToken:vi.fn(async()=>owner),applyNotification} as unknown as RoomSubscriptionsRepository;
  const verify=vi.fn(async()=>({
   packageName:"ng.unigeria.unigeria",storeProductId:"maths_monthly",
