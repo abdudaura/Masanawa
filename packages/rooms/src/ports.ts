@@ -28,12 +28,13 @@ export interface RoomSubscriptionsRepository {
  activatePaid(tenantId:string,roomId:string):Promise<void>;
  persistVerified(input:{
   tenantId:string;userId:string;roomId:string;priceVersion:number;planId:string;
-  tokenHash:string;state:import("./subscriptions.js").SubscriptionState;
+  tokenHash:string;storeProductId:string;state:import("./subscriptions.js").SubscriptionState;
   periodEnd:string;orderId:string|null;
  }):Promise<import("./subscriptions.js").RoomEntitlement>;
  applyNotification(input:{
   tenantId:string;id:string;tokenHash:string;eventType:string;
   state:import("./subscriptions.js").SubscriptionState;periodEnd:string;orderId:string|null;
  }):Promise<"linked"|"unlinked"|"duplicate">;
+ ownerForToken(tokenHash:string):Promise<string|null>;
 }
 
