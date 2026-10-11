@@ -38,13 +38,13 @@ void main() {
     await tester.pump();
     await tester.tap(find.byTooltip('Send message'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Message actions'));
+    await tester.tap(find.byTooltip('Message actions').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Reply').last);
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
       contains('> hello'));
-    await tester.tap(find.byTooltip('Message actions'));
+    await tester.tap(find.byTooltip('Message actions').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Remove for me').last);
     await tester.pumpAndSettle();
@@ -54,6 +54,23 @@ void main() {
     expect(api.hidden.single,startsWith('request_'));
     expect(find.text('hello'),findsNothing);
     expect(drafts.data?['turns'],isEmpty);
+  });
+  testWidgets('C13 agent reply can be sent only to injected Gwani reporting journey', (tester) async {
+    final api=ActionApi(),reported=<String>[];
+    final controller=MasanaChatController(api:api,drafts:ActionDrafts(),
+      accountId:'fan-a',characterId:'character_0199f0d0-0000-7000-8000-000000000003');
+    await tester.pumpWidget(MaterialApp(home:MasanaChatScreen(
+      controller:controller,displayName:'Teacher',
+      onReportMessage:(id,body) async { reported.add(body); })));
+    await tester.enterText(find.byType(TextField),'hello');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Masana reply actions'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Report to Gwani').last);
+    await tester.pumpAndSettle();
+    expect(reported,['Answered']);
   });
   testWidgets('C13 failed server hide does not discard the chat message', (tester) async {
     final api=ActionApi()..failHide=true;
@@ -65,7 +82,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byTooltip('Send message'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Message actions'));
+    await tester.tap(find.byTooltip('Message actions').first);
     await tester.pumpAndSettle();
     expect(find.text('Report to Gwani'),findsNothing);
     await tester.tap(find.text('Remove for me').last);

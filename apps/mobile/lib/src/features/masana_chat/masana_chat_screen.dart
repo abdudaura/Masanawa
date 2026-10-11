@@ -43,12 +43,13 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
-  Future<void> _action(String action, MasanaChatTurn turn) async {
+  Future<void> _action(String action, MasanaChatTurn turn, {String? message}) async {
+    final body=message ?? turn.text;
     if (action == 'copy') {
-      await Clipboard.setData(ClipboardData(text: turn.text));
+      await Clipboard.setData(ClipboardData(text: body));
       _notice('Copied');
     } else if (action == 'reply') {
-      final quote=turn.text.replaceAll(RegExp(r'[\r\n]+'), ' ');
+      final quote=body.replaceAll(RegExp(r'[\r\n]+'), ' ');
       _composer.text='> ' + (quote.length > 180
         ? quote.substring(0, 180) + '…' : quote) + '\n\n';
       _composer.selection=TextSelection.collapsed(offset:_composer.text.length);
@@ -70,7 +71,7 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
       if(!mounted || !identical(owner,widget.controller)) return;
       _notice(ok?'Message hidden for you':'Message not removed. Retry when connected.');
     } else if (action == 'report' && widget.onReportMessage!=null) {
-      try { await widget.onReportMessage!(turn.requestId,turn.text); }
+      try { await widget.onReportMessage!(turn.requestId,body); }
       catch (_) { _notice('Could not open Gwani report. Try again.'); }
     }
   }
@@ -130,7 +131,20 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
                     child:Text('Sending or queued…')),
                 if(m.reply!=null) Align(alignment:Alignment.centerLeft,
                   child:Card(child:Padding(
-                    padding:const EdgeInsets.all(12),child:Text(m.reply!)))),
+                    padding:const EdgeInsets.all(12),
+                    child:Column(mainAxisSize:MainAxisSize.min,
+                      crossAxisAlignment:CrossAxisAlignment.end,children:[
+                        Text(m.reply!),
+                        PopupMenuButton<String>(
+                          tooltip:'Masana reply actions',
+                          onSelected:(action)=>_action(action,m,message:m.reply),
+                          itemBuilder:(context)=>[
+                            const PopupMenuItem(value:'reply',child:Text('Reply')),
+                            const PopupMenuItem(value:'copy',child:Text('Copy')),
+                            if(widget.onReportMessage!=null)
+                              const PopupMenuItem(value:'report',child:Text('Report to Gwani')),
+                          ]),
+                      ])))),
               ]);
             })),
         Padding(padding:const EdgeInsets.fromLTRB(8,4,8,8),
