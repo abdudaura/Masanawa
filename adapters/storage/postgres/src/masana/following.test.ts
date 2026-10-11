@@ -20,6 +20,7 @@ describe("C46 private Following PostgreSQL adapter", () => {
     const [sql,args]=query.mock.calls[0] as [string,unknown[]];
     expect(sql).toContain("f.tenant_id=$1 AND f.fan_user_id=$2");
     expect(sql).toContain("r.state='approved'");
+    expect(sql).toContain("jsonb_array_elements_text");
     expect(sql).toContain("o.kind='platform'");
     expect(sql).toContain("c.state='active'");
     expect(sql).toContain("f.character_id > $5");
