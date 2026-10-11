@@ -45,7 +45,7 @@ export function registerRoomDiscussionRoutes(app:FastifyInstance,ports:Discussio
      const pr=b.parentReplyId;
      if(pr!=null && (typeof pr!=="string" || !/^room-reply_[A-Za-z0-9_-]{8,120}$/.test(pr)))
        throw new RoomError(422,"invalid_parent_reply");
-     const result=await ports.store.create(a,p.id,t.kind,t.id,validateDiscussionBody(b.body),key,pr??null as string|null);
+     const result=await ports.store.create(a,p.id,t.kind,t.id,validateDiscussionBody(b.body),key,(pr as string|null|undefined)??null);
      return reply.code(202).send(result);
    }catch(e){return fail(e,reply);}
  });
