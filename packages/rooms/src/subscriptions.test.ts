@@ -1,7 +1,7 @@
 import {describe,expect,it} from "vitest";
 import {RoomError} from "./index.js";
 import {authorizedState,parsePurchaseToken,requirePricingStaff,validatePrice,purchaseTokenHash} from "./subscriptions.js";
-const evidence={packageName:"com.masanawa.app",storeProductId:"maths_monthly",subscriptionState:"SUBSCRIPTION_STATE_ACTIVE",periodEnd:"2030-01-01T00:00:00Z",orderId:"GPA.test",acknowledged:true};
+const evidence={packageName:"com.masanawa.app",storeProductId:"maths_monthly",subscriptionState:"SUBSCRIPTION_STATE_ACTIVE",periodEnd:"2030-01-01T00:00:00Z",orderId:"GPA.test",acknowledged:true,obfuscatedAccountId:'bound_account'};
 describe("J08 no client-granted entitlements",()=>{
  it("accepts only provider states with an unexpired period",()=>{
   expect(authorizedState(evidence,Date.parse("2029-01-01"))).toBe("active");
