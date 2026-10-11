@@ -17,8 +17,11 @@ export function registerExternalVideoRoutes(app: FastifyInstance, deps: {
   app.get("/v1/videos", async (request, reply) => {
     try {
       const principal = await deps.resolvePrincipal(request);
-      const items = await service.list(principal, request.query as Record<string, unknown>);
-      return { items, nextCursor: items.length === 20 ? items.at(-1)?.id ?? null : null };
+      const query = request.query as Record<string, unknown>;
+      const items = await service.list(principal, query);
+      // Use the validated requested page size, not a fixed 20.
+      const limit = query.limit === undefined ? 20 : Number(query.limit);
+      return { items, nextCursor: items.length === limit ? items.at(-1)?.id ?? null : null };
     } catch (err) { const r = replyError(err); return reply.code(r.status).send(r.body); }
   });
   app.get<{Params:{id:string}}>("/v1/videos/:id/availability", async (request, reply) => {
