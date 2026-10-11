@@ -24,6 +24,7 @@ class TelegramConnectionAdminPage extends StatefulWidget {
  @override State<TelegramConnectionAdminPage> createState()=>_TelegramConnectionAdminPageState();
 }
 class _TelegramConnectionAdminPageState extends State<TelegramConnectionAdminPage> {
+ final credentialAlias=TextEditingController();
  List<TelegramStaffConnection> accounts=const[];
  bool loading=true,busy=false;
  String? notice,error;
@@ -35,12 +36,14 @@ class _TelegramConnectionAdminPageState extends State<TelegramConnectionAdminPag
    epoch++;accounts=const[];_reload();
   }
  }
- @override void dispose(){epoch++;super.dispose();}
+ @override void dispose(){epoch++;credentialAlias.dispose();super.dispose();}
  String _error(Object value){
   if(value is DioException){
    if(value.response?.statusCode==403)return 'Staff permission denied. No changes made.';
    if(value.response?.statusCode==401)return 'Session expired. Sign in again.';
    if(value.response?.statusCode==409)return 'Revision changed. Reload and retry.';
+   if(value.response?.statusCode==410)return 'Telegram automation is disabled by server policy.';
+   if(value.response?.statusCode==422)return 'Invalid credential alias or revision. Nothing changed.';
    if(value.type==DioExceptionType.connectionError||
       value.type==DioExceptionType.connectionTimeout)return 'Offline. Cannot change the account.';
   }
@@ -79,6 +82,70 @@ class _TelegramConnectionAdminPageState extends State<TelegramConnectionAdminPag
     await _reload();
     if(mounted)setState(()=>notice='Server confirmed the audited account change.');
    }
+  }catch(e){if(mounted)setState(()=>error=_error(e));}
+  finally{if(mounted)setState(()=>busy=false);}
+ }
+ Future<void> _authorize(TelegramStaffConnection item)async{
+  if(busy)return;
+  final alias=credentialAlias.text.trim();
+  if(!RegExp(r'^[A-Za-z0-9_-]{4,80}
+  appBar:AppBar(title:const Text('Telegram · Masana accounts'),actions:[
+   IconButton(tooltip:'Refresh',icon:const Icon(Icons.refresh),
+     onPressed:busy||loading?null:_reload)]),
+  body:ListView(padding:const EdgeInsets.all(16),children:[
+   Text('Masana: ${widget.characterId}',style:Theme.of(context).textTheme.titleMedium),
+   const SizedBox(height:10),
+   const Text('Register and verify the official bot identity in Masana Social Accounts first. '
+     'Link-only mode stays safe by default. An ops administrator must separately verify official '
+     'Telegram API authorization, server-side token vault access, consent and an expiry. '
+     'Do not paste bot tokens into this app.'),
+   TextField(controller:credentialAlias,autocorrect:false,enableSuggestions:false,
+    decoration:const InputDecoration(labelText:"Server-vault credential alias",
+     helperText:"Alias only. Never paste bot tokens or private keys here.")),
+   if(loading)const LinearProgressIndicator(),
+   if(error!=null)Column(children:[Text(error!,style:TextStyle(color:Theme.of(context).colorScheme.error)),
+     OutlinedButton(onPressed:_reload,child:const Text('Retry'))]),
+   if(!loading&&error==null&&accounts.isEmpty)
+     const Padding(padding:EdgeInsets.all(12),child:Text('No verified Telegram identity is configured.')),
+   for(final account in accounts)Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(
+    crossAxisAlignment:CrossAxisAlignment.start,children:[
+     Text(account.handle,style:Theme.of(context).textTheme.titleMedium),
+     Text('State: ${account.state} · ${account.verified?'verified':'unverified'}'),
+     Text(account.paused?'Paused: all messaging is disabled':
+       account.mode=='verified_automation_eligible'?'Eligibility recorded; runtime still subject to server gate':
+       'Link only: no automated messaging'),
+     if(account.state!='revoked')Wrap(children:[
+      if(account.verified&&account.state=='published'&&!account.paused)
+       FilledButton(onPressed:busy?null:()=>_authorize(account),
+        child:const Text('Validate official bot')),
+
+      OutlinedButton(onPressed:busy||account.paused?null:()=>_control(account,'pause'),
+        child:const Text('Pause')),
+      TextButton(onPressed:busy?null:()=>_control(account,'revoke'),
+        child:const Text('Revoke')),
+     ]),
+    ]))),
+   if(notice!=null)Text(notice!),
+  ]),
+ );
+}
+).hasMatch(alias)){
+   setState(()=>error="Choose an existing server-vault credential alias, never a bot token.");return;
+  }
+  final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+   title:const Text("Authorize official Telegram Bot API?"),
+   content:const Text("Server checks getMe, webhook ownership and an already stored credential. This action is audited and does not bypass the global messaging switch."),
+   actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text("Cancel")),
+    FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text("Verify"))]));
+  if(confirmed!=true||!mounted)return;
+  final char=widget.characterId;
+  setState((){busy=true;error=null;});
+  try{
+   await widget.dio.post<void>("/v1/admin/masana/${Uri.encodeComponent(char)}/telegram/"
+     "${Uri.encodeComponent(item.id)}/authorize",data:{"revision":item.revision,"credentialAlias":alias});
+   credentialAlias.clear();
+   if(mounted&&char==widget.characterId){await _reload();
+    if(mounted)setState(()=>notice="Official bot eligibility verified by server. Runtime may remain disabled.");}
   }catch(e){if(mounted)setState(()=>error=_error(e));}
   finally{if(mounted)setState(()=>busy=false);}
  }

@@ -19,7 +19,10 @@ export interface TelegramInboxStore {
 }
 export interface TelegramPrivateContentStore {
  /** Implementation uses the existing private encrypted object store with bounded TTL and ACL. */
- put(input:{tenantId:string;identityId:string;eventId:string;text:string}):Promise<string>;
+ /** The Telegram recipient ID remains inside the encrypted envelope; never SQL/outbox. */
+ put(input:{tenantId:string;identityId:string;eventId:string;chatId:string;text:string}):Promise<string>;
+ /** Delete orphaned encrypted content if consent changes or an event is duplicate. */
+ discard(input:{tenantId:string;identityId:string;encryptedRef:string}):Promise<void>;
 }
 export interface TelegramSecretVault {
  /** Per-bot webhook secret, acquired only by trusted server-side identity; never exposed to clients. */

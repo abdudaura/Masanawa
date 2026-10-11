@@ -26,9 +26,18 @@ export function registerTelegramIngressRoutes(app:FastifyInstance,p:TelegramIngr
    let encryptedRef:string|null=null;
    if(update.command===null && await p.inbox.isConsented(bot,hash)){
     encryptedRef=await p.privateContent.put({tenantId:bot.tenantId,identityId:identity,
-      eventId:telegramEventId(identity,update.updateId),text:update.text});
+      eventId:telegramEventId(identity,update.updateId),chatId:update.chatId,text:update.text});
    }
-   const result=await p.inbox.admit(bot,update,hash,encryptedRef);
+   let result;
+   try{result=await p.inbox.admit(bot,update,hash,encryptedRef);}
+   catch(e){
+    if(encryptedRef){try{await p.privateContent.discard({tenantId:bot.tenantId,
+      identityId:identity,encryptedRef});}catch{throw new TelegramIngressError(503,"telegram_private_cleanup_unavailable");}}
+    throw e;
+   }
+   if(encryptedRef&&result!=="queued"){
+    await p.privateContent.discard({tenantId:bot.tenantId,identityId:identity,encryptedRef});
+   }
    // Never reflect message text, chat ID, token or private payload reference to Telegram.
    return reply.code(result==="queued"?202:200).send({ok:true});
   }catch(e){
