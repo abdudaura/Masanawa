@@ -53,4 +53,25 @@ describe("YouTube source persistence and mandatory audit",()=>{
     expect(v.statements.some(s=>s.includes("UPDATE external_videos.youtube_subscriptions"))).toBe(false);
     expect(v.audit).not.toHaveBeenCalled();
   });
+  it("lists only the authenticated tenant using bound SQL, never a global source scan",async()=>{
+    const v=setup();
+    await v.store.list("tenant_a");
+    expect(v.client.query).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE tenant_id=$1 AND provider='youtube'"),["tenant_a"]);
+    expect(v.statements.some(sql=>/FROM external_videos.sources/u.test(sql)
+      && !sql.includes("tenant_id=$1"))).toBe(false);
+  });
+  it("a paused source update never targets other tenants, and audit failure rolls back",async()=>{
+    const v=setup();
+    v.audit.mockRejectedValueOnce(new Error("audit_unavailable"));
+    await expect(v.store.pause({tenantId:"tenant_a",id:"source_1",actorId:"staff_1"}))
+      .rejects.toThrow("audit_unavailable");
+    const updates=v.client.query.mock.calls.filter(([sql])=>
+      typeof sql==="string"&&sql.startsWith("UPDATE external_videos."));
+    expect(updates).toHaveLength(2);
+    for(const [,args] of updates) expect(args).toEqual(["tenant_a","source_1"]);
+    expect(v.statements).toContain("ROLLBACK");
+    expect(v.statements).not.toContain("COMMIT");
+  });
+
 });

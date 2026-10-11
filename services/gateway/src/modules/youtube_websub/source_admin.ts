@@ -18,7 +18,12 @@ export class SourceAdminError extends Error {
   constructor(readonly status:number,readonly code:string){super(code);}
 }
 function requireStaff(actor:VideoPrincipal):{tenantId:string;actorId:string}{
-  if(!actor.tenantId || actor.tenantId.length>200 || !actor.actorId ||
+  // The shared resolver must supply a real authenticated tenant and actor.
+  // Reject blank/control-only authorities even when a caller's role is staff.
+  if(!actor.tenantId || actor.tenantId.length>200 ||
+    !actor.tenantId.trim() || /[\u0000-\u001f\u007f]/u.test(actor.tenantId) ||
+    !actor.actorId || !actor.actorId.trim() ||
+    /[\u0000-\u001f\u007f]/u.test(actor.actorId) ||
     !actor.staffRoles.some(x=>x==="content_editor"||x==="ops_admin"||x==="super_admin")){
     throw new SourceAdminError(403,"video_source_staff_required");
   }
@@ -48,7 +53,7 @@ export function createYouTubeSourceAdminService(store:AdminYouTubeSourceStore){
     },
     async pause(actor:VideoPrincipal,id:string){
       const a=requireStaff(actor);
-      if(!/^[0-9a-f-]{36}$/iu.test(id)) throw new SourceAdminError(422,"invalid_source_id");
+      if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(id)) throw new SourceAdminError(422,"invalid_source_id");
       const ok=await store.pause({tenantId:a.tenantId,id,actorId:a.actorId});
       if(!ok) throw new SourceAdminError(404,"source_missing");
       return {paused:true};
