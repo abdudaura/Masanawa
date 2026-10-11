@@ -5,10 +5,13 @@ import 'package:masanawa/src/features/account/device_security_screen.dart';
 import 'package:masanawa/src/features/account/device_security_client.dart';
 class FakeTransport implements FanDevicesTransport {
   @override String ownerAccountId='fan-one';
-  bool current=true,fail=false,needsStepUp=false;
+  bool current=true,fail=false,needsStepUp=false,disabled=false;
   String? usedKey;
   @override bool get isCurrentAccount=>current;
   @override Future<List<FanDevice>> list()async {
+    if(disabled)throw DioException(requestOptions:RequestOptions(path:'/v1/account/devices'),
+      response:Response(requestOptions:RequestOptions(path:'/v1/account/devices'),
+        statusCode:503,data:{'code':'feature_disabled'}));
     if(fail)throw StateError('offline');
     return [FanDevice(id:'4eadd05d-d474-4fd0-848f-8c5791db63f6',
       startedAt:DateTime.utc(2026),lastSeenAt:DateTime.utc(2026),expiresAt:DateTime.utc(2027),current:false),
@@ -21,6 +24,17 @@ class FakeTransport implements FanDevicesTransport {
   }
 }
 void main(){
+  testWidgets('C09 disabled API hides cached sessions and gives honest unavailable state',(tester)async{
+    final t=FakeTransport()..disabled=true;
+    await tester.pumpWidget(MaterialApp(home:DeviceSecurityScreen(transport:t)));
+    await tester.pumpAndSettle();
+    expect(find.text('Device security is temporarily unavailable.'),findsOneWidget);
+    expect(find.text('Sign out'),findsNothing);
+    t.disabled=false;
+    await tester.tap(find.byTooltip('Refresh'));
+    await tester.pumpAndSettle();
+    expect(find.text('This device'),findsOneWidget);
+  });
   testWidgets('C09 only remote device offers sign out, with confirmation',(tester)async{
     final t=FakeTransport();
     await tester.pumpWidget(MaterialApp(home:DeviceSecurityScreen(transport:t)));
