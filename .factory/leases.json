@@ -2228,11 +2228,15 @@
       ],
       "branch": "lane/l-feed-a05-a06-editorial-review-20261011-gpt6-0907",
       "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
-      "source_pr": null,
+      "source_pr": 666,
       "claimed_at": "2026-10-11T08:10:40.507Z",
       "heartbeat_at": "2026-10-11T08:30:29.656Z",
       "expires_at": "2026-10-11T08:35:29.656Z",
-      "notes": "All paths exact and non-overlapping; AF00 owns migration registration / gateway and worker composition. Old direct staff publishing will fail closed."
+      "notes": "All paths exact and non-overlapping; AF00 owns migration registration / gateway and worker composition. Old direct staff publishing will fail closed.",
+      "released_at": "2026-10-11T08:33:55.310Z",
+      "release_reason": "L-FEED A05/A06 feature-owned 15 file source and test authorship PR #666 merged into nondeploying integration/rebuild bd60ba7664a78db5cc17a6fb69d697044e050110 from head cb79f27d4a12f8cc785f6ef6639c9a2b55765dea. AF00 #616 comment 6107171885: protected gateway/PG registry/Admin shell/worker composition outstanding. Toolchain/checkout unavailable and GH Jobs zero steps; TS/Vitest/PG18/Flutter/Android NOT_RUN. No deployment or finance changes.",
+      "source_head": "cb79f27d4a12f8cc785f6ef6639c9a2b55765dea",
+      "integration_head_sha": "bd60ba7664a78db5cc17a6fb69d697044e050110"
     }
   ],
   "history": [
