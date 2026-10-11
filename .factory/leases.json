@@ -1817,9 +1817,12 @@
       "heartbeat_at": "2026-10-11T04:57:18.980Z",
       "expires_at": "2026-10-11T05:02:18.980Z",
       "notes": "C54 client reuses existing canonical billed purchase route, PG store, receipt projection and webhook worker. New client, tests, J05 acceptance. AF00 root wiring not touched.",
-      "source_head": "0c014f26099851297e78aa948fce14365cf2b0d8",
+      "source_head": "f9aec54a39872ddd4e6604e44741b948155314d9",
       "source_pr": 651,
-      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/651"
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/651",
+      "integration_head_sha": "eaf840667e63cbe61981f8ff7a377c02e04091da",
+      "released_at": "2026-10-11T05:00:23.519Z",
+      "release_reason": "Reviewed source-only #651 merged to non-deploying integration/rebuild; post-merge SHA eaf840667e63cbe61981f8ff7a377c02e04091da. AF00 root C54 mounting and real CI/PG18/Flutter/Android/provider tests explicitly outstanding; exact-head hosted CI 0-step FAILED/BLOCKED; no main/production merge."
     },
     {
       "claim_id": "l-shell-c05-account-20261011-gpt6-0556",
