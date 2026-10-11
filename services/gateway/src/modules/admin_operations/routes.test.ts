@@ -39,6 +39,18 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
   expect(call).toHaveBeenCalledWith({name:"calls",enabled:false,
     expectedRevision:0,idempotencyKey:"request-xyz",reason:"Emergency service shutdown"});
  });
+ it("keeps flags preview in the scoped HTTP forbidden error handler",async()=>{
+  const app=create();
+  const reply=await app.inject({method:"GET",url:"/v1/admin/ops/flags/preview?name=posting&enabled=true"});
+  expect(reply.statusCode).toBe(403);
+  expect(reply.json()).toEqual({code:"admin_ops.forbidden"});
+ });
+ it("rejects malformed preview requests with typed 400, never a generic 500",async()=>{
+  const app=create();
+  const reply=await app.inject({method:"GET",url:"/v1/admin/ops/flags/preview?name=unknown&enabled=maybe"});
+  expect(reply.statusCode).toBe(400);
+  expect(reply.json()).toEqual({code:"admin_ops.invalid"});
+ });
  it("denies unknown staff roles through live HTTP",async()=>{
   const app=create();const reply=await app.inject({method:"GET",url:"/v1/admin/staff"});
   expect(reply.statusCode).toBe(403);
