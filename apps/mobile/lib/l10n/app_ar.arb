@@ -67,7 +67,6 @@
   "languageHausaUnavailable": "جارٍ استكمال دعم واجهة التطبيق باللغة الهوساوية.",
   "languageSelected": "محدد",
   "platformAgentsTab": "وكلاء Masanawa",
-  "twinsTab": "التوائم",
   "searchPlatformAgents": "ابحث عن وكلاء Masanawa",
   "clearAgentSearch": "مسح بحث الوكلاء",
   "agentsLoadFailed": "تعذّر تحميل الوكلاء. حاول مجددًا.",
@@ -75,15 +74,7 @@
   "noMatchingAgents": "لا يوجد وكلاء يطابقون بحثك.",
   "gwaniUnavailableRetry": "Gwani غير متاح. حاول مجددًا بعد قليل.",
   "gwaniUnavailableNow": "Gwani غير متاح الآن.",
-  "privateTwinTalkUnavailable": "المحادثة الخاصة مع {name} غير متاحة بعد.",
-  "viewTwinProfile": "عرض الملف الشخصي",
   "searchTalks": "البحث في المحادثات",
-  "searchPublicTwins": "البحث عن التوائم العامة",
-  "clearTwinSearch": "مسح البحث",
-  "myTwin": "توأمي",
-  "publicTwin": "توأم عام",
-  "noPublicTwins": "لم يتم العثور على توائم عامة.",
-  "publicTwinsLoadFailed": "تعذّر تحميل التوائم العامة. حاول مجددًا.",
   "loadMore": "تحميل المزيد",
   "statusAvailable": "متاح",
   "statusListening": "يستمع…",
@@ -92,5 +83,53 @@
   "statusOffline": "غير متصل",
   "statusUnverified": "الحالة غير مؤكدة",
   "statusWorkingTasks": "{count, plural, =1{يعمل · مهمة واحدة} =2{يعمل · مهمتان} few{يعمل · {count} مهام} many{يعمل · {count} مهمة} other{يعمل · {count} مهمة}}",
-  "twinShareText": "تحدث مع {name} على Masanawa: {url}"
+  "chats": "Chats",
+  "@chats": {
+    "description": "Bottom navigation: Masana conversations"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "Bottom navigation: Masana status updates"
+  },
+  "calls": "Calls",
+  "@calls": {
+    "description": "Bottom navigation: voice and video calls"
+  },
+  "rooms": "Rooms",
+  "@rooms": {
+    "description": "Bottom navigation: audio group rooms"
+  },
+  "passwordCreateTitle": "Create a password",
+  "@passwordCreateTitle": {
+    "description": "Password setup heading for an unregistered phone number"
+  },
+  "passwordConfirmTitle": "Repeat your password",
+  "@passwordConfirmTitle": {
+    "description": "Password setup confirmation heading"
+  },
+  "passwordCreateSubtitle": "Six digits. You will need it when you sign in on a new device.",
+  "@passwordCreateSubtitle": {
+    "description": "Password setup explanation"
+  },
+  "passwordEnterTitle": "Enter your password",
+  "@passwordEnterTitle": {
+    "description": "Password entry heading for a registered number on a new device"
+  },
+  "passwordEnterSubtitle": "Six-digit password for {identifier}",
+  "@passwordEnterSubtitle": {
+    "description": "Password entry subtitle naming the phone number",
+    "placeholders": {
+      "identifier": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordMismatch": "Passwords do not match. Try again.",
+  "@passwordMismatch": {
+    "description": "Password setup confirmation mismatch"
+  },
+  "passwordSignIn": "Sign in",
+  "@passwordSignIn": {
+    "description": "Password entry submit button"
+  }
 }

@@ -67,7 +67,6 @@
   "languageHausaUnavailable": "Ana kammala tallafin harshen Hausa na manhaja.",
   "languageSelected": "An zaɓa",
   "platformAgentsTab": "Wakilan Masanawa",
-  "twinsTab": "Tagwayen AI",
   "searchPlatformAgents": "Nemo wakilan Masanawa",
   "clearAgentSearch": "Share binciken wakilai",
   "agentsLoadFailed": "Ba a iya ɗauko wakilai ba. Sake gwadawa.",
@@ -75,15 +74,7 @@
   "noMatchingAgents": "Babu wakilin da ya dace da bincikenka.",
   "gwaniUnavailableRetry": "Ba a samun Gwani a yanzu. Sake gwadawa nan gaba kaɗan.",
   "gwaniUnavailableNow": "Ba a samun Gwani a yanzu.",
-  "privateTwinTalkUnavailable": "Ba a samun hira ta sirri da {name} a yanzu.",
-  "viewTwinProfile": "Duba bayanan martaba",
   "searchTalks": "Nemo hirarraki",
-  "searchPublicTwins": "Nemo tagwayen AI na jama'a",
-  "clearTwinSearch": "Share bincike",
-  "myTwin": "Tagwayena",
-  "publicTwin": "Tagwayen AI na jama'a",
-  "noPublicTwins": "Ba a sami tagwayen AI na jama'a ba.",
-  "publicTwinsLoadFailed": "Ba a iya ɗauko tagwayen AI na jama'a ba. Sake gwadawa.",
   "loadMore": "Ƙara nunawa",
   "statusAvailable": "Akwai",
   "statusListening": "Yana sauraro…",
@@ -92,5 +83,53 @@
   "statusOffline": "Ba ya kan layi",
   "statusUnverified": "Ba a tabbatar da halinsa ba",
   "statusWorkingTasks": "{count, plural, =1{Yana aiki · aiki 1} other{Yana aiki · ayyuka {count}}}",
-  "twinShareText": "Yi hira da {name} a Masanawa: {url}"
+  "chats": "Chats",
+  "@chats": {
+    "description": "Bottom navigation: Masana conversations"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "Bottom navigation: Masana status updates"
+  },
+  "calls": "Calls",
+  "@calls": {
+    "description": "Bottom navigation: voice and video calls"
+  },
+  "rooms": "Rooms",
+  "@rooms": {
+    "description": "Bottom navigation: audio group rooms"
+  },
+  "passwordCreateTitle": "Create a password",
+  "@passwordCreateTitle": {
+    "description": "Password setup heading for an unregistered phone number"
+  },
+  "passwordConfirmTitle": "Repeat your password",
+  "@passwordConfirmTitle": {
+    "description": "Password setup confirmation heading"
+  },
+  "passwordCreateSubtitle": "Six digits. You will need it when you sign in on a new device.",
+  "@passwordCreateSubtitle": {
+    "description": "Password setup explanation"
+  },
+  "passwordEnterTitle": "Enter your password",
+  "@passwordEnterTitle": {
+    "description": "Password entry heading for a registered number on a new device"
+  },
+  "passwordEnterSubtitle": "Six-digit password for {identifier}",
+  "@passwordEnterSubtitle": {
+    "description": "Password entry subtitle naming the phone number",
+    "placeholders": {
+      "identifier": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordMismatch": "Passwords do not match. Try again.",
+  "@passwordMismatch": {
+    "description": "Password setup confirmation mismatch"
+  },
+  "passwordSignIn": "Sign in",
+  "@passwordSignIn": {
+    "description": "Password entry submit button"
+  }
 }

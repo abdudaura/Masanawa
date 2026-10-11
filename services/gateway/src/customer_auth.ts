@@ -1,5 +1,6 @@
 import {
   createOtpCode,
+  hashDevicePassword,
   hashOtpCode,
   hashPlatformSessionToken,
   mintPlatformSessionToken,
@@ -77,6 +78,26 @@ export interface CustomerAuthService {
     code: string;
     name?: string;
   }>): Promise<AuthTokensView>;
+  accountStatus(input: Readonly<{
+    phone: string;
+    deviceId: string;
+  }>): Promise<Readonly<{ registered: boolean; deviceKnown: boolean }>>;
+  deviceRestore(input: Readonly<{
+    phone: string;
+    deviceId: string;
+  }>): Promise<AuthTokensView>;
+  passwordVerify(input: Readonly<{
+    phone: string;
+    deviceId: string;
+    password: string;
+  }>): Promise<AuthTokensView>;
+  passwordSetup(input: Readonly<{
+    phone: string;
+    deviceId: string;
+    password: string;
+    name: string;
+    email?: string;
+  }>): Promise<AuthTokensView>;
   refresh(input: Readonly<{ refreshToken: string }>): Promise<AuthTokensView>;
   logout(input: Readonly<{ authorizationHeader: string | undefined }>): Promise<void>;
 }
@@ -116,6 +137,16 @@ function authUser(profile: PlatformAuthProfile, isNewUser: boolean): AuthUserVie
     stateId: null,
     createdAt: profile.createdAt,
   });
+}
+
+function assertDeviceId(deviceId: string): string {
+  if (!/^[0-9a-f]{32}$/u.test(deviceId)) throw new CustomerAuthError("VALIDATION_FAILED", 400);
+  return deviceId;
+}
+
+function assertPassword(password: string): string {
+  if (!/^\d{6}$/u.test(password)) throw new CustomerAuthError("VALIDATION_FAILED", 400);
+  return password;
 }
 
 function bearer(header: string | undefined): string | null {
@@ -313,6 +344,176 @@ export function createCustomerAuthService(input: Readonly<{
       return issueTokens(
         Object.freeze({ tenantId: profile.tenantId, userId: profile.userId, profile }),
         false,
+      );
+    },
+
+    async accountStatus(request) {
+      let normalized;
+      try {
+        normalized = normalizePlatformAuthIdentifier({ phone: request.phone });
+      } catch {
+        throw new CustomerAuthError("VALIDATION_FAILED", 400);
+      }
+      const deviceId = assertDeviceId(request.deviceId);
+      const observedAt = now();
+      const profile = await input.repository.resolveProfile({
+        tenantId: input.tenantId,
+        channel: normalized.channel,
+        identifier: normalized.identifier,
+        observedAt,
+      });
+      if (!profile) return Object.freeze({ registered: false, deviceKnown: false });
+      const deviceKnown = await input.repository.isDeviceKnown({
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        deviceId,
+      });
+      return Object.freeze({ registered: true, deviceKnown });
+    },
+
+    async deviceRestore(request) {
+      let normalized;
+      try {
+        normalized = normalizePlatformAuthIdentifier({ phone: request.phone });
+      } catch {
+        throw new CustomerAuthError("VALIDATION_FAILED", 400);
+      }
+      const deviceId = assertDeviceId(request.deviceId);
+      const at = now();
+      const profile = await input.repository.resolveProfile({
+        tenantId: input.tenantId,
+        channel: normalized.channel,
+        identifier: normalized.identifier,
+        observedAt: at,
+      });
+      if (!profile) throw new CustomerAuthError("ACCOUNT_NOT_FOUND", 404);
+      const known = await input.repository.isDeviceKnown({
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        deviceId,
+      });
+      if (!known) throw new CustomerAuthError("DEVICE_CHALLENGE", 401);
+      await input.repository.registerDevice({
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        deviceId,
+        at,
+      });
+      return issueTokens(
+        Object.freeze({ tenantId: profile.tenantId, userId: profile.userId, profile }),
+        false,
+      );
+    },
+
+    async passwordVerify(request) {
+      let normalized;
+      try {
+        normalized = normalizePlatformAuthIdentifier({ phone: request.phone });
+      } catch {
+        throw new CustomerAuthError("VALIDATION_FAILED", 400);
+      }
+      const deviceId = assertDeviceId(request.deviceId);
+      const password = assertPassword(request.password);
+      const at = now();
+      const profile = await input.repository.resolveProfile({
+        tenantId: input.tenantId,
+        channel: normalized.channel,
+        identifier: normalized.identifier,
+        observedAt: at,
+      });
+      if (!profile) throw new CustomerAuthError("ACCOUNT_NOT_FOUND", 404);
+      const passwordHash = hashDevicePassword({
+        pepper: input.otpPepper,
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        password,
+      });
+      const result = await input.repository.verifyPasswordCredential({
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        passwordHash,
+        at,
+      });
+      if (result === "missing") throw new CustomerAuthError("PASSWORD_NOT_SET", 409);
+      if (result === "locked") throw new CustomerAuthError("PASSWORD_LOCKED", 429);
+      if (result !== "accepted") throw new CustomerAuthError("PASSWORD_INVALID", 400);
+      await input.repository.registerDevice({
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        deviceId,
+        at,
+      });
+      return issueTokens(
+        Object.freeze({ tenantId: profile.tenantId, userId: profile.userId, profile }),
+        false,
+      );
+    },
+
+    async passwordSetup(request) {
+      let normalized;
+      try {
+        normalized = normalizePlatformAuthIdentifier({ phone: request.phone });
+      } catch {
+        throw new CustomerAuthError("VALIDATION_FAILED", 400);
+      }
+      const deviceId = assertDeviceId(request.deviceId);
+      const password = assertPassword(request.password);
+      const name = request.name.trim();
+      if (!name || name.length > 160) throw new CustomerAuthError("VALIDATION_FAILED", 400);
+      let email: string | null = null;
+      if (request.email !== undefined) {
+        try {
+          email = normalizePlatformAuthIdentifier({ email: request.email }).identifier;
+        } catch {
+          throw new CustomerAuthError("VALIDATION_FAILED", 400);
+        }
+      }
+      const createdAt = now();
+      const existing = await input.repository.resolveProfile({
+        tenantId: input.tenantId,
+        channel: normalized.channel,
+        identifier: normalized.identifier,
+        observedAt: createdAt,
+      });
+      if (existing) throw new CustomerAuthError("ACCOUNT_EXISTS", 409);
+      let profile = await input.repository.createProfile({
+        tenantId: input.tenantId,
+        channel: normalized.channel,
+        identifier: normalized.identifier,
+        name,
+        locale: "en-NG",
+        createdAt,
+      });
+      await input.repository.setPasswordCredential({
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        passwordHash: hashDevicePassword({
+          pepper: input.otpPepper,
+          tenantId: input.tenantId,
+          userId: profile.userId,
+          password,
+        }),
+        createdAt,
+      });
+      if (email) {
+        const attached = await input.repository.attachIdentity({
+          tenantId: input.tenantId,
+          userId: profile.userId,
+          channel: "email",
+          identifier: email,
+          linkedAt: createdAt,
+        });
+        if (attached) profile = attached;
+      }
+      await input.repository.registerDevice({
+        tenantId: input.tenantId,
+        userId: profile.userId,
+        deviceId,
+        at: createdAt,
+      });
+      return issueTokens(
+        Object.freeze({ tenantId: profile.tenantId, userId: profile.userId, profile }),
+        true,
       );
     },
 

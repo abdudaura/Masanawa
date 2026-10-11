@@ -43,7 +43,7 @@ final class LocalePreferenceController extends ChangeNotifier {
   bool _saving = false;
   Future<void>? _pendingLoad;
 
-  Locale? get override => _override;
+  Locale? get localeOverride => _override;
   bool get loaded => _loaded;
 
   static Locale? validate(String? languageCode) {

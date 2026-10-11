@@ -149,6 +149,66 @@ class ApiClient {
     return AuthTokens.fromJson(data);
   }
 
+  // ---- Password auth (U-auth-pw) ----
+  // Declared Gateway contract for the 6-digit device password. Email keeps
+  // real OTP. Every call fails closed (ApiException) when the server has not
+  // implemented the endpoint yet; the UI surfaces that honestly.
+
+  Future<AccountStatusResponse> authAccountStatus({
+    required String phone,
+    required String deviceId,
+  }) async {
+    final data = await _get(
+      '/v1/auth/account/status',
+      queryParameters: {'phone': phone, 'deviceId': deviceId},
+    );
+    return AccountStatusResponse.fromJson(data);
+  }
+
+  Future<AuthTokens> deviceRestore({
+    required String phone,
+    required String deviceId,
+  }) async {
+    final data = await _post('/v1/auth/device/restore', {
+      'phone': phone,
+      'deviceId': deviceId,
+    });
+    return AuthTokens.fromJson(data);
+  }
+
+  Future<AuthTokens> passwordVerify({
+    required String phone,
+    required String deviceId,
+    required String password,
+  }) async {
+    final data = await _post(
+      '/v1/auth/password/verify',
+      PasswordVerifyRequest(phone: phone, deviceId: deviceId, password: password)
+          .toJson(),
+    );
+    return AuthTokens.fromJson(data);
+  }
+
+  Future<AuthTokens> passwordSetup({
+    required String phone,
+    required String deviceId,
+    required String password,
+    required String name,
+    String? email,
+  }) async {
+    final data = await _post(
+      '/v1/auth/password/setup',
+      PasswordSetupRequest(
+        phone: phone,
+        deviceId: deviceId,
+        password: password,
+        name: name,
+        email: email,
+      ).toJson(),
+    );
+    return AuthTokens.fromJson(data);
+  }
+
   Future<AuthTokens> refresh(String refreshToken) async {
     final data = await _post('/auth/refresh', {'refreshToken': refreshToken});
     return AuthTokens.fromJson(data);

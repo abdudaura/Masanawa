@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/l10n/app_localizations.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
-import 'package:masanawa/src/screens/twin/twin_home_shell.dart';
+import 'package:masanawa/src/agents/agent_presence_labels.dart';
 
 AgentDirectoryEntry _agent(AgentPresence presence, {int count = 0}) =>
     AgentDirectoryEntry(
@@ -70,16 +70,10 @@ void main() {
     for (final code in ['en', 'ha', 'ar', 'fr', 'es', 'pt']) {
       final strings = await AppLocalizations.delegate.load(Locale(code));
       expect(strings.agentsLoadFailed.trim(), isNotEmpty);
-      expect(strings.publicTwinsLoadFailed.trim(), isNotEmpty);
+      expect(strings.noMatchingAgents.trim(), isNotEmpty);
       expect(strings.retry.trim(), isNotEmpty);
-      expect(strings.privateTwinTalkUnavailable('Amina Twin'),
-          contains('Amina Twin'));
-      final share = strings.twinShareText(
-        'Amina Twin', 'https://masanawa.com/t/abc',
-      );
-      expect(share, contains('Amina Twin'));
-      expect(share, contains('https://masanawa.com/t/abc'));
-
+      expect(strings.otpSentTo('user@example.com'),
+          contains('user@example.com'));
     }
   });
 }

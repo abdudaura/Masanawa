@@ -109,7 +109,6 @@ import {
   createCreatorCloneService,
   type CreatorCloneAuthorizer,
 } from "./creator_clone.js";
-import { createAutomaticCloneCoreProvisioner, createCloneOnboardingService } from "./clone_onboarding.js";
 import { createCreatorEconomyService } from "./creator_economy.js";
 import { createCreatorSkillService } from "./creator_skills.js";
 import {
@@ -1589,27 +1588,6 @@ export async function startGatewayService(
         })
       : undefined);
 
-  const composedCloneOnboarding = options.appOptions?.cloneOnboarding ??
-    (creatorCloneAuthorizer && composedCreatorClone && composedDirectory &&
-     database.cloneSetups && database.personalClones &&
-     database.characterSkillAssignments && database.skills &&
-     database.skillGuides && database.skillDistribution
-      ? createCloneOnboardingService({
-          authorizer: creatorCloneAuthorizer,
-          setups: database.cloneSetups,
-          clones: composedCreatorClone,
-          directory: composedDirectory,
-          core: createAutomaticCloneCoreProvisioner({
-            authorizer: creatorCloneAuthorizer,
-            personalClones: database.personalClones,
-            assignments: database.characterSkillAssignments,
-            skills: database.skills,
-            guides: database.skillGuides,
-            distribution: database.skillDistribution,
-          }),
-        })
-      : undefined);
-
   const composedCryptoAssistant: AgentCryptoAssistant | undefined =
     composedFinancial && database.cryptoChatActions
       ? createAgentCryptoAssistant({
@@ -2268,7 +2246,6 @@ export async function startGatewayService(
       ...(liveVoiceTokens ? { liveVoiceTokens } : {}),
       ...(composedPush ? { mobilePush: composedPush } : {}),
       ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),
-      ...(composedCloneOnboarding ? { cloneOnboarding: composedCloneOnboarding } : {}),
       ...(composedCreatorEconomy
         ? { creatorEconomy: composedCreatorEconomy }
         : {}),

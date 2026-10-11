@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dio/dio.dart';
 import 'package:masanawa/main.dart';
 import 'package:masanawa/src/screens/onboarding/phone_login_screen.dart';
+import 'package:masanawa/src/ui/components/logo.dart';
 import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
@@ -43,7 +44,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('Masanawa'), findsWidgets);
+    expect(find.byType(MasanawaLogo), findsOneWidget);
     expect(find.byType(PhoneLoginScreen), findsNothing);
     expect(tester.takeException(), isNull);
 

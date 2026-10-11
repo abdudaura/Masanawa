@@ -30,6 +30,10 @@ class ColorTokens {
     required this.surfaceCard,
     required this.surfaceMuted,
     required this.structuralBorder,
+    required this.bubbleOut,
+    required this.chatBg,
+    required this.tickRead,
+    required this.chatNotice,
   });
 
   final String brandPrimary;
@@ -45,6 +49,19 @@ class ColorTokens {
   final String surfaceCard;
   final String surfaceMuted;
   final String structuralBorder;
+
+  /// Outgoing message bubble. Values read from the WhatsApp 2.26 APK
+  /// (light #D9FDD3 verified; dark #144D37 evidence-matched).
+  final String bubbleOut;
+
+  /// Conversation background (light classic #EFEAE2; dark #0B141A verified).
+  final String chatBg;
+
+  /// Read-receipt blue, both modes (verified #53BDEB in the APK).
+  final String tickRead;
+
+  /// Encryption-notice yellow (visual match; not file-verified).
+  final String chatNotice;
 }
 
 /// Semantic color roles, light + dark pairs. Values match
@@ -62,11 +79,15 @@ final class MasanawaTokens {
     warning: '#F59E0B',
     success: '#25D366',
     textPrimary: '#111B21',
-    textMuted: '#667781',
+    textMuted: '#54656F',
     surfaceBg: '#F0F2F5',
     surfaceCard: '#FFFFFF',
     surfaceMuted: '#E7FCEB',
     structuralBorder: '#E9EDEF',
+    bubbleOut: '#D9FDD3',
+    chatBg: '#EFEAE2',
+    tickRead: '#53BDEB',
+    chatNotice: '#FFD279',
   );
 
   static const ColorTokens dark = ColorTokens(
@@ -79,10 +100,14 @@ final class MasanawaTokens {
     success: '#00A884',
     textPrimary: '#E9EDEF',
     textMuted: '#8696A0',
-    surfaceBg: '#111B21',
+    surfaceBg: '#0B141A',
     surfaceCard: '#202C33',
     surfaceMuted: '#2A3942',
     structuralBorder: '#2F3B43',
+    bubbleOut: '#144D37',
+    chatBg: '#0B141A',
+    tickRead: '#53BDEB',
+    chatNotice: '#FFD279',
   );
 
   /// 4px spacing grid.

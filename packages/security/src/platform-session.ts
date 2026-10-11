@@ -21,6 +21,8 @@ export interface PlatformSessionIdentity {
 
 export type OtpConsumeResult = "accepted" | "invalid" | "expired" | "locked" | "missing";
 
+export type PasswordVerifyResult = "accepted" | "invalid" | "locked" | "missing";
+
 export interface PlatformSessionRepository {
   putOtpChallenge(input: Readonly<{
     tenantId: TenantId; channel: PlatformAuthChannel; identifier: string; codeHash: string;
@@ -40,6 +42,21 @@ export interface PlatformSessionRepository {
   createProfile(input: Readonly<{
     tenantId: TenantId; channel: PlatformAuthChannel; identifier: string; name: string; locale: string; createdAt: string;
   }>): Promise<PlatformAuthProfile>;
+  setPasswordCredential(input: Readonly<{
+    tenantId: TenantId; userId: UserId; passwordHash: string; createdAt: string;
+  }>): Promise<void>;
+  verifyPasswordCredential(input: Readonly<{
+    tenantId: TenantId; userId: UserId; passwordHash: string; at: string;
+  }>): Promise<PasswordVerifyResult>;
+  registerDevice(input: Readonly<{
+    tenantId: TenantId; userId: UserId; deviceId: string; at: string;
+  }>): Promise<void>;
+  isDeviceKnown(input: Readonly<{
+    tenantId: TenantId; userId: UserId; deviceId: string;
+  }>): Promise<boolean>;
+  attachIdentity(input: Readonly<{
+    tenantId: TenantId; userId: UserId; channel: PlatformAuthChannel; identifier: string; linkedAt: string;
+  }>): Promise<PlatformAuthProfile | null>;
   issueSession(input: Readonly<{
     identity: PlatformSessionIdentity; accessHash: string; refreshHash: string;
     accessExpiresAt: string; refreshExpiresAt: string; issuedAt: string;
@@ -79,6 +96,18 @@ export function hashOtpCode(input: Readonly<{
   if (input.pepper.length < 32) throw new TypeError("auth.otp_pepper_too_short");
   return createHmac("sha256", input.pepper)
     .update(`${input.tenantId}\0${input.channel}\0${input.identifier}\0${input.code}`, "utf8")
+    .digest("hex");
+}
+
+export function hashDevicePassword(input: Readonly<{
+  pepper: string; tenantId: TenantId; userId: UserId; password: string;
+}>): string {
+  if (!/^\d{6}$/u.test(input.password)) throw new TypeError("auth.password_invalid");
+  if (input.pepper.length < 32) throw new TypeError("auth.password_pepper_too_short");
+  // Domain-separated from OTP hashes by construction (tenant\0user\0password
+  // vs tenant\0channel\0identifier\0code), so sharing the pepper is sound.
+  return createHmac("sha256", input.pepper)
+    .update(`${input.tenantId}\0${input.userId}\0${input.password}`, "utf8")
     .digest("hex");
 }
 

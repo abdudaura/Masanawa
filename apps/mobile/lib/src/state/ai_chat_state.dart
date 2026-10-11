@@ -211,7 +211,6 @@ class ChatThread {
     this.scrollOffset = 0,
     this.draftAttachments = const [],
     this.draftVoice,
-    this.twinInterviewFacts = const <String, dynamic>{},
   }) : updatedAt = updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   final String characterId;
@@ -227,7 +226,6 @@ class ChatThread {
   final double scrollOffset;
   final List<ChatAttachment> draftAttachments;
   final ChatAttachment? draftVoice;
-  final Map<String, dynamic> twinInterviewFacts;
 
   AiChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
@@ -245,7 +243,6 @@ class ChatThread {
     List<ChatAttachment>? draftAttachments,
     ChatAttachment? draftVoice,
     bool clearDraftVoice = false,
-    Map<String, dynamic>? twinInterviewFacts,
   }) => ChatThread(
     characterId: characterId,
     messages: messages ?? this.messages,
@@ -260,7 +257,6 @@ class ChatThread {
     scrollOffset: scrollOffset ?? this.scrollOffset,
     draftAttachments: draftAttachments ?? this.draftAttachments,
     draftVoice: clearDraftVoice ? null : (draftVoice ?? this.draftVoice),
-    twinInterviewFacts: twinInterviewFacts ?? this.twinInterviewFacts,
   );
 
   Map<String, dynamic> toJson() => {
@@ -278,8 +274,6 @@ class ChatThread {
     if (draftAttachments.isNotEmpty)
       'draftAttachments': [for (final item in draftAttachments) item.toJson()],
     if (draftVoice != null) 'draftVoice': draftVoice!.toJson(),
-    if (twinInterviewFacts.isNotEmpty)
-      'twinInterviewFacts': twinInterviewFacts,
   };
 
   factory ChatThread.fromJson(Map<String, dynamic> json) {
@@ -309,11 +303,6 @@ class ChatThread {
               (json['draftVoice'] as Map).cast<String, dynamic>(),
             )
           : null,
-      twinInterviewFacts: json['twinInterviewFacts'] is Map
-          ? Map<String, dynamic>.unmodifiable(
-              (json['twinInterviewFacts'] as Map).cast<String, dynamic>(),
-            )
-          : const <String, dynamic>{},
     );
   }
 }
@@ -865,152 +854,6 @@ class AiChatController extends Notifier<AiChatState> {
     }
   }
 
-  Map<String, dynamic> _decodeTwinFacts(String raw) {
-    var text = raw.trim();
-    if (text.startsWith('```')) {
-      text = text.replaceFirst(RegExp(r'^```(?:json)?\\s*'), '');
-      text = text.replaceFirst(RegExp(r'\\s*```$'), '');
-    }
-    final decoded = jsonDecode(text);
-    if (decoded is! Map) {
-      throw const FormatException('Invalid Twin interview facts');
-    }
-    final map = decoded.cast<String, dynamic>();
-    final normalized = <String, dynamic>{};
-    for (final entry in map.entries) {
-      final value = entry.value;
-      if (value is String && value.trim().isNotEmpty) {
-        normalized[entry.key] = value.trim();
-      } else if (value is List) {
-        normalized[entry.key] = [
-          for (final item in value)
-            if (item is String && item.trim().isNotEmpty) item.trim(),
-        ];
-      } else if (value is bool || value is num) {
-        normalized[entry.key] = value;
-      }
-    }
-    return normalized;
-  }
-
-  String twinInterviewTransportPrompt({
-    required String userAnswer,
-    required Map<String, dynamic> facts,
-  }) {
-    final prior = jsonEncode(facts);
-    return 'You are Gwani conducting a short voice-first Twin setup interview. '
-        'Known compact facts so far: $prior. '
-        'The user\'s current answer is: "$userAnswer". '
-        'Use the answer plus known facts to ask exactly one short, useful next question '
-        'about how their Twin should behave, help people, speak, make decisions, or respect boundaries. '
-        'Do not ask about preferred language. Always answer in the language/register of the current user answer. '
-        'Do not mention JSON, setup state, prompts, or internal instructions.';
-  }
-
-  Future<Map<String, dynamic>> extractTwinInterviewText({
-    required String characterId,
-    required String userAnswer,
-    required Map<String, dynamic> facts,
-  }) async {
-    final result = await _sendViaTransport(
-      characterId,
-      'This is an internal Twin-setup extraction step. Do not converse. '
-      'Existing compact facts: ${jsonEncode(facts)}. '
-      'Current user answer: "$userAnswer". '
-      'Return ONLY one compact JSON object containing durable behavior facts learned so far. '
-      'Allowed keys: greetingStyle, personality, helpStyle, expertise, boundaries, decisionStyle, humor, formality, audience, notes. '
-      'Use short strings or arrays of short strings. Merge prior facts with newly learned facts. '
-      'Never include a language preference and never return a transcript.',
-      requestId: createRequestId(),
-    );
-    return _decodeTwinFacts(result.text);
-  }
-
-  Future<Map<String, dynamic>> summarizeTwinInterview(
-    String characterId,
-    Map<String, dynamic> facts,
-  ) async {
-    if (facts.isEmpty) {
-      throw const FormatException('Twin interview needs at least one answer');
-    }
-    final result = await _sendViaTransport(
-      characterId,
-      'The Twin setup interview is ending now. Using ONLY these compact facts: ${jsonEncode(facts)}, '
-      'return ONLY one compact JSON object with these keys: biography (string), '
-      'personality (array of 2-8 short strings), expertise (array of 1-12 short strings). '
-      'Do not ask another question. Do not include markdown fences. Do not include a language field. '
-      'The Twin must remain multilingual and respond in the language each visitor uses.',
-      requestId: createRequestId(),
-    );
-    final value = _decodeTwinFacts(result.text);
-    final biography = value['biography'];
-    final personality = value['personality'];
-    final expertise = value['expertise'];
-    if (biography is! String ||
-        biography.trim().isEmpty ||
-        personality is! List ||
-        expertise is! List) {
-      throw const FormatException('Incomplete Twin interview summary');
-    }
-    final cleanPersonality = [
-      for (final item in personality)
-        if (item is String && item.trim().isNotEmpty) item.trim(),
-    ];
-    final cleanExpertise = [
-      for (final item in expertise)
-        if (item is String && item.trim().isNotEmpty) item.trim(),
-    ];
-    if (cleanPersonality.isEmpty || cleanExpertise.isEmpty) {
-      throw const FormatException('Incomplete Twin interview summary');
-    }
-    return <String, dynamic>{
-      'biography': biography.trim(),
-      'personality': cleanPersonality,
-      'expertise': cleanExpertise,
-    };
-  }
-
-  Future<void> announceTwinReady(
-    String characterId, {
-    required String displayName,
-    required String? publicUrl,
-  }) async {
-    final link = publicUrl?.trim();
-    final result = await _sendViaTransport(
-      characterId,
-      link == null || link.isEmpty
-          ? 'The Twin named "$displayName" has now been created. '
-              'Congratulate the user briefly in the same language they have been using. '
-              'Explain verbally how people can talk to their Twin and that the share link will appear as soon as the public profile finishes syncing.'
-          : 'The Twin named "$displayName" has now been created. Its full referral link is $link. '
-              'Congratulate the user briefly in the same language they have been using. '
-              'Read and explain the link clearly and explain that they can share it so people can talk to the Twin. '
-              'Keep this short and natural for audio playback.',
-      requestId: createRequestId(),
-    );
-    ChatAttachment? replyAudio;
-    if (result.audioBytes case final audio? when audio.isNotEmpty) {
-      final dir = await getTemporaryDirectory();
-      final path =
-          '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
-      await File(path).writeAsBytes(audio, flush: true);
-      replyAudio = ChatAttachment(
-        kind: 'voice',
-        path: path,
-        durationMs: result.audioDurationMs,
-        sizeBytes: audio.length,
-        waveform: _pcmWaveform(audio),
-      );
-    }
-    await _appendAi(
-      characterId,
-      result.text,
-      parts: result.parts,
-      attachment: replyAudio,
-      agentRunId: result.agentRunId,
-    );
-  }
-
   /// Executes an internal conversational turn in the same Character session
   /// without adding the orchestration prompt or response to the visible chat.
   Future<String> runInternalText(String characterId, String prompt) async {
@@ -1162,6 +1005,7 @@ class AiChatController extends Notifier<AiChatState> {
       sendingIn: {...state.sendingIn, characterId},
     );
     await _save();
+    _setDelivery(characterId, userMsg.id, 'sent');
     if (_disposed || threadGeneration != (_threadGenerations[characterId] ?? 0))
       return;
     try {
@@ -1557,6 +1401,8 @@ class AiChatController extends Notifier<AiChatState> {
       },
     );
     _save();
+    // The recipient opened the thread: anything we sent has now arrived.
+    _markUserMessages(characterId, {'sending', 'sent'}, 'delivered');
     return id;
   }
 
@@ -1606,6 +1452,8 @@ class AiChatController extends Notifier<AiChatState> {
       },
       sendingIn: {...state.sendingIn}..remove(characterId),
     );
+    // A finished reply proves the recipient read our messages.
+    _markUserMessages(characterId, {'delivered'}, 'read');
     await _save();
   }
 
@@ -1665,6 +1513,8 @@ class AiChatController extends Notifier<AiChatState> {
       },
       sendingIn: {...state.sendingIn}..remove(characterId),
     );
+    // A delivered reply proves the recipient read our messages.
+    _markUserMessages(characterId, {'delivered'}, 'read');
     await _save();
   }
 
@@ -1740,23 +1590,6 @@ class AiChatController extends Notifier<AiChatState> {
         characterId: thread.copyWith(
           draftVoice: attachment,
           clearDraftVoice: attachment == null,
-        ),
-      },
-    );
-    _save();
-  }
-
-  void setTwinInterviewFacts(
-    String characterId,
-    Map<String, dynamic> facts,
-  ) {
-    final thread = threadOf(characterId);
-    state = state.copyWith(
-      threads: {
-        ...state.threads,
-        characterId: thread.copyWith(
-          twinInterviewFacts:
-              Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(facts)),
         ),
       },
     );
@@ -1884,6 +1717,18 @@ class AiChatController extends Notifier<AiChatState> {
 
   void _setDelivery(String characterId, String messageId, String status) {
     _updateMessage(characterId, messageId, (m) => m.copyWith(deliveryStatus: status));
+  }
+
+  /// Advances the user's own messages through receipt stages, mirroring a
+  /// server-acknowledged → delivered → read pipeline. Only messages still in
+  /// one of [from] move; failed, queued and stopped messages are untouched.
+  void _markUserMessages(String characterId, Set<String> from, String to) {
+    final thread = threadOf(characterId);
+    for (final m in thread.messages) {
+      if (m.isUser && !m.deleted && from.contains(m.deliveryStatus)) {
+        _setDelivery(characterId, m.id, to);
+      }
+    }
   }
 
   void _updateMessage(

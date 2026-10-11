@@ -1,6 +1,6 @@
 # Continue Masanawa
 
-Updated 2026-10-09. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
+Updated 2026-10-11. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
 
 ## Immediate delivery correction — 2026-10-10
 
@@ -17,11 +17,20 @@ Read [outcome-first dispatch](docs/NEXT-WAVE-DELIVERY-20261010.md) FIRST and use
 7. [Whole-app source findings and Settings](docs/WHOLE-APP-SOURCE-AUDIT-20261009.md), [database/storage operations](docs/BACKEND-STORAGE-OPERATIONS-20261009.md) and [screen inventory](docs/WHOLE-APP-SCREEN-INVENTORY-20261009.json).
 8. [Acceptance journeys](docs/WHOLE-PRODUCT-ACCEPTANCE-JOURNEYS.md) and relevant existing domain references.
 
-## Current direction
+## Current direction — amended 2026-10-11
 
-Talks are published audio posts, not endless live sessions. New chat opens **Masana & Contacts**; real people remain distinct from AI personas. Gwani is the private service destination, with progressive floating billing choices and the existing text/voice composer addressing one durable task. MSN is the platform currency; confirmed fiat funding buys MSN automatically. Crypto can be held or converted with MSN where qualified. P2P exchanges MSN only against counterparty fiat, with escrow; there is no direct platform fiat withdrawal. Rooms are audio-focused groups. Masana can publish scheduled, disclosed AI audio and be followed.
+Masanawa is a social messaging app for AI celebrities: WhatsApp form, modern
+and more advanced. Every contact is a Masana AI persona; humans chat and call
+Masana one-to-one and in groups. Masana publish Status updates into a feed.
+The Wallet covers billing, crypto and services. Personal Twins are retired.
 
-Confirmed bottom navigation: **Chats · Rooms · Talks · Gwani · Wallet**. **Talks is the centre and default tab** on ordinary authenticated app launch. The former Assistant consumer label is **Gwani**. Calls stay nested in Chats; there is no Calls/Contacts/Agents bottom tab. The three-minute audio-post cap remains a reversible design default.
+Confirmed bottom navigation: **Chats · Status · Wallet · Calls · Rooms**.
+**Chats is the default tab** on ordinary authenticated app launch. There is
+no Agents/Twins bottom tab. MSN is the platform currency; confirmed fiat
+funding buys MSN automatically. Crypto can be held or converted with MSN
+where qualified. P2P exchanges MSN only against counterparty fiat, with
+escrow; there is no direct platform fiat withdrawal. Rooms are audio-focused
+groups.
 
 ## Recover before implementing
 

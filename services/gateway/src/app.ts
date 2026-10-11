@@ -3,8 +3,6 @@ import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
-import { registerCloneOnboardingRoutes } from "./clone_onboarding_routes.js";
-import type { CloneOnboardingService } from "./clone_onboarding.js";
 import type { CreatorCloneService } from "./creator_clone.js";
 import type { CreatorEconomyService } from "./creator_economy.js";
 import type { CreatorSkillService } from "./creator_skills.js";
@@ -95,7 +93,6 @@ export interface GatewayAppOptions {
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
   readonly creatorClone?: CreatorCloneService;
-  readonly cloneOnboarding?: CloneOnboardingService;
   readonly creatorEconomy?: CreatorEconomyService;
   readonly creatorSkills?: CreatorSkillService;
   readonly commerceCatalog?: CommerceCatalogService;
@@ -440,6 +437,116 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             ...(request.body.name === undefined
               ? {}
               : { name: request.body.name }),
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.get(
+      "/v1/auth/account/status",
+      {
+        schema: {
+          querystring: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.accountStatus({
+            phone: request.query.phone,
+            deviceId: request.query.deviceId,
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/auth/device/restore",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.deviceRestore({
+            phone: request.body.phone,
+            deviceId: request.body.deviceId,
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/auth/password/verify",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+              password: Type.String({ minLength: 6, maxLength: 6 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.passwordVerify({
+            phone: request.body.phone,
+            deviceId: request.body.deviceId,
+            password: request.body.password,
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/auth/password/setup",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+              password: Type.String({ minLength: 6, maxLength: 6 }),
+              name: Type.String({ minLength: 1, maxLength: 160 }),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.passwordSetup({
+            phone: request.body.phone,
+            deviceId: request.body.deviceId,
+            password: request.body.password,
+            name: request.body.name,
+            ...(request.body.email === undefined
+              ? {}
+              : { email: request.body.email }),
           });
         } catch (error) {
           return authError(error, reply);
@@ -1375,11 +1482,6 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         return { accepted: true as const };
       },
     );
-  }
-
-  if (options.cloneOnboarding) {
-    const onboarding = options.cloneOnboarding;
-    app.register(async child => { await registerCloneOnboardingRoutes(child, onboarding); });
   }
 
   registerAgentShellRoutes(app, {

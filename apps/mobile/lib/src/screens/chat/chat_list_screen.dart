@@ -372,9 +372,9 @@ class ChatListScreen extends ConsumerWidget {
             },
           ),
           IconButton(
-            tooltip: 'Agents',
+            tooltip: 'New chat',
             icon: const Icon(Icons.groups_outlined),
-            onPressed: () => context.push('/agents'),
+            onPressed: () => context.push('/masana'),
           ),
           IconButton(
             tooltip: 'Settings & profile',
@@ -399,7 +399,7 @@ class ChatListScreen extends ConsumerWidget {
               loading: directory.loading,
               error: directory.error,
               hasAgents: directory.agents.isNotEmpty,
-              onStart: () => context.push('/agents'),
+              onStart: () => context.push('/masana'),
             )
           : RefreshIndicator(
               onRefresh: () =>
@@ -510,7 +510,7 @@ class ChatListScreen extends ConsumerWidget {
         tooltip: 'Start conversation',
         backgroundColor: u.brand,
         foregroundColor: Colors.white,
-        onPressed: () => context.push('/agents'),
+        onPressed: () => context.push('/masana'),
         child: const Icon(Icons.mic_none_outlined),
       ),
     );

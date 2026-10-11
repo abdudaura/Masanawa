@@ -84,6 +84,10 @@ describe("gateway service bootstrap", () => {
       capabilities: () => ({ otpChannels: ["email"] }),
       async sendOtp() { throw new Error("unused"); },
       async verifyOtp() { throw new Error("unused"); },
+      async accountStatus() { throw new Error("unused"); },
+      async deviceRestore() { throw new Error("unused"); },
+      async passwordVerify() { throw new Error("unused"); },
+      async passwordSetup() { throw new Error("unused"); },
       async refresh() { throw new Error("unused"); },
       async logout() {},
     };

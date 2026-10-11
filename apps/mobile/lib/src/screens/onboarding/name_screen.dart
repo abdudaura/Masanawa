@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../localization/auth_error_localizer.dart';
+import '../../localization/language_picker_button.dart';
 import '../../core/api/models.dart';
+import '../../core/phone/country_codes.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
+import '../../ui/components/phone_field.dart';
 import '../../ui/components/primary_button.dart';
 
 class NameScreen extends ConsumerStatefulWidget {
@@ -19,11 +22,13 @@ class NameScreen extends ConsumerStatefulWidget {
 
 class _NameScreenState extends ConsumerState<NameScreen> {
   final _name = TextEditingController();
+  final _phone = TextEditingController();
   bool _saving = false;
 
   @override
   void dispose() {
     _name.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
@@ -39,7 +44,22 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       context.go('/chats');
       return;
     }
-    if (current is! SessionNameRequired) {
+    // Email sign-ups arrive without a phone number: every account leaves
+    // this step with phone + name. Password-setup sign-ups already carry
+    // their phone; OTP phone sign-ups carry it in the state.
+    String? phone;
+    if (current is SessionNameRequired &&
+        current.channel == OtpChannel.email) {
+      final e164 = normalizeE164(_phone.text);
+      final digits = e164.replaceAll(RegExp(r'\D'), '');
+      if (digits.length < 7 || digits.length > 15) {
+        _snack(AppLocalizations.of(context).invalidPhoneNumber);
+        return;
+      }
+      phone = e164;
+    }
+    if (current is! SessionNameRequired &&
+        current is! SessionRegisterProfile) {
       context.go('/phone-login');
       return;
     }
@@ -51,11 +71,9 @@ class _NameScreenState extends ConsumerState<NameScreen> {
     }
     if (_saving) return;
     setState(() => _saving = true);
-    await ref.read(sessionProvider.notifier).verifyOtp(
-          current.code,
-          phone: current.channel == OtpChannel.sms ? current.identifier : null,
-          email: current.channel == OtpChannel.email ? current.identifier : null,
+    await ref.read(sessionProvider.notifier).submitProfile(
           name: name,
+          phone: phone,
         );
     if (mounted) setState(() => _saving = false);
   }
@@ -77,7 +95,6 @@ class _NameScreenState extends ConsumerState<NameScreen> {
           code: next.code,
           stage: AuthFailureStage.completeProfile,
         ));
-        context.go('/phone-login');
       } else if (next is SessionSignedOut) {
         context.go('/phone-login');
       }
@@ -87,11 +104,16 @@ class _NameScreenState extends ConsumerState<NameScreen> {
     final session = ref.watch(sessionProvider);
     final identifier = session is SessionNameRequired
         ? session.identifier
-        : session is SessionSignedIn
-            ? (session.user.phone ?? session.user.email ?? '')
-            : '';
+        : session is SessionRegisterProfile
+            ? session.phone
+            : session is SessionSignedIn
+                ? (session.user.phone ?? session.user.email ?? '')
+                : '';
+    final needsPhone =
+        session is SessionNameRequired && session.channel == OtpChannel.email;
 
     return OnboardingScaffold(
+      showLogo: false,
       title: l10n.nameQuestion,
       subtitle: identifier.isEmpty
           ? l10n.completeProfile
@@ -100,6 +122,15 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: LanguagePickerButton(),
+          ),
+          const SizedBox(height: 8),
+          if (needsPhone) ...[
+            PhoneField(controller: _phone, autofocus: false),
+            const SizedBox(height: 16),
+          ],
           TextField(
             controller: _name,
             autofocus: false,

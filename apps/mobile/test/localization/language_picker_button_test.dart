@@ -51,7 +51,7 @@ void main() {
         builder: (context, _) => LocalePreferenceScope(
           controller: controller,
           child: MaterialApp(
-            locale: controller.override,
+            locale: controller.localeOverride,
             supportedLocales: MasanawaLocalization.supportedLocales,
             localizationsDelegates: MasanawaLocalization.delegates,
             home: const Scaffold(body: LanguagePickerButton()),
@@ -89,7 +89,7 @@ void main() {
     await tester.tap(find.byKey(const Key('language-fr')));
     await tester.pumpAndSettle();
     expect(store.value, 'fr');
-    expect(controller.override, const Locale('fr'));
+    expect(controller.localeOverride, const Locale('fr'));
 
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
@@ -105,7 +105,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('language-device')));
     await tester.pumpAndSettle();
-    expect(controller.override, isNull);
+    expect(controller.localeOverride, isNull);
     expect(store.value, isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -126,7 +126,7 @@ void main() {
 
     expect(find.text('Could not save language preference. Try again.'),
         findsOneWidget);
-    expect(controller.override, const Locale('en'));
+    expect(controller.localeOverride, const Locale('en'));
     expect(store.value, 'en');
 
     await tester.pumpWidget(const SizedBox.shrink());

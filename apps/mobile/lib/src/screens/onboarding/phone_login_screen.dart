@@ -28,6 +28,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   OtpChannel _channel = OtpChannel.email;
   List<OtpChannel>? _availableChannels;
   String? _capabilityError;
+  bool _checking = false;
 
   @override
   void initState() {
@@ -73,7 +74,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     }
   }
 
-  void _continueWithPhone() {
+  void _continueWithPhone() async {
     final e164 = normalizeE164(_phone.text);
     final digits = e164.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 7 || digits.length > 15) {
@@ -82,7 +83,11 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       );
       return;
     }
-    ref.read(sessionProvider.notifier).sendOtp(phone: e164);
+    // Phone login uses the 6-digit device password, not SMS OTP. Email
+    // keeps real OTP below.
+    setState(() => _checking = true);
+    await ref.read(sessionProvider.notifier).startPhoneLogin(e164);
+    if (mounted) setState(() => _checking = false);
   }
 
   void _sendEmailCode() {
@@ -101,6 +106,13 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     ref.listen(sessionProvider, (previous, next) {
       if (next is SessionAwaitingOtp) {
         context.go('/otp');
+      } else if (next is SessionPasswordRequired) {
+        context.go(
+          '/password?phone=${Uri.encodeComponent(next.identifier)}'
+          '&setup=${next.setup ? '1' : '0'}',
+        );
+      } else if (next is SessionRegisterProfile) {
+        context.go('/name');
       } else if (next is SessionSignedIn) {
         context.go('/chats');
       }
@@ -113,6 +125,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     final channels = _availableChannels;
 
     return OnboardingScaffold(
+      showLogo: false,
       title: l10n.welcomeTitle,
       subtitle: channels == null
           ? l10n.checkingSignInMethods
@@ -169,7 +182,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                     ),
                 ],
                 selected: {_channel},
-                onSelectionChanged: sending
+                onSelectionChanged: sending || _checking
                     ? null
                     : (selection) {
                         setState(() => _channel = selection.first);
@@ -226,11 +239,13 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             PrimaryButton(
               label: sending
                   ? l10n.sendingCode
-                  : _isEmail
-                      ? l10n.sendCode
-                      : l10n.continueAction,
-              loading: sending,
-              onPressed: sending
+                  : _checking
+                      ? l10n.continueAction
+                      : _isEmail
+                          ? l10n.sendCode
+                          : l10n.continueAction,
+              loading: sending || _checking,
+              onPressed: sending || _checking
                   ? null
                   : _isEmail
                       ? _sendEmailCode

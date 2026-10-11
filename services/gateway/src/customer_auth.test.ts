@@ -116,6 +116,51 @@ class MemorySessions implements PlatformSessionRepository {
     const row = this.sessions.get(input.accessHash);
     if (row) row.revoked = true;
   }
+  passwords = new Map<string, { hash: string; attempts: number; locked: boolean }>();
+  devices = new Map<string, Set<string>>();
+  private passwordKey(tenantId: string, userId: string) {
+    return `${tenantId}:${userId}`;
+  }
+  async setPasswordCredential(input: Parameters<PlatformSessionRepository["setPasswordCredential"]>[0]) {
+    this.passwords.set(this.passwordKey(input.tenantId, input.userId), {
+      hash: input.passwordHash,
+      attempts: 0,
+      locked: false,
+    });
+  }
+  async verifyPasswordCredential(input: Parameters<PlatformSessionRepository["verifyPasswordCredential"]>[0]) {
+    const row = this.passwords.get(this.passwordKey(input.tenantId, input.userId));
+    if (!row) return "missing" as const;
+    if (row.locked) return "locked" as const;
+    if (row.hash !== input.passwordHash) {
+      row.attempts += 1;
+      if (row.attempts >= 5) {
+        row.locked = true;
+        return "locked" as const;
+      }
+      return "invalid" as const;
+    }
+    row.attempts = 0;
+    return "accepted" as const;
+  }
+  async registerDevice(input: Parameters<PlatformSessionRepository["registerDevice"]>[0]) {
+    const key = this.passwordKey(input.tenantId, input.userId);
+    const set = this.devices.get(key) ?? new Set<string>();
+    set.add(input.deviceId);
+    this.devices.set(key, set);
+  }
+  async isDeviceKnown(input: Parameters<PlatformSessionRepository["isDeviceKnown"]>[0]) {
+    return this.devices.get(this.passwordKey(input.tenantId, input.userId))?.has(input.deviceId) ?? false;
+  }
+  async attachIdentity(input: Parameters<PlatformSessionRepository["attachIdentity"]>[0]) {
+    if (!this.profile || this.profile.userId !== input.userId) return null;
+    this.profile = Object.freeze({
+      ...this.profile,
+      email: input.channel === "email" ? input.identifier : this.profile.email,
+      phone: input.channel === "sms" ? input.identifier : this.profile.phone,
+    });
+    return this.profile;
+  }
 }
 
 describe("platform-session Agent authorization", () => {
@@ -564,6 +609,126 @@ describe("customer authentication", () => {
     await expect(service.sendOtp({ email: "user@example.com" }))
       .rejects.toMatchObject({ code: "OTP_DELIVERY_UNAVAILABLE" });
     expect(repository.challenge).toBeNull();
+  });
+});
+
+describe("customer password authentication", () => {
+  const deviceId = "a".repeat(32);
+  const otherDevice = "b".repeat(32);
+
+  function service(repository: MemorySessions) {
+    return createCustomerAuthService({
+      repository,
+      tenantId: createCanonicalId("tenant"),
+      otpPepper: "p".repeat(48),
+      emailDelivery: { async send() {} },
+    });
+  }
+
+  it("runs setup, status, restore and verify as one loop", async () => {
+    const repository = new MemorySessions();
+    const auth = service(repository);
+    const phone = "+2348012345678";
+    await expect(auth.accountStatus({ phone, deviceId }))
+      .resolves.toEqual({ registered: false, deviceKnown: false });
+    const created = await auth.passwordSetup({
+      phone,
+      deviceId,
+      password: "123456",
+      name: "Amina",
+    });
+    expect(created.user).toMatchObject({
+      name: "Amina",
+      phone,
+      isNewUser: true,
+    });
+    await expect(auth.accountStatus({ phone, deviceId }))
+      .resolves.toEqual({ registered: true, deviceKnown: true });
+    await expect(auth.accountStatus({ phone, deviceId: otherDevice }))
+      .resolves.toEqual({ registered: true, deviceKnown: false });
+    const restored = await auth.deviceRestore({ phone, deviceId });
+    expect(restored.user.phone).toBe(phone);
+    const verified = await auth.passwordVerify({
+      phone,
+      deviceId: otherDevice,
+      password: "123456",
+    });
+    expect(verified.user.phone).toBe(phone);
+    await expect(auth.accountStatus({ phone, deviceId: otherDevice }))
+      .resolves.toEqual({ registered: true, deviceKnown: true });
+  });
+
+  it("locks after five wrong passwords and keeps the right one out", async () => {
+    const repository = new MemorySessions();
+    const auth = service(repository);
+    const phone = "+2348012345678";
+    await auth.passwordSetup({ phone, deviceId, password: "123456", name: "Amina" });
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await expect(auth.passwordVerify({ phone, deviceId, password: "000000" }))
+        .rejects.toMatchObject({ code: "PASSWORD_INVALID", statusCode: 400 });
+    }
+    await expect(auth.passwordVerify({ phone, deviceId, password: "000000" }))
+      .rejects.toMatchObject({ code: "PASSWORD_LOCKED", statusCode: 429 });
+    await expect(auth.passwordVerify({ phone, deviceId, password: "123456" }))
+      .rejects.toMatchObject({ code: "PASSWORD_LOCKED", statusCode: 429 });
+  });
+
+  it("rejects unknown phones, duplicate setup and bad input", async () => {
+    const repository = new MemorySessions();
+    const auth = service(repository);
+    const phone = "+2348012345678";
+    await expect(auth.passwordVerify({ phone, deviceId, password: "123456" }))
+      .rejects.toMatchObject({ code: "ACCOUNT_NOT_FOUND", statusCode: 404 });
+    await auth.passwordSetup({ phone, deviceId, password: "123456", name: "Amina" });
+    await expect(auth.passwordSetup({ phone, deviceId, password: "123456", name: "Amina" }))
+      .rejects.toMatchObject({ code: "ACCOUNT_EXISTS", statusCode: 409 });
+    await expect(auth.passwordSetup({ phone, deviceId, password: "12", name: "Amina" }))
+      .rejects.toMatchObject({ code: "VALIDATION_FAILED", statusCode: 400 });
+    await expect(auth.passwordVerify({ phone: "not-a-phone", deviceId, password: "123456" }))
+      .rejects.toMatchObject({ code: "VALIDATION_FAILED", statusCode: 400 });
+    await expect(auth.accountStatus({ phone, deviceId: "short" }))
+      .rejects.toMatchObject({ code: "VALIDATION_FAILED", statusCode: 400 });
+  });
+
+  it("attaches the optional email identity at setup", async () => {
+    const repository = new MemorySessions();
+    const auth = service(repository);
+    const created = await auth.passwordSetup({
+      phone: "+2348012345678",
+      deviceId,
+      password: "123456",
+      name: "Amina",
+      email: "amina@example.com",
+    });
+    expect(created.user).toMatchObject({
+      phone: "+2348012345678",
+      email: "amina@example.com",
+    });
+  });
+
+  it("routes registered numbers without a password to setup", async () => {
+    const repository = new MemorySessions();
+    const auth = service(repository);
+    const tenantId = createCanonicalId("tenant");
+    const local = createCustomerAuthService({
+      repository,
+      tenantId,
+      otpPepper: "p".repeat(48),
+      emailDelivery: { async send() {} },
+    });
+    await local.passwordSetup({
+      phone: "+2348012345678",
+      deviceId,
+      password: "123456",
+      name: "Amina",
+    });
+    // Simulate a legacy OTP-created account: profile exists, no credential.
+    repository.passwords.clear();
+    await expect(auth.passwordVerify({
+      phone: "+2348012345678",
+      deviceId,
+      password: "123456",
+    })).rejects.toMatchObject({ code: "PASSWORD_NOT_SET", statusCode: 409 });
   });
 });
 

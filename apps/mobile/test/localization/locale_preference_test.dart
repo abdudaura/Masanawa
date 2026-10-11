@@ -43,16 +43,16 @@ void main() {
     final store = MemoryLocaleStore();
     final first = LocalePreferenceController(store);
     await first.load();
-    expect(first.override, isNull); // Follow device by default.
+    expect(first.localeOverride, isNull); // Follow device by default.
     await first.select(const Locale('ar'));
     expect(store.value, 'ar');
-    expect(first.override, const Locale('ar'));
+    expect(first.localeOverride, const Locale('ar'));
     final restarted = LocalePreferenceController(store);
     await restarted.load();
-    expect(restarted.override, const Locale('ar'));
+    expect(restarted.localeOverride, const Locale('ar'));
     await restarted.select(null);
     expect(store.value, isNull);
-    expect(restarted.override, isNull);
+    expect(restarted.localeOverride, isNull);
     first.dispose();
     restarted.dispose();
   });
@@ -62,12 +62,12 @@ void main() {
     final controller = LocalePreferenceController(store);
     await controller.load();
     expect(controller.loaded, isTrue);
-    expect(controller.override, isNull);
+    expect(controller.localeOverride, isNull);
     controller.dispose();
     store.fail = true;
     final failed = LocalePreferenceController(store);
     await failed.load();
-    expect(failed.override, isNull);
+    expect(failed.localeOverride, isNull);
     failed.dispose();
   });
 
@@ -80,7 +80,7 @@ void main() {
       controller.select(const Locale('fr')),
       throwsStateError,
     );
-    expect(controller.override, const Locale('en'));
+    expect(controller.localeOverride, const Locale('en'));
     expect(store.value, 'en');
     controller.dispose();
   });
@@ -102,10 +102,10 @@ void main() {
     final selecting = controller.select(const Locale('fr'));
     store.readGate.complete('ar');
     await reading;
-    expect(controller.override, const Locale('ar'));
+    expect(controller.localeOverride, const Locale('ar'));
     store.writeGate.complete();
     await selecting;
-    expect(controller.override, const Locale('fr'));
+    expect(controller.localeOverride, const Locale('fr'));
     expect(store.saved, 'fr');
     controller.dispose();
   });
@@ -135,7 +135,7 @@ void main() {
     );
     store.writeGate.complete();
     await first;
-    expect(controller.override, const Locale('fr'));
+    expect(controller.localeOverride, const Locale('fr'));
     expect(store.saved, 'fr');
     controller.dispose();
   });

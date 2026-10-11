@@ -20,6 +20,22 @@
   "@talk": {
     "description": "Bottom navigation: private AI conversation, not a public Talk"
   },
+  "chats": "Chats",
+  "@chats": {
+    "description": "Bottom navigation: Masana conversations"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "Bottom navigation: Masana status updates"
+  },
+  "calls": "Calls",
+  "@calls": {
+    "description": "Bottom navigation: voice and video calls"
+  },
+  "rooms": "Rooms",
+  "@rooms": {
+    "description": "Bottom navigation: audio group rooms"
+  },
   "explore": "Explore",
   "@explore": {
     "description": "Home discovery feed tab"
@@ -115,6 +131,39 @@
   "verifyCode": "Verify",
   "resendCodeIn": "Resend code in {seconds}s",
   "resendCode": "Resend code",
+  "passwordCreateTitle": "Create a password",
+  "@passwordCreateTitle": {
+    "description": "Password setup heading for an unregistered phone number"
+  },
+  "passwordConfirmTitle": "Repeat your password",
+  "@passwordConfirmTitle": {
+    "description": "Password setup confirmation heading"
+  },
+  "passwordCreateSubtitle": "Six digits. You will need it when you sign in on a new device.",
+  "@passwordCreateSubtitle": {
+    "description": "Password setup explanation"
+  },
+  "passwordEnterTitle": "Enter your password",
+  "@passwordEnterTitle": {
+    "description": "Password entry heading for a registered number on a new device"
+  },
+  "passwordEnterSubtitle": "Six-digit password for {identifier}",
+  "@passwordEnterSubtitle": {
+    "description": "Password entry subtitle naming the phone number",
+    "placeholders": {
+      "identifier": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordMismatch": "Passwords do not match. Try again.",
+  "@passwordMismatch": {
+    "description": "Password setup confirmation mismatch"
+  },
+  "passwordSignIn": "Sign in",
+  "@passwordSignIn": {
+    "description": "Password entry submit button"
+  },
   "nameQuestion": "What should we call you?",
   "completeProfile": "Complete your Masanawa profile.",
   "codeVerifiedName": "Your code is verified. Add your name to finish signing in.",
@@ -293,7 +342,6 @@
     "description": "Accessible status for the selected app UI language option"
   },
   "platformAgentsTab": "Masanawa Agents",
-  "twinsTab": "Twins",
   "searchPlatformAgents": "Search Masanawa Agents",
   "clearAgentSearch": "Clear agent search",
   "agentsLoadFailed": "Could not load agents. Try again.",
@@ -301,15 +349,7 @@
   "noMatchingAgents": "No agents match your search.",
   "gwaniUnavailableRetry": "Gwani is unavailable. Try again shortly.",
   "gwaniUnavailableNow": "Gwani is unavailable right now.",
-  "privateTwinTalkUnavailable": "Private Talk with {name} is not available yet.",
-  "viewTwinProfile": "View profile",
   "searchTalks": "Search Talks",
-  "searchPublicTwins": "Search public Twins",
-  "clearTwinSearch": "Clear search",
-  "myTwin": "My Twin",
-  "publicTwin": "Public Twin",
-  "noPublicTwins": "No public Twins found.",
-  "publicTwinsLoadFailed": "Could not load public Twins. Try again.",
   "loadMore": "Load more",
   "statusAvailable": "Available",
   "statusListening": "Listening…",
@@ -320,9 +360,6 @@
   "statusWorkingTasks": "{count, plural, =1{Working · 1 task} other{Working · {count} tasks}}",
   "@platformAgentsTab": {
     "description": "Root navigation/public Twin discovery UI: platformAgentsTab"
-  },
-  "@twinsTab": {
-    "description": "Root navigation/public Twin discovery UI: twinsTab"
   },
   "@searchPlatformAgents": {
     "description": "Root navigation/public Twin discovery UI: searchPlatformAgents"
@@ -345,37 +382,8 @@
   "@gwaniUnavailableNow": {
     "description": "Root navigation/public Twin discovery UI: gwaniUnavailableNow"
   },
-  "@privateTwinTalkUnavailable": {
-    "description": "Unavailable private Twin session. Interpolate exact user-authored Twin name, not a provider identifier.",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "@viewTwinProfile": {
-    "description": "Root navigation/public Twin discovery UI: viewTwinProfile"
-  },
   "@searchTalks": {
     "description": "Root navigation/public Twin discovery UI: searchTalks"
-  },
-  "@searchPublicTwins": {
-    "description": "Root navigation/public Twin discovery UI: searchPublicTwins"
-  },
-  "@clearTwinSearch": {
-    "description": "Root navigation/public Twin discovery UI: clearTwinSearch"
-  },
-  "@myTwin": {
-    "description": "Root navigation/public Twin discovery UI: myTwin"
-  },
-  "@publicTwin": {
-    "description": "Root navigation/public Twin discovery UI: publicTwin"
-  },
-  "@noPublicTwins": {
-    "description": "Root navigation/public Twin discovery UI: noPublicTwins"
-  },
-  "@publicTwinsLoadFailed": {
-    "description": "Root navigation/public Twin discovery UI: publicTwinsLoadFailed"
   },
   "@loadMore": {
     "description": "Root navigation/public Twin discovery UI: loadMore"
@@ -403,18 +411,6 @@
     "placeholders": {
       "count": {
         "type": "int"
-      }
-    }
-  },
-  "twinShareText": "Talk with {name} on Masanawa: {url}",
-  "@twinShareText": {
-    "description": "Explicit share message for a public user-owned Twin; preserve exact name and canonical URL unchanged",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      },
-      "url": {
-        "type": "String"
       }
     }
   }

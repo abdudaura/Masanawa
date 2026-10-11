@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../l10n/app_localizations.dart';
 import '../../ui/components/logo.dart';
-import '../../ui/components/masanawa_wordmark.dart';
-import '../../tokens/masanawa_tokens.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../state/session_state.dart';
 
@@ -50,8 +47,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _restoreDeadline?.cancel();
     if (session is SessionSignedIn) {
       context.go('/chats');
-    } else if (session is SessionNameRequired) {
+    } else if (session is SessionNameRequired ||
+        session is SessionRegisterProfile) {
       context.go('/name');
+    } else if (session is SessionPasswordRequired) {
+      context.go(
+        '/password?phone=${Uri.encodeComponent(session.identifier)}'
+        '&setup=${session.setup ? '1' : '0'}',
+      );
     } else if (session is SessionAwaitingOtp ||
         session is SessionVerifying ||
         session is SessionSendingOtp) {
@@ -74,35 +77,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       if (_brandReady) _navigate(next);
     });
     final u = context.masanawa;
+    // WhatsApp-style launch moment: plain background, centered mark, no
+    // tagline and no gradient. Routing and timings below are untouched.
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [u.brandGradientFrom, u.brandGradientTo],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              MasanawaLogo(dark: true, height: 120, showWordmark: false),
-              SizedBox(height: MasanawaTokens.spacing[4]),
-              const MasanawaWordmark(light: true, fontSize: 30),
-              SizedBox(height: MasanawaTokens.spacing[2]),
-              Text(
-                AppLocalizations.of(context).splashTagline,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: MasanawaTokens.fontSize['md'],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+      backgroundColor: u.surfaceBg,
+      body: Center(
+        child: MasanawaLogo(dark: true, height: 120, showWordmark: false),
       ),
     );
   }
