@@ -1,0 +1,111 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'device_security_client.dart';
+
+/// C09. AF00 attaches from Settings; no offline session revocation is queued.
+class DeviceSecurityScreen extends StatefulWidget {
+  const DeviceSecurityScreen({super.key,required this.transport});
+  final FanDevicesTransport transport;
+  @override State<DeviceSecurityScreen> createState()=>_DeviceSecurityScreenState();
+}
+class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
+  List<FanDevice> items=[];
+  String? error;
+  final Map<String,String> retryKeys={};
+  bool loading=true,offline=false;
+  String? revoking;
+  int generation=0;
+  String t(String en,String ha)=>Localizations.localeOf(context).languageCode=='ha'?ha:en;
+  @override void initState(){super.initState();refresh();}
+  @override void didUpdateWidget(covariant DeviceSecurityScreen old){
+    super.didUpdateWidget(old);
+    if(!identical(old.transport,widget.transport)||
+      old.transport.ownerAccountId!=widget.transport.ownerAccountId||
+      !widget.transport.isCurrentAccount){
+      ++generation;items=[];retryKeys.clear();revoking=null;error=null;
+      loading=true;offline=false;refresh();
+    }
+  }
+  @override void dispose(){++generation;super.dispose();}
+  Future<void> refresh()async{
+    final ticket=++generation;
+    if(!widget.transport.isCurrentAccount) {
+      if(mounted)setState((){items=[];loading=false;error=t('Sign in to manage devices','Shiga domin sarrafa na’urori');});
+      return;
+    }
+    setState((){loading=items.isEmpty;error=null;});
+    try{
+      final list=await widget.transport.list();
+      if(!mounted||ticket!=generation||!widget.transport.isCurrentAccount)return;
+      setState((){items=list;loading=false;offline=false;});
+    }on DioException catch(e){
+      if(!mounted||ticket!=generation)return;
+      setState((){loading=false;offline=e.type==DioExceptionType.connectionError||
+        e.type==DioExceptionType.connectionTimeout;
+        error=(e.response?.statusCode==401||e.response?.statusCode==403)?
+          t('Session expired. Sign in again.','Lokaci ya kare. Sake shiga.'):
+          t('Unable to load devices. Retry.','An kasa dauko na’urori. Sake gwadawa.');});
+    }catch(_){
+      if(mounted&&ticket==generation)setState((){
+        loading=false;error=t('Unable to load devices. Retry.','An kasa dauko na’urori. Sake gwadawa.');});
+    }
+  }
+  Future<void> revoke(FanDevice device)async{
+    if(revoking!=null||device.current||offline||!widget.transport.isCurrentAccount)return;
+    final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+      title:Text(t('Sign out this device?','A fitar da wannan na’ura?')),
+      content:Text(t('The other session will lose access. You can sign in again later.',
+        'Za a fitar da wannan na’ura. Ana iya sake shiga daga baya.')),
+      actions:[
+        TextButton(onPressed:()=>Navigator.pop(ctx,false),child:Text(t('Cancel','Soke'))),
+        FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:Text(t('Sign out','Fita')))]));
+    if(confirmed!=true||!mounted||!widget.transport.isCurrentAccount)return;
+    final ticket=generation;
+    final key=retryKeys.putIfAbsent(device.id,()=>
+      'c09_${DateTime.now().microsecondsSinceEpoch}_${device.id.substring(0,8)}');
+    setState((){revoking=device.id;error=null;});
+    try{
+      await widget.transport.revoke(device.id,key);
+      if(!mounted||ticket!=generation||!widget.transport.isCurrentAccount)return;
+      retryKeys.remove(device.id);await refresh();
+    }on DioException catch(e){
+      if(mounted&&ticket==generation)setState(()=>error=
+        e.response?.statusCode==401||e.response?.statusCode==403?
+          t('Session expired. Sign in again.','Lokaci ya kare. Sake shiga.'):
+          t('Could not sign out device. Retry is safe.','An kasa fitar da na’ura. Sake gwadawa ya dace.'));
+    }catch(_){
+      if(mounted&&ticket==generation)setState(()=>
+        error=t('Could not sign out device. Retry is safe.','An kasa fitar da na’ura. Sake gwadawa ya dace.'));
+    }finally{if(mounted&&ticket==generation)setState(()=>revoking=null);}
+  }
+  @override Widget build(BuildContext context){
+    if(!widget.transport.isCurrentAccount)return Scaffold(appBar:AppBar(
+      title:Text(t('Device security','Tsaron na’ura'))),
+      body:Center(child:Text(t('Sign in to manage devices','Shiga domin sarrafa na’urori'))));
+    return Scaffold(appBar:AppBar(title:Text(t('Device security','Tsaron na’ura')),
+      actions:[IconButton(tooltip:t('Refresh','Sabunta'),icon:const Icon(Icons.refresh),
+        onPressed:revoking==null?refresh:null)]),
+      body:Column(children:[
+        if(offline)MaterialBanner(content:Text(t('Offline. Signing out requires a connection.',
+          'Babu intanet. Ana bukatar intanet domin fita.')),
+          actions:[TextButton(onPressed:refresh,child:Text(t('Retry','Sake gwadawa')))]),
+        if(error!=null)MaterialBanner(content:Text(error!),
+          actions:[TextButton(onPressed:refresh,child:Text(t('Retry','Sake gwadawa')))]),
+        Expanded(child:loading?const Center(child:CircularProgressIndicator()):
+          items.isEmpty?Center(child:Text(t('No active devices.','Babu na’urar da ke aiki.'))):
+          ListView.builder(itemCount:items.length,itemBuilder:(context,index){
+            final d=items[index];
+            return ListTile(key:ValueKey('device-${d.id}'),
+              leading:const Icon(Icons.phone_android_outlined),
+              title:Text(d.current?t('This device','Wannan na’ura'):
+                t('Signed-in device','Na’urar da ta shiga')),
+              subtitle:Text('${t('Last active','An yi aiki')}: ${d.lastSeenAt.toLocal()}'),
+              trailing:d.current?Text(t('Current','Yanzu')):
+                revoking==d.id?const CircularProgressIndicator():
+                TextButton(onPressed:revoking==null&&!offline?()=>revoke(d):null,
+                  child:Text(t('Sign out','Fita'))),
+            );
+          })),
+      ]));
+  }
+}
