@@ -2276,8 +2276,8 @@
       "base_sha": "027f07b4411c3973d0587749b08675135396bbd7",
       "source_pr": null,
       "claimed_at": "2026-10-11T10:01:26.613Z",
-      "heartbeat_at": "2026-10-11T10:06:05.329Z",
-      "expires_at": "2026-10-11T10:11:05.329Z",
+      "heartbeat_at": "2026-10-11T10:09:11.995Z",
+      "expires_at": "2026-10-11T10:14:11.995Z",
       "notes": "Explicit current owner directive. AF00-only paths, no competing fresh lease, all changes on new branch to nondeploying integration. Open #616 handoff; disabled Rooms until #625 package imports qualify."
     }
   ],
