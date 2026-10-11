@@ -31,7 +31,8 @@ export function createMasanaLiveKitDispatch(input: {
     return message+"."+createHmac("sha256",input.apiSecret).update(message).digest("base64url");
   }
   async function send(roomName:string, service:string,method:string,payload:unknown):Promise<void> {
-    if (!await input.enabled()) throw new Error("calls_provider_off");
+    // The kill switch blocks new dispatches, never shutdown of an existing room.
+    if (method==="CreateDispatch" && !await input.enabled()) throw new Error("calls_provider_off");
     const response=await transport(base+"/twirp/livekit."+service+"/"+method,{
       method:"POST",
       headers:{"authorization":"Bearer "+adminToken(roomName),"content-type":"application/json"},
