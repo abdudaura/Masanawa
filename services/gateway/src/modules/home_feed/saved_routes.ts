@@ -31,6 +31,7 @@ export function registerSavedLibraryRoutes(app:FastifyInstance,deps:{
   app.put("/v1/videos/:id/save",async(req,reply)=>execute(req,reply,async(actor)=>{
     const id=(req.params as {id:string}).id;
     const value=(req.body??{}) as Record<string,unknown>;
-    return deps.service.saveVideo(actor,id,value.enabled as boolean);
+    if(typeof value.enabled!=="boolean")throw Object.assign(new Error("invalid_saved_state"),{status:422,code:"invalid_saved_state"});
+    return deps.service.saveVideo(actor,id,value.enabled);
   }));
 }
