@@ -13,6 +13,7 @@ function harness(qualified=true,enabled=true) {
     finish:vi.fn(async()=>true),
     get:vi.fn(async()=>null),
     findByRequest:vi.fn(async()=>null),
+    stopConfirmed:vi.fn(async()=>{}),
   };
   const provider={
     dispatch:vi.fn(async()=>{}),
