@@ -4,7 +4,7 @@ import {registerAdminFeedReviewRoutes} from "./admin_review_routes.js";
 import {registerHomeFeedRoutes} from "./routes.js";
 const editor={kind:"staff" as const,tenantId:"t1",id:"editor",permissions:["content_editor"]};
 const draft={authorMasanaId:"m1",kind:"text",body:"Approved story",idempotencyKey:"editorial-req01"};
-function mock(){return {create:vi.fn(async()=>({id:"new",state:"draft",revision:0})),list:vi.fn(async()=>[]),get:vi.fn(async()=>null),change:vi.fn(async()=>({state:"in_review",revision:1}))};}
+function mock(){return {create:vi.fn(async()=>({id:"new",state:"draft",revision:0})),update:vi.fn(async()=>({id:"new",state:"draft",revision:1})),list:vi.fn(async()=>[]),get:vi.fn(async()=>null),change:vi.fn(async()=>({state:"in_review",revision:1}))};}
 const options=(service:ReturnType<typeof mock>,principal:()=>Promise<any>=async()=>editor)=>
  ({service:service as never,principal,tenant:()=>"t1",enabled:()=>true});
 describe("A05/A06 admin editorial HTTP",()=>{
@@ -30,6 +30,13 @@ describe("A05/A06 admin editorial HTTP",()=>{
   const r=await app.inject({method:"POST",url:"/v1/admin/feed/drafts",headers:{"idempotency-key":"editorial-req01"},
    payload:{...draft,actor:{id:"super_admin"},tenantId:"other"}});
   expect(r.statusCode).toBe(200);expect(service.create).toHaveBeenCalledWith(editor,expect.objectContaining({authorMasanaId:"m1",idempotencyKey:"editorial-req01"}));await app.close();
+ });
+ it("rejects forged draft editor and malformed versions",async()=>{
+  const app=Fastify(),service=mock();
+  await registerAdminFeedReviewRoutes(app,options(service,async()=>({...editor,permissions:[]})));
+  const res=await app.inject({method:"PATCH",url:"/v1/admin/feed/posts/uuid/draft",
+   headers:{"idempotency-key":"edit-req001"},payload:{authorMasanaId:"m1",kind:"text",body:"changed",expectedRevision:2}});
+  expect(res.statusCode).toBe(403);expect(service.update).not.toHaveBeenCalled();await app.close();
  });
  it("validates action and revision before touching persistence",async()=>{
   const app=Fastify(),service=mock();await registerAdminFeedReviewRoutes(app,options(service));
