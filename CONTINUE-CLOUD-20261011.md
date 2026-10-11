@@ -24,6 +24,7 @@ This branch deliberately preserves existing CHAT-P04 PR #612 head `46af99e50dedd
 - `93836297`: actual isolated PostgreSQL receipt/replay/account-boundary tests and canonical assistant `replyToKey` history provenance.
 - `b114b7f7`: compiler prerequisite repairs, reproducible dependency declaration patches, gift/profile unknown-field rejection, stale test fixture repairs, environment registry and source scanner repairs.
 - Later commits on this branch contain the mobile outbox/recovery/linkage implementation and this handoff; inspect `git log` for exact latest SHAs.
+- `99e65faa`: mobile outbox, accepted-turn recovery, canonical reply linkage, focused regressions, localization lock reconciliation and generated-file exclusions.
 
 This is a safe feature/integration checkpoint, **not a production release or a claim that the whole app is complete**. Main pushes trigger mobile/signing/foundation workflows. Do not merge to main or deploy without auditing production hooks and completing applicable gates. Existing PR #616 (`e33490013c54a9dc3a86c8fcb526a01634df3992`) contains substantial separate app rebuilding work (333 changed files at inspection). Review and reconcile it rather than discarding it or assuming another account integrated it. PR #600 was also fetched for read-only source comparison.
 
@@ -40,6 +41,8 @@ Gift and profile routes now reject unexpected raw body fields before Fastify can
 ## Executed validation and limits
 
 Prior executed results (final broad rerun results are recorded below if available):
+
+Final checkpoint verification: `pnpm typecheck` **PASS**; Gateway plus dependency build **PASS**; `pnpm test:ci` **1,250 passed,1 failed,145 skipped** (233 passed files,1 failed file,21 skipped files). The sole failure is `tests/contracts/public-api-lifecycle.test.ts` → `versions service contract routes while leaving only probes unversioned`, covering the73 legacy unversioned source routes described below. Do not describe the whole suite as passing. Focused mobile recovery/receipt/thread tests **38 passed**, exit0, on the explicitly limited Flutter3.44.0/Dart3.12.0 runner (`--no-pub` after3.12.2 resolution). Official supported-bundle and device qualification remain pending.
 
 - Gateway chat service/route/app suites: **43 passed**.
 - Real PostgreSQL18 receipt recovery and scope/provenance tests: **2 passed**, using an isolated disposable database and actual mobile-shell migration; no provider calls.
