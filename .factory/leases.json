@@ -1743,6 +1743,29 @@
       "heartbeat_at": "2026-10-11T04:43:42.384Z",
       "expires_at": "2026-10-11T04:48:42.384Z",
       "notes": "No overlap with C09 or AF00. New identity migration source; AF00 retains root composition/registry/feature flag. No live auth provider, financial or production changes."
+    },
+    {
+      "claim_id": "l-feed-c23-media-viewer-20261011-gpt6-0545",
+      "owner": "L-FEED C23 / GPT-6",
+      "scope": "C23 signed post media authorization, original image/audio viewer, transcript, account-safe playback; no duplicate object store, signer, or worker; AF00 shared composition",
+      "paths": [
+        "services/gateway/src/modules/home_feed/media_routes.ts",
+        "services/gateway/src/modules/home_feed/media_routes.test.ts",
+        "adapters/storage/postgres/src/home_feed/media_authorization.ts",
+        "adapters/storage/postgres/src/home_feed/media_authorization.test.ts",
+        "apps/mobile/lib/src/features/home_feed/feed_media_api.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_api.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
+        "apps/mobile/test/features/home_feed/feed_media_screen_test.dart",
+        "tests/e2e/J06/media_viewer/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-feed-c23-media-viewer-20261011-gpt6-0545",
+      "base_sha": "9256ada27b33ed286edaa3ba42835972575a25fd",
+      "claimed_at": "2026-10-11T04:44:12.484Z",
+      "heartbeat_at": "2026-10-11T04:44:12.484Z",
+      "expires_at": "2026-10-11T04:49:12.484Z",
+      "notes": "Read #615 planning authority, #616 AF00, J06 #631 and C22 #642. Reuse canonical feed.posts and approved media signer; no shared route/DB registry changes."
     }
   ],
   "history": [
