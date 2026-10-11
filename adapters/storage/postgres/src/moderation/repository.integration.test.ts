@@ -54,7 +54,15 @@ pgDescribe("J13 actual PostgreSQL18 case lifecycle",()=>{
   expect(await ack.acknowledge({tenantId:"tenant_j13",actionId:"action_j13",
    operationId:enqueued.rows[0]!.outbox_event_id,fence:1,evidenceId:"receipt1"})).toBe(true);
   expect((await r.find("tenant_j13","case_j13"))?.state).toBe("actioned");
-  await r.appeal("tenant_j13","case_j13","appeal_j13","user_a","wrong decision");
+  await r.appeal("tenant_j13","case_j13","appeal_j13","user_a","wrong decision","appeal-retry-1");
+  // Simulate a lost HTTP response: same actor+key+body returns without duplicate audit.
+  await r.appeal("tenant_j13","case_j13","appeal_j13_retry","user_a","wrong decision","appeal-retry-1");
+  await expect(r.appeal("tenant_j13","case_j13","appeal_j13_conflict","user_a",
+   "different reason","appeal-retry-1")).rejects.toMatchObject({code:"moderation.idempotency_conflict"});
+  await expect(r.appeal("tenant_j13","case_j13","appeal_j13_new","user_a",
+   "same reason new key","appeal-retry-2")).rejects.toMatchObject({code:"moderation.appeal_not_ready"});
+  expect((await pool.query("SELECT 1 FROM moderation.appeals WHERE tenant_id='tenant_j13' AND case_id='case_j13'")).rowCount).toBe(1);
+  expect((await pool.query("SELECT 1 FROM moderation.case_events WHERE tenant_id='tenant_j13' AND case_id='case_j13' AND kind='appealed'")).rowCount).toBe(1);
   const review1=await r.resolveAppeal("tenant_j13","case_j13","appeal_j13","staff2",true,1);
   expect(review1.state).toBe("under_review");
   await expect(r.resolveAppeal("tenant_j13","case_j13","appeal_j13","staff2",true,2))
