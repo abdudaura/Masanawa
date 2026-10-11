@@ -69,3 +69,7 @@ export class FeedService {
   if(sort!=="newest"&&sort!=="oldest")throw new FeedError(422,"invalid_sort");
   return this.repo.comments(tenant,post,viewer,before??null,30,sort)}
 }
+
+// A05/A06 canonical editorial lifecycle (reuses feed.posts and reviewer audit).
+export {EditorialReviewService} from './review.js';
+export type {EditorialPost,EditorialRepository,EditorialAction,EditorialState,DraftInput} from './review.js';
