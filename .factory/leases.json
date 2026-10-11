@@ -1493,11 +1493,12 @@
       "branch": "lane/l-chat-j04-masana-calls-20261011-gpt6-0455",
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
       "claimed_at": "2026-10-11T03:56:43.641Z",
-      "heartbeat_at": "2026-10-11T04:12:20.880Z",
+      "heartbeat_at": "2026-10-11T04:16:32.111Z",
       "expires_at": "2026-10-11T04:17:20.880Z",
-      "notes": "Canonical /v1/calls source under own module, AF00 to compose root; provider and full device checks are release-gated.",
-      "source_head": "71aeb12fdcf7ea014c179b0041cca96e08816580",
-      "source_pr": 643
+      "notes": "Source committed, PR #643 draft integration/rebuild; AF00 handoff comment on #616; Python 3/3 exact blob tests passed; Foundation frozen pnpm lockfile missing packages/feed importer; release/shell composition and all platform checks outstanding. No merge/main deployment.",
+      "source_head": "880597b3c5d9b76f6bb3b17e831a296fbc754891",
+      "source_pr": 643,
+      "released_at": "2026-10-11T04:16:32.111Z"
     },
     {
       "claim_id": "l-social-telegram-j22-20261011-gpt6-0500",
