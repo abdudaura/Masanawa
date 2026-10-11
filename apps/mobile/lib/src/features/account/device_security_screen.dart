@@ -117,7 +117,8 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
                 t('Signed-in device','Na’urar da ta shiga')),
               subtitle:Text('${t('Last active','An yi aiki')}: ${d.lastSeenAt.toLocal()}'),
               trailing:d.current?Text(t('Current','Yanzu')):
-                revoking==d.id?const SizedBox.square(dimension:20,\n                  child:CircularProgressIndicator(strokeWidth:2)):
+                revoking==d.id?const SizedBox.square(dimension:20,
+                  child:CircularProgressIndicator(strokeWidth:2)):
                 TextButton(onPressed:revoking==null&&!offline?()=>revoke(d):null,
                   child:Text(t('Sign out','Fita'))),
             );
