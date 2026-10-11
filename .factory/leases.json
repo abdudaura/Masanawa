@@ -1457,7 +1457,12 @@
       "claimed_at": "2026-10-11T03:40:26.393Z",
       "heartbeat_at": "2026-10-11T03:47:25.909Z",
       "expires_at": "2026-10-11T03:52:25.909Z",
-      "notes": "Continue SAME #625 PR, after readback/CAS. Implement join/read/write paid admission, purchase/display/retry pending through existing paid APIs; no production payments or live migration."
+      "notes": "Continue SAME #625 PR, after readback/CAS. Implement join/read/write paid admission, purchase/display/retry pending through existing paid APIs; no production payments or live migration.",
+      "released_at": "2026-10-11T03:48:55.181Z",
+      "release_reason": "Connected existing canonical J08 Play screen and billing store from concurrent owner into paid/free Room UI; expired-member renew path; 4 Flutter, 6 mock-PG, 5 HTTP test cases authored. Source commits through 01e16e6, same #625, AF00 #616 handoff 6105158053 and #625 handoff 6105161809. Latest action runs not qualified; shared frozen pnpm importers packages/feed fail. No root/deploy/provider/live migrations.",
+      "source_head": "16fbb5a3ec0a523c57845ec0530a630d405b0da3",
+      "integration_head_sha": null,
+      "test_state": "CI Foundation frozen pnpm install FAIL missing packages/feed; TS SKIPPED; Vitest/PG/Android/Flutter latest source NOT_RUN/PENDING; 18 unrelated provider tests PASS"
     },
     {
       "claim_id": "l-admin-a19-403-recovery-20261011-gpt6",
