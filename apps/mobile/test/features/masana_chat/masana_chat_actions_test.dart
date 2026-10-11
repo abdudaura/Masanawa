@@ -50,7 +50,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Remove').last);
     await tester.pumpAndSettle();
-    expect(api.hidden,singleElement(isNotEmpty));
+    expect(api.hidden,hasLength(1));
+    expect(api.hidden.single,startsWith('request_'));
     expect(find.text('hello'),findsNothing);
     expect(drafts.data?['turns'],isEmpty);
   });
