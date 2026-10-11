@@ -11,26 +11,8 @@ class FakeApi extends OperationsApi {
   @override
   Future<List<OperationFlag>> flags() async {
     if(fail)throw DioException(requestOptions:RequestOptions(path:'/' ),type:DioExceptionType.connectionError);
-    return [const OperationFlag(name:flagName,enabled:false,revision:0,updatedAt:null)];
+    return [OperationFlag(name:flagName,enabled:false,revision:0,updatedAt:null)];
   }
- testWidgets('A18 account switch removes earlier operator flags and denies offline stale readback', (tester) async {
-  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(false))));
-  await tester.pumpAndSettle();
-  expect(find.text('posting'),findsOneWidget);
-  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(true))));
-  await tester.pumpAndSettle();
-  expect(find.text('posting'),findsNothing);
-  expect(find.textContaining('Operational state unavailable'),findsOneWidget);
-  expect(tester.takeException(),isNull);
- });
- testWidgets('A18 replaces the old tenant flag snapshot after a new account login', (tester) async {
-  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(false))));
-  await tester.pumpAndSettle();
-  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(false,flagName:'calls'))));
-  await tester.pumpAndSettle();
-  expect(find.text('posting'),findsNothing);
-  expect(find.text('calls'),findsOneWidget);
- });
 }
 void main(){
  testWidgets('A18 disabled state is honest', (tester) async {
@@ -45,4 +27,23 @@ void main(){
   expect(find.textContaining('unavailable'), findsOneWidget);
   expect(find.text('Retry'), findsOneWidget);
  });
+ testWidgets('A18 account switch removes earlier operator flags and denies offline stale readback', (tester) async {
+  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(false))));
+  await tester.pumpAndSettle();
+  expect(find.text('posting'),findsOneWidget);
+  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(true))));
+  await tester.pumpAndSettle();
+  expect(find.text('posting'),findsNothing);
+  expect(find.textContaining('Operational state unavailable'),findsOneWidget);
+  expect(tester.takeException(),isNull);
+ });
+ testWidgets('A18 replaces previous operator flag names with new authenticated values', (tester) async {
+  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(false))));
+  await tester.pumpAndSettle();
+  await tester.pumpWidget(MaterialApp(home:OperationsPage(api:FakeApi(false,flagName:'calls'))));
+  await tester.pumpAndSettle();
+  expect(find.text('posting'),findsNothing);
+  expect(find.text('calls'),findsOneWidget);
+ });
+
 }
