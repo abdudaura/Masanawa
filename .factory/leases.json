@@ -1394,6 +1394,21 @@
       "notes": "Read main, planning #615, integration and merged #624/#627/#637; only Flutter consumer video feature and dependency. Reuse canonical catalog API; request AF00 shared Home composition. No live provider activation.",
       "source_pr": 638,
       "source_head": "dde938af192bc9215d2718a822ae4b7ee626a536"
+    },
+    {
+      "claim_id": "l-masana-pgtrigger-fix-20261011-gpt6",
+      "owner": "GPT-6 L-MASANA migration correctness (AF00 reviewed handoff)",
+      "scope": "Correct two invalid PL/pgSQL function delimiters in unregistered R1 Masana profile migration source; add regression asserting valid delimiter balance; no shared migration registration or live DB writes.",
+      "paths": [
+        "packages/masana/migrations/0001_masana_profiles.sql",
+        "packages/masana/src/migration_sql.test.ts"
+      ],
+      "branch": "lane/l-masana-pgtrigger-fix-20261011-gpt6",
+      "base_sha": "ec8acd39b153952d3fabc5ae3ca7f749ba375a11",
+      "claimed_at": "2026-10-11T03:30:40.000Z",
+      "heartbeat_at": "2026-10-11T03:30:40.000Z",
+      "expires_at": "2026-10-11T03:35:40.000Z",
+      "notes": "Source-only unregistered package migration; confirm no applied checksum before AF00 registration. Non-deploying integration target; no production/main edits."
     }
   ],
   "history": [
