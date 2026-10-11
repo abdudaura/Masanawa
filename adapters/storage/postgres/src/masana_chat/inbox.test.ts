@@ -30,6 +30,21 @@ describe("C10 tenant-private canonical chat inbox", () => {
     expect(sql).toContain("u.state='active'");
     expect(values).toEqual(["tenant-a","fan-a","teacher"]);
   });
+  it("keeps Gwani in its dedicated tab, not C10 list or pin/read", async () => {
+    const {inbox,query}=repository([{revision:"1"}]);
+    await inbox.list(scope);
+    const listing=String(query.mock.calls[0]?.[0]);
+    expect(listing).toContain("lower(r.profile->>'handle') <> 'gwani'");
+    expect(listing).toContain("AND ($3='' OR position(");
+    query.mockClear();
+    await inbox.setPinned(scope,character,true,0);
+    expect(String(query.mock.calls[0]?.[0]))
+      .toContain("lower(r.profile->>'handle') <> 'gwani'");
+    query.mockClear();
+    await inbox.markRead(scope,character);
+    expect(String(query.mock.calls[0]?.[0]))
+      .toContain("lower(r.profile->>'handle') <> 'gwani'");
+  });
   it("fails closed on invalid query or missing caller tenant", async () => {
     const {inbox,query}=repository();
     await expect(inbox.list({tenantId:"",fanUserId:"a"})).rejects.toThrow();
