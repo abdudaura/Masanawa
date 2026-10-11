@@ -2251,11 +2251,14 @@
       "branch": "lane/l-chat-c13-message-actions-20261011-gpt6",
       "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
       "source_pr": 665,
-      "source_head": "a43725c09ff6a4ba4b0a43de0b266fbec062a25f",
+      "source_head": "928249b3e038b584935b19065c980c9ccb2c4a8d",
       "claimed_at": "2026-10-11T09:36:42.852Z",
       "heartbeat_at": "2026-10-11T09:37:57.773Z",
       "expires_at": "2026-10-11T09:42:57.773Z",
-      "notes": "No finance/shared app/main/worker/router updates. Database-backed hides enable only after AF00 migration and default-OFF flag; preserve original journal."
+      "notes": "No finance/shared app/main/worker/router updates. Database-backed hides enable only after AF00 migration and default-OFF flag; preserve original journal.",
+      "released_at": "2026-10-11T09:40:25.277Z",
+      "release_reason": "C13 feature source completed and merged to non-deploying integration via PR #665: 4 exact-path safety fixes, default-off migration/UI and authored regressions. Source head 928249b3; merge 027f07b. No executable TS/Vitest/PG18/Flutter/Android verification, AF00 still owns composition and production gate.",
+      "integration_head_sha": "027f07b4411c3973d0587749b08675135396bbd7"
     }
   ],
   "history": [
