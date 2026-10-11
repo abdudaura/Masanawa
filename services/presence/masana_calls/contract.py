@@ -35,3 +35,16 @@ class MasanaCallDispatch:
     def assert_room(self, actual: str) -> None:
         if actual != self.room_name:
             raise ValueError("dispatched_room_mismatch")
+
+def qualified_gemini_voice(profile_id: str, raw_profiles: str) -> str:
+    """Resolve staff-approved profile ID to server-configured Gemini voice; fail closed."""
+    try:
+        profiles = json.loads(raw_profiles)
+    except (TypeError, ValueError):
+        raise ValueError("invalid_voice_profile_map") from None
+    if not isinstance(profiles, dict):
+        raise ValueError("invalid_voice_profile_map")
+    voice = profiles.get(profile_id)
+    if not isinstance(voice, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9-]{1,39}", voice):
+        raise ValueError("voice_profile_not_qualified")
+    return voice
