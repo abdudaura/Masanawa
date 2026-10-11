@@ -59,7 +59,7 @@ class _HistoryState extends State<MasanaCallHistoryScreen>{
     mainAxisSize:MainAxisSize.min,children:[
     Text(callHistoryError(error!),textAlign:TextAlign.center),
     TextButton(onPressed:()=>_load(),child:const Text('Retry'))])):
-   RefreshIndicator(onRefresh:()=>_load(),child:ListView(children:[
+   RefreshIndicator(onRefresh:()=>_load(),child:ListView(physics:const AlwaysScrollableScrollPhysics(),children:[
     if(error!=null)ListTile(title:Text(callHistoryError(error!)),
      trailing:TextButton(onPressed:()=>_load(),child:const Text('Retry'))),
     if(items.isEmpty)const Padding(padding:EdgeInsets.all(28),

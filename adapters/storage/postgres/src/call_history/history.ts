@@ -1,6 +1,11 @@
 import type {Pool} from "pg";
-import type {HistoryEntry,HistoryPage,HistoryState} from "../../../../../services/gateway/src/modules/call_history/policy.js";
-import {makeHistoryCursor} from "../../../../../services/gateway/src/modules/call_history/policy.js";
+// Structural DTO matches the versioned C18 gateway policy; storage never imports Gateway.
+type HistoryState="connecting"|"active"|"ended"|"failed"|"expired";
+interface HistoryEntry {
+ callId:string;characterId:string;displayName:string;state:HistoryState;
+ createdAt:string;startedAt:string|null;endedAt:string|null;durationSeconds:number;
+}
+interface HistoryPage {schemaVersion:1;items:HistoryEntry[];nextCursor:string|null;}
 
 interface HistoryScope {tenantId:string;fanUserId:string;}
 type Row={
@@ -46,7 +51,7 @@ export function createPostgresCallHistoryReader(db:Pick<Pool,"query">){
    }));
    const last=items[items.length-1];
    return {schemaVersion:1,items,nextCursor:hasMore&&last?
-     makeHistoryCursor(last.createdAt,last.callId):null};
+     last.createdAt+"|"+last.callId:null};
   },
  });
 }

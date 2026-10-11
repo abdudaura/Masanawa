@@ -16,7 +16,15 @@ export function registerMasanaCallHistoryRoutes(app:FastifyInstance,ports:CallHi
    const auth=req.headers.authorization;
    if(typeof auth!=="string"||!auth.startsWith("Bearer ")||auth.length<12)
      throw new HistoryFault("unauthorized",401);
-   const actor=await ports.resolveFan(auth);
+   let actor:HistoryActor;
+   try{actor=await ports.resolveFan(auth);}
+   catch(e){
+    const status=(e as {status?:number;statusCode?:number})?.status ??
+       (e as {statusCode?:number})?.statusCode;
+    if(status===401)throw new HistoryFault("unauthorized",401);
+    if(status===403)throw new HistoryFault("forbidden",403);
+    throw e;
+   }
    if(!actor?.tenantId||!actor.fanUserId)throw new HistoryFault("unauthorized",401);
    let enabled=false;
    try{enabled=await ports.enabled();}catch{/* fail closed */}

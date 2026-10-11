@@ -33,6 +33,19 @@ describe("C18 HTTP fan-only privacy and fail-closed availability",()=>{
     {limit:30,cursor:null});
   }finally{await app.close();}
  });
+ it("preserves authoritative revoked-session 401 rather than reporting service outage",async()=>{
+  const app=Fastify();
+  const list=vi.fn(async()=>valid);
+  registerMasanaCallHistoryRoutes(app,{resolveFan:async()=>{
+    throw Object.assign(new Error("session_revoked"),{status:401});
+  },store:{list},enabled:async()=>true});
+  try{
+   const r=await app.inject({method:"GET",url:"/v1/calls/history",
+    headers:{authorization:"Bearer test-token"}});
+   expect(r.statusCode).toBe(401);
+   expect(list).not.toHaveBeenCalled();
+  }finally{await app.close();}
+ });
  it("denies feature-off and malformed pagination without leaking SQL/provider detail",async()=>{
   const h=testApp(false);
   try{

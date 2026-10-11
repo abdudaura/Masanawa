@@ -2,7 +2,7 @@ import {describe,it,expect,vi} from "vitest";
 import {createPostgresCallHistoryReader} from "./history.js";
 describe("C18 PostgreSQL tenant-private call history",()=>{
  it("binds tenant/fan and stable cursor without reading media tokens",async()=>{
-  const query=vi.fn(async()=>({rows:[{
+  const query=vi.fn(async (_sql:string,_params:unknown[])=>({rows:[{
    callId:"call_0199f0d0-0000-7000-8000-000000000005",
    characterId:"character_0199f0d0-0000-7000-8000-000000000005",
    displayName:"Gwani",state:"ended",createdAt:new Date("2026-10-11T07:00:00Z"),
