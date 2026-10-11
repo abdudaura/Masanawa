@@ -1,7 +1,18 @@
 import type { FastifyInstance } from "fastify";
-import type {
-  FanInboxItem, FanInboxScope,
-} from "../../../../../adapters/storage/postgres/src/masana_chat/inbox.js";
+export interface FanInboxScope {
+  readonly tenantId: string;
+  readonly fanUserId: string;
+}
+export interface FanInboxItem {
+  readonly characterId: string;
+  readonly displayName: string;
+  readonly profession: string;
+  readonly lastMessage: string;
+  readonly lastActivityAt: string;
+  readonly pinned: boolean;
+  readonly unreadCount: number;
+  readonly revision: number;
+}
 
 export interface MasanaInboxRoutesDeps {
   resolveFan: (authorizationHeader: string | undefined) => Promise<{
