@@ -1571,16 +1571,17 @@
         "packages/security/migrations/0104_fan_device_sessions.sql",
         "packages/security/src/device-sessions.ts",
         "packages/security/src/device-sessions.test.ts",
-        "packages/security/src/index.ts"
+        "packages/security/src/index.ts",
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart"
       ],
       "branch": "lane/l-shell-c09-device-security-20261011-gpt6",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:10:10.855Z",
-      "heartbeat_at": "2026-10-11T04:14:42.536Z",
-      "expires_at": "2026-10-11T04:19:42.536Z",
+      "heartbeat_at": "2026-10-11T04:17:04.934Z",
+      "expires_at": "2026-10-11T04:22:04.934Z",
       "notes": "Feature-only no production migration, no financial write, AF00 composition needed.",
       "source_pr": 644,
-      "source_head": "1e0dcbb0bd6614b1a647a9cb2e3ee1633d585fd0"
+      "source_head": "1718a2561f2579fd6c1d31e6f2f7d2d5130b19ab"
     },
     {
       "claim_id": "l-masana-a04-draft-rehearsal-20261011-gpt6-0513",
