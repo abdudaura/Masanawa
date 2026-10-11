@@ -1447,7 +1447,7 @@
       "claim_id": "l-chat-c10-inbox-20261011-gpt6-0450",
       "owner": "L-CHAT C10 / GPT-6 window 0450",
       "lane": "L-CHAT",
-      "scope": "C10 fan-private Masana recent chats, pin and mark-read using canonical sessions and approved profiles; account-fenced PG, gateway, Flutter and security regression; no second chat journal, root router or provider activation",
+      "scope": "C10 fan-private Masana recent chats, pin and mark-read using canonical sessions and approved profiles; account-fenced PG, gateway, Flutter and security regression; no second chat journal, root router or provider activation; repair observed J03 send-visual-state widget regression",
       "paths": [
         "packages/masana/migrations/0002_chat_inbox.sql",
         "adapters/storage/postgres/src/masana_chat/inbox.ts",
@@ -1459,15 +1459,16 @@
         "apps/mobile/test/features/masana_chat/masana_chats_list_test.dart",
         "tests/e2e/J03/chats_list.md",
         "apps/mobile/lib/l10n/app_en.arb",
-        "apps/mobile/lib/l10n/app_ha.arb"
+        "apps/mobile/lib/l10n/app_ha.arb",
+        "apps/mobile/test/features/masana_chat/masana_chat_screen_test.dart"
       ],
       "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
       "claimed_at": "2026-10-11T03:50:50.130Z",
-      "heartbeat_at": "2026-10-11T03:57:34.314Z",
-      "expires_at": "2026-10-11T04:02:34.314Z",
+      "heartbeat_at": "2026-10-11T04:01:05.433Z",
+      "expires_at": "2026-10-11T04:06:05.433Z",
       "notes": "Feature-owned paths; AF00 composes; forward-only SQL under existing registered masana migration root; no production or finance changes.",
-      "source_head": "5b1fbbf19e17d49e3f4b3001c0684cbe004d44c9"
+      "source_head": "f4ec1c2bf5734e3f671b3629c8b747f5d95dc062"
     },
     {
       "claim_id": "l-chat-j04-masana-calls-20261011-gpt6-0455",
