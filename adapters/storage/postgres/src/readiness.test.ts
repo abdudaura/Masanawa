@@ -40,7 +40,7 @@ describe("AF00 canonical rebuilt product migration admission", () => {
     // official-video items, and Masana requires the existing identity schema.
     expect(ids.indexOf("external-videos/0001_external_videos.sql"))
       .toBeLessThan(ids.indexOf("feed/0003_saved_videos.sql"));
-    expect(ids.indexOf("identity/0001_identity.sql"))
+    expect(ids.indexOf("identity/0001_identity_foundation.sql"))
       .toBeLessThan(ids.indexOf("masana/0001_masana_profiles.sql"));
     expect(ids.indexOf("masana/0001_masana_profiles.sql"))
       .toBeLessThan(ids.indexOf("masana-missions/0001_missions.sql"));
