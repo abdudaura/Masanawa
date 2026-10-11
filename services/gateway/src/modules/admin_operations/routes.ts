@@ -13,7 +13,7 @@ export function registerAdminOperationsRoutes(app: FastifyInstance, operations: 
   });
   scope.get("/v1/admin/ops/overview", async request => operations.overview(request.headers.authorization));
   scope.get("/v1/admin/ops/flags", async request => operations.flags(request.headers.authorization));
-  app.get<{Querystring:{name:string;enabled:string}}>("/v1/admin/ops/flags/preview", async request => {
+  scope.get<{Querystring:{name:string;enabled:string}}>("/v1/admin/ops/flags/preview", async request => {
     const {name,enabled}=request.query;
     if (!FLAG_NAMES.some(n=>n===name) || (enabled!=="true" && enabled!=="false")) throw new OperationsError("invalid",400);
     return operations.preview(request.headers.authorization,name as OperationsFlag,enabled==="true");
