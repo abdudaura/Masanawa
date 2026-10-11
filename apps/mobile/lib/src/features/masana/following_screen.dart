@@ -97,7 +97,7 @@ class _MasanaFollowingState extends State<MasanaFollowingScreen> {
       Padding(padding:const EdgeInsets.all(12),child:Column(children:[
         TextField(key:const Key('following_search'),controller:query,
           onSubmitted:(_)=>refresh(),decoration:InputDecoration(
-          labelText:t('Name or profession','Suna ko sana’a'),
+          labelText:t('Name, profession or skill','Suna, sana’a ko fasaha'),
           border:const OutlineInputBorder(),prefixIcon:const Icon(Icons.search),
           suffixIcon:IconButton(onPressed:refresh,icon:const Icon(Icons.arrow_forward),
             tooltip:t('Search','Nema')))),
