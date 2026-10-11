@@ -22,3 +22,31 @@ export async function expireMasanaCalls(input: {
   }
   return expired.length;
 }
+
+
+/** Periodic existing worker hook; the PostgreSQL lease is the durable retry authority.
+ * A 30-second delay between attempts prevents provider storms.
+ * Each acknowledged stop is idempotent and removes the pending room shutdown.
+ */
+export async function reconcileMasanaCallStops(input:{
+  readonly enabled:boolean;
+  readonly claimPendingStops:(limit:number)=>Promise<readonly {
+    tenantId:string;callId:string;roomName:string}[]>;
+  readonly stop:(roomName:string,callId:string)=>Promise<void>;
+  readonly ackStop:(scope:{tenantId:string;callId:string})=>Promise<void>;
+},limit=40):Promise<{attempted:number;confirmed:number}> {
+  if(!input.enabled)return {attempted:0,confirmed:0};
+  if(!Number.isInteger(limit)||limit<1||limit>100)throw new TypeError("invalid_limit");
+  const due=await input.claimPendingStops(limit);
+  let confirmed=0;
+  for(const item of due){
+    try{
+      await input.stop(item.roomName,item.callId);
+      await input.ackStop({tenantId:item.tenantId,callId:item.callId});
+      confirmed++;
+    }catch {
+      // Persistently pending in PG. Next lease retries after the delay.
+    }
+  }
+  return {attempted:due.length,confirmed};
+}
