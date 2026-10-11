@@ -1389,11 +1389,11 @@
       "branch": "lane/l-video-c28-official-player-20261011-gpt6",
       "base_sha": "ebd3b81599866aee488ed6ef9d2e791f73a8d798",
       "claimed_at": "2026-10-11T03:23:39.707Z",
-      "heartbeat_at": "2026-10-11T03:27:56.097Z",
-      "expires_at": "2026-10-11T03:32:56.097Z",
+      "heartbeat_at": "2026-10-11T03:33:54.933Z",
+      "expires_at": "2026-10-11T03:38:54.933Z",
       "notes": "Read main, planning #615, integration and merged #624/#627/#637; only Flutter consumer video feature and dependency. Reuse canonical catalog API; request AF00 shared Home composition. No live provider activation.",
       "source_pr": 638,
-      "source_head": "dde938af192bc9215d2718a822ae4b7ee626a536"
+      "source_head": "98ac7016e2abda8d24643b489f03a7c9411204e2"
     }
   ],
   "history": [
