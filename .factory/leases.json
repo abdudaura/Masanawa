@@ -1516,6 +1516,31 @@
       "heartbeat_at": "2026-10-11T03:59:11.380Z",
       "expires_at": "2026-10-11T04:04:11.380Z",
       "notes": "Disjoint J22 additions on existing #626 social authority; AF00 retains composition and deployment. 5-minute lease; no shared file or old data edits."
+    },
+    {
+      "claim_id": "l-feed-c22-post-detail-20261011-gpt6-0500",
+      "owner": "L-FEED C22 / GPT-6",
+      "scope": "C22 Masana post detail: tenant-safe replies, ordering, fan idempotency, moderation, Flutter deep detail, account-safe loading states; reuse J06 feed/comment outbox; AF00 root router retained",
+      "paths": [
+        "packages/feed/src/index.ts",
+        "packages/feed/src/index.test.ts",
+        "packages/feed/migrations/0002_comment_threads.sql",
+        "adapters/storage/postgres/src/home_feed/repository.ts",
+        "adapters/storage/postgres/src/home_feed/repository.test.ts",
+        "services/gateway/src/modules/home_feed/routes.ts",
+        "services/gateway/src/modules/home_feed/routes.test.ts",
+        "apps/mobile/lib/src/features/home_feed/feed_api.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_comments_sheet.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_post_detail_screen.dart",
+        "apps/mobile/test/features/home_feed/feed_post_detail_test.dart",
+        "tests/e2e/J06/post_details.md"
+      ],
+      "branch": "lane/l-feed-c22-post-detail-20261011-gpt6-0500",
+      "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
+      "claimed_at": "2026-10-11T04:00:15Z",
+      "heartbeat_at": "2026-10-11T04:00:15Z",
+      "expires_at": "2026-10-11T04:05:15Z",
+      "notes": "Non-deploying integration/rebuild only; no shared app/router/main/migration registry, financial data, provider writes"
     }
   ],
   "history": [
