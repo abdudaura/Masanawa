@@ -1901,8 +1901,8 @@
       "source_pr": 625,
       "base_sha": "eeaad29aa7591452740b5079f6e970828ebf6cc8",
       "claimed_at": "2026-10-11T05:06:21.669Z",
-      "heartbeat_at": "2026-10-11T05:07:00.840Z",
-      "expires_at": "2026-10-11T05:12:00.840Z",
+      "heartbeat_at": "2026-10-11T05:09:38.620Z",
+      "expires_at": "2026-10-11T05:14:38.620Z",
       "notes": "Continuation on original #625 branch; additive 0003 SQL; no shared router, lockfile, ledger or provider activation."
     }
   ],
