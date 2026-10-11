@@ -2241,18 +2241,20 @@
     {
       "claim_id": "l-chat-c13-migration-gated-inbox-20261011-gpt6-1032",
       "owner": "GPT-6 / L-CHAT C13 source integration safety",
-      "scope": "Fix existing PR #665 C13 inbox to remain queryable before its unregistered 0006 schema; add flag-on/off exact SQL regressions. AF00 owns migration registry and runtime enablement.",
+      "scope": "Fix existing PR #665 C13 inbox to remain queryable before its unregistered 0006 schema; add flag-on/off exact SQL regressions. AF00 owns migration registry and runtime enablement. Also default-off hide action UI until AF00 verifies migration and API; widget source regressions.",
       "paths": [
         "adapters/storage/postgres/src/masana_chat/inbox.ts",
-        "adapters/storage/postgres/src/masana_chat/inbox.test.ts"
+        "adapters/storage/postgres/src/masana_chat/inbox.test.ts",
+        "apps/mobile/lib/src/features/masana_chat/masana_chat_screen.dart",
+        "apps/mobile/test/features/masana_chat/masana_chat_actions_test.dart"
       ],
       "branch": "lane/l-chat-c13-message-actions-20261011-gpt6",
       "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
       "source_pr": 665,
       "source_head": "a43725c09ff6a4ba4b0a43de0b266fbec062a25f",
       "claimed_at": "2026-10-11T09:36:42.852Z",
-      "heartbeat_at": "2026-10-11T09:36:42.852Z",
-      "expires_at": "2026-10-11T09:41:42.852Z",
+      "heartbeat_at": "2026-10-11T09:37:57.773Z",
+      "expires_at": "2026-10-11T09:42:57.773Z",
       "notes": "No finance/shared app/main/worker/router updates. Database-backed hides enable only after AF00 migration and default-OFF flag; preserve original journal."
     }
   ],
