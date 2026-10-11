@@ -47,6 +47,7 @@ export async function registerHomeFeedRoutes(app:FastifyInstance,o:FeedRoutesOpt
  app.put("/v1/posts/:id/save",async(req,rep)=>run(req,rep,async({actor})=>o.service.save(member(actor),str(object(req.params).id),view(object(req.body).enabled))));
  app.post("/v1/posts/:id/comments",async(req,rep)=>run(req,rep,async({actor})=>{
   const a=member(actor),b=object(req.body);
+  if(b.parentId!==undefined&&b.parentId!==null&&typeof b.parentId!=="string")return rep.code(422).send({code:"invalid_parent_comment"});
   return o.service.comment(a,str(object(req.params).id),str(b.body),str(req.headers["idempotency-key"]),await o.isNewAccount(req),typeof b.parentId==="string"?b.parentId:null);
  }));
 }
