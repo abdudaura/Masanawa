@@ -1986,10 +1986,10 @@
       "branch": "lane/l-video-a14-curation-pagination-20261011-gpt6-0629",
       "base_sha": "068c6ed787e2b7fd905a612e7771c9c1ddd0d6d5",
       "claimed_at": "2026-10-11T05:29:49.317Z",
-      "heartbeat_at": "2026-10-11T05:34:41.332Z",
-      "expires_at": "2026-10-11T05:39:41.332Z",
+      "heartbeat_at": "2026-10-11T05:39:41.182Z",
+      "expires_at": "2026-10-11T05:44:41.182Z",
       "notes": "All edits confined to L-VIDEO feature-owned paths; no main deploy, no shared gateway/router/migrations/CI changes. AF00 composition review for integration/rebuild.",
-      "source_head": "9c6caa047e21987d2f9e9cbcfd6edb2183678610",
+      "source_head": "e4405cb6dc32e841d058ea97ca41630e38b08365",
       "source_pr": 656
     }
   ],
