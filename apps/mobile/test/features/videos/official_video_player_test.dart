@@ -24,7 +24,7 @@ void main() {
       'http://www.youtube.com/watch?v=abcDE12_-34',
       'https://www.youtube.com.evil.com/watch?v=abcDE12_-34',
       'https://www.youtube.com/watch?v=abcDE12_-34&redirect=https://bad.test',
-      'https://www.youtube.com:443/watch?v=abcDE12_-34',
+      'https://www.youtube.com:444/watch?v=abcDE12_-34',
       'https://www.youtube.com/watch?v=abcDE12_-34#evil',
       'https://www.tiktok.com/@teacher/video/123',
       'https://www.facebook.com/plugins/video.php?href=https://bad.test',
@@ -52,9 +52,13 @@ void main() {
     await tester.pump();
     expect(embedded?.path, '/embed/abcDE12_-34');
     expect(find.text('Provider iframe'), findsOneWidget);
+    await tester.ensureVisible(find.text('Stop'));
+    await tester.pump();
     await tester.tap(find.text('Stop'));
     await tester.pump();
     expect(find.text('Provider iframe'), findsNothing);
+    await tester.ensureVisible(find.text('Open in youtube'));
+    await tester.pump();
     await tester.tap(find.text('Open in youtube'));
     await tester.pump();
     expect(opened, v.sourceUrl);
