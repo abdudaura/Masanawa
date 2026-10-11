@@ -14,6 +14,7 @@ export interface VideoStore {
   }): Promise<ExternalVideo | null>;
   list(input: { tenantId: string; provider?: VideoProvider; publicOnly: boolean; limit: number; before?: string }): Promise<readonly ExternalVideo[]>;
 }
+const videoUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 export class VideoAdmissionError extends Error {
   constructor(public readonly status: number, public readonly code: string, message: string) { super(message); }
 }
@@ -50,7 +51,7 @@ export function createVideoAdmissionService(store: VideoStore) {
     },
     async review(actor: VideoPrincipal, id: string, input: unknown): Promise<ExternalVideo> {
       const tenantId = requireTenant(actor), actorId = requireStaff(actor);
-      if (!/^[a-f0-9-]{36}$/iu.test(id)) throw new VideoAdmissionError(400, "video_invalid_id", "Invalid video ID");
+      if (!videoUuid.test(id)) throw new VideoAdmissionError(400, "video_invalid_id", "Invalid video ID");
       if (!input || typeof input !== "object" || Array.isArray(input)) throw new VideoAdmissionError(400,"video_invalid_review","Invalid review");
       const x = input as Record<string, unknown>;
       const keys = Object.keys(x).sort().join(",");
@@ -85,7 +86,7 @@ export function createVideoAdmissionService(store: VideoStore) {
       if (query.provider !== undefined && !["youtube","tiktok","facebook"].includes(String(query.provider))) {
         throw new VideoAdmissionError(400, "video_invalid_provider", "Unsupported provider");
       }
-      if (query.before !== undefined && (typeof query.before !== "string" || !/^[0-9a-f-]{36}$/iu.test(query.before))) {
+      if (query.before !== undefined && (typeof query.before !== "string" || !videoUuid.test(query.before))) {
         throw new VideoAdmissionError(400, "video_invalid_cursor", "Invalid cursor");
       }
       const limit = query.limit === undefined ? 20 : Number(query.limit);

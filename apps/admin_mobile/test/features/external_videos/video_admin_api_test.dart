@@ -40,4 +40,12 @@ void main(){
     expect(requests.last.queryParameters, {'before':first.nextCursor});
     expect(requests.last.data, isNull);
   });
+  test('malformed server cursor is rejected before another page is requested', () async {
+    final dio = Dio(BaseOptions(baseUrl:'https://example.test'));
+    dio.interceptors.add(InterceptorsWrapper(onRequest:(options,handler) {
+      handler.resolve(Response(requestOptions:options,statusCode:200,
+        data:{'items':<dynamic>[], 'nextCursor':'------------------------------------'}));
+    }));
+    await expectLater(VideoAdminApi(dio).page(), throwsFormatException);
+  });
 }
