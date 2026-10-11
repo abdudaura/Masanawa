@@ -2069,31 +2069,6 @@
       "released_at": "2026-10-11T07:02:11.787Z",
       "integration_head_sha": "3b3eb3969ad323083d11cd1bf57fbe06439443c8",
       "release_reason": "C29/J14 12-path source reviewed and merged PR #659 into non-deploying integration/rebuild SHA 3b3eb3969ad323083d11cd1bf57fbe06439443c8. Merged SHA GitHub Foundation check job and mobile/admin jobs FAIL before any steps; TS/Vitest/PG18/Flutter/Android BLOCKED/NOT_RUN. AF00 protected app/router/Admin composition remains absent and explicitly handed off in PR #616; not E2E, not production."
-    },
-    {
-      "claim_id": "l-chat-c18-history-20261011-gpt6-disjoint",
-      "owner": "L-CHAT / GPT-6 C18",
-      "scope": "Fan-private C18 Masana call history, paginated J04 call_sessions READ ONLY, existing expiry worker, retry call UX, account-safe offline/empty/errors. Separate disjoint paths from J04; AF00 owns shared composition.",
-      "paths": [
-        "packages/masana/src/call_history.ts",
-        "packages/masana/src/call_history.test.ts",
-        "adapters/storage/postgres/src/call_history/history.ts",
-        "adapters/storage/postgres/src/call_history/history.test.ts",
-        "services/gateway/src/modules/call_history/routes.ts",
-        "services/gateway/src/modules/call_history/routes.test.ts",
-        "apps/mobile/lib/src/features/call_history/call_history_api.dart",
-        "apps/mobile/lib/src/features/call_history/call_history_screen.dart",
-        "apps/mobile/test/features/call_history/call_history_screen_test.dart",
-        "tests/e2e/C18/ACCEPTANCE.md"
-      ],
-      "branch": "lane/l-chat-c18-history-20261011-gpt6",
-      "base_sha": "880597b3c5d9b76f6bb3b17e831a296fbc754891",
-      "source_pr": 660,
-      "source_head": "b94e40bb371d48830fea016e18e12597c4290e43",
-      "claimed_at": "2026-10-11T06:57:18.895Z",
-      "heartbeat_at": "2026-10-11T07:02:33.906Z",
-      "expires_at": "2026-10-11T07:07:33.906Z",
-      "notes": "New only disjoint paths; no edits to J04 existing service/routes/PG/migration/worker or shared AF00 roots; stacked on J04 #643"
     }
   ],
   "history": [
@@ -5029,6 +5004,34 @@
       "integration_head_sha": null,
       "released_at": "2026-10-11T05:09:08.139Z",
       "release_reason": "11-path C06 account privacy/optional-push source committed at 3db867ad8c44de10a551f7b97e1d96b4babf7e54; draft PR #654; AF00 #616 handoff comment 6105685489. Default-off, no live/provider/finance writes. Exact-head Foundation CI 38113777364 check job FAILED zero steps; Mobile CI 38113777292 admin/build jobs FAILED zero steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED. AF00 only owns migration registration, canonical auth+pool/flag composition, existing push policy hook, C05 route. Nondeploying integration pending review; no main/production merge. Post-release disjoint merge base refresh: latest source branch head 4c3f65ec727292a4bed25e9f341cbf5a7ada0d8f merges integration/rebuild@88a0848 (C04/C05), same 11 paths; CI on merge SHA pending."
+    },
+    {
+      "claim_id": "l-chat-c18-history-20261011-gpt6-disjoint",
+      "owner": "L-CHAT / GPT-6 C18",
+      "scope": "Fan-private C18 Masana call history, paginated J04 call_sessions READ ONLY, existing expiry worker, retry call UX, account-safe offline/empty/errors. Separate disjoint paths from J04; AF00 owns shared composition.",
+      "paths": [
+        "packages/masana/src/call_history.ts",
+        "packages/masana/src/call_history.test.ts",
+        "adapters/storage/postgres/src/call_history/history.ts",
+        "adapters/storage/postgres/src/call_history/history.test.ts",
+        "services/gateway/src/modules/call_history/routes.ts",
+        "services/gateway/src/modules/call_history/routes.test.ts",
+        "apps/mobile/lib/src/features/call_history/call_history_api.dart",
+        "apps/mobile/lib/src/features/call_history/call_history_screen.dart",
+        "apps/mobile/test/features/call_history/call_history_screen_test.dart",
+        "tests/e2e/C18/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-chat-c18-history-20261011-gpt6",
+      "base_sha": "880597b3c5d9b76f6bb3b17e831a296fbc754891",
+      "source_pr": 660,
+      "source_head": "b94e40bb371d48830fea016e18e12597c4290e43",
+      "claimed_at": "2026-10-11T06:57:18.895Z",
+      "heartbeat_at": "2026-10-11T07:02:33.906Z",
+      "expires_at": "2026-10-11T07:07:33.906Z",
+      "notes": "New only disjoint paths; no edits to J04 existing service/routes/PG/migration/worker or shared AF00 roots; stacked on J04 #643",
+      "released_at": "2026-10-11T07:06:09.386Z",
+      "release_reason": "Source PR #660 at b94e40bb371d48830fea016e18e12597c4290e43 pinned, disjoint C18 call-history source and tests. J04 #643 dependency unmerged, AF00 #616 informed. GitHub Actions jobs failed zero steps; source exact-blob standalone TypeScript and 2 Node compiled contract tests pass, Vitest/PG18/Flutter/Android NOT_RUN. AF00 protected composition and safe nondeploying integration pending; no main/production activation.",
+      "integration_head_sha": null
     }
   ]
 }
