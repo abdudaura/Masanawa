@@ -1636,11 +1636,12 @@
       ],
       "branch": "lane/l-feed-c25-saved-20261011-gpt6-0520",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
-      "source_pr": null,
+      "source_pr": 647,
       "claimed_at": "2026-10-11T04:20:22.928Z",
-      "heartbeat_at": "2026-10-11T04:20:22.928Z",
-      "expires_at": "2026-10-11T04:25:22.928Z",
-      "notes": "Non-deploying source only; AF00 owns shared router, migration registration, package importers, staff/tenant principal; L-VIDEO owns C27 Save action insertion; no existing history deleted."
+      "heartbeat_at": "2026-10-11T04:25:46.373Z",
+      "expires_at": "2026-10-11T04:30:46.373Z",
+      "notes": "Non-deploying source only; AF00 owns shared router, migration registration, package importers, staff/tenant principal; L-VIDEO owns C27 Save action insertion; no existing history deleted.",
+      "source_head": "a1ccf13a44e63abc20462700306753929b5afd7b"
     },
     {
       "claim_id": "l-video-c27-c29-source-recovery-20261011-gpt6-0422",
