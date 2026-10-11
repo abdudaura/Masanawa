@@ -116,6 +116,14 @@ export function createPgRoomSubscriptions(pool:Pool):RoomSubscriptionsRepository
       [v.tenantId,v.tokenHash,v.state,v.periodEnd,v.orderId]);
     await q.query("UPDATE rooms.store_notifications SET result='linked' WHERE tenant_id=$1 AND notification_id=$2",
       [v.tenantId,v.id]);
+    if(found.rows[0].state!==v.state){
+     await q.query(`INSERT INTO events.outbox
+      (outbox_event_id,tenant_id,event_id,event_type,schema_version,aggregate_type,aggregate_id,correlation_id,destination,payload)
+      VALUES($1,$2,$3,'rooms.subscription.changed',1,'room_subscription',$4,$5,'notifications.rooms',
+        jsonb_build_object('userId',$6,'roomId',$4,'state',$7))`,
+      [uuid("outbox-event_"),v.tenantId,uuid("event_"),found.rows[0].room_id,
+       uuid("correlation_"),found.rows[0].user_id,v.state]);
+    }
     return "linked";
    });
   }
