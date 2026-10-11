@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/features/home_feed/feed_media_api.dart';
 import 'package:masanawa/src/features/home_feed/feed_media_screen.dart';
+import 'package:masanawa/src/features/home_feed/feed_media_action.dart';
+import 'package:masanawa/src/features/home_feed/feed_api.dart';
 
 const post='381026c2-9d56-47b1-b73d-1784e24e41e2';
 class MediaStub implements FeedMediaApi {
@@ -13,6 +15,20 @@ class MediaStub implements FeedMediaApi {
 FeedMediaGrant grant(String id)=>FeedMediaGrant(mediaId:id,kind:'image',
  url:Uri.parse('https://media.example.test/signed'),expiresAt:DateTime.now().add(const Duration(minutes:1)));
 void main(){
+ testWidgets('C21 C23 action carries both post scope and media ID',(t)async{
+   final postValue=FeedPost(id:post,authorMasanaId:'masana',kind:'image',
+     body:'Original',mediaIds:const ['media_abcdefgh'],publishedAt:DateTime.utc(2026),
+     likeCount:0,commentCount:0,liked:false,saved:false);
+   String? receivedPost,receivedMedia;
+   await t.pumpWidget(MaterialApp(home:Scaffold(body:FeedMediaOpenAction(
+     post:postValue,mediaId:'media_abcdefgh',onOpen:(p,m){
+       receivedPost=p.id;receivedMedia=m;
+     }))));
+   await t.tap(find.text('View image'));
+   expect(receivedPost,post);
+   expect(receivedMedia,'media_abcdefgh');
+ });
+
  testWidgets('C23 single post media cannot be rendered before server grant',(t)async{
    final pending=Completer<FeedMediaGrant>();
    await t.pumpWidget(MaterialApp(home:FeedMediaScreen(api:MediaStub((_,__)=>pending.future),
