@@ -7,7 +7,7 @@ class MasanaChatScreen extends StatefulWidget {
   const MasanaChatScreen({
     super.key, required this.controller, required this.displayName,
     this.onAttach, this.onRecordVoice, this.onReportMessage,
-    this.voiceQualified = false,
+    this.voiceQualified = false, this.hideQualified = false,
   });
   final MasanaChatController controller;
   final String displayName;
@@ -15,6 +15,8 @@ class MasanaChatScreen extends StatefulWidget {
   /// Use the existing Gwani moderation case journey, never a new report API.
   final Future<void> Function(String requestId, String body)? onReportMessage;
   final bool voiceQualified;
+  /// C13 is unusable until the canonical hide route and 0006 schema are enabled.
+  final bool hideQualified;
   @override
   State<MasanaChatScreen> createState() => _MasanaChatScreenState();
 }
@@ -54,7 +56,7 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
         ? quote.substring(0, 180) + '…' : quote) + '\n\n';
       _composer.selection=TextSelection.collapsed(offset:_composer.text.length);
       _composerFocus.requestFocus();
-    } else if (action == 'hide') {
+    } else if (action == 'hide' && widget.hideQualified) {
       final confirmed=await showDialog<bool>(context:context,builder:(dialogContext)=>
         AlertDialog(
           title:const Text('Remove this message for me?'),
@@ -115,7 +117,8 @@ class _MasanaChatScreenState extends State<MasanaChatScreen> {
                             itemBuilder:(context)=>[
                               const PopupMenuItem(value:'reply',child:Text('Reply')),
                               const PopupMenuItem(value:'copy',child:Text('Copy')),
-                              const PopupMenuItem(value:'hide',child:Text('Remove for me')),
+                              if(widget.hideQualified)
+                                const PopupMenuItem(value:'hide',child:Text('Remove for me')),
                               if(widget.onReportMessage!=null)
                                 const PopupMenuItem(value:'report',child:Text('Report to Gwani')),
                             ]),
