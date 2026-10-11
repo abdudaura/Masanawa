@@ -1645,7 +1645,10 @@
       "heartbeat_at": "2026-10-11T04:25:46.373Z",
       "expires_at": "2026-10-11T04:30:46.373Z",
       "notes": "Non-deploying source only; AF00 owns shared router, migration registration, package importers, staff/tenant principal; L-VIDEO owns C27 Save action insertion; no existing history deleted.",
-      "source_head": "a1ccf13a44e63abc20462700306753929b5afd7b"
+      "source_head": "67def830090d676357dadccb16a9992429c54e9f",
+      "integration_head_sha": "62952339dcf6c0150d5879cb61b9c49e7e67e284",
+      "released_at": "2026-10-11T04:31:44.463Z",
+      "release_reason": "PR #647 reviewed and squash merged nondeploying source into integration/rebuild at 62952339dcf6c0150d5879cb61b9c49e7e67e284. No main deployment. Frozen pnpm install FAIL missing packages/feed importer, TS/Vitest/build blocked; full PG18, Flutter, Android, provider and E2E not verified. AF00 shared root/migration composition and L-VIDEO C27 integration remain."
     },
     {
       "claim_id": "l-video-c27-c29-source-recovery-20261011-gpt6-0422",
