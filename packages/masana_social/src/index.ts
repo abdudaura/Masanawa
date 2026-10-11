@@ -3,3 +3,4 @@ export * from "./store.js";
 export * from "./delivery.js";
 export * from "./telegram.js";
 export * from "./telegram_ports.js";
+export * from "./telegram_admin_ports.js";
