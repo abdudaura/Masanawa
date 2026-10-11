@@ -1689,9 +1689,11 @@
       ],
       "branch": "lane/l-feed-c26-unified-search-20261011-gpt6-0535",
       "claimed_at": "2026-10-11T04:34:53.828Z",
-      "heartbeat_at": "2026-10-11T04:34:53.828Z",
-      "expires_at": "2026-10-11T04:39:53.828Z",
-      "notes": "All brand-new feature-local paths; AF00 owns shared router/registries/migration roots and merging. No production activation."
+      "heartbeat_at": "2026-10-11T04:40:37.291Z",
+      "expires_at": "2026-10-11T04:45:37.291Z",
+      "notes": "All brand-new feature-local paths; AF00 owns shared router/registries/migration roots and merging. No production activation.",
+      "source_pr": 648,
+      "source_head": "9089b31270f3dbdbf38c13b1c98e8d2c33bae400"
     },
     {
       "claim_id": "l-shell-c09-fail-closed-recovery-20261011-gpt6-0535",
