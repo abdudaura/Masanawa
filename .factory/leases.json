@@ -1735,13 +1735,14 @@
         "apps/mobile/lib/src/features/account/fan_setup_repository.dart",
         "apps/mobile/lib/src/features/account/fan_setup_screen.dart",
         "apps/mobile/test/features/account/fan_setup_screen_test.dart",
-        "tests/e2e/J01/fan_setup/ACCEPTANCE.md"
+        "tests/e2e/J01/fan_setup/ACCEPTANCE.md",
+        "packages/identity/src/index.ts"
       ],
       "branch": "lane/l-shell-c04-fan-setup-20261011-gpt6-0540",
       "base_sha": "9256ada27b33ed286edaa3ba42835972575a25fd",
       "claimed_at": "2026-10-11T04:41:53.965Z",
-      "heartbeat_at": "2026-10-11T04:43:42.384Z",
-      "expires_at": "2026-10-11T04:48:42.384Z",
+      "heartbeat_at": "2026-10-11T04:46:03.600Z",
+      "expires_at": "2026-10-11T04:51:03.600Z",
       "notes": "No overlap with C09 or AF00. New identity migration source; AF00 retains root composition/registry/feature flag. No live auth provider, financial or production changes."
     },
     {
