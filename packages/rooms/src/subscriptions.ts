@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { RoomError } from "./index.js";
 export type SubscriptionState = "active"|"grace"|"on_hold"|"past_due"|"expired"|"cancelled"|"refunded";
 export interface RoomPlan {
@@ -58,3 +58,9 @@ export function authorizedState(v:VerifiedPlaySubscription,nowMs=Date.now()):Sub
  throw new RoomError(409,"purchase_not_entitled");
 }
 
+
+/** Stable opaque Google Billing account ID. Must be keyed with a server-only secret. */
+export function opaqueBillingAccountBinding(tenantId:string,userId:string,serverKey:string):string {
+ if(!tenantId||!userId||serverKey.length<32)throw new RoomError(503,"billing_binding_not_configured");
+ return createHmac("sha256",serverKey).update(JSON.stringify([tenantId,userId]),"utf8").digest("hex");
+}
