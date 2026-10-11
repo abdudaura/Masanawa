@@ -21,7 +21,7 @@ integration("J06 real PostgreSQL18 Feed tenant/idempotency/visibility",()=>{
   const threadMigration=readFileSync(new URL("../../../../../packages/feed/migrations/0002_comment_threads.sql",import.meta.url),"utf8");
   await pool.query(threadMigration);
   await pool.query(threadMigration); // idempotent upgrade rehearsal, never rewrite 0001
-  await pool.query("INSERT INTO masana.character_revisions(tenant_id,character_id,state,profile) VALUES('tenant_thread','masana_one','approved','{\\"displayName\\":\\"Teacher\\"}'::jsonb)");
+  await pool.query("INSERT INTO masana.character_revisions(tenant_id,character_id,state,profile) VALUES('tenant_thread','masana_one','approved',jsonb_build_object('displayName','Teacher'))");
   repo=new PgHomeFeedRepository(pool);
  });
  afterAll(async()=>{await isolated?.close();});
