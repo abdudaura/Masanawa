@@ -41,14 +41,14 @@ class _RoomDiscussionModerationScreenState extends State<RoomDiscussionModeratio
    actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),
     FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Confirm'))]));
   if(confirmed!=true||!mounted)return;
-  final e=epoch;setState(()=>busy=true);
+  final e=epoch,scope=widget.accountScope,api=widget.api;setState(()=>busy=true);
   try{
    await widget.api.review(reply.id,decision);
    if(mounted&&e==epoch)await load();
   }catch(x){
    if(mounted&&e==epoch)ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content:Text(explain(x))));
-  }finally{if(mounted&&e==epoch)setState(()=>busy=false);}
+  }finally{if(mounted&&widget.accountScope==scope&&identical(widget.api,api))setState(()=>busy=false);}
  }
  @override Widget build(BuildContext context)=>Scaffold(
   appBar:AppBar(title:const Text('Room discussion review'),

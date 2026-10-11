@@ -69,14 +69,15 @@ class _RoomDiscussionScreenState extends State<RoomDiscussionScreen>{
   if(sending||target==null||body.isEmpty||body.length>2000)return;
   pendingKey??='rd_'+DateTime.now().microsecondsSinceEpoch.toString()+'_'
    +List.generate(12,(_)=>Random.secure().nextInt(16).toRadixString(16)).join();
-  final n=revision;setState(()=>sending=true);
+  final n=revision, scope=widget.accountScope, room=widget.roomId, api=widget.api;
+  setState(()=>sending=true);
   try{
    await widget.api.send(widget.roomId,target,body,pendingKey!,parentReplyId:parentReplyId);
    if(!mounted||n!=revision)return;
    input.clear();pendingKey=null;await refresh();
   }catch(e){
    if(mounted&&n==revision)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(roomDiscussionError(e))));
-  }finally{if(mounted&&n==revision)setState(()=>sending=false);}
+  }finally{if(mounted&&widget.accountScope==scope&&widget.roomId==room&&identical(widget.api,api))setState(()=>sending=false);}
  }
  @override Widget build(BuildContext context)=>Column(children:[
   if(targets.isNotEmpty)Padding(padding:const EdgeInsets.all(8),child:DropdownButtonFormField<String>(

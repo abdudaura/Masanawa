@@ -10,7 +10,7 @@ const project=(r:any,a:RoomActor):DiscussionReply=>({
  replyId:r.reply_id,roomId:r.room_id,parentKind:r.lesson_id?"lesson":"question",
  parentId:r.lesson_id??r.question_id,parentReplyId:r.parent_reply_id??null,
  body:r.body,state:r.moderation_state,authoredByMe:r.user_id===a.userId,
- createdAt:new Date(r.created_at).toISOString()
+ createdAt:r.sort_created_at??new Date(r.created_at).toISOString()
 });
 async function tx<T>(pool:Pool,run:(q:PoolClient)=>Promise<T>):Promise<T>{
  const q=await pool.connect();
@@ -51,7 +51,7 @@ export function createPgRoomDiscussionRepository(pool:Pool){
      const col=kind==="lesson"?"lesson_id":"question_id";
      const c=cursor;
      const r=await q.query(
-       "SELECT * FROM rooms.discussion_replies WHERE tenant_id=$1 AND room_id=$2 AND "+col+"=$3 "+
+       "SELECT *, to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_created_at FROM rooms.discussion_replies WHERE tenant_id=$1 AND room_id=$2 AND "+col+"=$3 "+
        "AND (moderation_state='visible' OR (user_id=$4 AND moderation_state='held')) "+
        "AND ($5::timestamptz IS NULL OR (created_at,reply_id)<($5::timestamptz,$6::text)) "+
        "ORDER BY created_at DESC,reply_id DESC LIMIT 51",
