@@ -3,7 +3,7 @@ export type PostKind = "text"|"image"|"audio";
 export type FeedMode = "for_you"|"following";
 export type Actor = {kind:"fan"|"masana"|"staff"; tenantId:string; id:string; permissions?:readonly string[]; approved?:boolean};
 export interface Post {id:string; tenantId:string; authorMasanaId:string;authorName?:string;kind:PostKind;body:string;media:readonly string[];transcript:string|null;publishedAt:string;likeCount:number;commentCount:number;viewerLiked:boolean;viewerSaved:boolean}
-export interface Comment {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string}
+export interface Comment {id:string;postId:string;body:string;state:"pending"|"visible";createdAt:string;parentId?:string|null}
 export interface Publish {authorMasanaId:string;kind:PostKind;body:string;media?:readonly string[];transcript?:string|null;idempotencyKey:string}
 export class FeedError extends Error {constructor(readonly status:number,readonly code:string){super(code)}}
 export interface Repository {
@@ -12,8 +12,8 @@ export interface Repository {
  publish(tenant:string,publisher:string,value:Required<Publish>):Promise<Post>;
  setLike(tenant:string,fan:string,post:string,enabled:boolean):Promise<boolean>;
  setSave(tenant:string,fan:string,post:string,enabled:boolean):Promise<boolean>;
- comment(tenant:string,fan:string,post:string,text:string,key:string,pending:boolean):Promise<Comment>;
- comments(tenant:string,post:string,viewer:string|null,before:string|null,limit:number):Promise<readonly Comment[]>;
+ comment(tenant:string,fan:string,post:string,text:string,key:string,pending:boolean,parentId?:string|null):Promise<Comment>;
+ comments(tenant:string,post:string,viewer:string|null,before:string|null,limit:number,sort?:"newest"|"oldest"):Promise<readonly Comment[]>;
 }
 const ident=/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 const uid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -59,11 +59,13 @@ export class FeedService {
   await this.detail(actor.tenantId,fan,post);return this.repo.setLike(actor.tenantId,fan,post,enabled)}
  async save(actor:Actor,post:string,enabled:boolean){const fan=this.fan(actor);requirePostId(post);
   await this.detail(actor.tenantId,fan,post);return this.repo.setSave(actor.tenantId,fan,post,enabled)}
- async comment(actor:Actor,post:string,body:string,idempotencyKey:string,isNewAccount:boolean){
+ async comment(actor:Actor,post:string,body:string,idempotencyKey:string,isNewAccount:boolean,parentId?:string|null){
   const fan=this.fan(actor);requirePostId(post);if(!key.test(idempotencyKey))throw new FeedError(422,"invalid_idempotency_key");
   const text=body.trim();if(!text||text.length>1000)throw new FeedError(422,"invalid_comment");
-  await this.detail(actor.tenantId,fan,post);return this.repo.comment(actor.tenantId,fan,post,text,idempotencyKey,isNewAccount)}
- async comments(tenant:string,post:string,viewer:string|null,before?:string){
+  if(parentId!=null&&!uid.test(parentId))throw new FeedError(422,"invalid_parent_comment");
+  await this.detail(actor.tenantId,fan,post);return this.repo.comment(actor.tenantId,fan,post,text,idempotencyKey,isNewAccount,parentId??null)}
+ async comments(tenant:string,post:string,viewer:string|null,before?:string,sort:"newest"|"oldest"="newest"){
   await this.detail(tenant,viewer,post);if(before&&!uid.test(before))throw new FeedError(422,"invalid_cursor");
-  return this.repo.comments(tenant,post,viewer,before??null,30)}
+  if(sort!=="newest"&&sort!=="oldest")throw new FeedError(422,"invalid_sort");
+  return this.repo.comments(tenant,post,viewer,before??null,30,sort)}
 }
