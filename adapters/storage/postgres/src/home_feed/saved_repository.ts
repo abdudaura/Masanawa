@@ -1,8 +1,10 @@
 import type {Pool} from "pg";
-import type {SavedCursor,SavedItem,SavedRepository} from "../../../../../packages/feed/src/saved.js";
+// Structural DTO equivalent to the canonical packages/feed/src/saved.ts port.
+type SavedCursor={at:string;kind:"post"|"video";id:string};
+type SavedItem={kind:"post"|"video";id:string;savedAt:string;post?:Record<string,unknown>;video?:Record<string,unknown>};
 
 /** One fan-private C25 projection over existing feed.saves and verified official video items. */
-export class PgSavedLibraryRepository implements SavedRepository {
+export class PgSavedLibraryRepository {
   constructor(private readonly pool:Pool){}
   async list(tenant:string,fan:string,before:SavedCursor|null,limit:number):Promise<readonly SavedItem[]> {
     const sql=String.raw`WITH saved_items AS (
