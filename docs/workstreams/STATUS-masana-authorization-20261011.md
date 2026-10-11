@@ -28,3 +28,8 @@ Contracts: existing @masanawa/feed, PgHomeFeedRepository, editorial review (#666
 
 ## Dependency-ready scope expansion before edit
 - packages/feed/src/review.ts: repair observed unmatched parenthesis in validateDraft; index.ts re-exports this source, so canonical feed cannot load otherwise. Existing tests are preserved. Prior #666 ownership is released; no shared-file edit.
+
+## Publishing continuation — exact paths added before edits
+- adapters/storage/postgres/src/home_feed/review_repository.ts
+- adapters/storage/postgres/src/home_feed/review_repository.test.ts
+The existing scheduled publisher rechecks author eligibility in its verifier, but its final SQL CAS rechecks only revision approval. Extend the same canonical identity predicate to immediate approval/scheduling and due release so deactivation/ownership transfer cannot race the final publication write. No new job or migration.
