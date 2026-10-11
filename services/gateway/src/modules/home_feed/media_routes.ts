@@ -17,6 +17,8 @@ export interface FeedMediaOptions {
   enabled:()=>boolean;
   find:(tenantId:string,postId:string,mediaId:string)=>Promise<PublishedPostMedia|null>;
   sign:MediaSigner;
+  /** Exact, configured CDN/S3 download origins. No user-provided hosts. */
+  approvedDownloadOrigin:(origin:string)=>boolean;
 }
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const media=/^media_[A-Za-z0-9_-]{8,128}$/;
@@ -39,13 +41,16 @@ export async function registerFeedMediaRoutes(app:FastifyInstance,options:FeedMe
     const post=await options.find(tenant,postId,mediaId);
     if(!post||post.tenantId!==tenant||post.postId!==postId||post.mediaId!==mediaId||
       !["image","audio"].includes(post.kind))return reply.code(404).send(bad("media_unavailable"));
-    const signed=await options.sign(post);
+    let signed:Awaited<ReturnType<MediaSigner>>;
+    try{signed=await options.sign(post);}
+    catch{return reply.code(503).send(bad("media_signer_unavailable"));}
     // Never return unapproved, unsigned, HTTP, expired or unbounded grants.
     if(!signed)return reply.code(404).send(bad("media_unavailable"));
     let uri:URL;
     try{uri=new URL(signed.url);}catch{return reply.code(503).send(bad("media_signer_unavailable"));}
     const ttl=Date.parse(signed.expiresAt)-Date.now();
     if(uri.protocol!=="https:"||!uri.hostname||uri.username||uri.password||
+      !options.approvedDownloadOrigin(uri.origin)||uri.hash||
       !Number.isFinite(ttl)||ttl<=0||ttl>300000||
       !(post.kind==="image"?/^image\/(jpeg|png|webp|gif)$/.test(signed.contentType):
         /^audio\/(mpeg|mp4|ogg|aac|wav|webm)$/.test(signed.contentType)))
