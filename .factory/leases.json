@@ -1711,7 +1711,10 @@
       "heartbeat_at": "2026-10-11T04:38:49.967Z",
       "expires_at": "2026-10-11T04:43:49.967Z",
       "source_pr": 644,
-      "notes": "Single existing C09 source authority; AF00 owns composition and integration/CI lock. Changes only 4 feature files; no production activation."
+      "notes": "Single existing C09 source authority; AF00 owns composition and integration/CI lock. Changes only 4 feature files; no production activation.",
+      "released_at": "2026-10-11T04:41:19.895Z",
+      "source_head": "6bc44fac1bf323dffc82353bc85db8da5864e027",
+      "release_reason": "Existing #644 continued with default-off gateway gate, fail-closed API test and Flutter disabled/retry UI test. AF00 #616 comment 6105514731. Foundation 38112287139 actual install FAIL missing lockfile importers; TS skipped; Mobile 38112287135 in progress as of release. No safe integration/main merge yet, no live DB or finance mutation. Retain PR for AF00 review."
     }
   ],
   "history": [
