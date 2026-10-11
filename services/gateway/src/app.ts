@@ -4,9 +4,6 @@ import type { Instant } from "@masanawa/contracts";
 import { isCanonicalId, nowInstant, parseCanonicalId, PlatformError } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
-import { registerCloneOnboardingRoutes } from "./clone_onboarding_routes.js";
-import type { CloneOnboardingService } from "./clone_onboarding.js";
-import type { CreatorCloneService } from "./creator_clone.js";
 import type { CreatorEconomyService } from "./creator_economy.js";
 import type { CreatorSkillService } from "./creator_skills.js";
 import type { CommerceCatalogService } from "./commerce_catalog.js";
@@ -95,8 +92,6 @@ export interface GatewayAppOptions {
   readonly isDraining?: () => boolean;
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
-  readonly creatorClone?: CreatorCloneService;
-  readonly cloneOnboarding?: CloneOnboardingService;
   readonly creatorEconomy?: CreatorEconomyService;
   readonly creatorSkills?: CreatorSkillService;
   readonly commerceCatalog?: CommerceCatalogService;
@@ -874,53 +869,6 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
-  if (options.creatorClone) {
-    const creatorClone = options.creatorClone;
-    app.post(
-      "/creator/clone",
-      {
-        schema: {
-          body: Type.Object(
-            {
-              displayName: Type.String({ minLength: 1, maxLength: 120 }),
-              biography: Type.String({ minLength: 1, maxLength: 1000 }),
-              languages: Type.Array(
-                Type.String({ minLength: 1, maxLength: 120 }),
-                { minItems: 1, maxItems: 16 },
-              ),
-              personality: Type.Array(
-                Type.String({ minLength: 1, maxLength: 120 }),
-                { minItems: 1, maxItems: 24 },
-              ),
-              expertise: Type.Array(
-                Type.String({ minLength: 1, maxLength: 120 }),
-                { minItems: 1, maxItems: 32 },
-              ),
-            },
-            { additionalProperties: false },
-          ),
-          response: {
-            200: Type.Object(
-              {
-                created: Type.Boolean(),
-                characterId: Type.String(),
-                characterVersionId: Type.String(),
-                relationshipId: Type.String(),
-                displayName: Type.String(),
-              },
-              { additionalProperties: false },
-            ),
-          },
-        },
-      },
-      async (request) =>
-        creatorClone.create({
-          authorizationHeader: request.headers.authorization,
-          ...request.body,
-        }),
-    );
-  }
-
   if (options.agentConversation) {
     const conversation = options.agentConversation;
 
@@ -1405,11 +1353,6 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         return { accepted: true as const };
       },
     );
-  }
-
-  if (options.cloneOnboarding) {
-    const onboarding = options.cloneOnboarding;
-    app.register(async child => { await registerCloneOnboardingRoutes(child, onboarding); });
   }
 
   registerAgentShellRoutes(app, {

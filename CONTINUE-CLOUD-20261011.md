@@ -1,3 +1,9 @@
+# URGENT OWNER CORRECTION — 2026-10-11
+
+The owner explicitly says old creator/clone onboarding was removed from the product focus. Previous compatibility work preserving that flow was a mistake. Do not restore or expand it. This checkpoint removes Gateway consumer `/creator/clone` and `/creator/onboarding` wiring, startup composition, and obsolete onboarding services, Shell adapter and tests. Retired URLs must return404 on both legacy and /v1 forms. Preserve canonical auth and existing stored records; this removal authorizes no destructive database migration.
+
+**NEXT ACCOUNT FIRST TASK:** Finish auditing/removing all obsolete mobile creator/clone entrypoints and files, including `/clone`, clone setup screen, onboarding transport/controller/models, creation prompts and clone-interview orchestration. Some mobile cleanup may be incomplete in this quota-limited checkpoint; inspect source, do not infer completion. Remove stale creator compatibility guidance below. Keep current Masana & Contacts, Chats/Rooms/Talks/Gwani/Wallet direction and durable chat improvements. Audit remaining old creator economy/skills consumer routes against owner direction before retaining them. Do not work on old ideas just because files still exist. The earlier green suite predates this deletion checkpoint; rerun typecheck/build/tests after cleanup.
+
 # Continue Masanawa from this checkpoint
 
 Owner instruction: this cloud workspace is the sole implementation and integration owner. Continue recommended connected customer milestones autonomously. Do not assume another window will finish missing work. The owner requested a pushed checkpoint for continuation from another ChatGPT account.

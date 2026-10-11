@@ -16,6 +16,16 @@ afterEach(async () => {
 });
 
 describe("gateway service bootstrap", () => {
+  it("does not expose retired consumer creator or clone onboarding routes", async () => {
+    const app = createGatewayApp();
+    apps.push(app);
+    for (const prefix of ["", "/v1"]) {
+      for (const [method, path] of [["POST", "/creator/clone"], ["GET", "/creator/onboarding"],
+        ["PUT", "/creator/onboarding/profile"], ["POST", "/creator/onboarding/confirm"]] as const) {
+        expect((await app.inject({ method, url: `${prefix}${path}` })).statusCode).toBe(404);
+      }
+    }
+  });
   it("reports health without implying dependency readiness", async () => {
     const app = createGatewayApp({
       now: () => toInstant("2026-10-01T16:00:00Z"),
