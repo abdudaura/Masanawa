@@ -12,6 +12,7 @@ export interface CallStore {
   markActive(input: CallActor & {callId: string}): Promise<boolean>;
   finish(input: CallActor & {callId: string; state: "ended" | "failed"; failureCode?: string}): Promise<boolean>;
   get(input: CallActor & {callId: string}): Promise<CallRecord | null>;
+  findByRequest(input: CallActor & {characterId: string; requestId: string}): Promise<CallRecord | null>;
 }
 export interface CallProvider {
   /** Dispatch must be idempotent on callId and must recheck active DB state each turn. */
@@ -57,11 +58,29 @@ export function createMasanaCallService(input: {
       let created=false;
       try { created=await input.store.create({...fan,callId,characterId,requestId,roomName,expiresAt}); }
       catch (e) {
-        if (e && typeof e==="object" && "code" in e && (e as {code?:unknown}).code==="23505")
-          throw new CallFault("call_already_pending",409);
-        throw e;
+        if (!(e && typeof e==="object" && "code" in e && (e as {code?:unknown}).code==="23505"))
+          throw e;
       }
-      if (!created) throw new CallFault("call_already_pending",409);
+      if (!created) {
+        // A response may be lost after LiveKit dispatch. Re-issue only the
+        // SAME fan's token for the SAME idempotency key, never a new dispatch.
+        // An unrelated concurrent call remains a 409 with no token leak.
+        const retry=await input.store.findByRequest({...fan,characterId,requestId});
+        if (!retry || !["connecting","active"].includes(retry.state) ||
+            !new Date(retry.expiresAt).getTime() ||
+            new Date(retry.expiresAt).getTime()<=now().getTime())
+          throw new CallFault("call_already_pending",409);
+        try {
+          const media=await input.provider.token({
+            callId:retry.callId,roomName:retry.roomName,fanUserId:fan.fanUserId,
+          });
+          if (!/^wss:\/\//.test(media.url) || !media.token || !media.expiresAt)
+            throw new Error("invalid_provider_token");
+          return {callId:retry.callId,characterId,roomName:retry.roomName,
+            url:media.url,token:media.token,
+            tokenExpiresAt:media.expiresAt,expiresAt:retry.expiresAt,state:retry.state};
+        } catch {throw new CallFault("calls_unavailable",503);}
+      }
       try {
         await input.provider.dispatch({callId,roomName,tenantId:fan.tenantId,characterId});
         const media=await input.provider.token({callId,roomName,fanUserId:fan.fanUserId});
