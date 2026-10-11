@@ -1607,6 +1607,31 @@
       "claimed_at": "2026-10-11T04:12:53.843Z",
       "heartbeat_at": "2026-10-11T04:12:53.843Z",
       "expires_at": "2026-10-11T04:17:53.843Z"
+    },
+    {
+      "claim_id": "l-video-a14-recovery-20261011-gpt6-0515",
+      "owner": "L-VIDEO A14/J15 / GPT-6",
+      "scope": "Complete existing official video review recovery across staff UI, authenticated API, tenant-scoped PostgreSQL CAS/audit, worker safe demotion and negative tests; shared registries/composition reserved for AF00",
+      "paths": [
+        "services/gateway/src/modules/external_videos/service.ts",
+        "services/gateway/src/modules/external_videos/service.test.ts",
+        "services/gateway/src/modules/external_videos/routes.test.ts",
+        "adapters/storage/postgres/src/external_videos/repository.ts",
+        "adapters/storage/postgres/src/external_videos/repository.integration.test.ts",
+        "packages/external-videos/migrations/0004_video_recovery.sql",
+        "services/worker/src/jobs/external_videos/recovery.ts",
+        "services/worker/src/jobs/external_videos/recovery.test.ts",
+        "apps/admin_mobile/lib/src/features/external_videos/video_admin_api.dart",
+        "apps/admin_mobile/lib/src/features/external_videos/video_curation_screen.dart",
+        "apps/admin_mobile/test/features/external_videos/video_recovery_test.dart",
+        "tests/e2e/J15/recovery.md"
+      ],
+      "branch": "lane/l-video-a14-recovery-20261011-gpt6-0515",
+      "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
+      "claimed_at": "2026-10-11T04:17:52.129Z",
+      "heartbeat_at": "2026-10-11T04:17:52.129Z",
+      "expires_at": "2026-10-11T04:22:52.129Z",
+      "notes": "New additive 0004 migration source only. Existing canonical external_videos items/audit, no new pipeline or hosted video. Never main/live."
     }
   ],
   "history": [
