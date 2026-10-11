@@ -16,14 +16,14 @@ export interface RehearsalRunner {
  isVoiceQualified(characterId:string):Promise<boolean>;
 }
 const valid=(v:string,max:number)=>typeof v==='string'&&v.length>0&&v.length<=max&&/^[A-Za-z0-9_-]+$/.test(v);
-export async function processMasanaRehearsal(event:{tenantId:string;runId:string},port:RehearsalPort,runner:RehearsalRunner,enabled:boolean):Promise<'disabled'|'already_processed'|'processed'|'requeued'>{
+export async function processMasanaRehearsal(event:{tenantId:string;runId:string},port:RehearsalPort,runner:RehearsalRunner,enabled:boolean):Promise<'disabled'|'already_processed'|'processed'|'failed'>{
  if(!enabled)return 'disabled';
  if(!valid(event.tenantId,160)||!valid(event.runId,160))throw new TypeError('invalid_rehearsal_event');
  const run=await port.claim(event.tenantId,event.runId);
  if(!run)return 'already_processed';
  try{
   if(run.mode==='call'&&!await runner.isVoiceQualified(run.characterId)){
-   await port.fail(run,'voice_not_qualified');return 'requeued';
+   await port.fail(run,'voice_not_qualified');return 'failed';
   }
   const preview=await runner.run({mode:run.mode,prompt:run.prompt,draftProfile:run.draftProfile,
    approvedForPublic:false,maxTokens:512,noSideEffects:true});
@@ -31,9 +31,11 @@ export async function processMasanaRehearsal(event:{tenantId:string;runId:string
    typeof preview.previewText!=='string'||preview.previewText.length>4000||
    (preview.audioMediaId!==undefined&&!valid(preview.audioMediaId,160)))
    throw new TypeError('invalid_preview');
-  await port.complete(run,preview);
+  if(!await port.complete(run,preview))return 'already_processed';
   return 'processed';
  }catch{
-  await port.fail(run,'rehearsal_failed');return 'requeued';
+  await port.fail(run,'rehearsal_failed');
+  if(run.attempt<3)throw new Error('masana_rehearsal_retry');
+  return 'failed';
  }
 }
