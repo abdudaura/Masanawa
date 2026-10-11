@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/features/search/search_repository.dart';
-import 'package:masanawa_mobile/src/features/search/search_screen.dart';
+import 'package:masanawa/src/features/search/search_repository.dart';
+import 'package:masanawa/src/features/search/search_screen.dart';
 
 class StubSearch implements SearchRepository {
   final calls = <String>[];
