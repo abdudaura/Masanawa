@@ -2069,6 +2069,27 @@
       "released_at": "2026-10-11T07:02:11.787Z",
       "integration_head_sha": "3b3eb3969ad323083d11cd1bf57fbe06439443c8",
       "release_reason": "C29/J14 12-path source reviewed and merged PR #659 into non-deploying integration/rebuild SHA 3b3eb3969ad323083d11cd1bf57fbe06439443c8. Merged SHA GitHub Foundation check job and mobile/admin jobs FAIL before any steps; TS/Vitest/PG18/Flutter/Android BLOCKED/NOT_RUN. AF00 protected app/router/Admin composition remains absent and explicitly handed off in PR #616; not E2E, not production."
+    },
+    {
+      "claim_id": "l-admin-j19-ops-continuity-20261011-gpt6-0803",
+      "owner": "L-ADMIN / GPT-6",
+      "scope": "J19 existing canonical Ops admin kill-switch and telemetry continuity across staff account switch, typed API denial, PG tenant metrics and worker admission negatives. Reuse existing J19 sources; AF00 owns shared app/router, migration registry and live wiring.",
+      "paths": [
+        "apps/admin_mobile/lib/src/features/operations/operations_page.dart",
+        "apps/admin_mobile/lib/src/features/operations/overview_page.dart",
+        "apps/admin_mobile/test/features/operations/operations_page_test.dart",
+        "apps/admin_mobile/test/features/operations/overview_page_test.dart",
+        "services/gateway/src/modules/admin_operations/routes.ts",
+        "services/gateway/src/modules/admin_operations/routes.test.ts",
+        "adapters/storage/postgres/src/admin_operations/metrics.test.ts",
+        "services/worker/src/jobs/admin_operations/gate.test.ts"
+      ],
+      "branch": "lane/l-admin-j19-ops-continuity-20261011-gpt6-0803",
+      "base_sha": "3b3eb3969ad323083d11cd1bf57fbe06439443c8",
+      "claimed_at": "2026-10-11T07:09:03.048Z",
+      "heartbeat_at": "2026-10-11T07:09:03.048Z",
+      "expires_at": "2026-10-11T07:14:03.048Z",
+      "notes": "Nondeploying integration only; no financial ledger edits or enabling controls"
     }
   ],
   "history": [
