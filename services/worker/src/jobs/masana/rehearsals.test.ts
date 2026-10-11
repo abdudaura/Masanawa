@@ -21,6 +21,6 @@ describe('A04 worker does not publish or impersonate',()=>{
   let error='';const port:RehearsalPort={claim:async()=>({...run,mode:'call'}),complete:async()=>{throw Error('must not complete')},fail:async(_,v)=>{error=v}};
   const s=await processMasanaRehearsal({tenantId:run.tenantId,runId:run.runId},port,
    {isVoiceQualified:async()=>false,run:async()=>{throw Error('must not run')}},true);
-  expect(s).toBe('requeued');expect(error).toBe('voice_not_qualified');
+  expect(s).toBe('failed');expect(error).toBe('voice_not_qualified');
  });
 });
