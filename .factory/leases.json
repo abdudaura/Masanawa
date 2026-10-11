@@ -1767,6 +1767,25 @@
       "heartbeat_at": "2026-10-11T04:44:12.484Z",
       "expires_at": "2026-10-11T04:49:12.484Z",
       "notes": "Read #615 planning authority, #616 AF00, J06 #631 and C22 #642. Reuse canonical feed.posts and approved media signer; no shared route/DB registry changes."
+    },
+    {
+      "claim_id": "l-feed-c26-search-source-review-20261011-gpt6-0549",
+      "owner": "L-FEED / C26 source recovery review (GPT-6)",
+      "scope": "Continue existing #648 C26 search source and regression tests: public post fallbacks, parser/tenant-negative coverage. No shared router, root config, finance, DB migrations or payment/worker changes.",
+      "paths": [
+        "adapters/storage/postgres/src/search/index.ts",
+        "adapters/storage/postgres/src/search/index.test.ts",
+        "services/gateway/src/modules/search/routes.ts",
+        "services/gateway/src/modules/search/routes.test.ts"
+      ],
+      "branch": "lane/l-feed-c26-unified-search-20261011-gpt6-0535",
+      "base_sha": "9256ada27b33ed286edaa3ba42835972575a25fd",
+      "source_pr": 648,
+      "source_head": "a313a1da7ce43a098d032414b5f6f82dc43b5961",
+      "claimed_at": "2026-10-11T04:49:52.021Z",
+      "heartbeat_at": "2026-10-11T04:49:52.021Z",
+      "expires_at": "2026-10-11T04:54:52.021Z",
+      "notes": "Original C26 lease released 2026-10-11T04:42:47Z; original PR head checked and coordination note added on #648 before bounded continuation. AF00 retains registration, lockfile and merge/deploy."
     }
   ],
   "history": [
