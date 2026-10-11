@@ -1,5 +1,5 @@
 import type {Pool,PoolClient} from "pg";
-import type {EditorialPost,EditorialRepository,EditorialAction,EditorialState,DraftInput} from "../../../../../packages/feed/src/review.js";
+import type {EditorialPost,EditorialRepository,EditorialAction,EditorialState,DraftInput} from "@masanawa/feed";
 
 /** One transactional PostgreSQL authority: feed.posts and an immutable revision audit.
  * Registered by AF00 only after the forward-only feed migration is qualified.
