@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { registerApiVersionAliases } from "./api_versioning.js";
 import type { Instant } from "@masanawa/contracts";
 import { isCanonicalId, nowInstant, parseCanonicalId, PlatformError } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
@@ -302,6 +303,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     requestTimeout: 30_000,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
+  registerApiVersionAliases(app);
+
   const now = options.now ?? nowInstant;
   const checks = options.readinessChecks ?? [];
 
@@ -360,7 +363,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       "/agent/sessions/:characterSessionId/turn-stream",
       "/agent/sessions/:characterSessionId/media-turn",
       "/agent/sessions/:characterSessionId/media-set-turn",
-    ].includes(request.routeOptions.url ?? "");
+    ].includes((request.routeOptions.url ?? "").replace(/^\/v1(?=\/)/u, ""));
     // Public telemetry IDs remain server-issued. Conversation request keys
     // identify an account-fenced durable command, so retries must preserve them.
     // The authorizer and repository supply authority, never this caller key.

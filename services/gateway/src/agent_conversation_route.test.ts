@@ -92,12 +92,14 @@ describe("Alpha agent conversation routes", () => {
       const payload = route.startsWith("media")
         ? route === "media-turn" ? { characterId, caption: "", ...media[0] } : { characterId, caption: "", media }
         : { characterId, text: "hello" };
-      for (let retry = 0; retry < 2; retry++) {
-        const response = await app.inject({ method: "POST", url: `/agent/sessions/${createCanonicalId("character-session")}/${route}`,
-          headers: { "x-request-id": requestId }, payload });
-        expect(response.statusCode).toBe(200);
+      for (const prefix of ["", "/v1"]) {
+        for (let retry = 0; retry < 2; retry++) {
+          const response = await app.inject({ method: "POST", url: `${prefix}/agent/sessions/${createCanonicalId("character-session")}/${route}`,
+            headers: { "x-request-id": requestId }, payload });
+          expect(response.statusCode).toBe(200);
+        }
       }
-      expect(seen).toEqual([requestId, requestId]);
+      expect(seen).toEqual([requestId, requestId, requestId, requestId]);
     },
   );
 

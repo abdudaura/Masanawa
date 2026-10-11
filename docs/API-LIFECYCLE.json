@@ -22,6 +22,296 @@
       "/fulfillments",
       "/offers",
       "/quotes"
+    ],
+    "compatibilityUnversionedRoutes": [
+      {
+        "method": "GET",
+        "path": "/account/deletion"
+      },
+      {
+        "method": "POST",
+        "path": "/account/deletion/request"
+      },
+      {
+        "method": "POST",
+        "path": "/account/deletion/verify"
+      },
+      {
+        "method": "GET",
+        "path": "/activity"
+      },
+      {
+        "method": "GET",
+        "path": "/admin/channels/whatsapp/qr"
+      },
+      {
+        "method": "POST",
+        "path": "/admin/channels/whatsapp/reset"
+      },
+      {
+        "method": "GET",
+        "path": "/admin/channels/whatsapp/status"
+      },
+      {
+        "method": "GET",
+        "path": "/admin/talk-safety/:kind/:targetId"
+      },
+      {
+        "method": "PUT",
+        "path": "/admin/talk-safety/:kind/:targetId"
+      },
+      {
+        "method": "POST",
+        "path": "/channels/telegram/webhook"
+      },
+      {
+        "method": "GET",
+        "path": "/channels/whatsapp/webhook"
+      },
+      {
+        "method": "POST",
+        "path": "/channels/whatsapp/webhook"
+      },
+      {
+        "method": "GET",
+        "path": "/home"
+      },
+      {
+        "method": "GET",
+        "path": "/me/saved-talks"
+      },
+      {
+        "method": "DELETE",
+        "path": "/me/saved-talks/:talkId"
+      },
+      {
+        "method": "GET",
+        "path": "/me/saved-talks/:talkId"
+      },
+      {
+        "method": "PUT",
+        "path": "/me/saved-talks/:talkId"
+      },
+      {
+        "method": "GET",
+        "path": "/me/talks"
+      },
+      {
+        "method": "GET",
+        "path": "/personas/:publicId"
+      },
+      {
+        "method": "GET",
+        "path": "/profiles/:handle"
+      },
+      {
+        "method": "POST",
+        "path": "/profiles/:handle/follow"
+      },
+      {
+        "method": "GET",
+        "path": "/profiles/by-user/:userId"
+      },
+      {
+        "method": "POST",
+        "path": "/profiles/by-user/:userId/follow"
+      },
+      {
+        "method": "GET",
+        "path": "/profiles/me"
+      },
+      {
+        "method": "PATCH",
+        "path": "/profiles/me"
+      },
+      {
+        "method": "PUT",
+        "path": "/profiles/me"
+      },
+      {
+        "method": "GET",
+        "path": "/safety/profiles/:handle/preference"
+      },
+      {
+        "method": "PUT",
+        "path": "/safety/profiles/:handle/preference"
+      },
+      {
+        "method": "POST",
+        "path": "/safety/reports"
+      },
+      {
+        "method": "GET",
+        "path": "/safety/users/:userId/preference"
+      },
+      {
+        "method": "PUT",
+        "path": "/safety/users/:userId/preference"
+      },
+      {
+        "method": "GET",
+        "path": "/search"
+      },
+      {
+        "method": "GET",
+        "path": "/talks"
+      },
+      {
+        "method": "POST",
+        "path": "/talks"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId"
+      },
+      {
+        "method": "PATCH",
+        "path": "/talks/:talkId"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/ai-seat-quotes"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/ai-seat-quotes/:quoteId/confirm"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/ai-seats"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/comments"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/end"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/gifts"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/gifts/catalog"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/host-controls"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/host-participants/:participantId"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/host-questions"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/host-questions/:questionId"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/host-requests/:requestId"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/invitation-response"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/invitations"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/leave-seat"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/live/connect"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/live/disconnect"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/live/heartbeat"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/live/media-token"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/live/state"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/participation"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/poll"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/polls"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/polls/:pollId/close"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/polls/:pollId/vote"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/questions"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/raise-hand"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/reactions"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/replay"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/replay/playback"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/replay/publication"
+      },
+      {
+        "method": "POST",
+        "path": "/talks/:talkId/replay/recording"
+      },
+      {
+        "method": "DELETE",
+        "path": "/talks/:talkId/twin-seats/:seatId/direct"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/twin-seats/:seatId/direct"
+      },
+      {
+        "method": "PUT",
+        "path": "/talks/:talkId/twin-seats/:seatId/direct"
+      },
+      {
+        "method": "GET",
+        "path": "/talks/:talkId/twin-seats/mine"
+      }
     ]
   },
   "deprecations": []

@@ -80,3 +80,26 @@ it("composes onboarding with the existing Gateway health, readiness and director
     expect(f.service.read).toHaveBeenCalledTimes(1);
   } finally { await app.close(); }
 });
+it.each(["", "/v1"])("preserves scoped onboarding field fences and no-store on %s routes", async prefix => {
+  const f = await fixture();
+  await f.app.close();
+  const app = createGatewayWithCloneOnboarding({ cloneOnboarding: f.service as unknown as CloneOnboardingService });
+  try {
+    for (const payload of [
+      { expectedRevision: null, profile: { displayName: "Nasir" }, userId: "forged" },
+      { expectedRevision: null, profile: { displayName: "Nasir", apiKey: "secret" } },
+      { expectedRevision: null, profile: { displayName: "Nasir", avatarUrl: "https://attacker.example" } },
+    ]) {
+      const denied = await app.inject({ method: "PUT", url: `${prefix}/creator/onboarding/profile`, headers: { authorization: "Bearer private" }, payload });
+      expect(denied.statusCode).toBe(400);
+      expect(denied.headers["cache-control"]).toBe("private, no-store");
+      expect(denied.body).not.toMatch(/forged|secret|attacker/);
+    }
+    expect(f.service.save).not.toHaveBeenCalled();
+    const valid = await app.inject({ method: "PUT", url: `${prefix}/creator/onboarding/profile`, headers: { authorization: "Bearer private" }, payload: { expectedRevision: null, profile: { displayName: "Nasir", languages: ["Hausa"] } } });
+    expect(valid.statusCode).toBe(200);
+    expect(valid.headers["cache-control"]).toBe("private, no-store");
+    expect(f.service.save).toHaveBeenCalledTimes(1);
+    expect(f.service.save).toHaveBeenCalledWith({ authorizationHeader: "Bearer private", expectedRevision: null, profile: { displayName: "Nasir", languages: ["Hausa"] } });
+  } finally { await app.close(); }
+});

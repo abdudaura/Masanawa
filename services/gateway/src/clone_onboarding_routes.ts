@@ -32,10 +32,11 @@ export async function registerCloneOnboardingRoutes(app: FastifyInstance, servic
         "/creator/onboarding/cancel": ["expectedRevision"],
         "/creator/onboarding/support": ["characterId"],
       };
-      const allowed = fields[request.routeOptions.url ?? ""];
+      const routeUrl = (request.routeOptions.url ?? "").replace(/^\/v1(?=\/)/u, "");
+      const allowed = fields[routeUrl];
       const body = request.body;
       if (allowed && body && typeof body === "object" && Object.keys(body).some(key => !allowed.includes(key))) throw new CloneSetupError("invalid");
-      if (request.routeOptions.url === "/creator/onboarding/profile" && body && typeof body === "object") {
+      if (routeUrl === "/creator/onboarding/profile" && body && typeof body === "object") {
         const profile = (body as Record<string, unknown>).profile;
         if (profile && typeof profile === "object" && Object.keys(profile).some(key => !["displayName", "biography", "languages", "personality", "expertise"].includes(key))) throw new CloneSetupError("invalid");
       }

@@ -38,6 +38,17 @@ Operational probes are intentionally unversioned:
 All product/public/internal HTTP contract routes use a major prefix such as
 `/v1/...`. The supported major list is declared in `API-LIFECYCLE.json`.
 
+Gateway bootstrap registers `/v1` aliases for existing unversioned product routes,
+using the same handlers, authorization hooks, schemas and response contracts.
+Installed clients retain their existing URLs. Probes stay unversioned; already
+versioned routes do not acquire another prefix. Legacy routes beyond the historical
+compatibility prefixes are inventoried by exact method and path in
+`http.compatibilityUnversionedRoutes`. This is an explicit migration layer, not
+permission for new unversioned routes or another source of durable state.
+New clients should use `/v1`; removal of a legacy URL requires separately reviewed
+client migration and registered deprecation. Agent retries retain canonical request
+keys on both URL forms and remain scoped by the same authorization/repository checks.
+
 Compatible request/response additions may stay within a major only when existing clients
 remain valid. A breaking route/schema/semantic change requires a new supported major or
 an explicit compatibility layer. Old and new majors may coexist during migration.

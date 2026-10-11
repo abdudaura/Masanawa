@@ -38,6 +38,7 @@ interface ApiLifecycle {
     readonly supportedMajors: readonly number[];
     readonly operationalUnversionedPaths: readonly string[];
     readonly compatibilityUnversionedPrefixes: readonly string[];
+    readonly compatibilityUnversionedRoutes: readonly { readonly method: string; readonly path: string }[];
   };
   readonly deprecations: readonly ApiDeprecation[];
 }
@@ -209,14 +210,24 @@ describe("public API lifecycle", () => {
       lifecycle.http.supportedMajors.map((major) => `/v${major}`),
     );
     const compatibility = lifecycle.http.compatibilityUnversionedPrefixes;
+    const legacyRoutes = new Set(lifecycle.http.compatibilityUnversionedRoutes.map(route => `${route.method} ${route.path}`));
+    const retained = new Set<string>();
+    expect(legacyRoutes.size).toBe(lifecycle.http.compatibilityUnversionedRoutes.length);
+    for (const route of lifecycle.http.compatibilityUnversionedRoutes) {
+      expect(route.method).toMatch(/^(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)$/u);
+      expect(route.path).toMatch(/^\/(?!v\d+(?:\/|$))/u);
+      expect(operational.has(route.path)).toBe(false);
+    }
     const offenders: string[] = [];
 
-    for (const file of sourceFiles(path.resolve("services"))) {
+    for (const file of sourceFiles(path.resolve("services")).filter(file => !/\.(?:test|spec)\./u.test(file))) {
       const source = fs.readFileSync(file, "utf8");
       for (const match of source.matchAll(
-        /\b(?:app|server|router)\.(?:get|post|put|patch|delete|options|head)\(\s*["'`]([^"'`]+)["'`]/gu,
+        /\b(?:app|server|router|routes)\.(get|post|put|patch|delete|options|head)(?:<[^()]*>)?\(\s*["'`]([^"'`]+)["'`]/gu,
       )) {
-        const route = match[1]!;
+        const route = match[2]!;
+        const key = `${match[1]!.toUpperCase()} ${route}`;
+        if (legacyRoutes.has(key)) { retained.add(key); continue; }
         if (operational.has(route)) continue;
         if (compatibility.some(
           (prefix) => route === prefix || route.startsWith(`${prefix}/`),
@@ -234,6 +245,7 @@ describe("public API lifecycle", () => {
     }
 
     expect(offenders).toEqual([]);
+    expect([...legacyRoutes].filter(route => !retained.has(route))).toEqual([]);
   });
 
   it("requires every source deprecation to be registered and auditable", () => {

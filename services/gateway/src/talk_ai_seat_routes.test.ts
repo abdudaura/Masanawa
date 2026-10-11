@@ -194,7 +194,9 @@ describe("Talk AI Seat API", () => {
   });
 
   it("returns the canonical confirmation status and friendly message", async () => {
-    const quoteId = createCanonicalId("quote");
+    // The repository fixture uses the suffix to select its status. Keep this
+    // case deterministic rather than choosing admitted for random IDs ending 0.
+    const quoteId = "quote_0199f0d0-0000-7000-8000-000000000001";
     const response = await app().inject({
       method: "POST",
       url: `/talks/talk_1/ai-seat-quotes/${quoteId}/confirm`,
