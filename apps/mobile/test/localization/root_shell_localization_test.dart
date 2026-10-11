@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/l10n/app_localizations.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
-import 'package:masanawa/src/screens/twin/twin_home_shell.dart';
+import 'package:masanawa/src/agents/agent_presence_labels.dart';
 
 AgentDirectoryEntry _agent(AgentPresence presence, {int count = 0}) =>
     AgentDirectoryEntry(
