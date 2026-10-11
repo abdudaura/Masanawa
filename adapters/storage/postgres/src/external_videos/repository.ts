@@ -34,8 +34,8 @@ export function createPostgresVideoStore(pool: Pool) {
       });
     },
     async review(input: {
-      tenantId:string; id:string; actorId:string; expectedState:"pending"|"approved";
-      state:"approved"|"hidden"|"unavailable"; verificationReference:string|null;
+      tenantId:string; id:string; actorId:string; expectedState:"pending"|"approved"|"hidden"|"unavailable";
+      state:"pending"|"approved"|"hidden"|"unavailable"; verificationReference:string|null; reasonReference?:string|null;
     }): Promise<Item|null> {
       return transaction(pool, async db => {
         const changed=await db.query<Item>(
@@ -45,8 +45,10 @@ export function createPostgresVideoStore(pool: Pool) {
           [input.tenantId,input.id,input.expectedState,input.state,input.verificationReference,input.actorId]);
         if (!changed.rows[0]) return null;
         await db.query(
-          "INSERT INTO external_videos.review_audit(tenant_id,event_id,item_id,actor_id,action,verification_reference) VALUES($1,$2,$3,$4,$5,$6)",
-          [input.tenantId,randomUUID(),input.id,input.actorId,input.state==="approved"?"approve":input.state==="hidden"?"hide":"unavailable",input.verificationReference]);
+          "INSERT INTO external_videos.review_audit(tenant_id,event_id,item_id,actor_id,action,verification_reference,reason_reference) VALUES($1,$2,$3,$4,$5,$6,$7)",
+          [input.tenantId,randomUUID(),input.id,input.actorId,
+            input.state==="pending"?"reopen":input.state==="approved"?"approve":input.state==="hidden"?"hide":"unavailable",
+            input.verificationReference,input.reasonReference??null]);
         return changed.rows[0];
       });
     },

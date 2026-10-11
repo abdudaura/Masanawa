@@ -17,6 +17,8 @@ testWithDb("J15 external videos PG18 — audited, tenant-fenced manual approval"
   beforeAll(async () => {
     const url = new URL("../../../../../packages/external-videos/migrations/0001_external_videos.sql", import.meta.url);
     await pool.query(await readFile(url, "utf8"));
+    const recovery = new URL("../../../../../packages/external-videos/migrations/0004_video_recovery.sql", import.meta.url);
+    await pool.query(await readFile(recovery, "utf8"));
   });
   afterAll(async () => { await pool.end(); });
 
@@ -44,12 +46,21 @@ testWithDb("J15 external videos PG18 — audited, tenant-fenced manual approval"
     const hidden = await repo.review({tenantId,id,actorId,expectedState:"approved",state:"hidden",verificationReference:null});
     expect(hidden?.reviewState).toBe("hidden");
     expect(await repo.list({tenantId,publicOnly:true,limit:10})).toHaveLength(0);
+    expect(await repo.review({tenantId,id,actorId,expectedState:"unavailable",state:"pending",verificationReference:null})).toBeNull();
+    expect((await repo.review({tenantId,id,actorId,expectedState:"hidden",state:"pending",verificationReference:null}))?.reviewState).toBe("pending");
+    expect(await repo.list({tenantId,publicOnly:true,limit:10})).toHaveLength(0);
+    expect((await repo.review({tenantId,id,actorId,expectedState:"pending",state:"approved",verificationReference:"provider-reverified-player-xyz"}))?.reviewState).toBe("approved");
+    expect((await repo.review({tenantId,id,actorId:"system:external-video-review",expectedState:"approved",state:"unavailable",verificationReference:null,reasonReference:"provider-removed-verified-123"}))?.reviewState).toBe("unavailable");
+    expect((await repo.review({tenantId,id,actorId,expectedState:"unavailable",state:"pending",verificationReference:null}))?.reviewState).toBe("pending");
+    expect(await repo.list({tenantId,publicOnly:true,limit:10})).toEqual([]);
 
     const audit = await pool.query<{action:string}>(
       "SELECT action FROM external_videos.review_audit WHERE tenant_id=$1 AND item_id=$2 ORDER BY occurred_at",
       [tenantId,id],
     );
-    expect(audit.rows.map(x => x.action)).toEqual(["submit","approve","hide"]);
+    expect(audit.rows.map(x => x.action)).toEqual(["submit","approve","hide","reopen","approve","unavailable","reopen"]);
+    const evidence=await pool.query<{reason_reference:string}>("SELECT reason_reference FROM external_videos.review_audit WHERE tenant_id=$1 AND item_id=$2 AND action='unavailable'",[tenantId,id]);
+    expect(evidence.rows[0]?.reason_reference).toBe("provider-removed-verified-123");
   });
 
   it("database itself blocks forged approved state without eligibility evidence", async () => {

@@ -20,8 +20,12 @@ class VideoAdminApi {
   Future<void> submit(String url,String title,String channelName) async {
     await dio.post<void>('/v1/admin/video-items', data:{'url':url.trim(),'title':title.trim(),'channelName':channelName.trim()});
   }
-  Future<void> review(String id,String state,String? evidence) async {
+  Future<void> review(String id,String state,String? evidence,{String? expectedState}) async {
+    if (state == 'pending' && expectedState != 'hidden' && expectedState != 'unavailable') {
+      throw ArgumentError('Re-review must match a hidden or unavailable item');
+    }
     await dio.patch<void>('/v1/admin/video-items/$id/review',
-      data:{'state':state,'verificationReference':evidence});
+      data:{'state':state,'verificationReference':evidence,
+        if (state == 'pending') 'expectedState':expectedState});
   }
 }

@@ -7,8 +7,9 @@ import {
 export interface VideoStore {
   submit(item: ExternalVideo, actorId: string): Promise<ExternalVideo>;
   review(input: {
-    tenantId: string; id: string; actorId: string; expectedState: "pending" | "approved";
-    state: "approved" | "hidden" | "unavailable";
+    tenantId: string; id: string; actorId: string; expectedState: "pending" | "approved" | "hidden" | "unavailable";
+    state: "pending" | "approved" | "hidden" | "unavailable";
+    reasonReference?: string | null;
     verificationReference: string | null;
   }): Promise<ExternalVideo | null>;
   list(input: { tenantId: string; provider?: VideoProvider; publicOnly: boolean; limit: number; before?: string }): Promise<readonly ExternalVideo[]>;
@@ -52,19 +53,29 @@ export function createVideoAdmissionService(store: VideoStore) {
       if (!/^[a-f0-9-]{36}$/iu.test(id)) throw new VideoAdmissionError(400, "video_invalid_id", "Invalid video ID");
       if (!input || typeof input !== "object" || Array.isArray(input)) throw new VideoAdmissionError(400,"video_invalid_review","Invalid review");
       const x = input as Record<string, unknown>;
-      if (Object.keys(x).sort().join(",") !== "state,verificationReference") {
+      const keys = Object.keys(x).sort().join(",");
+      if (keys !== "state,verificationReference" && keys !== "expectedState,state,verificationReference") {
         throw new VideoAdmissionError(400,"video_invalid_review","Unexpected review fields");
       }
-      const state = x.state as "approved" | "hidden" | "unavailable";
-      if (!["approved","hidden","unavailable"].includes(state)) throw new VideoAdmissionError(400,"video_invalid_review","Invalid review state");
+      const state = x.state as "pending" | "approved" | "hidden" | "unavailable";
+      if (!["pending","approved","hidden","unavailable"].includes(state)) throw new VideoAdmissionError(400,"video_invalid_review","Invalid review state");
+      const previous = x.expectedState;
+      if (state === "pending" && previous !== "hidden" && previous !== "unavailable") {
+        throw new VideoAdmissionError(400,"video_invalid_review","Re-review requires the last hidden or unavailable state");
+      }
+      if (state !== "pending" && previous !== undefined) {
+        throw new VideoAdmissionError(400,"video_invalid_review","Do not supply a previous state for this transition");
+      }
       // A staff verification record is mandatory before an item can be public.
       const verificationReference = typeof x.verificationReference === "string" ? x.verificationReference.trim() : null;
       if (state === "approved" && (!verificationReference || verificationReference.length < 12 || verificationReference.length > 250)) {
         throw new VideoAdmissionError(400,"video_verification_required","Record official player/rights eligibility evidence before approval");
       }
       if (state !== "approved" && verificationReference !== null) throw new VideoAdmissionError(400,"video_invalid_review","Only approval accepts verification evidence");
+      const expectedState = state === "pending" ? previous as "hidden" | "unavailable"
+        : state === "approved" ? "pending" : "approved";
       const updated = await store.review({ tenantId, id, actorId,
-        expectedState: state === "approved" ? "pending" : "approved", state, verificationReference });
+        expectedState, state, verificationReference });
       if (!updated) throw new VideoAdmissionError(409, "video_review_conflict", "Video is missing or review state changed");
       return updated;
     },
