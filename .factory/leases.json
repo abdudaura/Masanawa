@@ -1836,7 +1836,13 @@
       "claimed_at": "2026-10-11T04:55:56.996Z",
       "heartbeat_at": "2026-10-11T04:55:56.996Z",
       "expires_at": "2026-10-11T05:00:56.996Z",
-      "notes": "Exact paths only, source-first standalone C05. C04 #649 owns /v1/me and AF00 owns shared navigation; do not duplicate."
+      "notes": "Exact paths only, source-first standalone C05. C04 #649 owns /v1/me and AF00 owns shared navigation; do not duplicate.",
+      "released_at": "2026-10-11T05:00:11.027Z",
+      "release_reason": "C05 standalone private account API read+Flutter screen+6 authored widget/model tests, source-readback complete. PR #652 head ee71d22808c94504164175da483d57d3e0b2fd7d; AF00 handoff #616 comment 6105641472. C04 contract #649 not integrated. Actual CI workflow advisory success but jobs FAIL; Node24/pnpm/Flutter/PG/Android unavailable here. No main merge or release.",
+      "source_head": "ee71d22808c94504164175da483d57d3e0b2fd7d",
+      "source_pr": 652,
+      "integration_head_sha": null,
+      "test_state": "BLOCKED: runner missing locally, actual GitHub workflow jobs FAIL at 38113315035/38113315116"
     },
     {
       "claim_id": "l-masana-c46-following-20261011-gpt6-0600",
