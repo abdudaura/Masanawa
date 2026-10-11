@@ -1912,6 +1912,34 @@
       "source_head_sha": "3951d976948cfba787a7a311d0cfecf5fff7da82",
       "integration_head_sha": null,
       "test_state": "IMPLEMENTED_UNVERIFIED feature-local; full E2E/PG18/Flutter/Android BLOCKED on toolchain, AF00 composition and pnpm lock"
+    },
+    {
+      "claim_id": "l-rooms-c38-saved-lessons-20261011-gpt6",
+      "owner": "GPT-6 L-ROOMS C38 fan saved lessons",
+      "scope": "Complete C38 saved teacher lessons with server-side membership+Play entitlement each read/write, canonical rooms schema, account-scoped Flutter UI, tests; AF00 protected gateway/router/migration registration untouched, no new wallet/worker",
+      "paths": [
+        "packages/rooms/migrations/0004_saved_lessons.sql",
+        "adapters/storage/postgres/src/rooms/bookmarks.ts",
+        "adapters/storage/postgres/src/rooms/bookmarks.test.ts",
+        "services/gateway/src/modules/rooms/bookmark_routes.ts",
+        "services/gateway/src/modules/rooms/bookmark_routes.test.ts",
+        "apps/mobile/lib/src/features/rooms/saved_lessons_client.dart",
+        "apps/mobile/lib/src/features/rooms/saved_lessons_screen.dart",
+        "apps/mobile/test/features/rooms/saved_lessons_screen_test.dart",
+        "apps/mobile/lib/src/features/rooms/rooms_client.dart",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/rooms_screen_test.dart",
+        "apps/mobile/test/features/rooms/room_paid_access_test.dart",
+        "tests/e2e/J07/saved_lessons/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-rooms-c38-saved-lessons-20261011-gpt6",
+      "source_pr": 625,
+      "base_sha": "3951d976948cfba787a7a311d0cfecf5fff7da82",
+      "source_head": "3951d976948cfba787a7a311d0cfecf5fff7da82",
+      "claimed_at": "2026-10-11T05:20:26.423Z",
+      "heartbeat_at": "2026-10-11T05:20:26.423Z",
+      "expires_at": "2026-10-11T05:25:26.423Z",
+      "notes": "New stacked path-only C38 branch. Previous C39 claim released; no edits to C39 paths beyond compatible existing room UI. No live data/provider/production writes."
     }
   ],
   "history": [
