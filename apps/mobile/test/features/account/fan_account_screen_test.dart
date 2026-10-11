@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/features/account/fan_account_repository.dart';
@@ -92,4 +93,45 @@ void main() {
     expect(setupCalls,1);
     expect(find.text('Create public profile'),findsNothing);
   });
+  testWidgets('C05 missing private record can resume C04 setup',
+      (tester) async {
+    var opens = 0;
+    final request = RequestOptions(path:'/v1/me');
+    final repo = _FakeRepo('fan-a', () async => throw DioException(
+      requestOptions: request,
+      response: Response(requestOptions:request,statusCode:404),
+    ));
+    await tester.pumpWidget(_app(keyName:'fan-a',repo:repo,
+      onSetup:()=>opens++));
+    await tester.pumpAndSettle();
+    expect(find.text('Account setup is incomplete.'),findsOneWidget);
+    await tester.tap(find.text('Complete setup'));
+    expect(opens,1);
+  });
+
+  testWidgets('C05 unauthorized read never keeps private data',
+      (tester) async {
+    final request = RequestOptions(path:'/v1/me');
+    final repo = _FakeRepo('fan-a', () async => throw DioException(
+      requestOptions:request,
+      response:Response(requestOptions:request,statusCode:401),
+    ));
+    await tester.pumpWidget(_app(keyName:'fan-a',repo:repo));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in to view your private account.'),findsOneWidget);
+    expect(find.text('Amina'),findsNothing);
+  });
+
+  testWidgets('C05 network loss without prior projection displays retry',
+      (tester) async {
+    final repo = _FakeRepo('fan-a', () async => throw DioException(
+      requestOptions:RequestOptions(path:'/v1/me'),
+      type:DioExceptionType.connectionError,
+    ));
+    await tester.pumpWidget(_app(keyName:'fan-a',repo:repo));
+    await tester.pumpAndSettle();
+    expect(find.text('Offline. Connect and retry.'),findsOneWidget);
+    expect(find.text('Amina'),findsNothing);
+  });
+
 }
