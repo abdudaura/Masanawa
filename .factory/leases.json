@@ -2351,6 +2351,22 @@
         "apps/mobile/test/features/rooms/room_membership_screen_test.dart"
       ],
       "scope": "Extend canonical #625/#655 membership with staff-assigned moderators and revocable single-use invites"
+    },
+    {
+      "base_sha": "a8e1c84cebcec9604a6b7c9cbdafc6ba6c2b036d",
+      "branch": "lane/quality-profile-authority-20261011",
+      "claim_id": "0b6a32c4-3780-4e80-8978-daf0b3712bde",
+      "claimed_at": "2026-10-11T20:33:08Z",
+      "expires_at": "2026-10-11T20:38:08Z",
+      "heartbeat_at": "2026-10-11T20:33:08Z",
+      "owner": "quality-profile-authority-20261011-cloud",
+      "paths": [
+        "docs/workstreams/AF13-quality-profile-authority-20261011.md",
+        "services/gateway/src/talk_profile_routes.test.ts",
+        "services/gateway/src/talk_profile_routes.ts"
+      ],
+      "pr": "",
+      "scope": "quality-profile-authority"
     }
   ],
   "history": [
