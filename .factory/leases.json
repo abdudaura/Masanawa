@@ -1979,14 +1979,18 @@
         "apps/admin_mobile/lib/src/features/external_videos/video_curation_screen.dart",
         "apps/admin_mobile/test/features/external_videos/video_admin_api_test.dart",
         "apps/admin_mobile/test/features/external_videos/video_recovery_test.dart",
-        "adapters/storage/postgres/src/external_videos/repository.integration.test.ts"
+        "adapters/storage/postgres/src/external_videos/repository.integration.test.ts",
+        "services/gateway/src/modules/external_videos/service.ts",
+        "services/gateway/src/modules/external_videos/service.test.ts"
       ],
       "branch": "lane/l-video-a14-curation-pagination-20261011-gpt6-0629",
       "base_sha": "068c6ed787e2b7fd905a612e7771c9c1ddd0d6d5",
       "claimed_at": "2026-10-11T05:29:49.317Z",
-      "heartbeat_at": "2026-10-11T05:29:49.317Z",
-      "expires_at": "2026-10-11T05:34:49.317Z",
-      "notes": "All edits confined to L-VIDEO feature-owned paths; no main deploy, no shared gateway/router/migrations/CI changes. AF00 composition review for integration/rebuild."
+      "heartbeat_at": "2026-10-11T05:34:41.332Z",
+      "expires_at": "2026-10-11T05:39:41.332Z",
+      "notes": "All edits confined to L-VIDEO feature-owned paths; no main deploy, no shared gateway/router/migrations/CI changes. AF00 composition review for integration/rebuild.",
+      "source_head": "9c6caa047e21987d2f9e9cbcfd6edb2183678610",
+      "source_pr": 656
     }
   ],
   "history": [
