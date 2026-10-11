@@ -1933,14 +1933,18 @@
         "tests/e2e/J07/saved_lessons/ACCEPTANCE.md"
       ],
       "branch": "lane/l-rooms-c38-saved-lessons-20261011-gpt6",
-      "source_pr": 625,
+      "source_pr": 655,
       "base_sha": "3951d976948cfba787a7a311d0cfecf5fff7da82",
       "source_head": "3951d976948cfba787a7a311d0cfecf5fff7da82",
       "claimed_at": "2026-10-11T05:20:26.423Z",
       "heartbeat_at": "2026-10-11T05:24:39.130Z",
       "expires_at": "2026-10-11T05:29:39.130Z",
       "notes": "New stacked path-only C38 branch. Previous C39 claim released; no edits to C39 paths beyond compatible existing room UI. No live data/provider/production writes.",
-      "source_head_sha": "69b750f7f6d31417b4d1bf7bbcb25f78cc3b84f7"
+      "source_head_sha": "a69300264cdfa1a8a64f49efc21a308df13fb691",
+      "released_at": "2026-10-11T05:27:12.505Z",
+      "integration_head_sha": null,
+      "test_state": "SOURCE_IMPLEMENTED / INTEGRATED_UNVERIFIED; TS/Vitest/PG18/Flutter/Android NOT_RUN, CI jobs zero-step failure",
+      "release_reason": "PR #655 stacked on Rooms #625; 13 source files: PG expand-only 0004, tenant-private bookmark adapter, authenticated default-off Gateway, Flutter lesson ID/save/saved library, widget and route/PG negative tests, J07 acceptance. AF00 #616 comment 6105822261. Exact-head Foundation 38114773886 check failed with zero steps, Mobile 38114773879 build/admin failed with zero steps; no executed test PASS. Container Node22/tsc only, cannot clone private GitHub (DNS), pnpm/PG/Flutter/Dart absent. No shared route/migration composition, Play/provider or main deployment. AF00 owns integration and real PG/device qualification."
     }
   ],
   "history": [
