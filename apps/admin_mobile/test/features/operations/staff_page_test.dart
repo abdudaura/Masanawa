@@ -6,7 +6,7 @@ import 'package:masanawa_admin/src/features/operations/staff_page.dart';
 
 class StaffFakeApi extends OperationsApi {
  StaffFakeApi(this.deny):super(Dio(),accessToken:() async=>'unused');
- final bool deny;
+ bool deny;
  @override Future<List<StaffMember>> staff() async {
   if(deny)throw Exception('403');
   return [const StaffMember(userId:'staff_123',roles:['ops_admin'],mfaVerified:true)];
@@ -28,6 +28,31 @@ void main(){
  testWidgets('A19 denies unauthorized access without a local fallback', (tester) async {
   await tester.pumpWidget(MaterialApp(home:StaffPage(api:StaffFakeApi(true))));
   await tester.pumpAndSettle();
-  expect(find.textContaining('unavailable or access denied'),findsOneWidget);
+  expect(find.textContaining('unavailable or access denied'), findsOneWidget);
+  // An unselected Audit tab must not leak a rejected Future into the test
+  // zone (or crash the application before the user opens that tab).
+  expect(tester.takeException(), isNull);
+ });
+ testWidgets('A19 audit 403 is rendered when selecting its lazy tab', (tester) async {
+  await tester.pumpWidget(MaterialApp(home:StaffPage(api:StaffFakeApi(true))));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Audit'));
+  await tester.pumpAndSettle();
+  expect(find.text('Audit history unavailable or access denied.'), findsOneWidget);
+  expect(tester.takeException(), isNull);
+ });
+ testWidgets('A19 retry recovers only from a fresh server read', (tester) async {
+  final api = StaffFakeApi(true);
+  await tester.pumpWidget(MaterialApp(home:StaffPage(api:api)));
+  await tester.pumpAndSettle();
+  expect(find.text('staff_123'), findsNothing);
+  api.deny = false;
+  await tester.tap(find.text('Retry'));
+  await tester.pumpAndSettle();
+  expect(find.text('staff_123'), findsOneWidget);
+  await tester.tap(find.text('Audit'));
+  await tester.pumpAndSettle();
+  expect(find.text('admin_ops.flag_change'), findsOneWidget);
+  expect(tester.takeException(), isNull);
  });
 }
