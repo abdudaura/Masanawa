@@ -41,6 +41,7 @@ void main() {
     Uri? opened;
     await tester.pumpWidget(MaterialApp(home: Scaffold(body:
       ExternalVideosScreen(load: loaded,
+        checkAvailability: (_) async => true,
         embedBuilder: (_) => const Text('Provider iframe'),
         open: (url) async { opened = url; return true; }))));
     await tester.pumpAndSettle();
