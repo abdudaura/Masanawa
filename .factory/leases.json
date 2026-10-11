@@ -1105,7 +1105,7 @@
         "docs/rebuild/DELIVERY.md",
         "docs/rebuild/WINDOW-PROMPT.md"
       ],
-      "release_reason": "Canonical PR #615 current head 3a8e735b7e911ca6ba4bcf78210c0453a47f136d; DELIVERY \u00a71A + AGENTS + CONTINUE-HERE + WINDOW-PROMPT verified by four-file source readback and 6 policy assertions. No app/DB/CI/production changes; AF00 and four lane PRs notified. New owner rule authorizes work now, only production safety blocked.",
+      "release_reason": "Canonical PR #615 current head 3a8e735b7e911ca6ba4bcf78210c0453a47f136d; DELIVERY §1A + AGENTS + CONTINUE-HERE + WINDOW-PROMPT verified by four-file source readback and 6 policy assertions. No app/DB/CI/production changes; AF00 and four lane PRs notified. New owner rule authorizes work now, only production safety blocked.",
       "released_at": "2026-10-10T16:14:59.252Z",
       "scope": "Owner explicitly permits independent implementation and non-deploying source integration despite unavailable/unrelated tests; preserve production, security and finance release gates. Documentation only, no code or CI changes.",
       "source_pr": 615
@@ -1833,7 +1833,7 @@
       "heartbeat_at": "2026-10-11T04:57:18.980Z",
       "integration_head_sha": "eaf840667e63cbe61981f8ff7a377c02e04091da",
       "notes": "C54 client reuses existing canonical billed purchase route, PG store, receipt projection and webhook worker. New client, tests, J05 acceptance. AF00 root wiring not touched.",
-      "owner": "L-FIN/C54 \u2014 GPT-6",
+      "owner": "L-FIN/C54 — GPT-6",
       "paths": [
         "apps/mobile/lib/src/features/wallet/billing_receipt.dart",
         "apps/mobile/lib/src/features/wallet/billing_receipt_screen.dart",
@@ -2173,7 +2173,7 @@
         "apps/mobile/test/features/videos/video_availability_test.dart",
         "apps/mobile/test/features/videos/video_repository_test.dart"
       ],
-      "release_reason": "Six-path C27\u2013C29 source PR #664 head 2180744c safely squash-merged into nondeploying integration/rebuild as fb20e76d5c4027068c32ebdf35e27009babdc863. Authenticated Dio repository Dart parse repaired, missing checker fails closed, negative/widget tests authored. CI on merged head 38123045044/38123045083 all 3 jobs FAILED with 0 steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; AF00 composition and J14/J15 real device/providers pending; NO main/prod/payment changes.",
+      "release_reason": "Six-path C27–C29 source PR #664 head 2180744c safely squash-merged into nondeploying integration/rebuild as fb20e76d5c4027068c32ebdf35e27009babdc863. Authenticated Dio repository Dart parse repaired, missing checker fails closed, negative/widget tests authored. CI on merged head 38123045044/38123045083 all 3 jobs FAILED with 0 steps. TS/Vitest/PG18/Flutter/Android NOT_RUN/BLOCKED; AF00 composition and J14/J15 real device/providers pending; NO main/prod/payment changes.",
       "released_at": "2026-10-11T07:54:31.385Z",
       "scope": "Repair canonical official-video consumer end-to-end: valid Dio catalog/availability, mandatory fail-closed provider play admission, account-change safety, cursor/negative Flutter regression; reuse existing gateway/PG/recovery; AF00 owns protected router/composition.",
       "source_head": "2180744c780499989ddc85533e6c21b040ed1cdb",
@@ -2335,8 +2335,8 @@
       "branch": "lane/rooms-membership-invites-20261011",
       "claim_id": "rooms-membership-invites-20261011-cloud",
       "claimed_at": "2026-10-11T20:20:51.819Z",
-      "expires_at": "2026-10-11T20:36:46.723Z",
-      "heartbeat_at": "2026-10-11T20:31:46.723Z",
+      "expires_at": "2026-10-11T20:38:40.804Z",
+      "heartbeat_at": "2026-10-11T20:33:40.804Z",
       "owner": "Codex ROOMS implementation owner",
       "paths": [
         "adapters/storage/postgres/src/rooms/membership.ts",
@@ -2350,7 +2350,9 @@
         "apps/mobile/test/features/rooms/room_membership_client_test.dart",
         "apps/mobile/test/features/rooms/room_membership_screen_test.dart"
       ],
-      "scope": "Extend canonical #625/#655 membership with staff-assigned moderators and revocable single-use invites"
+      "scope": "Extend canonical #625/#655 membership with staff-assigned moderators and revocable single-use invites",
+      "source_head": "51fe9ef16c6311efde5356cfcbcc662b24faef5d",
+      "notes": "Nine substantive files pushed. Eighteen exact-source Node24 repository/route port tests PASS, real DB/Fastify/Flutter/full tsc unrun. Handoff and stacked PR being finalized; protected AF00 composition excluded."
     },
     {
       "base_sha": "a8e1c84cebcec9604a6b7c9cbdafc6ba6c2b036d",
@@ -4137,7 +4139,7 @@
       "expires_at": "2026-10-10T03:53:26.298Z",
       "heartbeat_at": "2026-10-10T03:48:26.298Z",
       "notes": "No AF00 Gateway composition/worker/migrations, AF05 media, AF08 auth, nor active AF09 report/feed claims. Explicit projection of publish/remove HTTP receipts using existing canonical toPublicAudioPost.",
-      "owner": "AF09 #609 continuation \u2014 GPT-6 response projection",
+      "owner": "AF09 #609 continuation — GPT-6 response projection",
       "paths": [
         "services/gateway/src/audio_posts/routes.ts",
         "services/gateway/src/audio_posts/routes_projection.test.mjs",
@@ -4157,7 +4159,7 @@
       "claimed_at": "2026-10-10T04:22:31.829Z",
       "expires_at": "2026-10-10T04:31:30.319Z",
       "heartbeat_at": "2026-10-10T04:26:30.319Z",
-      "owner": "AF09 #609 continuation \u2014 comments pagination / GPT-6",
+      "owner": "AF09 #609 continuation — comments pagination / GPT-6",
       "paths": [
         "services/gateway/src/audio_posts/contract.ts",
         "services/gateway/src/audio_posts/service.ts",
@@ -4185,7 +4187,7 @@
       "heartbeat_at": "2026-10-10T04:30:22.205Z",
       "integration_head_sha": null,
       "notes": "No edits to concurrent feed/destination/transport/routes/SQL/shared migrations; existing PR only. Previous owner AF09-0517 released at 2026-10-10T04:29:26.879Z; CAS exact-path continuation, same PR source, preserve all edits. Shared AF00 shell/router unchanged.",
-      "owner": "AF09 existing #609 \u2014 GPT-6 2026-10-10 0527 comments sheet",
+      "owner": "AF09 existing #609 — GPT-6 2026-10-10 0527 comments sheet",
       "paths": [
         "apps/mobile/lib/src/audio_posts/audio_post_comments_sheet.dart",
         "apps/mobile/test/audio_first/af09/comments_sheet_test.dart",
@@ -4655,7 +4657,7 @@
       "expires_at": "2026-10-10T08:20:02.391Z",
       "heartbeat_at": "2026-10-10T08:15:02.391Z",
       "integration_head_sha": null,
-      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit. Executed Foundation run 38036528676 reduced TS6059 build errors 4\u21921; repository.ts is the sole remaining AF09 import; 3 new canonical contract tests pass (overall Vitest 1247 pass/85 fail/22 skip). Safe no-provider-work test import fix explicitly coordinated AF01 PR590 comment 6095528568, AF13 PR460 comment 6095528951 and AF09 PR609 comment 6095529270. Postgres Vitest shared schema race; exact bounded `vitest.config.ts` transfer AF13 #460 6095558419, AF00 #600 6095558791 and AF09 #609 6095559090; trial fileParallelism false, no skipped tests. Hosted build PASS and provider tooling PASS run 38036869594. Root typecheck/test still FAIL; Vitest fileParallelism:false exact-head run 38037083541 queued, mobile independent job 38037083542 running. No merge.",
+      "notes": "Exact target and protected index transfer published AF00 #600 comment 6095432259 and AF09 #609 comment 6095433355. No active lease on target paths. No competing integration branch. Canonical types and projection relocated; 3 tests authored; Foundation 38036528676 and Mobile 38036528675 queued for exact head after commit. Executed Foundation run 38036528676 reduced TS6059 build errors 4→1; repository.ts is the sole remaining AF09 import; 3 new canonical contract tests pass (overall Vitest 1247 pass/85 fail/22 skip). Safe no-provider-work test import fix explicitly coordinated AF01 PR590 comment 6095528568, AF13 PR460 comment 6095528951 and AF09 PR609 comment 6095529270. Postgres Vitest shared schema race; exact bounded `vitest.config.ts` transfer AF13 #460 6095558419, AF00 #600 6095558791 and AF09 #609 6095559090; trial fileParallelism false, no skipped tests. Hosted build PASS and provider tooling PASS run 38036869594. Root typecheck/test still FAIL; Vitest fileParallelism:false exact-head run 38037083541 queued, mobile independent job 38037083542 running. No merge.",
       "owner": "GPT-6 AF09 continuing existing PR #609 after AF00 bounded stale-path recovery",
       "paths": [
         "packages/contracts/src/index.ts",
@@ -5030,7 +5032,7 @@
       ],
       "release_reason": "Source PR #625 committed a free Room vertical in exclusive paths. Real Flutter Admin widget step PASS, newer consumer test pending at handoff, Foundation install FAIL new packages/rooms lock importer; PG/TypeScript/Android E2E unverified. AF00 composition/lockfile required, paid J08 excluded. Not released/deployed/merged.",
       "released_at": "2026-10-10T16:38:24.639Z",
-      "scope": "L-ROOMS/free J07\u2013J08: room discovery, join, durable ask, worker answer queue and staff review; paid Play Billing excluded until verified. AF00 retains all root entrypoints, migration registry, release.",
+      "scope": "L-ROOMS/free J07–J08: room discovery, join, durable ask, worker answer queue and staff review; paid Play Billing excluded until verified. AF00 retains all root entrypoints, migration registry, release.",
       "source_head": "d3e2fcda445565c83363f2b57822bc08e985a7a4",
       "source_pr": 625
     },
