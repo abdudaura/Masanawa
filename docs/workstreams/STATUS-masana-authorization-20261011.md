@@ -25,3 +25,6 @@ Prior feed claims l-feed-j06-core, l-feed-c22-post-detail and l-feed-a05-a06-edi
 - NOT INTEGRATED / NOT PRODUCTION VERIFIED.
 
 Contracts: existing @masanawa/feed, PgHomeFeedRepository, editorial review (#666), FeedApi and MasanaFeedScreen; no new schema, publisher, queue, auth or storage authority. Next action: implement owned authorization + display recovery and execute available meaningful tests. PR and exact head/test evidence appended at delivery.
+
+## Dependency-ready scope expansion before edit
+- packages/feed/src/review.ts: repair observed unmatched parenthesis in validateDraft; index.ts re-exports this source, so canonical feed cannot load otherwise. Existing tests are preserved. Prior #666 ownership is released; no shared-file edit.
