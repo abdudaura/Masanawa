@@ -33,10 +33,12 @@ describe("admin YouTube source authority",()=>{
  });
  it("fences listing, including blank principals, before reaching storage",async()=>{
    const h=harness();
-   await expect(h.service.list({...staff,staffRoles:[]})).rejects.toMatchObject({status:403});
+   const denied = h.service.list({...staff,staffRoles:[]});
+   expect(denied).toBeInstanceOf(Promise);
+   await expect(denied).rejects.toMatchObject({status:403});
    await expect(h.service.list({...staff,tenantId:" "}))
      .rejects.toMatchObject({status:403});
-   await expect(h.service.list({...staff,tenantId:"tenant\\nother"}))
+   await expect(h.service.list({...staff,tenantId:"tenant\nother"}))
      .rejects.toMatchObject({status:403});
    await expect(h.service.list({...staff,actorId:" "}))
      .rejects.toMatchObject({status:403});
