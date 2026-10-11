@@ -1744,8 +1744,12 @@
       "heartbeat_at": "2026-10-11T04:50:26.206Z",
       "expires_at": "2026-10-11T04:55:26.206Z",
       "notes": "No overlap with C09 or AF00. New identity migration source; AF00 retains root composition/registry/feature flag. No live auth provider, financial or production changes.",
-      "source_head": "768972a4da54c5d64cf26ac7f471828fd5a790e8",
-      "source_pr": 649
+      "source_head": "8b411994efd09405c01a2dd9e728ceee5feadaec",
+      "source_pr": 649,
+      "released_at": "2026-10-11T04:53:35.794Z",
+      "release_reason": "J01 C04 feature-local 12-source-path slice and PostgreSQL integration test authored; prior head's 2 Flutter widget cases PASS, wider Flutter analyzer FAIL unrelated, TS/Vitest/PG18/Android at exact current SHA NOT_RUN/BLOCKED (missing packages/feed pnpm lockfile importer and subsequent zero-step jobs). AF00 PR #616 exact-head composition and repair handoff comments 6105600639, 6105572676. No integration merge or live deployment; root actor/media/router age guard pending.",
+      "integration_head_sha": null,
+      "test_state": "SOURCE_IMPLEMENTED / PARTIAL_IMPLEMENTATION; not integrated, exact SHA unverified"
     },
     {
       "claim_id": "l-feed-c23-media-viewer-20261011-gpt6-0545",
