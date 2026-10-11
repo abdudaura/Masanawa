@@ -14,9 +14,11 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
   List<FanDevice> items=[];
   String? error;
   final Map<String,String> retryKeys={};
-  bool loading=true,offline=false,stepUpRequired=false;
+  bool loading=true,offline=false,stepUpRequired=false,disabled=false;
   String? revoking;
   int generation=0;
+  bool featureDisabled(DioException e) => e.response?.statusCode==503 &&
+    e.response?.data is Map && (e.response!.data as Map)['code']=='feature_disabled';
   String t(String en,String ha)=>Localizations.localeOf(context).languageCode=='ha'?ha:en;
   @override void initState(){super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) { if(mounted)refresh(); });
@@ -27,7 +29,7 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
       old.transport.ownerAccountId!=widget.transport.ownerAccountId||
       !widget.transport.isCurrentAccount){
       ++generation;items=[];retryKeys.clear();revoking=null;error=null;
-      loading=true;offline=false;stepUpRequired=false;refresh();
+      loading=true;offline=false;stepUpRequired=false;disabled=false;refresh();
     }
   }
   @override void dispose(){++generation;super.dispose();}
@@ -37,25 +39,30 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
       if(mounted)setState((){items=[];loading=false;error=t('Sign in to manage devices','Shiga domin sarrafa na’urori');});
       return;
     }
-    setState((){loading=items.isEmpty;error=null;stepUpRequired=false;});
+    setState((){loading=items.isEmpty;error=null;stepUpRequired=false;disabled=false;});
     try{
       final list=await widget.transport.list();
       if(!mounted||ticket!=generation||!widget.transport.isCurrentAccount)return;
-      setState((){items=list;loading=false;offline=false;});
+      setState((){items=list;loading=false;offline=false;disabled=false;});
     }on DioException catch(e){
       if(!mounted||ticket!=generation)return;
-      setState((){loading=false;offline=e.type==DioExceptionType.connectionError||
-        e.type==DioExceptionType.connectionTimeout;
-        error=(e.response?.statusCode==401||e.response?.statusCode==403)?
+      setState((){
+        loading=false;
+        disabled=featureDisabled(e);
+        offline=!disabled && (e.type==DioExceptionType.connectionError||
+          e.type==DioExceptionType.connectionTimeout);
+        error=disabled?null:
+          (e.response?.statusCode==401||e.response?.statusCode==403)?
           t('Session expired. Sign in again.','Lokaci ya kare. Sake shiga.'):
-          t('Unable to load devices. Retry.','An kasa dauko na’urori. Sake gwadawa.');});
+          t('Unable to load devices. Retry.','An kasa dauko na’urori. Sake gwadawa.');
+      });
     }catch(_){
       if(mounted&&ticket==generation)setState((){
         loading=false;error=t('Unable to load devices. Retry.','An kasa dauko na’urori. Sake gwadawa.');});
     }
   }
   Future<void> revoke(FanDevice device)async{
-    if(revoking!=null||device.current||offline||!widget.transport.isCurrentAccount)return;
+    if(revoking!=null||device.current||offline||disabled||!widget.transport.isCurrentAccount)return;
     final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
       title:Text(t('Sign out this device?','A fitar da wannan na’ura?')),
       content:Text(t('The other session will lose access. You can sign in again later.',
@@ -74,8 +81,9 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
       retryKeys.remove(device.id);await refresh();
     }on DioException catch(e){
       if(mounted&&ticket==generation)setState(() {
-        stepUpRequired=e.response?.statusCode==428;
-        error=stepUpRequired?
+        disabled=featureDisabled(e);
+        stepUpRequired=!disabled && e.response?.statusCode==428;
+        error=disabled?null:stepUpRequired?
           t('Verify again to sign out another device. A new one-time code is required.',
             'Sake tabbatarwa don fitar da wata na’ura. Ana bukatar sabon lamba.'):
         e.response?.statusCode==401||e.response?.statusCode==403?
@@ -108,6 +116,9 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
               child:Text(t('Need account recovery? Ask Gwani','Kana bukatar taimako? Tambayi Gwani'))),
           ])),
         Expanded(child:loading?const Center(child:CircularProgressIndicator()):
+          disabled?Center(child:Padding(padding:const EdgeInsets.all(20),
+            child:Text(t('Device security is temporarily unavailable.',
+              'Ba a samun tsaron na’ura a yanzu.')))):
           items.isEmpty?Center(child:Text(t('No active devices.','Babu na’urar da ke aiki.'))):
           ListView.builder(itemCount:items.length,itemBuilder:(context,index){
             final d=items[index];
@@ -119,7 +130,7 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
               trailing:d.current?Text(t('Current','Yanzu')):
                 revoking==d.id?const SizedBox.square(dimension:20,
                   child:CircularProgressIndicator(strokeWidth:2)):
-                TextButton(onPressed:revoking==null&&!offline?()=>revoke(d):null,
+                TextButton(onPressed:revoking==null&&!offline&&!disabled?()=>revoke(d):null,
                   child:Text(t('Sign out','Fita'))),
             );
           })),
