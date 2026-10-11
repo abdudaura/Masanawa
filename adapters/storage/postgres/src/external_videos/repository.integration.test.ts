@@ -34,6 +34,8 @@ testWithDb("J15 external videos PG18 — audited, tenant-fenced manual approval"
     const duplicate = await repo.submit({ ...original, id: randomUUID() }, actorId);
     expect(duplicate.id).toBe(id);
     expect(await repo.list({tenantId,publicOnly:true,limit:10})).toEqual([]);
+    expect(await repo.isApproved({tenantId,id})).toBe(false);
+    expect(await repo.isApproved({tenantId:otherTenant,id})).toBe(false);
     expect(await repo.list({tenantId:otherTenant,publicOnly:false,limit:10})).toEqual([]);
 
     const approved = await repo.review({
@@ -42,9 +44,12 @@ testWithDb("J15 external videos PG18 — audited, tenant-fenced manual approval"
     });
     expect(approved?.reviewState).toBe("approved");
     expect(await repo.list({tenantId,publicOnly:true,limit:10})).toHaveLength(1);
+    expect(await repo.isApproved({tenantId,id})).toBe(true);
+    expect(await repo.isApproved({tenantId:otherTenant,id})).toBe(false);
     expect(await repo.review({tenantId:otherTenant,id,actorId,expectedState:"approved",state:"hidden",verificationReference:null})).toBeNull();
     const hidden = await repo.review({tenantId,id,actorId,expectedState:"approved",state:"hidden",verificationReference:null});
     expect(hidden?.reviewState).toBe("hidden");
+    expect(await repo.isApproved({tenantId,id})).toBe(false);
     expect(await repo.list({tenantId,publicOnly:true,limit:10})).toHaveLength(0);
     expect(await repo.review({tenantId,id,actorId,expectedState:"unavailable",state:"pending",verificationReference:null})).toBeNull();
     expect((await repo.review({tenantId,id,actorId,expectedState:"hidden",state:"pending",verificationReference:null}))?.reviewState).toBe("pending");

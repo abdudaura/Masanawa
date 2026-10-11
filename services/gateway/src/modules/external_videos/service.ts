@@ -13,6 +13,8 @@ export interface VideoStore {
     verificationReference: string | null;
   }): Promise<ExternalVideo | null>;
   list(input: { tenantId: string; provider?: VideoProvider; publicOnly: boolean; limit: number; before?: string }): Promise<readonly ExternalVideo[]>;
+  /** Optional during rollout: absence is a 503, never "available". */
+  isApproved?(input: {tenantId: string; id: string}): Promise<boolean>;
 }
 const videoUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 export class VideoAdmissionError extends Error {
@@ -79,6 +81,13 @@ export function createVideoAdmissionService(store: VideoStore) {
         expectedState, state, verificationReference });
       if (!updated) throw new VideoAdmissionError(409, "video_review_conflict", "Video is missing or review state changed");
       return updated;
+    },
+    async availability(actor: VideoPrincipal, id: string): Promise<{ available: boolean }> {
+      const tenantId = requireTenant(actor);
+      if (!videoUuid.test(id)) throw new VideoAdmissionError(400, "video_invalid_id", "Invalid video ID");
+      if (!store.isApproved) throw new VideoAdmissionError(503, "video_unavailable", "Video availability is temporarily unavailable");
+      // Missing, hidden, pending and withdrawn videos all share one response.
+      return {available: await store.isApproved({tenantId, id})};
     },
     async list(actor: VideoPrincipal, query: {provider?: unknown; before?: unknown; limit?: unknown}, publicOnly = true): Promise<readonly ExternalVideo[]> {
       const tenantId = requireTenant(actor);

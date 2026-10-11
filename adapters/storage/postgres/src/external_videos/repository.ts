@@ -52,6 +52,14 @@ export function createPostgresVideoStore(pool: Pool) {
         return changed.rows[0];
       });
     },
+    async isApproved(input: {tenantId:string;id:string}): Promise<boolean> {
+      // Deliberately disclose no metadata or reason for tenant-foreign items.
+      const result=await pool.query<{available:boolean}>(
+        "SELECT EXISTS(SELECT 1 FROM external_videos.items WHERE tenant_id=$1 AND item_id=$2::uuid "+
+        "AND review_state='approved' AND verified_at IS NOT NULL AND verification_reference IS NOT NULL) AS available",
+        [input.tenantId,input.id]);
+      return result.rows[0]?.available===true;
+    },
     async list(input: { tenantId:string; provider?:"youtube"|"tiktok"|"facebook"; publicOnly:boolean;limit:number; before?:string }): Promise<readonly Item[]> {
       const result=await pool.query<Item>(
         "SELECT "+projection+" FROM external_videos.items WHERE tenant_id=$1 "+
