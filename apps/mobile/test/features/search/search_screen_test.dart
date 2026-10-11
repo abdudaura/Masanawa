@@ -10,7 +10,7 @@ class StubSearch implements SearchRepository {
   bool fail = false;
   @override
   Future<SearchPage> search(String query, SearchFacet kind, {String? cursor}) {
-    calls.add(query + ':' + kind.apiValue + ':' + (cursor ?? ''));
+    calls.add('$query:${kind.apiValue}:${cursor ?? ''}');
     if (pending != null) return pending!.future;
     if (fail) return Future.error(StateError('unavailable'));
     return Future.value(SearchPage([

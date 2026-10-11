@@ -62,7 +62,7 @@ class DioSearchRepository implements SearchRepository {
   Future<SearchPage> search(String query, SearchFacet kind, {String? cursor}) async {
     final response = await dio.get<Map<String, dynamic>>('/v1/search',
       queryParameters: {'q': query, 'kind': kind.apiValue, 'limit': 15,
-        if (cursor != null) 'cursor': cursor});
+        'cursor': ?cursor});
     if (response.data == null) throw const FormatException('Missing search response');
     final page = SearchPage.fromJson(response.data!);
     if (page.items.any((item) => item.kind != kind)) {

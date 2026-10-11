@@ -71,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final page = await widget.repository.search(q, kind, cursor: before);
       if (!mounted || key != _generation || session != widget.sessionKey || kind != _facet ||
-          _query.text.trim() != q) return;
+          _query.text.trim() != q) { return; }
       setState(() {
         _items = more ? [..._items, ...page.items] : page.items;
         _cursor = page.nextCursor;
@@ -145,7 +145,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     textAlign: TextAlign.center)),
               for (final result in _items)
                 ListTile(
-                  key: ValueKey('search-' + result.kind.apiValue + '-' + result.id),
+                  key: ValueKey('search-${result.kind.apiValue}-${result.id}'),
                   leading: Icon(switch (result.kind) {
                     SearchFacet.masana => Icons.person_outline,
                     SearchFacet.rooms => Icons.school_outlined,
