@@ -28,12 +28,29 @@ class ActionDrafts extends MasanaChatDraftStore {
   @override Future<void> clear(String a,String c) async {data=null;}
 }
 void main() {
+  testWidgets('C13 unavailable feature never offers a nonworking hide action', (tester) async {
+    final api=ActionApi();
+    final controller=MasanaChatController(api:api,drafts:ActionDrafts(),
+      accountId:'fan-a',characterId:'character_0199f0d0-0000-7000-8000-000000000003');
+    await tester.pumpWidget(MaterialApp(home:MasanaChatScreen(
+      controller:controller,displayName:'Teacher')));
+    await tester.enterText(find.byType(TextField),'hello');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Send message'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Message actions').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Reply'),findsWidgets);
+    expect(find.text('Remove for me'),findsNothing);
+    expect(api.hidden,isEmpty);
+  });
+
   testWidgets('C13 quote and server-acknowledged hide', (tester) async {
     final api=ActionApi(),drafts=ActionDrafts();
     final controller=MasanaChatController(api:api,drafts:drafts,
       accountId:'fan-a',characterId:'character_0199f0d0-0000-7000-8000-000000000003');
     await tester.pumpWidget(MaterialApp(home:MasanaChatScreen(
-      controller:controller,displayName:'Teacher')));
+      controller:controller,displayName:'Teacher',hideQualified:true)));
     await tester.enterText(find.byType(TextField),'hello');
     await tester.pump();
     await tester.tap(find.byTooltip('Send message'));
@@ -77,7 +94,7 @@ void main() {
     final controller=MasanaChatController(api:api,drafts:ActionDrafts(),
       accountId:'fan-a',characterId:'character_0199f0d0-0000-7000-8000-000000000003');
     await tester.pumpWidget(MaterialApp(home:MasanaChatScreen(
-      controller:controller,displayName:'Teacher')));
+      controller:controller,displayName:'Teacher',hideQualified:true)));
     await tester.enterText(find.byType(TextField),'hello');
     await tester.pump();
     await tester.tap(find.byTooltip('Send message'));
