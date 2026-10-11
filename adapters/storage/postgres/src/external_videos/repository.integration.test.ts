@@ -70,4 +70,22 @@ testWithDb("J15 external videos PG18 — audited, tenant-fenced manual approval"
       [tenantId, randomUUID(),randomUUID(),"https://www.tiktok.com/@teacher/video/7234567890123456789"],
     )).rejects.toThrow();
   });
+  it("pages 25 curated items across a stable tenant-scoped PostgreSQL cursor", async () => {
+    const pageTenant = "video-page-" + randomUUID();
+    for (let i = 0; i < 25; i++) {
+      await repo.submit({
+        id: randomUUID(), tenantId: pageTenant, provider: "youtube",
+        providerVideoId: "page-" + i, sourceUrl: "https://www.youtube.com/watch?v=abcDE12_-34",
+        title: "Lesson " + i, channelName: "Teacher", reviewState: "pending",
+        verifiedAt: null, createdAt: new Date().toISOString(),
+      }, actorId);
+    }
+    const first = await repo.list({tenantId:pageTenant,publicOnly:false,limit:20});
+    const second = await repo.list({tenantId:pageTenant,publicOnly:false,limit:20,before:first[19]!.id});
+    expect(first).toHaveLength(20);
+    expect(second).toHaveLength(5);
+    expect(new Set([...first,...second].map(x=>x.id)).size).toBe(25);
+    expect(await repo.list({tenantId:pageTenant,publicOnly:true,limit:20})).toEqual([]);
+    expect(await repo.list({tenantId:otherTenant,publicOnly:false,limit:20,before:first[19]!.id})).toEqual([]);
+  });
 });

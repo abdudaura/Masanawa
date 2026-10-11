@@ -25,6 +25,9 @@ describe("J15 manual source admission",()=>{
     await expect(api.submit(fan,{url:"https://youtu.be/abcDE12_-34",title:"A",channelName:"B"})).rejects.toMatchObject({status:403});
     expect(()=>strictManualVideoInput({url:"https://youtu.be/abcDE12_-34",title:"A",channelName:"B",actorId:"admin"})).toThrow();
     await expect(api.list(fan,{},false)).rejects.toBeInstanceOf(VideoAdmissionError);
+    await expect(api.list(staff,{before:"------------------------------------"})).rejects.toMatchObject({status:400,code:"video_invalid_cursor"});
+    await expect(api.list(staff,{before:"00000000-0000-4000-a000-000000000001"})).resolves.toBeDefined();
+    await expect(api.review(staff,"------------------------------------",{state:"approved",verificationReference:"official-provider-evidence-123"})).rejects.toMatchObject({status:400,code:"video_invalid_id"});
   });
   it("stays private until manually verified; hides immediately and isolates tenants",async()=>{
     const api=createVideoAdmissionService(store);
