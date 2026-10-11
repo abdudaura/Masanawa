@@ -1,10 +1,13 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
-import type {Actor} from "../../../../../packages/feed/src/index.js";
-import type {SavedLibraryService} from "../../../../../packages/feed/src/saved.js";
+type Actor={kind:"fan"|"staff"|"masana";tenantId:string;id:string;permissions?:readonly string[];approved?:boolean};
+type SavedPort={
+  list(actor:Actor,cursor?:string):Promise<unknown>;
+  saveVideo(actor:Actor,videoId:string,enabled:boolean):Promise<unknown>;
+};
 
 /** Bind to AF00's existing session, tenant and feature flag. No body-supplied actor. */
 export function registerSavedLibraryRoutes(app:FastifyInstance,deps:{
-  service:Pick<SavedLibraryService,"list"|"saveVideo">;
+  service:SavedPort;
   principal:(request:FastifyRequest)=>Promise<Actor|null>;
   tenant:(request:FastifyRequest)=>string|null;
   enabled:()=>boolean;
