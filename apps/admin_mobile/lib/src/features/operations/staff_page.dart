@@ -30,6 +30,17 @@ class _StaffPageState extends State<StaffPage> {
 
   late Future<_StaffRead<StaffMember>> _members = _read(widget.api.staff);
   late Future<_StaffRead<AuditEvent>> _audit = _read(widget.api.audit);
+  @override
+  void didUpdateWidget(covariant StaffPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When the signed-in staff principal changes the host replaces its API
+    // client. Never display roles or audit entries retained from that client.
+    if (!identical(oldWidget.api, widget.api)) {
+      _members = _read(widget.api.staff);
+      _audit = _read(widget.api.audit);
+    }
+  }
+
   void _reload()=>setState((){
     _members=_read(widget.api.staff);
     _audit=_read(widget.api.audit);
