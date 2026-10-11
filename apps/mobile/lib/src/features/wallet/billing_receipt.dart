@@ -28,47 +28,70 @@ class BillReceipt {
   bool get finalStatus => status == BillReceiptStatus.successful ||
       status == BillReceiptStatus.failed || status == BillReceiptStatus.reversed;
 
+  /// The existing GET /v1/commerce/bills/purchases/:reference returns a
+  /// BillingFulfillmentRecord, NOT the separate receipt projection helper.
+  /// Decode its actual wire fields without altering the canonical API.
   factory BillReceipt.fromJson(Object? value) {
     if (value is! Map) throw const FormatException('Invalid bill receipt');
     final j = value.cast<String, dynamic>();
-    if (j['kind'] != 'billing-receipt' ||
-        j['reference'] is! String ||
-        !validBillReference(j['reference'] as String) ||
-        j['title'] is! String ||
-        (j['title'] as String).isEmpty ||
-        j['summary'] is! String ||
-        j['rows'] is! List ||
-        (j['rows'] as List).length > 12 ||
-        j['canRefresh'] is! bool) {
-      throw const FormatException('Malformed bill receipt');
+    final reference = j['fulfillmentReference'];
+    final title = j['itemName'];
+    final recipient = j['customerId'];
+    final customerName = j['customerName'];
+    final amount = j['amount'];
+    final providerReference = j['providerReference'];
+    final deliveryCode = j['deliveryCode'];
+    if (reference is! String || !validBillReference(reference) ||
+        title is! String || title.isEmpty || title.length > 250 ||
+        recipient is! String || recipient.isEmpty || recipient.length > 150 ||
+        customerName != null && (customerName is! String || customerName.length > 250) ||
+        amount is! String || amount.length > 50 ||
+        !RegExp(r'^(?:0|[1-9]\d*)(?:\.\d+)?$').hasMatch(amount) ||
+        j['currency'] != 'NGN' ||
+        j['revision'] is! int || (j['revision'] as int) < 1 ||
+        providerReference != null && (providerReference is! String || providerReference.length > 150) ||
+        deliveryCode != null && (deliveryCode is! String || deliveryCode.length > 500)) {
+      throw const FormatException('Malformed billing fulfillment');
     }
-    final state = switch (j['status']) {
+    final state = switch (j['state']) {
       'ready' => BillReceiptStatus.ready,
-      'processing' => BillReceiptStatus.processing,
+      'dispatching' => BillReceiptStatus.processing,
       'checking' => BillReceiptStatus.checking,
-      'successful' => BillReceiptStatus.successful,
+      'succeeded' => BillReceiptStatus.successful,
       'failed' => BillReceiptStatus.failed,
       'reversed' => BillReceiptStatus.reversed,
-      'needs-review' => BillReceiptStatus.needsReview,
-      _ => throw const FormatException('Unsupported receipt status'),
+      'manual_review' => BillReceiptStatus.needsReview,
+      _ => throw const FormatException('Unsupported fulfillment state'),
     };
-    final rows = <BillReceiptRow>[];
-    for (final item in j['rows'] as List) {
-      if (item is! Map || item['label'] is! String ||
-          item['value'] is! String ||
-          (item['label'] as String).length > 100 ||
-          (item['value'] as String).length > 500) {
-        throw const FormatException('Invalid receipt detail row');
-      }
-      rows.add(BillReceiptRow(item['label'] as String, item['value'] as String));
-    }
+    final summary = switch (state) {
+      BillReceiptStatus.ready => 'Bill is ready for confirmation.',
+      BillReceiptStatus.processing => 'Payment submitted; provider settlement is pending.',
+      BillReceiptStatus.checking => 'Checking existing provider reference.',
+      BillReceiptStatus.successful => 'Payment confirmed by the billing provider.',
+      BillReceiptStatus.failed => 'Payment failed. No automatic duplicate dispatch.',
+      BillReceiptStatus.reversed => 'Provider reports payment reversed.',
+      BillReceiptStatus.needsReview => 'Payment needs manual staff review.',
+    };
     return BillReceipt(
-      reference: j['reference'] as String,
+      reference: reference,
       status: state,
-      title: j['title'] as String,
-      summary: j['summary'] as String,
-      rows: List.unmodifiable(rows),
-      canRefresh: j['canRefresh'] as bool,
+      title: title,
+      summary: summary,
+      rows: List.unmodifiable([
+        BillReceiptRow('Recipient', recipient),
+        if (customerName is String && customerName.isNotEmpty)
+          BillReceiptRow('Account', customerName),
+        BillReceiptRow('Amount', 'NGN $amount'),
+        BillReceiptRow('Reference', reference),
+        if (state == BillReceiptStatus.successful &&
+            deliveryCode is String && deliveryCode.isNotEmpty)
+          BillReceiptRow('Delivery code', deliveryCode),
+        if (providerReference is String && providerReference.isNotEmpty)
+          BillReceiptRow('Provider reference', providerReference),
+      ]),
+      canRefresh: state == BillReceiptStatus.processing ||
+          state == BillReceiptStatus.checking ||
+          state == BillReceiptStatus.successful,
     );
   }
 }
