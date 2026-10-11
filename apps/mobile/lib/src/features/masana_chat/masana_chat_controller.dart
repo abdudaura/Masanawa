@@ -191,6 +191,33 @@ class MasanaChatController extends ChangeNotifier {
       _busy = false; _notify();
     }
   }
+  /// C13: do not erase the immutable agent journal. A failed network request
+  /// leaves the bubble untouched; never mutate a turn mid-FIFO drain.
+  Future<bool> hideSentTurn(String requestId) async {
+    await restore();
+    if (_disposed || !_restored || _busy) return false;
+    final index = _turns.indexWhere((t) =>
+      t.requestId == requestId && t.state == ChatSendState.sent);
+    if (index < 0) return false;
+    final generation = _generation;
+    try {
+      await api.hideSentTurn(characterId, requestId);
+      if (_disposed || generation != _generation) return false;
+      final current = _turns.indexWhere((t) =>
+        t.requestId == requestId && t.state == ChatSendState.sent);
+      if (current < 0) return false;
+      _turns.removeAt(current);
+      final persisted = await _persist();
+      if (!_disposed && generation == _generation) _notify();
+      return persisted && !_disposed && generation == _generation;
+    } catch (_) {
+      if (!_disposed && generation == _generation) {
+        error = 'Could not remove the message. Retry when connected.';
+        _notify();
+      }
+      return false;
+    }
+  }
   Future<void> clearForAccountSwitch() async {
     _generation++;
     final session = _sessionId;

@@ -53,7 +53,21 @@ function mapped(row: Row): FanInboxItem {
 }
 
 /** Never project another fan, unapproved Masana, or unpublished biography. */
-export function createMasanaInboxRepository(db: Pick<Pool, "query">) {
+export function createMasanaInboxRepository(
+  db: Pick<Pool, "query">,
+  options: { readonly hiddenTurnsReady?: boolean } = {},
+) {
+  // A missing 0006 migration must never break the pre-existing J03/C10 inbox.
+  // AF00 enables this SQL only after a verified migration and before enabling
+  // the C13 hide endpoint. The normal (pre-migration) query remains unchanged.
+  const unreadHideFence = options.hiddenTurnsReady === true ? `
+              AND NOT EXISTS (SELECT 1 FROM masana.fan_hidden_turns h
+                WHERE h.tenant_id=u.tenant_id AND h.fan_user_id=u.user_id
+                  AND h.character_id=u.character_id AND h.request_id=u.request_id)` : "";
+  const previewHideFence = options.hiddenTurnsReady === true ? `
+            AND NOT EXISTS (SELECT 1 FROM masana.fan_hidden_turns h
+              WHERE h.tenant_id=t.tenant_id AND h.fan_user_id=t.user_id
+                AND h.character_id=t.character_id AND h.request_id=t.request_id)` : "";
   return Object.freeze({
     async list(scope: FanInboxScope, query = ""): Promise<readonly FanInboxItem[]> {
       boundedScope(scope);
@@ -79,6 +93,7 @@ export function createMasanaInboxRepository(db: Pick<Pool, "query">) {
               AND u.character_id=l.character_id
               AND u.state='completed' AND u.reply IS NOT NULL
               AND u.updated_at > COALESCE(p.last_read_at,to_timestamp(0))
+${unreadHideFence}
           )::text AS unread_count
         FROM latest l
         JOIN identity.users u ON u.tenant_id=$1
@@ -96,6 +111,7 @@ export function createMasanaInboxRepository(db: Pick<Pool, "query">) {
           FROM agents.mobile_turn_commands t
           WHERE t.tenant_id=$1 AND t.user_id=$2
             AND t.character_id=l.character_id
+${previewHideFence}
           ORDER BY t.updated_at DESC, t.request_id DESC
           LIMIT 1
         ) t ON TRUE
