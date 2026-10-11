@@ -32,7 +32,7 @@ describe("Postgres Direct Twin repository",()=>{
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:DirectTwinSqlPool={
       async query<Row>(text:string,values?:unknown[]){
-        call={text,values};
+        call={ text, ...(values === undefined ? {} : { values }) };
         return {rowCount:1,rows:[{
           tenant_id:"tenant-1",talk_id:"talk-1",seat_id:"seat-1",
           persona_id:"twin-1",kind:"twin",owner_user_id:"owner-1",
@@ -53,7 +53,7 @@ describe("Postgres Direct Twin repository",()=>{
     let call:{text:string;values?:unknown[]}|undefined;
     const pool:DirectTwinSqlPool={
       async query<Row>(text:string,values?:unknown[]){
-        call={text,values};
+        call={ text, ...(values === undefined ? {} : { values }) };
         return {
           rowCount:1,
           rows:[{

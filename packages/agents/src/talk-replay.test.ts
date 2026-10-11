@@ -3,11 +3,11 @@ import {
   createTalkReplaySession,
   isReplayPubliclyVisible,
   transitionTalkReplaySession,
-  type TalkId,
   type TalkRecordingId,
   type TalkRecordingSegmentId,
   type TalkReplayPolicy,
 } from "./talk-replay.js";
+import type { TalkId } from "./talk-live.js";
 
 const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
 const hostUserId = "user_00000000-0000-4000-8000-000000000002" as never;

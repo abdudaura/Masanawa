@@ -1,0 +1,96 @@
+import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { Pool } from "pg";
+import { createPostgresVideoStore } from "./repository.js";
+
+const database = process.env.MASANAWA_TEST_DATABASE_URL;
+const testWithDb = database ? describe : describe.skip;
+
+testWithDb("J15 external videos PG18 — audited, tenant-fenced manual approval", () => {
+  const pool = new Pool({ connectionString: database });
+  const repo = createPostgresVideoStore(pool);
+  const tenantId = "video-test-" + randomUUID();
+  const otherTenant = "video-test-" + randomUUID();
+  const actorId = "staff-" + randomUUID();
+  const id = randomUUID();
+  beforeAll(async () => {
+    const url = new URL("../../../../../packages/external-videos/migrations/0001_external_videos.sql", import.meta.url);
+    await pool.query(await readFile(url, "utf8"));
+    const recovery = new URL("../../../../../packages/external-videos/migrations/0004_video_recovery.sql", import.meta.url);
+    await pool.query(await readFile(recovery, "utf8"));
+  });
+  afterAll(async () => { await pool.end(); });
+
+  it("does not show pending videos, verifies on approve, hides on revoke and audits all transitions", async () => {
+    const original = {
+      id, tenantId, provider: "youtube" as const, providerVideoId: "abcDE12_-34",
+      sourceUrl: "https://www.youtube.com/watch?v=abcDE12_-34",
+      title: "Algebra", channelName: "Tutor", reviewState: "pending" as const,
+      verifiedAt: null, createdAt: new Date().toISOString(),
+    };
+    const saved = await repo.submit(original, actorId);
+    expect(saved.id).toBe(id);
+    const duplicate = await repo.submit({ ...original, id: randomUUID() }, actorId);
+    expect(duplicate.id).toBe(id);
+    expect(await repo.list({tenantId,publicOnly:true,limit:10})).toEqual([]);
+    expect(await repo.isApproved({tenantId,id})).toBe(false);
+    expect(await repo.isApproved({tenantId:otherTenant,id})).toBe(false);
+    expect(await repo.list({tenantId:otherTenant,publicOnly:false,limit:10})).toEqual([]);
+
+    const approved = await repo.review({
+      tenantId, id, actorId, expectedState:"pending", state:"approved",
+      verificationReference:"verified-official-provider-player-123",
+    });
+    expect(approved?.reviewState).toBe("approved");
+    expect(await repo.list({tenantId,publicOnly:true,limit:10})).toHaveLength(1);
+    expect(await repo.isApproved({tenantId,id})).toBe(true);
+    expect(await repo.isApproved({tenantId:otherTenant,id})).toBe(false);
+    expect(await repo.review({tenantId:otherTenant,id,actorId,expectedState:"approved",state:"hidden",verificationReference:null})).toBeNull();
+    const hidden = await repo.review({tenantId,id,actorId,expectedState:"approved",state:"hidden",verificationReference:null});
+    expect(hidden?.reviewState).toBe("hidden");
+    expect(await repo.isApproved({tenantId,id})).toBe(false);
+    expect(await repo.list({tenantId,publicOnly:true,limit:10})).toHaveLength(0);
+    expect(await repo.review({tenantId,id,actorId,expectedState:"unavailable",state:"pending",verificationReference:null})).toBeNull();
+    expect((await repo.review({tenantId,id,actorId,expectedState:"hidden",state:"pending",verificationReference:null}))?.reviewState).toBe("pending");
+    expect(await repo.list({tenantId,publicOnly:true,limit:10})).toHaveLength(0);
+    expect((await repo.review({tenantId,id,actorId,expectedState:"pending",state:"approved",verificationReference:"provider-reverified-player-xyz"}))?.reviewState).toBe("approved");
+    expect((await repo.review({tenantId,id,actorId:"system:external-video-review",expectedState:"approved",state:"unavailable",verificationReference:null,reasonReference:"provider-removed-verified-123"}))?.reviewState).toBe("unavailable");
+    expect((await repo.review({tenantId,id,actorId,expectedState:"unavailable",state:"pending",verificationReference:null}))?.reviewState).toBe("pending");
+    expect(await repo.list({tenantId,publicOnly:true,limit:10})).toEqual([]);
+
+    const audit = await pool.query<{action:string}>(
+      "SELECT action FROM external_videos.review_audit WHERE tenant_id=$1 AND item_id=$2 ORDER BY occurred_at",
+      [tenantId,id],
+    );
+    expect(audit.rows.map(x => x.action)).toEqual(["submit","approve","hide","reopen","approve","unavailable","reopen"]);
+    const evidence=await pool.query<{reason_reference:string}>("SELECT reason_reference FROM external_videos.review_audit WHERE tenant_id=$1 AND item_id=$2 AND action='unavailable'",[tenantId,id]);
+    expect(evidence.rows[0]?.reason_reference).toBe("provider-removed-verified-123");
+  });
+
+  it("database itself blocks forged approved state without eligibility evidence", async () => {
+    await expect(pool.query(
+      "INSERT INTO external_videos.items(tenant_id,item_id,provider,provider_video_id,source_url,title,channel_name,review_state) "+
+      "VALUES($1,$2,'tiktok',$3,$4,'Test','Teacher','approved')",
+      [tenantId, randomUUID(),randomUUID(),"https://www.tiktok.com/@teacher/video/7234567890123456789"],
+    )).rejects.toThrow();
+  });
+  it("pages 25 curated items across a stable tenant-scoped PostgreSQL cursor", async () => {
+    const pageTenant = "video-page-" + randomUUID();
+    for (let i = 0; i < 25; i++) {
+      await repo.submit({
+        id: randomUUID(), tenantId: pageTenant, provider: "youtube",
+        providerVideoId: "page-" + i, sourceUrl: "https://www.youtube.com/watch?v=abcDE12_-34",
+        title: "Lesson " + i, channelName: "Teacher", reviewState: "pending",
+        verifiedAt: null, createdAt: new Date().toISOString(),
+      }, actorId);
+    }
+    const first = await repo.list({tenantId:pageTenant,publicOnly:false,limit:20});
+    const second = await repo.list({tenantId:pageTenant,publicOnly:false,limit:20,before:first[19]!.id});
+    expect(first).toHaveLength(20);
+    expect(second).toHaveLength(5);
+    expect(new Set([...first,...second].map(x=>x.id)).size).toBe(25);
+    expect(await repo.list({tenantId:pageTenant,publicOnly:true,limit:20})).toEqual([]);
+    expect(await repo.list({tenantId:otherTenant,publicOnly:false,limit:20,before:first[19]!.id})).toEqual([]);
+  });
+});

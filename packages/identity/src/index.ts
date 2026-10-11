@@ -10,3 +10,4 @@ export * from "./twin-profile.js";
 
 export * from "./account-deletion.js";
 export * from "./account-deletion-repository.js";
+export * from "./fan_setup.js";
