@@ -26,6 +26,7 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
   List<MasanaInboxItem> _chats=[];
   Timer? _debounce;
   int _generation=0;
+  int _accountEpoch=0;
   bool _loading=true,_offline=false,_denied=false,_retired=false;
   String? _error;
 
@@ -35,6 +36,8 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
   void didUpdateWidget(covariant MasanaChatsListScreen oldWidget){
     super.didUpdateWidget(oldWidget);
     if(oldWidget.accountId!=widget.accountId) {
+      _accountEpoch++;
+      _debounce?.cancel();
       _generation++;
       _search.clear();
       _chats=[];_loading=true;_offline=false;_error=null;
@@ -44,6 +47,7 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
   }
   @override
   void dispose(){
+    _accountEpoch++;
     _generation++;_debounce?.cancel();_search.dispose();super.dispose();
   }
   bool _current(int n)=>mounted&&n==_generation;
@@ -90,10 +94,13 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
     _debounce=Timer(const Duration(milliseconds:350),_refresh);
   }
   Future<void> _togglePin(MasanaInboxItem chat) async {
+    final epoch=_accountEpoch, account=widget.accountId;
+    bool sameAccount()=>mounted && epoch==_accountEpoch &&
+      account==widget.accountId;
     try {
       final newVersion=await widget.inbox.pin(
         chat.characterId,!chat.pinned,chat.revision);
-      if(!mounted) return;
+      if(!sameAccount()) return;
       setState((){
         _chats=[for(final c in _chats)
           if(c.characterId==chat.characterId)
@@ -103,15 +110,18 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
       // Refresh cache and authoritative ordering after the mutation.
       unawaited(_refresh());
     } catch (_) {
-      if(mounted) setState(() {
+      if(sameAccount()) setState(() {
         _error='pin';
       });
     }
   }
   void _open(MasanaInboxItem chat) {
+    final epoch=_accountEpoch, account=widget.accountId;
     widget.onOpen(chat.characterId,chat.displayName);
     unawaited(widget.inbox.markRead(chat.characterId).then((_) {
-      if(mounted) unawaited(_refresh());
+      if(mounted && epoch==_accountEpoch && account==widget.accountId) {
+        unawaited(_refresh());
+      }
     }).catchError((Object _) { /* keep unread on failure */ }));
   }
   @override
@@ -182,7 +192,7 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
       ]),
       floatingActionButton:widget.onDiscover==null?null:
         FloatingActionButton(
-          tooltip:copy('Find Masana','Nemi Masana'),
+          tooltip:tr.chatC10Discover,
           onPressed:widget.onDiscover,
           child:const Icon(Icons.add_comment_outlined)),
     );
