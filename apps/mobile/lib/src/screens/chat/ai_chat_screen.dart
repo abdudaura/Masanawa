@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -31,15 +30,11 @@ import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
-import '../../state/my_twin_state.dart';
 import '../../state/wallet_state.dart';
 import '../../voice/paid_voice.dart';
 import '../../voice/paid_voice_state.dart';
-import '../../owner_access/owner_access.dart';
-import '../../owner_access/owner_access_state.dart';
 import '../../safety/twin_safety.dart';
 import '../../safety/twin_safety_state.dart';
-import '../../twin/twin_teaching.dart';
 import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
@@ -52,10 +47,6 @@ class AiChatScreen extends ConsumerStatefulWidget {
     required this.characterId,
     this.entryMode = AiChatEntryMode.chat,
     this.initialPrompt,
-    this.twinSetup = false,
-    this.twinGender,
-    this.twinAge,
-    this.twinPhotoPath,
     this.embeddedInShell = false,
     this.onOpenAgents,
     this.onOpenActivity,
@@ -65,10 +56,6 @@ class AiChatScreen extends ConsumerStatefulWidget {
   final String characterId;
   final AiChatEntryMode entryMode;
   final String? initialPrompt;
-  final bool twinSetup;
-  final String? twinGender;
-  final int? twinAge;
-  final String? twinPhotoPath;
   /// Root Talk tab: own app bar remains, but leading and overflow navigate
   /// within the shell rather than assuming a separate pushed chat route.
   final bool embeddedInShell;
@@ -98,12 +85,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
   bool _initialEntryHandled = false;
-  bool _finishingTwin = false;
-  Map<String, dynamic> _twinInterviewFacts = <String, dynamic>{};
   String? _cafeCategory;
   LiveVoiceSession? _inlineVoiceSession;
   StreamSubscription<String>? _inlineTranscriptSub;
-  StreamSubscription<String>? _inlineInputTranscriptSub;
   StreamSubscription<LiveVoiceState>? _inlineVoiceStateSub;
   StreamSubscription<void>? _inlineTurnSub;
   PaidVoiceAdmission? _inlinePaidAdmission;
@@ -112,8 +96,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   String _inlineTranscript = '';
   String _inlineTranscriptHistory = '';
   String _inlineCurrentTranscript = '';
-  String _hiddenTwinInput = '';
-  Future<void> _twinFactExtraction = Future<void>.value();
   LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
   bool _inlineVoiceClosing = false;
 
@@ -163,10 +145,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             for (final item in thread.draftAttachments)
               if (File(item.path).existsSync()) item,
           ];
-          if (widget.twinSetup) {
-            _twinInterviewFacts =
-                Map<String, dynamic>.from(thread.twinInterviewFacts);
-          }
         });
       }
       final offset = thread.scrollOffset;
@@ -189,7 +167,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _scrollPersistTimer?.cancel();
     _walletRefreshTimer?.cancel();
     _inlineTranscriptSub?.cancel();
-    _inlineInputTranscriptSub?.cancel();
     _inlineVoiceStateSub?.cancel();
     _inlineTurnSub?.cancel();
     unawaited(_disposeInlineVoice());
@@ -239,24 +216,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
 
-    if (widget.twinSetup &&
-        attachments.isEmpty &&
-        text.trim().isNotEmpty) {
-      unawaited(_sendTwinInterviewText(text.trim(), reply));
-      _input.clear();
-      ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
-      setState(() {
-        _showEmoji = false;
-        _replyingTo = null;
-      });
-      return;
-    }
-    if (widget.entryMode == AiChatEntryMode.teach &&
-        attachments.isEmpty &&
-        text.trim().isNotEmpty) {
-      unawaited(_teachThenSend(text, reply));
-      return;
-    }
     _commitTextSend(text, attachments, reply);
   }
 
@@ -269,149 +228,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             suggestion.message,
           ),
     );
-  }
-
-  bool _twinFactsReadyForCompletion(Map<String, dynamic> facts) {
-    bool has(String key) {
-      final value = facts[key];
-      if (value is String) return value.trim().isNotEmpty;
-      if (value is List) return value.any(
-        (item) => item is String && item.trim().isNotEmpty,
-      );
-      return value != null;
-    }
-
-    final hasBehavior = has('personality');
-    final hasBoundaries = has('boundaries');
-    final hasPurpose = has('expertise') || has('helpStyle');
-    final hasInteractionStyle =
-        has('greetingStyle') ||
-        has('formality') ||
-        has('humor') ||
-        has('decisionStyle') ||
-        has('audience');
-    return hasBehavior && hasBoundaries && hasPurpose && hasInteractionStyle;
-  }
-
-  void _maybeAutoFinishTwin(Map<String, dynamic> facts) {
-    if (!widget.twinSetup ||
-        _finishingTwin ||
-        !_twinFactsReadyForCompletion(facts) ||
-        !mounted) {
-      return;
-    }
-    final guide = ref.read(agentDirectoryProvider).find(widget.characterId);
-    if (guide == null) return;
-    unawaited(_finishTwinSetup(guide));
-  }
-
-  Future<void> _sendTwinInterviewText(
-    String text,
-    AiChatMessage? reply,
-  ) async {
-    final ctl = ref.read(aiChatProvider.notifier);
-    try {
-      await ctl.sendText(
-        widget.characterId,
-        text,
-        replyToId: reply?.id,
-        replyPreview: reply == null
-            ? null
-            : (reply.text.isNotEmpty ? reply.text : 'Gwani'),
-        transportPrompt: ctl.twinInterviewTransportPrompt(
-          userAnswer: text,
-          facts: _twinInterviewFacts,
-        ),
-      );
-      final next = await ctl.extractTwinInterviewText(
-        characterId: widget.characterId,
-        userAnswer: text,
-        facts: _twinInterviewFacts,
-      );
-      if (!mounted) return;
-      setState(() => _twinInterviewFacts = next);
-      ctl.setTwinInterviewFacts(widget.characterId, next);
-      _maybeAutoFinishTwin(next);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'I could not save that Twin setup answer. Please say it again.',
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _teachThenSend(
-    String text,
-    AiChatMessage? reply,
-  ) async {
-    final ownedTwin = await ref.read(myTwinProvider.future);
-    if (!mounted) return;
-    if (ownedTwin?.characterId != widget.characterId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Teach mode is available only in your own Twin chat.'),
-        ),
-      );
-      return;
-    }
-    final command = interpretTwinTeaching(text);
-    if (command != null) {
-      try {
-        final transport = ref.read(twinProfileTransportProvider);
-        final preview = await transport.previewCustomization(command.patch);
-        if (!mounted) return;
-        var confirmed = true;
-        if (preview.requiresConfirmation) {
-          confirmed = await showDialog<bool>(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: const Text('Confirm standing change'),
-                  content: Text(
-                    command.summary +
-                        '. This changes how people can find your Twin until you change it again.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(false),
-                      child: const Text('Cancel'),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(true),
-                      child: const Text('Confirm'),
-                    ),
-                  ],
-                ),
-              ) ??
-              false;
-        }
-        if (!confirmed) return;
-        await transport.applyCustomization(
-          preview: preview,
-          confirmed: confirmed,
-        );
-        await ref.read(myTwinProvider.notifier).refresh();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(command.summary + '.')),
-        );
-      } catch (_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'I could not save that Twin update. Your message was not sent; please try again.',
-            ),
-          ),
-        );
-        return;
-      }
-    }
-    if (!mounted) return;
-    _commitTextSend(text, const [], reply);
   }
 
   void _commitTextSend(
@@ -689,145 +505,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
-  Future<void> _finishTwinSetup(AgentDirectoryEntry guide) async {
-    if (_finishingTwin) return;
-    final gender = widget.twinGender;
-    final age = widget.twinAge;
-    if (gender == null || age == null) return;
-
-    setState(() => _finishingTwin = true);
-    try {
-      if (_inlineVoiceSession != null) {
-        await _stopInlineLiveVoice(outcome: 'completed');
-      }
-      _consumeHiddenTwinInput();
-      await _twinFactExtraction;
-      if (!mounted) return;
-      final chat = ref.read(aiChatProvider.notifier);
-      final summary = await chat.summarizeTwinInterview(
-        widget.characterId,
-        _twinInterviewFacts,
-      );
-      final session = ref.read(sessionProvider);
-      if (session is! SessionSignedIn) {
-        throw StateError('Sign in is required');
-      }
-      final ownerName = session.user.name.trim();
-      final photoPath = widget.twinPhotoPath?.trim();
-      if (photoPath == null || photoPath.isEmpty) {
-        throw StateError('Twin photo is missing');
-      }
-      final photo = File(photoPath);
-      final bytes = await photo.readAsBytes();
-      if (bytes.isEmpty || bytes.length > 4 * 1024 * 1024) {
-        throw StateError('Twin photo is too large');
-      }
-      final mimeType = lookupMimeType(
-            photoPath,
-            headerBytes: bytes.take(16).toList(),
-          ) ??
-          'image/jpeg';
-      if (!{'image/jpeg', 'image/png', 'image/webp'}.contains(mimeType)) {
-        throw StateError('Twin photo format is unsupported');
-      }
-      final result = await ref.read(creatorCloneTransportProvider).create(
-            displayName: ownerName.isEmpty ? 'My Twin' : '$ownerName Twin',
-            biography: summary['biography'] as String,
-            gender: gender,
-            age: age,
-            avatarBase64: base64Encode(bytes),
-            avatarMimeType: mimeType,
-            personality: List<String>.from(summary['personality'] as List),
-            expertise: List<String>.from(summary['expertise'] as List),
-          );
-      await ref.read(agentDirectoryProvider.notifier).refresh();
-      await ref.read(myTwinProvider.notifier).refresh();
-      chat.setTwinInterviewFacts(widget.characterId, const <String, dynamic>{});
-      if (mounted) {
-        setState(() => _twinInterviewFacts = <String, dynamic>{});
-      }
-      await chat.announceTwinReady(
-        guide.characterId,
-        displayName: result.displayName,
-        publicUrl: result.publicUrl,
-      );
-      if (!mounted) return;
-      final link = result.publicUrl;
-      await showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (sheetContext) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Icon(
-                  Icons.check_circle_rounded,
-                  size: 52,
-                  color: context.masanawa.brand,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Your Twin is ready',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(sheetContext).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  link == null || link.isEmpty
-                      ? 'Gwani will tell you how to use your Twin. The public link is still syncing.'
-                      : 'Share this link so anyone can talk to your Twin:',
-                  textAlign: TextAlign.center,
-                ),
-                if (link != null && link.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  SelectableText(
-                    link,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: link));
-                      if (sheetContext.mounted) {
-                        ScaffoldMessenger.of(sheetContext).showSnackBar(
-                          const SnackBar(content: Text('Masana link copied')),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.copy_rounded),
-                    label: const Text('Copy Masana link'),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Your personal Masana is ready.')),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'I could not finish it yet. Keep this chat and try again.',
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _finishingTwin = false);
-    }
-  }
-
   // ---- Build ---------------------------------------------------------------
 
   @override
@@ -921,11 +598,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         }
         switch (widget.entryMode) {
           case AiChatEntryMode.chat:
-            break;
           case AiChatEntryMode.teach:
-            if (_input.text.isEmpty) {
-              _input.text = '';
-            }
             break;
           case AiChatEntryMode.study:
             break;
@@ -1045,22 +718,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
           actions: [
-            if (widget.twinSetup &&
-                _selectedMessageIds.isEmpty &&
-                !_showSearch)
-              TextButton.icon(
-                onPressed: _finishingTwin || _twinInterviewFacts.isEmpty
-                    ? null
-                    : () => _finishTwinSetup(agent),
-                icon: _finishingTwin
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check_rounded),
-                label: const Text('Finish Twin'),
-              ),
             if (_selectedMessageIds.isNotEmpty) ...[
               IconButton(
                 tooltip: 'Copy selected',
@@ -1126,9 +783,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 if (value == 'archive') ctl.toggleArchive(widget.characterId);
                 if (value == 'rename') _renameConversation();
                 if (value == 'gift') await _sendTwinGift(agent);
-                if (value == 'owner') await _requestOwnerChat(agent);
-                if (value == 'block') await _blockTwin(agent);
-                if (value == 'report') await _reportTwin(agent);
+                if (value == 'block') await _blockAgent(agent);
+                if (value == 'report') await _reportAgent(agent);
               },
               itemBuilder: (_) => [
                 if (widget.embeddedInShell) ...const [
@@ -1143,9 +799,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 if (!agent.supportAgent) ...const [
                   PopupMenuDivider(),
                   PopupMenuItem(value: 'gift', child: Text('Send gift')),
-                  PopupMenuItem(value: 'owner', child: Text('Talk to owner')),
-                  PopupMenuItem(value: 'block', child: Text('Block Twin')),
-                  PopupMenuItem(value: 'report', child: Text('Report Twin')),
+                  PopupMenuItem(value: 'block', child: Text('Block')),
+                  PopupMenuItem(value: 'report', child: Text('Report')),
                 ],
                 const PopupMenuDivider(),
                 const PopupMenuItem(value: 'clear', child: Text('Clear chat')),
@@ -1155,27 +810,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
         body: Column(
           children: [
-            if (widget.twinSetup)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                color: u.brand.withValues(alpha: .08),
-                child: Row(
-                  children: [
-                    Icon(Icons.mic_rounded, color: u.brand, size: 18),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Twin interview · talk naturally. Your speech is not shown as text.',
-                        style: TextStyle(fontSize: 12.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             if (updateRequired)
               MaterialBanner(
                 content: Text(
@@ -1353,22 +987,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 child: Text(
                   'Study · ask, answer, or speak naturally. Your learning progress is saved privately.',
-                  style: TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
-                ),
-              ),
-            if (widget.entryMode == AiChatEntryMode.teach)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(12, 6, 12, 2),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                decoration: BoxDecoration(
-                  color: u.brand.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: u.brand.withValues(alpha: .18)),
-                ),
-                child: Text(
-                  'Teach mode: try “My bio is…”, “I speak…”, “My interests are…”, '
-                  'or “Make my Twin public/private”. Other messages stay normal chat.',
                   style: TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
                 ),
               ),
@@ -1640,260 +1258,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  bool _ownerRequestCanDispute(OwnerAccessRequest request) {
-    final disputeBy = request.disputeBy;
-    return request.state == OwnerAccessState.settled &&
-        request.chargeMode == 'paid' &&
-        request.earningsReleasedAt == null &&
-        disputeBy != null &&
-        disputeBy.isAfter(DateTime.now());
-  }
-
-  bool _ownerRequestIsLive(OwnerAccessRequest request) {
-    return request.state == OwnerAccessState.requested ||
-        request.state == OwnerAccessState.accepted ||
-        request.state == OwnerAccessState.scheduled ||
-        request.state == OwnerAccessState.active ||
-        request.state == OwnerAccessState.disputed ||
-        request.state == OwnerAccessState.releasing ||
-        _ownerRequestCanDispute(request);
-  }
-
-  String _ownerRequestStatus(OwnerAccessRequest request) {
-    switch (request.state) {
-      case OwnerAccessState.requested:
-        return 'Waiting for the owner to respond.';
-      case OwnerAccessState.accepted:
-        return 'The owner accepted your request.';
-      case OwnerAccessState.scheduled:
-        final scheduled = request.scheduledFor;
-        return scheduled == null
-            ? 'The session is scheduled.'
-            : 'Scheduled for ${MaterialLocalizations.of(context).formatFullDate(scheduled)} at '
-                '${TimeOfDay.fromDateTime(scheduled).format(context)}.';
-      case OwnerAccessState.active:
-        return 'Your session is in progress.';
-      case OwnerAccessState.completed:
-        return 'Your session was completed.';
-      case OwnerAccessState.settled:
-        final disputeBy = request.disputeBy;
-        if (_ownerRequestCanDispute(request) && disputeBy != null) {
-          return 'Your session was completed. You can dispute it until '
-              '${MaterialLocalizations.of(context).formatFullDate(disputeBy)} at '
-              '${TimeOfDay.fromDateTime(disputeBy).format(context)}.';
-        }
-        return request.earningsReleasedAt == null
-            ? 'Your session was completed.'
-            : 'Your session was completed and the payment was released.';
-      case OwnerAccessState.releasing:
-        return 'Your session was completed. Payment release is being finalized.';
-      case OwnerAccessState.declined:
-        return 'The owner declined this request.';
-      case OwnerAccessState.expired:
-        return 'This request expired.';
-      case OwnerAccessState.cancelled:
-        return 'You cancelled this request.';
-      case OwnerAccessState.noShow:
-        return 'The scheduled session was missed.';
-      case OwnerAccessState.refunded:
-        return 'This request ended and eligible held Credits were returned.';
-      case OwnerAccessState.disputed:
-        return 'This request is under review.';
-    }
-  }
-
-  Future<void> _showOwnerRequestStatus(
-    AgentDirectoryEntry agent,
-    OwnerAccessRequest request,
-  ) async {
-    final cancellable =
-        request.state == OwnerAccessState.requested ||
-        request.state == OwnerAccessState.accepted ||
-        request.state == OwnerAccessState.scheduled;
-    final priceLabel = request.chargeMode == 'trial'
-        ? 'trial'
-        : '${request.priceCredits} Credits';
-    final action = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Talk to the owner'),
-        content: Text(
-          '${_ownerRequestStatus(request)}\n\n'
-          '${request.durationMinutes} minutes · $priceLabel',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Close'),
-          ),
-          if (cancellable)
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-              child: const Text('Cancel request'),
-            ),
-          if (_ownerRequestCanDispute(request))
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop('dispute'),
-              child: const Text('Dispute session'),
-            ),
-          if (request.state == OwnerAccessState.active)
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop('open'),
-              child: const Text('Open human chat'),
-            ),
-        ],
-      ),
-    );
-    if (action == null || !mounted) return;
-    if (action == 'open') {
-      await context.push(
-        '/owner-session/' +
-            Uri.encodeComponent(agent.characterId) +
-            '/' +
-            Uri.encodeComponent(request.requestId),
-      );
-      return;
-    }
-    if (action == 'dispute') {
-      final reason = await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => SimpleDialog(
-          title: const Text('Why are you disputing this session?'),
-          children: [
-            SimpleDialogOption(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop('service-not-delivered'),
-              child: const Text('The service was not delivered'),
-            ),
-            SimpleDialogOption(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop('service-quality'),
-              child: const Text('The service quality was unacceptable'),
-            ),
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(dialogContext).pop('other'),
-              child: const Text('Other reason'),
-            ),
-          ],
-        ),
-      );
-      if (reason == null || !mounted) return;
-      final updated =
-          await ref.read(ownerAccessControllerProvider.notifier).act(
-                characterId: agent.characterId,
-                requestId: request.requestId,
-                action: 'dispute',
-                disputeReason: reason,
-              );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            updated == null
-                ? 'Could not open this dispute.'
-                : 'Dispute submitted. The payment remains pending during review.',
-          ),
-        ),
-      );
-      return;
-    }
-    if (action != 'cancel') return;
-    final updated = await ref.read(ownerAccessControllerProvider.notifier).act(
-          characterId: agent.characterId,
-          requestId: request.requestId,
-          action: 'cancel',
-        );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          updated == null
-              ? 'Could not cancel this request.'
-              : 'Talk request cancelled.',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _requestOwnerChat(AgentDirectoryEntry agent) async {
-    final controller = ref.read(ownerAccessControllerProvider.notifier);
-    final existing = await controller.latest(characterId: agent.characterId);
-    if (!mounted) return;
-    if (existing != null && _ownerRequestIsLive(existing)) {
-      await _showOwnerRequestStatus(agent, existing);
-      return;
-    }
-    if (existing == null &&
-        ref.read(ownerAccessControllerProvider).error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not check your current owner request. Try again.'),
-        ),
-      );
-      return;
-    }
-
-    OwnerAccessQuote? quote;
-    for (final minutes in const [15, 30, 60, 5, 10, 45, 90, 120]) {
-      quote = await controller.quote(
-        characterId: agent.characterId,
-        modality: OwnerAccessModality.text,
-        durationMinutes: minutes,
-      );
-      if (quote != null) break;
-    }
-    if (quote == null || !mounted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('The owner is not accepting requests right now.'),
-          ),
-        );
-      }
-      return;
-    }
-    final offer = quote;
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Talk to the owner'),
-        content: Text(
-          offer.isTrial
-              ? 'Your ${offer.trialDurationDays}-day trial covers this ${offer.durationMinutes}-minute private text session with the real owner.'
-              : 'Request a ${offer.durationMinutes}-minute private text session with the real owner for ${offer.priceCredits} Credits. Funds are held until verified attendance and completion; otherwise eligible refunds are returned.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Not now'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Send request'),
-          ),
-        ],
-      ),
-    );
-    if (accepted != true) return;
-    final request = await controller.submit(characterId: agent.characterId);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          request == null
-              ? 'Could not send owner request.'
-              : 'Owner request sent. We will notify you when it changes.',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _blockTwin(AgentDirectoryEntry agent) async {
+  Future<void> _blockAgent(AgentDirectoryEntry agent) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text('Block ${agent.displayName}?'),
-        content: const Text('This Twin will no longer be available to you until you unblock it.'),
+                content: const Text('They will no longer be available to you until you unblock them.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1919,7 +1289,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
-  Future<void> _reportTwin(AgentDirectoryEntry agent) async {
+  Future<void> _reportAgent(AgentDirectoryEntry agent) async {
     final selected = await showDialog<TwinReportReason>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
@@ -1946,10 +1316,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Future<(bool allowed, PaidVoiceAdmission? admission)> _admitInlineVoice(
     AgentDirectoryEntry agent,
   ) async {
-    final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
-    final requiresTwinAdmission =
-        !agent.supportAgent && ownedCharacterId != agent.characterId;
-    if (!requiresTwinAdmission) return (true, null);
+    // Personal Twins are retired: every non-support Masana goes through
+    // paid admission, preserving billing behavior.
+    final requiresPaidAdmission = !agent.supportAgent;
+    if (!requiresPaidAdmission) return (true, null);
 
     final controller = ref.read(paidVoiceControllerProvider.notifier);
     final quote = await controller.quote(
@@ -2019,43 +1389,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     });
   }
 
-  void _applyHiddenTwinInputChunk(String chunk) {
-    if (!widget.twinSetup) return;
-    final next = chunk.trim();
-    if (next.isEmpty) return;
-    final current = _hiddenTwinInput;
-    if (current.isEmpty || next.startsWith(current)) {
-      _hiddenTwinInput = next;
-    } else if (!current.endsWith(next)) {
-      final separator =
-          current.endsWith(' ') || next.startsWith(' ') ? '' : ' ';
-      _hiddenTwinInput = current + separator + next;
-    }
-  }
-
-  void _consumeHiddenTwinInput() {
-    if (!widget.twinSetup) return;
-    final answer = _hiddenTwinInput.trim();
-    _hiddenTwinInput = '';
-    if (answer.isEmpty) return;
-    _twinFactExtraction = _twinFactExtraction.then((_) async {
-      if (!mounted) return;
-      try {
-        final ctl = ref.read(aiChatProvider.notifier);
-        final next = await ctl.extractTwinInterviewText(
-          characterId: widget.characterId,
-          userAnswer: answer,
-          facts: _twinInterviewFacts,
-        );
-        if (!mounted) return;
-        setState(() => _twinInterviewFacts = next);
-        ctl.setTwinInterviewFacts(widget.characterId, next);
-      } catch (_) {
-        // Hidden speech is never rendered or written into the local timeline.
-      }
-    });
-  }
-
   Future<void> _disposeInlineVoice() async {
     if (_inlineVoiceClosing) return;
     final session = _inlineVoiceSession;
@@ -2072,11 +1405,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         : ref.read(walletProvider.notifier);
     try {
       await _inlineTranscriptSub?.cancel();
-      await _inlineInputTranscriptSub?.cancel();
       await _inlineVoiceStateSub?.cancel();
       await _inlineTurnSub?.cancel();
       _inlineTranscriptSub = null;
-      _inlineInputTranscriptSub = null;
       _inlineVoiceStateSub = null;
       _inlineTurnSub = null;
       await session.close();
@@ -2136,7 +1467,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       final grant = await shellTransport.mintLiveVoiceGrant(
         agent.characterId,
         admissionId: paidAdmission?.admissionId,
-        purpose: widget.twinSetup ? 'twin-setup' : 'conversation',
+        purpose: 'conversation',
       );
       if (!mounted) {
         throw StateError('Voice screen closed before session start');
@@ -2144,22 +1475,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
-        captureInputTranscription: widget.twinSetup,
+        captureInputTranscription: false,
       );
 
       _inlineTranscriptSub?.cancel();
-      _inlineInputTranscriptSub?.cancel();
       _inlineVoiceStateSub?.cancel();
       _inlineTurnSub?.cancel();
       _inlineTranscriptSub =
           session.transcripts.listen(_applyInlineTranscriptChunk);
-      if (widget.twinSetup) {
-        _inlineInputTranscriptSub =
-            session.inputTranscripts.listen(_applyHiddenTwinInputChunk);
-      }
       _inlineTurnSub = session.turnCompletions.listen((_) {
         _finishInlineTranscriptTurn();
-        _consumeHiddenTwinInput();
       });
       _inlineVoiceStateSub = session.states.listen((state) {
         if (!mounted) return;
@@ -2177,7 +1502,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         _inlineTranscript = '';
         _inlineTranscriptHistory = '';
         _inlineCurrentTranscript = '';
-        _hiddenTwinInput = '';
         _inlineVoiceState = LiveVoiceState.connecting;
       });
 
@@ -2236,13 +1560,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final shellTransport = _inlineShellTransport;
     final characterId = _inlineVoiceCharacterId;
     try {
-      _consumeHiddenTwinInput();
       await _inlineTranscriptSub?.cancel();
-      await _inlineInputTranscriptSub?.cancel();
       await _inlineVoiceStateSub?.cancel();
       await _inlineTurnSub?.cancel();
       _inlineTranscriptSub = null;
-      _inlineInputTranscriptSub = null;
       _inlineVoiceStateSub = null;
       _inlineTurnSub = null;
       await session.close();
@@ -2289,12 +1610,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     final shellTransport = transport as AgentShellTransport;
-    final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
-    final requiresTwinAdmission =
-        !agent.supportAgent && ownedCharacterId != agent.characterId;
+    // Personal Twins are retired: every non-support Masana goes through
+    // paid admission, preserving billing behavior.
+    final requiresPaidAdmission = !agent.supportAgent;
 
     PaidVoiceAdmission? paidAdmission;
-    if (requiresTwinAdmission) {
+    if (requiresPaidAdmission) {
       final controller = ref.read(paidVoiceControllerProvider.notifier);
       final quote = await controller.quote(
         characterId: agent.characterId,

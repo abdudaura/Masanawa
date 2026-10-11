@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,7 +9,6 @@ import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/password_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
-import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/person_profile_screen.dart';
 import '../screens/profile/persona_profile_screen.dart';
@@ -24,7 +22,6 @@ import '../screens/twin/shell_tab.dart';
 import '../shell/five_tab_shell.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
-import '../state/twin_directory_state.dart';
 import '../talks/talk_models.dart';
 
 /// The five canonical root destinations. These are navigation indices only,
@@ -89,8 +86,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path.startsWith('/talk/') ||
           path.startsWith('/u/') ||
           path.startsWith('/persona/') ||
-          path.startsWith('/twin/') ||
-          path.startsWith('/owner-session/') ||
           path == '/agents' ||
           path == '/masana' ||
           path == '/settings' ||
@@ -205,7 +200,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/chat/:id',
         builder: (context, state) {
           final entry = switch (state.uri.queryParameters['entry']) {
-            'teach' => AiChatEntryMode.teach,
             'study' => AiChatEntryMode.study,
             'voice-note' => AiChatEntryMode.liveTalk,
             'live-talk' => AiChatEntryMode.liveTalk,
@@ -213,32 +207,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             'cafe' => AiChatEntryMode.cafe,
             _ => AiChatEntryMode.chat,
           };
-          final twinSetup = state.uri.queryParameters['twinSetup'] == '1';
           return AiChatScreen(
             characterId: state.pathParameters['id']!,
             entryMode: entry,
             initialPrompt: state.uri.queryParameters['prompt'],
-            twinSetup: twinSetup,
-            twinGender: state.uri.queryParameters['gender'],
-            twinAge: int.tryParse(state.uri.queryParameters['age'] ?? ''),
-            twinPhotoPath: state.uri.queryParameters['photo'],
           );
         },
       ),
       GoRoute(
-        path: '/owner-session/:characterId/:requestId',
-        builder: (context, state) => OwnerAccessSessionScreen(
-          characterId: state.pathParameters['characterId']!,
-          requestId: state.pathParameters['requestId']!,
-        ),
-      ),
-      GoRoute(
-        path: '/twin/:publicId',
-        builder: (context, state) => _TwinLinkResolverScreen(
-          publicId: state.pathParameters['publicId']!,
-        ),
-      ),
-      GoRoute(path: '/agents', redirect: (_, __) => '/home?tab=chats'),
+        path: '/agents', redirect: (_, __) => '/home?tab=chats'),
       GoRoute(path: '/masana', builder: (_, _) => const MasanaListScreen()),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
@@ -255,96 +232,3 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.listen(isSignedInProvider, (_, _) => router.refresh());
   return router;
 });
-
-class _TwinLinkResolverScreen extends ConsumerStatefulWidget {
-  const _TwinLinkResolverScreen({required this.publicId});
-
-  final String publicId;
-
-  @override
-  ConsumerState<_TwinLinkResolverScreen> createState() =>
-      _TwinLinkResolverScreenState();
-}
-
-class _TwinLinkResolverScreenState
-    extends ConsumerState<_TwinLinkResolverScreen> {
-  String? _error;
-  bool _resolving = true;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _resolve());
-  }
-
-  Future<void> _resolve() async {
-    if (!_resolving) {
-      setState(() {
-        _resolving = true;
-        _error = null;
-      });
-    }
-    try {
-      final twin = await ref.read(twinDirectoryTransportProvider).resolve(
-            publicId: widget.publicId,
-          );
-      if (!mounted) return;
-      if (twin == null) {
-        setState(() {
-          _resolving = false;
-          _error =
-              'This Masana is private or the share link is no longer available.';
-        });
-        return;
-      }
-      context.go('/chat/' + Uri.encodeComponent(twin.characterId));
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _resolving = false;
-        _error = 'Could not open this Masana right now.';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_resolving) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-    return Scaffold(
-      appBar: AppBar(title: const Text('Open Masana')),
-      body: SafeArea(
-        minimum: const EdgeInsets.all(24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.link_off_outlined, size: 42),
-                const SizedBox(height: 16),
-                Text(
-                  _error ?? 'This Masana link is unavailable.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: _resolve,
-                  child: const Text('Try again'),
-                ),
-                TextButton(
-                  onPressed: () => context.go('/home'),
-                  child: const Text('Back home'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

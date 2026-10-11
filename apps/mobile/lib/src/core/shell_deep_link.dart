@@ -2,9 +2,8 @@
 /// authorizes the conversation and every action; links never carry execution
 /// authority.
 ///
-/// Public Twin links deliberately resolve through `/twin/:publicId` first. That
-/// route performs an authenticated, privacy-aware Gateway lookup before opening
-/// the canonical Character conversation.
+/// Public Masana links resolve straight to the public profile route; the
+/// retired Twin lookup route no longer exists.
 String? shellDeepLinkRoute(Uri uri) {
   if (uri.userInfo.isNotEmpty || uri.hasPort || uri.fragment.isNotEmpty) {
     return null;
@@ -19,8 +18,8 @@ String? shellDeepLinkRoute(Uri uri) {
     final kind = uri.pathSegments.first;
     final id = uri.pathSegments[1];
     if (kind == 'twin') {
-      if (!_validPublicTwinId(id)) return null;
-      return '/twin/${Uri.encodeComponent(id)}';
+      if (!_validPublicId(id)) return null;
+      return '/persona/${Uri.encodeComponent(id)}';
     }
     if (kind == 'talk') {
       if (!_validTalkId(id)) return null;
@@ -38,7 +37,6 @@ String? shellDeepLinkRoute(Uri uri) {
         'twin',
         'talk',
         'activity',
-        'owner-session',
       }.contains(uri.host)) {
     return null;
   }
@@ -48,8 +46,8 @@ String? shellDeepLinkRoute(Uri uri) {
       return null;
     }
     final publicId = uri.pathSegments.single;
-    if (!_validPublicTwinId(publicId)) return null;
-    return '/twin/${Uri.encodeComponent(publicId)}';
+    if (!_validPublicId(publicId)) return null;
+    return '/persona/${Uri.encodeComponent(publicId)}';
   }
 
   if (uri.host == 'talk') {
@@ -66,22 +64,6 @@ String? shellDeepLinkRoute(Uri uri) {
       return null;
     }
     return '/home?tab=activity';
-  }
-
-  if (uri.host == 'owner-session') {
-    if (uri.pathSegments.length != 2 || uri.queryParameters.isNotEmpty) {
-      return null;
-    }
-    final characterId = uri.pathSegments[0];
-    final requestId = uri.pathSegments[1];
-    if (!_validCharacterId(characterId) ||
-        !RegExp(r'^[A-Za-z0-9_-]{8,256}$').hasMatch(requestId)) {
-      return null;
-    }
-    return '/owner-session/' +
-        Uri.encodeComponent(characterId) +
-        '/' +
-        Uri.encodeComponent(requestId);
   }
 
   String? characterId;
@@ -103,7 +85,7 @@ String? shellDeepLinkRoute(Uri uri) {
 bool _validCharacterId(String value) =>
     RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(value);
 
-bool _validPublicTwinId(String value) =>
+bool _validPublicId(String value) =>
     RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
 
 bool _validTalkId(String value) =>

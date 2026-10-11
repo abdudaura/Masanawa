@@ -11,14 +11,14 @@ void main() {
         '/chat/character_abc');
   });
 
-  test('public Twin links resolve through the privacy-aware Twin lookup route', () {
+  test('public Masana links resolve to the public profile route', () {
     expect(
       shellDeepLinkRoute(Uri.parse('https://masanawa.com/twin/amina_bello')),
-      '/twin/amina_bello',
+      '/persona/amina_bello',
     );
     expect(
       shellDeepLinkRoute(Uri.parse('masanawa://twin/amina_bello')),
-      '/twin/amina_bello',
+      '/persona/amina_bello',
     );
   });
 
@@ -40,14 +40,14 @@ void main() {
     );
   });
 
-  test('started human session link opens the private room', () {
+  test('retired owner-session links no longer resolve', () {
     expect(
       shellDeepLinkRoute(
         Uri.parse(
           'masanawa://owner-session/character_abc/request_owner_123',
         ),
       ),
-      '/owner-session/character_abc/request_owner_123',
+      isNull,
     );
   });
 
@@ -98,13 +98,13 @@ void main() {
     expect(pending.take(ready: true), isNull);
   });
 
-  test('cold-start public Twin link also waits for authentication', () {
+  test('cold-start public Masana link also waits for authentication', () {
     final pending = PendingDeepLink();
     pending.offer(Uri.parse('https://masanawa.com/twin/amina_bello'));
     expect(pending.take(ready: false), isNull);
     expect(
       shellDeepLinkRoute(pending.take(ready: true)!),
-      '/twin/amina_bello',
+      '/persona/amina_bello',
     );
     expect(pending.take(ready: true), isNull);
   });
