@@ -54,6 +54,38 @@ void main(){
   expect(sent.data['action'],'approve');
   expect(sent.data['expectedRevision'],2);
  });
+ testWidgets('A06 draft author can revise, preserving author and expected revision', (tester) async{
+  final dio=Dio(BaseOptions(baseUrl:'https://example.invalid'));
+  final calls=<RequestOptions>[];
+  dio.interceptors.add(InterceptorsWrapper(onRequest:(options,handler){
+    calls.add(options);
+    if(options.method=='GET'){
+      handler.resolve(Response<dynamic>(requestOptions:options,statusCode:200,data:[
+        {'id':'9b8c8884-7a31-49d9-aee5-521364b54aef',
+         'authorMasanaId':'masana','kind':'text','body':'Initial',
+         'media':<String>[],'transcript':null,
+         'state':'draft','revision':0,'createdBy':'editor_one'}
+      ]));
+    }else{
+      handler.resolve(Response<dynamic>(requestOptions:options,statusCode:200,data:
+       {'state':'draft','revision':1}));
+    }
+  }));
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:ReviewQueuePage(
+    dio:dio,accessToken:()async=>'staff-token',canEdit:true,staffId:'editor_one'))));
+  await tester.pumpAndSettle();
+  expect(find.text('Edit draft'),findsOneWidget);
+  await tester.tap(find.text('Edit draft'));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byType(TextField).last,'Updated lesson');
+  await tester.tap(find.text('Save revision'));
+  await tester.pumpAndSettle();
+  final request=calls.singleWhere((c)=>c.method=='PATCH');
+  expect(request.path,contains('/draft'));
+  expect(request.data['authorMasanaId'],'masana');
+  expect(request.data['expectedRevision'],0);
+  expect(request.data['body'],'Updated lesson');
+ });
  testWidgets('A06 denies editor actions without role', (tester) async{
   final dio=Dio();final calls=<RequestOptions>[];
   dio.interceptors.add(InterceptorsWrapper(onRequest:(options,handler){calls.add(options);handler.next(options);}));
