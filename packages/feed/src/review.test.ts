@@ -3,7 +3,7 @@ import {EditorialReviewService,type EditorialPost,type EditorialRepository} from
 const post:EditorialPost={id:"9b8c8884-7a31-49d9-aee5-521364b54aef",tenantId:"tenant",authorMasanaId:"masana",kind:"text",body:"Hello",media:[],transcript:null,state:"in_review",revision:1,createdBy:"author",scheduledAt:null,updatedAt:"2026-10-11T07:00:00Z"};
 const staff=(id="reviewer")=>({kind:"staff" as const,tenantId:"tenant",id,permissions:["content_editor"]});
 function deps(){
- const repo={create:vi.fn(async()=>post),get:vi.fn(async()=>post),list:vi.fn(async()=>[post]),change:vi.fn(async()=>({...post,state:"published" as const}))} satisfies EditorialRepository;
+ const repo={create:vi.fn(async()=>post),update:vi.fn(async()=>post),get:vi.fn(async()=>post),list:vi.fn(async()=>[post]),change:vi.fn(async()=>({...post,state:"published" as const}))} satisfies EditorialRepository;
  return {repo,service:new EditorialReviewService(repo,async()=>true,async()=>true)};
 }
 describe("A05/A06 editorial admission and review",()=>{
@@ -40,6 +40,15 @@ describe("A05/A06 editorial admission and review",()=>{
   const future=new Date(Date.now()+120000).toISOString();
   await service.change(staff(),post.id,"schedule",1,"schedule-key01",future);
   expect(repo.change).toHaveBeenCalledWith("tenant",post.id,"reviewer",1,"schedule","schedule-key01",future);
+ });
+ it("only the originating editor can revise a draft",async()=>{
+  const {repo,service}=deps();
+  repo.get.mockResolvedValue({...post,state:"draft"});
+  await expect(service.update(staff("reviewer"),post.id,1,
+   {authorMasanaId:"masana",kind:"text",body:"Correct",idempotencyKey:"edit-req001"})).rejects.toMatchObject({code:"draft_owner_required"});
+  await service.update(staff("author"),post.id,1,
+   {authorMasanaId:"masana",kind:"text",body:"Correct",idempotencyKey:"edit-req001"});
+  expect(repo.update).toHaveBeenCalledWith("tenant",post.id,"author",1,expect.objectContaining({body:"Correct"}));
  });
  it("rejects malformed post references and key replays",async()=>{
   const {service,repo}=deps();
