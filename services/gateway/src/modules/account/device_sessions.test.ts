@@ -39,6 +39,12 @@ describe("C09 trusted device-security routes",()=>{
     (store.revoke as ReturnType<typeof vi.fn>).mockResolvedValue("current");
     r=await app.inject({method:"POST",url:`/v1/account/devices/${id}/revoke`,
       headers:{authorization:header},payload:{idempotencyKey:"revoke-key-001"}});
-    expect(r.statusCode).toBe(409);await app.close();
+    expect(r.statusCode).toBe(409);
+    (store.revoke as ReturnType<typeof vi.fn>).mockResolvedValue("step_up_required");
+    r=await app.inject({method:"POST",url:`/v1/account/devices/${id}/revoke`,
+      headers:{authorization:header},payload:{idempotencyKey:"revoke-key-002"}});
+    expect(r.statusCode).toBe(428);
+    expect(r.json()).toEqual({code:"recent_verification_required"});
+    await app.close();
   });
 });

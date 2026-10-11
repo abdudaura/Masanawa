@@ -4,15 +4,17 @@ import 'device_security_client.dart';
 
 /// C09. AF00 attaches from Settings; no offline session revocation is queued.
 class DeviceSecurityScreen extends StatefulWidget {
-  const DeviceSecurityScreen({super.key,required this.transport});
+  const DeviceSecurityScreen({super.key,required this.transport,
+    this.onReauthenticate,this.onOpenRecovery});
   final FanDevicesTransport transport;
+  final VoidCallback? onReauthenticate,onOpenRecovery;
   @override State<DeviceSecurityScreen> createState()=>_DeviceSecurityScreenState();
 }
 class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
   List<FanDevice> items=[];
   String? error;
   final Map<String,String> retryKeys={};
-  bool loading=true,offline=false;
+  bool loading=true,offline=false,stepUpRequired=false;
   String? revoking;
   int generation=0;
   String t(String en,String ha)=>Localizations.localeOf(context).languageCode=='ha'?ha:en;
@@ -25,7 +27,7 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
       old.transport.ownerAccountId!=widget.transport.ownerAccountId||
       !widget.transport.isCurrentAccount){
       ++generation;items=[];retryKeys.clear();revoking=null;error=null;
-      loading=true;offline=false;refresh();
+      loading=true;offline=false;stepUpRequired=false;refresh();
     }
   }
   @override void dispose(){++generation;super.dispose();}
@@ -35,7 +37,7 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
       if(mounted)setState((){items=[];loading=false;error=t('Sign in to manage devices','Shiga domin sarrafa na’urori');});
       return;
     }
-    setState((){loading=items.isEmpty;error=null;});
+    setState((){loading=items.isEmpty;error=null;stepUpRequired=false;});
     try{
       final list=await widget.transport.list();
       if(!mounted||ticket!=generation||!widget.transport.isCurrentAccount)return;
@@ -71,10 +73,14 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
       if(!mounted||ticket!=generation||!widget.transport.isCurrentAccount)return;
       retryKeys.remove(device.id);await refresh();
     }on DioException catch(e){
-      if(mounted&&ticket==generation)setState(()=>error=
+      if(mounted&&ticket==generation)setState(() {
+        stepUpRequired=e.response?.statusCode==428;
+        error=stepUpRequired?
+          t('Verify again to sign out another device. A new one-time code is required.',
+            'Sake tabbatarwa don fitar da wata na’ura. Ana bukatar sabon lamba.'):
         e.response?.statusCode==401||e.response?.statusCode==403?
           t('Session expired. Sign in again.','Lokaci ya kare. Sake shiga.'):
-          t('Could not sign out device. Retry is safe.','An kasa fitar da na’ura. Sake gwadawa ya dace.'));
+          t('Could not sign out device. Retry is safe.','An kasa fitar da na’ura. Sake gwadawa ya dace.');});
     }catch(_){
       if(mounted&&ticket==generation)setState(()=>
         error=t('Could not sign out device. Retry is safe.','An kasa fitar da na’ura. Sake gwadawa ya dace.'));
@@ -93,6 +99,14 @@ class _DeviceSecurityScreenState extends State<DeviceSecurityScreen> {
           actions:[TextButton(onPressed:refresh,child:Text(t('Retry','Sake gwadawa')))]),
         if(error!=null)MaterialBanner(content:Text(error!),
           actions:[TextButton(onPressed:refresh,child:Text(t('Retry','Sake gwadawa')))]),
+        if(stepUpRequired)Padding(padding:const EdgeInsets.all(12),
+          child:Column(children:[
+            FilledButton.icon(onPressed:widget.onReauthenticate,
+              icon:const Icon(Icons.verified_user_outlined),
+              label:Text(t('Verify with a one-time code','Tabbatar da lamba'))),
+            TextButton(onPressed:widget.onOpenRecovery,
+              child:Text(t('Need account recovery? Ask Gwani','Kana bukatar taimako? Tambayi Gwani'))),
+          ])),
         Expanded(child:loading?const Center(child:CircularProgressIndicator()):
           items.isEmpty?Center(child:Text(t('No active devices.','Babu na’urar da ke aiki.'))):
           ListView.builder(itemCount:items.length,itemBuilder:(context,index){

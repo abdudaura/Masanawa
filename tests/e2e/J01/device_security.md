@@ -4,6 +4,7 @@ Source: feature-local auth session projection, not a new user or session store.
 AF00 owns binding Settings -> DeviceSecurityScreen using the signed-in Dio session.
 - Fan signs in on two Android installations; C09 displays both opaque session handles without credential hashes.
 - Current device is marked and cannot be revoked through this remote-device control. Logout uses canonical auth.
+- If the present login is older than five minutes, the server returns 428 and the UI asks for a fresh OTP sign-in with the existing canonical auth flow; no second challenge subsystem or bypass token. A new signed-in session can retry. Recovery offers navigation to the existing Agents directory to contact Gwani.
 - Fan confirms remote sign-out; database revokes the target access AND refresh in one write; request audited in same transaction. Re-authenticating from the removed device is required.
 - Switch fan accounts while remote list fetch is pending: old fan devices never appear under the new fan.
 - Retry the same key after a timeout: one audit row, same remote session revoked, no unintended second target.

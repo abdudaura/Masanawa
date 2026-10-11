@@ -44,8 +44,8 @@ export function createPgFanDeviceSessionStore(pool: Pool): FanDeviceSessionStore
         // Lock current session against refresh rotation and concurrent revoke.
         // Serializes replay with the same bearer, so checking the audit below
         // and writing it are atomic even for concurrent duplicate requests.
-        const active=await client.query<{device_id:string}>(`
-          SELECT device_id FROM security.platform_sessions
+        const active=await client.query<{device_id:string;created_at:Date|string}>(`
+          SELECT device_id,created_at FROM security.platform_sessions
            WHERE tenant_id=$1 AND user_id=$2 AND access_hash=$3
              AND revoked_at IS NULL AND access_expires_at>now() AND refresh_expires_at>now()
            FOR UPDATE`,[actor.tenantId,actor.fanUserId,currentAccessHash]);
@@ -56,6 +56,11 @@ export function createPgFanDeviceSessionStore(pool: Pool): FanDeviceSessionStore
            WHERE tenant_id=$1 AND fan_user_id=$2 AND request_key=$3`,
           [actor.tenantId,actor.fanUserId,key]);
         if(old.rows.length)return old.rows[0]?.device_id===deviceId?"already" as const:"not_found" as const;
+        // Existing OTP-only platform login supplies a recent authenticator.
+        // Demanding a fresh sign-in is fail-closed step-up without inventing a
+        // second OTP verifier or relying on a client-supplied 'verified' flag.
+        if(Date.now()-new Date(active.rows[0]!.created_at).getTime()>5*60_000)
+          return "step_up_required" as const;
         const revoked=await client.query<{device_id:string}>(`
           UPDATE security.platform_sessions SET revoked_at=now(),updated_at=now()
            WHERE tenant_id=$1 AND user_id=$2 AND device_id=$3::uuid

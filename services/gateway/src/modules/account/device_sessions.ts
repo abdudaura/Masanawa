@@ -41,6 +41,7 @@ export function registerFanDeviceRoutes(app:FastifyInstance,deps:FanDeviceRoutes
       return reply.code(422).send({code:"invalid_device_command"});
     const result=await deps.store.revoke(current.identity,current.hash,id,input!.idempotencyKey as string);
     if(result==="unauthorized")return reply.code(401).send({code:"session_expired"});
+    if(result==="step_up_required")return reply.code(428).send({code:"recent_verification_required"});
     if(result==="current")return reply.code(409).send({code:"use_logout_for_current_device"});
     if(result==="not_found")return reply.code(404).send({code:"device_not_found"});
     return {id,revoked:true,replayed:result==="already"};

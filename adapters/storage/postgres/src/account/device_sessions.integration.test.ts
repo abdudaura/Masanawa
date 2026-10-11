@@ -49,6 +49,7 @@ describeDb("C09 canonical device session PostgreSQL acceptance",()=>{
     expect(await store.revoke(actorB,foreign.accessHash,other!.id,"cross-fan-001")).toBe("not_found");
     expect(await store.revoke(actorA,current.accessHash,
       devices!.find(d=>d.current)!.id,"current-deny-001")).toBe("current");
+    // Existing OTP sign-in issued this session moments ago: step-up satisfied.
     expect(await store.revoke(actorA,current.accessHash,other!.id,"stable-key-001")).toBe("revoked");
     expect(await store.revoke(actorA,current.accessHash,other!.id,"stable-key-001")).toBe("already");
     expect(await store.revoke(actorA,current.accessHash,
@@ -69,5 +70,35 @@ describeDb("C09 canonical device session PostgreSQL acceptance",()=>{
     const after=await store.list(actorA,current.accessHash);
     expect(after).toHaveLength(1);
     expect(after?.[0]?.current).toBe(true);
+  });
+  it("requires a fresh OTP-authenticated platform session for a destructive revoke",async()=>{
+    const auth=createPostgresPlatformSessionRepository(pool);
+    const store=createPgFanDeviceSessionStore(pool);
+    const tenantId=createCanonicalId("tenant");
+    const issuedAt=new Date(Date.now()-90*60_000).toISOString();
+    const future=new Date(Date.now()+15*60_000).toISOString();
+    const refreshFuture=new Date(Date.now()+24*60*60_000).toISOString();
+    const profile=await auth.createProfile({tenantId,channel:"email",
+      identifier:`c09-stale-${tenantId.slice(-8)}@example.test`,
+      name:"Old OTP",locale:"en",createdAt:issuedAt});
+    const tokens=Array.from({length:2},()=>({
+      access:mintPlatformSessionToken("access"),refresh:mintPlatformSessionToken("refresh")
+    }));
+    for(const token of tokens) {
+      await auth.issueSession({identity:{tenantId,userId:profile.userId,profile},
+        accessHash:hashPlatformSessionToken(token.access),
+        refreshHash:hashPlatformSessionToken(token.refresh),
+        accessExpiresAt:future,refreshExpiresAt:refreshFuture,issuedAt});
+    }
+    const owner={tenantId,fanUserId:profile.userId},access=hashPlatformSessionToken(tokens[0]!.access);
+    const remote=(await store.list(owner,access))!.find(d=>!d.current)!;
+    expect(await store.revoke(owner,access,remote.id,"revoke-stale-001")).toBe("step_up_required");
+    expect(await auth.resolveAccess({
+      accessHash:hashPlatformSessionToken(tokens[1]!.access),at:new Date().toISOString()
+    })).not.toBeNull();
+    const count=await pool.query<{n:string}>(`
+      SELECT count(*)::text AS n FROM security.fan_session_revocation_audit
+      WHERE tenant_id=$1 AND fan_user_id=$2`,[tenantId,profile.userId]);
+    expect(count.rows[0]?.n).toBe("0");
   });
 });

@@ -10,7 +10,7 @@ export interface FanDevicePrincipal {
   readonly tenantId: string;
   readonly fanUserId: string;
 }
-export type FanDeviceRevokeResult = "revoked" | "already" | "not_found" | "current" | "unauthorized";
+export type FanDeviceRevokeResult = "revoked" | "already" | "not_found" | "current" | "unauthorized" | "step_up_required";
 export interface FanDeviceSessionStore {
   list(principal: FanDevicePrincipal, currentAccessHash: string): Promise<readonly FanDeviceSession[] | null>;
   revoke(principal: FanDevicePrincipal, currentAccessHash: string,

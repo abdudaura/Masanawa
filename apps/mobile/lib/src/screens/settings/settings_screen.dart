@@ -242,7 +242,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     },
                   );
                   Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => DeviceSecurityScreen(transport: transport),
+                    builder: (_) => DeviceSecurityScreen(
+                      transport: transport,
+                      onReauthenticate: () async {
+                        // The canonical OTP sign-in is the only step-up authority.
+                        await ref.read(sessionProvider.notifier).logout();
+                        if (context.mounted) context.go('/phone-login');
+                      },
+                      onOpenRecovery: () {
+                        if (context.mounted) context.go('/home?tab=agents');
+                      },
+                    ),
                   ));
                 },
               ),
