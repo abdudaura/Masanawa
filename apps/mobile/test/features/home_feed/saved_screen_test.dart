@@ -13,15 +13,18 @@ class MemorySavedApi implements SavedLibraryApi {
 }
 void main() {
   testWidgets('C25 empty, retry and switched account never show previous fan rows',(tester) async {
-    final a=MemorySavedApi([const SavedPage(items:[],nextCursor:null)]);
+    final a=MemorySavedApi([SavedPage(items:[
+      SavedEntry(kind:'post',id:'visible-from-a',savedAt:DateTime.utc(2026,10,11))
+    ],nextCursor:null)]);
     final b=MemorySavedApi([const SavedPage(items:[],nextCursor:null)]);
     Widget screen(SavedLibraryApi api,String account)=>MaterialApp(home:Scaffold(
       body:MasanaSavedScreen(api:api,accountKey:account)));
     await tester.pumpWidget(screen(a,'fan-a'));await tester.pumpAndSettle();
-    expect(find.text('Nothing saved yet'),findsOneWidget);
+    expect(find.byKey(const ValueKey('post:visible-from-a')),findsOneWidget);
     expect(a.calls,1);
     await tester.pumpWidget(screen(b,'fan-b'));await tester.pumpAndSettle();
     expect(b.calls,1);
+    expect(find.byKey(const ValueKey('post:visible-from-a')),findsNothing);
     expect(find.text('Nothing saved yet'),findsOneWidget);
     await tester.tap(find.text('Refresh'));await tester.pumpAndSettle();
     expect(b.calls,2);
