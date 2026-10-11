@@ -58,8 +58,8 @@ export function registerRoomSubscriptionRoutes(app:FastifyInstance,p:RoomSubscri
       typeof revision!=="number"||!Number.isSafeInteger(revision)||revision<1)
     throw new RoomError(422,"invalid_plan_selection");
    const roomId=pathId(req,"id");
-   const choices=await p.repository.listPlans(a.tenantId,roomId);
-   const price=choices.find(x=>x.planId===planId&&x.version===revision);
+   // A customer's accepted historical price remains verifiable after an Admin price revision.
+   const price=await p.repository.findHistoricalPrice(a.tenantId,roomId,planId,revision);
    if(!price)throw new RoomError(409,"price_version_stale");
    const verified=await p.play.verify(token);
    if(verified.packageName!==p.playPackageName||verified.storeProductId!==price.storeProductId||
