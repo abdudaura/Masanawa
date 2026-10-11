@@ -98,4 +98,55 @@ describe("J15 video HTTP authorization boundary", () => {
     expect((await app.inject({method: "GET", url: "/v1/admin/video-items?before=bad", headers: {"x-test-staff":"yes"}})).statusCode).toBe(400);
     await app.close();
   });
+  it("paginates approved fan videos with the requested limit and isolated tenant cursor", async () => {
+    const app = Fastify();
+    const approved: ExternalVideo[] = Array.from({length: 5}, (_, i) => ({
+      id: "00000000-0000-4000-a000-" + String(i + 1).padStart(12, "0"),
+      tenantId: "tenant-a", provider: "youtube" as const,
+      providerVideoId: "abcDE12_-34", sourceUrl: "https://www.youtube.com/watch?v=abcDE12_-34",
+      title: "Approved " + i, channelName: "Original creator", reviewState: "approved" as const,
+      verifiedAt: "2026-10-11T00:00:00Z", createdAt: "2026-10-11T00:00:00Z",
+    }));
+    const inputs: Array<{tenantId:string;limit:number;before?:string}> = [];
+    registerExternalVideoRoutes(app, {
+      resolvePrincipal: async (request) => ({
+        tenantId: request.headers["x-test-other-tenant"] === "yes" ? "tenant-b" : "tenant-a",
+        actorId: null, staffRoles: [],
+      }),
+      store: {
+        submit: async (video) => video,
+        review: async () => null,
+        list: async (input) => {
+          inputs.push({tenantId:input.tenantId,limit:input.limit,
+            ...(input.before ? {before:input.before} : {})});
+          if (input.tenantId !== "tenant-a") return [];
+          const start = input.before ? approved.findIndex(v => v.id === input.before) + 1 : 0;
+          if (input.before && start === 0) return [];
+          return approved.slice(start, start + input.limit);
+        },
+      },
+    });
+    const first = await app.inject({method:"GET",url:"/v1/videos?limit=2"});
+    expect(first.statusCode).toBe(200);
+    expect(first.json().items).toHaveLength(2);
+    expect(first.json().nextCursor).toBe(approved[1]!.id);
+    const second = await app.inject({method:"GET",
+      url:"/v1/videos?limit=2&before=" + first.json().nextCursor});
+    expect(second.json().items).toHaveLength(2);
+    expect(second.json().nextCursor).toBe(approved[3]!.id);
+    const third = await app.inject({method:"GET",
+      url:"/v1/videos?limit=2&before=" + second.json().nextCursor});
+    expect(third.json().items).toHaveLength(1);
+    expect(third.json().nextCursor).toBeNull();
+    expect(inputs.map(x => x.limit)).toEqual([2,2,2]);
+    const other = await app.inject({method:"GET",
+      url:"/v1/videos?limit=2&before=" + first.json().nextCursor,
+      headers:{"x-test-other-tenant":"yes"}});
+    expect(other.json().items).toEqual([]);
+    expect(other.json().nextCursor).toBeNull();
+    const malformed = await app.inject({method:"GET",url:"/v1/videos?limit=200"});
+    expect(malformed.statusCode).toBe(400);
+    await app.close();
+  });
+
 });
