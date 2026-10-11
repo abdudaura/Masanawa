@@ -19,7 +19,7 @@ class LiveKitMasanaCallMedia implements MasanaCallMedia {
     await _room.localParticipant?.setMicrophoneEnabled(enabled);
   }
   @override Future<void> speaker(bool enabled) async {
-    await _room.setSpeakerOn(enabled);
+    await AudioManager.instance.setSpeakerOutputPreferred(enabled);
   }
   @override Future<void> disconnect() async {
     await _room.disconnect();
@@ -117,8 +117,10 @@ class _MasanaCallScreenState extends State<MasanaCallScreen> {
       await media?.speaker(!speakerOn);
       if(mounted) setState(()=>speakerOn=!speakerOn);
     } catch (_) {
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content:Text('Speaker selection unavailable')));
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content:Text('Speaker selection unavailable')));
+      }
     }
   }
   @override void dispose() {
@@ -128,11 +130,11 @@ class _MasanaCallScreenState extends State<MasanaCallScreen> {
   }
   @override Widget build(BuildContext context) {
     final active=phase==MasanaCallPhase.active;
-    final countdown=deadline==null?null:deadline!.difference(DateTime.now()).inSeconds;
+    final countdown=deadline?.difference(DateTime.now()).inSeconds;
     final status=switch(phase) {
       MasanaCallPhase.permission=>'Checking microphone permission…',
       MasanaCallPhase.connecting=>'Connecting securely…',
-      MasanaCallPhase.active=>'Connected · ' + Duration(seconds:seconds).toString().substring(2,7),
+      MasanaCallPhase.active=>'Connected · ${Duration(seconds:seconds).toString().substring(2,7)}',
       MasanaCallPhase.ending=>'Ending call…',
       MasanaCallPhase.ended=>'Call ended',
       MasanaCallPhase.error=>error??'Call unavailable',
