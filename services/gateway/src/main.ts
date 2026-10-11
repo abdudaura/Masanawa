@@ -155,6 +155,8 @@ import type {
   LiveVoiceTokenService,
 } from "./agent_shell_contract.js";
 import { createGeminiLiveTokenService } from "./live_voice_token.js";
+import { createPostgresCallHistoryRepository } from "./call_history/postgres_repository.js";
+import { createCallHistoryService, type CallHistoryRepository, type CallHistoryRecorder } from "./call_history/service.js";
 import {
   createMobilePushRegistrationService,
   createFcmPushSender,
@@ -289,6 +291,7 @@ export interface ServiceProcess extends NodeSignalSource {
 }
 
 export interface ServiceDatabaseDependency {
+  readonly callHistory?: CallHistoryRepository & CallHistoryRecorder;
   readonly readinessCheck: ReadinessCheck;
   readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
@@ -453,6 +456,7 @@ function createDefaultDatabaseDependency(
         });
       },
     }),
+    callHistory: createPostgresCallHistoryRepository(database.pool),
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
@@ -756,6 +760,8 @@ export async function startGatewayService(
     liveVoiceTokens = createGeminiLiveTokenService({
       apiKey: alphaGeminiApiKey,
       authorizer: conversationAuthorizer!,
+      ...(database.callHistory ? { callHistory: database.callHistory } : {}),
+      ...(database.platformAgentProfiles ? { platformProfiles: database.platformAgentProfiles } : {}),
       model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
       voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
     });
@@ -1215,6 +1221,8 @@ export async function startGatewayService(
         liveVoiceTokens = createGeminiLiveTokenService({
           apiKey: liveApiKey,
           authorizer: conversationAuthorizer,
+          ...(database.callHistory ? { callHistory: database.callHistory } : {}),
+          ...(database.platformAgentProfiles ? { platformProfiles: database.platformAgentProfiles } : {}),
           model: liveModel,
           voiceName: liveVoice,
           ...(twinProduction
@@ -2239,6 +2247,9 @@ export async function startGatewayService(
         : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
+      ...(!options.appOptions?.callHistory && directoryAuthorizer && database.callHistory
+        ? { callHistory: createCallHistoryService({ authorizer: directoryAuthorizer, repository: database.callHistory }) }
+        : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
         : {}),

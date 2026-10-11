@@ -112,6 +112,7 @@ export interface LiveVoiceTokenService {
     readonly admissionId?: string | null;
     readonly purpose?: "conversation" | "twin-setup";
   }): Promise<{
+    readonly callId?: string;
     readonly token: string;
     readonly websocketUrl: string;
     readonly model: string;

@@ -2,6 +2,7 @@ import type { AgentConversationAuthorizer } from "./agent_conversation_contract.
 import type { PlatformAgentProfileRepository } from "@masanawa/agents";
 import type { LiveVoiceTokenService } from "./agent_shell_contract.js";
 import { parseCanonicalId } from "@masanawa/contracts";
+import { CallHistoryError, type CallHistoryRecorder } from "./call_history/service.js";
 
 export function createGeminiLiveTokenService(input: {
   readonly apiKey: string;
@@ -11,6 +12,7 @@ export function createGeminiLiveTokenService(input: {
   readonly voiceName?: string;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => Date;
+  readonly callHistory?: CallHistoryRecorder;
   readonly paidVoiceAdmission?: {
     validate(input: {
       readonly tenantId: import("@masanawa/contracts").TenantId;
@@ -66,6 +68,9 @@ export function createGeminiLiveTokenService(input: {
         profile?.voiceProvider.toLowerCase() === "gemini" && profile.voiceName.trim()
           ? profile.voiceName.trim()
           : voiceName;
+      if (input.callHistory && !profile) {
+        throw new CallHistoryError("calls.masana_unavailable", 403);
+      }
       const twinSetup = request.purpose === "twin-setup";
       if (twinSetup && profile && !profile.supportAgent) {
         throw new TypeError("Twin setup live voice requires a support agent");
@@ -118,7 +123,16 @@ export function createGeminiLiveTokenService(input: {
         characterId,
         admissionId: request.admissionId ?? null,
       }));
+      const callId = input.callHistory
+        ? await input.callHistory.recordIssued({
+            tenantId: admission.scope.tenantId,
+            userId: admission.scope.userId,
+            characterId,
+            expiresAt: expiresAt.toISOString(),
+          })
+        : undefined;
       return Object.freeze({
+        ...(callId ? { callId } : {}),
         token: payload.name,
         websocketUrl:
           "wss://generativelanguage.googleapis.com/ws/" +

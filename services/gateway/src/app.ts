@@ -80,6 +80,8 @@ import {
 } from "@masanawa/telemetry";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
+import { registerCallHistoryRoutes } from "./call_history/routes.js";
+import type { CallHistoryService } from "./call_history/service.js";
 
 export interface ReadinessCheck {
   readonly name: string;
@@ -87,6 +89,7 @@ export interface ReadinessCheck {
 }
 
 export interface GatewayAppOptions {
+  readonly callHistory?: CallHistoryService;
   readonly readinessChecks?: readonly ReadinessCheck[];
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
@@ -1484,6 +1487,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
+  if (options.callHistory) registerCallHistoryRoutes(app, options.callHistory);
   registerAgentShellRoutes(app, {
     ...(options.agentShell ? { agentShell: options.agentShell } : {}),
     ...(options.liveVoiceTokens
