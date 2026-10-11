@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:admin_mobile/src/features/content_studio/content_studio_page.dart';
-import 'package:admin_mobile/src/features/content_studio/review_queue_page.dart';
+import 'package:masanawa_admin/src/features/content_studio/content_studio_page.dart';
+import 'package:masanawa_admin/src/features/content_studio/review_queue_page.dart';
 
 void main(){
  testWidgets('A05 saves a draft, never publishes directly', (tester) async{
