@@ -1525,9 +1525,9 @@
       "source_pr": 626,
       "source_head": "711dbfc896af6947c1866a695c383ecbef8436cc",
       "claimed_at": "2026-10-11T03:58:18.951Z",
-      "heartbeat_at": "2026-10-11T04:06:00.868Z",
-      "expires_at": "2026-10-11T04:11:00.868Z",
-      "notes": "Disjoint J22 additions on existing #626 social authority; AF00 retains composition and deployment. 5-minute lease; no shared file or old data edits."
+      "heartbeat_at": "2026-10-11T04:08:17.158Z",
+      "expires_at": "2026-10-11T04:13:17.158Z",
+      "notes": "Disjoint J22 additions on existing #626 social authority; AF00 retains composition and deployment. 5-minute lease; no shared file or old data edits. Renewed for security recovery after inspecting live competing paths."
     },
     {
       "claim_id": "l-feed-c22-post-detail-20261011-gpt6-0500",
