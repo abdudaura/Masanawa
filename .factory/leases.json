@@ -2237,6 +2237,23 @@
       "release_reason": "L-FEED A05/A06 feature-owned 15 file source and test authorship PR #666 merged into nondeploying integration/rebuild bd60ba7664a78db5cc17a6fb69d697044e050110 from head cb79f27d4a12f8cc785f6ef6639c9a2b55765dea. AF00 #616 comment 6107171885: protected gateway/PG registry/Admin shell/worker composition outstanding. Toolchain/checkout unavailable and GH Jobs zero steps; TS/Vitest/PG18/Flutter/Android NOT_RUN. No deployment or finance changes.",
       "source_head": "cb79f27d4a12f8cc785f6ef6639c9a2b55765dea",
       "integration_head_sha": "bd60ba7664a78db5cc17a6fb69d697044e050110"
+    },
+    {
+      "claim_id": "l-chat-c13-migration-gated-inbox-20261011-gpt6-1032",
+      "owner": "GPT-6 / L-CHAT C13 source integration safety",
+      "scope": "Fix existing PR #665 C13 inbox to remain queryable before its unregistered 0006 schema; add flag-on/off exact SQL regressions. AF00 owns migration registry and runtime enablement.",
+      "paths": [
+        "adapters/storage/postgres/src/masana_chat/inbox.ts",
+        "adapters/storage/postgres/src/masana_chat/inbox.test.ts"
+      ],
+      "branch": "lane/l-chat-c13-message-actions-20261011-gpt6",
+      "base_sha": "fb20e76d5c4027068c32ebdf35e27009babdc863",
+      "source_pr": 665,
+      "source_head": "a43725c09ff6a4ba4b0a43de0b266fbec062a25f",
+      "claimed_at": "2026-10-11T09:36:42.852Z",
+      "heartbeat_at": "2026-10-11T09:36:42.852Z",
+      "expires_at": "2026-10-11T09:41:42.852Z",
+      "notes": "No finance/shared app/main/worker/router updates. Database-backed hides enable only after AF00 migration and default-OFF flag; preserve original journal."
     }
   ],
   "history": [
