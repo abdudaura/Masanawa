@@ -1867,10 +1867,10 @@
       "branch": "lane/l-masana-c46-following-20261011-gpt6",
       "base_sha": "7d817a87cda31e761a9de42724739ec41244d1a2",
       "claimed_at": "2026-10-11T04:58:54.433Z",
-      "heartbeat_at": "2026-10-11T05:04:42.783Z",
-      "expires_at": "2026-10-11T05:09:42.783Z",
+      "heartbeat_at": "2026-10-11T05:07:13.344Z",
+      "expires_at": "2026-10-11T05:12:13.344Z",
       "notes": "Scoped original new paths only, verified no overlap in active claims; no production writes, no financial code.",
-      "source_head": "0218d390a081a6afc7f1d3c42a72e3f28bed6895"
+      "source_head": "20a46a8ae9d01976b5aecdae4934f8be0bf91c11"
     },
     {
       "claim_id": "l-shell-c06-privacy-notices-20261011-gpt6",
