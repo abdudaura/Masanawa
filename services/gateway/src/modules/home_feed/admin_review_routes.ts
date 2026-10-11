@@ -1,6 +1,6 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
 import type {Actor} from "@masanawa/feed";
-import type {DraftInput,EditorialAction,EditorialState,EditorialPost} from "../../../../../packages/feed/src/review.js";
+import type {DraftInput,EditorialAction,EditorialState,EditorialPost} from "@masanawa/feed";
 
 type EditorialPort={
  create(actor:Actor,input:DraftInput):Promise<EditorialPost>;
