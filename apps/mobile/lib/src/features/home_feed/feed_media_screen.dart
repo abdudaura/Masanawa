@@ -133,7 +133,7 @@ class _FeedMediaScreenState extends State<FeedMediaScreen>
                   final max=total.inMilliseconds.toDouble().clamp(1.0,double.infinity).toDouble();
                   return Slider(value:position.inMilliseconds.toDouble().clamp(0.0,max).toDouble(),
                     max:max,onChanged:widget.onBeforeAudio==null?null:
-                      (value)=>unawaited(player.seek(Duration(milliseconds:value.round())));
+                      (value)=>unawaited(player.seek(Duration(milliseconds:value.round()))));
                 }),
                 Wrap(spacing:8,children:[
                   for(final speed in [1.0,1.5,2.0])
