@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'masana_studio_api.dart';
+import 'rehearsal_api.dart';
+import 'rehearsal_screen.dart';
 
 /// A02/A03. Root Admin drawer and staff JWT/RBAC composition belong to AF00.
 /// A04 live rehearsal is disabled until the canonical sandbox is connected.
@@ -111,6 +113,11 @@ class _MasanaStudioScreenState extends State<MasanaStudioScreen> {
      subtitle:Text('${r.characterId} · revision ${r.revision} · ${r.state}'),
      onTap:saving||r.state!='draft'?null:()=>edit(r),
      trailing:r.state=='draft'?Row(mainAxisSize:MainAxisSize.min,children:[
+      IconButton(tooltip:'Rehearse draft',icon:const Icon(Icons.science_outlined),
+       onPressed:saving||widget.repository is! GatewayMasanaStudioRepository?null:()=>Navigator.of(context).push(
+        MaterialPageRoute<void>(builder:(_)=>MasanaRehearsalScreen(
+         repository:GatewayMasanaRehearsalRepository((widget.repository as GatewayMasanaStudioRepository).dio),
+         characterId:r.characterId,revision:r.revision,accountKey:widget.accountKey)))),
       IconButton(tooltip:'Attach verified media',icon:const Icon(Icons.image_outlined),
        onPressed:saving?null:()=>attachMedia(r)),
       IconButton(tooltip:'Approve revision',icon:const Icon(Icons.verified_outlined),
