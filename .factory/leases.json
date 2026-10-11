@@ -1389,8 +1389,8 @@
       "branch": "lane/l-video-c28-official-player-20261011-gpt6",
       "base_sha": "ebd3b81599866aee488ed6ef9d2e791f73a8d798",
       "claimed_at": "2026-10-11T03:23:39.707Z",
-      "heartbeat_at": "2026-10-11T03:36:20.029Z",
-      "expires_at": "2026-10-11T03:41:20.029Z",
+      "heartbeat_at": "2026-10-11T03:37:54.538Z",
+      "expires_at": "2026-10-11T03:42:54.538Z",
       "notes": "PR #638 follow-up real GitHub Flutter mobile run #38108849170 after repairing three C28 video widget tests from prior run #38108432124 (433 pass/14 fail, three in scope). No root/finance/DB edits.",
       "source_pr": 638,
       "source_head": "17840c20af0662460bc7d82c5e18a554a7853b3e"
