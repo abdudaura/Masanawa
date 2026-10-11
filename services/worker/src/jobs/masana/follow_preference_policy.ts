@@ -1,11 +1,13 @@
-import type { Pool } from "pg";
+interface FollowReadPool {
+  query(sql:string,parameters:string[]):Promise<{rows:Array<{allowed:boolean}>}>;
+}
 
 /** Check at delivery time, not just at event enqueue. Fail-closed on DB error.
  * Existing events.outbox and the platform notifications worker remain the only
  * delivery authorities. This is a required policy adapter, not a second queue.
  */
 export async function mayNotifyFollower(
-  db:Pick<Pool,"query">,
+  db:FollowReadPool,
   input:{tenantId:string;fanId:string;characterId:string}
 ):Promise<boolean> {
   try {
