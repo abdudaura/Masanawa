@@ -1,12 +1,22 @@
 import {describe,it,expect,vi} from "vitest";
 import Fastify from "fastify";
 import {registerAdminFeedReviewRoutes} from "./admin_review_routes.js";
+import {registerHomeFeedRoutes} from "./routes.js";
 const editor={kind:"staff" as const,tenantId:"t1",id:"editor",permissions:["content_editor"]};
 const draft={authorMasanaId:"m1",kind:"text",body:"Approved story",idempotencyKey:"editorial-req01"};
 function mock(){return {create:vi.fn(async()=>({id:"new",state:"draft",revision:0})),list:vi.fn(async()=>[]),get:vi.fn(async()=>null),change:vi.fn(async()=>({state:"in_review",revision:1}))};}
 const options=(service:ReturnType<typeof mock>,principal:()=>Promise<any>=async()=>editor)=>
  ({service:service as never,principal,tenant:()=>"t1",enabled:()=>true});
 describe("A05/A06 admin editorial HTTP",()=>{
+ it("retired direct publisher refuses even an authorized staff principal",async()=>{
+  const app=Fastify(),publish=vi.fn();
+  await registerHomeFeedRoutes(app,{service:{publish} as never,
+   principal:async()=>editor,tenant:()=>"t1",isNewAccount:async()=>false,enabled:()=>true});
+  const r=await app.inject({method:"POST",url:"/v1/admin/feed/posts",
+   headers:{"idempotency-key":"direct-bypass"},payload:{authorMasanaId:"m1",kind:"text",body:"bypass"}});
+  expect(r.statusCode).toBe(410);expect(publish).not.toHaveBeenCalled();await app.close();
+ });
+
  it("fan and foreign-tenant staff cannot draft, review or approve",async()=>{
   const app=Fastify(),service=mock();await registerAdminFeedReviewRoutes(app,options(service,async()=>({kind:"fan",tenantId:"t1",id:"fan"})));
   const a=await app.inject({method:"POST",url:"/v1/admin/feed/drafts",headers:{"idempotency-key":"editorial-req01"},payload:draft});
