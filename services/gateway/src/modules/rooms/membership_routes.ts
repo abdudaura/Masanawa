@@ -1,10 +1,20 @@
 import type {FastifyInstance,FastifyRequest} from 'fastify';
-import {RoomError} from '@masanawa/rooms';
+import {RoomError,requireFan,requireRoomStaff} from '@masanawa/rooms';
 import type {RoomActor} from '@masanawa/rooms/ports';
-import type {RoomMembershipRepository} from '../../../../../adapters/storage/postgres/src/rooms/membership.js';
+
+/** Structural port keeps Gateway independent of the PostgreSQL implementation. */
+export interface RoomMembershipRouteRepository {
+ members(a:RoomActor,id:string):Promise<unknown[]>;
+ setRole(a:RoomActor,id:string,userId:string,role:unknown):Promise<void>;
+ moderate(a:RoomActor,id:string,userId:string,action:unknown):Promise<void>;
+ invites(a:RoomActor,id:string):Promise<unknown[]>;
+ issue(a:RoomActor,id:string):Promise<unknown>;
+ revoke(a:RoomActor,id:string,inviteId:string):Promise<void>;
+ accept(a:RoomActor,id:string,token:unknown):Promise<{joined:true}>;
+}
 
 export interface RoomMembershipRoutePorts {
- repository:RoomMembershipRepository;
+ repository:RoomMembershipRouteRepository;
  authorize:(header:string|undefined,capability:'rooms.read'|'rooms.join'|'rooms.staff')=>Promise<RoomActor>;
  enabled:()=>boolean;
 }
@@ -18,6 +28,8 @@ export function registerRoomMembershipRoutes(app:FastifyInstance,ports:RoomMembe
     if(!ports.enabled())throw new RoomError(410,'rooms_membership_disabled');
     const h=req.headers.authorization;
     const a=await ports.authorize(typeof h==='string'?h:undefined,cap);
+    requireFan(a.userId);
+    if(cap==='rooms.staff')requireRoomStaff(a.roles);
     const body=req.body;
     if(body!==undefined&&(body===null||typeof body!=='object'||Array.isArray(body)))throw new RoomError(422,'invalid_request');
     return await fn(a,req.params as Record<string,string>,(body??{}) as Record<string,unknown>);
