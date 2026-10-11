@@ -35,10 +35,10 @@ class GwaniCasesApi {
     return (response.data as Map)['caseId'] as String;
   }
 
-  Future<void> appeal(String caseId, String reason) async {
+  Future<void> appeal(String caseId, String reason, {required String clientRequestId}) async {
     await dio.post<dynamic>(
       '/v1/cases/${Uri.encodeComponent(caseId)}/appeal',
-      data: {'reason': reason},
+      data: {'reason': reason, 'clientRequestId': clientRequestId},
     );
   }
 }
