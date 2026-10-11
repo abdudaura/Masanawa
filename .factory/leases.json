@@ -396,30 +396,6 @@
     },
     {
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "branch": "work/recovery-02-u02-task-journal-20261009",
-      "claim_id": "u02-580-recovery-binding-20261010-gpt6-unique",
-      "claimed_at": "2026-10-10T07:41:47.344Z",
-      "expires_at": "2026-10-10T07:53:17.804Z",
-      "heartbeat_at": "2026-10-10T07:48:17.804Z",
-      "integration_head_sha": null,
-      "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths.; AF00 bounded transfer requested on PR #600 comment 6095247924 after 2h inactive AF00 registry claim; emergency non-deploying CI failure repair limited to additive operator-tasks pnpm frozen importer, confirmed existing packages/versions. User directs finish tests; no shared CI workflow changes.; real GitHub run 38035545178 TypeScript errors in exact owned source plus inherited #520 index.test.ts typed fixture. Scoped extension to exact test path to fix actual compiler error.",
-      "owner": "GPT-6 Masanawa U02 continuation / task recovery",
-      "paths": [
-        "packages/operator-tasks/src/recovery.ts",
-        "packages/operator-tasks/src/recovery.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md",
-        "pnpm-lock.yaml",
-        "packages/operator-tasks/src/index.test.ts"
-      ],
-      "release_reason": "PR #580 same-branch complete bounded source repair, real Node24/pnpm12 PG18 CI install PASS, packages/operator-tasks strict TypeScript PASS at current head 61724ca; repo-wide CI blocked by unowned AF09 TalkId import TS2459. Vitest/PG integration/build/Flutter not executed, parent U02 partially integrated. AF09 owner comment #6095295993, AF00 #600 comment #6095247924, exact PR580 comments #6095315352 and #6095320605. No unsafe merge or deployment.",
-      "released_at": "2026-10-10T07:53:53.776Z",
-      "scope": "Existing PR #580 status-only outcome validation, SQL operation/capability fencing and regression checks. No shared Gateway composition, financial authority, migration or deployments.",
-      "source_head": "61724ca50a634452eda6bd7f5cd30e6f37caf8ff",
-      "source_pr": 580,
-      "test_state": "PASS_REAL frozen pnpm install + package typecheck; FAIL repository typecheck TalkId import unowned; Vitest/PG/build NOT_RUN"
-    },
-    {
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "branch": "work/shared-ci-recovery-work-20261008",
       "claim_id": "af13-pr460-gateway-declaration-typing-20261010",
       "claimed_at": "2026-10-10T07:44:23.167Z",
@@ -487,39 +463,6 @@
       "source_head_sha": "e455a12638d3791e166f26ee3cc54d159a982ac6",
       "source_pr": 612,
       "test_state": "GitHub Foundation #38036538174: Typecheck FAIL at packages/agents/src/talk-replay.test.ts(6,8), targeted/new Vitest + provider + build SKIPPED/NOT_RUN. Source/test head 4e728ae30978f203371b86911151f16c4ff05091."
-    },
-    {
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "branch": "work/recovery-02-u02-task-journal-20261009",
-      "claim_id": "u02-580-suite-recovery-20261010-gpt6",
-      "claimed_at": "2026-10-10T07:57:52.556Z",
-      "expires_at": "2026-10-10T08:24:59.710Z",
-      "heartbeat_at": "2026-10-10T08:19:59.710Z",
-      "integration_head_sha": null,
-      "notes": "AF09 claim from #609 released earlier. Copy only exact proven canonical type import from existing #609/#460 onto #580 for repo typecheck and test execution. AF00 root protected.; additionally adopt already-authored AF09/#460 strict type fix for account deletion integration test `requestId: string` to allow U02 focused tests; previous AF09 claim released.; bounded AF00 exact workflow transfer request PR600 comment 6095453880, adopt pre-existing AF09 #609 independent real test/build steps on U02 branch only to prevent skipping after unrelated typecheck; overall CI still fails red.; build real disposable PostgreSQL18 journal claim/settle/concurrency test under owned U02 package path, separate local test DB with localhost guard, no production schema or shared migration edits.; real GH run 38036532133 surfaced architectural one-root-export violation and TS5011 build; fix operator-tasks package-owned source only, preserve PostgreSQL + recovery availability through root exports. AF00 remains owner of Gateway dependencies and lockfile.; hosted PG18 38036716404 two new recovery tests PASS_REAL; repository architecture prohibits direct process.env in packages/*; move existing test unchanged in logic to tests/integration with root-level environment authority rather than weaken gate.; AF00 precise shared Gateway dependency/lockfile composition requested PR600 comment 6095554234; add dependency only on existing U02 branch, no root app/worker/production activation.; continuing same owner after lease expired with no overlapping exact path owner, final CI report and source-closure checklist; no newly claimed shared paths.",
-      "owner": "GPT-6 U02 PR580 executable suite continuation",
-      "paths": [
-        "packages/agents/src/talk-replay.test.ts",
-        "packages/operator-tasks/src/recovery.test.ts",
-        "packages/operator-tasks/src/recovery.ts",
-        "packages/operator-tasks/src/index.test.ts",
-        "docs/workstreams/recovery-02-u02-20261009.md",
-        "adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts",
-        ".github/workflows/foundation-ci.yml",
-        "packages/operator-tasks/src/recovery.postgres.integration.test.ts",
-        "packages/operator-tasks/src/index.ts",
-        "packages/operator-tasks/package.json",
-        "packages/operator-tasks/tsconfig.build.json",
-        "tests/integration/operator-task-recovery-pg.test.ts",
-        "services/gateway/package.json",
-        "pnpm-lock.yaml"
-      ],
-      "release_reason": "Existing #580 connected U02 module fixes + canonical Gateway dependency and real isolated PG tests. 32 U02 tests PASS_REAL at 6c023767, package build PASS_REAL at 2670c74; combined latest source GH 38037413655 and 38037571388 queued/in progress, not yet verified. Full suite RED, financial/AF00/U01/U03 integrated source MISSING, nondeploying baseline NONE. SHA-specific checklist in PR comment 6095634797 and docs/workstreams/recovery-02-u02-20261009.md. No main merge, no production actions. Explicitly release path lease for reviewed integrator.",
-      "released_at": "2026-10-10T08:22:32.009Z",
-      "scope": "Adopt AF09/#460 tested TalkId test-only import to unblock global TypeScript on stacked PR580 then execute focused U02 Vitest/PG and fix actual failures",
-      "source_head": "6bc4a9cec05c26927b49f39f9ab6fe923788e4cf",
-      "source_pr": 580,
-      "test_state": "PASS_REAL 32 U02 tests at earlier source, PASS_REAL U02 build earlier SHA; latest exact head queued / NOT VERIFIED, full repository FAIL"
     },
     {
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
@@ -674,42 +617,6 @@
       ],
       "scope": "Complete failing environment registry and explicit HTTP compatibility paths. Preserve live billing and crypto owners.",
       "source_pr": 460
-    },
-    {
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
-      "claim_id": "af00-600-flutter-security-migration-20261010-gpt6",
-      "claimed_at": "2026-10-10T08:54:42.350Z",
-      "expires_at": "2026-10-10T09:21:20.971Z",
-      "heartbeat_at": "2026-10-10T09:16:20.971Z",
-      "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation.",
-      "owner": "GPT-6 AF00 user-directed protected source completion in existing PR #600",
-      "paths": [
-        "apps/mobile/lib/src/router/app_router.dart",
-        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
-        "packages/security/migrations/0103_platform_profile_contact_uniqueness.sql",
-        "adapters/storage/postgres/src/identity/account-deletion.integration.test.ts",
-        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
-        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
-        "apps/mobile/lib/src/localization/locale_preference.dart",
-        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
-        "apps/mobile/lib/src/social/own_profile_transport.dart",
-        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
-        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
-        "apps/mobile/test/audio_first/af09/feed_test.dart",
-        "apps/mobile/test/owner_access_http_transport_test.dart",
-        "apps/mobile/test/talk_direct_twin_http_transport_test.dart",
-        "apps/mobile/test/twin_directory_http_transport_test.dart",
-        "apps/mobile/test/talk_screen_test.dart",
-        "services/gateway/tsconfig.json",
-        "services/gateway/package.json",
-        "pnpm-lock.yaml"
-      ],
-      "release_reason": "Owner explicitly confirmed on 2026-10-11 no other window is working and appointed current cloud agent in charge. Preserve existing PR source and recover #612 exact head 46af99e50dedd5a1596ffb5795086410ef4ff859; no reset or deletion.",
-      "released_at": "2026-10-11T10:22:03.756271+00:00",
-      "scope": "Append-only contact uniqueness migration plus Flutter warnings and regression tests, preserving AF00 navigation.",
-      "source_pr": 600
     },
     {
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
@@ -1169,11 +1076,19 @@
         "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
         "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
         "apps/mobile/lib/src/localization/locale_preference.dart",
-        "apps/admin_mobile/lib/src/screens/platform_pages.dart",
         "apps/admin_mobile/lib/src/core/admin_auth_api.dart"
       ],
       "scope": "R0 consumer and Android Admin Flutter build unblock: 5 exact source paths only; preserve user finance and excluded features frozen, no app root/nav/gateway/SQL.",
-      "source_pr": 460
+      "source_pr": 460,
+      "transferred_paths": [
+        "apps/admin_mobile/lib/src/screens/platform_pages.dart"
+      ],
+      "transfer_record": {
+        "to": "rooms-ci-closure-20261011-cloud",
+        "at": "2026-10-11T20:50:01.736Z",
+        "basis": "Owner specifically requests resolve PR669 blockers; existing 6efb9cca Admin repair reused; branch preserved, no reset/force push",
+        "source_head": "6efb9cca3219af81200d562a98cc269a1d05cf26"
+      }
     },
     {
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
@@ -2355,6 +2270,25 @@
       "heartbeat_at": "2026-10-11T20:46:52.789Z",
       "expires_at": "2026-10-11T20:51:52.790Z",
       "notes": "Expanded claim pushed/read back at 855c82d before editorial SQL edits. 11 executable Node source units/mock SQL contracts PASS_SIMULATED; original syntax error reproduced and fixed. #671 preserves canonical feed authority. Flutter/PG/full checkout unavailable; coordinator shell/Gateway composition still required."
+    },
+    {
+      "claim_id": "rooms-ci-closure-20261011-cloud",
+      "owner": "Codex ROOMS / owner-directed CI blocker repair",
+      "scope": "Owner requests resolve actual PR669 blockers; narrow shared dependency and baseline Admin compiler repair",
+      "paths": [
+        "pnpm-lock.yaml",
+        "adapters/storage/postgres/package.json",
+        "services/gateway/package.json",
+        "services/worker/package.json",
+        "apps/admin_mobile/lib/src/screens/platform_pages.dart",
+        "docs/workstreams/AF10-membership-invites-20261011.md"
+      ],
+      "branch": "lane/rooms-membership-invites-20261011",
+      "base_sha": "bfcc68dbc23c18ca0da38c1b027aa7f8d871944a",
+      "source_pr": 669,
+      "claimed_at": "2026-10-11T20:47:21.305Z",
+      "heartbeat_at": "2026-10-11T20:47:21.305Z",
+      "expires_at": "2026-10-11T20:52:21.305Z"
     }
   ],
   "history": [
@@ -5464,6 +5398,99 @@
       "source_pr": 669,
       "released_at": "2026-10-11T20:40:26.020Z",
       "release_reason": "ROOMS exact ten-file source and finite composition handoff pushed as draft PR669. Source 0e92f496: 20 Node24 actual repository/route-port unit tests PASS, 10 Flutter cases authored NOT_RUN. Full tsc/Flutter/PG absent; no DB or production proof. Coordinator explicitly owns remaining protected exports/SQL registration/auth route mounting/detail navigation and staff UI. No integration or main merge; preserve #625/#655 and continue finite checklist."
+    },
+    {
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "claim_id": "af00-600-flutter-security-migration-20261010-gpt6",
+      "claimed_at": "2026-10-10T08:54:42.350Z",
+      "expires_at": "2026-10-10T09:21:20.971Z",
+      "heartbeat_at": "2026-10-10T09:16:20.971Z",
+      "notes": "Owner requested fix all remaining tests, no overlapping with active crypto/billing owners; protected corrections on existing AF00 PR; no prod activation.",
+      "owner": "GPT-6 AF00 user-directed protected source completion in existing PR #600",
+      "paths": [
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "packages/security/migrations/0103_platform_profile_contact_uniqueness.sql",
+        "adapters/storage/postgres/src/identity/account-deletion.integration.test.ts",
+        "apps/mobile/lib/src/audio_posts/audio_post_composer_screen.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_playback.dart",
+        "apps/mobile/lib/src/audio_posts/audio_post_feed_screen.dart",
+        "apps/mobile/lib/src/localization/locale_preference.dart",
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/social/own_profile_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
+        "apps/mobile/test/audio_first/af09/feed_test.dart",
+        "apps/mobile/test/owner_access_http_transport_test.dart",
+        "apps/mobile/test/talk_direct_twin_http_transport_test.dart",
+        "apps/mobile/test/twin_directory_http_transport_test.dart",
+        "apps/mobile/test/talk_screen_test.dart",
+        "services/gateway/tsconfig.json",
+        "services/gateway/package.json",
+        "pnpm-lock.yaml"
+      ],
+      "release_reason": "Owner explicitly confirmed on 2026-10-11 no other window is working and appointed current cloud agent in charge. Preserve existing PR source and recover #612 exact head 46af99e50dedd5a1596ffb5795086410ef4ff859; no reset or deletion.",
+      "released_at": "2026-10-11T10:22:03.756271+00:00",
+      "scope": "Append-only contact uniqueness migration plus Flutter warnings and regression tests, preserving AF00 navigation.",
+      "source_pr": 600
+    },
+    {
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "claim_id": "u02-580-suite-recovery-20261010-gpt6",
+      "claimed_at": "2026-10-10T07:57:52.556Z",
+      "expires_at": "2026-10-10T08:24:59.710Z",
+      "heartbeat_at": "2026-10-10T08:19:59.710Z",
+      "integration_head_sha": null,
+      "notes": "AF09 claim from #609 released earlier. Copy only exact proven canonical type import from existing #609/#460 onto #580 for repo typecheck and test execution. AF00 root protected.; additionally adopt already-authored AF09/#460 strict type fix for account deletion integration test `requestId: string` to allow U02 focused tests; previous AF09 claim released.; bounded AF00 exact workflow transfer request PR600 comment 6095453880, adopt pre-existing AF09 #609 independent real test/build steps on U02 branch only to prevent skipping after unrelated typecheck; overall CI still fails red.; build real disposable PostgreSQL18 journal claim/settle/concurrency test under owned U02 package path, separate local test DB with localhost guard, no production schema or shared migration edits.; real GH run 38036532133 surfaced architectural one-root-export violation and TS5011 build; fix operator-tasks package-owned source only, preserve PostgreSQL + recovery availability through root exports. AF00 remains owner of Gateway dependencies and lockfile.; hosted PG18 38036716404 two new recovery tests PASS_REAL; repository architecture prohibits direct process.env in packages/*; move existing test unchanged in logic to tests/integration with root-level environment authority rather than weaken gate.; AF00 precise shared Gateway dependency/lockfile composition requested PR600 comment 6095554234; add dependency only on existing U02 branch, no root app/worker/production activation.; continuing same owner after lease expired with no overlapping exact path owner, final CI report and source-closure checklist; no newly claimed shared paths.",
+      "owner": "GPT-6 U02 PR580 executable suite continuation",
+      "paths": [
+        "packages/agents/src/talk-replay.test.ts",
+        "packages/operator-tasks/src/recovery.test.ts",
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/index.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "adapters/storage/postgres/src/identity/account-deletion-access.integration.test.ts",
+        ".github/workflows/foundation-ci.yml",
+        "packages/operator-tasks/src/recovery.postgres.integration.test.ts",
+        "packages/operator-tasks/src/index.ts",
+        "packages/operator-tasks/package.json",
+        "packages/operator-tasks/tsconfig.build.json",
+        "tests/integration/operator-task-recovery-pg.test.ts",
+        "services/gateway/package.json",
+        "pnpm-lock.yaml"
+      ],
+      "release_reason": "Existing #580 connected U02 module fixes + canonical Gateway dependency and real isolated PG tests. 32 U02 tests PASS_REAL at 6c023767, package build PASS_REAL at 2670c74; combined latest source GH 38037413655 and 38037571388 queued/in progress, not yet verified. Full suite RED, financial/AF00/U01/U03 integrated source MISSING, nondeploying baseline NONE. SHA-specific checklist in PR comment 6095634797 and docs/workstreams/recovery-02-u02-20261009.md. No main merge, no production actions. Explicitly release path lease for reviewed integrator.",
+      "released_at": "2026-10-10T08:22:32.009Z",
+      "scope": "Adopt AF09/#460 tested TalkId test-only import to unblock global TypeScript on stacked PR580 then execute focused U02 Vitest/PG and fix actual failures",
+      "source_head": "6bc4a9cec05c26927b49f39f9ab6fe923788e4cf",
+      "source_pr": 580,
+      "test_state": "PASS_REAL 32 U02 tests at earlier source, PASS_REAL U02 build earlier SHA; latest exact head queued / NOT VERIFIED, full repository FAIL"
+    },
+    {
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "branch": "work/recovery-02-u02-task-journal-20261009",
+      "claim_id": "u02-580-recovery-binding-20261010-gpt6-unique",
+      "claimed_at": "2026-10-10T07:41:47.344Z",
+      "expires_at": "2026-10-10T07:53:17.804Z",
+      "heartbeat_at": "2026-10-10T07:48:17.804Z",
+      "integration_head_sha": null,
+      "notes": "Reviewed older stale U02 recovery owner from PR #580; keep same PR/branch, no force reset. Only owned paths.; AF00 bounded transfer requested on PR #600 comment 6095247924 after 2h inactive AF00 registry claim; emergency non-deploying CI failure repair limited to additive operator-tasks pnpm frozen importer, confirmed existing packages/versions. User directs finish tests; no shared CI workflow changes.; real GitHub run 38035545178 TypeScript errors in exact owned source plus inherited #520 index.test.ts typed fixture. Scoped extension to exact test path to fix actual compiler error.",
+      "owner": "GPT-6 Masanawa U02 continuation / task recovery",
+      "paths": [
+        "packages/operator-tasks/src/recovery.ts",
+        "packages/operator-tasks/src/recovery.test.ts",
+        "docs/workstreams/recovery-02-u02-20261009.md",
+        "pnpm-lock.yaml",
+        "packages/operator-tasks/src/index.test.ts"
+      ],
+      "release_reason": "PR #580 same-branch complete bounded source repair, real Node24/pnpm12 PG18 CI install PASS, packages/operator-tasks strict TypeScript PASS at current head 61724ca; repo-wide CI blocked by unowned AF09 TalkId import TS2459. Vitest/PG integration/build/Flutter not executed, parent U02 partially integrated. AF09 owner comment #6095295993, AF00 #600 comment #6095247924, exact PR580 comments #6095315352 and #6095320605. No unsafe merge or deployment.",
+      "released_at": "2026-10-10T07:53:53.776Z",
+      "scope": "Existing PR #580 status-only outcome validation, SQL operation/capability fencing and regression checks. No shared Gateway composition, financial authority, migration or deployments.",
+      "source_head": "61724ca50a634452eda6bd7f5cd30e6f37caf8ff",
+      "source_pr": 580,
+      "test_state": "PASS_REAL frozen pnpm install + package typecheck; FAIL repository typecheck TalkId import unowned; Vitest/PG/build NOT_RUN"
     }
   ],
   "schema_version": 1
