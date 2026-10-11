@@ -40,9 +40,13 @@ export function parseSearchQuery(raw: unknown): Omit<SearchQuery, "tenantId"> {
   const rawLimit = data.limit === undefined ? 15 : Number(data.limit);
   if (!Number.isSafeInteger(rawLimit) || rawLimit < 1 || rawLimit > 20)
     throw new SearchRequestError("invalid_limit");
-  const cursor = data.cursor === undefined ? null : data.cursor;
-  if (cursor !== null && (typeof cursor !== "string" || cursor.length < 1 ||
-      cursor.length > 160 || !/^[a-zA-Z0-9_-]+$/.test(cursor)))
-    throw new SearchRequestError("invalid_cursor");
+  const rawCursor = data.cursor;
+  let cursor: string | null = null;
+  if (rawCursor !== undefined && rawCursor !== null) {
+    if (typeof rawCursor !== "string" || rawCursor.length < 1 ||
+        rawCursor.length > 160 || !/^[a-zA-Z0-9_-]+$/.test(rawCursor))
+      throw new SearchRequestError("invalid_cursor");
+    cursor = rawCursor;
+  }
   return { q, kind: kind as SearchKind, limit: rawLimit, cursor };
 }
