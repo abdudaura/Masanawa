@@ -11,7 +11,7 @@ export function registerModerationRoutes(app:FastifyInstance,service:ModerationR
  app.post("/v1/cases",async r=>wrap(()=>service.report(r.headers.authorization,r.body as Parameters<ModerationRoutes["report"]>[1])));
  app.get("/v1/cases",async r=>wrap(()=>service.ownCases(r.headers.authorization)));
  app.get("/v1/cases/:id",async r=>wrap(()=>service.read(r.headers.authorization,(r.params as {id:string}).id)));
- app.post("/v1/cases/:id/appeal",async r=>wrap(()=>service.appeal(r.headers.authorization,(r.params as {id:string}).id,(r.body as {reason:unknown}).reason)));
+ app.post("/v1/cases/:id/appeal",async r=>wrap(()=>service.appeal(r.headers.authorization,(r.params as {id:string}).id,(r.body ?? {}) as Parameters<ModerationRoutes["appeal"]>[2])));
  // Gwani's verified service principal can propose; it cannot approve or enforce.
  // AF00 protects the /v1/gwani prefix with the trusted agent service verifier.
  app.post("/v1/gwani/cases/:id/proposals",async r=>wrap(()=>service.propose(
