@@ -1674,6 +1674,23 @@
       "released_at": "2026-10-11T04:33:20.846Z",
       "release_reason": "PR #638 source-only merged into non-deploying integration/rebuild; exact Video branch head 20af89ab65a80c05d5a88a6767d67c21200c5b2e; merge 9256ada27b33ed286edaa3ba42835972575a25fd. Current head runner CI consumer analyze/test fail; root pnpm install fails missing feed importer. AF00 owns root composition and rerun, no main deployment.",
       "integration_head_sha": "9256ada27b33ed286edaa3ba42835972575a25fd"
+    },
+    {
+      "claim_id": "l-feed-c26-search-20261011-gpt6-0535",
+      "owner": "GPT-6 L-FEED C26 unified search",
+      "scope": "C26 public Masana/Rooms/Posts/Videos read-only search using canonical PostgreSQL projections, API and Flutter screen; no legacy humans, no new worker/ledger or shared composition.",
+      "paths": [
+        "services/gateway/src/modules/search/**",
+        "adapters/storage/postgres/src/search/**",
+        "apps/mobile/lib/src/features/search/**",
+        "apps/mobile/test/features/search/**",
+        "tests/e2e/J06/search/**"
+      ],
+      "branch": "lane/l-feed-c26-unified-search-20261011-gpt6-0535",
+      "claimed_at": "2026-10-11T04:34:53.828Z",
+      "heartbeat_at": "2026-10-11T04:34:53.828Z",
+      "expires_at": "2026-10-11T04:39:53.828Z",
+      "notes": "All brand-new feature-local paths; AF00 owns shared router/registries/migration roots and merging. No production activation."
     }
   ],
   "history": [
