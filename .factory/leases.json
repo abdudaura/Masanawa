@@ -1605,8 +1605,9 @@
       "branch": "lane/l-masana-a04-rehearsal-20261011-gpt6-0513",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:12:53.843Z",
-      "heartbeat_at": "2026-10-11T04:12:53.843Z",
-      "expires_at": "2026-10-11T04:17:53.843Z"
+      "heartbeat_at": "2026-10-11T04:18:30.676Z",
+      "expires_at": "2026-10-11T04:23:30.676Z",
+      "source_head": "7617fcbf3345c9574c216d53966e4c4a5d4e38d9"
     },
     {
       "claim_id": "l-video-a14-recovery-20261011-gpt6-0515",
