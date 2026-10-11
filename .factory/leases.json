@@ -1466,6 +1466,26 @@
       "expires_at": "2026-10-11T03:59:53.457Z",
       "notes": "Feature-owned paths; AF00 composes; forward-only SQL under existing registered masana migration root; no production or finance changes.",
       "source_head": "713b3ce150c37f2dadc6b196a99180143cca6013"
+    },
+    {
+      "claim_id": "l-chat-j04-masana-calls-20261011-gpt6-0455",
+      "owner": "L-CHAT J04 / GPT-6 current window",
+      "scope": "C14-C15 Masana-only qualified voice call admission, LiveKit dispatch contract, tenant-fenced PostgreSQL lifecycle, mobile connecting/active/recovery and expiry worker; no root composition, no duplicate session authority; disjoint from C10 inbox",
+      "paths": [
+        "packages/masana/migrations/0003_voice_calls.sql",
+        "adapters/storage/postgres/src/masana_calls/**",
+        "services/gateway/src/modules/masana_calls/**",
+        "services/worker/src/jobs/masana_calls/**",
+        "apps/mobile/lib/src/features/calls/**",
+        "apps/mobile/test/features/calls/**",
+        "tests/e2e/J04/**"
+      ],
+      "branch": "lane/l-chat-j04-masana-calls-20261011-gpt6-0455",
+      "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
+      "claimed_at": "2026-10-11T03:56:43.641Z",
+      "heartbeat_at": "2026-10-11T03:56:43.641Z",
+      "expires_at": "2026-10-11T04:01:43.641Z",
+      "notes": "Canonical /v1/calls source under own module, AF00 to compose root; provider and full device checks are release-gated."
     }
   ],
   "history": [
