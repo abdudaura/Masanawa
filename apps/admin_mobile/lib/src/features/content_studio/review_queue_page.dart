@@ -58,6 +58,53 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
     if(time==null)return null;
     return DateTime(date.year,date.month,date.day,time.hour,time.minute);
   }
+  Future<void> editDraft(Map<String,dynamic> post) async {
+    if(busy||!widget.canEdit||post['createdBy']!=widget.staffId)return;
+    final gen=generation,sourceDio=widget.dio;
+    final id=post['id']?.toString()??'',revision=post['revision'];
+    if(id.isEmpty||revision is! int||post['state']!='draft')return;
+    final body=TextEditingController(text:post['body']?.toString()??'');
+    final transcript=TextEditingController(text:post['transcript']?.toString()??'');
+    try {
+      final save=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+        title:const Text('Edit draft'),
+        content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+          TextField(controller:body,maxLines:4,maxLength:5000,
+            decoration:const InputDecoration(labelText:'Original post text')),
+          if(post['kind']=='audio')TextField(controller:transcript,maxLines:3,maxLength:15000,
+            decoration:const InputDecoration(labelText:'Accessible audio transcript')),
+          const Text('The Masana author and approved media remain unchanged.'),
+        ])),
+        actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),
+          FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Save revision'))]));
+      if(save!=true||!mounted||gen!=generation)return;
+      if(body.text.trim().isEmpty&&post['kind']=='text')return;
+      if(post['kind']=='audio'&&transcript.text.trim().isEmpty)return;
+      setState(()=>busy=true);
+      final options=await auth();
+      if(!mounted||gen!=generation)return;
+      options.headers!['Idempotency-Key']='edit-${DateTime.now().microsecondsSinceEpoch}';
+      final media=post['media'];
+      await sourceDio.patch<void>('/v1/admin/feed/posts/$id/draft',options:options,data:{
+        'authorMasanaId':post['authorMasanaId'],
+        'kind':post['kind'],'body':body.text.trim(),
+        'media':media is List?media:[],
+        'transcript':post['kind']=='audio'?transcript.text.trim():null,
+        'expectedRevision':revision,
+      });
+      if(mounted&&gen==generation)await load();
+    }on DioException catch(e){
+      if(mounted&&gen==generation)setState(()=>error=e.response?.statusCode==409
+        ?'Draft was edited by someone else. Refresh before trying again.'
+        :e.response?.statusCode==403?'Only the draft creator can change its text.'
+        :'Draft update failed. Check connection and reload.');
+    }catch(_){
+      if(mounted&&gen==generation)setState(()=>error='Draft update could not be confirmed. Reload before retry.');
+    }finally{
+      body.dispose();transcript.dispose();
+      if(mounted&&gen==generation)setState(()=>busy=false);
+    }
+  }
   Future<void> action(Map<String,dynamic> p,String operation) async{
     if(busy||!widget.canEdit)return;
     final gen=generation,sourceDio=widget.dio;
@@ -124,7 +171,10 @@ class _ReviewQueuePageState extends State<ReviewQueuePage> {
               if(p['scheduledAt']!=null)Text('Scheduled: ${p['scheduledAt']}'),
               Text('Revision ${p['revision']} · ${state.replaceAll('_',' ')}'),
               Wrap(spacing:8,runSpacing:6,children:[
-                if(state=='draft')FilledButton(onPressed:busy?null:()=>action(p,'submit'),child:const Text('Send to review')),
+                if(state=='draft')...[
+                  if(p['createdBy']==widget.staffId)TextButton(onPressed:busy?null:()=>editDraft(p),child:const Text('Edit draft')),
+                  FilledButton(onPressed:busy?null:()=>action(p,'submit'),child:const Text('Send to review')),
+                ],
                 if(state=='in_review')...[
                   TextButton(onPressed:busy?null:()=>action(p,'revise'),child:const Text('Return for revision')),
                   FilledButton(onPressed:busy||!canApprove?null:()=>action(p,'approve'),child:const Text('Approve & publish')),
