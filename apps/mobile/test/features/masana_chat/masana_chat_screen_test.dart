@@ -42,6 +42,10 @@ void main(){
     await tester.pumpWidget(MaterialApp(home:MasanaChatScreen(
       controller:controller,displayName:'Teacher')));
     await tester.enterText(find.byType(TextField),'Hi');
+    // TextField changes schedule a frame: assert the Mic-to-Send visual
+    // transition after that frame, not against the pre-edit tree.
+    await tester.pump();
+    expect(find.byTooltip('Send message'), findsOneWidget);
     await tester.tap(find.byTooltip('Send message'));
     await tester.pumpAndSettle();
     expect(find.text('Hi'),findsOneWidget);
