@@ -1462,9 +1462,10 @@
       "branch": "lane/l-chat-c10-inbox-20261011-gpt6-0450",
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
       "claimed_at": "2026-10-11T03:50:50.130Z",
-      "heartbeat_at": "2026-10-11T03:50:50.130Z",
-      "expires_at": "2026-10-11T03:55:50.130Z",
-      "notes": "Feature-owned paths; AF00 composes; forward-only SQL under existing registered masana migration root; no production or finance changes."
+      "heartbeat_at": "2026-10-11T03:54:53.457Z",
+      "expires_at": "2026-10-11T03:59:53.457Z",
+      "notes": "Feature-owned paths; AF00 composes; forward-only SQL under existing registered masana migration root; no production or finance changes.",
+      "source_head": "713b3ce150c37f2dadc6b196a99180143cca6013"
     }
   ],
   "history": [
