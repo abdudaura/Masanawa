@@ -5,7 +5,7 @@ import { createMasanaInboxRepository } from "./inbox.js";
 const scope = {tenantId:"tenant-a",fanUserId:"fan-a"};
 const character = "character_0199f0d0-0000-7000-8000-000000000003";
 function repository(rows: readonly Record<string, unknown>[] = []) {
-  const query = vi.fn(async () => ({rows, rowCount:rows.length}));
+  const query = vi.fn(async (..._args: unknown[]) => ({rows, rowCount:rows.length}));
   return { inbox: createMasanaInboxRepository({
     query,
   } as unknown as Pick<Pool,"query">), query};

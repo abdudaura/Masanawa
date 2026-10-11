@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa_mobile/src/features/masana_chat/masana_chats_list_api.dart';
-import 'package:masanawa_mobile/src/features/masana_chat/masana_chats_list_screen.dart';
+import 'package:masanawa/src/features/masana_chat/masana_chats_list_api.dart';
+import 'package:masanawa/src/features/masana_chat/masana_chats_list_screen.dart';
 
 class InboxFake implements MasanaInboxAccess {
   final List<String> scopes=[];

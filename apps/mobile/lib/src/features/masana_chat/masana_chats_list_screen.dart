@@ -153,7 +153,7 @@ class _MasanaChatsListScreenState extends State<MasanaChatsListScreen> {
                     onTap:()=>_open(chat),
                     leading:CircleAvatar(
                       child:Text(chat.displayName.isEmpty?'M':
-                        chat.displayName.characters.first.toUpperCase())),
+                        chat.displayName.substring(0,1).toUpperCase())),
                     title:Text(chat.displayName,
                       maxLines:1,overflow:TextOverflow.ellipsis),
                     subtitle:Text(
