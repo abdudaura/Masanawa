@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../finance/crypto_wallet_screen.dart';
+import '../app/masanawa_consumer_shell.dart';
 import '../screens/activity/activity_screen.dart';
 import '../screens/billing/billing_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
@@ -29,10 +30,8 @@ import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
 import '../talks/talk_models.dart';
 
-/// The approved four root destinations. These are navigation indices only,
-/// not a pricing, identity or task-authority contract.
-int shellRootTabIndex(String? tab) =>
-    MasanawaRootTab.fromQuery(tab).index;
+/// Rebuild root navigation is Masana-only. Old shell enum is legacy only.
+int shellRootTabIndex(String? tab) => MasanawaTab.parse(tab).index;
 
 /// Old shell links must not be reinterpreted as different current tabs.
 String? legacyShellDestination(String? tab) => switch (tab) {
@@ -42,10 +41,8 @@ String? legacyShellDestination(String? tab) => switch (tab) {
       _ => null,
     };
 
-/// Production router for the human-hosted Talk product.
-///
-/// Root shell: Home · Agents · Wallet · Talk; legacy entry points stay valid.
-/// Home contains Explore / Live Talks.
+/// The canonical consumer router: Chats, Rooms, Home, Gwani, Wallet.
+/// Legacy Talk/Twin deep links do not confer permission to excluded flows.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -53,8 +50,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = state.matchedLocation;
 
       if (path == '/splash') return null;
-      if (path == '/chat' || path == '/chats') return '/home?tab=talk';
-      if (path == '/agents' || path == '/masana') return '/home?tab=agents';
+      if (path == '/chat' || path == '/chats') return '/home?tab=chats';
+      if (path == '/agents' || path == '/masana') return '/masana/discover';
+      if (path == '/rooms') return '/home?tab=rooms';
+      if (path == '/you') return '/account';
+      if (path == '/search') return '/masana/discover';
+      // Preserve ledger/history, never re-enable retired live Talk/Twin roles.
+      if (path == '/clone' || path == '/my-twin' ||
+          path == '/talk/create' || path.startsWith('/talk/') ||
+          path.startsWith('/twin/') || path.startsWith('/persona/') ||
+          path.startsWith('/owner-session/') || path.startsWith('/u/') ||
+          path == '/my-talks' || path == '/saved-talks') {
+        return '/home';
+      }
 
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
@@ -80,6 +88,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final protected = path == '/home' ||
+          path == '/account' ||
+          path == '/masana/discover' ||
+          path.startsWith('/masana/') ||
+          path == '/rooms' ||
           path == '/activity' ||
           path == '/you' ||
           path == '/search' ||
@@ -124,7 +136,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final index = shellRootTabIndex(
             state.uri.queryParameters['tab']);
-          return TwinHomeShell(initialIndex: index);
+          return MasanawaConsumerShell(
+             initialTab: MasanawaTab.values[index],
+           );
         },
       ),
       GoRoute(
@@ -231,30 +245,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           onOpenCrypto: () => context.push('/crypto'),
         ),
       ),
-      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=talk'),
+      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=chats'),
+      GoRoute(path: '/rooms', redirect: (_, __) => '/home?tab=rooms'),
+      GoRoute(path: '/account', builder: (_, __) =>
+          const MasanawaAccountRoute()),
+      GoRoute(path: '/masana/discover', builder: (_, __) =>
+          const MasanawaDiscoverRoute()),
+      GoRoute(path: '/masana/:id/profile', builder: (_, state) =>
+          MasanawaProfileRoute(characterId: state.pathParameters['id']!)),
+      GoRoute(path: '/masana/:id/chat', builder: (_, state) =>
+          MasanawaConversationRoute(characterId: state.pathParameters['id']!)),
       GoRoute(
         path: '/chat/:id',
-        builder: (context, state) {
-          final entry = switch (state.uri.queryParameters['entry']) {
-            'teach' => AiChatEntryMode.teach,
-            'study' => AiChatEntryMode.study,
-            'voice-note' => AiChatEntryMode.liveTalk,
-            'live-talk' => AiChatEntryMode.liveTalk,
-            'live-voice' => AiChatEntryMode.liveVoice,
-            'cafe' => AiChatEntryMode.cafe,
-            _ => AiChatEntryMode.chat,
-          };
-          final twinSetup = state.uri.queryParameters['twinSetup'] == '1';
-          return AiChatScreen(
-            characterId: state.pathParameters['id']!,
-            entryMode: entry,
-            initialPrompt: state.uri.queryParameters['prompt'],
-            twinSetup: twinSetup,
-            twinGender: state.uri.queryParameters['gender'],
-            twinAge: int.tryParse(state.uri.queryParameters['age'] ?? ''),
-            twinPhotoPath: state.uri.queryParameters['photo'],
-          );
-        },
+        redirect: (_, state) =>
+            '/masana/${Uri.encodeComponent(state.pathParameters['id']!)}/chat',
       ),
       GoRoute(
         path: '/owner-session/:characterId/:requestId',
@@ -269,8 +273,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
         ),
       ),
-      GoRoute(path: '/agents', redirect: (_, __) => '/home?tab=agents'),
-      GoRoute(path: '/masana', redirect: (_, __) => '/home?tab=agents'),
+      GoRoute(path: '/agents', redirect: (_, __) => '/masana/discover'),
+      GoRoute(path: '/masana', redirect: (_, __) => '/masana/discover'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/billing',
