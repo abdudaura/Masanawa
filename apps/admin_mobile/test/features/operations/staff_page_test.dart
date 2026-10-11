@@ -33,6 +33,21 @@ void main(){
   // zone (or crash the application before the user opens that tab).
   expect(tester.takeException(), isNull);
  });
+ testWidgets('A19 never retains another admin account staff or audit', (tester) async {
+  await tester.pumpWidget(MaterialApp(home:StaffPage(api:StaffFakeApi(false))));
+  await tester.pumpAndSettle();
+  expect(find.text('staff_123'), findsOneWidget);
+  // Same State, but a new authenticated API client/account.
+  await tester.pumpWidget(MaterialApp(home:StaffPage(api:StaffFakeApi(true))));
+  await tester.pumpAndSettle();
+  expect(find.text('staff_123'), findsNothing);
+  expect(find.text('Staff directory unavailable or access denied.'), findsOneWidget);
+  await tester.tap(find.text('Audit'));
+  await tester.pumpAndSettle();
+  expect(find.text('admin_ops.flag_change'), findsNothing);
+  expect(find.text('Audit history unavailable or access denied.'), findsOneWidget);
+  expect(tester.takeException(), isNull);
+ });
  testWidgets('A19 audit 403 is rendered when selecting its lazy tab', (tester) async {
   await tester.pumpWidget(MaterialApp(home:StaffPage(api:StaffFakeApi(true))));
   await tester.pumpAndSettle();
