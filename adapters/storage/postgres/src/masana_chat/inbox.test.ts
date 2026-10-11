@@ -4,13 +4,35 @@ import { createMasanaInboxRepository } from "./inbox.js";
 
 const scope = {tenantId:"tenant-a",fanUserId:"fan-a"};
 const character = "character_0199f0d0-0000-7000-8000-000000000003";
-function repository(rows: readonly Record<string, unknown>[] = []) {
+function repository(
+  rows: readonly Record<string, unknown>[] = [],
+  options: { hiddenTurnsReady?: boolean } = {},
+) {
   const query = vi.fn(async (..._args: unknown[]) => ({rows, rowCount:rows.length}));
   return { inbox: createMasanaInboxRepository({
     query,
-  } as unknown as Pick<Pool,"query">), query};
+  } as unknown as Pick<Pool,"query">, options), query};
 }
 describe("C10 tenant-private canonical chat inbox", () => {
+  it("keeps the existing J03 inbox query usable before C13 schema 0006 is registered", async () => {
+    const {inbox, query} = repository();
+    await inbox.list(scope);
+    const sql = String(query.mock.calls[0]?.[0]);
+    expect(sql).not.toContain("masana.fan_hidden_turns");
+    expect(sql).toContain("agents.mobile_turn_commands");
+    expect(sql).toContain("u.tenant_id=$1 AND u.user_id=$2");
+  });
+  it("filters only this fan's hidden turn from preview and unread after verified schema readiness", async () => {
+    const {inbox, query} = repository([], {hiddenTurnsReady:true});
+    await inbox.list(scope);
+    const sql = String(query.mock.calls[0]?.[0]);
+    expect((sql.match(/NOT EXISTS \(SELECT 1 FROM masana\.fan_hidden_turns h/g) ?? []))
+      .toHaveLength(2);
+    for (const alias of ["u", "t"]) {
+      expect(sql).toContain(`h.tenant_id=${alias}.tenant_id AND h.fan_user_id=${alias}.user_id`);
+      expect(sql).toContain(`h.character_id=${alias}.character_id AND h.request_id=${alias}.request_id`);
+    }
+  });
   it("queries canonical session/turn tables only inside the authenticated scope", async () => {
     const {inbox,query} = repository([{
       character_id:character,display_name:"Gwana",profession:"Teacher",
