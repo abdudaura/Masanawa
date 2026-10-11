@@ -1458,6 +1458,21 @@
       "heartbeat_at": "2026-10-11T03:47:25.909Z",
       "expires_at": "2026-10-11T03:52:25.909Z",
       "notes": "Continue SAME #625 PR, after readback/CAS. Implement join/read/write paid admission, purchase/display/retry pending through existing paid APIs; no production payments or live migration."
+    },
+    {
+      "claim_id": "l-admin-a19-403-recovery-20261011-gpt6",
+      "owner": "GPT-6 / L-ADMIN A19 staff runtime recovery",
+      "scope": "Fix confirmed Admin staff 403 unhandled Future and add regression; no shared auth/router/finance",
+      "paths": [
+        "apps/admin_mobile/lib/src/features/operations/staff_page.dart",
+        "apps/admin_mobile/test/features/operations/staff_page_test.dart"
+      ],
+      "branch": "lane/l-admin-staff-a19-403-recovery-20261011-gpt6",
+      "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
+      "claimed_at": "2026-10-11T03:48:02.508Z",
+      "heartbeat_at": "2026-10-11T03:48:02.508Z",
+      "expires_at": "2026-10-11T03:53:02.508Z",
+      "notes": "CI 38108849170: Admin analyze PASS, 11/12 widget tests, A19 failure."
     }
   ],
   "history": [
