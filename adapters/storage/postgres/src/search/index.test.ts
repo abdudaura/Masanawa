@@ -19,7 +19,7 @@ describe("canonical public search PostgreSQL projections", () => {
     }
   );
   it("uses a nonempty public title for Masana image/audio posts and escapes LIKE patterns", async () => {
-    const query = vi.fn(async () => ({ rows: [] }));
+    const query = vi.fn(async (_sql: string, _args: unknown[]) => ({ rows: [] }));
     const store = createPostgresSearchStore({ query } as never);
     await store.search({ tenantId: "t_a", q: "%_\\", kind: "posts", limit: 5, cursor: null });
     const [sql, args] = query.mock.calls[0]!;
