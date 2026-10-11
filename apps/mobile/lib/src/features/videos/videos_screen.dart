@@ -64,6 +64,7 @@ class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
     if (oldWidget.load != widget.load ||
         oldWidget.loadPage != widget.loadPage ||
         oldWidget.accountKey != widget.accountKey ||
+        oldWidget.checkAvailability != widget.checkAvailability ||
         oldWidget.enabled != widget.enabled) {
       reset(null);
     }

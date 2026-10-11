@@ -42,6 +42,7 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
   @override void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    verificationFailed = widget.checkAvailability == null;
     try {
       approvedEmbed = OfficialVideoEmbed.fromSource(
         widget.video.provider, widget.video.sourceUrl);
@@ -58,7 +59,7 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
         old.checkAvailability != widget.checkAvailability) {
       availabilityEpoch++;
       checkingAvailability = false;
-      verificationFailed = false;
+      verificationFailed = widget.checkAvailability == null;
       controller = null;
       playing = false;
       loading = false;
@@ -88,9 +89,9 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
     if (approvedEmbed == null || unavailable || checkingAvailability || playing) return;
     final check = widget.checkAvailability;
     if (check == null) {
-      // Legacy, server-verified catalog compatibility only. AF00 must supply
-      // the fresh authenticated status callback before release qualification.
-      _startVerifiedPlayer();
+      // The host must inject the signed-in server authorization resolver.
+      // A missing resolver can never authorize provider playback.
+      setState(() => verificationFailed = true);
       return;
     }
     unawaited(_verifyAndPlay(check));

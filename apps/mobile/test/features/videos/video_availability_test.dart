@@ -73,4 +73,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Official iframe'), findsNothing);
   });
+  testWidgets('C29: missing authenticated verifier stays fail-closed',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(home: OfficialVideoPlayerScreen(
+      video: video,
+      embedBuilder: (_) => const Text('Official iframe'),
+      open: (_) async => true,
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('Official iframe'), findsNothing);
+    expect(find.text('Could not check video availability. Retry when online.'),
+      findsOneWidget);
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    await tester.tap(find.text('Play official video'));
+    await tester.pump();
+    expect(find.text('Official iframe'), findsNothing);
+  });
+
 }

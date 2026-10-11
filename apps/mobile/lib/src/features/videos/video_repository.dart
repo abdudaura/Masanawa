@@ -1,33 +1,46 @@
 import 'package:dio/dio.dart';
 import 'video_models.dart';
 
-/// Uses the parent app's configured HTTPS Dio with real session/tenant binding.
-/// No second authentication store or endpoint is introduced.
+/// C27–C29 use the host application's authenticated, account-scoped Dio.
+/// Never cache positive approval or invent provider URLs.
 class VideoRepository {
   VideoRepository(this.dio);
   final Dio dio;
 
-  /// The backend cursor points to the final approved item of the preceding page.
+  static final RegExp _videoId = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+  );
+
+  /// Server-derived approved catalog, including its opaque next cursor.
   Future<VideoCatalogPage> page({String? provider, String? before}) async {
-    final response = await dio.get<Map<String, dynamic>>('/v1/videos',
-      queryParameters: {'provider': ?provider, 'before': ?before});
-    final body = response.data;
-    if (body == null) throw const FormatException('Invalid video catalog');
-    return VideoCatalogPage.fromJson(body);
+    if (provider != null &&
+        !const {'youtube', 'tiktok', 'facebook'}.contains(provider)) {
+      throw const FormatException('Unsupported video provider');
+    }
+    if (before != null && !_videoId.hasMatch(before)) {
+      throw const FormatException('Invalid video cursor');
+    }
+    final response = await dio.get<Map<String, dynamic>>(
+      '/v1/videos',
+      queryParameters: {
+        if (provider != null) 'provider': provider,
+        if (before != null) 'before': before,
+      },
+    );
+    final data = response.data;
+    if (data == null) throw const FormatException('Invalid video catalog');
+    return VideoCatalogPage.fromJson(data);
   }
 
-  /// C29: revalidate a catalog item before starting an official player.
-  /// Only a trusted server tenant/session determines availability; never
-  /// derive a positive status from a cached video or an HTTP failure.
+  /// Recheck at every play attempt. A denied, offline or malformed response
+  /// is never interpreted as successful admission.
   Future<bool> isApproved(String id) async {
-    if (!RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}
-  Future<List<ExternalVideo>> list({String? provider}) async =>
-      (await page(provider: provider)).items;
-}
-).hasMatch(id)) {
+    if (!_videoId.hasMatch(id)) {
       throw const FormatException('Invalid video ID');
     }
-    final response = await dio.get<Map<String, dynamic>>('/v1/videos/$id/availability');
+    final response = await dio.get<Map<String, dynamic>>(
+      '/v1/videos/$id/availability',
+    );
     final data = response.data;
     if (data == null || data.length != 1 || data['available'] is! bool) {
       throw const FormatException('Unverified video availability');
@@ -35,7 +48,7 @@ class VideoRepository {
     return data['available'] as bool;
   }
 
-  /// Kept for existing J15 callers that only need a first page.
+  /// Compatibility for existing first-page C27 consumers.
   Future<List<ExternalVideo>> list({String? provider}) async =>
       (await page(provider: provider)).items;
 }
