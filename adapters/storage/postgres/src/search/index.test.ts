@@ -18,6 +18,18 @@ describe("canonical public search PostgreSQL projections", () => {
       expect(page).toEqual({ items: [{ kind, id: "z", title: "Maths", subtitle: "teacher" }], nextCursor: "z" });
     }
   );
+  it("uses a nonempty public title for Masana image/audio posts and escapes LIKE patterns", async () => {
+    const query = vi.fn(async () => ({ rows: [] }));
+    const store = createPostgresSearchStore({ query } as never);
+    await store.search({ tenantId: "t_a", q: "%_\\", kind: "posts", limit: 5, cursor: null });
+    const [sql, args] = query.mock.calls[0]!;
+    expect(sql).toContain("COALESCE(NULLIF(left(btrim(p.body),120), '')");
+    expect(sql).toContain("WHEN 'audio' THEN 'Audio post'");
+    expect(sql).toContain("WHEN 'image' THEN 'Image post'");
+    expect(sql).toContain("p.state='published'");
+    expect(sql).toContain("o.kind='platform'");
+    expect(args).toEqual(["t_a", "%\\%\\_\\\\%", null, 6]);
+  });
   it("rejects unscoped usage", async () => {
     const query = vi.fn();
     const store = createPostgresSearchStore({ query } as never);
