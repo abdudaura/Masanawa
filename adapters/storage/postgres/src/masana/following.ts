@@ -36,6 +36,7 @@ export function createFollowingStore(db: Db) {
           "  WHERE ff.tenant_id=f.tenant_id AND ff.character_id=f.character_id)) AS follower_count,",
           "COALESCE(pref.muted,false) AS muted",
           "FROM masana.follows f",
+          "JOIN identity.users u ON u.tenant_id=f.tenant_id AND u.user_id=f.fan_user_id AND u.state='active'",
           "JOIN masana.character_revisions r ON r.tenant_id=f.tenant_id AND r.character_id=f.character_id AND r.state='approved'",
           "JOIN identity.characters c ON c.tenant_id=f.tenant_id AND c.character_id=f.character_id AND c.state='active'",
           "JOIN identity.character_ownership o ON o.tenant_id=f.tenant_id AND o.character_id=f.character_id AND o.kind='platform'",
