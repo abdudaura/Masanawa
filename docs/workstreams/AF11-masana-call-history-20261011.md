@@ -20,6 +20,13 @@ Bounded AF00 composition transfer, owner has assigned this window full ownership
 `services/gateway/src/app.ts`, `services/gateway/src/main.ts`.
 No auth, ledger, native audio, existing migration or deployment edits.
 
+Mobile continuation claim: `apps/mobile/lib/src/calls/**`,
+`apps/mobile/lib/src/screens/calls/calls_screen.dart`,
+`apps/mobile/test/call_history_transport_test.dart`,
+`apps/mobile/test/calls_screen_test.dart`. This uses the existing authenticated
+API client, a separate subtree per signed-in account and local cancellable
+pagination. No shared provider/router/localization or native audio changes.
+
 Verification: 24 tests passed across call-history, Gateway app and paid-voice
 suites; five SQL tests executed on isolated local PostgreSQL, including migration
 registration/rerun, tenant/account fencing, pagination and lifecycle races.
