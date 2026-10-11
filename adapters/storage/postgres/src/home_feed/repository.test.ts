@@ -10,7 +10,7 @@ describe("J06 tenant-scoped SQL and no duplicate follower registry",()=>{
   expect(query.mock.calls[0]?.[1]).toEqual(["tenantA","fanA","following",null,null,21]);
  });
  it("never allows a reaction write without matching published post",async()=>{
-  const query=vi.fn(async()=>({rows:[]}));
+  const query=vi.fn(async()=>({rows:[{admitted:true}]}));
   const repo=new PgHomeFeedRepository({query} as unknown as Pool);
   await repo.setLike("tenantA","fanA","381026c2-9d56-47b1-b73d-1784e24e41e2",true);
   expect(query.mock.calls[0]?.[0]).toContain("p.state='published'");
@@ -39,4 +39,26 @@ describe("J06 tenant-scoped SQL and no duplicate follower registry",()=>{
   expect(query.mock.calls[0]?.[1]).toEqual(["tenantA","381026c2-9d56-47b1-b73d-1784e24e41e2","fanA",null,30,"oldest"]);
  });
 
+ it("Status fails closed if author is revoked between read and reaction insert",async()=>{
+  const query=vi.fn(async(_sql:string,_args:unknown[])=>({rows:[{admitted:false}]}));
+  const repo=new PgHomeFeedRepository({query} as unknown as Pool);
+  await expect(repo.setLike("tenantA","fanA","381026c2-9d56-47b1-b73d-1784e24e41e2",true)).rejects.toMatchObject({status:404});
+  await expect(repo.setSave("tenantA","fanA","381026c2-9d56-47b1-b73d-1784e24e41e2",true)).rejects.toMatchObject({status:404});
+  for(const [sql,binds] of query.mock.calls){
+   expect(sql).toContain("a.state='active'");expect(sql).toContain("o.kind='platform'");
+   expect(sql).toContain("m.state='approved'");expect(sql).toContain("o.tenant_id=a.tenant_id");
+   expect(binds).toEqual(["tenantA","fanA","381026c2-9d56-47b1-b73d-1784e24e41e2"]);
+  }
+ });
+ it("Status list and detail recheck canonical character after approval",async()=>{
+  const query=vi.fn(async(_sql:string,_args:unknown[])=>({rows:[]}));
+  const repo=new PgHomeFeedRepository({query} as unknown as Pool);
+  await repo.list("tenantA","fanA","for_you",null,21);
+  await repo.find("tenantA","fanA","381026c2-9d56-47b1-b73d-1784e24e41e2");
+  for(const [sql] of query.mock.calls){
+   expect(sql).toContain("a.state='active'");expect(sql).toContain("o.kind='platform'");
+   expect(sql).toContain("m.tenant_id=p.tenant_id");expect(sql).toContain("m.character_id=p.author_masana_id");
+  }
+ });
 });
+
