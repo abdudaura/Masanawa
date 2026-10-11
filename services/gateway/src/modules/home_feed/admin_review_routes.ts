@@ -51,7 +51,7 @@ export async function registerAdminFeedReviewRoutes(app:FastifyInstance,o:AdminR
   if(media!==undefined&&(!Array.isArray(media)||media.some(x=>typeof x!=="string")))
    return Promise.reject(Object.assign(new Error("invalid_media"),{status:422,code:"invalid_media"}));
   return o.service.create(actor,{authorMasanaId:string(b.authorMasanaId),kind:string(b.kind) as DraftInput["kind"],
-   body:string(b.body),media:media as string[]|undefined,transcript:b.transcript==null?null:string(b.transcript),
+   body:string(b.body),...(media===undefined?{}:{media:media as string[]}),transcript:b.transcript==null?null:string(b.transcript),
    idempotencyKey:string(req.headers["idempotency-key"])});
  }));
  app.patch("/v1/admin/feed/posts/:id/draft",async(req,rep)=>guard(req,rep,actor=>{
@@ -62,8 +62,7 @@ export async function registerAdminFeedReviewRoutes(app:FastifyInstance,o:AdminR
     return Promise.reject(Object.assign(new Error("invalid_draft_edit"),{status:422,code:"invalid_draft_edit"}));
   return o.service.update(actor,string(obj(req.params).id),revision,{
    authorMasanaId:string(b.authorMasanaId),kind:string(b.kind) as DraftInput["kind"],
-   body:string(b.body),media:media as string[]|undefined,
-   transcript:b.transcript==null?null:string(b.transcript),
+   body:string(b.body),...(media===undefined?{}:{media:media as string[]}),transcript:b.transcript==null?null:string(b.transcript),
    idempotencyKey:string(req.headers["idempotency-key"])});
  }));
  app.get("/v1/admin/feed/review",async(req,rep)=>guard(req,rep,actor=>{
