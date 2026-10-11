@@ -1580,10 +1580,10 @@
       ],
       "branch": "lane/l-gwani-cases-j13-20261010-gpt6",
       "source_pr": 628,
-      "source_head": "e735bdd3df929da1b646ae9913465e367f06aa47",
+      "source_head": "8b7ac2bc666f2ee66ee4b4cb95784469026ef089",
       "claimed_at": "2026-10-11T04:07:50.311Z",
-      "heartbeat_at": "2026-10-11T04:07:50.311Z",
-      "expires_at": "2026-10-11T04:12:50.311Z",
+      "heartbeat_at": "2026-10-11T04:12:24.919Z",
+      "expires_at": "2026-10-11T04:17:24.919Z",
       "notes": "Disjoint J13 appeal retry sub-scope. AF00 owns package importer/root migration registry and composition. Never merge to main."
     },
     {
