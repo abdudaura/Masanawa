@@ -42,11 +42,30 @@ describe("J06 Masana-only Feed",()=>{
   expect(await s.like(fan,post.id,true)).toBe(true);expect(await s.save(fan,post.id,false)).toBe(true);
   await expect(s.save({...fan,tenantId:"other"},post.id,true)).rejects.toMatchObject({status:404});
   await s.comment(fan,post.id," question ","client-key-001",true);
-  expect(db.comment).toHaveBeenCalledWith("tenant","fan",post.id,"question","client-key-001",true);
+  expect(db.comment).toHaveBeenCalledWith("tenant","fan",post.id,"question","client-key-001",true,null);
  });
  it("allows approved editor with stable idempotency",async()=>{
   const db=mock(),s=new FeedService(db,async()=>true);
   await s.publish({kind:"staff",tenantId:"tenant",id:"editor",permissions:["content_editor"]},{authorMasanaId:"masana",kind:"text",body:"Welcome",idempotencyKey:"request-007"});
   expect(db.publish).toHaveBeenCalledTimes(1);
  });
+ it("C22 rejects forged parent IDs before any comment write",async()=>{
+  const db=mock(),service=new FeedService(db,async()=>true);
+  await expect(service.comment(fan,post.id,"reply","key-reply-001",false,"another-tenant")).rejects.toMatchObject({status:422,code:"invalid_parent_comment"});
+  expect(db.comment).not.toHaveBeenCalled();
+ });
+ it("C22 retains canonical idempotency and forwards one-level parent to the same repository",async()=>{
+  const db=mock(),service=new FeedService(db,async()=>true);
+  const parent="9b8c8884-7a31-49d9-aee5-521364b54aef";
+  await service.comment(fan,post.id,"Follow-up","key-reply-002",true,parent);
+  expect(db.comment).toHaveBeenCalledWith("tenant","fan",post.id,"Follow-up","key-reply-002",true,parent);
+  await service.comments("tenant",post.id,fan.id,undefined,"oldest");
+  expect(db.comments).toHaveBeenLastCalledWith("tenant",post.id,fan.id,null,30,"oldest");
+ });
+ it("C22 rejects invented comment sort modes",async()=>{
+  const db=mock(),service=new FeedService(db,async()=>true);
+  await expect(service.comments("tenant",post.id,fan.id,undefined,"random" as never)).rejects.toMatchObject({code:"invalid_sort"});
+  expect(db.comments).not.toHaveBeenCalled();
+ });
+
 });

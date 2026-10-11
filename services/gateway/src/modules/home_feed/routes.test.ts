@@ -26,4 +26,43 @@ describe("J06 HTTP cannot publish as fan or leak across tenant",()=>{
   const res=await app.inject({method:"POST",url:"/v1/admin/feed/posts",payload:{kind:"text",body:"No",authorMasanaId:"a"}});
   expect(res.statusCode).toBe(401);expect(publish).not.toHaveBeenCalled();await app.close();
  });
+ it("C22 rejects arbitrary sort before querying the thread",async()=>{
+  const app=Fastify(),comments=vi.fn();
+  await registerHomeFeedRoutes(app,{service:{comments} as never,principal:async()=>null,
+   tenant:()=>"tenant",isNewAccount:async()=>false,enabled:()=>true});
+  const r=await app.inject({method:"GET",url:"/v1/posts/381026c2-9d56-47b1-b73d-1784e24e41e2/comments?sort=staff"});
+  expect(r.statusCode).toBe(422);expect(comments).not.toHaveBeenCalled();await app.close();
+ });
+ it("C22 denies a reply from a guest and does not enqueue",async()=>{
+  const app=Fastify(),comment=vi.fn();
+  await registerHomeFeedRoutes(app,{service:{comment} as never,principal:async()=>null,
+   tenant:()=>"tenant",isNewAccount:async()=>false,enabled:()=>true});
+  const r=await app.inject({method:"POST",url:"/v1/posts/381026c2-9d56-47b1-b73d-1784e24e41e2/comments",
+   headers:{"idempotency-key":"key-reply-001"},payload:{body:"secret",parentId:"9b8c8884-7a31-49d9-aee5-521364b54aef"}});
+  expect(r.statusCode).toBe(401);expect(comment).not.toHaveBeenCalled();await app.close();
+ });
+ it("C22 takes author only from authenticated principal, not reply payload",async()=>{
+  const app=Fastify(),comment=vi.fn(async()=>({id:"ok"}));
+  await registerHomeFeedRoutes(app,{service:{comment} as never,
+   principal:async()=>({kind:"fan",tenantId:"tenant",id:"trusted_fan"}),
+   tenant:()=>"tenant",isNewAccount:async()=>true,enabled:()=>true});
+  const parent="9b8c8884-7a31-49d9-aee5-521364b54aef",id="381026c2-9d56-47b1-b73d-1784e24e41e2";
+  const r=await app.inject({method:"POST",url:"/v1/posts/"+id+"/comments",
+   headers:{"idempotency-key":"key-reply-001"},payload:{body:"Answer",parentId:parent,fanId:"forged"}});
+  expect(r.statusCode).toBe(200);
+  expect(comment).toHaveBeenCalledWith({kind:"fan",tenantId:"tenant",id:"trusted_fan"},id,"Answer","key-reply-001",true,parent);
+  await app.close();
+ });
+
+ it("C22 refuses non-string parent rather than creating a different root comment",async()=>{
+  const app=Fastify(),comment=vi.fn();
+  await registerHomeFeedRoutes(app,{service:{comment} as never,
+   principal:async()=>({kind:"fan",tenantId:"tenant",id:"trusted_fan"}),
+   tenant:()=>"tenant",isNewAccount:async()=>false,enabled:()=>true});
+  const r=await app.inject({method:"POST",url:"/v1/posts/381026c2-9d56-47b1-b73d-1784e24e41e2/comments",
+   headers:{"idempotency-key":"key-reply-001"},payload:{body:"Reply",parentId:{foreign:"id"}}});
+  expect(r.statusCode).toBe(422);expect(comment).not.toHaveBeenCalled();
+  await app.close();
+ });
+
 });

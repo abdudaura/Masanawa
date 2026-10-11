@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'feed_api.dart';
 import 'feed_comments_sheet.dart';
+import 'feed_post_detail_screen.dart';
 
 /// Feature-local C21 screen. AF00 wires this in the sole Home center shell.
 class MasanaFeedScreen extends StatefulWidget {
@@ -69,6 +70,22 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(t('Action failed. Retry.','Ba a yi nasara ba. Sake gwadawa.'))));
     }
   }
+  void openPost(FeedPost post) {
+    final feed=widget.api,account=widget.accountKey;
+    Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeedPostDetailScreen(
+      initialPost:post,accountKey:account,
+      loadPost:(id)=>feed is DioFeedApi?feed.detail(id):Future.value(post),
+      loadThread:(id,sort)=>feed is DioFeedApi?feed.thread(id,sort):feed.comments(id),
+      sendComment:(id,body,key,parent) async {
+        if(feed is DioFeedApi){await feed.sendThreadComment(id,body,key,parent);}
+        else if(parent==null){await feed.comment(id,body,key);}
+        else {throw StateError('Reply transport unavailable');}
+      },
+      canReply:feed is DioFeedApi,
+      onMasanaProfile:widget.onMasanaProfile,onMedia:widget.onOpenMedia,onReport:widget.onReport,
+      enabled:widget.enabled,
+    )));
+  }
   void openComments(FeedPost post) {
     showModalBottomSheet<void>(context:context,isScrollControlled:true,
       builder:(ctx)=>SizedBox(height:MediaQuery.sizeOf(ctx).height*0.78,
@@ -100,6 +117,9 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
                 TextButton.icon(onPressed:widget.onMasanaProfile==null?null:()=>widget.onMasanaProfile!(post.authorMasanaId),
                   icon:const Icon(Icons.verified_outlined),label:Text(post.authorName??post.authorMasanaId)),
                 if(post.body.isNotEmpty)Text(post.body,style:Theme.of(context).textTheme.bodyLarge),
+                Align(alignment:AlignmentDirectional.centerStart,
+                  child:TextButton(onPressed:()=>openPost(post),
+                    child:Text(t('Open post','Bude labari')))),
                 if(post.mediaIds.isNotEmpty)Wrap(spacing:8,children:post.mediaIds.map((id)=>ActionChip(
                   avatar:Icon(post.kind=='audio'?Icons.play_circle_outline:Icons.image_outlined),
                   label:Text(post.kind=='audio'?t('Play audio','Kunna sauti'):t('View image','Duba hoto')),
