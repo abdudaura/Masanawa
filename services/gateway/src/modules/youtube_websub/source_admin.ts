@@ -21,9 +21,9 @@ function requireStaff(actor:VideoPrincipal):{tenantId:string;actorId:string}{
   // The shared resolver must supply a real authenticated tenant and actor.
   // Reject blank/control-only authorities even when a caller's role is staff.
   if(!actor.tenantId || actor.tenantId.length>200 ||
-    !actor.tenantId.trim() || /[\\u0000-\\u001f\\u007f]/u.test(actor.tenantId) ||
+    !actor.tenantId.trim() || /[\u0000-\u001f\u007f]/u.test(actor.tenantId) ||
     !actor.actorId || !actor.actorId.trim() ||
-    /[\\u0000-\\u001f\\u007f]/u.test(actor.actorId) ||
+    /[\u0000-\u001f\u007f]/u.test(actor.actorId) ||
     !actor.staffRoles.some(x=>x==="content_editor"||x==="ops_admin"||x==="super_admin")){
     throw new SourceAdminError(403,"video_source_staff_required");
   }
