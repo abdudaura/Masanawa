@@ -2088,11 +2088,11 @@
       ],
       "branch": "lane/l-chat-c18-history-20261011-gpt6",
       "base_sha": "880597b3c5d9b76f6bb3b17e831a296fbc754891",
-      "source_pr": 643,
-      "source_head": "880597b3c5d9b76f6bb3b17e831a296fbc754891",
+      "source_pr": 660,
+      "source_head": "b94e40bb371d48830fea016e18e12597c4290e43",
       "claimed_at": "2026-10-11T06:57:18.895Z",
-      "heartbeat_at": "2026-10-11T06:57:18.895Z",
-      "expires_at": "2026-10-11T07:02:18.895Z",
+      "heartbeat_at": "2026-10-11T07:02:33.906Z",
+      "expires_at": "2026-10-11T07:07:33.906Z",
       "notes": "New only disjoint paths; no edits to J04 existing service/routes/PG/migration/worker or shared AF00 roots; stacked on J04 #643"
     }
   ],
