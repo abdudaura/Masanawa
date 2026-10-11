@@ -447,6 +447,116 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
     );
 
+    app.get(
+      "/v1/auth/account/status",
+      {
+        schema: {
+          querystring: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.accountStatus({
+            phone: request.query.phone,
+            deviceId: request.query.deviceId,
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/auth/device/restore",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.deviceRestore({
+            phone: request.body.phone,
+            deviceId: request.body.deviceId,
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/auth/password/verify",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+              password: Type.String({ minLength: 6, maxLength: 6 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.passwordVerify({
+            phone: request.body.phone,
+            deviceId: request.body.deviceId,
+            password: request.body.password,
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/auth/password/setup",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.String({ minLength: 7, maxLength: 40 }),
+              deviceId: Type.String({ minLength: 32, maxLength: 32 }),
+              password: Type.String({ minLength: 6, maxLength: 6 }),
+              name: Type.String({ minLength: 1, maxLength: 160 }),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.passwordSetup({
+            phone: request.body.phone,
+            deviceId: request.body.deviceId,
+            password: request.body.password,
+            name: request.body.name,
+            ...(request.body.email === undefined
+              ? {}
+              : { email: request.body.email }),
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
     app.post(
       "/auth/refresh",
       {

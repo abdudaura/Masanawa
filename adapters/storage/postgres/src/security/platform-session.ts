@@ -217,6 +217,114 @@ export function createPostgresPlatformSessionRepository(pool: Pool): PlatformSes
       });
     },
 
+    async setPasswordCredential(input) {
+      await pool.query(
+        `INSERT INTO security.platform_device_passwords(
+           tenant_id,user_id,password_hash,attempts,max_attempts,
+           locked_until,created_at,updated_at
+         ) VALUES ($1,$2,$3,0,5,NULL,$4,$4)
+         ON CONFLICT (tenant_id,user_id) DO UPDATE
+           SET password_hash=EXCLUDED.password_hash,attempts=0,
+               locked_until=NULL,updated_at=EXCLUDED.updated_at`,
+        [input.tenantId,input.userId,input.passwordHash,input.createdAt],
+      );
+    },
+
+    async verifyPasswordCredential(input) {
+      return withTransaction(pool, async (client) => {
+        const result = await client.query<{
+          password_hash: string;
+          attempts: number;
+          max_attempts: number;
+          locked_until: Date | string | null;
+        }>(
+          `SELECT password_hash,attempts,max_attempts,locked_until
+             FROM security.platform_device_passwords
+            WHERE tenant_id=$1 AND user_id=$2 FOR UPDATE`,
+          [input.tenantId,input.userId],
+        );
+        const row = result.rows[0];
+        if (!row) return "missing" as const;
+        if (row.locked_until !== null &&
+            new Date(row.locked_until).getTime() > Date.parse(input.at)) {
+          return "locked" as const;
+        }
+        if (row.attempts >= row.max_attempts) return "locked" as const;
+        if (!sameHash(row.password_hash, input.passwordHash)) {
+          await client.query(
+            `UPDATE security.platform_device_passwords
+                SET attempts=attempts+1,updated_at=$3,
+                    locked_until=CASE WHEN attempts+1>=max_attempts THEN $4 ELSE NULL END
+              WHERE tenant_id=$1 AND user_id=$2`,
+            [
+              input.tenantId,input.userId,input.at,
+              new Date(Date.parse(input.at) + 15 * 60 * 1000).toISOString(),
+            ],
+          );
+          const attempts = row.attempts + 1;
+          return attempts >= row.max_attempts ? "locked" as const : "invalid" as const;
+        }
+        await client.query(
+          `UPDATE security.platform_device_passwords
+              SET attempts=0,locked_until=NULL,updated_at=$3
+            WHERE tenant_id=$1 AND user_id=$2`,
+          [input.tenantId,input.userId,input.at],
+        );
+        return "accepted" as const;
+      });
+    },
+
+    async registerDevice(input) {
+      await pool.query(
+        `INSERT INTO security.platform_auth_devices(
+           tenant_id,user_id,device_id,created_at,last_seen_at
+         ) VALUES ($1,$2,$3,$4,$4)
+         ON CONFLICT (tenant_id,user_id,device_id) DO UPDATE
+           SET last_seen_at=EXCLUDED.last_seen_at`,
+        [input.tenantId,input.userId,input.deviceId,input.at],
+      );
+    },
+
+    async isDeviceKnown(input) {
+      const result = await pool.query<{ one: number }>(
+        `SELECT 1 AS one
+           FROM security.platform_auth_devices
+          WHERE tenant_id=$1 AND user_id=$2 AND device_id=$3`,
+        [input.tenantId,input.userId,input.deviceId],
+      );
+      return (result.rowCount ?? 0) > 0;
+    },
+
+    async attachIdentity(input) {
+      return withTransaction(pool, async (client) => {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `auth:identity:${input.tenantId}:${input.channel}:${input.identifier}`,
+        ]);
+        const external = subject(input.channel,input.identifier,input.linkedAt);
+        const existing = await resolveUserByExternalIdentity(
+          client,input.tenantId,external,
+        );
+        if (existing && existing !== input.userId) {
+          throw new Error("auth.identity_taken");
+        }
+        if (!existing) {
+          await linkExternalUserIdentity(client,{
+            tenantId: input.tenantId,userId: input.userId,
+            subject: external,linkedAt: toInstant(input.linkedAt),
+          });
+        }
+        await client.query(
+          `UPDATE security.platform_user_profiles
+              SET email=CASE WHEN $3='email' THEN $4 ELSE email END,
+                  phone=CASE WHEN $3='sms' THEN $4 ELSE phone END,
+                  updated_at=$5
+            WHERE tenant_id=$1 AND user_id=$2`,
+          [input.tenantId,input.userId,input.channel,input.identifier,input.linkedAt],
+        );
+        return loadProfile(client,input.tenantId,input.userId);
+      });
+    },
+
     async issueSession(input) {
       await withTransaction(pool, async (client) => {
         // Serialize issuance against the deletion revoker's canonical User
