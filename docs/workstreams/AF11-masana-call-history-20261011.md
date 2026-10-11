@@ -39,5 +39,39 @@ Independent review: no actionable findings; reviewer separately executed all
 10 route/token tests successfully. PostgreSQL evidence is the implementation
 window's executed local run, not an independent provider qualification.
 
-Next: mobile recents/lifecycle integration. API and remaining qualification:
+Mobile recents source is now implemented: authenticated transport, cancellable
+pagination, pull-to-refresh/retry, sign-out/session fencing, and existing Masana
+directory/chat navigation. Ten Flutter transport/widget/shell tests passed.
+Scoped Dart analysis completed on all four owned files with zero diagnostics.
+Independent mobile review found no actionable issues and reran seven focused
+tests successfully. Runner: limited Flutter 3.44.0 framework with Dart 3.12.2
+tools; this is not signed Android/iOS or physical-device qualification.
+
+Next: mobile native-session connection/end reporting, then incoming signaling
+and group orchestration. Until lifecycle hooks land, issued attempts remain
+connecting/expired in history rather than being falsely marked completed.
+The mobile feature needs this branch's Gateway endpoint deployed through the
+separate qualification/release flow; the existing production endpoint was not
+activated here. New UI copy still needs shared localization integration.
+API and remaining qualification:
 `services/gateway/src/call_history/README.md`.
+
+Commands executed:
+
+```sh
+MASANAWA_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:5432/masanawa_test node node_modules/vitest/vitest.mjs run services/gateway/src/call_history services/gateway/src/app.test.ts services/gateway/src/paid_voice.test.ts services/gateway/src/paid_voice_routes.test.ts
+pnpm --filter @masanawa/gateway-service build
+pnpm --filter @masanawa/gateway-service typecheck
+cd apps/mobile
+flutter test --no-pub test/call_history_transport_test.dart test/calls_screen_test.dart test/app_shell_route_compatibility_test.dart
+```
+
+Cloud tool activation: pnpm under `/workspace/.onboarding-tools/node_modules/.bin`;
+Flutter under `/workspace/.onboarding-tools/flutter-oci/sdks/flutter/bin`;
+`XDG_CONFIG_HOME=/workspace/.onboarding-tools/flutter-config` and
+`PUB_CACHE=/workspace/.onboarding-tools/pub-cache`.
+The default analyzer CLI could not write its read-only home cache. Scoped
+analysis ran the SDK analysis server with explicit
+`--cache=/workspace/.onboarding-tools/dart-analysis-cache`, requested the four
+owned files through its protocol, and confirmed completion plus all four reports.
+Session logs/helpers in `/tmp` are not repository artifacts or transferable proof.

@@ -1,7 +1,9 @@
 # Masana call history backend
 
 This milestone records outgoing Masana voice attempts. It does not implement
-incoming ringing, group-call orchestration, mobile recents, or provider disconnect.
+incoming ringing, group-call orchestration, or provider disconnect. Mobile recents
+now consumes this contract through `apps/mobile/lib/src/calls/call_history.dart`
+and the existing Calls screen, with session-fenced pagination and retry.
 
 ## Contract
 
@@ -53,7 +55,7 @@ SQL tests create and remove their own local PostgreSQL database.
 
 Next connected milestone: parse the optional grant `callId` on mobile; report
 connection after Gemini setup completes, report closure after local teardown;
-render paginated recents with account-fenced state. Keep these reports separate
+keep the implemented recents up to date after those events. Keep these reports separate
 from existing billing admission/settlement. Incoming/group calls need explicit
 participant admission, signaling, provider revocation and device push proof.
 Production release also requires retention/account-deletion policy integration,
