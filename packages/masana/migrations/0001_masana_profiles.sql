@@ -23,7 +23,7 @@ CREATE TABLE masana.character_revisions (
 -- Staff can create a NEW draft, but cannot rewrite any published or prior
 -- character bible in place. Allow only draft->approved->retired transitions.
 CREATE OR REPLACE FUNCTION masana.protect_revision_history()
-RETURNS trigger LANGUAGE plpgsql AS $
+RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
      OR NEW.character_id IS DISTINCT FROM OLD.character_id
@@ -37,7 +37,7 @@ BEGIN
      )
   THEN RAISE EXCEPTION 'masana_revision_immutable' USING ERRCODE='23514'; END IF;
   RETURN NEW;
-END; $;
+END; $$;
 CREATE TRIGGER masana_protect_revision
 BEFORE UPDATE ON masana.character_revisions
 FOR EACH ROW EXECUTE FUNCTION masana.protect_revision_history();
@@ -62,7 +62,7 @@ CREATE TABLE masana.character_media (
 );
 -- Defence in depth: even privileged direct SQL may never approve unverified imagery.
 CREATE OR REPLACE FUNCTION masana.require_rights_cleared_approved_media()
-RETURNS trigger LANGUAGE plpgsql AS $
+RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE approved_kinds integer;
 BEGIN
   IF NEW.state <> 'approved' THEN RETURN NEW; END IF;
@@ -76,7 +76,7 @@ BEGIN
     RAISE EXCEPTION 'masana_media_unverified' USING ERRCODE='23514';
   END IF;
   RETURN NEW;
-END; $;
+END; $$;
 CREATE TRIGGER masana_approval_requires_media
 BEFORE INSERT OR UPDATE ON masana.character_revisions
 FOR EACH ROW WHEN (NEW.state='approved')
