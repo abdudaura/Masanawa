@@ -27,6 +27,7 @@ const eligibleSession = `EXISTS (
   JOIN identity.users u ON u.tenant_id=s.tenant_id
     AND u.user_id=s.user_id AND u.state='active'
   WHERE s.tenant_id=$1 AND s.user_id=$2 AND s.character_id=$3
+    AND lower(r.profile->>'handle') <> 'gwani'
 )`;
 function boundedScope(scope: FanInboxScope): void {
   if (!scope.tenantId || !scope.fanUserId ||
@@ -98,8 +99,9 @@ export function createMasanaInboxRepository(db: Pick<Pool, "query">) {
           ORDER BY t.updated_at DESC, t.request_id DESC
           LIMIT 1
         ) t ON TRUE
-        WHERE $3='' OR position(lower($3) in
-          lower(r.profile->>'displayName' || ' ' || r.profile->>'profession'))>0
+        WHERE lower(r.profile->>'handle') <> 'gwani'
+          AND ($3='' OR position(lower($3) in
+            lower(r.profile->>'displayName' || ' ' || r.profile->>'profession'))>0)
         ORDER BY COALESCE(p.pinned,false) DESC,
           COALESCE(t.updated_at,l.session_at) DESC, l.character_id
         LIMIT 50
