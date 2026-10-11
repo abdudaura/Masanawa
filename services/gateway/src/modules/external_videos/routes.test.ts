@@ -47,6 +47,14 @@ describe("J15 video HTTP authorization boundary", () => {
       headers:{"x-test-staff":"yes"}, payload:{state:"hidden",verificationReference:null}});
     expect(hidden.statusCode).toBe(200);
     expect((await app.inject({method:"GET",url:"/v1/videos"})).json().items).toEqual([]);
+    const reopen = await app.inject({method:"PATCH",url:`/v1/admin/video-items/${id}/review`,
+      headers:{"x-test-staff":"yes"},payload:{state:"pending",expectedState:"hidden",verificationReference:null}});
+    expect(reopen.statusCode).toBe(200);
+    expect(reopen.json().reviewState).toBe("pending");
+    expect((await app.inject({method:"GET",url:"/v1/videos"})).json().items).toEqual([]);
+    const stale = await app.inject({method:"PATCH",url:`/v1/admin/video-items/${id}/review`,
+      headers:{"x-test-staff":"yes"},payload:{state:"pending",expectedState:"hidden",verificationReference:null}});
+    expect(stale.statusCode).toBe(409);
     await app.close();
   });
 });

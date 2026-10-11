@@ -39,9 +39,19 @@ class _VideoCurationScreenState extends State<VideoCurationScreen> {
       field.dispose();
       if (evidence == null || evidence.length < 12) return;
     }
+    if (state == 'pending') {
+      final confirmed = await showDialog<bool>(context: context,builder:(c)=>AlertDialog(
+        title:const Text('Return video to review?'),
+        content:const Text('This will not publish it. Verify the official embed and provider rights again before approval.'),
+        actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancel')),
+          FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('Reopen'))],
+      ));
+      if (confirmed != true) return;
+    }
     if (!mounted) return;
     setState(() {working = true;error = null;});
-    try {await widget.api.review(v.id,state,evidence);if (mounted) refresh();}
+    try {await widget.api.review(v.id,state,evidence,
+      expectedState:state == 'pending' ? v.state : null);if (mounted) refresh();}
     catch (_) {if (mounted) setState(() => error = 'Review failed or item changed. Refresh and retry.');}
     finally {if (mounted) setState(() => working = false);}
   }
@@ -67,6 +77,7 @@ class _VideoCurationScreenState extends State<VideoCurationScreen> {
               if(v.state == 'pending') IconButton(tooltip:'Verify and approve',onPressed:working?null:()=>review(v,'approved'),icon:const Icon(Icons.check_circle_outline)),
               if(v.state == 'approved') IconButton(tooltip:'Hide',onPressed:working?null:()=>review(v,'hidden'),icon:const Icon(Icons.visibility_off_outlined)),
               if(v.state == 'approved') IconButton(tooltip:'Unavailable',onPressed:working?null:()=>review(v,'unavailable'),icon:const Icon(Icons.block)),
+              if(v.state == 'hidden' || v.state == 'unavailable') IconButton(tooltip:'Return to review',onPressed:working?null:()=>review(v,'pending'),icon:const Icon(Icons.restart_alt)),
             ]),
           )),
         ]);

@@ -37,5 +37,12 @@ describe("J15 manual source admission",()=>{
     await api.review(staff,v.id,{state:"hidden",verificationReference:null});
     expect(await api.list(fan,{})).toEqual([]);
     await expect(api.review(staff,v.id,{state:"approved",verificationReference:"official-player-check-123"})).rejects.toMatchObject({status:409});
+    await expect(api.review(fan,v.id,{state:"pending",expectedState:"hidden",verificationReference:null})).rejects.toMatchObject({status:403});
+    await expect(api.review(staff,v.id,{state:"pending",expectedState:"approved",verificationReference:null})).rejects.toMatchObject({status:400});
+    await expect(api.review(staff,v.id,{state:"pending",expectedState:"unavailable",verificationReference:null})).rejects.toMatchObject({status:409});
+    await expect(api.review(staff,v.id,{state:"pending",expectedState:"hidden",verificationReference:"forged-evidence"})).rejects.toMatchObject({status:400});
+    expect((await api.review(staff,v.id,{state:"pending",expectedState:"hidden",verificationReference:null})).reviewState).toBe("pending");
+    expect(await api.list(fan,{})).toEqual([]);
+    expect((await api.review(staff,v.id,{state:"approved",verificationReference:"official-player-reverified-456"})).reviewState).toBe("approved");
   });
 });
