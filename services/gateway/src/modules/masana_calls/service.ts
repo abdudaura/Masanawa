@@ -13,6 +13,7 @@ export interface CallStore {
   finish(input: CallActor & {callId: string; state: "ended" | "failed"; failureCode?: string}): Promise<boolean>;
   get(input: CallActor & {callId: string}): Promise<CallRecord | null>;
   findByRequest(input: CallActor & {characterId: string; requestId: string}): Promise<CallRecord | null>;
+  stopConfirmed(input: CallActor & {callId: string}): Promise<void>;
 }
 export interface CallProvider {
   /** Dispatch must be idempotent on callId and must recheck active DB state each turn. */
@@ -90,7 +91,10 @@ export function createMasanaCallService(input: {
           tokenExpiresAt:media.expiresAt,expiresAt,state:"connecting" as const};
       } catch {
         await input.store.finish({...fan,callId,state:"failed",failureCode:"provider_unavailable"});
-        try { await input.provider.stop({callId,roomName}); } catch { /* expiry worker reconciles */ }
+        try {
+          await input.provider.stop({callId,roomName});
+          await input.store.stopConfirmed({...fan,callId});
+        } catch { /* Durable provider_stop_pending retried by J04 stop worker. */ }
         throw new CallFault("calls_unavailable",503);
       }
     },
@@ -108,8 +112,10 @@ export function createMasanaCallService(input: {
       if (!session) throw new CallFault("call_not_found",404);
       if (session.state==="ended" || session.state==="failed" || session.state==="expired") return {ended:true};
       if (!await input.store.finish({...fan,callId:id,state:"ended"})) throw new CallFault("call_not_found",404);
-      try { await input.provider.stop({callId:id,roomName:session.roomName}); }
-      catch { /* fail-closed DB state; expiry/stop reconciliation is retried */ }
+      try {
+        await input.provider.stop({callId:id,roomName:session.roomName});
+        await input.store.stopConfirmed({...fan,callId:id});
+      } catch { /* Durable provider_stop_pending remains until stop confirmed. */ }
       return {ended:true};
     },
     async status(auth: string | undefined, id: string) {
