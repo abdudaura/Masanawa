@@ -12,7 +12,7 @@ function mockDb(opts:{member?:boolean;paid?:boolean;entitled?:boolean}={}){
   if(sql.startsWith("SELECT state FROM rooms.memberships"))return {rows:opts.member===false?[]:[{state:"active"}]};
   if(sql.startsWith("SELECT 1 FROM rooms.entitlements"))return {rows:opts.entitled?[{}]:[]};
   if(sql.startsWith("SELECT 1 FROM rooms.questions"))return {rows:[{}]};
-  if(sql.startsWith("SELECT * FROM rooms.discussion_replies WHERE"))return {rows:[]};
+  if(sql.includes("FROM rooms.discussion_replies WHERE"))return {rows:[]};
   return {rows:[]};
  });
  const connection={query,release:()=>{released=true}};
@@ -24,7 +24,7 @@ describe("C39 PG discussion protects Room membership and entitlements",()=>{
   const m=mockDb({member:false});
   await expect(m.db.list(actor,"room_test","question","room-question_aabbccdd",null))
    .rejects.toMatchObject({status:403,code:"room_membership_required"});
-  expect(m.seen.some(q=>q.sql.includes("SELECT * FROM rooms.discussion_replies"))).toBe(false);
+  expect(m.seen.some(q=>q.sql.includes("FROM rooms.discussion_replies"))).toBe(false);
   expect(m.wasReleased()).toBe(true);
  });
  it("rejects paid content when the fan has no verified entitlement",async()=>{
@@ -37,7 +37,7 @@ describe("C39 PG discussion protects Room membership and entitlements",()=>{
   const m=mockDb();
   const page=await m.db.list(actor,"room_test","question","room-question_aabbccdd",null);
   expect(page.items).toEqual([]);expect(page.nextCursor).toBeNull();
-  const q=m.seen.find(x=>x.sql.includes("SELECT * FROM rooms.discussion_replies"));
+  const q=m.seen.find(x=>x.sql.includes("FROM rooms.discussion_replies"));
   expect(q?.sql).toContain("user_id=$4 AND moderation_state='held'");
   expect(q?.args).toEqual(["tenant_ours","room_test","room-question_aabbccdd","fan_ours",null,null]);
  });
