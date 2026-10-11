@@ -1535,13 +1535,14 @@
         "apps/mobile/lib/src/features/home_feed/feed_comments_sheet.dart",
         "apps/mobile/lib/src/features/home_feed/feed_post_detail_screen.dart",
         "apps/mobile/test/features/home_feed/feed_post_detail_test.dart",
-        "tests/e2e/J06/post_details.md"
+        "tests/e2e/J06/post_details.md",
+        "apps/mobile/lib/src/features/home_feed/feed_screen.dart"
       ],
       "branch": "lane/l-feed-c22-post-detail-20261011-gpt6-0500",
       "base_sha": "557a56a015f43ca16486a4b703ce47a18167cdda",
       "claimed_at": "2026-10-11T04:00:15Z",
-      "heartbeat_at": "2026-10-11T04:00:15Z",
-      "expires_at": "2026-10-11T04:05:15Z",
+      "heartbeat_at": "2026-10-11T04:04:00Z",
+      "expires_at": "2026-10-11T04:09:00Z",
       "notes": "Non-deploying integration/rebuild only; no shared app/router/main/migration registry, financial data, provider writes"
     }
   ],
