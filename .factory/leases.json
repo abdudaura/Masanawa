@@ -2064,6 +2064,31 @@
       "heartbeat_at": "2026-10-11T06:53:40.960Z",
       "expires_at": "2026-10-11T06:58:40.958Z",
       "notes": "No source_admin path (#657). No main / provider enable. Separate AF00 composition."
+    },
+    {
+      "claim_id": "l-chat-c18-history-20261011-gpt6-disjoint",
+      "owner": "L-CHAT / GPT-6 C18",
+      "scope": "Fan-private C18 Masana call history, paginated J04 call_sessions READ ONLY, existing expiry worker, retry call UX, account-safe offline/empty/errors. Separate disjoint paths from J04; AF00 owns shared composition.",
+      "paths": [
+        "packages/masana/src/call_history.ts",
+        "packages/masana/src/call_history.test.ts",
+        "adapters/storage/postgres/src/call_history/history.ts",
+        "adapters/storage/postgres/src/call_history/history.test.ts",
+        "services/gateway/src/modules/call_history/routes.ts",
+        "services/gateway/src/modules/call_history/routes.test.ts",
+        "apps/mobile/lib/src/features/call_history/call_history_api.dart",
+        "apps/mobile/lib/src/features/call_history/call_history_screen.dart",
+        "apps/mobile/test/features/call_history/call_history_screen_test.dart",
+        "tests/e2e/C18/ACCEPTANCE.md"
+      ],
+      "branch": "lane/l-chat-c18-history-20261011-gpt6",
+      "base_sha": "880597b3c5d9b76f6bb3b17e831a296fbc754891",
+      "source_pr": 643,
+      "source_head": "880597b3c5d9b76f6bb3b17e831a296fbc754891",
+      "claimed_at": "2026-10-11T06:57:18.895Z",
+      "heartbeat_at": "2026-10-11T06:57:18.895Z",
+      "expires_at": "2026-10-11T07:02:18.895Z",
+      "notes": "New only disjoint paths; no edits to J04 existing service/routes/PG/migration/worker or shared AF00 roots; stacked on J04 #643"
     }
   ],
   "history": [
