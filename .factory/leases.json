@@ -1426,6 +1426,27 @@
       "notes": "Existing PR #625 continuation, J07 preserved. AF00 owns root composition/CI/lockfile/staging and release. No live Play activation.",
       "source_pr": 625,
       "source_head": "d3e2fcda445565c83363f2b57822bc08e985a7a4"
+    },
+    {
+      "claim_id": "l-rooms-paid-access-j08-20261011-gpt6-0439",
+      "owner": "GPT-6 independent L-ROOMS J08 paid access and consumer UI",
+      "scope": "Connect existing verified-Play J08 entitlements to existing J07 Room join/lesson/question access, existing Room discovery/Flutter subscription UI; no second Play verifier/DB/queue. Exact-path nonoverlap with active J08 payment owner. AF00 retains shared Gateway/router/migration/lock/provider activation.",
+      "paths": [
+        "adapters/storage/postgres/src/rooms/repository.ts",
+        "services/gateway/src/modules/rooms/routes.ts",
+        "apps/mobile/lib/src/features/rooms/rooms_client.dart",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/room_paid_access_test.dart",
+        "adapters/storage/postgres/src/rooms/paid_access.test.ts",
+        "services/gateway/src/modules/rooms/paid_access.test.ts"
+      ],
+      "branch": "lane/l-rooms-free-questions-20261010-gpt6",
+      "base_sha": "b8155985f50c5065e3845a7530fe79bc5624f6be",
+      "source_pr": 625,
+      "claimed_at": "2026-10-11T03:40:26.393Z",
+      "heartbeat_at": "2026-10-11T03:40:26.393Z",
+      "expires_at": "2026-10-11T03:45:26.393Z",
+      "notes": "Continue SAME #625 PR, after readback/CAS. Implement join/read/write paid admission, purchase/display/retry pending through existing paid APIs; no production payments or live migration."
     }
   ],
   "history": [
