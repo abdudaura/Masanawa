@@ -60,7 +60,8 @@ export function registerRoomSubscriptionRoutes(app:FastifyInstance,p:RoomSubscri
    const roomId=pathId(req,"id");
    // A customer's accepted historical price remains verifiable after an Admin price revision.
    const price=await p.repository.findHistoricalPrice(a.tenantId,roomId,planId,revision);
-   if(!price)throw new RoomError(409,"price_version_stale");
+   if(!price||price.planId!==planId||price.version!==revision)
+    throw new RoomError(409,"price_version_stale");
    const verified=await p.play.verify(token);
    if(verified.packageName!==p.playPackageName||verified.storeProductId!==price.storeProductId||
       verified.obfuscatedAccountId!==p.purchaseAccountBinding(a.tenantId,a.userId))

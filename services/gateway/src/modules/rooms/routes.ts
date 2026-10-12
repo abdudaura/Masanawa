@@ -91,6 +91,7 @@ export function registerRoomsRoutes(app:FastifyInstance,ports:RoomsRoutePorts):v
      const source=await ports.repository.staffRoom(a,id(req));
      if(!source)throw new RoomError(409,"staff_draft_read_required");
      const eligible=await ports.isApprovedMasana(a.tenantId,source.teacherCharacterId);
+     if(!eligible)throw new RoomError(403,"masana_teacher_required");
      await ports.repository.publish(a,id(req),eligible);return {published:true};
    }catch(e){return respondError(e,reply);}
  });

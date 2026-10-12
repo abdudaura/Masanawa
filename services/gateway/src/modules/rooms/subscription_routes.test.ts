@@ -60,6 +60,13 @@ describe("J08 server-only paid subscription authorization",()=>{
   expect(params?.tokenHash).toMatch(/^[0-9a-f]{64}$/u);
   expect(JSON.stringify(params)).not.toContain(storeToken);await app.close();
  });
+ it("rejects a price returned for another plan without reaching Play",async()=>{
+  const {app,verify,repo}=setup();
+  const r=await app.inject({method:"POST",url:"/v1/rooms/room_maths/subscription/verify",
+   payload:{...payload,planId:"room-plan_other"}});
+  expect(r.statusCode).toBe(409);expect(verify).not.toHaveBeenCalled();
+  expect(repo.persistVerified).not.toHaveBeenCalled();await app.close();
+ });
  it("requires pricing_manager staff for plan writes and OIDC auth for RTDN",async()=>{
   const {app,repo}=setup();
   const r=await app.inject({method:"POST",url:"/v1/admin/rooms/room_maths/plans",payload:{period:"month"}});
