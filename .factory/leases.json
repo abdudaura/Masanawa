@@ -2297,14 +2297,14 @@
       "branch": "lane/af13-directory-presence-recovery-20261012",
       "base_sha": "950fe2e5ac66d8162b8c151a30d268eaeee76493",
       "claimed_at": "2026-10-12T22:10:53.520796+00:00",
-      "heartbeat_at": "2026-10-12T22:14:46.899094+00:00",
-      "expires_at": "2026-10-12T22:19:46.899094+00:00",
+      "heartbeat_at": "2026-10-12T22:16:24.541175+00:00",
+      "expires_at": "2026-10-12T22:21:24.541175+00:00",
       "transfer_record": {
         "from": "AF07 directory presentation; released AF13 #460 tests",
         "to": "AF13 MUI-09 named directory recovery journey",
         "basis": "Owner continuation explicitly authorizes bounded transfer for failing directory journey; no unreleased overlaps; #593 disjoint contacts source preserved, #460 recovered selectively"
       },
-      "notes": "Source and recovered tests implemented; 35 focused directory/cache/Chats/route cases running clean; reviewer/full-suite next. Original semantics/localization fixture corrections retained in logs."
+      "notes": "Implementation 92d8ba67a1f83f8b293e29a35eb07cf521e5dc55 pushed PR #692; 35 focused PASS, focused analysis zero, independent reviewer no actionable findings. Full suite executing once; four profile failures reproduced so far, no source changes since review."
     }
   ],
   "history": [
