@@ -2095,34 +2095,6 @@
       }
     },
     {
-      "base_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
-      "branch": "lane/status-masana-authorization-20261011",
-      "claim_id": "status-masana-authorization-20261011-codex",
-      "claimed_at": "2026-10-11T20:44:30.844Z",
-      "expires_at": "2026-10-12T02:14:31.271Z",
-      "heartbeat_at": "2026-10-12T02:09:31.271Z",
-      "notes": "Continuation 2026-10-12: full checkout now available; repository-pinned standalone tools outside repo, feed tsc passed; existing PG18 tests claimed before edits, Docker local disposable test database only. Full Flutter8Status+4media passed CI on16973d1; shared lockfile/router still coordinator.",
-      "owner": "Codex STATUS implementation window",
-      "paths": [
-        "packages/feed/src/index.ts",
-        "packages/feed/src/index.test.ts",
-        "packages/feed/src/review.ts",
-        "adapters/storage/postgres/src/home_feed/repository.ts",
-        "adapters/storage/postgres/src/home_feed/repository.test.ts",
-        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
-        "apps/mobile/test/features/home_feed/feed_screen_test.dart",
-        "tests/e2e/J06/status_authorization.test.mjs",
-        "docs/workstreams/STATUS-masana-authorization-20261011.md",
-        "adapters/storage/postgres/src/home_feed/review_repository.ts",
-        "adapters/storage/postgres/src/home_feed/review_repository.test.ts",
-        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
-        "adapters/storage/postgres/src/home_feed/feed.integration.test.ts"
-      ],
-      "scope": "Canonical Status feed authorization and recovery; previous overlapping feed owners explicitly released",
-      "source_head": "16973d1e0ef81aae52218720a57bb48119a05b7d",
-      "source_pr": 671
-    },
-    {
       "base_sha": "bfcc68dbc23c18ca0da38c1b027aa7f8d871944a",
       "branch": "lane/rooms-membership-invites-20261011",
       "claim_id": "rooms-ci-closure-20261011-cloud",
@@ -5542,6 +5514,37 @@
       "released_at": "2026-10-11T10:22:03.756271+00:00",
       "scope": "Integrate pinned AF09 feature source into existing root PR #600 non-main snapshot; root Talks composition, inspect CI zero-step and consolidate exact SHA; no release, no auth/payment or production execution",
       "source_pr": 600
+    },
+    {
+      "base_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
+      "branch": "lane/status-masana-authorization-20261011",
+      "claim_id": "status-masana-authorization-20261011-codex",
+      "claimed_at": "2026-10-11T20:44:30.844Z",
+      "expires_at": "2026-10-12T02:14:31.271Z",
+      "heartbeat_at": "2026-10-12T02:09:31.271Z",
+      "notes": "Continuation 2026-10-12: full checkout now available; repository-pinned standalone tools outside repo, feed tsc passed; existing PG18 tests claimed before edits, Docker local disposable test database only. Full Flutter8Status+4media passed CI on16973d1; shared lockfile/router still coordinator.",
+      "owner": "Codex STATUS implementation window",
+      "paths": [
+        "packages/feed/src/index.ts",
+        "packages/feed/src/index.test.ts",
+        "packages/feed/src/review.ts",
+        "adapters/storage/postgres/src/home_feed/repository.ts",
+        "adapters/storage/postgres/src/home_feed/repository.test.ts",
+        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
+        "apps/mobile/test/features/home_feed/feed_screen_test.dart",
+        "tests/e2e/J06/status_authorization.test.mjs",
+        "docs/workstreams/STATUS-masana-authorization-20261011.md",
+        "adapters/storage/postgres/src/home_feed/review_repository.ts",
+        "adapters/storage/postgres/src/home_feed/review_repository.test.ts",
+        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
+        "adapters/storage/postgres/src/home_feed/feed.integration.test.ts"
+      ],
+      "scope": "Canonical Status feed authorization and recovery; previous overlapping feed owners explicitly released",
+      "source_head": "3a2c1bd6526584467af9c1b2b768420a6ed2e5f1",
+      "source_pr": 671,
+      "released_at": "2026-10-12T02:14:40.929Z",
+      "handoff_head": "225d3b94742961e422141553a5861fb1abf118fa",
+      "release_reason": "Owned Status authorization/recovery/media syntax source and existing PG suite complete. Strict feed/scoped TypeScript PASS;50Vitest PASS (41mock,9real disposablePG18);11Node units PASS;8Status+4media Flutter cases PASS actual CI. PR671 head225d3b9, source3a2c1bd, handoff docs/workstreams/STATUS-masana-authorization-20261011.md. Coordinator owns shell/router/Gateway/media bindings, lockfile importer/full workspace/device/restore qualification; no merge/deploy. Exact remaining source transferred through existing PR. Own disposable database removed; source preserved."
     }
   ],
   "schema_version": 1
