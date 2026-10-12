@@ -2228,6 +2228,26 @@
       "heartbeat_at": "2026-10-12T13:45:36.510749+00:00",
       "expires_at": "2026-10-12T16:45:36.510749+00:00",
       "notes": "No live claim overlap. Owner explicitly prioritizes Android call and voice-note repair. Narrow AF06 composer/AF11 session allocation to AF05 recorded here; do not change canonical money/admission/history authority, shared router or other windows source. Recovered deleted recording source de7ad6dc6 as reference only, not wholesale restoration. Narrow AF06 transport timeout allocation: live grant client15s expires before existing provider20s deadline; pinned identity/no retry retained. Owner-directed AF00 narrow main.ts Gemini fallback voice allocation only; RESTAuthToken schema rejects current SDK-style liveConnectConstraints (production10:53Z provider400 corroborates). No routing/migrations/billing edits."
+    },
+    {
+      "claim_id": "af08-mui02-executable-validation-20261012-gpt6",
+      "owner": "AF08 / GPT-6 MUI-02 verification (AF00-scoped temporary validation workflow only)",
+      "scope": "Continue PR #680 unchanged; run real Flutter widget tests on GitHub hosted runner via isolated, disposable workflow; no change to existing CI, release or auth ownership; update one handoff then release",
+      "paths": [
+        "apps/mobile/lib/src/screens/onboarding/name_screen.dart",
+        "apps/mobile/lib/src/screens/onboarding/otp_screen.dart",
+        "apps/mobile/lib/src/screens/onboarding/password_screen.dart",
+        "apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart",
+        "apps/mobile/test/ui/mui02_auth_language_test.dart",
+        "docs/workstreams/UI-MUI-02-auth-language.md",
+        ".github/workflows/mui02-validation-20261012.yml"
+      ],
+      "branch": "lane/af08-mui02-auth-language-20261012-gpt6",
+      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "claimed_at": "2026-10-12T16:06:36.182Z",
+      "heartbeat_at": "2026-10-12T16:06:36.182Z",
+      "expires_at": "2026-10-12T16:11:36.182Z",
+      "notes": "Prior AF08 PR #680 claim released; no overlapping live claims. Isolated workflow is a narrow AF00 CI support path, never merged to main; tests execute on equivalent code tree."
     }
   ],
   "history": [
