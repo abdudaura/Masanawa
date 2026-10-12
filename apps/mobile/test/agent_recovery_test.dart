@@ -100,8 +100,9 @@ class RetryDirectory implements AgentDirectoryTransport {
   int calls = 0;
   @override
   Future<List<AgentDirectoryEntry>> loadDirectory() async {
-    if (++calls == 1)
+    if (++calls == 1) {
       throw const ApiException('private database error', statusCode: 503);
+    }
     return [agent];
   }
 
@@ -325,6 +326,81 @@ void main() {
     },
   );
 
+  testWidgets(
+    'mounted directory revokes availability during outage and recovers before denial',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final transport = FakeDirectory();
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(ProviderScope(
+          overrides: [
+            agentDirectoryTransportProvider.overrideWithValue(transport),
+            agentDirectoryCacheProvider.overrideWithValue(_NoopDirectoryCache()),
+            agentTransportProvider.overrideWithValue(RecoveringTransport()),
+            sessionProvider.overrideWith(_SignedInSessionController.new),
+          ],
+          child: MaterialApp(
+            theme: buildMasanawaTheme(brightness: Brightness.light),
+            home: const MasanaListScreen(),
+          ),
+        ));
+        await tester.pump();
+        expect(transport.requests, hasLength(1));
+        transport.requests.single.complete([agent]);
+        await tester.pumpAndSettle();
+
+        void expectPresence(String label, {required bool available}) {
+          final indicator = find.byWidgetPredicate((widget) =>
+              widget is Container &&
+              widget.constraints?.maxWidth == 13 &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration! as BoxDecoration).shape == BoxShape.circle);
+          final dot = tester.widget<Container>(indicator);
+          final colors = tester.element(indicator).masanawa;
+          expect((dot.decoration! as BoxDecoration).color,
+              available ? colors.success : colors.textMuted, reason: label);
+        }
+
+        expectPresence('Available', available: true);
+        await tester.tap(find.byTooltip('Refresh'));
+        await tester.pump();
+        expectPresence('Status unverified', available: false);
+        transport.requests[1].completeError(
+          const ApiException('private server detail', statusCode: 503),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Amina'), findsOneWidget);
+        expectPresence('Status unverified', available: false);
+        expect(find.bySemanticsLabel(RegExp('Amina: Status unverified')), findsOneWidget);
+        expect(find.textContaining('private server detail'), findsNothing);
+        await tester.tap(find.text('Retry'));
+        await tester.pump();
+        transport.requests[2].complete([agent]);
+        await tester.pumpAndSettle();
+        expectPresence('Available', available: true);
+        expect(find.bySemanticsLabel(RegExp('Amina: Available')), findsOneWidget);
+        expect(find.text('Retry'), findsNothing);
+
+        await tester.tap(find.byTooltip('Refresh'));
+        await tester.pump();
+        transport.requests[3].completeError(
+          const ApiException('private authorization detail', statusCode: 401),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Amina'), findsNothing);
+        expect(find.bySemanticsLabel(RegExp('Amina: Available')), findsNothing);
+        expect(find.text('Sign in'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
   test('feedback never echoes an unknown server or provider message', () {
     const error = ApiException(
       'postgres://secret SQL stacktrace GEMINI_API_KEY',
@@ -369,7 +445,14 @@ void main() {
         const ApiException('hidden', statusCode: 503),
       );
       await retry;
-      expect(c.read(agentDirectoryProvider).agents, [agent]);
+      // Preserve identity, not a stale claim of current availability.
+      final cached = c.read(agentDirectoryProvider).agents;
+      expect(cached, hasLength(1));
+      expect(cached.single.characterId, agent.characterId);
+      expect(cached.single.characterVersionId, agent.characterVersionId);
+      expect(cached.single.displayName, agent.displayName);
+      expect(cached.single.presence, AgentPresence.unknown);
+      expect(cached.single.activeWorkCount, 0);
       final denied = c.read(agentDirectoryProvider.notifier).refresh();
       transport.requests[2].completeError(
         const ApiException('hidden', statusCode: 401),

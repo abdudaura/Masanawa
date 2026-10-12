@@ -7,7 +7,7 @@ Map<String, dynamic> entryWithPresence(Object? value) => {
   'displayName': 'Gwani',
   'roleLabel': 'AI conversation guide',
   'about': 'Masanawa assistant',
-  if (value != null) 'presence': value,
+  'presence': ?value,
 };
 
 void main() {
@@ -32,9 +32,11 @@ void main() {
     expect(entry.presence, AgentPresence.unknown);
   });
 
-  test('malformed presence does not crash the whole agent directory', () {
+  test('malformed presence stays unverified without inventing offline status', () {
     final entry = AgentDirectoryEntry.fromJson(entryWithPresence(123));
-    expect(entry.presence, AgentPresence.offline);
+    expect(entry.presence, AgentPresence.unknown);
+    expect(entry.presenceLabel, 'Status unverified');
+    expect(entry.toJson()['presence'], 'unknown');
   });
 
   test('all recognized nonavailable states remain intact', () {
