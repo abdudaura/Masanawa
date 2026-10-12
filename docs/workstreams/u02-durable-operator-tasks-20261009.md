@@ -1,0 +1,38 @@
+# U02 — durable operator task journal (2026-10-09)
+
+**SOURCE: PARTIAL_IMPLEMENTATION · INTEGRATION: ISOLATED CODE ONLY · EVIDENCE: STATIC_AUDIT_ONLY · DEPLOYMENT: NONE.** Never merge/deploy or report source as production complete without outstanding runtime tests.
+
+## Claim and ownership
+- GPT-6 independent window; claim originally committed 2026-10-08T23:48Z. Five-minute lease renewed by ongoing commits/PR activity; not a permanent reservation.
+- Base `main`: `5e758673ae91082520b21b3153da53791ae2cbf3`. Branch `work/u02-durable-operator-tasks-20261009-gpt6`, draft/unmerged [PR #520](https://github.com/Baatiku/masanawa/pull/520).
+- Last source/test checkpoint before metadata fix: `5851bfcf4ee88f050d9b490dabd4dd7e3f59f3ce`. Metadata-only correction commit removed an accidentally copied U01 claim from this U02 tree, leaving the original U01 branch unmodified. Use the current PR head SHA for integration.
+- Exact owned paths: `packages/operator-tasks/**`, `services/gateway/src/operator_tasks/**`, this U02 handoff. No migration manifest, finance, native Firebase, global composer/router, production, merge or branch deletion.
+- Contract: `docs/AI-OPERATOR-ACTION-AND-TASK-CONTRACT-V1-20261008.md`, `docs/20-WINDOW-AI-CHAT-EXECUTION-20261008.md`, both 2026-10-08 U/F scope reconciliations and `CONTINUE-HERE.md`.
+- U01 was freshly claimed when work began (`work/u01-operator-contract-20261009-gpt6`, checkpoint `640428edf51683a02baa99b3234d8cf2247649b7`). Work #497, Firebase #461, F11 #518, financial/R/C and F12/F18 owners retain their scopes.
+
+## Implementation
+1. **New package** `@masanawa/operator-tasks` with separate TS/build configuration and PostgreSQL adapter export. No dependency edits to shared Gateway manifest.
+2. **`src/index.ts`:** canonical task/operation IDs, versioned 9-phase journal protocol, private-scoped idempotent request fingerprint, bounded stable argument digest instead of raw inputs, per-tenant/user reads, typed event cursors; task revisions/CAS, approval token random secret stored only as digest, access-session binding and expiry, token rotation, pre-operation cancel, current domain authorization recheck and explicit unknown/reconciling state.
+3. **Safety:** a successful `execute` result is NOT completion evidence. The separate trusted domain `reconcile` readback must prove an actual receipt. Execution admission is durably committed before any domain call; a client retry or reconciliation query never resubmits an uncertain external effect. Injected domain authority must implement `admit`, `authorizeConfirmation`, `execute`, and **read-only** `reconcile`.
+4. **`src/postgres.ts`** durable PostgreSQL owner/task/revision-safe repository with transactional `SELECT FOR UPDATE`, initial and CAS-state immutable-by-API task events, owner-request dedup, per-user cursor paging and atomic transaction/rollback.
+5. **`migrations/0010_operator_tasks_isolated.sql`** private standalone schema with owner-qualified unique keys, history index, task/event FK and phase constraints. NOT registered/applied: F11 must elect migration ordering and grants/role policy.
+6. **`services/gateway/src/operator_tasks/routes.ts`** strictly authenticated, no-store, field-whitelisted and Fastify-encapsulated propose, read/list/events/cancel and confirm HTTP endpoints. `prepare`/reconcile remain internal and are not publicly routable; routes are NOT mounted to the shared Gateway.
+7. **Tests authored:** 12 U02 Vitest service/security/recovery cases, 1 SQL schema contract case and 5 Fastify injection cases: `packages/operator-tasks/src/index.test.ts`, `packages/operator-tasks/src/postgres.contract.test.ts`, `services/gateway/src/operator_tasks/routes.test.ts`.
+
+## Actually executed vs unverified
+
+- **EXECUTED:** 16/16 read-only assertions on exact GitHub branch file contents passed. Checked typed ID generation, tenant/user query fencing, optimistic revision, SQL uniqueness/events, receipt readback, reauthorization, token hashing, no raw arguments, scoped routes, and presence of negative tests. **This was only static text auditing**, NOT TypeScript compilation or runtime tests.
+- **NOT EXECUTED (0 test cases run):** `pnpm install --frozen-lockfile`; `pnpm exec tsc -p packages/operator-tasks/tsconfig.json`; `pnpm exec vitest run packages/operator-tasks/src/index.test.ts packages/operator-tasks/src/postgres.contract.test.ts services/gateway/src/operator_tasks/routes.test.ts`; `pnpm --filter @masanawa/operator-tasks build`; Gateway typecheck; repository-wide `pnpm test:ci`/`pnpm typecheck`; PG18 schema migration, transaction/concurrency tests, device/provider tests.
+- **Environment blockers:** Sandbox Node v22.16.0 (repository mandates >=24 <25), no pnpm, no authenticated local checkout/workspace dependencies, no disposable PG18/provider/device. Shared Actions quota issue #457 was documented; no new green CI was observed. No scripts executed against production or financial provider.
+
+## Critical integration gaps and exact next work
+
+1. **U01 / U04 authoritative domain bridge:** Align U01 published schemas/version/permissions and U02 IDs; bind each `taskId`+`operationId` to persisted canonical domain quote/recipient/action revision and confirmation terms BEFORE invoking internal `prepare`. This source stores a digest, not the executable request and cannot act safely without real domain adapters. Recheck Block/Host/membership, persona, balance, KYC, risk, active quote, device and consent at confirm AND immediate domain effect; never install mock acceptors in production.
+2. **U03/C07/F18 UI and session:** Serve exact human-reviewed terms and protected one-time approval token from authenticated domain preparation. Reissue token after app restart/session rotation; account/persona switch must reauthorize review. U02 token binds access session, **not yet a canonical persona version**, so do not expose cross-persona approval until U01/C07 binds revision. No generic speech `yes` can authorize.
+3. **F11 DB integration:** Choose unique migration owner/sequence after reconciling collisions #472/#475/#487/#490/#497, test on disposable PG18, verify minimal role/tenant enforcement and add database-level RLS/FKs if appropriate. The source has app-scoped tenant predicates, not separately verified RLS.
+4. **F18 Gateway composition:** Add `"@masanawa/operator-tasks": "workspace:*"` to `services/gateway/package.json` only under shared ownership and mount `registerOperatorTaskRoutes` only when the genuine U04 domain authorizer and repository exist. Test Fastify, auth, 404/409 and no-cache semantics on integrated SHA.
+5. **U02 next source:** A durable service-principal recovery lease/scan for abandoned `running/reconciling` tasks and multi-operation task steps is **NOT implemented**. Current `reconcile` API method is read-only and manual/injected. A crash between CAS and the external call must not cause a second side effect; build status-only bounded recovery with real durable operation refs and test A/B/C concurrent/restart paths.
+6. **Release gates:** Run written suites, Node24 TypeScript build, PG real race tests, lost HTTP response, two-device confirmation, session logout/revocation, expense/recipient/quote revision, provider unknown outcome, and exact-amount authoritative receipts. All security/financial/domain acceptance is currently unverified.
+
+## Explicit protected scope
+No Flutter five-tab edits (U03/F12 own UI), no Billing/Crypto ledger, no person DM send, no public Talk host action, no U01 file, no Firebase native change, no Gateway `app.ts/main.ts`, no shared schema registration, no prod traffic, no migration application, no merges or branch deletes. App target remains Talks · Chats · Assistant · Wallet · Agents.
