@@ -2,6 +2,16 @@
 
 Owner direction: accelerate the agreed product, avoid duplicate/unnecessary work and indefinite handoff queues. This dispatch policy supersedes the old unrestricted “pick any narrow unfinished work” approach. Product/security requirements and exact-path protection remain.
 
+## Current owner override — 2026-10-11
+
+Main is the default development integration target. Routine development CI/CD
+from main merges is authorized. Do not hold scoped changes for release-only
+proof, unrelated baseline failures, repeated approvals or an integration-only
+queue. Run relevant checks, fix introduced failures and keep real tests,
+auth/privacy and canonical financial safeguards. Use concise handoffs; whole-app
+completion is not required for every source merge or local test handoff.
+This overrides older dispatch/Factory/handoff merge restrictions.
+
 ## Observed failure and correction
 
 At main `f381f077c485c04261459b77a42c215d3ce3a14b`, new PRs had largely delivered partial safeguards. Evidence tools #592/#594/#596/#603 and cleanup #595/#598/#599 overlap in purpose; partial contact/audio/auth/settings patches do not complete those lanes. Some tested changes were merged to different non-production integration branches, leaving main unchanged. These are dated observations; refresh exact PR heads before acting.
@@ -49,42 +59,25 @@ Before dispatch, inspect checkout access and Dart/Flutter/Node/pnpm/PostgreSQL a
 
 If no actual required runner can be obtained, record one exact blocker with commands/version/error and route its test job to a capable continuing window/local runner. Continue implementable connected source and isolated executable checks. Do not repeatedly retry zero-step CI, rewrite code into simulations and call it repository tests, or substitute more verification scripts for implementation. Auth/money/privacy source without adequate checks remains unverified and is not forced through a merge.
 
-Run relevant source/contract/negative tests at exact SHA. Do not demand production bank/device/restore proof for every safe non-deploying source merge. Real production/device/provider proof still gates activation. Test outcomes are NOT_RUN / BLOCKED / FAIL / PASS_SIMULATED / PASS_REAL.
+Run relevant source/contract/negative tests at the implementation SHA. Do not demand production bank/device/restore proof for a development merge. Distinguish development CI/CD from real financial/provider activation and release qualification. Test outcomes are NOT_RUN / BLOCKED / FAIL / PASS_SIMULATED / PASS_REAL.
 
-## One integration queue and baseline
+## Main integration and concise handoffs
 
-AF00 elects and publishes ONE continuing non-deploying integration branch after inspecting Git-hosted deployment filters/hooks, CI/migration triggers and existing branch heads. “integration” in a branch name alone is not proof it cannot deploy. Preserve existing branches and merge/cherry-pick only accounted-for unique tested source; no reset/force-push/deletion.
+Merge scoped compatible work into main after relevant checks and conflict review.
+Preserve useful unique branch source; no reset, force-push or deletion. Alternate
+integration branches are for a concrete conflict or explicit owner request, not a
+mandatory staging queue. Main's routine development CI/CD is authorized.
 
-Do not create another per-patch integration branch without a specific conflict/isolation reason. Existing AF13/AF15/AF01 branches are inputs to consolidate. A bounded source reviewer/feature owner may perform an authorized safe merge on non-overlapping files; root code edits still require the exact owner. Do not wait for a new chat just to merge a ready PR.
+For a held PR, record the exact head, concrete introduced failure/conflict or
+required missing contract, owner and next action. Unrelated existing failures and
+unavailable runners are reported precisely; do not claim them passed or disable
+checks. Keep branch protection and financial/auth/data controls.
 
-For every held PR, record exact head, current dependency/conflicting paths/failing or unavailable commands/deployment hazard, named responsible window and next executable correction. “Waiting for AF00”, “CI failed” and “not production-ready” alone are inadequate blockers. A no-step CI result is not an executed test.
-
-Completion levels: feature-source connected and tested; integrated unified SHA tested; device/provider qualified; released. Keep these separate. Main remains the eventual source of truth; a qualified reviewable integration baseline is not a released product.
-
-## Continue and hand off without fragmenting
-
-Keep one continuing branch/PR for a coherent milestone. A released short lease is not proof someone should redo the same scope. Finish the milestone's missing source, wire canonical adapters, resolve applicable source failures and reach a justified safe integration result. A micro-fix handoff must state which original milestone remains and transfer that continuation, rather than advertise the whole AF lane as completed.
-
-If a real dependency/toolchain prevents completion, publish the source and precise handoff, then continue a dependency-independent part of the same milestone or an explicitly claimed next critical milestone. Do not invent new low-priority work merely to appear active.
-
-Before local pull/rebuild, AF00 publishes exact unified source SHA, adopted/superseded PR dispositions, local-source reconciliation status, migrations/config requirements, executable build/analyzer/test results, remaining disabled/unqualified features and reproducible APK steps. Never say “all done” from a PR count.
-
-## Owner's pre-pull completion boundary — 2026-10-10
-
-Finish all implementable source and integration here before asking the owner to pull locally. Local execution is reserved for genuinely unavailable toolchains, devices, credentials or provider environments; it is not a destination for missing feature code, unwired routes, unallocated migrations or unresolved source conflicts. This is a source-completion boundary, not permission to claim unrun checks passed or activate unqualified financial/provider behavior.
-
-Every continuing milestone PR must maintain a finite closure checklist derived from the agreed journeys:
-- Required source item and exact paths; current implementation commit or explicit missing source.
-- Named current implementation owner; dependency contract and bounded composition transfer if needed.
-- Source state: MISSING / IN_PROGRESS / IMPLEMENTED_UNVERIFIED / SOURCE_CHECKED / INTEGRATED.
-- Separate execution result and environment; integration target and exact integrated SHA.
-- For a local-only check, the exact missing capability, attempted command/error, owner and reproducible next command. An unavailable test runner never makes missing implementation local-only.
-
-At each handoff, identify which checklist items were closed and continue the highest-priority remaining implementable item. A released lease or finished small patch does not close the customer milestone. If the current session must end, explicitly transfer those remaining items in the existing PR; the next window resumes the checklist instead of opening an unrelated helper. Do not manufacture activity or repeat documentation/zero-step CI while core source is missing.
-
-AF00 must publish the reviewed single integration target and a queue of exact-head composition tasks. Distinguish awaiting feature source, unresolved source conflict and unavailable execution; do not bundle them as “waiting for tests”. Implement imports, authenticated bindings, client routes, allocated migrations, worker registration and config validation under exact-path ownership while running all checks actually available. Delegate bounded composition through the registry when capacity blocks progress; never silently seize paths or merge known failing/unsafe source.
-
-Before requesting the local pull, publish one pinned unified source SHA and the closure checklist: no required source item may remain MISSING/IN_PROGRESS or disconnected. List unavailable checks honestly and provide the local reconciliation/test/build commands. The owner's unseen local fixes still require preservation and reconciliation; do not claim them reconciled remotely. After local tests, repair any discovered defects before release. Remote source completion and real end-to-end qualification are separate claims.
+Continue useful implementable source. A concise handoff identifies implemented
+behavior, source SHA, relevant test results and remaining work. No full-product
+completion checklist or release qualification is required before a scoped merge
+or local test handoff. Source, integrated code, device/provider qualification and
+released product are separate evidence levels.
 
 ## Pending owner-reported chat speed and billing continuity — 2026-10-10
 
