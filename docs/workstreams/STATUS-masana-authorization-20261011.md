@@ -4,7 +4,7 @@ Owner: Codex STATUS implementation window. Date: 2026-10-11 UTC.
 PR: https://github.com/weavewellindustrieslimited/masanawa/pull/671
 Branch: lane/status-masana-authorization-20261011
 Base: integration/rebuild @ e33490013c54a9dc3a86c8fcb526a01634df3992
-Implemented and executed source HEAD: 9b01f5e99289ab493370fafe510d1ba6f118a821
+Implemented and executed source HEAD: 16973d1e0ef81aae52218720a57bb48119a05b7d
 Main inspected before and after implementation: a8e1c84cebcec9604a6b7c9cbdafc6ba6c2b036d, including merged #668.
 Final handoff commit changes documentation only; the PR branch supplies its exact current head.
 
@@ -19,6 +19,7 @@ Exact-path workstream claim pushed and read back at d316f84 before implementatio
 - adapters/storage/postgres/src/home_feed/repository.test.ts
 - adapters/storage/postgres/src/home_feed/review_repository.ts
 - adapters/storage/postgres/src/home_feed/review_repository.test.ts
+- apps/mobile/lib/src/features/home_feed/feed_media_screen.dart
 - apps/mobile/lib/src/features/home_feed/feed_screen.dart
 - apps/mobile/test/features/home_feed/feed_screen_test.dart
 - tests/e2e/J06/status_authorization.test.mjs
@@ -29,11 +30,11 @@ No financial, auth authority, shared shell/router, Gateway composition, localiza
 ## Connected source / finite closure (J06, C21, A05/A06)
 | Item | Owner / paths | Source | Executed result |
 | --- | --- | --- | --- |
-| Masana-only direct publication; reject fan, staff bypass, spoofed/unapproved identity and invalid text/media | STATUS / feed index | IMPLEMENTED_UNVERIFIED, 9b01f5e99289ab493370fafe510d1ba6f118a821 | PASS_SIMULATED Node source units |
+| Masana-only direct publication; reject fan, staff bypass, spoofed/unapproved identity and invalid text/media | STATUS / feed index | IMPLEMENTED_UNVERIFIED, 16973d1e0ef81aae52218720a57bb48119a05b7d | PASS_SIMULATED Node source units |
 | Reuse independent staff draft/review authority; repair blocking validator syntax | STATUS / review.ts | IMPLEMENTED_UNVERIFIED | Before repair runtime parser FAIL reproduced; fixed source parser and independent-review unit PASS |
 | Feed/detail/comment read and reaction/comment insert recheck approved active platform author in tenant | STATUS / feed repository | IMPLEMENTED_UNVERIFIED | PASS_SIMULATED SQL-contract/mocked-pool cases; real PG NOT_RUN |
 | Final immediate approval, scheduling and due publication SQL recheck current author eligibility | STATUS / review repository | IMPLEMENTED_UNVERIFIED | PASS_SIMULATED denial/rollback/no-audit tests; real PG races NOT_RUN |
-| Feed disable/account replacement invalidate responses, reset pagination and clear projections; revoked session clears posts; offline refresh retains same-account content; reactions serialize/rollback/retry; pagination error retry; short lists refresh | STATUS / feed_screen.dart | IMPLEMENTED_UNVERIFIED | 8 total Flutter widget cases authored, NOT_RUN |
+| Feed disable/account replacement invalidate responses, reset pagination and clear projections; revoked session clears posts; offline refresh retains same-account content; reactions serialize/rollback/retry; pagination error retry; short lists refresh | STATUS / feed_screen.dart | IMPLEMENTED_UNVERIFIED | 8/8 Flutter widget tests PASS_SIMULATED in actual CI runner (UI stubs), source 16973d1 |
 | Preserve #668 five tabs; mount actual Masana Status and remove human composer | coordinating window / apps/mobile/lib/src/shell/five_tab_shell.dart | MISSING on inspected main | NOT_RUN; exact transfer request below |
 | Authenticate and bind canonical feed/editorial repositories/author+media verifiers, register existing routes/migrations, nested media/profile/report destinations | coordinating window / protected composition | NOT VERIFIED / must inspect current source | NOT_RUN |
 | Full workspace, PG18, Flutter and device qualification | coordinator / qualified runner | Pending execution | BLOCKED, exact requirements below |
@@ -46,11 +47,11 @@ Environment: isolated source snapshot fetched through authenticated GitHub conne
 - Node `stripTypeScriptTypes(readFileSync(path), {mode:'transform'})` on all 7 changed TypeScript source/test files: **PASS syntax transform**, not TypeScript typecheck.
 - `node --experimental-transform-types /tmp/status-review-before.ts` using preserved original review.ts from the base snapshot: **FAIL reproduced**, ERR_INVALID_TYPESCRIPT_SYNTAX at the unmatched parenthesis in validateDraft; corrected source successfully loads in the 11-test suite.
 - `git diff --check`: **PASS**.
-- GitHub exact-source readback for all 10 source/test paths at 9b01f5e99289ab493370fafe510d1ba6f118a821: matched the executed local snapshot byte for byte. This is source integrity evidence, not runtime E2E.
+- GitHub exact-source readback for all 10 backend/feed source/test paths at 9b01f5e99289ab493370fafe510d1ba6f118a821, unchanged at 16973d1; media repair readback at 16973d1: matched the executed local snapshot byte for byte. This is source integrity evidence, not runtime E2E.
 - `git clone https://github.com/weavewellindustrieslimited/masanawa.git /workspace/masanawa`: **BLOCKED**, configured proxy port 8080 unreachable. No proxy bypass attempted.
 - `pnpm --filter @masanawa/feed typecheck` in the isolated snapshot: printed **No projects found**, NOT_RUN despite exit code 0. Full manifests/dependencies are absent; no compilation pass claimed.
-- `command -v flutter`, `command -v dart`, `command -v psql`: absent. Flutter analyzer/widgets/APK and actual PG18 qualification **NOT_RUN/BLOCKED**.
-- Exact-source CI Foundation run 38173645321, job 114571321074: **FAIL**, real steps ran. Install failed ERR_PNPM_PACKAGE_MANAGER_NO_IMPORTER because pnpm-lock.yaml lacks importers[packages/feed]; Typecheck skipped, Test/Build failed at dependency setup, actual Vitest/PG tests did not execute. Eighteen separate provider-tooling tests passed, not Status or provider E2E. Runner checked PR merge ref 79b1f6cd19df6a0ba9c87671d67a0bf349088cfe (source 9b01f5e into integration base 5ebc77a1). Coordinator exclusively owns pnpm-lock.yaml: regenerate against current workspace with pnpm 12.8.2, preserve all importers/pinned versions, rerun the checks; this lane has not edited the lockfile. Mobile Build 38173645324 has a real Flutter runner and was still in progress; local Flutter unavailable does not mean CI unavailable. Inspect actual widget/analyzer/build steps before integration. Combined Vercel failed build-rate-limit; no Status test failure established by that status.
+- `command -v flutter`, `command -v dart`, `command -v psql`: absent. Local Flutter/PG qualification **BLOCKED**. Actual GitHub Flutter execution is recorded below.
+- Exact-source CI Foundation run 38173645321, job 114571321074: **FAIL**, real steps ran. Install failed ERR_PNPM_PACKAGE_MANAGER_NO_IMPORTER because pnpm-lock.yaml lacks importers[packages/feed]; Typecheck skipped, Test/Build failed at dependency setup, actual Vitest/PG tests did not execute. Eighteen separate provider-tooling tests passed, not Status or provider E2E. Runner checked PR merge ref 79b1f6cd19df6a0ba9c87671d67a0bf349088cfe (source 9b01f5e into integration base 5ebc77a1). Coordinator exclusively owns pnpm-lock.yaml: regenerate against current workspace with pnpm 12.8.2, preserve all importers/pinned versions, rerun the checks; this lane has not edited the lockfile. Mobile Build 38173645324 was superseded; final source execution results are recorded below. Combined Vercel failed build-rate-limit; no Status test failure established by that status.
 
 ## Bounded repository-visible transfer request to coordinating window
 Requested shared path: **apps/mobile/lib/src/shell/five_tab_shell.dart** (owner retains authority; this lane has NOT edited it).
@@ -58,7 +59,7 @@ Requested shared path: **apps/mobile/lib/src/shell/five_tab_shell.dart** (owner 
 2. Replace Status's current TalkHomeScreen with existing `MasanaFeedScreen` and `DioFeedApi(existingAuthenticatedDio)`; supply a canonical current-account key, enable state and existing approved-media/profile/report bindings.
 3. Remove Status `FloatingActionButton` “New status” pointing at `/talk/create`. Humans cannot publish consumer Status. Staff publish only through existing independent A05/A06 editorial workflow; approved Masana service identities use the canonical service.
 4. Clear/pop nested post/comment/media screens on logout/account replacement. Passing a frozen prior-account key into a pushed route is not account replacement.
-5. If adopting this feature from integration into main, keep #668 shell/source intact and transplant these 11 scoped paths only; do not merge the unrelated historical integration tree over main. This PR targets the coordinator's existing non-deploying integration/rebuild, never auto-merge main.
+5. If adopting this feature from integration into main, keep #668 shell/source intact and transplant these 12 scoped paths only; do not merge the unrelated historical integration tree over main. This PR targets the coordinator's existing non-deploying integration/rebuild, never auto-merge main.
 
 Protected Gateway/worker/migration binding remains with coordinating window. Before enabling, verify principal comes solely from canonical server session; approvedMasana and scheduled verifier resolve tenant + approved revision + active platform-owned canonical identity; media resolver validates current rights/ownership; register existing routes once and retain their kill switches. No new publisher, queue, media registry, auth store or financial ledger is introduced here.
 
@@ -76,4 +77,21 @@ Protected Gateway/worker/migration binding remains with coordinating window. Bef
 Next implementable action is coordinator-owned Status shell/API composition, not another feed subsystem. Remaining lane source is explicitly transferred to that continuing window through this PR and handoff.
 
 ## Additional Status compilation blocker claimed before edit
-Exact added path: apps/mobile/lib/src/features/home_feed/feed_media_screen.dart. Actual Flutter analyzer at PR merge SHA 79b1f6c reports expected ')' at line 136 in Slider callback. Fix the missing Slider closing parenthesis, retaining existing C23 signed-media/audio behavior and tests. Prior media owner is released and no unreleased overlapping registry owner found. The separate MyTwinRouteScreen error at shared app_router.dart:236 remains with coordinator; do not restore retired Twin onboarding.
+Exact added path: apps/mobile/lib/src/features/home_feed/feed_media_screen.dart. Actual Flutter analyzer at PR merge SHA 79b1f6c reports expected ')' at line 136 in Slider callback. Fixed the missing Slider closing parenthesis at 16973d1, retaining existing C23 signed-media/audio behavior and tests. Prior media owner is released and no unreleased overlapping registry owner found. The separate MyTwinRouteScreen error at shared app_router.dart:236 remains with coordinator; do not restore retired Twin onboarding.
+
+## Final executed CI and continuation checkpoint — 2026-10-12 UTC
+Final implemented source SHA: **16973d1e0ef81aae52218720a57bb48119a05b7d**.
+PR merge test SHA: **f139acf** (16973d1 into integration snapshot 5ebc77a1f36ca2dc462f4f2ef6e0dff682d98230).
+Final handoff commit changes documentation only.
+
+- Mobile Build **38173867952**, consumer job **114572049917**: actual Flutter full test command executed. **8/8 feed_screen_test.dart cases PASS_SIMULATED** (Flutter widget runtime with stub FeedApi), including human-composer absence, account replacement, feature disable/late result, stale pagination lock, offline/401, reaction rollback/retry and pagination failure recovery. **4/4 existing feed_media_screen_test.dart cases PASS_SIMULATED**, including server-grant gating, scoped media ID, account-switch rejection and disabled/denied media state. These are actual executed widget tests, not real API/DB/device E2E.
+- The repaired feed_media_screen.dart has **no analyzer syntax error** on this run. Consumer analyze still **FAIL** with the one source error `apps/mobile/lib/src/router/app_router.dart:236:34 MyTwinRouteScreen isn't a class` and unrelated lint debt. Full consumer tests **FAIL** on unrelated account privacy/video/wallet/directory/localization/profile/retired-Talk cases and app route compilation; relevant Status tests passed. Production APK/Web release steps **FAIL**; no binary qualified.
+- Same run Admin job **114572050078**: analyzer **PASS**, full widget suite **FAIL**, debug APK **PASS**. This is Admin-only evidence, not consumer Status/device release proof.
+- Foundation **38173868160**, job **114571991857**: actual dependency install **FAIL** `ERR_PNPM_PACKAGE_MANAGER_NO_IMPORTER`, missing `pnpm-lock.yaml importers["packages/feed"]`; typecheck **SKIPPED**, package test/build fail before source execution. Real PG18/Vitest source qualification remains blocked. Coordinator owns this exact lockfile path and must regenerate/check the current pinned workspace without weakening frozen installation.
+- Continuation reran `node --experimental-transform-types tests/e2e/J06/status_authorization.test.mjs`: **11/11 PASS_SIMULATED**; `git diff --check` **PASS**.
+- Main remains a8e1c84 after refreshed read. No merge, main mutation, production operation, provider call or paid resource performed.
+
+### Exact remaining source transfer / execution owner
+The **coordinating window** owns the remaining implementable source: `apps/mobile/lib/src/shell/five_tab_shell.dart` must mount actual Masana Status and remove the human composer; `apps/mobile/lib/src/router/app_router.dart` must remove/retire the stale MyTwinRouteScreen reference rather than restoring Twin onboarding; protected Gateway/worker/migration composition must connect existing canonical auth/feed/editorial/media modules. The exact narrow changes are described above. Status owner has not edited these protected paths.
+The coordinator also owns `pnpm-lock.yaml` repair, exact integrated-SHA TS/Vitest/PG18 and consumer build reruns. Device/signing/provider/production checks remain separate and unverified.
+Full Status journey remains **PARTIAL_IMPLEMENTATION**; owned source authorization/recovery/media syntax increment is implemented and its scoped executable units/widgets pass. Next action: coordinator composes these existing modules and qualifies the unified SHA. Preserve source and continue PR #671; do not open another publisher/feed subsystem.
