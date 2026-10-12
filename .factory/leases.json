@@ -2264,6 +2264,21 @@
       "source_pr": 684,
       "source_head": "93797a4b5908ed4f4ea14e2484dc740e75549b13",
       "integration_head_sha": "b398aa27c1259d4e69546be91b1c2b00ccc29fd7"
+    },
+    {
+      "claim_id": "af03-mui08-crypto-20261012",
+      "owner": "Codex AF03 MUI-08",
+      "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
+      "paths": [
+        "apps/mobile/lib/src/finance/crypto_wallet_screen.dart",
+        "apps/mobile/test/ui/mui08_crypto_test.dart",
+        "docs/workstreams/UI-MUI-08-crypto.md"
+      ],
+      "branch": "lane/af03-mui08-crypto-20261012",
+      "base_sha": "1337917a7e063971fd083deb4d0ce4b59310b219",
+      "claimed_at": "2026-10-12T19:27:20.480107+00:00",
+      "heartbeat_at": "2026-10-12T19:27:20.480107+00:00",
+      "expires_at": "2026-10-12T19:32:20.480107+00:00"
     }
   ],
   "history": [
