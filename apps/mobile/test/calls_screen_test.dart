@@ -237,6 +237,32 @@ void main() {
     expect(find.text('Amina private previous query'), findsNothing);
   });
 
+  testWidgets('account replacement while searched request is pending clears all old rows', (tester) async {
+    final pending = Completer<CallHistoryPage>();
+    final session = _Session();
+    var initialRequests = 0;
+    await _mount(
+      tester,
+      session,
+      _Transport(
+        (_) async => page(initialRequests++ == 0 ? 'Old recent' : 'New recent'),
+        searchHandler: (_, query) => query == 'amina'
+            ? pending.future
+            : Future.value(page('New recent')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'amina');
+    await tester.pump(const Duration(milliseconds: 355));
+    session.change('account-b');
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    pending.complete(page('Old searched account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Old searched account'), findsNothing);
+    expect(find.text('New recent'), findsOneWidget);
+  });
+
   testWidgets('search distinguishes no matching calls and supports retry', (tester) async {
     var offline = true;
     await _mount(
