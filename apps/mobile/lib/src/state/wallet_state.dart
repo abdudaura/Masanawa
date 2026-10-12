@@ -10,20 +10,30 @@ final walletTransportProvider = Provider<WalletTransport>(
 );
 
 class WalletController extends AsyncNotifier<WalletView?> {
+  String? _accountId(SessionState session) =>
+      session is SessionSignedIn ? session.user.id : null;
+
   @override
   Future<WalletView?> build() async {
-    final signedIn = ref.watch(isSignedInProvider);
+    final accountId = ref.watch(sessionProvider.select(_accountId));
     final transport = ref.watch(walletTransportProvider);
-    if (!signedIn) return null;
+    if (accountId == null) return null;
     return transport.load();
   }
 
   Future<void> refresh() async {
-    if (!ref.read(isSignedInProvider)) return;
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(walletTransportProvider).load(),
-    );
+    final accountId = _accountId(ref.read(sessionProvider));
+    if (accountId == null) return;
+    // Keep every read under Riverpod's Future lifecycle. Manual state writes
+    // after await bypass its stale-result fencing, including the initial load
+    // completing after a refresh or a response arriving after account changes.
+    ref.invalidateSelf();
+    try {
+      await future;
+    } catch (_) {
+      // build publishes AsyncError for the mounted retry UI. RefreshIndicator
+      // and existing background callers do not need an unhandled rejection.
+    }
   }
 
   Future<CreditTransferReceipt?> sendCredits({
@@ -31,10 +41,9 @@ class WalletController extends AsyncNotifier<WalletView?> {
     required int amountCredits,
   }) async {
     try {
-      final receipt = await ref.read(walletTransportProvider).sendCredits(
-            recipient: recipient,
-            amountCredits: amountCredits,
-          );
+      final receipt = await ref
+          .read(walletTransportProvider)
+          .sendCredits(recipient: recipient, amountCredits: amountCredits);
       await refresh();
       return receipt;
     } catch (_) {
@@ -47,7 +56,9 @@ class WalletController extends AsyncNotifier<WalletView?> {
     required int amountCredits,
   }) async {
     try {
-      final receipt = await ref.read(walletTransportProvider).sendGift(
+      final receipt = await ref
+          .read(walletTransportProvider)
+          .sendGift(
             recipientCharacterId: recipientCharacterId,
             amountCredits: amountCredits,
           );
@@ -59,7 +70,6 @@ class WalletController extends AsyncNotifier<WalletView?> {
   }
 }
 
-final walletProvider =
-    AsyncNotifierProvider<WalletController, WalletView?>(
+final walletProvider = AsyncNotifierProvider<WalletController, WalletView?>(
   WalletController.new,
 );
