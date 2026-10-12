@@ -2274,14 +2274,16 @@
         "apps/mobile/lib/src/state/wallet_state.dart",
         "apps/mobile/test/ui/mui07_wallet_test.dart",
         "apps/mobile/test/wallet_account_fencing_test.dart",
+        "apps/mobile/test/wallet_service_shortcuts_test.dart",
+        "docs/workstreams/UI-MUI-03-chats.md",
         "docs/workstreams/UI-MUI-07-wallet.md"
       ],
       "branch": "lane/af03-mui07-wallet-presentation-20261012",
       "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
       "claimed_at": "2026-10-12T17:24:49.811891+00:00",
-      "heartbeat_at": "2026-10-12T17:31:43.377246+00:00",
-      "expires_at": "2026-10-12T17:36:43.377246+00:00",
-      "notes": "First6 race tests now PASS; related Wallet regressions and focusedDart executing; locale date fixture corrected; adding initial-load-v-refresh/account/logout read races before final source review."
+      "heartbeat_at": "2026-10-12T17:32:23.923235+00:00",
+      "expires_at": "2026-10-12T17:37:23.923235+00:00",
+      "notes": "First6 race tests now PASS; related Wallet regressions and focusedDart executing; locale date fixture corrected; adding initial-load-v-refresh/account/logout read races before final source review. Bounded related test-fixture theme correction after executed Wallet shortcuts failure; MUI03 handoff-only update for fresh claim/PR source reconciliation. No MUI03 source ownership taken."
     }
   ],
   "history": [
