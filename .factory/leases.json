@@ -2281,9 +2281,9 @@
       "branch": "lane/af03-mui07-wallet-presentation-20261012",
       "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
       "claimed_at": "2026-10-12T17:24:49.811891+00:00",
-      "heartbeat_at": "2026-10-12T17:41:15.955995+00:00",
-      "expires_at": "2026-10-12T17:46:15.955995+00:00",
-      "notes": "PR686 head416a2139c.96 focusedPASS/zeroDart; full source524pass10fail, untouched baseline still finishing. Duration-cap test full-run timing failure: unchangedtest/controller, immediate full13test group recheckPASS. CI Foundation TalkIdTS2459 and Mobilefullanalysis324diagnostics failures retained; no checksdisabled."
+      "heartbeat_at": "2026-10-12T17:43:56.648166+00:00",
+      "expires_at": "2026-10-12T17:48:56.648166+00:00",
+      "notes": "PR686 MERGED normally at867d1288885bc335ee0f2704504de8135580dc72, exact head/source416a2139c8dccf4747e7ec289ddecd7c381190c3. Five executedapp/test blobs equal mergedmain.96 focusedPASS/zeroDart; fullFAIL recorded baseline496/9 source524/10, relatedWalletfixturefixed, two timing-sensitiveaudio rechecksPASS; Docs finalhandoff on docs/mui07-verified-wallet-handoff-20261012 underway."
     }
   ],
   "history": [
