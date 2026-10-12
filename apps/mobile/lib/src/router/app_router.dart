@@ -66,14 +66,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (isSignedIn && (path == '/phone-login' || path == '/otp')) {
-        final user = (session as SessionSignedIn).user;
+        final user = session.user;
         return user.isNewUser ? '/name' : '/home';
       }
 
       if (path == '/name') {
         if (session is SessionNameRequired) return null;
         if (isSignedIn) {
-          final user = (session as SessionSignedIn).user;
+          final user = session.user;
           return user.isNewUser ? null : '/home';
         }
         return '/phone-login';
