@@ -89,7 +89,7 @@ describe.skipIf(!databaseUrl)("Masana call history on PostgreSQL", () => {
 
   it("searches the authorized full history before pagination rather than filtering one page locally", async () => {
     const userId = "search-pages";
-    const created = [];
+    const created: string[] = [];
     for (let i = 0; i < 4; i++) {
       const callId = await repository.recordIssued({ ...scope, userId, characterId: "masana-a", expiresAt: expiresAt() });
       created.push(callId);
