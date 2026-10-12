@@ -1,6 +1,17 @@
 # Continue Masanawa
 
-Updated 2026-10-11. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
+Updated 2026-10-12. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
+
+## Latest calls delivery and direct continuation — 2026-10-12
+
+Native call reporting, persisted recents and private 2–4 Masana group calls are
+merged to main at `757cf5657`. Canonical platform voice billing and durable
+reservation/settlement recovery are included. Read the
+[direct next-window handoff](docs/workstreams/CALLS-NEXT-WINDOW-HANDOFF-20261012.md)
+and [executed AF11 evidence](docs/workstreams/AF11-masana-call-history-20261011.md).
+The next calls source lane is incoming Masana signaling/push; signed device and
+real provider qualification remain unrun. Fetch fresh main and claims before
+starting, and preserve other windows' work.
 
 ## Current development policy — 2026-10-11
 
@@ -43,9 +54,12 @@ where qualified. P2P exchanges MSN only against counterparty fiat, with
 escrow; there is no direct platform fiat withdrawal. Rooms are audio-focused
 groups.
 
-## Recover before implementing
+## Historical recovery note — inspect fresh main first
 
-The owner reports locally fixed source and a built APK. That local source, commit/dirty diff and artifact are **not yet available to this window**. AF00 must preserve and reconcile them before replacing affected screens. GitHub main observed at `5e758673ae91082520b21b3153da53791ae2cbf3`; use fresh refs when starting.
+This note predates merged #668 and the calls delivery above. The owner's pushed
+updates and calls source have since been integrated into main; the old missing
+local-source report is not a current blocker. Preserve any newer local edits and
+inspect fresh refs before replacing affected screens.
 
 Existing drafts include #497 integration, #576 MSN, #575/#578 calls, #468/#508 contacts and #529/#530 chat polish. They are recovery inputs, not proof of completion. Inspect exact heads and unique changes, then test and integrate in dependency order. See recovery map for every old R/C/U/F lane; none is silently marked DONE.
 
