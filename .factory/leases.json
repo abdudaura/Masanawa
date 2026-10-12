@@ -583,7 +583,6 @@
       "notes": "Layer breach reproduced at #600 exact Vitest run 38040972085: storage/postgres following_repository.ts imports services/gateway. Move types only; do not add duplicated authority or bypass architecture guard; requires same-sha Typecheck + test. No migrations, providers or production behavior. Narrow reviewed stale recovery: two talk_profile_routes paths transferred to quality-profile-authority-20261011-cloud; preserved branch 3c0e88489baa7b5ad99dff66e69325f23937f086; pushed recovery record lane/quality-profile-authority-20261011@d32861984 docs/workstreams/AF13-quality-profile-authority-20261011.md. Remaining paths unchanged.",
       "owner": "GPT-6 AF06 continuing existing PR #497 chat lifecycle repair",
       "paths": [
-        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
         "apps/mobile/test/chat/chat_action_account_test.dart",
         "packages/agents/src/talk-replay.test.ts",
         "services/gateway/src/audio_posts/following.ts",
@@ -647,7 +646,15 @@
         "adapters/storage/postgres/src/audio_posts/following_repository.ts"
       ],
       "scope": "AF00/AF09 integration repair: move canonical Published Audio Record/Following repository types into packages/contracts; preserve Gateway re-exports and adapter imports, fixing real adapter inward-dependency violation without loosening architecture tests",
-      "source_pr": 600
+      "source_pr": 600,
+      "transferred_paths": [
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart"
+      ],
+      "transfer_record": {
+        "to": "af06-mui03-mounted-chats-search-20261012-gpt6",
+        "at": "2026-10-12T16:37:08.123Z",
+        "basis": "Reviewed expired 2026-10-10 broad claim, branch work/af00-root-navigation-20261010-masanawa01-c at 3c0e88489baa7b5ad99dff66e69325f23937f086 divergent 422 behind current main; main MUI-01 #678 already changes chat_list_screen.dart; preserve original branch and all other stale paths; transfer this exact path only for requested MUI-03."
+      }
     },
     {
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
@@ -2228,6 +2235,23 @@
       "heartbeat_at": "2026-10-12T13:45:36.510749+00:00",
       "expires_at": "2026-10-12T16:45:36.510749+00:00",
       "notes": "No live claim overlap. Owner explicitly prioritizes Android call and voice-note repair. Narrow AF06 composer/AF11 session allocation to AF05 recorded here; do not change canonical money/admission/history authority, shared router or other windows source. Recovered deleted recording source de7ad6dc6 as reference only, not wholesale restoration. Narrow AF06 transport timeout allocation: live grant client15s expires before existing provider20s deadline; pinned identity/no retry retained. Owner-directed AF00 narrow main.ts Gemini fallback voice allocation only; RESTAuthToken schema rejects current SDK-style liveConnectConstraints (production10:53Z provider400 corroborates). No routing/migrations/billing edits."
+    },
+    {
+      "base_sha": "eecea844349738b1e9a7227fa31d859f438503e9",
+      "branch": "lane/af06-mui03-chats-search-20261012-gpt6",
+      "claim_id": "af06-mui03-mounted-chats-search-20261012-gpt6",
+      "claimed_at": "2026-10-12T16:37:08.128Z",
+      "expires_at": "2026-10-12T16:42:08.128Z",
+      "heartbeat_at": "2026-10-12T16:37:08.128Z",
+      "owner": "AF06 / MUI-03 GPT-6",
+      "lane": "AF06",
+      "scope": "Mounted Chats search: immediate filtering of authenticated, Masana-directory-approved local conversation threads and account-fenced state; preserve pin/archive/open/read. C10 server-wide query remains a separate AF00 integration gap.",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
+        "apps/mobile/test/ui/mui03_chats_search_test.dart",
+        "docs/workstreams/UI-MUI-03-chats.md"
+      ],
+      "notes": "Stale exact-path recovery documented on prior claim; no AF00 shared router, Gateway, migration or financial changes."
     }
   ],
   "history": [
