@@ -4,6 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../calls/call_history.dart';
+import '../../calls/call_lifecycle_reporter.dart';
+import '../../calls/group_call_screen.dart';
+import '../../calls/group_call_controller.dart';
+import '../../calls/group_call_transport.dart';
+import '../../calls/group_paid_voice_transport.dart';
+import '../../calls/group_paid_voice_outbox.dart';
+import '../../core/providers.dart';
+import '../../state/agent_directory_state.dart';
+import '../../voice/paid_voice_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -11,6 +20,8 @@ class CallsScreen extends ConsumerWidget {
   const CallsScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(callLifecycleReporterProvider);
+    ref.watch(groupPaidVoiceOutboxProvider);
     final session = ref.watch(sessionProvider);
     final u = context.masanawa;
     return Scaffold(
@@ -18,6 +29,13 @@ class CallsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Calls'),
         actions: [
+          IconButton(
+            tooltip: 'Call multiple Masana',
+            icon: const Icon(Icons.groups_outlined),
+            onPressed: session is SessionSignedIn
+                ? () => _openGroup(context, ref, session)
+                : null,
+          ),
           IconButton(
             tooltip: 'Choose a Masana',
             icon: const Icon(Icons.add_call),
@@ -36,6 +54,130 @@ class CallsScreen extends ConsumerWidget {
           : session is SessionRestoring
           ? const Center(child: CircularProgressIndicator())
           : const Center(child: Text('Sign in to see your calls.')),
+    );
+  }
+
+  Future<void> _openGroup(
+    BuildContext context,
+    WidgetRef ref,
+    SessionSignedIn session,
+  ) async {
+    final accountId = session.user.id;
+    final container = ProviderScope.containerOf(context, listen: false);
+    String? currentAccount() {
+      final current = container.read(sessionProvider);
+      return current is SessionSignedIn ? current.user.id : null;
+    }
+
+    final reporter = ref.read(callLifecycleReporterProvider);
+    final owner = reporter.captureOwner();
+    if (owner == null || owner.accountId != accountId) return;
+    await ref.read(agentDirectoryProvider.notifier).refresh();
+    if (!context.mounted || currentAccount() != accountId) return;
+    final contacts = ref
+        .read(agentDirectoryProvider)
+        .agents
+        .map(
+          (agent) => GroupContact(
+            characterId: agent.characterId,
+            displayName: agent.displayName,
+            supportAgent: agent.supportAgent,
+          ),
+        )
+        .toList(growable: false);
+    final bindings = <String, CallLifecycleBinding>{};
+    CallLifecycleBinding binding(String? callId) =>
+        bindings.putIfAbsent(callId ?? '', () => reporter.bind(owner, callId));
+    final api = ref.read(apiClientProvider);
+    final transport = GatewayGroupCallTransport(
+      api: api,
+      accessToken: owner.accessToken,
+      accountKey: accountId,
+      currentAccountKey: currentAccount,
+    );
+    final paid = GroupPaidVoiceTransport(
+      api: api,
+      accessToken: owner.accessToken,
+      outbox: ref.read(groupPaidVoiceOutboxProvider),
+      accountKey: accountId,
+      currentAccountKey: currentAccount,
+    );
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (groupContext) => Consumer(
+          builder: (context, groupRef, _) {
+            final currentSession = groupRef.watch(sessionProvider);
+            return GroupCallScreen(
+              accountKey: currentSession is SessionSignedIn
+                  ? currentSession.user.id
+                  : 'signed-out',
+              currentAccountKey: currentAccount,
+              contacts: contacts,
+              transport: transport,
+              onChildConnected: (grant) => binding(grant.callId).connected(),
+              onChildClosed: (grant) => binding(grant.callId).closed(),
+              authorize: (contact) async {
+                final controller = PaidVoiceController(paid);
+                try {
+                  final quote = await controller.quote(
+                    characterId: contact.characterId,
+                  );
+                  if (quote == null ||
+                      !groupContext.mounted ||
+                      currentAccount() != accountId)
+                    return null;
+                  final approved = await showDialog<bool>(
+                    context: groupContext,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text('Voice with ${contact.displayName}'),
+                      content: Text(
+                        quote.isTrial
+                            ? 'Your voice trial covers this Masana.'
+                            : 'Reserve up to ${quote.spendCapCredits} Credits for this Masana. Only verified live time is charged.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: const Text('Accept & join'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (approved != true || currentAccount() != accountId)
+                    return null;
+                  final admission = await controller.accept(
+                    characterId: contact.characterId,
+                  );
+                  if (admission == null) return null;
+                  return GroupAdmission(
+                    admissionId: admission.admissionId,
+                    expiresAt: admission.expiresAt,
+                    maxDuration:
+                        Duration(seconds: quote.estimatedSeconds).compareTo(
+                              admission.expiresAt.difference(DateTime.now()),
+                            ) <=
+                            0
+                        ? Duration(seconds: quote.estimatedSeconds)
+                        : admission.expiresAt.difference(DateTime.now()),
+                    onMediaStarted: () =>
+                        paid.mediaStarted(admissionId: admission.admissionId),
+                    onEnded: () => paid.complete(
+                      admissionId: admission.admissionId,
+                      outcome: 'completed',
+                    ),
+                  );
+                } finally {
+                  controller.dispose();
+                }
+              },
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -117,6 +259,9 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(callHistoryRevisionProvider, (previous, next) {
+      if (previous != next && _sameAccount) _load(refresh: true);
+    });
     final u = context.masanawa;
     return RefreshIndicator(
       onRefresh: () => _load(refresh: true),

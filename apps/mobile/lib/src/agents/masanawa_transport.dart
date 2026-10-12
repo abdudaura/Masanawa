@@ -102,6 +102,34 @@ class _GatewayClient {
     }
   }
 
+  // Token grants must never retry with a credential from a different session.
+  Future<Map<String, dynamic>> postPinned(
+    String path,
+    Map<String, dynamic> body, {String? accessToken}
+  ) async {
+    final token = accessToken ?? readAccessToken?.call();
+    final pinned = Dio(dio.options.copyWith(baseUrl: baseUrl));
+    pinned.httpClientAdapter = dio.httpClientAdapter;
+    try {
+      final response = await pinned.post<Map<String, dynamic>>(
+        '$baseUrl$path',
+        data: body,
+        options: Options(
+          followRedirects: false,
+          headers: {'Authorization': token == null ? '' : 'Bearer $token'},
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 15),
+        ),
+      );
+      if (response.data == null) {
+        throw const ApiException('Empty response from server');
+      }
+      return response.data!;
+    } on DioException catch (error) {
+      throw mapDioError(error);
+    }
+  }
+
   Future<Map<String, dynamic>> put(
     String path,
     Map<String, dynamic> body,
@@ -731,7 +759,17 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     String? admissionId,
     String purpose = 'conversation',
   }) async {
-    final data = await _client.post(
+    return mintLiveVoiceGrantPinned(characterId,
+        admissionId: admissionId, purpose: purpose);
+  }
+
+  Future<AgentLiveVoiceGrant> mintLiveVoiceGrantPinned(
+    String characterId, {
+    String? accessToken,
+    String? admissionId,
+    String purpose = 'conversation',
+  }) async {
+    final data = await _client.postPinned(
       '/agent/live/token',
       {
         'characterId': characterId,
@@ -739,6 +777,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
         if (admissionId != null && admissionId.isNotEmpty)
           'admissionId': admissionId,
       },
+      accessToken: accessToken,
     );
     final expiresAt = DateTime.tryParse(data['expiresAt'] as String? ?? '');
     final token = data['token'];
@@ -758,6 +797,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
       model: model,
       voiceName: voiceName,
       expiresAt: expiresAt,
+      callId: data['callId'] is String ? data['callId'] as String : null,
     );
   }
 

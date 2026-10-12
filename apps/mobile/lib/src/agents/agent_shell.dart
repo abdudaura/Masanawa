@@ -132,7 +132,9 @@ class AgentLiveVoiceGrant {
     required this.model,
     required this.voiceName,
     required this.expiresAt,
+    this.callId,
   });
+  final String? callId;
   final String token;
   final String websocketUrl;
   final String model;

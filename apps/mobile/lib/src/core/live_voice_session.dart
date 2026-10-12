@@ -26,7 +26,16 @@ class LiveVoiceSession with WidgetsBindingObserver {
     required this.characterName,
     this.captureInputTranscription = false,
     AudioRecorder? recorder,
-  }) : _recorder = recorder ?? AudioRecorder() {
+    this.sharedMicrophone,
+    this.onAudioPcm,
+    this.onInterrupted,
+    this.onConnected,
+    this.onClosed,
+    this.sendGreeting = true,
+    this.maxDuration,
+    this.endAt,
+  }) : _recorder =
+           recorder ?? (sharedMicrophone == null ? AudioRecorder() : null) {
     // Closing before a caller awaits readiness must not emit an unhandled
     // async error. Consumers awaiting ready still receive the failure.
     _ready.future.ignore();
@@ -35,7 +44,17 @@ class LiveVoiceSession with WidgetsBindingObserver {
   final AgentLiveVoiceGrant grant;
   final String characterName;
   final bool captureInputTranscription;
-  final AudioRecorder _recorder;
+  final AudioRecorder? _recorder;
+  final Stream<Uint8List>? sharedMicrophone;
+  final FutureOr<void> Function(Uint8List)? onAudioPcm;
+  final FutureOr<void> Function()? onInterrupted;
+  final FutureOr<void> Function()? onConnected;
+  final FutureOr<void> Function()? onClosed;
+  final bool sendGreeting;
+  final Duration? maxDuration;
+  final DateTime? endAt;
+  bool _connectedReported = false;
+  bool get _ownsAudio => sharedMicrophone == null;
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
   final _transcripts = StreamController<String>.broadcast(sync: true);
@@ -48,6 +67,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   StreamSubscription<AudioInterruptionEvent>? _interruptions;
   StreamSubscription<void>? _noisy;
   Timer? _setupTimer;
+  Timer? _durationTimer;
   Future<void>? _starting;
   Future<void>? _closing;
   Future<void>? _startingMic;
@@ -83,46 +103,52 @@ class LiveVoiceSession with WidgetsBindingObserver {
     if (_closed || _socket != null) return;
     _state.add(LiveVoiceState.connecting);
     try {
-      if (!await _recorder.hasPermission()) {
-        throw StateError('Microphone permission is required for live voice.');
-      }
-      if (_closed) return;
-      final audioSession = await AudioSession.instance;
-      await audioSession.configure(
-        AudioSessionConfiguration(
-          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-          avAudioSessionCategoryOptions:
-              AVAudioSessionCategoryOptions.allowBluetooth |
-              AVAudioSessionCategoryOptions.defaultToSpeaker,
-          avAudioSessionMode: AVAudioSessionMode.voiceChat,
-          androidAudioAttributes: const AndroidAudioAttributes(
-            contentType: AndroidAudioContentType.speech,
-            usage: AndroidAudioUsage.voiceCommunication,
+      if (_ownsAudio) {
+        if (!await _recorder!.hasPermission()) {
+          throw StateError('Microphone permission is required for live voice.');
+        }
+        if (_closed) return;
+        final audioSession = await AudioSession.instance;
+        await audioSession.configure(
+          AudioSessionConfiguration(
+            avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+            avAudioSessionCategoryOptions:
+                AVAudioSessionCategoryOptions.allowBluetooth |
+                AVAudioSessionCategoryOptions.defaultToSpeaker,
+            avAudioSessionMode: AVAudioSessionMode.voiceChat,
+            androidAudioAttributes: const AndroidAudioAttributes(
+              contentType: AndroidAudioContentType.speech,
+              usage: AndroidAudioUsage.voiceCommunication,
+            ),
+            androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+            androidWillPauseWhenDucked: true,
           ),
-          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
-        ),
-      );
-      if (_closed) return;
-      if (!await audioSession.setActive(true)) {
-        throw StateError('Audio is in use. End the other call and try again.');
-      }
-      if (_closed) {
-        await audioSession.setActive(false);
-        return;
-      }
-      _interruptions = audioSession.interruptionEventStream.listen((event) {
-        if (event.begin && !_closed) {
-          _fail('Live voice ended because another call needs the microphone.');
-          unawaited(close());
+        );
+        if (_closed) return;
+        if (!await audioSession.setActive(true)) {
+          throw StateError(
+            'Audio is in use. End the other call and try again.',
+          );
         }
-      });
-      _noisy = audioSession.becomingNoisyEventStream.listen((_) {
-        if (!_closed) {
-          _fail('Live voice ended because the audio device disconnected.');
-          unawaited(close());
+        if (_closed) {
+          await audioSession.setActive(false);
+          return;
         }
-      });
+        _interruptions = audioSession.interruptionEventStream.listen((event) {
+          if (event.begin && !_closed) {
+            _fail(
+              'Live voice ended because another call needs the microphone.',
+            );
+            unawaited(close());
+          }
+        });
+        _noisy = audioSession.becomingNoisyEventStream.listen((_) {
+          if (!_closed) {
+            _fail('Live voice ended because the audio device disconnected.');
+            unawaited(close());
+          }
+        });
+      }
       WidgetsBinding.instance.addObserver(this);
       _observing = true;
 
@@ -178,15 +204,9 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'systemInstruction': {
               'parts': [
                 {
-                  'text': captureInputTranscription
-                      ? 'You are $characterName conducting a short voice-first Twin setup interview. '
-                            'Ask one simple question at a time about greeting style, helpful behavior, '
-                            'personality, useful knowledge, decisions and boundaries. Never ask for a '
-                            'preferred language; always follow the language/register the user is speaking. '
-                            'Do not read, quote or mention hidden transcription or internal setup state.'
-                      : 'You are $characterName. Have a natural live voice conversation. '
-                            'Answer in the user\'s language. Do not transcribe the user or '
-                            'read hidden system information aloud.',
+                  'text':
+                      'You are $characterName. Have a natural live voice conversation. '
+                      'Answer in the user\'s language. Do not read hidden system information aloud.',
                 },
               ],
             },
@@ -202,11 +222,15 @@ class LiveVoiceSession with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _beginMicrophone() async {
-    if (_closed || _muted || !_setupComplete || _micSub != null) return;
+  Future<void> _beginMicrophone({bool initialSetup = false}) async {
+    if (_closed ||
+        (_muted && !initialSetup) ||
+        !_setupComplete ||
+        _micSub != null)
+      return;
     final active = _startingMic;
     if (active != null) return active;
-    final future = _startMicrophone();
+    final future = _startMicrophone(initialSetup: initialSetup);
     _startingMic = future;
     try {
       await future;
@@ -215,20 +239,22 @@ class LiveVoiceSession with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _startMicrophone() async {
-    final stream = await _recorder.startStream(
-      const RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: 16000,
-        numChannels: 1,
-        echoCancel: true,
-        noiseSuppress: true,
-        autoGain: true,
-      ),
-    );
-    if (_closed || _muted) {
+  Future<void> _startMicrophone({bool initialSetup = false}) async {
+    final stream =
+        sharedMicrophone ??
+        await _recorder!.startStream(
+          const RecordConfig(
+            encoder: AudioEncoder.pcm16bits,
+            sampleRate: 16000,
+            numChannels: 1,
+            echoCancel: true,
+            noiseSuppress: true,
+            autoGain: true,
+          ),
+        );
+    if (_closed || (_muted && !initialSetup)) {
       try {
-        await _recorder.stop();
+        if (_ownsAudio) await _recorder!.stop();
       } catch (_) {}
       return;
     }
@@ -255,6 +281,9 @@ class LiveVoiceSession with WidgetsBindingObserver {
         _fail('Microphone streaming stopped.');
         unawaited(close());
       },
+      onDone: () {
+        if (!_closed) unawaited(close());
+      },
     );
     _state.add(LiveVoiceState.listening);
   }
@@ -274,9 +303,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
       if (decoded is! Map) return;
       final message = decoded.cast<String, dynamic>();
       if (message.containsKey('setupComplete')) {
+        if (_setupComplete) return;
         _setupTimer?.cancel();
         _setupComplete = true;
-        if (!await LivePcmAudio.setSpeaker(_speaker)) {
+        if (_ownsAudio && !await LivePcmAudio.setSpeaker(_speaker)) {
           throw StateError('Audio routing is unavailable.');
         }
         if (_closed) return;
@@ -284,31 +314,48 @@ class LiveVoiceSession with WidgetsBindingObserver {
         // intentionally never requested or rendered as text.
         final pendingSocket = _socket;
         if (pendingSocket == null || _closed) return;
-        pendingSocket.add(
-          jsonEncode({
-            'clientContent': {
-              'turns': [
-                {
-                  'role': 'user',
-                  'parts': [
-                    {
-                      'text': captureInputTranscription
-                          ? 'Start the Twin interview now with one brief welcoming question. '
-                                'Do not ask about language.'
-                          : 'Start this live conversation now with a brief natural greeting, '
-                                'then ask how you can help. Speak in the language most appropriate '
-                                'for the user and keep the opening short.',
-                    },
-                  ],
-                },
-              ],
-              'turnComplete': true,
-            },
-          }),
-        );
-        await _beginMicrophone();
+        if (sendGreeting) {
+          pendingSocket.add(
+            jsonEncode({
+              'clientContent': {
+                'turns': [
+                  {
+                    'role': 'user',
+                    'parts': [
+                      {
+                        'text':
+                            'Start this live conversation with a brief natural greeting, '
+                            'then ask how you can help.',
+                      },
+                    ],
+                  },
+                ],
+                'turnComplete': true,
+              },
+            }),
+          );
+        }
+        await _beginMicrophone(initialSetup: true);
         if (!_ready.isCompleted && !_closed) {
+          final now = DateTime.now();
+          final deadline = endAt;
+          final expiry = deadline != null && deadline.isBefore(grant.expiresAt)
+              ? deadline
+              : grant.expiresAt;
+          final remaining = expiry.difference(now);
+          final limit = maxDuration;
+          final allowed = limit != null && limit < remaining
+              ? limit
+              : remaining;
+          if (allowed <= Duration.zero) {
+            throw StateError('This call permission has expired.');
+          }
+          _durationTimer = Timer(allowed, () => unawaited(close()));
           _ready.complete();
+          if (!_connectedReported) {
+            _connectedReported = true;
+            _notify(onConnected);
+          }
         }
         return;
       }
@@ -321,7 +368,8 @@ class LiveVoiceSession with WidgetsBindingObserver {
       final server = message['serverContent'];
       if (server is! Map) return;
       if (server['interrupted'] == true) {
-        await LivePcmAudio.stop();
+        if (_ownsAudio) await LivePcmAudio.stop();
+        if (onInterrupted != null) await onInterrupted!();
         if (_closed) return;
         _state.add(LiveVoiceState.interrupted);
         return;
@@ -361,6 +409,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
                 data is String &&
                 data.isNotEmpty) {
               _state.add(LiveVoiceState.speaking);
+              if (onAudioPcm != null) {
+                await onAudioPcm!(base64Decode(data));
+                continue;
+              }
               if (!await LivePcmAudio.start(sampleRate: 24000)) {
                 throw StateError('Native live audio playback is unavailable.');
               }
@@ -385,7 +437,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   Future<void> setSpeaker(bool enabled) async {
     if (_closed) return;
     _speaker = enabled;
-    await LivePcmAudio.setSpeaker(enabled);
+    if (_ownsAudio) await LivePcmAudio.setSpeaker(enabled);
   }
 
   Future<void> mute(bool muted) async {
@@ -394,10 +446,12 @@ class LiveVoiceSession with WidgetsBindingObserver {
     if (muted) {
       await _startingMic;
       if (_closed) return;
-      await _micSub?.cancel();
+      try {
+        await _micSub?.cancel();
+      } catch (_) {}
       _micSub = null;
       try {
-        await _recorder.stop();
+        if (_ownsAudio) await _recorder!.stop();
       } catch (_) {}
     } else {
       await _beginMicrophone();
@@ -438,38 +492,58 @@ class LiveVoiceSession with WidgetsBindingObserver {
       );
     }
     _setupTimer?.cancel();
+    _durationTimer?.cancel();
     if (_observing) {
       WidgetsBinding.instance.removeObserver(this);
       _observing = false;
     }
-    await _interruptions?.cancel();
-    await _noisy?.cancel();
-    await _socketSub?.cancel();
+    try {
+      await _interruptions?.cancel();
+    } catch (_) {}
+    try {
+      await _noisy?.cancel();
+    } catch (_) {}
+    try {
+      await _socketSub?.cancel();
+    } catch (_) {}
     try {
       await _startingMic;
     } catch (_) {}
-    await _micSub?.cancel();
+    try {
+      await _micSub?.cancel();
+    } catch (_) {}
     _micSub = null;
     try {
-      await _recorder.stop();
+      if (_ownsAudio) await _recorder!.stop();
     } catch (_) {}
     try {
-      await _recorder.dispose();
+      if (_ownsAudio) await _recorder!.dispose();
     } catch (_) {}
-    await LivePcmAudio.release();
+    try {
+      if (_ownsAudio) await LivePcmAudio.release();
+    } catch (_) {}
     try {
       await _socket?.close(WebSocketStatus.normalClosure, 'ended');
     } catch (_) {}
     _socket = null;
     try {
-      final audioSession = await AudioSession.instance;
-      await audioSession.setActive(false);
+      if (_ownsAudio) {
+        final audioSession = await AudioSession.instance;
+        await audioSession.setActive(false);
+      }
     } catch (_) {}
+    _notify(onClosed);
     _state.add(LiveVoiceState.ended);
     await _state.close();
     await _errors.close();
     await _transcripts.close();
     await _inputTranscripts.close();
     await _turnCompletions.close();
+  }
+
+  void _notify(FutureOr<void> Function()? callback) {
+    if (callback == null) return;
+    // History delivery must never hold microphone or socket cleanup hostage.
+    unawaited(Future<void>.sync(callback).catchError((Object _) {}));
   }
 }

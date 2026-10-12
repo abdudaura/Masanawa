@@ -22,10 +22,15 @@ import '../../chat/cafe_suggestions.dart';
 import '../../chat/message_parts.dart';
 import '../../chat/message_parts_view.dart';
 import '../../chat/shell_document.dart';
+import '../../calls/call_lifecycle_reporter.dart';
+import '../../calls/call_lifecycle_limits.dart';
+import '../../calls/group_paid_voice_transport.dart';
+import '../../calls/group_paid_voice_outbox.dart';
 import '../../core/live_pcm_audio.dart';
 import '../../core/live_voice_session.dart';
 import '../../core/app_permissions.dart';
 import '../../agents/agent_shell.dart';
+import '../../agents/masanawa_transport.dart';
 import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
@@ -87,10 +92,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   bool _initialEntryHandled = false;
   String? _cafeCategory;
   LiveVoiceSession? _inlineVoiceSession;
+  LiveVoiceSession? _modalVoiceSession;
+  ProviderSubscription<SessionState>? _voiceAccountSubscription;
   StreamSubscription<String>? _inlineTranscriptSub;
   StreamSubscription<LiveVoiceState>? _inlineVoiceStateSub;
   StreamSubscription<void>? _inlineTurnSub;
   PaidVoiceAdmission? _inlinePaidAdmission;
+  PaidVoiceController? _inlinePaidController;
   AgentShellTransport? _inlineShellTransport;
   String? _inlineVoiceCharacterId;
   String _inlineTranscript = '';
@@ -102,6 +110,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   @override
   void initState() {
     super.initState();
+    _voiceAccountSubscription = ref.listenManual(sessionProvider, (
+      previous,
+      next,
+    ) {
+      final previousId = previous is SessionSignedIn ? previous.user.id : null;
+      final nextId = next is SessionSignedIn ? next.user.id : null;
+      if (previousId != nextId) {
+        unawaited(_inlineVoiceSession?.close() ?? Future<void>.value());
+        unawaited(_modalVoiceSession?.close() ?? Future<void>.value());
+      }
+    });
     _input.addListener(() {
       final hasText = _input.text.isNotEmpty;
       if (hasText != _hasText) setState(() => _hasText = hasText);
@@ -164,6 +183,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   void dispose() {
+    _voiceAccountSubscription?.close();
+    unawaited(_modalVoiceSession?.close() ?? Future<void>.value());
     _scrollPersistTimer?.cancel();
     _walletRefreshTimer?.cancel();
     _inlineTranscriptSub?.cancel();
@@ -1313,20 +1334,29 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       SnackBar(content: Text(ok ? 'Report submitted.' : 'Could not submit report.')),
     );
   }
-  Future<(bool allowed, PaidVoiceAdmission? admission)> _admitInlineVoice(
-    AgentDirectoryEntry agent,
+  PaidVoiceController _capturePaidController(
+      CallLifecycleOwner owner, CallLifecycleReporter reporter) {
+    return PaidVoiceController(GroupPaidVoiceTransport(
+      api: ref.read(apiClientProvider),
+      accountKey: owner.accountId,
+      accessToken: owner.accessToken,
+      outbox: ref.read(groupPaidVoiceOutboxProvider),
+      currentAccountKey: () => reporter.captureOwner()?.accountId));
+  }
+
+  Future<(bool allowed, PaidVoiceAdmission? admission, int? estimatedSeconds)> _admitInlineVoice(
+    AgentDirectoryEntry agent, {required PaidVoiceController controller}
   ) async {
     // Personal Twins are retired: every non-support Masana goes through
     // paid admission, preserving billing behavior.
     final requiresPaidAdmission = !agent.supportAgent;
-    if (!requiresPaidAdmission) return (true, null);
+    if (!requiresPaidAdmission) return (true, null, null);
 
-    final controller = ref.read(paidVoiceControllerProvider.notifier);
     final quote = await controller.quote(
       characterId: agent.characterId,
       expectedSeconds: 5 * 60,
     );
-    if (quote == null || !mounted) return (false, null);
+    if (quote == null || !mounted) return (false, null, null);
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1348,9 +1378,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ],
       ),
     );
-    if (accepted != true) return (false, null);
+    if (accepted != true) return (false, null, null);
     final admission = await controller.accept(characterId: agent.characterId);
-    return (admission != null, admission);
+    return (admission != null, admission, quote.estimatedSeconds);
   }
 
   void _applyInlineTranscriptChunk(String chunk) {
@@ -1397,9 +1427,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final admission = _inlinePaidAdmission;
     final shellTransport = _inlineShellTransport;
     final characterId = _inlineVoiceCharacterId;
-    final paidController = admission == null
-        ? null
-        : ref.read(paidVoiceControllerProvider.notifier);
+    final paidController = _inlinePaidController;
     final walletController = admission == null
         ? null
         : ref.read(walletProvider.notifier);
@@ -1432,6 +1460,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     } finally {
       _inlineVoiceSession = null;
       _inlinePaidAdmission = null;
+      _inlinePaidController = null;
       _inlineShellTransport = null;
       _inlineVoiceCharacterId = null;
       _inlineVoiceClosing = false;
@@ -1451,12 +1480,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (mounted) _comingSoon('Live voice');
       return;
     }
-    final admissionResult = await _admitInlineVoice(agent);
-    if (!mounted || !admissionResult.$1) return;
+    final reporter = ref.read(callLifecycleReporterProvider);
+    final owner = reporter.captureOwner();
+    if (owner == null) return;
+    final paidController = _capturePaidController(owner, reporter);
+    final walletController = ref.read(walletProvider.notifier);
+    final admissionResult = await _admitInlineVoice(agent, controller: paidController);
     final paidAdmission = admissionResult.$2;
+    if (!admissionResult.$1) return;
+    if (!mounted || reporter.captureOwner()?.accountId != owner.accountId) {
+      if (paidAdmission != null) {
+        await paidController.complete(admissionId: paidAdmission.admissionId,
+            outcome: 'interrupted').catchError((_) {});
+      }
+      return;
+    }
 
     final shellTransport = transport as AgentShellTransport;
     LiveVoiceSession? session;
+    CallLifecycleBinding? history;
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
       await shellTransport.setPresence(
@@ -1464,18 +1506,31 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         state: 'on_call',
         durationMs: 5 * 60 * 1000,
       );
-      final grant = await shellTransport.mintLiveVoiceGrant(
-        agent.characterId,
-        admissionId: paidAdmission?.admissionId,
-        purpose: 'conversation',
-      );
-      if (!mounted) {
+      if (!mounted || reporter.captureOwner()?.accountId != owner.accountId) {
+        throw StateError('Call account changed before grant issuance');
+      }
+      final grant = shellTransport is MasanawaAgentTransport
+          ? await shellTransport.mintLiveVoiceGrantPinned(agent.characterId,
+              accessToken: owner.accessToken, admissionId: paidAdmission?.admissionId)
+          : await shellTransport.mintLiveVoiceGrant(agent.characterId,
+              admissionId: paidAdmission?.admissionId, purpose: 'conversation');
+      history = reporter.bind(owner, grant.callId);
+      if (!mounted || reporter.captureOwner()?.accountId != owner.accountId) {
+        await history.closed();
         throw StateError('Voice screen closed before session start');
       }
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
+        onConnected: history.connected,
+        onClosed: history.closed,
         captureInputTranscription: false,
+        endAt: paidAdmission?.expiresAt,
+        maxDuration: paidAdmission == null ? null : paidNativeCallMaxDuration(
+          estimatedSeconds: admissionResult.$3!,
+          admissionExpiresAt: paidAdmission.expiresAt,
+          now: DateTime.now(),
+        ),
       );
 
       _inlineTranscriptSub?.cancel();
@@ -1497,6 +1552,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       setState(() {
         _inlineVoiceSession = session;
         _inlinePaidAdmission = paidAdmission;
+        _inlinePaidController = paidController;
         _inlineShellTransport = shellTransport;
         _inlineVoiceCharacterId = agent.characterId;
         _inlineTranscript = '';
@@ -1507,21 +1563,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
       await Future.wait<void>([session.start(), session.ready]);
       if (paidAdmission != null) {
-        await ref
-            .read(paidVoiceControllerProvider.notifier)
-            .mediaStarted(admissionId: paidAdmission.admissionId);
+        await paidController.mediaStarted(admissionId: paidAdmission.admissionId);
       }
     } catch (_) {
       await session?.close();
+      await history?.closed();
       if (paidAdmission != null) {
-        await ref
-            .read(paidVoiceControllerProvider.notifier)
-            .complete(
+        await paidController.complete(
               admissionId: paidAdmission.admissionId,
               outcome: 'interrupted',
             )
             .catchError((_) {});
-        unawaited(ref.read(walletProvider.notifier).refresh());
+        unawaited(walletController.refresh());
       }
       await shellTransport
           .setPresence(
@@ -1534,6 +1587,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         setState(() {
           _inlineVoiceSession = null;
           _inlinePaidAdmission = null;
+          _inlinePaidController = null;
           _inlineShellTransport = null;
           _inlineVoiceCharacterId = null;
           _inlineVoiceState = LiveVoiceState.failed;
@@ -1568,9 +1622,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       _inlineTurnSub = null;
       await session.close();
       if (admission != null) {
-        await ref
-            .read(paidVoiceControllerProvider.notifier)
-            .complete(
+        await _inlinePaidController?.complete(
               admissionId: admission.admissionId,
               outcome: outcome,
             )
@@ -1591,6 +1643,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         setState(() {
           _inlineVoiceSession = null;
           _inlinePaidAdmission = null;
+          _inlinePaidController = null;
           _inlineShellTransport = null;
           _inlineVoiceCharacterId = null;
           _inlineVoiceState = LiveVoiceState.idle;
@@ -1609,19 +1662,26 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (mounted) _comingSoon('Live voice');
       return;
     }
+    final reporter = ref.read(callLifecycleReporterProvider);
+    final owner = reporter.captureOwner();
+    if (owner == null) return;
     final shellTransport = transport as AgentShellTransport;
     // Personal Twins are retired: every non-support Masana goes through
     // paid admission, preserving billing behavior.
     final requiresPaidAdmission = !agent.supportAgent;
 
+    final paidController = _capturePaidController(owner, reporter);
+    final walletController = ref.read(walletProvider.notifier);
     PaidVoiceAdmission? paidAdmission;
+    var estimatedSeconds = 300;
     if (requiresPaidAdmission) {
-      final controller = ref.read(paidVoiceControllerProvider.notifier);
+      final controller = paidController;
       final quote = await controller.quote(
         characterId: agent.characterId,
         expectedSeconds: 5 * 60,
       );
       if (quote != null) {
+        estimatedSeconds = quote.estimatedSeconds;
         if (!mounted) return;
         final accepted = await showDialog<bool>(
           context: context,
@@ -1658,6 +1718,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
 
     LiveVoiceSession? session;
+    CallLifecycleBinding? history;
     var verifiedMediaStarted = false;
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
@@ -1667,17 +1728,32 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         durationMs: 5 * 60 * 1000,
       );
       unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
-      final grant = await shellTransport.mintLiveVoiceGrant(
-        agent.characterId,
-        admissionId: paidAdmission?.admissionId,
-      );
-      if (!mounted) {
+      if (!mounted || reporter.captureOwner()?.accountId != owner.accountId) {
+        throw StateError('Call account changed before grant issuance');
+      }
+      final grant = shellTransport is MasanawaAgentTransport
+          ? await shellTransport.mintLiveVoiceGrantPinned(agent.characterId,
+              accessToken: owner.accessToken, admissionId: paidAdmission?.admissionId)
+          : await shellTransport.mintLiveVoiceGrant(agent.characterId,
+              admissionId: paidAdmission?.admissionId);
+      history = reporter.bind(owner, grant.callId);
+      if (!mounted || reporter.captureOwner()?.accountId != owner.accountId) {
+        await history.closed();
         throw StateError('Voice screen closed before call start');
       }
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
+        onConnected: history.connected,
+        onClosed: history.closed,
+        endAt: paidAdmission?.expiresAt,
+        maxDuration: paidAdmission == null ? null : paidNativeCallMaxDuration(
+          estimatedSeconds: estimatedSeconds,
+          admissionExpiresAt: paidAdmission.expiresAt,
+          now: DateTime.now(),
+        ),
       );
+      _modalVoiceSession = session;
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -1691,19 +1767,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           maxDuration: paidAdmission == null
               ? null
               : Duration(
-                  seconds: ref
-                      .read(paidVoiceControllerProvider)
-                      .quote
-                      ?.estimatedSeconds ??
-                      300,
+                  seconds: estimatedSeconds,
                 ),
           onMediaStarted: paidAdmission == null
               ? null
               : () async {
                   try {
-                    await ref
-                        .read(paidVoiceControllerProvider.notifier)
-                        .mediaStarted(
+                    await paidController.mediaStarted(
                           admissionId: paidAdmission!.admissionId,
                         );
                     verifiedMediaStarted = true;
@@ -1735,15 +1805,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     } finally {
       await session?.close();
+      await history?.closed();
+      if (identical(_modalVoiceSession, session)) _modalVoiceSession = null;
       if (paidAdmission != null) {
-        await ref
-            .read(paidVoiceControllerProvider.notifier)
-            .complete(
+        await paidController.complete(
               admissionId: paidAdmission.admissionId,
               outcome: verifiedMediaStarted ? 'completed' : 'interrupted',
             )
             .catchError((_) {});
-        unawaited(ref.read(walletProvider.notifier).refresh());
+        unawaited(walletController.refresh());
       }
       await shellTransport
           .setPresence(

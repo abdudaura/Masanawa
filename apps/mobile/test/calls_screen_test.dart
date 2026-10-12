@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/calls/call_history.dart';
+import 'package:masanawa/src/calls/call_lifecycle_reporter.dart';
 import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/screens/calls/calls_screen.dart';
 import 'package:masanawa/src/state/session_state.dart';
@@ -181,4 +182,25 @@ void main() {
     expect(find.text('Sign in to see your calls.'), findsOneWidget);
     expect(requests, 1);
   });
+  testWidgets(
+    'successful lifecycle delivery refreshes current-account recents',
+    (tester) async {
+      var requests = 0;
+      await _mount(
+        tester,
+        _Session(),
+        _Transport((_) async => page(++requests == 1 ? 'Before' : 'After')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Before'), findsOneWidget);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(CallsScreen)),
+      );
+      container.read(callHistoryRevisionProvider.notifier).state++;
+      await tester.pumpAndSettle();
+      expect(find.text('After'), findsOneWidget);
+      expect(requests, 2);
+      expect(find.byTooltip('Call multiple Masana'), findsOneWidget);
+    },
+  );
 }
