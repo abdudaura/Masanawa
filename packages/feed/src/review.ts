@@ -44,7 +44,7 @@ export class EditorialReviewService {
   if(body.length>5000||(input.kind==="text"&&!body)||!Array.isArray(media)
     ||media.length>(input.kind==="image"?10:input.kind==="audio"?1:0)
     ||(input.kind!=="text"&&media.length===0)
-    ||(input.kind==="audio"&&!transcript?.trim())||(transcript?.length??0)>15000)
+    ||(input.kind==="audio"&&!transcript?.trim())||(transcript?.length??0)>15000
     ||media.some(x=>typeof x!=="string"||!/^media_[A-Za-z0-9_-]{8,128}$/.test(x)))
     fail("invalid_draft");
   if(!await this.approvedMasana(actor.tenantId,input.authorMasanaId))fail("masana_not_approved",403);
@@ -90,3 +90,4 @@ export class EditorialReviewService {
   return this.repo.change(actor.tenantId,id,actor.id,revision,action,key,scheduledAt);
  }
 }
+

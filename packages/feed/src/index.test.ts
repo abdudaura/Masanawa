@@ -6,6 +6,12 @@ function mock(){
 }
 const fan={kind:"fan" as const,tenantId:"tenant",id:"fan"};
 describe("J06 Masana-only Feed",()=>{
+ it("rejects direct staff publishing even with editorial permission",async()=>{
+  const db=mock(),s=new FeedService(db,async()=>true);
+  await expect(s.publish({kind:"staff",tenantId:"tenant",id:"editor",permissions:["content_editor"]},
+   {authorMasanaId:"masana",kind:"text",body:"Bypass",idempotencyKey:"request-staff-001"})).rejects.toMatchObject({status:403,code:"masana_only_publish"});
+  expect(db.publish).not.toHaveBeenCalled();
+ });
  it("rejects member post and never writes",async()=>{
   const db=mock(),service=new FeedService(db,async()=>true);
   await expect(service.publish(fan,{authorMasanaId:"masana",kind:"text",body:"No",idempotencyKey:"request-001"})).rejects.toMatchObject({status:403});
@@ -18,12 +24,12 @@ describe("J06 Masana-only Feed",()=>{
   await expect(s.publish({kind:"masana",tenantId:"tenant",id:"masana",approved:true},{authorMasanaId:"masana",kind:"text",body:"no",idempotencyKey:"request-004"})).rejects.toMatchObject({code:"masana_not_approved"});
  });
  it("rejects remote media injection and missing audio transcript",async()=>{
-  const db=mock(),s=new FeedService(db,async()=>true),staff={kind:"staff" as const,tenantId:"tenant",id:"staff",permissions:["content_editor"]};
+  const db=mock(),s=new FeedService(db,async()=>true),staff={kind:"masana" as const,tenantId:"tenant",id:"masana",approved:true};
   await expect(s.publish(staff,{authorMasanaId:"masana",kind:"image",body:"photo",media:["https://evil.example/image"],idempotencyKey:"request-005"})).rejects.toMatchObject({code:"invalid_media_reference"});
   await expect(s.publish(staff,{authorMasanaId:"masana",kind:"audio",body:"clip",media:["media_abcdefgh"],idempotencyKey:"request-006"})).rejects.toMatchObject({code:"audio_transcript_required"});
  });
  it("denies media ownership unless canonical library confirms the Masana and tenant",async()=>{
-  const db=mock(),staff={kind:"staff" as const,tenantId:"tenant",id:"staff",permissions:["content_editor"]};
+  const db=mock(),staff={kind:"masana" as const,tenantId:"tenant",id:"masana",approved:true};
   const input={authorMasanaId:"masana",kind:"image" as const,body:"Cover",media:["media_abcdefgh"],idempotencyKey:"request-media-001"};
   const denied=new FeedService(db,async()=>true);
   await expect(denied.publish(staff,input)).rejects.toMatchObject({code:"media_not_approved"});
@@ -44,9 +50,9 @@ describe("J06 Masana-only Feed",()=>{
   await s.comment(fan,post.id," question ","client-key-001",true);
   expect(db.comment).toHaveBeenCalledWith("tenant","fan",post.id,"question","client-key-001",true,null);
  });
- it("allows approved editor with stable idempotency",async()=>{
+ it("allows approved Masana with stable idempotency",async()=>{
   const db=mock(),s=new FeedService(db,async()=>true);
-  await s.publish({kind:"staff",tenantId:"tenant",id:"editor",permissions:["content_editor"]},{authorMasanaId:"masana",kind:"text",body:"Welcome",idempotencyKey:"request-007"});
+  await s.publish({kind:"masana",tenantId:"tenant",id:"masana",approved:true},{authorMasanaId:"masana",kind:"text",body:"Welcome",idempotencyKey:"request-007"});
   expect(db.publish).toHaveBeenCalledTimes(1);
  });
  it("C22 rejects forged parent IDs before any comment write",async()=>{
@@ -69,3 +75,4 @@ describe("J06 Masana-only Feed",()=>{
  });
 
 });
+

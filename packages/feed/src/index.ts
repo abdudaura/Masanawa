@@ -41,7 +41,9 @@ export class FeedService {
  async detail(tenant:string,viewer:string|null,id:string){requireId(tenant);requirePostId(id);
   const post=await this.repo.find(tenant,viewer,id);if(!post)throw new FeedError(404,"post_not_found");return post}
  async publish(actor:Actor,value:Publish){
-  if(actor.kind==="fan"||(actor.kind==="staff"&&!actor.permissions?.includes("content_editor"))||(actor.kind==="masana"&&(!actor.approved||actor.id!==value.authorMasanaId)))throw new FeedError(403,"masana_only_publish");
+  // Staff must use the independently reviewed editorial workflow. Only a
+  // server-authenticated approved Masana may publish as its own identity.
+  if(actor.kind!=="masana"||actor.approved!==true||actor.id!==value.authorMasanaId)throw new FeedError(403,"masana_only_publish");
   requireId(actor.tenantId);requireId(value.authorMasanaId);
   if(!await this.approvedMasana(actor.tenantId,value.authorMasanaId))throw new FeedError(403,"masana_not_approved");
   if(!key.test(value.idempotencyKey))throw new FeedError(422,"invalid_idempotency_key");
@@ -49,7 +51,8 @@ export class FeedService {
   const media=value.media??[];
   if(!Array.isArray(media)||media.length>(value.kind==="image"?10:value.kind==="audio"?1:0)||(value.kind!=="text"&&media.length===0)||
     media.some(x=>typeof x!=="string"||!/^media_[A-Za-z0-9_-]{8,128}$/.test(x)))throw new FeedError(422,"invalid_media_reference");
-  if((value.kind==="text"&&!value.body.trim())||value.body.length>5000||(value.transcript?.length??0)>15000)throw new FeedError(422,"invalid_post_text");
+  if(typeof value.body!=="string"||(value.transcript!=null&&typeof value.transcript!=="string")||
+    (value.kind==="text"&&!value.body.trim())||value.body.length>5000||(value.transcript?.length??0)>15000)throw new FeedError(422,"invalid_post_text");
   if(value.kind==="audio"&&!value.transcript?.trim())throw new FeedError(422,"audio_transcript_required");
   for(const mediaId of media){if(!await this.approvedMedia(actor.tenantId,value.authorMasanaId,mediaId))throw new FeedError(403,"media_not_approved");}
   return this.repo.publish(actor.tenantId,actor.id,{...value,body:value.body.trim(),media,transcript:value.transcript??null});
@@ -73,3 +76,4 @@ export class FeedService {
 // A05/A06 canonical editorial lifecycle (reuses feed.posts and reviewer audit).
 export {EditorialReviewService} from './review.js';
 export type {EditorialPost,EditorialRepository,EditorialAction,EditorialState,DraftInput} from './review.js';
+
