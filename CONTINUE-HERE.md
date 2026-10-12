@@ -2,6 +2,24 @@
 
 Updated 2026-10-12. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
 
+## UI audit integrated into continuing windows — 2026-10-12
+
+The owner's UI audit is now a tracked implementation queue, not an optional
+recommendation list. Read [the UI continuation queue](docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md)
+when selecting UI work or preparing the next window prompt. It maps shared
+headers/navigation, auth language alignment, Chats/Calls search, Status, Rooms,
+Wallet/Crypto and combined/installed-app checks to existing AF owners.
+The [copyable next-window prompt](docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md)
+starts the next dependency-ready unclaimed milestone; existing named work such
+as incoming-call qualification stays in its lane and carries the queue forward.
+
+Each milestone has its own handoff, with implementation, executed checks and
+release evidence kept separate. Preserve newer main/branch work, use existing
+factory/claims and one shared composition owner, and print the next queue-aware
+prompt directly at completion. Do not let missing signed devices/provider
+authority stall independent UI source or disappear from the remaining checks.
+The queue's publication does not certify any app requirement as complete.
+
 ## Latest incoming calls delivery — 2026-10-12
 
 Incoming Masana signaling/push source is delivered by [PR #675](https://github.com/weavewellindustrieslimited/masanawa/pull/675),

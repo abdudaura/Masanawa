@@ -14,6 +14,12 @@ AGENTS.md, CONTINUE-HERE.md, docs/workstreams/AF11-incoming-calls-20261012.md
 and docs/workstreams/CALLS-NEXT-WINDOW-HANDOFF-20261012.md. Inspect current
 PR heads/claims and preserve other windows' Status/Rooms work.
 
+Also read docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md. Keep this signed
+Calls qualification task intact and carry the audit forward. MUI-05 tracks
+call-history search and shared Calls presentation; continue it as independent
+source work if qualification runners are unavailable and exact paths can be
+claimed. Preserve any newer implementation before changing Calls/history.
+
 Incoming Masana signaling/push is implemented in PR #675: durable scoped
 ringing, explicit accept/decline, server cancel/timeout, missed history,
 metadata push retries, passive polling/resume readback and existing paid voice
@@ -42,6 +48,10 @@ compatible source into main. If device/provider runners are unavailable, finish
 independent source work and state exactly what remains unrun. Do not claim
 production-qualified behavior from local tests. Publish an updated handoff and
 give the owner the merged SHA, executed results and reusable prompt directly.
+Include the UI queue link, the next ready milestone and relevant handoff in
+that prompt. Record any MUI-05 work in docs/workstreams/UI-MUI-05-calls-search.md;
+keep signed-device/provider checks open separately, never silently closed by
+search/widget tests. Use UI-NEXT-WINDOW-PROMPT-20261012.md as the UI prompt seed.
 ```
 
 ## Evidence boundary

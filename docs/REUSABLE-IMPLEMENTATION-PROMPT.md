@@ -9,6 +9,10 @@ MASANAWA — COMPLETE A CUSTOMER MILESTONE
 Repository: weavewellindustrieslimited/masanawa
 
 Read fresh AGENTS.md and CONTINUE-HERE.md, then only relevant contracts/source.
+When selecting UI work or preparing continuation, read
+docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md. Continue the owner's named
+lane first; otherwise select the next dependency-ready unclaimed audit milestone.
+Carry relevant audit acceptance into touched screens without reopening planning.
 Preserve Chats · Status · Wallet · Calls · Rooms, Chats default, Masana-only
 contacts, no human-to-human consumer chats/calls, and retired Twins/onboarding.
 Keep Wallet billing/crypto/services and canonical financial/auth safeguards.
@@ -35,4 +39,13 @@ Leave a concise handoff: branch/PR, base/head, changed paths, commands/results,
 remaining source/dependencies and next action. Do not require whole-app completion
 before a scoped merge or useful local test handoff. Keep development integration,
 real device/provider qualification and production release claims separate.
+
+For UI work update the selected per-milestone handoff using
+docs/workstreams/UI-WINDOW-HANDOFF-TEMPLATE-20261012.md. At completion print
+the next self-contained prompt DIRECTLY, naming the next ready milestone,
+exact delivered SHA and relevant handoff, and retaining
+docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md. Use
+docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md as the seed. If one external
+check is blocked, keep it open and advance independent implementable source;
+do not cycle only through blocked qualification or lose unfinished UI work.
 ```
