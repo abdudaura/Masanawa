@@ -39,13 +39,15 @@ class _Session extends SessionController {
 }
 
 class _Transport implements CallHistoryTransport {
-  _Transport(this.handler);
+  _Transport(this.handler, {this.searchHandler});
   final Future<CallHistoryPage> Function(String?) handler;
+  final Future<CallHistoryPage> Function(String?, String)? searchHandler;
   @override
   Future<CallHistoryPage> loadPage({
     String? cursor,
+    String query = '',
     CancelToken? cancelToken,
-  }) => handler(cursor);
+  }) => searchHandler?.call(cursor, query) ?? handler(cursor);
 }
 
 CallHistoryPage page(String name, {String? nextCursor}) => CallHistoryPage(
@@ -174,6 +176,122 @@ void main() {
       expect(cursors, [null, null, null]);
     },
   );
+
+  testWidgets('queries all authorized pages by name and clear restores history', (tester) async {
+    final queries = <String>[];
+    await _mount(
+      tester,
+      _Session(),
+      _Transport(
+        (_) async => page('First page', nextCursor: 'older'),
+        searchHandler: (cursor, query) async {
+          queries.add('$query/$cursor');
+          if (query == 'bello') return page('Bello from older page');
+          return page('First page', nextCursor: 'older');
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '  BELLO  ');
+    await tester.pump(const Duration(milliseconds: 355));
+    await tester.pumpAndSettle();
+    expect(find.text('Bello from older page'), findsOneWidget);
+    expect(find.text('First page'), findsNothing);
+    expect(queries, contains('bello/null'));
+    await tester.tap(find.byIcon(Icons.clear));
+    await tester.pumpAndSettle();
+    expect(find.text('First page'), findsOneWidget);
+    expect(queries, contains('/null'));
+    expect(find.byTooltip('Call multiple Masana'), findsOneWidget);
+    expect(find.byTooltip('Choose a Masana'), findsOneWidget);
+  });
+
+  testWidgets('stale query A result is fenced as soon as B is typed', (tester) async {
+    final slow = Completer<CallHistoryPage>();
+    final queries = <String>[];
+    await _mount(
+      tester,
+      _Session(),
+      _Transport(
+        (_) async => page('Recent'),
+        searchHandler: (cursor, query) {
+          queries.add(query);
+          if (query == 'amina') return slow.future;
+          return Future.value(page('Bello'));
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'amina');
+    await tester.pump(const Duration(milliseconds: 355));
+    expect(queries, contains('amina'));
+    await tester.enterText(find.byType(TextField), 'bello');
+    await tester.pump();
+    slow.complete(page('Amina private previous query'));
+    await tester.pump();
+    expect(find.text('Amina private previous query'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 355));
+    await tester.pumpAndSettle();
+    expect(queries, contains('bello'));
+    expect(find.text('Bello'), findsOneWidget);
+    expect(find.text('Amina private previous query'), findsNothing);
+  });
+
+  testWidgets('account replacement while searched request is pending clears all old rows', (tester) async {
+    final pending = Completer<CallHistoryPage>();
+    final session = _Session();
+    var initialRequests = 0;
+    await _mount(
+      tester,
+      session,
+      _Transport(
+        (_) async => page(initialRequests++ == 0 ? 'Old recent' : 'New recent'),
+        searchHandler: (_, query) => query == 'amina'
+            ? pending.future
+            : Future.value(page('New recent')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'amina');
+    await tester.pump(const Duration(milliseconds: 355));
+    session.change('account-b');
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    pending.complete(page('Old searched account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Old searched account'), findsNothing);
+    expect(find.text('New recent'), findsOneWidget);
+  });
+
+  testWidgets('search distinguishes no matching calls and supports retry', (tester) async {
+    var offline = true;
+    await _mount(
+      tester,
+      _Session(),
+      _Transport(
+        (_) async => page('Recent'),
+        searchHandler: (_, query) async {
+          if (query.isEmpty) return page('Recent');
+          if (query == 'absent') return const CallHistoryPage(calls: []);
+          if (offline) { offline = false; throw StateError('offline'); }
+          return page('Recovered');
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'absent');
+    await tester.pump(const Duration(milliseconds: 355));
+    await tester.pumpAndSettle();
+    expect(find.text('No matching calls'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'recover');
+    await tester.pump(const Duration(milliseconds: 355));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text('Recovered'), findsOneWidget);
+  });
+
   testWidgets('sign-out hides existing rows and does not fetch another page', (
     tester,
   ) async {

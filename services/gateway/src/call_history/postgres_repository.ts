@@ -54,11 +54,21 @@ export function createPostgresCallHistoryRepository(pool: CallHistorySqlPool): C
       const result = await pool.query<Row>(`SELECT ${selection} FROM agents.masana_call_history h
         WHERE ${scope} AND ${roster}
           AND ($4::timestamptz IS NULL OR (h.created_at,h.call_id)<($4::timestamptz,$5::uuid))
-        ORDER BY h.created_at DESC,h.call_id DESC LIMIT $6`,
-      [input.tenantId,input.userId,input.characterIds,input.cursor?.createdAt ?? null,input.cursor?.callId ?? null,input.limit+1]);
+          AND ($6::text='' OR position($6 in lower(h.display_name))>0
+            OR position($6 in lower(h.character_id))>0
+            OR position($6 in lower(h.call_id::text))>0
+            OR position($6 in lower(COALESCE(to_jsonb(h)->>'direction','outgoing')))>0
+            OR position($6 in lower(CASE
+              WHEN (to_jsonb(h)->>'incoming_outcome') IN ('missed','declined','cancelled') THEN to_jsonb(h)->>'incoming_outcome'
+              WHEN h.ended_at IS NOT NULL THEN 'ended'
+              WHEN h.expires_at<=clock_timestamp() THEN 'expired'
+              WHEN h.connected_at IS NOT NULL THEN 'active'
+              ELSE 'connecting' END))>0)
+        ORDER BY h.created_at DESC,h.call_id DESC LIMIT $7`,
+      [input.tenantId,input.userId,input.characterIds,input.cursor?.createdAt ?? null,input.cursor?.callId ?? null,input.query ?? "",input.limit+1]);
       const calls = result.rows.slice(0,input.limit).map(record);
       const last = calls.at(-1);
-      return { calls, nextCursor: result.rows.length > input.limit && last ? encodeCallCursor(last) : null };
+      return { calls, nextCursor: result.rows.length > input.limit && last ? encodeCallCursor(last, input.query ?? "") : null };
     },
     async get(input) {
       const result = await pool.query<Row>(`SELECT ${selection} FROM agents.masana_call_history h

@@ -46,6 +46,29 @@ void main() {
       dio.close();
     },
   );
+  test('query is sent only through canonical authorized /v1/calls', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    final api = ApiClient(dio: dio)..accessToken = 'session-token';
+    dio.httpClientAdapter = _Adapter((request) async {
+      expect(request.path, '/v1/calls');
+      expect(request.queryParameters, {
+        'limit': 30,
+        'q': 'amina',
+        'cursor': 'query-bound-cursor',
+      });
+      expect(request.headers['Authorization'], 'Bearer session-token');
+      return ResponseBody.fromString(
+        '{"calls":[],"nextCursor":null}',
+        200,
+        headers: {Headers.contentTypeHeader: ['application/json']},
+      );
+    });
+    await GatewayCallHistoryTransport(api: api).loadPage(
+      query: 'amina', cursor: 'query-bound-cursor',
+    );
+    dio.close();
+  });
+
   test(
     'rejects malformed history rather than silently displaying an empty list',
     () async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,7 @@ import '../../voice/paid_voice_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../ui/components/masanawa_main_header.dart';
+import '../../ui/components/conversation_search_field.dart';
 
 class CallsScreen extends ConsumerWidget {
   const CallsScreen({super.key});
@@ -125,8 +128,9 @@ class CallsScreen extends ConsumerWidget {
                   );
                   if (quote == null ||
                       !groupContext.mounted ||
-                      currentAccount() != accountId)
+                      currentAccount() != accountId) {
                     return null;
+                  }
                   final approved = await showDialog<bool>(
                     context: groupContext,
                     builder: (dialogContext) => AlertDialog(
@@ -148,8 +152,9 @@ class CallsScreen extends ConsumerWidget {
                       ],
                     ),
                   );
-                  if (approved != true || currentAccount() != accountId)
+                  if (approved != true || currentAccount() != accountId) {
                     return null;
+                  }
                   final admission = await controller.accept(
                     characterId: contact.characterId,
                   );
@@ -196,6 +201,10 @@ class _CallHistoryList extends ConsumerStatefulWidget {
 }
 
 class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
+  final TextEditingController _search = TextEditingController();
+  Timer? _debounce;
+  String _query = '';
+  bool _invalidQuery = false;
   List<CallHistoryItem> _calls = [];
   String? _nextCursor;
   bool _loading = true;
@@ -212,8 +221,35 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
   @override
   void dispose() {
     _generation++;
+    _debounce?.cancel();
     _request?.cancel();
+    _search.dispose();
     super.dispose();
+  }
+
+  void _searchChanged(String value) {
+    _debounce?.cancel();
+    // Invalidate at the keystroke, not at the later debounce boundary.
+    _generation++;
+    _request?.cancel();
+    final query = value.trim().toLowerCase();
+    setState(() {
+      _query = query;
+      _invalidQuery = query.length > 80;
+      _calls = [];
+      _nextCursor = null;
+      _loading = !_invalidQuery;
+      _failed = false;
+    });
+    if (_invalidQuery) return;
+    if (query.isEmpty) {
+      unawaited(_load(refresh: true));
+    } else {
+      _debounce = Timer(
+        const Duration(milliseconds: 350),
+        () => unawaited(_load(refresh: true)),
+      );
+    }
   }
 
   bool get _sameAccount {
@@ -239,7 +275,11 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
     try {
       final page = await ref
           .read(callHistoryTransportProvider)
-          .loadPage(cursor: refresh ? null : _nextCursor, cancelToken: token);
+          .loadPage(
+            cursor: refresh ? null : _nextCursor,
+            query: _query,
+            cancelToken: token,
+          );
       if (!mounted || generation != _generation || !_sameAccount) return;
       setState(() {
         final combined = [if (!refresh) ..._calls, ...page.calls];
@@ -269,21 +309,34 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          ConversationSearchField(
+            controller: _search,
+            hintText: 'Search calls',
+            onChanged: _searchChanged,
+            onClear: () => _searchChanged(''),
+          ),
+          if (_invalidQuery)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Search must be 80 characters or fewer.'),
+            ),
           if (_loading) const LinearProgressIndicator(),
-          if (!_loading && !_failed && _calls.isEmpty)
+          if (!_loading && !_failed && !_invalidQuery && _calls.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
                   Icon(Icons.call_outlined, size: 58, color: u.brand),
                   const SizedBox(height: 18),
-                  const Text(
-                    'No recent calls',
-                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                  Text(
+                    _query.isEmpty ? 'No recent calls' : 'No matching calls',
+                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Your calls with Masana will appear here.',
+                  Text(
+                    _query.isEmpty
+                        ? 'Your calls with Masana will appear here.'
+                        : 'Try a different name, state, or call identifier.',
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -291,7 +344,14 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
             ),
           for (final call in _calls)
             ListTile(
-              leading: Icon(call.missed ? Icons.call_missed : call.incoming ? Icons.call_received : Icons.call_made, color: u.brand),
+              leading: Icon(
+                call.missed
+                    ? Icons.call_missed
+                    : call.incoming
+                    ? Icons.call_received
+                    : Icons.call_made,
+                color: u.brand,
+              ),
               title: Text(call.displayName),
               subtitle: Text(
                 '${_label(call.state)} · ${_date(context, call.createdAt)}',
@@ -301,7 +361,7 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
                 '/chat/${Uri.encodeComponent(call.characterId)}',
               ),
             ),
-          if (_failed)
+          if (_failed && !_invalidQuery)
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -317,7 +377,7 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
                 ],
               ),
             ),
-          if (!_loading && !_failed && _nextCursor != null)
+          if (!_loading && !_failed && !_invalidQuery && _nextCursor != null)
             TextButton(onPressed: _load, child: const Text('Load more')),
         ],
       ),
