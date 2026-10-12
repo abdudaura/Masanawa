@@ -1,8 +1,9 @@
 # Masana call history backend
 
-This milestone records outgoing Masana voice attempts. It does not implement
-incoming ringing, group-call orchestration, or provider disconnect. Mobile recents
-now consumes this contract through `apps/mobile/lib/src/calls/call_history.dart`
+This module records outgoing Masana voice attempts, including group participants.
+Native one-to-one and group sessions report connection after setup and microphone
+subscription, then closure after local teardown. Mobile recents consumes the
+contract through `apps/mobile/lib/src/calls/call_history.dart`
 and the existing Calls screen, with session-fenced pagination and retry.
 
 ## Contract
@@ -41,8 +42,8 @@ contacts cannot create these records. Removing a persona from the visible
 roster removes it from this projection without erasing historical storage.
 
 Append-only migration: `agents/0007_masana_call_history.sql`. The existing
-agents migration root discovers it automatically. Existing financial tables
-and historical migrations remain unchanged. History stores no credentials,
+agents migration root discovers it automatically. Historical financial records remain intact. The additive commerce migration
+0110 allows platform voice quotes/admissions without a human creator beneficiary. History stores no credentials,
 audio, transcripts, quotes, charges or verified usage.
 
 ## Verification and remaining qualification
@@ -53,10 +54,15 @@ provider/storage failures, SQL pagination, concurrent lifecycle reports,
 expiry, runtime migration discovery and checksum-preserving migration reruns.
 SQL tests create and remove their own local PostgreSQL database.
 
-Next connected milestone: parse the optional grant `callId` on mobile; report
-connection after Gemini setup completes, report closure after local teardown;
-keep the implemented recents up to date after those events. Keep these reports separate
-from existing billing admission/settlement. Incoming/group calls need explicit
-participant admission, signaling, provider revocation and device push proof.
-Production release also requires retention/account-deletion policy integration,
-real provider/device verification and deployment/migration qualification.
+Native reporting uses a persistent, bounded, account-fenced advisory outbox;
+connected/end retries remain separate from canonical paid admission/settlement.
+The Calls screen refreshes when history delivery succeeds. Private 2–4 Masana
+calls are implemented in `../group_calls`; the mobile group owner shares one
+microphone and coordinates model playback. Only current server-approved Masana
+may join. Canonical paid voice requires separate per-persona consent; support
+status and paid admission validity come from the server.
+
+Production release still requires signed Android/iOS and physical-device
+qualification, real provider/network/audio checks, deployment/migration
+qualification and retention/account-deletion policy integration. Incoming
+Masana-initiated ringing/push is a separate signaling milestone.
