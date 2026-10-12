@@ -11,7 +11,7 @@ class MasanaFeedScreen extends StatefulWidget {
   final FeedApi api;
   final String accountKey;
   final ValueChanged<String>? onMasanaProfile;
-  final ValueChanged<String>? onOpenMedia;
+  final void Function(FeedPost post, String mediaId)? onOpenMedia;
   final ValueChanged<String>? onReport;
   final bool enabled;
   @override State<MasanaFeedScreen> createState()=>_MasanaFeedScreenState();
@@ -102,7 +102,7 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
         else {throw StateError('Reply transport unavailable');}
       },
       canReply:feed is DioFeedApi,
-      onMasanaProfile:widget.onMasanaProfile,onMedia:widget.onOpenMedia,onReport:widget.onReport,
+      onMasanaProfile:widget.onMasanaProfile,onMedia:widget.onOpenMedia==null?null:(id)=>widget.onOpenMedia!(post,id),onReport:widget.onReport,
       enabled:widget.enabled,
     )));
   }
@@ -145,7 +145,7 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
                 if(post.mediaIds.isNotEmpty)Wrap(spacing:8,children:post.mediaIds.map((id)=>ActionChip(
                   avatar:Icon(post.kind=='audio'?Icons.play_circle_outline:Icons.image_outlined),
                   label:Text(post.kind=='audio'?t('Play audio','Kunna sauti'):t('View image','Duba hoto')),
-                  onPressed:widget.onOpenMedia==null?null:()=>widget.onOpenMedia!(id))).toList()),
+                  onPressed:widget.onOpenMedia==null?null:()=>widget.onOpenMedia!(post,id))).toList()),
                 Wrap(spacing:4,children:[
                   TextButton.icon(onPressed:pendingActions.contains(post.id)?null:()=>action(post,like:true),icon:Icon(post.liked?Icons.favorite:Icons.favorite_border),
                     label:Text('${post.likeCount}')),

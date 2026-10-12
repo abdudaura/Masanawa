@@ -4,6 +4,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/providers.dart';
+import '../core/network/api_client.dart';
+import '../screens/calls/calls_screen.dart';
+import '../features/home_feed/feed_media_api.dart';
+import '../features/home_feed/feed_media_screen.dart';
 import '../features/account/fan_account_repository.dart';
 import '../features/account/fan_account_screen.dart';
 import '../features/home_feed/feed_api.dart';
@@ -24,31 +28,27 @@ import '../state/session_state.dart';
 /// Canonical rebuild routes. The old four-tab Talk/Twin enum is intentionally
 /// left only for old compatibility source; it must never choose production tabs.
 enum MasanawaTab {
-  chats('chats'),
-  rooms('rooms'),
-  home('home'),
-  gwani('gwani'),
-  wallet('wallet');
-
+  chats('chats'), status('status'), wallet('wallet'), calls('calls'), rooms('rooms');
   const MasanawaTab(this.query);
   final String query;
-
+  // Historical links retain a defined destination without adding retired tabs.
+  static const home = status;
+  static const gwani = chats;
   static MasanawaTab parse(String? raw) => switch (raw) {
-    'chats' => chats,
-    'rooms' => rooms,
-    'gwani' => gwani,
+    'status' || 'home' => status,
     'wallet' => wallet,
-    _ => home,
+    'calls' => calls,
+    'rooms' => rooms,
+    _ => chats,
   };
-
-  String get location => this == home ? '/home' : '/home?tab=$query';
+  String get location => this == chats ? '/home' : '/home?tab=$query';
 }
 
 /// Consumer navigation composition only. Auth, money, Masana eligibility and
 /// provider permissions still belong to the existing server authorities.
 /// No Talk, Twin, public posting or user-created Room affordance is mounted.
 class MasanawaConsumerShell extends ConsumerStatefulWidget {
-  const MasanawaConsumerShell({super.key, this.initialTab = MasanawaTab.home});
+  const MasanawaConsumerShell({super.key, this.initialTab = MasanawaTab.chats});
   final MasanawaTab initialTab;
 
   @override
@@ -60,20 +60,26 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
   final Set<MasanawaTab> _visited = {};
   bool _videos = false;
   bool _videoVisited = false;
-  late final DioFeedApi _feed;
-  late final VideoRepository _video;
-  late final GatewayMasanaRepository _masana;
-  late final MasanaChatsListApi _inbox;
+  late DioFeedApi _feed;
+  late DioFeedMediaApi _media;
+  late ApiClient _client;
+  String? _account;
+  late VideoRepository _video;
+  late MasanaChatsListApi _inbox;
 
   @override
   void initState() {
     super.initState();
     _selected = widget.initialTab;
     _visited.add(_selected);
-    final client = ref.read(apiClientProvider);
+    _bindClient(ref.read(apiClientProvider));
+  }
+
+  void _bindClient(ApiClient client) {
+    _client = client;
+    _media = DioFeedMediaApi(client.dio, () async => client.accessToken);
     _feed = DioFeedApi(client.dio, () async => client.accessToken);
     _video = VideoRepository(client.dio);
-    _masana = GatewayMasanaRepository(client.dio);
     _inbox = MasanaChatsListApi(client.dio, const FlutterSecureStorage());
   }
 
@@ -98,7 +104,7 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
   String _translate(String en, String ha) =>
       Localizations.localeOf(context).languageCode == 'ha' ? ha : en;
 
-  Widget _home(String account) => Scaffold(
+  Widget _status(String account) => Scaffold(
     appBar: AppBar(
       title: const Text('Masanawa'),
       actions: [
@@ -119,7 +125,7 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Row(children: [
           Expanded(child: ChoiceChip(
-            label: Text(_translate('Feed', 'Labarai')),
+            label: Text(_translate('Status', 'Labarai')),
             selected: !_videos,
             onSelected: (_) => setState(() => _videos = false),
           )),
@@ -138,8 +144,7 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
           accountKey: account,
           onMasanaProfile: (id) => context.push(
             '/masana/${Uri.encodeComponent(id)}/profile'),
-          // Media requires post+media pair and an audio-focus handoff; never
-          // substitute a bare media ID, or grant a non-authorized playback.
+          onOpenMedia: (post, mediaId) => _openMedia(account, post, mediaId),
         ),
         _videoVisited
             ? ExternalVideosScreen(
@@ -155,6 +160,23 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
     ]),
   );
 
+  void _openMedia(String account, FeedPost post, String mediaId) {
+    if (!post.mediaIds.contains(mediaId)) return;
+    final api = _media;
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Consumer(
+      builder: (context, ref, _) {
+        final session = ref.watch(sessionProvider);
+        final current = session is SessionSignedIn ? session.user.id : '';
+        if (current != account || current.isEmpty) {
+          return const Scaffold(body: Center(child: Text('Sign in to view this update.')));
+        }
+        return FeedMediaScreen(key: ValueKey('$account-${post.id}-$mediaId'),
+          api: api, accountKey: account, postId: post.id, mediaIds: post.mediaIds,
+          initialMediaId: mediaId, kind: post.kind);
+      },
+    )));
+  }
+
   Widget _page(MasanawaTab tab, String account) => switch (tab) {
     MasanawaTab.chats => MasanaChatsListScreen(
       key: ValueKey('inbox-$account'),
@@ -164,12 +186,8 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
       onDiscover: () => context.push('/masana/discover'),
     ),
     MasanawaTab.rooms => const _RoomsIntegrationGate(),
-    MasanawaTab.home => _home(account),
-    MasanawaTab.gwani => _GwaniLanding(
-      key: ValueKey('gwani-$account'),
-      repository: _masana,
-      onOpen: (id) => context.push('/masana/${Uri.encodeComponent(id)}/chat'),
-    ),
+    MasanawaTab.status => _status(account),
+    MasanawaTab.calls => const CallsScreen(),
     MasanawaTab.wallet => WalletScreen(
       embeddedInShell: true,
       onBuyBills: () => context.push('/billing'),
@@ -183,6 +201,13 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     final account = session is SessionSignedIn ? session.user.id : '';
+    final client = ref.watch(apiClientProvider);
+    if (!identical(client, _client)) _bindClient(client);
+    if (_account != account) {
+      _account = account;
+      _visited.clear();_visited.add(_selected);
+      _videos = false;_videoVisited = false;
+    }
     return Scaffold(
       body: IndexedStack(
         index: _selected.index,
@@ -200,31 +225,12 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
         selectedIndex: _selected.index,
         onDestinationSelected: (index) => _switch(MasanawaTab.values[index]),
         destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.chat_bubble_outline),
-            selectedIcon: const Icon(Icons.chat_bubble),
-            label: _translate('Chats', 'Hirarraki'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.school_outlined),
-            selectedIcon: const Icon(Icons.school),
-            label: _translate('Rooms', 'Dakuna'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: _translate('Home', 'Gida'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.support_agent_outlined),
-            selectedIcon: const Icon(Icons.support_agent),
-            label: 'Gwani',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: const Icon(Icons.account_balance_wallet),
-            label: _translate('Wallet', 'Aljihu'),
-          ),
+          NavigationDestination(icon: const Icon(Icons.chat_bubble_outline), selectedIcon: const Icon(Icons.chat_bubble), label: _translate('Chats','Hirarraki')),
+          NavigationDestination(icon: const Icon(Icons.donut_large), label: _translate('Status','Labarai')),
+          NavigationDestination(icon: const Icon(Icons.account_balance_wallet_outlined), selectedIcon: const Icon(Icons.account_balance_wallet), label: _translate('Wallet','Aljihu')),
+          NavigationDestination(icon: const Icon(Icons.call_outlined), selectedIcon: const Icon(Icons.call), label: _translate('Calls','Kira')),
+          NavigationDestination(icon: const Icon(Icons.groups_outlined), selectedIcon: const Icon(Icons.groups), label: _translate('Rooms','Dakuna')),
+
         ],
       ),
     );
@@ -256,61 +262,6 @@ class _RoomsIntegrationGate extends StatelessWidget {
       )),
     );
   }
-}
-
-class _GwaniLanding extends StatefulWidget {
-  const _GwaniLanding({super.key, required this.repository, required this.onOpen});
-  final MasanaRepository repository;
-  final ValueChanged<String> onOpen;
-  @override State<_GwaniLanding> createState() => _GwaniLandingState();
-}
-class _GwaniLandingState extends State<_GwaniLanding> {
-  late Future<MasanaProfile?> _future = _load();
-  Future<MasanaProfile?> _load() async {
-    final profiles = await widget.repository.search('Gwani');
-    for (final profile in profiles) {
-      if (profile.profile['handle']?.toString().toLowerCase() == 'gwani' ||
-          profile.displayName.trim().toLowerCase() == 'gwani') {
-        return profile;
-      }
-    }
-    return null;
-  }
-  @override
-  void didUpdateWidget(covariant _GwaniLanding old) {
-    super.didUpdateWidget(old);
-    if (old.repository != widget.repository) _future = _load();
-  }
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Gwani')),
-    body: FutureBuilder<MasanaProfile?>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final agent = snapshot.data;
-        if (snapshot.hasError || agent == null) {
-          return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('Gwani is currently unavailable.'),
-            TextButton(onPressed: () => setState(() => _future = _load()),
-              child: const Text('Retry')),
-          ]));
-        }
-        return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(agent.displayName,
-            style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            icon: const Icon(Icons.chat_bubble_outline),
-            label: const Text('Chat with Gwani'),
-            onPressed: () => widget.onOpen(agent.characterId),
-          ),
-        ]));
-      },
-    ),
-  );
 }
 
 /// J03 uses the same authenticated Dio and the existing durable outbox.

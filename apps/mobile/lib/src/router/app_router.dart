@@ -37,7 +37,7 @@ String? legacyShellDestination(String? tab) => switch (tab) {
       _ => null,
     };
 
-/// The canonical consumer router: Chats, Rooms, Home, Gwani, Wallet.
+/// The canonical consumer router: Chats, Status, Wallet, Calls, Rooms.
 /// Legacy Talk/Twin deep links do not confer permission to excluded flows.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -49,6 +49,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (path == '/chat' || path == '/chats') return '/home?tab=chats';
       if (path == '/agents' || path == '/masana') return '/masana/discover';
       if (path == '/rooms') return '/home?tab=rooms';
+      if (path == '/status') return '/home?tab=status';
+      if (path == '/calls') return '/home?tab=calls';
       if (path == '/you') return '/account';
       if (path == '/activity') return '/home';
       if (path == '/search') return '/masana/discover';
@@ -233,7 +235,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/my-twin',
-        builder: (_, _) => const MyTwinRouteScreen(),
+        redirect: (_, _) => '/home',
       ),
       GoRoute(
         path: '/wallet',
@@ -244,6 +246,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=chats'),
       GoRoute(path: '/rooms', redirect: (_, __) => '/home?tab=rooms'),
+      GoRoute(path: '/status', redirect: (_, __) => '/home?tab=status'),
+      GoRoute(path: '/calls', redirect: (_, __) => '/home?tab=calls'),
       GoRoute(path: '/account', builder: (_, __) =>
           const MasanawaAccountRoute()),
       GoRoute(path: '/masana/discover', builder: (_, __) =>
@@ -285,7 +289,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 
-  ref.listen(isSignedInProvider, (_, _) => router.refresh());
+  ref.listen(sessionProvider, (previous, next) {
+    final before = previous is SessionSignedIn ? previous.user.id : null;
+    final after = next is SessionSignedIn ? next.user.id : null;
+    if (before != null && before != after) {
+      // Destroy nested post/media/comment projections from the prior account.
+      router.go(after == null ? '/phone-login' : '/home');
+    } else {
+      router.refresh();
+    }
+  });
   return router;
 });
 

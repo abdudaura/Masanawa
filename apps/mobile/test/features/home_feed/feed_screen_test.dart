@@ -111,5 +111,18 @@ void main(){
   expect(find.text('Could not load more updates'),findsNothing);expect(find.text('post'),findsOneWidget);
  });
 
+ testWidgets('Status media action retains the authorized post and media pair',(tester)async{
+  final api=StubFeed('image');
+  final post=FeedPost(id:'381026c2-9d56-47b1-b73d-1784e24e41e2',authorMasanaId:'masana',
+   kind:'image',body:'A Masana image',mediaIds:const ['media_abcdefgh'],publishedAt:DateTime.utc(2026),
+   likeCount:0,commentCount:0,liked:false,saved:false);
+  api.onList=(mode,cursor)=>Future.value(FeedPage([post],null));
+  String? openedPost,openedMedia;
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaFeedScreen(api:api,accountKey:'fan',
+   onOpenMedia:(post,id){openedPost=post.id;openedMedia=id;}))));await tester.pumpAndSettle();
+  await tester.tap(find.text('View image'));await tester.pumpAndSettle();
+  expect(openedPost,post.id);expect(openedMedia,'media_abcdefgh');
+ });
+
 }
 
