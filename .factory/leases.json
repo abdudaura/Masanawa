@@ -2044,14 +2044,26 @@
         "services/gateway/package.json",
         "adapters/storage/postgres/src/index.ts",
         "pnpm-lock.yaml",
-        "apps/mobile/pubspec.lock"
+        "apps/mobile/pubspec.lock",
+        "package.json",
+        "services/gateway/src/modules/account/fan_setup_routes.test.ts",
+        "services/gateway/src/modules/admin_operations/routes.test.ts",
+        "services/gateway/src/modules/masana/following_routes.test.ts",
+        "services/gateway/src/modules/masana_chat/inbox_routes.ts",
+        "services/gateway/src/modules/notifications/delivery_preferences_routes.test.ts",
+        "services/gateway/src/modules/home_feed/saved_routes.ts",
+        "packages/feed/src/index.ts",
+        "packages/feed/src/review.ts",
+        "packages/feed/src/index.test.ts",
+        "packages/feed/src/review.test.ts",
+        "services/gateway/src/modules/home_feed/composition.test.ts"
       ],
       "branch": "lane/status-connected-wiring-20261012",
       "base_sha": "5c08e151d5ee51c932af5326df85a334a5c0f7b7",
       "claimed_at": "2026-10-12T07:14:58.724Z",
-      "heartbeat_at": "2026-10-12T08:01:50.846Z",
-      "expires_at": "2026-10-12T08:06:50.846Z",
-      "notes": "Owner explicitly approves Gateway app/main, manifest/PG export/root lock and required build fixes; documented exact transfer. Narrow stale cloud-api app/main claim source preserved and superseded only for this Status composition, per direct owner instruction. Full financial/auth/call source preservation; no deploy/live SQL."
+      "heartbeat_at": "2026-10-12T08:07:58.529Z",
+      "expires_at": "2026-10-12T08:12:58.529Z",
+      "notes": "Owner explicitly approved Status composition + required build fixes. Kind-aware media, HTTP root qualification and reproduced full compiler failures. Preserve incoming Calls additive composition; no production activation."
     },
     {
       "claim_id": "af11-incoming-calls-20261012",
