@@ -2258,7 +2258,12 @@
       "claimed_at": "2026-10-12T16:59:44.419Z",
       "heartbeat_at": "2026-10-12T17:11:47.406Z",
       "expires_at": "2026-10-12T17:16:47.406Z",
-      "notes": "PR #684 source 93797a4b; run #38282179776 passed 13 backend/real-PG and 26 Flutter, with two existing style diagnostics; style corrected, added state/account regressions. Final hosted run #38282543556 in progress. Shared router/Gateway main untouched."
+      "notes": "PR #684 source 93797a4b; run #38282179776 passed 13 backend/real-PG and 26 Flutter, with two existing style diagnostics; style corrected, added state/account regressions. Final hosted run #38282543556 in progress. Shared router/Gateway main untouched.",
+      "released_at": "2026-10-12T17:17:14.292Z",
+      "release_reason": "MUI-05 complete connected source PR #684 main merge b398aa27c1259d4e69546be91b1c2b00ccc29fd7, tested source 93797a4, final exact app/test blobs match merged main; hosted run #38282543556: 27 Flutter and 13 backend incl 6 real PG18 tests, focused Dart analysis zero issues. Post-merge handoff PR #685 merged 52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788. MUI04/03 pending AF00, MUI09/10 AF11 device/provider open; no production release claim.",
+      "source_pr": 684,
+      "source_head": "93797a4b5908ed4f4ea14e2484dc740e75549b13",
+      "integration_head_sha": "b398aa27c1259d4e69546be91b1c2b00ccc29fd7"
     }
   ],
   "history": [
