@@ -2281,9 +2281,9 @@
       "branch": "lane/af03-mui07-wallet-presentation-20261012",
       "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
       "claimed_at": "2026-10-12T17:24:49.811891+00:00",
-      "heartbeat_at": "2026-10-12T17:39:11.447696+00:00",
-      "expires_at": "2026-10-12T17:44:11.447696+00:00",
-      "notes": "PR686 exact head416a2139c8dccf4747e7ec289ddecd7c381190c3 pushed;96 focused testsPASS and focusedDart zero. Full source diagnostics324 vs325 untouchedmain, no newdiagnostics. Full suites still executing with baseline failures preserved. Review no actionable issues."
+      "heartbeat_at": "2026-10-12T17:41:15.955995+00:00",
+      "expires_at": "2026-10-12T17:46:15.955995+00:00",
+      "notes": "PR686 head416a2139c.96 focusedPASS/zeroDart; full source524pass10fail, untouched baseline still finishing. Duration-cap test full-run timing failure: unchangedtest/controller, immediate full13test group recheckPASS. CI Foundation TalkIdTS2459 and Mobilefullanalysis324diagnostics failures retained; no checksdisabled."
     }
   ],
   "history": [
