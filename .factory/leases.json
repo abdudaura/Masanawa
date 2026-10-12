@@ -89,14 +89,14 @@
       "scope": "Reconcile legacy four-tab root with confirmed Chats Rooms Talks Gwani Wallet order, Talks centre/default, typed aliasing and no hidden voice.",
       "source_head": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
       "source_pr": 497,
+      "transfer_record": {
+        "at": "2026-10-12T02:12:41.596Z",
+        "basis": "Owner directs remove demonstrated CI blockers; casts/unread label only, no routing, money, auth or shell behavior change; package solver records existing dependencies only",
+        "to": "rooms-ci-closure-20261011-cloud"
+      },
       "transferred_paths": [
         "apps/mobile/lib/src/router/app_router.dart"
-      ],
-      "transfer_record": {
-        "to": "rooms-ci-closure-20261011-cloud",
-        "at": "2026-10-12T02:12:41.596Z",
-        "basis": "Owner directs remove demonstrated CI blockers; casts/unread label only, no routing, money, auth or shell behavior change; package solver records existing dependencies only"
-      }
+      ]
     },
     {
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
@@ -647,14 +647,14 @@
       ],
       "scope": "AF00/AF09 integration repair: move canonical Published Audio Record/Following repository types into packages/contracts; preserve Gateway re-exports and adapter imports, fixing real adapter inward-dependency violation without loosening architecture tests",
       "source_pr": 600,
+      "transfer_record": {
+        "at": "2026-10-12T16:37:08.123Z",
+        "basis": "Reviewed expired 2026-10-10 broad claim, branch work/af00-root-navigation-20261010-masanawa01-c at 3c0e88489baa7b5ad99dff66e69325f23937f086 divergent 422 behind current main; main MUI-01 #678 already changes chat_list_screen.dart; preserve original branch and all other stale paths; transfer this exact path only for requested MUI-03.",
+        "to": "af06-mui03-mounted-chats-search-20261012-gpt6"
+      },
       "transferred_paths": [
         "apps/mobile/lib/src/screens/chat/chat_list_screen.dart"
-      ],
-      "transfer_record": {
-        "to": "af06-mui03-mounted-chats-search-20261012-gpt6",
-        "at": "2026-10-12T16:37:08.123Z",
-        "basis": "Reviewed expired 2026-10-10 broad claim, branch work/af00-root-navigation-20261010-masanawa01-c at 3c0e88489baa7b5ad99dff66e69325f23937f086 divergent 422 behind current main; main MUI-01 #678 already changes chat_list_screen.dart; preserve original branch and all other stale paths; transfer this exact path only for requested MUI-03."
-      }
+      ]
     },
     {
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
@@ -2020,20 +2020,25 @@
         "tests/contracts/public-api-lifecycle.test.ts"
       ],
       "scope": "OWNER CORRECTION supersedes legacy preservation: remove obsolete consumer creator/clone onboarding workflows and route/UI wiring; preserve canonical auth/data and chat reliability; push corrected checkpoint.",
+      "transfer_record": {
+        "at": "2026-10-12T02:12:41.596Z",
+        "basis": "Owner directs remove demonstrated CI blockers; casts/unread label only, no routing, money, auth or shell behavior change; package solver records existing dependencies only",
+        "to": "rooms-ci-closure-20261011-cloud"
+      },
       "transferred_paths": [
         "apps/mobile/lib/src/router/app_router.dart",
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart"
-      ],
-      "transfer_record": {
-        "to": "rooms-ci-closure-20261011-cloud",
-        "at": "2026-10-12T02:12:41.596Z",
-        "basis": "Owner directs remove demonstrated CI blockers; casts/unread label only, no routing, money, auth or shell behavior change; package solver records existing dependencies only"
-      }
+      ]
     },
     {
+      "base_sha": "5c08e151d5ee51c932af5326df85a334a5c0f7b7",
+      "branch": "lane/status-connected-wiring-20261012",
       "claim_id": "status-connected-wiring-20261012",
+      "claimed_at": "2026-10-12T07:14:58.724Z",
+      "expires_at": "2026-10-12T08:23:41.568Z",
+      "heartbeat_at": "2026-10-12T08:18:41.568Z",
+      "notes": "Owner explicitly approved Status composition + required build fixes. Kind-aware media, HTTP root qualification and reproduced full compiler failures. Preserve incoming Calls additive composition; no production activation.",
       "owner": "Codex STATUS continuation",
-      "scope": "Owner-directed canonical five-tab Status shell/router and existing-auth feature runtime",
       "paths": [
         "apps/mobile/lib/src/app/masanawa_consumer_shell.dart",
         "apps/mobile/lib/src/router/app_router.dart",
@@ -2070,25 +2075,22 @@
         "services/worker/src/jobs/masana/follow_preference_policy.test.ts",
         "services/worker/src/jobs/youtube_websub/outbox_runner.ts"
       ],
-      "branch": "lane/status-connected-wiring-20261012",
-      "base_sha": "5c08e151d5ee51c932af5326df85a334a5c0f7b7",
-      "claimed_at": "2026-10-12T07:14:58.724Z",
-      "heartbeat_at": "2026-10-12T08:18:41.568Z",
-      "expires_at": "2026-10-12T08:23:41.568Z",
-      "notes": "Owner explicitly approved Status composition + required build fixes. Kind-aware media, HTTP root qualification and reproduced full compiler failures. Preserve incoming Calls additive composition; no production activation.",
-      "source_head_sha": "683d7526ffb514fe2fba78bf6438b35217aaa1c7",
-      "test_state": "PASS full strict typecheck/full build/frozen dependencies,78 focused+2rootHTTP+9realPG18+15Flutter, scopedDart; global30 failures under baseline comparison; production feed404; Android SDK missing.",
+      "release_reason": "PR674 merged integration523b1511; full build/typecheck,89focused tests+15Flutter;74fresh migrations rehearsal;29global failures reproduced baseline; productionfeed404. Continued media binding separately.",
       "released_at": "2026-10-12T12:32:32.764Z",
-      "release_reason": "PR674 merged integration523b1511; full build/typecheck,89focused tests+15Flutter;74fresh migrations rehearsal;29global failures reproduced baseline; productionfeed404. Continued media binding separately."
+      "scope": "Owner-directed canonical five-tab Status shell/router and existing-auth feature runtime",
+      "source_head_sha": "683d7526ffb514fe2fba78bf6438b35217aaa1c7",
+      "test_state": "PASS full strict typecheck/full build/frozen dependencies,78 focused+2rootHTTP+9realPG18+15Flutter, scopedDart; global30 failures under baseline comparison; production feed404; Android SDK missing."
     },
     {
-      "claim_id": "af11-incoming-calls-20261012",
-      "owner": "Codex incoming calls coordinating window",
-      "branch": "feature/masana-incoming-calls-20261012",
       "base_sha": "708a2ba11",
+      "branch": "feature/masana-incoming-calls-20261012",
+      "claim_id": "af11-incoming-calls-20261012",
       "claimed_at": "2026-10-12T08:01:43.493401+00:00",
-      "heartbeat_at": "2026-10-12T12:36:37.189759+00:00",
       "expires_at": "2026-10-12T12:51:37.189759+00:00",
+      "heartbeat_at": "2026-10-12T12:36:37.189759+00:00",
+      "integration_head_sha": "682827b7712518e78657bae3d3dc9b8956806b83",
+      "notes": "Previous AF11 delivered/released. Historical alternative call PR643/660 paths inspected and preserved; existing main contracts remain canonical. Narrow routing additions only; Status owns Calls screen. Canonical push request deadline narrowly bounded for durable recovery/shutdown; source tests underway. Narrow incoming hint duplicate/active-call navigation guard only. Narrow owner-directed incoming history projection transfer; Status PR674 old44-line placeholder inspected, preserved in its branch. Main342-line native/group/recents source retained. Source checkpoint efd159787; independent final review no findings; production/provider/device unrun.",
+      "owner": "Codex incoming calls coordinating window",
       "paths": [
         "services/gateway/src/incoming_calls/**",
         "packages/agents/migrations/0009_masana_incoming_calls.sql",
@@ -2113,21 +2115,23 @@
         "apps/mobile/lib/src/screens/calls/calls_screen.dart (recents icon/state labels only)",
         "apps/mobile/test/calls_screen_test.dart"
       ],
+      "release_reason": "PR675 merged to main through normal merge; tree8716ada0 matches reviewed source.98Gateway+87Flutter PASS; Gateway build PASS; incoming Dart no diagnostics; broader Gateway54 diagnostics and fullMobile6warnings match untouched main; remoteCI baseline failures documented. Source/state handoff AF11-incoming-calls-20261012; direct prompt published. No device/provider/production qualification.",
+      "released_at": "2026-10-12T12:40:58.448126+00:00",
       "scope": "Owner-directed incoming Masana signaling/push with narrow composition integration; preserve Status PR674 additions; no native media, auth or ledger replacement",
-      "notes": "Previous AF11 delivered/released. Historical alternative call PR643/660 paths inspected and preserved; existing main contracts remain canonical. Narrow routing additions only; Status owns Calls screen. Canonical push request deadline narrowly bounded for durable recovery/shutdown; source tests underway. Narrow incoming hint duplicate/active-call navigation guard only. Narrow owner-directed incoming history projection transfer; Status PR674 old44-line placeholder inspected, preserved in its branch. Main342-line native/group/recents source retained. Source checkpoint efd159787; independent final review no findings; production/provider/device unrun.",
       "source_head": "2d00b84601a8bc21d9d43601bedffa2057b4a58d",
       "source_pr": 675,
-      "test_state": "98 Gateway (real PG) +87 Flutter PASS; Gateway build PASS; incoming Dart clean; Gateway wider typecheck matches54 main diagnostics",
-      "integration_head_sha": "682827b7712518e78657bae3d3dc9b8956806b83",
-      "released_at": "2026-10-12T12:40:58.448126+00:00",
-      "release_reason": "PR675 merged to main through normal merge; tree8716ada0 matches reviewed source.98Gateway+87Flutter PASS; Gateway build PASS; incoming Dart no diagnostics; broader Gateway54 diagnostics and fullMobile6warnings match untouched main; remoteCI baseline failures documented. Source/state handoff AF11-incoming-calls-20261012; direct prompt published. No device/provider/production qualification."
+      "test_state": "98 Gateway (real PG) +87 Flutter PASS; Gateway build PASS; incoming Dart clean; Gateway wider typecheck matches54 main diagnostics"
     },
     {
-      "claim_id": "status-media-binding-20261012",
-      "owner": "Codex STATUS continuation",
-      "branch": "lane/status-media-binding-20261012",
       "base_sha": "523b1511ebff58ce10d5e90cb2478680970e0d2b",
-      "scope": "Canonical media object mapping, reused S3 HEAD+bounded signed GET and approved additive Status main binding",
+      "branch": "lane/status-media-binding-20261012",
+      "claim_id": "status-media-binding-20261012",
+      "claimed_at": "2026-10-12T12:32:32.764Z",
+      "expires_at": "2026-10-12T12:46:43.359Z",
+      "heartbeat_at": "2026-10-12T12:41:43.359Z",
+      "integration_head_sha": "007e5df53ab2bbc9c82df30fc18e61f9e141e5aa",
+      "notes": "Additive canonical image binding/main port, same S3 signer optionalHEAD; no new env/catalog edits. Seven first connected tests passed; full strict compiler/build and replay/PG regressions running.",
+      "owner": "Codex STATUS continuation",
       "paths": [
         "adapters/storage/postgres/src/home_feed/eligibility.ts",
         "adapters/storage/postgres/src/home_feed/eligibility.test.ts",
@@ -2139,26 +2143,23 @@
         "services/gateway/src/main.ts",
         "docs/workstreams/STATUS-media-binding-20261012.md"
       ],
-      "claimed_at": "2026-10-12T12:32:32.764Z",
-      "heartbeat_at": "2026-10-12T12:41:43.359Z",
-      "expires_at": "2026-10-12T12:46:43.359Z",
-      "notes": "Additive canonical image binding/main port, same S3 signer optionalHEAD; no new env/catalog edits. Seven first connected tests passed; full strict compiler/build and replay/PG regressions running.",
+      "release_reason": "PR676 merged007e5df treee3f99a matches qualifiede1de174.102tests incl11realPG18,strictcompiler+Gatewaybuild pass. Source complete configured-image milestone, no deployedmedia;exactcatalogue/store/audio/device handoffs remain. TempownedPGremoved.",
+      "released_at": "2026-10-12T12:42:29.844Z",
+      "scope": "Canonical media object mapping, reused S3 HEAD+bounded signed GET and approved additive Status main binding",
       "source_head_sha": "e7588974af9483ca1fe6fe84a044463dd5011a0f",
       "source_pr": 676,
-      "test_state": "PASS102 incl11realPG18, fullstrict workspace/refreshedGatewaytypecheck,Gateway deps build+productionimports. Explicit trusted store injection source complete, environmentcatalog transfer/config/audio/device/live gaps recorded.",
-      "integration_head_sha": "007e5df53ab2bbc9c82df30fc18e61f9e141e5aa",
-      "released_at": "2026-10-12T12:42:29.844Z",
-      "release_reason": "PR676 merged007e5df treee3f99a matches qualifiede1de174.102tests incl11realPG18,strictcompiler+Gatewaybuild pass. Source complete configured-image milestone, no deployedmedia;exactcatalogue/store/audio/device handoffs remain. TempownedPGremoved."
+      "test_state": "PASS102 incl11realPG18, fullstrict workspace/refreshedGatewaytypecheck,Gateway deps build+productionimports. Explicit trusted store injection source complete, environmentcatalog transfer/config/audio/device/live gaps recorded."
     },
     {
-      "claim_id": "ui-audit-continuation-workflow-20261012",
-      "owner": "Codex UI audit continuation window",
-      "branch": "plan/ui-audit-refinement-20261012",
       "base_sha": "682827b7712518e78657bae3d3dc9b8956806b83",
+      "branch": "plan/ui-audit-refinement-20261012",
+      "claim_id": "ui-audit-continuation-workflow-20261012",
       "claimed_at": "2026-10-12T12:56:58.120662+00:00",
-      "heartbeat_at": "2026-10-12T13:03:46.402522+00:00",
       "expires_at": "2026-10-12T13:16:58.120662+00:00",
-      "scope": "Owner-directed documentation-only integration of the UI audit into existing multi-window prompts; no product/router/auth/financial/native source changes",
+      "heartbeat_at": "2026-10-12T13:03:46.402522+00:00",
+      "integration_head_sha": "0053e8d4e1b0282ed05e407871edff62d365a9c9",
+      "notes": "Read fresh main, Status/Rooms branches and latest registry; no live exact-path ownership found for these shared documentation entrypoints. Preserve Calls qualification and all active feature work.",
+      "owner": "Codex UI audit continuation window",
       "paths": [
         "CONTINUE-HERE.md",
         "AGENTS.md",
@@ -2170,18 +2171,24 @@
         "docs/superpowers/specs/2026-10-12-masanawa-ui-audit-design.md",
         "docs/superpowers/plans/2026-10-12-masanawa-ui-refinement.md"
       ],
-      "notes": "Read fresh main, Status/Rooms branches and latest registry; no live exact-path ownership found for these shared documentation entrypoints. Preserve Calls qualification and all active feature work.",
+      "release_reason": "Documentation-only audit queue/plan/prompt integration merged PR677; 9-document link/fence/whitespace and ten-milestone/four-entrypoint checks PASS; remote Foundation CI FAIL on unchanged pre-existing TalkId TS2459; no app tests/device/provider/deployment verification claimed. Next unclaimed ready UI milestone through published queue, initially MUI01 or independent MUI02.",
       "released_at": "2026-10-12T13:03:46.402522+00:00",
+      "scope": "Owner-directed documentation-only integration of the UI audit into existing multi-window prompts; no product/router/auth/financial/native source changes",
       "source_head_sha": "ff5bbe4bed429cf0e041772e5903382fa11e5be3",
       "source_pr": 677,
-      "integration_head_sha": "0053e8d4e1b0282ed05e407871edff62d365a9c9",
-      "release_reason": "Documentation-only audit queue/plan/prompt integration merged PR677; 9-document link/fence/whitespace and ten-milestone/four-entrypoint checks PASS; remote Foundation CI FAIL on unchanged pre-existing TalkId TS2459; no app tests/device/provider/deployment verification claimed. Next unclaimed ready UI milestone through published queue, initially MUI01 or independent MUI02.",
       "test_state": "Documentation PASS; Foundation CI FAIL pre-existing TalkId TS2459; app/device/provider NOT_RUN"
     },
     {
+      "base_sha": "0053e8d4e",
+      "branch": "lane/af00-mui01-presentation-20261012",
       "claim_id": "af00-mui01-presentation-20261012",
+      "claimed_at": "2026-10-12T13:16:42.900613+00:00",
+      "delivery_head_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "expires_at": "2026-10-12T15:16:42.900613+00:00",
+      "heartbeat_at": "2026-10-12T13:38:44.939641+00:00",
+      "integration_head_sha": "18bdd8140a2bdf78b8cccfdb42a8030a5452d52c",
+      "notes": "No live path overlap. Recovery: historical AF00 root PR600 superseded by merged shell; preserve integration Status/media and Rooms source for domain milestones. No router/auth/financial edits.",
       "owner": "AF00 / Codex MUI-01 presentation",
-      "scope": "Shared presentation only; preserve full Calls and domain behaviors",
       "paths": [
         "apps/mobile/lib/src/theme/masanawa_theme.dart",
         "apps/mobile/lib/src/ui/components/masanawa_wordmark.dart",
@@ -2194,23 +2201,21 @@
         "apps/mobile/test/ui/mui01_presentation_test.dart",
         "docs/workstreams/UI-MUI-01-foundation.md"
       ],
-      "branch": "lane/af00-mui01-presentation-20261012",
-      "base_sha": "0053e8d4e",
-      "claimed_at": "2026-10-12T13:16:42.900613+00:00",
-      "heartbeat_at": "2026-10-12T13:38:44.939641+00:00",
-      "expires_at": "2026-10-12T15:16:42.900613+00:00",
-      "notes": "No live path overlap. Recovery: historical AF00 root PR600 superseded by merged shell; preserve integration Status/media and Rooms source for domain milestones. No router/auth/financial edits.",
+      "release_reason": "MUI01 merged normally in PR678; exact tested tree match at18bdd8140; handoff metadata PR679 mergedada66c61c.39focusedpass,13presentation cases,454globalpass/9baselinefail,329same analyzer diagnostics; fresh review separator correction pixel RED/GREEN. Rendered320/360/390/430 1x2x,RTL and allmainheaders. NoAndroidSDK/signeddevice/providerrelease. MUI02 next; full queue and remaining domain/combined/installed acceptance retained in UI-MUI-01-foundation.md. No router/auth/financial/backend/CI changes or admin bypass.",
       "released_at": "2026-10-12T13:38:44.939641+00:00",
+      "scope": "Shared presentation only; preserve full Calls and domain behaviors",
       "source_head": "3076b26056e6c1ad4e3958f1126e193198409b76",
-      "source_pr": 678,
-      "integration_head_sha": "18bdd8140a2bdf78b8cccfdb42a8030a5452d52c",
-      "delivery_head_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
-      "release_reason": "MUI01 merged normally in PR678; exact tested tree match at18bdd8140; handoff metadata PR679 mergedada66c61c.39focusedpass,13presentation cases,454globalpass/9baselinefail,329same analyzer diagnostics; fresh review separator correction pixel RED/GREEN. Rendered320/360/390/430 1x2x,RTL and allmainheaders. NoAndroidSDK/signeddevice/providerrelease. MUI02 next; full queue and remaining domain/combined/installed acceptance retained in UI-MUI-01-foundation.md. No router/auth/financial/backend/CI changes or admin bypass."
+      "source_pr": 678
     },
     {
+      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "branch": "lane/af05-android-voice-repair-20261012",
       "claim_id": "af05-android-voice-repair-20261012",
+      "claimed_at": "2026-10-12T13:45:36.510749+00:00",
+      "expires_at": "2026-10-12T16:45:36.510749+00:00",
+      "heartbeat_at": "2026-10-12T13:45:36.510749+00:00",
+      "notes": "No live claim overlap. Owner explicitly prioritizes Android call and voice-note repair. Narrow AF06 composer/AF11 session allocation to AF05 recorded here; do not change canonical money/admission/history authority, shared router or other windows source. Recovered deleted recording source de7ad6dc6 as reference only, not wholesale restoration. Narrow AF06 transport timeout allocation: live grant client15s expires before existing provider20s deadline; pinned identity/no retry retained. Owner-directed AF00 narrow main.ts Gemini fallback voice allocation only; RESTAuthToken schema rejects current SDK-style liveConnectConstraints (production10:53Z provider400 corroborates). No routing/migrations/billing edits.",
       "owner": "AF05 / owner-directed Android voice repair",
-      "scope": "Restore real composer voice notes and diagnose/fix call start errors; retain AF11 history/billing/incoming",
       "paths": [
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
         "apps/mobile/lib/src/core/live_voice_session.dart",
@@ -2229,20 +2234,19 @@
         "services/gateway/src/call_history/token_recording.test.ts",
         "services/gateway/src/main.ts"
       ],
-      "branch": "lane/af05-android-voice-repair-20261012",
-      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
-      "claimed_at": "2026-10-12T13:45:36.510749+00:00",
-      "heartbeat_at": "2026-10-12T13:45:36.510749+00:00",
-      "expires_at": "2026-10-12T16:45:36.510749+00:00",
-      "notes": "No live claim overlap. Owner explicitly prioritizes Android call and voice-note repair. Narrow AF06 composer/AF11 session allocation to AF05 recorded here; do not change canonical money/admission/history authority, shared router or other windows source. Recovered deleted recording source de7ad6dc6 as reference only, not wholesale restoration. Narrow AF06 transport timeout allocation: live grant client15s expires before existing provider20s deadline; pinned identity/no retry retained. Owner-directed AF00 narrow main.ts Gemini fallback voice allocation only; RESTAuthToken schema rejects current SDK-style liveConnectConstraints (production10:53Z provider400 corroborates). No routing/migrations/billing edits."
+      "scope": "Restore real composer voice notes and diagnose/fix call start errors; retain AF11 history/billing/incoming"
     },
     {
-      "claim_id": "af11-mui05-calls-search-20261012-gpt6",
-      "owner": "AF11 / MUI-05 search continuation GPT-6",
-      "lane": "AF11",
-      "scope": "Add bounded server-side query-scoped canonical calls history pagination and UI search, reuse existing source, do not touch native/group/incoming/billing authority",
       "base_sha": "600fe204c1610c6c715ad9d61387f58f67d5817a",
       "branch": "lane/af11-mui05-search-20261012-gpt6",
+      "claim_id": "af11-mui05-calls-search-20261012-gpt6",
+      "claimed_at": "2026-10-12T16:59:44.419Z",
+      "expires_at": "2026-10-12T17:16:47.406Z",
+      "heartbeat_at": "2026-10-12T17:11:47.406Z",
+      "integration_head_sha": "b398aa27c1259d4e69546be91b1c2b00ccc29fd7",
+      "lane": "AF11",
+      "notes": "PR #684 source 93797a4b; run #38282179776 passed 13 backend/real-PG and 26 Flutter, with two existing style diagnostics; style corrected, added state/account regressions. Final hosted run #38282543556 in progress. Shared router/Gateway main untouched.",
+      "owner": "AF11 / MUI-05 search continuation GPT-6",
       "paths": [
         "apps/mobile/lib/src/calls/call_history.dart",
         "apps/mobile/lib/src/screens/calls/calls_screen.dart",
@@ -2255,34 +2259,45 @@
         "services/gateway/src/call_history/postgres_repository.test.ts",
         "docs/workstreams/UI-MUI-05-calls-search.md"
       ],
-      "claimed_at": "2026-10-12T16:59:44.419Z",
-      "heartbeat_at": "2026-10-12T17:11:47.406Z",
-      "expires_at": "2026-10-12T17:16:47.406Z",
-      "notes": "PR #684 source 93797a4b; run #38282179776 passed 13 backend/real-PG and 26 Flutter, with two existing style diagnostics; style corrected, added state/account regressions. Final hosted run #38282543556 in progress. Shared router/Gateway main untouched.",
-      "released_at": "2026-10-12T17:17:14.292Z",
       "release_reason": "MUI-05 complete connected source PR #684 main merge b398aa27c1259d4e69546be91b1c2b00ccc29fd7, tested source 93797a4, final exact app/test blobs match merged main; hosted run #38282543556: 27 Flutter and 13 backend incl 6 real PG18 tests, focused Dart analysis zero issues. Post-merge handoff PR #685 merged 52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788. MUI04/03 pending AF00, MUI09/10 AF11 device/provider open; no production release claim.",
-      "source_pr": 684,
+      "released_at": "2026-10-12T17:17:14.292Z",
+      "scope": "Add bounded server-side query-scoped canonical calls history pagination and UI search, reuse existing source, do not touch native/group/incoming/billing authority",
       "source_head": "93797a4b5908ed4f4ea14e2484dc740e75549b13",
-      "integration_head_sha": "b398aa27c1259d4e69546be91b1c2b00ccc29fd7"
+      "source_pr": 684
     },
     {
+      "base_sha": "1337917a7e063971fd083deb4d0ce4b59310b219",
+      "branch": "lane/af03-mui08-crypto-20261012",
       "claim_id": "af03-mui08-crypto-20261012",
+      "claimed_at": "2026-10-12T19:27:20.480107+00:00",
+      "expires_at": "2026-10-12T19:55:07.080502+00:00",
+      "heartbeat_at": "2026-10-12T19:50:07.080502+00:00",
+      "notes": "PR688 merged8ddcb5eac; handoffPR689 merged576ecda13; exact app/test blobs match e2950f41.134 focused tests and24 render cases PASS;focused analyzerzero;full322 vs324 no introduced. PR Foundation38299948635 FAIL unchanged TalkIdTS2459;Mobile38299948610 FAIL global analyzer. APK missing Android SDK;expiry/composition/device/provider/combined acceptance open.",
       "owner": "Codex AF03 MUI-08",
-      "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "paths": [
         "apps/mobile/lib/src/finance/crypto_wallet_screen.dart",
         "apps/mobile/test/ui/mui08_crypto_test.dart",
         "docs/workstreams/UI-MUI-08-crypto.md"
       ],
-      "branch": "lane/af03-mui08-crypto-20261012",
-      "base_sha": "1337917a7e063971fd083deb4d0ce4b59310b219",
-      "claimed_at": "2026-10-12T19:27:20.480107+00:00",
-      "heartbeat_at": "2026-10-12T19:50:07.080502+00:00",
-      "expires_at": "2026-10-12T19:55:07.080502+00:00",
-      "notes": "PR688 merged8ddcb5eac; handoffPR689 merged576ecda13; exact app/test blobs match e2950f41.134 focused tests and24 render cases PASS;focused analyzerzero;full322 vs324 no introduced. PR Foundation38299948635 FAIL unchanged TalkIdTS2459;Mobile38299948610 FAIL global analyzer. APK missing Android SDK;expiry/composition/device/provider/combined acceptance open.",
-      "source_head": "e2950f41c96599a8223e089a9713318d780abf6d",
+      "release_reason": "Delivered normal source PR688 and handoff PR689; final main576ecda13e8c3f9c034c325986a27376faa87589. All three exact paths released. No signed/live/provider/full-suite claim.",
       "released_at": "2026-10-12T19:50:07.080502+00:00",
-      "release_reason": "Delivered normal source PR688 and handoff PR689; final main576ecda13e8c3f9c034c325986a27376faa87589. All three exact paths released. No signed/live/provider/full-suite claim."
+      "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
+      "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
+    },
+    {
+      "base_sha": "576ecda13e8c3f9c034c325986a27376faa87589",
+      "branch": "lane/af13-mui09-combined-20261012",
+      "claim_id": "93f8ade5-997c-479c-aae1-fb325e7bb37c",
+      "claimed_at": "2026-10-12T20:51:19Z",
+      "expires_at": "2026-10-12T20:56:19Z",
+      "heartbeat_at": "2026-10-12T20:51:19Z",
+      "owner": "AF13 MUI-09 combined regression",
+      "paths": [
+        "apps/mobile/test/ui/mui09_combined_regression_test.dart",
+        "docs/workstreams/UI-MUI-09-verification.md"
+      ],
+      "pr": "",
+      "scope": "Bounded simulated combined shell navigation/search/layout/account regression; no production composition/auth/money/voice changes"
     }
   ],
   "history": [
@@ -5543,12 +5558,14 @@
       "notes": "PR #623 head 6efb9cca3219af81200d562a98cc269a1d05cf26: Admin analyze PASS in run 38067461575; Admin widget tests FAIL inherited or scope pending logs; Admin APK compiling, consumer in progress.",
       "owner": "GPT-6 / R0 Flutter compiler recovery coordination AF00 #616",
       "paths": [],
+      "release_reason": "All originally claimed paths narrowly transferred with preserved source to owner-directed PR669 recovery",
+      "released_at": "2026-10-12T02:09:26.555Z",
       "scope": "R0 consumer and Android Admin Flutter build unblock: 5 exact source paths only; preserve user finance and excluded features frozen, no app root/nav/gateway/SQL.",
       "source_pr": 460,
       "transfer_record": {
-        "to": "rooms-ci-closure-20261011-cloud",
         "at": "2026-10-12T02:09:26.555Z",
-        "basis": "Owner requests demonstrated CI blocker repair; preserve r0 source and reuse its AdminAuthException constructor fix"
+        "basis": "Owner requests demonstrated CI blocker repair; preserve r0 source and reuse its AdminAuthException constructor fix",
+        "to": "rooms-ci-closure-20261011-cloud"
       },
       "transferred_paths": [
         "apps/admin_mobile/lib/src/screens/platform_pages.dart",
@@ -5556,9 +5573,7 @@
         "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
         "apps/mobile/lib/src/localization/locale_preference.dart",
         "apps/admin_mobile/lib/src/core/admin_auth_api.dart"
-      ],
-      "released_at": "2026-10-12T02:09:26.555Z",
-      "release_reason": "All originally claimed paths narrowly transferred with preserved source to owner-directed PR669 recovery"
+      ]
     },
     {
       "base_sha": "027f07b4411c3973d0587749b08675135396bbd7",
@@ -5676,6 +5691,7 @@
       "claim_id": "status-masana-authorization-20261011-codex",
       "claimed_at": "2026-10-11T20:44:30.844Z",
       "expires_at": "2026-10-12T02:14:31.271Z",
+      "handoff_head": "225d3b94742961e422141553a5861fb1abf118fa",
       "heartbeat_at": "2026-10-12T02:09:31.271Z",
       "notes": "Continuation 2026-10-12: full checkout now available; repository-pinned standalone tools outside repo, feed tsc passed; existing PG18 tests claimed before edits, Docker local disposable test database only. Full Flutter8Status+4media passed CI on16973d1; shared lockfile/router still coordinator.",
       "owner": "Codex STATUS implementation window",
@@ -5694,12 +5710,11 @@
         "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
         "adapters/storage/postgres/src/home_feed/feed.integration.test.ts"
       ],
+      "release_reason": "Owned Status authorization/recovery/media syntax source and existing PG suite complete. Strict feed/scoped TypeScript PASS;50Vitest PASS (41mock,9real disposablePG18);11Node units PASS;8Status+4media Flutter cases PASS actual CI. PR671 head225d3b9, source3a2c1bd, handoff docs/workstreams/STATUS-masana-authorization-20261011.md. Coordinator owns shell/router/Gateway/media bindings, lockfile importer/full workspace/device/restore qualification; no merge/deploy. Exact remaining source transferred through existing PR. Own disposable database removed; source preserved.",
+      "released_at": "2026-10-12T02:14:40.929Z",
       "scope": "Canonical Status feed authorization and recovery; previous overlapping feed owners explicitly released",
       "source_head": "3a2c1bd6526584467af9c1b2b768420a6ed2e5f1",
-      "source_pr": 671,
-      "released_at": "2026-10-12T02:14:40.929Z",
-      "handoff_head": "225d3b94742961e422141553a5861fb1abf118fa",
-      "release_reason": "Owned Status authorization/recovery/media syntax source and existing PG suite complete. Strict feed/scoped TypeScript PASS;50Vitest PASS (41mock,9real disposablePG18);11Node units PASS;8Status+4media Flutter cases PASS actual CI. PR671 head225d3b9, source3a2c1bd, handoff docs/workstreams/STATUS-masana-authorization-20261011.md. Coordinator owns shell/router/Gateway/media bindings, lockfile importer/full workspace/device/restore qualification; no merge/deploy. Exact remaining source transferred through existing PR. Own disposable database removed; source preserved."
+      "source_pr": 671
     },
     {
       "base_sha": "3951d976948cfba787a7a311d0cfecf5fff7da82",
@@ -5773,27 +5788,30 @@
       "test_state": "IMPLEMENTED_UNVERIFIED feature-local; full E2E/PG18/Flutter/Android BLOCKED on toolchain, AF00 composition and pnpm lock"
     },
     {
+      "base_sha": "799b2b337bd0c5915e24aa0b9f1b476bec521ea0",
+      "branch": "integration/rebuild",
       "claim_id": "status-integrated-evidence-20261012",
+      "claimed_at": "2026-10-12T02:24:20.038Z",
+      "expires_at": "2026-10-12T02:29:20.038Z",
+      "heartbeat_at": "2026-10-12T02:24:20.038Z",
       "owner": "Codex STATUS implementation window",
-      "scope": "Record user-directed safe source merge and exact read-only production probe",
       "paths": [
         "docs/workstreams/STATUS-masana-authorization-20261011.md"
       ],
-      "branch": "integration/rebuild",
-      "base_sha": "799b2b337bd0c5915e24aa0b9f1b476bec521ea0",
-      "claimed_at": "2026-10-12T02:24:20.038Z",
-      "heartbeat_at": "2026-10-12T02:24:20.038Z",
-      "expires_at": "2026-10-12T02:29:20.038Z",
+      "release_reason": "PR671 merged799b2b3; merge tree5afd4ec matches tested preview, strict TS+50tests including9realPG18 pass; production read-only healthz/readyz200, v1/feed404 absent. Integration handoff at5c08e151; coordinator composition/source release remains pending.",
       "released_at": "2026-10-12T02:24:36.112Z",
-      "release_reason": "PR671 merged799b2b3; merge tree5afd4ec matches tested preview, strict TS+50tests including9realPG18 pass; production read-only healthz/readyz200, v1/feed404 absent. Integration handoff at5c08e151; coordinator composition/source release remains pending."
+      "scope": "Record user-directed safe source merge and exact read-only production probe"
     },
     {
       "base_sha": "bfcc68dbc23c18ca0da38c1b027aa7f8d871944a",
       "branch": "lane/rooms-membership-invites-20261011",
       "claim_id": "rooms-ci-closure-20261011-cloud",
       "claimed_at": "2026-10-11T20:47:21.305Z",
+      "delivery_head_sha": "9336d66d3a783922cef8d862ea784cff5c7b8c7a",
       "expires_at": "2026-10-12T02:23:02.573Z",
       "heartbeat_at": "2026-10-12T02:18:02.573Z",
+      "integration_branch": "lane/l-rooms-c38-saved-lessons-20261011-gpt6",
+      "integration_head_sha": "3a067f57ca262ab113d5d0718ed1e1769c392c77",
       "owner": "Codex ROOMS / owner-directed CI blocker repair",
       "paths": [
         "pnpm-lock.yaml",
@@ -5841,19 +5859,21 @@
         "adapters/storage/postgres/src/rooms/membership.integration.test.mjs",
         "services/gateway/src/modules/rooms/rtdn_auth.test.ts"
       ],
-      "scope": "Owner requests resolve actual PR669 blockers; narrow shared dependency and baseline Admin compiler repair",
-      "source_pr": 669,
-      "source_head": "f2951e3a11f09dc5b2ac4c391e30d1fac22cc57f",
-      "integration_head_sha": "3a067f57ca262ab113d5d0718ed1e1769c392c77",
-      "integration_branch": "lane/l-rooms-c38-saved-lessons-20261011-gpt6",
-      "delivery_head_sha": "9336d66d3a783922cef8d862ea784cff5c7b8c7a",
+      "release_reason": "Owner-directed blockers repaired and PR669 merged into existing Rooms prerequisite feature branch. Qualified source1b79c3a: frozen install/full typecheck/full build,128Rooms+architecture Vitest,20unit,5realPG18,22RoomsFlutter,3AdminFlutter,both analyzers PASS. Global app failures remain documented; main/runtime composition and production activation not performed. Merge3a067f57 tree matched sourcef2951e3; durable target handoff9336d66. Temporary local PG container stopped, tests did not touch live databases.",
       "released_at": "2026-10-12T02:26:39.133Z",
-      "release_reason": "Owner-directed blockers repaired and PR669 merged into existing Rooms prerequisite feature branch. Qualified source1b79c3a: frozen install/full typecheck/full build,128Rooms+architecture Vitest,20unit,5realPG18,22RoomsFlutter,3AdminFlutter,both analyzers PASS. Global app failures remain documented; main/runtime composition and production activation not performed. Merge3a067f57 tree matched sourcef2951e3; durable target handoff9336d66. Temporary local PG container stopped, tests did not touch live databases."
+      "scope": "Owner requests resolve actual PR669 blockers; narrow shared dependency and baseline Admin compiler repair",
+      "source_head": "f2951e3a11f09dc5b2ac4c391e30d1fac22cc57f",
+      "source_pr": 669
     },
     {
+      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "branch": "lane/af08-mui02-auth-language-20261012-gpt6",
       "claim_id": "af08-mui02-auth-language-20261012-gpt6",
+      "claimed_at": "2026-10-12T15:42:06.069Z",
+      "expires_at": "2026-10-12T15:59:02.021Z",
+      "heartbeat_at": "2026-10-12T15:54:02.021Z",
+      "notes": "Fresh main ada66c61c, no overlapping active or stale claims for six exact paths; four mounted auth routes use centerEnd wrappers; no change to picker, session, router or AF00 presentation.",
       "owner": "AF08 / GPT-6 MUI-02",
-      "scope": "MUI-02 mounted auth language-selector presentation and geometry regressions",
       "paths": [
         "apps/mobile/lib/src/screens/onboarding/name_screen.dart",
         "apps/mobile/lib/src/screens/onboarding/otp_screen.dart",
@@ -5862,20 +5882,22 @@
         "apps/mobile/test/ui/mui02_auth_language_test.dart",
         "docs/workstreams/UI-MUI-02-auth-language.md"
       ],
-      "branch": "lane/af08-mui02-auth-language-20261012-gpt6",
-      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
       "pr": "",
-      "claimed_at": "2026-10-12T15:42:06.069Z",
-      "heartbeat_at": "2026-10-12T15:54:02.021Z",
-      "expires_at": "2026-10-12T15:59:02.021Z",
-      "notes": "Fresh main ada66c61c, no overlapping active or stale claims for six exact paths; four mounted auth routes use centerEnd wrappers; no change to picker, session, router or AF00 presentation.",
+      "release_reason": "MUI-02 source/test PR #680 branch head 52d60f3b74cc51baf8cb9991b92dd5fad7abc4f2, source test head 651b857d2. Handoff docs/workstreams/UI-MUI-02-auth-language.md. No Flutter runtime tests, no merge or release. CI analyzer 329 baseline, TS2459 baseline. AF08 Flutter runner should execute 33 tests before PR merge; exact paths released for pickup.",
       "released_at": "2026-10-12T16:00:53.550Z",
-      "release_reason": "MUI-02 source/test PR #680 branch head 52d60f3b74cc51baf8cb9991b92dd5fad7abc4f2, source test head 651b857d2. Handoff docs/workstreams/UI-MUI-02-auth-language.md. No Flutter runtime tests, no merge or release. CI analyzer 329 baseline, TS2459 baseline. AF08 Flutter runner should execute 33 tests before PR merge; exact paths released for pickup."
+      "scope": "MUI-02 mounted auth language-selector presentation and geometry regressions"
     },
     {
+      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "branch": "lane/af08-mui02-auth-language-20261012-gpt6",
       "claim_id": "af08-mui02-executable-validation-20261012-gpt6",
+      "claimed_at": "2026-10-12T16:06:36.182Z",
+      "delivery_head_sha": "eecea844349738b1e9a7227fa31d859f438503e9",
+      "expires_at": "2026-10-12T16:30:23.952Z",
+      "heartbeat_at": "2026-10-12T16:25:23.951Z",
+      "integration_head_sha": "8bc782c2659973f43c6e6e248540c6b16b2a3106",
+      "notes": "Prior AF08 PR #680 claim released; no overlapping live claims. Isolated workflow is a narrow AF00 CI support path, never merged to main; tests execute on equivalent code tree. Flutter runner reveals 7 actual 320/390/large-text overflow failures, primarily shared auth PrimaryButton row and possible PhoneField; AF00 common UI paths narrowly acquired for responsive corrections; no router/CI canonical changes. Remote final validation workflow accidentally included library source in flutter test positional arguments; validator-only YAML correction required, application and tests already pass in preceding run. PR #680 merged after 33+22 Flutter tests and scoped analyze PASS. Only docs handoff and claim release remain.",
       "owner": "AF08 / GPT-6 MUI-02 verification (AF00-scoped temporary validation workflow only)",
-      "scope": "Continue PR #680 unchanged; run real Flutter widget tests on GitHub hosted runner via isolated, disposable workflow; no change to existing CI, release or auth ownership; update one handoff then release",
       "paths": [
         "apps/mobile/lib/src/screens/onboarding/name_screen.dart",
         "apps/mobile/lib/src/screens/onboarding/otp_screen.dart",
@@ -5887,19 +5909,12 @@
         "apps/mobile/lib/src/ui/components/primary_button.dart",
         "apps/mobile/lib/src/ui/components/phone_field.dart"
       ],
-      "branch": "lane/af08-mui02-auth-language-20261012-gpt6",
-      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
-      "claimed_at": "2026-10-12T16:06:36.182Z",
-      "heartbeat_at": "2026-10-12T16:25:23.951Z",
-      "expires_at": "2026-10-12T16:30:23.952Z",
-      "notes": "Prior AF08 PR #680 claim released; no overlapping live claims. Isolated workflow is a narrow AF00 CI support path, never merged to main; tests execute on equivalent code tree. Flutter runner reveals 7 actual 320/390/large-text overflow failures, primarily shared auth PrimaryButton row and possible PhoneField; AF00 common UI paths narrowly acquired for responsive corrections; no router/CI canonical changes. Remote final validation workflow accidentally included library source in flutter test positional arguments; validator-only YAML correction required, application and tests already pass in preceding run. PR #680 merged after 33+22 Flutter tests and scoped analyze PASS. Only docs handoff and claim release remain.",
+      "release_reason": "PR #680 reviewed and merged at 8bc782c; PR #681 docs-only SHA-specific verified handoff merged at eecea844. All six production/test source blobs match passing Flutter hosted validator head 7ad7e2d. 33 + 22 widget tests PASS; scoped Dart analyze clean. MUI-03 next; installed/prod/device/MUI-09/10/AF11 remain open. Validation workflow isolated to unmerged branch. Released all exact paths.",
       "released_at": "2026-10-12T16:27:41.552Z",
-      "source_pr": 680,
+      "scope": "Continue PR #680 unchanged; run real Flutter widget tests on GitHub hosted runner via isolated, disposable workflow; no change to existing CI, release or auth ownership; update one handoff then release",
       "source_head": "5cb21b1f1f219f8477eeb6869ef217ce2c07d2b3",
-      "integration_head_sha": "8bc782c2659973f43c6e6e248540c6b16b2a3106",
-      "delivery_head_sha": "eecea844349738b1e9a7227fa31d859f438503e9",
-      "test_state": "PASS_SIMULATED_WIDGET: 33 MUI-02 + 22 prior auth/MUI-01 executed on github run 38276920855; PASS_DART_ANALYZE scoped six Dart paths; 329 whole-repo diagnostics/TS2459 baseline FAIL; device/provider NOT_RUN",
-      "release_reason": "PR #680 reviewed and merged at 8bc782c; PR #681 docs-only SHA-specific verified handoff merged at eecea844. All six production/test source blobs match passing Flutter hosted validator head 7ad7e2d. 33 + 22 widget tests PASS; scoped Dart analyze clean. MUI-03 next; installed/prod/device/MUI-09/10/AF11 remain open. Validation workflow isolated to unmerged branch. Released all exact paths."
+      "source_pr": 680,
+      "test_state": "PASS_SIMULATED_WIDGET: 33 MUI-02 + 22 prior auth/MUI-01 executed on github run 38276920855; PASS_DART_ANALYZE scoped six Dart paths; 329 whole-repo diagnostics/TS2459 baseline FAIL; device/provider NOT_RUN"
     },
     {
       "base_sha": "eecea844349738b1e9a7227fa31d859f438503e9",
@@ -5908,26 +5923,34 @@
       "claimed_at": "2026-10-12T16:37:08.128Z",
       "expires_at": "2026-10-12T16:53:29.474Z",
       "heartbeat_at": "2026-10-12T16:48:29.474Z",
-      "owner": "AF06 / MUI-03 GPT-6",
+      "integration_head_sha": "5b5bd26e7d5d62541652a2090bd32c9a90caa9fe",
       "lane": "AF06",
-      "scope": "Mounted Chats search: immediate filtering of authenticated, Masana-directory-approved local conversation threads and account-fenced state; preserve pin/archive/open/read. C10 server-wide query remains a separate AF00 integration gap.",
+      "notes": "Continuation by same AF06 owner after brief expired interval; no new overlapping claims. Hosted validation run 38279529355 PASSED all focused steps on exact two app/test blobs at e4b0c533; source PR #682, canonical C10 integration remains open.",
+      "owner": "AF06 / MUI-03 GPT-6",
       "paths": [
         "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
         "apps/mobile/test/ui/mui03_chats_search_test.dart",
         "docs/workstreams/UI-MUI-03-chats.md"
       ],
-      "notes": "Continuation by same AF06 owner after brief expired interval; no new overlapping claims. Hosted validation run 38279529355 PASSED all focused steps on exact two app/test blobs at e4b0c533; source PR #682, canonical C10 integration remains open.",
+      "release_reason": "Scoped MUI-03 mounted authorized local Chats search merged PR #682 at 5b5bd26e7d5d62541652a2090bd32c9a90caa9fe; post-merge handoff docs PR #683 merged at 600fe204c1610c6c715ad9d61387f58f67d5817a. Focused hosted Flutter run 38279529355 PASS 4 widget+16 regression+0 Dart issues, app/test blobs match implementation e4b0c533. Canonical C10 server-wide authorized inbox/query still UNMOUNTED; AF00 notified via #616 comment 6128601248, remains OPEN. No signed-device/provider evidence.",
+      "released_at": "2026-10-12T16:51:29.110Z",
+      "scope": "Mounted Chats search: immediate filtering of authenticated, Masana-directory-approved local conversation threads and account-fenced state; preserve pin/archive/open/read. C10 server-wide query remains a separate AF00 integration gap.",
       "source_head": "190be801e739e42cd11f76d227a72fe96e304340",
       "source_pr": 682,
-      "integration_head_sha": "5b5bd26e7d5d62541652a2090bd32c9a90caa9fe",
-      "released_at": "2026-10-12T16:51:29.110Z",
-      "release_reason": "Scoped MUI-03 mounted authorized local Chats search merged PR #682 at 5b5bd26e7d5d62541652a2090bd32c9a90caa9fe; post-merge handoff docs PR #683 merged at 600fe204c1610c6c715ad9d61387f58f67d5817a. Focused hosted Flutter run 38279529355 PASS 4 widget+16 regression+0 Dart issues, app/test blobs match implementation e4b0c533. Canonical C10 server-wide authorized inbox/query still UNMOUNTED; AF00 notified via #616 comment 6128601248, remains OPEN. No signed-device/provider evidence.",
       "test_state": "PASS_SCOPED_WIDGET; MUI03_PARTIAL_SOURCE"
     },
     {
+      "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
+      "branch": "lane/af03-mui07-wallet-presentation-20261012",
       "claim_id": "af03-mui07-wallet-presentation-20261012",
+      "claimed_at": "2026-10-12T17:24:49.811891+00:00",
+      "delivery_head_sha": "1337917a7e063971fd083deb4d0ce4b59310b219",
+      "expires_at": "2026-10-12T17:48:56.648166+00:00",
+      "handoff_pr": 687,
+      "heartbeat_at": "2026-10-12T17:43:56.648166+00:00",
+      "integration_head_sha": "867d1288885bc335ee0f2704504de8135580dc72",
+      "notes": "PR686 MERGED normally at867d1288885bc335ee0f2704504de8135580dc72, exact head/source416a2139c8dccf4747e7ec289ddecd7c381190c3. Five executedapp/test blobs equal mergedmain.96 focusedPASS/zeroDart; fullFAIL recorded baseline496/9 source524/10, relatedWalletfixturefixed, two timing-sensitiveaudio rechecksPASS; Docs finalhandoff on docs/mui07-verified-wallet-handoff-20261012 underway.",
       "owner": "AF03 / Codex MUI-07 mounted Wallet presentation",
-      "scope": "Existing mounted Wallet compact truthful presentation and account-fenced balance reads; no monetary operation/auth/router/backend/denomination changes",
       "paths": [
         "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
         "apps/mobile/lib/src/state/wallet_state.dart",
@@ -5937,19 +5960,11 @@
         "docs/workstreams/UI-MUI-03-chats.md",
         "docs/workstreams/UI-MUI-07-wallet.md"
       ],
-      "branch": "lane/af03-mui07-wallet-presentation-20261012",
-      "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
-      "claimed_at": "2026-10-12T17:24:49.811891+00:00",
-      "heartbeat_at": "2026-10-12T17:43:56.648166+00:00",
-      "expires_at": "2026-10-12T17:48:56.648166+00:00",
-      "notes": "PR686 MERGED normally at867d1288885bc335ee0f2704504de8135580dc72, exact head/source416a2139c8dccf4747e7ec289ddecd7c381190c3. Five executedapp/test blobs equal mergedmain.96 focusedPASS/zeroDart; fullFAIL recorded baseline496/9 source524/10, relatedWalletfixturefixed, two timing-sensitiveaudio rechecksPASS; Docs finalhandoff on docs/mui07-verified-wallet-handoff-20261012 underway.",
-      "released_at": "2026-10-12T17:49:15.761867+00:00",
       "release_reason": "Source PR686 merged normally867d1288885bc335ee0f2704504de8135580dc72, exact head416a2139c8dccf4747e7ec289ddecd7c381190c3. Postmerge docsPR687 merged 1337917a7e063971fd083deb4d0ce4b59310b219.96 focusedFlutter PASS and scopedDart zero. Full suites baseline496/9source524/10 remainFAIL; Walletfixturefixed and two unchangedaudio timing rechecksPASS. Fullanalyze325baseline324source/no newdiagnostics; CI TalkIdTS2459/globalFlutter failures not disabled. CanonicalMUI03 inbox, AF00 composition, MSNfundingSend and MUI04-08independent/MUI09-10/AF11qualification OPEN. Next independentMUI08; exacthandoff docs/workstreams/UI-MUI-07-wallet.md and UI-MUI-03-chats.md. No protectedsource seized.",
+      "released_at": "2026-10-12T17:49:15.761867+00:00",
+      "scope": "Existing mounted Wallet compact truthful presentation and account-fenced balance reads; no monetary operation/auth/router/backend/denomination changes",
       "source_head": "416a2139c8dccf4747e7ec289ddecd7c381190c3",
       "source_pr": 686,
-      "integration_head_sha": "867d1288885bc335ee0f2704504de8135580dc72",
-      "handoff_pr": 687,
-      "delivery_head_sha": "1337917a7e063971fd083deb4d0ce4b59310b219",
       "test_state": "96 focusedFlutter PASS; focusedDart zero; fullFlutter baseline496PASS/9FAIL source524PASS/10FAIL; two timingcases PASS rechecks; fullDart baseline325/source324 no introduceddiagnostics; CI baselineFAIL; signed/provider NOT_RUN"
     }
   ],
