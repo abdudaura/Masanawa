@@ -1,5 +1,137 @@
 # MUI-09 / AF13 — bounded combined regression on integrated UI source
 
+## Named directory recovery continuation — 2026-10-12, PR #692
+
+**Scope:** MUI-09/AF13 bounded AF07 directory journey: a signed-in fan opens
+`/masana`, refreshes an available roster, encounters a transient outage,
+retries, then receives authorization denial. The mounted picker incorrectly
+kept a green availability dot when canonical presence became unknown. Green
+now requires explicit `available`; other states stay neutral, with the existing
+localized status exposed through accessibility semantics. Persona/chat routing,
+account-fenced roster/cache authority and private feedback remain intact.
+
+- Fresh base: `950fe2e5ac66d8162b8c151a30d268eaeee76493` (#691 delivered).
+- Implementation/test source: `92d8ba67a1f83f8b293e29a35eb07cf521e5dc55`.
+- Branch: `lane/af13-directory-presence-recovery-20261012`;
+  [PR #692](https://github.com/weavewellindustrieslimited/masanawa/pull/692).
+- Integration: PENDING_MAIN_MERGE. Scoped verification: **PASS_SIMULATED**;
+  release **NOT_RELEASED**. Overall MUI-09 and unresolved feature acceptance
+  remain **PARTIAL / OPEN**.
+
+### Allocation and preserved source
+
+Exact-path claim `af13-directory-presence-recovery-20261012` was acquired before
+edits through the existing CAS registry; allocation commit
+`fee79b3cbe799fbe7ddd054579c7598bd130358a`. The owner-authorized bounded
+AF07→AF13 presentation/test allocation is recorded there. Four paths only:
+
+- `apps/mobile/lib/src/screens/chat/masana_list_screen.dart` — actual mounted
+  availability color and status semantics; no new presence authority.
+- `apps/mobile/test/agent_directory_readiness_test.dart` — recover the released
+  #460 malformed-presence correction: unknown/status-unverified/cache JSON,
+  retaining explicit offline and recognized-state assertions.
+- `apps/mobile/test/agent_recovery_test.dart` — recover released #460 semantic
+  roster checks and add the real mounted 320px refresh/503/retry/401 journey.
+- `docs/workstreams/UI-MUI-09-verification.md` — this handoff.
+
+Latest Software Factory remains `b8e9437ea40ce22094758a4352d9c88462d3e17a`;
+AGENTS/operating/verification/claim implementation reviewed. Current project
+main-development policy governs integration. Fresh claims and paginated #616
+comments still have no subsequent AF00/AF05 canonical inbox transfer. Preserve
+#497 `82e4f436e47828be76088cabe2c9064a80a548ec`, #576
+`aa88511f4add1bbcf9e213283088fea5a6b0561b`, prior narrow Chats recovery and
+AF05 voice checkpoint `d9ec3a3c6`. #593 directory work at
+`8d261cc2c857c0dcc963052dc5ff2f195d30027e` is disjoint and preserved.
+
+Released #460 repairs were already available on
+`work/shared-ci-recovery-work-20261008` at head
+`06d30813b39e8681da30793d0b4e448a14ebd07c`. Only the two relevant assertion
+repairs were recovered, preserving current Masana names and newer tests. No
+wholesale ancestry merge, source deletion, auth/finance/router/voice/migration
+or dependency change. SDK-generated lock/analysis changes restored to original
+bytes; pub resolution was executed, not a frozen-lockfile qualification.
+
+### Executed evidence
+
+Runner: local official Flutter **3.47.7** (`abaf9c5237`), Dart **3.13.5**.
+Tests use synthetic transports and real mounted widgets/controller/theme code;
+no live server/account/provider or installed-app evidence.
+
+- **RED:** original source plus new mounted test: **17 passed / 3 failed**.
+  Both retained directory failures reproduced; new test proved the actual
+  refresh indicator stayed green while controller presence was unknown.
+- **PASS:** **35 focused tests**, directory readiness/recovery/cache fast-start,
+  MUI-03 Chats and shell route compatibility. Mounted journey checks immediate
+  revocation, retained persona after 503, neutral unknown indicator, accessible
+  status, private-error redaction, restored availability after successful retry,
+  and removal after 401. Existing stale-query/account/cache tests retained.
+- **PASS:** focused Dart analysis, **zero issues**. Three pre-existing informational
+  diagnostics in touched files were corrected without changing domain behavior.
+- **FAIL:** full Flutter suite **578 passed / 6 failed**, source `92d8ba67...`.
+  The two named directory failures now pass; remaining failures:
+  `edit_profile_screen_test.dart` — missing profile offers real first-time creation;
+  unsaved or invalid updates cannot be submitted; saved public profile survives
+  leaving and reopening editor; failed save keeps previous server state for recovery.
+  `talk_screen_test.dart` — listener opens Sponsor Seat sheet from Add AI;
+  host opens direct Add AI semantics. No introduced failure found.
+- Exact source-head Foundation [38315646012](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38315646012)
+  **FAIL**: `packages/agents/src/talk-replay.test.ts(6,8)` TS2459, `TalkId` not
+  exported. Mobile [38315646005](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38315646005)
+  **IN_PROGRESS** at readback (Install); later steps not passed. Vercel **FAIL**:
+  deployment build rate limit. Routine development merge is owner-authorized;
+  these pre-existing global failures are retained, not waived.
+- Whole analysis **NOT_RERUN**; prior executed **322 diagnostics / FAIL** retained.
+  TalkId TS2459/global CI debt is not fixed or waived. Android SDK/signing/phone
+  absent; prior APK blockage and MUI-10/AF11 qualification remain OPEN.
+- Independent reviewer examined source `92d8ba67...` and canonical controller:
+  **no actionable correctness/regression findings**. Non-English mounted status
+  semantics are not separately qualified; existing localized status authority
+  is reused. Hausa production English fallback/full translation remain OPEN.
+
+Initial verification caught and corrected a non-null localization lookup in a
+fixture without delegates, a merged-label assertion, and semantics-handle
+cleanup timing. Final focused run passed; unsuccessful intermediate runs are
+retained in `/workspace/scratch/directory-{red,green,green-final,focused}.log`.
+Final logs: `directory-focused-final.log`, `directory-analyze-final.log`,
+`directory-full-suite.log`. No CI/protection/test suppression or admin bypass.
+
+```sh
+cd apps/mobile
+/workspace/flutter/bin/flutter pub get
+/workspace/flutter/bin/flutter test --no-pub --reporter expanded \
+  test/agent_directory_readiness_test.dart test/agent_recovery_test.dart \
+  test/agent_directory_fast_start_test.dart test/ui/mui03_chats_search_test.dart \
+  test/app_shell_route_compatibility_test.dart
+/workspace/flutter/bin/dart analyze lib/src/screens/chat/masana_list_screen.dart \
+  test/agent_directory_readiness_test.dart test/agent_recovery_test.dart
+/workspace/flutter/bin/flutter test --no-pub --reporter expanded
+```
+
+### Acceptance and next action
+
+The named simulated directory recovery journey is closed for the mounted
+picker at the delivered source; canonical server/device qualification remains
+OPEN. Two retained directory assertion failures are corrected by integrating
+existing useful source. This does not close the full MUI-09 milestone.
+Preserve the earlier **158 focused**, **24 corrected font-render cases** and
+**27 audio rechecks PASS**, earlier full **575 passed / 8 failed**, and the
+exact MUI-07 **496/9 → 524/10** results, optional-test-set caveat, outage fixture
+repair and timing-sensitive audio failures/rechecks below and in MUI-07.
+Different test sets/counts do not independently prove a production repair.
+
+Prefer MUI-03 only after explicit AF00 trusted composition/auth/migration
+transfers and AF05 `main.ts` coordination. Otherwise continue MUI-09/AF13
+with a bounded AF14 transfer for the named first-time profile creation/save/
+reload journey, reproducing its remaining failures before correction; preserve
+its useful prior #460 source. MUI-04/06 require canonical protected composition;
+MUI-07 MSN/funding/Send needs AF01/AF00 reconciliation with #576; MUI-08 exposes
+`quotedAt`, not expiry, and needs AF01's authoritative contract. Keep MUI-10
+signed installed identity and AF11 incoming/native/group/provider checks OPEN.
+Do not rerun the same combined matrix as a replacement for missing integration.
+
+
+## Earlier combined regression delivery (retained evidence)
+
 ## Identity and scope
 
 Base: `576ecda13e8c3f9c034c325986a27376faa87589`, freshly cloned/fetched main.
