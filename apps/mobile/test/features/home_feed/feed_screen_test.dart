@@ -57,7 +57,7 @@ void main(){
  });
  testWidgets('Status discards an outstanding response on disable and reloads on enable',(tester)async{
   final pending=Completer<FeedPage>(),api=StubFeed('fresh');
-  api.onList=(_,__)=>pending.future;
+  api.onList=(_,_)=>pending.future;
   Future<void> render(bool enabled)async{
    await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaFeedScreen(api:api,accountKey:'fan',enabled:enabled))));
    await tester.pump();
@@ -84,10 +84,10 @@ void main(){
  testWidgets('Status preserves offline content but clears it on revoked session',(tester)async{
   final api=StubFeed('cached');
   await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaFeedScreen(api:api,accountKey:'fan'))));await tester.pumpAndSettle();
-  api.onList=(_,__)=>Future.error(DioException(requestOptions:RequestOptions(path:'/v1/feed'),type:DioExceptionType.connectionError));
+  api.onList=(_,_)=>Future.error(DioException(requestOptions:RequestOptions(path:'/v1/feed'),type:DioExceptionType.connectionError));
   await tester.drag(find.byType(ListView),const Offset(0,500));await tester.pumpAndSettle();
   expect(find.text('cached'),findsOneWidget);
-  api.onList=(_,__)=>Future.error(denial(401));await tester.tap(find.text('Retry'));await tester.pumpAndSettle();
+  api.onList=(_,_)=>Future.error(denial(401));await tester.tap(find.text('Retry'));await tester.pumpAndSettle();
   expect(find.text('cached'),findsNothing);
  });
  testWidgets('Status failed reaction rolls back and re-enables retry',(tester)async{
@@ -109,6 +109,19 @@ void main(){
   expect(find.text('post'),findsOneWidget);expect(find.text('Could not load more updates'),findsOneWidget);
   fail=false;await tester.tap(find.text('Retry'));await tester.pumpAndSettle();
   expect(find.text('Could not load more updates'),findsNothing);expect(find.text('post'),findsOneWidget);
+ });
+
+ testWidgets('Status media action retains the authorized post and media pair',(tester)async{
+  final api=StubFeed('image');
+  final post=FeedPost(id:'381026c2-9d56-47b1-b73d-1784e24e41e2',authorMasanaId:'masana',
+   kind:'image',body:'A Masana image',mediaIds:const ['media_abcdefgh'],publishedAt:DateTime.utc(2026),
+   likeCount:0,commentCount:0,liked:false,saved:false);
+  api.onList=(mode,cursor)=>Future.value(FeedPage([post],null));
+  String? openedPost,openedMedia;
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaFeedScreen(api:api,accountKey:'fan',
+   onOpenMedia:(post,id){openedPost=post.id;openedMedia=id;}))));await tester.pumpAndSettle();
+  await tester.tap(find.text('View image'));await tester.pumpAndSettle();
+  expect(openedPost,post.id);expect(openedMedia,'media_abcdefgh');
  });
 
 }

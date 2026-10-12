@@ -28,7 +28,7 @@ describe("J19 actual HTTP endpoint denied paths",()=>{
  });
  it("does not let request body replace path-owned flag identity",async()=>{
   const app=Fastify();apps.push(app);
-  const call=vi.fn(async()=>({name:"calls" as const,enabled:false,revision:1,updatedAt:null}));
+  const call=vi.fn(async(_mutation:unknown)=>({name:"calls" as const,enabled:false,revision:1,updatedAt:null}));
   registerAdminOperationsRoutes(app,{
     overview:async()=>({pendingJobs:0,activeJobLeases:0,deadLetters:0,oldestPendingSeconds:null,
       openFinancialReconciliation:0,roomAnswerAgeSeconds:null,externalSyncLagSeconds:null,

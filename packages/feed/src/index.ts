@@ -29,7 +29,7 @@ export function decodeCursor(value?:string):{at:string;id:string}|null{
 }
 export class FeedService {
  constructor(private readonly repo:Repository,private readonly approvedMasana:(tenant:string,id:string)=>Promise<boolean>,
-  private readonly approvedMedia:(tenant:string,masana:string,mediaId:string)=>Promise<boolean> = async () => false){}
+  private readonly approvedMedia:(tenant:string,masana:string,mediaId:string,kind:PostKind)=>Promise<boolean> = async () => false){}
  async list(tenant:string,viewer:string|null,mode:FeedMode,cursor?:string){
   requireId(tenant);if(viewer)requireId(viewer);
   if(mode!=="for_you"&&mode!=="following")throw new FeedError(422,"invalid_mode");
@@ -54,7 +54,7 @@ export class FeedService {
   if(typeof value.body!=="string"||(value.transcript!=null&&typeof value.transcript!=="string")||
     (value.kind==="text"&&!value.body.trim())||value.body.length>5000||(value.transcript?.length??0)>15000)throw new FeedError(422,"invalid_post_text");
   if(value.kind==="audio"&&!value.transcript?.trim())throw new FeedError(422,"audio_transcript_required");
-  for(const mediaId of media){if(!await this.approvedMedia(actor.tenantId,value.authorMasanaId,mediaId))throw new FeedError(403,"media_not_approved");}
+  for(const mediaId of media){if(!await this.approvedMedia(actor.tenantId,value.authorMasanaId,mediaId,value.kind))throw new FeedError(403,"media_not_approved");}
   return this.repo.publish(actor.tenantId,actor.id,{...value,body:value.body.trim(),media,transcript:value.transcript??null});
  }
  private fan(actor:Actor){if(actor.kind!=="fan")throw new FeedError(403,"fan_only_action");requireId(actor.tenantId);requireId(actor.id);return actor.id}

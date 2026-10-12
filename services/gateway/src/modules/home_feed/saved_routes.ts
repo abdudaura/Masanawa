@@ -27,7 +27,7 @@ export function registerSavedLibraryRoutes(app:FastifyInstance,deps:{
   };
   app.get("/v1/saved",async(req,reply)=>execute(req,reply,async(actor)=>{
     const q=(req.query??{}) as Record<string,unknown>;
-    if(q.cursor!==undefined&&typeof q.cursor!=="string")
+    if(Object.keys(q).some(key=>key!=="cursor")||(q.cursor!==undefined&&typeof q.cursor!=="string"))
       return Promise.reject(Object.assign(new Error("invalid_cursor"),{status:422,code:"invalid_cursor"}));
     return deps.service.list(actor,q.cursor as string|undefined);
   }));

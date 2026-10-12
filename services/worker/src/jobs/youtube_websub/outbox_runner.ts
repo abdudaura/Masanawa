@@ -46,7 +46,7 @@ export async function runYoutubeOutboxBatch(input: {
       ...(safeErrorCode===undefined?{}:{safeErrorCode}),
       ...(state==="retry-scheduled"?{
         availableAt:new Date(Date.now()+Math.min(3600000,30000*2**Math.min(event.attempt,7))).toISOString() as
-          Parameters<typeof settleOutboxClaim>[1]["availableAt"],
+          NonNullable<Parameters<typeof settleOutboxClaim>[1]["availableAt"]>,
       }:{}),
     }));
     if(state==="acknowledged") acknowledged++;

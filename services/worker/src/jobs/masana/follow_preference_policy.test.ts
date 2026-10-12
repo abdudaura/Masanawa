@@ -16,9 +16,9 @@ describe("C46 send-time follow and mute policy",()=>{
   it("rejects unfollow, mute, missing rows and storage errors",async()=>{
     for(const row of [{allowed:false},undefined]){
       const query=vi.fn().mockResolvedValue({rows:row?[row]:[]});
-      expect(await mayNotifyFollower({query} as unknown as Pick<Pool,"query">,input)).toBe(false);
+      expect(await mayNotifyFollower({query},input)).toBe(false);
     }
     const query=vi.fn().mockRejectedValue(new Error("database_unavailable"));
-    expect(await mayNotifyFollower({query} as unknown as Pick<Pool,"query">,input)).toBe(false);
+    expect(await mayNotifyFollower({query},input)).toBe(false);
   });
 });

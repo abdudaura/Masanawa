@@ -39,6 +39,7 @@
     "@masanawa/skills": "workspace:*",
     "@masanawa/tools": "workspace:*",
     "@masanawa/agents": "workspace:*",
-    "@masanawa/identity": "workspace:*"
+    "@masanawa/identity": "workspace:*",
+    "fastify": "5.12.5"
   }
 }

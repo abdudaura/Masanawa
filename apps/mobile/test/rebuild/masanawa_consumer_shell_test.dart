@@ -7,19 +7,20 @@ import 'package:masanawa/src/app/masanawa_consumer_shell.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('J02 screen shows only five canonical bottom tabs, Home centred', (tester) async {
+  testWidgets('J02 screen shows only five canonical bottom tabs, Chats launch and Status second', (tester) async {
     FlutterSecureStorage.setMockInitialValues({});
     await tester.pumpWidget(const ProviderScope(
       child: MaterialApp(home: MasanawaConsumerShell(initialTab: MasanawaTab.rooms)),
     ));
     await tester.pump();
     final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(bar.selectedIndex, 1);
+    expect(bar.selectedIndex, 4);
     final labels = tester.widgetList<NavigationDestination>(
       find.byType(NavigationDestination),
     ).map((destination) => destination.label).toList();
-    expect(labels, ['Chats', 'Rooms', 'Home', 'Gwani', 'Wallet']);
-    expect(labels[2], 'Home');
+    expect(labels, ['Chats', 'Status', 'Wallet', 'Calls', 'Rooms']);
+    expect(MasanawaTab.parse(null), MasanawaTab.chats);
+    expect(MasanawaTab.parse('status').index, 1);
     expect(find.text('Talk'), findsNothing);
     expect(find.text('Twins'), findsNothing);
     expect(find.byTooltip('Start Talk'), findsNothing);

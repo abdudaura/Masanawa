@@ -1,3 +1,4 @@
+import {registerStatusRuntime,type StatusRuntime} from "./modules/home_feed/runtime.js";
 import Fastify from "fastify";
 import { isRetiredLegacyRequest } from "./modules/retired/policy.js";
 import type { Instant } from "@masanawa/contracts";
@@ -90,6 +91,7 @@ export interface ReadinessCheck {
 }
 
 export interface GatewayAppOptions {
+  readonly status?: StatusRuntime;
   readonly readinessChecks?: readonly ReadinessCheck[];
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
@@ -1386,6 +1388,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   if (options.cloneOnboarding) {
     const onboarding = options.cloneOnboarding;
     app.register(async child => { await registerCloneOnboardingRoutes(child, onboarding); });
+  }
+
+  if (options.status) {
+    app.register(async scope => { await registerStatusRuntime(scope, options.status!); });
   }
 
   registerAgentShellRoutes(app, {
