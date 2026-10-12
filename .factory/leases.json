@@ -2108,9 +2108,12 @@
       ],
       "scope": "Owner-directed incoming Masana signaling/push with narrow composition integration; preserve Status PR674 additions; no native media, auth or ledger replacement",
       "notes": "Previous AF11 delivered/released. Historical alternative call PR643/660 paths inspected and preserved; existing main contracts remain canonical. Narrow routing additions only; Status owns Calls screen. Canonical push request deadline narrowly bounded for durable recovery/shutdown; source tests underway. Narrow incoming hint duplicate/active-call navigation guard only. Narrow owner-directed incoming history projection transfer; Status PR674 old44-line placeholder inspected, preserved in its branch. Main342-line native/group/recents source retained. Source checkpoint efd159787; independent final review no findings; production/provider/device unrun.",
-      "source_head": "4c87e54b527f0356b2311beb38a452a6de341e9c",
+      "source_head": "2d00b84601a8bc21d9d43601bedffa2057b4a58d",
       "source_pr": 675,
-      "test_state": "98 Gateway (real PG) +87 Flutter PASS; Gateway build PASS; incoming Dart clean; Gateway wider typecheck matches54 main diagnostics"
+      "test_state": "98 Gateway (real PG) +87 Flutter PASS; Gateway build PASS; incoming Dart clean; Gateway wider typecheck matches54 main diagnostics",
+      "integration_head_sha": "682827b7712518e78657bae3d3dc9b8956806b83",
+      "released_at": "2026-10-12T12:40:58.448126+00:00",
+      "release_reason": "PR675 merged to main through normal merge; tree8716ada0 matches reviewed source.98Gateway+87Flutter PASS; Gateway build PASS; incoming Dart no diagnostics; broader Gateway54 diagnostics and fullMobile6warnings match untouched main; remoteCI baseline failures documented. Source/state handoff AF11-incoming-calls-20261012; direct prompt published. No device/provider/production qualification."
     },
     {
       "claim_id": "status-media-binding-20261012",
