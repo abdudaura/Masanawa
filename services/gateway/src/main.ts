@@ -155,6 +155,8 @@ import type {
   LiveVoiceTokenService,
 } from "./agent_shell_contract.js";
 import { createGeminiLiveTokenService } from "./live_voice_token.js";
+import { createPostgresGroupCallRepository } from "./group_calls/postgres_repository.js";
+import { createGroupCallService, GroupCallError, type GroupCallRepository } from "./group_calls/service.js";
 import { createPostgresCallHistoryRepository } from "./call_history/postgres_repository.js";
 import { createCallHistoryService, type CallHistoryRepository, type CallHistoryRecorder } from "./call_history/service.js";
 import {
@@ -292,6 +294,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly callHistory?: CallHistoryRepository & CallHistoryRecorder;
+  readonly groupCalls?: GroupCallRepository;
   readonly readinessCheck: ReadinessCheck;
   readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
@@ -413,6 +416,7 @@ function createDefaultDatabaseDependency(
     applicationName: "masanawa-gateway",
     migrationRoots: platformProductMigrationRoots(),
   });
+  const groupCalls = createPostgresGroupCallRepository(database.pool);
   return Object.freeze({
     readinessCheck: database.readinessCheck,
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
@@ -457,6 +461,7 @@ function createDefaultDatabaseDependency(
       },
     }),
     callHistory: createPostgresCallHistoryRepository(database.pool),
+    groupCalls,
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
@@ -510,7 +515,10 @@ function createDefaultDatabaseDependency(
     talkSafety: createPostgresTalkSafetyRepository(database.pool),
     talkSafetyReplay: createPostgresTalkSafetyReplayBridge(database.pool),
     directTwin: createPostgresDirectTwinRepository(database.pool),
-    close: database.close,
+    close: async () => {
+      await groupCalls.drainBackground();
+      await database.close();
+    },
   });
 }
 
@@ -938,6 +946,7 @@ export async function startGatewayService(
       twinProduction = createTwinProductionRuntime({
         sessions: customerSessions,
         profiles: database.twinProfiles,
+        ...(database.platformAgentProfiles ? { platformProfiles: database.platformAgentProfiles } : {}),
         economy: database.twinEconomy,
         events: database.twinEvents,
         commerce: database.commerce,
@@ -2249,6 +2258,33 @@ export async function startGatewayService(
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(!options.appOptions?.callHistory && directoryAuthorizer && database.callHistory
         ? { callHistory: createCallHistoryService({ authorizer: directoryAuthorizer, repository: database.callHistory }) }
+        : {}),
+      ...(!options.appOptions?.groupCalls && directoryAuthorizer &&
+          database.groupCalls && liveVoiceTokens && database.callHistory
+        ? { groupCalls: createGroupCallService({
+            repository: database.groupCalls,
+            authorizer: directoryAuthorizer,
+            liveVoiceTokens,
+            paidAdmissionConfigured: !!twinProduction,
+            ...(database.twinEconomy ? {
+              validateAdmission: async (request: {
+                tenantId: string; userId: string; characterId: string; admissionId: string | null;
+              }) => {
+                const admission = request.admissionId
+                  ? await database.twinEconomy!.readVoiceAdmission({
+                      tenantId: request.tenantId as TenantId,
+                      admissionId: request.admissionId,
+                    })
+                  : null;
+                if (!admission || admission.userId !== request.userId ||
+                    admission.characterId !== request.characterId || admission.settledAt !== null ||
+                    !Number.isFinite(Date.parse(admission.expiresAt)) ||
+                    Date.parse(admission.expiresAt) <= Date.now()) {
+                  throw new GroupCallError("calls.paid_admission_invalid", 403);
+                }
+              },
+            } : {}),
+          }) }
         : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }

@@ -25,6 +25,55 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     await pool?.end();
   });
 
+  it("persists immutable voice settlement timing and usage for recovery", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const plan = { planKey: `voice-settle:${createCanonicalId("operation")}`,
+      entries: [{ role: "platform", amountCredits: 10, ledgerEntryId: createCanonicalId("ledger-entry") }],
+      createdAt: "2026-10-12T10:00:30.000Z",
+      voiceSettlement: { verifiedSeconds: 30, outcome: "completed" as const } };
+    expect(await repository.putLedgerPlan({ tenantId, plan })).toEqual(plan);
+    expect(await repository.readLedgerPlan({ tenantId, planKey: plan.planKey })).toEqual(plan);
+    expect(await repository.putLedgerPlan({ tenantId, plan: { ...plan,
+      createdAt: "2026-10-12T10:01:30.000Z",
+      voiceSettlement: { verifiedSeconds: 90, outcome: "interrupted" } } })).toEqual(plan);
+  });
+
+  it("preserves historical owners while persisting nullable platform voice beneficiaries", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const ownerUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const base = {
+      tenantId, userId, ownerUserId, characterId,
+      quoteId: createCanonicalId("quote"), policyRevision: 1, trialPolicyRevision: 1,
+      chargeMode: "paid" as const, trialDurationDays: 7, trialStartsAt: null,
+      trialExpiresAt: null, estimatedSeconds: 300, estimatedPriceCredits: 50,
+      spendCapCredits: 50, ownerShareBasisPoints: 8000, unitSeconds: 60,
+      priceCreditsPerUnit: 10, quoteExpiresAt: "2099-10-05T16:10:00.000Z",
+      createdAt: "2026-10-05T16:00:00.000Z",
+    };
+    await repository.putVoiceQuote(base);
+    const platform = { ...base, quoteId: createCanonicalId("quote"),
+      ownerUserId: null, ownerShareBasisPoints: 0 };
+    expect(await repository.putVoiceQuote(platform)).toEqual(platform);
+    expect(await repository.readVoiceQuote({ tenantId, quoteId: base.quoteId })).toEqual(base);
+    const admission = { tenantId, userId, ownerUserId: null,
+      admissionId: createCanonicalId("operation"), quoteId: platform.quoteId,
+      characterId, chargeMode: "paid" as const, admittedAt: base.createdAt,
+      startedAt: null, expiresAt: platform.quoteExpiresAt, spendCapCredits: 50,
+      reservationLedgerEntryId: createCanonicalId("ledger-entry"), settledAt: null };
+    expect(await repository.putVoiceAdmission(admission)).toEqual(admission);
+    expect(await repository.readVoiceAdmission({ tenantId: createCanonicalId("tenant"),
+      admissionId: admission.admissionId })).toBeNull();
+    await expect(repository.putVoiceQuote({ ...platform,
+      quoteId: createCanonicalId("quote"), ownerShareBasisPoints: 1 })).rejects.toThrow("zero owner share");
+    await runMigrations(pool, [{ owner: "commerce", directory: fileURLToPath(
+      new URL("../../../../../packages/commerce/migrations", import.meta.url)) }]);
+    expect(await repository.readVoiceQuote({ tenantId, quoteId: base.quoteId })).toEqual(base);
+  });
+
   it("persists one immutable Credit transfer receipt and accepts only exact replay", async () => {
     const repository = createPostgresTwinRuntimeRepository(pool);
     const tenantId = createCanonicalId("tenant");

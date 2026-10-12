@@ -1,3 +1,4 @@
+import type { PlatformAgentProfileRepository } from "@masanawa/agents";
 import {
   createCanonicalId,
   nowInstant,
@@ -322,6 +323,8 @@ async function ensurePlan(
     readonly tenantId: TenantId;
     readonly planKey: string;
     readonly roles: readonly { readonly role: string; readonly amountCredits: number }[];
+    readonly createdAt?: string;
+    readonly voiceSettlement?: import("@masanawa/commerce").TwinLedgerPlan["voiceSettlement"];
   },
 ) {
   const existing = await repository.readLedgerPlan({
@@ -341,7 +344,8 @@ async function ensurePlan(
           }),
         ),
       ),
-      createdAt: at(),
+      createdAt: input.createdAt ?? at(),
+      ...(input.voiceSettlement ? { voiceSettlement: input.voiceSettlement } : {}),
     }),
   });
 }
@@ -381,6 +385,7 @@ function defaultLimitPolicy(
 export function createTwinProductionRuntime(input: {
   readonly sessions: PlatformCustomerSessionAuthorizer;
   readonly profiles: EnsuringTwinProfiles;
+  readonly platformProfiles?: PlatformAgentProfileRepository;
   readonly economy: TwinRuntimeRepository;
   readonly events: TwinProductionEventStore;
   readonly commerce: CommerceRepository;
@@ -1221,7 +1226,14 @@ export function createTwinProductionRuntime(input: {
           tenantId: request.tenantId,
           characterId: request.characterId,
         });
-        if (!owner) throw new Error("Paid Twin voice requires a personal Twin");
+        if (!owner) {
+          const platform = await input.platformProfiles?.readForCharacter(request);
+          if (!platform || platform.tenantId !== request.tenantId ||
+              platform.characterId !== request.characterId ||
+              platform.voiceProvider.toLowerCase() !== "gemini" || !platform.voiceName.trim()) {
+            throw new Error("Masana voice is unavailable");
+          }
+        }
         const policy = await trialPolicy(request.tenantId, "twin-voice");
         const usage = await input.economy.readTrialUsage({
           tenantId: request.tenantId,
@@ -1234,7 +1246,7 @@ export function createTwinProductionRuntime(input: {
           active: true,
           unitSeconds: input.voice.unitSeconds,
           priceCreditsPerUnit: input.voice.priceCreditsPerUnit,
-          ownerShareBasisPoints: input.voice.ownerShareBasisPoints,
+          ownerShareBasisPoints: owner ? input.voice.ownerShareBasisPoints : 0,
           trial: policy,
         };
         const quote = quoteTwinVoice({
@@ -1293,10 +1305,9 @@ export function createTwinProductionRuntime(input: {
           quoteId: request.quoteId,
         });
         if (
-          !quote ||
+          !quote || quote.tenantId !== request.tenantId || quote.quoteId !== request.quoteId ||
           quote.userId !== request.userId ||
-          quote.characterId !== request.characterId ||
-          Date.parse(quote.quoteExpiresAt) <= Date.now()
+          quote.characterId !== request.characterId
         ) {
           throw new Error("Paid voice quote is unavailable or expired");
         }
@@ -1305,8 +1316,12 @@ export function createTwinProductionRuntime(input: {
           quoteId: quote.quoteId,
         });
         if (existing) {
+          if (existing.tenantId !== request.tenantId || existing.userId !== request.userId ||
+              existing.characterId !== request.characterId || existing.quoteId !== quote.quoteId) {
+            throw new Error("Paid voice admission is unavailable");
+          }
           if (
-            existing.reservationLedgerEntryId &&
+            existing.settledAt === null && existing.reservationLedgerEntryId &&
             existing.chargeMode === "paid" &&
             existing.spendCapCredits > 0
           ) {
@@ -1342,6 +1357,12 @@ export function createTwinProductionRuntime(input: {
             admittedAt: existing.admittedAt,
             expiresAt: existing.expiresAt,
             spendCapCredits: existing.spendCapCredits,
+          });
+        }
+        if (!Number.isFinite(Date.parse(quote.quoteExpiresAt)) ||
+            Date.parse(quote.quoteExpiresAt) <= Date.now()) {
+          throw Object.assign(new Error("Paid voice quote is unavailable or expired"), {
+            statusCode: 410, code: "voice.quote_expired_without_admission",
           });
         }
         const admissionId = createCanonicalId("operation");
@@ -2841,11 +2862,9 @@ export function createTwinProductionRuntime(input: {
       readonly characterId: CharacterId;
       readonly admissionId: string | null;
     }) {
-      const owner = await input.economy.readOwnerForCharacter({
-        tenantId: request.tenantId,
-        characterId: request.characterId,
-      });
-      if (!owner || owner === request.userId) return;
+      const platform = await input.platformProfiles?.readForCharacter(request);
+      if (platform?.tenantId === request.tenantId &&
+          platform.characterId === request.characterId && platform.supportAgent === true) return;
       if (!request.admissionId) throw new Error("Paid Twin voice admission is required");
       const admission = await input.economy.readVoiceAdmission({
         tenantId: request.tenantId,
@@ -2853,9 +2872,12 @@ export function createTwinProductionRuntime(input: {
       });
       if (
         !admission ||
+        admission.tenantId !== request.tenantId ||
+        admission.admissionId !== request.admissionId ||
         admission.userId !== request.userId ||
         admission.characterId !== request.characterId ||
         admission.settledAt !== null ||
+        !Number.isFinite(Date.parse(admission.expiresAt)) ||
         Date.parse(admission.expiresAt) <= Date.now()
       ) {
         throw new Error("Paid Twin voice admission is invalid");
@@ -2871,14 +2893,7 @@ export function createTwinProductionRuntime(input: {
       // Minting a Live token proves authorization, not media usage. Billing
       // starts only after the connected client reports Gemini setup complete
       // through mediaStarted below.
-      const owner = await input.economy.readOwnerForCharacter({
-        tenantId: request.tenantId,
-        characterId: request.characterId,
-      });
-      if (!owner || owner === request.userId) return;
-      if (!request.admissionId) {
-        throw new Error("Paid Twin voice admission is required");
-      }
+      await voiceAdmissionGate.validate(request);
     },
 
     async mediaStarted(request: {
@@ -2927,15 +2942,28 @@ export function createTwinProductionRuntime(input: {
         tenantId: identity.tenantId,
         admissionId: request.admissionId,
       });
-      if (!admission || admission.userId !== identity.userId || admission.settledAt !== null) {
+      if (!admission || admission.tenantId !== identity.tenantId ||
+          admission.admissionId !== request.admissionId || admission.userId !== identity.userId) {
         throw new Error("Paid Twin voice admission is unavailable");
+      }
+      if (admission.settledAt !== null) {
+        return Object.freeze({ admissionId: admission.admissionId, settled: true,
+          alreadySettled: true, settledAt: admission.settledAt });
       }
       const quote = await input.economy.readVoiceQuote({
         tenantId: identity.tenantId,
         quoteId: admission.quoteId,
       });
-      if (!quote) throw new Error("Paid Twin voice quote is unavailable");
-      const seconds =
+      if (!quote || quote.tenantId !== identity.tenantId ||
+          quote.userId !== admission.userId || quote.characterId !== admission.characterId ||
+          quote.ownerUserId !== admission.ownerUserId ||
+          (admission.ownerUserId === null && quote.ownerShareBasisPoints !== 0)) {
+        throw new Error("Paid Twin voice quote is unavailable or inconsistent");
+      }
+      const priorPlan = await input.economy.readLedgerPlan({ tenantId: identity.tenantId,
+        planKey: `voice-settle:${admission.admissionId}` });
+      const stoppedAt = priorPlan?.createdAt ?? at();
+      const measuredSeconds =
         admission.startedAt === null
           ? 0
           : Math.max(
@@ -2943,37 +2971,45 @@ export function createTwinProductionRuntime(input: {
               Math.min(
                 quote.estimatedSeconds,
                 Math.ceil(
-                  (Date.now() - Date.parse(admission.startedAt)) / 1000,
+                  (Date.parse(stoppedAt) - Date.parse(admission.startedAt)) / 1000,
                 ),
               ),
             );
-      const decision = settleVerifiedTwinVoiceUsage({
+      const proposedUsage = priorPlan?.voiceSettlement ?? {
+        verifiedSeconds: measuredSeconds,
+        outcome: admission.startedAt === null ? "failed-before-media" as const : request.outcome,
+      };
+      const decide = (usage: typeof proposedUsage) => settleVerifiedTwinVoiceUsage({
         admissionId: admission.admissionId,
-        outcome:
-          admission.startedAt === null
-            ? "failed-before-media"
-            : request.outcome,
-        verifiedSeconds: seconds,
+        outcome: usage.outcome,
+        verifiedSeconds: usage.verifiedSeconds,
         trialCovered: admission.chargeMode === "trial",
         unitSeconds: quote.unitSeconds,
         priceCreditsPerUnit: quote.priceCreditsPerUnit,
         ownerShareBasisPoints: quote.ownerShareBasisPoints,
         reservedCredits: admission.spendCapCredits,
       });
-      if (decision.disposition === "reconcile") {
+      const proposedDecision = decide(proposedUsage);
+      if (proposedDecision.disposition === "reconcile") {
         throw new Error("Paid Twin voice requires reconciliation");
       }
       const plan = await ensurePlan(input.economy, {
         tenantId: identity.tenantId,
         planKey: `voice-settle:${admission.admissionId}`,
+        createdAt: stoppedAt,
+        voiceSettlement: proposedUsage,
         roles: [
-          { role: "owner", amountCredits: decision.ownerEarningCredits },
-          { role: "platform", amountCredits: decision.platformRevenueCredits },
-          { role: "refund", amountCredits: decision.refundCredits },
+          { role: "owner", amountCredits: proposedDecision.ownerEarningCredits },
+          { role: "platform", amountCredits: proposedDecision.platformRevenueCredits },
+          { role: "refund", amountCredits: proposedDecision.refundCredits },
         ].filter((entry) => entry.amountCredits > 0),
       });
+      // Concurrent first attempts reuse the winning persisted plan's usage.
+      const usage = plan.voiceSettlement ?? proposedUsage;
+      const seconds = usage.verifiedSeconds;
+      const decision = decide(usage);
       if (admission.chargeMode === "paid") {
-        if (decision.ownerEarningCredits > 0) {
+        if (decision.ownerEarningCredits > 0 && admission.ownerUserId !== null) {
           await input.commerce.postTransfer({
             schemaVersion: 1,
             ledgerEntryId: planEntry(plan, "owner", decision.ownerEarningCredits)!,
@@ -3029,13 +3065,13 @@ export function createTwinProductionRuntime(input: {
       await input.economy.markVoiceSettled({
         tenantId: identity.tenantId,
         admissionId: admission.admissionId,
-        outcome: admission.startedAt === null ? "failed-before-media" : request.outcome,
+        outcome: usage.outcome,
         verifiedSeconds: seconds,
         settlement: Object.freeze({ ...decision }),
         settledAt: at(),
       });
-      const voiceFailedBeforeMedia = admission.startedAt === null;
-      await input.events.append({
+      const voiceFailedBeforeMedia = usage.outcome === "failed-before-media";
+      if (admission.ownerUserId !== null) await input.events.append({
         tenantId: identity.tenantId,
         payload: {
           eventType: voiceFailedBeforeMedia

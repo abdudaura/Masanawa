@@ -1,5 +1,5 @@
 import { createCanonicalId } from "@masanawa/contracts";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createTwinProductionRuntime } from "./twin_production_runtime.js";
 
 const tenantId = createCanonicalId("tenant");
@@ -116,7 +116,11 @@ function harness() {
 
 const requesterUserId = createCanonicalId("user");
 
-function paidOrderingHarness(order: string[]) {
+function paidOrderingHarness(order: string[], options: {
+  expired?: boolean;
+  existing?: boolean;
+  settled?: boolean;
+} = {}) {
   const ledgerPlan = (input: { readonly plan: unknown }) => {
     order.push("plan");
     return input.plan;
@@ -165,11 +169,17 @@ function paidOrderingHarness(order: string[]) {
           ownerShareBasisPoints: 8000,
           unitSeconds: 60,
           priceCreditsPerUnit: 10,
-          quoteExpiresAt: "2099-10-05T16:10:00.000Z",
+          quoteExpiresAt: options.expired ? "2020-10-05T16:10:00.000Z" : "2099-10-05T16:10:00.000Z",
           createdAt: "2026-10-05T16:00:00.000Z",
         };
       },
-      async readVoiceAdmissionByQuote() { return null; },
+      async readVoiceAdmissionByQuote() {
+        return options.existing ? { tenantId, userId: requesterUserId, ownerUserId, characterId,
+          admissionId: "operation_existing_voice", quoteId: "quote_paid_123", chargeMode: "paid",
+          admittedAt: "2020-10-05T16:00:00.000Z", expiresAt: "2020-10-05T16:20:00.000Z",
+          spendCapCredits: 50, reservationLedgerEntryId: "ledger-entry_existing_reserve",
+          settledAt: options.settled ? "2020-10-05T16:10:00.000Z" : null } : null;
+      },
       async readLedgerPlan() { return null; },
       async putLedgerPlan(input: { readonly plan: unknown }) {
         return ledgerPlan(input);
@@ -626,14 +636,20 @@ function ownerLifecycleHarness(input: {
 
 function voiceLifecycleHarness(options: {
   readonly startedAt?: string | null;
+  readonly platform?: boolean;
+  readonly support?: boolean;
+  readonly failRefundOnce?: boolean;
+  readonly ownerShare?: number;
 } = {}) {
   const transfers: Array<Record<string, unknown>> = [];
   const events: Array<Record<string, unknown>> = [];
   let markStartedCalls = 0;
+  let savedPlan: unknown = null;
+  let refundFailed = false;
   let admission: any = {
     tenantId,
     userId: requesterUserId,
-    ownerUserId,
+    ownerUserId: options.platform ? null : ownerUserId,
     admissionId: "operation_voice_lifecycle_123",
     quoteId: "quote_voice_lifecycle_123",
     characterId,
@@ -669,9 +685,18 @@ function voiceLifecycleHarness(options: {
       async searchPublic() { return []; },
       async readPublicById() { return null; },
     } as never,
+    platformProfiles: {
+      async readForCharacter() {
+        return options.platform ? { tenantId, characterId, supportAgent: options.support === true,
+          voiceProvider: "gemini", voiceName: "Kore" } : null;
+      },
+    } as never,
     economy: {
+      async readTrialPolicy() { return null; },
+      async readTrialUsage() { return { startedAt: null, consumedUnits: 0 }; },
+      async putVoiceQuote(value: unknown) { return value; },
       async readOwnerForCharacter() {
-        return ownerUserId;
+        return options.platform ? null : ownerUserId;
       },
       async readVoiceAdmission() {
         return admission;
@@ -680,7 +705,7 @@ function voiceLifecycleHarness(options: {
         return {
           tenantId,
           userId: requesterUserId,
-          ownerUserId,
+          ownerUserId: options.platform ? null : ownerUserId,
           quoteId: admission.quoteId,
           characterId,
           policyRevision: 1,
@@ -692,7 +717,7 @@ function voiceLifecycleHarness(options: {
           estimatedSeconds: 300,
           estimatedPriceCredits: 50,
           spendCapCredits: 50,
-          ownerShareBasisPoints: 8000,
+          ownerShareBasisPoints: options.ownerShare ?? (options.platform ? 0 : 8000),
           unitSeconds: 60,
           priceCreditsPerUnit: 10,
           quoteExpiresAt: new Date(Date.now() + 5 * 60_000).toISOString(),
@@ -704,9 +729,10 @@ function voiceLifecycleHarness(options: {
         admission = { ...admission, startedAt: admission.startedAt ?? input.startedAt };
         return admission;
       },
-      async readLedgerPlan() { return null; },
+      async readLedgerPlan() { return savedPlan; },
       async putLedgerPlan(input: { readonly plan: unknown }) {
-        return input.plan;
+        savedPlan = input.plan;
+        return savedPlan;
       },
       async markVoiceSettled(input: { readonly settledAt: string }) {
         admission = { ...admission, settledAt: input.settledAt };
@@ -724,7 +750,11 @@ function voiceLifecycleHarness(options: {
     } as never,
     commerce: {
       async postTransfer(input: Record<string, unknown>) {
-        transfers.push(input);
+        if (options.failRefundOnce && input.reason === "refund" && !refundFailed) {
+          refundFailed = true;
+          throw new Error("injected refund interruption");
+        }
+        if (!transfers.some(t => t.ledgerEntryId === input.ledgerEntryId)) transfers.push(input);
         return input;
       },
     } as never,
@@ -736,7 +766,7 @@ function voiceLifecycleHarness(options: {
     voice: {
       unitSeconds: 60,
       priceCreditsPerUnit: 10,
-      ownerShareBasisPoints: 8000,
+      ownerShareBasisPoints: options.ownerShare ?? (options.platform ? 0 : 8000),
     },
     ownerAccess: {
       platformFeeBasisPoints: 2000,
@@ -761,6 +791,7 @@ describe("Twin production runtime composition", () => {
     expect(Object.isFrozen(runtime)).toBe(true);
     expect(Object.keys(runtime).sort()).toEqual([
       "commissionAdmin",
+      "creditGift",
       "creditTransfer",
       "gifts",
       "monetization",
@@ -771,6 +802,7 @@ describe("Twin production runtime composition", () => {
       "ownerAccessOffering",
       "paidFeatureTrialAdmin",
       "paidVoice",
+      "providerValuationAdmin",
       "twinActivity",
       "twinAttribution",
       "twinDirectory",
@@ -1483,5 +1515,129 @@ describe("Twin production runtime composition", () => {
       entries: [],
     });
     expect(JSON.stringify(wallet)).not.toContain("9999");
+  });
+});
+
+
+describe("platform Masana canonical voice billing", () => {
+  it("quotes platform voice without a human beneficiary", async () => {
+    const h = voiceLifecycleHarness({ platform: true });
+    const quote = await h.runtime.paidVoice.quote({ authorizationHeader: "Bearer test",
+      characterId, expectedSeconds: 300 });
+    expect(quote.ownerShareBasisPoints).toBe(0);
+    expect(quote.estimatedSeconds).toBe(300);
+  });
+
+  it("requires and account/character fences admissions at both token gates", async () => {
+    const h = voiceLifecycleHarness({ platform: true });
+    const request = { tenantId, userId: requesterUserId, characterId,
+      admissionId: h.admission().admissionId };
+    for (const gate of [h.runtime.voiceAdmissionGate.validate, h.runtime.voiceAdmissionGate.tokenIssued]) {
+      await expect(gate(request)).resolves.toBeUndefined();
+      await expect(gate({ ...request, admissionId: null })).rejects.toThrow("required");
+      await expect(gate({ ...request, admissionId: "forged_admission" })).rejects.toThrow("invalid");
+      await expect(gate({ ...request, userId: ownerUserId })).rejects.toThrow("invalid");
+      await expect(gate({ ...request, characterId: createCanonicalId("character") })).rejects.toThrow("invalid");
+      await expect(gate({ ...request, tenantId: createCanonicalId("tenant") })).rejects.toThrow("invalid");
+      h.admission().expiresAt = "invalid";
+      await expect(gate(request)).rejects.toThrow("invalid");
+      h.admission().expiresAt = new Date(Date.now() + 60_000).toISOString();
+    }
+    h.admission().settledAt = new Date().toISOString();
+    await expect(h.runtime.voiceAdmissionGate.validate(request)).rejects.toThrow("invalid");
+  });
+
+  it("exempts only a matching canonical support profile", async () => {
+    const h = voiceLifecycleHarness({ platform: true, support: true });
+    const request = { tenantId, userId: requesterUserId, characterId, admissionId: null };
+    await expect(h.runtime.voiceAdmissionGate.validate(request)).resolves.toBeUndefined();
+    await expect(h.runtime.voiceAdmissionGate.tokenIssued(request)).resolves.toBeUndefined();
+    await expect(h.runtime.voiceAdmissionGate.validate({ ...request,
+      characterId: createCanonicalId("character") })).rejects.toThrow("required");
+    const unknown = voiceLifecycleHarness();
+    await expect(unknown.runtime.voiceAdmissionGate.validate(request)).rejects.toThrow("required");
+  });
+
+  it("settles platform usage to canonical platform revenue and refund only", async () => {
+    const h = voiceLifecycleHarness({ platform: true,
+      startedAt: new Date(Date.now() - 30_000).toISOString() });
+    await h.runtime.voiceAdmissionGate.complete({ authorizationHeader: "Bearer test",
+      admissionId: h.admission().admissionId, outcome: "completed" });
+    expect(h.transfers.map(t => t.reason).sort()).toEqual(["platform-margin", "refund"]);
+    expect(h.transfers.every(t => (t.credit as any).kind !== "pending-earnings")).toBe(true);
+  });
+
+  it("retries partial settlement across a billing unit boundary using frozen usage", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-10-12T10:00:30Z"));
+      const h = voiceLifecycleHarness({ platform: true, failRefundOnce: true,
+        startedAt: "2026-10-12T10:00:00Z" });
+      const request = { authorizationHeader: "Bearer test", admissionId: h.admission().admissionId,
+        outcome: "completed" as const };
+      await expect(h.runtime.voiceAdmissionGate.complete(request)).rejects.toThrow("injected");
+      expect(h.transfers).toHaveLength(1);
+      expect(h.transfers[0]).toMatchObject({ reason: "platform-margin", amountCredits: 10 });
+      vi.setSystemTime(new Date("2026-10-12T10:01:30Z"));
+      await expect(h.runtime.voiceAdmissionGate.complete({ ...request, outcome: "interrupted" }))
+        .resolves.toMatchObject({ verifiedSeconds: 30 });
+      expect(h.transfers).toHaveLength(2);
+      expect(h.transfers[1]).toMatchObject({ reason: "refund", amountCredits: 40 });
+      expect(h.events).toEqual([]);
+      await h.runtime.voiceAdmissionGate.complete(request);
+      expect(h.transfers).toHaveLength(2);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("acknowledges a settled admission retry without posting again and fences other accounts", async () => {
+    const h = voiceLifecycleHarness({ platform: true,
+      startedAt: new Date(Date.now() - 30_000).toISOString() });
+    const request = { authorizationHeader: "Bearer test", admissionId: h.admission().admissionId,
+      outcome: "completed" as const };
+    await h.runtime.voiceAdmissionGate.complete(request);
+    const transfers = h.transfers.length;
+    const events = h.events.length;
+    await expect(h.runtime.voiceAdmissionGate.complete(request)).resolves.toMatchObject({
+      admissionId: request.admissionId, settled: true, alreadySettled: true });
+    expect(h.transfers).toHaveLength(transfers);
+    expect(h.events).toHaveLength(events);
+    h.admission().userId = ownerUserId;
+    await expect(h.runtime.voiceAdmissionGate.complete(request)).rejects.toThrow("unavailable");
+  });
+
+  it("rejects an inconsistent ownerless quote before posting value", async () => {
+    const h = voiceLifecycleHarness({ platform: true, ownerShare: 8000,
+      startedAt: new Date(Date.now() - 30_000).toISOString() });
+    await expect(h.runtime.voiceAdmissionGate.complete({ authorizationHeader: "Bearer test",
+      admissionId: h.admission().admissionId, outcome: "completed" })).rejects.toThrow("inconsistent");
+    expect(h.transfers).toEqual([]);
+  });
+});
+
+
+describe("paid voice accepted quote recovery", () => {
+  const request = { authorizationHeader: "Bearer test", characterId,
+    quoteId: "quote_paid_123", accepted: true };
+  it("returns the original admission after its accepted quote expires", async () => {
+    const order: string[] = [];
+    const runtime = paidOrderingHarness(order, { existing: true, expired: true });
+    await expect(runtime.paidVoice.start(request)).resolves.toMatchObject({
+      admissionId: "operation_existing_voice" });
+    expect(order).toEqual(["reserve"]);
+  });
+  it("returns a settled admission without another reserve transfer", async () => {
+    const order: string[] = [];
+    const runtime = paidOrderingHarness(order, { existing: true, expired: true, settled: true });
+    await expect(runtime.paidVoice.start(request)).resolves.toMatchObject({
+      admissionId: "operation_existing_voice" });
+    expect(order).toEqual([]);
+  });
+  it("rejects an expired quote that never obtained an admission", async () => {
+    const order: string[] = [];
+    const runtime = paidOrderingHarness(order, { expired: true });
+    await expect(runtime.paidVoice.start(request)).rejects.toThrow("expired");
+    await expect(runtime.paidVoice.start(request)).rejects.toMatchObject({
+      statusCode: 410, code: "voice.quote_expired_without_admission" });
+    expect(order).toEqual([]);
   });
 });

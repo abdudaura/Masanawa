@@ -6,7 +6,7 @@ function setup(ok = true) {
   const recordIssued = vi.fn(async () => "0199a000-0000-7000-8000-000000000002");
   const authorize = vi.fn(async () => ({ scope: { tenantId: "tenant-a", userId: "user-a" } }));
   const readForCharacter = vi.fn(async (): Promise<{ voiceProvider: string; voiceName: string } | null> => ({ voiceProvider: "gemini", voiceName: "Kore" }));
-  const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ name: "ephemeral-test-token-value" }), { status: ok ? 200 : 503 }));
+  const fetchImpl = vi.fn(async (..._args: Parameters<typeof fetch>) => new Response(JSON.stringify({ name: "ephemeral-test-token-value" }), { status: ok ? 200 : 503 }));
   const service = createGeminiLiveTokenService({
     apiKey: "fake-test-key",
     authorizer: { authorize } as never,
@@ -47,4 +47,10 @@ describe("server-issued call history", () => {
     recordIssued.mockRejectedValue(new Error("storage unavailable"));
     await expect(service.mint({ characterId, authorizationHeader: undefined })).rejects.toThrow("storage unavailable");
   });
+  it("bounds provider credential issuance with an abort signal", async () => {
+    const { service, fetchImpl } = setup();
+    await service.mint({ characterId, authorizationHeader: "Bearer account" });
+    expect(fetchImpl.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+  });
+
 });

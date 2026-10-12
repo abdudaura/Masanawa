@@ -83,6 +83,7 @@ export function createGeminiLiveTokenService(input: {
         "https://generativelanguage.googleapis.com/v1beta/auth_tokens",
         {
           method: "POST",
+          signal: AbortSignal.timeout(20_000),
           headers: {
             "x-goog-api-key": apiKey,
             "content-type": "application/json",

@@ -610,6 +610,9 @@ export function createPostgresTwinRuntimeRepository(
     },
 
     async putVoiceQuote(input) {
+      if (input.ownerUserId === null && input.ownerShareBasisPoints !== 0) {
+        throw new Error("Platform voice quote must have zero owner share");
+      }
       await pool.query(
         `INSERT INTO commerce.twin_voice_quotes(
            tenant_id,quote_id,user_id,owner_user_id,character_id,

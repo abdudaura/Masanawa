@@ -1,3 +1,5 @@
+import { registerGroupCallRoutes } from "./group_calls/routes.js";
+import { GroupCallError, type GroupCallService } from "./group_calls/service.js";
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
@@ -90,6 +92,7 @@ export interface ReadinessCheck {
 
 export interface GatewayAppOptions {
   readonly callHistory?: CallHistoryService;
+  readonly groupCalls?: GroupCallService;
   readonly readinessChecks?: readonly ReadinessCheck[];
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
@@ -306,6 +309,12 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   const checks = options.readinessChecks ?? [];
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof GroupCallError) {
+      void reply.code(error.statusCode).send({
+        error: { code: error.code, message: "Group call request could not be completed" },
+      });
+      return;
+    }
     if (error instanceof Error && error.message === "financial.auth.unauthorized") {
       void reply.code(401).send({
         error: {
@@ -1488,6 +1497,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   }
 
   if (options.callHistory) registerCallHistoryRoutes(app, options.callHistory);
+  if (options.groupCalls) registerGroupCallRoutes(app, options.groupCalls);
   registerAgentShellRoutes(app, {
     ...(options.agentShell ? { agentShell: options.agentShell } : {}),
     ...(options.liveVoiceTokens

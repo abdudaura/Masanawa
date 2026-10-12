@@ -28,7 +28,7 @@ export interface TwinCreditOperationReceipt {
 export interface PersistedTwinVoiceQuote {
   readonly tenantId: TenantId;
   readonly userId: UserId;
-  readonly ownerUserId: UserId;
+  readonly ownerUserId: UserId | null;
   readonly quoteId: string;
   readonly characterId: CharacterId;
   readonly policyRevision: number;
@@ -50,7 +50,7 @@ export interface PersistedTwinVoiceQuote {
 export interface PersistedTwinVoiceAdmission {
   readonly tenantId: TenantId;
   readonly userId: UserId;
-  readonly ownerUserId: UserId;
+  readonly ownerUserId: UserId | null;
   readonly admissionId: string;
   readonly quoteId: string;
   readonly characterId: CharacterId;
@@ -93,6 +93,10 @@ export interface TwinLedgerPlanEntry {
 }
 
 export interface TwinLedgerPlan {
+  readonly voiceSettlement?: {
+    readonly verifiedSeconds: number;
+    readonly outcome: "completed" | "interrupted" | "failed-before-media";
+  };
   readonly planKey: string;
   readonly entries: readonly TwinLedgerPlanEntry[];
   readonly createdAt: string;
