@@ -221,16 +221,23 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Align(
-            alignment: AlignmentDirectional.centerEnd,
+            alignment: Alignment.center,
             child: LanguagePickerButton(),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var i = 0; i < 6; i++)
-                SizedBox(
-                  width: 47,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Size six code boxes to the padded form so that the 320px
+              // viewport and increased text sizes do not clip an input.
+              final boxWidth = ((constraints.maxWidth - 30) / 6)
+                  .clamp(36.0, 47.0)
+                  .toDouble();
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 0; i < 6; i++)
+                    SizedBox(
+                      width: boxWidth,
                   child: TextField(
                     controller: _boxes[i],
                     focusNode: _boxFocus[i],
@@ -261,6 +268,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   ),
                 ),
             ],
+              );
+            },
           ),
           if (error != null) ...[
             const SizedBox(height: 12),

@@ -123,7 +123,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Align(
-            alignment: AlignmentDirectional.centerEnd,
+            alignment: Alignment.center,
             child: LanguagePickerButton(),
           ),
           const SizedBox(height: 8),
