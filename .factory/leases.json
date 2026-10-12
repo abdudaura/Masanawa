@@ -2036,14 +2036,16 @@
         "apps/mobile/test/features/home_feed/feed_screen_test.dart",
         "services/gateway/src/modules/home_feed/runtime.ts",
         "services/gateway/src/modules/home_feed/runtime.test.ts",
-        "docs/workstreams/STATUS-connected-wiring-20261012.md"
+        "docs/workstreams/STATUS-connected-wiring-20261012.md",
+        "adapters/storage/postgres/src/home_feed/eligibility.ts",
+        "adapters/storage/postgres/src/home_feed/eligibility.test.ts"
       ],
       "branch": "lane/status-connected-wiring-20261012",
       "base_sha": "5c08e151d5ee51c932af5326df85a334a5c0f7b7",
       "claimed_at": "2026-10-12T07:14:58.724Z",
-      "heartbeat_at": "2026-10-12T07:14:58.725Z",
-      "expires_at": "2026-10-12T07:19:58.725Z",
-      "notes": "Exact branch record pushed/read back before edits. Original explicitly excluded Gateway app/main and required manifests/exports/lockfile transfer pending; leave them untouched until reply. Preserve calls/Wallet/Rooms authority and source."
+      "heartbeat_at": "2026-10-12T07:52:21.998Z",
+      "expires_at": "2026-10-12T07:57:21.998Z",
+      "notes": "Flutter SDK3.47.7/Dart3.13.5 obtained;15scoped widget cases pass in isolated copy,6auth route tests/strictTS pass; shared mobile lock mismatch recorded, original tracked bytes restored. Canonical selectors claimed/readback before edits. Explicit gateway/manifest/export/lock transfer still pending."
     }
   ],
   "history": [
