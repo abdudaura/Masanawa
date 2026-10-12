@@ -68,6 +68,8 @@ changes were committed from SDK bootstrap.
 - Incoming-owned Dart source/test analysis: **no issues** (12 files).
 - Wider changed-mobile analysis: no errors; two existing router unnecessary-cast warnings and informational style diagnostics with the newer SDK. Main's introduced brace hint was corrected. No checks disabled.
 - Broader Gateway typecheck fails with **54 normalized diagnostics identical to untouched `708a2ba11`**, zero introduced diagnostics. It is not reported as passing.
+- GitHub Foundation CI on delivery head `4c87e54b5` failed at `packages/agents/src/talk-replay.test.ts:6` (unexported `TalkId`); reproduced on untouched main with `pnpm --filter @masanawa/agents typecheck`.
+- GitHub Mobile Build on that head stopped at full analysis, not APK/device tests. Full local analysis reproduced **six error/warning diagnostics identical to untouched main** (all warnings, zero errors), with 329 total issues on head versus 330 on baseline. No introduced warning/error and no checks weakened. Foundation run `38250021988`; Mobile run `38250022014`. Remote CI is not green.
 - Independent final review: no outstanding actionable findings. Fixed post-mint persistence ambiguity and partial/alpha paid-gate configuration; tests caught both before fixes.
 - `git diff --check` passed. Following final recovery update, incoming SQL suite rerun: 7 passed.
 

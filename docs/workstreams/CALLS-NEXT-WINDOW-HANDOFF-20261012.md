@@ -19,7 +19,10 @@ ringing, explicit accept/decline, server cancel/timeout, missed history,
 metadata push retries, passive polling/resume readback and existing paid voice
 acceptance/native/history/billing recovery. Local evidence: 98 Gateway tests,
 87 Flutter tests and Gateway build pass; incoming-owned Dart has no diagnostics.
-Broader Gateway typecheck matches 54 pre-existing main diagnostics. Do not
+Broader Gateway typecheck matches 54 pre-existing main diagnostics. Remote CI
+still fails on the pre-existing TalkId export and six mobile analyzer warnings;
+repair demonstrated baseline blockers where needed for signed qualification,
+without disabling checks. Do not
 rebuild delivered native/group/billing/incoming code or replace the full Calls
 screen with an old scaffold. Contacts are Masana only; no personal Twins or
 human-to-human consumer calls. Preserve historical financial records/Wallet.
