@@ -2070,7 +2070,9 @@
       "expires_at": "2026-10-12T08:23:41.568Z",
       "notes": "Owner explicitly approved Status composition + required build fixes. Kind-aware media, HTTP root qualification and reproduced full compiler failures. Preserve incoming Calls additive composition; no production activation.",
       "source_head_sha": "683d7526ffb514fe2fba78bf6438b35217aaa1c7",
-      "test_state": "PASS full strict typecheck/full build/frozen dependencies,78 focused+2rootHTTP+9realPG18+15Flutter, scopedDart; global30 failures under baseline comparison; production feed404; Android SDK missing."
+      "test_state": "PASS full strict typecheck/full build/frozen dependencies,78 focused+2rootHTTP+9realPG18+15Flutter, scopedDart; global30 failures under baseline comparison; production feed404; Android SDK missing.",
+      "released_at": "2026-10-12T12:32:32.764Z",
+      "release_reason": "PR674 merged integration523b1511; full build/typecheck,89focused tests+15Flutter;74fresh migrations rehearsal;29global failures reproduced baseline; productionfeed404. Continued media binding separately."
     },
     {
       "claim_id": "af11-incoming-calls-20261012",
@@ -2103,6 +2105,27 @@
       ],
       "scope": "Owner-directed incoming Masana signaling/push with narrow composition integration; preserve Status PR674 additions; no native media, auth or ledger replacement",
       "notes": "Previous AF11 delivered/released. Historical alternative call PR643/660 paths inspected and preserved; existing main contracts remain canonical. Narrow routing additions only; Status owns Calls screen. Canonical push request deadline narrowly bounded for durable recovery/shutdown; source tests underway."
+    },
+    {
+      "claim_id": "status-media-binding-20261012",
+      "owner": "Codex STATUS continuation",
+      "branch": "lane/status-media-binding-20261012",
+      "base_sha": "523b1511ebff58ce10d5e90cb2478680970e0d2b",
+      "scope": "Canonical media object mapping, reused S3 HEAD+bounded signed GET and approved additive Status main binding",
+      "paths": [
+        "adapters/storage/postgres/src/home_feed/eligibility.ts",
+        "adapters/storage/postgres/src/home_feed/eligibility.test.ts",
+        "services/gateway/src/modules/home_feed/media_runtime.ts",
+        "services/gateway/src/modules/home_feed/media_runtime.test.ts",
+        "services/gateway/src/modules/home_feed/composition.test.ts",
+        "services/gateway/src/talk_replay/playback/s3_object_store.ts",
+        "services/gateway/src/modules/home_feed/object_store.test.ts",
+        "services/gateway/src/main.ts",
+        "docs/workstreams/STATUS-media-binding-20261012.md"
+      ],
+      "claimed_at": "2026-10-12T12:32:32.764Z",
+      "heartbeat_at": "2026-10-12T12:32:32.764Z",
+      "expires_at": "2026-10-12T12:37:32.764Z"
     }
   ],
   "history": [
