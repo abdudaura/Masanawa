@@ -150,7 +150,11 @@ void main() {
                 isTrue,
               );
               semantics.dispose();
-              expect(tester.takeException(), isNull);
+              final layoutIssue = tester.takeException();
+              if (layoutIssue != null) {
+                debugPrint('MUI02 DEBUG: ' + layoutIssue.toStringDeep());
+              }
+              expect(layoutIssue, isNull);
               expect(store.value, language);
             },
           );
@@ -193,6 +197,10 @@ void main() {
       tester.getCenter(find.byKey(const Key('language-picker'))).dx,
       closeTo(160, 1.0),
     );
-    expect(tester.takeException(), isNull);
+    final layoutIssue = tester.takeException();
+              if (layoutIssue != null) {
+                debugPrint('MUI02 DEBUG: ' + layoutIssue.toStringDeep());
+              }
+              expect(layoutIssue, isNull);
   });
 }
