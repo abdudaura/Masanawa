@@ -70,7 +70,7 @@ class CallHistoryPage {
 }
 
 abstract interface class CallHistoryTransport {
-  Future<CallHistoryPage> loadPage({String? cursor, CancelToken? cancelToken});
+  Future<CallHistoryPage> loadPage({String? cursor, String query = '', CancelToken? cancelToken});
 }
 
 class GatewayCallHistoryTransport implements CallHistoryTransport {
@@ -79,15 +79,15 @@ class GatewayCallHistoryTransport implements CallHistoryTransport {
   @override
   Future<CallHistoryPage> loadPage({
     String? cursor,
+    String query = '',
     CancelToken? cancelToken,
   }) async {
-    final query = <String, dynamic>{'limit': 30};
-    if (cursor != null) {
-      query['cursor'] = cursor;
-    }
+    final parameters = <String, dynamic>{'limit': 30};
+    if (cursor != null) parameters['cursor'] = cursor;
+    if (query.isNotEmpty) parameters['q'] = query;
     final response = await api.dio.get<dynamic>(
       '/v1/calls',
-      queryParameters: query,
+      queryParameters: parameters,
       cancelToken: cancelToken,
     );
     final data = response.data;
