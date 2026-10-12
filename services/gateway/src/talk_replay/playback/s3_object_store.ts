@@ -1,6 +1,8 @@
 import { createHash, createHmac } from "node:crypto";
 
 export interface ReplayObjectStore {
+  /** Optional additive metadata port; existing replay consumers need no change. */
+  statObject?(objectKey:string):Promise<{contentType:string;bytes:number}|null>;
   checksumSha256(objectKey:string):Promise<string>;
   deleteObject(objectKey:string):Promise<void>;
   presignGet(objectKey:string,ttlSeconds:number):Promise<{
@@ -79,7 +81,7 @@ export function createReplayObjectStore(input:Readonly<{
     return url;
   }
 
-  function authHeaders(url:URL,date:Date,method:"GET"|"DELETE"):Record<string,string>{
+  function authHeaders(url:URL,date:Date,method:"GET"|"HEAD"|"DELETE"):Record<string,string>{
     const {date:datePart,timestamp}=amzTimestamp(date);
     const payloadHash=sha256("");
     const canonicalHeaders=`host:${url.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${timestamp}\n`;
@@ -110,6 +112,19 @@ export function createReplayObjectStore(input:Readonly<{
   }
 
   return Object.freeze<ReplayObjectStore>({
+    async statObject(objectKey){
+      const url=objectUrl(objectKey);
+      const response=await fetchImpl(url,{method:"HEAD",headers:authHeaders(url,now(),"HEAD"),
+        redirect:"error",signal:AbortSignal.timeout(10000)});
+      if(response.status===404)return null;
+      if(!response.ok)throw new Error("talks.replay.object_metadata_unavailable");
+      const contentType=response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
+      const rawBytes=response.headers.get("content-length");
+      const bytes=rawBytes!==null&&/^[0-9]+$/.test(rawBytes)?Number(rawBytes):NaN;
+      if(!contentType||!Number.isSafeInteger(bytes)||bytes<1||bytes>maxObjectBytes)
+        throw new Error("talks.replay.object_metadata_invalid");
+      return {contentType,bytes};
+    },
     async checksumSha256(objectKey){
       const url=objectUrl(objectKey);
       for(let attempt=1;attempt<=availabilityAttempts;attempt+=1){

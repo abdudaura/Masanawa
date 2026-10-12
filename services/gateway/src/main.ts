@@ -1,5 +1,6 @@
+import {createStatusMediaRuntime,type StatusMediaConfiguration} from "./modules/home_feed/media_runtime.js";
 import {FeedService,EditorialReviewService} from "@masanawa/feed";
-import {PgHomeFeedRepository,PgEditorialReviewRepository,PgStatusEligibility} from "@masanawa/postgres";
+import {PgHomeFeedRepository,PgEditorialReviewRepository,PgStatusEligibility,PgFeedMediaAuthorization} from "@masanawa/postgres";
 import type {StatusRuntime} from "./modules/home_feed/runtime.js";
 import { pathToFileURL } from "node:url";
 import type {
@@ -297,6 +298,7 @@ export interface ServiceDatabaseDependency {
     feed: PgHomeFeedRepository;
     editorial: PgEditorialReviewRepository;
     eligibility: PgStatusEligibility;
+    published: PgFeedMediaAuthorization;
   }>;
   readonly readinessCheck: ReadinessCheck;
   readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
@@ -367,6 +369,7 @@ export interface StartGatewayServiceOptions {
   readonly databaseFactory?: ServiceDatabaseFactory;
   readonly appFactory?: (options: GatewayAppOptions) => ManagedNodeServer;
   readonly appOptions?: Omit<GatewayAppOptions, "isDraining">;
+  readonly statusMedia?: StatusMediaConfiguration;
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
@@ -423,7 +426,8 @@ function createDefaultDatabaseDependency(
     readinessCheck: database.readinessCheck,
     status: Object.freeze({feed: new PgHomeFeedRepository(database.pool),
       editorial: new PgEditorialReviewRepository(database.pool),
-      eligibility: new PgStatusEligibility(database.pool)}),
+      eligibility: new PgStatusEligibility(database.pool),
+      published: new PgFeedMediaAuthorization(database.pool)}),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
     platformAgentIdentity: Object.freeze({
@@ -2243,14 +2247,23 @@ export async function startGatewayService(
 
   let status: StatusRuntime | undefined = options.appOptions?.status;
   if (!status && database.status && database.platformSessions) {
-    const {feed, editorial, eligibility} = database.status;
+    const {feed, editorial, eligibility, published} = database.status;
     const sessions = billingCustomerAuthorizer ?? createPlatformCustomerSessionAuthorizer({repository: database.platformSessions});
     const editors = readPrincipalSet(env.MASANAWA_ADMIN_PRINCIPALS ?? env.MASANAWA_ADMIN_USER_IDS ?? env.MASANAWA_ADMIN_EMAILS);
     const author = (tenant: string, id: string) => eligibility.author(tenant, id);
-    const media = (tenant: string, id: string, ref: string, kind: "text" | "image" | "audio") => eligibility.media(tenant, id, ref, kind);
+    let mediaRuntime: ReturnType<typeof createStatusMediaRuntime>;
+    try {
+      mediaRuntime = createStatusMediaRuntime({eligibility, published,
+        ...(options.statusMedia ? {configuration: options.statusMedia} : {})});
+    } catch (error) {
+      await database.close().catch(() => undefined);
+      throw error;
+    }
+    const media = mediaRuntime.approved;
     status = {
       sessions, feed: new FeedService(feed, author, media),
       editorial: new EditorialReviewService(editorial, author, media),
+      media: mediaRuntime.media,
       // Use existing server-configured platform user principals, never client roles.
       isEditor: async session => editors.has(session.userId),
     };
