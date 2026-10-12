@@ -2264,26 +2264,6 @@
       "source_pr": 684,
       "source_head": "93797a4b5908ed4f4ea14e2484dc740e75549b13",
       "integration_head_sha": "b398aa27c1259d4e69546be91b1c2b00ccc29fd7"
-    },
-    {
-      "claim_id": "af03-mui07-wallet-presentation-20261012",
-      "owner": "AF03 / Codex MUI-07 mounted Wallet presentation",
-      "scope": "Existing mounted Wallet compact truthful presentation and account-fenced balance reads; no monetary operation/auth/router/backend/denomination changes",
-      "paths": [
-        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
-        "apps/mobile/lib/src/state/wallet_state.dart",
-        "apps/mobile/test/ui/mui07_wallet_test.dart",
-        "apps/mobile/test/wallet_account_fencing_test.dart",
-        "apps/mobile/test/wallet_service_shortcuts_test.dart",
-        "docs/workstreams/UI-MUI-03-chats.md",
-        "docs/workstreams/UI-MUI-07-wallet.md"
-      ],
-      "branch": "lane/af03-mui07-wallet-presentation-20261012",
-      "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
-      "claimed_at": "2026-10-12T17:24:49.811891+00:00",
-      "heartbeat_at": "2026-10-12T17:43:56.648166+00:00",
-      "expires_at": "2026-10-12T17:48:56.648166+00:00",
-      "notes": "PR686 MERGED normally at867d1288885bc335ee0f2704504de8135580dc72, exact head/source416a2139c8dccf4747e7ec289ddecd7c381190c3. Five executedapp/test blobs equal mergedmain.96 focusedPASS/zeroDart; fullFAIL recorded baseline496/9 source524/10, relatedWalletfixturefixed, two timing-sensitiveaudio rechecksPASS; Docs finalhandoff on docs/mui07-verified-wallet-handoff-20261012 underway."
     }
   ],
   "history": [
@@ -5924,6 +5904,34 @@
       "released_at": "2026-10-12T16:51:29.110Z",
       "release_reason": "Scoped MUI-03 mounted authorized local Chats search merged PR #682 at 5b5bd26e7d5d62541652a2090bd32c9a90caa9fe; post-merge handoff docs PR #683 merged at 600fe204c1610c6c715ad9d61387f58f67d5817a. Focused hosted Flutter run 38279529355 PASS 4 widget+16 regression+0 Dart issues, app/test blobs match implementation e4b0c533. Canonical C10 server-wide authorized inbox/query still UNMOUNTED; AF00 notified via #616 comment 6128601248, remains OPEN. No signed-device/provider evidence.",
       "test_state": "PASS_SCOPED_WIDGET; MUI03_PARTIAL_SOURCE"
+    },
+    {
+      "claim_id": "af03-mui07-wallet-presentation-20261012",
+      "owner": "AF03 / Codex MUI-07 mounted Wallet presentation",
+      "scope": "Existing mounted Wallet compact truthful presentation and account-fenced balance reads; no monetary operation/auth/router/backend/denomination changes",
+      "paths": [
+        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
+        "apps/mobile/lib/src/state/wallet_state.dart",
+        "apps/mobile/test/ui/mui07_wallet_test.dart",
+        "apps/mobile/test/wallet_account_fencing_test.dart",
+        "apps/mobile/test/wallet_service_shortcuts_test.dart",
+        "docs/workstreams/UI-MUI-03-chats.md",
+        "docs/workstreams/UI-MUI-07-wallet.md"
+      ],
+      "branch": "lane/af03-mui07-wallet-presentation-20261012",
+      "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
+      "claimed_at": "2026-10-12T17:24:49.811891+00:00",
+      "heartbeat_at": "2026-10-12T17:43:56.648166+00:00",
+      "expires_at": "2026-10-12T17:48:56.648166+00:00",
+      "notes": "PR686 MERGED normally at867d1288885bc335ee0f2704504de8135580dc72, exact head/source416a2139c8dccf4747e7ec289ddecd7c381190c3. Five executedapp/test blobs equal mergedmain.96 focusedPASS/zeroDart; fullFAIL recorded baseline496/9 source524/10, relatedWalletfixturefixed, two timing-sensitiveaudio rechecksPASS; Docs finalhandoff on docs/mui07-verified-wallet-handoff-20261012 underway.",
+      "released_at": "2026-10-12T17:49:15.761867+00:00",
+      "release_reason": "Source PR686 merged normally867d1288885bc335ee0f2704504de8135580dc72, exact head416a2139c8dccf4747e7ec289ddecd7c381190c3. Postmerge docsPR687 merged 1337917a7e063971fd083deb4d0ce4b59310b219.96 focusedFlutter PASS and scopedDart zero. Full suites baseline496/9source524/10 remainFAIL; Walletfixturefixed and two unchangedaudio timing rechecksPASS. Fullanalyze325baseline324source/no newdiagnostics; CI TalkIdTS2459/globalFlutter failures not disabled. CanonicalMUI03 inbox, AF00 composition, MSNfundingSend and MUI04-08independent/MUI09-10/AF11qualification OPEN. Next independentMUI08; exacthandoff docs/workstreams/UI-MUI-07-wallet.md and UI-MUI-03-chats.md. No protectedsource seized.",
+      "source_head": "416a2139c8dccf4747e7ec289ddecd7c381190c3",
+      "source_pr": 686,
+      "integration_head_sha": "867d1288885bc335ee0f2704504de8135580dc72",
+      "handoff_pr": 687,
+      "delivery_head_sha": "1337917a7e063971fd083deb4d0ce4b59310b219",
+      "test_state": "96 focusedFlutter PASS; focusedDart zero; fullFlutter baseline496PASS/9FAIL source524PASS/10FAIL; two timingcases PASS rechecks; fullDart baseline325/source324 no introduceddiagnostics; CI baselineFAIL; signed/provider NOT_RUN"
     }
   ],
   "schema_version": 1
