@@ -4,8 +4,10 @@
 
 Base: `576ecda13e8c3f9c034c325986a27376faa87589`, freshly cloned/fetched main.
 Test-source checkpoint: **`df7ca6f1453ff646dfdeab28151724a3c4b20bc5`**,
-branch `lane/af13-mui09-combined-20261012`. PR and merge identity are recorded
-below after integration. Implementation: **IMPLEMENTED_SCOPED_TEST_SOURCE /
+branch `lane/af13-mui09-combined-20261012`. [PR #690](https://github.com/weavewellindustrieslimited/masanawa/pull/690) exact head
+`3fbe06c82391841d33ff0b788740e67ada93669e`, normally merged at
+**`3990d546972f9afec9f2e17117049add9e69883c`**, 2026-10-12 21:05:27 UTC.
+Merged test blob equals the tested checkpoint exactly. Implementation: **INTEGRATED_SCOPED_TEST_SOURCE /
 PARTIAL_MUI09_ACCEPTANCE**. Verification: **PASS_SIMULATED** for the named
 focused/combined cases; full suite and whole analysis remain **FAIL**.
 Release: **NOT_RELEASED**; no signed artifact, phone, live account or provider.
@@ -182,7 +184,15 @@ Fixture captures/contact sheets remain outside Git; no customer data.
 
 ## Integration and next continuation
 
-[PR #690](https://github.com/weavewellindustrieslimited/masanawa/pull/690) targets main; merge identity pending final integration. No admin bypass/protection/test change. Claim release follows post-merge handoff readback.
+PR #690 is merged into main at `3990d546972f9afec9f2e17117049add9e69883c`,
+exact reviewed head `3fbe06c82391841d33ff0b788740e67ada93669e`. Main/test
+blob `18c9645832781eab56a03ca754064220240195f5` was compared to `df7ca6f1453ff646dfdeab28151724a3c4b20bc5`
+and matches exactly. No admin bypass/protection/test change. Exact-head
+Foundation #38308371422 and Mobile #38308371576 were IN_PROGRESS at merge
+readback, not passed; Vercel check FAIL reports build-rate-limit. The earlier
+main/standard compiler and analyzer debt remains. This documentation-only
+post-merge update changes no executable source. Release exact claim after
+this handoff integration; registry release publishes the delivered identity.
 
 ```text
 Continue weavewellindustrieslimited/masanawa from fresh origin/main.
@@ -194,7 +204,9 @@ UI-MUI-08-crypto.md and UI-MUI-09-verification.md (all under docs/workstreams).
 Read latest Software Factory instructions; reconcile fresh PR heads/claims.
 
 MUI-09 bounded combined tests source df7ca6f1453ff646dfdeab28151724a3c4b20bc5.
-PR #690 targets main; refresh actual merge identity before continuing.
+PR #690 exact head 3fbe06c82391841d33ff0b788740e67ada93669e;
+source merge 3990d546972f9afec9f2e17117049add9e69883c.
+Ownership release is published on factory/claims after handoff integration.
 158 focused tests and 24 font-loaded combined cases PASS_SIMULATED;
 168 captures generated, representative matrices inspected; focused analysis
 zero issues. Full suite 575 passed / 8 retained failures; 27 audio rechecks PASS. Full analysis remains 322 diagnostics;
