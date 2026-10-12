@@ -1,5 +1,16 @@
 # MUI-03 / AF06 — mounted Chats search and canonical inbox integration handoff
 
+## Fresh continuation reconciliation — 2026-10-12, Wallet fallback #686
+
+Inspected fresh main `52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788`, current PR heads, source and `factory/claims`. The older Chats-path conflict was already narrowly recovered in the registry for #682; this window did not acquire or edit Chats implementation. Open #497 remains preserved at `82e4f436e47828be76088cabe2c9064a80a548ec`, along with the old claim's remaining paths and branch checkpoint. **Canonical C10 authenticated server-wide inbox/search acceptance remains OPEN**; mounted local filtering below is not that authority.
+
+Unreleased `cloud-api-v1-20261011` AF00 composition and `af05-android-voice-repair-20261012` `main.ts`/voice allocations still require explicit bounded transfers. Expiry was not treated as permission to seize them. The [existing AF00 integration request](https://github.com/weavewellindustrieslimited/masanawa/pull/616#issuecomment-6128601248) remains the named dependency. MUI-04/06 likewise need protected mounting; MUI-05 #684/#685 is already merged.
+
+Owner-authorized fallback delivered useful disjoint **MUI-07 mounted Wallet** source under claim `af03-mui07-wallet-presentation-20261012`: base `52c6b5a9...`, implementation/exact PR #686 head `416a2139c8dccf4747e7ec289ddecd7c381190c3`, normal merge `867d1288885bc335ee0f2704504de8135580dc72`. Local Flutter 3.47.7 executed **96 focused tests PASS**, including preserved MUI-01/02/03/root regressions; focused Dart analysis zero issues. Full analysis 324 versus 325 fresh baseline, no introduced diagnostics. Full suites remain FAIL (baseline 496/9, source 524/10 with precise test-set caveat and audio rechecks), and standard CI still fails global diagnostics/TalkId TS2459. See [exact MUI-07 handoff](UI-MUI-07-wallet.md) for all changed paths, ownership, commands, failure names and remaining acceptance. This reconciliation edits only this handoff, not Chats/backend/router/ledger/voice source.
+
+**Smallest next action:** AF00 supplies the exact canonical inbox composition/auth/migration transfer with AF05 `main.ts` coordination, then AF06 completes the remaining connected server search and its required executable negative/race/action tests. If protected dependencies remain unavailable, **MUI-08 / AF03** is the next independent ready source on the existing mounted Crypto presentation. Preserve all MUI-04…08 independent acceptance, MUI-09 combined regression, MUI-10 signed installed-source identity and AF11 live device/provider qualification as OPEN. Use the queue-aware prompt in the new MUI-07 handoff rather than repeating the earlier local-search milestone.
+
+
 ## Source identity, ownership and status
 
 - Base fresh main: `eecea844349738b1e9a7227fa31d859f438503e9` (verified MUI-02 handoff #681).
