@@ -75,7 +75,6 @@
       "paths": [
         "apps/mobile/lib/src/screens/twin/shell_tab.dart",
         "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
-        "apps/mobile/lib/src/router/app_router.dart",
         "apps/mobile/test/audio_first/af00/root_navigation_test.dart",
         "docs/workstreams/AF00-root-navigation-20261010.md",
         "apps/mobile/test/app_shell_route_compatibility_test.dart",
@@ -89,7 +88,15 @@
       ],
       "scope": "Reconcile legacy four-tab root with confirmed Chats Rooms Talks Gwani Wallet order, Talks centre/default, typed aliasing and no hidden voice.",
       "source_head": "bb73b528862aae403a52b0fdedffd36c3f7a5674",
-      "source_pr": 497
+      "source_pr": 497,
+      "transferred_paths": [
+        "apps/mobile/lib/src/router/app_router.dart"
+      ],
+      "transfer_record": {
+        "to": "rooms-ci-closure-20261011-cloud",
+        "at": "2026-10-12T02:12:41.596Z",
+        "basis": "Owner directs remove demonstrated CI blockers; casts/unread label only, no routing, money, auth or shell behavior change; package solver records existing dependencies only"
+      }
     },
     {
       "base_sha": "f381f077c485c04261459b77a42c215d3ce3a14b",
@@ -261,68 +268,6 @@
     },
     {
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
-      "claim_id": "af00-600-owner-directed-unified-source-20261010-gpt6-0518",
-      "claimed_at": "2026-10-10T05:13:33.187Z",
-      "expires_at": "2026-10-10T05:18:33.187Z",
-      "heartbeat_at": "2026-10-10T05:13:33.187Z",
-      "notes": "User explicitly took over integration and CI coordination; AF09 feature path edits remain on existing PR609; no overwrite. Inspect deployment triggers, main and PR heads and do not fake CI evidence.",
-      "owner": "AF00 user-directed unified integration / GPT-6",
-      "paths": [
-        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
-        "apps/mobile/lib/src/router/app_router.dart",
-        "services/gateway/src/app.ts",
-        "services/gateway/src/main.ts",
-        "services/worker/src/main.ts",
-        "docs/workstreams/AF00-integration-20261010.md"
-      ],
-      "release_reason": "Owner explicitly confirmed on 2026-10-11 no other window is working and appointed current cloud agent in charge. Preserve existing PR source and recover #612 exact head 46af99e50dedd5a1596ffb5795086410ef4ff859; no reset or deletion.",
-      "released_at": "2026-10-11T10:22:03.756271+00:00",
-      "scope": "Integrate pinned AF09 feature source into existing root PR #600 non-main snapshot; root Talks composition, inspect CI zero-step and consolidate exact SHA; no release, no auth/payment or production execution",
-      "source_pr": 600
-    },
-    {
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
-      "claim_id": "af00-600-source-migration-20261010-gpt6-0520",
-      "claimed_at": "2026-10-10T05:19:01.295Z",
-      "expires_at": "2026-10-10T05:29:45.184Z",
-      "heartbeat_at": "2026-10-10T05:27:16.875Z",
-      "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files. Source integrated to pinned root 28386c3617dc6d89ea14994d3e5aae397e95eab5; GitHub PR 600 comment 6094203574; central Actions runner-zero-steps incident remains. Remaining source AF00 AF05 AF15 AF10.",
-      "owner": "AF00 owner-directed root integration / GPT-6 continued",
-      "paths": [
-        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
-        "apps/mobile/lib/src/router/app_router.dart",
-        "services/gateway/src/app.ts",
-        "services/gateway/src/main.ts",
-        "services/worker/src/main.ts",
-        "docs/workstreams/AF00-integration-20261010.md",
-        "packages/talks/migrations/0015_published_audio_posts.sql",
-        "apps/mobile/test/twin_home_shell_test.dart",
-        "tools/audio-first-qualification/qualify.mjs",
-        "tools/audio-first-qualification/qualify.test.mjs",
-        "tools/audio-first-qualification/journeys.json",
-        "tests/security/audio_first/evidence_path_guard.mjs",
-        "tests/security/audio_first/evidence_path_guard.test.mjs",
-        "docs/workstreams/AF13-evidence-ledger-20261009.md",
-        "apps/mobile/android/app/src/main/res/drawable-night-v21/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/drawable-night/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/drawable-v21/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/drawable/launch_background.xml",
-        "apps/mobile/android/app/src/main/res/values/colors.xml",
-        "apps/mobile/lib/src/screens/splash/splash_screen.dart",
-        "apps/mobile/test/audio_first/af08/neutral_launch_test.dart",
-        "docs/workstreams/AF08-neutral-launch-20261009.md",
-        "apps/mobile/lib/src/core/live_pcm_audio.dart",
-        "apps/mobile/test/audio_first/af05/live_pcm_audio_bridge_test.dart",
-        "docs/workstreams/AF05-pcm-bridge-guard-20261010.md"
-      ],
-      "released_at": "2026-10-10T05:27:16.875Z",
-      "scope": "Reclaim after prior AF00 claim expired without live collisions; finish additive numbered source migration, root Flutter route, single integration record and central CI blocker, preserve other PR work and no production deploy; adopt reviewed read-only AF13 #596 qualification authority with pinned source (no release permission); adopt AF08 #597 neutral native splash and Flutter launch consistent with /home, no production; pinned AF05 #602 PCM guard nonmain source only",
-      "source_pr": 600
-    },
-    {
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
       "branch": "work/shared-ci-recovery-work-20261008",
       "claim_id": "af13-existing-pr460-sql-fixtures-20261010-gpt6-0735",
       "claimed_at": "2026-10-10T07:35:23.959Z",
@@ -463,30 +408,6 @@
       "source_head_sha": "e455a12638d3791e166f26ee3cc54d159a982ac6",
       "source_pr": 612,
       "test_state": "GitHub Foundation #38036538174: Typecheck FAIL at packages/agents/src/talk-replay.test.ts(6,8), targeted/new Vitest + provider + build SKIPPED/NOT_RUN. Source/test head 4e728ae30978f203371b86911151f16c4ff05091."
-    },
-    {
-      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
-      "branch": "work/shared-ci-recovery-work-20261008",
-      "claim_id": "af13-pr460-flutter-analyzer-standalone-20261010-gpt6",
-      "claimed_at": "2026-10-10T08:00:41.580Z",
-      "expires_at": "2026-10-10T08:05:41.580Z",
-      "heartbeat_at": "2026-10-10T08:00:41.580Z",
-      "integration_head_sha": null,
-      "notes": "Real Actions 38035943605 analyzer failed with 8 warning issues. Other three protected AF00 paths require a bounded transfer.",
-      "owner": "GPT-6 AF13 CI qualification / existing PR #460",
-      "paths": [
-        "apps/mobile/lib/src/social/own_profile_transport.dart",
-        "apps/mobile/test/owner_access_http_transport_test.dart",
-        "apps/mobile/test/talk_direct_twin_http_transport_test.dart",
-        "apps/mobile/test/twin_directory_http_transport_test.dart",
-        "apps/mobile/test/talk_screen_test.dart"
-      ],
-      "release_reason": "Five Flutter lint warnings corrected; exact-head analyzer left three AF00 protected warnings; Mobile tests/APK skipped.",
-      "released_at": "2026-10-10T08:28:39.682Z",
-      "scope": "Remove five executable Flutter analyzer warnings in independent transport/widget-test files; preserve AF00 router/chat authority.",
-      "source_head_sha": "512fa4b9613fad9b5de8feebca49be562f2464e8",
-      "source_pr": 460,
-      "test_state": "SCOPED_FIX_PASS_BUT_MOBILE_ANALYZER_FAIL_3; FLUTTER_TEST_AND_APK_SKIPPED"
     },
     {
       "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
@@ -2124,30 +2045,6 @@
       "source_pr": 665
     },
     {
-      "base_sha": "027f07b4411c3973d0587749b08675135396bbd7",
-      "branch": "lane/af00-shell-composition-20261011-gpt6",
-      "claim_id": "af00-masanawa-five-tabs-migration-composition-20261011-gpt6",
-      "claimed_at": "2026-10-11T10:01:26.613Z",
-      "expires_at": "2026-10-11T10:14:11.995Z",
-      "heartbeat_at": "2026-10-11T10:09:11.995Z",
-      "integration_head_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
-      "notes": "Explicit current owner directive. AF00-only paths, no competing fresh lease, all changes on new branch to nondeploying integration. Open #616 handoff; disabled Rooms until #625 package imports qualify.",
-      "owner": "AF00 root integrator / GPT-6 / owner-directed recovery",
-      "paths": [
-        "apps/mobile/lib/src/router/app_router.dart",
-        "apps/mobile/lib/src/app/masanawa_consumer_shell.dart",
-        "apps/mobile/test/rebuild/masanawa_consumer_shell_test.dart",
-        "adapters/storage/postgres/src/readiness.ts",
-        "adapters/storage/postgres/src/readiness.test.ts",
-        "apps/mobile/test/app_shell_route_compatibility_test.dart"
-      ],
-      "release_reason": "Owner-directed AF00 J02 shell/migration-source integration: PR #667 six exact paths merged into non-deploying integration; head c0b191c, merge e334900. Authenticated client components composed; legacy nav denied. J02/J10 Flutter widget+PG manifest tests AUTHORED but NOT_RUN (GitHub check/admin/build zero steps; local git DNS/Node24/pnpm/PG18/Flutter/Android missing). New Gateway/worker/Rooms/Gwani/finance integration and release remain open. AF00 handoff #616 comment 6107971561.",
-      "released_at": "2026-10-11T10:15:49.935Z",
-      "scope": "Replace old production router with canonical five-tab Masana-only Flutter shell; connect existing J03/Feed/Video/Masana/Wallet components through one authenticated API client; fail-close legacy routes, and stage canonical migration roots without live SQL. Source/negative tests; no user funds or production changes.",
-      "source_head": "c0b191c44a0d3c1acdaa8d00e7e34ef6e5f0b402",
-      "source_pr": null
-    },
-    {
       "base_sha": "5597abdb1aea1587fbecd72840602794c5d04d7c",
       "branch": "continue-chat-reliability-20261011",
       "claim_id": "cloud-api-v1-20261011",
@@ -2163,8 +2060,6 @@
         "apps/mobile/lib/src/agents/creator_clone.dart",
         "apps/mobile/lib/src/agents/creator_clone_transport.dart",
         "apps/mobile/lib/src/core/providers.dart",
-        "apps/mobile/lib/src/router/app_router.dart",
-        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
         "apps/mobile/lib/src/screens/settings/clone_setup_screen.dart",
         "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
         "apps/mobile/lib/src/state/clone_onboarding_controller.dart",
@@ -2188,7 +2083,16 @@
         "services/gateway/src/talk_ai_seat_routes.test.ts",
         "tests/contracts/public-api-lifecycle.test.ts"
       ],
-      "scope": "OWNER CORRECTION supersedes legacy preservation: remove obsolete consumer creator/clone onboarding workflows and route/UI wiring; preserve canonical auth/data and chat reliability; push corrected checkpoint."
+      "scope": "OWNER CORRECTION supersedes legacy preservation: remove obsolete consumer creator/clone onboarding workflows and route/UI wiring; preserve canonical auth/data and chat reliability; push corrected checkpoint.",
+      "transferred_paths": [
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart"
+      ],
+      "transfer_record": {
+        "to": "rooms-ci-closure-20261011-cloud",
+        "at": "2026-10-12T02:12:41.596Z",
+        "basis": "Owner directs remove demonstrated CI blockers; casts/unread label only, no routing, money, auth or shell behavior change; package solver records existing dependencies only"
+      }
     },
     {
       "base_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
@@ -2223,8 +2127,8 @@
       "branch": "lane/rooms-membership-invites-20261011",
       "claim_id": "rooms-ci-closure-20261011-cloud",
       "claimed_at": "2026-10-11T20:47:21.305Z",
-      "expires_at": "2026-10-12T02:14:26.555Z",
-      "heartbeat_at": "2026-10-12T02:09:26.555Z",
+      "expires_at": "2026-10-12T02:17:41.596Z",
+      "heartbeat_at": "2026-10-12T02:12:41.596Z",
       "owner": "Codex ROOMS / owner-directed CI blocker repair",
       "paths": [
         "pnpm-lock.yaml",
@@ -2240,7 +2144,15 @@
         "services/gateway/src/modules/rooms/subscription_routes.ts",
         "services/gateway/src/modules/rooms/subscription_routes.test.ts",
         "services/gateway/src/modules/rooms/rtdn_auth.ts",
-        "apps/admin_mobile/lib/src/core/admin_auth_api.dart"
+        "apps/admin_mobile/lib/src/core/admin_auth_api.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "apps/mobile/lib/src/social/own_profile_transport.dart",
+        "apps/mobile/test/owner_access_http_transport_test.dart",
+        "apps/mobile/test/talk_direct_twin_http_transport_test.dart",
+        "apps/mobile/test/talk_screen_test.dart",
+        "apps/mobile/test/twin_directory_http_transport_test.dart",
+        "apps/mobile/pubspec.lock"
       ],
       "scope": "Owner requests resolve actual PR669 blockers; narrow shared dependency and baseline Admin compiler repair",
       "source_pr": 669
@@ -5520,6 +5432,116 @@
       ],
       "released_at": "2026-10-12T02:09:26.555Z",
       "release_reason": "All originally claimed paths narrowly transferred with preserved source to owner-directed PR669 recovery"
+    },
+    {
+      "base_sha": "027f07b4411c3973d0587749b08675135396bbd7",
+      "branch": "lane/af00-shell-composition-20261011-gpt6",
+      "claim_id": "af00-masanawa-five-tabs-migration-composition-20261011-gpt6",
+      "claimed_at": "2026-10-11T10:01:26.613Z",
+      "expires_at": "2026-10-11T10:14:11.995Z",
+      "heartbeat_at": "2026-10-11T10:09:11.995Z",
+      "integration_head_sha": "e33490013c54a9dc3a86c8fcb526a01634df3992",
+      "notes": "Explicit current owner directive. AF00-only paths, no competing fresh lease, all changes on new branch to nondeploying integration. Open #616 handoff; disabled Rooms until #625 package imports qualify.",
+      "owner": "AF00 root integrator / GPT-6 / owner-directed recovery",
+      "paths": [
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/lib/src/app/masanawa_consumer_shell.dart",
+        "apps/mobile/test/rebuild/masanawa_consumer_shell_test.dart",
+        "adapters/storage/postgres/src/readiness.ts",
+        "adapters/storage/postgres/src/readiness.test.ts",
+        "apps/mobile/test/app_shell_route_compatibility_test.dart"
+      ],
+      "release_reason": "Owner-directed AF00 J02 shell/migration-source integration: PR #667 six exact paths merged into non-deploying integration; head c0b191c, merge e334900. Authenticated client components composed; legacy nav denied. J02/J10 Flutter widget+PG manifest tests AUTHORED but NOT_RUN (GitHub check/admin/build zero steps; local git DNS/Node24/pnpm/PG18/Flutter/Android missing). New Gateway/worker/Rooms/Gwani/finance integration and release remain open. AF00 handoff #616 comment 6107971561.",
+      "released_at": "2026-10-11T10:15:49.935Z",
+      "scope": "Replace old production router with canonical five-tab Masana-only Flutter shell; connect existing J03/Feed/Video/Masana/Wallet components through one authenticated API client; fail-close legacy routes, and stage canonical migration roots without live SQL. Source/negative tests; no user funds or production changes.",
+      "source_head": "c0b191c44a0d3c1acdaa8d00e7e34ef6e5f0b402",
+      "source_pr": null
+    },
+    {
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "branch": "work/shared-ci-recovery-work-20261008",
+      "claim_id": "af13-pr460-flutter-analyzer-standalone-20261010-gpt6",
+      "claimed_at": "2026-10-10T08:00:41.580Z",
+      "expires_at": "2026-10-10T08:05:41.580Z",
+      "heartbeat_at": "2026-10-10T08:00:41.580Z",
+      "integration_head_sha": null,
+      "notes": "Real Actions 38035943605 analyzer failed with 8 warning issues. Other three protected AF00 paths require a bounded transfer.",
+      "owner": "GPT-6 AF13 CI qualification / existing PR #460",
+      "paths": [
+        "apps/mobile/lib/src/social/own_profile_transport.dart",
+        "apps/mobile/test/owner_access_http_transport_test.dart",
+        "apps/mobile/test/talk_direct_twin_http_transport_test.dart",
+        "apps/mobile/test/twin_directory_http_transport_test.dart",
+        "apps/mobile/test/talk_screen_test.dart"
+      ],
+      "release_reason": "Five Flutter lint warnings corrected; exact-head analyzer left three AF00 protected warnings; Mobile tests/APK skipped.",
+      "released_at": "2026-10-10T08:28:39.682Z",
+      "scope": "Remove five executable Flutter analyzer warnings in independent transport/widget-test files; preserve AF00 router/chat authority.",
+      "source_head_sha": "512fa4b9613fad9b5de8feebca49be562f2464e8",
+      "source_pr": 460,
+      "test_state": "SCOPED_FIX_PASS_BUT_MOBILE_ANALYZER_FAIL_3; FLUTTER_TEST_AND_APK_SKIPPED"
+    },
+    {
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "claim_id": "af00-600-source-migration-20261010-gpt6-0520",
+      "claimed_at": "2026-10-10T05:19:01.295Z",
+      "expires_at": "2026-10-10T05:29:45.184Z",
+      "heartbeat_at": "2026-10-10T05:27:16.875Z",
+      "notes": "Prior own AF00 #600 lease expired 17s while executing source integration; no other live overlapping leases as read from registry; user explicitly directs takeover and source completion. Do not alter AF09 feature-owned files. Source integrated to pinned root 28386c3617dc6d89ea14994d3e5aae397e95eab5; GitHub PR 600 comment 6094203574; central Actions runner-zero-steps incident remains. Remaining source AF00 AF05 AF15 AF10.",
+      "owner": "AF00 owner-directed root integration / GPT-6 continued",
+      "paths": [
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/worker/src/main.ts",
+        "docs/workstreams/AF00-integration-20261010.md",
+        "packages/talks/migrations/0015_published_audio_posts.sql",
+        "apps/mobile/test/twin_home_shell_test.dart",
+        "tools/audio-first-qualification/qualify.mjs",
+        "tools/audio-first-qualification/qualify.test.mjs",
+        "tools/audio-first-qualification/journeys.json",
+        "tests/security/audio_first/evidence_path_guard.mjs",
+        "tests/security/audio_first/evidence_path_guard.test.mjs",
+        "docs/workstreams/AF13-evidence-ledger-20261009.md",
+        "apps/mobile/android/app/src/main/res/drawable-night-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-night/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable-v21/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/drawable/launch_background.xml",
+        "apps/mobile/android/app/src/main/res/values/colors.xml",
+        "apps/mobile/lib/src/screens/splash/splash_screen.dart",
+        "apps/mobile/test/audio_first/af08/neutral_launch_test.dart",
+        "docs/workstreams/AF08-neutral-launch-20261009.md",
+        "apps/mobile/lib/src/core/live_pcm_audio.dart",
+        "apps/mobile/test/audio_first/af05/live_pcm_audio_bridge_test.dart",
+        "docs/workstreams/AF05-pcm-bridge-guard-20261010.md"
+      ],
+      "released_at": "2026-10-10T05:27:16.875Z",
+      "scope": "Reclaim after prior AF00 claim expired without live collisions; finish additive numbered source migration, root Flutter route, single integration record and central CI blocker, preserve other PR work and no production deploy; adopt reviewed read-only AF13 #596 qualification authority with pinned source (no release permission); adopt AF08 #597 neutral native splash and Flutter launch consistent with /home, no production; pinned AF05 #602 PCM guard nonmain source only",
+      "source_pr": 600
+    },
+    {
+      "base_sha": "7c443966be97e9092cbc1fb98562c75253434326",
+      "branch": "work/af00-root-navigation-20261010-masanawa01-c",
+      "claim_id": "af00-600-owner-directed-unified-source-20261010-gpt6-0518",
+      "claimed_at": "2026-10-10T05:13:33.187Z",
+      "expires_at": "2026-10-10T05:18:33.187Z",
+      "heartbeat_at": "2026-10-10T05:13:33.187Z",
+      "notes": "User explicitly took over integration and CI coordination; AF09 feature path edits remain on existing PR609; no overwrite. Inspect deployment triggers, main and PR heads and do not fake CI evidence.",
+      "owner": "AF00 user-directed unified integration / GPT-6",
+      "paths": [
+        "apps/mobile/lib/src/screens/twin/twin_home_shell.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/worker/src/main.ts",
+        "docs/workstreams/AF00-integration-20261010.md"
+      ],
+      "release_reason": "Owner explicitly confirmed on 2026-10-11 no other window is working and appointed current cloud agent in charge. Preserve existing PR source and recover #612 exact head 46af99e50dedd5a1596ffb5795086410ef4ff859; no reset or deletion.",
+      "released_at": "2026-10-11T10:22:03.756271+00:00",
+      "scope": "Integrate pinned AF09 feature source into existing root PR #600 non-main snapshot; root Talks composition, inspect CI zero-step and consolidate exact SHA; no release, no auth/payment or production execution",
+      "source_pr": 600
     }
   ],
   "schema_version": 1
