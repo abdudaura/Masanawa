@@ -2124,8 +2124,9 @@
         "docs/workstreams/STATUS-media-binding-20261012.md"
       ],
       "claimed_at": "2026-10-12T12:32:32.764Z",
-      "heartbeat_at": "2026-10-12T12:32:32.764Z",
-      "expires_at": "2026-10-12T12:37:32.764Z"
+      "heartbeat_at": "2026-10-12T12:36:47.358Z",
+      "expires_at": "2026-10-12T12:41:47.358Z",
+      "notes": "Additive canonical image binding/main port, same S3 signer optionalHEAD; no new env/catalog edits. Seven first connected tests passed; full strict compiler/build and replay/PG regressions running."
     }
   ],
   "history": [
