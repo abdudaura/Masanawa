@@ -10,7 +10,7 @@ import '../tokens/masanawa_tokens.dart';
 import 'crypto_models.dart';
 import 'crypto_state.dart';
 
-class CryptoWalletScreen extends ConsumerWidget {
+class CryptoWalletScreen extends ConsumerStatefulWidget {
   const CryptoWalletScreen({super.key});
 
   static String operationTitle(String operation) {
@@ -28,6 +28,27 @@ class CryptoWalletScreen extends ConsumerWidget {
     }
   }
 
+  @override
+  ConsumerState<CryptoWalletScreen> createState() => _CryptoWalletScreenState();
+}
+
+class _CryptoWalletScreenState extends ConsumerState<CryptoWalletScreen> {
+  bool _busy = false;
+  Future<void> _runAction(Future<void> Function() action) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _refreshWallet() async {
+    if (_busy) return;
+    await ref.read(cryptoWalletProvider.notifier).refresh();
+  }
+
   static void _message(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -40,8 +61,8 @@ class CryptoWalletScreen extends ConsumerWidget {
       error is ApiException
           ? error.message
           : error is FormatException
-              ? 'Please check the amount and details you entered.'
-              : 'Crypto service is temporarily unavailable. Please try again.',
+          ? 'Please check the amount and details you entered.'
+          : 'Crypto service is temporarily unavailable. Please try again.',
     );
   }
 
@@ -52,11 +73,9 @@ class CryptoWalletScreen extends ConsumerWidget {
   ) async {
     final capabilities = wallet.capabilities;
     final settlement = capabilities.fiatSettlementProviderCode;
-    if (
-      !capabilities.fiatOnRamp ||
-      capabilities.fiatCurrencies.isEmpty ||
-      settlement == null
-    ) {
+    if (!capabilities.fiatOnRamp ||
+        capabilities.fiatCurrencies.isEmpty ||
+        settlement == null) {
       return;
     }
 
@@ -72,20 +91,19 @@ class CryptoWalletScreen extends ConsumerWidget {
     if (input == null || !context.mounted) return;
 
     try {
-      final purchase =
-          await ref.read(cryptoWalletProvider.notifier).createFiatPurchase(
-                requestId: createRequestId(),
-                fiatAmount: input.amount,
-                fiatCurrency: input.currency,
-              );
+      final purchase = await ref
+          .read(cryptoWalletProvider.notifier)
+          .createFiatPurchase(
+            requestId: createRequestId(),
+            fiatAmount: input.amount,
+            fiatCurrency: input.currency,
+          );
       final checkout = purchase.checkoutUrl == null
           ? null
           : Uri.tryParse(purchase.checkoutUrl!);
-      if (
-        checkout == null ||
-        checkout.scheme != 'https' ||
-        checkout.host.isEmpty
-      ) {
+      if (checkout == null ||
+          checkout.scheme != 'https' ||
+          checkout.host.isEmpty) {
         throw const FormatException('Secure checkout is unavailable');
       }
       final opened = await launchUrl(
@@ -103,6 +121,7 @@ class CryptoWalletScreen extends ConsumerWidget {
       final checkStatus = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
+          scrollable: true,
           title: const Text('Checkout opened'),
           content: Text(
             'Complete the secure checkout, then return here. '
@@ -126,8 +145,8 @@ class CryptoWalletScreen extends ConsumerWidget {
             .read(cryptoWalletProvider.notifier)
             .refreshFiatPurchase(purchase.requestId);
         if (!context.mounted) return;
-        final message = refreshed.status == 'succeeded' &&
-                refreshed.cryptoAmount != null
+        final message =
+            refreshed.status == 'succeeded' && refreshed.cryptoAmount != null
             ? 'Purchase completed: ${refreshed.cryptoAmount} ${refreshed.settlementAsset}'
             : 'Purchase status: ${refreshed.status.replaceAll('_', ' ')}';
         _message(context, message);
@@ -152,7 +171,9 @@ class CryptoWalletScreen extends ConsumerWidget {
     );
     if (input == null || !context.mounted) return;
     try {
-      final intent = await ref.read(cryptoWalletProvider.notifier).createDeposit(
+      final intent = await ref
+          .read(cryptoWalletProvider.notifier)
+          .createDeposit(
             requestId: createRequestId(),
             providerCode: route.providerCode,
             amount: input.amount,
@@ -200,10 +221,17 @@ class CryptoWalletScreen extends ConsumerWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
+          scrollable: true,
           title: const Text('Confirm conversion'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _SummaryRow(label: 'From', value: source.label),
+              if (quote.quotedAt != null)
+                _SummaryRow(
+                  label: 'Quoted at',
+                  value: _date(context, quote.quotedAt!),
+                ),
               _SummaryRow(
                 label: 'You convert',
                 value: '${quote.amount} ${quote.providerCode}',
@@ -274,10 +302,17 @@ class CryptoWalletScreen extends ConsumerWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
+          scrollable: true,
           title: const Text('Confirm withdrawal'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _SummaryRow(label: 'Asset / network', value: route.label),
+              if (quote.quotedAt != null)
+                _SummaryRow(
+                  label: 'Quoted at',
+                  value: _date(context, quote.quotedAt!),
+                ),
               _SummaryRow(
                 label: 'Amount',
                 value: '${quote.amount} ${quote.providerCode}',
@@ -288,8 +323,7 @@ class CryptoWalletScreen extends ConsumerWidget {
               ),
               _SummaryRow(
                 label: 'Estimated receive',
-                value:
-                    '${quote.estimatedReceiveAmount} ${quote.providerCode}',
+                value: '${quote.estimatedReceiveAmount} ${quote.providerCode}',
               ),
               _SummaryRow(
                 label: 'Fee handling',
@@ -304,7 +338,7 @@ class CryptoWalletScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               SelectableText(
                 quote.destinationAddress,
-                maxLines: 3,
+                textDirection: TextDirection.ltr,
               ),
             ],
           ),
@@ -339,8 +373,9 @@ class CryptoWalletScreen extends ConsumerWidget {
     CryptoIntent intent,
   ) async {
     try {
-      final refreshed =
-          await ref.read(cryptoWalletProvider.notifier).refreshOperation(intent);
+      final refreshed = await ref
+          .read(cryptoWalletProvider.notifier)
+          .refreshOperation(intent);
       if (context.mounted && refreshed.terminal) {
         _operationResult(context, refreshed);
       }
@@ -361,105 +396,87 @@ class CryptoWalletScreen extends ConsumerWidget {
             : 'Purchase completed: ${intent.providerTargetAmount} ${intent.targetAsset}',
       'manual_review' =>
         'This transaction needs verification before any balance change is accepted.',
-      'succeeded' => '${operationTitle(intent.operation)} completed',
+      'succeeded' =>
+        '${CryptoWalletScreen.operationTitle(intent.operation)} completed',
       'failed' =>
-        '${operationTitle(intent.operation)} failed. Reserved funds were released when applicable.',
+        '${CryptoWalletScreen.operationTitle(intent.operation)} failed. Reserved funds were released when applicable.',
       _ =>
-        '${operationTitle(intent.operation)} submitted. It will update after provider confirmation.',
+        '${CryptoWalletScreen.operationTitle(intent.operation)} submitted. It will update after provider confirmation.',
     };
     _message(context, message);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final wallet = ref.watch(cryptoWalletProvider);
     final u = context.masanawa;
     return Scaffold(
-      backgroundColor: u.surfaceBg,
+      backgroundColor: u.surfaceCard,
       appBar: AppBar(
+        backgroundColor: u.surfaceCard,
+        foregroundColor: u.textPrimary,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         title: const Text('Crypto Wallet'),
         actions: [
           IconButton(
             tooltip: 'Refresh wallet',
-            onPressed: () => ref.read(cryptoWalletProvider.notifier).refresh(),
+            onPressed: _busy ? null : _refreshWallet,
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: wallet.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _WalletError(
-          error: error,
-          onRetry: () => ref.read(cryptoWalletProvider.notifier).refresh(),
-        ),
+        error: (error, _) =>
+            _WalletError(error: error, onRetry: _refreshWallet),
         data: (data) => RefreshIndicator(
-          onRefresh: () => ref.read(cryptoWalletProvider.notifier).refresh(),
+          onRefresh: _refreshWallet,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
-              _CryptoTokenStrip(
+              _AssetList(
                 wallet: data,
                 onSelected: (value) {
                   ref.read(cryptoWalletProvider.notifier).selectAsset(value);
                 },
               ),
               const SizedBox(height: 10),
-              _BalanceCard(
+              _BalanceSummary(
                 wallet: data,
                 onRefreshBalance: data.selectedProviderCode == null
                     ? null
-                    : () =>
-                        ref.read(cryptoWalletProvider.notifier).refreshBalance(),
+                    : () => ref
+                          .read(cryptoWalletProvider.notifier)
+                          .refreshBalance(),
               ),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ActionButton(
-                      icon: Icons.add_card_rounded,
-                      label: 'Buy',
-                      enabled: data.capabilities.fiatOnRamp &&
-                          data.capabilities.fiatCurrencies.isNotEmpty &&
-                          data.capabilities.fiatSettlementProviderCode != null,
-                      onTap: () => _buy(context, ref, data),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _ActionButton(
-                      icon: Icons.call_received_rounded,
-                      label: 'Receive',
-                      enabled:
-                          data.capabilities.deposits && data.selectedRoute != null,
-                      onTap: () => _receive(context, ref, data),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ActionButton(
-                      icon: Icons.swap_horiz_rounded,
-                      label: 'Convert',
-                      enabled: data.capabilities.conversions &&
-                          data.selectedRoute != null,
-                      onTap: () => _convert(context, ref, data),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _ActionButton(
-                      icon: Icons.call_made_rounded,
-                      label: 'Withdraw',
-                      enabled: data.capabilities.withdrawals &&
-                          data.selectedRoute != null,
-                      onTap: () => _withdraw(context, ref, data),
-                    ),
-                  ),
-                ],
+              _CryptoActions(
+                busy: _busy,
+                buy:
+                    data.capabilities.fiatOnRamp &&
+                        data.capabilities.fiatCurrencies.isNotEmpty &&
+                        data.capabilities.fiatSettlementProviderCode != null
+                    ? () => _runAction(() => _buy(context, ref, data))
+                    : null,
+                receive:
+                    data.capabilities.deposits && data.selectedRoute != null
+                    ? () => _runAction(() => _receive(context, ref, data))
+                    : null,
+                convert:
+                    data.capabilities.conversions &&
+                        data.selectedRoute != null &&
+                        data.conversionRoutes.any(
+                          (route) =>
+                              route.providerCode != data.selectedProviderCode,
+                        )
+                    ? () => _runAction(() => _convert(context, ref, data))
+                    : null,
+                withdraw:
+                    data.capabilities.withdrawals && data.selectedRoute != null
+                    ? () => _runAction(() => _withdraw(context, ref, data))
+                    : null,
               ),
               if (!data.capabilities.fiatOnRamp ||
                   !data.capabilities.conversions ||
@@ -480,7 +497,7 @@ class CryptoWalletScreen extends ConsumerWidget {
               if (data.history.isEmpty)
                 _EmptyHistory(color: u.textMuted)
               else
-                _HistoryCard(
+                _ActivityList(
                   history: data.history,
                   onRefresh: (intent) => _refreshIntent(context, ref, intent),
                 ),
@@ -492,11 +509,8 @@ class CryptoWalletScreen extends ConsumerWidget {
   }
 }
 
-class _CryptoTokenStrip extends StatelessWidget {
-  const _CryptoTokenStrip({
-    required this.wallet,
-    required this.onSelected,
-  });
+class _AssetList extends StatelessWidget {
+  const _AssetList({required this.wallet, required this.onSelected});
 
   final CryptoWalletSnapshot wallet;
   final ValueChanged<String> onSelected;
@@ -504,34 +518,31 @@ class _CryptoTokenStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (wallet.depositRoutes.isEmpty) return const SizedBox.shrink();
-    return Center(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final route in wallet.depositRoutes) ...[
-              ChoiceChip(
-                label: Text(route.label),
-                selected: wallet.selectedProviderCode == route.providerCode,
-                showCheckmark: false,
-                visualDensity: VisualDensity.compact,
-                onSelected: (_) => onSelected(route.providerCode),
-              ),
-              const SizedBox(width: 6),
-            ],
-          ],
-        ),
+    return RadioGroup<String>(
+      groupValue: wallet.selectedProviderCode,
+      onChanged: (value) {
+        if (value != null) onSelected(value);
+      },
+      child: Column(
+        children: [
+          for (final route in wallet.depositRoutes)
+            RadioListTile<String>(
+              value: route.providerCode,
+              contentPadding: EdgeInsets.zero,
+              title: Text(route.label),
+              subtitle: wallet.balances[route.providerCode] == null
+                  ? null
+                  : Text(wallet.balances[route.providerCode]!),
+              dense: true,
+            ),
+        ],
       ),
     );
   }
 }
 
-class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({
-    required this.wallet,
-    required this.onRefreshBalance,
-  });
+class _BalanceSummary extends StatelessWidget {
+  const _BalanceSummary({required this.wallet, required this.onRefreshBalance});
 
   final CryptoWalletSnapshot wallet;
   final VoidCallback? onRefreshBalance;
@@ -541,102 +552,69 @@ class _BalanceCard extends StatelessWidget {
     final u = context.masanawa;
     final selected = wallet.selectedRoute;
     final balance = wallet.selectedBalance;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [u.brandGradientFrom, u.brandGradientTo],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(MasanawaTokens.radius['2xl']!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Available balance',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Available balance', style: TextStyle(color: u.textMuted)),
+        const SizedBox(height: 6),
+        Text(
+          selected == null
+              ? 'No supported assets'
+              : balance ?? 'Balance unavailable',
+          textDirection: balance == null ? null : TextDirection.ltr,
+          style: TextStyle(
+            color: u.textPrimary,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
           ),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        ),
+        if (selected != null)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  selected == null ? 'No assets' : balance ?? '—',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 31,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              Text(selected.label, style: TextStyle(color: u.textMuted)),
+              IconButton(
+                tooltip: 'Refresh balance',
+                onPressed: onRefreshBalance,
+                icon: const Icon(Icons.sync),
               ),
-              if (selected != null)
-                IconButton(
-                  tooltip: 'Refresh balance',
-                  color: Colors.white,
-                  onPressed: onRefreshBalance,
-                  icon: const Icon(Icons.sync),
-                ),
             ],
           ),
-          if (selected != null)
-            Text(
-              selected.label,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-    required this.onTap,
+class _CryptoActions extends StatelessWidget {
+  const _CryptoActions({
+    required this.busy,
+    this.buy,
+    this.receive,
+    this.convert,
+    this.withdraw,
   });
-
-  final IconData icon;
-  final String label;
-  final bool enabled;
-  final VoidCallback onTap;
-
+  final bool busy;
+  final Future<void> Function()? buy, receive, convert, withdraw;
   @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Material(
-      color: enabled ? u.surfaceCard : u.surfaceMuted,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
-        side: BorderSide(color: u.structuralBorder),
-      ),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 15),
-          child: Column(
-            children: [
-              Icon(icon, color: enabled ? u.brand : u.textMuted),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: enabled ? u.textPrimary : u.textMuted,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      if (buy != null) _button('Buy', Icons.add_card_rounded, buy!),
+      if (receive != null)
+        _button('Receive', Icons.call_received_rounded, receive!),
+      if (convert != null)
+        _button('Convert', Icons.swap_horiz_rounded, convert!),
+      if (withdraw != null)
+        _button('Withdraw', Icons.call_made_rounded, withdraw!),
+    ],
+  );
+  Widget _button(String label, IconData icon, Future<void> Function() action) =>
+      OutlinedButton.icon(
+        onPressed: busy ? null : action,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+      );
 }
 
 class _CapabilityNotice extends StatelessWidget {
@@ -678,29 +656,20 @@ class _CapabilityNotice extends StatelessWidget {
   }
 }
 
-class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.history, required this.onRefresh});
+class _ActivityList extends StatelessWidget {
+  const _ActivityList({required this.history, required this.onRefresh});
   final List<CryptoIntent> history;
   final ValueChanged<CryptoIntent> onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Card(
-      elevation: 0,
-      color: u.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(MasanawaTokens.radius['xl']!),
-        side: BorderSide(color: u.structuralBorder),
-      ),
-      child: Column(
-        children: [
-          for (var index = 0; index < history.length; index++) ...[
-            _HistoryTile(intent: history[index], onRefresh: onRefresh),
-            if (index != history.length - 1) const Divider(height: 1),
-          ],
+    return Column(
+      children: [
+        for (var index = 0; index < history.length; index++) ...[
+          _HistoryTile(intent: history[index], onRefresh: onRefresh),
+          if (index != history.length - 1) const Divider(height: 1),
         ],
-      ),
+      ],
     );
   }
 }
@@ -730,36 +699,123 @@ class _HistoryTile extends StatelessWidget {
         intent.targetAsset != null;
     final amount = showsTarget
         ? intent.providerTargetAmount == null
-            ? '${intent.amount} ${intent.asset} → ${intent.targetAsset}'
-            : '${intent.amount} ${intent.asset} → ${intent.providerTargetAmount} ${intent.targetAsset}'
+              ? '${intent.amount} ${intent.asset} → ${intent.targetAsset}'
+              : '${intent.amount} ${intent.asset} → ${intent.providerTargetAmount} ${intent.targetAsset}'
         : '${intent.amount} ${intent.asset}';
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: statusColor.withValues(alpha: .12),
-        child: Icon(icon, color: statusColor),
-      ),
-      title: Text(
-        CryptoWalletScreen.operationTitle(intent.operation),
-        style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        '$amount\n${intent.status.replaceAll('_', ' ')}',
-        maxLines: 2,
-      ),
-      isThreeLine: true,
-      trailing: intent.pending &&
-              (intent.operation == 'withdraw' ||
-                  intent.operation == 'convert' ||
-                  intent.operation == 'buy')
-          ? IconButton(
-              tooltip: 'Check status',
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              alignment: AlignmentDirectional.centerStart,
+            ),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => _IntentDetails(intent: intent),
+            ),
+            icon: Icon(icon, color: statusColor),
+            label: Text(CryptoWalletScreen.operationTitle(intent.operation)),
+          ),
+          Text(
+            amount,
+            textDirection: TextDirection.ltr,
+            style: TextStyle(color: u.textPrimary),
+          ),
+          Text(
+            intent.status.replaceAll('_', ' '),
+            style: TextStyle(color: statusColor),
+          ),
+          if (intent.createdAt != null)
+            Text(
+              _date(context, intent.createdAt!),
+              style: TextStyle(color: u.textMuted),
+            ),
+          if (intent.pending &&
+              const {'withdraw', 'convert', 'buy'}.contains(intent.operation))
+            TextButton.icon(
               onPressed: () => onRefresh(intent),
-              icon: const Icon(Icons.refresh),
-            )
-          : Icon(Icons.circle, color: statusColor, size: 10),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Check status'),
+            ),
+        ],
+      ),
     );
   }
+}
+
+String _date(BuildContext context, DateTime value) {
+  final local = value.toLocal();
+  final labels = MaterialLocalizations.of(context);
+  return '${labels.formatMediumDate(local)} · ${labels.formatTimeOfDay(TimeOfDay.fromDateTime(local))}';
+}
+
+class _IntentDetails extends StatelessWidget {
+  const _IntentDetails({required this.intent});
+  final CryptoIntent intent;
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
+    title: const Text('Transaction details'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SummaryRow(
+          label: 'Operation',
+          value: CryptoWalletScreen.operationTitle(intent.operation),
+        ),
+        _SummaryRow(label: 'Amount', value: '${intent.amount} ${intent.asset}'),
+        if (intent.network != null)
+          _SummaryRow(label: 'Network', value: intent.network!),
+        if (intent.targetAsset != null)
+          _SummaryRow(label: 'Target', value: intent.targetAsset!),
+        if (intent.targetNetwork != null)
+          _SummaryRow(label: 'Target network', value: intent.targetNetwork!),
+        if (intent.providerTargetAmount != null)
+          _SummaryRow(
+            label: 'Settled target amount',
+            value: intent.providerTargetAmount!,
+          ),
+        if (intent.destinationAddress != null)
+          _SummaryRow(label: 'Recipient', value: intent.destinationAddress!),
+        if (intent.payAddress != null)
+          _SummaryRow(label: 'Deposit address', value: intent.payAddress!),
+        if (intent.providerNetworkFee != null)
+          _SummaryRow(
+            label: 'Network fee',
+            value: '${intent.providerNetworkFee} ${intent.asset}',
+          ),
+        if (intent.withdrawalFeePayer != null)
+          _SummaryRow(label: 'Fee payer', value: intent.withdrawalFeePayer!),
+        _SummaryRow(label: 'Status', value: intent.status.replaceAll('_', ' ')),
+        if (intent.pending)
+          const Text(
+            'Awaiting provider confirmation. Check status in activity before trying another transaction.',
+          ),
+        _SummaryRow(label: 'Request ID', value: intent.requestId),
+        if (intent.createdAt != null)
+          _SummaryRow(
+            label: 'Created',
+            value: _date(context, intent.createdAt!),
+          ),
+        if (intent.updatedAt != null)
+          _SummaryRow(
+            label: 'Updated',
+            value: _date(context, intent.updatedAt!),
+          ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Done'),
+      ),
+    ],
+  );
 }
 
 class _EmptyHistory extends StatelessWidget {
@@ -785,15 +841,20 @@ class _WalletError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final message =
-        error is ApiException ? (error as ApiException).message : 'Wallet unavailable';
+    final message = error is ApiException
+        ? (error as ApiException).message
+        : 'Wallet unavailable';
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.account_balance_wallet_outlined, size: 48, color: u.brand),
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 48,
+              color: u.brand,
+            ),
             const SizedBox(height: 14),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 18),
@@ -818,16 +879,26 @@ class _DepositDialog extends StatelessWidget {
     final address = intent.payAddress;
     final amount = intent.providerPayAmount ?? intent.amount;
     return AlertDialog(
+      scrollable: true,
       title: const Text('Receive crypto'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SummaryRow(label: 'Send exactly', value: '$amount ${intent.asset}'),
+          if (intent.network != null)
+            _SummaryRow(label: 'Network', value: intent.network!),
+          _SummaryRow(
+            label: 'Status',
+            value: intent.status.replaceAll('_', ' '),
+          ),
           const SizedBox(height: 12),
           const Text('Deposit address'),
           const SizedBox(height: 6),
-          SelectableText(address ?? 'Address unavailable'),
+          SelectableText(
+            address ?? 'Address unavailable',
+            textDirection: TextDirection.ltr,
+          ),
           if (address != null) ...[
             const SizedBox(height: 10),
             OutlinedButton.icon(
@@ -894,7 +965,7 @@ class _BuySheetState extends State<_BuySheet> {
       title: 'Buy crypto',
       children: [
         DropdownButtonFormField<String>(
-          value: _currency,
+          initialValue: _currency,
           decoration: const InputDecoration(labelText: 'Pay with'),
           items: [
             for (final currency in widget.fiatCurrencies)
@@ -905,10 +976,7 @@ class _BuySheetState extends State<_BuySheet> {
           },
         ),
         const SizedBox(height: 12),
-        _AmountField(
-          controller: _amount,
-          label: 'Fiat amount',
-        ),
+        _AmountField(controller: _amount, label: 'Fiat amount'),
         const SizedBox(height: 12),
         Text(
           'Your purchase settles as ${widget.settlementAsset} in your Masanawa wallet. You can convert it after settlement.',
@@ -1004,7 +1072,8 @@ class _ConvertSheetState extends State<_ConvertSheet> {
         _AmountField(controller: _amount),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: _target,
+          initialValue: _target,
+          isExpanded: true,
           decoration: const InputDecoration(labelText: 'Convert to'),
           items: [
             for (final route in widget.targets)
@@ -1098,7 +1167,10 @@ class _SheetScaffold extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 16),
               ...children,
@@ -1111,10 +1183,7 @@ class _SheetScaffold extends StatelessWidget {
 }
 
 class _AmountField extends StatelessWidget {
-  const _AmountField({
-    required this.controller,
-    this.label = 'Amount',
-  });
+  const _AmountField({required this.controller, this.label = 'Amount'});
   final TextEditingController controller;
   final String label;
 
@@ -1123,9 +1192,7 @@ class _AmountField extends StatelessWidget {
     return TextField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-      ],
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
       decoration: InputDecoration(labelText: label, hintText: '0.00'),
     );
   }
@@ -1141,20 +1208,14 @@ class _SummaryRow extends StatelessWidget {
     final u = context.masanawa;
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(label, style: TextStyle(color: u.textMuted))),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                color: u.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          Text(label, style: TextStyle(color: u.textMuted)),
+          SelectableText(
+            value,
+            textDirection: TextDirection.ltr,
+            style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600),
           ),
         ],
       ),
