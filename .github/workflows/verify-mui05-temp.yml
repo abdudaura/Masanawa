@@ -1,0 +1,53 @@
+name: MUI05 scoped Flutter and backend validation
+on:
+  push:
+    branches: [validation/mui05-calls-search-final-20261012-gpt6]
+permissions:
+  contents: read
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Resolve Flutter dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      - name: MUI05 widgets and Calls regression
+        working-directory: apps/mobile
+        run: flutter test --reporter expanded test/calls_screen_test.dart test/call_history_transport_test.dart test/ui/mui01_presentation_test.dart
+      - name: Focused Dart analyzer
+        working-directory: apps/mobile
+        run: dart analyze lib/src/calls/call_history.dart lib/src/screens/calls/calls_screen.dart test/calls_screen_test.dart test/call_history_transport_test.dart
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 6
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pnpm
+        run: |
+          npm install -g pnpm@12.8.2
+          pnpm --version
+      - name: Install workspace deps in temporary runner only
+        run: pnpm install --no-frozen-lockfile
+      - name: Authenticated calls HTTP and real PostgreSQL search tests
+        run: pnpm exec vitest run services/gateway/src/call_history/routes.test.ts services/gateway/src/call_history/postgres_repository.test.ts
