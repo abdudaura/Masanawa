@@ -2235,23 +2235,6 @@
       "heartbeat_at": "2026-10-12T13:45:36.510749+00:00",
       "expires_at": "2026-10-12T16:45:36.510749+00:00",
       "notes": "No live claim overlap. Owner explicitly prioritizes Android call and voice-note repair. Narrow AF06 composer/AF11 session allocation to AF05 recorded here; do not change canonical money/admission/history authority, shared router or other windows source. Recovered deleted recording source de7ad6dc6 as reference only, not wholesale restoration. Narrow AF06 transport timeout allocation: live grant client15s expires before existing provider20s deadline; pinned identity/no retry retained. Owner-directed AF00 narrow main.ts Gemini fallback voice allocation only; RESTAuthToken schema rejects current SDK-style liveConnectConstraints (production10:53Z provider400 corroborates). No routing/migrations/billing edits."
-    },
-    {
-      "base_sha": "eecea844349738b1e9a7227fa31d859f438503e9",
-      "branch": "lane/af06-mui03-chats-search-20261012-gpt6",
-      "claim_id": "af06-mui03-mounted-chats-search-20261012-gpt6",
-      "claimed_at": "2026-10-12T16:37:08.128Z",
-      "expires_at": "2026-10-12T16:53:29.474Z",
-      "heartbeat_at": "2026-10-12T16:48:29.474Z",
-      "owner": "AF06 / MUI-03 GPT-6",
-      "lane": "AF06",
-      "scope": "Mounted Chats search: immediate filtering of authenticated, Masana-directory-approved local conversation threads and account-fenced state; preserve pin/archive/open/read. C10 server-wide query remains a separate AF00 integration gap.",
-      "paths": [
-        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
-        "apps/mobile/test/ui/mui03_chats_search_test.dart",
-        "docs/workstreams/UI-MUI-03-chats.md"
-      ],
-      "notes": "Continuation by same AF06 owner after brief expired interval; no new overlapping claims. Hosted validation run 38279529355 PASSED all focused steps on exact two app/test blobs at e4b0c533; source PR #682, canonical C10 integration remains open."
     }
   ],
   "history": [
@@ -5869,6 +5852,29 @@
       "delivery_head_sha": "eecea844349738b1e9a7227fa31d859f438503e9",
       "test_state": "PASS_SIMULATED_WIDGET: 33 MUI-02 + 22 prior auth/MUI-01 executed on github run 38276920855; PASS_DART_ANALYZE scoped six Dart paths; 329 whole-repo diagnostics/TS2459 baseline FAIL; device/provider NOT_RUN",
       "release_reason": "PR #680 reviewed and merged at 8bc782c; PR #681 docs-only SHA-specific verified handoff merged at eecea844. All six production/test source blobs match passing Flutter hosted validator head 7ad7e2d. 33 + 22 widget tests PASS; scoped Dart analyze clean. MUI-03 next; installed/prod/device/MUI-09/10/AF11 remain open. Validation workflow isolated to unmerged branch. Released all exact paths."
+    },
+    {
+      "base_sha": "eecea844349738b1e9a7227fa31d859f438503e9",
+      "branch": "lane/af06-mui03-chats-search-20261012-gpt6",
+      "claim_id": "af06-mui03-mounted-chats-search-20261012-gpt6",
+      "claimed_at": "2026-10-12T16:37:08.128Z",
+      "expires_at": "2026-10-12T16:53:29.474Z",
+      "heartbeat_at": "2026-10-12T16:48:29.474Z",
+      "owner": "AF06 / MUI-03 GPT-6",
+      "lane": "AF06",
+      "scope": "Mounted Chats search: immediate filtering of authenticated, Masana-directory-approved local conversation threads and account-fenced state; preserve pin/archive/open/read. C10 server-wide query remains a separate AF00 integration gap.",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
+        "apps/mobile/test/ui/mui03_chats_search_test.dart",
+        "docs/workstreams/UI-MUI-03-chats.md"
+      ],
+      "notes": "Continuation by same AF06 owner after brief expired interval; no new overlapping claims. Hosted validation run 38279529355 PASSED all focused steps on exact two app/test blobs at e4b0c533; source PR #682, canonical C10 integration remains open.",
+      "source_head": "190be801e739e42cd11f76d227a72fe96e304340",
+      "source_pr": 682,
+      "integration_head_sha": "5b5bd26e7d5d62541652a2090bd32c9a90caa9fe",
+      "released_at": "2026-10-12T16:51:29.110Z",
+      "release_reason": "Scoped MUI-03 mounted authorized local Chats search merged PR #682 at 5b5bd26e7d5d62541652a2090bd32c9a90caa9fe; post-merge handoff docs PR #683 merged at 600fe204c1610c6c715ad9d61387f58f67d5817a. Focused hosted Flutter run 38279529355 PASS 4 widget+16 regression+0 Dart issues, app/test blobs match implementation e4b0c533. Canonical C10 server-wide authorized inbox/query still UNMOUNTED; AF00 notified via #616 comment 6128601248, remains OPEN. No signed-device/provider evidence.",
+      "test_state": "PASS_SCOPED_WIDGET; MUI03_PARTIAL_SOURCE"
     }
   ],
   "schema_version": 1
