@@ -12,12 +12,13 @@ function onlyKeys(value: unknown, allowed: readonly string[]): void {
 
 const params = Type.Object({ callId: Type.String({ minLength: 36, maxLength: 36 }) }, { additionalProperties: false });
 export function registerCallHistoryRoutes(app: FastifyInstance, service: CallHistoryService): void {
-  app.get("/v1/calls", { preValidation: async request => onlyKeys(request.query, ["limit", "cursor"]), schema: { querystring: Type.Object({
+  app.get("/v1/calls", { preValidation: async request => onlyKeys(request.query, ["limit", "cursor", "q"]), schema: { querystring: Type.Object({
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
-    cursor: Type.Optional(Type.String({ minLength: 1, maxLength: 200 })),
+    cursor: Type.Optional(Type.String({ minLength: 1, maxLength: 600 })),
+    q: Type.Optional(Type.String({ maxLength: 80 })),
   }, { additionalProperties: false }) } }, async (request) => {
-    const query = request.query as { limit?: number; cursor?: string };
-    return service.list({ ...query, ...(request.headers.authorization ? { authorizationHeader: request.headers.authorization } : {}) });
+    const query = request.query as { limit?: number; cursor?: string; q?: string };
+    return service.list({ limit: query.limit, cursor: query.cursor, query: query.q, ...(request.headers.authorization ? { authorizationHeader: request.headers.authorization } : {}) });
   });
   app.get("/v1/calls/:callId", { schema: { params } }, async (request) => {
     const { callId } = request.params as { callId: string };
