@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
-import 'package:masanawa/src/owner_access/owner_access.dart';
 import 'package:masanawa/src/owner_access/owner_access_http_transport.dart';
 
 class _Adapter implements HttpClientAdapter {

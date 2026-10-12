@@ -225,6 +225,9 @@ importers:
       '@masanawa/providers':
         specifier: workspace:*
         version: link:../../../packages/providers
+      '@masanawa/rooms':
+        specifier: workspace:*
+        version: link:../../../packages/rooms
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../../packages/security
@@ -402,6 +405,12 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
+  packages/rooms:
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
   packages/security:
     dependencies:
       '@masanawa/contracts':
@@ -508,6 +517,9 @@ importers:
       '@masanawa/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@masanawa/rooms':
+        specifier: workspace:*
+        version: link:../../packages/rooms
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../packages/security
@@ -597,6 +609,9 @@ importers:
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
+      '@masanawa/rooms':
+        specifier: workspace:*
+        version: link:../../packages/rooms
       '@masanawa/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry

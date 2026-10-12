@@ -3,7 +3,7 @@ import type {Pool,PoolClient} from "pg";
 import {RoomError,requireFan,validateIdempotencyKey} from "@masanawa/rooms";
 import {validateDiscussionBody,validateDiscussionTarget,requireDiscussionModerator} from "@masanawa/rooms";
 import type {DiscussionReply,DiscussionPage,DiscussionDecision,DiscussionTarget,DiscussionCursor} from "@masanawa/rooms";
-import type {RoomActor} from "@masanawa/rooms/ports";
+import type {RoomActor} from "@masanawa/rooms";
 import {assertRoom,lookupRoom,requirePublishedEligible,requireMember} from "./repository.js";
 const rid=(prefix:string)=>prefix+randomUUID();
 const project=(r:any,a:RoomActor):DiscussionReply=>({

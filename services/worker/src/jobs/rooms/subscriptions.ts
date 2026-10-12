@@ -1,4 +1,4 @@
-import type {RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
+import type {RoomSubscriptionsRepository} from "@masanawa/rooms";
 import type {PlaySubscriptionVerifier,VerifiedPlaySubscription} from "@masanawa/rooms";
 import {authorizedState,RoomError,purchaseTokenHash} from "@masanawa/rooms";
 

@@ -7,6 +7,8 @@ import 'rooms_client.dart';
 import 'room_subscriptions_client.dart';
 import 'room_billing_store.dart';
 import 'room_subscribe_screen.dart';
+import 'saved_lessons_client.dart';
+import 'saved_lessons_screen.dart';
 const masanaBlue=Color(0xFF1E63D6);
 String roomError(Object e){
  if(e is DioException){
@@ -18,13 +20,15 @@ String roomError(Object e){
  return 'Could not load. Check the network and retry.';
 }
 class RoomsScreen extends StatefulWidget {
- const RoomsScreen({super.key,required this.client,this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport});
+ const RoomsScreen({super.key,required this.client,this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
  final RoomsClient client;
  final RoomSubscriptionsClient? subscriptionsClient;
  final RoomBillingStore? billingStore;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
  final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
+ final SavedLessonsClient? savedLessonsClient;
+ final String? savedLessonsAccountKey;
  @override State<RoomsScreen> createState()=>_RoomsScreenState();
 }
 class _RoomsScreenState extends State<RoomsScreen>{
@@ -69,7 +73,8 @@ class _RoomsScreenState extends State<RoomsScreen>{
        await Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>RoomHomeScreen(client:widget.client,id:r.id,
         subscriptionsClient:widget.subscriptionsClient,billingStore:widget.billingStore,
         discussionApi:widget.discussionApi,discussionAccountScope:widget.discussionAccountScope,
-        onDiscussionReport:widget.onDiscussionReport)));
+        onDiscussionReport:widget.onDiscussionReport,
+        savedLessonsClient:widget.savedLessonsClient,savedLessonsAccountKey:widget.savedLessonsAccountKey)));
        if(mounted)load();
       });
     })))
@@ -78,18 +83,20 @@ class _RoomsScreenState extends State<RoomsScreen>{
 }
 class RoomHomeScreen extends StatefulWidget {
  const RoomHomeScreen({super.key,required this.client,required this.id,
-  this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport});
+  this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
  final RoomsClient client;final String id;
  final RoomSubscriptionsClient? subscriptionsClient;
  final RoomBillingStore? billingStore;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
  final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
+ final SavedLessonsClient? savedLessonsClient;
+ final String? savedLessonsAccountKey;
  @override State<RoomHomeScreen> createState()=>_RoomHomeScreenState();
 }
 class _RoomHomeScreenState extends State<RoomHomeScreen>{
  final question=TextEditingController();
- RoomInfo? info;List<RoomQuestion> items=[];List<String> lessons=[];
+ RoomInfo? info;List<RoomQuestion> items=[];List<RoomLesson> lessons=[];
  bool loading=true,busy=false,paidAccessBlocked=false;Object? error;int tab=0;String? pendingKey;
  @override void initState(){super.initState();load();}
  @override void dispose(){question.dispose();super.dispose();}
@@ -97,7 +104,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
   setState((){loading=true;error=null;});
   try{final room=await widget.client.room(widget.id);
    List<RoomQuestion> qs=[];
-   List<String> ls=[];
+   List<RoomLesson> ls=[];
    bool subscriptionBlocked=false;
    if(room.joined){
     try{
@@ -146,6 +153,26 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
    if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(roomError(e))));
   }finally{if(mounted)setState(()=>busy=false);}
  }
+ Future<void> bookmark(RoomLesson lesson)async{
+  final client=widget.savedLessonsClient;
+  if(busy||client==null||!client.isCurrentAccount||widget.savedLessonsAccountKey!=client.accountKey||paidAccessBlocked)return;
+  setState(()=>busy=true);
+  try{
+   await client.save(widget.id,lesson.id);
+   if(mounted&&client.isCurrentAccount)ScaffoldMessenger.of(context)
+    .showSnackBar(const SnackBar(content:Text('Lesson saved.')));
+  }catch(error){
+   if(mounted)ScaffoldMessenger.of(context)
+    .showSnackBar(SnackBar(content:Text(roomError(error))));
+  }finally{if(mounted)setState(()=>busy=false);}
+ }
+ void openSaved(){
+  final client=widget.savedLessonsClient;
+  final key=widget.savedLessonsAccountKey;
+  if(client==null||key==null||key!=client.accountKey||!client.isCurrentAccount||!info!.joined||paidAccessBlocked)return;
+  Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>
+   SavedRoomLessonsScreen(client:client,roomId:widget.id,accountKey:key)));
+ }
  Future<void> ask()async{
   if(busy||question.text.trim().length<4)return;
   pendingKey??='rq_'+DateTime.now().microsecondsSinceEpoch.toString()+'_'
@@ -157,7 +184,11 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
   finally{if(mounted)setState(()=>busy=false);}
  }
  @override Widget build(BuildContext context)=>Scaffold(
-  appBar:AppBar(title:Text(info?.title??'Room'),backgroundColor:masanaBlue,foregroundColor:Colors.white),
+  appBar:AppBar(title:Text(info?.title??'Room'),backgroundColor:masanaBlue,foregroundColor:Colors.white,
+   actions:widget.savedLessonsClient==null?null:[IconButton(
+    key:const Key('room-saved-lessons'),tooltip:'Saved lessons',
+    onPressed:info?.joined==true&&!paidAccessBlocked&&widget.savedLessonsAccountKey==widget.savedLessonsClient?.accountKey?openSaved:null,
+    icon:const Icon(Icons.bookmarks_outlined))]),
   body:loading?const Center(child:CircularProgressIndicator()):
    error!=null?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
     Text(roomError(error!)),TextButton(onPressed:load,child:const Text('Retry'))])):
@@ -180,7 +211,11 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
        RoomDiscussionScreen(roomId:widget.id,api:widget.discussionApi!,
         accountScope:widget.discussionAccountScope!,onReport:widget.onDiscussionReport)):
        tab==0?(lessons.isEmpty?const Center(child:Text('Lessons coming soon')):
-       ListView.builder(itemCount:lessons.length,itemBuilder:(_,i)=>ListTile(title:Text(lessons[i])))):
+       ListView.builder(itemCount:lessons.length,itemBuilder:(_,i)=>ListTile(
+        title:Text(lessons[i].body),
+        trailing:widget.savedLessonsClient==null?null:IconButton(
+         tooltip:'Save lesson',icon:const Icon(Icons.bookmark_add_outlined),
+         onPressed:busy||!widget.savedLessonsClient!.isCurrentAccount||widget.savedLessonsAccountKey!=widget.savedLessonsClient!.accountKey?null:()=>bookmark(lessons[i]))))):
        RefreshIndicator(onRefresh:load,child:ListView(children:[
         if(items.isEmpty)const ListTile(title:Text('Ask the first question.')),
         for(final q in items)ListTile(title:Text(q.body),
