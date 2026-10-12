@@ -2199,6 +2199,30 @@
       "integration_head_sha": "18bdd8140a2bdf78b8cccfdb42a8030a5452d52c",
       "delivery_head_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
       "release_reason": "MUI01 merged normally in PR678; exact tested tree match at18bdd8140; handoff metadata PR679 mergedada66c61c.39focusedpass,13presentation cases,454globalpass/9baselinefail,329same analyzer diagnostics; fresh review separator correction pixel RED/GREEN. Rendered320/360/390/430 1x2x,RTL and allmainheaders. NoAndroidSDK/signeddevice/providerrelease. MUI02 next; full queue and remaining domain/combined/installed acceptance retained in UI-MUI-01-foundation.md. No router/auth/financial/backend/CI changes or admin bypass."
+    },
+    {
+      "claim_id": "af05-android-voice-repair-20261012",
+      "owner": "AF05 / owner-directed Android voice repair",
+      "scope": "Restore real composer voice notes and diagnose/fix call start errors; retain AF11 history/billing/incoming",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "apps/mobile/lib/src/core/live_voice_session.dart",
+        "apps/mobile/lib/src/core/voice_note_recorder.dart",
+        "apps/mobile/lib/src/ui/components/voice_note_composer.dart",
+        "apps/mobile/lib/src/core/audio_failure.dart",
+        "apps/mobile/test/voice_note_recorder_test.dart",
+        "apps/mobile/test/voice_note_composer_test.dart",
+        "apps/mobile/test/ai_chat_voice_actions_test.dart",
+        "apps/mobile/test/live_voice_session_test.dart",
+        "apps/mobile/test/audio_failure_test.dart",
+        "docs/workstreams/AF05-android-voice-repair-20261012.md"
+      ],
+      "branch": "lane/af05-android-voice-repair-20261012",
+      "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "claimed_at": "2026-10-12T13:45:36.510749+00:00",
+      "heartbeat_at": "2026-10-12T13:45:36.510749+00:00",
+      "expires_at": "2026-10-12T16:45:36.510749+00:00",
+      "notes": "No live claim overlap. Owner explicitly prioritizes Android call and voice-note repair. Narrow AF06 composer/AF11 session allocation to AF05 recorded here; do not change canonical money/admission/history authority, shared router or other windows source. Recovered deleted recording source de7ad6dc6 as reference only, not wholesale restoration."
     }
   ],
   "history": [
