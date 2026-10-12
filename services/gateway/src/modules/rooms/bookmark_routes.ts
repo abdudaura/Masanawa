@@ -1,6 +1,6 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
 import {RoomError,requireFan} from "@masanawa/rooms";
-import type {RoomActor} from "@masanawa/rooms/ports";
+import type {RoomActor} from "@masanawa/rooms";
 type Lesson={lessonId:string;body:string;kind:"lesson"|"announcement";bookmarkedAt:string};
 export interface RoomBookmarkPorts {
   readonly authorize:(header:string|undefined,cap:"rooms.read")=>Promise<RoomActor>;

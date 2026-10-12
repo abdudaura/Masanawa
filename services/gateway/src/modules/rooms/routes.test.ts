@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import {describe,it,expect,vi} from "vitest";
 import {registerRoomsRoutes} from "./routes.js";
-import type {RoomsRepository,RoomActor} from "@masanawa/rooms/ports";
+import type {RoomsRepository,RoomActor} from "@masanawa/rooms";
 import {RoomError} from "@masanawa/rooms";
 function build(actor:RoomActor,enabled=true){
  const ask=vi.fn(),create=vi.fn();

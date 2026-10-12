@@ -31,4 +31,12 @@ describe("RTDN Google signed PubSub OIDC",()=>{
   const good=jwt(claims);
   expect(await verifier("Bearer "+good.slice(0,-1)+"x")).toBe(false);
  });
+ it("rejects alternate signature text that decodes to the same bytes",async()=>{
+  const verifier=createGooglePubSubPushVerifier({audience:aud,serviceAccountEmail:email,http:http as typeof fetch,clock:()=>now});
+  const token=jwt(claims),parts=token.split("."),signature=parts[2]!;
+  const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  const alias=signature.slice(0,-1)+alphabet[alphabet.indexOf(signature.at(-1)!)+1];
+  expect(Buffer.from(alias,"base64url")).toEqual(Buffer.from(signature,"base64url"));
+  expect(await verifier("Bearer "+parts[0]+"."+parts[1]+"."+alias)).toBe(false);
+ });
 });

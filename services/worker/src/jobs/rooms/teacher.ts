@@ -1,6 +1,6 @@
 /** Durable Room question processor; never grants subscriptions or auto-publishes unreviewed AI answers. */
-import type {TeacherJob,TeacherQueue} from "@masanawa/rooms/teacher";
-export type {TeacherJob,TeacherQueue} from "@masanawa/rooms/teacher";
+import type {TeacherJob,TeacherQueue} from "@masanawa/rooms";
+export type {TeacherJob,TeacherQueue} from "@masanawa/rooms";
 export interface RoomAnswerModel {
  generate(input:{tenantId:string;roomId:string;questionId:string}):Promise<string|null>;
 }

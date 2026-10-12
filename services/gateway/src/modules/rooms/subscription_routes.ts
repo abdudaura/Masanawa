@@ -2,7 +2,7 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
 import {RoomError,authorizedState,parsePurchaseToken,purchaseTokenHash,requirePricingStaff,validatePrice} from "@masanawa/rooms";
 import type {PlaySubscriptionVerifier} from "@masanawa/rooms";
-import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
+import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms";
 export interface RoomSubscriptionPorts {
  readonly repository:RoomSubscriptionsRepository;
  readonly authorize:(header:string|undefined,capability:"rooms.read"|"rooms.join"|"rooms.staff")=>Promise<RoomActor>;
@@ -60,7 +60,8 @@ export function registerRoomSubscriptionRoutes(app:FastifyInstance,p:RoomSubscri
    const roomId=pathId(req,"id");
    // A customer's accepted historical price remains verifiable after an Admin price revision.
    const price=await p.repository.findHistoricalPrice(a.tenantId,roomId,planId,revision);
-   if(!price)throw new RoomError(409,"price_version_stale");
+   if(!price||price.planId!==planId||price.version!==revision)
+    throw new RoomError(409,"price_version_stale");
    const verified=await p.play.verify(token);
    if(verified.packageName!==p.playPackageName||verified.storeProductId!==price.storeProductId||
       verified.obfuscatedAccountId!==p.purchaseAccountBinding(a.tenantId,a.userId))

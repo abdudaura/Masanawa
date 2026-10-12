@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import {describe,it,expect,vi} from "vitest";
-import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
+import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms";
 import {registerRoomSubscriptionRoutes} from "./subscription_routes.js";
 const fan:RoomActor={tenantId:"tenant_test",userId:"fan_test",roles:["fan"]};
 const price={planId:"room-plan_123456",version:1,amountMinor:"199900",
@@ -59,6 +59,13 @@ describe("J08 server-only paid subscription authorization",()=>{
   const params=vi.mocked(repo.persistVerified).mock.calls[0]?.[0];
   expect(params?.tokenHash).toMatch(/^[0-9a-f]{64}$/u);
   expect(JSON.stringify(params)).not.toContain(storeToken);await app.close();
+ });
+ it("rejects a price returned for another plan without reaching Play",async()=>{
+  const {app,verify,repo}=setup();
+  const r=await app.inject({method:"POST",url:"/v1/rooms/room_maths/subscription/verify",
+   payload:{...payload,planId:"room-plan_other"}});
+  expect(r.statusCode).toBe(409);expect(verify).not.toHaveBeenCalled();
+  expect(repo.persistVerified).not.toHaveBeenCalled();await app.close();
  });
  it("requires pricing_manager staff for plan writes and OIDC auth for RTDN",async()=>{
   const {app,repo}=setup();

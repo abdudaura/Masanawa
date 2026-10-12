@@ -1,7 +1,7 @@
 import {randomUUID} from "node:crypto";
 import type {Pool,PoolClient} from "pg";
 import {RoomError,validateQuestion,validateIdempotencyKey,requireFan,requireRoomStaff} from "@masanawa/rooms";
-import type {RoomActor,RoomsRepository} from "@masanawa/rooms/ports";
+import type {RoomActor,RoomsRepository} from "@masanawa/rooms";
 import type {RoomPreview,RoomQuestion} from "@masanawa/rooms";
 export type Queryable=Pick<PoolClient,"query">;
 const newId=(prefix:string)=>prefix+randomUUID();

@@ -36,3 +36,6 @@ export function requireFan(userId:string|null):string {
 }
 export * from "./subscriptions.js";
 export * from "./discussion.js";
+
+export type * from "./ports.js";
+export type * from "./teacher.js";

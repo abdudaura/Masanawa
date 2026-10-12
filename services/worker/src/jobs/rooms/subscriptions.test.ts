@@ -1,6 +1,6 @@
 import {describe,expect,it,vi} from "vitest";
 import {createRoomSubscriptionJob} from "./subscriptions.js";
-import type {RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
+import type {RoomSubscriptionsRepository} from "@masanawa/rooms";
 const purchaseToken="room_token_that_is_long_enough_012345";
 function build({enabled=true,owner="t1",period="2030-01-01T00:00:00Z"}={}){
  const applyNotification=vi.fn(async (_input:Parameters<RoomSubscriptionsRepository['applyNotification']>[0])=>"linked" as const);
