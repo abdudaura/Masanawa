@@ -2256,9 +2256,9 @@
         "docs/workstreams/UI-MUI-05-calls-search.md"
       ],
       "claimed_at": "2026-10-12T16:59:44.419Z",
-      "heartbeat_at": "2026-10-12T16:59:44.419Z",
-      "expires_at": "2026-10-12T17:04:44.419Z",
-      "notes": "MUI-04 requires missing AF00 root/feed composition; MUI-05 ready with existing mounted calls and canonical /v1/calls PG/HTTP; earlier AF11 claims released, current Calls preserved."
+      "heartbeat_at": "2026-10-12T17:08:17.030Z",
+      "expires_at": "2026-10-12T17:13:17.030Z",
+      "notes": "Exact-path MUI05 source PR #684 underway. First hosted run #38281852639 caught historic PostgreSQL missing direction/incoming_outcome and a retry test fixture failure; repairs source c7f548f7, rerun validation temp head 6344f296. Preserve AF00/AF05 roots."
     }
   ],
   "history": [
