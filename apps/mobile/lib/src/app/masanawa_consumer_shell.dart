@@ -58,8 +58,6 @@ class MasanawaConsumerShell extends ConsumerStatefulWidget {
 class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
   late MasanawaTab _selected;
   final Set<MasanawaTab> _visited = {};
-  bool _videos = false;
-  bool _videoVisited = false;
   late DioFeedApi _feed;
   late DioFeedMediaApi _media;
   late ApiClient _client;
@@ -108,6 +106,8 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
     appBar: AppBar(
       title: const Text('Masanawa'),
       actions: [
+        IconButton(tooltip: _translate('Videos','Bidiyoyi'), icon: const Icon(Icons.video_library_outlined),
+          onPressed: () => _openVideos(account)),
         IconButton(
           tooltip: _translate('Find Masana', 'Nemo Masana'),
           icon: const Icon(Icons.search_outlined),
@@ -120,45 +120,27 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
         ),
       ],
     ),
-    body: Column(children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Row(children: [
-          Expanded(child: ChoiceChip(
-            label: Text(_translate('Status', 'Labarai')),
-            selected: !_videos,
-            onSelected: (_) => setState(() => _videos = false),
-          )),
-          const SizedBox(width: 8),
-          Expanded(child: ChoiceChip(
-            label: Text(_translate('Videos', 'Bidiyoyi')),
-            selected: _videos,
-            onSelected: (_) => setState(() { _videos = true; _videoVisited = true; }),
-          )),
-        ]),
-      ),
-      Expanded(child: IndexedStack(index: _videos ? 1 : 0, children: [
-        MasanaFeedScreen(
-          key: ValueKey('masana-feed-$account'),
-          api: _feed,
-          accountKey: account,
-          onMasanaProfile: (id) => context.push(
-            '/masana/${Uri.encodeComponent(id)}/profile'),
-          onOpenMedia: (post, mediaId) => _openMedia(account, post, mediaId),
-        ),
-        _videoVisited
-            ? ExternalVideosScreen(
-                key: ValueKey('official-videos-$account'),
-                accountKey: account,
-                languageCode: Localizations.localeOf(context).languageCode,
-                load: _video.list,
-                loadPage: _video.page,
-                checkAvailability: _video.isApproved,
-              )
-            : const SizedBox.shrink(),
-      ])),
-    ]),
+    body: MasanaFeedScreen(
+      key: ValueKey('masana-feed-$account'), api: _feed, accountKey: account,
+      onMasanaProfile: (id) => context.push('/masana/${Uri.encodeComponent(id)}/profile'),
+      onOpenMedia: (post, mediaId) => _openMedia(account, post, mediaId),
+    ),
   );
+
+  void _openVideos(String account) {
+    final api = _video;
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Consumer(
+      builder: (context, ref, _) {
+        final session = ref.watch(sessionProvider);
+        if (session is! SessionSignedIn || session.user.id != account) {
+          return const Scaffold(body: Center(child: Text('Sign in to view videos.')));
+        }
+        return ExternalVideosScreen(accountKey: account,
+          languageCode: Localizations.localeOf(context).languageCode,
+          load: api.list, loadPage: api.page, checkAvailability: api.isApproved);
+      },
+    )));
+  }
 
   void _openMedia(String account, FeedPost post, String mediaId) {
     if (!post.mediaIds.contains(mediaId)) return;
@@ -206,7 +188,6 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
     if (_account != account) {
       _account = account;
       _visited.clear();_visited.add(_selected);
-      _videos = false;_videoVisited = false;
     }
     return Scaffold(
       body: IndexedStack(
