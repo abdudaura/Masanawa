@@ -2079,6 +2079,19 @@
       ],
       "scope": "Owner requests resolve actual PR669 blockers; narrow shared dependency and baseline Admin compiler repair",
       "source_pr": 669
+    },
+    {
+      "claim_id": "status-integrated-evidence-20261012",
+      "owner": "Codex STATUS implementation window",
+      "scope": "Record user-directed safe source merge and exact read-only production probe",
+      "paths": [
+        "docs/workstreams/STATUS-masana-authorization-20261011.md"
+      ],
+      "branch": "integration/rebuild",
+      "base_sha": "799b2b337bd0c5915e24aa0b9f1b476bec521ea0",
+      "claimed_at": "2026-10-12T02:24:20.038Z",
+      "heartbeat_at": "2026-10-12T02:24:20.038Z",
+      "expires_at": "2026-10-12T02:29:20.038Z"
     }
   ],
   "history": [
