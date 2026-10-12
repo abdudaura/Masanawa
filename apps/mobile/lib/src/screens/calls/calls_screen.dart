@@ -128,8 +128,9 @@ class CallsScreen extends ConsumerWidget {
                   );
                   if (quote == null ||
                       !groupContext.mounted ||
-                      currentAccount() != accountId)
+                      currentAccount() != accountId) {
                     return null;
+                  }
                   final approved = await showDialog<bool>(
                     context: groupContext,
                     builder: (dialogContext) => AlertDialog(
@@ -151,8 +152,9 @@ class CallsScreen extends ConsumerWidget {
                       ],
                     ),
                   );
-                  if (approved != true || currentAccount() != accountId)
+                  if (approved != true || currentAccount() != accountId) {
                     return null;
+                  }
                   final admission = await controller.accept(
                     characterId: contact.characterId,
                   );
