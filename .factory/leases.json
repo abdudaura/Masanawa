@@ -2245,8 +2245,8 @@
       "branch": "lane/af08-mui02-auth-language-20261012-gpt6",
       "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
       "claimed_at": "2026-10-12T16:06:36.182Z",
-      "heartbeat_at": "2026-10-12T16:06:36.182Z",
-      "expires_at": "2026-10-12T16:11:36.182Z",
+      "heartbeat_at": "2026-10-12T16:09:15.995Z",
+      "expires_at": "2026-10-12T16:14:15.995Z",
       "notes": "Prior AF08 PR #680 claim released; no overlapping live claims. Isolated workflow is a narrow AF00 CI support path, never merged to main; tests execute on equivalent code tree."
     }
   ],
