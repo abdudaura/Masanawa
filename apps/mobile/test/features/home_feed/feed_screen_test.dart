@@ -57,7 +57,7 @@ void main(){
  });
  testWidgets('Status discards an outstanding response on disable and reloads on enable',(tester)async{
   final pending=Completer<FeedPage>(),api=StubFeed('fresh');
-  api.onList=(_,__)=>pending.future;
+  api.onList=(_,_)=>pending.future;
   Future<void> render(bool enabled)async{
    await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaFeedScreen(api:api,accountKey:'fan',enabled:enabled))));
    await tester.pump();
@@ -84,10 +84,10 @@ void main(){
  testWidgets('Status preserves offline content but clears it on revoked session',(tester)async{
   final api=StubFeed('cached');
   await tester.pumpWidget(MaterialApp(home:Scaffold(body:MasanaFeedScreen(api:api,accountKey:'fan'))));await tester.pumpAndSettle();
-  api.onList=(_,__)=>Future.error(DioException(requestOptions:RequestOptions(path:'/v1/feed'),type:DioExceptionType.connectionError));
+  api.onList=(_,_)=>Future.error(DioException(requestOptions:RequestOptions(path:'/v1/feed'),type:DioExceptionType.connectionError));
   await tester.drag(find.byType(ListView),const Offset(0,500));await tester.pumpAndSettle();
   expect(find.text('cached'),findsOneWidget);
-  api.onList=(_,__)=>Future.error(denial(401));await tester.tap(find.text('Retry'));await tester.pumpAndSettle();
+  api.onList=(_,_)=>Future.error(denial(401));await tester.tap(find.text('Retry'));await tester.pumpAndSettle();
   expect(find.text('cached'),findsNothing);
  });
  testWidgets('Status failed reaction rolls back and re-enables retry',(tester)async{

@@ -6,6 +6,14 @@ function mock(){
 }
 const fan={kind:"fan" as const,tenantId:"tenant",id:"fan"};
 describe("J06 Masana-only Feed",()=>{
+ it("does not relabel approved image references as audio",async()=>{
+  const db=mock(),media=vi.fn(async(_t:string,_a:string,_m:string,kind:string)=>kind==="image");
+  const service=new FeedService(db,async()=>true,media);
+  await expect(service.publish({kind:"masana",tenantId:"tenant",id:"masana",approved:true},
+   {authorMasanaId:"masana",kind:"audio",body:"",media:["media_abcdefgh"],transcript:"speech",idempotencyKey:"request-kind-001"})).rejects.toMatchObject({code:"media_not_approved"});
+  expect(media).toHaveBeenCalledWith("tenant","masana","media_abcdefgh","audio");
+  expect(db.publish).not.toHaveBeenCalled();
+ });
  it("rejects direct staff publishing even with editorial permission",async()=>{
   const db=mock(),s=new FeedService(db,async()=>true);
   await expect(s.publish({kind:"staff",tenantId:"tenant",id:"editor",permissions:["content_editor"]},

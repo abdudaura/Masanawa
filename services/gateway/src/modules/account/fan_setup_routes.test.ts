@@ -27,7 +27,7 @@ function setup(enabled=true){
  };
  const verifyAvatar=vi.fn(async()=>false);
  const app=Fastify();
- registerFanSetupRoutes(app,{auth,store,verifyAvatar,enabled:()=>enabled});
+ registerFanSetupRoutes(app,{auth:{fan:auth},store,verifyAvatar,enabled:()=>enabled});
  return {app,auth,store,writes,verifyAvatar};
 }
 describe("C04 /v1/me actor and consent boundary",()=>{

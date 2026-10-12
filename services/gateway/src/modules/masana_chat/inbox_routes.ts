@@ -34,7 +34,7 @@ const record = (x: unknown): Record<string, unknown> =>
 export function registerMasanaInboxRoutes(
   app: FastifyInstance, deps: MasanaInboxRoutesDeps,
 ): void {
-  async function fan(request: {headers: {authorization?: string}}):
+  async function fan(request: {headers: {authorization?: string | undefined}}):
       Promise<FanInboxScope | null> {
     if (!request.headers.authorization) return null;
     const actor = await deps.resolveFan(request.headers.authorization);

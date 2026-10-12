@@ -1,3 +1,6 @@
+import {FeedService,EditorialReviewService} from "@masanawa/feed";
+import {PgHomeFeedRepository,PgEditorialReviewRepository,PgStatusEligibility} from "@masanawa/postgres";
+import type {StatusRuntime} from "./modules/home_feed/runtime.js";
 import { pathToFileURL } from "node:url";
 import type {
   AgentPresentationRepository,
@@ -290,6 +293,11 @@ export interface ServiceProcess extends NodeSignalSource {
 }
 
 export interface ServiceDatabaseDependency {
+  readonly status?: Readonly<{
+    feed: PgHomeFeedRepository;
+    editorial: PgEditorialReviewRepository;
+    eligibility: PgStatusEligibility;
+  }>;
   readonly readinessCheck: ReadinessCheck;
   readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
@@ -413,6 +421,9 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    status: Object.freeze({feed: new PgHomeFeedRepository(database.pool),
+      editorial: new PgEditorialReviewRepository(database.pool),
+      eligibility: new PgStatusEligibility(database.pool)}),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
     platformAgentIdentity: Object.freeze({
@@ -2230,11 +2241,27 @@ export async function startGatewayService(
     });
   }
 
+  let status: StatusRuntime | undefined = options.appOptions?.status;
+  if (!status && database.status && database.platformSessions) {
+    const {feed, editorial, eligibility} = database.status;
+    const sessions = billingCustomerAuthorizer ?? createPlatformCustomerSessionAuthorizer({repository: database.platformSessions});
+    const editors = readPrincipalSet(env.MASANAWA_ADMIN_PRINCIPALS ?? env.MASANAWA_ADMIN_USER_IDS ?? env.MASANAWA_ADMIN_EMAILS);
+    const author = (tenant: string, id: string) => eligibility.author(tenant, id);
+    const media = (tenant: string, id: string, ref: string, kind: "text" | "image" | "audio") => eligibility.media(tenant, id, ref, kind);
+    status = {
+      sessions, feed: new FeedService(feed, author, media),
+      editorial: new EditorialReviewService(editorial, author, media),
+      // Use existing server-configured platform user principals, never client roles.
+      isEditor: async session => editors.has(session.userId),
+    };
+  }
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
+      ...(status ? { status } : {}),
       ...(accountDeletion ? { accountDeletion } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
       ...(composedTalkReplay ? { talkReplay: composedTalkReplay } : {}),

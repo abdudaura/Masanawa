@@ -20,7 +20,7 @@ const row=(revision=1,completed=false)=>({
  fan_setup_completed_at:completed?new Date():null,revision
 });
 function mock(revision=1,completed=false){
- const statements:{sql:string;values?:unknown[]}[]=[];
+ const statements:{sql:string;values?:unknown[]|undefined}[]=[];
  const query=async(sql:string,values?:unknown[])=>{
   statements.push({sql,values});
   if(sql.startsWith("SELECT"))return {rows:[row(revision,completed)]};
@@ -39,11 +39,11 @@ describe("J01 PostgreSQL adapter",()=>{
   expect(s.statements.map(x=>x.sql)).toContain("BEGIN");
   expect(s.statements.map(x=>x.sql)).toContain("COMMIT");
   const reads=s.statements.filter(x=>x.sql.startsWith("SELECT"));
-  expect(reads[0].values).toEqual(["tenant_real","fan_a"]);
+  expect(reads[0]?.values).toEqual(["tenant_real","fan_a"]);
   const writes=s.statements.filter(x=>x.sql.startsWith("UPDATE"));
   expect(writes).toHaveLength(1);
-  expect(writes[0].sql).toContain("revision=$8");
-  expect(writes[0].values?.slice(0,2)).toEqual(["tenant_real","fan_a"]);
+  expect(writes[0]?.sql).toContain("revision=$8");
+  expect(writes[0]?.values?.slice(0,2)).toEqual(["tenant_real","fan_a"]);
  });
  it("returns same completed record without a second update on retry",async()=>{
   const s=mock(2,true);

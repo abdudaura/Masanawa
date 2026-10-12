@@ -68,10 +68,10 @@ class _MasanaFeedScreenState extends State<MasanaFeedScreen> {
         items=[...items,...page.items.where((p)=>seen.add(p.id))];
         cursor=page.nextCursor;fetchingMore=false;
       });
-    }catch(e){if(mounted&&ticket==generation)setState((){
+    }catch(e){if(mounted&&ticket==generation){setState((){
       if(accessLost(e)){items=[];cursor=null;error=e.toString();}
       fetchingMore=false;pageError=e.toString();
-    });}
+    });}}
   }
   Future<void> action(FeedPost p,{required bool like}) async {
     final index=items.indexWhere((row)=>row.id==p.id);

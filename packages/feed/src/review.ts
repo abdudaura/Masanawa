@@ -36,7 +36,7 @@ function validKey(key:string){if(!idempotency.test(key))fail("invalid_idempotenc
 export class EditorialReviewService {
  constructor(private readonly repo:EditorialRepository,
   private readonly approvedMasana:(tenant:string,id:string)=>Promise<boolean>,
-  private readonly approvedMedia:(tenant:string,masana:string,media:string)=>Promise<boolean>){}
+  private readonly approvedMedia:(tenant:string,masana:string,media:string,kind:PostKind)=>Promise<boolean>){}
  private async validateDraft(actor:Actor,input:DraftInput):Promise<Required<DraftInput>>{
   if(!identifier.test(input.authorMasanaId))fail("invalid_masana");
   if(!["text","image","audio"].includes(input.kind))fail("invalid_post_kind");
@@ -48,7 +48,7 @@ export class EditorialReviewService {
     ||media.some(x=>typeof x!=="string"||!/^media_[A-Za-z0-9_-]{8,128}$/.test(x)))
     fail("invalid_draft");
   if(!await this.approvedMasana(actor.tenantId,input.authorMasanaId))fail("masana_not_approved",403);
-  for(const ref of media)if(!await this.approvedMedia(actor.tenantId,input.authorMasanaId,ref))fail("media_not_approved",403);
+  for(const ref of media)if(!await this.approvedMedia(actor.tenantId,input.authorMasanaId,ref,input.kind))fail("media_not_approved",403);
   return {authorMasanaId:input.authorMasanaId,kind:input.kind,body,media,transcript,idempotencyKey:input.idempotencyKey};
  }
  async create(actor:Actor,input:DraftInput):Promise<EditorialPost>{
@@ -85,7 +85,7 @@ export class EditorialReviewService {
    fail("separate_reviewer_required",403);
   if(action==="approve"||action==="schedule"){
    if(!await this.approvedMasana(actor.tenantId,record!.authorMasanaId))fail("masana_not_approved",403);
-   for(const media of record!.media)if(!await this.approvedMedia(actor.tenantId,record!.authorMasanaId,media))fail("media_not_approved",403);
+   for(const media of record!.media)if(!await this.approvedMedia(actor.tenantId,record!.authorMasanaId,media,record!.kind))fail("media_not_approved",403);
   }
   return this.repo.change(actor.tenantId,id,actor.id,revision,action,key,scheduledAt);
  }

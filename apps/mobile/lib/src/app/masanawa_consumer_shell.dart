@@ -120,7 +120,9 @@ class _MasanawaConsumerShellState extends ConsumerState<MasanawaConsumerShell> {
         ),
       ],
     ),
-    body: MasanaFeedScreen(
+    body: account.isEmpty
+      ? const Center(child: Text('Sign in to view Status updates.'))
+      : MasanaFeedScreen(
       key: ValueKey('masana-feed-$account'), api: _feed, accountKey: account,
       onMasanaProfile: (id) => context.push('/masana/${Uri.encodeComponent(id)}/profile'),
       onOpenMedia: (post, mediaId) => _openMedia(account, post, mediaId),
@@ -270,7 +272,7 @@ class _MasanawaConversationRouteState
     final session = ref.read(sessionProvider);
     final account = session is SessionSignedIn ? session.user.id : '';
     if (_controller != null && _account == account &&
-        _controller!.characterId == widget.characterId) return;
+        _controller!.characterId == widget.characterId) { return; }
     _controller?.dispose();
     _account = account;
     if (account.isEmpty) { _controller = null; return; }

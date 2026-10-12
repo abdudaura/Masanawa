@@ -73,14 +73,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (isSignedIn && (path == '/phone-login' || path == '/otp')) {
-        final user = (session as SessionSignedIn).user;
+        final user = session.user;
         return user.isNewUser ? '/name' : '/home';
       }
 
       if (path == '/name') {
         if (session is SessionNameRequired) return null;
         if (isSignedIn) {
-          final user = (session as SessionSignedIn).user;
+          final user = session.user;
           return user.isNewUser ? null : '/home';
         }
         return '/phone-login';
@@ -143,9 +143,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/activity',
         builder: (context, _) => ActivityScreen(
-          onOpenTalk: (id) => context.push('/talk/' + Uri.encodeComponent(id)),
+          onOpenTalk: (id) => context.push('/talk/${Uri.encodeComponent(id)}'),
           onOpenProfile: (handle) => context.push(
-            '/u/' + Uri.encodeComponent(handle)),
+            '/u/${Uri.encodeComponent(handle)}'),
         ),
       ),
       GoRoute(
@@ -166,14 +166,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => TalkSearchScreen(
           initialQuery: state.uri.queryParameters['q'],
           onOpenTalk: (talk) => context.push(
-            '/talk/' + Uri.encodeComponent(talk.id),
+            '/talk/${Uri.encodeComponent(talk.id)}',
             extra: talk,
           ),
           onOpenPerson: (handle) => context.push(
-            '/u/' + Uri.encodeComponent(handle),
+            '/u/${Uri.encodeComponent(handle)}',
           ),
           onOpenPersona: (publicId) => context.push(
-            '/persona/' + Uri.encodeComponent(publicId),
+            '/persona/${Uri.encodeComponent(publicId)}',
           ),
         ),
       ),
@@ -181,7 +181,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/talk/create',
         builder: (context, _) => CreateTalkScreen(
           onCreated: (talk) => context.go(
-            '/talk/' + Uri.encodeComponent(talk.id) + '?host=1',
+            '/talk/${Uri.encodeComponent(talk.id)}?host=1',
             extra: talk,
           ),
         ),
@@ -203,23 +203,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/u/:handle',
         builder: (context, state) => PersonProfileScreen(
           handle: state.pathParameters['handle']!,
-          onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
-          onOpenTwin: (publicId) => context.push('/persona/' + Uri.encodeComponent(publicId)),
+          onOpenTalk: (talkId) => context.push('/talk/${Uri.encodeComponent(talkId)}'),
+          onOpenTwin: (publicId) => context.push('/persona/${Uri.encodeComponent(publicId)}'),
         ),
       ),
       GoRoute(
         path: '/persona/:publicId',
         builder: (context, state) => PersonaProfileScreen(
           publicId: state.pathParameters['publicId']!,
-          onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
-          onOpenOwner: (handle) => context.push('/u/' + Uri.encodeComponent(handle)),
+          onOpenTalk: (talkId) => context.push('/talk/${Uri.encodeComponent(talkId)}'),
+          onOpenOwner: (handle) => context.push('/u/${Uri.encodeComponent(handle)}'),
         ),
       ),
       GoRoute(
         path: '/my-talks',
         builder: (context, _) => MyTalksScreen(
           onOpenTalk: (talk) => context.push(
-            '/talk/' + Uri.encodeComponent(talk.id),
+            '/talk/${Uri.encodeComponent(talk.id)}',
             extra: talk,
           ),
         ),
@@ -228,7 +228,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/saved-talks',
         builder: (context, _) => SavedTalksScreen(
           onOpenTalk: (talk) => context.push(
-            '/talk/' + Uri.encodeComponent(talk.id),
+            '/talk/${Uri.encodeComponent(talk.id)}',
             extra: talk,
           ),
         ),
@@ -244,13 +244,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           onOpenCrypto: () => context.push('/crypto'),
         ),
       ),
-      GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=chats'),
-      GoRoute(path: '/rooms', redirect: (_, __) => '/home?tab=rooms'),
-      GoRoute(path: '/status', redirect: (_, __) => '/home?tab=status'),
-      GoRoute(path: '/calls', redirect: (_, __) => '/home?tab=calls'),
-      GoRoute(path: '/account', builder: (_, __) =>
+      GoRoute(path: '/chats', redirect: (_, _) => '/home?tab=chats'),
+      GoRoute(path: '/rooms', redirect: (_, _) => '/home?tab=rooms'),
+      GoRoute(path: '/status', redirect: (_, _) => '/home?tab=status'),
+      GoRoute(path: '/calls', redirect: (_, _) => '/home?tab=calls'),
+      GoRoute(path: '/account', builder: (_, _) =>
           const MasanawaAccountRoute()),
-      GoRoute(path: '/masana/discover', builder: (_, __) =>
+      GoRoute(path: '/masana/discover', builder: (_, _) =>
           const MasanawaDiscoverRoute()),
       GoRoute(path: '/masana/:id/profile', builder: (_, state) =>
           MasanawaProfileRoute(characterId: state.pathParameters['id']!)),
@@ -274,8 +274,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           publicId: state.pathParameters['publicId']!,
         ),
       ),
-      GoRoute(path: '/agents', redirect: (_, __) => '/masana/discover'),
-      GoRoute(path: '/masana', redirect: (_, __) => '/masana/discover'),
+      GoRoute(path: '/agents', redirect: (_, _) => '/masana/discover'),
+      GoRoute(path: '/masana', redirect: (_, _) => '/masana/discover'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/billing',
@@ -343,7 +343,7 @@ class _TwinLinkResolverScreenState
         });
         return;
       }
-      context.go('/chat/' + Uri.encodeComponent(twin.characterId));
+      context.go('/chat/${Uri.encodeComponent(twin.characterId)}');
     } catch (_) {
       if (!mounted) return;
       setState(() {

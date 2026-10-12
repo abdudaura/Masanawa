@@ -8,7 +8,7 @@ describe("C13 owned message hides", () => {
     const store = createMasanaMessageActionStore({query} as never);
     expect(await store.hideOwnedSentTurn({tenantId:"tenant-a",fanUserId:"fan-a"},character,turn))
       .toBe(true);
-    const [sql, params] = query.mock.calls[0];
+    const [sql, params] = query.mock.calls[0]!;
     expect(sql).toContain("t.tenant_id=$1 AND t.user_id=$2 AND t.character_id=$3");
     expect(sql).toContain("t.request_id=$4 AND t.state='completed'");
     expect(sql).toContain("o.kind='platform'");

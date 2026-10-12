@@ -31,3 +31,9 @@ export * from "./commerce/billing-funding.js";
 export * from "./commerce/billing-runtime.js";
 export * from "./commerce/twin-economy.js";
 export * from "./commerce/ngn-wallet.js";
+
+// Canonical Status feed/editorial storage; no second post or media authority.
+export {PgHomeFeedRepository} from "./home_feed/repository.js";
+export {PgEditorialReviewRepository} from "./home_feed/review_repository.js";
+export {PgStatusEligibility} from "./home_feed/eligibility.js";
+export {PgFeedMediaAuthorization} from "./home_feed/media_authorization.js";

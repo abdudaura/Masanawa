@@ -7,6 +7,14 @@ function deps(){
  return {repo,service:new EditorialReviewService(repo,async()=>true,async()=>true)};
 }
 describe("A05/A06 editorial admission and review",()=>{
+ it("rechecks the actual media kind during independent review",async()=>{
+  const {repo}=deps();repo.get.mockResolvedValue({...post,kind:"audio",media:["media_abcdefgh"],transcript:"speech"});
+  const media=vi.fn(async(_t:string,_a:string,_m:string,kind:string)=>kind==="image");
+  const service=new EditorialReviewService(repo,async()=>true,media);
+  await expect(service.change(staff(),post.id,"approve",1,"approve-kind01")).rejects.toMatchObject({code:"media_not_approved"});
+  expect(media).toHaveBeenCalledWith("tenant","masana","media_abcdefgh","audio");
+  expect(repo.change).not.toHaveBeenCalled();
+ });
  it("denies fans and unprivileged staff before database access",async()=>{
   const {service,repo}=deps();
   await expect(service.create({kind:"fan",tenantId:"tenant",id:"fan"},{authorMasanaId:"masana",kind:"text",body:"hi",idempotencyKey:"editorial-key01"})).rejects.toMatchObject({status:403});

@@ -7,7 +7,7 @@ function fixture(auth=true,enabled=true){
  const list=vi.fn().mockResolvedValue([{kind:"room_answer",enabled:false}]);
  const set=vi.fn().mockImplementation(async (_who,choice)=>choice);
  const principal=vi.fn().mockResolvedValue(auth?actor:null);
- registerDeliveryPreferenceRoutes(app,{preferences:{list,set,pushEnabled:vi.fn()},resolvePrincipal:principal,enabled:()=>enabled});
+ registerDeliveryPreferenceRoutes(app,{preferences:{list,set},resolvePrincipal:principal,enabled:()=>enabled});
  return {app,list,set,principal};
 }
 describe("C06 Gateway optional push preferences",()=>{

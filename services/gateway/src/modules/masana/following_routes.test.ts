@@ -13,8 +13,10 @@ describe("C46 authorized private Following API",()=>{
   const open:FastifyInstance[]=[];
   const app=async()=>{
     const server=Fastify();
-    server.setErrorHandler((error,_request,reply)=>reply.code(error.statusCode??500)
-      .send({code:error.message}));
+    server.setErrorHandler((error,_request,reply)=>{
+      const failure=error as {statusCode?:number;message?:string};
+      return reply.code(failure.statusCode??500).send({code:failure.message});
+    });
     registerFollowingRoutes(server,{auth:{async fan(header){
       if(header!=="Bearer fan")throw Object.assign(new Error("unauthorized"),{statusCode:401});
       return {tenantId:"tenant_real",userId:"fan_real"};
