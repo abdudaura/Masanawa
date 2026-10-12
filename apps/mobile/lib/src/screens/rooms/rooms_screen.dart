@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../state/talk_state.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../ui/components/masanawa_main_header.dart';
 
 /// Live audio rooms, backed by the live Talk feed. A room here is a live
 /// voice session you can join; history and membership controls arrive in the
@@ -18,7 +19,7 @@ class RoomsScreen extends ConsumerWidget {
     final feed = ref.watch(talkFeedProvider(TalkFeedKind.live));
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(title: const Text('Rooms')),
+      appBar: masanawaMainHeader(context),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(talkFeedProvider(TalkFeedKind.live).future),
         child: feed.when(

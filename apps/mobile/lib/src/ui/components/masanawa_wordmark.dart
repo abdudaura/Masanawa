@@ -5,7 +5,7 @@ import '../../theme/masanawa_theme.dart';
 /// `Masanawa` with a small `Agents` sitting low at the end of the name.
 /// The single brand lockup used in headers and splash.
 class MasanawaWordmark extends StatelessWidget {
-  const MasanawaWordmark({super.key, this.light = false, this.fontSize = 20});
+  const MasanawaWordmark({super.key, this.light = false, this.fontSize = 24});
 
   /// Light-on-brand variant (green headers, splash).
   final bool light;
@@ -14,10 +14,8 @@ class MasanawaWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final main = light ? Colors.white : u.brand;
-    final sub = light
-        ? Colors.white.withValues(alpha: 0.85)
-        : u.textMuted;
+    final main = light ? Colors.white : u.brandStrong;
+    final sub = light ? Colors.white.withValues(alpha: 0.85) : u.textMuted;
     return Semantics(
       label: 'Masanawa Agents',
       child: Row(
@@ -28,14 +26,14 @@ class MasanawaWordmark extends StatelessWidget {
             'Masanawa',
             style: TextStyle(
               fontSize: fontSize,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
               color: main,
               height: 1.0,
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 1),
+            padding: const EdgeInsetsDirectional.only(start: 4, bottom: 1),
             child: Text(
               'Agents',
               style: TextStyle(
