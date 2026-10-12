@@ -2279,9 +2279,9 @@
       "branch": "lane/af03-mui07-wallet-presentation-20261012",
       "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
       "claimed_at": "2026-10-12T17:24:49.811891+00:00",
-      "heartbeat_at": "2026-10-12T17:24:49.811891+00:00",
-      "expires_at": "2026-10-12T17:29:49.811891+00:00",
-      "notes": "MUI03 canonical C10 inbox blocked by unreleased AF00 root and AF05 main.ts claims. MUI04 Status needs AF00 mounting. MUI05 merged PR684/685. MUI06 Rooms requires AF00. Earliest safe disjoint UI source MUI07; existing plans supplied. Preserve funding/send and MSN reconciliation as open domain integration. Prior released exact-path financial/UI claims inspected."
+      "heartbeat_at": "2026-10-12T17:27:05.975523+00:00",
+      "expires_at": "2026-10-12T17:32:05.975523+00:00",
+      "notes": "Auth read race reproduction and narrow/RTL layout tests authored first; local Flutter SDK acquisition executing, no production source edited yet."
     }
   ],
   "history": [
