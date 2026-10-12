@@ -14,7 +14,11 @@ account-fenced roster/cache authority and private feedback remain intact.
 - Implementation/test source: `92d8ba67a1f83f8b293e29a35eb07cf521e5dc55`.
 - Branch: `lane/af13-directory-presence-recovery-20261012`;
   [PR #692](https://github.com/weavewellindustrieslimited/masanawa/pull/692).
-- Integration: PENDING_MAIN_MERGE. Scoped verification: **PASS_SIMULATED**;
+- Exact reviewed PR head: `e101cf38f928c4f2187ae12d284458ff713d9a07`.
+- Normal source merge: **`db268b62d248a6dadab954847646a027d6c70972`**,
+  2026-10-12 22:17:44 UTC. All three executable/test blobs equal tested source
+  `92d8ba67...` exactly. Implementation **INTEGRATED_SCOPED_SOURCE**;
+  scoped verification **PASS_SIMULATED**;
   release **NOT_RELEASED**. Overall MUI-09 and unresolved feature acceptance
   remain **PARTIAL / OPEN**.
 
@@ -92,6 +96,12 @@ Initial verification caught and corrected a non-null localization lookup in a
 fixture without delegates, a merged-label assertion, and semantics-handle
 cleanup timing. Final focused run passed; unsuccessful intermediate runs are
 retained in `/workspace/scratch/directory-{red,green,green-final,focused}.log`.
+Exact final PR-head Foundation [38315813542](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38315813542)
+and Mobile [38315813356](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38315813356)
+were **IN_PROGRESS** at merge readback, not passed; Vercel remained rate limited.
+Post-merge documentation changes no executable source. Release exact claim after
+this handoff merges; release readback publishes both source and handoff identities.
+
 Final logs: `directory-focused-final.log`, `directory-analyze-final.log`,
 `directory-full-suite.log`. No CI/protection/test suppression or admin bypass.
 
@@ -129,6 +139,50 @@ MUI-07 MSN/funding/Send needs AF01/AF00 reconciliation with #576; MUI-08 exposes
 signed installed identity and AF11 incoming/native/group/provider checks OPEN.
 Do not rerun the same combined matrix as a replacement for missing integration.
 
+
+### Current queue-aware continuation prompt
+
+```text
+Continue weavewellindustrieslimited/masanawa from fresh origin/main.
+Read AGENTS.md, CONTINUE-HERE.md, docs/MULTI-WINDOW-WORK.md,
+docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md,
+docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md and
+UI-MUI-03-chats.md, UI-MUI-07-wallet.md, UI-MUI-08-crypto.md,
+UI-MUI-09-verification.md under docs/workstreams.
+Read latest Software Factory instructions; reconcile fresh PRs/claims.
+
+Delivered directory recovery source 92d8ba67a1f83f8b293e29a35eb07cf521e5dc55;
+PR #692 exact head e101cf38f928c4f2187ae12d284458ff713d9a07;
+normal source merge db268b62d248a6dadab954847646a027d6c70972.
+35 focused tests PASS; focused analysis clean; full suite FAIL 578 passed /
+6 retained failures: four edit-profile and two Talk Add AI tests, named in
+the MUI-09 handoff. Recovered released #460 directory assertions and fixed
+the mounted picker falsely showing green for unknown presence. Preserve
+older 158 focused / 24 corrected font-render / 27 audio rechecks PASS,
+575/8 full-suite baseline, 322 analyzer diagnostics, MUI-07 exact failures /
+test-set caveat / audio rechecks, TalkId TS2459 and global CI debt. No signed
+installed-app/provider evidence; Android SDK absent. Hausa production English
+fallback and complete localization remain OPEN.
+
+Prefer MUI-03 canonical server-wide inbox only with explicit AF00 trusted
+composition/auth/migration transfers and AF05 main.ts coordination. Preserve
+prior claim recovery, #497 source and AF05 voice work. MUI-04/06 require
+protected canonical composition; MUI-07 MSN/funding/Send needs AF01/AF00
+reconciliation with #576; MUI-08 exposes quotedAt, not expiry, and needs AF01
+contract authority. Otherwise continue MUI-09/AF13 through a bounded AF14
+transfer for the named first-time profile creation/save/reload journey:
+reproduce its failures, recover useful prior #460 source, and fix demonstrated
+customer behavior. Do not repeat the combined matrix instead of integration.
+
+Preserve five tabs, Chats default, Masana-only contacts, Calls/native/group/
+incoming/history/billing, Status/media, Rooms, auth and finance. No second
+ledger, Cr-to-MSN relabel, invented data or unsupported actions. Keep all
+unfinished feature acceptance, full MUI-09, MUI-10 signed installed identity
+and AF11 device/provider qualification OPEN. Claim exact paths; implement,
+check, independently review, commit, push and merge compatible source normally.
+Update selected milestone handoff, release ownership, and print the next
+queue-aware continuation prompt.
+```
 
 ## Earlier combined regression delivery (retained evidence)
 
