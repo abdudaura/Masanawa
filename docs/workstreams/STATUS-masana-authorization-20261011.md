@@ -4,7 +4,7 @@ Owner: Codex STATUS implementation window. Date: 2026-10-11 UTC.
 PR: https://github.com/weavewellindustrieslimited/masanawa/pull/671
 Branch: lane/status-masana-authorization-20261011
 Base: integration/rebuild @ e33490013c54a9dc3a86c8fcb526a01634df3992
-Implemented and executed source HEAD: 16973d1e0ef81aae52218720a57bb48119a05b7d
+Implemented source HEAD: 3a2c1bd6526584467af9c1b2b768420a6ed2e5f1 (earlier Flutter execution source 16973d1 is unchanged)
 Main inspected before and after implementation: a8e1c84cebcec9604a6b7c9cbdafc6ba6c2b036d, including merged #668.
 Final handoff commit changes documentation only; the PR branch supplies its exact current head.
 
@@ -17,6 +17,7 @@ Exact-path workstream claim pushed and read back at d316f84 before implementatio
 - packages/feed/src/review.ts
 - adapters/storage/postgres/src/home_feed/repository.ts
 - adapters/storage/postgres/src/home_feed/repository.test.ts
+- adapters/storage/postgres/src/home_feed/feed.integration.test.ts
 - adapters/storage/postgres/src/home_feed/review_repository.ts
 - adapters/storage/postgres/src/home_feed/review_repository.test.ts
 - apps/mobile/lib/src/features/home_feed/feed_media_screen.dart
@@ -59,7 +60,7 @@ Requested shared path: **apps/mobile/lib/src/shell/five_tab_shell.dart** (owner 
 2. Replace Status's current TalkHomeScreen with existing `MasanaFeedScreen` and `DioFeedApi(existingAuthenticatedDio)`; supply a canonical current-account key, enable state and existing approved-media/profile/report bindings.
 3. Remove Status `FloatingActionButton` “New status” pointing at `/talk/create`. Humans cannot publish consumer Status. Staff publish only through existing independent A05/A06 editorial workflow; approved Masana service identities use the canonical service.
 4. Clear/pop nested post/comment/media screens on logout/account replacement. Passing a frozen prior-account key into a pushed route is not account replacement.
-5. If adopting this feature from integration into main, keep #668 shell/source intact and transplant these 12 scoped paths only; do not merge the unrelated historical integration tree over main. This PR targets the coordinator's existing non-deploying integration/rebuild, never auto-merge main.
+5. If adopting this feature from integration into main, keep #668 shell/source intact and transplant these 13 scoped paths only; do not merge the unrelated historical integration tree over main. This PR targets the coordinator's existing non-deploying integration/rebuild, never auto-merge main.
 
 Protected Gateway/worker/migration binding remains with coordinating window. Before enabling, verify principal comes solely from canonical server session; approvedMasana and scheduled verifier resolve tenant + approved revision + active platform-owned canonical identity; media resolver validates current rights/ownership; register existing routes once and retain their kill switches. No new publisher, queue, media registry, auth store or financial ledger is introduced here.
 
@@ -98,3 +99,22 @@ Full Status journey remains **PARTIAL_IMPLEMENTATION**; owned source authorizati
 
 ## Continuation claim before PostgreSQL integration test changes — 2026-10-12
 Exact added path: adapters/storage/postgres/src/home_feed/feed.integration.test.ts. Environment network now permits a full checkout and pinned tools installed outside the repository. Feed package strict typecheck has passed. Continue the existing disposable-only PG18 suite: replace outdated staff direct-publish fixtures with authenticated Masana identity and canonical active/platform identity tables; preserve historical-comment upgrade tests; add real revocation/ownership and final editorial publication denial/recovery tests. No migration, manifest, lockfile or shared composition edits. This replaces prior unavailable-runner assumptions with observed capability; no production DB access.
+
+## Completed available-runner continuation — 2026-10-12 UTC
+**Source checkpoint 3a2c1bd6526584467af9c1b2b768420a6ed2e5f1** adds only the existing PostgreSQL integration test changes; runtime source and Flutter source remain as tested above. Environment network recovery now allowed a full clone at /workspace/status-checkout. Prior clone/runner blocks above are historical observations, not current capability claims.
+
+### Executed at matching source blobs
+- Repository-pinned **TypeScript 7.0.2**, **Vitest 5.0.3**, **Fastify 5.12.5**, **pg 8.23.0**, **@types/pg 8.23.1**, **@types/node 24.13.6** installed in /tmp/status-tools. Checkout node_modules is an untracked symlink to those tools. No manifest, tracked lockfile or check policy changed; this is scoped execution, not a successful frozen workspace install.
+- `/tmp/status-tools/node_modules/.bin/tsc -p packages/feed/tsconfig.json`: **PASS**, unchanged repository strict package configuration.
+- `/tmp/status-tools/node_modules/.bin/tsc -p /tmp/status-tsconfig.json`: **PASS**, 12 source/test entry files, extending the unchanged repository tsconfig.base.json with only temporary typeRoots. Includes feed/editorial source and original tests, feed/review PostgreSQL source and tests, real integration test, existing gateway routes/tests and J06 journey. No strictness flags weakened.
+- Original six-file Vitest suite: **41/41 PASS_SIMULATED** (unit and Fastify-injection/mock-repository cases).
+- Disposable local Docker database image `pgvector/pgvector:0.8.6-pg18`, server **PostgreSQL 18.6**, local port 55438. The unadapted integration suite first **FAIL: 4 failed, 1 passed**, missing canonical identity tables. Adapted fixtures now use canonical active/platform identity columns and approved Masana publisher IDs; retained historical staff post/comment bytes and original upgrade/idempotency checks.
+- `MASANAWA_TEST_DATABASE_URL=<disposable-test-url> /tmp/status-tools/node_modules/.bin/vitest run packages/feed/src/index.test.ts packages/feed/src/review.test.ts adapters/storage/postgres/src/home_feed/repository.test.ts adapters/storage/postgres/src/home_feed/review_repository.test.ts adapters/storage/postgres/src/home_feed/feed.integration.test.ts services/gateway/src/modules/home_feed/routes.test.ts tests/e2e/J06/feed-journey.test.ts`: **7 files / 50 tests PASS**, comprising **41 PASS_SIMULATED** units/injection cases and **9 PASS_REAL** disposable PostgreSQL integration tests.
+- Real PG tests cover stable publication/idempotency conflicts, canonical follow filtering, tenant/fan reactions/comments/outbox, historic-comment preservation across 0002 upgrade applied twice, one-level reply constraints, denied staff/foreign publication, deactivation/nonplatform ownership/approval revocation read+write denial and recovery, immediate editorial denied-CAS rollback with retained draft, and scheduled denial/recovery releasing once with one audit.
+- Actual fixture applies existing events 0001, feed 0001, feed 0002 twice and editorial 0004 to an isolated test DB. It uses minimal canonical identity tables. This is **not** a rehearsal of complete production identity/media migrations, feed 0003, backup/restore, real authenticated Flutter→Gateway→DB or provider/device E2E.
+- Executed integration-test file Git blob **7e3dba96b5fc75a715c9213faf8c3fae437eddaa** matches pushed file at source checkpoint. `git diff --check` **PASS**.
+- Own disposable test container is removed after verification; no production database, migration or external provider used.
+
+### Closure / coordinator next action
+Owned runtime source is implemented; strict scoped TypeScript, 50 Vitest cases including real PG authorization/recovery, 11 Node units, 8 Status Flutter widgets and 4 existing media widgets have executed successfully. The **whole Status journey remains PARTIAL_IMPLEMENTATION** because coordinator-owned shell/auth/media/Gateway composition remains disconnected or unverified on main, and whole-workspace CI still fails. No merge or release performed here.
+Continue PR #671 on the existing integration target. Coordinator implements the exact five_tab_shell.dart / app_router.dart transfer, fixes the shared pnpm-lock.yaml importer and reruns full frozen install/typecheck/tests/build plus unified authenticated Status/device/restore checks. Missing local Flutter is no longer a universal execution blocker: CI has an actual qualified runner. Full identity migration, integration/source wiring, consumer binary and production proof remain explicitly pending. No further independent Status subsystem is needed.
