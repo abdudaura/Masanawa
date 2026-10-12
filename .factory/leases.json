@@ -2149,7 +2149,7 @@
       "branch": "plan/ui-audit-refinement-20261012",
       "base_sha": "682827b7712518e78657bae3d3dc9b8956806b83",
       "claimed_at": "2026-10-12T12:56:58.120662+00:00",
-      "heartbeat_at": "2026-10-12T12:56:58.120662+00:00",
+      "heartbeat_at": "2026-10-12T13:03:46.402522+00:00",
       "expires_at": "2026-10-12T13:16:58.120662+00:00",
       "scope": "Owner-directed documentation-only integration of the UI audit into existing multi-window prompts; no product/router/auth/financial/native source changes",
       "paths": [
@@ -2163,7 +2163,13 @@
         "docs/superpowers/specs/2026-10-12-masanawa-ui-audit-design.md",
         "docs/superpowers/plans/2026-10-12-masanawa-ui-refinement.md"
       ],
-      "notes": "Read fresh main, Status/Rooms branches and latest registry; no live exact-path ownership found for these shared documentation entrypoints. Preserve Calls qualification and all active feature work."
+      "notes": "Read fresh main, Status/Rooms branches and latest registry; no live exact-path ownership found for these shared documentation entrypoints. Preserve Calls qualification and all active feature work.",
+      "released_at": "2026-10-12T13:03:46.402522+00:00",
+      "source_head_sha": "ff5bbe4bed429cf0e041772e5903382fa11e5be3",
+      "source_pr": 677,
+      "integration_head_sha": "0053e8d4e1b0282ed05e407871edff62d365a9c9",
+      "release_reason": "Documentation-only audit queue/plan/prompt integration merged PR677; 9-document link/fence/whitespace and ten-milestone/four-entrypoint checks PASS; remote Foundation CI FAIL on unchanged pre-existing TalkId TS2459; no app tests/device/provider/deployment verification claimed. Next unclaimed ready UI milestone through published queue, initially MUI01 or independent MUI02.",
+      "test_state": "Documentation PASS; Foundation CI FAIL pre-existing TalkId TS2459; app/device/provider NOT_RUN"
     }
   ],
   "history": [
