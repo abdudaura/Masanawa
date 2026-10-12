@@ -164,48 +164,57 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Align(
-            alignment: AlignmentDirectional.centerEnd,
+            alignment: Alignment.center,
             child: LanguagePickerButton(),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var i = 0; i < 6; i++)
-                SizedBox(
-                  width: 47,
-                  child: TextField(
-                    controller: _boxes[i],
-                    focusNode: _boxFocus[i],
-                    autofocus: i == 0,
-                    obscureText: true,
-                    obscuringCharacter: '•',
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    // No length limiter: multi-char input is a paste and is
-                    // spread across boxes by _onBoxChanged.
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    onChanged: (_) => _onBoxChanged(i),
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      counterText: '',
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          MasanawaTokens.radius['md']!,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Size six code boxes to the padded form so that the 320px
+              // viewport and increased text sizes do not clip an input.
+              final boxWidth = ((constraints.maxWidth - 30) / 6)
+                  .clamp(36.0, 47.0)
+                  .toDouble();
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 0; i < 6; i++)
+                    SizedBox(
+                      width: boxWidth,
+                      child: TextField(
+                        controller: _boxes[i],
+                        focusNode: _boxFocus[i],
+                        autofocus: i == 0,
+                        obscureText: true,
+                        obscuringCharacter: '•',
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        // No length limiter: multi-char input is a paste and is
+                        // spread across boxes by _onBoxChanged.
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (_) => _onBoxChanged(i),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              MasanawaTokens.radius['md']!,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                ],
+              );
+            },
           ),
           if (_localError != null || error != null) ...[
             const SizedBox(height: 12),

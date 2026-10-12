@@ -134,7 +134,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Align(
-            alignment: AlignmentDirectional.centerEnd,
+            alignment: Alignment.center,
             child: LanguagePickerButton(),
           ),
           const SizedBox(height: 8),
