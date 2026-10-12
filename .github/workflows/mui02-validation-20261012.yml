@@ -27,10 +27,10 @@ jobs:
       - name: Fetch Flutter dependencies
         run: flutter pub get
       - name: MUI-02 matrix of 33 mounted auth route widget tests
-        run: flutter test --reporter expanded test/ui/mui02_auth_language_test.dart lib/src/ui/components/primary_button.dart
+        run: flutter test --reporter expanded test/ui/mui02_auth_language_test.dart
       - name: Existing auth and MUI-01 presentation regression tests
         if: success() || failure()
         run: flutter test --reporter expanded test/onboarding_scaffold_test.dart test/localization/language_picker_button_test.dart test/password_screen_test.dart test/ui/mui01_presentation_test.dart
       - name: Analyze exact changed Dart source and test paths
         if: success() || failure()
-        run: dart analyze lib/src/screens/onboarding/name_screen.dart lib/src/screens/onboarding/otp_screen.dart lib/src/screens/onboarding/password_screen.dart lib/src/screens/onboarding/phone_login_screen.dart test/ui/mui02_auth_language_test.dart
+        run: dart analyze lib/src/screens/onboarding/name_screen.dart lib/src/screens/onboarding/otp_screen.dart lib/src/screens/onboarding/password_screen.dart lib/src/screens/onboarding/phone_login_screen.dart test/ui/mui02_auth_language_test.dart lib/src/ui/components/primary_button.dart
