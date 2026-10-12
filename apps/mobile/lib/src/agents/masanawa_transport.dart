@@ -118,7 +118,9 @@ class _GatewayClient {
           followRedirects: false,
           headers: {'Authorization': token == null ? '' : 'Bearer $token'},
           sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 15),
+          // Provider minting has a 20-second deadline, followed by durable
+          // admission/history storage. Keep a bounded margin without reminting.
+          receiveTimeout: const Duration(seconds: 30),
         ),
       );
       if (response.data == null) {
