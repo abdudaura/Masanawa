@@ -2138,7 +2138,10 @@
       "notes": "Additive canonical image binding/main port, same S3 signer optionalHEAD; no new env/catalog edits. Seven first connected tests passed; full strict compiler/build and replay/PG regressions running.",
       "source_head_sha": "e7588974af9483ca1fe6fe84a044463dd5011a0f",
       "source_pr": 676,
-      "test_state": "PASS102 incl11realPG18, fullstrict workspace/refreshedGatewaytypecheck,Gateway deps build+productionimports. Explicit trusted store injection source complete, environmentcatalog transfer/config/audio/device/live gaps recorded."
+      "test_state": "PASS102 incl11realPG18, fullstrict workspace/refreshedGatewaytypecheck,Gateway deps build+productionimports. Explicit trusted store injection source complete, environmentcatalog transfer/config/audio/device/live gaps recorded.",
+      "integration_head_sha": "007e5df53ab2bbc9c82df30fc18e61f9e141e5aa",
+      "released_at": "2026-10-12T12:42:29.844Z",
+      "release_reason": "PR676 merged007e5df treee3f99a matches qualifiede1de174.102tests incl11realPG18,strictcompiler+Gatewaybuild pass. Source complete configured-image milestone, no deployedmedia;exactcatalogue/store/audio/device handoffs remain. TempownedPGremoved."
     }
   ],
   "history": [
