@@ -2277,9 +2277,9 @@
       "branch": "lane/af03-mui08-crypto-20261012",
       "base_sha": "1337917a7e063971fd083deb4d0ce4b59310b219",
       "claimed_at": "2026-10-12T19:27:20.480107+00:00",
-      "heartbeat_at": "2026-10-12T19:30:19.393518+00:00",
-      "expires_at": "2026-10-12T19:35:19.393518+00:00",
-      "notes": "20 new widget cases authored; preserved PR576 and AF00/AF05 allocations; SDK installed, RED execution starting."
+      "heartbeat_at": "2026-10-12T19:32:24.140984+00:00",
+      "expires_at": "2026-10-12T19:37:24.140984+00:00",
+      "notes": "RED: 1 pass/19 fail against unchanged production source; flat assets/actions/activity, scrollable receipts/reviews and single active journey implemented."
     }
   ],
   "history": [
