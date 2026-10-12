@@ -15,6 +15,16 @@ export function registerTalkProfileRoutes(
   app.put(
     "/profiles/me",
     {
+      preValidation: async (request, reply) => {
+        // Reject unknown raw fields before Fastify's validator removes them.
+        const body = request.body;
+        if (body !== null && typeof body === "object" && !Array.isArray(body)) {
+          const allowed = ["handle", "displayName", "bio"];
+          if (Object.keys(body).some((key) => !allowed.includes(key))) {
+            return reply.code(400).send({ message: "profiles.invalid_request" });
+          }
+        }
+      },
       schema: {
         body: Type.Object(
           {
@@ -44,6 +54,16 @@ export function registerTalkProfileRoutes(
   app.patch(
     "/profiles/me",
     {
+      preValidation: async (request, reply) => {
+        // Reject unknown raw fields before Fastify's validator removes them.
+        const body = request.body;
+        if (body !== null && typeof body === "object" && !Array.isArray(body)) {
+          const allowed = ["displayName", "bio", "removeAvatar"];
+          if (Object.keys(body).some((key) => !allowed.includes(key))) {
+            return reply.code(400).send({ message: "profiles.invalid_request" });
+          }
+        }
+      },
       schema: {
         body: Type.Object(
           {
