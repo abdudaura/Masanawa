@@ -2283,6 +2283,27 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
+    },
+    {
+      "claim_id": "af13-directory-presence-recovery-20261012",
+      "owner": "AF13 / directory recovery window",
+      "scope": "Bounded AF07 to AF13 allocation: mounted Masana directory presence through transient outage/retry/denial; recover released #460 test corrections; no directory authority/auth/composition changes",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/masana_list_screen.dart",
+        "apps/mobile/test/agent_directory_readiness_test.dart",
+        "apps/mobile/test/agent_recovery_test.dart",
+        "docs/workstreams/UI-MUI-09-verification.md"
+      ],
+      "branch": "lane/af13-directory-presence-recovery-20261012",
+      "base_sha": "950fe2e5ac66d8162b8c151a30d268eaeee76493",
+      "claimed_at": "2026-10-12T22:10:53.520796+00:00",
+      "heartbeat_at": "2026-10-12T22:10:53.520796+00:00",
+      "expires_at": "2026-10-12T22:15:53.520796+00:00",
+      "transfer_record": {
+        "from": "AF07 directory presentation; released AF13 #460 tests",
+        "to": "AF13 MUI-09 named directory recovery journey",
+        "basis": "Owner continuation explicitly authorizes bounded transfer for failing directory journey; no unreleased overlaps; #593 disjoint contacts source preserved, #460 recovered selectively"
+      }
     }
   ],
   "history": [
