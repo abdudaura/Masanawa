@@ -2022,6 +2022,28 @@
         "at": "2026-10-12T02:12:41.596Z",
         "basis": "Owner directs remove demonstrated CI blockers; casts/unread label only, no routing, money, auth or shell behavior change; package solver records existing dependencies only"
       }
+    },
+    {
+      "claim_id": "status-connected-wiring-20261012",
+      "owner": "Codex STATUS continuation",
+      "scope": "Owner-directed canonical five-tab Status shell/router and existing-auth feature runtime",
+      "paths": [
+        "apps/mobile/lib/src/app/masanawa_consumer_shell.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/test/rebuild/masanawa_consumer_shell_test.dart",
+        "apps/mobile/lib/src/screens/calls/calls_screen.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
+        "apps/mobile/test/features/home_feed/feed_screen_test.dart",
+        "services/gateway/src/modules/home_feed/runtime.ts",
+        "services/gateway/src/modules/home_feed/runtime.test.ts",
+        "docs/workstreams/STATUS-connected-wiring-20261012.md"
+      ],
+      "branch": "lane/status-connected-wiring-20261012",
+      "base_sha": "5c08e151d5ee51c932af5326df85a334a5c0f7b7",
+      "claimed_at": "2026-10-12T07:14:58.724Z",
+      "heartbeat_at": "2026-10-12T07:14:58.725Z",
+      "expires_at": "2026-10-12T07:19:58.725Z",
+      "notes": "Exact branch record pushed/read back before edits. Original explicitly excluded Gateway app/main and required manifests/exports/lockfile transfer pending; leave them untouched until reply. Preserve calls/Wallet/Rooms authority and source."
     }
   ],
   "history": [
