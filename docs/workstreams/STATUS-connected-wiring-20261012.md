@@ -30,3 +30,11 @@ Owner answered the scope question: **Yes—complete the Status wiring and requir
 - pnpm-lock.yaml
 - apps/mobile/pubspec.lock
 The mobile lockfile also has six proven missing declared-dependency entries (intl/localizations/webview), required for frozen resolution; include that bounded build fix under the owner's approved required-build scope. Bind canonical session + existing pool + existing feed/editorial services, export existing PG classes, add feed dependency and preserve all existing financial/call/auth behavior. No deployment or production migrations authorized; prohibited call-history/live-voice files remain untouched.
+
+## Connected qualification expansion — claimed before edits
+- packages/feed/src/index.ts
+- packages/feed/src/review.ts
+- packages/feed/src/index.test.ts
+- packages/feed/src/review.test.ts
+- services/gateway/src/modules/home_feed/composition.test.ts
+Pass the declared post kind to canonical media eligibility, deny audio where the current canonical media catalogue contains only image objects, and test root registration plus author/tenant/recovery behavior. No new media registry.
