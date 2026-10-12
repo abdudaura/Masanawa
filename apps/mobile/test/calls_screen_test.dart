@@ -245,6 +245,7 @@ void main() {
       _Transport(
         (_) async => page('Recent'),
         searchHandler: (_, query) async {
+          if (query.isEmpty) return page('Recent');
           if (query == 'absent') return const CallHistoryPage(calls: []);
           if (offline) { offline = false; throw StateError('offline'); }
           return page('Recovered');
