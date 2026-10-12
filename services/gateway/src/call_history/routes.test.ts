@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import { describe, expect, it, vi } from "vitest";
 import { registerCallHistoryRoutes } from "./routes.js";
-import { createCallHistoryService } from "./service.js";
+import { createCallHistoryService, encodeCallCursor } from "./service.js";
 import type { TenantId, UserId } from "@masanawa/contracts";
 import { createGatewayApp } from "../app.js";
 
@@ -58,6 +58,47 @@ describe("Masana call history HTTP authority", () => {
       expect((await app.inject({ url: "/v1/calls/not-an-id" })).statusCode).toBe(400);
       expect((await app.inject({ url: `/v1/calls/${callId}` })).statusCode).toBe(404);
       expect(repository.get).toHaveBeenCalledWith({ tenantId: "tenant-a", userId: "user-a", callId, characterIds: null });
+    } finally { await app.close(); }
+  });
+
+
+  it("searches within authorized history with normalized query and rejects foreign cursor reuse", async () => {
+    const { app, repository, authorizer } = setup();
+    const cursor = encodeCallCursor({
+      createdAt: "2026-10-12T10:00:00.000Z",
+      callId,
+    }, "amina");
+    try {
+      const response = await app.inject({
+        url: `/v1/calls?q=%20AMINA%20&cursor=${encodeURIComponent(cursor)}&limit=1`,
+        headers: { authorization: "Bearer account" },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(repository.list).toHaveBeenCalledWith(expect.objectContaining({
+        tenantId: "tenant-a", userId: "user-a",
+        query: "amina", limit: 1, cursor: { createdAt: "2026-10-12T10:00:00.000Z", callId },
+      }));
+      expect(authorizer.authorize).toHaveBeenCalledWith({
+        authorizationHeader: "Bearer account", capability: "agents.directory.read",
+      });
+      expect((await app.inject({ url: `/v1/calls?q=bello&cursor=${cursor}` })).statusCode).toBe(400);
+      expect((await app.inject({ url: `/v1/calls?cursor=${cursor}` })).statusCode).toBe(400);
+      expect((await app.inject({ url: `/v1/calls?q=amina&cursor=${encodeCallCursor({ createdAt: "2026-10-12T10:00:00.000Z", callId })}` })).statusCode).toBe(400);
+      expect((await app.inject({ url: `/v1/calls?q=${"x".repeat(81)}` })).statusCode).toBe(400);
+      expect((await app.inject({ url: "/v1/calls?q=%00" })).statusCode).toBe(400);
+      expect((await app.inject({ url: "/v1/calls?q=&userId=other-user" })).statusCode).toBe(400);
+    } finally { await app.close(); }
+  });
+  it("keeps the two-field history cursor compatible with an empty query", async () => {
+    const { app, repository } = setup();
+    const cursor = encodeCallCursor({
+      createdAt: "2026-10-12T10:00:00.000Z", callId,
+    });
+    try {
+      expect((await app.inject({ url: `/v1/calls?cursor=${cursor}&q=` })).statusCode).toBe(200);
+      expect(repository.list).toHaveBeenCalledWith(expect.objectContaining({
+        query: "", cursor: { createdAt: "2026-10-12T10:00:00.000Z", callId },
+      }));
     } finally { await app.close(); }
   });
 
