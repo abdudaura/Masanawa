@@ -2190,9 +2190,15 @@
       "branch": "lane/af00-mui01-presentation-20261012",
       "base_sha": "0053e8d4e",
       "claimed_at": "2026-10-12T13:16:42.900613+00:00",
-      "heartbeat_at": "2026-10-12T13:16:42.900613+00:00",
+      "heartbeat_at": "2026-10-12T13:38:44.939641+00:00",
       "expires_at": "2026-10-12T15:16:42.900613+00:00",
-      "notes": "No live path overlap. Recovery: historical AF00 root PR600 superseded by merged shell; preserve integration Status/media and Rooms source for domain milestones. No router/auth/financial edits."
+      "notes": "No live path overlap. Recovery: historical AF00 root PR600 superseded by merged shell; preserve integration Status/media and Rooms source for domain milestones. No router/auth/financial edits.",
+      "released_at": "2026-10-12T13:38:44.939641+00:00",
+      "source_head": "3076b26056e6c1ad4e3958f1126e193198409b76",
+      "source_pr": 678,
+      "integration_head_sha": "18bdd8140a2bdf78b8cccfdb42a8030a5452d52c",
+      "delivery_head_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "release_reason": "MUI01 merged normally in PR678; exact tested tree match at18bdd8140; handoff metadata PR679 mergedada66c61c.39focusedpass,13presentation cases,454globalpass/9baselinefail,329same analyzer diagnostics; fresh review separator correction pixel RED/GREEN. Rendered320/360/390/430 1x2x,RTL and allmainheaders. NoAndroidSDK/signeddevice/providerrelease. MUI02 next; full queue and remaining domain/combined/installed acceptance retained in UI-MUI-01-foundation.md. No router/auth/financial/backend/CI changes or admin bypass."
     }
   ],
   "history": [
