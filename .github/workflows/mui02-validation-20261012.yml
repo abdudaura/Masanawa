@@ -1,0 +1,36 @@
+name: MUI-02 focused Flutter verification
+
+on:
+  push:
+    branches:
+      - validation/mui02-flutter-20261012-gpt6
+    paths:
+      - ".github/workflows/mui02-validation-20261012.yml"
+      - "apps/mobile/**"
+
+permissions:
+  contents: read
+
+jobs:
+  auth-language:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Fetch Flutter dependencies
+        run: flutter pub get
+      - name: MUI-02 matrix of 33 mounted auth route widget tests
+        run: flutter test --reporter expanded test/ui/mui02_auth_language_test.dart
+      - name: Existing auth and MUI-01 presentation regression tests
+        if: success() || failure()
+        run: flutter test --reporter expanded test/onboarding_scaffold_test.dart test/localization/language_picker_button_test.dart test/password_screen_test.dart test/ui/mui01_presentation_test.dart
+      - name: Analyze exact changed Dart source and test paths
+        if: success() || failure()
+        run: dart analyze lib/src/screens/onboarding/name_screen.dart lib/src/screens/onboarding/otp_screen.dart lib/src/screens/onboarding/password_screen.dart lib/src/screens/onboarding/phone_login_screen.dart test/ui/mui02_auth_language_test.dart
