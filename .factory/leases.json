@@ -2241,8 +2241,8 @@
       "branch": "lane/af06-mui03-chats-search-20261012-gpt6",
       "claim_id": "af06-mui03-mounted-chats-search-20261012-gpt6",
       "claimed_at": "2026-10-12T16:37:08.128Z",
-      "expires_at": "2026-10-12T16:42:08.128Z",
-      "heartbeat_at": "2026-10-12T16:37:08.128Z",
+      "expires_at": "2026-10-12T16:47:39.480Z",
+      "heartbeat_at": "2026-10-12T16:42:39.480Z",
       "owner": "AF06 / MUI-03 GPT-6",
       "lane": "AF06",
       "scope": "Mounted Chats search: immediate filtering of authenticated, Masana-directory-approved local conversation threads and account-fenced state; preserve pin/archive/open/read. C10 server-wide query remains a separate AF00 integration gap.",
@@ -2251,7 +2251,7 @@
         "apps/mobile/test/ui/mui03_chats_search_test.dart",
         "docs/workstreams/UI-MUI-03-chats.md"
       ],
-      "notes": "Stale exact-path recovery documented on prior claim; no AF00 shared router, Gateway, migration or financial changes."
+      "notes": "Source 8bc7a722e1e439250f3d3e3cd9cf11ae70f5841e, draft #682. Temporary hosted Flutter validation run 38279190576 executing; no pass claimed. C10 server inbox backend remains unmounted and AF00/AF05 shared composition owned separately."
     }
   ],
   "history": [
