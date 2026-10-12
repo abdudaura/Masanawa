@@ -2283,21 +2283,6 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
-    },
-    {
-      "base_sha": "576ecda13e8c3f9c034c325986a27376faa87589",
-      "branch": "lane/af13-mui09-combined-20261012",
-      "claim_id": "93f8ade5-997c-479c-aae1-fb325e7bb37c",
-      "claimed_at": "2026-10-12T20:51:19Z",
-      "expires_at": "2026-10-12T21:09:33Z",
-      "heartbeat_at": "2026-10-12T21:04:33Z",
-      "owner": "AF13 MUI-09 combined regression",
-      "paths": [
-        "apps/mobile/test/ui/mui09_combined_regression_test.dart",
-        "docs/workstreams/UI-MUI-09-verification.md"
-      ],
-      "pr": "",
-      "scope": "Bounded simulated combined shell navigation/search/layout/account regression; no production composition/auth/money/voice changes"
     }
   ],
   "history": [
@@ -5966,6 +5951,23 @@
       "source_head": "416a2139c8dccf4747e7ec289ddecd7c381190c3",
       "source_pr": 686,
       "test_state": "96 focusedFlutter PASS; focusedDart zero; fullFlutter baseline496PASS/9FAIL source524PASS/10FAIL; two timingcases PASS rechecks; fullDart baseline325/source324 no introduceddiagnostics; CI baselineFAIL; signed/provider NOT_RUN"
+    },
+    {
+      "base_sha": "576ecda13e8c3f9c034c325986a27376faa87589",
+      "branch": "lane/af13-mui09-combined-20261012",
+      "claim_id": "93f8ade5-997c-479c-aae1-fb325e7bb37c",
+      "claimed_at": "2026-10-12T20:51:19Z",
+      "expires_at": "2026-10-12T21:09:33Z",
+      "heartbeat_at": "2026-10-12T21:04:33Z",
+      "owner": "AF13 MUI-09 combined regression",
+      "paths": [
+        "apps/mobile/test/ui/mui09_combined_regression_test.dart",
+        "docs/workstreams/UI-MUI-09-verification.md"
+      ],
+      "pr": "",
+      "release_reason": "MUI-09 bounded test source df7ca6f1453ff646dfdeab28151724a3c4b20bc5 integrated PR690 exact head3fbe06c82391841d33ff0b788740e67ada93669e main3990d546972f9afec9f2e17117049add9e69883c; PR691 handoff merged950fe2e5ac66d8162b8c151a30d268eaeee76493.158 focused and24 font-render cases PASS; full575/8 retained failures;27 audio rechecks PASS;322 analyzer debt;APK missing AndroidSDK. Overall MUI09 and protected feature/device/provider acceptance remain OPEN. Two exact paths released; preserve other claims.",
+      "released_at": "2026-10-12T21:07:25Z",
+      "scope": "Bounded simulated combined shell navigation/search/layout/account regression; no production composition/auth/money/voice changes"
     }
   ],
   "schema_version": 1
