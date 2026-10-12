@@ -1,6 +1,6 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
 import {RoomError,requireRoomStaff,requireFan,validateQuestion,validateIdempotencyKey} from "@masanawa/rooms";
-import type {RoomActor,RoomsRepository} from "@masanawa/rooms/ports";
+import type {RoomActor,RoomsRepository} from "@masanawa/rooms";
 
 type Capability="rooms.read"|"rooms.join"|"rooms.ask"|"rooms.staff";
 export interface RoomsRoutePorts {

@@ -12,7 +12,7 @@ registerHooks({resolve(specifier,context,next){
  return next(specifier,context);
 }});
 const {createPgRoomMembershipRepository}=await import('./membership.ts');
-const {RoomError}=await import('../../../../../packages/rooms/src/index.ts');
+const {RoomError}=await import('@masanawa/rooms');
 const fan={tenantId:'tenant-a',userId:'fan-a',roles:[]};
 const mod={...fan,roles:[]};
 const admin={...fan,roles:['rooms_moderator']};

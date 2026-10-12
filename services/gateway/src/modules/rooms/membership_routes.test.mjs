@@ -11,7 +11,7 @@ registerHooks({resolve(specifier,context,next){
  return next(specifier,context);
 }});
 const {registerRoomMembershipRoutes}=await import('./membership_routes.ts');
-const {RoomError}=await import('../../../../../packages/rooms/src/index.ts');
+const {RoomError}=await import('@masanawa/rooms');
 const actor={tenantId:'verified-tenant',userId:'verified-user',roles:[]};
 function setup({enabled=true,authError=null,repoError=null,verifiedActor=actor}={}){
  const routes=new Map(),calls=[];

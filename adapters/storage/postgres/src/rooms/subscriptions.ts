@@ -2,7 +2,7 @@
 import {randomUUID} from "node:crypto";
 import type {Pool,PoolClient} from "pg";
 import {RoomError,validatePrice} from "@masanawa/rooms";
-import type {RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
+import type {RoomSubscriptionsRepository} from "@masanawa/rooms";
 const uuid=(prefix:string)=>prefix+randomUUID();
 async function transaction<T>(pool:Pool,fn:(q:PoolClient)=>Promise<T>):Promise<T>{
  const q=await pool.connect();try{await q.query("BEGIN");const v=await fn(q);await q.query("COMMIT");return v;}

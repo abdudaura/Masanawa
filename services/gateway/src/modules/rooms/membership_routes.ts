@@ -1,6 +1,6 @@
 import type {FastifyInstance,FastifyRequest} from 'fastify';
 import {RoomError,requireFan,requireRoomStaff} from '@masanawa/rooms';
-import type {RoomActor} from '@masanawa/rooms/ports';
+import type {RoomActor} from '@masanawa/rooms';
 
 /** Structural port keeps Gateway independent of the PostgreSQL implementation. */
 export interface RoomMembershipRouteRepository {

@@ -8,16 +8,6 @@
       "types": "./src/index.ts",
       "production": "./dist/index.js",
       "default": "./src/index.ts"
-    },
-    "./ports": {
-      "types": "./src/ports.ts",
-      "production": "./dist/ports.js",
-      "default": "./src/ports.ts"
-    },
-    "./teacher": {
-      "types": "./src/teacher.ts",
-      "production": "./dist/teacher.js",
-      "default": "./src/teacher.ts"
     }
   },
   "scripts": {

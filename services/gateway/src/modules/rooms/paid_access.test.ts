@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import {describe,it,expect,vi} from "vitest";
 import {RoomError} from "@masanawa/rooms";
-import type {RoomActor,RoomsRepository} from "@masanawa/rooms/ports";
+import type {RoomActor,RoomsRepository} from "@masanawa/rooms";
 import {registerRoomsRoutes} from "./routes.js";
 
 const fan:RoomActor={tenantId:"tenant_one",userId:"fan_one",roles:["fan"]};

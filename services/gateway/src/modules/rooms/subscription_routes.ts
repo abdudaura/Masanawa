@@ -2,7 +2,7 @@
 import type {FastifyInstance,FastifyRequest} from "fastify";
 import {RoomError,authorizedState,parsePurchaseToken,purchaseTokenHash,requirePricingStaff,validatePrice} from "@masanawa/rooms";
 import type {PlaySubscriptionVerifier} from "@masanawa/rooms";
-import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
+import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms";
 export interface RoomSubscriptionPorts {
  readonly repository:RoomSubscriptionsRepository;
  readonly authorize:(header:string|undefined,capability:"rooms.read"|"rooms.join"|"rooms.staff")=>Promise<RoomActor>;

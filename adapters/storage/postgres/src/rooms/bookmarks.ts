@@ -1,6 +1,6 @@
 import type {Pool,PoolClient} from "pg";
 import {RoomError,requireFan} from "@masanawa/rooms";
-import type {RoomActor} from "@masanawa/rooms/ports";
+import type {RoomActor} from "@masanawa/rooms";
 import {assertRoom,lookupRoom,requirePublishedEligible,requireMember} from "./repository.js";
 
 export interface SavedRoomLesson {

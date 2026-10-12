@@ -1,7 +1,7 @@
 import {createHash, randomBytes, randomUUID} from 'node:crypto';
 import type {Pool, PoolClient} from 'pg';
 import {RoomError, requireFan, requireRoomStaff} from '@masanawa/rooms';
-import type {RoomActor} from '@masanawa/rooms/ports';
+import type {RoomActor} from '@masanawa/rooms';
 import {assertRoom, lookupRoom, requireMember, requirePublishedEligible} from './repository.js';
 
 export interface MembershipView {userId:string; state:'active'|'left'|'banned'; role:'member'|'moderator';}
@@ -40,7 +40,7 @@ export function createPgRoomMembershipRepository(pool:Pool):RoomMembershipReposi
  async function audit(q:PoolClient,a:RoomActor,id:string,event:string,payload:object){
   await q.query(`INSERT INTO events.audit_events
    (audit_event_id,tenant_id,event_type,schema_version,aggregate_type,aggregate_id,occurred_at,actor,correlation_id,sensitivity,payload)
-   VALUES($1,$2,$3,1,'room',$4,now(),jsonb_build_object('userId',$5),$6,'internal',$7::jsonb)`,
+   VALUES($1,$2,$3,1,'room',$4,now(),jsonb_build_object('userId',$5::text),$6,'internal',$7::jsonb)`,
    ['audit-event_'+randomUUID(),a.tenantId,event,id,a.userId,'correlation_'+randomUUID(),JSON.stringify(payload)]);
  }
  return {

@@ -2,7 +2,7 @@ import type {FastifyInstance, FastifyRequest} from "fastify";
 import {RoomError,requireFan,validateIdempotencyKey} from "@masanawa/rooms";
 import {validateDiscussionBody,validateDiscussionTarget,validateDiscussionCursor,requireDiscussionModerator} from "@masanawa/rooms";
 import type {DiscussionPage,DiscussionReply,DiscussionDecision} from "@masanawa/rooms";
-import type {RoomActor} from "@masanawa/rooms/ports";
+import type {RoomActor} from "@masanawa/rooms";
 
 export interface DiscussionStore {
   list(actor:RoomActor,roomId:string,kind:"lesson"|"question",targetId:string,cursor:{before:string;beforeId:string}|null):Promise<DiscussionPage>;

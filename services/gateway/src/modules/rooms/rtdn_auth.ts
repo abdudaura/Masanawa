@@ -30,6 +30,9 @@ export function createGooglePubSubPushVerifier(input:GooglePubSubAuth){
    const token=header.slice(7);
    const parts=token.split(".");
    if(parts.length!==3||parts.some(p=>! /^[A-Za-z0-9_-]+$/u.test(p)))return false;
+   // Reject unused-bit aliases: different JWT text must not decode to the same signature.
+   const decoded=parts.map(part=>Buffer.from(part,"base64url"));
+   if(decoded.some((bytes,index)=>bytes.toString("base64url")!==parts[index]))return false;
    const hdr=object(JSON.parse(Buffer.from(parts[0]!,"base64url").toString("utf8")));
    const payload=object(JSON.parse(Buffer.from(parts[1]!,"base64url").toString("utf8")));
    if(hdr.alg!=="RS256"||typeof hdr.kid!=="string"||hdr.kid.length>160)return false;

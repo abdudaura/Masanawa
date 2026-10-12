@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import {describe,it,expect,vi} from "vitest";
-import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms/ports";
+import type {RoomActor,RoomSubscriptionsRepository} from "@masanawa/rooms";
 import {registerRoomSubscriptionRoutes} from "./subscription_routes.js";
 const fan:RoomActor={tenantId:"tenant_test",userId:"fan_test",roles:["fan"]};
 const price={planId:"room-plan_123456",version:1,amountMinor:"199900",
