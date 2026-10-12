@@ -1062,32 +1062,6 @@
       "test_state": "8/8 new Gateway/worker/PG18 tests PASS; overall legacy suite 42 FAIL 1375 PASS; Node install/typecheck/build PASS. Flutter admin new test PASS, legacy analyze/APK FAIL; consumer final pending. NOT RELEASED."
     },
     {
-      "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
-      "branch": "lane/r0-flutter-compiler-20261010-gpt6",
-      "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
-      "claimed_at": "2026-10-10T16:12:51.215Z",
-      "expires_at": "2026-10-10T16:30:23.825Z",
-      "heartbeat_at": "2026-10-10T16:25:23.825Z",
-      "notes": "PR #623 head 6efb9cca3219af81200d562a98cc269a1d05cf26: Admin analyze PASS in run 38067461575; Admin widget tests FAIL inherited or scope pending logs; Admin APK compiling, consumer in progress.",
-      "owner": "GPT-6 / R0 Flutter compiler recovery coordination AF00 #616",
-      "paths": [
-        "apps/admin_mobile/lib/src/core/admin_auth_api.dart"
-      ],
-      "scope": "R0 consumer and Android Admin Flutter build unblock: 5 exact source paths only; preserve user finance and excluded features frozen, no app root/nav/gateway/SQL.",
-      "source_pr": 460,
-      "transfer_record": {
-        "to": "rooms-ci-closure-20261011-cloud",
-        "at": "2026-10-12T02:06:19.148Z",
-        "basis": "Owner requests exact consumer compiler repair; reuse existing 483199fa8 source and preserve original branch"
-      },
-      "transferred_paths": [
-        "apps/admin_mobile/lib/src/screens/platform_pages.dart",
-        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
-        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
-        "apps/mobile/lib/src/localization/locale_preference.dart"
-      ]
-    },
-    {
       "base_sha": "ce439df50d4c49c44ed615209068fa071dfe731a",
       "branch": "lane/l-social-verified-links-20261010-gpt6",
       "claim_id": "l-social-verified-links-20261010-gpt6-1718",
@@ -1331,32 +1305,6 @@
       "scope": "Continue existing merged J14/J15 external video catalog with real official provider embed playback and graceful fallback; no duplicate backend/DB/provider authority",
       "source_head": "17840c20af0662460bc7d82c5e18a554a7853b3e",
       "source_pr": 638
-    },
-    {
-      "base_sha": "b8155985f50c5065e3845a7530fe79bc5624f6be",
-      "branch": "lane/l-rooms-free-questions-20261010-gpt6",
-      "claim_id": "l-rooms-paid-access-j08-20261011-gpt6-0439",
-      "claimed_at": "2026-10-11T03:40:26.393Z",
-      "expires_at": "2026-10-11T03:52:25.909Z",
-      "heartbeat_at": "2026-10-11T03:47:25.909Z",
-      "integration_head_sha": null,
-      "notes": "Continue SAME #625 PR, after readback/CAS. Implement join/read/write paid admission, purchase/display/retry pending through existing paid APIs; no production payments or live migration.",
-      "owner": "GPT-6 independent L-ROOMS J08 paid access and consumer UI",
-      "paths": [
-        "adapters/storage/postgres/src/rooms/repository.ts",
-        "services/gateway/src/modules/rooms/routes.ts",
-        "apps/mobile/lib/src/features/rooms/rooms_client.dart",
-        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
-        "apps/mobile/test/features/rooms/room_paid_access_test.dart",
-        "adapters/storage/postgres/src/rooms/paid_access.test.ts",
-        "services/gateway/src/modules/rooms/paid_access.test.ts"
-      ],
-      "release_reason": "Connected existing canonical J08 Play screen and billing store from concurrent owner into paid/free Room UI; expired-member renew path; 4 Flutter, 6 mock-PG, 5 HTTP test cases authored. Source commits through 01e16e6, same #625, AF00 #616 handoff 6105158053 and #625 handoff 6105161809. Latest action runs not qualified; shared frozen pnpm importers packages/feed fail. No root/deploy/provider/live migrations.",
-      "released_at": "2026-10-11T03:48:55.181Z",
-      "scope": "Connect existing verified-Play J08 entitlements to existing J07 Room join/lesson/question access, existing Room discovery/Flutter subscription UI; no second Play verifier/DB/queue. Exact-path nonoverlap with active J08 payment owner. AF00 retains shared Gateway/router/migration/lock/provider activation.",
-      "source_head": "16fbb5a3ec0a523c57845ec0530a630d405b0da3",
-      "source_pr": 625,
-      "test_state": "CI Foundation frozen pnpm install FAIL missing packages/feed; TS SKIPPED; Vitest/PG/Android/Flutter latest source NOT_RUN/PENDING; 18 unrelated provider tests PASS"
     },
     {
       "base_sha": "3f374fb74f51723f616cbd39720135b3bbb04633",
@@ -2274,8 +2222,8 @@
       "branch": "lane/rooms-membership-invites-20261011",
       "claim_id": "rooms-ci-closure-20261011-cloud",
       "claimed_at": "2026-10-11T20:47:21.305Z",
-      "expires_at": "2026-10-12T02:11:19.148Z",
-      "heartbeat_at": "2026-10-12T02:06:19.148Z",
+      "expires_at": "2026-10-12T02:14:26.555Z",
+      "heartbeat_at": "2026-10-12T02:09:26.555Z",
       "owner": "Codex ROOMS / owner-directed CI blocker repair",
       "paths": [
         "pnpm-lock.yaml",
@@ -2286,7 +2234,12 @@
         "docs/workstreams/AF10-membership-invites-20261011.md",
         "apps/mobile/lib/src/localization/locale_preference.dart",
         "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
-        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart"
+        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
+        "services/gateway/src/modules/rooms/routes.ts",
+        "services/gateway/src/modules/rooms/subscription_routes.ts",
+        "services/gateway/src/modules/rooms/subscription_routes.test.ts",
+        "services/gateway/src/modules/rooms/rtdn_auth.ts",
+        "apps/admin_mobile/lib/src/core/admin_auth_api.dart"
       ],
       "scope": "Owner requests resolve actual PR669 blockers; narrow shared dependency and baseline Admin compiler repair",
       "source_pr": 669
@@ -5513,6 +5466,59 @@
       "release_reason": "Owner development policy merged into main via #673 f188827a572d32e982c3bfa8718b6266609f277e; tested profile #670 also merged main a6eb2a429fa6a2bb3161e95f80ed1dd64e25f1d3. Relevant checks retained; integration-only/whole-product gates removed; settings administration 403, no changes claimed.",
       "released_at": "2026-10-12T02:05:51Z",
       "scope": "development-main-policy"
+    },
+    {
+      "base_sha": "b8155985f50c5065e3845a7530fe79bc5624f6be",
+      "branch": "lane/l-rooms-free-questions-20261010-gpt6",
+      "claim_id": "l-rooms-paid-access-j08-20261011-gpt6-0439",
+      "claimed_at": "2026-10-11T03:40:26.393Z",
+      "expires_at": "2026-10-11T03:52:25.909Z",
+      "heartbeat_at": "2026-10-11T03:47:25.909Z",
+      "integration_head_sha": null,
+      "notes": "Continue SAME #625 PR, after readback/CAS. Implement join/read/write paid admission, purchase/display/retry pending through existing paid APIs; no production payments or live migration.",
+      "owner": "GPT-6 independent L-ROOMS J08 paid access and consumer UI",
+      "paths": [
+        "adapters/storage/postgres/src/rooms/repository.ts",
+        "services/gateway/src/modules/rooms/routes.ts",
+        "apps/mobile/lib/src/features/rooms/rooms_client.dart",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/room_paid_access_test.dart",
+        "adapters/storage/postgres/src/rooms/paid_access.test.ts",
+        "services/gateway/src/modules/rooms/paid_access.test.ts"
+      ],
+      "release_reason": "Connected existing canonical J08 Play screen and billing store from concurrent owner into paid/free Room UI; expired-member renew path; 4 Flutter, 6 mock-PG, 5 HTTP test cases authored. Source commits through 01e16e6, same #625, AF00 #616 handoff 6105158053 and #625 handoff 6105161809. Latest action runs not qualified; shared frozen pnpm importers packages/feed fail. No root/deploy/provider/live migrations.",
+      "released_at": "2026-10-11T03:48:55.181Z",
+      "scope": "Connect existing verified-Play J08 entitlements to existing J07 Room join/lesson/question access, existing Room discovery/Flutter subscription UI; no second Play verifier/DB/queue. Exact-path nonoverlap with active J08 payment owner. AF00 retains shared Gateway/router/migration/lock/provider activation.",
+      "source_head": "16fbb5a3ec0a523c57845ec0530a630d405b0da3",
+      "source_pr": 625,
+      "test_state": "CI Foundation frozen pnpm install FAIL missing packages/feed; TS SKIPPED; Vitest/PG/Android/Flutter latest source NOT_RUN/PENDING; 18 unrelated provider tests PASS"
+    },
+    {
+      "base_sha": "8aec0126420530384ea814ce5dfee7a60378fc3d",
+      "branch": "lane/r0-flutter-compiler-20261010-gpt6",
+      "claim_id": "r0-flutter-compiler-recovery-20261010-gpt6-1713",
+      "claimed_at": "2026-10-10T16:12:51.215Z",
+      "expires_at": "2026-10-10T16:30:23.825Z",
+      "heartbeat_at": "2026-10-10T16:25:23.825Z",
+      "notes": "PR #623 head 6efb9cca3219af81200d562a98cc269a1d05cf26: Admin analyze PASS in run 38067461575; Admin widget tests FAIL inherited or scope pending logs; Admin APK compiling, consumer in progress.",
+      "owner": "GPT-6 / R0 Flutter compiler recovery coordination AF00 #616",
+      "paths": [],
+      "scope": "R0 consumer and Android Admin Flutter build unblock: 5 exact source paths only; preserve user finance and excluded features frozen, no app root/nav/gateway/SQL.",
+      "source_pr": 460,
+      "transfer_record": {
+        "to": "rooms-ci-closure-20261011-cloud",
+        "at": "2026-10-12T02:09:26.555Z",
+        "basis": "Owner requests demonstrated CI blocker repair; preserve r0 source and reuse its AdminAuthException constructor fix"
+      },
+      "transferred_paths": [
+        "apps/admin_mobile/lib/src/screens/platform_pages.dart",
+        "apps/mobile/lib/src/talks/talk_gift_http_transport.dart",
+        "apps/mobile/lib/src/talks/talk_gift_pending_store.dart",
+        "apps/mobile/lib/src/localization/locale_preference.dart",
+        "apps/admin_mobile/lib/src/core/admin_auth_api.dart"
+      ],
+      "released_at": "2026-10-12T02:09:26.555Z",
+      "release_reason": "All originally claimed paths narrowly transferred with preserved source to owner-directed PR669 recovery"
     }
   ],
   "schema_version": 1
