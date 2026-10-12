@@ -1,4 +1,8 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:masanawa/l10n/app_localizations.dart';
+import 'package:masanawa/src/shell/five_tab_shell.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:masanawa/src/screens/chat/chat_list_screen.dart';
@@ -193,4 +197,44 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('root navigation paints a visible surface separator', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final capture = GlobalKey();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          aiChatProvider.overrideWith(_OfflineChats.new),
+          agentDirectoryProvider.overrideWith(_Directory.new),
+          sessionProvider.overrideWith(_Session.new),
+        ],
+        child: MaterialApp(
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RepaintBoundary(key: capture, child: const FiveTabShell()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final top = tester.getTopLeft(find.byType(NavigationBar)).dy.toInt();
+    await tester.runAsync(() async {
+      final image =
+          await (capture.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary)
+              .toImage();
+      final data = (await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      ))!;
+      final pixel = (top * image.width + image.width ~/ 2) * 4;
+      expect(data.buffer.asUint8List(pixel, 4), [233, 237, 239, 255]);
+      image.dispose();
+    });
+    expect(tester.takeException(), isNull);
+  });
 }

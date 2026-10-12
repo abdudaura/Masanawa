@@ -101,6 +101,7 @@ class _FiveTabShellState extends ConsumerState<FiveTabShell> {
         _ => null,
       },
       bottomNavigationBar: DecoratedBox(
+        position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(color: context.masanawa.structuralBorder),
