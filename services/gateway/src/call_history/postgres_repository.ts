@@ -57,9 +57,9 @@ export function createPostgresCallHistoryRepository(pool: CallHistorySqlPool): C
           AND ($6::text='' OR position($6 in lower(h.display_name))>0
             OR position($6 in lower(h.character_id))>0
             OR position($6 in lower(h.call_id::text))>0
-            OR position($6 in lower(h.direction))>0
+            OR position($6 in lower(COALESCE(to_jsonb(h)->>'direction','outgoing')))>0
             OR position($6 in lower(CASE
-              WHEN h.incoming_outcome IN ('missed','declined','cancelled') THEN h.incoming_outcome
+              WHEN (to_jsonb(h)->>'incoming_outcome') IN ('missed','declined','cancelled') THEN to_jsonb(h)->>'incoming_outcome'
               WHEN h.ended_at IS NOT NULL THEN 'ended'
               WHEN h.expires_at<=clock_timestamp() THEN 'expired'
               WHEN h.connected_at IS NOT NULL THEN 'active'
