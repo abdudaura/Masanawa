@@ -273,7 +273,11 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
     try {
       final page = await ref
           .read(callHistoryTransportProvider)
-          .loadPage(cursor: refresh ? null : _nextCursor, query: _query, cancelToken: token);
+          .loadPage(
+            cursor: refresh ? null : _nextCursor,
+            query: _query,
+            cancelToken: token,
+          );
       if (!mounted || generation != _generation || !_sameAccount) return;
       setState(() {
         final combined = [if (!refresh) ..._calls, ...page.calls];
@@ -315,14 +319,14 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
               child: Text('Search must be 80 characters or fewer.'),
             ),
           if (_loading) const LinearProgressIndicator(),
-          if (!_loading && !_failed && _calls.isEmpty)
+          if (!_loading && !_failed && !_invalidQuery && _calls.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
                   Icon(Icons.call_outlined, size: 58, color: u.brand),
                   const SizedBox(height: 18),
-                  const Text(
+                  Text(
                     _query.isEmpty ? 'No recent calls' : 'No matching calls',
                     style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
                   ),
@@ -338,7 +342,14 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
             ),
           for (final call in _calls)
             ListTile(
-              leading: Icon(call.missed ? Icons.call_missed : call.incoming ? Icons.call_received : Icons.call_made, color: u.brand),
+              leading: Icon(
+                call.missed
+                    ? Icons.call_missed
+                    : call.incoming
+                    ? Icons.call_received
+                    : Icons.call_made,
+                color: u.brand,
+              ),
               title: Text(call.displayName),
               subtitle: Text(
                 '${_label(call.state)} · ${_date(context, call.createdAt)}',
