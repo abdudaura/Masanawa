@@ -2170,6 +2170,29 @@
       "integration_head_sha": "0053e8d4e1b0282ed05e407871edff62d365a9c9",
       "release_reason": "Documentation-only audit queue/plan/prompt integration merged PR677; 9-document link/fence/whitespace and ten-milestone/four-entrypoint checks PASS; remote Foundation CI FAIL on unchanged pre-existing TalkId TS2459; no app tests/device/provider/deployment verification claimed. Next unclaimed ready UI milestone through published queue, initially MUI01 or independent MUI02.",
       "test_state": "Documentation PASS; Foundation CI FAIL pre-existing TalkId TS2459; app/device/provider NOT_RUN"
+    },
+    {
+      "claim_id": "af00-mui01-presentation-20261012",
+      "owner": "AF00 / Codex MUI-01 presentation",
+      "scope": "Shared presentation only; preserve full Calls and domain behaviors",
+      "paths": [
+        "apps/mobile/lib/src/theme/masanawa_theme.dart",
+        "apps/mobile/lib/src/ui/components/masanawa_wordmark.dart",
+        "apps/mobile/lib/src/ui/components/masanawa_main_header.dart",
+        "apps/mobile/lib/src/ui/components/conversation_search_field.dart",
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
+        "apps/mobile/lib/src/screens/calls/calls_screen.dart",
+        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
+        "apps/mobile/lib/src/shell/five_tab_shell.dart",
+        "apps/mobile/test/ui/mui01_presentation_test.dart",
+        "docs/workstreams/UI-MUI-01-foundation.md"
+      ],
+      "branch": "lane/af00-mui01-presentation-20261012",
+      "base_sha": "0053e8d4e",
+      "claimed_at": "2026-10-12T13:16:42.900613+00:00",
+      "heartbeat_at": "2026-10-12T13:16:42.900613+00:00",
+      "expires_at": "2026-10-12T15:16:42.900613+00:00",
+      "notes": "No live path overlap. Recovery: historical AF00 root PR600 superseded by merged shell; preserve integration Status/media and Rooms source for domain milestones. No router/auth/financial edits."
     }
   ],
   "history": [
