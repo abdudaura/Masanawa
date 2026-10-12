@@ -84,6 +84,18 @@ Future<void> _mount(
 );
 
 void main() {
+  testWidgets('labels incoming missed history and preserves outgoing history', (tester) async {
+    await _mount(tester, _Session(), _Transport((_) async => CallHistoryPage(calls: [
+      CallHistoryItem(callId: 'incoming', characterId: 'masana', displayName: 'Missed Amina', state: 'missed', direction: 'incoming', createdAt: DateTime.utc(2026,10,12)),
+      ...page('Outgoing Bello').calls,
+    ])));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Missed'), findsNWidgets(2));
+    expect(find.byIcon(Icons.call_missed), findsOneWidget);
+    expect(find.byIcon(Icons.call_made), findsOneWidget);
+    expect(find.textContaining('Connecting'), findsOneWidget);
+  });
+
   testWidgets('shows persisted history and loads the next page', (
     tester,
   ) async {

@@ -1,3 +1,5 @@
+import '../calls/incoming_call_coordinator.dart';
+import '../calls/incoming_call_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -78,7 +80,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/phone-login';
       }
 
-      final protected = path == '/home' ||
+      final protected = path.startsWith('/calls/incoming/') ||
+          path == '/home' ||
           path == '/activity' ||
           path == '/search' ||
           path == '/chats' ||
@@ -123,7 +126,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final index = shellRootTabIndex(
             state.uri.queryParameters['tab']);
-          return FiveTabShell(initialIndex: index);
+          return IncomingCallCoordinator(child: FiveTabShell(initialIndex: index));
         },
       ),
       GoRoute(
@@ -193,6 +196,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, _) => WalletScreen(
           onBuyBills: () => context.push('/billing'),
           onOpenCrypto: () => context.push('/crypto'),
+        ),
+      ),
+      GoRoute(
+        path: '/calls/incoming/:callId',
+        builder: (context, state) => IncomingCallScreen(
+          callId: state.pathParameters['callId']!,
         ),
       ),
       GoRoute(path: '/chats', redirect: (_, __) => '/home?tab=chats'),
