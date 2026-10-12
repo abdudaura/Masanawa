@@ -2090,10 +2090,12 @@
         "apps/mobile/test/incoming_*.dart",
         "docs/workstreams/AF11-incoming-calls-20261012.md",
         "CONTINUE-HERE.md",
-        "docs/workstreams/CALLS-NEXT-WINDOW-HANDOFF-20261012.md"
+        "docs/workstreams/CALLS-NEXT-WINDOW-HANDOFF-20261012.md",
+        "services/gateway/src/mobile_push.ts",
+        "services/gateway/src/incoming_calls/composition.test.ts"
       ],
       "scope": "Owner-directed incoming Masana signaling/push with narrow composition integration; preserve Status PR674 additions; no native media, auth or ledger replacement",
-      "notes": "Previous AF11 delivered/released. Historical alternative call PR643/660 paths inspected and preserved; existing main contracts remain canonical. Narrow routing additions only; Status owns Calls screen."
+      "notes": "Previous AF11 delivered/released. Historical alternative call PR643/660 paths inspected and preserved; existing main contracts remain canonical. Narrow routing additions only; Status owns Calls screen. Canonical push request deadline narrowly bounded for durable recovery/shutdown; source tests underway."
     }
   ],
   "history": [
