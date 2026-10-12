@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/message_parts.dart';
 import '../../finance/crypto_wallet_screen.dart';
@@ -195,6 +194,7 @@ class ChatListScreen extends ConsumerWidget {
       if (confirmed == true) ctl.clearThread(thread.characterId);
     }
     if (action == 'rename') {
+      if (!context.mounted) return;
       final editor = TextEditingController(text: thread.title ?? '');
       final value = await showDialog<String>(
         context: context,
@@ -431,7 +431,7 @@ class ChatListScreen extends ConsumerWidget {
                   ref.read(agentDirectoryProvider.notifier).refresh(),
               child: ListView.separated(
                 itemCount: visibleThreads.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     Divider(height: 1, indent: 76, color: u.structuralBorder),
                 itemBuilder: (context, index) {
                   final thread = visibleThreads[index];

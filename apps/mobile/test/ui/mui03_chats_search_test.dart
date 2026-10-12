@@ -136,14 +136,14 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final router = GoRouter(routes: [
-      GoRoute(path: '/', builder: (_, __) => const ChatListScreen()),
+      GoRoute(path: '/', builder: (_, _) => const ChatListScreen()),
       GoRoute(
         path: '/chat/:id',
         builder: (_, state) => Scaffold(
           body: Text('Opened ${state.pathParameters['id']}'),
         ),
       ),
-      GoRoute(path: '/masana', builder: (_, __) =>
+      GoRoute(path: '/masana', builder: (_, _) =>
           const Scaffold(body: Text('Discover'))),
     ]);
     addTearDown(router.dispose);
@@ -219,7 +219,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'no-result');
     await tester.pump();
     expect(find.text('No matching conversations'), findsOneWidget);
-    container.read(sessionProvider.notifier).switchTo('fan-b');
+    (container.read(sessionProvider.notifier) as _Session).switchTo('fan-b');
     await tester.pump();
     expect(find.byType(TextField), findsOneWidget);
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
