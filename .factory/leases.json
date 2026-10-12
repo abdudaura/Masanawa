@@ -2289,8 +2289,8 @@
       "branch": "lane/af13-mui09-combined-20261012",
       "claim_id": "93f8ade5-997c-479c-aae1-fb325e7bb37c",
       "claimed_at": "2026-10-12T20:51:19Z",
-      "expires_at": "2026-10-12T20:56:19Z",
-      "heartbeat_at": "2026-10-12T20:51:19Z",
+      "expires_at": "2026-10-12T20:59:12Z",
+      "heartbeat_at": "2026-10-12T20:54:12Z",
       "owner": "AF13 MUI-09 combined regression",
       "paths": [
         "apps/mobile/test/ui/mui09_combined_regression_test.dart",
