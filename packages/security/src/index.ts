@@ -16,3 +16,4 @@ export * from "./twin-economy-eligibility.js";
 export * from "./owner-session-privacy.js";
 
 export * from "./customer-channel.js";
+export * from "./device-sessions.js";
