@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/message_parts.dart';
 import '../../finance/crypto_wallet_screen.dart';
@@ -10,6 +11,7 @@ import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../ui/components/masanawa_main_header.dart';
+import '../../ui/components/conversation_search_field.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
@@ -411,7 +413,13 @@ class ChatListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: threads.isEmpty
+      body: _ChatsSearchPane(
+        key: ValueKey(session is SessionSignedIn ? session.user.id : 'signed-out'),
+        threads: session is SessionSignedIn ? threads : const <ChatThread>[],
+        directory: directory,
+        online: chat.online,
+        onRetry: () => ref.read(agentDirectoryProvider.notifier).refresh(),
+        resultsBuilder: (visibleThreads) => visibleThreads.isEmpty
           ? _EmptyChats(
               loading: directory.loading,
               error: directory.error,
@@ -422,11 +430,11 @@ class ChatListScreen extends ConsumerWidget {
               onRefresh: () =>
                   ref.read(agentDirectoryProvider.notifier).refresh(),
               child: ListView.separated(
-                itemCount: threads.length,
+                itemCount: visibleThreads.length,
                 separatorBuilder: (_, __) =>
                     Divider(height: 1, indent: 76, color: u.structuralBorder),
                 itemBuilder: (context, index) {
-                  final thread = threads[index];
+                  final thread = visibleThreads[index];
                   final agent = directory.find(thread.characterId)!;
                   final last = thread.lastMessage;
                   return ListTile(
@@ -523,6 +531,7 @@ class ChatListScreen extends ConsumerWidget {
                 },
               ),
             ),
+      ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Start conversation',
         backgroundColor: u.brand,
@@ -530,6 +539,136 @@ class ChatListScreen extends ConsumerWidget {
         onPressed: () => context.push('/masana'),
         child: const Icon(Icons.mic_none_outlined),
       ),
+    );
+  }
+}
+
+
+/* Search is scoped to the currently authorized directory and account-owned
+ * conversation projection. Filtering is synchronous: there are no outstanding
+ * search responses which could overwrite a newer query. A keyed pane disposes
+ * its controller when the authenticated account changes. The C10 server-wide
+ * inbox endpoint is not mounted on main; do not suggest cached-only matches
+ * cover unhydrated remote history. */
+class _ChatsSearchPane extends StatefulWidget {
+  const _ChatsSearchPane({
+    super.key,
+    required this.threads,
+    required this.directory,
+    required this.online,
+    required this.onRetry,
+    required this.resultsBuilder,
+  });
+
+  final List<ChatThread> threads;
+  final AgentDirectoryState directory;
+  final bool online;
+  final VoidCallback onRetry;
+  final Widget Function(List<ChatThread> visibleThreads) resultsBuilder;
+
+  @override
+  State<_ChatsSearchPane> createState() => _ChatsSearchPaneState();
+}
+
+class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
+  final TextEditingController _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _changed(String raw) {
+    final query = raw.trim().toLowerCase();
+    if (query != _query) setState(() => _query = query);
+  }
+
+  void _clear() {
+    _search.clear();
+    if (_query.isNotEmpty) setState(() => _query = '');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = widget.threads.where((thread) {
+      final authorized = widget.directory.find(thread.characterId);
+      if (authorized == null) return false;
+      if (_query.isEmpty) return true;
+      return authorized.displayName.toLowerCase().contains(_query) ||
+          (thread.title?.toLowerCase().contains(_query) ?? false) ||
+          thread.characterId.toLowerCase().contains(_query);
+    }).toList(growable: false);
+
+    return Column(
+      children: [
+        ConversationSearchField(
+          controller: _search,
+          hintText: 'Search Masana conversations',
+          clearTooltip: 'Clear chat search',
+          onChanged: _changed,
+          onClear: _clear,
+        ),
+        if (widget.directory.loading)
+          const LinearProgressIndicator(minHeight: 2),
+        if (widget.directory.error != null && widget.threads.isNotEmpty)
+          MaterialBanner(
+            content: const Text(
+              'Could not refresh Masana contacts. Showing saved conversations.',
+            ),
+            actions: [
+              TextButton(onPressed: widget.onRetry, child: const Text('Retry')),
+            ],
+          ),
+        Expanded(
+          child: _query.isNotEmpty &&
+                  visible.isEmpty &&
+                  widget.threads.isNotEmpty &&
+                  !widget.directory.loading
+              ? Center(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Semantics(
+                        liveRegion: true,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.search_off_outlined, size: 42),
+                            const SizedBox(height: 12),
+                            Text(
+                              widget.online
+                                  ? 'No matching conversations'
+                                  : 'No matches in saved conversations',
+                              textAlign: TextAlign.center,
+                            ),
+                            if (!widget.online) ...[
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Offline searches only include chats saved on this device.',
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            TextButton(
+                              onPressed: _clear,
+                              child: const Text('Clear search'),
+                            ),
+                            if (!widget.online)
+                              TextButton(
+                                onPressed: widget.onRetry,
+                                child: const Text('Retry contacts'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : widget.resultsBuilder(visible),
+        ),
+      ],
     );
   }
 }
