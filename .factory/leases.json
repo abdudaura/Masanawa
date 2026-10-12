@@ -2304,7 +2304,9 @@
         "to": "AF13 MUI-09 named directory recovery journey",
         "basis": "Owner continuation explicitly authorizes bounded transfer for failing directory journey; no unreleased overlaps; #593 disjoint contacts source preserved, #460 recovered selectively"
       },
-      "notes": "PR #692 merged normally at db268b62d248a6dadab954847646a027d6c70972 exact head e101cf38f928c4f2187ae12d284458ff713d9a07; all three app/test blobs match 92d8ba67. 35 focused PASS, analysis zero; full578/6 retained profile/Talk failures; postmerge handoff pending."
+      "notes": "PR #692 merged normally at db268b62d248a6dadab954847646a027d6c70972 exact head e101cf38f928c4f2187ae12d284458ff713d9a07; all three app/test blobs match 92d8ba67. 35 focused PASS, analysis zero; full578/6 retained profile/Talk failures; postmerge handoff pending.",
+      "released_at": "2026-10-12T22:19:00.666885+00:00",
+      "release_reason": "Source PR #692 exact head e101cf38f928c4f2187ae12d284458ff713d9a07 merged db268b62d248a6dadab954847646a027d6c70972; implementation92d8ba67a1f83f8b293e29a35eb07cf521e5dc55 blobs match main. Handoff PR #693 head5682a579d8989765a706e49d870bdd980ff918fd merged7620ed05200a1e3ca41a746e6d4801fc07e3d6c8. 35 focused PASS, analysis zero; full578/6 retained four profile/two Talk failures; MUI09/10 and AF11 OPEN. Exact four paths released; next MUI03 with AF00/AF05 transfers else bounded AF14 profile creation/save/reload."
     }
   ],
   "history": [
