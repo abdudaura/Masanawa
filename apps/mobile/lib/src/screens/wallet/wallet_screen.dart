@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../commerce/wallet_models.dart';
 import '../../state/wallet_state.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../ui/components/masanawa_main_header.dart';
 
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({
@@ -22,8 +23,10 @@ class WalletScreen extends ConsumerWidget {
   final VoidCallback? onWithdraw;
   final VoidCallback? onBuyBills;
   final VoidCallback? onOpenCrypto;
+
   /// Opens the existing qualified Billing category; selecting it does not pay.
   final ValueChanged<String>? onOpenBillingService;
+
   /// Root owns the header when this surface is selected as a bottom tab.
   final bool embeddedInShell;
 
@@ -43,7 +46,7 @@ class WalletScreen extends ConsumerWidget {
           onBuyBills: onBuyBills,
           onOpenBillingService: onOpenBillingService,
         ),
-        const SizedBox(height: 80),
+        const SizedBox(height: 24),
         if (loading)
           const Center(child: CircularProgressIndicator())
         else ...[
@@ -65,15 +68,17 @@ class WalletScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: embeddedInShell ? null : AppBar(title: const Text('Wallet')),
+      appBar: embeddedInShell ? null : masanawaMainHeader(context),
       body: RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
         child: wallet.when(
+          skipLoadingOnRefresh: false,
           loading: () => pendingOrUnavailableWallet(loading: true),
-          error: (_, __) => pendingOrUnavailableWallet(),
+          error: (_, _) => pendingOrUnavailableWallet(),
           data: (value) {
             if (value == null) return pendingOrUnavailableWallet();
             return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               children: [
                 _Balances(view: value),
@@ -83,7 +88,9 @@ class WalletScreen extends ConsumerWidget {
                   onBuyBills: onBuyBills,
                   onOpenBillingService: onOpenBillingService,
                 ),
-                if (onAddMoney != null || onSend != null || onWithdraw != null) ...[
+                if (onAddMoney != null ||
+                    onSend != null ||
+                    onWithdraw != null) ...[
                   const SizedBox(height: 12),
                   _Actions(
                     onAddMoney: onAddMoney,
@@ -111,7 +118,14 @@ class WalletScreen extends ConsumerWidget {
                     ),
                   )
                 else
-                  ...value.entries.map((entry) => _WalletEntryTile(entry: entry)),
+                  ...value.entries.map(
+                    (entry) => Column(
+                      children: [
+                        _WalletEntryTile(entry: entry),
+                        Divider(height: 1, color: u.structuralBorder),
+                      ],
+                    ),
+                  ),
               ],
             );
           },
@@ -128,13 +142,8 @@ class _Balances extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: u.surfaceCard,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: u.structuralBorder),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -144,24 +153,22 @@ class _Balances extends StatelessWidget {
             '${view.spendableCredits} Cr',
             style: TextStyle(
               color: u.textPrimary,
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 24,
+            runSpacing: 12,
             children: [
-              Expanded(
-                child: _SmallBalance(
-                  label: 'Pending',
-                  value: '${view.pendingEarningsCredits} Cr',
-                ),
+              _SmallBalance(
+                label: 'Pending',
+                value: '${view.pendingEarningsCredits} Cr',
               ),
-              Expanded(
-                child: _SmallBalance(
-                  label: 'Available',
-                  value: '${view.availableEarningsCredits} Cr',
-                ),
+              _SmallBalance(
+                label: 'Available',
+                value: '${view.availableEarningsCredits} Cr',
               ),
             ],
           ),
@@ -182,7 +189,10 @@ class _SmallBalance extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 2),
         Text(label, style: TextStyle(color: u.textMuted, fontSize: 12)),
       ],
@@ -238,10 +248,7 @@ class WalletServiceShortcuts extends StatelessWidget {
             onPressed: () => billing('tv'),
           ),
         ] else if (onBuyBills != null)
-          ActionChip(
-            label: const Text('Billing'),
-            onPressed: onBuyBills,
-          ),
+          ActionChip(label: const Text('Billing'), onPressed: onBuyBills),
       ],
     );
   }
@@ -260,29 +267,28 @@ class _Actions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        Expanded(
-          child: FilledButton.icon(
+        if (onAddMoney != null)
+          FilledButton.icon(
             onPressed: onAddMoney,
             icon: const Icon(Icons.add),
             label: const Text('Add money'),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: OutlinedButton.icon(
+        if (onSend != null)
+          OutlinedButton.icon(
             onPressed: onSend,
             icon: const Icon(Icons.send_outlined),
             label: const Text('Send'),
           ),
-        ),
-        const SizedBox(width: 8),
-        IconButton.outlined(
-          tooltip: 'Withdraw',
-          onPressed: onWithdraw,
-          icon: const Icon(Icons.south_west),
-        ),
+        if (onWithdraw != null)
+          IconButton.outlined(
+            tooltip: 'Withdraw',
+            onPressed: onWithdraw,
+            icon: const Icon(Icons.south_west),
+          ),
       ],
     );
   }
@@ -294,16 +300,26 @@ class _WalletEntryTile extends StatelessWidget {
 
   IconData get icon {
     switch (entry.kind) {
-      case WalletEntryKind.funding: return Icons.add_circle_outline;
-      case WalletEntryKind.transferSent: return Icons.north_east;
-      case WalletEntryKind.transferReceived: return Icons.south_west;
-      case WalletEntryKind.purchase: return Icons.shopping_bag_outlined;
-      case WalletEntryKind.commission: return Icons.percent;
-      case WalletEntryKind.gift: return Icons.card_giftcard_outlined;
-      case WalletEntryKind.voice: return Icons.graphic_eq;
-      case WalletEntryKind.ownerSession: return Icons.person_outline;
-      case WalletEntryKind.refund: return Icons.replay_outlined;
-      case WalletEntryKind.withdrawal: return Icons.account_balance_outlined;
+      case WalletEntryKind.funding:
+        return Icons.add_circle_outline;
+      case WalletEntryKind.transferSent:
+        return Icons.north_east;
+      case WalletEntryKind.transferReceived:
+        return Icons.south_west;
+      case WalletEntryKind.purchase:
+        return Icons.shopping_bag_outlined;
+      case WalletEntryKind.commission:
+        return Icons.percent;
+      case WalletEntryKind.gift:
+        return Icons.card_giftcard_outlined;
+      case WalletEntryKind.voice:
+        return Icons.graphic_eq;
+      case WalletEntryKind.ownerSession:
+        return Icons.person_outline;
+      case WalletEntryKind.refund:
+        return Icons.replay_outlined;
+      case WalletEntryKind.withdrawal:
+        return Icons.account_balance_outlined;
     }
   }
 
@@ -311,26 +327,43 @@ class _WalletEntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final sign = entry.incoming ? '+' : '-';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: u.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: u.structuralBorder),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: u.brand),
-        title: Text(
-          entry.title,
-          style: TextStyle(color: u.textPrimary, fontSize: 14),
-        ),
-        trailing: Text(
-          '$sign${entry.amountCredits} Cr',
-          style: TextStyle(
-            color: u.textPrimary,
-            fontWeight: FontWeight.w600,
+    final date = entry.createdAt;
+    final months = MaterialLocalizations.of(context).formatShortMonthDay(date);
+    final time =
+        '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: u.brand, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.title,
+                  style: TextStyle(color: u.textPrimary, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$months ${date.year} · $time',
+                  style: TextStyle(color: u.textMuted, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$sign${entry.amountCredits} Cr',
+                  style: TextStyle(
+                    color: u.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
