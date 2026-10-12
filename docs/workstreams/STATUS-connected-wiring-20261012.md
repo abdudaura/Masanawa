@@ -15,3 +15,8 @@ Branch: lane/status-connected-wiring-20261012. Base integration/rebuild 5c08e151
 Narrow shared shell/router continuation of the previously published Status transfer; old AF00 shell-composition lease is released. Preserve CallsScreen by recovering the unchanged #668 main widget only; do not implement/change call authority. Keep Rooms' current access gate and Wallet billing/crypto. Retire stale Twin route and align Chats · Status · Wallet · Calls · Rooms, Chats default. Connect Status to existing per-account Dio, server-authorized post/media and existing editor workflow. No new auth, publisher, queue or ledger.
 
 A narrow transfer question is pending for original explicitly forbidden Gateway app.ts/main.ts and required shared gateway manifest/PG exports/lockfile; DO NOT edit those until owner reply. Prepare canonical authenticated runtime and tests meanwhile. No deployment/production migration authorization assumed.
+
+## Exact source expansion before edits
+- adapters/storage/postgres/src/home_feed/eligibility.ts
+- adapters/storage/postgres/src/home_feed/eligibility.test.ts
+Read existing approved active platform identity and cleared character_media for canonical service validation. No new table or authorization authority; binds only, deny unknown/foreign/unapproved records. These feature-owned selectors make the pending root patch concrete against the existing pool; app/main remain untouched.
