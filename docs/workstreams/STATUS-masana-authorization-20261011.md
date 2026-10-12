@@ -118,3 +118,18 @@ Exact added path: adapters/storage/postgres/src/home_feed/feed.integration.test.
 ### Closure / coordinator next action
 Owned runtime source is implemented; strict scoped TypeScript, 50 Vitest cases including real PG authorization/recovery, 11 Node units, 8 Status Flutter widgets and 4 existing media widgets have executed successfully. The **whole Status journey remains PARTIAL_IMPLEMENTATION** because coordinator-owned shell/auth/media/Gateway composition remains disconnected or unverified on main, and whole-workspace CI still fails. No merge or release performed here.
 Continue PR #671 on the existing integration target. Coordinator implements the exact five_tab_shell.dart / app_router.dart transfer, fixes the shared pnpm-lock.yaml importer and reruns full frozen install/typecheck/tests/build plus unified authenticated Status/device/restore checks. Missing local Flutter is no longer a universal execution blocker: CI has an actual qualified runner. Full identity migration, integration/source wiring, consumer binary and production proof remain explicitly pending. No further independent Status subsystem is needed.
+
+## User-directed safe integration and read-only production verification — 2026-10-12
+**PR #671 merged into the continuing integration/rebuild branch at 799b2b337bd0c5915e24aa0b9f1b476bec521ea0.** This supersedes earlier unmerged/handoff-only statements for this increment.
+Immediately before merge, target remained 5ebc77a1f36ca2dc462f4f2ef6e0dff682d98230 and source remained 225d3b94742961e422141553a5861fb1abf118fa. Merge preview 5215e543f00852b1cf221d2f8a970828dd6f4ca1 passed unchanged strict feed typecheck, scoped strict TypeScript and all 50 Vitest tests (41 units/injection, 9 actual disposable PG18).
+After merge, fetched integration HEAD is exactly 799b2b3, and its tree **5afd4ec7cba05294a3cd3fa336861d51ec4797aa** exactly matches the tested preview tree. No source discrepancy or repeated-test assumption. Own merge-check PG18 container removed afterward.
+Inspected workflows trigger pushes on main and mark integration/rebuild as non-deploying. Main was not merged or deployed; Gateway/worker/router/catalog/manifest/lockfile authority remains unchanged.
+
+Read-only HTTPS probes to the configured production gateway masanawa-gateway-production.up.railway.app:
+- GET /healthz: **HTTP 200**.
+- GET /readyz: **HTTP 200**.
+- GET /v1/feed: **HTTP 404**, response message **Route GET:/v1/feed not found**.
+- An initial /health probe returned 404 because the repository's actual liveness path is /healthz; corrected probe above.
+
+Production gateway is reachable/ready under its own health contract, but the canonical Status feed route is **not live** there. This is executed negative production evidence, not a Status E2E or release pass. The earlier original prompt explicitly forbade deployment and production migrations; none performed.
+Scoped source state is now **INTEGRATED**, with the exact merged-tree checks above. Whole consumer Status journey remains **PARTIAL_IMPLEMENTATION** until the coordinating composition paths are connected and qualified and an authorized release makes them live. Exact next action remains wiring Status shell/auth/feed/editorial/media modules, retiring the stale Twin router reference and repairing full-workspace lockfile importers on the existing baseline; do not leave this tested increment waiting for another feature PR.
