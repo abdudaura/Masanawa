@@ -2279,9 +2279,9 @@
       "branch": "lane/af03-mui07-wallet-presentation-20261012",
       "base_sha": "52c6b5a9afe83d40d1c7ee28ef5d8e7b837e5788",
       "claimed_at": "2026-10-12T17:24:49.811891+00:00",
-      "heartbeat_at": "2026-10-12T17:29:50.862048+00:00",
-      "expires_at": "2026-10-12T17:34:50.862048+00:00",
-      "notes": "Local Flutter3.47.7 executed RED:6 account/read races reproduce; shared header/layout assertions fail existing source; fixtures corrected. Implementing account-ID reload and refresh-generation fencing only, retaining all financial operations/transport contracts."
+      "heartbeat_at": "2026-10-12T17:31:43.377246+00:00",
+      "expires_at": "2026-10-12T17:36:43.377246+00:00",
+      "notes": "First6 race tests now PASS; related Wallet regressions and focusedDart executing; locale date fixture corrected; adding initial-load-v-refresh/account/logout read races before final source review."
     }
   ],
   "history": [
