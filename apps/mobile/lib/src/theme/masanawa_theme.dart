@@ -211,20 +211,19 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
       indicatorColor: Colors.transparent,
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(
+          size: 24,
           color: states.contains(WidgetState.selected)
-              ? masanawa.brandStrong
-              : masanawa.textMuted,
+              ? masanawa.brand
+              : masanawa.textPrimary,
         ),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (states) => TextStyle(
-          color: states.contains(WidgetState.selected)
-              ? masanawa.brandStrong
-              : masanawa.textMuted,
+          color: masanawa.textPrimary,
           fontSize: 12,
           fontWeight: states.contains(WidgetState.selected)
               ? FontWeight.w700
-              : FontWeight.w500,
+              : FontWeight.w600,
         ),
       ),
     ),

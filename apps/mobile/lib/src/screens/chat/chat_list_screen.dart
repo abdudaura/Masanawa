@@ -9,7 +9,7 @@ import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
-import '../../ui/components/masanawa_wordmark.dart';
+import '../../ui/components/masanawa_main_header.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
@@ -51,15 +51,14 @@ class ChatListScreen extends ConsumerWidget {
     AgentMessagePartKind.status => 'Status update',
   };
 
-  List<(ChatThread, AgentMessagePart)> _activity(
-    Iterable<ChatThread> threads,
-  ) {
+  List<(ChatThread, AgentMessagePart)> _activity(Iterable<ChatThread> threads) {
     final items = <(ChatThread, AgentMessagePart)>[];
     for (final thread in threads) {
       for (final message in thread.messages.reversed) {
         for (final part in message.parts.reversed) {
           final status = part.status?.toLowerCase();
-          final activeWork = part.kind == AgentMessagePartKind.work &&
+          final activeWork =
+              part.kind == AgentMessagePartKind.work &&
               !{'completed', 'fulfilled', 'cancelled'}.contains(status);
           final needsAttention =
               part.kind == AgentMessagePartKind.approval ||
@@ -102,8 +101,8 @@ class ChatListScreen extends ConsumerWidget {
                       part.kind == AgentMessagePartKind.approval
                           ? Icons.approval_outlined
                           : part.status == 'failed'
-                              ? Icons.error_outline
-                              : Icons.work_outline,
+                          ? Icons.error_outline
+                          : Icons.work_outline,
                     ),
                     title: Text(
                       part.title ??
@@ -142,7 +141,9 @@ class ChatListScreen extends ConsumerWidget {
         child: Wrap(
           children: [
             ListTile(
-              leading: Icon(thread.pinned ? Icons.push_pin_outlined : Icons.push_pin),
+              leading: Icon(
+                thread.pinned ? Icons.push_pin_outlined : Icons.push_pin,
+              ),
               title: Text(thread.pinned ? 'Unpin' : 'Pin'),
               onTap: () => Navigator.pop(sheetContext, 'pin'),
             ),
@@ -220,14 +221,15 @@ class ChatListScreen extends ConsumerWidget {
     WidgetRef ref,
     AgentDirectoryState directory,
   ) async {
-    final archived = ref
-        .read(aiChatProvider)
-        .threads
-        .values
-        .where((thread) => thread.archived)
-        .where((thread) => directory.find(thread.characterId) != null)
-        .toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final archived =
+        ref
+            .read(aiChatProvider)
+            .threads
+            .values
+            .where((thread) => thread.archived)
+            .where((thread) => directory.find(thread.characterId) != null)
+            .toList()
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -290,31 +292,56 @@ class ChatListScreen extends ConsumerWidget {
         .where((thread) => directory.find(thread.characterId) != null)
         .toList();
     final activity = _activity(threads);
-    final attention = activity.where((item) =>
-        item.$2.kind == AgentMessagePartKind.approval ||
-        item.$2.status == 'failed' ||
-        item.$2.status == 'waiting_for_approval' ||
-        item.$2.status == 'waiting_for_input').length;
+    final attention = activity
+        .where(
+          (item) =>
+              item.$2.kind == AgentMessagePartKind.approval ||
+              item.$2.status == 'failed' ||
+              item.$2.status == 'waiting_for_approval' ||
+              item.$2.status == 'waiting_for_input',
+        )
+        .length;
+
+    final activityLabel = !chat.online
+        ? 'Offline · cached conversations available'
+        : attention > 0
+        ? '$attention need attention · ${activity.length} active'
+        : '${activity.length} active work item${activity.length == 1 ? '' : 's'}';
+    final activityStyle = TextStyle(color: u.textPrimary, fontSize: 12.5);
+    final activityText =
+        TextPainter(
+          text: TextSpan(text: activityLabel, style: activityStyle),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(
+          maxWidth:
+              (MediaQuery.sizeOf(context).width -
+                      28 -
+                      25 -
+                      (activity.isNotEmpty ? 18 : 0))
+                  .clamp(1, double.infinity),
+        );
+    final activityHeight = (activityText.height + 16).clamp(
+      38.0,
+      double.infinity,
+    );
+    activityText.dispose();
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(
-        backgroundColor: u.brand,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const MasanawaWordmark(light: true),
+      appBar: masanawaMainHeader(
+        context,
         bottom: activity.isEmpty && chat.online
             ? null
             : PreferredSize(
-                preferredSize: const Size.fromHeight(38),
+                preferredSize: Size.fromHeight(activityHeight),
                 child: InkWell(
                   onTap: activity.isEmpty
                       ? null
                       : () => _showActivity(context, directory, activity),
                   child: Container(
                     width: double.infinity,
-                    color: Colors.white.withValues(alpha: .13),
+                    color: u.surfaceBg,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 8,
@@ -325,27 +352,17 @@ class ChatListScreen extends ConsumerWidget {
                           chat.online
                               ? Icons.work_outline
                               : Icons.cloud_off_outlined,
-                          color: Colors.white,
+                          color: u.textPrimary,
                           size: 17,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            !chat.online
-                                ? 'Offline · cached conversations available'
-                                : attention > 0
-                                    ? '$attention need attention · ${activity.length} active'
-                                    : '${activity.length} active work item${activity.length == 1 ? '' : 's'}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.5,
-                            ),
-                          ),
+                          child: Text(activityLabel, style: activityStyle),
                         ),
                         if (activity.isNotEmpty)
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
-                            color: Colors.white,
+                            color: u.textPrimary,
                             size: 18,
                           ),
                       ],
@@ -380,11 +397,11 @@ class ChatListScreen extends ConsumerWidget {
             tooltip: 'Settings & profile',
             icon: CircleAvatar(
               radius: 14,
-              backgroundColor: Colors.white.withValues(alpha: 0.25),
+              backgroundColor: u.surfaceBg,
               child: Text(
                 userName.isNotEmpty ? userName[0].toUpperCase() : 'M',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: u.textPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -442,9 +459,9 @@ class ChatListScreen extends ConsumerWidget {
                         ],
                         Expanded(
                           child: Text(
-                      thread.title?.trim().isNotEmpty == true
-                          ? thread.title!
-                          : agent.displayName,
+                            thread.title?.trim().isNotEmpty == true
+                                ? thread.title!
+                                : agent.displayName,
                             style: TextStyle(
                               color: u.textPrimary,
                               fontSize: 16.5,
@@ -534,39 +551,44 @@ class _EmptyChats extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.mic_none_outlined, size: 58, color: u.brand),
-            const SizedBox(height: 18),
-            Text(
-              loading && !hasAgents
-                  ? 'Loading your agents…'
-                  : error ??
-                        (hasAgents
-                            ? 'Talk to an agent'
-                            : 'No agents are available right now.'),
-              style: TextStyle(
-                color: u.textPrimary,
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.mic_none_outlined, size: 58, color: u.brand),
+              const SizedBox(height: 18),
+              Text(
+                loading && !hasAgents
+                    ? 'Loading your agents…'
+                    : error ??
+                          (hasAgents
+                              ? 'Talk to an agent'
+                              : 'No agents are available right now.'),
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hasAgents ? 'Choose an agent to start a conversation.' : 'Your conversations are still here. Please try again shortly.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: u.textMuted, fontSize: 14, height: 1.5),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: loading && !hasAgents ? null : onStart,
-              icon: const Icon(Icons.groups_outlined),
-              label: Text(hasAgents ? 'Choose an agent' : 'View agents'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                hasAgents
+                    ? 'Choose an agent to start a conversation.'
+                    : 'Your conversations are still here. Please try again shortly.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: u.textMuted, fontSize: 14, height: 1.5),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: loading && !hasAgents ? null : onStart,
+                icon: const Icon(Icons.groups_outlined),
+                label: Text(hasAgents ? 'Choose an agent' : 'View agents'),
+              ),
+            ],
+          ),
         ),
       ),
     );

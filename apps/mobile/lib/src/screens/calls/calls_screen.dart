@@ -15,6 +15,7 @@ import '../../state/agent_directory_state.dart';
 import '../../voice/paid_voice_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../ui/components/masanawa_main_header.dart';
 
 class CallsScreen extends ConsumerWidget {
   const CallsScreen({super.key});
@@ -26,8 +27,8 @@ class CallsScreen extends ConsumerWidget {
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(
-        title: const Text('Calls'),
+      appBar: masanawaMainHeader(
+        context,
         actions: [
           IconButton(
             tooltip: 'Call multiple Masana',

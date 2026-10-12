@@ -10,6 +10,8 @@ import '../screens/talks/talk_home_screen.dart';
 import '../talks/talk_models.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../screens/twin/shell_tab.dart';
+import '../ui/components/masanawa_main_header.dart';
+import '../theme/masanawa_theme.dart';
 
 /// Canonical five-tab root shell: Chats · Status · Wallet · Calls · Rooms.
 ///
@@ -53,30 +55,29 @@ class _FiveTabShellState extends ConsumerState<FiveTabShell> {
   }
 
   Widget _page(int index) => switch (index) {
-        0 => const ChatListScreen(),
-        1 => TalkHomeScreen(
-            onOpenTalk: (TalkDiscoveryItem talk) => context.push(
-              '/talk/' + Uri.encodeComponent(talk.id),
-            ),
-            onOpenSearch: () => context.push('/search'),
-            onOpenGwani: () => context.push('/billing'),
-            embeddedInShell: true,
-          ),
-        2 => WalletScreen(
-            embeddedInShell: true,
-            onOpenCrypto: () => context.push('/crypto'),
-            onOpenBillingService: (service) => context.push(
-              '/billing?service=' + Uri.encodeQueryComponent(service),
-            ),
-          ),
-        3 => const CallsScreen(),
-        _ => const RoomsScreen(),
-      };
+    0 => const ChatListScreen(),
+    1 => TalkHomeScreen(
+      onOpenTalk: (TalkDiscoveryItem talk) =>
+          context.push('/talk/' + Uri.encodeComponent(talk.id)),
+      onOpenSearch: () => context.push('/search'),
+      onOpenGwani: () => context.push('/billing'),
+      embeddedInShell: true,
+    ),
+    2 => WalletScreen(
+      embeddedInShell: true,
+      onOpenCrypto: () => context.push('/crypto'),
+      onOpenBillingService: (service) =>
+          context.push('/billing?service=' + Uri.encodeQueryComponent(service)),
+    ),
+    3 => const CallsScreen(),
+    _ => const RoomsScreen(),
+  };
 
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
     return Scaffold(
+      appBar: _index == 1 || _index == 2 ? masanawaMainHeader(context) : null,
       body: IndexedStack(
         index: _index,
         children: List.generate(
@@ -88,47 +89,54 @@ class _FiveTabShellState extends ConsumerState<FiveTabShell> {
       ),
       floatingActionButton: switch (_index) {
         0 => FloatingActionButton(
-            tooltip: 'New chat',
-            onPressed: () => context.push('/masana'),
-            child: const Icon(Icons.chat_rounded),
-          ),
+          tooltip: 'New chat',
+          onPressed: () => context.push('/masana'),
+          child: const Icon(Icons.chat_rounded),
+        ),
         1 => FloatingActionButton(
-            tooltip: 'New status',
-            onPressed: () => context.push('/talk/create'),
-            child: const Icon(Icons.add_rounded),
-          ),
+          tooltip: 'New status',
+          onPressed: () => context.push('/talk/create'),
+          child: const Icon(Icons.add_rounded),
+        ),
         _ => null,
       },
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _selectTab,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.chat_bubble_outline),
-            selectedIcon: const Icon(Icons.chat_bubble),
-            label: strings.chats,
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: context.masanawa.structuralBorder),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.donut_large),
-            selectedIcon: const Icon(Icons.donut_large),
-            label: strings.status,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: const Icon(Icons.account_balance_wallet),
-            label: strings.wallet,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.call_outlined),
-            selectedIcon: const Icon(Icons.call),
-            label: strings.calls,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.groups_outlined),
-            selectedIcon: const Icon(Icons.groups),
-            label: strings.rooms,
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: _selectTab,
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.chat_bubble_outline),
+              selectedIcon: const Icon(Icons.chat_bubble),
+              label: strings.chats,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.donut_large),
+              selectedIcon: const Icon(Icons.donut_large),
+              label: strings.status,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              selectedIcon: const Icon(Icons.account_balance_wallet),
+              label: strings.wallet,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.call_outlined),
+              selectedIcon: const Icon(Icons.call),
+              label: strings.calls,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.groups_outlined),
+              selectedIcon: const Icon(Icons.groups),
+              label: strings.rooms,
+            ),
+          ],
+        ),
       ),
     );
   }
