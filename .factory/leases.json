@@ -2240,14 +2240,16 @@
         "apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart",
         "apps/mobile/test/ui/mui02_auth_language_test.dart",
         "docs/workstreams/UI-MUI-02-auth-language.md",
-        ".github/workflows/mui02-validation-20261012.yml"
+        ".github/workflows/mui02-validation-20261012.yml",
+        "apps/mobile/lib/src/ui/components/primary_button.dart",
+        "apps/mobile/lib/src/ui/components/phone_field.dart"
       ],
       "branch": "lane/af08-mui02-auth-language-20261012-gpt6",
       "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
       "claimed_at": "2026-10-12T16:06:36.182Z",
-      "heartbeat_at": "2026-10-12T16:09:15.995Z",
-      "expires_at": "2026-10-12T16:14:15.995Z",
-      "notes": "Prior AF08 PR #680 claim released; no overlapping live claims. Isolated workflow is a narrow AF00 CI support path, never merged to main; tests execute on equivalent code tree."
+      "heartbeat_at": "2026-10-12T16:14:11.990Z",
+      "expires_at": "2026-10-12T16:19:11.990Z",
+      "notes": "Prior AF08 PR #680 claim released; no overlapping live claims. Isolated workflow is a narrow AF00 CI support path, never merged to main; tests execute on equivalent code tree. Flutter runner reveals 7 actual 320/390/large-text overflow failures, primarily shared auth PrimaryButton row and possible PhoneField; AF00 common UI paths narrowly acquired for responsive corrections; no router/CI canonical changes."
     }
   ],
   "history": [
