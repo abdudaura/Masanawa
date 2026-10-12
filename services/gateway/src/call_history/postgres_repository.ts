@@ -7,7 +7,7 @@ export interface CallHistorySqlPool {
 interface Row extends Record<string, unknown> {
   call_id: string; character_id: string; display_name: string;
   created_at: Date; connected_at: Date | null; ended_at: Date | null; expires_at: Date;
-  expired: boolean;
+  expired: boolean; direction?: "incoming" | "outgoing"; incoming_outcome?: string | null;
 }
 const selection = `h.*, (h.expires_at <= clock_timestamp()) AS expired`;
 const scope = `h.tenant_id=$1 AND h.user_id=$2
@@ -21,8 +21,8 @@ const roster = `EXISTS (SELECT 1 FROM agents.platform_agent_profiles p
 function record(row: Row): CallRecord {
   return {
     callId: row.call_id, characterId: row.character_id, displayName: row.display_name,
-    direction: "outgoing", kind: "audio",
-    state: row.ended_at ? "ended" : row.expired ? "expired" : row.connected_at ? "active" : "connecting",
+    direction: row.direction ?? "outgoing", kind: "audio",
+    state: row.incoming_outcome === "missed" ? "missed" : row.incoming_outcome === "declined" ? "declined" : row.incoming_outcome === "cancelled" ? "cancelled" : row.ended_at ? "ended" : row.expired ? "expired" : row.connected_at ? "active" : "connecting",
     createdAt: row.created_at.toISOString(), connectedAt: row.connected_at?.toISOString() ?? null,
     endedAt: row.ended_at?.toISOString() ?? null, expiresAt: row.expires_at.toISOString(),
     connectionEvidence: row.connected_at ? "client_report" : null,
@@ -30,6 +30,14 @@ function record(row: Row): CallRecord {
 }
 export function createPostgresCallHistoryRepository(pool: CallHistorySqlPool): CallHistoryRepository & CallHistoryRecorder {
   return {
+    async attachIssued(input) {
+      const result = await pool.query(`UPDATE agents.masana_call_history h SET expires_at=$5
+        WHERE h.tenant_id=$1 AND h.user_id=$2 AND h.character_id=$3 AND h.call_id=$4
+          AND h.direction='incoming' AND h.incoming_outcome='accepted' AND h.ended_at IS NULL
+          AND ${roster} RETURNING call_id`, [input.tenantId,input.userId,input.characterId,input.callId,input.expiresAt]);
+      if (result.rowCount !== 1) throw new CallHistoryError("calls.incoming_unavailable", 409);
+      return input.callId;
+    },
     async recordIssued(input) {
       const callId = createCanonicalId("request").slice("request_".length);
       const result = await pool.query(`INSERT INTO agents.masana_call_history

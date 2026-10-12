@@ -2,15 +2,26 @@
 
 Updated 2026-10-12. This is the active entry point. Older freezes, repeated launch prompts and live-Talk-first instructions have been retired from the active reading path; their exact originals are preserved in [the archive](docs/archive/20261009/README.md).
 
-## Latest calls delivery and direct continuation — 2026-10-12
+## Latest incoming calls delivery — 2026-10-12
+
+Incoming Masana signaling/push source is delivered by [PR #675](https://github.com/weavewellindustrieslimited/masanawa/pull/675),
+source `efd159787`. Ringing, explicit accept/decline, server cancel/timeout,
+missed history, durable push recovery and account-fenced Flutter use existing
+auth/history/native/billing contracts. **98 Gateway + 87 Flutter tests passed**;
+signed device/provider/production qualification remains unrun. Read the
+[executed incoming handoff](docs/workstreams/AF11-incoming-calls-20261012.md)
+and [direct continuation prompt](docs/workstreams/CALLS-NEXT-WINDOW-HANDOFF-20261012.md).
+Preserve the full Calls screen and previous native/group/financial implementation.
+
+## Previous native/group calls delivery — 2026-10-12
 
 Native call reporting, persisted recents and private 2–4 Masana group calls are
 merged to main at `757cf5657`. Canonical platform voice billing and durable
 reservation/settlement recovery are included. Read the
 [direct next-window handoff](docs/workstreams/CALLS-NEXT-WINDOW-HANDOFF-20261012.md)
 and [executed AF11 evidence](docs/workstreams/AF11-masana-call-history-20261011.md).
-The next calls source lane is incoming Masana signaling/push; signed device and
-real provider qualification remain unrun. Fetch fresh main and claims before
+Incoming Masana signaling/push has since been implemented above; signed device
+and real provider qualification remain unrun. Fetch fresh main and claims before
 starting, and preserve other windows' work.
 
 ## Current development policy — 2026-10-11

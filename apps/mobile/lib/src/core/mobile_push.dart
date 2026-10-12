@@ -11,14 +11,22 @@ import '../agents/agent_shell.dart';
 import 'request_id.dart';
 import 'shell_deep_link.dart';
 
-const _firebaseApiKey =
-    String.fromEnvironment('FIREBASE_API_KEY', defaultValue: '');
-const _firebaseAppId =
-    String.fromEnvironment('FIREBASE_APP_ID', defaultValue: '');
-const _firebaseSenderId =
-    String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID', defaultValue: '');
-const _firebaseProjectId =
-    String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: '');
+const _firebaseApiKey = String.fromEnvironment(
+  'FIREBASE_API_KEY',
+  defaultValue: '',
+);
+const _firebaseAppId = String.fromEnvironment(
+  'FIREBASE_APP_ID',
+  defaultValue: '',
+);
+const _firebaseSenderId = String.fromEnvironment(
+  'FIREBASE_MESSAGING_SENDER_ID',
+  defaultValue: '',
+);
+const _firebaseProjectId = String.fromEnvironment(
+  'FIREBASE_PROJECT_ID',
+  defaultValue: '',
+);
 
 bool get firebasePushConfigured =>
     _firebaseApiKey.isNotEmpty &&
@@ -27,11 +35,11 @@ bool get firebasePushConfigured =>
     _firebaseProjectId.isNotEmpty;
 
 FirebaseOptions get _firebaseOptions => const FirebaseOptions(
-      apiKey: _firebaseApiKey,
-      appId: _firebaseAppId,
-      messagingSenderId: _firebaseSenderId,
-      projectId: _firebaseProjectId,
-    );
+  apiKey: _firebaseApiKey,
+  appId: _firebaseAppId,
+  messagingSenderId: _firebaseSenderId,
+  projectId: _firebaseProjectId,
+);
 
 @pragma('vm:entry-point')
 Future<void> masanawaFirebaseBackgroundMessage(RemoteMessage message) async {
@@ -47,6 +55,7 @@ class MobilePushService {
   static const _installationKey = 'masanawa.push.installation.v1';
   static const _enabledKey = 'masanawa.push.enabled.v1';
   static final _links = StreamController<Uri>.broadcast(sync: true);
+  static final _incomingHints = StreamController<Uri>.broadcast(sync: true);
   static final _notifications = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
   static bool _nativeLinksInitialized = false;
@@ -62,6 +71,7 @@ class MobilePushService {
   static StreamSubscription<RemoteMessage>? _opened;
 
   Stream<Uri> get deepLinks => _links.stream;
+  Stream<Uri> get incomingHints => _incomingHints.stream;
   bool get configured => firebasePushConfigured;
 
   Uri? takeInitialDeepLink() {
@@ -129,10 +139,20 @@ class MobilePushService {
     if (initial != null) _emitMessageLink(initial);
 
     _foreground = FirebaseMessaging.onMessage.listen((message) async {
+      final hint = _linkFor(message);
+      if (hint != null) {
+        final uri = Uri.tryParse(hint);
+        if (uri != null &&
+            shellDeepLinkRoute(uri)?.startsWith('/calls/incoming/') == true) {
+          _incomingHints.add(uri);
+        }
+      }
       final notification = message.notification;
       if (notification == null) return;
       await _notifications.show(
-        id: message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+        id:
+            message.messageId?.hashCode ??
+            DateTime.now().millisecondsSinceEpoch,
         title: notification.title ?? 'Masanawa',
         body: notification.body,
         notificationDetails: const NotificationDetails(
@@ -153,7 +173,9 @@ class MobilePushService {
       final transport = _transport;
       final characterId = _characterId;
       if (transport != null && characterId != null) {
-        unawaited(registerForCharacter(transport, characterId).catchError((_) {}));
+        unawaited(
+          registerForCharacter(transport, characterId).catchError((_) {}),
+        );
       }
     });
     _initialized = true;
@@ -179,11 +201,13 @@ class MobilePushService {
     );
     final android = _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       await android.requestNotificationsPermission();
     }
-    final allowed = settings.authorizationStatus == AuthorizationStatus.authorized ||
+    final allowed =
+        settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional;
     await _storage.write(key: _enabledKey, value: allowed ? 'true' : 'false');
     final transport = _transport;
@@ -195,7 +219,8 @@ class MobilePushService {
   }
 
   Future<String> _installation() async {
-    final cached = _installationId ?? await _storage.read(key: _installationKey);
+    final cached =
+        _installationId ?? await _storage.read(key: _installationKey);
     if (cached != null && cached.length >= 16) {
       _installationId = cached;
       return cached;
@@ -219,7 +244,9 @@ class MobilePushService {
     if (await _storage.read(key: _enabledKey) == 'false') return;
     final settings = await FirebaseMessaging.instance.getNotificationSettings();
     if (settings.authorizationStatus != AuthorizationStatus.authorized &&
-        settings.authorizationStatus != AuthorizationStatus.provisional) return;
+        settings.authorizationStatus != AuthorizationStatus.provisional) {
+      return;
+    }
     final token = await FirebaseMessaging.instance.getToken();
     if (token == null || token.isEmpty) return;
     final installationId = await _installation();
@@ -261,6 +288,13 @@ class MobilePushService {
   String? _linkFor(RemoteMessage message) {
     final explicit = message.data['deepLink'];
     if (explicit is String && explicit.isNotEmpty) return explicit;
+    final callId = message.data['callId'];
+    if (message.data['type'] == 'incoming_call' && callId is String) {
+      final raw = 'masanawa://calls/incoming/${Uri.encodeComponent(callId)}';
+      final uri = Uri.tryParse(raw);
+      if (uri != null && shellDeepLinkRoute(uri) != null) return raw;
+      return null;
+    }
     final characterId = message.data['characterId'];
     if (characterId is String && characterId.startsWith('character_')) {
       return 'masanawa://chat/${Uri.encodeComponent(characterId)}';

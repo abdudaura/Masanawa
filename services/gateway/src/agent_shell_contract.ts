@@ -110,6 +110,8 @@ export interface LiveVoiceTokenService {
     readonly authorizationHeader: string | undefined;
     readonly characterId: string;
     readonly admissionId?: string | null;
+    /** Internal incoming-call attachment. Public HTTP routes never accept this field. */
+    readonly historyCallId?: string;
     readonly purpose?: "conversation" | "twin-setup";
   }): Promise<{
     readonly callId?: string;

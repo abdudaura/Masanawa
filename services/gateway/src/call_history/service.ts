@@ -9,9 +9,9 @@ export interface CallRecord {
   readonly callId: string;
   readonly characterId: string;
   readonly displayName: string;
-  readonly direction: "outgoing";
+  readonly direction: "outgoing" | "incoming";
   readonly kind: "audio";
-  readonly state: "connecting" | "active" | "ended" | "expired";
+  readonly state: "connecting" | "active" | "ended" | "expired" | "missed" | "declined" | "cancelled";
   readonly createdAt: string;
   readonly connectedAt: string | null;
   readonly endedAt: string | null;
@@ -25,6 +25,7 @@ export interface CallHistoryRepository {
   report(input: CallScope & { readonly callId: string; readonly event: "connected" | "ended" }): Promise<CallRecord | null>;
 }
 export interface CallHistoryRecorder {
+  attachIssued?(input: { readonly tenantId: string; readonly userId: string; readonly characterId: string; readonly callId: string; readonly expiresAt: string }): Promise<string>;
   recordIssued(input: { readonly tenantId: string; readonly userId: string; readonly characterId: string; readonly expiresAt: string }): Promise<string>;
 }
 export class CallHistoryError extends Error {

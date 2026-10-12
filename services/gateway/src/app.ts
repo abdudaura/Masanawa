@@ -1,3 +1,5 @@
+import { registerIncomingCallRoutes } from "./incoming_calls/routes.js";
+import { IncomingCallError, type IncomingCallService } from "./incoming_calls/service.js";
 import { registerGroupCallRoutes } from "./group_calls/routes.js";
 import { GroupCallError, type GroupCallService } from "./group_calls/service.js";
 import Fastify from "fastify";
@@ -93,6 +95,7 @@ export interface ReadinessCheck {
 export interface GatewayAppOptions {
   readonly callHistory?: CallHistoryService;
   readonly groupCalls?: GroupCallService;
+  readonly incomingCalls?: IncomingCallService;
   readonly readinessChecks?: readonly ReadinessCheck[];
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
@@ -309,6 +312,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   const checks = options.readinessChecks ?? [];
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof IncomingCallError) {
+      void reply.code(error.statusCode).send({ error: { code: error.code, message: "Incoming call request could not be completed" } });
+      return;
+    }
     if (error instanceof GroupCallError) {
       void reply.code(error.statusCode).send({
         error: { code: error.code, message: "Group call request could not be completed" },
@@ -1498,6 +1505,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   if (options.callHistory) registerCallHistoryRoutes(app, options.callHistory);
   if (options.groupCalls) registerGroupCallRoutes(app, options.groupCalls);
+  if (options.incomingCalls) registerIncomingCallRoutes(app, options.incomingCalls);
   registerAgentShellRoutes(app, {
     ...(options.agentShell ? { agentShell: options.agentShell } : {}),
     ...(options.liveVoiceTokens

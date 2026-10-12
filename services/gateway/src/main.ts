@@ -1,3 +1,6 @@
+import { createIncomingCallService, type IncomingRepository, type IncomingCallService } from "./incoming_calls/service.js";
+import { createPostgresIncomingCallRepository } from "./incoming_calls/postgres_repository.js";
+import { createIncomingServerAuthorizer } from "./incoming_calls/server_authorizer.js";
 import { pathToFileURL } from "node:url";
 import type {
   AgentPresentationRepository,
@@ -295,6 +298,7 @@ export interface ServiceProcess extends NodeSignalSource {
 export interface ServiceDatabaseDependency {
   readonly callHistory?: CallHistoryRepository & CallHistoryRecorder;
   readonly groupCalls?: GroupCallRepository;
+  readonly incomingCalls?: IncomingRepository;
   readonly readinessCheck: ReadinessCheck;
   readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
   readonly initializePlatformPolicy?: (tenantId: TenantId, revision: string) => Promise<void>;
@@ -461,6 +465,7 @@ function createDefaultDatabaseDependency(
       },
     }),
     callHistory: createPostgresCallHistoryRepository(database.pool),
+    incomingCalls: createPostgresIncomingCallRepository(database.pool),
     groupCalls,
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
@@ -647,6 +652,9 @@ export async function startGatewayService(
     options.appOptions?.twinProduction;
   let pushSender: MobilePushSender | undefined;
   let ownerAccessSweepTenantId: TenantId | undefined;
+  let incomingRecoveryTimer: ReturnType<typeof setInterval> | undefined;
+  let incomingRecovery: Promise<void> | undefined;
+  let incomingCalls: IncomingCallService | undefined;
   let ownerAccessSweepTimer: ReturnType<typeof setInterval> | undefined;
   let ownerAccessSweepRunning = false;
   let talkPushDedupePurgeTimer: ReturnType<typeof setInterval> | undefined;
@@ -2227,6 +2235,16 @@ export async function startGatewayService(
 
   let app: ManagedNodeServer;
   try {
+    incomingCalls = options.appOptions?.incomingCalls ??
+      (directoryAuthorizer && database.incomingCalls && liveVoiceTokens
+        ? createIncomingCallService({
+            repository: database.incomingCalls,
+            authorizer: directoryAuthorizer,
+            serverAuthorizer: createIncomingServerAuthorizer(env.MASANAWA_INCOMING_CALLS_SERVER_TOKEN),
+            liveVoiceTokens,
+            ...(pushSender ? { pushSender } : {}),
+          })
+        : undefined);
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
@@ -2256,6 +2274,7 @@ export async function startGatewayService(
         : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
+      ...(incomingCalls ? { incomingCalls } : {}),
       ...(!options.appOptions?.callHistory && directoryAuthorizer && database.callHistory
         ? { callHistory: createCallHistoryService({ authorizer: directoryAuthorizer, repository: database.callHistory }) }
         : {}),
@@ -2331,6 +2350,7 @@ export async function startGatewayService(
     ...(options.logger ? { logger: options.logger } : {}),
     onDraining: () => {
       drain.beginDraining();
+      if (incomingRecoveryTimer) clearInterval(incomingRecoveryTimer);
       if (linkedWhatsAppController) {
         void linkedWhatsAppController.stop().catch(() => undefined);
       }
@@ -2344,6 +2364,8 @@ export async function startGatewayService(
       }
     },
     onAfterClose: async () => {
+      if (incomingRecoveryTimer) clearInterval(incomingRecoveryTimer);
+      await incomingRecovery;
       if (linkedWhatsAppController) {
         await linkedWhatsAppController.stop().catch(() => undefined);
       }
@@ -2369,6 +2391,18 @@ export async function startGatewayService(
       await lifecycle.stop("manual").catch(() => undefined);
       throw error;
     }
+  }
+
+  const runIncomingRecovery = () => {
+    if (!incomingCalls || incomingRecovery || drain.isDraining()) return;
+    incomingRecovery = incomingCalls.recover().catch(() => {
+      // Durable invitations/outbox are retried by the next sweep or process.
+    }).finally(() => { incomingRecovery = undefined; });
+  };
+  if (incomingCalls) {
+    incomingRecoveryTimer = setInterval(runIncomingRecovery, 1000);
+    incomingRecoveryTimer.unref();
+    runIncomingRecovery();
   }
 
   const runTalkPushDedupePurge = async () => {

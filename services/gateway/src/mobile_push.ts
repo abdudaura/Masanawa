@@ -113,7 +113,7 @@ export function createFcmPushSender(input: {
   const now = input.now ?? (() => new Date());
   let cached: { token: string; expiresAt: number } | undefined;
 
-  async function accessToken(): Promise<string> {
+  async function accessToken(signal: AbortSignal): Promise<string> {
     const current = now().getTime();
     if (cached && cached.expiresAt - 60_000 > current) return cached.token;
     const issued = Math.floor(current / 1000);
@@ -135,6 +135,7 @@ export function createFcmPushSender(input: {
       .sign(credentials.private_key)
       .toString("base64url")}`;
     const response = await fetchImpl(credentials.token_uri!, {
+      signal,
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -165,7 +166,8 @@ export function createFcmPushSender(input: {
       if (registrations.length === 0) {
         return Object.freeze({ attempted: 0, delivered: 0 });
       }
-      const bearer = await accessToken();
+      const signal = AbortSignal.timeout(10_000);
+      const bearer = await accessToken(signal);
       let delivered = 0;
       for (const registration of registrations) {
         const response = await fetchImpl(
@@ -174,6 +176,7 @@ export function createFcmPushSender(input: {
           )}/messages:send`,
           {
             method: "POST",
+            signal,
             headers: {
               authorization: `Bearer ${bearer}`,
               "content-type": "application/json",

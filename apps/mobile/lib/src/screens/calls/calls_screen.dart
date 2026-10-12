@@ -290,7 +290,7 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
             ),
           for (final call in _calls)
             ListTile(
-              leading: Icon(Icons.call_made, color: u.brand),
+              leading: Icon(call.missed ? Icons.call_missed : call.incoming ? Icons.call_received : Icons.call_made, color: u.brand),
               title: Text(call.displayName),
               subtitle: Text(
                 '${_label(call.state)} · ${_date(context, call.createdAt)}',
@@ -327,6 +327,9 @@ class _CallHistoryListState extends ConsumerState<_CallHistoryList> {
     'connecting' => 'Connecting',
     'active' => 'Connected',
     'ended' => 'Ended',
+    'missed' => 'Missed',
+    'declined' => 'Declined',
+    'cancelled' => 'Cancelled',
     _ => 'Expired',
   };
   String _date(BuildContext context, DateTime timestamp) {

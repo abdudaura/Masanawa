@@ -1,62 +1,52 @@
-# Calls: next-window handoff
+# Calls: direct continuation after incoming delivery
 
-Delivery is merged and pushed to main at `757cf5657d95a550b2e5b2dcf687bcf183e25d4e`.
-The previous calls implementation lane is complete and released; inspect fresh
-claims before claiming the next lane. No receiving window has been confirmed.
+Incoming source: `efd1597872e15eaf9623c1346167ad1053c8bea4`, delivered by
+[PR #675](https://github.com/weavewellindustrieslimited/masanawa/pull/675).
+The PR records its exact main integration SHA. Previous native/group/billing
+source is preserved. Read [executed evidence](AF11-incoming-calls-20261012.md).
+No receiving window confirmed; inspect fresh main and claims.
 
-## Copy this into the next window
+## Copy into the next window
 
 ```text
-Continue weavewellindustrieslimited/masanawa from fresh origin/main. Do the work,
-not just a plan. Read AGENTS.md, CONTINUE-HERE.md and
- docs/workstreams/AF11-masana-call-history-20261011.md for delivered contracts,
-exact test commands and remaining qualification. Preserve local changes and
-other windows' Status/Rooms work. Inspect fresh branches and path claims first.
+Continue weavewellindustrieslimited/masanawa from fresh origin/main. Read
+AGENTS.md, CONTINUE-HERE.md, docs/workstreams/AF11-incoming-calls-20261012.md
+and docs/workstreams/CALLS-NEXT-WINDOW-HANDOFF-20261012.md. Inspect current
+PR heads/claims and preserve other windows' Status/Rooms work.
 
-Product: Chats · Status · Wallet · Calls · Rooms; Chats default. Contacts are
-Masana AI personas only. No human-to-human consumer calling or messaging.
-Personal Twins and creator/clone onboarding are retired. Preserve historical
-financial records and the canonical Wallet ledger.
+Incoming Masana signaling/push is implemented in PR #675: durable scoped
+ringing, explicit accept/decline, server cancel/timeout, missed history,
+metadata push retries, passive polling/resume readback and existing paid voice
+acceptance/native/history/billing recovery. Local evidence: 98 Gateway tests,
+87 Flutter tests and Gateway build pass; incoming-owned Dart has no diagnostics.
+Broader Gateway typecheck matches 54 pre-existing main diagnostics. Remote CI
+still fails on the pre-existing TalkId export and six mobile analyzer warnings;
+repair demonstrated baseline blockers where needed for signed qualification,
+without disabling checks. Do not
+rebuild delivered native/group/billing/incoming code or replace the full Calls
+screen with an old scaffold. Contacts are Masana only; no personal Twins or
+human-to-human consumer calls. Preserve historical financial records/Wallet.
 
-Already merged: native connection/end reporting with account-fenced persistent
-retries; recents refresh; private 2–4 Masana calls using one microphone/audio
-focus and bounded coordinated output; per-Masana consent, duration/expiry caps,
-removal/background/account cleanup; platform voice quotes without a human creator
-beneficiary; durable reservation/completion recovery and immutable settlement
-retry decisions. Do not rebuild those features or assume existing Twin-labelled
-financial storage means the retired consumer product should return.
+Next milestone: signed Android/iOS device and real provider qualification of
+incoming calls plus existing one-to-one/group calls. Check available runners
+and configured authority first. Qualify foreground/background/terminated push,
+permission denial, duplicate/late notification taps, account switches,
+accept/decline/cancel/timeout races, missed history, audio interruptions,
+offline restart, duration/consent/removal and billing/refund recovery. Reuse the
+server-only incoming authority and existing FCM registration/paid voice contracts;
+unknown issuance must stay fenced from remint. Provider spending and production
+financial activation are separate from routine authorized development CI/CD.
 
-Next implementation lane: incoming Masana call signaling and push. Reuse existing
-mobile push registration, session authorization, provider token issuance, call
-history and paid voice authority. Implement durable account/tenant-scoped ringing,
-accept/decline/cancel/timeout and missed history. Only server-authorized Masana may
-initiate; mint media credentials after explicit acceptance and valid per-Masana
-admission. Handle duplicate/late pushes, foreground/background delivery, account
-changes, retries and cleanup. Inspect existing source before deciding exact paths;
-claim them visibly and coordinate shared Gateway/router/native composition.
-
-Run meaningful tests and relevant builds, review the exact final diff, commit,
-push and merge compatible source to main. Existing unrelated full typecheck
-failures are documented; fix introduced failures and never disable checks or use
-admin bypass. Routine development CI/CD is authorized by the current project
-policy. Real provider spending and production financial activation remain separate.
-
-Device/provider qualification remains unrun: qualify a new signed Android/iOS
-binary and real one-to-one/group calls, audio interruptions, offline restart,
-removal, consent caps and refund recovery. Check available runners/credentials;
-complete independent source work when a device or runner is unavailable. Do not
-claim deployed or production-qualified behavior from passing local tests.
-
-Before finishing, give the owner the merged SHA, executed results, remaining work
-and a direct reusable continuation prompt. Persist the handoff and update the
-entry document; do not leave the owner to reconstruct the chat or ask for it.
+Fix demonstrated source defects with tests, review, commit, push and merge
+compatible source into main. If device/provider runners are unavailable, finish
+independent source work and state exactly what remains unrun. Do not claim
+production-qualified behavior from local tests. Publish an updated handoff and
+give the owner the merged SHA, executed results and reusable prompt directly.
 ```
 
-## Executed evidence from the completed lane
+## Evidence boundary
 
-75 Gateway tests + 11 real PostgreSQL economy tests + 56 Flutter tests passed.
-Gateway, commerce and PostgreSQL builds passed. Independent final review had no
-outstanding findings. Mobile analysis had no errors/warnings; group-owned files
-had zero diagnostics. Broader Gateway typecheck reproduced the existing main
-failures; it was not reported as passing. Device/provider/production qualification
-was not executed. The AF11 record contains reproducible commands and tool versions.
+Local source checks passed; no signed phone, real FCM/APNs/Gemini call,
+production migration/provider spending or deployment qualification was executed.
+Shared localization and history retention/account-erasure qualification remain
+future work. AF11 has contracts, exact commands and tooling.

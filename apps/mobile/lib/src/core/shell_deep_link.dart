@@ -9,6 +9,18 @@ String? shellDeepLinkRoute(Uri uri) {
     return null;
   }
 
+  if (uri.scheme == 'masanawa' && uri.host == 'calls') {
+    if (uri.queryParameters.isNotEmpty ||
+        uri.pathSegments.length != 2 ||
+        uri.pathSegments.first != 'incoming' ||
+        !RegExp(
+          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+        ).hasMatch(uri.pathSegments[1])) {
+      return null;
+    }
+    return '/calls/incoming/${uri.pathSegments[1]}';
+  }
+
   if (uri.scheme == 'https') {
     if (uri.host.toLowerCase() != 'masanawa.com' ||
         uri.queryParameters.isNotEmpty ||
@@ -90,3 +102,17 @@ bool _validPublicId(String value) =>
 
 bool _validTalkId(String value) =>
     RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,159}$').hasMatch(value);
+
+/// Incoming hints cannot replace a voice destination or another active call.
+/// Conversation routes can own inline audio; the caller supplies imperative
+/// group/modal ownership separately. Other destinations retain normal routing.
+bool canOpenIncomingCallRoute({
+  required String currentPath,
+  required String targetPath,
+  bool hasActiveCall = false,
+}) {
+  if (!targetPath.startsWith('/calls/incoming/')) return true;
+  return !hasActiveCall &&
+      !currentPath.startsWith('/calls/incoming/') &&
+      !currentPath.startsWith('/chat/');
+}

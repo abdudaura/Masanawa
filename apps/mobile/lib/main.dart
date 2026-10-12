@@ -36,14 +36,15 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
   @override
   void initState() {
     super.initState();
-    _localePreference = LocalePreferenceController(SecureLocalePreferenceStore());
+    _localePreference = LocalePreferenceController(
+      SecureLocalePreferenceStore(),
+    );
     unawaited(_localePreference.load());
     _links = MobilePushService.instance.deepLinks.listen(_openDeepLink);
     final initial = MobilePushService.instance.takeInitialDeepLink();
     if (initial != null) _pendingLink.offer(initial);
     _router = ref.read(appRouterProvider);
-    _router.routeInformationProvider
-        .addListener(_scheduleLinkDrain);
+    _router.routeInformationProvider.addListener(_scheduleLinkDrain);
     _scheduleLinkDrain();
 
     // Push/Firebase/native-link setup is useful but not required to paint the
@@ -69,12 +70,24 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       if (!mounted) return;
       final session = ref.read(sessionProvider);
       final router = ref.read(appRouterProvider);
-      final uri = _pendingLink.take(ready: session is SessionSignedIn &&
-          !session.user.isNewUser &&
-          router.routeInformationProvider.value.uri.path != '/splash');
+      final uri = _pendingLink.take(
+        ready:
+            session is SessionSignedIn &&
+            !session.user.isNewUser &&
+            router.routeInformationProvider.value.uri.path != '/splash',
+      );
       if (uri != null) {
         final route = shellDeepLinkRoute(uri);
-        if (route != null) router.go(route);
+        if (route != null &&
+            canOpenIncomingCallRoute(
+              currentPath: router.routeInformationProvider.value.uri.path,
+              targetPath: route,
+              hasActiveCall:
+                  router.routerDelegate.navigatorKey.currentState?.canPop() ??
+                  false,
+            )) {
+          router.go(route);
+        }
       }
     });
     WidgetsBinding.instance.ensureVisualUpdate();
@@ -84,8 +97,7 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
   void dispose() {
     _links?.cancel();
     _localePreference.dispose();
-    _router.routeInformationProvider
-        .removeListener(_scheduleLinkDrain);
+    _router.routeInformationProvider.removeListener(_scheduleLinkDrain);
     super.dispose();
   }
 

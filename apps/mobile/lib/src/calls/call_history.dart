@@ -11,11 +11,15 @@ class CallHistoryItem {
     required this.displayName,
     required this.state,
     required this.createdAt,
+    this.direction = 'outgoing',
   });
   final String callId;
   final String characterId;
   final String displayName;
   final String state;
+  final String direction;
+  bool get incoming => direction == 'incoming';
+  bool get missed => incoming && (state == 'missed' || state == 'expired');
   final DateTime createdAt;
 
   factory CallHistoryItem.fromJson(Map<String, dynamic> json) {
@@ -32,8 +36,18 @@ class CallHistoryItem {
         characterId.isEmpty ||
         displayName is! String ||
         displayName.isEmpty ||
-        !const ['connecting', 'active', 'ended', 'expired'].contains(state) ||
-        json['direction'] != 'outgoing' ||
+        !const [
+          'connecting',
+          'active',
+          'ended',
+          'expired',
+          'ringing',
+          'accepted',
+          'declined',
+          'cancelled',
+          'missed',
+        ].contains(state) ||
+        !const ['outgoing', 'incoming'].contains(json['direction']) ||
         json['kind'] != 'audio' ||
         createdAt == null) {
       throw const FormatException('Invalid Masana call history record');
@@ -44,6 +58,7 @@ class CallHistoryItem {
       displayName: displayName,
       state: state as String,
       createdAt: createdAt,
+      direction: json['direction'] as String,
     );
   }
 }
