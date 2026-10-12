@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../agents/agent_directory.dart';
 import '../../agents/agent_feedback.dart';
+import '../../agents/agent_presence_labels.dart';
 import '../../state/session_state.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
@@ -142,7 +144,7 @@ class MasanaListScreen extends ConsumerWidget {
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: directory.agents.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   Divider(height: 1, indent: 76, color: u.structuralBorder),
               itemBuilder: (context, index) {
                 final agent = directory.agents[index];
@@ -195,6 +197,10 @@ class _MasanaAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final image = agent.avatarUrl;
+    final strings = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final presence = strings == null
+        ? agent.presenceLabel
+        : localizedAgentPresence(strings, agent);
     return Stack(
       children: [
         CircleAvatar(
@@ -217,15 +223,20 @@ class _MasanaAvatar extends StatelessWidget {
         Positioned(
           right: 0,
           bottom: 0,
-          child: Container(
-            width: 13,
-            height: 13,
-            decoration: BoxDecoration(
-              color: agent.presence == AgentPresence.offline
-                  ? u.textMuted
-                  : u.success,
-              shape: BoxShape.circle,
-              border: Border.all(color: u.surfaceBg, width: 2),
+          child: Semantics(
+            label: '${agent.displayName}: $presence',
+            child: Container(
+              width: 13,
+              height: 13,
+              decoration: BoxDecoration(
+                // Cached, malformed and busy presence is not an availability
+                // grant. Only a current explicit server value gets green.
+                color: agent.presence == AgentPresence.available
+                    ? u.success
+                    : u.textMuted,
+                shape: BoxShape.circle,
+                border: Border.all(color: u.surfaceBg, width: 2),
+              ),
             ),
           ),
         ),
