@@ -2297,14 +2297,14 @@
       "branch": "lane/af13-directory-presence-recovery-20261012",
       "base_sha": "950fe2e5ac66d8162b8c151a30d268eaeee76493",
       "claimed_at": "2026-10-12T22:10:53.520796+00:00",
-      "heartbeat_at": "2026-10-12T22:12:02.723508+00:00",
-      "expires_at": "2026-10-12T22:17:02.723508+00:00",
+      "heartbeat_at": "2026-10-12T22:13:22.417841+00:00",
+      "expires_at": "2026-10-12T22:18:22.417841+00:00",
       "transfer_record": {
         "from": "AF07 directory presentation; released AF13 #460 tests",
         "to": "AF13 MUI-09 named directory recovery journey",
         "basis": "Owner continuation explicitly authorizes bounded transfer for failing directory journey; no unreleased overlaps; #593 disjoint contacts source preserved, #460 recovered selectively"
       },
-      "notes": "Exact path allocation published; inspected released #460 test corrections and disjoint #593; authored mounted outage/availability/denial regression before source edits; Flutter 3.47.7 runner setup underway"
+      "notes": "RED reproduced 17 passed / 3 failed: two retained directory assertions plus actual green unknown picker defect. Source correction in claimed picker; recovered #460 assertions selectively; checking outage/retry/401 mounted journey."
     }
   ],
   "history": [
