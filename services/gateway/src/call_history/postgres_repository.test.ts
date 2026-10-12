@@ -86,6 +86,34 @@ describe.skipIf(!databaseUrl)("Masana call history on PostgreSQL", () => {
     await pool.query("UPDATE agents.agent_presentations SET visible_in_user_app=true WHERE tenant_id='tenant-a'");
   });
 
+
+  it("searches the authorized full history before pagination rather than filtering one page locally", async () => {
+    const userId = "search-pages";
+    const created = [];
+    for (let i = 0; i < 4; i++) {
+      const callId = await repository.recordIssued({ ...scope, userId, characterId: "masana-a", expiresAt: expiresAt() });
+      created.push(callId);
+      await pool.query(
+        "UPDATE agents.masana_call_history SET created_at=clock_timestamp()-($2 * interval '1 minute') WHERE call_id=$1",
+        [callId, 4 - i],
+      );
+    }
+    const oldest = created[0]!;
+    const uniqueIdentifier = oldest.slice(-10);
+    const target = await repository.list({ ...scope, userId, limit: 1, cursor: null, query: uniqueIdentifier });
+    expect(target.calls.map(call => call.callId)).toEqual([oldest]);
+    expect(target.nextCursor).toBeNull();
+    const namePage1 = await repository.list({ ...scope, userId, limit: 1, cursor: null, query: "amina" });
+    const cursor = namePage1.calls[0]!;
+    expect(namePage1.nextCursor).not.toBeNull();
+    const namePage2 = await repository.list({ ...scope, userId, limit: 1, cursor: { createdAt: cursor.createdAt, callId: cursor.callId }, query: "amina" });
+    expect(namePage2.calls).toHaveLength(1);
+    expect(namePage2.calls[0]?.callId).not.toBe(cursor.callId);
+    expect((await repository.list({ ...scope, userId: "other-account", limit: 30, cursor: null, query: uniqueIdentifier })).calls).toEqual([]);
+    expect((await repository.list({ ...scope, tenantId: "tenant-b", userId, limit: 30, cursor: null, query: uniqueIdentifier })).calls).toEqual([]);
+    expect((await repository.list({ ...scope, userId, characterIds: [], limit: 30, cursor: null, query: uniqueIdentifier })).calls).toEqual([]);
+  });
+
   it("does not treat expired credentials as verified connected media", async () => {
     const callId = await repository.recordIssued({ ...scope, characterId: "masana-a", expiresAt: expiresAt() });
     await pool.query("UPDATE agents.masana_call_history SET created_at=clock_timestamp()-interval '2 minutes', expires_at=clock_timestamp()-interval '1 minute' WHERE call_id=$1", [callId]);
