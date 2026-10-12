@@ -4,9 +4,9 @@
 
 - Base fresh main: `eecea844349738b1e9a7227fa31d859f438503e9` (verified MUI-02 handoff #681).
 - Implementation/test commit: `e4b0c533a086240d8f2c2671f3eac0ef82ef8cc5` (first implementation `8bc7a722e1e439250f3d3e3cd9cf11ae70f5841e`; corrected a test compilation error and analyzer diagnostics).
-- Feature branch: `lane/af06-mui03-chats-search-20261012-gpt6`; [source PR #682](https://github.com/weavewellindustrieslimited/masanawa/pull/682). Final source/merge SHA is recorded in the follow-up verification handoff after merger; do not infer a main merge from this source report.
+- Feature branch: `lane/af06-mui03-chats-search-20261012-gpt6`; [source PR #682](https://github.com/weavewellindustrieslimited/masanawa/pull/682). Source PR final head including this handoff: `190be801e739e42cd11f76d227a72fe96e304340`. **Merged main source SHA: `5b5bd26e7d5d62541652a2090bd32c9a90caa9fe`**. Safe normal GitHub merge, no bypass. This documentation-only follow-up records post-merge evidence.
 - Ownership: `af06-mui03-mounted-chats-search-20261012-gpt6` on `factory/claims`, three exact paths below. Prior 2026-10-10 unreleased overlapping claim `af06-pr497-chat-list-async-action-lifecycle-20261010085813` was reviewed and narrowly transferred *only* this current Chats file: old branch `3c0e88489baa7b5ad99dff66e69325f23937f086` was divergent and its remaining paths/work preserved. AF05 owns `services/gateway/src/main.ts` until transferred; AF00 owns canonical root/router/composition.
-- Implementation: **PARTIAL_IMPLEMENTATION** (local mounted authorized search only). Scoped verification: **PASS_SIMULATED_WIDGET**. Canonical server-wide inbox search/integration **OPEN**. Installed-app, live backend/provider, signed-device: **NOT_VERIFIED**.
+- Implementation: **INTEGRATED_SCOPED_SOURCE / PARTIAL_MUI03_ACCEPTANCE** (local mounted authorized search only). Scoped verification: **PASS_SIMULATED_WIDGET**. Canonical server-wide inbox search/integration **OPEN**. Installed-app, live backend/provider, signed-device: **NOT_VERIFIED**.
 
 ## Exact files changed
 
@@ -34,7 +34,7 @@ Keep MUI-04 Status, MUI-05 Calls history, MUI-06 Rooms, MUI-07 Wallet, MUI-08 Cr
 
 ## Smallest next action
 
-After safely merging this scoped tested UI source, AF00 should compose *the existing C10 authorized inbox* into current main in a new, narrowly claimed workstream, extending real query behavior without discarding current Chats/Calls. In parallel choose the earliest dependency-ready unclaimed MUI-04 / AF09 Status milestone if AF00's protected paths remain owned.
+After the safe source merge at `5b5bd26e7d5d62541652a2090bd32c9a90caa9fe`, AF00 should compose *the existing C10 authorized inbox* into current main in a new, narrowly claimed workstream, extending real query behavior without discarding current Chats/Calls. In parallel choose the earliest dependency-ready unclaimed MUI-04 / AF09 Status milestone if AF00's protected paths remain owned.
 
 ## Queue-aware continuation prompt
 
@@ -49,7 +49,7 @@ MUI-01 #678 merged 18bdd8140; MUI-02 #680 merged
 8bc782c2659973f43c6e6e248540c6b16b2a3106;
 handoff #681 main eecea844349738b1e9a7227fa31d859f438503e9.
 MUI-03 scoped mounted Chats search source e4b0c533a086240d8f2c2671f3eac0ef82ef8cc5,
-PR #682 (reconcile its latest head and merge SHA with main).
+PR #682 merged at main 5b5bd26e7d5d62541652a2090bd32c9a90caa9fe.
 Hosted run #38279529355 at app/test-identical validation 133d195fcf1e
 passed 4 MUI-03 widget tests, 16 MUI-01/root tests and focused Dart
 analysis with zero issues; first run #38279190576 failed fixture compilation,
