@@ -45,3 +45,6 @@ PUB_CACHE=/workspace/toolchains/pub-cache /workspace/toolchains/flutter/bin/flut
 ```
 
 Merge qualification scope: safe source-only consolidation onto the existing #655 Rooms prerequisite branch, not main or a released app. Main integration remains AF00-owned and gated by the wider baseline and confirmed product retirement reconciliation. The source remains disabled/unmounted until the already listed canonical auth/export/SQL registration/Room-detail composition tasks are accepted. Production/device/Play activation is NOT_VERIFIED. Do not merge this old ancestry wholesale to main or reinstate personal Twins/human-to-human consumer flows.
+
+
+Final qualification clarification: generated Next/.dist build artifacts were preserved outside the source tree before rerunning API contract scanning. The deprecation-inventory check then PASSED; the remaining API contract failure is 74 unversioned legacy route declarations (including protected app.ts). No new Rooms route is among the offenders. Full-application result counts above describe the executed broad run, not a clean source-only baseline certificate. Production/main merge remains gated. Tested feature source is 1b79c3a009a7b83f535018a6a0b7bf30921c8108; subsequent commits here change this handoff only.
