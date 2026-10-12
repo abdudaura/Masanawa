@@ -2056,14 +2056,21 @@
         "packages/feed/src/review.ts",
         "packages/feed/src/index.test.ts",
         "packages/feed/src/review.test.ts",
-        "services/gateway/src/modules/home_feed/composition.test.ts"
+        "services/gateway/src/modules/home_feed/composition.test.ts",
+        "adapters/storage/postgres/package.json",
+        "adapters/storage/postgres/src/account/fan_setup.test.ts",
+        "adapters/storage/postgres/src/masana_chat/message_actions.test.ts",
+        "services/worker/src/jobs/masana/follow_preference_policy.test.ts",
+        "services/worker/src/jobs/youtube_websub/outbox_runner.ts"
       ],
       "branch": "lane/status-connected-wiring-20261012",
       "base_sha": "5c08e151d5ee51c932af5326df85a334a5c0f7b7",
       "claimed_at": "2026-10-12T07:14:58.724Z",
-      "heartbeat_at": "2026-10-12T08:07:58.529Z",
-      "expires_at": "2026-10-12T08:12:58.529Z",
-      "notes": "Owner explicitly approved Status composition + required build fixes. Kind-aware media, HTTP root qualification and reproduced full compiler failures. Preserve incoming Calls additive composition; no production activation."
+      "heartbeat_at": "2026-10-12T08:18:41.568Z",
+      "expires_at": "2026-10-12T08:23:41.568Z",
+      "notes": "Owner explicitly approved Status composition + required build fixes. Kind-aware media, HTTP root qualification and reproduced full compiler failures. Preserve incoming Calls additive composition; no production activation.",
+      "source_head_sha": "683d7526ffb514fe2fba78bf6438b35217aaa1c7",
+      "test_state": "PASS full strict typecheck/full build/frozen dependencies,78 focused+2rootHTTP+9realPG18+15Flutter, scopedDart; global30 failures under baseline comparison; production feed404; Android SDK missing."
     },
     {
       "claim_id": "af11-incoming-calls-20261012",
