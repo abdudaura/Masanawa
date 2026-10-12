@@ -112,6 +112,11 @@ describe.skipIf(!databaseUrl)("Masana call history on PostgreSQL", () => {
     expect((await repository.list({ ...scope, userId: "other-account", limit: 30, cursor: null, query: uniqueIdentifier })).calls).toEqual([]);
     expect((await repository.list({ ...scope, tenantId: "tenant-b", userId, limit: 30, cursor: null, query: uniqueIdentifier })).calls).toEqual([]);
     expect((await repository.list({ ...scope, userId, characterIds: [], limit: 30, cursor: null, query: uniqueIdentifier })).calls).toEqual([]);
+    await repository.report({ ...scope, userId, callId: oldest, event: "ended" });
+    const ended = await repository.list({ ...scope, userId, limit: 2, cursor: null, query: "ended" });
+    expect(ended.calls.map(call => call.callId)).toContain(oldest);
+    const outgoing = await repository.list({ ...scope, userId, limit: 2, cursor: null, query: "outgoing" });
+    expect(outgoing.calls).toHaveLength(2);
   });
 
   it("does not treat expired credentials as verified connected media", async () => {
