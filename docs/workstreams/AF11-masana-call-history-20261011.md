@@ -169,7 +169,7 @@ MASANAWA_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:5432/masanawa_test node
 MASANAWA_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:5432/masana_platform_voice_test node node_modules/vitest/vitest.mjs run adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts
 pnpm --filter @masanawa/gateway-service build
 pnpm --filter @masanawa/commerce build
-pnpm --filter @masanawa/postgres-adapter build
+pnpm --filter @masanawa/postgres build
 cd apps/mobile
 flutter test --no-pub test/call_history_transport_test.dart test/calls_screen_test.dart test/live_voice_session_test.dart test/call_lifecycle_reporter_test.dart test/group_call_controller_test.dart test/group_call_outbox_transport_test.dart test/group_call_screen_test.dart test/app_shell_route_compatibility_test.dart
 ```
