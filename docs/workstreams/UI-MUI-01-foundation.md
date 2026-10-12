@@ -5,7 +5,7 @@
 - Lead: AF00; exact-path claim `af00-mui01-presentation-20261012` on `factory/claims` (acquired `e4cc650e9`).
 - Base: `0053e8d4e1b0282ed05e407871edff62d365a9c9`.
 - Branch: `lane/af00-mui01-presentation-20261012`; delivered source `3076b26056e6c1ad4e3958f1126e193198409b76` (initial implementation `aadd1f180`, reviewed separator correction `3076b2605`).
-- Source PR: [#678](https://github.com/weavewellindustrieslimited/masanawa/pull/678). Implementation: **PARTIAL_IMPLEMENTATION — source complete, main integration pending**. Verification: **PASS_SIMULATED** for shared presentation, widgets and rendered layouts; broader failures separately below. Release: **NOT_RELEASED**.
+- Source PR: [#678](https://github.com/weavewellindustrieslimited/masanawa/pull/678). Merged main: `18bdd8140a2bdf78b8cccfdb42a8030a5452d52c` (2026-10-12). Implementation: **INTEGRATED**; the merged tree equals reviewed/tested PR head `801fccec32fb67d649d3e40d6575bcccb1b68142`. Verification: **PASS_SIMULATED** for shared presentation, widgets and rendered layouts; broader failures separately below. Release: **NOT_RELEASED**.
 - No live overlapping lease existed. Historical AF00 root claims and integration/Rooms/Status refs were inspected and preserved. Main's Calls source is canonical: the older integration version removes 325 current Calls lines and its theme drops current chat tokens; neither was adopted.
 - Changed exact paths:
   - `apps/mobile/lib/src/theme/masanawa_theme.dart`
@@ -47,7 +47,7 @@ Commands below ran on the delivered source tree (doc commits do not change it):
 - Fresh-context branch review: no Critical/Important findings; only the separator finding, corrected with a red→green pixel regression. Calls changes are limited to its header import/factory. Domain search, Rooms availability and financial review focus remain with their later milestones.
 - `git diff --check`: PASS. Source diff, preservation and handoff links reviewed.
 
-Remote CI on initial source: Foundation run `38255985545` fails unchanged `packages/agents/src/talk-replay.test.ts:6` TS2459 (`TalkId` not exported); exact-base main run `38252934521` has the same error. Mobile run `38255985749` fails on existing analyzer diagnostics. Vercel reports a build rate limit. Checks/branch protections remain intact; no admin bypass, rule suppression or deployment claim. Final PR checks remain visible in #678.
+Remote CI on initial source: Foundation run `38255985545` fails unchanged `packages/agents/src/talk-replay.test.ts:6` TS2459 (`TalkId` not exported); exact-base main run `38252934521` has the same error. Mobile run `38255985749` fails on existing analyzer diagnostics. Vercel reports a build rate limit. Checks/branch protections remain intact; no admin bypass, rule suppression or deployment claim. Final PR checks remain visible in #678. Normal GitHub merge succeeded without admin bypass or protection changes; these failures remain reported, not converted to passes.
 
 ## Remaining work and blockers
 
@@ -66,7 +66,8 @@ Read AGENTS.md, CONTINUE-HERE.md,
 docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md and
 docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md.
 Read predecessor docs/workstreams/UI-MUI-01-foundation.md:
-MUI-01 source 3076b26056e6c1ad4e3958f1126e193198409b76, PR #678.
+MUI-01 source 3076b26056e6c1ad4e3958f1126e193198409b76, PR #678,
+merged main 18bdd8140a2bdf78b8cccfdb42a8030a5452d52c.
 Verify its current merged evidence; do not redo shared presentation.
 
 Prefer MUI-02 / AF08: center the existing language selector across supported
