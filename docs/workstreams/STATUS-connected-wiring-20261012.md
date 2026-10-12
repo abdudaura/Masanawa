@@ -48,3 +48,9 @@ Pass the declared post kind to canonical media eligibility, deny audio where the
 - services/gateway/src/modules/notifications/delivery_preferences_routes.test.ts
 - services/gateway/src/modules/home_feed/saved_routes.ts
 Frozen install passes. Full root/gateway typecheck reveals undeclared fastify/missions dependencies and five stale fixture/type mismatches. Correct canonical fixtures and exact optional typing without relaxing tsconfig. Saved cursor-array regression reproduced; reject malformed query keys. Incoming Calls owns separate logic; approved Status root changes remain additive and must preserve its later integration.
+
+## Next reproduced strict compiler blockers — before edits
+- adapters/storage/postgres/package.json
+- adapters/storage/postgres/src/account/fan_setup.test.ts
+- adapters/storage/postgres/src/masana_chat/message_actions.test.ts
+The PG adapter also imports missions without declaring it; strict test indices/optional values need correction. Retain assertions; no compiler flag relaxation.
