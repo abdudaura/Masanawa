@@ -4,9 +4,9 @@
 
 - Fresh source base: `600fe204c1610c6c715ad9d61387f58f67d5817a` (includes prior #682/#683 MUI-03 scoped search).
 - Feature/test source commit: `93797a4b5908ed4f4ea14e2484dc740e75549b13` (earlier implementation `6c21289`, observed failures corrected at `c7f548f`, final style + state/account regressions).
-- Branch: `lane/af11-mui05-search-20261012-gpt6`, [PR #684](https://github.com/weavewellindustrieslimited/masanawa/pull/684) (source-tested; awaiting merge review).
+- Branch: `lane/af11-mui05-search-20261012-gpt6`, [PR #684](https://github.com/weavewellindustrieslimited/masanawa/pull/684). Reviewed PR head `bb81dbc447b0a0734c9e695906319323b0dcca66`, **merged main `b398aa27c1259d4e69546be91b1c2b00ccc29fd7`** through normal GitHub merge with expected-head protection; no admin bypass.
 - Lease `af11-mui05-calls-search-20261012-gpt6` on `factory/claims`; previous AF11 incoming, AF00 presentation and STATUS claims for these exact files were released. No active path conflict at acquisition. AF00 retains shared router/bootstrap and AF05 voice.
-- Status **VERIFIED_SCOPED_SOURCE**, **NOT_MERGED** at this source checkpoint, **NOT_RELEASED**. Hosted widgets and actual isolated PostgreSQL 18 passed; no signed install/live customer/provider assertion.
+- Status **INTEGRATED / VERIFIED_SCOPED_SOURCE**, **NOT_RELEASED**. Final hosted Flutter+real PostgreSQL tests on exactly matching app/test blobs passed; all nine touched app/test SHA blobs were separately checked equal at validated source `93797a4` and merged main `b398aa2`. No signed install/live customer/provider assertion. Hosted widgets and actual isolated PostgreSQL 18 passed; no signed install/live customer/provider assertion.
 
 ## Exact claimed paths
 
@@ -33,11 +33,67 @@ Final hosted validation branch `validation/mui05-calls-search-final-20261012-gpt
 
 ## Remaining acceptance / follow-on
 
-1. Completed: inspected actual failed/green CI job steps/logs, repaired historical-schema SQL and fixture errors, reran 13 backend/real PG18 and 27 Flutter tests and focused zero-issue analysis on exact source. Next: normal safe merge, no bypass.
-2. Review updated main, diff, service/cursor auth and preservation, merge tested compatible #684 without bypass, then pin exact PR source and main SHA here (documentation follow-up if needed).
+1. **Completed:** inspected actual failed/green CI job steps/logs, repaired historical-schema SQL and fixture errors, reran 13 backend/real PG18 and 27 Flutter tests with focused zero-issue analysis on exact source; merged reviewed, compatible source PR #684 to `main@b398aa27c1259d4e69546be91b1c2b00ccc29fd7` without admin bypass. All nine app/test blobs equal validated source. No pending MUI-05 implementable source item remains.
+2. **Remaining release qualification:** whole-repo baseline issues, real account history permissions against deployed Gateway, installed Android/real IME/RTL/account navigation and AF11 qualified incoming/provider calls. Scoped Flutter widget+real PG tests do not prove a signed production release.
 3. MUI-04 Status root/feed authorization and composition is missing on main and remains AF00 dependency; MUI-03 canonical C10 server-wide inbox integration remains partial. MUI-06 Rooms, MUI-07 Wallet, MUI-08 Crypto, MUI-09 combined 320/360/390/430px keyboard/large-text/RTL/account, MUI-10 signed installed-source identity and AF11 device/provider incoming-call qualification remain open. No production release from scoped source/tests.
-4. Release the AF11 exact-path claim upon safe merge/handoff; next queue-aware window should take earliest dependency-ready unclaimed item, prefer MUI-04 through AF00 protected composition when available, else MUI-06 and preserve the MUI-03 C10 gap.
+4. AF11 exact-path ownership is released separately on `factory/claims` after this documentation merge. Next queue-aware window: prefer MUI-04 through AF00 protected composition when its integration contract is ready, otherwise MUI-06 Rooms (also requires bounded AF00 composition). Preserve the outstanding MUI-03 C10 server-authorized inbox gap.
 
-## Direct next continuation prompt (to update with merge SHA)
+## Direct next queue-aware continuation prompt
 
-Continue weavewellindustrieslimited/masanawa from fresh origin/main. Read AGENTS.md, CONTINUE-HERE.md, docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md, docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md and this UI-MUI-05-calls-search.md handoff. MUI-05 source/test PR #684 base `600fe204` and source `6c21289`; inspect exact CI run #38281852639, fix any introduced failure, do not claim an unrun check, merge safely, pin resulting main SHA and release AF11 path lease. MUI-03 local search #682/#683 is merged but remote C10 remains partial and AF00-owned. Prefer MUI-04 Status if AF00 protected integration is ready, otherwise earliest unclaimed ready UI milestone. Preserve Chats · Status · Wallet · Calls · Rooms, Chats default, Masana-only contacts, native/group/history/billing/incoming Calls, Status/media, Rooms, auth and finance. Do not wholesale merge historical shell, create fake records/valuations, duplicate ledgers, Cr-to-MSN relabel, user publishing or Create Room. Keep MUI-09 320/360/390/430px keyboard/large-text/RTL/account, MUI-10 installed signed-source identity and AF11 device/provider proof open. Report exact SHAs, PR, tests, blockers and next action.
+```text
+Continue weavewellindustrieslimited/masanawa from fresh origin/main.
+Read AGENTS.md, CONTINUE-HERE.md,
+docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md,
+docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md,
+docs/workstreams/UI-MUI-03-chats.md and
+docs/workstreams/UI-MUI-05-calls-search.md.
+
+MUI-01 PR #678 source 3076b2605 merged 18bdd8140.
+MUI-02 PR #680 source 5cb21b1 merged 8bc782c2659973f43c6e6e248540c6b16b2a3106
+and verified handoff PR #681 main eecea844349738b1e9a7227fa31d859f438503e9.
+MUI-03 local mounted Chats search PR #682 merged
+5b5bd26e7d5d62541652a2090bd32c9a90caa9fe, handoff PR #683
+main 600fe204c1610c6c715ad9d61387f58f67d5817a.
+MUI-03 remains PARTIAL: canonical C10 remote /v1/chats is not
+mounted on main; AF00 owns bounded C10 integration request #616 comment 6128601248.
+
+MUI-05 AF11 full paginated Calls search source/test 93797a4b5908ed4f4ea14e2484dc740e75549b13,
+PR #684 final head bb81dbc447b0a0734c9e695906319323b0dcca66,
+MERGED MAIN b398aa27c1259d4e69546be91b1c2b00ccc29fd7.
+Final hosted run #38282543556 at source-identical temp workflow
+c1dfb81b0112ba2aec26bd39cde999f0b4e9009b passed 27 Flutter
+widget/regression tests, 13 backend/Fastify/real PostgreSQL18 tests,
+focused Dart analysis with ZERO issues. Nine changed app/test blobs
+match merged main exactly. Earlier actual run failures fixed and documented.
+No signed device/live provider or whole-repository clean CI claim.
+
+NEXT MUI-04 / AF09 Status, if no active claim: adopt existing
+authorized feed/media and staff/approved Masana publication source
+selectively onto fresh main; AF00 owns protected shell/router, Gateway
+and migrations. Preserve real auth/permission and media readback;
+remove unsupported human New status. Do not wholesale merge old
+integration shell or lose native/group/billing/incoming Calls.
+If AF00 composition is actively owned or cannot be safely transferred,
+select next dependency-ready unclaimed milestone MUI-06 / AF10 Rooms,
+or MUI-07 / AF03 with AF01 financial authority. Preserve MUI-03
+remote server-inbox acceptance as an explicit pending AF00 item.
+
+Keep Chats · Status · Wallet · Calls · Rooms, Chats default, Masana-only
+contacts and existing Status/media, Rooms, auth and finance. No invented
+records, money/rates, second ledger, Cr-to-MSN relabel, human publishing,
+Create Room or destructive provider activation. Retain MUI-06…08,
+MUI-09 320/360/390/430px keyboard/large-text/RTL/account journeys,
+MUI-10 signed installed app/source identity and AF11 qualified
+incoming-call/device/provider regression. Existing whole Flutter analyzer
+329 diagnostics, TalkId TS2459 and nine earlier unrelated Flutter
+suite failures are baseline NOT PASSES and not waived.
+
+Fetch fresh origin/main, all relevant PR heads and factory/claims.
+Claim exact files; coordinate protected edits with AF00, AF08 and AF01
+as applicable. Implement connected code, run relevant tests, review,
+commit, push, merge safe compatible changes into main. Preserve CI
+and protections; never claim unrun release/device checks. Update
+selected milestone handoff with base/source/merge SHAs, PR, paths,
+actual tests/errors, remaining acceptance and smallest next action.
+Release ownership and print the next queue-aware prompt directly.
+```
