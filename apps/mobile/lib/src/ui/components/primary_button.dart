@@ -27,16 +27,28 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final canPress = enabled && !loading && onPressed != null;
+    final labelWidget = Text(
+      label,
+      textAlign: TextAlign.center,
+      softWrap: true,
+      style: TextStyle(
+        color: canPress ? Colors.white : u.textMuted,
+        fontSize: MasanawaTokens.fontSize['md'],
+        fontWeight: FontWeight.w600,
+      ),
+    );
     final button = Material(
       color: canPress ? u.brand : u.surfaceMuted,
       borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
       child: InkWell(
         onTap: canPress ? onPressed : null,
         borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
-        child: SizedBox(
-          height: MasanawaTokens.touchTargetMin + 4,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MasanawaTokens.touchTargetMin + 4,
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: Row(
               mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -55,14 +67,7 @@ class PrimaryButton extends StatelessWidget {
                 else if (icon != null)
                   Icon(icon, size: 20, color: canPress ? Colors.white : u.textMuted),
                 if (loading || icon != null) const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: canPress ? Colors.white : u.textMuted,
-                    fontSize: MasanawaTokens.fontSize['md'],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                if (expand) Flexible(child: labelWidget) else labelWidget,
               ],
             ),
           ),
