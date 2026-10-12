@@ -38,3 +38,13 @@ The mobile lockfile also has six proven missing declared-dependency entries (int
 - packages/feed/src/review.test.ts
 - services/gateway/src/modules/home_feed/composition.test.ts
 Pass the declared post kind to canonical media eligibility, deny audio where the current canonical media catalogue contains only image objects, and test root registration plus author/tenant/recovery behavior. No new media registry.
+
+## Reproduced required build fixes — claimed before edits
+- package.json
+- services/gateway/src/modules/account/fan_setup_routes.test.ts
+- services/gateway/src/modules/admin_operations/routes.test.ts
+- services/gateway/src/modules/masana/following_routes.test.ts
+- services/gateway/src/modules/masana_chat/inbox_routes.ts
+- services/gateway/src/modules/notifications/delivery_preferences_routes.test.ts
+- services/gateway/src/modules/home_feed/saved_routes.ts
+Frozen install passes. Full root/gateway typecheck reveals undeclared fastify/missions dependencies and five stale fixture/type mismatches. Correct canonical fixtures and exact optional typing without relaxing tsconfig. Saved cursor-array regression reproduced; reject malformed query keys. Incoming Calls owns separate logic; approved Status root changes remain additive and must preserve its later integration.
