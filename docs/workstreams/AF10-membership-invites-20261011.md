@@ -48,3 +48,10 @@ Merge qualification scope: safe source-only consolidation onto the existing #655
 
 
 Final qualification clarification: generated Next/.dist build artifacts were preserved outside the source tree before rerunning API contract scanning. The deprecation-inventory check then PASSED; the remaining API contract failure is 74 unversioned legacy route declarations (including protected app.ts). No new Rooms route is among the offenders. Full-application result counts above describe the executed broad run, not a clean source-only baseline certificate. Production/main merge remains gated. Tested feature source is 1b79c3a009a7b83f535018a6a0b7bf30921c8108; subsequent commits here change this handoff only.
+
+
+## Confirmed source merge
+
+Owner-authorized PR #669 is MERGED. Source HEAD: f2951e3a11f09dc5b2ac4c391e30d1fac22cc57f. Merge commit: 3a067f57ca262ab113d5d0718ed1e1769c392c77. Target branch: lane/l-rooms-c38-saved-lessons-20261011-gpt6. Base before merge: 172b5bf9a8a1b94a475b5a053d42795e396182b3. The merged Git tree matched the qualified source tree on readback. This record-only commit follows that immutable merge.
+
+State: Rooms feature source consolidated; unified main integration NONE, application milestone PARTIAL_IMPLEMENTATION, production/device/Play NOT_VERIFIED. No main merge, production deployment or production migration occurred. Remaining root Gateway/auth/export/SQL registration and Room-detail bindings are explicit earlier checklist items for AF00; broad baseline failures are preserved, not weakened or marked passed. Next action: coordinator resumes #655/#625 integration from this merge and reconciles confirmed Chats/Status/Wallet/Calls/Rooms and retired consumer onboarding against current main. Never restore the old source branch consumer behavior wholesale.
