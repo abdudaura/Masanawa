@@ -2195,9 +2195,9 @@
       "branch": "lane/status-masana-authorization-20261011",
       "claim_id": "status-masana-authorization-20261011-codex",
       "claimed_at": "2026-10-11T20:44:30.844Z",
-      "expires_at": "2026-10-11T20:55:32.359Z",
-      "heartbeat_at": "2026-10-11T20:50:32.359Z",
-      "notes": "Actual CI reveals missing ')' in C23 signed media Slider; exact path claimed/read back ad98a44, fixed16973d1. Node11pass simulated, lockfile importer stops workspace TS/PG, shared router stale MyTwinRouteScreen remains coordinator; latest Flutter runner requested automatically by substantive push, waiting actual results.",
+      "expires_at": "2026-10-12T02:14:31.271Z",
+      "heartbeat_at": "2026-10-12T02:09:31.271Z",
+      "notes": "Continuation 2026-10-12: full checkout now available; repository-pinned standalone tools outside repo, feed tsc passed; existing PG18 tests claimed before edits, Docker local disposable test database only. Full Flutter8Status+4media passed CI on16973d1; shared lockfile/router still coordinator.",
       "owner": "Codex STATUS implementation window",
       "paths": [
         "packages/feed/src/index.ts",
@@ -2211,7 +2211,8 @@
         "docs/workstreams/STATUS-masana-authorization-20261011.md",
         "adapters/storage/postgres/src/home_feed/review_repository.ts",
         "adapters/storage/postgres/src/home_feed/review_repository.test.ts",
-        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart"
+        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
+        "adapters/storage/postgres/src/home_feed/feed.integration.test.ts"
       ],
       "scope": "Canonical Status feed authorization and recovery; previous overlapping feed owners explicitly released",
       "source_head": "16973d1e0ef81aae52218720a57bb48119a05b7d",
