@@ -54,3 +54,8 @@ Frozen install passes. Full root/gateway typecheck reveals undeclared fastify/mi
 - adapters/storage/postgres/src/account/fan_setup.test.ts
 - adapters/storage/postgres/src/masana_chat/message_actions.test.ts
 The PG adapter also imports missions without declaring it; strict test indices/optional values need correction. Retain assertions; no compiler flag relaxation.
+
+## Final worker compiler blockers — claimed before edits
+- services/worker/src/jobs/masana/follow_preference_policy.test.ts
+- services/worker/src/jobs/youtube_websub/outbox_runner.ts
+Missing Pool type import and exact optional timestamp typing. Preserve runtime claims/settlement behavior.
