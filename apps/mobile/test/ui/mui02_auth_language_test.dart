@@ -146,7 +146,7 @@ void main() {
               expect(tester.widget<TextButton>(picker).onPressed, isNotNull);
               final semantics = tester.ensureSemantics();
               expect(
-                tester.getSemantics(picker).hasAction(SemanticsAction.tap),
+                tester.getSemantics(picker).getSemanticsData().hasAction(SemanticsAction.tap),
                 isTrue,
               );
               semantics.dispose();
