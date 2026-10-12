@@ -3,15 +3,15 @@
 ## Identity and ownership
 
 Base: `1337917a7e063971fd083deb4d0ce4b59310b219` (delivered #687).
-Implementation/test SHA: **`e2950f41c96599a8223e089a9713318d780abf6d`** on `lane/af03-mui08-crypto-20261012`. PR and main merge recorded after publication.
-Implementation: **PARTIAL_IMPLEMENTATION** until source merge is recorded; bounded mounted presentation, not complete financial/provider acceptance.
+Implementation/test SHA: **`e2950f41c96599a8223e089a9713318d780abf6d`** on `lane/af03-mui08-crypto-20261012`. Exact [PR #688](https://github.com/weavewellindustrieslimited/masanawa/pull/688) head: **`113cd49602dd7632d66830b6806c4808549594d7`**. Normal expected-head merge at **`8ddcb5eac31459d90e52e940339668fca58e02eb`**, 2026-10-12. Both app/test blobs equal merged main exactly; no admin bypass, protection/test changes or forced push.
+Implementation: **INTEGRATED_SCOPED_SOURCE / PARTIAL_MUI08_ACCEPTANCE**. Bounded mounted presentation has executed simulated evidence; financial expiry/live/provider/combined/device acceptance remains open.
 Release: **NOT_RELEASED**. No signed installed app or provider execution.
 
 Read AGENTS, CONTINUE-HERE, multi-window rules, queue, next-window seed and MUI-03/07 handoffs. Latest Software Factory remains v0.4.4 at `b8e9437ea40ce22094758a4352d9c88462d3e17a`; read its AGENTS, skill, operating and verification references. Project owner policy authorizes normal main integration and governs superseded integration-only rules. Used executing-plans/TDD/verification skills; independent read-only reviewer required by those skills found no source blockers. Its Buy/Convert coverage suggestion was addressed.
 
 Fresh main and open PRs matched the supplied handoff. Factory claims still require bounded AF00 composition/auth/migration transfers and AF05 `main.ts` coordination. Latest paginated #616 comments contain the existing request [6128601248](https://github.com/weavewellindustrieslimited/masanawa/pull/616#issuecomment-6128601248), no new transfer. PR #497 unique source and narrow Chats recovery remain preserved. MUI-03 server-wide C10 inbox, MUI-04/06 composition and MUI-07 MSN/funding/Send remain open.
 
-Inspected PR #576 exact head `aa88511f4add1bbcf9e213283088fea5a6b0561b`, including its Crypto file diff: additive MSN readback is preserved in its branch, not imported or relabelled. No other unreleased claim overlaps this window's three paths. Exact CAS claim **`af03-mui08-crypto-20261012`** acquired at registry `af87cc3e0907220699007b064fa091348790360c9a`, with meaningful test/source checkpoints. Final release recorded after handoff integration.
+Inspected PR #576 exact head `aa88511f4add1bbcf9e213283088fea5a6b0561b`, including its Crypto file diff: additive MSN readback is preserved in its branch, not imported or relabelled. No other unreleased claim overlaps this window's three paths. Exact CAS claim **`af03-mui08-crypto-20261012`** acquired at registry `af87cc3e0907220699007b064fa091348790360c9a`, with meaningful test/source checkpoints. Release this exact claim after post-merge handoff integration; registry release checkpoint is published separately.
 
 ## Exact paths and behavior
 
@@ -34,7 +34,7 @@ Flutter **3.47.7** (`abaf9c5237`), Dart **3.13.5**, newly installed in `/workspa
 - Initial broader focused run: **131 PASS**, before three added Buy/Convert/outage cases. A later run with the additional cases failed only the new incorrect SelectableText test cast; fixed before final execution. No failed attempt is counted as a final pass.
 - Whole analysis remains non-clean. First full run: 323 diagnostics, including one introduced unnecessary test import; removed. Final focused analysis must be zero issues. Final full run: **322 diagnostics versus 324** on untouched fresh main `1337917a...` in a separate worktree with the same SDK. Compared severity/path/message sets: **zero introduced diagnostics**; the two original deprecated dropdown `value` diagnostics were removed. Global diagnostics are not suppressed.
 - `flutter build apk --debug --no-pub`: **BLOCKED**, `[!] No Android SDK found`. No APK/signing/device claim. No live financial provider, backend/PG execution or paid resource used.
-- Full Flutter suites **NOT_RERUN** for this presentation patch. Preserve exact previous [MUI-07 evidence](UI-MUI-07-wallet.md): baseline 496 passed/9 failed; implementation 524 passed/10 failed, with test-set caveat and successful unchanged audio rechecks. Those failures are not erased by this scoped run. Standard CI's existing whole-analyzer failures and TalkId TS2459 remain named debt; current PR runs recorded after push.
+- Full Flutter suites **NOT_RERUN** for this presentation patch. Preserve exact previous [MUI-07 evidence](UI-MUI-07-wallet.md): baseline 496 passed/9 failed; implementation 524 passed/10 failed, with test-set caveat and successful unchanged audio rechecks. Those failures are not erased by this scoped run. Standard CI's existing whole-analyzer failures and TalkId TS2459 remain named debt; PR [Foundation CI #38299948635](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38299948635) **FAILS** at unchanged `packages/agents/src/talk-replay.test.ts(6,8)` TS2459 (`TalkId` not exported), confirmed from executed job logs. [Mobile Build #38299948610](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38299948610) remains **IN_PROGRESS**, not passed, at handoff readback. Main runs [#38299985639](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38299985639) and [#38299986275](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38299986275) likewise IN_PROGRESS. Refresh actual results before claiming anything about standard CI.
 
 ## Acceptance and remaining owners
 
@@ -80,4 +80,50 @@ flutter test --no-pub --reporter expanded \
 flutter build apk --debug --no-pub
 ```
 
-Final raw local logs: `/workspace/scratch/mui08-{focused-verified,render-verified,analyze-verified,full-analyze-final,baseline-analyze,apk,rtl-red-corrected}.log`. Captures are synthetic fixtures under `/workspace/scratch`, not committed customer data. CI/release evidence and exact merged main identity follow after normal PR integration.
+Final raw local logs: `/workspace/scratch/mui08-{focused-verified,render-verified,analyze-verified,full-analyze-final,baseline-analyze,apk,rtl-red-corrected}.log`. Captures are synthetic fixtures under `/workspace/scratch`, not committed customer data. Source merge identity and observed CI state are recorded above. This documentation-only post-merge update changes no executable source.
+
+## Queue-aware next-window prompt
+
+```text
+Continue weavewellindustrieslimited/masanawa from fresh origin/main.
+Read AGENTS.md, CONTINUE-HERE.md, docs/MULTI-WINDOW-WORK.md,
+docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md,
+docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md,
+docs/workstreams/UI-MUI-03-chats.md, UI-MUI-07-wallet.md and
+UI-MUI-08-crypto.md (all milestone handoffs under docs/workstreams).
+Read latest Software Factory instructions and fresh PR heads/claims.
+
+MUI-08 bounded Crypto source e2950f41c96599a8223e089a9713318d780abf6d,
+PR #688 exact head 113cd49602dd7632d66830b6806c4808549594d7,
+source merge 8ddcb5eac31459d90e52e940339668fca58e02eb.
+Flutter3.47.7/Dart3.13.5:134 focused tests PASS,24 SDK-font fixture
+render cases PASS,focused analyzer zero issues;full analyzer322 versus
+324 fresh baseline,no new diagnostics. APK blocked:no Android SDK.
+No full-suite/provider/signed-phone/release claim. Refresh #688/main CI;
+existing global diagnostics and TalkId TS2459 remain named failures.
+Preserve MUI-07 #686 source416a2139 and #687 handoff; read its exact
+full-suite failure names,test-set caveat and successful audio rechecks.
+
+Prefer MUI-03 canonical C10 server-wide authenticated inbox when explicit
+AF00 composition/auth/migration and AF05 main.ts transfers are available.
+Preserve prior narrow claim recovery,#497 unique source and AF05 voice.
+MUI-04/06 need protected AF00 mounting;MUI-07 MSN/funding/Send needs
+AF01/AF00 reconciliation with #576 head aa88511f4add1bbcf9e213283088fea5a6b0561b.
+MUI-08 quote DTOs supply quotedAt but no expiry/bound-quote identity:
+AF01 must reconcile authoritative expiry;never invent it in presentation.
+If protected dependencies remain unavailable,next independent queue work
+is MUI-09 / AF13 bounded combined regression on integrated screens,
+using docs/workstreams/UI-MUI-09-verification.md after exact-path claims.
+Report unresolved source acceptance and obtain transfers for actual defects;
+continue useful executable work,not another planning/checker loop.
+
+Preserve five tabs,Chats default,Masana-only identities,Calls/native/group/
+incoming/billing,Status/media,Rooms,auth and finance. No second ledger,
+Cr-to-MSN relabel,fake data,unsupported actions or provider activation.
+Keep MUI-03/04/06/07/08 acceptance,MUI-09 combined keyboard/layout/RTL/
+account/locale checks,MUI-10 signed installed-source identity and AF11
+real device/provider qualification OPEN. Implement relevant source/tests,
+review,commit,push and merge compatible development work normally.
+Update selected milestone handoff,release ownership and print the next
+queue-aware continuation prompt directly with exact delivered identity.
+```
