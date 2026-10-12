@@ -20,3 +20,13 @@ A narrow transfer question is pending for original explicitly forbidden Gateway 
 - adapters/storage/postgres/src/home_feed/eligibility.ts
 - adapters/storage/postgres/src/home_feed/eligibility.test.ts
 Read existing approved active platform identity and cleared character_media for canonical service validation. No new table or authorization authority; binds only, deny unknown/foreign/unapproved records. These feature-owned selectors make the pending root patch concrete against the existing pool; app/main remain untouched.
+
+## Owner-approved narrow composition transfer — before root edits
+Owner answered the scope question: **Yes—complete the Status wiring and required build fixes**. Exact additional paths:
+- services/gateway/src/app.ts
+- services/gateway/src/main.ts
+- services/gateway/package.json
+- adapters/storage/postgres/src/index.ts
+- pnpm-lock.yaml
+- apps/mobile/pubspec.lock
+The mobile lockfile also has six proven missing declared-dependency entries (intl/localizations/webview), required for frozen resolution; include that bounded build fix under the owner's approved required-build scope. Bind canonical session + existing pool + existing feed/editorial services, export existing PG classes, add feed dependency and preserve all existing financial/call/auth behavior. No deployment or production migrations authorized; prohibited call-history/live-voice files remain untouched.
