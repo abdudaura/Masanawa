@@ -181,38 +181,38 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
                   for (var i = 0; i < 6; i++)
                     SizedBox(
                       width: boxWidth,
-                  child: TextField(
-                    controller: _boxes[i],
-                    focusNode: _boxFocus[i],
-                    autofocus: i == 0,
-                    obscureText: true,
-                    obscuringCharacter: '•',
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    // No length limiter: multi-char input is a paste and is
-                    // spread across boxes by _onBoxChanged.
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    onChanged: (_) => _onBoxChanged(i),
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      counterText: '',
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          MasanawaTokens.radius['md']!,
+                      child: TextField(
+                        controller: _boxes[i],
+                        focusNode: _boxFocus[i],
+                        autofocus: i == 0,
+                        obscureText: true,
+                        obscuringCharacter: '•',
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        // No length limiter: multi-char input is a paste and is
+                        // spread across boxes by _onBoxChanged.
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (_) => _onBoxChanged(i),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              MasanawaTokens.radius['md']!,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                ],
               );
             },
           ),
