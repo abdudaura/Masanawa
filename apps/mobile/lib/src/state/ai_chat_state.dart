@@ -14,6 +14,7 @@ import '../chat/chat_format.dart';
 import '../chat/message_parts.dart';
 import '../core/providers.dart';
 import '../core/live_pcm_audio.dart';
+import '../core/agent_audio_attachment.dart';
 import '../core/network/api_client.dart';
 import '../core/request_id.dart';
 import '../agents/agent_shell.dart';
@@ -1092,17 +1093,31 @@ class AiChatController extends Notifier<AiChatState> {
       );
       ChatAttachment? replyAudio;
       if (result.audioBytes case final audio? when audio.isNotEmpty) {
-        final dir = await getTemporaryDirectory();
-        final path =
-            '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
-        await File(path).writeAsBytes(audio, flush: true);
-        replyAudio = ChatAttachment(
-          kind: 'voice',
-          path: path,
-          durationMs: result.audioDurationMs,
-          sizeBytes: audio.length,
-          waveform: _pcmWaveform(audio),
-        );
+        // Voice-note and text replies can carry Gemini raw PCM, not a WAV
+        // container. A failed optional player attachment must never hide an
+        // already successful, persisted text reply.
+        try {
+          final playable = prepareAgentAudioAttachment(
+            audio,
+            mimeType: result.audioMimeType,
+          );
+          final dir = await getTemporaryDirectory();
+          final path =
+              '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.${playable.extension}';
+          await File(path).writeAsBytes(playable.bytes, flush: true);
+          replyAudio = ChatAttachment(
+            kind: 'voice',
+            path: path,
+            durationMs: result.audioDurationMs,
+            sizeBytes: playable.bytes.length,
+            waveform: playable.isWav
+                ? _pcmWaveform(playable.bytes)
+                : const [],
+          );
+        } catch (_) {
+          // Preserve the delivered conversation turn if provider audio has an
+          // unsupported format, is malformed, or cannot be cached locally.
+        }
       }
       if (streamMessageId != null) {
         await _finalizeAiStream(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:record/record.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:masanawa/src/core/voice_note_recorder.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
@@ -15,7 +16,46 @@ class _Recorder extends VoiceNoteRecorder {
  @override Future<void> cancel() async {cancelled=true;state=VoiceNoteState.idle;notifyListeners();}
  @override void retain() {}
 }
+class _PreviewAudio extends Mock implements AudioPlayer {}
+
 void main() {
+ testWidgets('finished recording can be previewed locally without uploading or starting a call', (tester) async {
+  final recorder = _Recorder();
+  final player = _PreviewAudio();
+  final sent = <ChatAttachment>[];
+  when(() => player.setFilePath(any())).thenAnswer((_) async => const Duration(seconds: 1));
+  when(() => player.play()).thenAnswer((_) async {});
+  when(() => player.dispose()).thenAnswer((_) async {});
+  await tester.pumpWidget(MaterialApp(theme:buildMasanawaTheme(brightness:Brightness.light),
+    home:Scaffold(body:VoiceNoteComposer(recorder:recorder,previewPlayer:player,
+      isOwnerCurrent:()=>true,onSend:(note) async {sent.add(note);return true;}))));
+  await tester.pumpAndSettle();
+  expect(find.text('Play voice note'),findsNothing);
+  await tester.tap(find.text('Stop'));
+  await tester.pumpAndSettle();
+  expect(find.text('Play voice note'),findsOneWidget);
+  await tester.tap(find.text('Play voice note'));
+  await tester.pumpAndSettle();
+  verify(() => player.setFilePath('/private/note.m4a')).called(1);
+  verify(() => player.play()).called(1);
+  expect(sent,isEmpty);
+  expect(tester.takeException(),isNull);
+ });
+ testWidgets('preview playback errors do not send recorded audio', (tester) async {
+  final recorder = _Recorder();
+  final player = _PreviewAudio();
+  when(() => player.setFilePath(any())).thenThrow(StateError('offline preview'));
+  when(() => player.dispose()).thenAnswer((_) async {});
+  var sent = false;
+  await tester.pumpWidget(MaterialApp(theme:buildMasanawaTheme(brightness:Brightness.light),
+    home:Scaffold(body:VoiceNoteComposer(recorder:recorder,previewPlayer:player,
+      isOwnerCurrent:()=>true,onSend:(_) async {sent=true;return true;}))));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Stop'));await tester.pumpAndSettle();
+  await tester.tap(find.text('Play voice note'));await tester.pumpAndSettle();
+  expect(find.textContaining('recording could not be played'),findsOneWidget);
+  expect(sent,false);
+ });
  for(final scale in [1.0,2.0]) {
   testWidgets('record then send dispatches one voice note at 320px ${scale}x', (tester) async {
    tester.view.physicalSize=const Size(320,800);tester.view.devicePixelRatio=1;
