@@ -44,6 +44,15 @@ describe("Status production composition source",()=>{
    databaseFactory:()=>database,logger:{info:()=>{},error:()=>{}},
    appFactory:options=>{composition=options;return {listen:async()=>"http://local",close:async()=>{}};}});
   expect(composition?.status?.media).toBeDefined();
+  // A mounted production Status backend must not bypass qualification by
+  // merely having an authenticated session and PostgreSQL repository.
+  expect(composition?.status?.enabled?.()).toBe(false);
+  const disabledApp=createGatewayApp({status:composition!.status!});
+  expect((await disabledApp.inject({method:"GET",url:"/v1/feed",
+    headers:{authorization:`Bearer msw_access_${"a".repeat(64)}`}})).statusCode).toBe(503);
+  expect(f.resolveAccess).not.toHaveBeenCalled();
+  expect(f.list).not.toHaveBeenCalled();
+  await disabledApp.close();
   await expect(composition!.status!.media!.sign({tenantId:"tenant_real",postId:"381026c2-9d56-47b1-b73d-1784e24e41e2",
    authorMasanaId:"masana",mediaId:"media_abcdefgh",kind:"image",transcript:null})).rejects.toThrow("status.media_store_unavailable");
   expect(composition?.status?.feed).toBeInstanceOf(FeedService);
@@ -65,8 +74,10 @@ describe("Status production composition source",()=>{
   const presignGet=vi.fn(async()=>({url:"https://media.example/signed",expiresAt:new Date(Date.now()+120000).toISOString()}));
   const processRef=()=>Object.assign(new EventEmitter(),{exitCode:undefined,exit:()=>{throw Error("unexpected exit");}}) as ServiceProcess;
   const settings={objects:{statObject,presignGet},approvedDownloadOrigins:["https://media.example"]};
-  const runtime=await startGatewayService({env:{NODE_ENV:"test"},processRef:processRef(),logger:{info:()=>{},error:()=>{}},
+  const runtime=await startGatewayService({env:{NODE_ENV:"test",MASANAWA_STATUS_BACKEND_ENABLED:"true"},
+   processRef:processRef(),logger:{info:()=>{},error:()=>{}},
    databaseFactory:()=>database,statusMedia:settings,appFactory:options=>{composition=options;return {listen:async()=>"http://local",close:async()=>{}};}});
+  expect(composition!.status!.enabled?.()).toBe(true);
   expect(await composition!.status!.media!.sign(post)).toMatchObject({contentType:"image/png",url:"https://media.example/signed"});
   expect(statObject).toHaveBeenCalledWith("canonical/image.png");expect(presignGet).toHaveBeenCalledWith("canonical/image.png",120);
   await runtime.shutdown();vi.mocked(database.close).mockClear();
