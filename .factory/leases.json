@@ -1666,28 +1666,6 @@
       "source_head": "c9d2b3a52f3aafaa04a2bb31e4c13f7d46700214"
     },
     {
-      "base_sha": "a69300264cdfa1a8a64f49efc21a308df13fb691",
-      "branch": "lane/l-rooms-c38-saved-lessons-20261011-gpt6",
-      "claim_id": "l-rooms-c38-account-key-hardening-20261011-gpt6",
-      "claimed_at": "2026-10-11T05:28:39.595Z",
-      "expires_at": "2026-10-11T05:33:39.595Z",
-      "heartbeat_at": "2026-10-11T05:28:39.595Z",
-      "integration_head_sha": null,
-      "owner": "GPT-6 / C38 review hardening",
-      "paths": [
-        "apps/mobile/lib/src/features/rooms/saved_lessons_client.dart",
-        "apps/mobile/lib/src/features/rooms/saved_lessons_screen.dart",
-        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
-        "apps/mobile/test/features/rooms/saved_lessons_screen_test.dart"
-      ],
-      "release_reason": "C38 reused same PR #655 to enforce route accountKey == client owner key and default-deny mismatch on read/write, test source added; no shared app/router/auth/financial edits; exact head 172b5bf9; no test toolchain or merge.",
-      "released_at": "2026-10-11T05:29:30.914Z",
-      "scope": "Close cross-account mismatch of SavedLessonsClient owner account key vs displayed route; existing PR #655 only, no AF00 shared edits",
-      "source_head_sha": "172b5bf9a8a1b94a475b5a053d42795e396182b3",
-      "source_pr": 655,
-      "test_state": "source regression authored only, executable Flutter/Android blocked, GitHub checks zero-step failures"
-    },
-    {
       "base_sha": "068c6ed787e2b7fd905a612e7771c9c1ddd0d6d5",
       "branch": "lane/l-video-a14-curation-pagination-20261011-gpt6-0629",
       "claim_id": "l-video-a14-admin-pagination-20261011-gpt6-0629",
@@ -2158,35 +2136,6 @@
       "test_state": "Documentation PASS; Foundation CI FAIL pre-existing TalkId TS2459; app/device/provider NOT_RUN"
     },
     {
-      "base_sha": "0053e8d4e",
-      "branch": "lane/af00-mui01-presentation-20261012",
-      "claim_id": "af00-mui01-presentation-20261012",
-      "claimed_at": "2026-10-12T13:16:42.900613+00:00",
-      "delivery_head_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
-      "expires_at": "2026-10-12T15:16:42.900613+00:00",
-      "heartbeat_at": "2026-10-12T13:38:44.939641+00:00",
-      "integration_head_sha": "18bdd8140a2bdf78b8cccfdb42a8030a5452d52c",
-      "notes": "No live path overlap. Recovery: historical AF00 root PR600 superseded by merged shell; preserve integration Status/media and Rooms source for domain milestones. No router/auth/financial edits.",
-      "owner": "AF00 / Codex MUI-01 presentation",
-      "paths": [
-        "apps/mobile/lib/src/theme/masanawa_theme.dart",
-        "apps/mobile/lib/src/ui/components/masanawa_wordmark.dart",
-        "apps/mobile/lib/src/ui/components/masanawa_main_header.dart",
-        "apps/mobile/lib/src/ui/components/conversation_search_field.dart",
-        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
-        "apps/mobile/lib/src/screens/calls/calls_screen.dart",
-        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
-        "apps/mobile/lib/src/shell/five_tab_shell.dart",
-        "apps/mobile/test/ui/mui01_presentation_test.dart",
-        "docs/workstreams/UI-MUI-01-foundation.md"
-      ],
-      "release_reason": "MUI01 merged normally in PR678; exact tested tree match at18bdd8140; handoff metadata PR679 mergedada66c61c.39focusedpass,13presentation cases,454globalpass/9baselinefail,329same analyzer diagnostics; fresh review separator correction pixel RED/GREEN. Rendered320/360/390/430 1x2x,RTL and allmainheaders. NoAndroidSDK/signeddevice/providerrelease. MUI02 next; full queue and remaining domain/combined/installed acceptance retained in UI-MUI-01-foundation.md. No router/auth/financial/backend/CI changes or admin bypass.",
-      "released_at": "2026-10-12T13:38:44.939641+00:00",
-      "scope": "Shared presentation only; preserve full Calls and domain behaviors",
-      "source_head": "3076b26056e6c1ad4e3958f1126e193198409b76",
-      "source_pr": 678
-    },
-    {
       "base_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
       "branch": "lane/af05-android-voice-repair-20261012",
       "claim_id": "af05-android-voice-repair-20261012",
@@ -2262,6 +2211,23 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
+    },
+    {
+      "claim_id": "af10-mui06-main-rooms-20261013-gpt6",
+      "owner": "AF10 / GPT-6 MUI-06 canonical Rooms",
+      "scope": "MUI-06/AF10: mount canonical persistent Rooms discovery/join/lessons and saved lessons, no shared AF00 gateway/migration/router writes; recover released C38 and MUI01 path records without discarding source",
+      "paths": [
+        "apps/mobile/lib/src/features/rooms/**",
+        "apps/mobile/test/features/rooms/**",
+        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
+        "apps/mobile/test/rooms_screen_test.dart",
+        "docs/workstreams/UI-MUI-06-rooms.md"
+      ],
+      "branch": "lane/af10-mui06-canonical-rooms-20261013",
+      "base_sha": "3fcd910ebe905a52f8fe011ee13cf81993e46aa1",
+      "claimed_at": "2026-10-13T05:22:41.406Z",
+      "heartbeat_at": "2026-10-13T05:22:41.406Z",
+      "expires_at": "2026-10-13T05:27:41.406Z"
     }
   ],
   "history": [
@@ -6044,6 +6010,59 @@
       "release_reason": "Scoped AF14 source and four authored tests committed; reviewed PR #696 exact head 2dd60197a4329db91fccfa97d38b86028c176199 merged normally at 09ffd7ed7ed67da8a842ab2d3af3c410e1e5b568, handoff integrated in main 00a1e84522f01451a7a6bfc344d021ec476efc0c; tests NOT_RUN Flutter/Dart absent, not device/provider qualified.",
       "integration_head_sha": "09ffd7ed7ed67da8a842ab2d3af3c410e1e5b568",
       "source_pr": 696
+    },
+    {
+      "base_sha": "a69300264cdfa1a8a64f49efc21a308df13fb691",
+      "branch": "lane/l-rooms-c38-saved-lessons-20261011-gpt6",
+      "claim_id": "l-rooms-c38-account-key-hardening-20261011-gpt6",
+      "claimed_at": "2026-10-11T05:28:39.595Z",
+      "expires_at": "2026-10-11T05:33:39.595Z",
+      "heartbeat_at": "2026-10-11T05:28:39.595Z",
+      "integration_head_sha": null,
+      "owner": "GPT-6 / C38 review hardening",
+      "paths": [
+        "apps/mobile/lib/src/features/rooms/saved_lessons_client.dart",
+        "apps/mobile/lib/src/features/rooms/saved_lessons_screen.dart",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/saved_lessons_screen_test.dart"
+      ],
+      "release_reason": "C38 reused same PR #655 to enforce route accountKey == client owner key and default-deny mismatch on read/write, test source added; no shared app/router/auth/financial edits; exact head 172b5bf9; no test toolchain or merge.",
+      "released_at": "2026-10-11T05:29:30.914Z",
+      "scope": "Close cross-account mismatch of SavedLessonsClient owner account key vs displayed route; existing PR #655 only, no AF00 shared edits",
+      "source_head_sha": "172b5bf9a8a1b94a475b5a053d42795e396182b3",
+      "source_pr": 655,
+      "test_state": "source regression authored only, executable Flutter/Android blocked, GitHub checks zero-step failures",
+      "recovery_note": "Published release evidence preserved in history during AF10 MUI-06 exact-path recovery; source #655 / #678 preserved."
+    },
+    {
+      "base_sha": "0053e8d4e",
+      "branch": "lane/af00-mui01-presentation-20261012",
+      "claim_id": "af00-mui01-presentation-20261012",
+      "claimed_at": "2026-10-12T13:16:42.900613+00:00",
+      "delivery_head_sha": "ada66c61ce7e34393aa452487da079cfb1d65fc1",
+      "expires_at": "2026-10-12T15:16:42.900613+00:00",
+      "heartbeat_at": "2026-10-12T13:38:44.939641+00:00",
+      "integration_head_sha": "18bdd8140a2bdf78b8cccfdb42a8030a5452d52c",
+      "notes": "No live path overlap. Recovery: historical AF00 root PR600 superseded by merged shell; preserve integration Status/media and Rooms source for domain milestones. No router/auth/financial edits.",
+      "owner": "AF00 / Codex MUI-01 presentation",
+      "paths": [
+        "apps/mobile/lib/src/theme/masanawa_theme.dart",
+        "apps/mobile/lib/src/ui/components/masanawa_wordmark.dart",
+        "apps/mobile/lib/src/ui/components/masanawa_main_header.dart",
+        "apps/mobile/lib/src/ui/components/conversation_search_field.dart",
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
+        "apps/mobile/lib/src/screens/calls/calls_screen.dart",
+        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
+        "apps/mobile/lib/src/shell/five_tab_shell.dart",
+        "apps/mobile/test/ui/mui01_presentation_test.dart",
+        "docs/workstreams/UI-MUI-01-foundation.md"
+      ],
+      "release_reason": "MUI01 merged normally in PR678; exact tested tree match at18bdd8140; handoff metadata PR679 mergedada66c61c.39focusedpass,13presentation cases,454globalpass/9baselinefail,329same analyzer diagnostics; fresh review separator correction pixel RED/GREEN. Rendered320/360/390/430 1x2x,RTL and allmainheaders. NoAndroidSDK/signeddevice/providerrelease. MUI02 next; full queue and remaining domain/combined/installed acceptance retained in UI-MUI-01-foundation.md. No router/auth/financial/backend/CI changes or admin bypass.",
+      "released_at": "2026-10-12T13:38:44.939641+00:00",
+      "scope": "Shared presentation only; preserve full Calls and domain behaviors",
+      "source_head": "3076b26056e6c1ad4e3958f1126e193198409b76",
+      "source_pr": 678,
+      "recovery_note": "Published release evidence preserved in history during AF10 MUI-06 exact-path recovery; source #655 / #678 preserved."
     }
   ],
   "schema_version": 1
