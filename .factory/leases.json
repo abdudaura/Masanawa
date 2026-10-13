@@ -1989,6 +1989,30 @@
       "integration_head_sha": "fd29f392156ab6f032fa66a4de6420b932d64507",
       "source_head": "c37d4a6a5a472b201e1dce0c33298036ee08ec8e",
       "source_pr": 709
+    },
+    {
+      "claim_id": "af01-wallet-credit-send-20261013-gpt6",
+      "owner": "AF01 Wallet Send / GPT-6",
+      "branch": "lane/af01-wallet-credit-send-20261013-gpt6",
+      "base_sha": "bf6c9f2386d5b7c22ad8eb6b035b949cdbd64269",
+      "paths": [
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/credit_transfer_routes.ts",
+        "services/gateway/src/credit_transfer_routes.test.ts",
+        "services/gateway/src/credit_transfer_composition.test.ts",
+        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
+        "apps/mobile/lib/src/screens/wallet/send_credits_sheet.dart",
+        "apps/mobile/test/ui/mui07_wallet_test.dart",
+        "apps/mobile/test/ui/af01_send_credits_test.dart",
+        ".github/workflows/af01-wallet-credit-send.yml",
+        "docs/workstreams/AF01-wallet-send-integration-20261013.md"
+      ],
+      "scope": "Wire existing Flutter Send Credits review-confirm-receipt to existing canonical Gateway credit transfer/postgres ledger with operator client/server default-off gates; no fiat/MSN provider activation",
+      "claimed_at": "2026-10-13T10:04:28.703Z",
+      "heartbeat_at": "2026-10-13T10:04:28.703Z",
+      "expires_at": "2026-10-13T10:14:28.703Z",
+      "notes": "Main #711 readback, no competing unreleased paths; scoped two-provider CI planned"
     }
   ],
   "history": [
