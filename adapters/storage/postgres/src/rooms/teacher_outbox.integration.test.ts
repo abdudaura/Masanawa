@@ -5,7 +5,7 @@ import {platformProductMigrationRoots} from "../readiness.js";
 import {runMigrations} from "../migrations.js";
 import {createPgRoomsRepository} from "./repository.js";
 import {createPgTeacherQueue} from "./teacher_outbox.js";
-import {createRoomTeacherWorker} from "../../../../services/worker/src/jobs/rooms/teacher.js";
+import {createRoomTeacherWorker} from "../../../../../services/worker/src/jobs/rooms/teacher.js";
 
 const connection=process.env.MASANAWA_TEST_DATABASE_URL;
 describe.skipIf(!connection)("actual PG18 Rooms customer question to Gemini-model response",()=>{
