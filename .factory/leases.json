@@ -2053,7 +2053,12 @@
         "adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts",
         "packages/commerce/migration_proposals/0112_msn_wallet.sql"
       ],
-      "scope": "Add MSN issuance invariant source/migration, trusted authenticated Gateway readback and opt-in Flutter UI with real PostgreSQL tests. Explicitly leave NGN funding/provider workers/crypto issuance/transfer disabled until proof."
+      "scope": "Add MSN issuance invariant source/migration, trusted authenticated Gateway readback and opt-in Flutter UI with real PostgreSQL tests. Explicitly leave NGN funding/provider workers/crypto issuance/transfer disabled until proof.",
+      "released_at": "2026-10-13T11:22:50.162Z",
+      "release_reason": "PR #713 reviewed and merged after final hosted PostgreSQL18/Vitest 34/34, Flutter 44/44, zero scoped Dart analysis at source 120de3b7785bdcf01e6178667566491b7965818e. Proposed schema NOT in auto-applied migrations; all MSN provider/funding/issuance/Send and both mobile/Gateway read flags remain default OFF.",
+      "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
+      "source_pr": 713,
+      "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
     }
   ],
   "history": [
