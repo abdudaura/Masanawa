@@ -1792,8 +1792,8 @@
       "branch": "lane/af00-status-rooms-chats-backend-20261013",
       "claim_id": "af00-j06-j07-c10-20261013",
       "claimed_at": "2026-10-13T06:01:47.593Z",
-      "expires_at": "2026-10-13T06:11:10.936Z",
-      "heartbeat_at": "2026-10-13T06:06:10.936Z",
+      "expires_at": "2026-10-13T06:16:08.112Z",
+      "heartbeat_at": "2026-10-13T06:11:08.112Z",
       "owner": "AF00 / GPT-6 owner-directed protected source composition",
       "paths": [
         "services/gateway/src/app.ts",
@@ -1820,7 +1820,7 @@
       ],
       "scope": "Selective J06 status / J07-J08-C38 rooms / C10 server-wide Chats backend, forward-only PG and disabled paid/publishing with current Calls preserved",
       "notes": "PR #616 comment 6139065553 approved bounded transfer; original AF05 native/voice and cloud branches stay intact. No whole-shell merge, production migrations/provider activation or known regressions. Source PRs #674/#676/#625/#655/#641.",
-      "source_head": "1481305f3f8963b33ef462188361ba67c9666d01"
+      "source_head": "b6e009feab11032ab0cd276be7beef983d8adad4"
     },
     {
       "claim_id": "af00-video-status-media-20261013-gpt6",
