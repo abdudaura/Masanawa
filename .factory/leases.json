@@ -2059,23 +2059,6 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
-    },
-    {
-      "claim_id": "af10-content-channel-autoconnect-20261013-gpt6",
-      "owner": "AF10/GPT-6 authenticated channel readiness",
-      "scope": "Remove redundant WhatsApp/Telegram manual boolean gate when secure provider credentials are configured; preserve webhook/admin checks",
-      "branch": "lane/af10-content-channel-autoconnect-20261013",
-      "base_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae",
-      "paths": [
-        "services/gateway/src/main.ts",
-        "docs/workstreams/AF10-channel-auto-activation-20261013.md",
-        ".github/workflows/status-video-integration.yml",
-        "services/gateway/src/channel_autoconnect.test.ts"
-      ],
-      "pr": "",
-      "claimed_at": "2026-10-13T14:46:15.293Z",
-      "heartbeat_at": "2026-10-13T14:47:07.701Z",
-      "expires_at": "2026-10-13T14:53:07.701Z"
     }
   ],
   "history": [
@@ -6709,6 +6692,25 @@
       "source_pr": 718,
       "source_head": "7d8418487342980970669ecb59fa6a4a580cb585",
       "integration_head_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae"
+    },
+    {
+      "claim_id": "af10-content-channel-autoconnect-20261013-gpt6",
+      "owner": "AF10/GPT-6 authenticated channel readiness",
+      "scope": "Remove redundant WhatsApp/Telegram manual boolean gate when secure provider credentials are configured; preserve webhook/admin checks",
+      "branch": "lane/af10-content-channel-autoconnect-20261013",
+      "base_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae",
+      "paths": [
+        "services/gateway/src/main.ts",
+        "docs/workstreams/AF10-channel-auto-activation-20261013.md",
+        ".github/workflows/status-video-integration.yml",
+        "services/gateway/src/channel_autoconnect.test.ts"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T14:46:15.293Z",
+      "heartbeat_at": "2026-10-13T14:47:07.701Z",
+      "expires_at": "2026-10-13T14:53:07.701Z",
+      "released_at": "2026-10-13T14:48:01.498Z",
+      "release_reason": "Audited Telegram and WhatsApp manual flags but source update blocked before commit by tool safety controls; no code changed, no provider activation performed, no PR created. Preserve current webhook/auth prerequisites and report remaining dependency."
     }
   ],
   "schema_version": 1
