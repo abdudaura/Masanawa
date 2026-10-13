@@ -2268,8 +2268,8 @@
       "branch": "lane/af13-profile-recovery-20261013",
       "claim_id": "1a24043d-9c4b-4dd9-a939-8ec5408f3748",
       "claimed_at": "2026-10-13T00:31:25Z",
-      "expires_at": "2026-10-13T00:39:25Z",
-      "heartbeat_at": "2026-10-13T00:34:25Z",
+      "expires_at": "2026-10-13T00:42:13Z",
+      "heartbeat_at": "2026-10-13T00:37:13Z",
       "owner": "AF13 profile recovery",
       "paths": [
         "apps/mobile/lib/src/screens/profile/edit_profile_screen.dart",
