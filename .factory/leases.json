@@ -1788,12 +1788,12 @@
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
     },
     {
-      "base_sha": "875654e90a192b82dcdaab05f1fb2b4e07e93202",
-      "branch": "lane/af00-status-rooms-chats-backend-20261013",
+      "base_sha": "19056110f5bd5ba24b5efba9339b06280ca5dd71",
+      "branch": "lane/af00-status-video-runtime-composition-20261013",
       "claim_id": "af00-j06-j07-c10-20261013",
       "claimed_at": "2026-10-13T06:01:47.593Z",
-      "expires_at": "2026-10-13T06:16:08.112Z",
-      "heartbeat_at": "2026-10-13T06:11:08.112Z",
+      "expires_at": "2026-10-13T10:15:04.014Z",
+      "heartbeat_at": "2026-10-13T06:15:04.014Z",
       "owner": "AF00 / GPT-6 owner-directed protected source composition",
       "paths": [
         "services/gateway/src/app.ts",
@@ -1816,37 +1816,16 @@
         "adapters/storage/postgres/package.json",
         "services/worker/package.json",
         "pnpm-lock.yaml",
-        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
-      ],
-      "scope": "Selective J06 status / J07-J08-C38 rooms / C10 server-wide Chats backend, forward-only PG and disabled paid/publishing with current Calls preserved",
-      "notes": "PR #616 comment 6139065553 approved bounded transfer; original AF05 native/voice and cloud branches stay intact. No whole-shell merge, production migrations/provider activation or known regressions. Source PRs #674/#676/#625/#655/#641.",
-      "source_head": "b6e009feab11032ab0cd276be7beef983d8adad4"
-    },
-    {
-      "claim_id": "af00-video-status-media-20261013-gpt6",
-      "owner": "AF00/VIDEO and Status media integration / GPT-6",
-      "branch": "lane/af00-video-status-media-20261013",
-      "base_sha": "875654e90a192b82dcdaab05f1fb2b4e07e93202",
-      "claimed_at": "2026-10-13T06:06:53.779Z",
-      "heartbeat_at": "2026-10-13T06:06:53.779Z",
-      "expires_at": "2026-10-13T09:06:53.779Z",
-      "scope": "Recover approved external video feature and Status audio playback, account-fenced app composition; feature-local Gateway/PG/worker sources, preserve AF00 root composition claim and no unsafe media URL",
-      "paths": [
-        "packages/external-videos/**",
+        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md",
         "services/gateway/src/modules/external_videos/**",
         "services/gateway/src/modules/youtube_websub/**",
-        "services/worker/src/jobs/external_videos/**",
-        "services/worker/src/jobs/youtube_websub/**",
         "adapters/storage/postgres/src/external_videos/**",
-        "apps/mobile/lib/src/features/videos/**",
-        "apps/mobile/test/features/videos/**",
-        "apps/mobile/pubspec.yaml",
-        "apps/mobile/lib/src/screens/status/status_screen.dart",
-        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
-        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
-        "apps/mobile/lib/src/core/status_audio_focus.dart",
-        "docs/workstreams/AF00-status-videos-audio-20261013.md"
-      ]
+        "packages/external-videos/**",
+        "services/worker/src/jobs/youtube_websub/**"
+      ],
+      "scope": "Selective J06 status / J07-J08-C38 rooms / C10 server-wide Chats backend, forward-only PG and disabled paid/publishing with current Calls preserved",
+      "notes": "Owner directs complete Status audio and Video Gateway/PG wiring after #699; prior AF00 source tree commit 1481305 preserved for selective recovery, existing explicit cloud/AF05 shared app.ts/main.ts transfer; preserve newer Calls and do not touch AF05 voice-path changes. No production S3 config inferred.",
+      "source_head": "b6e009feab11032ab0cd276be7beef983d8adad4"
     },
     {
       "base_sha": "875654e90a192b82dcdaab05f1fb2b4e07e93202",
@@ -6197,6 +6176,36 @@
       "scope": "Repair canonical official-video consumer end-to-end: valid Dio catalog/availability, mandatory fail-closed provider play admission, account-change safety, cursor/negative Flutter regression; reuse existing gateway/PG/recovery; AF00 owns protected router/composition.",
       "source_head": "2180744c780499989ddc85533e6c21b040ed1cdb",
       "source_pr": 664
+    },
+    {
+      "claim_id": "af00-video-status-media-20261013-gpt6",
+      "owner": "AF00/VIDEO and Status media integration / GPT-6",
+      "branch": "lane/af00-video-status-media-20261013",
+      "base_sha": "875654e90a192b82dcdaab05f1fb2b4e07e93202",
+      "claimed_at": "2026-10-13T06:06:53.779Z",
+      "heartbeat_at": "2026-10-13T06:06:53.779Z",
+      "expires_at": "2026-10-13T09:06:53.779Z",
+      "scope": "Recover approved external video feature and Status audio playback, account-fenced app composition; feature-local Gateway/PG/worker sources, preserve AF00 root composition claim and no unsafe media URL",
+      "paths": [
+        "packages/external-videos/**",
+        "services/gateway/src/modules/external_videos/**",
+        "services/gateway/src/modules/youtube_websub/**",
+        "services/worker/src/jobs/external_videos/**",
+        "services/worker/src/jobs/youtube_websub/**",
+        "adapters/storage/postgres/src/external_videos/**",
+        "apps/mobile/lib/src/features/videos/**",
+        "apps/mobile/test/features/videos/**",
+        "apps/mobile/pubspec.yaml",
+        "apps/mobile/lib/src/screens/status/status_screen.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_screen.dart",
+        "apps/mobile/lib/src/features/home_feed/feed_media_screen.dart",
+        "apps/mobile/lib/src/core/status_audio_focus.dart",
+        "docs/workstreams/AF00-status-videos-audio-20261013.md"
+      ],
+      "released_at": "2026-10-13T06:15:04.014Z",
+      "release_reason": "PR #699 video/audio UI and reusable server modules merged to main 19056110; app/server binding follows on AF00 composition scope",
+      "source_head_sha": "9c26389add5cb3a506ae6d67b1e48557a377d78e",
+      "merge_sha": "19056110f5bd5ba24b5efba9339b06280ca5dd71"
     }
   ],
   "schema_version": 1
