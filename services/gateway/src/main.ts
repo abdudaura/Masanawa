@@ -1,7 +1,11 @@
 import { FeedService, EditorialReviewService } from "@masanawa/feed";
+import { RoomError } from "@masanawa/rooms";
 import {
   PgHomeFeedRepository, PgEditorialReviewRepository, PgStatusEligibility,
   PgFeedMediaAuthorization, createPostgresVideoStore,
+  createPgRoomsRepository, createPgRoomDiscussionRepository,
+  createPgRoomBookmarkStore, createPgRoomMembershipRepository,
+  createMasanaInboxRepository,
 } from "@masanawa/postgres";
 import { createStatusMediaRuntime, type StatusMediaConfiguration } from "./modules/home_feed/media_runtime.js";
 import { createConfiguredStatusMedia } from "./modules/home_feed/media_environment.js";
@@ -312,6 +316,8 @@ export interface ServiceDatabaseDependency {
     published: PgFeedMediaAuthorization;
   };
   readonly videos?: ReturnType<typeof createPostgresVideoStore>;
+  /** Reuses the same canonical platform Pool for Rooms and C10. */
+  readonly featurePool?: Parameters<typeof createPgRoomsRepository>[0];
   readonly callHistory?: CallHistoryRepository & CallHistoryRecorder;
   readonly groupCalls?: GroupCallRepository;
   readonly incomingCalls?: IncomingRepository;
@@ -441,6 +447,7 @@ function createDefaultDatabaseDependency(
   const groupCalls = createPostgresGroupCallRepository(database.pool);
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    featurePool: database.pool,
     status: {
       feed: new PgHomeFeedRepository(database.pool),
       editorial: new PgEditorialReviewRepository(database.pool),
@@ -2316,6 +2323,76 @@ export async function startGatewayService(
       },
     } : undefined);
 
+
+  // One canonical signed-in fan and tenant authority, shared with Status and
+  // Videos. Feature flags default OFF; no Room paid/subscription activation.
+  const featurePool = database.featurePool;
+  const featureTenant = platformTenantId;
+  const resolveFeatureFan = async (authorizationHeader: string | undefined) => {
+    if (!authorizationHeader || !sessions || !featureTenant)
+      throw new CustomerAuthError("UNAUTHORIZED", 401);
+    const session = await sessions.authorize({ authorizationHeader });
+    if (session.tenantId !== featureTenant)
+      throw new CustomerAuthError("FORBIDDEN", 403);
+    return { tenantId: session.tenantId, userId: session.userId };
+  };
+  const roomsEnabled = () => env.MASANAWA_ROOMS_BACKEND_ENABLED === "true";
+  const rooms: GatewayAppOptions["rooms"] = options.appOptions?.rooms ??
+    (featurePool && sessions && featureTenant ? (() => {
+      const authorizeRoom = async (
+        header: string | undefined,
+        _capability: "rooms.read" | "rooms.join" | "rooms.ask" | "rooms.staff",
+      ) => {
+        try {
+          const session = await resolveFeatureFan(header);
+          // Never derive staff roles from headers, tokens' arbitrary claims,
+          // or client request bodies. Staff writes remain unavailable.
+          return { tenantId: session.tenantId, userId: session.userId, roles: [] };
+        } catch (error) {
+          if (error instanceof CustomerAuthError)
+            throw new RoomError(error.statusCode, error.code);
+          throw new RoomError(503, "rooms_auth_unavailable");
+        }
+      };
+      const eligibility = database.status?.eligibility ??
+        new PgStatusEligibility(featurePool);
+      return {
+        routes: {
+          repository: createPgRoomsRepository(featurePool),
+          authorize: authorizeRoom,
+          isApprovedMasana: (tenant: string, character: string) =>
+            eligibility.author(tenant, character),
+          enabled: roomsEnabled,
+        },
+        discussion: {
+          store: createPgRoomDiscussionRepository(featurePool),
+          authorize: authorizeRoom, enabled: roomsEnabled,
+        },
+        bookmarks: {
+          store: createPgRoomBookmarkStore(featurePool),
+          authorize: authorizeRoom, enabled: roomsEnabled,
+        },
+        membership: {
+          repository: createPgRoomMembershipRepository(featurePool),
+          authorize: authorizeRoom,
+          // Invitation/moderator lifecycle stays OFF until separately qualified.
+          enabled: () => false,
+        },
+      };
+    })() : undefined);
+  const masanaInbox: GatewayAppOptions["masanaInbox"] =
+    options.appOptions?.masanaInbox ??
+    (featurePool && sessions && featureTenant ? {
+      enabled: () => env.MASANAWA_CHATS_INBOX_ENABLED === "true",
+      resolveFan: async (header: string | undefined) => {
+        const session = await resolveFeatureFan(header);
+        return { tenantId: session.tenantId, fanUserId: session.userId };
+      },
+      // Message history remains in the original J03 journal. Hides require a
+      // separately qualified 0006 schema before they may be enabled.
+      inbox: createMasanaInboxRepository(featurePool, { hiddenTurnsReady: false }),
+    } : undefined);
+
   let app: ManagedNodeServer;
   try {
     incomingCalls = options.appOptions?.incomingCalls ??
@@ -2331,6 +2408,8 @@ export async function startGatewayService(
     app = appFactory({
       ...(status ? {status} : {}),
       ...(videos ? {videos} : {}),
+      ...(rooms ? {rooms} : {}),
+      ...(masanaInbox ? {masanaInbox} : {}),
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(accountDeletion ? { accountDeletion } : {}),

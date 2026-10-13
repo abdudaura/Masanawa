@@ -1,5 +1,10 @@
 import { registerStatusRuntime, type StatusRuntime } from "./modules/home_feed/runtime.js";
 import { registerExternalVideoRoutes } from "./modules/external_videos/routes.js";
+import { registerRoomsRoutes, type RoomsRoutePorts } from "./modules/rooms/routes.js";
+import { registerRoomDiscussionRoutes, type DiscussionRoutePorts } from "./modules/rooms/discussion_routes.js";
+import { registerRoomBookmarkRoutes, type RoomBookmarkPorts } from "./modules/rooms/bookmark_routes.js";
+import { registerRoomMembershipRoutes, type RoomMembershipRoutePorts } from "./modules/rooms/membership_routes.js";
+import { registerMasanaInboxRoutes, type MasanaInboxRoutesDeps } from "./modules/masana_chat/inbox_routes.js";
 import type { VideoStore } from "./modules/external_videos/service.js";
 import type { VideoPrincipal } from "./modules/external_videos/contract.js";
 import type { FastifyRequest } from "fastify";
@@ -99,6 +104,15 @@ export interface ReadinessCheck {
 
 export interface GatewayAppOptions {
   readonly status?: StatusRuntime;
+  /** One canonical session and PostgreSQL-backed inbox; no parallel journal. */
+  readonly masanaInbox?: MasanaInboxRoutesDeps;
+  /** Persistent Rooms; never reintroduce legacy live Talk as a Room. */
+  readonly rooms?: Readonly<{
+    routes: RoomsRoutePorts;
+    discussion: DiscussionRoutePorts;
+    bookmarks: RoomBookmarkPorts;
+    membership: RoomMembershipRoutePorts;
+  }>;
   readonly videos?: {
     store: VideoStore;
     resolvePrincipal: (request: FastifyRequest) => Promise<VideoPrincipal>;
@@ -1519,6 +1533,13 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   }
   if (options.videos) {
     app.register(async scope => { registerExternalVideoRoutes(scope, options.videos!); });
+  }
+  if (options.masanaInbox) registerMasanaInboxRoutes(app, options.masanaInbox);
+  if (options.rooms) {
+    registerRoomsRoutes(app, options.rooms.routes);
+    registerRoomDiscussionRoutes(app, options.rooms.discussion);
+    registerRoomBookmarkRoutes(app, options.rooms.bookmarks);
+    registerRoomMembershipRoutes(app, options.rooms.membership);
   }
   if (options.callHistory) registerCallHistoryRoutes(app, options.callHistory);
   if (options.groupCalls) registerGroupCallRoutes(app, options.groupCalls);
