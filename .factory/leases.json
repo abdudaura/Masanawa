@@ -2076,8 +2076,8 @@
       "base_sha": "ce7f4a9df38262b00c9fab78986143e6ccdf760c",
       "branch": "lane/af01-msn-reconciliation-20261013-gpt6",
       "claimed_at": "2026-10-13T15:24:56.460Z",
-      "heartbeat_at": "2026-10-13T15:26:20.460Z",
-      "expires_at": "2026-10-13T15:31:20.460Z",
+      "heartbeat_at": "2026-10-13T15:29:46.392Z",
+      "expires_at": "2026-10-13T15:34:46.392Z",
       "notes": "Fresh main #720; #714/#715 integrated. Staged 0112 remains outside production. No shared composition ownership or paid provider access."
     }
   ],
