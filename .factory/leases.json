@@ -1970,32 +1970,6 @@
       "source_head": "c87a433d12f9aaaf26783d8aa112cb9731f42721",
       "integration_head_sha": "ce0f65f769ed3d2bfd18ea2ff543bd5150e8b4e6",
       "source_pr": 727
-    },
-    {
-      "claim_id": "af07-masana-room-deeplink-20261013-gpt6",
-      "owner": "AF07/GPT-6 Masana per-character Room navigation",
-      "scope": "Canonical batch Room ID directory readback and authenticated Flutter navigation from professional Masana chats/profiles to each matching published Room",
-      "branch": "lane/af07-masana-room-directory-deeplink-20261013-gpt6",
-      "base_sha": "0bec155321b385f20dc9344e761525bc7db72215",
-      "paths": [
-        "services/gateway/src/agent_directory.ts",
-        "services/gateway/src/agent_directory.test.ts",
-        "services/gateway/src/agent_directory_rooms.ts",
-        "services/gateway/src/agent_directory_rooms.test.ts",
-        "services/gateway/src/main.ts",
-        "apps/mobile/lib/src/agents/agent_directory.dart",
-        "apps/mobile/lib/src/screens/chat/masana_list_screen.dart",
-        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
-        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
-        "apps/mobile/lib/src/router/app_router.dart",
-        "apps/mobile/test/masana_room_link_test.dart",
-        ".github/workflows/masana-roster-integration.yml",
-        "docs/workstreams/AF07-professional-masana-room-navigation-20261013.md"
-      ],
-      "pr": "",
-      "claimed_at": "2026-10-13T16:35:47.170Z",
-      "heartbeat_at": "2026-10-13T16:35:47.170Z",
-      "expires_at": "2026-10-13T17:20:47.170Z"
     }
   ],
   "history": [
@@ -7005,6 +6979,36 @@
       "release_reason": "PR #725 source 18e9fefc5cb876e77a3368aa4f74c1ba05801a4f tested Gateway/Worker, 23 agent/auth tests, 3 real PG18 catalog tests, 3 teacher worker tests, focused Flutter tests PASSED; merged main 0bec155321b385f20dc9344e761525bc7db72215. Android APK compilation job in progress and NOT yet verified; Railway/Gemini device acceptance open.",
       "integration_head_sha": "0bec155321b385f20dc9344e761525bc7db72215",
       "source_pr": 725
+    },
+    {
+      "claim_id": "af07-masana-room-deeplink-20261013-gpt6",
+      "owner": "AF07/GPT-6 Masana per-character Room navigation",
+      "scope": "Canonical batch Room ID directory readback and authenticated Flutter navigation from professional Masana chats/profiles to each matching published Room",
+      "branch": "lane/af07-masana-room-directory-deeplink-20261013-gpt6",
+      "base_sha": "0bec155321b385f20dc9344e761525bc7db72215",
+      "paths": [
+        "services/gateway/src/agent_directory.ts",
+        "services/gateway/src/agent_directory.test.ts",
+        "services/gateway/src/agent_directory_rooms.ts",
+        "services/gateway/src/agent_directory_rooms.test.ts",
+        "services/gateway/src/main.ts",
+        "apps/mobile/lib/src/agents/agent_directory.dart",
+        "apps/mobile/lib/src/screens/chat/masana_list_screen.dart",
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/test/masana_room_link_test.dart",
+        ".github/workflows/masana-roster-integration.yml",
+        "docs/workstreams/AF07-professional-masana-room-navigation-20261013.md"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T16:35:47.170Z",
+      "heartbeat_at": "2026-10-13T16:35:47.170Z",
+      "expires_at": "2026-10-13T17:20:47.170Z",
+      "released_at": "2026-10-13T16:48:27.637Z",
+      "release_reason": "PR #728 passed dedicated production Gateway/Worker builds, 26 roster/agent-room Vitest, PG18, Flutter and Dart analysis; exact source 5b6e2315177090431a63080e4c6249a2de993faa merged main 6ed4af48fe4ea2fc53c8447dc83434c9c86d25e3. No production Railway/provider acceptance.",
+      "integration_head_sha": "6ed4af48fe4ea2fc53c8447dc83434c9c86d25e3",
+      "source_pr": 728
     }
   ],
   "schema_version": 1
