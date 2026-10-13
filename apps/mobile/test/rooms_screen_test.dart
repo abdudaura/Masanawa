@@ -138,6 +138,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('pushed private Room detail unmounts after account switch',
+      (tester) async {
+    final rooms = _Rooms()..joined = true;
+    final container = await _mount(tester, rooms);
+    await tester.tap(find.text('Mathematics'));
+    await tester.pumpAndSettle();
+    expect(find.text('Introduction to algebra'), findsOneWidget);
+    (container.read(sessionProvider.notifier) as _Session).switchTo('fan-b');
+    await tester.pumpAndSettle();
+    expect(find.text('Introduction to algebra'), findsNothing);
+    expect(find.text('Session changed. Sign in to view this Room.'),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('old account cannot join after identity changes', (tester) async {
     final rooms = _Rooms();
     var account = 'fan-a';
