@@ -4,6 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/features/videos/video_models.dart';
 import 'package:masanawa/src/features/videos/official_video_player_screen.dart';
 
+Future<void> _useTallVideoViewport(WidgetTester tester) async {
+  await tester.binding.setSurfaceSize(const Size(800, 950));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+}
+
 void main() {
   final video = ExternalVideo(
     id: '11111111-1111-4111-8111-111111111111',
@@ -20,6 +25,7 @@ void main() {
   );
 
   testWidgets('C29: withdrawn item never creates a player', (tester) async {
+    await _useTallVideoViewport(tester);
     var calls = 0;
     await tester.pumpWidget(player((id) async {
       calls++;
@@ -36,6 +42,7 @@ void main() {
 
   testWidgets('C29: connection error never assumes available; retry rechecks',
       (tester) async {
+    await _useTallVideoViewport(tester);
     var tries = 0;
     await tester.pumpWidget(player((_) async {
       tries++;
@@ -58,6 +65,7 @@ void main() {
 
   testWidgets('C29: stale checks cannot reopen player after widget replacement',
       (tester) async {
+    await _useTallVideoViewport(tester);
     final pending = <void Function(bool)>[];
     Future<bool> delayed(String _) {
       final pendingCheck = Completer<bool>();
@@ -75,6 +83,7 @@ void main() {
   });
   testWidgets('C29: missing authenticated verifier stays fail-closed',
       (tester) async {
+    await _useTallVideoViewport(tester);
     await tester.pumpWidget(MaterialApp(home: OfficialVideoPlayerScreen(
       video: video,
       embedBuilder: (_) => const Text('Official iframe'),
@@ -93,6 +102,7 @@ void main() {
 
   testWidgets('C29: opening at source rechecks approval after catalog fetch',
       (tester) async {
+    await _useTallVideoViewport(tester);
     var checked = 0;
     Uri? opened;
     await tester.pumpWidget(MaterialApp(home: OfficialVideoPlayerScreen(
@@ -116,6 +126,7 @@ void main() {
 
   testWidgets('C29: approved external open uses canonical provider URL',
       (tester) async {
+    await _useTallVideoViewport(tester);
     Uri? opened;
     var checked = 0;
     await tester.pumpWidget(MaterialApp(home: OfficialVideoPlayerScreen(
@@ -133,6 +144,7 @@ void main() {
 
   testWidgets('C29: stale external approval cannot open after account remount',
       (tester) async {
+    await _useTallVideoViewport(tester);
     final pending = Completer<bool>();
     Uri? opened;
     Widget mount(Future<bool> Function(String) check) => MaterialApp(
