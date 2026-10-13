@@ -1989,23 +1989,6 @@
       "integration_head_sha": "fd29f392156ab6f032fa66a4de6420b932d64507",
       "source_head": "c37d4a6a5a472b201e1dce0c33298036ee08ec8e",
       "source_pr": 709
-    },
-    {
-      "claim_id": "af00-status-rooms-staff-20261013-gpt6",
-      "owner": "AF00 / GPT-6 status-room staff integration",
-      "scope": "Canonical signed-in content-editor Room creation/moderation with default-off staff gate and default-off Status backend; preserve customer tenants and worker/paid gates",
-      "branch": "lane/af00-status-rooms-staff-20261013-gpt6",
-      "base_sha": "fd29f392156ab6f032fa66a4de6420b932d64507",
-      "paths": [
-        "services/gateway/src/main.ts",
-        "services/gateway/src/modules/home_feed/composition.test.ts",
-        "services/gateway/src/modules/rooms/routes.test.ts",
-        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
-      ],
-      "claimed_at": "2026-10-13T09:43:23.013Z",
-      "heartbeat_at": "2026-10-13T09:44:16.521Z",
-      "expires_at": "2026-10-13T09:49:16.521Z",
-      "notes": "AF00 shared Gateway main composition; latest main checked; unclaimed exact files; no providers/production flags activated"
     }
   ],
   "history": [
@@ -6443,6 +6426,28 @@
       "integration_head_sha": "174c7d1b633a15607e069a0205269baf414e3b95",
       "released_at": "2026-10-13T06:57:49.061Z",
       "release_reason": "PR #704 normal merge on main 174c7d1; hosted exact-source 37ff01b8 Node24/pnpm12/PG18 focused 62/62 tests, including fresh+upgrade and deny/default-off; later handoff-only commit keeps source blobs. Strict whole Gateway legacy 75 diagnostics and Foundation TalkId TS2459 remain failed; Flutter/device/provider not run. C10 Flutter remote inbox and other work remain open."
+    },
+    {
+      "claim_id": "af00-status-rooms-staff-20261013-gpt6",
+      "owner": "AF00 / GPT-6 status-room staff integration",
+      "scope": "Canonical signed-in content-editor Room creation/moderation with default-off staff gate and default-off Status backend; preserve customer tenants and worker/paid gates",
+      "branch": "lane/af00-status-rooms-staff-20261013-gpt6",
+      "base_sha": "fd29f392156ab6f032fa66a4de6420b932d64507",
+      "paths": [
+        "services/gateway/src/main.ts",
+        "services/gateway/src/modules/home_feed/composition.test.ts",
+        "services/gateway/src/modules/rooms/routes.test.ts",
+        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
+      ],
+      "claimed_at": "2026-10-13T09:43:23.013Z",
+      "heartbeat_at": "2026-10-13T09:44:16.521Z",
+      "expires_at": "2026-10-13T09:49:16.521Z",
+      "notes": "AF00 shared Gateway main composition; latest main checked; unclaimed exact files; no providers/production flags activated",
+      "released_at": "2026-10-13T09:50:24.539Z",
+      "release_reason": "PR #710 merged normally. Source d9fd0ba0361e8c4e32c7be0b00d2aa4620b62d67; main 472bc3d9ba99c2b7d58808c3e3540064f603781d; hosted 20 suites 84 tests PASS real PG18.6; 75 unrelated Gateway global TS diagnostics; no enabled provider/production/device qualification.",
+      "source_pr": 710,
+      "source_head": "d9fd0ba0361e8c4e32c7be0b00d2aa4620b62d67",
+      "integration_head_sha": "472bc3d9ba99c2b7d58808c3e3540064f603781d"
     }
   ],
   "schema_version": 1
