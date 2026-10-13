@@ -1836,6 +1836,23 @@
       ],
       "notes": "Bounded AF00 shared transfer acknowledged #616 comment 6139065553; previously released af00-j06-j07-c10-20261013 source retained #700; AF05 live voice and Calls untouched. No provider or destructive migrations.",
       "source_pr": 700
+    },
+    {
+      "base_sha": "c64994837d3a1a19bd065f94c241178aa512e53d",
+      "branch": "recover/af14-notification-account-20261013",
+      "claim_id": "af14-notification-source-recovery-20261013",
+      "claimed_at": "2026-10-13T06:43:39.571Z",
+      "expires_at": "2026-10-13T06:48:39.571Z",
+      "heartbeat_at": "2026-10-13T06:43:39.571Z",
+      "owner": "GPT-6 / AF14 notification recovery",
+      "paths": [
+        "apps/mobile/lib/src/account_preferences/notification_switch_controller.dart",
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/test/audio_first/af14/notification_switch_controller_test.dart",
+        ".github/workflows/mobile-notification-regression.yml"
+      ],
+      "scope": "Reconcile source-only PR #606 notification account fence and OS permission verification into current Settings without losing newer settings/customer controls; run relevant Flutter tests, merge main.",
+      "notes": "Reviewed original PR #606 head 19d29dd2a8da; source unmerged, no active competing exact-path claims. Keep original PR open until merged recovery verified; do not restore stale full settings file."
     }
   ],
   "history": [
