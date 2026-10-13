@@ -21,7 +21,9 @@ class MasanawaStartupMetrics {
 
   static void afterFrame(String milestone) {
     if (kReleaseMode || _emitted.contains(milestone) ||
-        !_scheduled.add(milestone)) return;
+        !_scheduled.add(milestone)) {
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scheduled.remove(milestone);
       mark(milestone);
