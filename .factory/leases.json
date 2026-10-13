@@ -2262,6 +2262,22 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
+    },
+    {
+      "base_sha": "7620ed05200a1e3ca41a746e6d4801fc07e3d6c8",
+      "branch": "lane/af13-profile-recovery-20261013",
+      "claim_id": "1a24043d-9c4b-4dd9-a939-8ec5408f3748",
+      "claimed_at": "2026-10-13T00:31:25Z",
+      "expires_at": "2026-10-13T00:36:25Z",
+      "heartbeat_at": "2026-10-13T00:31:25Z",
+      "owner": "AF13 profile recovery",
+      "paths": [
+        "apps/mobile/lib/src/screens/profile/edit_profile_screen.dart",
+        "apps/mobile/test/edit_profile_screen_test.dart",
+        "docs/workstreams/UI-MUI-09-verification.md"
+      ],
+      "pr": "",
+      "scope": "Bounded AF14 transfer: first-time profile creation/save/reload; recover released 460 tests"
     }
   ],
   "history": [
