@@ -6,8 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../screens/calls/calls_screen.dart';
 import '../screens/chat/chat_list_screen.dart';
 import '../screens/rooms/rooms_screen.dart';
-import '../screens/talks/talk_home_screen.dart';
-import '../talks/talk_models.dart';
+import '../screens/status/status_screen.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../screens/twin/shell_tab.dart';
 import '../ui/components/masanawa_main_header.dart';
@@ -56,13 +55,7 @@ class _FiveTabShellState extends ConsumerState<FiveTabShell> {
 
   Widget _page(int index) => switch (index) {
     0 => const ChatListScreen(),
-    1 => TalkHomeScreen(
-      onOpenTalk: (TalkDiscoveryItem talk) =>
-          context.push('/talk/' + Uri.encodeComponent(talk.id)),
-      onOpenSearch: () => context.push('/search'),
-      onOpenGwani: () => context.push('/billing'),
-      embeddedInShell: true,
-    ),
+    1 => const StatusScreen(),
     2 => WalletScreen(
       embeddedInShell: true,
       onOpenCrypto: () => context.push('/crypto'),
@@ -92,11 +85,6 @@ class _FiveTabShellState extends ConsumerState<FiveTabShell> {
           tooltip: 'New chat',
           onPressed: () => context.push('/masana'),
           child: const Icon(Icons.chat_rounded),
-        ),
-        1 => FloatingActionButton(
-          tooltip: 'New status',
-          onPressed: () => context.push('/talk/create'),
-          child: const Icon(Icons.add_rounded),
         ),
         _ => null,
       },
