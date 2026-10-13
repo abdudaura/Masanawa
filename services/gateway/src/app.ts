@@ -63,6 +63,7 @@ import { registerMyTwinProjectionRoutes } from "./my_twin_projection_routes.js";
 import { registerTwinActivityRoutes } from "./twin_activity_routes.js";
 import { registerWalletProjectionRoutes } from "./wallet_projection_routes.js";
 import { registerCreditTransferRoutes, registerGiftRoutes } from "./credit_transfer_routes.js";
+import { registerMsnBalanceRoutes, type MsnBalanceAuthority, type MsnBalanceReader } from "./msn_wallet/routes.js";
 import { registerTwinAttributionRoutes, registerCommissionPolicyAdminRoutes } from "./twin_attribution_routes.js";
 import { registerProviderValuationAdminRoutes } from "./provider_valuation_admin_routes.js";
 import { registerPaidVoiceRoutes, registerPaidVoiceSettlementRoutes } from "./paid_voice_routes.js";
@@ -161,6 +162,9 @@ export interface GatewayAppOptions {
     ) => Promise<boolean>;
   }>;
   readonly twinProduction?: TwinProductionRuntime;
+  /** Read-only off-chain MSN. No issuance authority in a customer route. */
+  readonly msnBalance?: Readonly<{ authorizer: MsnBalanceAuthority; ledger: MsnBalanceReader }>;
+
   /** Operator-verified legacy Credit Send; never inferred from Wallet mount. */
   readonly walletCreditSendEnabled?: boolean;
 }
@@ -1608,6 +1612,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   if (options.linkedWhatsApp) {
     registerLinkedWhatsAppAdminRoutes(app, options.linkedWhatsApp);
+  }
+
+  if (options.msnBalance) {
+    registerMsnBalanceRoutes(app, options.msnBalance);
   }
 
   if (options.twinProduction) {

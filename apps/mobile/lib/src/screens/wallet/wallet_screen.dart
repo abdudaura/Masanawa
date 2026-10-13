@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../commerce/wallet_models.dart';
+import '../../core/network/api_client.dart';
+import '../../core/providers.dart';
+import '../../finance/msn_balance_card.dart';
+import '../../finance/msn_balance_transport.dart';
 import '../../state/session_state.dart';
 import 'send_credits_sheet.dart';
 import 'wallet_receipt_sheet.dart';
@@ -15,6 +19,12 @@ const bool kWalletCreditSendEnabled = bool.fromEnvironment(
   'MASANAWA_WALLET_CREDIT_SEND_ENABLED', defaultValue: false,
 );
 
+/// Exact MSN uses its own off-chain asset, not existing Credits.
+/// Production Wallet does not reveal this until qualified and enabled.
+const bool kWalletMsnBalanceEnabled = bool.fromEnvironment(
+  'MASANAWA_MSN_BALANCE_ENABLED', defaultValue: false,
+);
+
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({
     super.key,
@@ -26,6 +36,7 @@ class WalletScreen extends ConsumerWidget {
     this.onOpenBillingService,
     this.embeddedInShell = false,
     this.walletCreditSendEnabled = kWalletCreditSendEnabled,
+    this.walletMsnBalanceEnabled = kWalletMsnBalanceEnabled,
   });
 
   final VoidCallback? onAddMoney;
@@ -40,12 +51,13 @@ class WalletScreen extends ConsumerWidget {
   /// Root owns the header when this surface is selected as a bottom tab.
   final bool embeddedInShell;
   final bool walletCreditSendEnabled;
+  final bool walletMsnBalanceEnabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final wallet = ref.watch(walletProvider);
-    final accountId = walletCreditSendEnabled
+    final accountId = (walletCreditSendEnabled || walletMsnBalanceEnabled)
         ? switch (ref.watch(sessionProvider)) {
             SessionSignedIn(:final user) => user.id,
             _ => null,
@@ -140,6 +152,15 @@ class WalletScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               children: [
                 _Balances(view: value),
+                if (walletMsnBalanceEnabled && accountId != null)
+                  MsnBalanceCard(
+                    sessionIdentity: accountId,
+                    transport: GatewayMsnBalanceTransport(
+                      dio: ref.watch(dioProvider),
+                      baseUrl: kApiBaseUrl,
+                      readAccessToken: () => ref.read(apiClientProvider).accessToken,
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 WalletServiceShortcuts(
                   onOpenCrypto: onOpenCrypto,
