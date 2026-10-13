@@ -44,35 +44,82 @@ class ApiClient {
     dio.interceptors.add(
       QueuedInterceptorsWrapper(
         onRequest: (options, handler) {
+          // A retry retains the original epoch. A queued request from A must
+          // never be dispatched using B's bearer after an account switch.
+          if (_isProtected(options.path)) {
+            final expected = options.extra.putIfAbsent(
+              _requestEpochKey, () => _sessionEpoch,
+            );
+            if (expected != _sessionEpoch) {
+              handler.reject(_accountChanged(options));
+              return;
+            }
+          }
           final token = accessToken;
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+          } else {
+            options.headers.remove('Authorization');
           }
           handler.next(options);
         },
+        onResponse: (response, handler) {
+          if (_isStale(response.requestOptions)) {
+            handler.reject(_accountChanged(response.requestOptions));
+          } else {
+            handler.next(response);
+          }
+        },
         onError: (e, handler) async {
-          final path = e.requestOptions.path;
+          final options = e.requestOptions;
+          if (_isStale(options)) {
+            handler.reject(_accountChanged(options));
+            return;
+          }
+          final path = options.path;
           final canRefresh = onUnauthorized != null &&
+              _isProtected(path) &&
+              options.headers['Authorization'] is String &&
               !path.contains('/auth/refresh') &&
               !path.contains('/auth/otp') &&
               !path.contains('/auth/verify');
           if (e.response?.statusCode == 401 &&
               canRefresh &&
-              e.requestOptions.extra['masanawaAuthRetried'] != true) {
+              options.extra['masanawaAuthRetried'] != true) {
+            final originalEpoch = _sessionEpoch;
             try {
-              final newToken = await refreshAuthorization();
-              if (newToken != null && newToken.isNotEmpty) {
-                accessToken = newToken;
-                final opts = e.requestOptions;
-                opts.headers['Authorization'] = 'Bearer $newToken';
-                opts.extra['masanawaAuthRetried'] = true;
-                final retried = await dio.fetch(opts);
+              // Another in-session request may already have refreshed the
+              // token. Reuse its result rather than rotating refresh twice.
+              final sentBearer = options.headers['Authorization'];
+              final current = accessToken;
+              final rotated = current != null &&
+                      sentBearer != 'Bearer $current'
+                  ? current
+                  : await refreshAuthorization();
+              if (originalEpoch != _sessionEpoch) {
+                handler.reject(_accountChanged(options));
+                return;
+              }
+              if (rotated != null && rotated.isNotEmpty) {
+                // The session controller usually persists this; the transport
+                // also supports its existing direct callback contract.
+                _accessToken = rotated;
+                options.headers['Authorization'] = 'Bearer $rotated';
+                options.extra['masanawaAuthRetried'] = true;
+                final retried = await dio.fetch(options);
+                if (originalEpoch != _sessionEpoch) {
+                  handler.reject(_accountChanged(options));
+                  return;
+                }
                 handler.resolve(retried);
                 return;
               }
             } catch (_) {
-              // Refresh failed → the original 401 propagates (the session
-              // controller already cleared the session on its side).
+              if (originalEpoch != _sessionEpoch) {
+                handler.reject(_accountChanged(options));
+                return;
+              }
+              // Preserve the original 401; do not replay uncertain writes.
             }
           }
           handler.next(e);
@@ -81,30 +128,76 @@ class ApiClient {
     );
   }
 
+  static const _requestEpochKey = 'masanawaAuthenticatedRequestEpoch';
   final Dio dio;
   Future<String?>? _authorizationRefresh;
+  int? _refreshEpoch;
+  int _sessionEpoch = 0;
+  String? _accountId;
+  String? _accessToken;
 
-  /// Access token attached to protected requests by the session controller.
-  String? accessToken;
+  /// Session identity comes only from the canonical session controller. It is
+  /// not derived from caller headers, claims, or the request. Logout/re-login
+  /// (even to the same fan) invalidates every earlier private response.
+  String? get authenticatedAccountId => _accountId;
+  set authenticatedAccountId(String? id) {
+    if (_accountId == id && id != null) return;
+    _accountId = id;
+    _sessionEpoch++;
+    _authorizationRefresh = null;
+    _refreshEpoch = null;
+  }
 
-  /// Called by the interceptor on a 401 to rotate the session; returns the new
-  /// access token or null when rotation fails (sign-out). Wired by the session
-  /// controller — never set by API surfaces.
+  /// Existing agent/channel transports keep reading this current bearer.
+  /// Direct token replacement without a bound session is conservatively
+  /// treated as a different authorization context.
+  String? get accessToken => _accessToken;
+  set accessToken(String? token) {
+    if (_accessToken == token) return;
+    _accessToken = token;
+    if (_accountId == null) {
+      _sessionEpoch++;
+      _authorizationRefresh = null;
+      _refreshEpoch = null;
+    }
+  }
+
   Future<String?> Function()? onUnauthorized;
 
-  /// Rotates the current session once and shares that in-flight refresh across
-  /// API + Agent transports. Platform refresh tokens rotate, so concurrent
-  /// 401s must never race separate refresh calls.
+  bool _isProtected(String path) =>
+      !path.startsWith('/auth/') && !path.startsWith('/v1/auth/');
+
+  bool _isStale(RequestOptions request) =>
+      _isProtected(request.path) &&
+      request.extra[_requestEpochKey] != null &&
+      request.extra[_requestEpochKey] != _sessionEpoch;
+
+  DioException _accountChanged(RequestOptions request) => DioException(
+        requestOptions: request,
+        type: DioExceptionType.cancel,
+        error: const ApiException(
+          'Account changed. Please open this page again.',
+          code: 'ACCOUNT_CHANGED',
+        ),
+      );
+
+  /// Rotate once within the same session. An old refresh result is never
+  /// returned for a new account, including A→B→A replacements.
   Future<String?> refreshAuthorization() {
+    final epoch = _sessionEpoch;
     final active = _authorizationRefresh;
-    if (active != null) return active;
+    if (active != null && _refreshEpoch == epoch) return active;
     final callback = onUnauthorized;
     if (callback == null) return Future<String?>.value(null);
-    final future = callback();
+    final future = Future<String?>.sync(callback).then(
+      (token) => _sessionEpoch == epoch ? token : null,
+    );
     _authorizationRefresh = future;
+    _refreshEpoch = epoch;
     return future.whenComplete(() {
       if (identical(_authorizationRefresh, future)) {
         _authorizationRefresh = null;
+        _refreshEpoch = null;
       }
     });
   }
