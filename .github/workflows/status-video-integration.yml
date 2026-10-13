@@ -58,5 +58,7 @@ jobs:
           packages/feed/src/index.test.ts
           services/worker/src/jobs/rooms
           services/worker/src/jobs/home_feed
+      - name: Worker service typecheck
+        run: pnpm --filter @masanawa/worker-service typecheck
       - name: Gateway strict typecheck
         run: pnpm --filter @masanawa/gateway-service typecheck

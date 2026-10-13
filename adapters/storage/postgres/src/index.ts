@@ -43,3 +43,6 @@ export { createPgRoomDiscussionRepository } from "./rooms/discussion.js";
 export { createPgRoomBookmarkStore } from "./rooms/bookmarks.js";
 export { createPgRoomMembershipRepository } from "./rooms/membership.js";
 export { createMasanaInboxRepository } from "./masana_chat/inbox.js";
+
+// Worker-only Room teacher queue uses the existing events.outbox journal.
+export { createPgTeacherQueue } from "./rooms/teacher_outbox.js";
