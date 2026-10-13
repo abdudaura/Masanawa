@@ -1899,7 +1899,12 @@
         ".github/workflows/mui03-remote-inbox.yml",
         "docs/workstreams/UI-MUI-03-chats.md"
       ],
-      "notes": "After AF00 #704 merged main, preserve existing MUI03 local Chats search/Calls/navigation; bounded local client source, authorized C10 remote query with pinned credential and stale-account fence; runtime disabled/offline honest. No AF08 shared transport edits."
+      "notes": "After AF00 #704 merged main, preserve existing MUI03 local Chats search/Calls/navigation; bounded local client source, authorized C10 remote query with pinned credential and stale-account fence; runtime disabled/offline honest. No AF08 shared transport edits.",
+      "released_at": "2026-10-13T07:50:54.692Z",
+      "release_reason": "Reviewed post-merge cleanup: independent MUI03 C10 client PR #706 head 18b91a0535adc08a0828c367a901cc62eb162834 had exact-head Flutter+analyze and startup CI PASS; merged main 79d8fc9419c1415231a6a82aee5043076f60291b; subsequent main includes AF05 PR #705 at 9b246649077fc77cd9135f4b8c6a79bcd9e440fa. Device/Gateway PG18 qualification separate.",
+      "source_head": "18b91a0535adc08a0828c367a901cc62eb162834",
+      "source_pr": 706,
+      "integration_head_sha": "9b246649077fc77cd9135f4b8c6a79bcd9e440fa"
     },
     {
       "base_sha": "79d8fc9419c1415231a6a82aee5043076f60291b",
