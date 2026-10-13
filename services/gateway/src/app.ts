@@ -161,6 +161,8 @@ export interface GatewayAppOptions {
     ) => Promise<boolean>;
   }>;
   readonly twinProduction?: TwinProductionRuntime;
+  /** Operator-verified legacy Credit Send; never inferred from Wallet mount. */
+  readonly walletCreditSendEnabled?: boolean;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -1615,7 +1617,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     registerMyTwinProjectionRoutes(app, twin.myTwin);
     registerTwinActivityRoutes(app, twin.twinActivity);
     registerWalletProjectionRoutes(app, twin.wallet);
-    registerCreditTransferRoutes(app, twin.creditTransfer);
+    registerCreditTransferRoutes(
+      app, twin.creditTransfer, () => options.walletCreditSendEnabled === true,
+    );
     registerGiftRoutes(app, twin.gifts);
     registerTwinAttributionRoutes(app, twin.twinAttribution);
     registerCommissionPolicyAdminRoutes(app, twin.commissionAdmin);
