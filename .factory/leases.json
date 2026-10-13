@@ -2059,6 +2059,23 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af10-rooms-production-build-20261013-gpt6",
+      "owner": "AF10 / GPT-6 production readiness",
+      "scope": "Restore live Gateway production compiler and verify real Rooms/worker build and PG migration before any production activation",
+      "branch": "lane/af10-rooms-production-build-20261013-gpt6",
+      "base_sha": "d547dcdccf3ec448c65ee8dd995ca29e91d1d3e2",
+      "paths": [
+        "services/gateway/src/call_history/routes.ts",
+        "services/gateway/src/call_history/routes.test.ts",
+        ".github/workflows/rooms-production-build.yml",
+        "docs/workstreams/AF10-rooms-production-activation-20261013.md"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T14:02:47.536Z",
+      "heartbeat_at": "2026-10-13T14:02:47.536Z",
+      "expires_at": "2026-10-13T14:07:47.536Z"
     }
   ],
   "history": [
