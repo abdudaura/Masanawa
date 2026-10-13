@@ -12,7 +12,7 @@ describe("Gemini Room question answer delivery",()=>{
    expect(()=>createGeminiRoomAnswerModel({})).toThrow("rooms_ai.credentials_required");
  });
  it("submits the real queued question and directly returns a model answer",async()=>{
-   const fetchImpl=vi.fn(async()=>success());
+   const fetchImpl=vi.fn(async(_url:string|URL|Request,_init?:RequestInit)=>success());
    const model=createGeminiRoomAnswerModel({credentialsJson:JSON.stringify({
      credentials:[{apiKey:"example-test-secret-key-111111"}],
    }),models:'["gemini-2.5-flash"]',fetchImpl});
@@ -20,8 +20,8 @@ describe("Gemini Room question answer delivery",()=>{
    expect(fetchImpl).toHaveBeenCalledTimes(1);
    const [url,opts]=fetchImpl.mock.calls[0]!;
    expect(url).toContain("gemini-2.5-flash:generateContent");
-   expect(opts.headers["x-goog-api-key"]).toBe("example-test-secret-key-111111");
-   const body=JSON.parse(opts.body as string);
+   expect(new Headers(opts?.headers).get("x-goog-api-key")).toBe("example-test-secret-key-111111");
+   const body=JSON.parse(opts?.body as string);
    expect(JSON.stringify(body.contents)).toContain("What is 2+2?");
    expect(JSON.stringify(body.system_instruction)).not.toContain("staff approval required");
  });
