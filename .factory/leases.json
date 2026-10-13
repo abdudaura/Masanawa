@@ -1851,8 +1851,8 @@
       "branch": "recover/af05-voice-notes-connected-20261013",
       "claim_id": "af05-voice-notes-recovery-20261013",
       "claimed_at": "2026-10-13T06:57:32.000Z",
-      "expires_at": "2026-10-13T07:02:32.000Z",
-      "heartbeat_at": "2026-10-13T06:57:32.000Z",
+      "expires_at": "2026-10-13T07:05:30.130Z",
+      "heartbeat_at": "2026-10-13T07:00:30.130Z",
       "owner": "GPT-6 / AF05 voice-note completion",
       "paths": [
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
@@ -1869,7 +1869,7 @@
         "docs/workstreams/AF05-voice-notes-connected-20261013.md"
       ],
       "scope": "Recover AF05 unmerged native recorder and UI; connect chat microphone to owner-fenced offline-safe voice-note attachment; preserve independent live call button and tests.",
-      "notes": "Original one-commit WIP branch lane/af05-android-voice-repair-20261012, source head d9ec3a3c60d2, contains 9 files and authored tests; no PR. Avoid other voice/session/native/finance/composition paths."
+      "notes": "Original one-commit WIP branch lane/af05-android-voice-repair-20261012, source head d9ec3a3c60d2, contains 9 files and authored tests; no PR. Avoid other voice/session/native/finance/composition paths. Implementation head cd0dad1 source connected; PR #705 opened; awaiting executable Flutter exact-head checks."
     }
   ],
   "history": [
