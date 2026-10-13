@@ -99,7 +99,7 @@ void main() {
 
   testWidgets('review never debits until explicit second confirmation', (tester) async {
     var calls = 0;
-    await mountSheet(tester, send: (_, __) async { calls++; return _receipt; });
+    await mountSheet(tester, send: (_, __) async { calls++; return null; });
     await enterDetails(tester);
     expect(calls, 0);
     expect(find.text('Confirm and send'), findsOneWidget);
