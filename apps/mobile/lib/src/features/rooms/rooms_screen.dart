@@ -5,9 +5,6 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'rooms_client.dart';
-import 'room_subscriptions_client.dart';
-import 'room_billing_store.dart';
-import 'room_subscribe_screen.dart';
 import 'saved_lessons_client.dart';
 import 'saved_lessons_screen.dart';
 const masanaBlue=Color(0xFF1E63D6);
@@ -22,10 +19,8 @@ String roomError(Object e){
  return 'Could not load. Check the network and retry.';
 }
 class RoomsScreen extends StatefulWidget {
- const RoomsScreen({super.key,required this.client,this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
+ const RoomsScreen({super.key,required this.client,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
  final RoomsClient client;
- final RoomSubscriptionsClient? subscriptionsClient;
- final RoomBillingStore? billingStore;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
  final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
@@ -79,7 +74,6 @@ class _RoomsScreenState extends State<RoomsScreen>{
       trailing:Icon(r.joined?Icons.check_circle_outline:Icons.chevron_right,color:masanaBlue),
       onTap:()async{
        await Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>RoomHomeScreen(client:widget.client,id:r.id,
-        subscriptionsClient:widget.subscriptionsClient,billingStore:widget.billingStore,
         discussionApi:widget.discussionApi,discussionAccountScope:widget.discussionAccountScope,
         onDiscussionReport:widget.onDiscussionReport,
         savedLessonsClient:widget.savedLessonsClient,savedLessonsAccountKey:widget.savedLessonsAccountKey)));
@@ -91,10 +85,8 @@ class _RoomsScreenState extends State<RoomsScreen>{
 }
 class RoomHomeScreen extends StatefulWidget {
  const RoomHomeScreen({super.key,required this.client,required this.id,
-  this.subscriptionsClient,this.billingStore,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
+  this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
  final RoomsClient client;final String id;
- final RoomSubscriptionsClient? subscriptionsClient;
- final RoomBillingStore? billingStore;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
  final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
@@ -136,30 +128,6 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
    await load();
   }catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(roomError(e))));}
   finally{if(mounted)setState(()=>busy=false);}
- }
- Future<void> paidJoin()async{
-  if(busy||info==null)return;
-  final subscription=widget.subscriptionsClient;
-  final billing=widget.billingStore;
-  if(subscription==null||billing==null){
-   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content:Text('Google Play subscriptions are not available on this device.')));
-   return;
-  }
-  setState(()=>busy=true);
-  try{
-   final verified=await Navigator.push<bool>(context,MaterialPageRoute(
-    builder:(_)=>RoomSubscribeScreen(roomId:widget.id,
-     client:subscription,store:billing)));
-   if(!mounted)return;
-   if(verified==true){
-    // Only the Gateway's verified Play entitlement can authorize this join.
-    await widget.client.join(widget.id);
-    await load();
-   }
-  }catch(e){
-   if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(roomError(e))));
-  }finally{if(mounted)setState(()=>busy=false);}
  }
  Future<void> bookmark(RoomLesson lesson)async{
   final client=widget.savedLessonsClient;
@@ -206,13 +174,10 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
      Text(info!.title,style:Theme.of(context).textTheme.titleLarge),
      Text('Teacher: ${info!.teacher} · ${info!.members} members'),
      if(info!.paid)const Text('Paid lessons need a verified Google Play subscription.'),
-     FilledButton(onPressed:busy||(info!.paid&&(paidAccessBlocked||!info!.joined)&&
-       (widget.subscriptionsClient==null||widget.billingStore==null))?null:
-       (info!.paid&&(paidAccessBlocked||!info!.joined)?paidJoin:membership),
-      child:Text(info!.paid&&(widget.subscriptionsClient==null||widget.billingStore==null)&&
-       (paidAccessBlocked||!info!.joined)?'Subscription unavailable':
-       paidAccessBlocked?'Renew subscription':
-       info!.joined?'Leave Room':info!.paid?'Subscribe or join Room':'Join free Room'))])),
+     FilledButton(
+      onPressed:busy||(!info!.joined&&info!.paid)?null:membership,
+      child:Text(info!.paid&&!info!.joined?'Subscription unavailable':
+       info!.joined?'Leave Room':'Join free Room'))])),
     if(info!.joined&&!paidAccessBlocked)...[
      SegmentedButton<int>(segments:const [
        ButtonSegment(value:0,label:Text('Lessons')),ButtonSegment(value:1,label:Text('Questions')),
