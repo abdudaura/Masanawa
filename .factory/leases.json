@@ -2059,37 +2059,6 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
-    },
-    {
-      "claim_id": "af01-msn-quote-status-20261013-gpt6",
-      "owner": "GPT-6 / AF01 MSN staged funding journal + readback",
-      "base_sha": "db42827abfa464303833578a3bf49d9ae41f4709",
-      "branch": "lane/af01-msn-quote-journal-20261013-gpt6",
-      "paths": [
-        "packages/commerce/migration_proposals/0112_msn_wallet.sql",
-        "services/gateway/src/msn_wallet/quote_journal.ts",
-        "services/gateway/src/msn_wallet/quote_journal.test.ts",
-        "services/gateway/src/msn_wallet/funding_routes.ts",
-        "services/gateway/src/msn_wallet/funding_routes.test.ts",
-        "services/gateway/src/app.ts",
-        "services/gateway/src/main.ts",
-        "services/gateway/src/msn_wallet/funding_composition.test.ts",
-        "adapters/storage/postgres/src/commerce/msn-quote-journal.integration.test.ts",
-        "apps/mobile/lib/src/finance/msn_funding_transport.dart",
-        "apps/mobile/lib/src/finance/msn_funding_card.dart",
-        "apps/mobile/test/finance/msn_funding_transport_test.dart",
-        "apps/mobile/test/finance/msn_funding_card_test.dart",
-        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
-        ".github/workflows/af01-msn-funding-status.yml",
-        "docs/workstreams/AF01-msn-funding-status-20261013.md"
-      ],
-      "claimed_at": "2026-10-13T13:03:36.016Z",
-      "heartbeat_at": "2026-10-13T13:24:19.297Z",
-      "expires_at": "2026-10-13T13:34:19.297Z",
-      "scope": "Staged (non-auto) MSN quote/fiat verification journal, authenticated account-safe status route and Flutter readback behind flags OFF; no mint/pay/conversion",
-      "notes": "No other existing ledger/provider activation. Extend proposal 0112 without production migrations",
-      "source_head": "cec24fb3863c7f8877149f6075c1fd34568d6c70",
-      "source_pr": 715
     }
   ],
   "history": [
@@ -6598,6 +6567,40 @@
       "released_at": "2026-10-13T12:59:13.540Z",
       "release_reason": "PR #714 head 3cd0dc4fffd103ea35df4d2e03fa6f88845b76ea safely squash-merged main db42827abfa464303833578a3bf49d9ae41f4709; hosted Vitest 63+PG18 3 and Flutter 23 PASS, focused Dart analyze PASS. Unrelated Foundation TalkId / Status Video strict TS remain failing; provider/live/issuance/Android NOT qualified.",
       "integration_head_sha": "db42827abfa464303833578a3bf49d9ae41f4709"
+    },
+    {
+      "claim_id": "af01-msn-quote-status-20261013-gpt6",
+      "owner": "GPT-6 / AF01 MSN staged funding journal + readback",
+      "base_sha": "db42827abfa464303833578a3bf49d9ae41f4709",
+      "branch": "lane/af01-msn-quote-journal-20261013-gpt6",
+      "paths": [
+        "packages/commerce/migration_proposals/0112_msn_wallet.sql",
+        "services/gateway/src/msn_wallet/quote_journal.ts",
+        "services/gateway/src/msn_wallet/quote_journal.test.ts",
+        "services/gateway/src/msn_wallet/funding_routes.ts",
+        "services/gateway/src/msn_wallet/funding_routes.test.ts",
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/msn_wallet/funding_composition.test.ts",
+        "adapters/storage/postgres/src/commerce/msn-quote-journal.integration.test.ts",
+        "apps/mobile/lib/src/finance/msn_funding_transport.dart",
+        "apps/mobile/lib/src/finance/msn_funding_card.dart",
+        "apps/mobile/test/finance/msn_funding_transport_test.dart",
+        "apps/mobile/test/finance/msn_funding_card_test.dart",
+        "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
+        ".github/workflows/af01-msn-funding-status.yml",
+        "docs/workstreams/AF01-msn-funding-status-20261013.md"
+      ],
+      "claimed_at": "2026-10-13T13:03:36.016Z",
+      "heartbeat_at": "2026-10-13T13:24:19.297Z",
+      "expires_at": "2026-10-13T13:34:19.297Z",
+      "scope": "Staged (non-auto) MSN quote/fiat verification journal, authenticated account-safe status route and Flutter readback behind flags OFF; no mint/pay/conversion",
+      "notes": "No other existing ledger/provider activation. Extend proposal 0112 without production migrations",
+      "source_head": "cec24fb3863c7f8877149f6075c1fd34568d6c70",
+      "source_pr": 715,
+      "released_at": "2026-10-13T13:25:13.052Z",
+      "release_reason": "PR #715 exact source cec24fb3863c7f8877149f6075c1fd34568d6c70 merged main 204ed142fc8bb90b02c7c62b49e5c4b9020f7e34; hosted 79 Vitest+7 real PG18, 54 Flutter PASS and focused Dart clean; global 75 inherited Gateway TS, unrelated Foundation TalkId and mobile whole analyzer remain fail; no qualified fiat/custody/treasury migration/device/provider or activation.",
+      "integration_head_sha": "204ed142fc8bb90b02c7c62b49e5c4b9020f7e34"
     }
   ],
   "schema_version": 1
