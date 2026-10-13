@@ -2069,9 +2069,11 @@
       "paths": [
         ".github/workflows/rooms-production-build.yml",
         "adapters/storage/postgres/src/rooms/repository.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts",
         "adapters/storage/postgres/src/rooms/teacher_outbox.test.ts",
         "adapters/storage/postgres/src/rooms/teacher_outbox.ts",
         "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/room_auto_answer_test.dart",
         "docs/workstreams/AF10-rooms-direct-answers-20261013.md",
         "packages/rooms/migrations/0005_short_questions.sql",
         "packages/rooms/src/index.test.ts",
@@ -2087,14 +2089,13 @@
         "services/worker/src/jobs/rooms/runtime.ts",
         "services/worker/src/jobs/rooms/teacher.test.ts",
         "services/worker/src/jobs/rooms/teacher.ts",
-        "services/worker/src/main.ts",
-        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts"
+        "services/worker/src/main.ts"
       ],
       "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/718",
       "claimed_at": "2026-10-13T14:21:15.778Z",
-      "heartbeat_at": "2026-10-13T14:36:53.648Z",
-      "expires_at": "2026-10-13T14:44:53.648Z",
-      "notes": "Same-owner recovery of expired short lease (previous 2026-10-13T14:29:29.921Z); first focused source cdb0fe5 had 45 Rooms/PG tests and worker+Flutter PASS, plus earlier baseline global typecheck failures. Continue substantial real PostgreSQL question->AI answer integration, no different owner took paths."
+      "heartbeat_at": "2026-10-13T14:44:16.842Z",
+      "expires_at": "2026-10-13T14:52:16.842Z",
+      "notes": "Continuing same owner on PR #718 after expired lease: exact head cdb0fe5 source already verified focused hosted builds and tests. Extend completion to mobile answer refresh and real PG18 question→AI answer; preserve unique branch source."
     }
   ],
   "history": [
