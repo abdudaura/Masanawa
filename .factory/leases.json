@@ -2065,8 +2065,8 @@
       "branch": "lane/af01-msn-fiat-preflight-20261013-gpt6",
       "claim_id": "af01-msn-fiat-preflight-20261013-gpt6",
       "claimed_at": "2026-10-13T12:49:54.596Z",
-      "expires_at": "2026-10-13T12:54:54.596Z",
-      "heartbeat_at": "2026-10-13T12:49:54.596Z",
+      "expires_at": "2026-10-13T13:01:43.148Z",
+      "heartbeat_at": "2026-10-13T12:56:43.148Z",
       "owner": "GPT-6 / AF01 verified fiat intake",
       "paths": [
         "services/gateway/src/msn_wallet/fiat_intake.ts",
@@ -2078,7 +2078,9 @@
         "docs/workstreams/AF01-msn-fiat-intake-20261013.md"
       ],
       "scope": "Exact immutable PG funding intent read and server-to-server Flutterwave verification before any custody-backed MSN issuance; no live API, flag, migration or ledger writes",
-      "notes": "Source-only safe provider readback; no issuer or financial activation"
+      "notes": "Source-only safe provider readback; no issuer or financial activation",
+      "source_pr": 714,
+      "source_head": "3cd0dc4fffd103ea35df4d2e03fa6f88845b76ea"
     }
   ],
   "history": [
