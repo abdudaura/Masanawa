@@ -1,8 +1,11 @@
 import { createIncomingCallService, type IncomingRepository, type IncomingCallService } from "./incoming_calls/service.js";
 import { FeedService, EditorialReviewService } from "@masanawa/feed";
 import { RoomError } from "@masanawa/rooms";
+import { createStatusMediaRuntime, type StatusMediaConfiguration } from "./modules/home_feed/media_runtime.js";
+import type { StatusRuntime } from "./modules/home_feed/runtime.js";
 import {
   PgHomeFeedRepository, PgEditorialReviewRepository, PgStatusEligibility,
+  PgFeedMediaAuthorization,
   createPgRoomsRepository, createPgRoomDiscussionRepository,
   createPgRoomBookmarkStore, createPgRoomMembershipRepository,
   createMasanaInboxRepository,
@@ -305,6 +308,12 @@ export interface ServiceProcess extends NodeSignalSource {
 }
 
 export interface ServiceDatabaseDependency {
+  readonly status?: Readonly<{
+    feed: PgHomeFeedRepository;
+    editorial: PgEditorialReviewRepository;
+    eligibility: PgStatusEligibility;
+    published: PgFeedMediaAuthorization;
+  }>;
   /** Shared canonical Pool, never a per-feature PostgreSQL authority. */
   readonly featurePool?: Parameters<typeof createPgRoomsRepository>[0];
   readonly callHistory?: CallHistoryRepository & CallHistoryRecorder;
@@ -379,6 +388,7 @@ export interface StartGatewayServiceOptions {
   readonly databaseFactory?: ServiceDatabaseFactory;
   readonly appFactory?: (options: GatewayAppOptions) => ManagedNodeServer;
   readonly appOptions?: Omit<GatewayAppOptions, "isDraining">;
+  readonly statusMedia?: StatusMediaConfiguration;
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
@@ -435,6 +445,12 @@ function createDefaultDatabaseDependency(
   return Object.freeze({
     readinessCheck: database.readinessCheck,
     featurePool: database.pool,
+    status: Object.freeze({
+      feed: new PgHomeFeedRepository(database.pool),
+      editorial: new PgEditorialReviewRepository(database.pool),
+      eligibility: new PgStatusEligibility(database.pool),
+      published: new PgFeedMediaAuthorization(database.pool),
+    }),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
     platformAgentIdentity: Object.freeze({
@@ -2257,6 +2273,36 @@ export async function startGatewayService(
             ...(pushSender ? { pushSender } : {}),
           })
         : undefined);
+  // Preserve the original J06 media/editorial seam for injected tests and
+  // managed builds; never infer a storage bucket or staff role from the client.
+  let statusRuntime: StatusRuntime | undefined = options.appOptions?.status;
+  if (!statusRuntime && database.status && database.platformSessions) {
+    const { feed, editorial, eligibility, published } = database.status;
+    const sessions = billingCustomerAuthorizer ??
+      createPlatformCustomerSessionAuthorizer({ repository: database.platformSessions });
+    const editors = readPrincipalSet(env.MASANAWA_ADMIN_PRINCIPALS ??
+      env.MASANAWA_ADMIN_USER_IDS ?? env.MASANAWA_ADMIN_EMAILS);
+    let mediaRuntime: ReturnType<typeof createStatusMediaRuntime>;
+    try {
+      mediaRuntime = createStatusMediaRuntime({
+        eligibility, published,
+        ...(options.statusMedia ? { configuration: options.statusMedia } : {}),
+      });
+    } catch (error) {
+      await database.close().catch(() => undefined);
+      throw error;
+    }
+    const approved = (tenant: string, id: string) => eligibility.author(tenant, id);
+    statusRuntime = {
+      sessions,
+      feed: new FeedService(feed, approved, mediaRuntime.approved),
+      editorial: new EditorialReviewService(editorial, approved, mediaRuntime.approved),
+      media: mediaRuntime.media,
+      isEditor: async session => editors.has(session.userId),
+      // Startup can compose safely without activating unqualified customer routes.
+      enabled: () => env.MASANAWA_STATUS_BACKEND_ENABLED === "true",
+    };
+  }
   // AF00 single owner: current authenticated customer sessions + PostgreSQL.
   // Never infer user/tenant/editor role from client input; no extra server.
   const featureOptions: Partial<GatewayAppOptions> = (() => {
@@ -2329,6 +2375,7 @@ export async function startGatewayService(
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...featureOptions,
+      ...(statusRuntime ? { status: statusRuntime } : {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(accountDeletion ? { accountDeletion } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),

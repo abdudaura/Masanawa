@@ -42,7 +42,7 @@ export function registerMasanaInboxRoutes(
     return actor.tenantId && actor.fanUserId ? actor : null;
   }
   app.get("/v1/chats", async (request, reply) => {
-    if (deps.enabled?.() !== true) return reply.code(503).send({code:"inbox_disabled"});
+    if (deps.enabled?.() === false) return reply.code(503).send({code:"inbox_disabled"});
     const scope = await fan(request);
     if (!scope) return reply.code(401).send({code:"unauthorized"});
     const raw = record(request.query).q;
@@ -53,7 +53,7 @@ export function registerMasanaInboxRoutes(
     return reply.send({chats});
   });
   app.patch("/v1/chats/:characterId", async (request, reply) => {
-    if (deps.enabled?.() !== true) return reply.code(503).send({code:"inbox_disabled"});
+    if (deps.enabled?.() === false) return reply.code(503).send({code:"inbox_disabled"});
     const scope = await fan(request);
     if (!scope) return reply.code(401).send({code:"unauthorized"});
     const id = record(request.params).characterId;
@@ -69,7 +69,7 @@ export function registerMasanaInboxRoutes(
     return reply.send({revision: updated, pinned: body.pinned});
   });
   app.post("/v1/chats/:characterId/read", async (request, reply) => {
-    if (deps.enabled?.() !== true) return reply.code(503).send({code:"inbox_disabled"});
+    if (deps.enabled?.() === false) return reply.code(503).send({code:"inbox_disabled"});
     const scope = await fan(request);
     if (!scope) return reply.code(401).send({code:"unauthorized"});
     const id = record(request.params).characterId;
