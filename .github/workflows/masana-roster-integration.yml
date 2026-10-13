@@ -1,0 +1,66 @@
+name: Masana Professional Roster Integration
+on:
+  pull_request:
+    paths:
+      - "services/gateway/src/platform_agent_bootstrap*"
+      - "services/gateway/src/main.ts"
+      - "adapters/storage/postgres/src/masana/catalog_seed*"
+      - "adapters/storage/postgres/src/index.ts"
+      - "apps/mobile/assets/masana/**"
+      - "apps/mobile/lib/src/agents/masana_portrait_avatar.dart"
+      - "apps/mobile/lib/src/screens/chat/masana_list_screen.dart"
+      - "apps/mobile/test/masana_professional_portraits_test.dart"
+      - "apps/mobile/pubspec.yaml"
+      - ".github/workflows/masana-roster-integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/gateway/src/platform_agent_bootstrap.ts"
+      - "adapters/storage/postgres/src/masana/catalog_seed.ts"
+      - ".github/workflows/masana-roster-integration.yml"
+permissions: {contents: read}
+jobs:
+  server-roster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env: {POSTGRES_DB: masanawa_test, POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d masanawa_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/masanawa_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with: {version: "12.8.2",run_install: false}
+      - uses: actions/setup-node@v5
+        with: {node-version: "24",cache: pnpm,cache-dependency-path: pnpm-lock.yaml}
+      - run: pnpm install --frozen-lockfile
+      - name: Production Gateway and worker builds
+        run: |
+          pnpm --filter @masanawa/gateway-service... build
+          pnpm --filter @masanawa/worker-service... build
+      - name: Professional agent identity and call profile seeds
+        run: pnpm exec vitest run services/gateway/src/platform_agent_bootstrap.test.ts services/gateway/src/agent_directory.test.ts services/gateway/src/agent_directory_route.test.ts
+      - name: Real PG18 Masana and Rooms creation
+        run: pnpm exec vitest run adapters/storage/postgres/src/masana/catalog_seed.integration.test.ts
+      - name: Room AI and protected voice token regressions
+        run: pnpm exec vitest run services/worker/src/jobs/rooms/teacher.test.ts services/gateway/src/live_voice_token.test.ts
+  flutter-roster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run: {working-directory: apps/mobile}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with: {channel: stable,cache: true}
+      - run: flutter pub get
+      - name: Dedicated 26 portraits bundled in Flutter
+        run: flutter test --no-pub --reporter expanded test/masana_professional_portraits_test.dart test/agent_directory_readiness_test.dart
+      - name: Focused Dart analysis
+        run: dart analyze lib/src/agents/masana_portrait_avatar.dart lib/src/screens/chat/masana_list_screen.dart
