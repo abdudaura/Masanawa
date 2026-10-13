@@ -65,14 +65,18 @@ class _MsnFundingCardState extends State<MsnFundingCard> {
     try {
       final result = await widget.transport.read();
       if (!mounted || generation != _generation ||
-          session != widget.sessionIdentity) return;
+          session != widget.sessionIdentity) {
+        return;
+      }
       setState(() {
         _loading = false;
         _operations = result;
       });
     } catch (error) {
       if (!mounted || generation != _generation ||
-          session != widget.sessionIdentity) return;
+          session != widget.sessionIdentity) {
+        return;
+      }
       setState(() {
         _loading = false;
         _operations = null;
