@@ -6,6 +6,8 @@ import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
 import '../../finance/msn_balance_card.dart';
 import '../../finance/msn_balance_transport.dart';
+import '../../finance/msn_funding_card.dart';
+import '../../finance/msn_funding_transport.dart';
 import '../../state/session_state.dart';
 import 'send_credits_sheet.dart';
 import 'wallet_receipt_sheet.dart';
@@ -25,6 +27,12 @@ const bool kWalletMsnBalanceEnabled = bool.fromEnvironment(
   'MASANAWA_MSN_BALANCE_ENABLED', defaultValue: false,
 );
 
+/// Independent, read-only quote/status rollout. Defaults OFF until staged
+/// finance schema, provider/custody and operator release checks qualify.
+const bool kWalletMsnFundingStatusEnabled = bool.fromEnvironment(
+  'MASANAWA_MSN_FUNDING_READBACK_ENABLED', defaultValue: false,
+);
+
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({
     super.key,
@@ -37,6 +45,7 @@ class WalletScreen extends ConsumerWidget {
     this.embeddedInShell = false,
     this.walletCreditSendEnabled = kWalletCreditSendEnabled,
     this.walletMsnBalanceEnabled = kWalletMsnBalanceEnabled,
+    this.walletMsnFundingStatusEnabled = kWalletMsnFundingStatusEnabled,
   });
 
   final VoidCallback? onAddMoney;
@@ -52,12 +61,14 @@ class WalletScreen extends ConsumerWidget {
   final bool embeddedInShell;
   final bool walletCreditSendEnabled;
   final bool walletMsnBalanceEnabled;
+  final bool walletMsnFundingStatusEnabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final wallet = ref.watch(walletProvider);
-    final accountId = (walletCreditSendEnabled || walletMsnBalanceEnabled)
+    final accountId = (walletCreditSendEnabled || walletMsnBalanceEnabled ||
+            walletMsnFundingStatusEnabled)
         ? switch (ref.watch(sessionProvider)) {
             SessionSignedIn(:final user) => user.id,
             _ => null,
@@ -156,6 +167,15 @@ class WalletScreen extends ConsumerWidget {
                   MsnBalanceCard(
                     sessionIdentity: accountId,
                     transport: GatewayMsnBalanceTransport(
+                      dio: ref.watch(dioProvider),
+                      baseUrl: kApiBaseUrl,
+                      readAccessToken: () => ref.read(apiClientProvider).accessToken,
+                    ),
+                  ),
+                if (walletMsnFundingStatusEnabled && accountId != null)
+                  MsnFundingCard(
+                    sessionIdentity: accountId,
+                    transport: GatewayMsnFundingTransport(
                       dio: ref.watch(dioProvider),
                       baseUrl: kApiBaseUrl,
                       readAccessToken: () => ref.read(apiClientProvider).accessToken,

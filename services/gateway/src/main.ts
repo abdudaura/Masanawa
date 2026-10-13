@@ -166,6 +166,7 @@ import {
 } from "./financial_service.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createMsnLedgerStore } from "./msn_wallet/store.js";
+import { createMsnFundingJournal } from "./msn_wallet/quote_journal.js";
 import type { MsnBalanceAuthority } from "./msn_wallet/routes.js";
 import { createAgentShellService } from "./agent_shell.js";
 import type {
@@ -2477,6 +2478,15 @@ export async function startGatewayService(
         ? { msnBalance: {
             authorizer: msnBalanceAuthorizer,
             ledger: createMsnLedgerStore(database.featurePool),
+          } }
+        : {}),
+      // Never register a customer write route or expose a made-up conversion.
+      // Requires a separately installed, approved staged quote journal.
+      ...(env.MASANAWA_MSN_FUNDING_READBACK_ENABLED === "true" &&
+          database.featurePool && msnBalanceAuthorizer
+        ? { msnFunding: {
+            authorizer: msnBalanceAuthorizer,
+            reader: createMsnFundingJournal(database.featurePool),
           } }
         : {}),
       // Only the production operator may enable this legacy credit-ledger

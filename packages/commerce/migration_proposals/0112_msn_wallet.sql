@@ -107,3 +107,62 @@ CREATE CONSTRAINT TRIGGER msn_balanced_issue
 -- Users must never be permitted to mutate these tables through direct SQL.
 -- API access requires an authenticated, authorized read service; qualified
 -- issuance uses a privileged server worker AFTER externally verified backing.
+
+
+-- Staged funding quote journal. Not part of automatic production migrations.
+-- A quote is a server-owned snapshot, NOT permission to debit fiat, claim
+-- custody or mint MSN. Never accept quote pricing from customer HTTP bodies.
+CREATE TABLE IF NOT EXISTS commerce.msn_funding_quotes (
+  tenant_id text NOT NULL,
+  user_id text NOT NULL,
+  quote_id text NOT NULL,
+  funding_rail text NOT NULL CHECK (funding_rail IN ('NGN_FLUTTERWAVE','NOWPAYMENTS_CRYPTO')),
+  funding_reference text NOT NULL,
+  ngn_funding_kobo bigint NULL CHECK (ngn_funding_kobo > 0),
+  backing_asset text NOT NULL CHECK (backing_asset ~ '^[A-Z0-9_-]{2,32}$'),
+  backing_network text NOT NULL CHECK (backing_network ~ '^[a-z0-9_-]{2,64}$'),
+  minimum_settled_backing_usd_micro numeric(38,0) NOT NULL CHECK (minimum_settled_backing_usd_micro > 0),
+  price_per_msn_usd_micro numeric(38,0) NOT NULL CHECK (price_per_msn_usd_micro > 0),
+  provider_quote_reference text NOT NULL,
+  -- Hash of external quote/pricing source, NOT evidence of actual custody.
+  pricing_evidence_sha256 text NOT NULL CHECK (pricing_evidence_sha256 ~ '^[0-9a-f]{64}$'),
+  issued_at timestamptz NOT NULL,
+  expires_at timestamptz NOT NULL CHECK (expires_at > issued_at),
+  PRIMARY KEY (tenant_id,quote_id),
+  UNIQUE (tenant_id,quote_id,user_id),
+  UNIQUE (tenant_id,funding_reference),
+  CHECK (
+    (funding_rail='NGN_FLUTTERWAVE' AND ngn_funding_kobo IS NOT NULL)
+    OR (funding_rail='NOWPAYMENTS_CRYPTO' AND ngn_funding_kobo IS NULL)
+  )
+);
+CREATE INDEX IF NOT EXISTS msn_funding_owner_order
+ ON commerce.msn_funding_quotes(tenant_id,user_id,issued_at DESC,quote_id DESC);
+
+-- Independent Flutterwave readback + canonical NGN ledger verified;
+-- NEVER treat this event as acquired crypto/custody backing.
+CREATE TABLE IF NOT EXISTS commerce.msn_fiat_verifications (
+  tenant_id text NOT NULL,
+  quote_id text NOT NULL,
+  user_id text NOT NULL,
+  provider_transaction_id text NOT NULL UNIQUE,
+  provider_verification_sha256 text NOT NULL
+    CHECK (provider_verification_sha256 ~ '^[0-9a-f]{64}$'),
+  verified_at timestamptz NOT NULL,
+  PRIMARY KEY (tenant_id,quote_id),
+  FOREIGN KEY (tenant_id,quote_id,user_id)
+    REFERENCES commerce.msn_funding_quotes(tenant_id,quote_id,user_id)
+    ON DELETE RESTRICT
+);
+CREATE INDEX IF NOT EXISTS msn_verification_owner
+ ON commerce.msn_fiat_verifications(tenant_id,user_id,verified_at DESC);
+
+-- An auditor can prove history without rewriting old quote/verification terms.
+DROP TRIGGER IF EXISTS msn_funding_quote_immutable ON commerce.msn_funding_quotes;
+CREATE TRIGGER msn_funding_quote_immutable
+ BEFORE UPDATE OR DELETE ON commerce.msn_funding_quotes
+ FOR EACH ROW EXECUTE FUNCTION commerce.msn_forbid_mutation();
+DROP TRIGGER IF EXISTS msn_fiat_verification_immutable ON commerce.msn_fiat_verifications;
+CREATE TRIGGER msn_fiat_verification_immutable
+ BEFORE UPDATE OR DELETE ON commerce.msn_fiat_verifications
+ FOR EACH ROW EXECUTE FUNCTION commerce.msn_forbid_mutation();
