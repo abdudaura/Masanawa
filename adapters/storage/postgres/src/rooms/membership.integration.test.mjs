@@ -17,8 +17,10 @@ const connection=process.env.MASANAWA_TEST_DATABASE_URL;
 // Explicit local-only guard: never apply qualification schemas to a supplied live database.
 if(!connection)throw new Error('Set MASANAWA_TEST_DATABASE_URL for the disposable local Rooms PostgreSQL instance');
 const supplied=new URL(connection);
-if(supplied.hostname!=='127.0.0.1'||supplied.port!=='55469'||supplied.pathname!=='/masanawa_rooms_test')
- throw new Error('Qualification accepts only 127.0.0.1:55469/masanawa_rooms_test');
+if(supplied.hostname!=='127.0.0.1'||!([
+ ['55469','/masanawa_rooms_test'],['5432','/masanawa_test']
+].some(([port,pathname])=>supplied.port===port&&supplied.pathname===pathname)))
+ throw new Error('Qualification only accepts disposable local PostgreSQL test endpoints');
 const database='rooms_membership_'+randomBytes(8).toString('hex')+'_test';
 const control=new Pool({connectionString:connection});
 let pool,repository,created=false;
@@ -32,7 +34,8 @@ before(async()=>{
   'packages/events/migrations/0001_event_foundation.sql','packages/rooms/migrations/0001_rooms_free.sql',
   'packages/rooms/migrations/0002_room_subscriptions.sql','packages/rooms/migrations/0003_discussion_threads.sql',
   'packages/rooms/migrations/0004_saved_lessons.sql',
-  'adapters/storage/postgres/src/rooms/membership_schema.sql']){
+  'packages/rooms/migrations/0005_short_questions.sql',
+  'packages/rooms/migrations/0006_membership_invites.sql']){
   await pool.query(readFileSync(new URL('../../../../../'+path,import.meta.url),'utf8'));
  }
  for(const tenant of ['tenant_test','tenant_other']){
