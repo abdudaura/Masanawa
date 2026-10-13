@@ -2377,6 +2377,11 @@ export async function startGatewayService(
     return { tenantId: session.tenantId, userId: session.userId };
   };
   const roomsEnabled = () => true;
+  // Separate rollout from free Rooms discovery and AI answers: the six-step
+  // Rooms schema must be applied and customer/moderator journeys qualified
+  // before inviting users. OFF by default even when Rooms itself is live.
+  const roomsMembershipEnabled = () =>
+    process.env.MASANAWA_ROOMS_MEMBERSHIP_ENABLED === "true";
   const roomsStaffEnabled = () => true; // Server-listed editors only; not client-supplied roles.
   const rooms: GatewayAppOptions["rooms"] = options.appOptions?.rooms ??
     (featurePool && sessions && featureTenant ? (() => {
@@ -2423,8 +2428,8 @@ export async function startGatewayService(
         membership: {
           repository: createPgRoomMembershipRepository(featurePool),
           authorize: authorizeRoom,
-          // Invitation/moderator lifecycle stays OFF until separately qualified.
-          enabled: () => false,
+          // Explicit deployment gate; authorization is still checked per call.
+          enabled: roomsMembershipEnabled,
         },
       };
     })() : undefined);
