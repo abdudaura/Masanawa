@@ -1,17 +1,33 @@
 import {describe,it,expect,vi} from "vitest";
 import {createRoomTeacherWorker} from "./teacher.js";
-const job={outboxId:"outbox-event_1",tenantId:"tenant_1",questionId:"room-question_1",roomId:"room_1",fence:1};
-describe("durable teacher queue",()=>{
- it("does not claim when paused",async()=>{
-   const claim=vi.fn();const w=createRoomTeacherWorker({claim,draft:vi.fn(),fail:vi.fn()},{generate:vi.fn()},"worker1",()=>false);
-   expect(await w.tick()).toBe("disabled");expect(claim).not.toHaveBeenCalled();
+const job={outboxId:"outbox-event_1",tenantId:"tenant_1",
+ questionId:"room-question_1",roomId:"room_1",fence:1,
+ question:"What is algebra?",professionTitle:"Mathematics",language:"en"};
+describe("durable Rooms direct AI teacher",()=>{
+ it("does not claim while draining",async()=>{
+   const claim=vi.fn();
+   const w=createRoomTeacherWorker({claim,publish:vi.fn(),fail:vi.fn()},{generate:vi.fn()},"worker1",()=>false);
+   expect(await w.tick()).toBe("disabled");
+   expect(claim).not.toHaveBeenCalled();
  });
- it("does not lose the lone member question when no AI response exists",async()=>{
-   const draft=vi.fn();const w=createRoomTeacherWorker({claim:async()=>job,draft,fail:vi.fn()},{generate:async()=>null},"worker1",()=>true);
-   expect(await w.tick()).toBe("processed");expect(draft).toHaveBeenCalledWith(job,null);
+ it("delivers generated answers straight into the canonical journal",async()=>{
+   const publish=vi.fn();
+   const generate=vi.fn(async()=>"Algebra works with variables.");
+   const w=createRoomTeacherWorker({claim:async()=>job,publish,fail:vi.fn()},
+    {generate},"worker1",()=>true);
+   expect(await w.tick()).toBe("processed");
+   expect(generate).toHaveBeenCalledWith(job);
+   expect(publish).toHaveBeenCalledWith(job,"Algebra works with variables.");
  });
- it("reschedules transient failures using the same outbox identity",async()=>{
-   const fail=vi.fn();const w=createRoomTeacherWorker({claim:async()=>job,draft:vi.fn(),fail},{generate:async()=>{throw Error("offline");}},"worker1",()=>true);
-   expect(await w.tick()).toBe("retry");expect(fail).toHaveBeenCalledWith(job,"temporary_failure");
+ it("retries unavailable or empty models without losing user questions",async()=>{
+   const fail=vi.fn(),publish=vi.fn();
+   const w=createRoomTeacherWorker({claim:async()=>job,publish,fail},
+    {generate:async()=>{throw Error("provider_offline");}},"worker1",()=>true);
+   expect(await w.tick()).toBe("retry");
+   expect(fail).toHaveBeenCalledWith(job,"temporary_failure");
+   const empty=createRoomTeacherWorker({claim:async()=>job,publish,fail},
+    {generate:async()=>""},"worker1",()=>true);
+   expect(await empty.tick()).toBe("retry");
+   expect(publish).not.toHaveBeenCalled();
  });
 });
