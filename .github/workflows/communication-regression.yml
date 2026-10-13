@@ -68,10 +68,11 @@ jobs:
           services/gateway/src/paid_voice.test.ts
           services/gateway/src/paid_voice_routes.test.ts
       - name: Real PostgreSQL call lifecycle, incoming grants and account-fenced history
-        run: >-
-          pnpm exec vitest run
-          services/gateway/src/call_history
-          services/gateway/src/incoming_calls
+        # Repository tests allocate and tear down disposable databases. Running
+        # files concurrently can terminate another suite's pool (PG 57P01).
+        run: |
+          pnpm exec vitest run --no-file-parallelism services/gateway/src/call_history
+          pnpm exec vitest run --no-file-parallelism services/gateway/src/incoming_calls
 
   flutter-message-recording-and-live-call:
     runs-on: ubuntu-latest
