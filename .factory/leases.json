@@ -2059,28 +2059,6 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
-    },
-    {
-      "base_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc",
-      "branch": "lane/af01-msn-fiat-preflight-20261013-gpt6",
-      "claim_id": "af01-msn-fiat-preflight-20261013-gpt6",
-      "claimed_at": "2026-10-13T12:49:54.596Z",
-      "expires_at": "2026-10-13T13:01:43.148Z",
-      "heartbeat_at": "2026-10-13T12:56:43.148Z",
-      "owner": "GPT-6 / AF01 verified fiat intake",
-      "paths": [
-        "services/gateway/src/msn_wallet/fiat_intake.ts",
-        "services/gateway/src/msn_wallet/fiat_intake.test.ts",
-        "services/gateway/src/msn_wallet/fiat_intake_pg.ts",
-        "services/gateway/src/msn_wallet/fiat_intake_pg.test.ts",
-        "adapters/storage/postgres/src/commerce/msn-fiat-intake.integration.test.ts",
-        ".github/workflows/af01-msn-fiat-intake.yml",
-        "docs/workstreams/AF01-msn-fiat-intake-20261013.md"
-      ],
-      "scope": "Exact immutable PG funding intent read and server-to-server Flutterwave verification before any custody-backed MSN issuance; no live API, flag, migration or ledger writes",
-      "notes": "Source-only safe provider readback; no issuer or financial activation",
-      "source_pr": 714,
-      "source_head": "3cd0dc4fffd103ea35df4d2e03fa6f88845b76ea"
     }
   ],
   "history": [
@@ -6564,6 +6542,31 @@
       "source_pr": 711,
       "source_head": "93ae4c79e030c869ad76538eb996ea85c291298b",
       "integration_head_sha": "bf6c9f2386d5b7c22ad8eb6b035b949cdbd64269"
+    },
+    {
+      "base_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc",
+      "branch": "lane/af01-msn-fiat-preflight-20261013-gpt6",
+      "claim_id": "af01-msn-fiat-preflight-20261013-gpt6",
+      "claimed_at": "2026-10-13T12:49:54.596Z",
+      "expires_at": "2026-10-13T13:01:43.148Z",
+      "heartbeat_at": "2026-10-13T12:56:43.148Z",
+      "owner": "GPT-6 / AF01 verified fiat intake",
+      "paths": [
+        "services/gateway/src/msn_wallet/fiat_intake.ts",
+        "services/gateway/src/msn_wallet/fiat_intake.test.ts",
+        "services/gateway/src/msn_wallet/fiat_intake_pg.ts",
+        "services/gateway/src/msn_wallet/fiat_intake_pg.test.ts",
+        "adapters/storage/postgres/src/commerce/msn-fiat-intake.integration.test.ts",
+        ".github/workflows/af01-msn-fiat-intake.yml",
+        "docs/workstreams/AF01-msn-fiat-intake-20261013.md"
+      ],
+      "scope": "Exact immutable PG funding intent read and server-to-server Flutterwave verification before any custody-backed MSN issuance; no live API, flag, migration or ledger writes",
+      "notes": "Source-only safe provider readback; no issuer or financial activation",
+      "source_pr": 714,
+      "source_head": "3cd0dc4fffd103ea35df4d2e03fa6f88845b76ea",
+      "released_at": "2026-10-13T12:59:13.540Z",
+      "release_reason": "PR #714 head 3cd0dc4fffd103ea35df4d2e03fa6f88845b76ea safely squash-merged main db42827abfa464303833578a3bf49d9ae41f4709; hosted Vitest 63+PG18 3 and Flutter 23 PASS, focused Dart analyze PASS. Unrelated Foundation TalkId / Status Video strict TS remain failing; provider/live/issuance/Android NOT qualified.",
+      "integration_head_sha": "db42827abfa464303833578a3bf49d9ae41f4709"
     }
   ],
   "schema_version": 1
