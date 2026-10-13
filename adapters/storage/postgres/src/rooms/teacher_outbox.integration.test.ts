@@ -36,7 +36,11 @@ describe.skipIf(!connection)("actual PG18 Rooms customer question to Gemini-mode
  afterAll(async()=>{
    if(pool)await pool.end();
    if(admin){
-     await admin.query('DROP DATABASE IF EXISTS "'+db+'" WITH (FORCE)');
+     // The disposable test Pool has been closed above. Never FORCE-drop a
+     // database while pg@8 can still be emitting socket-close events: doing
+     // so throws an unhandled 57P01 after otherwise successful assertions.
+     // A plain DROP requires no remaining sessions and exposes real leaks.
+     await admin.query('DROP DATABASE IF EXISTS "'+db+'"');
      await admin.end();
    }
  },30_000);
