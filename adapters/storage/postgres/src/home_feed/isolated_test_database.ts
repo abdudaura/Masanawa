@@ -13,12 +13,28 @@ export async function createIsolatedPostgresTestDatabase(connectionString: strin
     const url = new URL(connectionString);
     url.pathname = "/" + name;
     const pool = new Pool({connectionString:url.toString()});
+    // Wait for connections to finish their asynchronous shutdown before
+    // dropping the database; FORCE would raise uncaught PG 57P01 events.
+    const dropWhenIdle = async () => {
+      for (let attempt = 0; attempt < 50; attempt += 1) {
+        const q = await admin.query<{count:string}>(
+          "SELECT count(*)::text AS count FROM pg_stat_activity WHERE datname=$1",
+          [name],
+        );
+        if (Number(q.rows[0]?.count) === 0) {
+          await admin.query('DROP DATABASE IF EXISTS "' + name + '"');
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      throw new Error("Disposable Status PG database still has active connections");
+    };
     return {
       pool,
       close: async () => {
         try { await pool.end(); }
         finally {
-          try { await admin.query('DROP DATABASE IF EXISTS "' + name + '" WITH (FORCE)'); }
+          try { await dropWhenIdle(); }
           finally { await admin.end(); }
         }
       },
