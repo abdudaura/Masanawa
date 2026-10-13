@@ -18,7 +18,8 @@ describe("Gemini Room question answer delivery",()=>{
    expect(await model.generate(job)).toBe("Service restored.");
    const options=fetchImpl.mock.calls[0]?.[1];
    expect(new Headers(options?.headers).get("x-goog-api-key")).toBe(credential);
-   for(const rejected of ["", "has whitespace inside", " ".repeat(2)+"bad", "x".repeat(257)]){
+   expect(()=>createGeminiRoomAnswerModel({apiKey:"  padded-server-key  "})).not.toThrow();
+   for(const rejected of ["", "has whitespace inside", "x".repeat(257)]){
      expect(()=>createGeminiRoomAnswerModel({apiKey:rejected})).toThrow("rooms_ai.credentials_required");
    }
  });
