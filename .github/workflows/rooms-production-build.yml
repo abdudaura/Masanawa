@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - "services/gateway/src/call_history/**"
+      - "services/gateway/src/main.ts"
+      - "apps/mobile/lib/src/screens/rooms/**"
+      - "apps/mobile/test/features/rooms/**"
+      - "adapters/storage/postgres/src/rooms/**"
       - "services/worker/src/**"
       - "packages/rooms/**"
       - "apps/mobile/lib/src/features/rooms/**"
@@ -15,6 +19,9 @@ on:
     branches: [main]
     paths:
       - "services/gateway/src/call_history/routes.ts"
+      - "services/gateway/src/main.ts"
+      - "apps/mobile/lib/src/screens/rooms/**"
+      - "apps/mobile/test/features/rooms/**"
       - "services/worker/src/main.ts"
       - "packages/rooms/**"
       - "adapters/storage/postgres/src/rooms/**"
@@ -70,6 +77,15 @@ jobs:
       - name: Real PG18 forward-upgrade and Rooms schema readiness
         run: pnpm exec vitest run adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts
           adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts
+      - name: Room invitations and member authorization unit tests
+        run: >-
+          node --experimental-transform-types --test
+          services/gateway/src/modules/rooms/membership_routes.test.mjs
+          adapters/storage/postgres/src/rooms/membership.test.mjs
+      - name: Real PG18 room invitation lifecycle, race and tenant fences
+        run: >-
+          node --experimental-transform-types --test
+          adapters/storage/postgres/src/rooms/membership.integration.test.mjs
       - name: Focused Worker production typing
         run: pnpm --filter @masanawa/worker-service typecheck
   flutter-rooms:
@@ -92,6 +108,14 @@ jobs:
           test/rooms_screen_test.dart
           test/features/rooms/room_discussion_screen_test.dart
           test/features/rooms/room_auto_answer_test.dart
+          test/features/rooms/room_membership_client_test.dart
+          test/features/rooms/room_membership_screen_test.dart
       - name: Focused Rooms Dart analysis
-        run: dart analyze lib/src/features/rooms/rooms_screen.dart
+        run: >-
+          dart analyze lib/src/features/rooms/rooms_screen.dart
+          lib/src/features/rooms/room_membership_client.dart
+          lib/src/features/rooms/room_membership_screen.dart
+          lib/src/screens/rooms/rooms_screen.dart
+          test/features/rooms/room_membership_client_test.dart
+          test/features/rooms/room_membership_screen_test.dart
 
