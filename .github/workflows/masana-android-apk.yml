@@ -56,8 +56,8 @@ jobs:
       - name: Compile Android release APK for handset testing
         run: >-
           flutter build apk --release --no-pub
-          --dart-define=API_BASE_URL=https://masanawa-gateway-production.up.railway.app
-          --dart-define=AGENT_BASE_URL=https://masanawa-gateway-production.up.railway.app
+          --dart-define=API_BASE_URL=https://masanawa-gateway-production-338f.up.railway.app
+          --dart-define=AGENT_BASE_URL=https://masanawa-gateway-production-338f.up.railway.app
       - name: Inspect APK result
         run: test -s build/app/outputs/flutter-apk/app-release.apk
       - name: Preserve compiled handset APK
