@@ -165,6 +165,8 @@ import {
   type FinancialAuthorizer,
 } from "./financial_service.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
+import { createMsnLedgerStore } from "./msn_wallet/store.js";
+import type { MsnBalanceAuthority } from "./msn_wallet/routes.js";
 import { createAgentShellService } from "./agent_shell.js";
 import type {
   AgentShellActionExecutor,
@@ -693,6 +695,7 @@ export async function startGatewayService(
   let creatorCloneAuthorizer = options.creatorCloneAuthorizer;
   let commerceAuthorizer = options.commerceAuthorizer;
   let financialAuthorizer = options.financialAuthorizer;
+  let msnBalanceAuthorizer: MsnBalanceAuthority | undefined;
   let strategy = options.agentStrategy;
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
@@ -879,6 +882,7 @@ export async function startGatewayService(
       repository: database.platformSessions,
     });
     billingCustomerAuthorizer = customerSessions;
+    msnBalanceAuthorizer = customerSessions;
     talkAuthorizer = customerSessions;
     talkReplayAuthorizer = customerSessions;
     talkLiveAuthorizer = customerSessions;
@@ -2464,6 +2468,16 @@ export async function startGatewayService(
         : {}),
       ...(linkedWhatsAppAdmin
         ? { linkedWhatsApp: linkedWhatsAppAdmin }
+        : {}),
+      // MSN is separate from legacy Credits and customer-facing NGN.
+      // Read-only, requiring explicit operator flag and platform session.
+      // No payment, issuance, conversion or transfer route is registered.
+      ...(env.MASANAWA_MSN_BALANCE_ENABLED === "true" &&
+          database.featurePool && msnBalanceAuthorizer
+        ? { msnBalance: {
+            authorizer: msnBalanceAuthorizer,
+            ledger: createMsnLedgerStore(database.featurePool),
+          } }
         : {}),
       // Only the production operator may enable this legacy credit-ledger
       // transfer. This never activates MSN minting, funding or crypto payouts.
