@@ -732,3 +732,67 @@ describe("customer password authentication", () => {
   });
 });
 
+
+
+describe("professional Masana first-contact and call token authority",()=>{
+ it("discovers an official professor distinct from support and provisions its chat/call relationship",async()=>{
+   const tenantId=createCanonicalId("tenant"),userId=createCanonicalId("user");
+   const supportId=createCanonicalId("character"),professorId=createCanonicalId("character");
+   const relationshipId=createCanonicalId("relationship");
+   const professorVersionId=createCanonicalId("character-version");
+   let provisioned=0;
+   const profiles=[
+     {schemaVersion:1 as const,tenantId,characterId:supportId,
+       supportAgent:true,defaultForNewUsers:true,voiceProvider:"gemini",voiceName:"Bodi",revision:1},
+     {schemaVersion:1 as const,tenantId,characterId:professorId,
+       supportAgent:false,defaultForNewUsers:false,voiceProvider:"gemini",voiceName:"Sulafat",revision:1},
+   ];
+   const authorizers=createPlatformCustomerAuthorizers({
+     sessions:{async authorize(){return {tenantId,userId,profile:{
+       tenantId,userId,name:"Student",email:"student@example.com",phone:null,
+       locale:"en-NG",createdAt:nowInstant()}};}},
+     presentations:{
+       async readForCharacter({characterId}){return characterId===professorId?{
+         schemaVersion:1 as const,tenantId,characterId,characterVersionId:professorVersionId,
+         displayName:"Prof. Ruqayya Haruna",roleLabel:"Mathematics",about:"AI teaching",
+         greeting:"Let's learn.",visibleInUserApp:true,sortOrder:11,revision:1,
+       }:null;},
+       async listAll(){return [];},async listVisible(){return [];},
+       async put(input){return input.presentation;},
+     },
+     skillAssignments:{
+       async readForCharacter(){return null;},async put(input){return input.assignment;},
+     },
+     relationships:{
+       async listForUser(){return [];},
+       async readForUserCharacter(){return null;},
+     },
+     relationshipProvisioner:{
+       async getOrCreateForUserCharacter(input){
+         provisioned++;
+         return {tenantId,userId,characterId:input.characterId,relationshipId,
+           state:"active" as const,stage:null,tone:null,
+           preferences:{},disclosures:{},permissions:{},revision:1,
+           createdAt:nowInstant(),updatedAt:nowInstant()};
+       },
+     },
+     platformProfiles:{
+       async readForCharacter(input){return profiles.find(p=>p.characterId===input.characterId)??null;},
+       async listSupportAgents(){return [profiles[0]!];},
+       async listPlatformAgents(){return profiles;},
+       async put(input){return input.profile;},
+     },
+     policyRevision:"production-masana-professionals-v1",
+   });
+   const directory=await authorizers.directory.authorize({
+     authorizationHeader:"Bearer student",capability:"agents.directory.read",
+   });
+   expect(directory.characterIds).toContain(professorId);
+   expect(directory.characterIds).toContain(supportId);
+   const admission=await authorizers.conversation.authorize({
+     authorizationHeader:"Bearer student",characterId:professorId,
+   });
+   expect(admission.scope).toMatchObject({tenantId,userId,characterId:professorId,relationshipId});
+   expect(provisioned).toBe(1);
+ });
+});
