@@ -1931,15 +1931,16 @@
       "base_sha": "9b246649077fc77cd9135f4b8c6a79bcd9e440fa",
       "branch": "recover/af00-700-worker-closure-20261013",
       "claimed_at": "2026-10-13T08:30:53.649Z",
-      "heartbeat_at": "2026-10-13T08:30:53.649Z",
-      "expires_at": "2026-10-13T08:55:53.649Z",
+      "heartbeat_at": "2026-10-13T08:33:24.953Z",
+      "expires_at": "2026-10-13T08:58:24.953Z",
       "scope": "Recover unmerged #700 worker workspace declaration and meaningful existing PG18/backend/worker CI; reconcile old draft without replacing newer main",
       "paths": [
         "services/worker/package.json",
         ".github/workflows/status-video-integration.yml",
-        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
+        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md",
+        "pnpm-lock.yaml"
       ],
-      "notes": "Main includes #702 and #704 source and PG18 62-test pass, distinct #700 helper and broad CI redundant. No provider/paid activation. PR #700 closing only after unique work disposition."
+      "notes": "Main includes #702 and #704 source and PG18 62-test pass, distinct #700 helper and broad CI redundant. No provider/paid activation. PR #700 closing only after unique work disposition. Lockfile importer update required by hosted ERR_PNPM_OUTDATED_LOCKFILE at run 38369934540; recovered exact workspace link from original #700."
     }
   ],
   "history": [
