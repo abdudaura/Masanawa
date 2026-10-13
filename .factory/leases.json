@@ -1877,7 +1877,12 @@
         "at": "2026-10-13T07:47:10.528Z",
         "basis": "Owner requested merging latest unmerged features; audited original expired AF05 claim, unchanged PR #705 exact head cd0dad1, same branch, source regression CI 29+ tests passing with one reproducible overriding-test-helper analyzer warning; reviewed takeover is only exact test file, preserve all other AF05 source.",
         "to": "af05-voice-note-analyzer-recovery-20261013"
-      }
+      },
+      "released_at": "2026-10-13T07:49:41.707Z",
+      "release_reason": "PR #705 source and focused Flutter+analyzer checks PASS at 814523132c96c391ba43c5c435dc1af9ad63f9fc; merged to main 9b246649077fc77cd9135f4b8c6a79bcd9e440fa. Real device/provider E2E still NOT_RUN.",
+      "source_head": "814523132c96c391ba43c5c435dc1af9ad63f9fc",
+      "source_pr": 705,
+      "integration_head_sha": "9b246649077fc77cd9135f4b8c6a79bcd9e440fa"
     },
     {
       "claim_id": "af06-mui03-c10-client-20261013-gpt6",
@@ -1908,7 +1913,12 @@
         "apps/mobile/test/ai_chat_voice_actions_test.dart"
       ],
       "scope": "Remove invalid @override from disconnected test-only helper, exact-head CI verify then merge existing PR #705.",
-      "notes": "Stale claim reviewed + bounded transfer in original record; do not modify shared auth or live voice; preserve original source and tests; handoff only on actual merger or concrete failure."
+      "notes": "Stale claim reviewed + bounded transfer in original record; do not modify shared auth or live voice; preserve original source and tests; handoff only on actual merger or concrete failure.",
+      "released_at": "2026-10-13T07:49:41.707Z",
+      "release_reason": "PR #705 source and focused Flutter+analyzer checks PASS at 814523132c96c391ba43c5c435dc1af9ad63f9fc; merged to main 9b246649077fc77cd9135f4b8c6a79bcd9e440fa. Real device/provider E2E still NOT_RUN.",
+      "source_head": "814523132c96c391ba43c5c435dc1af9ad63f9fc",
+      "source_pr": 705,
+      "integration_head_sha": "9b246649077fc77cd9135f4b8c6a79bcd9e440fa"
     }
   ],
   "history": [
