@@ -1858,7 +1858,12 @@
         ".github/workflows/mobile-notification-regression.yml"
       ],
       "scope": "Reconcile source-only PR #606 notification account fence and OS permission verification into current Settings without losing newer settings/customer controls; run relevant Flutter tests, merge main.",
-      "notes": "Reviewed original PR #606 head 19d29dd2a8da; source unmerged, no active competing exact-path claims. Keep original PR open until merged recovery verified; do not restore stale full settings file. Source checkpoint df6a146; focused 10/10 Flutter pass; follow-up resolves 6 informational analyzer lints."
+      "notes": "Reviewed original PR #606 head 19d29dd2a8da; source unmerged, no active competing exact-path claims. Keep original PR open until merged recovery verified; do not restore stale full settings file. Source checkpoint df6a146; focused 10/10 Flutter pass; follow-up resolves 6 informational analyzer lints.",
+      "released_at": "2026-10-13T06:54:07.310Z",
+      "source_pr": 703,
+      "source_head": "6f7b4f7a1d3381686e9df2e195b35827628d74ae",
+      "integration_head_sha": "7d16ed7b83e02beff153e462924d472951cf9202",
+      "release_reason": "PR #703 merged into main; exact-head 10/10 Flutter focused and zero-issue analyzer PASS (run 38359075382); merged main same focused suite PASS (run 38359185626); old PR #606 closed superseded. Full mobile build and Foundation CI remain pre-existing unrelated failures, device/Firebase E2E NOT_RUN."
     }
   ],
   "history": [
