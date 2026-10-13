@@ -63,6 +63,14 @@ export function platformProductMigrationRoots(): readonly MigrationRoot[] {
       owner: "commerce",
       directory: packageMigrationDirectory("@masanawa/commerce"),
     }),
+    // These new domains are forward-only migrations. Existing owner hashes
+    // and historical ledger, auth and money migrations remain untouched.
+    ...["masana", "feed", "rooms", "external-videos"].map((owner) =>
+      Object.freeze({
+        owner,
+        directory: fileURLToPath(new URL(`../../../../packages/${owner}/migrations/`, import.meta.url)),
+      }),
+    ),
     Object.freeze({
       owner: "talks",
       directory: fileURLToPath(

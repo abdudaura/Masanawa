@@ -16,7 +16,7 @@ describe("Status existing canonical eligibility selectors",()=>{
   expect(await r.author("tenant","masana")).toBe(true);
   expect(await r.media("tenant","masana","media_abcdefgh")).toBe(true);
   expect(query.mock.calls[0]?.[1]).toEqual(["tenant","masana"]);
-  expect(query.mock.calls[1]?.[1]).toEqual(["tenant","masana","media_abcdefgh"]);
+  expect(query.mock.calls[1]?.[1]).toEqual(["tenant","masana","media_abcdefgh","image"]);
   for(const [sql] of query.mock.calls){
    expect(sql).toContain("c.state='active'");
    expect(sql).toContain("o.kind='platform'");
@@ -28,13 +28,14 @@ describe("Status existing canonical eligibility selectors",()=>{
  it("denies image references relabelled as audio before querying",async()=>{
   const query=vi.fn();const r=new PgStatusEligibility({query} as never);
   expect(await r.media("tenant","masana","media_abcdefgh","audio")).toBe(false);
-  expect(query).not.toHaveBeenCalled();
+  // No locally declared approval: unverified query does not confer rights.
+  expect(query).toHaveBeenCalledTimes(1);
  });
  it("cleared object resolution binds tenant author media and denies malformed rows",async()=>{
   const query=vi.fn(async(_sql:string,_args:unknown[])=>({rows:[{object_key:"tenant/approved.png"}]}));
   const r=new PgStatusEligibility({query} as never);
   expect(await r.object("tenant","masana","media_abcdefgh")).toEqual({objectKey:"tenant/approved.png"});
-  expect(query.mock.calls[0]?.[1]).toEqual(["tenant","masana","media_abcdefgh"]);
+  expect(query.mock.calls[0]?.[1]).toEqual(["tenant","masana","media_abcdefgh","image"]);
   const sql=query.mock.calls[0]?.[0];
   for(const guard of ["m.kind IN","m.rights_note","m.approved_by","c.state='active'","o.kind='platform'","r.state='approved'"])
    expect(sql).toContain(guard);
@@ -71,6 +72,12 @@ const connection=process.env.MASANAWA_TEST_DATABASE_URL;
   expect(await eligibility.object('tenant_real','masana','media_abcdefgh')).toEqual({objectKey:'canonical/image.png'});
   for(const args of [['foreign','masana','media_abcdefgh'],['tenant_real','foreign','media_abcdefgh'],['tenant_real','masana','media_foreign'],["tenant_real' OR true --",'masana','media_abcdefgh']])
    expect(await eligibility.object(args[0]!,args[1]!,args[2]!)).toBeNull();
+ });
+ it("does not relabel portrait as audio and admits only explicitly cleared audio media",async()=>{
+  expect(await eligibility.object('tenant_real','masana','media_abcdefgh','audio')).toBeNull();
+  await db.pool.query("INSERT INTO masana.character_media VALUES('tenant_real','masana','media_audio0001','audio','cleared recording license','reviewer','canonical/speech.m4a')");
+  expect(await eligibility.object('tenant_real','masana','media_audio0001','audio')).toEqual({objectKey:'canonical/speech.m4a'});
+  expect(await eligibility.object('tenant_real','masana','media_audio0001','image')).toBeNull();
  });
  it("revocation, private ownership, suspension or withdrawn rights deny the next read",async()=>{
   for(const [table,column,blocked,restored] of [

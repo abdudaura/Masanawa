@@ -14,7 +14,7 @@ function fixture(){
 describe("Status cleared canonical image signing",()=>{
  it("uses server catalogue key and 120s grant; public DTO never exposes key",async()=>{
   const f=fixture();const grant=await f.runtime.media.sign(post);
-  expect(f.object).toHaveBeenCalledWith("tenant_real","masana","media_abcdefgh");
+  expect(f.object).toHaveBeenCalledWith("tenant_real","masana","media_abcdefgh","image");
   expect(f.presignGet).toHaveBeenCalledWith("canonical/tenant_real/approved.png",120);
   expect(grant).toMatchObject({contentType:"image/png"});expect(JSON.stringify(grant)).not.toContain("canonical/");
   expect(await f.runtime.approved("tenant_real","masana","media_abcdefgh","image")).toBe(true);
@@ -29,6 +29,22 @@ describe("Status cleared canonical image signing",()=>{
   }
   f.object.mockResolvedValueOnce(null as never);expect(await f.runtime.media.sign(post)).toBeNull();
   expect(f.presignGet).not.toHaveBeenCalled();
+ });
+
+ it("signs only rights-cleared audio with bounded MIME, size and current publication",async()=>{
+  const f=fixture();const audioPost={...post,kind:"audio" as const,transcript:"Spoken update"};
+  f.find.mockResolvedValue(audioPost);
+  f.statObject.mockResolvedValue({contentType:"audio/mpeg",bytes:8192});
+  const signed=await f.runtime.media.sign(audioPost);
+  expect(signed).toMatchObject({contentType:"audio/mpeg"});
+  expect(f.object).toHaveBeenCalledWith("tenant_real","masana","media_abcdefgh","audio");
+  expect(await f.runtime.approved("tenant_real","masana","media_abcdefgh","audio")).toBe(true);
+  f.statObject.mockResolvedValueOnce({contentType:"image/png",bytes:8192});
+  expect(await f.runtime.media.sign(audioPost)).toBeNull();
+  f.statObject.mockResolvedValueOnce({contentType:"audio/mpeg",bytes:40*1024*1024});
+  expect(await f.runtime.media.sign(audioPost)).toBeNull();
+  f.find.mockResolvedValueOnce(null as never);
+  expect(await f.runtime.media.sign(audioPost)).toBeNull();
  });
  it("rechecks revocation and replacement after network metadata lookup",async()=>{
   const f=fixture();f.object.mockResolvedValueOnce({objectKey:"old.png"}).mockResolvedValueOnce({objectKey:"new.png"});

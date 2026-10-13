@@ -8,12 +8,13 @@ export interface StatusMediaConfiguration {
  approvedDownloadOrigins:readonly string[];
 }
 interface CanonicalMedia {
- object(tenant:string,author:string,media:string):Promise<{objectKey:string}|null>;
+ object(tenant:string,author:string,media:string,kind:"image"|"audio"):Promise<{objectKey:string}|null>;
 }
 interface PublishedMedia {
  find(tenant:string,post:string,media:string):Promise<PublishedPostMedia|null>;
 }
 const image=/^image\/(jpeg|png|webp|gif)$/;
+const audio=/^audio\/(mpeg|mp4|ogg|aac|wav|webm)$/;
 /** Reuses cleared character_media + published feed membership. No cache or public key. */
 export function createStatusMediaRuntime(input:{eligibility:CanonicalMedia;published:PublishedMedia;
  configuration?:StatusMediaConfiguration}){
@@ -25,12 +26,13 @@ export function createStatusMediaRuntime(input:{eligibility:CanonicalMedia;publi
    throw new TypeError("Status media requires exact HTTPS download origins");
  }
  const validated=async(tenant:string,author:string,media:string,kind:string)=>{
-  if(kind!=="image"||!configuration||origins.size===0)return null;
-  const object=await input.eligibility.object(tenant,author,media);
+  if((kind!=="image"&&kind!=="audio")||!configuration||origins.size===0)return null;
+  const object=await input.eligibility.object(tenant,author,media,kind);
   if(!object)return null;
   const metadata=await configuration.objects.statObject(object.objectKey);
-  if(!metadata||!image.test(metadata.contentType)||!Number.isSafeInteger(metadata.bytes)||
-    metadata.bytes<1||metadata.bytes>10*1024*1024)return null;
+  if(!metadata||!(kind==="image"?image.test(metadata.contentType):audio.test(metadata.contentType))||
+    !Number.isSafeInteger(metadata.bytes)||metadata.bytes<1||
+    metadata.bytes>(kind==="image"?10:30)*1024*1024)return null;
   // Network work must not retain a revoked approval or replaced object mapping.
   const current=await input.eligibility.object(tenant,author,media);
   if(!current||current.objectKey!==object.objectKey)return null;

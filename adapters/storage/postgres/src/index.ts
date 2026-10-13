@@ -31,3 +31,10 @@ export * from "./commerce/billing-funding.js";
 export * from "./commerce/billing-runtime.js";
 export * from "./commerce/twin-economy.js";
 export * from "./commerce/ngn-wallet.js";
+
+// Status and official provider video share the existing authenticated PG pool.
+export { PgHomeFeedRepository } from "./home_feed/repository.js";
+export { PgEditorialReviewRepository } from "./home_feed/review_repository.js";
+export { PgStatusEligibility } from "./home_feed/eligibility.js";
+export { PgFeedMediaAuthorization } from "./home_feed/media_authorization.js";
+export { createPostgresVideoStore } from "./external_videos/repository.js";

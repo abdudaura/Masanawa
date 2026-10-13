@@ -14,31 +14,25 @@ export class PgStatusEligibility {
   return r.rows[0]?.approved===true;
  }
  async media(tenant:string,character:string,media:string,kind:string="image"):Promise<boolean>{
-  // The canonical catalogue currently stores images only. Never relabel them as audio.
-  if(kind!=="image")return false;
-  const r=await this.pool.query(`SELECT EXISTS (
-   SELECT 1 FROM masana.character_media m
-   JOIN identity.characters c USING(tenant_id,character_id)
-   JOIN identity.character_ownership o USING(tenant_id,character_id)
-   JOIN masana.character_revisions r USING(tenant_id,character_id)
-   WHERE m.tenant_id=$1 AND m.character_id=$2 AND m.media_id=$3
-    AND r.state='approved' AND c.state='active' AND o.kind='platform'
-    AND length(btrim(m.rights_note))>4 AND length(btrim(m.approved_by))>0
-    AND length(btrim(m.object_key))>0) AS approved`,[tenant,character,media]);
-  return r.rows[0]?.approved===true;
+  if(kind!=="image"&&kind!=="audio")return false;
+  // The media kind and cleared object mapping must match the post kind.
+  return (await this.object(tenant,character,media,kind))!==null;
  }
- async object(tenant:string,character:string,media:string):Promise<{objectKey:string}|null>{
+ async object(tenant:string,character:string,media:string,kind:"image"|"audio"="image"):Promise<{objectKey:string}|null>{
+  const allowed=kind==="audio"?"audio":"image";
   const r=await this.pool.query(`SELECT m.object_key
    FROM masana.character_media m
    JOIN identity.characters c USING(tenant_id,character_id)
    JOIN identity.character_ownership o USING(tenant_id,character_id)
    JOIN masana.character_revisions r USING(tenant_id,character_id)
    WHERE m.tenant_id=$1 AND m.character_id=$2 AND m.media_id=$3
-    AND m.kind IN ('portrait','banner','cover')
+    AND (($4='audio' AND m.kind='audio') OR
+         ($4='image' AND m.kind IN ('portrait','banner','cover')))
     AND r.state='approved' AND c.state='active' AND o.kind='platform'
     AND length(btrim(m.rights_note))>4 AND length(btrim(m.approved_by))>0
-    AND length(btrim(m.object_key))>0 LIMIT 1`,[tenant,character,media]);
+    AND length(btrim(m.object_key))>0 LIMIT 1`,[tenant,character,media,allowed]);
   const key=r.rows[0]?.object_key;
   return typeof key==='string'&&key.trim()?{objectKey:key}:null;
  }
+
 }
