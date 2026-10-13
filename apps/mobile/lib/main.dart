@@ -8,6 +8,7 @@ import 'src/localization/masanawa_localization.dart';
 import 'src/localization/locale_preference.dart';
 import 'src/localization/locale_preference_scope.dart';
 import 'src/core/mobile_push.dart';
+import 'src/core/startup_metrics.dart';
 import 'src/core/pending_deep_link.dart';
 import 'src/core/shell_deep_link.dart';
 import 'src/router/app_router.dart';
@@ -15,7 +16,11 @@ import 'src/state/session_state.dart';
 import 'src/theme/masanawa_theme.dart';
 
 Future<void> main() async {
+  MasanawaStartupMetrics.mark('dart_main');
   WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    MasanawaStartupMetrics.mark('first_flutter_frame');
+  });
   runApp(const ProviderScope(child: MasanawaApp()));
 }
 
@@ -73,8 +78,7 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       final uri = _pendingLink.take(
         ready:
             session is SessionSignedIn &&
-            !session.user.isNewUser &&
-            router.routeInformationProvider.value.uri.path != '/splash',
+            !session.user.isNewUser,
       );
       if (uri != null) {
         final route = shellDeepLinkRoute(uri);

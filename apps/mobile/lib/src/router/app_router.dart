@@ -16,12 +16,13 @@ import '../screens/profile/person_profile_screen.dart';
 import '../screens/profile/persona_profile_screen.dart';
 import '../screens/search/talk_search_screen.dart';
 import '../screens/settings/settings_screen.dart';
-import '../screens/splash/splash_screen.dart';
+import '../core/startup_metrics.dart';
 import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
 import '../screens/chat/masana_list_screen.dart';
 import '../screens/twin/shell_tab.dart';
 import '../shell/five_tab_shell.dart';
+import '../shell/startup_gate.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
 import '../talks/talk_models.dart';
@@ -42,28 +43,45 @@ String? legacyShellDestination(String? tab) => switch (tab) {
       _ => null,
     };
 
-/// Production router for the audio-first product.
-///
-/// Canonical root shell: Chats · Rooms · Talks · Gwani · Wallet (Talks
-/// default). The legacy Home · Agents · Wallet · Talk entries below stay
-/// valid as redirects until the shell migration unit removes them.
+/// Chats-first router. Secure local session restoration happens inline on
+/// /home, not through a separate branded splash screen or a fixed timer.
+/// Legacy links remain redirects to supported destinations.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/home?tab=chats',
     redirect: (context, state) {
       final path = state.matchedLocation;
 
-      if (path == '/splash') return null;
+      if (path == '/splash') return '/home?tab=chats';
       if (path == '/chat' || path == '/chats') return '/home?tab=chats';
       if (path == '/agents') return '/home?tab=chats';
 
       final session = ref.read(sessionProvider);
       final isSignedIn = session is SessionSignedIn;
 
+      // The /home widget itself only paints a neutral progress indicator
+      // during secure-storage restoration; neither local conversations nor
+      // protected child widgets are mounted until an account is restored.
       if (session is SessionRestoring ||
           session is SessionSendingOtp ||
           session is SessionVerifying) {
         return null;
+      }
+
+      // Resume in-progress sign-up states without showing authenticated Chats.
+      if (path == '/home') {
+        if (session is SessionNameRequired ||
+            session is SessionRegisterProfile) {
+          return '/name';
+        }
+        if (session is SessionPasswordRequired) {
+          return '/password?phone=${Uri.encodeComponent(session.identifier)}'
+              '&setup=${session.setup ? '1' : '0'}';
+        }
+        if (session is SessionAwaitingOtp) return '/otp';
+        if (session is SessionSignedIn && session.user.isNewUser) {
+          return '/name';
+        }
       }
 
       if (isSignedIn && (path == '/phone-login' || path == '/otp')) {
@@ -107,7 +125,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
+      // Old splash links now redirect; no splash page is constructed.
+      GoRoute(path: '/splash', redirect: (_, __) => '/home?tab=chats'),
       GoRoute(
         path: '/phone-login',
         builder: (_, _) => const PhoneLoginScreen(),
@@ -126,7 +145,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final index = shellRootTabIndex(
             state.uri.queryParameters['tab']);
-          return IncomingCallCoordinator(child: FiveTabShell(initialIndex: index));
+          return StartupGate(
+            child: IncomingCallCoordinator(
+              child: FiveTabShell(initialIndex: index),
+            ),
+          );
         },
       ),
       GoRoute(
@@ -238,6 +261,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 
-  ref.listen(isSignedInProvider, (_, _) => router.refresh());
+  // Restoring -> SignedOut keeps isSignedIn=false throughout; listening only
+  // to the boolean would leave the launch page stuck indefinitely. Refresh
+  // on the actual session transition, including a failed restore.
+  ref.listen<SessionState>(sessionProvider, (_, next) {
+    if (next is! SessionRestoring) {
+      MasanawaStartupMetrics.mark('session_resolved');
+    }
+    router.refresh();
+  });
   return router;
 });

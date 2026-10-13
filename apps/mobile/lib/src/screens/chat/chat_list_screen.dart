@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../chat/chat_format.dart';
+import '../../core/startup_metrics.dart';
 import '../../chat/message_parts.dart';
 import '../../finance/crypto_wallet_screen.dart';
 import '../../state/agent_directory_state.dart';
@@ -282,6 +283,7 @@ class ChatListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    MasanawaStartupMetrics.afterFrame('chats_first_frame');
     final u = context.masanawa;
     final chat = ref.watch(aiChatProvider);
     final directory = ref.watch(agentDirectoryProvider);
