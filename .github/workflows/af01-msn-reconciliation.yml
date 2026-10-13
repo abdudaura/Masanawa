@@ -1,0 +1,63 @@
+name: AF01 Staged MSN Reconciliation
+on:
+  pull_request:
+    paths:
+      - "services/gateway/src/msn_wallet/reconciliation*"
+      - "services/worker/src/jobs/msn/**"
+      - "adapters/storage/postgres/src/commerce/msn-reconciliation.integration.test.ts"
+      - ".github/workflows/af01-msn-reconciliation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/gateway/src/msn_wallet/reconciliation.ts"
+      - "services/worker/src/jobs/msn/**"
+      - ".github/workflows/af01-msn-reconciliation.yml"
+permissions:
+  contents: read
+jobs:
+  reconcile-pg18:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_DB: masanawa_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d masanawa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/masanawa_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: MSN reconciliation, worker and existing funding regressions
+        run: >-
+          pnpm exec vitest run
+          services/gateway/src/msn_wallet/reconciliation.test.ts
+          services/worker/src/jobs/msn/reconcile.test.ts
+          services/gateway/src/msn_wallet/admission.test.ts
+          services/gateway/src/msn_wallet/quote_journal.test.ts
+          services/gateway/src/msn_wallet/fiat_intake.test.ts
+      - name: Staged real PostgreSQL 18 accounting and provider verification
+        run: pnpm exec vitest run adapters/storage/postgres/src/commerce/msn-reconciliation.integration.test.ts
+      - name: Gateway and worker production compilation
+        run: |
+          pnpm --filter @masanawa/gateway-service... build
+          pnpm --filter @masanawa/worker-service... build
+      - name: Worker TypeScript contracts
+        run: pnpm --filter @masanawa/worker-service typecheck
