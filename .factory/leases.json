@@ -2044,24 +2044,6 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
-    },
-    {
-      "claim_id": "af00-mui04-status-composition-20261013",
-      "owner": "AF00 / GPT-6 bounded MUI-04 Status composition",
-      "scope": "Exact source integration in current five-tab shell: replace legacy Talk Status with authenticated Masana-only feed while preserving Calls and AF00 shared authority",
-      "paths": [
-        "apps/mobile/lib/src/features/home_feed/**",
-        "apps/mobile/test/features/home_feed/**",
-        "apps/mobile/lib/src/screens/status/status_screen.dart",
-        "apps/mobile/test/status_screen_test.dart",
-        "apps/mobile/lib/src/shell/five_tab_shell.dart",
-        "docs/workstreams/UI-MUI-04-status.md"
-      ],
-      "branch": "lane/af00-mui04-masana-status-20261013",
-      "base_sha": "5eec953bae1b7dacc000fa55fb45c86f7a04d180",
-      "claimed_at": "2026-10-13T05:34:22.795Z",
-      "heartbeat_at": "2026-10-13T05:34:22.795Z",
-      "expires_at": "2026-10-13T05:39:22.795Z"
     }
   ],
   "history": [
@@ -6091,6 +6073,29 @@
       "source_head_sha": "683d7526ffb514fe2fba78bf6438b35217aaa1c7",
       "test_state": "PASS full strict typecheck/full build/frozen dependencies,78 focused+2rootHTTP+9realPG18+15Flutter, scopedDart; global30 failures under baseline comparison; production feed404; Android SDK missing.",
       "recovery_note": "MUI04 recovers explicitly released Status source paths without replacing existing #674 app/Gateway code or newer Calls."
+    },
+    {
+      "claim_id": "af00-mui04-status-composition-20261013",
+      "owner": "AF00 / GPT-6 bounded MUI-04 Status composition",
+      "scope": "Exact source integration in current five-tab shell: replace legacy Talk Status with authenticated Masana-only feed while preserving Calls and AF00 shared authority",
+      "paths": [
+        "apps/mobile/lib/src/features/home_feed/**",
+        "apps/mobile/test/features/home_feed/**",
+        "apps/mobile/lib/src/screens/status/status_screen.dart",
+        "apps/mobile/test/status_screen_test.dart",
+        "apps/mobile/lib/src/shell/five_tab_shell.dart",
+        "docs/workstreams/UI-MUI-04-status.md"
+      ],
+      "branch": "lane/af00-mui04-masana-status-20261013",
+      "base_sha": "5eec953bae1b7dacc000fa55fb45c86f7a04d180",
+      "claimed_at": "2026-10-13T05:34:22.795Z",
+      "heartbeat_at": "2026-10-13T05:34:22.795Z",
+      "expires_at": "2026-10-13T05:39:22.795Z",
+      "released_at": "2026-10-13T05:38:24.749Z",
+      "release_reason": "Source-first Masana Status UI / approved media / authenticated account-fenced feature recovery merged PR #698 to main 875654e90a192b82dcdaab05f1fb2b4e07e93202 from source 08f42af5af26dab9aa6be12133415f7edaaba418, current Calls preserved. Diff/imports checked, authored Flutter cases NOT_RUN (no SDK). Server Gateway/PG composition from #674 and AF08 token isolation still OPEN. See docs/workstreams/UI-MUI-04-status.md.",
+      "source_head": "08f42af5af26dab9aa6be12133415f7edaaba418",
+      "integration_head_sha": "875654e90a192b82dcdaab05f1fb2b4e07e93202",
+      "source_pr": 698
     }
   ],
   "schema_version": 1
