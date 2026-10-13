@@ -363,6 +363,24 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
+  packages/feed:
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/masana:
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/rooms:
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
   packages/identity:
     dependencies:
       '@masanawa/contracts':
@@ -493,6 +511,9 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/feed':
+        specifier: workspace:*
+        version: link:../../packages/feed
       '@masanawa/identity':
         specifier: workspace:*
         version: link:../../packages/identity
@@ -508,6 +529,9 @@ importers:
       '@masanawa/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@masanawa/rooms':
+        specifier: workspace:*
+        version: link:../../packages/rooms
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../packages/security

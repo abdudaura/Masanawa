@@ -1,3 +1,12 @@
+import { FeedService, EditorialReviewService } from "@masanawa/feed";
+import {
+  PgHomeFeedRepository, PgEditorialReviewRepository, PgStatusEligibility,
+  PgFeedMediaAuthorization, createPostgresVideoStore,
+} from "@masanawa/postgres";
+import { createStatusMediaRuntime, type StatusMediaConfiguration } from "./modules/home_feed/media_runtime.js";
+import { createConfiguredStatusMedia } from "./modules/home_feed/media_environment.js";
+import type { StatusRuntime } from "./modules/home_feed/runtime.js";
+import { VideoAdmissionError } from "./modules/external_videos/service.js";
 import { createIncomingCallService, type IncomingRepository, type IncomingCallService } from "./incoming_calls/service.js";
 import { createPostgresIncomingCallRepository } from "./incoming_calls/postgres_repository.js";
 import { createIncomingServerAuthorizer } from "./incoming_calls/server_authorizer.js";
@@ -296,6 +305,13 @@ export interface ServiceProcess extends NodeSignalSource {
 }
 
 export interface ServiceDatabaseDependency {
+  readonly status?: {
+    feed: PgHomeFeedRepository;
+    editorial: PgEditorialReviewRepository;
+    eligibility: PgStatusEligibility;
+    published: PgFeedMediaAuthorization;
+  };
+  readonly videos?: ReturnType<typeof createPostgresVideoStore>;
   readonly callHistory?: CallHistoryRepository & CallHistoryRecorder;
   readonly groupCalls?: GroupCallRepository;
   readonly incomingCalls?: IncomingRepository;
@@ -362,6 +378,8 @@ export type ServiceDatabaseFactory = (
 export type GatewayServiceConfig = NodeServiceRuntimeConfig;
 
 export interface StartGatewayServiceOptions {
+  /** Explicit trusted original media store; never inferred from Talk replay. */
+  readonly statusMedia?: StatusMediaConfiguration;
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly processRef?: ServiceProcess;
   readonly logger?: ServiceLifecycleLogger;
@@ -423,6 +441,13 @@ function createDefaultDatabaseDependency(
   const groupCalls = createPostgresGroupCallRepository(database.pool);
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    status: {
+      feed: new PgHomeFeedRepository(database.pool),
+      editorial: new PgEditorialReviewRepository(database.pool),
+      eligibility: new PgStatusEligibility(database.pool),
+      published: new PgFeedMediaAuthorization(database.pool),
+    },
+    videos: createPostgresVideoStore(database.pool),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
       withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
     platformAgentIdentity: Object.freeze({
@@ -2233,6 +2258,64 @@ export async function startGatewayService(
     });
   }
 
+  // Reuse the already authorized user session. No headers can select tenant or
+  // grant a video editor role. An absent database port leaves the feature off.
+  const sessions = database.platformSessions
+    ? (billingCustomerAuthorizer ?? createPlatformCustomerSessionAuthorizer({
+        repository: database.platformSessions,
+      }))
+    : undefined;
+  const editors = readPrincipalSet(
+    env.MASANAWA_ADMIN_USER_IDS ?? env.MASANAWA_ADMIN_PRINCIPALS ??
+    env.MASANAWA_ADMIN_EMAILS,
+  );
+  let status: StatusRuntime | undefined = options.appOptions?.status;
+  try {
+    const mediaConfiguration = options.statusMedia ?? createConfiguredStatusMedia(env);
+    if (!status && sessions && database.status) {
+    const {feed,editorial,eligibility,published} = database.status;
+    const mediaRuntime = createStatusMediaRuntime({
+      eligibility,published,
+      ...(mediaConfiguration ? {configuration:mediaConfiguration} : {}),
+    });
+    const author = (tenant:string,id:string) => eligibility.author(tenant,id);
+    status = {
+      sessions,
+      feed: new FeedService(feed,author,mediaRuntime.approved),
+      editorial: new EditorialReviewService(editorial,author,mediaRuntime.approved),
+      isEditor: async session => editors.has(session.userId),
+      media: mediaRuntime.media,
+    };
+  }
+  } catch (error) {
+    // Fail closed without stranding the pool when trusted S3 origins or media
+    // composition are invalid. No Gateway listener has been created yet.
+    await database.close().catch(() => undefined);
+    throw error;
+  }
+  const videos: GatewayAppOptions["videos"] = options.appOptions?.videos ??
+    (sessions && database.videos ? {
+      store:database.videos,
+      resolvePrincipal: async request => {
+        let session: Awaited<ReturnType<typeof sessions.authorize>>;
+        try {
+          session = await sessions.authorize({
+            authorizationHeader:request.headers.authorization,
+          });
+        } catch {
+          throw new VideoAdmissionError(401,"authentication_required","Sign in to view videos");
+        }
+        if (!session?.tenantId || !session.userId) {
+          throw new VideoAdmissionError(401,"authentication_required","Sign in to view videos");
+        }
+        return {
+          tenantId:session.tenantId,
+          actorId:session.userId,
+          staffRoles:editors.has(session.userId) ? ["content_editor"] : [],
+        };
+      },
+    } : undefined);
+
   let app: ManagedNodeServer;
   try {
     incomingCalls = options.appOptions?.incomingCalls ??
@@ -2246,6 +2329,8 @@ export async function startGatewayService(
           })
         : undefined);
     app = appFactory({
+      ...(status ? {status} : {}),
+      ...(videos ? {videos} : {}),
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(accountDeletion ? { accountDeletion } : {}),

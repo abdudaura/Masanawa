@@ -1,0 +1,55 @@
+name: Status Video Integration
+on:
+  pull_request:
+    paths: ["services/gateway/**", "adapters/storage/postgres/**", "packages/feed/**", ".github/workflows/status-video-integration.yml"]
+  push:
+    branches: [main]
+    paths: ["services/gateway/**", "adapters/storage/postgres/**", "packages/feed/**", ".github/workflows/status-video-integration.yml"]
+permissions:
+  contents: read
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_DB: masanawa_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d masanawa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/masanawa_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+      - name: Focused Status and Video tests
+        run: >-
+          pnpm exec vitest run
+          services/gateway/src/modules/home_feed/media_runtime.test.ts
+          services/gateway/src/modules/home_feed/object_store.test.ts
+          services/gateway/src/modules/home_feed/composition.test.ts
+          services/gateway/src/modules/home_feed/status_video_composition.test.ts
+          services/gateway/src/modules/home_feed/runtime.test.ts
+          services/gateway/src/modules/external_videos/routes.test.ts
+          adapters/storage/postgres/src/home_feed/eligibility.test.ts
+          adapters/storage/postgres/src/external_videos/repository.integration.test.ts
+          packages/feed/src/index.test.ts
+      - name: Gateway strict typecheck
+        run: pnpm --filter @masanawa/gateway-service typecheck
