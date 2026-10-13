@@ -1821,8 +1821,8 @@
       "claim_id": "af00-rooms-c10-runtime-20261013-gpt6-continue",
       "owner": "GPT-6 / owner-directed AF00 Rooms and C10 gateway composition",
       "claimed_at": "2026-10-13T06:42:33.335Z",
-      "heartbeat_at": "2026-10-13T06:50:15.773Z",
-      "expires_at": "2026-10-13T07:20:15.773Z",
+      "heartbeat_at": "2026-10-13T06:52:43.019Z",
+      "expires_at": "2026-10-13T07:22:43.019Z",
       "base_sha": "c64994837d3a1a19bd065f94c241178aa512e53d",
       "branch": "lane/af00-rooms-c10-runtime-20261013",
       "scope": "Reconcile #700 unique Rooms/C10 protected Gateway runtime source on #702 merged Status/Video, preserving one PG/session authority; explicit default-OFF runtime; focused negative tests",
@@ -1837,9 +1837,10 @@
         "adapters/storage/postgres/package.json",
         "pnpm-lock.yaml",
         ".github/workflows/status-video-integration.yml",
-        "adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts"
+        "adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts",
+        "adapters/storage/postgres/src/readiness.ts"
       ],
-      "notes": "Bounded AF00 shared transfer acknowledged #616 comment 6139065553; previously released af00-j06-j07-c10-20261013 source retained #700; AF05 live voice and Calls untouched. No provider or destructive migrations. Hosted CI exact 674db542 found missing @masanawa/rooms importer; narrow manifest/lockfile repair needed. Hosted postgres18 test will run fresh/upgrade and repaired PG importer in focused CI on exact PR SHA.",
+      "notes": "Bounded AF00 shared transfer acknowledged #616 comment 6139065553; previously released af00-j06-j07-c10-20261013 source retained #700; AF05 live voice and Calls untouched. No provider or destructive migrations. Hosted CI exact 674db542 found missing @masanawa/rooms importer; narrow manifest/lockfile repair needed. Hosted postgres18 test will run fresh/upgrade and repaired PG importer in focused CI on exact PR SHA. Actual hosted PG18 fresh+upgrade fails feed/0003 external_videos FK because root order external-videos after feed. Fix ordering only; keep SQL hashes.",
       "source_pr": 700
     },
     {
