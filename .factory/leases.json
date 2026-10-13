@@ -1825,32 +1825,6 @@
       "release_reason": "PR #701 merged to main at ce968552e648f482ae74f613264f026c0061643e. Focused Mobile Startup Regression run 38356345765 PASS at b8a35b6; later only style fix (braces) at 5c4960e. Earlier Mobile Build whole-project Flutter analyze FAIL (pre-existing extensive warnings + one new style fixed), Foundation TS2459 existing; later current-head run 38356391584 launched, real Android APK startup timing NOT_RUN. No device speed claim."
     },
     {
-      "claim_id": "af00-rooms-c10-runtime-20261013-gpt6-continue",
-      "owner": "GPT-6 / owner-directed AF00 Rooms and C10 gateway composition",
-      "claimed_at": "2026-10-13T06:42:33.335Z",
-      "heartbeat_at": "2026-10-13T06:52:43.019Z",
-      "expires_at": "2026-10-13T07:22:43.019Z",
-      "base_sha": "c64994837d3a1a19bd065f94c241178aa512e53d",
-      "branch": "lane/af00-rooms-c10-runtime-20261013",
-      "scope": "Reconcile #700 unique Rooms/C10 protected Gateway runtime source on #702 merged Status/Video, preserving one PG/session authority; explicit default-OFF runtime; focused negative tests",
-      "paths": [
-        "services/gateway/src/app.ts",
-        "services/gateway/src/main.ts",
-        "services/gateway/src/modules/masana_chat/inbox_routes.ts",
-        "services/gateway/src/modules/masana_chat/af00_composition.test.ts",
-        "adapters/storage/postgres/src/index.ts",
-        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md",
-        "adapters/storage/postgres/src/migrations.ts",
-        "adapters/storage/postgres/package.json",
-        "pnpm-lock.yaml",
-        ".github/workflows/status-video-integration.yml",
-        "adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts",
-        "adapters/storage/postgres/src/readiness.ts"
-      ],
-      "notes": "Bounded AF00 shared transfer acknowledged #616 comment 6139065553; previously released af00-j06-j07-c10-20261013 source retained #700; AF05 live voice and Calls untouched. No provider or destructive migrations. Hosted CI exact 674db542 found missing @masanawa/rooms importer; narrow manifest/lockfile repair needed. Hosted postgres18 test will run fresh/upgrade and repaired PG importer in focused CI on exact PR SHA. Actual hosted PG18 fresh+upgrade fails feed/0003 external_videos FK because root order external-videos after feed. Fix ordering only; keep SQL hashes.",
-      "source_pr": 700
-    },
-    {
       "base_sha": "c64994837d3a1a19bd065f94c241178aa512e53d",
       "branch": "recover/af14-notification-account-20261013",
       "claim_id": "af14-notification-source-recovery-20261013",
@@ -6303,6 +6277,36 @@
       "release_reason": "PR #702 merged to main with nine targeted suites/46 tests PASS, TypeScript Gateway global inherited errors recorded; release remaining provider, worker, Flutter/Android qualification separately",
       "merge_sha": "c64994837d3a1a19bd065f94c241178aa512e53d",
       "source_head_sha": "3f91de23ceecaf158b880851eab9168544144ee3"
+    },
+    {
+      "claim_id": "af00-rooms-c10-runtime-20261013-gpt6-continue",
+      "owner": "GPT-6 / owner-directed AF00 Rooms and C10 gateway composition",
+      "claimed_at": "2026-10-13T06:42:33.335Z",
+      "heartbeat_at": "2026-10-13T06:52:43.019Z",
+      "expires_at": "2026-10-13T07:22:43.019Z",
+      "base_sha": "c64994837d3a1a19bd065f94c241178aa512e53d",
+      "branch": "lane/af00-rooms-c10-runtime-20261013",
+      "scope": "Reconcile #700 unique Rooms/C10 protected Gateway runtime source on #702 merged Status/Video, preserving one PG/session authority; explicit default-OFF runtime; focused negative tests",
+      "paths": [
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/modules/masana_chat/inbox_routes.ts",
+        "services/gateway/src/modules/masana_chat/af00_composition.test.ts",
+        "adapters/storage/postgres/src/index.ts",
+        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md",
+        "adapters/storage/postgres/src/migrations.ts",
+        "adapters/storage/postgres/package.json",
+        "pnpm-lock.yaml",
+        ".github/workflows/status-video-integration.yml",
+        "adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts",
+        "adapters/storage/postgres/src/readiness.ts"
+      ],
+      "notes": "Bounded AF00 shared transfer acknowledged #616 comment 6139065553; previously released af00-j06-j07-c10-20261013 source retained #700; AF05 live voice and Calls untouched. No provider or destructive migrations. Hosted CI exact 674db542 found missing @masanawa/rooms importer; narrow manifest/lockfile repair needed. Hosted postgres18 test will run fresh/upgrade and repaired PG importer in focused CI on exact PR SHA. Actual hosted PG18 fresh+upgrade fails feed/0003 external_videos FK because root order external-videos after feed. Fix ordering only; keep SQL hashes.",
+      "source_pr": 704,
+      "source_head": "a0a8ec22b3e3f97154ca66cc59fda3942a5f9efd",
+      "integration_head_sha": "174c7d1b633a15607e069a0205269baf414e3b95",
+      "released_at": "2026-10-13T06:57:49.061Z",
+      "release_reason": "PR #704 normal merge on main 174c7d1; hosted exact-source 37ff01b8 Node24/pnpm12/PG18 focused 62/62 tests, including fresh+upgrade and deny/default-off; later handoff-only commit keeps source blobs. Strict whole Gateway legacy 75 diagnostics and Foundation TalkId TS2459 remain failed; Flutter/device/provider not run. C10 Flutter remote inbox and other work remain open."
     }
   ],
   "schema_version": 1
