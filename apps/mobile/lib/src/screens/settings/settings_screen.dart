@@ -30,6 +30,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notificationBusy = false;
   bool _notificationLoadError = false;
   int _notificationEpoch = 0;
+  int _supportMutationEpoch = 0;
   String? _savingDefaultAgentId;
 
   @override
@@ -104,6 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String displayName,
   }) async {
     if (_savingDefaultAgentId != null) return;
+    final ticket = ++_supportMutationEpoch;
     setState(() => _savingDefaultAgentId = characterId);
     try {
       await ref.read(agentDirectoryTransportProvider)
@@ -125,7 +127,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _showFeedback('Could not update your default agent. Please try again.');
       }
     } finally {
-      if (mounted) setState(() => _savingDefaultAgentId = null);
+      if (mounted && ticket == _supportMutationEpoch) {
+        setState(() => _savingDefaultAgentId = null);
+      }
     }
   }
 
@@ -154,6 +158,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<SessionState>(sessionProvider, (before, after) {
+      final oldOwner = before is SessionSignedIn ? before.user.id : null;
+      final newOwner = after is SessionSignedIn ? after.user.id : null;
+      if (oldOwner == newOwner || !mounted) return;
+      ++_notificationEpoch;
+      ++_supportMutationEpoch;
+      setState(() {
+        _notifications = false;
+        _notificationReady = false;
+        _notificationLoadError = false;
+        _notificationBusy = false;
+        _savingDefaultAgentId = null;
+      });
+      unawaited(_refreshNotificationState());
+    });
     final u = context.masanawa;
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
