@@ -90,14 +90,15 @@ test('lost-response retry succeeds only for same active member; left/banned retr
  await denied(setup({invite,membership:'left'}).repo.accept(fan,roomId,token),'invite_already_used');
  await denied(setup({invite,membership:'banned'}).repo.accept(fan,roomId,token),'room_banned');
 });
-test('accept atomically consumes invitation, preserves existing role, scopes every write',async()=>{
+test('accept atomically consumes invitation, prevents left moderator reactivation, scopes every write',async()=>{
  const s=setup({membership:'left'});await s.repo.accept(fan,roomId,token);assert(s.committed());
  const lock=s.calls.findIndex(c=>c.sql.includes('FROM rooms.rooms'));
  const member=s.calls.findIndex(c=>c.sql.startsWith('SELECT state FROM rooms.memberships'));
  assert(lock<member);assert.match(s.calls[lock].sql,/FOR UPDATE/);
  const insert=s.calls.find(c=>c.sql.startsWith('INSERT INTO rooms.memberships'));
  assert.deepEqual(insert.args,[fan.tenantId,roomId,fan.userId]);
- assert(!insert.sql.split('DO UPDATE')[1].includes('role='));
+ assert.match(insert.sql,/role=CASE WHEN current_member\.state='active' THEN current_member\.role ELSE 'member' END/);
+ assert.match(insert.sql,/state='active'/);
  const consume=s.calls.find(c=>c.sql.startsWith('UPDATE rooms.membership_invites SET accepted_by'));
  assert.deepEqual(consume.args,[fan.tenantId,roomId,'invite-one',fan.userId]);
 });

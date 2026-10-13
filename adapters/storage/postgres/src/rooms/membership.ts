@@ -106,8 +106,12 @@ export function createPgRoomMembershipRepository(pool:Pool):RoomMembershipReposi
      throw new RoomError(409,'invite_already_used');
     }
     if(!invite.unexpired)throw new RoomError(410,'invite_expired');
-    await q.query(`INSERT INTO rooms.memberships(tenant_id,room_id,user_id,role) VALUES($1,$2,$3,'member')
-     ON CONFLICT(tenant_id,room_id,user_id) DO UPDATE SET state='active',updated_at=now()`,[a.tenantId,id,a.userId]);
+    await q.query(`INSERT INTO rooms.memberships AS current_member(tenant_id,room_id,user_id,role)
+     VALUES($1,$2,$3,'member')
+     ON CONFLICT(tenant_id,room_id,user_id) DO UPDATE
+       SET state='active',
+           role=CASE WHEN current_member.state='active' THEN current_member.role ELSE 'member' END,
+           updated_at=now()`,[a.tenantId,id,a.userId]);
     await q.query('UPDATE rooms.membership_invites SET accepted_by=$4,accepted_at=now() WHERE tenant_id=$1 AND room_id=$2 AND invite_id=$3',[a.tenantId,id,invite.invite_id,a.userId]);
     await audit(q,a,id,'rooms.invite.accepted',{inviteId:invite.invite_id});
     return {joined:true as const};
