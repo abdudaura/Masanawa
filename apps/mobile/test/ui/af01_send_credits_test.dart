@@ -48,10 +48,11 @@ class _Wallet extends WalletController {
 class _Session extends SessionController {
   @override
   SessionState build() => _session('fan-a');
+}
 
-  void change(String? id) {
-    state = id == null ? const SessionSignedOut() : _session(id);
-  }
+class _SignedOutSession extends SessionController {
+  @override
+  SessionState build() => const SessionSignedOut();
 }
 
 SessionSignedIn _session(String id) {
@@ -200,11 +201,10 @@ void main() {
 
   testWidgets('disabled and signed-out mounted wallets never expose Send',
       (tester) async {
-    final session = _Session();
     await tester.pumpWidget(ProviderScope(
       overrides: [
         walletProvider.overrideWith(() => _Wallet()),
-        sessionProvider.overrideWith(() => session),
+        sessionProvider.overrideWith(_Session.new),
       ],
       child: MaterialApp(
         theme: buildMasanawaTheme(brightness: Brightness.light),
@@ -213,7 +213,19 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(find.text('Send'), findsNothing);
-    session.change(null);
+
+    // Different provider container: signed-out account, enabled build flag.
+    await tester.pumpWidget(ProviderScope(
+      key: UniqueKey(),
+      overrides: [
+        walletProvider.overrideWith(() => _Wallet()),
+        sessionProvider.overrideWith(_SignedOutSession.new),
+      ],
+      child: MaterialApp(
+        theme: buildMasanawaTheme(brightness: Brightness.light),
+        home: const WalletScreen(walletCreditSendEnabled: true),
+      ),
+    ));
     await tester.pumpAndSettle();
     expect(find.text('Send'), findsNothing);
   });
