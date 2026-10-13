@@ -1948,7 +1948,6 @@
       "source_pr": 707
     },
     {
-      "id": "af09-rescue-video-approval-20261013-gpt6",
       "owner": "GPT-6 abandoned Status/video window recovery",
       "branch": "recover/status-video-approval-20261013",
       "paths": [
@@ -1962,10 +1961,15 @@
       "claimed_at": "2026-10-13T08:55:48.600Z",
       "heartbeat_at": "2026-10-13T08:55:48.600Z",
       "expires_at": "2026-10-13T09:40:48.600Z",
-      "notes": "Reconciled main #699/#702/#704/#705/#706/#707; no overlapping current claims. Run hosted focused Flutter CI and merge only passing code; signed devices/providers remain unverified."
+      "notes": "Reconciled main #699/#702/#704/#705/#706/#707; no overlapping current claims. Run hosted focused Flutter CI and merge only passing code; signed devices/providers remain unverified.",
+      "claim_id": "af09-rescue-video-approval-20261013-gpt6",
+      "released_at": "2026-10-13T09:05:32.528Z",
+      "release_reason": "Hosted run 38373264323 24 tests PASS, 24 infos, no errors/warnings; merged #708. Real provider, S3, Android and production admission not verified.",
+      "integration_head_sha": "4908cccf40d90b64a507439014b548b7ba10c65b",
+      "source_head": "ef7d2dfa21150d5c0df755c6afad2cbbaa046ab4",
+      "source_pr": 708
     },
     {
-      "id": "af10-rescue-rooms-account-20261013-gpt6",
       "owner": "GPT-6 abandoned MUI Rooms window recovery",
       "branch": "recover/rooms-detail-account-20261013",
       "paths": [
@@ -1978,7 +1982,13 @@
       "claimed_at": "2026-10-13T08:55:48.600Z",
       "heartbeat_at": "2026-10-13T08:55:48.600Z",
       "expires_at": "2026-10-13T09:40:48.600Z",
-      "notes": "Reconciled main #699/#702/#704/#705/#706/#707; no overlapping current claims. Run hosted focused Flutter CI and merge only passing code; signed devices/providers remain unverified."
+      "notes": "Reconciled main #699/#702/#704/#705/#706/#707; no overlapping current claims. Run hosted focused Flutter CI and merge only passing code; signed devices/providers remain unverified.",
+      "claim_id": "af10-rescue-rooms-account-20261013-gpt6",
+      "released_at": "2026-10-13T09:05:32.528Z",
+      "release_reason": "Hosted run 38373519998 25 tests PASS, 24 infos, no errors/warnings; merged #709. Real live accounts/device/provider not verified.",
+      "integration_head_sha": "fd29f392156ab6f032fa66a4de6420b932d64507",
+      "source_head": "c37d4a6a5a472b201e1dce0c33298036ee08ec8e",
+      "source_pr": 709
     }
   ],
   "history": [
