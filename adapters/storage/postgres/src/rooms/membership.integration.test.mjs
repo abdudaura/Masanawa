@@ -95,6 +95,20 @@ test('role authority and ban-versus-accept concurrency retain server-enforced de
  await repository.moderate(staff,id,'fan_one','unban');
  assert.equal((await pool.query('SELECT state FROM rooms.memberships WHERE room_id=$1 AND user_id=$2',[id,'fan_one'])).rows[0].state,'left');
 });
+test('rejoining after leaving cannot resurrect old moderator powers; active moderators keep their role',async()=>{
+ const id=await room();await member(id,'moderator_user','moderator');
+ await pool.query("UPDATE rooms.memberships SET state='left' WHERE tenant_id='tenant_test' AND room_id=$1 AND user_id='moderator_user'",[id]);
+ const invite=await repository.issue(staff,id);
+ assert.deepEqual(await repository.accept(actor('moderator_user'),id,invite.token),{joined:true});
+ const returning=(await pool.query("SELECT state,role FROM rooms.memberships WHERE tenant_id='tenant_test' AND room_id=$1 AND user_id='moderator_user'",[id])).rows[0];
+ assert.deepEqual(returning,{state:'active',role:'member'});
+ await denied(repository.issue(actor('moderator_user'),id),'room_moderator_required');
+ await member(id,'fan_one','moderator');
+ const activeInvite=await repository.issue(staff,id);
+ assert.deepEqual(await repository.accept(actor('fan_one'),id,activeInvite.token),{joined:true});
+ const active=(await pool.query("SELECT state,role FROM rooms.memberships WHERE tenant_id='tenant_test' AND room_id=$1 AND user_id='fan_one'",[id])).rows[0];
+ assert.deepEqual(active,{state:'active',role:'moderator'});
+});
 test('failed canonical audit rolls back membership and redemption; retry succeeds',async()=>{
  const id=await room(),invite=await repository.issue(staff,id);
  await pool.query(`CREATE FUNCTION events.reject_test_accept() RETURNS trigger LANGUAGE plpgsql AS $$
