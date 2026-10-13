@@ -1940,7 +1940,12 @@
         "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md",
         "pnpm-lock.yaml"
       ],
-      "notes": "Main includes #702 and #704 source and PG18 62-test pass, distinct #700 helper and broad CI redundant. No provider/paid activation. PR #700 closing only after unique work disposition. Lockfile importer update required by hosted ERR_PNPM_OUTDATED_LOCKFILE at run 38369934540; recovered exact workspace link from original #700."
+      "notes": "Main includes #702 and #704 source and PG18 62-test pass, distinct #700 helper and broad CI redundant. No provider/paid activation. PR #700 closing only after unique work disposition. Lockfile importer update required by hosted ERR_PNPM_OUTDATED_LOCKFILE at run 38369934540; recovered exact workspace link from original #700.",
+      "released_at": "2026-10-13T08:37:18.130Z",
+      "release_reason": "PR #707 merged to main at be6d99dc709ad1a2663979aebf7470be6721f4ce. Exact code SHA 2399f3d6 hosted PG18 frozen-install 20 suites 82 tests PASS; global TS 75 errors identical to #704 baseline. #700 closed as superseded with reviewed unique-file disposition (comment 6141648304). No provider activation or full production verification.",
+      "integration_head_sha": "be6d99dc709ad1a2663979aebf7470be6721f4ce",
+      "source_head": "5b0e7f6aeb08576a65ae437d17d6b4604b9739a0",
+      "source_pr": 707
     }
   ],
   "history": [
