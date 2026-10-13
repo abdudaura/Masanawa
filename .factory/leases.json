@@ -1972,20 +1972,6 @@
       "source_pr": 727
     },
     {
-      "claim_id": "af07-masana-final-apk-20261013-gpt6",
-      "owner": "AF07/GPT-6 complete handset APK after 26 Masana Room integration",
-      "scope": "Ensure Android APK workflow recompiles when new authorized Room navigation or directory source changes and certifies a real post-integration release APK",
-      "branch": "lane/af07-masana-final-apk-compilation-20261013-gpt6",
-      "base_sha": "6ed4af48fe4ea2fc53c8447dc83434c9c86d25e3",
-      "paths": [
-        ".github/workflows/masana-android-apk.yml"
-      ],
-      "pr": "",
-      "claimed_at": "2026-10-13T16:50:53.607Z",
-      "heartbeat_at": "2026-10-13T16:50:53.607Z",
-      "expires_at": "2026-10-13T17:35:53.607Z"
-    },
-    {
       "claim_id": "af01-msn-settlement-integrity-20261013-gpt6",
       "owner": "AF01 / GPT-6 settlement integration continuation",
       "scope": "Bind MSN issuance to immutable exact quote, independent canonical fiat verification and debit, reconcile NGN debit and ledger under staged disabled financial contract",
@@ -7042,6 +7028,24 @@
       "release_reason": "PR #728 passed dedicated production Gateway/Worker builds, 26 roster/agent-room Vitest, PG18, Flutter and Dart analysis; exact source 5b6e2315177090431a63080e4c6249a2de993faa merged main 6ed4af48fe4ea2fc53c8447dc83434c9c86d25e3. No production Railway/provider acceptance.",
       "integration_head_sha": "6ed4af48fe4ea2fc53c8447dc83434c9c86d25e3",
       "source_pr": 728
+    },
+    {
+      "claim_id": "af07-masana-final-apk-20261013-gpt6",
+      "owner": "AF07/GPT-6 complete handset APK after 26 Masana Room integration",
+      "scope": "Ensure Android APK workflow recompiles when new authorized Room navigation or directory source changes and certifies a real post-integration release APK",
+      "branch": "lane/af07-masana-final-apk-compilation-20261013-gpt6",
+      "base_sha": "6ed4af48fe4ea2fc53c8447dc83434c9c86d25e3",
+      "paths": [
+        ".github/workflows/masana-android-apk.yml"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T16:50:53.607Z",
+      "heartbeat_at": "2026-10-13T16:50:53.607Z",
+      "expires_at": "2026-10-13T17:35:53.607Z",
+      "released_at": "2026-10-13T16:57:13.165Z",
+      "integration_head_sha": "02cad68f1143b81726d6b51a61cf4472b9b55f81",
+      "source_pr": 729,
+      "release_reason": "PR #729 workflow-only, config validated by parsed Actions and Android portrait/Room-link tests; source 65ee1e1e885be15ba813667b0f38602a73f1f3d8 merged 02cad68f1143b81726d6b51a61cf4472b9b55f81. Fresh release APK compile still pending, no handset/provider or Railway acceptance."
     }
   ],
   "schema_version": 1
