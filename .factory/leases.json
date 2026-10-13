@@ -1792,8 +1792,8 @@
       "branch": "lane/af00-status-video-runtime-composition-20261013",
       "claim_id": "af00-j06-j07-c10-20261013",
       "claimed_at": "2026-10-13T06:01:47.593Z",
-      "expires_at": "2026-10-13T10:15:04.014Z",
-      "heartbeat_at": "2026-10-13T06:15:04.014Z",
+      "expires_at": "2026-10-13T06:20:34.611Z",
+      "heartbeat_at": "2026-10-13T06:15:34.611Z",
       "owner": "AF00 / GPT-6 owner-directed protected source composition",
       "paths": [
         "services/gateway/src/app.ts",
@@ -1825,7 +1825,7 @@
       ],
       "scope": "Selective J06 status / J07-J08-C38 rooms / C10 server-wide Chats backend, forward-only PG and disabled paid/publishing with current Calls preserved",
       "notes": "Owner directs complete Status audio and Video Gateway/PG wiring after #699; prior AF00 source tree commit 1481305 preserved for selective recovery, existing explicit cloud/AF05 shared app.ts/main.ts transfer; preserve newer Calls and do not touch AF05 voice-path changes. No production S3 config inferred.",
-      "source_head": "b6e009feab11032ab0cd276be7beef983d8adad4"
+      "source_head": "298ce543650343a83a090a08db32cb434059ce2f"
     },
     {
       "base_sha": "875654e90a192b82dcdaab05f1fb2b4e07e93202",
