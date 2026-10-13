@@ -1,0 +1,83 @@
+name: AF01 MSN Fiat Intake Proof
+on:
+  pull_request:
+    paths:
+      - "services/gateway/src/msn_wallet/fiat_intake*"
+      - "adapters/storage/postgres/src/commerce/msn-fiat-intake.integration.test.ts"
+      - ".github/workflows/af01-msn-fiat-intake.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/gateway/src/msn_wallet/fiat_intake*"
+      - "adapters/storage/postgres/src/commerce/msn-fiat-intake.integration.test.ts"
+permissions:
+  contents: read
+jobs:
+  provider-and-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_DB: masanawa_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d masanawa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/masanawa_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Server-only payment verification and PG snapshot negative tests
+        run: >-
+          pnpm exec vitest run
+          services/gateway/src/msn_wallet/fiat_intake.test.ts
+          services/gateway/src/msn_wallet/fiat_intake_pg.test.ts
+          services/gateway/src/msn_wallet/admission.test.ts
+          services/gateway/src/msn_wallet/store.test.ts
+      - name: Real PostgreSQL 18 canonical funded-intent reconciliation
+        run: >-
+          pnpm exec vitest run
+          adapters/storage/postgres/src/commerce/msn-fiat-intake.integration.test.ts
+  flutter-financial-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Existing wallet account, MSN and Credits transfer regressions
+        run: >-
+          flutter test --no-pub --reporter expanded
+          test/finance/msn_balance_transport_test.dart
+          test/finance/msn_balance_card_test.dart
+          test/ui/af01_send_credits_test.dart
+          test/auth_credential_fencing_test.dart
+      - name: Focused financial Flutter analysis
+        run: >-
+          dart analyze
+          lib/src/finance/msn_balance_transport.dart
+          lib/src/finance/msn_balance_card.dart
+          test/finance/msn_balance_transport_test.dart
+          test/finance/msn_balance_card_test.dart
