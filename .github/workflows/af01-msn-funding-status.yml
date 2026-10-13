@@ -1,0 +1,98 @@
+name: AF01 MSN Funding Journal Readback
+on:
+  pull_request:
+    paths:
+      - "services/gateway/src/msn_wallet/**"
+      - "services/gateway/src/app.ts"
+      - "services/gateway/src/main.ts"
+      - "packages/commerce/migration_proposals/0112_msn_wallet.sql"
+      - "adapters/storage/postgres/src/commerce/msn-quote-journal.integration.test.ts"
+      - "apps/mobile/lib/src/finance/msn_funding*"
+      - "apps/mobile/lib/src/screens/wallet/wallet_screen.dart"
+      - "apps/mobile/test/finance/msn_funding*"
+      - ".github/workflows/af01-msn-funding-status.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/gateway/src/msn_wallet/quote_journal.ts"
+      - "services/gateway/src/msn_wallet/funding_routes.ts"
+      - "packages/commerce/migration_proposals/0112_msn_wallet.sql"
+permissions:
+  contents: read
+jobs:
+  gateway-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_DB: masanawa_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d masanawa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/masanawa_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Quote journal, owner-scoped route and finance regression
+        run: >-
+          pnpm exec vitest run
+          services/gateway/src/msn_wallet/quote_journal.test.ts
+          services/gateway/src/msn_wallet/funding_routes.test.ts
+          services/gateway/src/msn_wallet/funding_composition.test.ts
+          services/gateway/src/msn_wallet/fiat_intake.test.ts
+          services/gateway/src/msn_wallet/fiat_intake_pg.test.ts
+          services/gateway/src/msn_wallet/admission.test.ts
+          services/gateway/src/msn_wallet/store.test.ts
+      - name: Staged PostgreSQL 18 immutable quote/payment history
+        run: >-
+          pnpm exec vitest run
+          adapters/storage/postgres/src/commerce/msn-quote-journal.integration.test.ts
+          adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts
+  flutter-funding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Funding history, MSN Wallet and session identity
+        run: >-
+          flutter test --no-pub --reporter expanded
+          test/finance/msn_funding_transport_test.dart
+          test/finance/msn_funding_card_test.dart
+          test/finance/msn_balance_transport_test.dart
+          test/finance/msn_balance_card_test.dart
+          test/ui/mui07_wallet_test.dart
+          test/ui/af01_send_credits_test.dart
+          test/auth_credential_fencing_test.dart
+      - name: Focused Dart analyzer
+        run: >-
+          dart analyze
+          lib/src/finance/msn_funding_transport.dart
+          lib/src/finance/msn_funding_card.dart
+          lib/src/screens/wallet/wallet_screen.dart
+          test/finance/msn_funding_transport_test.dart
+          test/finance/msn_funding_card_test.dart
