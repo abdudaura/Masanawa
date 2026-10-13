@@ -220,3 +220,33 @@ The public webhook URL is resolved in this order:
 The resolved URL must use HTTPS. Startup calls `setWebhook` with the configured secret
 token and allowed update type `message`, then calls `getWebhookInfo` and fails closed
 unless Telegram reports the exact same active URL. Pending updates are preserved.
+
+## 2026-10-13 account recovery: explicit database migration and canonical Worker
+
+The expired Railway account cannot be considered a backup or a reproducible build
+source. Preserve the original `masanawa-postgres` volume and all attached
+credentials before touching that service. The canonical Gateway source is
+`weavewellindustrieslimited/masanawa:main`; the previous `@nurain/worker`
+Git source is a retired webhook proxy, **not** the current Masanawa AI-answer Worker.
+
+The production Gateway's `start` now starts the server **without automatically
+running migrations**. The existing `pnpm --filter @masanawa/gateway-service
+migrate` remains a separate, explicit operator action, to run against the
+verified restored database **only after** an independent backup-and-restore drill
+and migration-manifest review. Do not call `alpha:prepare` or bootstrap identities
+against real customer data. Before approved migration 0006, `/readyz` should
+refuse requests to treat an outdated schema as qualified; Railway's Gateway
+health check uses readiness rather than mere HTTP liveness.
+
+The canonical Worker has its own monorepo-root Dockerfile and
+`infra/deployment/worker/railway.toml`; it builds and runs
+`@masanawa/worker-service` from the same pinned main SHA as Gateway.
+Never reuse `@nurain/worker`, copy the old volume into a new blank database
+without a verified archive, or share a public database endpoint unnecessarily.
+The new Railway account must explicitly bind secrets and private PostgreSQL
+host references through its secure variable store. Room membership,
+all MSN issuance/provider switches and automatic financial settlement remain
+OFF until their domain acceptance and genuine provider evidence.
+
+See `docs/workstreams/AF00-railway-account-recovery-20261013.md` for the
+bounded operator recovery sequence and unresolved live checks.

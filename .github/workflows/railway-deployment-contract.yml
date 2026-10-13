@@ -1,0 +1,43 @@
+name: Railway Deployment Source Contract
+on:
+  pull_request:
+    paths:
+      - "infra/deployment/gateway/**"
+      - "infra/deployment/worker/**"
+      - "services/gateway/package.json"
+      - "services/worker/**"
+      - "test/architecture/railway-deployment.test.ts"
+      - ".github/workflows/railway-deployment-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/deployment/gateway/**"
+      - "infra/deployment/worker/**"
+      - "services/gateway/package.json"
+      - "services/worker/**"
+      - "test/architecture/railway-deployment.test.ts"
+      - ".github/workflows/railway-deployment-contract.yml"
+permissions:
+  contents: read
+jobs:
+  canonical-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Verify deployment authority and fail-closed readiness
+        run: pnpm exec vitest run test/architecture/railway-deployment.test.ts
+      - name: Build canonical Gateway
+        run: pnpm --filter @masanawa/gateway-service... build
+      - name: Build canonical AI-answer Worker
+        run: pnpm --filter @masanawa/worker-service... build
