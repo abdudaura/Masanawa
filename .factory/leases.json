@@ -2026,8 +2026,8 @@
       "branch": "lane/af01-msn-qualified-balance-20261013-gpt6",
       "claim_id": "af01-msn-qualified-balance-20261013-gpt6",
       "claimed_at": "2026-10-13T11:02:50.285Z",
-      "heartbeat_at": "2026-10-13T11:15:47.917Z",
-      "expires_at": "2026-10-13T11:25:47.917Z",
+      "heartbeat_at": "2026-10-13T11:21:48.011Z",
+      "expires_at": "2026-10-13T11:31:48.011Z",
       "notes": "New AF01 read-only qualified MSN balance and backed-issuance source continuation, reuse individual files from diverged draft #576; separate off-chain MSN from legacy Credits; no provider execution, no user supplied proof, both runtime/client flags default OFF; main and root scope claimed exclusively after PR #712 merge. CI #38388319251 surfaced pg unavailable in Gateway package; move real PostgreSQL integration into postgres adapter test folder (no new dependency). Imported draft's Future.error widget fixture prematurely uncaught; repair fixture. Before code merge, stage candidate 0112 DDL outside auto-run commerce migration root; hosted PG tests apply proposed DDL explicitly after canonical migrations, preserving no unapproved deploy-time schema mutation.",
       "owner": "GPT-6 / AF01 MSN qualified readback",
       "paths": [
