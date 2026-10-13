@@ -2021,21 +2021,6 @@
       "source_head": "c6a3ee3b149245943bef6f5e1c3554a22d584a01",
       "source_pr": 731,
       "integration_head_sha": "483ec92068e6236137a7a28d709b8760414996cc"
-    },
-    {
-      "claim_id": "af07-apk-new-gateway-route-20261013-gpt6-2301",
-      "owner": "GPT-6 AF07 customer APK transport recovery",
-      "scope": "Correct consumer shared API+Masana Gateway URL defaults for newly deployed isolated Masanawa Railway environment; no finance, worker, auth server or DNS changes.",
-      "paths": [
-        "apps/mobile/lib/src/core/network/api_client.dart",
-        "apps/mobile/lib/src/agents/masanawa_transport.dart"
-      ],
-      "claimed_at": "2026-10-13T23:01:24.261Z",
-      "heartbeat_at": "2026-10-13T23:01:24.261Z",
-      "expires_at": "2026-10-13T23:36:24.261Z",
-      "base_sha": "483ec92068e6236137a7a28d709b8760414996cc",
-      "branch": "lane/af07-correct-new-gateway-20261013-gpt6",
-      "notes": "Source and Railway target identity inspected; new backend remains isolated with financial flags OFF. Android and provider evidence separate."
     }
   ],
   "history": [
@@ -7093,6 +7078,25 @@
       "integration_head_sha": "02cad68f1143b81726d6b51a61cf4472b9b55f81",
       "source_pr": 729,
       "release_reason": "PR #729 workflow-only, config validated by parsed Actions and Android portrait/Room-link tests; source 65ee1e1e885be15ba813667b0f38602a73f1f3d8 merged 02cad68f1143b81726d6b51a61cf4472b9b55f81. Fresh release APK compile still pending, no handset/provider or Railway acceptance."
+    },
+    {
+      "claim_id": "af07-apk-new-gateway-route-20261013-gpt6-2301",
+      "owner": "GPT-6 AF07 customer APK transport recovery",
+      "scope": "Correct consumer shared API+Masana Gateway URL defaults for newly deployed isolated Masanawa Railway environment; no finance, worker, auth server or DNS changes.",
+      "paths": [
+        "apps/mobile/lib/src/core/network/api_client.dart",
+        "apps/mobile/lib/src/agents/masanawa_transport.dart"
+      ],
+      "claimed_at": "2026-10-13T23:01:24.261Z",
+      "heartbeat_at": "2026-10-13T23:01:24.261Z",
+      "expires_at": "2026-10-13T23:36:24.261Z",
+      "base_sha": "483ec92068e6236137a7a28d709b8760414996cc",
+      "branch": "lane/af07-correct-new-gateway-20261013-gpt6",
+      "notes": "Source and Railway target identity inspected; new backend remains isolated with financial flags OFF. Android and provider evidence separate.",
+      "released_at": "2026-10-13T23:04:35.009Z",
+      "release_reason": "PR #732 source correction merged main a540c5fa030e493eabf39ec831f28cb65db5c6ab; executable APK/device and live backend E2E remain unverified.",
+      "source_head": "1e5b35409d016b49f7f0e99b137341e889f088ef",
+      "integration_head_sha": "a540c5fa030e493eabf39ec831f28cb65db5c6ab"
     }
   ],
   "schema_version": 1
