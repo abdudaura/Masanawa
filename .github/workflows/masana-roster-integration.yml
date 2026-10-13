@@ -9,6 +9,7 @@ on:
       - "apps/mobile/assets/masana/**"
       - "apps/mobile/lib/src/agents/masana_portrait_avatar.dart"
       - "apps/mobile/lib/src/screens/chat/masana_list_screen.dart"
+      - "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart"
       - "apps/mobile/test/masana_professional_portraits_test.dart"
       - "apps/mobile/pubspec.yaml"
       - ".github/workflows/masana-roster-integration.yml"
@@ -63,4 +64,4 @@ jobs:
       - name: Dedicated 26 portraits bundled in Flutter
         run: flutter test --no-pub --reporter expanded test/masana_professional_portraits_test.dart test/agent_directory_readiness_test.dart
       - name: Focused Dart analysis
-        run: dart analyze lib/src/agents/masana_portrait_avatar.dart lib/src/screens/chat/masana_list_screen.dart
+        run: dart analyze lib/src/agents/masana_portrait_avatar.dart lib/src/screens/chat/masana_list_screen.dart lib/src/screens/chat/ai_chat_screen.dart
