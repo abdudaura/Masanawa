@@ -6,6 +6,7 @@ import {runMigrations} from "../migrations.js";
 import {platformProductMigrationRoots} from "../readiness.js";
 import {createPgRoomsRepository} from "../rooms/repository.js";
 import {ensureMasanaCatalogProfilesAndRooms} from "./catalog_seed.js";
+import {initialRoomLessons,MASANA_INTRO_LESSONS} from "./catalog_lessons.js";
 
 const url=process.env.MASANAWA_TEST_DATABASE_URL;
 describe.skipIf(!url)("professional Masana catalog and Rooms on real PostgreSQL18",()=>{
@@ -73,11 +74,24 @@ describe.skipIf(!url)("professional Masana catalog and Rooms on real PostgreSQL1
    const list=await repo.list(fan,{});
    expect(list).toHaveLength(roster.length);
    await repo.join(fan,roster[4]!.seed.roomId);
+   const lessons=await repo.lessons(fan,roster[4]!.seed.roomId);
+   expect(lessons).toHaveLength(2);
+   expect(lessons.every(l=>l.kind==="lesson"&&l.body.length>100)).toBe(true);
    const question=await repo.ask(fan,roster[4]!.seed.roomId,"كيف حالك؟","student_ask_idempotency_123456");
    expect(question.state).toBe("queued");
    expect(question.roomId).toBe(roster[4]!.seed.roomId);
    expect((await pool.query("SELECT count(*)::int AS n FROM events.outbox WHERE tenant_id=$1 AND aggregate_id=$2 AND destination='rooms.teacher'",[tenant,question.questionId])).rows[0].n).toBe(1);
    await expect(repo.questions({...fan,tenantId:other},roster[4]!.seed.roomId)).rejects.toMatchObject({status:404});
+ });
+ it("all 26 professional teachers ship distinct, substantive first lessons",()=>{
+   expect(Object.keys(MASANA_INTRO_LESSONS)).toHaveLength(26);
+   for(const [key] of Object.entries(MASANA_INTRO_LESSONS)){
+     const lessons=initialRoomLessons(key);
+     expect(lessons).toHaveLength(2);
+     expect(lessons[0]?.body.length).toBeGreaterThan(160);
+     expect(lessons[1]?.body.length).toBeGreaterThan(160);
+     expect(new Set(lessons.map(l=>l.id)).size).toBe(2);
+   }
  });
  it("rerun is non-destructive; staff pause and existing approved revision survive",async()=>{
    await pool.query("UPDATE rooms.rooms SET state='paused' WHERE tenant_id=$1 AND room_id=$2",[tenant,roster[0]!.seed.roomId]);

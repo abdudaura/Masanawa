@@ -1,4 +1,5 @@
 import type {Pool} from "pg";
+import {initialRoomLessons} from "./catalog_lessons.js";
 import type {TenantId,CharacterId} from "@masanawa/contracts";
 
 /** A server-owned immutable catalog projection. Neither customers nor
@@ -103,6 +104,20 @@ export async function ensureMasanaCatalogProfilesAndRooms(input:{
          [input.tenantId,seed.roomId,slug,seed.roleLabel+" — "+seed.displayName,
           characterId,seed.languages[0]??"en"]);
        if(created.rowCount===1)rooms++;
+     }
+     // Starter content is fully published alongside the Room in the same
+     // tenant-scoped transaction. Reruns never rewrite staff/learner content.
+     for(const lesson of initialRoomLessons(seed.key)){
+       await c.query(`INSERT INTO rooms.lessons
+         (tenant_id,lesson_id,room_id,kind,body,state,publish_at)
+         VALUES($1,$2,$3,'lesson',$4,'published',now())
+         ON CONFLICT(tenant_id,lesson_id) DO NOTHING`,
+         [input.tenantId,lesson.id,seed.roomId,lesson.body]);
+       const verified=await c.query(`SELECT room_id FROM rooms.lessons
+         WHERE tenant_id=$1 AND lesson_id=$2`,
+         [input.tenantId,lesson.id]);
+       if(verified.rows[0]?.room_id!==seed.roomId)
+         throw new Error("masana_room_lesson_conflict");
      }
    }
    await c.query("COMMIT");
