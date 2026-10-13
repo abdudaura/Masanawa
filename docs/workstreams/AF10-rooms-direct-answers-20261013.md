@@ -22,3 +22,10 @@ Branch: lane/af10-rooms-direct-answers-20261013-gpt6
 
 ## Verification
 Run existing \`.github/workflows/rooms-production-build.yml\` on exact head: production Gateway + Worker builds, Rooms/Calls and provider tests, real PostgreSQL 18 migrations and idempotence. Scope human/financial/provider checks separately. MUI-09, MUI-10, AF11 remain OPEN.
+
+## Verified GitHub Actions, source `cdb0fe5426d291163f20ba2bfa99ce2d57052419`
+
+- [Rooms Production Build Qualification #38414561056](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38414561056): Gateway and Worker production dependency builds PASS; 12 Vitest suites / **56 tests PASS**; PostgreSQL18 fresh/upgrade migration checks 2 PASS (including `rooms/0005_short_questions.sql`); Worker strict TypeScript PASS; Flutter Rooms focused tests PASS; Rooms Dart targeted analyzer step exited zero with 5 informational diagnostics.
+- [Status Video Integration #38414560595](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38414560595): 22 suites **97 tests PASS**, Worker TypeScript and both production builds PASS. Whole Gateway strict typecheck FAILED on pre-existing legacy diagnostics. Foundation CI still FAILS on pre-existing TalkId TS2459 and Mobile global diagnostics remain; neither was waived.
+- Real Gemini credential/provider call, production database, two-user installed app, real question-to-answer live PostgreSQL readback and Railway deployment **NOT_RUN**; queue persistence was tested using isolated mocked Pool, while actual PostgreSQL 18 migrations were executed. No direct provider expense or production flag manipulation occurred.
+- Source worker automatically uses Gemini server credentials and is not staff-review gated. Production's previous Gateway and DB were offline; the old Railway `@nurain/worker` was pinned to a different repo/branch. Merging does not change that old deployment. Before public acceptance connect live current worker and healthy DB/Gateway with the correct credentials and run a real per-tenant Q→AI→answer check; repair remaining independent provider subscriptions only through verified provider evidence.
