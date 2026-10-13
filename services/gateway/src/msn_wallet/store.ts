@@ -66,6 +66,46 @@ export function createMsnLedgerStore(pool: MsnPgPool) {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        // A caller-supplied MsnAdmission and proof hash are never authority to
+        // overwrite the immutable priced quote or fabricate fiat verification.
+        // Re-bind the complete quote to the owner-scoped durable journal in
+        // the SAME transaction that consumes NGN and posts both MSN entries.
+        const persisted = await client.query(
+          `SELECT q.user_id,q.funding_rail,q.funding_reference,
+                  q.ngn_funding_kobo::text AS ngn_funding_kobo,
+                  q.backing_asset,q.backing_network,
+                  q.minimum_settled_backing_usd_micro::text AS minimum_backing,
+                  q.price_per_msn_usd_micro::text AS price,
+                  q.provider_quote_reference,q.issued_at,q.expires_at,
+                  v.provider_transaction_id AS verified_provider_id
+             FROM commerce.msn_funding_quotes q
+             LEFT JOIN commerce.msn_fiat_verifications v
+               ON v.tenant_id=q.tenant_id AND v.quote_id=q.quote_id
+              AND v.user_id=q.user_id
+            WHERE q.tenant_id=$1 AND q.user_id=$2 AND q.quote_id=$3
+            FOR UPDATE OF q`,
+          [a.tenantId, a.userId, a.quoteId],
+        );
+        const journal = persisted.rows[0];
+        const recordedTime = (value: unknown): number =>
+          value instanceof Date ? value.getTime() :
+          typeof value === "string" ? Date.parse(value) : NaN;
+        if (!journal || journal.user_id !== a.userId ||
+            journal.funding_rail !== quote.fundingRail ||
+            journal.funding_reference !== a.fundingReference ||
+            journal.ngn_funding_kobo !== quote.ngnFundingKobo?.toString() ||
+            journal.backing_asset !== a.backingAsset ||
+            journal.backing_network !== a.backingNetwork ||
+            journal.minimum_backing !== quote.minimumSettledBackingUsdMicro.toString() ||
+            journal.price !== quote.pricePerMsnUsdMicro.toString() ||
+            journal.provider_quote_reference !== quote.providerQuoteReference ||
+            recordedTime(journal.issued_at) !== quote.issuedAtMs ||
+            recordedTime(journal.expires_at) !== quote.expiresAtMs)
+          throw new Error("msn.quote.persisted_terms_mismatch");
+        if (typeof journal.verified_provider_id !== "string" ||
+            !/^[0-9]{1,80}$/.test(journal.verified_provider_id))
+          throw new Error("msn.ngn.fiat_verification_missing");
+
         const inserted = await client.query(
           `INSERT INTO commerce.msn_issuances (
               tenant_id,user_id,quote_id,funding_rail,funding_reference,
@@ -81,14 +121,11 @@ export function createMsnLedgerStore(pool: MsnPgPool) {
            quote.ngnFundingKobo?.toString() ?? null, input.verifiedEvidenceSha256],
         );
         if (inserted.rowCount === 1) {
-          // Same advisory lock as existing NGN billing reserves. A verified
-          // funding receipt alone is not enough: spend/consume its NGN
-          // liability in THIS transaction so a bill cannot use it as well.
-          await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-            "ngn-wallet:" + a.tenantId + ":" + a.userId,
-          ]);
+          // Match creditFunding's lock order: funding intent, then the
+          // canonical wallet advisory lock, to avoid an issuer/webhook deadlock.
           const funding = await client.query(
-            `SELECT amount_kobo::text AS amount_kobo, provider_transaction_id, state
+            `SELECT quote_id,amount_kobo::text AS amount_kobo,
+                    provider_transaction_id,state
                FROM commerce.ngn_funding_intents
               WHERE tenant_id=$1 AND user_id=$2 AND funding_reference=$3
               FOR UPDATE`,
@@ -96,10 +133,16 @@ export function createMsnLedgerStore(pool: MsnPgPool) {
           );
           const fund = funding.rows[0];
           if (!fund || fund.state !== "credited" ||
-              typeof fund.provider_transaction_id !== "string" ||
+              fund.quote_id !== a.quoteId ||
+              fund.provider_transaction_id !== journal.verified_provider_id ||
               fund.amount_kobo !== quote.ngnFundingKobo?.toString()) {
             throw new Error("msn.ngn.funding_not_settled");
           }
+          // Spend the NGN liability under the same wallet lock as billing.
+          // The unique issuance settlement identifier is reserved globally.
+          await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+            "ngn-wallet:" + a.tenantId + ":" + a.userId,
+          ]);
           const available = await client.query(
             `SELECT COALESCE(SUM(CASE WHEN direction='credit'
                     THEN amount_kobo ELSE -amount_kobo END),0)::text AS balance
