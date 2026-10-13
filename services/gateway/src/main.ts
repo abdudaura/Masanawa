@@ -251,6 +251,7 @@ import {
   createPlatformSessionFinancialAuthorizer,
   createResendOtpDelivery,
   type CustomerAuthService,
+  CustomerAuthError,
 } from "./customer_auth.js";
 import {
   createAccountDeletionService,
