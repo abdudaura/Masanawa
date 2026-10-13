@@ -107,8 +107,11 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
      const room=await lookupRoom(q,a.tenantId,id,true);await requirePublishedEligible(q,a,room);
      const prev=await q.query("SELECT state FROM rooms.memberships WHERE tenant_id=$1 AND room_id=$2 AND user_id=$3 FOR UPDATE",[a.tenantId,id,userId]);
      if(prev.rows[0]?.state==="banned")throw new RoomError(403,"room_banned");
-     await q.query(`INSERT INTO rooms.memberships(tenant_id,room_id,user_id) VALUES ($1,$2,$3)
-       ON CONFLICT(tenant_id,room_id,user_id) DO UPDATE SET state='active',updated_at=now()`,[a.tenantId,id,userId]);
+     await q.query(`INSERT INTO rooms.memberships AS current_member(tenant_id,room_id,user_id) VALUES ($1,$2,$3)
+       ON CONFLICT(tenant_id,room_id,user_id) DO UPDATE
+         SET state='active',
+             role=CASE WHEN current_member.state='active' THEN current_member.role ELSE 'member' END,
+             updated_at=now()`,[a.tenantId,id,userId]);
    });
  },
  async leave(a,id){
