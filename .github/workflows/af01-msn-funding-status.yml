@@ -60,11 +60,12 @@ jobs:
           services/gateway/src/msn_wallet/fiat_intake_pg.test.ts
           services/gateway/src/msn_wallet/admission.test.ts
           services/gateway/src/msn_wallet/store.test.ts
-      - name: Staged PostgreSQL 18 immutable quote/payment history
-        run: >-
-          pnpm exec vitest run
-          adapters/storage/postgres/src/commerce/msn-quote-journal.integration.test.ts
-          adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts
+      # Run PG integration suites serially against one canonical migration
+      # registry; parallel Vitest beforeAll migrations race CREATE TABLE.
+      - name: Staged PostgreSQL 18 immutable funding quote journal
+        run: pnpm exec vitest run adapters/storage/postgres/src/commerce/msn-quote-journal.integration.test.ts
+      - name: Existing MSN issuance ledger PG18 regression
+        run: pnpm exec vitest run adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts
   flutter-funding:
     runs-on: ubuntu-latest
     timeout-minutes: 25
