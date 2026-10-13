@@ -722,7 +722,9 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
         expectedRevision: item.revision,
       );
       if (!mounted || account != widget.accountId ||
-          token != widget.accessToken) return;
+          token != widget.accessToken) {
+        return;
+      }
       setState(() {
         _remote = [
           for (final entry in _remote)
@@ -734,7 +736,9 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
       });
     } catch (_) {
       if (!mounted || account != widget.accountId ||
-          token != widget.accessToken) return;
+          token != widget.accessToken) {
+        return;
+      }
       setState(() => _serverError = 'Could not update pin. Retry search.');
     }
   }
@@ -748,7 +752,9 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
       characterId: item.characterId,
     ).then((_) {
       if (mounted && account == widget.accountId &&
-          token == widget.accessToken) _retryRemote();
+          token == widget.accessToken) {
+        _retryRemote();
+      }
     }).catchError((Object _) {
       // Keep unread visible on failed receipt; do not fabricate a read.
     }));
