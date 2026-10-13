@@ -2059,6 +2059,22 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af10-content-channel-autoconnect-20261013-gpt6",
+      "owner": "AF10/GPT-6 authenticated channel readiness",
+      "scope": "Remove redundant WhatsApp/Telegram manual boolean gate when secure provider credentials are configured; preserve webhook/admin checks",
+      "branch": "lane/af10-content-channel-autoconnect-20261013",
+      "base_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae",
+      "paths": [
+        "services/gateway/src/main.ts",
+        "docs/workstreams/AF10-channel-auto-activation-20261013.md",
+        ".github/workflows/status-video-integration.yml"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T14:46:15.293Z",
+      "heartbeat_at": "2026-10-13T14:46:15.293Z",
+      "expires_at": "2026-10-13T14:52:15.293Z"
     }
   ],
   "history": [
