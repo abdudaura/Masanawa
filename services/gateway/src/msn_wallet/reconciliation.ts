@@ -77,7 +77,10 @@ export function createMsnReconciler(pool: MsnPgPool) {
             "COALESCE(l.sides,0)::text AS ledger_sides,",
             "COALESCE(l.total,0)::text AS ledger_total,",
             "COALESCE(l.customer,0)::text AS ledger_customer,",
-            "COALESCE(l.platform,0)::text AS ledger_platform",
+            "COALESCE(l.platform,0)::text AS ledger_platform,",
+            "COALESCE(d.entries,0)::text AS ngn_debit_entries,",
+            "COALESCE(d.valid_entries,0)::text AS ngn_valid_debits,",
+            "COALESCE(d.valid_kobo,0)::text AS ngn_debited_kobo",
             "FROM commerce.msn_funding_quotes q",
             "LEFT JOIN commerce.msn_fiat_verifications v",
             " ON v.tenant_id=q.tenant_id AND v.quote_id=q.quote_id AND v.user_id=q.user_id",
@@ -93,6 +96,20 @@ export function createMsnReconciler(pool: MsnPgPool) {
             " FROM commerce.msn_ledger_entries e",
             " WHERE e.tenant_id=q.tenant_id AND e.quote_id=q.quote_id AND e.user_id=q.user_id",
             ") l ON true",
+            // Detect a missing, malformed, orphaned or duplicated NGN conversion
+            // debit without mutating ledger or issuing new MSN.
+            "LEFT JOIN LATERAL (SELECT count(*) AS entries,",
+            " count(*) FILTER (WHERE n.direction='debit' AND",
+            " n.reason='adjustment' AND n.reference='msn-convert:' || q.quote_id",
+            " AND n.entry_id='msn-convert:' || q.quote_id) AS valid_entries,",
+            " COALESCE(sum(n.amount_kobo) FILTER (WHERE n.direction='debit'",
+            " AND n.reason='adjustment' AND n.reference='msn-convert:' || q.quote_id",
+            " AND n.entry_id='msn-convert:' || q.quote_id),0) AS valid_kobo",
+            " FROM commerce.ngn_wallet_entries n",
+            " WHERE n.tenant_id=q.tenant_id AND n.user_id=q.user_id",
+            " AND (n.entry_id='msn-convert:' || q.quote_id",
+            " OR n.reference='msn-convert:' || q.quote_id)",
+            ") d ON q.funding_rail='NGN_FLUTTERWAVE'",
             "WHERE q.tenant_id=$1",
             "ORDER BY q.issued_at DESC,q.quote_id DESC LIMIT $2",
           ].join(" "), [tenantId, limit + 1],
@@ -128,6 +145,18 @@ export function createMsnReconciler(pool: MsnPgPool) {
               reasons.push("double_entry_mismatch");
           } else if (sides !== 0n || total !== 0n || customer !== 0n || platform !== 0n) {
             reasons.push("orphan_ledger_entries");
+          }
+          if (row.funding_rail === "NGN_FLUTTERWAVE") {
+            const debitCount = integer(row.ngn_debit_entries, "ngn_debit_entries", true);
+            const validDebits = integer(row.ngn_valid_debits, "ngn_valid_debits", true);
+            const debitedKobo = integer(row.ngn_debited_kobo, "ngn_debited_kobo", true);
+            if (issued) {
+              if (debitCount !== 1n || validDebits !== 1n ||
+                  debitedKobo !== integer(row.expected_ngn_kobo, "ngn_expected"))
+                reasons.push("ngn_conversion_debit_mismatch");
+            } else if (debitCount !== 0n) {
+              reasons.push("orphan_ngn_conversion_debit");
+            }
           }
           if (row.funding_rail === "NGN_FLUTTERWAVE" && (verified || issued)) {
             if (row.funding_state !== "credited" ||
