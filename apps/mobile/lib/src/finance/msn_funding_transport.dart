@@ -56,12 +56,12 @@ class MsnFundingOperation {
       throw const FormatException('Invalid MSN funding status');
     }
     return MsnFundingOperation._(
-      quoteId: quoteId as String,
-      fundingReference: fundingReference as String,
+      quoteId: quoteId,
+      fundingReference: fundingReference,
       fundingRail: rail as String,
       ngnFundingKobo: ngn as String?,
-      backingAsset: backingAsset as String,
-      backingNetwork: backingNetwork as String,
+      backingAsset: backingAsset,
+      backingNetwork: backingNetwork,
       state: state as String,
       issuedMsnMicro: issued as String?,
     );
@@ -94,12 +94,62 @@ abstract interface class MsnFundingTransport {
 /// sends a conversion quote or trusts an HTTP redirect as settlement.
 class GatewayMsnFundingTransport implements MsnFundingTransport {
   GatewayMsnFundingTransport({
-    required Dio dio,
+    required this._dio,
     required String baseUrl,
-    required String? Function() readAccessToken,
-  }) : _dio = dio,
-       _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
-       _readAccessToken = readAccessToken;
+    required this._readAccessToken,
+  }) : _baseUrl = baseUrl.replaceFirst(RegExp(r'/
+
+  final Dio _dio;
+  final String _baseUrl;
+  final String? Function() _readAccessToken;
+
+  @override
+  Future<List<MsnFundingOperation>> read() async {
+    final token = _readAccessToken()?.trim();
+    if (token == null || token.isEmpty) {
+      throw const ApiException('Sign in to view MSN funding', statusCode: 401);
+    }
+    try {
+      final result = await _dio.get<Map<String, dynamic>>(
+        '$_baseUrl/v1/wallet/msn/funding',
+        options: Options(
+          followRedirects: false,
+          receiveTimeout: const Duration(seconds: 12),
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      if (_readAccessToken()?.trim() != token) {
+        throw const ApiException('MSN session changed', statusCode: 401);
+      }
+      final items = result.data?['items'];
+      if (items is! List || items.length > 20) {
+        throw const ApiException('Funding status is unavailable');
+      }
+      try {
+        return List<MsnFundingOperation>.unmodifiable(items.map((item) {
+          if (item is! Map<String, dynamic>) {
+            throw const FormatException('Invalid MSN funding item');
+          }
+          return MsnFundingOperation.fromJson(item);
+        }));
+      } on FormatException {
+        throw const ApiException('Funding status is unavailable');
+      }
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) {
+        throw const ApiException('MSN funding is not available yet',
+            statusCode: 404);
+      }
+      if (error.response?.statusCode == 401 ||
+          error.response?.statusCode == 403) {
+        throw const ApiException('Sign in again to view MSN funding',
+            statusCode: 401);
+      }
+      throw mapDioError(error);
+    }
+  }
+}
+), '');
 
   final Dio _dio;
   final String _baseUrl;
