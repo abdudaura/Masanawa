@@ -1948,6 +1948,23 @@
       "heartbeat_at": "2026-10-13T16:06:00Z",
       "expires_at": "2026-10-13T16:35:00Z",
       "notes": "AF07 #723 merged and its active claim does not overlap these paths. AF00 protected Gateway composition narrow transfer with stale overlapping files reviewed above; preserve existing account/money/worker."
+    },
+    {
+      "claim_id": "af07-masana-rooms-lessons-apk-20261013-gpt6",
+      "owner": "AF07/GPT-6 26 Room lesson starter content and real Android APK compilation",
+      "scope": "Publish actual curated starter lessons for all 26 Masana free Rooms idempotently and test PG18 answer-ready content; independent Android compilation and APK artifact despite unrelated full analyzer debt",
+      "branch": "lane/af07-masana-rooms-lessons-apk-20261013-gpt6",
+      "base_sha": "8cc8086738cc682cbad84433c99ffcb69fee72b3",
+      "paths": [
+        "adapters/storage/postgres/src/masana/catalog_seed.ts",
+        "adapters/storage/postgres/src/masana/catalog_seed.integration.test.ts",
+        ".github/workflows/masana-android-apk.yml",
+        "docs/workstreams/AF07-masana-apk-rooms-content-20261013.md"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T16:20:21.077Z",
+      "heartbeat_at": "2026-10-13T16:20:21.077Z",
+      "expires_at": "2026-10-13T17:05:21.077Z"
     }
   ],
   "history": [
