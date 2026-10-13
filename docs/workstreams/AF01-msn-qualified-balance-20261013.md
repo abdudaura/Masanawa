@@ -56,3 +56,7 @@ CI #38388652652: PostgreSQL18+Vitest **34 passed across 5 files** (including new
 ## Pre-merge production migration safeguard
 
 The trial DDL is stored at `packages/commerce/migration_proposals/0112_msn_wallet.sql`, **outside** `platformProductMigrationRoots()` and the auto-applied commerce migrations directory. Thus a deployment of main cannot silently create MSN finance tables. Real PG acceptance executes canonical migrations and then expressly applies the proposed SQL within its disposable test database. An operator must first qualify custody/provider evidence, migration versioning and production rollback and then schedule a distinct controlled migration for release. Until then even an accidentally enabled read-only Gateway route shows 503 instead of a fabricated balance.
+
+## Exact-head compiler regression repair
+
+CI #38389095587: PostgreSQL **34 passed**, while Flutter detected a genuine Dart syntax regression introduced by a source-transform replacement pattern containing a dollar-sign plus apostrophe, interpreted specially by JavaScript String.replace. The MSN transport constructor is repaired using exact-slice replacement instead of interpolating the replacement string; the preceding 44-pass source is preserved otherwise. No prior green Flutter result is being claimed for the broken head. Require a final full scoped recheck.

@@ -40,7 +40,7 @@ class GatewayMsnBalanceTransport implements MsnBalanceTransport {
     required this._dio,
     required String baseUrl,
     required this._readAccessToken,
-  }) : _baseUrl = baseUrl.replaceFirst(RegExp(r'/
+  }) : _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), '');
 
   final Dio _dio;
   final String _baseUrl;
