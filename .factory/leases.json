@@ -1942,6 +1942,22 @@
       "claimed_at": "2026-10-13T16:20:21.077Z",
       "heartbeat_at": "2026-10-13T16:21:27.957Z",
       "expires_at": "2026-10-13T17:06:27.957Z"
+    },
+    {
+      "claim_id": "af05-communication-e2e-preview-20261013-gpt6",
+      "owner": "GPT-6 / AF05 communication audit",
+      "scope": "Finite M4A voice-note preview before authenticated send and combined Chat/Voice/Calls executable regression only. No native/financial/Gateway composition changes.",
+      "branch": "fix/communication-voice-preview-regression-20261013-gpt6",
+      "base_sha": "a86b93142abe97c1701b318b74fad77254b06bef",
+      "paths": [
+        "apps/mobile/lib/src/ui/components/voice_note_composer.dart",
+        "apps/mobile/test/voice_note_composer_test.dart",
+        ".github/workflows/communication-regression.yml"
+      ],
+      "claimed_at": "2026-10-13T16:22:45.144Z",
+      "heartbeat_at": "2026-10-13T16:22:45.144Z",
+      "expires_at": "2026-10-13T16:27:45.144Z",
+      "notes": "Latest main and claim registry checked; preserve all existing calls and chat transport."
     }
   ],
   "history": [
