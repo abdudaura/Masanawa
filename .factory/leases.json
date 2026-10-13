@@ -1934,12 +1934,15 @@
       "paths": [
         "apps/mobile/lib/src/ui/components/voice_note_composer.dart",
         "apps/mobile/test/voice_note_composer_test.dart",
-        ".github/workflows/communication-regression.yml"
+        ".github/workflows/communication-regression.yml",
+        "apps/mobile/lib/src/state/ai_chat_state.dart",
+        "apps/mobile/lib/src/core/agent_audio_attachment.dart",
+        "apps/mobile/test/agent_audio_attachment_test.dart"
       ],
       "claimed_at": "2026-10-13T16:22:45.144Z",
-      "heartbeat_at": "2026-10-13T16:27:15.949Z",
-      "expires_at": "2026-10-13T16:32:15.949Z",
-      "notes": "Latest main and claim registry checked; preserve all existing calls and chat transport.",
+      "heartbeat_at": "2026-10-13T16:31:40.865Z",
+      "expires_at": "2026-10-13T16:38:40.865Z",
+      "notes": "Latest main and claim registry checked; preserve all existing calls and chat transport. Confirmed raw PCM mislabelled as WAV in persisted AI chat replies; fix formats + regression tests.",
       "source_pr": 726,
       "source_head": "a163742d18b5e7a96927399a779363a6d46fb9cb"
     },
