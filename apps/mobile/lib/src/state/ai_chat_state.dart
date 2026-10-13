@@ -18,6 +18,7 @@ import '../core/network/api_client.dart';
 import '../core/request_id.dart';
 import '../agents/agent_shell.dart';
 import '../core/mobile_push.dart';
+import '../core/startup_metrics.dart';
 import '../chat/shell_action_coordinator.dart';
 import '../chat/shell_action_journal.dart';
 import '../chat/shell_document.dart';
@@ -1956,6 +1957,7 @@ class AiChatController extends Notifier<AiChatState> {
       state = state.copyWith(
         threads: {for (final t in list) t.characterId: t, ...state.threads},
       );
+      MasanawaStartupMetrics.mark('cached_threads_ready');
     } catch (_) {
       // Corrupt/missing cache never prevents the user from opening chat.
     }

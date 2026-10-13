@@ -7,6 +7,7 @@ import '../agents/agent_directory_cache.dart';
 import '../agents/agent_feedback.dart';
 import '../agents/agent_shell.dart';
 import '../core/mobile_push.dart';
+import '../core/startup_metrics.dart';
 import '../core/providers.dart';
 import '../core/network/api_client.dart';
 import 'session_state.dart';
@@ -112,6 +113,7 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
         ]),
         loading: true,
       );
+      MasanawaStartupMetrics.mark('cached_directory_ready');
     }
 
     await _refreshForOwner(ownerId, request);
@@ -157,6 +159,7 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
         agents: immutableAgents,
         loading: false,
       );
+      MasanawaStartupMetrics.mark('live_directory_ready');
 
       unawaited(
         ref
