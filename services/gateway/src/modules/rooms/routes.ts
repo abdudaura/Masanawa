@@ -73,11 +73,6 @@ export function registerRoomsRoutes(app:FastifyInstance,ports:RoomsRoutePorts):v
      return {items:await ports.repository.staffRooms(a)};
    }catch(e){return respondError(e,reply);}
  });
- app.get("/v1/admin/rooms/questions",async(req,reply)=>{
-   try{const a=await guard(req,"rooms.staff");requireRoomStaff(a.roles);
-     return {items:await ports.repository.staffQueue(a)};
-   }catch(e){return respondError(e,reply);}
- });
  app.post("/v1/admin/rooms",async(req,reply)=>{
    try{const a=await guard(req,"rooms.staff");requireRoomStaff(a.roles);
      const b=data(req)||{};const item=await ports.repository.create(a,{
@@ -101,12 +96,5 @@ export function registerRoomsRoutes(app:FastifyInstance,ports:RoomsRoutePorts):v
      return reply.code(201).send({created:true});
    }catch(e){return respondError(e,reply);}
  });
- app.post("/v1/admin/rooms/questions/:questionId/review",async(req,reply)=>{
-   try{const a=await guard(req,"rooms.staff");requireRoomStaff(a.roles);
-     const p=req.params as {questionId:string};const b=data(req)||{};
-     if(b.decision!=="approve"&&b.decision!=="reject")throw new RoomError(422,"invalid_decision");
-     await ports.repository.review(a,p.questionId,String(b.answer||""),b.decision);
-     return {reviewed:true};
-   }catch(e){return respondError(e,reply);}
- });
+
 }
