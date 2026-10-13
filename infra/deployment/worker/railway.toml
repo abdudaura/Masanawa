@@ -1,0 +1,12 @@
+# Set Railway service Root Directory to repository root and Config File Path
+# to infra/deployment/worker/railway.toml. No database/volume is created here.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "infra/deployment/worker/Dockerfile"
+
+[deploy]
+startCommand = "pnpm --filter @masanawa/worker-service start"
+healthcheckPath = "/readyz"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
