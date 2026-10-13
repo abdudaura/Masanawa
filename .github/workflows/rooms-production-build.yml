@@ -1,0 +1,63 @@
+name: Rooms Production Build Qualification
+on:
+  pull_request:
+    paths:
+      - "services/gateway/src/call_history/**"
+      - "services/worker/src/**"
+      - "adapters/storage/postgres/src/rooms/**"
+      - "services/gateway/src/modules/rooms/**"
+      - "infra/deployment/gateway/**"
+      - ".github/workflows/rooms-production-build.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/gateway/src/call_history/routes.ts"
+      - "services/worker/src/main.ts"
+      - ".github/workflows/rooms-production-build.yml"
+permissions:
+  contents: read
+jobs:
+  build-and-rooms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_DB: masanawa_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d masanawa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/masanawa_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Build production Gateway and every dependency
+        run: pnpm --filter @masanawa/gateway-service... build
+      - name: Build production Room worker and every dependency
+        run: pnpm --filter @masanawa/worker-service... build
+      - name: Gateway Calls and Rooms typed actor/permissions tests
+        run: >-
+          pnpm exec vitest run
+          services/gateway/src/call_history/routes.test.ts
+          services/gateway/src/modules/rooms/routes.test.ts
+          services/gateway/src/modules/rooms/bookmark_routes.test.ts
+          services/gateway/src/modules/rooms/discussion_routes.test.ts
+          services/worker/src/jobs/rooms
+      - name: Real PG18 forward-upgrade and Rooms schema readiness
+        run: pnpm exec vitest run adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts

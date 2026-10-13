@@ -40,6 +40,24 @@ describe("Masana call history HTTP authority", () => {
     } finally { await app.close(); }
   });
 
+  it("defaults optional search and pagination server-side without undefined properties", async () => {
+    const { app, repository } = setup();
+    try {
+      expect((await app.inject({ url: "/v1/calls" })).statusCode).toBe(200);
+      expect(repository.list).toHaveBeenCalledWith(expect.objectContaining({
+        limit: 30,
+        query: "",
+        cursor: null,
+      }));
+      expect((await app.inject({ url: "/v1/calls?q=&limit=15" })).statusCode).toBe(200);
+      expect(repository.list).toHaveBeenLastCalledWith(expect.objectContaining({
+        limit: 15,
+        query: "",
+        cursor: null,
+      }));
+    } finally { await app.close(); }
+  });
+
   it("rejects unauthenticated reads before accessing storage", async () => {
     const { app, repository, authorizer } = setup();
     authorizer.authorize.mockRejectedValue(Object.assign(new Error("unauthorized"), { statusCode: 401 }));
