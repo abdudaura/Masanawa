@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../account_preferences/notification_switch_controller.dart';
 import '../../core/mobile_push.dart';
 import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
@@ -25,85 +26,53 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _notifications = false;
-  bool _notificationReady = false;
-  bool _notificationBusy = false;
-  bool _notificationLoadError = false;
-  int _notificationEpoch = 0;
+  late final NotificationSwitchController _notificationController;
+  String? _notificationAccountId;
   int _supportMutationEpoch = 0;
   String? _savingDefaultAgentId;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_refreshNotificationState());
+    _notificationController = NotificationSwitchController(
+      readEnabled: MobilePushService.instance.notificationEnabled,
+      requestPermission: MobilePushService.instance.requestPermission,
+      unregister: MobilePushService.instance.unregister,
+      // Preserve canonical push reattachment from the newer Settings source.
+      // A granted OS permission does not guarantee server-side delivery.
+      onEnabled: () async {
+        await ref.read(agentDirectoryProvider.notifier).refresh();
+      },
+    )..addListener(_notificationChanged);
   }
 
-  Future<void> _refreshNotificationState() async {
-    final epoch = ++_notificationEpoch;
-    try {
-      final enabled = await MobilePushService.instance.notificationEnabled();
-      if (!mounted || epoch != _notificationEpoch) return;
-      setState(() {
-        _notifications = enabled;
-        _notificationReady = true;
-        _notificationLoadError = false;
-      });
-    } catch (_) {
-      if (!mounted || epoch != _notificationEpoch) return;
-      setState(() {
-        _notificationReady = false;
-        _notificationLoadError = true;
-      });
+  void _notificationChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _bindNotificationAccount(String? accountId) {
+    if (_notificationAccountId == accountId) return;
+    _notificationAccountId = accountId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _notificationAccountId != accountId) return;
+      unawaited(_notificationController.bind(accountId));
+    });
+  }
+
+  Future<void> _setNotifications(bool requested) async {
+    final ownerId = _notificationAccountId;
+    final changed = await _notificationController.change(requested);
+    if (!mounted || _notificationAccountId != ownerId) return;
+    if (!changed && _notificationController.error != null) {
+      _showFeedback(_notificationController.error!);
     }
   }
 
-  Future<void> _setNotifications(bool enabled) async {
-    if (_notificationBusy) return;
-    setState(() => _notificationBusy = true);
-    final epoch = ++_notificationEpoch;
-    try {
-      if (enabled) {
-        await MobilePushService.instance.requestPermission();
-      } else {
-        await MobilePushService.instance.unregister();
-      }
-      final verified = await MobilePushService.instance.notificationEnabled();
-      if (enabled && verified) {
-        try {
-          // Re-attach canonical push registration after a prior unregister.
-          // Device permission alone does not prove notification delivery.
-          await ref.read(agentDirectoryProvider.notifier).refresh();
-        } catch (_) {
-          if (mounted && epoch == _notificationEpoch) {
-            _showFeedback(
-              'Device permission is enabled, but message delivery could not '
-              'be confirmed. Reconnect and retry.',
-            );
-          }
-        }
-      }
-      if (!mounted || epoch != _notificationEpoch) return;
-      setState(() {
-        _notifications = verified;
-        _notificationReady = true;
-        _notificationLoadError = false;
-      });
-      if (enabled && !verified) {
-        _showFeedback('Notifications are not permitted. Check system settings and retry.');
-      }
-    } catch (_) {
-      if (!mounted || epoch != _notificationEpoch) return;
-      setState(() {
-        _notificationReady = false;
-        _notificationLoadError = true;
-      });
-      _showFeedback('Could not update notifications. Retry after checking your connection.');
-    } finally {
-      if (mounted && epoch == _notificationEpoch) {
-        setState(() => _notificationBusy = false);
-      }
-    }
+  @override
+  void dispose() {
+    _notificationController.removeListener(_notificationChanged);
+    _notificationController.dispose();
+    super.dispose();
   }
 
   void _showFeedback(String message) {
@@ -176,20 +145,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final oldOwner = before is SessionSignedIn ? before.user.id : null;
       final newOwner = after is SessionSignedIn ? after.user.id : null;
       if (oldOwner == newOwner || !mounted) return;
-      ++_notificationEpoch;
       ++_supportMutationEpoch;
-      setState(() {
-        _notifications = false;
-        _notificationReady = false;
-        _notificationLoadError = false;
-        _notificationBusy = false;
-        _savingDefaultAgentId = null;
-      });
-      unawaited(_refreshNotificationState());
+      _bindNotificationAccount(newOwner);
+      setState(() => _savingDefaultAgentId = null);
     });
     final u = context.masanawa;
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
+    _bindNotificationAccount(user?.id);
     final name = user?.name ?? 'Citizen';
     final contact = user?.phone ?? user?.email ?? 'No contact saved';
     final directory = ref.watch(agentDirectoryProvider);
@@ -341,27 +304,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: Text(
                   !MobilePushService.instance.configured
                       ? 'Not available in this build'
-                      : _notificationBusy
+                      : _notificationController.loading ||
+                              _notificationController.saving
                           ? 'Checking notification permission…'
-                          : _notificationLoadError
-                              ? 'Could not verify permission. Retry below.'
-                              : 'Device permission; delivery also requires a connection',
+                          : _notificationController.error ??
+                              'Device permission; delivery also requires a connection',
                 ),
                 value: MobilePushService.instance.configured &&
-                    _notificationReady && _notifications,
+                    _notificationController.accountId == _notificationAccountId &&
+                    _notificationController.enabled,
                 onChanged: !MobilePushService.instance.configured ||
-                        !_notificationReady || _notificationBusy
+                        user == null ||
+                        _notificationController.accountId != _notificationAccountId ||
+                        !_notificationController.canChange
                     ? null
                     : (value) => unawaited(_setNotifications(value)),
               ),
-              if (_notificationLoadError &&
+              if (_notificationController.error != null &&
                   MobilePushService.instance.configured)
                 Align(
                   alignment: AlignmentDirectional.centerEnd,
                   child: TextButton.icon(
-                    onPressed: _notificationBusy
-                        ? null
-                        : () => unawaited(_refreshNotificationState()),
+                    onPressed: _notificationController.canRefresh
+                        ? () => unawaited(_notificationController.refresh())
+                        : null,
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry permission check'),
                   ),

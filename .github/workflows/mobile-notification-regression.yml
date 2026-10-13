@@ -1,0 +1,43 @@
+name: Mobile Notification Regression
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/lib/src/account_preferences/notification_switch_controller.dart"
+      - "apps/mobile/lib/src/screens/settings/settings_screen.dart"
+      - "apps/mobile/test/audio_first/af14/notification_switch_controller_test.dart"
+      - ".github/workflows/mobile-notification-regression.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/lib/src/account_preferences/notification_switch_controller.dart"
+      - "apps/mobile/lib/src/screens/settings/settings_screen.dart"
+      - "apps/mobile/test/audio_first/af14/notification_switch_controller_test.dart"
+      - ".github/workflows/mobile-notification-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  notifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - name: Verify notification/account race cases
+        run: flutter test --no-pub test/audio_first/af14/notification_switch_controller_test.dart
+      - name: Focused source analyzer
+        run: >-
+          flutter analyze --no-pub
+          lib/src/account_preferences/notification_switch_controller.dart
+          lib/src/screens/settings/settings_screen.dart
+          test/audio_first/af14/notification_switch_controller_test.dart
