@@ -2005,9 +2005,9 @@
       ],
       "scope": "Session-epoch isolation of authenticated shared Dio, old-account 401 refresh and stale response fences, and session rotation race tests; no new identity authority",
       "claimed_at": "2026-10-13T09:52:28.475Z",
-      "heartbeat_at": "2026-10-13T09:52:28.475Z",
-      "expires_at": "2026-10-13T09:57:28.475Z",
-      "notes": "Reconciled main #710 and prior AF08 draft claims, exact file ownership; hosted Flutter test planned"
+      "heartbeat_at": "2026-10-13T09:59:31.839Z",
+      "expires_at": "2026-10-13T10:04:31.839Z",
+      "notes": "Source PR #711 latest head 93ae4c79; first hosted Flutter run failed missing dart:async import in test only; repaired and second hosted run #38380186034 in progress; no main merge until tests pass."
     }
   ],
   "history": [
