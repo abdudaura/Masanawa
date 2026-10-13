@@ -22,15 +22,30 @@ const admission = admitMsnSettlement({
 });
 const evidence = "a".repeat(64);
 
-function fixture(mode: "new" | "duplicate" | "insufficient" | "no-receipt" = "new") {
+function fixture(mode: "new" | "duplicate" | "insufficient" | "no-receipt" |
+  "no-quote" | "wrong-quote" | "unverified" | "provider-mismatch" |
+  "wrong-intent" = "new") {
   const statements: string[] = [];
   const query = async (sql: string, _params?: unknown[]) => {
     statements.push(sql);
+    if (sql.includes("FROM commerce.msn_funding_quotes q"))
+      return { rows: mode === "no-quote" ? [] : [{
+        user_id: "u1", funding_rail: "NGN_FLUTTERWAVE",
+        funding_reference: "f1", ngn_funding_kobo: "25000",
+        backing_asset: "USDTTRC20", backing_network: "tron",
+        minimum_backing: "1000000",
+        price: mode === "wrong-quote" ? "1" : "250000",
+        provider_quote_reference: "pq1",
+        issued_at: new Date(1000), expires_at: new Date(5000),
+        verified_provider_id: mode === "unverified" ? null : "123",
+      }], rowCount: 1 };
     if (sql.includes("INSERT INTO commerce.msn_issuances"))
       return { rows: [], rowCount: mode === "duplicate" ? 0 : 1 };
     if (sql.includes("FROM commerce.ngn_funding_intents"))
       return { rows: mode === "no-receipt" ? [] :
-        [{ amount_kobo:"25000",provider_transaction_id:"provider1",state:"credited" }], rowCount:1 };
+        [{ amount_kobo:"25000",provider_transaction_id:
+          mode === "provider-mismatch" ? "999" : "123",state:"credited",
+          quote_id:mode === "wrong-intent" ? "someone-else" : "q1" }], rowCount:1 };
     if (sql.includes("FROM commerce.ngn_wallet_entries"))
       return { rows: [{ balance: mode === "insufficient" ? "24999" : "25000" }], rowCount:1 };
     if (sql.includes("FROM commerce.msn_issuances"))
@@ -61,6 +76,30 @@ describe("MSN ledger atomicity and replay", () => {
       "INSERT INTO commerce.msn_ledger_entries","COMMIT"])
       expect(log).toContain(phrase);
     expect(log).not.toContain("ROLLBACK");
+  });
+  it.each([
+    ["no-quote","msn.quote.persisted_terms_mismatch"],
+    ["wrong-quote","msn.quote.persisted_terms_mismatch"],
+    ["unverified","msn.ngn.fiat_verification_missing"],
+    ["provider-mismatch","msn.ngn.funding_not_settled"],
+    ["wrong-intent","msn.ngn.funding_not_settled"],
+  ] as const)("rejects %s instead of minting against unbound evidence", async (mode, code) => {
+    const f=fixture(mode);
+    await expect(f.store.issue({quote,admission,verifiedEvidenceSha256:evidence}))
+      .rejects.toThrow(code);
+    const sql=f.statements.join("\n");
+    expect(sql).toContain("ROLLBACK");
+    expect(sql).not.toContain("INSERT INTO commerce.msn_ledger_entries");
+    expect(sql).not.toContain("INSERT INTO commerce.ngn_wallet_entries");
+  });
+  it("locks the canonical credited intent before reserving the NGN wallet", async () => {
+    const f=fixture();
+    await f.store.issue({quote,admission,verifiedEvidenceSha256:evidence});
+    const intent=f.statements.findIndex(x=>x.includes("FROM commerce.ngn_funding_intents"));
+    const wallet=f.statements.findIndex(x=>x.includes("pg_advisory_xact_lock"));
+    expect(intent).toBeGreaterThan(-1);
+    expect(wallet).toBeGreaterThan(intent);
+    expect(f.statements.join("\n")).toContain("FROM commerce.msn_funding_quotes q");
   });
   it("replays without a second NGN debit/MSN credit", async () => {
     const f=fixture("duplicate");
