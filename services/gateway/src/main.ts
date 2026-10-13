@@ -462,7 +462,24 @@ function createDefaultDatabaseDependency(
     },
     videos: createPostgresVideoStore(database.pool),
     initializePlatformPolicy: (tenantId: TenantId, revision: string) =>
-      withTransaction(database.pool, client => initializePostgresPolicyRevision(client, tenantId, revision)),
+      withTransaction(database.pool, async client => {
+        // The first deployment has no existing identity tenant. Provision only
+        // the configured canonical platform tenant, without modifying any
+        // existing tenant or reactivating a suspended customer environment.
+        await client.query(
+          "INSERT INTO identity.tenants (tenant_id, created_at, updated_at) " +
+          "VALUES ($1, NOW(), NOW()) ON CONFLICT (tenant_id) DO NOTHING",
+          [tenantId],
+        );
+        const tenant = await client.query<{ state: string }>(
+          "SELECT state FROM identity.tenants WHERE tenant_id = $1 FOR SHARE",
+          [tenantId],
+        );
+        if (tenant.rows[0]?.state !== "active") {
+          throw new Error("platform.tenant_not_active");
+        }
+        await initializePostgresPolicyRevision(client, tenantId, revision);
+      }),
     platformAgentIdentity: Object.freeze({
       async provision(input: Parameters<PlatformAgentIdentityProvisioner["provision"]>[0]) {
         await withTransaction(database.pool, async (client) => {
