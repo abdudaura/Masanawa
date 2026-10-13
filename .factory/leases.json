@@ -2076,10 +2076,10 @@
         "docs/workstreams/AF10-rooms-teacher-worker-20261013.md",
         ".github/workflows/status-video-integration.yml"
       ],
-      "pr": "",
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/716",
       "claimed_at": "2026-10-13T13:44:15.192Z",
-      "heartbeat_at": "2026-10-13T13:44:15.192Z",
-      "expires_at": "2026-10-13T13:49:15.192Z"
+      "heartbeat_at": "2026-10-13T13:51:30.493Z",
+      "expires_at": "2026-10-13T13:56:30.493Z"
     }
   ],
   "history": [
