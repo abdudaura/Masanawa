@@ -81,12 +81,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(memberships.issues, 1);
     expect(find.text('New invitation (shown once)'), findsOneWidget);
+    await tester.scrollUntilVisible(find.byTooltip('Ban member'), 180,
+        scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byTooltip('Ban member'));
     await tester.pumpAndSettle();
     expect(find.text('Confirm Room action'), findsOneWidget);
     await tester.tap(find.text('Confirm'));
     await tester.pumpAndSettle();
     expect(memberships.banned, isTrue);
+    await tester.scrollUntilVisible(find.byTooltip('Revoke invitation'), -180,
+        scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byTooltip('Revoke invitation'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Confirm'));
