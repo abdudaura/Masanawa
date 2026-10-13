@@ -2076,11 +2076,14 @@
       "base_sha": "ce7f4a9df38262b00c9fab78986143e6ccdf760c",
       "branch": "lane/af01-msn-reconciliation-20261013-gpt6",
       "claimed_at": "2026-10-13T15:24:56.460Z",
-      "heartbeat_at": "2026-10-13T15:34:05.811Z",
+      "heartbeat_at": "2026-10-13T15:35:41.555Z",
       "expires_at": "2026-10-13T15:39:05.811Z",
       "notes": "Fresh main #720; #714/#715 integrated. Staged 0112 remains outside production. No shared composition ownership or paid provider access.",
       "source_pr": 721,
-      "source_head": "5a2278106c8657aa9d3b5e77a9fba9dbd7e1a543"
+      "source_head": "5a2278106c8657aa9d3b5e77a9fba9dbd7e1a543",
+      "integration_head_sha": "174b862ab4a6239e8ff96fb7dcdc8ac5ab541be0",
+      "release_reason": "PR #721 merged main 174b862. Exact-head Actions 38423066248 SUCCESS; 61 Vitest + 2 actual PG18, Gateway/Worker build + worker typecheck. Read-only staged source only; financial flags OFF, 0112 not production; real providers/device OPEN. PR handoff comment 6149216130.",
+      "released_at": "2026-10-13T15:35:41.555Z"
     }
   ],
   "history": [
