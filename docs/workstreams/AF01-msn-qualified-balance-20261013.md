@@ -48,3 +48,7 @@ then atomic crypto deposits/conversion/send, with actual provider evidence.
 ## CI repair from first hosted run #38388319251
 
 Gateway package correctly lacks a direct pg dependency, so PostgreSQL18 acceptance moved into the canonical adapters/storage/postgres/src/commerce location rather than creating a second database dependency. 31 Gateway/MSN tests passed before the old path's missing pg error aborted the fifth file. The old #576 Flutter disabled-route test created a completed-error future before attaching its consumer; deferred the fault until after the widget mounts. A new exact-head hosted run is required before claiming success.
+
+## Hosted qualified source e3f70616e53a693e746724ff4cf453f8eebb7f74
+
+CI #38388652652: PostgreSQL18+Vitest **34 passed across 5 files** (including new real migration/immutability/tenant fencing), Flutter **44 passed** across inherited MSN transport/card, MUI07 and AF01 Wallet and AF08 regression. Focused Dart analysis exited successfully with four informational style lints in reused #576 sources; follow-up source fixes these without changing behavior, requiring a final exact-head verification. No financial flags activated.

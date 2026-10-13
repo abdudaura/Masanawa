@@ -70,7 +70,9 @@ class _MsnBalanceCardState extends State<MsnBalanceCard> {
       final value = await widget.transport.read();
       if (!mounted ||
           generation != _generation ||
-          session != widget.sessionIdentity) return;
+          session != widget.sessionIdentity) {
+        return;
+      }
       setState(() {
         _balance = value;
         _loading = false;
@@ -78,7 +80,9 @@ class _MsnBalanceCardState extends State<MsnBalanceCard> {
     } catch (failure) {
       if (!mounted ||
           generation != _generation ||
-          session != widget.sessionIdentity) return;
+          session != widget.sessionIdentity) {
+        return;
+      }
       setState(() {
         _balance = null;
         _loading = false;
