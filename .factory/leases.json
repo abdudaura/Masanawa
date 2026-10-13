@@ -1989,25 +1989,6 @@
       "integration_head_sha": "fd29f392156ab6f032fa66a4de6420b932d64507",
       "source_head": "c37d4a6a5a472b201e1dce0c33298036ee08ec8e",
       "source_pr": 709
-    },
-    {
-      "claim_id": "af08-credential-fencing-20261013-gpt6",
-      "owner": "AF08 auth transport / GPT-6",
-      "branch": "lane/af08-credential-fencing-20261013-gpt6",
-      "base_sha": "472bc3d9ba99c2b7d58808c3e3540064f603781d",
-      "paths": [
-        "apps/mobile/lib/src/core/network/api_client.dart",
-        "apps/mobile/lib/src/state/session_state.dart",
-        "apps/mobile/test/auth_credential_fencing_test.dart",
-        "apps/mobile/test/session_state_test.dart",
-        ".github/workflows/af08-credential-fencing.yml",
-        "docs/workstreams/AF08-credential-fencing-20261013.md"
-      ],
-      "scope": "Session-epoch isolation of authenticated shared Dio, old-account 401 refresh and stale response fences, and session rotation race tests; no new identity authority",
-      "claimed_at": "2026-10-13T09:52:28.475Z",
-      "heartbeat_at": "2026-10-13T09:59:31.839Z",
-      "expires_at": "2026-10-13T10:04:31.839Z",
-      "notes": "Source PR #711 latest head 93ae4c79; first hosted Flutter run failed missing dart:async import in test only; repaired and second hosted run #38380186034 in progress; no main merge until tests pass."
     }
   ],
   "history": [
@@ -6467,6 +6448,30 @@
       "source_pr": 710,
       "source_head": "d9fd0ba0361e8c4e32c7be0b00d2aa4620b62d67",
       "integration_head_sha": "472bc3d9ba99c2b7d58808c3e3540064f603781d"
+    },
+    {
+      "claim_id": "af08-credential-fencing-20261013-gpt6",
+      "owner": "AF08 auth transport / GPT-6",
+      "branch": "lane/af08-credential-fencing-20261013-gpt6",
+      "base_sha": "472bc3d9ba99c2b7d58808c3e3540064f603781d",
+      "paths": [
+        "apps/mobile/lib/src/core/network/api_client.dart",
+        "apps/mobile/lib/src/state/session_state.dart",
+        "apps/mobile/test/auth_credential_fencing_test.dart",
+        "apps/mobile/test/session_state_test.dart",
+        ".github/workflows/af08-credential-fencing.yml",
+        "docs/workstreams/AF08-credential-fencing-20261013.md"
+      ],
+      "scope": "Session-epoch isolation of authenticated shared Dio, old-account 401 refresh and stale response fences, and session rotation race tests; no new identity authority",
+      "claimed_at": "2026-10-13T09:52:28.475Z",
+      "heartbeat_at": "2026-10-13T09:59:31.839Z",
+      "expires_at": "2026-10-13T10:04:31.839Z",
+      "notes": "Source PR #711 latest head 93ae4c79; first hosted Flutter run failed missing dart:async import in test only; repaired and second hosted run #38380186034 in progress; no main merge until tests pass.",
+      "released_at": "2026-10-13T10:00:49.987Z",
+      "release_reason": "PR #711 source 93ae4c79e030c869ad76538eb996ea85c291298b merged main bf6c9f2386d5b7c22ad8eb6b035b949cdbd64269; hosted run 38380186034 45 Flutter tests PASS + focused Dart analyze PASS. Initial test-only import fail fixed. Real provider/device and global baseline gates remain.",
+      "source_pr": 711,
+      "source_head": "93ae4c79e030c869ad76538eb996ea85c291298b",
+      "integration_head_sha": "bf6c9f2386d5b7c22ad8eb6b035b949cdbd64269"
     }
   ],
   "schema_version": 1
