@@ -2015,7 +2015,12 @@
         "infra/deployment/gateway/railway.toml"
       ],
       "scope": "Add dedicated canonical Worker Railway image/config and keep production DB migration explicitly operator-owned before account recovery; no provider activation or data movement",
-      "notes": "Old Railway account expired; installed Railway app does not expose usable runtime actions in this session. Exact data volume and backup are untouched."
+      "notes": "Old Railway account expired; installed Railway app does not expose usable runtime actions in this session. Exact data volume and backup are untouched.",
+      "released_at": "2026-10-13T20:52:34.846Z",
+      "release_reason": "PR #731 merged to main after canonical Node24 Gateway/Worker build workflow PASS (3 focused Vitest), Rooms production jobs PASS; Foundation/Status workflows had pre-existing TalkId TS2459 and historical broad TS errors. No Railway project API, old PG backup/restore, migration 0006 live, production deployment or Rooms E2E executed; flags OFF.",
+      "source_head": "c6a3ee3b149245943bef6f5e1c3554a22d584a01",
+      "source_pr": 731,
+      "integration_head_sha": "483ec92068e6236137a7a28d709b8760414996cc"
     }
   ],
   "history": [
