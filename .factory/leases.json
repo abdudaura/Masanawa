@@ -2011,7 +2011,8 @@
         "test/architecture/railway-deployment.test.ts",
         ".github/workflows/railway-deployment-contract.yml",
         "docs/workstreams/AF00-railway-account-recovery-20261013.md",
-        "docs/CONFIGURATION-DEPLOYMENT.md"
+        "docs/CONFIGURATION-DEPLOYMENT.md",
+        "infra/deployment/gateway/railway.toml"
       ],
       "scope": "Add dedicated canonical Worker Railway image/config and keep production DB migration explicitly operator-owned before account recovery; no provider activation or data movement",
       "notes": "Old Railway account expired; installed Railway app does not expose usable runtime actions in this session. Exact data volume and backup are untouched."
