@@ -1944,7 +1944,10 @@
       "expires_at": "2026-10-13T16:47:50.524Z",
       "notes": "Latest main and claim registry checked; preserve all existing calls and chat transport. Confirmed raw PCM mislabelled as WAV in persisted AI chat replies; fix formats + regression tests. Current source tests: 92 Flutter and 48 Gateway/PG pass; Android compilation gate in progress. Railway trial expired.",
       "source_pr": 726,
-      "source_head": "93da1ddf9fb0334846c79f97f0c9c314178b5dfa"
+      "source_head": "93da1ddf9fb0334846c79f97f0c9c314178b5dfa",
+      "released_at": "2026-10-13T16:43:40.614Z",
+      "release_reason": "Merged source PR #726 at 6e11fb3ef339b123d2765dc96caaa520bbe46754. Main source tests: 92 Flutter + 48 Gateway/PG passed; Android debug APK compiled at source-equivalent 25b5cb96 (only YAML differs on final head). Production Railway source reconnect rejected: trial expired. Physical Android + actual Gemini voice/calls NOT_RUN. Existing unrelated whole-project Mobile analyzer and Foundation TalkId typecheck FAIL.",
+      "integration_head_sha": "6e11fb3ef339b123d2765dc96caaa520bbe46754"
     },
     {
       "claim_id": "af10-room-rejoin-role-fence-20261013-gpt6",
