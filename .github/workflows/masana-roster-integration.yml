@@ -45,7 +45,7 @@ jobs:
           pnpm --filter @masanawa/gateway-service... build
           pnpm --filter @masanawa/worker-service... build
       - name: Professional agent identity and call profile seeds
-        run: pnpm exec vitest run services/gateway/src/platform_agent_bootstrap.test.ts services/gateway/src/agent_directory.test.ts services/gateway/src/agent_directory_route.test.ts
+        run: pnpm exec vitest run services/gateway/src/platform_agent_bootstrap.test.ts services/gateway/src/agent_directory.test.ts services/gateway/src/agent_directory_route.test.ts services/gateway/src/customer_auth.test.ts
       - name: Real PG18 Masana and Rooms creation
         run: pnpm exec vitest run adapters/storage/postgres/src/masana/catalog_seed.integration.test.ts
       - name: Room AI and protected voice token regressions
