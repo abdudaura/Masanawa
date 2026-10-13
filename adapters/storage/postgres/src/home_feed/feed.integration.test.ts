@@ -1,6 +1,6 @@
 import {readFileSync} from "node:fs";
 import {afterAll,beforeAll,describe,expect,it} from "vitest";
-import {createIsolatedPostgresTestDatabase} from "../commerce/isolated-test-database.js";
+import {createIsolatedPostgresTestDatabase} from "./isolated-test-database.js";
 import {PgHomeFeedRepository} from "./repository.js";
 import {PgEditorialReviewRepository} from "./review_repository.js";
 const conn=process.env.MASANAWA_TEST_DATABASE_URL;

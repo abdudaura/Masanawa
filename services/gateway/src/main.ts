@@ -2289,7 +2289,7 @@ export async function startGatewayService(
         ...(options.statusMedia ? { configuration: options.statusMedia } : {}),
       });
     } catch (error) {
-      await database.close().catch(() => undefined);
+      // The enclosing service-startup failure path owns the one DB close.
       throw error;
     }
     const approved = (tenant: string, id: string) => eligibility.author(tenant, id);

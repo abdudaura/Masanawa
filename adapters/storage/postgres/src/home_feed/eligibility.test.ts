@@ -1,4 +1,4 @@
-import {createIsolatedPostgresTestDatabase} from "../commerce/isolated-test-database.js";
+import {createIsolatedPostgresTestDatabase} from "./isolated-test-database.js";
 import {describe,it,expect,vi,beforeAll,afterAll} from "vitest";
 import {PgStatusEligibility} from "./eligibility.js";
 describe("Status existing canonical eligibility selectors",()=>{

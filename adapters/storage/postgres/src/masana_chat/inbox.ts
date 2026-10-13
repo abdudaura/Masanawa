@@ -117,7 +117,7 @@ ${previewHideFence}
         ) t ON TRUE
         WHERE lower(r.profile->>'handle') <> 'gwani'
           AND ($3='' OR position(lower($3) in
-            lower(r.profile->>'displayName' || ' ' || r.profile->>'profession'))>0)
+            lower((r.profile->>'displayName') || ' ' || (r.profile->>'profession')))>0)
         ORDER BY COALESCE(p.pinned,false) DESC,
           COALESCE(t.updated_at,l.session_at) DESC, l.character_id
         LIMIT 50
