@@ -107,9 +107,10 @@ class NotificationSwitchController extends ChangeNotifier {
         error = 'Notification change was not confirmed. Check permissions and retry.';
         return false;
       }
-      if (requested && onEnabled != null) {
+      final confirmDelivery = onEnabled;
+      if (requested && confirmDelivery != null) {
         try {
-          await onEnabled();
+          await confirmDelivery();
         } catch (_) {
           if (_current(generation, account)) {
             error = 'Device permission is enabled, but message delivery could not be confirmed. Reconnect and retry.';
