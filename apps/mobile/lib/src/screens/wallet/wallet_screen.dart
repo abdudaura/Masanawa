@@ -120,7 +120,9 @@ class WalletScreen extends ConsumerWidget {
                 }
                 final current = ref.read(sessionProvider);
                 if (current is! SessionSignedIn ||
-                    current.user.id != accountId) return;
+                    current.user.id != accountId) {
+                  return;
+                }
                 await showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,

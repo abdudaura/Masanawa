@@ -68,3 +68,9 @@ and exact amount. Wallet account isolation and AF08 Dio fencing still apply.
 Previous hosted #38381724205: Flutter **50 passed** with 6 informational lints; PostgreSQL/Gateway **56 passed, 1 failed**. The failing exact replay hit the independent (tenant_id, ledger_entry_id) uniqueness constraint even with a conflict arbiter restricted to (tenant_id, request_id). Both receipt identities are unique. Use targetless ON CONFLICT DO NOTHING followed by strict same-request stored receipt comparison; a different request trying to reuse a ledger entry must **not** return a successful receipt. The PostgreSQL acceptance now tests eight simultaneous exact replays plus the negative distinct-request/same-ledger collision. Introduced Flutter lint items are corrected, without broad unrelated formatting changes.
 
 **New verification:** pending exact-head CI; this source checkpoint is not a claimed pass. Existing feature flags both remain default OFF. Main merge must occur only after the new focused Gateway/PostgreSQL + Flutter results pass and current head/claims are reconciled. Full Flutter/TypeScript debt, device, providers and financial issuance remain separate open gates.
+
+## Hosted recheck at source 530decaf5cdfb6c08826417be37d7fdfe2b88a31
+
+- Dedicated Gateway/PostgreSQL18: **58/58 passed** (4 Vitest files), including eight exact-replay calls and rejected ledger ID reuse; scoped gateway typecheck reports unrelated pre-existing TypeScript debt.
+- Dedicated Flutter: **50/50 passed**. The initial correction left one Wallet curly-brace lint at line 123 discovered through Mobile Build; this follow-up fixes it. Final clean focused Dart analysis must be rerun at this follow-up's exact SHA.
+- Broad Mobile Build still stops at full Flutter analysis (366 diagnostics on previous source); Foundation stops at pre-existing TalkId TS2459; Status Video fails independent strict TS typecheck. No device/provider/release qualification.
