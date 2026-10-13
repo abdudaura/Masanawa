@@ -30,7 +30,6 @@ class _Chats extends AiChatController {
  @override AiChatState build()=>const AiChatState();
  @override void openThread(String characterId) {}
  @override void closeThread() {}
- @override void persistScrollOffset(String characterId,double offset) {}
  @override Future<void> sendAttachment(String characterId,ChatAttachment attachment,{String? caption,String? replyToId,String? replyPreview}) async {sent.add(attachment);}
 }
 class _Directory extends AgentDirectoryController {
