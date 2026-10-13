@@ -2059,6 +2059,27 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af10-rooms-teacher-runtime-20261013-gpt6",
+      "owner": "AF10 / GPT-6 connected Room queue worker",
+      "scope": "Bounded flagged Rooms teacher question worker with PG queue, service lifecycle, no unverified AI spending",
+      "branch": "lane/af10-rooms-teacher-runtime-20261013-gpt6",
+      "base_sha": "204ed142fc8bb90b02c7c62b49e5c4b9020f7e34",
+      "paths": [
+        "adapters/storage/postgres/src/index.ts",
+        "services/worker/src/main.ts",
+        "services/worker/src/jobs/rooms/runtime.ts",
+        "services/worker/src/jobs/rooms/runtime.test.ts",
+        "services/worker/src/jobs/rooms/teacher.ts",
+        "services/worker/src/jobs/rooms/teacher.test.ts",
+        "docs/workstreams/AF10-rooms-teacher-worker-20261013.md",
+        ".github/workflows/status-video-integration.yml"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T13:44:15.192Z",
+      "heartbeat_at": "2026-10-13T13:44:15.192Z",
+      "expires_at": "2026-10-13T13:49:15.192Z"
     }
   ],
   "history": [
