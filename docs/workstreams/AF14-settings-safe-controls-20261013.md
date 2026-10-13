@@ -1,5 +1,7 @@
 # AF14 — Settings account/device controls, 2026-10-13
 
+**Merged via [PR #696](https://github.com/weavewellindustrieslimited/masanawa/pull/696) at exact reviewed head `2dd60197a4329db91fccfa97d38b86028c176199`, normal merge `09ffd7ed7ed67da8a842ab2d3af3c410e1e5b568` (2026-10-13). Source state remains IMPLEMENTED_UNVERIFIED; this is not a signed/released app.**
+
 **Development source:** base `3fcd910ebe905a52f8fe011ee13cf81993e46aa1`; application source head `aa2f831699f0929639a95d52c13cffff23d17e56`; branch `lane/af14-settings-safe-controls-20261013`.
 **Status:** IMPLEMENTED_UNVERIFIED pending Dart/Flutter execution. This is scoped source, not a fully qualified Settings, notifications, auth or installed-device release.
 
