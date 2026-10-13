@@ -2021,6 +2021,20 @@
       "source_head": "c6a3ee3b149245943bef6f5e1c3554a22d584a01",
       "source_pr": 731,
       "integration_head_sha": "483ec92068e6236137a7a28d709b8760414996cc"
+    },
+    {
+      "claim_id": "af00-gateway-new-tenant-bootstrap-20261013-gpt6-2306",
+      "owner": "GPT-6 AF00 Gateway integration",
+      "scope": "Fix real new PG18 first-run tenant FK startup for professional Masana roster, keep existing tenants and financial state protected",
+      "paths": [
+        "services/gateway/src/main.ts"
+      ],
+      "claimed_at": "2026-10-13T23:05:25.059Z",
+      "heartbeat_at": "2026-10-13T23:05:25.059Z",
+      "expires_at": "2026-10-13T23:50:25.059Z",
+      "base_sha": "a540c5fa030e493eabf39ec831f28cb65db5c6ab",
+      "branch": "lane/af00-first-run-tenant-bootstrap-20261013-gpt6",
+      "notes": "Observed real fresh Railway characters_tenant_id_fkey error with canonical tenant; scope strictly startup tenant parent creation; no migration/finance."
     }
   ],
   "history": [
