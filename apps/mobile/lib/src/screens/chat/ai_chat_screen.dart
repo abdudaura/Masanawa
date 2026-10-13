@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
+import '../../agents/masana_portrait_avatar.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/cafe_suggestions.dart';
 import '../../chat/message_parts.dart';
@@ -745,18 +746,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 : () => context.push('/masana'),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 17,
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    agent.initial,
-                    style: TextStyle(
-                      color: u.brandStrong,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
+                MasanaPortraitAvatar(agent: agent, size: 34),
                 const SizedBox(width: 9),
                 Expanded(
                   child: Column(
@@ -1236,7 +1226,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
             for (final entry in agents)
               ListTile(
-                leading: CircleAvatar(child: Text(entry.initial)),
+                leading: MasanaPortraitAvatar(agent: entry, size: 40),
                 title: Text(entry.displayName),
                 subtitle: Text(entry.roleLabel),
                 onTap: () => Navigator.pop(sheetContext, entry),
@@ -2087,18 +2077,7 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(
-                  radius: 38,
-                  backgroundColor: u.brand,
-                  child: Text(
-                    widget.agent.initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                MasanaPortraitAvatar(agent: widget.agent, size: 76),
                 const SizedBox(height: 14),
                 Text(
                   widget.agent.displayName,
