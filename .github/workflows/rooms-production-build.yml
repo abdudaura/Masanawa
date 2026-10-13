@@ -69,6 +69,7 @@ jobs:
           packages/rooms/src/index.test.ts
       - name: Real PG18 forward-upgrade and Rooms schema readiness
         run: pnpm exec vitest run adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts
+          adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts
       - name: Focused Worker production typing
         run: pnpm --filter @masanawa/worker-service typecheck
   flutter-rooms:
@@ -90,6 +91,7 @@ jobs:
           test/features/rooms/rooms_screen_test.dart
           test/rooms_screen_test.dart
           test/features/rooms/room_discussion_screen_test.dart
+          test/features/rooms/room_auto_answer_test.dart
       - name: Focused Rooms Dart analysis
         run: dart analyze lib/src/features/rooms/rooms_screen.dart
 
