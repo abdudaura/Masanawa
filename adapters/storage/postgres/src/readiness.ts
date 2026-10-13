@@ -65,7 +65,7 @@ export function platformProductMigrationRoots(): readonly MigrationRoot[] {
     }),
     // These new domains are forward-only migrations. Existing owner hashes
     // and historical ledger, auth and money migrations remain untouched.
-    ...["masana", "feed", "rooms", "external-videos"].map((owner) =>
+    ...["masana", "external-videos", "feed", "rooms"].map((owner) =>
       Object.freeze({
         owner,
         directory: fileURLToPath(new URL(`../../../../packages/${owner}/migrations/`, import.meta.url)),
