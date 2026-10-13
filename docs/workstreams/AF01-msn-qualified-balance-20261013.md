@@ -60,3 +60,7 @@ The trial DDL is stored at `packages/commerce/migration_proposals/0112_msn_walle
 ## Exact-head compiler regression repair
 
 CI #38389095587: PostgreSQL **34 passed**, while Flutter detected a genuine Dart syntax regression introduced by a source-transform replacement pattern containing a dollar-sign plus apostrophe, interpreted specially by JavaScript String.replace. The MSN transport constructor is repaired using exact-slice replacement instead of interpolating the replacement string; the preceding 44-pass source is preserved otherwise. No prior green Flutter result is being claimed for the broken head. Require a final full scoped recheck.
+
+## Second compiler repair from hosted #38389349198
+
+The prior malformed transform had also duplicated the body following the Dart constructor, causing errors near line 93. Restored the transport directly from source-approved #576 and applied **only** the initializing-formal fix using a callback-based JS replacement. Verified one `read()` method, one class and a complete regex literal before push. The previous test run remains FAIL, and the next exact-head CI is authoritative.
