@@ -2059,27 +2059,6 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
-    },
-    {
-      "claim_id": "af10-live-answers-refresh-pg-20261013-gpt6",
-      "owner": "AF10/GPT-6 postmerge live answer UI and real PG18",
-      "scope": "Post-#718 separate merge: auto-refresh Room pending AI answer without stale account reads, verify real PG18 customer ask→outbox→AI answer→readback + failure retry.",
-      "branch": "lane/af10-rooms-live-answers-ui-pg-20261013-gpt6",
-      "base_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae",
-      "paths": [
-        ".github/workflows/rooms-production-build.yml",
-        "adapters/storage/postgres/src/rooms/repository.ts",
-        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts",
-        "adapters/storage/postgres/src/rooms/teacher_outbox.ts",
-        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
-        "apps/mobile/test/features/rooms/room_auto_answer_test.dart",
-        "docs/workstreams/AF10-rooms-direct-answer-refresh-20261013.md"
-      ],
-      "pr": "",
-      "claimed_at": "2026-10-13T14:51:15.857Z",
-      "heartbeat_at": "2026-10-13T14:56:45.315Z",
-      "expires_at": "2026-10-13T15:04:45.315Z",
-      "notes": "Real PG18 end-to-end run #38417440572 discovered SQLSTATE 42P08 ambiguous jsonb_build_object bind in actual user ask outbox. Claim canonical Rooms PG repository and teacher queue for exact typed fix; user request direct AI answers."
     }
   ],
   "history": [
@@ -6732,6 +6711,31 @@
       "expires_at": "2026-10-13T14:53:07.701Z",
       "released_at": "2026-10-13T14:48:01.498Z",
       "release_reason": "Audited Telegram and WhatsApp manual flags but source update blocked before commit by tool safety controls; no code changed, no provider activation performed, no PR created. Preserve current webhook/auth prerequisites and report remaining dependency."
+    },
+    {
+      "claim_id": "af10-live-answers-refresh-pg-20261013-gpt6",
+      "owner": "AF10/GPT-6 postmerge live answer UI and real PG18",
+      "scope": "Post-#718 separate merge: auto-refresh Room pending AI answer without stale account reads, verify real PG18 customer ask→outbox→AI answer→readback + failure retry.",
+      "branch": "lane/af10-rooms-live-answers-ui-pg-20261013-gpt6",
+      "base_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae",
+      "paths": [
+        ".github/workflows/rooms-production-build.yml",
+        "adapters/storage/postgres/src/rooms/repository.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.ts",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/room_auto_answer_test.dart",
+        "docs/workstreams/AF10-rooms-direct-answer-refresh-20261013.md"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T14:51:15.857Z",
+      "heartbeat_at": "2026-10-13T14:56:45.315Z",
+      "expires_at": "2026-10-13T15:04:45.315Z",
+      "notes": "Real PG18 end-to-end run #38417440572 discovered SQLSTATE 42P08 ambiguous jsonb_build_object bind in actual user ask outbox. Claim canonical Rooms PG repository and teacher queue for exact typed fix; user request direct AI answers.",
+      "released_at": "2026-10-13T15:00:09.609Z",
+      "release_reason": "PR #719 source d266d13407afc6f0e44b9943f80fab7562271525 merged main 20daa18a2d5b30d9b25f7eeff332a556aae5fc82; two PG18 suites 4 PASS and 12 focused Rooms suites 56 PASS, 10 Flutter PASS, Gateway/Worker production builds & Worker TypeScript PASS. No Railway real deployment, APK or Gemini provider acceptance.",
+      "integration_head_sha": "20daa18a2d5b30d9b25f7eeff332a556aae5fc82",
+      "source_pr": 719
     }
   ],
   "schema_version": 1
