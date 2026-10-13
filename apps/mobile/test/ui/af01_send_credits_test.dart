@@ -100,7 +100,7 @@ void main() {
 
   testWidgets('review never debits until explicit second confirmation', (tester) async {
     var calls = 0;
-    await mountSheet(tester, send: (_, __) async { calls++; return null; });
+    await mountSheet(tester, send: (_, _) async { calls++; return null; });
     await enterDetails(tester);
     expect(calls, 0);
     expect(find.text('Confirm and send'), findsOneWidget);
@@ -114,7 +114,7 @@ void main() {
   testWidgets('invalid, zero and insufficient amount never call transport', (tester) async {
     var calls = 0;
     await mountSheet(tester, spendable: 20,
-      send: (_, __) async { calls++; return _receipt; });
+      send: (_, _) async { calls++; return _receipt; });
     await enterDetails(tester, recipient: '', amount: '1');
     expect(find.textContaining('valid whole Credit'), findsOneWidget);
     await enterDetails(tester, amount: '25');
@@ -129,7 +129,7 @@ void main() {
     var account = 'fan-a';
     var calls = 0;
     await mountSheet(tester, account: () => account,
-      send: (_, __) async { calls++; return _receipt; });
+      send: (_, _) async { calls++; return _receipt; });
     await enterDetails(tester);
     account = 'fan-b';
     await tester.tap(find.text('Confirm and send'));
@@ -141,7 +141,7 @@ void main() {
   testWidgets('pending request allows no duplicate confirm taps', (tester) async {
     final deferred = Completer<CreditTransferReceipt?>();
     var calls = 0;
-    await mountSheet(tester, send: (_, __) {
+    await mountSheet(tester, send: (_, _) {
       calls++;
       return deferred.future;
     });
@@ -162,7 +162,7 @@ void main() {
     var account = 'fan-a';
     final deferred = Completer<CreditTransferReceipt?>();
     await mountSheet(tester, account: () => account,
-      send: (_, __) => deferred.future);
+      send: (_, _) => deferred.future);
     await enterDetails(tester);
     await tester.tap(find.text('Confirm and send'));
     await tester.pump();

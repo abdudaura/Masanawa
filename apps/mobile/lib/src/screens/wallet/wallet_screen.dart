@@ -115,7 +115,9 @@ class WalletScreen extends ConsumerWidget {
                         ),
                   ),
                 );
-                if (!context.mounted || receipt == null) return;
+                if (!context.mounted || receipt == null) {
+                  return;
+                }
                 final current = ref.read(sessionProvider);
                 if (current is! SessionSignedIn ||
                     current.user.id != accountId) return;

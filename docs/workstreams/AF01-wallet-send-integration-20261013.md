@@ -62,3 +62,9 @@ and exact amount. Wallet account isolation and AF08 Dio fencing still apply.
   no old branch wholesale merge or ledger relabel occurred.
 - MUI-09 full multi-tab combination, MUI-10 signed installed identity,
   AF11 real device/provider and overall launch acceptance remain OPEN.
+
+## 2026-10-13 concurrent replay repair checkpoint
+
+Previous hosted #38381724205: Flutter **50 passed** with 6 informational lints; PostgreSQL/Gateway **56 passed, 1 failed**. The failing exact replay hit the independent (tenant_id, ledger_entry_id) uniqueness constraint even with a conflict arbiter restricted to (tenant_id, request_id). Both receipt identities are unique. Use targetless ON CONFLICT DO NOTHING followed by strict same-request stored receipt comparison; a different request trying to reuse a ledger entry must **not** return a successful receipt. The PostgreSQL acceptance now tests eight simultaneous exact replays plus the negative distinct-request/same-ledger collision. Introduced Flutter lint items are corrected, without broad unrelated formatting changes.
+
+**New verification:** pending exact-head CI; this source checkpoint is not a claimed pass. Existing feature flags both remain default OFF. Main merge must occur only after the new focused Gateway/PostgreSQL + Flutter results pass and current head/claims are reconciled. Full Flutter/TypeScript debt, device, providers and financial issuance remain separate open gates.

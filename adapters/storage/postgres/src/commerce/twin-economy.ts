@@ -153,12 +153,15 @@ export function createPostgresTwinRuntimeRepository(
     },
 
     async recordCreditOperation(input) {
-      const inserted = await pool.query(
+      // Both request identity and ledger entry identity have unique constraints.
+      // Concurrent exact replays can contend on either index; a conflicting
+      // insert is only accepted after reading back and checking every field.
+      await pool.query(
         `INSERT INTO commerce.twin_credit_operations(
            tenant_id,request_id,kind,sender_user_id,recipient_user_id,
            character_id,amount_credits,ledger_entry_id,completed_at
          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-         ON CONFLICT (tenant_id,request_id) DO NOTHING`,
+         ON CONFLICT DO NOTHING`,
         [
           input.tenantId,
           input.requestId,
@@ -175,7 +178,7 @@ export function createPostgresTwinRuntimeRepository(
         tenantId: input.tenantId,
         requestId: input.requestId,
       });
-      if (!current) throw new Error("Twin credit operation persistence failed");
+      if (!current) throw new Error("Twin credit operation ledger entry replay conflict");
       if (
         current.kind !== input.kind ||
         current.senderUserId !== input.senderUserId ||
@@ -186,7 +189,6 @@ export function createPostgresTwinRuntimeRepository(
       ) {
         throw new Error("Twin credit operation replay conflict");
       }
-      void inserted;
       return current;
     },
 
