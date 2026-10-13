@@ -43,6 +43,7 @@ void main() {
     Uri? embedded, opened;
     await tester.pumpWidget(MaterialApp(home: OfficialVideoPlayerScreen(
       video: v,
+      checkAvailability: (_) async => true,
       embedBuilder: (url) { embedded = url; return const Text('Provider iframe'); },
       open: (url) async { opened = url; return true; },
     )));
