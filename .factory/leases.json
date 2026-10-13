@@ -2262,23 +2262,6 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
-    },
-    {
-      "claim_id": "af14-settings-safe-controls-20261013-gpt6",
-      "owner": "GPT-6 / AF14 owner-directed settings safety controls",
-      "scope": "Deliver Settings profile navigation, confirmed local chat clearing, single-flight canonical support selection and notification error/retry, truthful About identity without new providers.",
-      "branch": "lane/af14-settings-safe-controls-20261013",
-      "base_sha": "3fcd910ebe905a52f8fe011ee13cf81993e46aa1",
-      "paths": [
-        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
-        "apps/mobile/lib/src/screens/settings/clear_device_chats_dialog.dart",
-        "apps/mobile/test/clear_device_chats_dialog_test.dart",
-        "docs/workstreams/AF14-settings-safe-controls-20261013.md"
-      ],
-      "claimed_at": "2026-10-13T04:39:46.596Z",
-      "heartbeat_at": "2026-10-13T04:44:00.851Z",
-      "expires_at": "2026-10-13T04:49:00.851Z",
-      "notes": "Source+four authored dialog regressions committed, reviewed push reattach; focused Flutter runner unavailable locally; preserve feature branch and normal PR review."
     }
   ],
   "history": [
@@ -6040,6 +6023,27 @@
         "from": "AF14 profile editor; released AF13 #460 tests",
         "to": "AF13 MUI09 named profile creation/save/reload"
       }
+    },
+    {
+      "claim_id": "af14-settings-safe-controls-20261013-gpt6",
+      "owner": "GPT-6 / AF14 owner-directed settings safety controls",
+      "scope": "Deliver Settings profile navigation, confirmed local chat clearing, single-flight canonical support selection and notification error/retry, truthful About identity without new providers.",
+      "branch": "lane/af14-settings-safe-controls-20261013",
+      "base_sha": "3fcd910ebe905a52f8fe011ee13cf81993e46aa1",
+      "paths": [
+        "apps/mobile/lib/src/screens/settings/settings_screen.dart",
+        "apps/mobile/lib/src/screens/settings/clear_device_chats_dialog.dart",
+        "apps/mobile/test/clear_device_chats_dialog_test.dart",
+        "docs/workstreams/AF14-settings-safe-controls-20261013.md"
+      ],
+      "claimed_at": "2026-10-13T04:39:46.596Z",
+      "heartbeat_at": "2026-10-13T04:44:00.851Z",
+      "expires_at": "2026-10-13T04:49:00.851Z",
+      "notes": "Source+four authored dialog regressions committed, reviewed push reattach; focused Flutter runner unavailable locally; preserve feature branch and normal PR review.",
+      "released_at": "2026-10-13T04:46:36.901Z",
+      "release_reason": "Scoped AF14 source and four authored tests committed; reviewed PR #696 exact head 2dd60197a4329db91fccfa97d38b86028c176199 merged normally at 09ffd7ed7ed67da8a842ab2d3af3c410e1e5b568, handoff integrated in main 00a1e84522f01451a7a6bfc344d021ec476efc0c; tests NOT_RUN Flutter/Dart absent, not device/provider qualified.",
+      "integration_head_sha": "09ffd7ed7ed67da8a842ab2d3af3c410e1e5b568",
+      "source_pr": 696
     }
   ],
   "schema_version": 1
