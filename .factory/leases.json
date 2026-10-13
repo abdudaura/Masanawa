@@ -1989,6 +1989,25 @@
       "integration_head_sha": "fd29f392156ab6f032fa66a4de6420b932d64507",
       "source_head": "c37d4a6a5a472b201e1dce0c33298036ee08ec8e",
       "source_pr": 709
+    },
+    {
+      "claim_id": "af08-credential-fencing-20261013-gpt6",
+      "owner": "AF08 auth transport / GPT-6",
+      "branch": "lane/af08-credential-fencing-20261013-gpt6",
+      "base_sha": "472bc3d9ba99c2b7d58808c3e3540064f603781d",
+      "paths": [
+        "apps/mobile/lib/src/core/network/api_client.dart",
+        "apps/mobile/lib/src/state/session_state.dart",
+        "apps/mobile/test/auth_credential_fencing_test.dart",
+        "apps/mobile/test/session_state_test.dart",
+        ".github/workflows/af08-credential-fencing.yml",
+        "docs/workstreams/AF08-credential-fencing-20261013.md"
+      ],
+      "scope": "Session-epoch isolation of authenticated shared Dio, old-account 401 refresh and stale response fences, and session rotation race tests; no new identity authority",
+      "claimed_at": "2026-10-13T09:52:28.475Z",
+      "heartbeat_at": "2026-10-13T09:52:28.475Z",
+      "expires_at": "2026-10-13T09:57:28.475Z",
+      "notes": "Reconciled main #710 and prior AF08 draft claims, exact file ownership; hosted Flutter test planned"
     }
   ],
   "history": [
