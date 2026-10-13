@@ -2211,23 +2211,6 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
-    },
-    {
-      "claim_id": "af10-mui06-main-rooms-20261013-gpt6",
-      "owner": "AF10 / GPT-6 MUI-06 canonical Rooms",
-      "scope": "MUI-06/AF10: mount canonical persistent Rooms discovery/join/lessons and saved lessons, no shared AF00 gateway/migration/router writes; recover released C38 and MUI01 path records without discarding source",
-      "paths": [
-        "apps/mobile/lib/src/features/rooms/**",
-        "apps/mobile/test/features/rooms/**",
-        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
-        "apps/mobile/test/rooms_screen_test.dart",
-        "docs/workstreams/UI-MUI-06-rooms.md"
-      ],
-      "branch": "lane/af10-mui06-canonical-rooms-20261013",
-      "base_sha": "3fcd910ebe905a52f8fe011ee13cf81993e46aa1",
-      "claimed_at": "2026-10-13T05:22:41.406Z",
-      "heartbeat_at": "2026-10-13T05:22:41.406Z",
-      "expires_at": "2026-10-13T05:27:41.406Z"
     }
   ],
   "history": [
@@ -6063,6 +6046,28 @@
       "source_head": "3076b26056e6c1ad4e3958f1126e193198409b76",
       "source_pr": 678,
       "recovery_note": "Published release evidence preserved in history during AF10 MUI-06 exact-path recovery; source #655 / #678 preserved."
+    },
+    {
+      "claim_id": "af10-mui06-main-rooms-20261013-gpt6",
+      "owner": "AF10 / GPT-6 MUI-06 canonical Rooms",
+      "scope": "MUI-06/AF10: mount canonical persistent Rooms discovery/join/lessons and saved lessons, no shared AF00 gateway/migration/router writes; recover released C38 and MUI01 path records without discarding source",
+      "paths": [
+        "apps/mobile/lib/src/features/rooms/**",
+        "apps/mobile/test/features/rooms/**",
+        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
+        "apps/mobile/test/rooms_screen_test.dart",
+        "docs/workstreams/UI-MUI-06-rooms.md"
+      ],
+      "branch": "lane/af10-mui06-canonical-rooms-20261013",
+      "base_sha": "3fcd910ebe905a52f8fe011ee13cf81993e46aa1",
+      "claimed_at": "2026-10-13T05:22:41.406Z",
+      "heartbeat_at": "2026-10-13T05:22:41.406Z",
+      "expires_at": "2026-10-13T05:27:41.406Z",
+      "released_at": "2026-10-13T05:30:51.884Z",
+      "release_reason": "Merged 13-file MUI06 canonical mobile Rooms recovery via PR #697 at main 5eec953bae1b7dacc000fa55fb45c86f7a04d180 (source head 68e9a798665fde34db3e8982a0f6bda0b65eb317). Diff reviewed, missing undeclared in_app_purchase imports removed; tests authored, Dart/Flutter runner unavailable. Backend/migrations and paid/provider live qualification OPEN; docs/workstreams/UI-MUI-06-rooms.md holds handoff.",
+      "source_head": "68e9a798665fde34db3e8982a0f6bda0b65eb317",
+      "integration_head_sha": "5eec953bae1b7dacc000fa55fb45c86f7a04d180",
+      "source_pr": 697
     }
   ],
   "schema_version": 1
