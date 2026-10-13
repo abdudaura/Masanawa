@@ -12,6 +12,7 @@ import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
 import 'account_deletion_dialog.dart';
+import 'clear_device_chats_dialog.dart';
 
 /// Account and app preferences for the current Masanawa consumer product.
 /// Account deletion must be handled by an authenticated durable server workflow;
@@ -25,6 +26,10 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifications = false;
+  bool _notificationReady = false;
+  bool _notificationBusy = false;
+  bool _notificationLoadError = false;
+  int _notificationEpoch = 0;
   String? _savingDefaultAgentId;
 
   @override
@@ -34,8 +39,117 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _refreshNotificationState() async {
-    final enabled = await MobilePushService.instance.notificationEnabled();
-    if (mounted) setState(() => _notifications = enabled);
+    final epoch = ++_notificationEpoch;
+    try {
+      final enabled = await MobilePushService.instance.notificationEnabled();
+      if (!mounted || epoch != _notificationEpoch) return;
+      setState(() {
+        _notifications = enabled;
+        _notificationReady = true;
+        _notificationLoadError = false;
+      });
+    } catch (_) {
+      if (!mounted || epoch != _notificationEpoch) return;
+      setState(() {
+        _notificationReady = false;
+        _notificationLoadError = true;
+      });
+    }
+  }
+
+  Future<void> _setNotifications(bool enabled) async {
+    if (_notificationBusy) return;
+    setState(() => _notificationBusy = true);
+    final epoch = ++_notificationEpoch;
+    try {
+      if (enabled) {
+        await MobilePushService.instance.requestPermission();
+      } else {
+        await MobilePushService.instance.unregister();
+      }
+      final verified = await MobilePushService.instance.notificationEnabled();
+      if (!mounted || epoch != _notificationEpoch) return;
+      setState(() {
+        _notifications = verified;
+        _notificationReady = true;
+        _notificationLoadError = false;
+      });
+      if (enabled && !verified) {
+        _showFeedback('Notifications are not permitted. Check system settings and retry.');
+      }
+    } catch (_) {
+      if (!mounted || epoch != _notificationEpoch) return;
+      setState(() {
+        _notificationReady = false;
+        _notificationLoadError = true;
+      });
+      _showFeedback('Could not update notifications. Retry after checking your connection.');
+    } finally {
+      if (mounted && epoch == _notificationEpoch) {
+        setState(() => _notificationBusy = false);
+      }
+    }
+  }
+
+  void _showFeedback(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _chooseSupportAgent({
+    required String accountId,
+    required String characterId,
+    required String displayName,
+  }) async {
+    if (_savingDefaultAgentId != null) return;
+    setState(() => _savingDefaultAgentId = characterId);
+    try {
+      await ref.read(agentDirectoryTransportProvider)
+          .setDefaultPlatformAgent(characterId);
+      await ref.read(agentDirectoryProvider.notifier).refresh();
+      if (!mounted) return;
+      final current = ref.read(sessionProvider);
+      if (current is! SessionSignedIn || current.user.id != accountId) return;
+      final confirmed = ref.read(agentDirectoryProvider).agents.any(
+        (agent) => agent.characterId == characterId && agent.defaultPlatformAgent,
+      );
+      _showFeedback(confirmed
+          ? '$displayName is your default Masanawa agent.'
+          : 'The change could not be confirmed. Refresh and try again.');
+    } catch (_) {
+      if (!mounted) return;
+      final current = ref.read(sessionProvider);
+      if (current is SessionSignedIn && current.user.id == accountId) {
+        _showFeedback('Could not update your default agent. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _savingDefaultAgentId = null);
+    }
+  }
+
+  Future<void> _confirmClearChats() async {
+    final current = ref.read(sessionProvider);
+    if (current is! SessionSignedIn) return;
+    final ownerId = current.user.id;
+    final cleared = await showDialog<bool>(
+      context: context,
+      builder: (_) => ClearDeviceChatsDialog(
+        onConfirm: () async {
+          final now = ref.read(sessionProvider);
+          if (now is! SessionSignedIn || now.user.id != ownerId) {
+            throw StateError('Account changed before local cleanup');
+          }
+          await ref.read(aiChatProvider.notifier).clearAll();
+        },
+      ),
+    );
+    if (!mounted || cleared != true) return;
+    final now = ref.read(sessionProvider);
+    if (now is SessionSignedIn && now.user.id == ownerId) {
+      _showFeedback('Conversations cached on this device were cleared.');
+    }
   }
 
   @override
@@ -79,7 +193,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Container(
+          Semantics(
+            button: true,
+            label: 'Edit your profile',
+            child: InkWell(
+              onTap: () => context.push('/profile'),
+              child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: u.surfaceCard,
@@ -125,6 +244,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ],
             ),
+              ),
+            ),
           ),
           if (supportAgents.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -145,53 +266,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       final selected = agent.defaultPlatformAgent;
                       final saving =
                           _savingDefaultAgentId == agent.characterId;
-                      final voice =
-                          agent.voiceName == null || agent.voiceName!.isEmpty
-                              ? null
-                              : agent.voiceName;
                       return RadioListTile<String>(
                         value: agent.characterId,
                         groupValue: selectedSupportAgentId,
-                        onChanged: saving
+                        onChanged: saving || _savingDefaultAgentId != null ||
+                                user == null
                             ? null
-                            : (value) async {
+                            : (value) {
                                 if (value == null || selected) return;
-                                setState(
-                                  () => _savingDefaultAgentId = value,
-                                );
-                                try {
-                                  await ref
-                                      .read(agentDirectoryTransportProvider)
-                                      .setDefaultPlatformAgent(value);
-                                  await ref
-                                      .read(agentDirectoryProvider.notifier)
-                                      .refresh();
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '${agent.displayName} is now your default Masanawa agent',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (_) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Could not update your default agent. Please try again.',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) {
-                                    setState(
-                                      () => _savingDefaultAgentId = null,
-                                    );
-                                  }
-                                }
+                                unawaited(_chooseSupportAgent(
+                                  accountId: user.id,
+                                  characterId: value,
+                                  displayName: agent.displayName,
+                                ));
                               },
                         secondary: CircleAvatar(
                           backgroundColor: u.brand.withValues(alpha: 0.12),
@@ -201,11 +288,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                         ),
                         title: Text(agent.displayName),
-                        subtitle: Text(
-                          voice == null
-                              ? agent.roleLabel
-                              : '${agent.roleLabel} · Gemini $voice',
-                        ),
+                        subtitle: Text(agent.roleLabel),
                       );
                     },
                   ),
@@ -219,59 +302,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _Card(
             children: [
               SwitchListTile(
+                key: const Key('settings-notifications-toggle'),
                 secondary: Icon(Icons.notifications_outlined, color: u.brand),
                 title: const Text('Notifications'),
                 subtitle: Text(
-                  MobilePushService.instance.configured
-                      ? 'Replies, requests and updates'
-                      : 'Not available in this build',
+                  !MobilePushService.instance.configured
+                      ? 'Not available in this build'
+                      : _notificationBusy
+                          ? 'Checking notification permission…'
+                          : _notificationLoadError
+                              ? 'Could not verify permission. Retry below.'
+                              : 'Device permission; delivery also requires a connection',
                 ),
-                value:
-                    MobilePushService.instance.configured && _notifications,
-                onChanged: !MobilePushService.instance.configured
+                value: MobilePushService.instance.configured &&
+                    _notificationReady && _notifications,
+                onChanged: !MobilePushService.instance.configured ||
+                        !_notificationReady || _notificationBusy
                     ? null
-                    : (value) async {
-                        if (value) {
-                          final allowed = await MobilePushService.instance
-                              .requestPermission();
-                          if (!mounted) return;
-                          setState(() => _notifications = allowed);
-                          if (allowed) {
-                            await ref
-                                .read(agentDirectoryProvider.notifier)
-                                .refresh();
-                            await _refreshNotificationState();
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Notifications are disabled. You can enable them in system settings.',
-                                ),
-                              ),
-                            );
-                          }
-                        } else {
-                          await MobilePushService.instance.unregister();
-                          if (mounted) {
-                            setState(() => _notifications = false);
-                          }
-                        }
-                      },
+                    : (value) => unawaited(_setNotifications(value)),
               ),
+              if (_notificationLoadError &&
+                  MobilePushService.instance.configured)
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: TextButton.icon(
+                    onPressed: _notificationBusy
+                        ? null
+                        : () => unawaited(_refreshNotificationState()),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry permission check'),
+                  ),
+                ),
               const Divider(height: 1),
               ListTile(
+                key: const Key('settings-clear-device-chats'),
                 leading: Icon(Icons.delete_outline, color: u.brand),
-                title: const Text('Clear all chats'),
+                title: const Text('Clear chats on this device'),
                 subtitle: const Text(
-                  'Remove every conversation stored on this device',
+                  'Remove locally cached Masana conversations, not server history or receipts',
                 ),
-                onTap: () async {
-                  await ref.read(aiChatProvider.notifier).clearAll();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('All chats cleared')),
-                  );
-                },
+                onTap: user == null ? null : () => unawaited(_confirmClearChats()),
               ),
               const Divider(height: 1),
               ListTile(
@@ -281,10 +351,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => showAboutDialog(
                   context: context,
                   applicationName: 'Masanawa',
-                  applicationVersion: '1.0.0',
+
                   children: const [
                     Text(
-                      'Chat with Masana personas, share Status updates, and use Billing and Crypto in your Wallet.',
+                      'Chat with Masana personas, view their Status updates, make calls, explore Rooms and use Wallet services.',
                     ),
                   ],
                 ),
@@ -336,7 +406,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
           Center(
             child: Text(
-              'Masanawa · v1.0.0',
+              'Masanawa · Chats · Status · Wallet · Calls · Rooms',
               style: TextStyle(color: u.textMuted, fontSize: 11),
             ),
           ),
