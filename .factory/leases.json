@@ -1835,10 +1835,10 @@
       "branch": "perf/masanawa-cache-first-startup-20261013",
       "claim_id": "perf-fast-start-20261013-gpt6",
       "claimed_at": "2026-10-13T06:11:32.066Z",
-      "expires_at": "2026-10-13T06:22:46.568Z",
-      "heartbeat_at": "2026-10-13T06:17:46.568Z",
+      "expires_at": "2026-10-13T06:27:00.038Z",
+      "heartbeat_at": "2026-10-13T06:22:00.038Z",
       "integration_head_sha": null,
-      "notes": "Owner requested remove dedicated branded Splash and merge to main. Scoped protected router edit required, checked no live overlapping claims.",
+      "notes": "Run focused Flutter startup widget/cache tests in standalone CI to separate baseline whole-project analyzer failure. Protected startup shell and routing previously claimed; no existing CI file edited.",
       "owner": "GPT-6 / startup performance",
       "paths": [
         "apps/mobile/lib/main.dart",
@@ -1851,7 +1851,8 @@
         "scripts/mobile-startup-benchmark.ps1",
         "apps/mobile/lib/src/router/app_router.dart",
         "apps/mobile/lib/src/shell/startup_gate.dart",
-        "apps/mobile/test/ui/fast_launch_route_test.dart"
+        "apps/mobile/test/ui/fast_launch_route_test.dart",
+        ".github/workflows/mobile-startup-regression.yml"
       ],
       "scope": "Remove artificial Splash delay, surface local cache milestones, preserve account fencing, provide repeatable Android startup measurements."
     }
