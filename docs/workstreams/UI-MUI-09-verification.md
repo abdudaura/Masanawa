@@ -13,9 +13,14 @@ live server/account, device and release acceptance remains **OPEN**.
 - Implementation/test source: **`f915a3fedae24be8b58256a8984dca1fba806cf3`**.
 - Branch: `lane/af13-profile-recovery-20261013`;
   [PR #694](https://github.com/weavewellindustrieslimited/masanawa/pull/694).
-- Integration: pending normal main merge; record exact reviewed head and merge
-  identity after integration. Scoped source/test verification below is simulated;
-  **NOT_RELEASED**, no artifact/signing/installation/provider evidence.
+- Exact reviewed PR head: `360964c5e588b59f15ff4080a4401161c4d412db`.
+- Normal source merge: **`33bc93afb93456d4915975fcd2b611df0f47e660`**,
+  2026-10-13 00:45:14 UTC. Both editor/test blobs equal checked source
+  `f915a3f...` exactly (`42f699a5...` / `7d466d9b...`). Implementation
+  **INTEGRATED_SCOPED_SOURCE / PARTIAL_MUI09_ACCEPTANCE**; scoped verification
+  **PASS_SIMULATED**; **NOT_RELEASED**. No admin bypass/protection change or
+  artifact/signing/installation/provider evidence. This post-merge handoff uses
+  `docs/mui09-profile-recovery-handoff-20261013`, documentation only.
 
 ### Allocation, reconciliation and recovered source
 
@@ -112,9 +117,12 @@ not frozen-lockfile qualification. All fixture records/accounts are synthetic.
   and Mobile [38328593899](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38328593899)
   initially ran in progress. Foundation now **FAILS** with the unchanged
   `packages/agents/src/talk-replay.test.ts(6,8)` TS2459 (`TalkId` not exported),
-  confirmed in its failed job log. Mobile is still **IN_PROGRESS**, not passed,
-  at this readback. Refresh final-head checks after the handoff commit.
-  Global-analysis CI debt remains; no CI/test/protection change or admin bypass.
+  confirmed in its failed job log. Mobile now **FAILS at Analyze**, with later
+  test/APK steps not passed. Exact final-head Foundation
+  [38328765728](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38328765728)
+  and Mobile [38328765628](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38328765628)
+  were **IN_PROGRESS** at merge readback, not passed. Global-analysis CI debt
+  remains; no CI/test/protection change or admin bypass.
 
 Retained Talk failure names: `talk_screen_test.dart` — **listener opens Sponsor
 Seat sheet from Add AI**; **host opens direct Add AI semantics**. The four
@@ -160,8 +168,9 @@ No production keyboard workaround or full visual qualification is claimed.
 
 ### Remaining acceptance and smallest next action
 
-The named simulated mounted creation/save/readback journey is source-tested;
-its external auth/server/device acceptance and full MUI-09 remain **OPEN**.
+The named simulated mounted creation/save/readback journey is integrated and
+source-tested; its external auth/server/device acceptance and full MUI-09
+remain **OPEN**.
 Prefer **MUI-03** only with explicit AF00 trusted composition/auth/migration
 transfer and AF05 `main.ts` coordination. Otherwise continue **MUI-09/AF13**
 through a bounded AF09 allocation for the two retained Talk Add AI failures:
@@ -177,6 +186,55 @@ unfinished feature acceptance, full MUI-09, MUI-10 signed installed identity
 and AF11 device/provider qualification OPEN. Do not repeat the combined matrix
 instead of source integration. Release this exact claim after final handoff
 integration and print the next queue-aware prompt with delivered identities.
+
+
+
+### Current queue-aware continuation prompt
+
+```text
+Continue weavewellindustrieslimited/masanawa from fresh origin/main.
+Read AGENTS.md, CONTINUE-HERE.md, docs/MULTI-WINDOW-WORK.md,
+docs/workstreams/UI-CONTINUATION-QUEUE-20261012.md,
+docs/workstreams/UI-NEXT-WINDOW-PROMPT-20261012.md and
+UI-MUI-03-chats.md, UI-MUI-07-wallet.md, UI-MUI-08-crypto.md,
+UI-MUI-09-verification.md under docs/workstreams.
+Read latest Software Factory instructions; reconcile fresh PRs/claims.
+
+Profile source f915a3fedae24be8b58256a8984dca1fba806cf3;
+PR #694 exact head 360964c5e588b59f15ff4080a4401161c4d412db;
+source merge 33bc93afb93456d4915975fcd2b611df0f47e660.
+36 focused tests PASS; focused analysis clean. Final full suite FAIL:
+597 passed / 2 retained Talk Add AI failures, named in the handoff.
+Four profile failures are corrected; both directory corrections preserved.
+Whole analysis remains FAIL at317 diagnostics; prior322 remains historical.
+Preserve35 directory focused/578-6,158 focused/24 corrected font-render/
+27 audio rechecks PASS,575-8 baseline,MUI07 exact failures/test-set caveat/
+audio rechecks,TalkId TS2459 and global CI debt. Android SDK/signing/device
+and provider evidence absent; Hausa English fallback/full localization OPEN.
+
+Prefer MUI03 canonical server-wide inbox only with explicit AF00 trusted
+composition/auth/migration transfers and AF05 main.ts coordination.
+Preserve prior claim recovery,#497 unique source and AF05 voice work.
+MUI04/06 require protected canonical composition. MUI07 MSN/funding/Send
+needs AF01/AF00 reconciliation with #576. MUI08 exposes quotedAt,not expiry;
+obtain AF01 authoritative contract. Otherwise continue MUI09/AF13 through
+bounded AF09 allocation for retained listener Sponsor Seat / host Add AI
+failures: reconcile current product/route/seat contracts and useful #497/#460
+source,reproduce failures,and fix demonstrated behavior or stale fixtures.
+Do not restore retired publishing,unsupported actions or old shells.
+AF08 separately owns profile request/401-refresh credential fencing:
+editor response fences are tested,shared transport request isolation is OPEN.
+Do not repeat the combined matrix instead of integrating source.
+
+Preserve five tabs,Chats default,Masana-only contacts,Calls/native/group/
+incoming/history/billing,Status/media,Rooms,auth and finance. No second
+ledger,Cr-to-MSN relabel,invented data or unsupported actions.
+Keep unfinished feature acceptance,full MUI09,MUI10 signed installed identity
+and AF11 device/provider qualification OPEN. Claim exact paths; implement,
+check,independently review,commit,push and merge compatible source normally.
+Update selected milestone handoff,release ownership,and print the next
+queue-aware continuation prompt with exact delivered identities.
+```
 
 
 ## Named directory recovery continuation — 2026-10-12, PR #692
