@@ -1,171 +1,167 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../state/talk_state.dart';
-import '../../talks/talk_models.dart';
+import '../../core/providers.dart';
+import '../../features/rooms/room_discussion_api.dart';
+import '../../features/rooms/rooms_client.dart';
+import '../../features/rooms/rooms_screen.dart' as canonical;
+import '../../features/rooms/saved_lessons_client.dart';
+import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
-import '../../ui/components/masanawa_main_header.dart';
 
-/// Live audio rooms, backed by the live Talk feed. A room here is a live
-/// voice session you can join; history and membership controls arrive in the
-/// follow-up unit.
+/// Reuses the existing authenticated Gateway Dio and the canonical J07 Rooms
+/// contract. Never use the retired Talk/live-feed endpoint as Room discovery.
+final roomsClientProvider = Provider<RoomsClient>((ref) =>
+    HttpRoomsClient(ref.watch(apiClientProvider).dio));
+
+class AccountBoundRoomsClient implements RoomsClient {
+  AccountBoundRoomsClient({
+    required this.delegate,
+    required this.ownerAccount,
+    required this.currentAccount,
+  });
+
+  final RoomsClient delegate;
+  final String ownerAccount;
+  final String? Function() currentAccount;
+
+  void _checkAccount() {
+    if (ownerAccount.isEmpty || currentAccount() != ownerAccount) {
+      throw StateError('account_changed');
+    }
+  }
+
+  Future<T> _guard<T>(Future<T> Function() work) async {
+    _checkAccount();
+    final value = await work();
+    _checkAccount();
+    return value;
+  }
+
+  @override
+  Future<List<RoomInfo>> list({
+    required bool joined,
+    String query = '',
+    String language = '',
+  }) => _guard(() => delegate.list(
+      joined: joined, query: query, language: language));
+
+  @override
+  Future<RoomInfo> room(String id) => _guard(() => delegate.room(id));
+
+  @override
+  Future<void> join(String id) => _guard(() => delegate.join(id));
+
+  @override
+  Future<void> leave(String id) => _guard(() => delegate.leave(id));
+
+  @override
+  Future<RoomQuestion> ask(String id, String text, String key) =>
+      _guard(() => delegate.ask(id, text, key));
+
+  @override
+  Future<List<RoomQuestion>> questions(String id) =>
+      _guard(() => delegate.questions(id));
+
+  @override
+  Future<List<RoomLesson>> lessons(String id) =>
+      _guard(() => delegate.lessons(id));
+}
+
+class AccountBoundRoomDiscussionApi implements RoomDiscussionApi {
+  const AccountBoundRoomDiscussionApi({
+    required this.delegate,
+    required this.ownerAccount,
+    required this.currentAccount,
+  });
+  final RoomDiscussionApi delegate;
+  final String ownerAccount;
+  final String? Function() currentAccount;
+
+  Future<T> _guard<T>(Future<T> Function() work) async {
+    if (ownerAccount.isEmpty || currentAccount() != ownerAccount) {
+      throw StateError('account_changed');
+    }
+    final result = await work();
+    if (currentAccount() != ownerAccount) {
+      throw StateError('account_changed');
+    }
+    return result;
+  }
+
+  @override
+  Future<List<RoomDiscussionTarget>> targets(String roomId) =>
+      _guard(() => delegate.targets(roomId));
+
+  @override
+  Future<RoomDiscussionPage> list(
+    String roomId,
+    RoomDiscussionTarget target, {
+    String? cursor,
+  }) => _guard(() => delegate.list(roomId, target, cursor: cursor));
+
+  @override
+  Future<RoomDiscussionReply> send(
+    String roomId,
+    RoomDiscussionTarget target,
+    String body,
+    String key, {
+    String? parentReplyId,
+  }) => _guard(() => delegate.send(
+      roomId, target, body, key, parentReplyId: parentReplyId));
+}
+
+/// Already mounted in the five-tab shell; deliberately owns no new router,
+/// server identity, payment rail or migration. Missing server routes render
+/// an unavailable/retry state rather than invented Room records.
 class RoomsScreen extends ConsumerWidget {
   const RoomsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final u = context.masanawa;
-    final feed = ref.watch(talkFeedProvider(TalkFeedKind.live));
-    return Scaffold(
-      backgroundColor: u.surfaceBg,
-      appBar: masanawaMainHeader(context),
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(talkFeedProvider(TalkFeedKind.live).future),
-        child: feed.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Icon(Icons.cloud_off_outlined, size: 52, color: u.brand),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Could not load rooms. Pull to try again.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: u.textMuted, fontSize: 14, height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          data: (rooms) {
-            final live = rooms.where((r) => r.isLive).toList(growable: false);
-            if (live.isEmpty) {
-              return ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      children: [
-                        Icon(Icons.groups_outlined, size: 58, color: u.brand),
-                        const SizedBox(height: 18),
-                        Text(
-                          'No live rooms',
-                          style: TextStyle(
-                            color: u.textPrimary,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Live voice rooms will appear here.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: u.textMuted, fontSize: 14, height: 1.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            }
-            return ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: live.length,
-              separatorBuilder: (_, __) =>
-                  Divider(height: 1, indent: 76, color: u.structuralBorder),
-              itemBuilder: (context, index) {
-                final room = live[index];
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 7,
-                  ),
-                  leading: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: u.brand,
-                        foregroundImage:
-                            room.hostAvatarUrl?.isNotEmpty == true
-                                ? NetworkImage(room.hostAvatarUrl!)
-                                : null,
-                        child: room.hostAvatarUrl?.isNotEmpty == true
-                            ? null
-                            : Text(
-                                room.hostName.isNotEmpty
-                                    ? room.hostName[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 20,
-                                ),
-                              ),
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: u.success,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: u.surfaceBg, width: 2),
-                          ),
-                          child: const Text(
-                            'LIVE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  title: Text(
-                    room.title.isNotEmpty ? room.title : 'Live room',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: u.textPrimary,
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 3),
-                    child: Text(
-                      '${room.hostName} · ${room.listenerCount} listening',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: u.textMuted, fontSize: 14),
-                    ),
-                  ),
-                  trailing: Icon(
-                    Icons.chevron_right_rounded,
-                    color: u.textMuted,
-                  ),
-                  onTap: () => context.push(
-                    '/talk/' + Uri.encodeComponent(room.id),
-                  ),
-                );
-              },
-            );
-          },
+    final session = ref.watch(sessionProvider);
+    if (session is! SessionSignedIn) {
+      return Scaffold(
+        backgroundColor: context.masanawa.surfaceBg,
+        body: const Center(
+          child: Text('Sign in to view your Rooms.'),
         ),
+      );
+    }
+
+    final ownerAccount = session.user.id;
+    final api = ref.watch(apiClientProvider);
+    String? currentAccount() {
+      // A disposed tab must fail closed rather than retaining another fan's
+      // data in an in-flight read, even after logout or account replacement.
+      try {
+        final current = ref.read(sessionProvider);
+        return current is SessionSignedIn ? current.user.id : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return KeyedSubtree(
+      key: ValueKey('rooms-account-' + ownerAccount),
+      child: canonical.RoomsScreen(
+        client: AccountBoundRoomsClient(
+          delegate: ref.watch(roomsClientProvider),
+          ownerAccount: ownerAccount,
+          currentAccount: currentAccount,
+        ),
+        discussionApi: AccountBoundRoomDiscussionApi(
+          delegate: HttpRoomDiscussionApi(api.dio),
+          ownerAccount: ownerAccount,
+          currentAccount: currentAccount,
+        ),
+        discussionAccountScope: ownerAccount,
+        savedLessonsClient: DioSavedLessonsClient(
+          dio: api.dio,
+          accountKey: ownerAccount,
+          currentAccountKey: currentAccount,
+        ),
+        savedLessonsAccountKey: ownerAccount,
       ),
     );
   }
