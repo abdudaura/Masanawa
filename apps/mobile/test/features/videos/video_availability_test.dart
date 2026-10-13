@@ -91,4 +91,66 @@ void main() {
     expect(find.text('Official iframe'), findsNothing);
   });
 
+  testWidgets('C29: opening at source rechecks approval after catalog fetch',
+      (tester) async {
+    var checked = 0;
+    Uri? opened;
+    await tester.pumpWidget(MaterialApp(home: OfficialVideoPlayerScreen(
+      video: video,
+      checkAvailability: (id) async {
+        expect(id, video.id);
+        checked++;
+        return false;
+      },
+      open: (url) async { opened = url; return true; },
+      embedBuilder: (_) => const Text('Official iframe'),
+    )));
+    await tester.ensureVisible(find.text('Open in youtube'));
+    await tester.tap(find.text('Open in youtube'));
+    await tester.pumpAndSettle();
+    expect(checked, 1);
+    expect(opened, isNull);
+    expect(find.text('Official iframe'), findsNothing);
+    expect(find.text('Video unavailable here. Open at source.'), findsOneWidget);
+  });
+
+  testWidgets('C29: approved external open uses canonical provider URL',
+      (tester) async {
+    Uri? opened;
+    var checked = 0;
+    await tester.pumpWidget(MaterialApp(home: OfficialVideoPlayerScreen(
+      video: video,
+      checkAvailability: (_) async { checked++; return true; },
+      open: (url) async { opened = url; return true; },
+      embedBuilder: (_) => const Text('Official iframe'),
+    )));
+    await tester.ensureVisible(find.text('Open in youtube'));
+    await tester.tap(find.text('Open in youtube'));
+    await tester.pumpAndSettle();
+    expect(checked, 1);
+    expect(opened, video.sourceUrl);
+  });
+
+  testWidgets('C29: stale external approval cannot open after account remount',
+      (tester) async {
+    final pending = Completer<bool>();
+    Uri? opened;
+    Widget mount(Future<bool> Function(String) check) => MaterialApp(
+      home: OfficialVideoPlayerScreen(
+        video: video,
+        checkAvailability: check,
+        open: (url) async { opened = url; return true; },
+        embedBuilder: (_) => const Text('Official iframe'),
+      ),
+    );
+    await tester.pumpWidget(mount((_) => pending.future));
+    await tester.ensureVisible(find.text('Open in youtube'));
+    await tester.tap(find.text('Open in youtube'));
+    await tester.pump();
+    await tester.pumpWidget(mount((_) async => false));
+    pending.complete(true);
+    await tester.pumpAndSettle();
+    expect(opened, isNull);
+  });
+
 }
