@@ -1,0 +1,52 @@
+name: Mobile Startup Regression
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/lib/main.dart"
+      - "apps/mobile/lib/src/router/app_router.dart"
+      - "apps/mobile/lib/src/shell/startup_gate.dart"
+      - "apps/mobile/lib/src/state/session_state.dart"
+      - "apps/mobile/lib/src/state/agent_directory_state.dart"
+      - "apps/mobile/lib/src/state/ai_chat_state.dart"
+      - "apps/mobile/lib/src/screens/chat/chat_list_screen.dart"
+      - "apps/mobile/test/ui/fast_launch_route_test.dart"
+      - ".github/workflows/mobile-startup-regression.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/lib/main.dart"
+      - "apps/mobile/lib/src/router/app_router.dart"
+      - "apps/mobile/lib/src/shell/startup_gate.dart"
+      - "apps/mobile/lib/src/state/session_state.dart"
+      - "apps/mobile/lib/src/state/agent_directory_state.dart"
+      - "apps/mobile/lib/src/state/ai_chat_state.dart"
+      - "apps/mobile/lib/src/screens/chat/chat_list_screen.dart"
+      - "apps/mobile/test/ui/fast_launch_route_test.dart"
+      - ".github/workflows/mobile-startup-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - name: Run focused launch, router and cached directory tests
+        run: >-
+          flutter test --no-pub
+          test/ui/fast_launch_route_test.dart
+          test/app_shell_route_compatibility_test.dart
+          test/agent_directory_fast_start_test.dart
+          test/agent_directory_readiness_test.dart
