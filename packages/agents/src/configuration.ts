@@ -225,6 +225,11 @@ export interface PlatformAgentProfileRepository {
   listSupportAgents(input: {
     readonly tenantId: TenantId;
   }): Promise<readonly PlatformAgentProfile[]>;
+  /** Every official platform Character, not just help-desk support.
+   * Additive optional port for older/fake repositories. */
+  listPlatformAgents?(input: {
+    readonly tenantId: TenantId;
+  }): Promise<readonly PlatformAgentProfile[]>;
   put(input: {
     readonly profile: PlatformAgentProfile;
     readonly expectedRevision: number | null;

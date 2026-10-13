@@ -6,6 +6,7 @@ import {
   createPgRoomsRepository, createPgRoomDiscussionRepository,
   createPgRoomBookmarkStore, createPgRoomMembershipRepository,
   createMasanaInboxRepository,
+  ensureMasanaCatalogProfilesAndRooms,withCatalogProvisionLock,
 } from "@masanawa/postgres";
 import { createStatusMediaRuntime, type StatusMediaConfiguration } from "./modules/home_feed/media_runtime.js";
 import { createConfiguredStatusMedia } from "./modules/home_feed/media_environment.js";
@@ -862,21 +863,35 @@ export async function startGatewayService(
       throw error;
     }
 
-    if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
-      if (!database.platformAgentIdentity || !database.skillDistribution) {
+    // The professional Masana catalog is part of the normal server startup,
+    // NOT behind an operator activation flag. This uses only canonical
+    // PostgreSQL/Identity stores, never ships simulated contact data to APK.
+    // Test/injected database ports may omit these platform provisioning ports.
+    if (
+      database.platformAgentIdentity &&
+      database.skillDistribution &&
+      database.featurePool?.connect
+    ) {
+      try {
+        await withCatalogProvisionLock(database.featurePool, activePlatformTenantId, async () => {
+          const roster = await ensureDefaultPlatformAgents({
+            tenantId: activePlatformTenantId,
+            identity: database.platformAgentIdentity!,
+            presentations: database.agentPresentations!,
+            profiles: database.platformAgentProfiles!,
+            skillAssignments: database.characterSkillAssignments!,
+            skillDistribution: database.skillDistribution!,
+          });
+          await ensureMasanaCatalogProfilesAndRooms({
+            pool:database.featurePool!,
+            tenantId:activePlatformTenantId,
+            catalog:roster.catalog,
+          });
+        });
+      } catch (error) {
         await database.close().catch(() => undefined);
-        throw new Error(
-          "Platform Agent bootstrap requires Identity and Skill distribution repositories",
-        );
+        throw error;
       }
-      await ensureDefaultPlatformAgents({
-        tenantId: activePlatformTenantId,
-        identity: database.platformAgentIdentity,
-        presentations: database.agentPresentations,
-        profiles: database.platformAgentProfiles,
-        skillAssignments: database.characterSkillAssignments,
-        skillDistribution: database.skillDistribution,
-      });
     }
 
     const customerSessions = createPlatformCustomerSessionAuthorizer({

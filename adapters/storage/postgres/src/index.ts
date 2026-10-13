@@ -46,3 +46,6 @@ export { createMasanaInboxRepository } from "./masana_chat/inbox.js";
 
 // Worker-only Room teacher queue uses the existing events.outbox journal.
 export { createPgTeacherQueue } from "./rooms/teacher_outbox.js";
+
+// Platform-owned 26 Masana profile/Room seed; tenant-scoped and additive.
+export {ensureMasanaCatalogProfilesAndRooms,withCatalogProvisionLock} from "./masana/catalog_seed.js";

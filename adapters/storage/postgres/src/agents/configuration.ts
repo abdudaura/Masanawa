@@ -344,6 +344,16 @@ export function createPostgresPlatformAgentProfileRepository(
         return Object.freeze(result.rows.map(platformProfileFromRow));
       }, { isolation: "repeatable read", readOnly: true });
     },
+    async listPlatformAgents(input) {
+      return withTransaction(pool, async (client) => {
+        const result = await client.query<PlatformProfileRow>(
+          `SELECT * FROM agents.platform_agent_profiles
+            WHERE tenant_id = $1 ORDER BY character_id`,
+          [input.tenantId],
+        );
+        return Object.freeze(result.rows.map(platformProfileFromRow));
+      }, { isolation: "repeatable read", readOnly: true });
+    },
 
     async put(input) {
       const profile = normalizePlatformAgentProfile(input.profile);

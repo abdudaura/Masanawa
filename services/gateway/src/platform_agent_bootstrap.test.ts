@@ -1,188 +1,97 @@
-import { describe, expect, it, vi } from "vitest";
-import type {
-  AgentPresentation,
-  AgentPresentationRepository,
-  CharacterSkillAssignment,
-  CharacterSkillAssignmentRepository,
-  PlatformAgentProfile,
-  PlatformAgentProfileRepository,
-} from "@masanawa/agents";
-import { createCanonicalId, nowInstant } from "@masanawa/contracts";
-import type {
-  SkillDistributionProfile,
-  SkillDistributionRepository,
-} from "@masanawa/skills";
-
-import {
-  ensureDefaultPlatformAgents,
-  type PlatformAgentIdentityProvisioner,
-} from "./platform_agent_bootstrap.js";
-
-function fixture() {
-  const presentations: AgentPresentation[] = [];
-  const profiles: PlatformAgentProfile[] = [];
-  const assignments = new Map<string, CharacterSkillAssignment>();
-  const supportSkill: SkillDistributionProfile = {
-    schemaVersion: 1,
-    skillVersionId: createCanonicalId("skill-version"),
-    audiences: ["platform-support"],
-    installMode: "automatic",
-    category: "masanawa-support",
-    sortOrder: 0,
-  };
-
-  const identity = {
-    provision: vi.fn(async () => undefined),
-  } satisfies PlatformAgentIdentityProvisioner;
-
-  const presentationRepository = {
-    async readForCharacter(input: { characterId: string }) {
-      return (
-        presentations.find((item) => item.characterId === input.characterId) ??
-        null
-      );
+import {describe,it,expect,vi} from "vitest";
+import {createCanonicalId,nowInstant} from "@masanawa/contracts";
+import type {AgentPresentation,PlatformAgentProfile,CharacterSkillAssignment} from "@masanawa/agents";
+import {ensureDefaultPlatformAgents,PROFESSIONAL_MASANA_CATALOG} from "./platform_agent_bootstrap.js";
+function fixture(){
+ const presentations:AgentPresentation[]=[],profiles:PlatformAgentProfile[]=[];
+ const assignments=new Map<string,CharacterSkillAssignment>();
+ const identity={provision:vi.fn(async()=>undefined)};
+ return {identity,presentations,profiles,assignments,
+  presentationsPort:{
+    listAll:async()=>presentations,
+    readForCharacter:async({characterId}:{characterId:string})=>presentations.find(p=>p.characterId===characterId)??null,
+    listVisible:async()=>presentations.filter(p=>p.visibleInUserApp),
+    put:async({presentation,expectedRevision}:{presentation:AgentPresentation;expectedRevision:number|null})=>{
+       const i=presentations.findIndex(p=>p.characterId===presentation.characterId);
+       if(i>=0){expect(presentations[i]?.revision).toBe(expectedRevision);presentations[i]=presentation;}
+       else presentations.push(presentation);
+       return presentation;
     },
-    async listAll() {
-      return presentations;
+  },
+  profilesPort:{
+    listSupportAgents:async()=>profiles.filter(p=>p.supportAgent),
+    readForCharacter:async({characterId}:{characterId:string})=>profiles.find(p=>p.characterId===characterId)??null,
+    put:async({profile}:{profile:PlatformAgentProfile})=>{profiles.push(profile);return profile;},
+  },
+  assignmentsPort:{
+    readForCharacter:async({characterId}:{characterId:string})=>assignments.get(characterId)??null,
+    put:async({assignment}:{assignment:CharacterSkillAssignment})=>{
+      assignments.set(assignment.characterId,assignment);return assignment;
     },
-    async listVisible() {
-      return presentations.filter((item) => item.visibleInUserApp);
-    },
-    async put(input: { presentation: AgentPresentation }) {
-      presentations.push(input.presentation);
-      return input.presentation;
-    },
-  } as unknown as AgentPresentationRepository;
-
-  const profileRepository = {
-    async readForCharacter(input: { characterId: string }) {
-      return (
-        profiles.find((item) => item.characterId === input.characterId) ?? null
-      );
-    },
-    async listSupportAgents() {
-      return profiles.filter((item) => item.supportAgent);
-    },
-    async put(input: { profile: PlatformAgentProfile }) {
-      profiles.push(input.profile);
-      return input.profile;
-    },
-  } as unknown as PlatformAgentProfileRepository;
-
-  const assignmentRepository = {
-    async readForCharacter(input: { characterId: string }) {
-      return assignments.get(input.characterId) ?? null;
-    },
-    async put(input: { assignment: CharacterSkillAssignment }) {
-      assignments.set(input.assignment.characterId, input.assignment);
-      return input.assignment;
-    },
-  } as unknown as CharacterSkillAssignmentRepository;
-
-  const distributionRepository = {
-    async listForAudience() {
-      return [supportSkill];
-    },
-  } as unknown as SkillDistributionRepository;
-
-  return {
-    identity,
-    presentations,
-    profiles,
-    assignments,
-    supportSkill,
-    presentationRepository,
-    profileRepository,
-    assignmentRepository,
-    distributionRepository,
-  };
+  },
+  skillsPort:{listForAudience:async()=>[{skillVersionId:createCanonicalId("skill-version"),installMode:"automatic"}]},
+ };
 }
-
-describe("production platform Agent bootstrap", () => {
-  it("creates Gwani and Gwana once for an empty platform tenant", async () => {
-    const tenantId = createCanonicalId("tenant");
-    const f = fixture();
-
-    const first = await ensureDefaultPlatformAgents({
-      tenantId,
-      identity: f.identity,
-      presentations: f.presentationRepository,
-      profiles: f.profileRepository,
-      skillAssignments: f.assignmentRepository,
-      skillDistribution: f.distributionRepository,
-      now: () => nowInstant(),
-    });
-
-    expect(first).toMatchObject({
-      changed: true,
-      supportAgentCount: 2,
-    });
-    expect(f.presentations.map((item) => item.displayName)).toEqual([
-      "Gwani",
-      "Gwana",
-    ]);
-    expect(
-      f.profiles.map((item) => ({
-        voice: item.voiceName,
-        defaultAgent: item.defaultForNewUsers,
-      })),
-    ).toEqual([
-      { voice: "Bodi", defaultAgent: true },
-      { voice: "Sulafat", defaultAgent: false },
-    ]);
-    expect([...f.assignments.values()]).toHaveLength(2);
-    for (const assignment of f.assignments.values()) {
-      expect(assignment.skillVersionIds).toEqual([
-        f.supportSkill.skillVersionId,
-      ]);
-    }
-
-    const second = await ensureDefaultPlatformAgents({
-      tenantId,
-      identity: f.identity,
-      presentations: f.presentationRepository,
-      profiles: f.profileRepository,
-      skillAssignments: f.assignmentRepository,
-      skillDistribution: f.distributionRepository,
-      now: () => nowInstant(),
-    });
-
-    expect(second).toMatchObject({
-      changed: false,
-      supportAgentCount: 2,
-    });
-    expect(f.presentations).toHaveLength(2);
-    expect(f.profiles).toHaveLength(2);
-    expect(f.identity.provision).toHaveBeenCalledTimes(2);
-  });
-
-  it("does not modify an existing admin-managed support roster", async () => {
-    const tenantId = createCanonicalId("tenant");
-    const f = fixture();
-    f.profiles.push({
-      schemaVersion: 1,
-      tenantId,
-      characterId: createCanonicalId("character"),
-      supportAgent: true,
-      defaultForNewUsers: true,
-      voiceProvider: "gemini",
-      voiceName: "AdminVoice",
-      revision: 1,
-    });
-
-    const result = await ensureDefaultPlatformAgents({
-      tenantId,
-      identity: f.identity,
-      presentations: f.presentationRepository,
-      profiles: f.profileRepository,
-      skillAssignments: f.assignmentRepository,
-      skillDistribution: f.distributionRepository,
-      now: () => nowInstant(),
-    });
-
-    expect(result.changed).toBe(false);
-    expect(result.supportAgentCount).toBe(1);
-    expect(f.identity.provision).not.toHaveBeenCalled();
-    expect(f.presentations).toHaveLength(0);
-  });
+function run(f:ReturnType<typeof fixture>,tenantId=createCanonicalId("tenant")){
+ return ensureDefaultPlatformAgents({tenantId,identity:f.identity,
+   presentations:f.presentationsPort as never,profiles:f.profilesPort as never,
+   skillAssignments:f.assignmentsPort as never,skillDistribution:f.skillsPort as never,
+   now:()=>nowInstant()});
+}
+describe("26 professional Masana production bootstrap",()=>{
+ it("defines 2 support + 20 academic + 4 language tutors, all with dedicated Rooms and images",()=>{
+   expect(PROFESSIONAL_MASANA_CATALOG).toHaveLength(26);
+   expect(PROFESSIONAL_MASANA_CATALOG.filter(s=>s.supportAgent)).toHaveLength(2);
+   expect(new Set(PROFESSIONAL_MASANA_CATALOG.map(s=>s.roomId)).size).toBe(26);
+   expect(PROFESSIONAL_MASANA_CATALOG.slice(-4).map(s=>s.languages[0])).toEqual(["ar","en","hi","zh"]);
+   expect(PROFESSIONAL_MASANA_CATALOG.every(s=>s.displayName.includes(" "))).toBe(true);
+ });
+ it("provisions 26 chat/call identities, keeps Gwani default and is idempotent",async()=>{
+   const f=fixture(),tenant=createCanonicalId("tenant");
+   const first=await run(f,tenant);
+   expect(first.changed).toBe(true);
+   expect(first.characterIds).toHaveLength(26);
+   expect(f.identity.provision).toHaveBeenCalledTimes(26);
+   expect(f.presentations).toHaveLength(26);
+   expect(f.profiles).toHaveLength(26);
+   expect(f.assignments.size).toBe(26);
+   expect(f.profiles.filter(p=>p.defaultForNewUsers)).toHaveLength(1);
+   expect(f.profiles[0]).toMatchObject({supportAgent:true,voiceName:"Bodi"});
+   expect(f.profiles[1]).toMatchObject({supportAgent:true,voiceName:"Sulafat"});
+   expect(f.profiles.slice(2).every(p=>!p.supportAgent&&p.voiceProvider==="gemini")).toBe(true);
+   const second=await run(f,tenant);
+   expect(second.changed).toBe(false);
+   expect(f.identity.provision).toHaveBeenCalledTimes(26);
+ });
+ it("upgrades existing Gwani/Gwana without replacing their canonical identifiers",async()=>{
+   const f=fixture(),tenant=createCanonicalId("tenant");
+   const gwani=createCanonicalId("character"),gwana=createCanonicalId("character");
+   for(const [id,name] of [[gwani,"Gwani"],[gwana,"Gwana"]] as const){
+     f.presentations.push({schemaVersion:1,tenantId:tenant,characterId:id,
+       characterVersionId:createCanonicalId("character-version"),
+       displayName:name,roleLabel:"Masanawa Support",about:"Existing",greeting:null,
+       visibleInUserApp:true,sortOrder:0,revision:1});
+     f.profiles.push({schemaVersion:1,tenantId:tenant,characterId:id,
+       supportAgent:true,defaultForNewUsers:name==="Gwani",
+       voiceProvider:"gemini",voiceName:name==="Gwani"?"Bodi":"Sulafat",revision:1});
+   }
+   const result=await run(f,tenant);
+   expect(result.characterIds[0]).toBe(gwani);
+   expect(result.characterIds[1]).toBe(gwana);
+   expect(f.presentations[0]?.displayName).toBe("Mallam Gwani Bodi");
+   expect(f.presentations[1]?.displayName).toBe("Malamah Gwana Sulafat");
+   expect(f.identity.provision).toHaveBeenCalledTimes(24);
+   expect(f.profiles).toHaveLength(26);
+ });
+ it("does not override hidden or administrator-customized characters",async()=>{
+   const f=fixture(),tenant=createCanonicalId("tenant");
+   f.presentations.push({schemaVersion:1,tenantId:tenant,
+     characterId:createCanonicalId("character"),characterVersionId:createCanonicalId("character-version"),
+     displayName:"Dr. Amina Yusuf",roleLabel:"Admin-owned",about:"Hidden",
+     greeting:null,visibleInUserApp:false,sortOrder:18,revision:8});
+   await run(f,tenant);
+   expect(f.presentations.filter(p=>p.displayName==="Dr. Amina Yusuf")).toHaveLength(1);
+   expect(f.presentations[0]?.roleLabel).toBe("Admin-owned");
+   expect(f.identity.provision).toHaveBeenCalledTimes(25);
+ });
 });

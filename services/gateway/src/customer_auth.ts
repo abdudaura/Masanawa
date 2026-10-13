@@ -761,15 +761,17 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
     tenantId: Parameters<UserRelationshipReader["listForUser"]>[0]["tenantId"],
     userId: Parameters<UserRelationshipReader["listForUser"]>[0]["userId"],
   ): Promise<readonly CharacterId[]> {
-    const [relationships, supportAgents] = await Promise.all([
+    const [relationships, platformAgents] = await Promise.all([
       input.relationships.listForUser({ tenantId, userId }),
-      input.platformProfiles.listSupportAgents({ tenantId }),
+      input.platformProfiles.listPlatformAgents
+        ? input.platformProfiles.listPlatformAgents({ tenantId })
+        : input.platformProfiles.listSupportAgents({ tenantId }),
     ]);
     const characterIds = new Set<CharacterId>();
     for (const relationship of relationships) {
       characterIds.add(relationship.characterId);
     }
-    for (const profile of supportAgents) {
+    for (const profile of platformAgents) {
       characterIds.add(profile.characterId);
     }
     return Object.freeze([...characterIds]);
@@ -811,7 +813,10 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
           tenantId: identity.tenantId,
           characterId,
         });
-        if (!platform?.supportAgent) {
+        // Every canonical platform-owned Masana may accept a new user.
+        // Specialist educators are NOT support agents, but their official
+        // profile is enough to establish the normal relationship.
+        if (!platform) {
           const publicTwinAllowed =
             input.publicTwinAdmission
               ? await input.publicTwinAdmission.canChat({

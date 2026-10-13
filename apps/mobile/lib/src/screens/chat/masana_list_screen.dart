@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../agents/agent_directory.dart';
+import '../../agents/masana_portrait_avatar.dart';
 import '../../agents/agent_feedback.dart';
 import '../../agents/agent_presence_labels.dart';
 import '../../state/session_state.dart';
@@ -196,30 +197,13 @@ class _MasanaAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final image = agent.avatarUrl;
     final strings = Localizations.of<AppLocalizations>(context, AppLocalizations);
     final presence = strings == null
         ? agent.presenceLabel
         : localizedAgentPresence(strings, agent);
     return Stack(
       children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: u.brand,
-          foregroundImage: image != null && image.isNotEmpty
-              ? NetworkImage(image)
-              : null,
-          child: image == null || image.isEmpty
-              ? Text(
-                  agent.initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                  ),
-                )
-              : null,
-        ),
+        MasanaPortraitAvatar(agent: agent),
         Positioned(
           right: 0,
           bottom: 0,
