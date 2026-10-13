@@ -259,10 +259,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   groupValue: selectedSupportAgentId,
                   onChanged: (value) {
                     if (value == null || user == null ||
-                        _savingDefaultAgentId != null) return;
+                        _savingDefaultAgentId != null) {
+                      return;
+                    }
                     for (final agent in supportAgents) {
                       if (agent.characterId != value ||
-                          agent.defaultPlatformAgent) continue;
+                          agent.defaultPlatformAgent) {
+                        continue;
+                      }
                       unawaited(_chooseSupportAgent(
                         accountId: user.id,
                         characterId: value,
