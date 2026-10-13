@@ -11,7 +11,7 @@ describe("Status existing canonical eligibility selectors",()=>{
   }
  });
  it("binds exact tenant/author/media and checks current identity plus cleared rights",async()=>{
-  const query=vi.fn(async(_sql:string,_args:unknown[])=>({rows:[{approved:true}]}));
+  const query=vi.fn(async(_sql:string,_args:unknown[])=>({rows:[{approved:true,object_key:"canonical/image.png"}]}));
   const r=new PgStatusEligibility({query} as never);
   expect(await r.author("tenant","masana")).toBe(true);
   expect(await r.media("tenant","masana","media_abcdefgh")).toBe(true);
@@ -26,7 +26,7 @@ describe("Status existing canonical eligibility selectors",()=>{
   expect(query.mock.calls[1]?.[0]).toContain("m.approved_by");
  });
  it("denies image references relabelled as audio before querying",async()=>{
-  const query=vi.fn();const r=new PgStatusEligibility({query} as never);
+  const query=vi.fn(async()=>({rows:[{object_key:null}]}));const r=new PgStatusEligibility({query} as never);
   expect(await r.media("tenant","masana","media_abcdefgh","audio")).toBe(false);
   // No locally declared approval: unverified query does not confer rights.
   expect(query).toHaveBeenCalledTimes(1);
