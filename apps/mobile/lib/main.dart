@@ -78,8 +78,7 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
       final uri = _pendingLink.take(
         ready:
             session is SessionSignedIn &&
-            !session.user.isNewUser &&
-            router.routeInformationProvider.value.uri.path != '/splash',
+            !session.user.isNewUser,
       );
       if (uri != null) {
         final route = shellDeepLinkRoute(uri);
