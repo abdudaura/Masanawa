@@ -1,4 +1,12 @@
 export * from "./readiness.js";
+export { PgHomeFeedRepository } from "./home_feed/repository.js";
+export { PgEditorialReviewRepository } from "./home_feed/review_repository.js";
+export { PgStatusEligibility } from "./home_feed/eligibility.js";
+export { createPgRoomsRepository } from "./rooms/repository.js";
+export { createPgRoomDiscussionRepository } from "./rooms/discussion.js";
+export { createPgRoomBookmarkStore } from "./rooms/bookmarks.js";
+export { createPgRoomMembershipRepository } from "./rooms/membership.js";
+export { createMasanaInboxRepository } from "./masana_chat/inbox.js";
 export * from "./migrations.js";
 export * from "./pool.js";
 export * from "./transaction.js";

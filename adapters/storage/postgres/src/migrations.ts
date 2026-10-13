@@ -108,15 +108,9 @@ export async function runMigrations(
   pool: Pool,
   roots: readonly MigrationRoot[],
 ): Promise<readonly string[]> {
-  const migrations = (
-    await Promise.all(roots.map((root) => loadMigrationRoot(root)))
-  )
-    .flat()
-    .sort((left, right) =>
-      left.owner === right.owner
-        ? left.name.localeCompare(right.name)
-        : left.owner.localeCompare(right.owner),
-    );
+  // Dependents require predecessor schemas on a fresh database.
+  // Preserve roots order; each root already sorts its numbered migrations.
+  const migrations = (await Promise.all(roots.map(loadMigrationRoot))).flat();
 
   return withTransaction(
     pool,

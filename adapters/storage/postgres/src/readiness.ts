@@ -63,6 +63,9 @@ export function platformProductMigrationRoots(): readonly MigrationRoot[] {
       owner: "commerce",
       directory: packageMigrationDirectory("@masanawa/commerce"),
     }),
+    Object.freeze({ owner: "masana", directory: packageMigrationDirectory("@masanawa/masana") }),
+    Object.freeze({ owner: "feed", directory: packageMigrationDirectory("@masanawa/feed") }),
+    Object.freeze({ owner: "rooms", directory: packageMigrationDirectory("@masanawa/rooms") }),
     Object.freeze({
       owner: "talks",
       directory: fileURLToPath(
