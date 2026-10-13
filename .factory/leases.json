@@ -1946,6 +1946,39 @@
       "integration_head_sha": "be6d99dc709ad1a2663979aebf7470be6721f4ce",
       "source_head": "5b0e7f6aeb08576a65ae437d17d6b4604b9739a0",
       "source_pr": 707
+    },
+    {
+      "id": "af09-rescue-video-approval-20261013-gpt6",
+      "owner": "GPT-6 abandoned Status/video window recovery",
+      "branch": "recover/status-video-approval-20261013",
+      "paths": [
+        "apps/mobile/lib/src/features/videos/official_video_player_screen.dart",
+        "apps/mobile/test/features/videos/official_video_player_test.dart",
+        "apps/mobile/test/features/videos/video_availability_test.dart",
+        ".github/workflows/mobile-status-rooms-recovery.yml"
+      ],
+      "scope": "Close Status Videos provider-open approval bypass and assert verified external access; retain official provider embed and prior media source",
+      "base_sha": "be6d99dc709ad1a2663979aebf7470be6721f4ce",
+      "claimed_at": "2026-10-13T08:55:48.600Z",
+      "heartbeat_at": "2026-10-13T08:55:48.600Z",
+      "expires_at": "2026-10-13T09:40:48.600Z",
+      "notes": "Reconciled main #699/#702/#704/#705/#706/#707; no overlapping current claims. Run hosted focused Flutter CI and merge only passing code; signed devices/providers remain unverified."
+    },
+    {
+      "id": "af10-rescue-rooms-account-20261013-gpt6",
+      "owner": "GPT-6 abandoned MUI Rooms window recovery",
+      "branch": "recover/rooms-detail-account-20261013",
+      "paths": [
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/lib/src/screens/rooms/rooms_screen.dart",
+        "apps/mobile/test/rooms_screen_test.dart"
+      ],
+      "scope": "Ensure pushed persistent Rooms details unmount private content immediately on account switch; preserve canonical Rooms client/PG authority",
+      "base_sha": "be6d99dc709ad1a2663979aebf7470be6721f4ce",
+      "claimed_at": "2026-10-13T08:55:48.600Z",
+      "heartbeat_at": "2026-10-13T08:55:48.600Z",
+      "expires_at": "2026-10-13T09:40:48.600Z",
+      "notes": "Reconciled main #699/#702/#704/#705/#706/#707; no overlapping current claims. Run hosted focused Flutter CI and merge only passing code; signed devices/providers remain unverified."
     }
   ],
   "history": [
