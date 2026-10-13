@@ -2026,9 +2026,9 @@
       "branch": "lane/af01-msn-qualified-balance-20261013-gpt6",
       "claim_id": "af01-msn-qualified-balance-20261013-gpt6",
       "claimed_at": "2026-10-13T11:02:50.285Z",
-      "heartbeat_at": "2026-10-13T11:02:50.285Z",
-      "expires_at": "2026-10-13T11:12:50.285Z",
-      "notes": "New AF01 read-only qualified MSN balance and backed-issuance source continuation, reuse individual files from diverged draft #576; separate off-chain MSN from legacy Credits; no provider execution, no user supplied proof, both runtime/client flags default OFF; main and root scope claimed exclusively after PR #712 merge.",
+      "heartbeat_at": "2026-10-13T11:11:38.176Z",
+      "expires_at": "2026-10-13T11:21:38.176Z",
+      "notes": "New AF01 read-only qualified MSN balance and backed-issuance source continuation, reuse individual files from diverged draft #576; separate off-chain MSN from legacy Credits; no provider execution, no user supplied proof, both runtime/client flags default OFF; main and root scope claimed exclusively after PR #712 merge. CI #38388319251 surfaced pg unavailable in Gateway package; move real PostgreSQL integration into postgres adapter test folder (no new dependency). Imported draft's Future.error widget fixture prematurely uncaught; repair fixture.",
       "owner": "GPT-6 / AF01 MSN qualified readback",
       "paths": [
         "packages/commerce/migrations/0112_msn_wallet.sql",
@@ -2049,7 +2049,8 @@
         "apps/mobile/test/finance/msn_wallet_panel_test.dart",
         "apps/mobile/lib/src/screens/wallet/wallet_screen.dart",
         ".github/workflows/af01-msn-qualified-balance.yml",
-        "docs/workstreams/AF01-msn-qualified-balance-20261013.md"
+        "docs/workstreams/AF01-msn-qualified-balance-20261013.md",
+        "adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts"
       ],
       "scope": "Add MSN issuance invariant source/migration, trusted authenticated Gateway readback and opt-in Flutter UI with real PostgreSQL tests. Explicitly leave NGN funding/provider workers/crypto issuance/transfer disabled until proof."
     }
