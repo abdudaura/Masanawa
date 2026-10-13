@@ -211,6 +211,7 @@ void main() {
         final request = await adapter.started.future;
         token = 'account-b';
         expect(request.headers['Authorization'], 'Bearer account-a');
+        expect(request.receiveTimeout, greaterThan(const Duration(seconds: 20)));
         adapter.released.complete();
         final grant = await pending;
         expect(grant.callId, callId is String ? callId : null);

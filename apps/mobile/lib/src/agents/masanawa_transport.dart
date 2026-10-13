@@ -118,7 +118,8 @@ class _GatewayClient {
           followRedirects: false,
           headers: {'Authorization': token == null ? '' : 'Bearer $token'},
           sendTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 15),
+          // Provider minting can take 20 s, then lifecycle persistence follows.
+          receiveTimeout: const Duration(seconds: 30),
         ),
       );
       if (response.data == null) {
