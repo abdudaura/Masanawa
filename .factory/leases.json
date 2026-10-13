@@ -1961,7 +1961,12 @@
       "claimed_at": "2026-10-13T16:31:29.857Z",
       "heartbeat_at": "2026-10-13T16:33:48.553Z",
       "expires_at": "2026-10-13T16:43:48.553Z",
-      "notes": "Separate from active AF05 voice note and AF07 lessons claims. Default-OFF production Room membership preserved. Found direct free Room join has the identical stale-role revival bug; expand narrow claim and PG journey to cover both direct join and invitation redemption."
+      "notes": "Separate from active AF05 voice note and AF07 lessons claims. Default-OFF production Room membership preserved. Found direct free Room join has the identical stale-role revival bug; expand narrow claim and PG journey to cover both direct join and invitation redemption.",
+      "released_at": "2026-10-13T16:38:19.581Z",
+      "release_reason": "Merged scoped test-qualified Room join/invitation privilege-reset correction via PR #727. Source c87a433d12f9aaaf26783d8aa112cb9731f42721, merge ce0f65f769ed3d2bfd18ea2ff543bd5150e8b4e6; scoped Rooms Production Build Qualification run 38431871327: Gateway/Worker build, Node unit, real PG18 lifecycle, Flutter Rooms and analysis both jobs passed. No live Railway/production Room feature activation.",
+      "source_head": "c87a433d12f9aaaf26783d8aa112cb9731f42721",
+      "integration_head_sha": "ce0f65f769ed3d2bfd18ea2ff543bd5150e8b4e6",
+      "source_pr": 727
     },
     {
       "claim_id": "af07-masana-room-deeplink-20261013-gpt6",
