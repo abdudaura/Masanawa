@@ -27,6 +27,9 @@ Read-only `createMsnReconciler(pool).scan(tenantId,limit)` executes one repeatab
 
 AF01 must obtain independently verified provider-acquired backing, global provider settlement reservation, quoted conversion economics with price/expiry, real NGN debit and chargeback compensation, atomic issuance via canonical `createMsnLedgerStore.issue`, supervised durable worker with concurrent/replay recovery, provider reconciliation against treasury inventory and signed-Android customer readback. Existing crypto holdings must never simultaneously remain spendable after funding the same MSN issuance. Real accounts/licensing/provider evidence are external gates, not inferred from source tests. MUI-09, MUI-10 and AF11 stay OPEN.
 
-## Results
+## Executed source verification
 
-Source commit/PR/main merge SHA, executed test count/run URLs, code diff review and lease release will be recorded after actual CI.
+- Source/test head: `28bf4729490e98016a5bc2580b1a94f66f6e25aa` (seven added paths). Focused [Actions run #38422726606](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38422726606), job `115384025029`, executed **SUCCESS**.
+- 5 Vitest source test files: **61 passed**. Real PostgreSQL18 staged accounting + worker integration: **2 passed**. Gateway and Worker production builds **PASS**. Worker TypeScript **PASS**.
+- Test payment/custody proofs are synthetic fixture evidence, not live provider confirmation; real PostgreSQL 18 is used for accounting consistency and append-only invariants. No signed Flutter/Android, live provider, priced backing, migrated production database, production worker or deployment verified.
+- PR #721 is the tracked source; update source/main merge SHA only after GitHub reports an actual merge. Unrelated Foundation CI/Vercel failures do not override the successful scoped job.
