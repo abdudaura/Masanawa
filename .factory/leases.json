@@ -1942,6 +1942,22 @@
       "notes": "Latest main and claim registry checked; preserve all existing calls and chat transport.",
       "source_pr": 726,
       "source_head": "a163742d18b5e7a96927399a779363a6d46fb9cb"
+    },
+    {
+      "claim_id": "af10-room-rejoin-role-fence-20261013-gpt6",
+      "owner": "AF10/GPT-6 Rooms invitation privilege-fence integration",
+      "branch": "lane/af10-room-rejoin-role-fence-20261013-gpt6",
+      "base_sha": "a86b93142abe97c1701b318b74fad77254b06bef",
+      "scope": "Fix Room invite return from left membership restoring old moderator privilege, preserve moderator active state, cover real PostgreSQL18 with role assertions",
+      "paths": [
+        "adapters/storage/postgres/src/rooms/membership.ts",
+        "adapters/storage/postgres/src/rooms/membership.test.mjs",
+        "adapters/storage/postgres/src/rooms/membership.integration.test.mjs"
+      ],
+      "claimed_at": "2026-10-13T16:31:29.857Z",
+      "heartbeat_at": "2026-10-13T16:31:29.857Z",
+      "expires_at": "2026-10-13T16:41:29.857Z",
+      "notes": "Separate from active AF05 voice note and AF07 lessons claims. Default-OFF production Room membership preserved."
     }
   ],
   "history": [
