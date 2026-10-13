@@ -116,6 +116,9 @@ class WalletScreen extends ConsumerWidget {
                   ),
                 );
                 if (!context.mounted || receipt == null) return;
+                final current = ref.read(sessionProvider);
+                if (current is! SessionSignedIn ||
+                    current.user.id != accountId) return;
                 await showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
