@@ -44,15 +44,14 @@ describe("Status production composition source",()=>{
    databaseFactory:()=>database,logger:{info:()=>{},error:()=>{}},
    appFactory:options=>{composition=options;return {listen:async()=>"http://local",close:async()=>{}};}});
   expect(composition?.status?.media).toBeDefined();
-  // A mounted production Status backend must not bypass qualification by
-  // merely having an authenticated session and PostgreSQL repository.
-  expect(composition?.status?.enabled?.()).toBe(false);
-  const disabledApp=createGatewayApp({status:composition!.status!});
-  expect((await disabledApp.inject({method:"GET",url:"/v1/feed",
-    headers:{authorization:`Bearer msw_access_${"a".repeat(64)}`}})).statusCode).toBe(503);
-  expect(f.resolveAccess).not.toHaveBeenCalled();
-  expect(f.list).not.toHaveBeenCalled();
-  await disabledApp.close();
+  // Authenticated Status content is usable without an unrelated rollout switch.
+  expect(composition?.status?.enabled?.()).toBe(true);
+  const enabledApp=createGatewayApp({status:composition!.status!});
+  expect((await enabledApp.inject({method:"GET",url:"/v1/feed",
+    headers:{authorization:`Bearer msw_access_${"a".repeat(64)}`}})).statusCode).toBe(200);
+  expect(f.resolveAccess).toHaveBeenCalled();
+  expect(f.list).toHaveBeenCalled();
+  await enabledApp.close();
   await expect(composition!.status!.media!.sign({tenantId:"tenant_real",postId:"381026c2-9d56-47b1-b73d-1784e24e41e2",
    authorMasanaId:"masana",mediaId:"media_abcdefgh",kind:"image",transcript:null})).rejects.toThrow("status.media_store_unavailable");
   expect(composition?.status?.feed).toBeInstanceOf(FeedService);

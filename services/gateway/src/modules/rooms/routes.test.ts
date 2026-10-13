@@ -96,6 +96,14 @@ describe("Rooms v1 server authority",()=>{
     "Learn percentages","lesson");
   await f.app.close();
  });
+ it("has no ordinary question staff-review gate or manual approval endpoint",async()=>{
+  const {app}=build(fan);
+  try{
+   expect((await app.inject({method:"GET",url:"/v1/admin/rooms/questions"})).statusCode).toBe(404);
+   expect((await app.inject({method:"POST",url:"/v1/admin/rooms/questions/room-question_1/review",
+      payload:{decision:"approve",answer:"manually reviewed"}})).statusCode).toBe(404);
+  }finally{await app.close();}
+ });
  it("returns 503 on storage failure instead of leaking SQL internals",async()=>{
   const {app,repo}=build(fan);
   vi.mocked(repo.list).mockRejectedValue(new Error("private DB details"));

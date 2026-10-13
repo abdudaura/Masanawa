@@ -9,8 +9,9 @@ import {
   type NodeSignalSource,
   type ServiceLifecycleLogger,
 } from "@masanawa/node-runtime";
-import { createPostgresServiceDependency, createPgTeacherQueue, type Pool } from "@masanawa/postgres";
-import { createRoomTeacherReviewRuntime } from "./jobs/rooms/runtime.js";
+import { createPostgresServiceDependency, createPgTeacherQueue, platformProductMigrationRoots, type Pool } from "@masanawa/postgres";
+import { createRoomTeacherRuntime } from "./jobs/rooms/runtime.js";
+import { createGeminiRoomAnswerModel } from "./jobs/rooms/gemini_room_model.js";
 import {
   createWorkerApp,
   type WorkerAppOptions,
@@ -84,6 +85,7 @@ function createDefaultDatabaseDependency(
   return createPostgresServiceDependency({
     connectionString,
     applicationName: "masanawa-worker",
+    migrationRoots:platformProductMigrationRoots(),
   });
 }
 
@@ -98,25 +100,28 @@ export async function startWorkerService(
     options.databaseFactory ?? createDefaultDatabaseDependency;
   const database = databaseFactory(env);
   const appFactory = options.appFactory ?? createWorkerApp;
-  // Explicitly opt-in to review-only Room queue draining. This never calls an
-  // AI or paid provider, auto-publishes an answer, or grants an entitlement.
-  const roomReviewEnabled =
-    env.MASANAWA_ROOMS_TEACHER_REVIEW_ONLY_ENABLED === "true";
-  let roomReview: ReturnType<typeof createRoomTeacherReviewRuntime> | undefined;
+  // The Rooms question worker is part of the product, not a hidden opt-in.
+  // Lack of a pool or Gemini configuration is a startup error, not a silent
+  // "disabled" customer feature that can accept questions without answers.
+  let roomReview: ReturnType<typeof createRoomTeacherRuntime> | undefined;
 
   let app: ManagedNodeServer;
   try {
-    if (roomReviewEnabled) {
-      if (env.MASANAWA_ROOMS_BACKEND_ENABLED !== "true") {
-        throw new Error("rooms_teacher_requires_rooms_backend");
-      }
-      if (!database.pool) throw new Error("rooms_teacher_postgres_pool_required");
-      roomReview = createRoomTeacherReviewRuntime({
-        queue: createPgTeacherQueue(database.pool),
-        workerId: env.MASANAWA_ROOMS_TEACHER_WORKER_ID ?? "rooms-review-" + process.pid,
-        enabled: () => !drain.isDraining(),
-      });
-    }
+    if (!database.pool) throw new Error("rooms_teacher_postgres_pool_required");
+    roomReview = createRoomTeacherRuntime({
+      queue: createPgTeacherQueue(database.pool),
+      model: createGeminiRoomAnswerModel({
+        ...(env.MASANAWA_GEMINI_CREDENTIALS_JSON === undefined
+          ? {} : {credentialsJson:env.MASANAWA_GEMINI_CREDENTIALS_JSON}),
+        ...(env.MASANAWA_GEMINI_API_KEY !== undefined
+          ? {apiKey:env.MASANAWA_GEMINI_API_KEY}
+          : env.GEMINI_API_KEY !== undefined ? {apiKey:env.GEMINI_API_KEY} : {}),
+        ...(env.MASANAWA_GEMINI_REPLY_MODELS === undefined
+          ? {} : {models:env.MASANAWA_GEMINI_REPLY_MODELS}),
+      }),
+      workerId: env.MASANAWA_ROOMS_TEACHER_WORKER_ID ?? "rooms-ai-" + process.pid,
+      enabled: () => !drain.isDraining(),
+    });
     app = appFactory({
       ...(options.appOptions ?? {}),
       readinessChecks: [

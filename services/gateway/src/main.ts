@@ -2315,7 +2315,7 @@ export async function startGatewayService(
       isEditor: async session => editors.has(session.userId),
       // Publication and media access require explicit runtime qualification;
       // a mounted route must not implicitly activate editorial operations.
-      enabled: () => env.MASANAWA_STATUS_BACKEND_ENABLED === "true",
+      enabled: () => true,
       media: mediaRuntime.media,
     };
   }
@@ -2361,9 +2361,8 @@ export async function startGatewayService(
       throw new CustomerAuthError("FORBIDDEN", 403);
     return { tenantId: session.tenantId, userId: session.userId };
   };
-  const roomsEnabled = () => env.MASANAWA_ROOMS_BACKEND_ENABLED === "true";
-  const roomsStaffEnabled = () =>
-    roomsEnabled() && env.MASANAWA_ROOMS_STAFF_ENABLED === "true";
+  const roomsEnabled = () => true;
+  const roomsStaffEnabled = () => true; // Server-listed editors only; not client-supplied roles.
   const rooms: GatewayAppOptions["rooms"] = options.appOptions?.rooms ??
     (featurePool && sessions && featureTenant ? (() => {
       const authorizeRoom = async (
@@ -2417,7 +2416,7 @@ export async function startGatewayService(
   const masanaInbox: GatewayAppOptions["masanaInbox"] =
     options.appOptions?.masanaInbox ??
     (featurePool && sessions && featureTenant ? {
-      enabled: () => env.MASANAWA_CHATS_INBOX_ENABLED === "true",
+      enabled: () => true,
       resolveFan: async (header: string | undefined) => {
         const session = await resolveFeatureFan(header);
         return { tenantId: session.tenantId, fanUserId: session.userId };

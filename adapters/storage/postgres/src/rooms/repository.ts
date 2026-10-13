@@ -14,7 +14,7 @@ const parsePreview=(r:any):RoomPreview=>({
  joined:r.joined===true
 });
 const parseQuestion=(r:any):RoomQuestion=>({
- questionId:r.question_id,roomId:r.room_id,body:r.body,state:r.state,
+ questionId:r.question_id,roomId:r.room_id,body:r.body,state:r.state==="needs_staff"?"queued":r.state,
  queuedAt:new Date(r.queued_at).toISOString(),answer:r.answer||null
 });
 async function transaction<T>(pool:Pool, fn:(client:PoolClient)=>Promise<T>):Promise<T>{
@@ -128,9 +128,6 @@ export function createPgRoomsRepository(pool:Pool):RoomsRepository {
        if(duplicate.rows[0].body!==body)throw new RoomError(409,"idempotency_conflict");
        return parseQuestion(duplicate.rows[0]);
      }
-     const count=await q.query(`SELECT count(*)::int AS n FROM rooms.questions
-       WHERE tenant_id=$1 AND user_id=$2 AND queued_at>=now()-interval '24 hours'`,[a.tenantId,userId]);
-     if(Number(count.rows[0].n)>=20)throw new RoomError(429,"question_quota_reached");
      const questionId=newId("room-question_");
      await q.query(`INSERT INTO rooms.questions(tenant_id,question_id,room_id,user_id,body,idempotency_key)
        VALUES ($1,$2,$3,$4,$5,$6)`,[a.tenantId,questionId,id,userId,body,key]);

@@ -4,6 +4,9 @@ on:
     paths:
       - "services/gateway/src/call_history/**"
       - "services/worker/src/**"
+      - "packages/rooms/**"
+      - "apps/mobile/lib/src/features/rooms/**"
+      - "packages/rooms/migrations/**"
       - "adapters/storage/postgres/src/rooms/**"
       - "services/gateway/src/modules/rooms/**"
       - "infra/deployment/gateway/**"
@@ -13,13 +16,16 @@ on:
     paths:
       - "services/gateway/src/call_history/routes.ts"
       - "services/worker/src/main.ts"
+      - "packages/rooms/**"
+      - "adapters/storage/postgres/src/rooms/**"
+      - "apps/mobile/lib/src/features/rooms/**"
       - ".github/workflows/rooms-production-build.yml"
 permissions:
   contents: read
 jobs:
   build-and-rooms:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     services:
       postgres:
         image: pgvector/pgvector:0.8.6-pg18
@@ -59,5 +65,31 @@ jobs:
           services/gateway/src/modules/rooms/bookmark_routes.test.ts
           services/gateway/src/modules/rooms/discussion_routes.test.ts
           services/worker/src/jobs/rooms
+          adapters/storage/postgres/src/rooms/teacher_outbox.test.ts
+          packages/rooms/src/index.test.ts
       - name: Real PG18 forward-upgrade and Rooms schema readiness
         run: pnpm exec vitest run adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts
+      - name: Focused Worker production typing
+        run: pnpm --filter @masanawa/worker-service typecheck
+  flutter-rooms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Rooms mounted Flutter question journeys
+        run: >-
+          flutter test --no-pub --reporter expanded
+          test/features/rooms/rooms_screen_test.dart
+          test/rooms_screen_test.dart
+          test/features/rooms/room_discussion_screen_test.dart
+      - name: Focused Rooms Dart analysis
+        run: dart analyze lib/src/features/rooms/rooms_screen.dart
+

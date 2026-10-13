@@ -16,7 +16,7 @@ String roomError(Object e){
  if(e is DioException){
   if(e.response?.statusCode==403)return 'Membership or verified subscription required.';
   if(e.response?.statusCode==410)return 'This feature is currently disabled.';
-  if(e.response?.statusCode==429)return 'Daily question limit reached.';
+
   if(e.type==DioExceptionType.connectionError||e.type==DioExceptionType.connectionTimeout)return 'Offline. Retry after reconnecting.';
  }
  return 'Could not load. Check the network and retry.';
@@ -157,7 +157,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
    SavedRoomLessonsScreen(client:client,roomId:widget.id,accountKey:key)));
  }
  Future<void> ask()async{
-  if(busy||question.text.trim().length<4)return;
+  if(busy||question.text.trim().isEmpty)return;
   pendingKey??='rq_'+DateTime.now().microsecondsSinceEpoch.toString()+'_'
    +List.generate(12,(_)=>Random.secure().nextInt(16).toRadixString(16)).join();
   setState(()=>busy=true);
@@ -203,7 +203,7 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
        RefreshIndicator(onRefresh:load,child:ListView(children:[
         if(items.isEmpty)const ListTile(title:Text('Ask the first question.')),
         for(final q in items)ListTile(title:Text(q.body),
-         subtitle:Text(q.answer??'Teacher reply pending · ${q.status}')),
+         subtitle:Text(q.answer??'AI teacher is preparing an answer')),
        ]))),
      if(tab==1)SafeArea(child:Padding(padding:const EdgeInsets.all(8),child:Row(children:[
        Expanded(child:TextField(controller:question,maxLength:2000,maxLines:2,

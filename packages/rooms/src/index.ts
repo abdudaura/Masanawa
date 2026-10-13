@@ -17,7 +17,7 @@ export class RoomError extends Error {
 export function validateQuestion(raw:unknown):string {
   if(typeof raw!=="string") throw new RoomError(422,"invalid_question");
   const body=raw.trim();
-  if(body.length<4||body.length>2000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(body))
+  if(body.length<1||body.length>2000||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(body))
     throw new RoomError(422,"invalid_question");
   return body;
 }
