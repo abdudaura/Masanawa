@@ -34,7 +34,7 @@ export function createStatusMediaRuntime(input:{eligibility:CanonicalMedia;publi
     !Number.isSafeInteger(metadata.bytes)||metadata.bytes<1||
     metadata.bytes>(kind==="image"?10:30)*1024*1024)return null;
   // Network work must not retain a revoked approval or replaced object mapping.
-  const current=await input.eligibility.object(tenant,author,media);
+  const current=await input.eligibility.object(tenant,author,media,kind);
   if(!current||current.objectKey!==object.objectKey)return null;
   return {...object,contentType:metadata.contentType};
  };
