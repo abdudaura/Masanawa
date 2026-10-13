@@ -69,6 +69,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         await MobilePushService.instance.unregister();
       }
       final verified = await MobilePushService.instance.notificationEnabled();
+      if (enabled && verified) {
+        try {
+          // Re-attach canonical push registration after a prior unregister.
+          // Device permission alone does not prove notification delivery.
+          await ref.read(agentDirectoryProvider.notifier).refresh();
+        } catch (_) {
+          if (mounted && epoch == _notificationEpoch) {
+            _showFeedback(
+              'Device permission is enabled, but message delivery could not '
+              'be confirmed. Reconnect and retry.',
+            );
+          }
+        }
+      }
       if (!mounted || epoch != _notificationEpoch) return;
       setState(() {
         _notifications = verified;
@@ -360,7 +374,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: const Text(
                   'Remove locally cached Masana conversations, not server history or receipts',
                 ),
-                onTap: user == null ? null : () => unawaited(_confirmClearChats()),
+                onTap: user == null
+                    ? null
+                    : () => unawaited(_confirmClearChats()),
               ),
               const Divider(height: 1),
               ListTile(
@@ -370,7 +386,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => showAboutDialog(
                   context: context,
                   applicationName: 'Masanawa',
-
                   children: const [
                     Text(
                       'Chat with Masana personas, view their Status updates, make calls, explore Rooms and use Wallet services.',
