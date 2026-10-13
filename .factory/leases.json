@@ -1926,24 +1926,6 @@
       "released_at": "2026-10-13T15:35:41.555Z"
     },
     {
-      "claim_id": "af07-masana-rooms-lessons-apk-20261013-gpt6",
-      "owner": "AF07/GPT-6 26 Room lesson starter content and real Android APK compilation",
-      "scope": "Publish actual curated starter lessons for all 26 Masana free Rooms idempotently and test PG18 answer-ready content; independent Android compilation and APK artifact despite unrelated full analyzer debt",
-      "branch": "lane/af07-masana-rooms-lessons-apk-20261013-gpt6",
-      "base_sha": "8cc8086738cc682cbad84433c99ffcb69fee72b3",
-      "paths": [
-        ".github/workflows/masana-android-apk.yml",
-        "adapters/storage/postgres/src/masana/catalog_lessons.ts",
-        "adapters/storage/postgres/src/masana/catalog_seed.integration.test.ts",
-        "adapters/storage/postgres/src/masana/catalog_seed.ts",
-        "docs/workstreams/AF07-masana-apk-rooms-content-20261013.md"
-      ],
-      "pr": "",
-      "claimed_at": "2026-10-13T16:20:21.077Z",
-      "heartbeat_at": "2026-10-13T16:21:27.957Z",
-      "expires_at": "2026-10-13T17:06:27.957Z"
-    },
-    {
       "claim_id": "af05-communication-e2e-preview-20261013-gpt6",
       "owner": "GPT-6 / AF05 communication audit",
       "scope": "Finite M4A voice-note preview before authenticated send and combined Chat/Voice/Calls executable regression only. No native/financial/Gateway composition changes.",
@@ -6947,6 +6929,28 @@
       "notes": "AF07 #723 merged and its active claim does not overlap these paths. AF00 protected Gateway composition narrow transfer with stale overlapping files reviewed above; preserve existing account/money/worker.",
       "released_at": "2026-10-13T16:23:00Z",
       "release_reason": "Integrated tested source in PR #724; source head 92550385a3af0e1a5cbf2d11c748f8676aa35ee7; main merge a86b93142abe97c1701b318b74fad77254b06bef. Scoped Rooms workflow 38429513121 PASS: 56 Vitest, 4 PG18 forward/worker tests, 20 Node auth/unit, 5 real PG18 invite/tenant/race tests, 18 Flutter tests, Gateway/Worker production builds and Worker TS, focused Dart. Source only: production Rooms membership flag OFF, real gateway/DB/devices/backup not qualified; baseline full Foundation TS, whole Flutter analysis and Gateway strict fail separately."
+    },
+    {
+      "claim_id": "af07-masana-rooms-lessons-apk-20261013-gpt6",
+      "owner": "AF07/GPT-6 26 Room lesson starter content and real Android APK compilation",
+      "scope": "Publish actual curated starter lessons for all 26 Masana free Rooms idempotently and test PG18 answer-ready content; independent Android compilation and APK artifact despite unrelated full analyzer debt",
+      "branch": "lane/af07-masana-rooms-lessons-apk-20261013-gpt6",
+      "base_sha": "8cc8086738cc682cbad84433c99ffcb69fee72b3",
+      "paths": [
+        ".github/workflows/masana-android-apk.yml",
+        "adapters/storage/postgres/src/masana/catalog_lessons.ts",
+        "adapters/storage/postgres/src/masana/catalog_seed.integration.test.ts",
+        "adapters/storage/postgres/src/masana/catalog_seed.ts",
+        "docs/workstreams/AF07-masana-apk-rooms-content-20261013.md"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T16:20:21.077Z",
+      "heartbeat_at": "2026-10-13T16:21:27.957Z",
+      "expires_at": "2026-10-13T17:06:27.957Z",
+      "released_at": "2026-10-13T16:29:31.089Z",
+      "release_reason": "PR #725 source 18e9fefc5cb876e77a3368aa4f74c1ba05801a4f tested Gateway/Worker, 23 agent/auth tests, 3 real PG18 catalog tests, 3 teacher worker tests, focused Flutter tests PASSED; merged main 0bec155321b385f20dc9344e761525bc7db72215. Android APK compilation job in progress and NOT yet verified; Railway/Gemini device acceptance open.",
+      "integration_head_sha": "0bec155321b385f20dc9344e761525bc7db72215",
+      "source_pr": 725
     }
   ],
   "schema_version": 1
