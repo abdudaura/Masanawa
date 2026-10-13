@@ -99,8 +99,8 @@ describe("MSN quote journal source boundaries",()=>{
       tenantId:"tenant1",userId:"user1",quoteId:"quote1",
       reader,provider,observedAtMs:50001,
     })).rejects.toThrow("msn.quote.expired");
-    expect(reader).not.toHaveBeenCalled();
-    expect(provider).not.toHaveBeenCalled();
+    expect(reader.read).not.toHaveBeenCalled();
+    expect(provider.verifyByReference).not.toHaveBeenCalled();
   });
   it("refuses nonexistent quote without contacting payment provider",async()=>{
     const f=fixture(null);
@@ -110,6 +110,6 @@ describe("MSN quote journal source boundaries",()=>{
       tenantId:"tenant1",userId:"user1",quoteId:"quote1",
       reader,provider,observedAtMs:2000,
     })).rejects.toThrow("msn.quote.not_found");
-    expect(provider).not.toHaveBeenCalled();
+    expect(provider.verifyByReference).not.toHaveBeenCalled();
   });
 });
