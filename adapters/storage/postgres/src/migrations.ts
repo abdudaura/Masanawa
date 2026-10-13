@@ -108,15 +108,10 @@ export async function runMigrations(
   pool: Pool,
   roots: readonly MigrationRoot[],
 ): Promise<readonly string[]> {
-  const migrations = (
-    await Promise.all(roots.map((root) => loadMigrationRoot(root)))
-  )
-    .flat()
-    .sort((left, right) =>
-      left.owner === right.owner
-        ? left.name.localeCompare(right.name)
-        : left.owner.localeCompare(right.owner),
-    );
+  // Apply roots in dependency order (identity before Masana; Masana before
+  // Feed/Rooms), while preserving each root's numbered forward-only files.
+  // Sorting by owner name could run a dependent schema before its authority.
+  const migrations = (await Promise.all(roots.map(loadMigrationRoot))).flat();
 
   return withTransaction(
     pool,

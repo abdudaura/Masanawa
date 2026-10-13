@@ -39,13 +39,18 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Install workspace
         run: pnpm install --frozen-lockfile
-      - name: Focused Status and Video tests
+      - name: Focused Status, Video, Rooms and C10 tests
         run: >-
           pnpm exec vitest run
           services/gateway/src/modules/home_feed/media_runtime.test.ts
           services/gateway/src/modules/home_feed/object_store.test.ts
           services/gateway/src/modules/home_feed/composition.test.ts
           services/gateway/src/modules/home_feed/status_video_composition.test.ts
+          services/gateway/src/modules/masana_chat/af00_composition.test.ts
+          services/gateway/src/modules/masana_chat/inbox_routes.test.ts
+          services/gateway/src/modules/rooms/routes.test.ts
+          adapters/storage/postgres/src/home_feed/af00_migrations.integration.test.ts
+          packages/rooms/src/index.test.ts
           services/gateway/src/modules/home_feed/runtime.test.ts
           services/gateway/src/modules/external_videos/routes.test.ts
           adapters/storage/postgres/src/home_feed/eligibility.test.ts
