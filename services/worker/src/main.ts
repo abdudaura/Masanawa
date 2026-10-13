@@ -111,9 +111,12 @@ export async function startWorkerService(
     roomReview = createRoomTeacherRuntime({
       queue: createPgTeacherQueue(database.pool),
       model: createGeminiRoomAnswerModel({
-        credentialsJson: env.MASANAWA_GEMINI_CREDENTIALS_JSON,
-        apiKey: env.MASANAWA_GEMINI_API_KEY ?? env.GEMINI_API_KEY,
-        models: env.MASANAWA_GEMINI_REPLY_MODELS,
+        ...(env.MASANAWA_GEMINI_CREDENTIALS_JSON === undefined
+          ? {} : {credentialsJson:env.MASANAWA_GEMINI_CREDENTIALS_JSON}),
+        ...(env.MASANAWA_GEMINI_API_KEY === undefined && env.GEMINI_API_KEY === undefined
+          ? {} : {apiKey:env.MASANAWA_GEMINI_API_KEY ?? env.GEMINI_API_KEY}),
+        ...(env.MASANAWA_GEMINI_REPLY_MODELS === undefined
+          ? {} : {models:env.MASANAWA_GEMINI_REPLY_MODELS}),
       }),
       workerId: env.MASANAWA_ROOMS_TEACHER_WORKER_ID ?? "rooms-ai-" + process.pid,
       enabled: () => !drain.isDraining(),
