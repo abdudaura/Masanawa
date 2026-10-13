@@ -1,6 +1,6 @@
 # Measures Android process-to-first-frame and (on a profile/debug APK)
 # Masanawa's actual Dart/Chats/cache milestones. Requires adb on PATH.
-# Example: .\\scripts\\mobile-startup-benchmark.ps1 -Runs 5
+# Example: .\scripts\\mobile-startup-benchmark.ps1 -Runs 5
 param(
   [ValidateRange(1,30)][int]$Runs = 5,
   [string]$Package = "ng.unigeria.unigeria"
@@ -29,8 +29,8 @@ foreach ($mode in @("cold", "returning")) {
     }
     & adb logcat -c | Out-Null
     $launch = (& adb shell am start -W -n "$Package/.MainActivity" 2>&1 | Out-String)
-    $total = [regex]::Match($launch, "(?m)^TotalTime:\\s*(\\d+)")
-    $wait = [regex]::Match($launch, "(?m)^WaitTime:\\s*(\\d+)")
+    $total = [regex]::Match($launch, "(?m)^TotalTime:\s*(\d+)")
+    $wait = [regex]::Match($launch, "(?m)^WaitTime:\s*(\d+)")
     if ($launch -match "(?m)^Error:") { throw "Launch failed: $launch" }
     Start-Sleep -Seconds 3
     $milestones = (& adb logcat -d 2>&1 | Select-String 'MASANAWA_STARTUP' | ForEach-Object { $_.Line }) -join " | "
