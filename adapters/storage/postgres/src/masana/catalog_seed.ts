@@ -83,13 +83,10 @@ export async function ensureMasanaCatalogProfilesAndRooms(input:{
          [input.tenantId,characterId,revision,JSON.stringify(profile)]);
        if(created.rowCount===1)approved++;
      }
-     const owner=await c.query(`SELECT character_id,state FROM rooms.rooms
+     const owner=await c.query(`SELECT teacher_character_id,state FROM rooms.rooms
        WHERE tenant_id=$1 AND room_id=$2`,[input.tenantId,seed.roomId]);
      if(owner.rows.length){
-       
-       const room=await c.query(`SELECT teacher_character_id FROM rooms.rooms
-         WHERE tenant_id=$1 AND room_id=$2`,[input.tenantId,seed.roomId]);
-       if(room.rows[0]?.teacher_character_id!==characterId)
+       if(owner.rows[0]?.teacher_character_id!==characterId)
          throw Error("catalog_seed_room_conflict");
        // Do not override deliberately paused/retired Rooms.
        if(owner.rows[0].state==="draft"){
