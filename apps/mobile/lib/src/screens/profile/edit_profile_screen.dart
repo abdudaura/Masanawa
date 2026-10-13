@@ -26,16 +26,63 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _saving = false;
   bool _creatingProfile = false;
   bool _removeAvatar = false;
+  // A timed-out/uncertain write may already be committed on the server.
+  // Do not send another mutation until an authoritative GET reconciles it.
+  bool _requiresReload = false;
   String? _error;
+  String? _accountId;
+  int _accountEpoch = 0;
+  int _loadVersion = 0;
+  late final ProviderSubscription<SessionState> _sessionSubscription;
+
+  String? _signedInId(SessionState session) =>
+      session is SessionSignedIn ? session.user.id : null;
+
+  // A Future must never apply the old account's data to a new session.
+  bool _sameAccount(int epoch) {
+    if (!mounted || epoch != _accountEpoch || _accountId == null) return false;
+    return _signedInId(ref.read(sessionProvider)) == _accountId;
+  }
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _accountId = _signedInId(ref.read(sessionProvider));
+    _sessionSubscription = ref.listenManual<SessionState>(sessionProvider, (
+      previous,
+      next,
+    ) {
+      final nextId = _signedInId(next);
+      // Refreshing the same user's token should not discard the draft.
+      if (nextId == _accountId) return;
+      _accountId = nextId;
+      _accountEpoch++;
+      _loadVersion++;
+      setState(() {
+        _profile = null;
+        _creatingProfile = false;
+        _removeAvatar = false;
+        _requiresReload = false;
+        _saving = false;
+        _loading = nextId != null;
+        _error = nextId == null ? 'Sign in to edit your profile.' : null;
+        _name.clear();
+        _handle.clear();
+        _bio.clear();
+      });
+      if (nextId != null) _load();
+    });
+    if (_accountId != null) {
+      _load();
+    } else {
+      _loading = false;
+      _error = 'Sign in to edit your profile.';
+    }
   }
 
   @override
   void dispose() {
+    _sessionSubscription.close();
     _name.dispose();
     _handle.dispose();
     _bio.dispose();
@@ -43,15 +90,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _load() async {
-    if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-    }
+    final epoch = _accountEpoch;
+    if (!_sameAccount(epoch)) return;
+    final version = ++_loadVersion;
+    bool current() => _sameAccount(epoch) && version == _loadVersion;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final profile = await ref.read(ownProfileTransportProvider).loadSelf();
-      if (!mounted) return;
+      if (!current()) return;
       setState(() {
         _profile = profile;
         _creatingProfile = false;
@@ -59,29 +108,41 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _name.text = profile.displayName;
         _bio.text = profile.bio;
         _removeAvatar = false;
+        _requiresReload = false;
       });
     } on DioException catch (error) {
-      if (!mounted) return;
+      if (!current()) return;
       if (error.response?.statusCode == 404) {
         final session = ref.read(sessionProvider);
         setState(() {
+          // A confirming 404 permits retrying an uncommitted creation.
+          // Keep the same account's draft rather than making it start over.
+          if (!_creatingProfile) {
+            _handle.clear();
+            _name.text = session is SessionSignedIn ? session.user.name : '';
+            _bio.clear();
+          }
           _creatingProfile = true;
           _profile = null;
-          _handle.clear();
-          _name.text = session is SessionSignedIn ? session.user.name : '';
-          _bio.clear();
           _removeAvatar = false;
+          _requiresReload = false;
         });
       } else {
-        setState(() => _error =
-            'Could not load your profile. Check your connection and retry.');
+        setState(() {
+          _requiresReload = true;
+          _error =
+              'Could not load your profile. Check your connection and retry.';
+        });
       }
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _error =
-          'Could not load your profile. Check your connection and retry.');
+      if (!current()) return;
+      setState(() {
+        _requiresReload = true;
+        _error =
+            'Could not load your profile. Check your connection and retry.';
+      });
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (current()) setState(() => _loading = false);
     }
   }
 
@@ -97,9 +158,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _save() async {
+    final epoch = _accountEpoch;
     final current = _profile;
-    if ((current == null && !_creatingProfile) ||
-        _saving || !_changed || !_form.currentState!.validate()) return;
+    if (!_sameAccount(epoch) ||
+        (current == null && !_creatingProfile) ||
+        _requiresReload ||
+        _saving ||
+        !_changed ||
+        !_form.currentState!.validate()) {
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -119,7 +187,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               bio: bio == current.bio ? null : bio,
               removeAvatar: _removeAvatar,
             );
-      if (!mounted) return;
+      if (!mounted || !_sameAccount(epoch)) return;
       setState(() {
         _profile = updated;
         _creatingProfile = false;
@@ -134,32 +202,37 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (session is SessionSignedIn) {
         ref.invalidate(humanProfileByUserIdProvider(session.user.id));
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile saved.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile saved.')));
     } on DioException catch (error) {
-      if (!mounted) return;
+      if (!_sameAccount(epoch)) return;
       final status = error.response?.statusCode;
       setState(() {
+        _requiresReload = true;
         if (status == 409) {
           _error = _creatingProfile
               ? 'This handle may be taken, or your profile already exists. '
-                'Choose another handle or reload your profile.'
+                    'Reload your profile before choosing another handle.'
               : 'Your profile changed elsewhere. Reload before saving again.';
         } else if (status == 401 || status == 403) {
           _error = 'Your session needs to be renewed. Sign in and reload.';
         } else {
-          _error = 'Could not confirm whether your changes saved. '
+          _error =
+              'Could not confirm whether your changes saved. '
               'Reload your profile before trying again.';
         }
       });
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _error =
-          'Could not confirm whether your changes saved. '
-          'Reload your profile before trying again.');
+      if (!_sameAccount(epoch)) return;
+      setState(() {
+        _requiresReload = true;
+        _error =
+            'Could not confirm whether your changes saved. '
+            'Reload your profile before trying again.';
+      });
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_sameAccount(epoch)) setState(() => _saving = false);
     }
   }
 
@@ -174,154 +247,173 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : profile == null && !_creatingProfile
-              ? Center(
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_error ?? 'Your profile is unavailable.'),
+                  const SizedBox(height: 12),
+                  if (_accountId != null)
+                    FilledButton(
+                      onPressed: _load,
+                      child: const Text('Try again'),
+                    ),
+                ],
+              ),
+            )
+          : SafeArea(
+              child: Form(
+                key: _form,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_error ?? 'Your profile is unavailable.'),
+                      Center(
+                        child: CircleAvatar(
+                          radius: 46,
+                          backgroundColor: u.brandStrong,
+                          backgroundImage: avatar != null && avatar.isNotEmpty
+                              ? NetworkImage(avatar)
+                              : null,
+                          child: avatar == null || avatar.isEmpty
+                              ? const Icon(
+                                  Icons.person_rounded,
+                                  color: Colors.white,
+                                  size: 42,
+                                )
+                              : null,
+                        ),
+                      ),
+                      if (_removeAvatar &&
+                          profile?.avatarUrl?.isNotEmpty == true)
+                        Center(
+                          child: TextButton(
+                            key: const ValueKey('profile-undo-photo-removal'),
+                            onPressed: _saving
+                                ? null
+                                : () => setState(() => _removeAvatar = false),
+                            child: const Text('Keep current photo'),
+                          ),
+                        )
+                      else if (avatar != null && avatar.isNotEmpty)
+                        Center(
+                          child: TextButton.icon(
+                            key: const ValueKey('profile-remove-photo'),
+                            onPressed: _saving
+                                ? null
+                                : () => setState(() => _removeAvatar = true),
+                            icon: const Icon(Icons.delete_outline_rounded),
+                            label: const Text('Remove photo'),
+                          ),
+                        ),
+                      const SizedBox(height: 22),
+                      TextFormField(
+                        key: const ValueKey('profile-edit-name'),
+                        controller: _name,
+                        enabled: !_saving,
+                        maxLength: 80,
+                        textCapitalization: TextCapitalization.words,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          labelText: 'Display name',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                        ),
+                        validator: (value) {
+                          final name = value?.trim() ?? '';
+                          return name.length < 2
+                              ? 'Enter at least two characters'
+                              : null;
+                        },
+                      ),
                       const SizedBox(height: 12),
+                      TextFormField(
+                        key: const ValueKey('profile-edit-bio'),
+                        controller: _bio,
+                        enabled: !_saving,
+                        maxLength: 300,
+                        minLines: 3,
+                        maxLines: 5,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          labelText: 'Bio',
+                          hintText: 'Tell people a little about yourself',
+                          alignLabelWithHint: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_creatingProfile)
+                        TextFormField(
+                          key: const ValueKey('profile-create-handle'),
+                          controller: _handle,
+                          enabled: !_saving,
+                          maxLength: 40,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                            labelText: 'Public handle',
+                            prefixText: '@',
+                            helperText:
+                                'Letters, numbers, dots, underscores or hyphens',
+                          ),
+                          validator: (value) =>
+                              RegExp(
+                                r'^[a-z0-9_][a-z0-9_.-]{1,39}$',
+                              ).hasMatch(value?.trim().toLowerCase() ?? '')
+                              ? null
+                              : 'Enter a valid handle (2–40 characters)',
+                        )
+                      else
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.alternate_email_rounded),
+                          title: Text('@${profile!.handle}'),
+                          subtitle: const Text(
+                            'Your handle is fixed until linked Talk '
+                            'and invitation references can be migrated safely.',
+                          ),
+                        ),
+                      if (_error != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            _error!,
+                            style: TextStyle(color: u.emergency),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            key: const ValueKey('profile-reload'),
+                            onPressed: _saving ? null : _load,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Reload from server'),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
                       FilledButton(
-                        onPressed: _load,
-                        child: const Text('Try again'),
+                        key: const ValueKey('profile-edit-save'),
+                        onPressed: _saving || _requiresReload || !_changed
+                            ? null
+                            : _save,
+                        child: _saving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                _creatingProfile
+                                    ? 'Create profile'
+                                    : 'Save profile',
+                              ),
                       ),
                     ],
                   ),
-                )
-              : SafeArea(
-                  child: Form(
-                    key: _form,
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
-                      children: [
-                        Center(
-                          child: CircleAvatar(
-                            radius: 46,
-                            backgroundColor: u.brandStrong,
-                            backgroundImage: avatar != null && avatar.isNotEmpty
-                                ? NetworkImage(avatar) : null,
-                            child: avatar == null || avatar.isEmpty
-                                ? const Icon(Icons.person_rounded,
-                                    color: Colors.white, size: 42)
-                                : null,
-                          ),
-                        ),
-                        if (_removeAvatar && profile?.avatarUrl?.isNotEmpty == true)
-                          Center(
-                            child: TextButton(
-                              key: const ValueKey('profile-undo-photo-removal'),
-                              onPressed: _saving ? null
-                                  : () => setState(() => _removeAvatar = false),
-                              child: const Text('Keep current photo'),
-                            ),
-                          )
-                        else if (avatar != null && avatar.isNotEmpty)
-                          Center(
-                            child: TextButton.icon(
-                              key: const ValueKey('profile-remove-photo'),
-                              onPressed: _saving
-                                  ? null : () => setState(() => _removeAvatar = true),
-                              icon: const Icon(Icons.delete_outline_rounded),
-                              label: const Text('Remove photo'),
-                            ),
-                          ),
-                        const SizedBox(height: 22),
-                        TextFormField(
-                          key: const ValueKey('profile-edit-name'),
-                          controller: _name,
-                          enabled: !_saving,
-                          maxLength: 80,
-                          textCapitalization: TextCapitalization.words,
-                          onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                            labelText: 'Display name',
-                            prefixIcon: Icon(Icons.badge_outlined),
-                          ),
-                          validator: (value) {
-                            final name = value?.trim() ?? '';
-                            return name.length < 2
-                                ? 'Enter at least two characters' : null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          key: const ValueKey('profile-edit-bio'),
-                          controller: _bio,
-                          enabled: !_saving,
-                          maxLength: 300,
-                          minLines: 3,
-                          maxLines: 5,
-                          onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                            labelText: 'Bio',
-                            hintText: 'Tell people a little about yourself',
-                            alignLabelWithHint: true,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (_creatingProfile)
-                          TextFormField(
-                            key: const ValueKey('profile-create-handle'),
-                            controller: _handle,
-                            enabled: !_saving,
-                            maxLength: 40,
-                            onChanged: (_) => setState(() {}),
-                            decoration: const InputDecoration(
-                              labelText: 'Public handle',
-                              prefixText: '@',
-                              helperText: 'Letters, numbers, dots, underscores or hyphens',
-                            ),
-                            validator: (value) =>
-                                RegExp(r'^[a-z0-9_][a-z0-9_.-]{1,39}$')
-                                        .hasMatch(value?.trim().toLowerCase() ?? '')
-                                    ? null
-                                    : 'Enter a valid handle (2–40 characters)',
-                          )
-                        else
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.alternate_email_rounded),
-                            title: Text('@' + profile!.handle),
-                            subtitle: const Text(
-                              'Your handle is fixed until linked Talk '
-                              'and invitation references can be migrated safely.',
-                            ),
-                          ),
-                        if (_error != null) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              _error!,
-                              style: TextStyle(color: u.emergency),
-                            ),
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              key: const ValueKey('profile-reload'),
-                              onPressed: _saving ? null : _load,
-                              icon: const Icon(Icons.refresh_rounded),
-                              label: const Text('Reload from server'),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          key: const ValueKey('profile-edit-save'),
-                          onPressed: _saving || !_changed ? null : _save,
-                          child: _saving
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : Text(
-                                  _creatingProfile ? 'Create profile' : 'Save profile',
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
+              ),
+            ),
     );
   }
 }

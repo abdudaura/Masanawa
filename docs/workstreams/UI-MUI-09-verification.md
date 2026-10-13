@@ -1,5 +1,184 @@
 # MUI-09 / AF13 — bounded combined regression on integrated UI source
 
+## Named profile creation/save/readback recovery — 2026-10-13, PR #694
+
+**Scope:** MUI-09/AF13 bounded AF14 profile journey: an authenticated first-time
+fan creates a public profile, saves changes, leaves/reopens the editor, and
+recovers from an unconfirmed write through authoritative self-profile readback.
+This is the existing mounted `/profile` editor and canonical self transport,
+not new auth, profile APIs or avatar upload. Full MUI-09 remains **PARTIAL**;
+live server/account, device and release acceptance remains **OPEN**.
+
+- Fresh base / delivered #693: `7620ed05200a1e3ca41a746e6d4801fc07e3d6c8`.
+- Implementation/test source: **`f915a3fedae24be8b58256a8984dca1fba806cf3`**.
+- Branch: `lane/af13-profile-recovery-20261013`;
+  [PR #694](https://github.com/weavewellindustrieslimited/masanawa/pull/694).
+- Integration: pending normal main merge; record exact reviewed head and merge
+  identity after integration. Scoped source/test verification below is simulated;
+  **NOT_RELEASED**, no artifact/signing/installation/provider evidence.
+
+### Allocation, reconciliation and recovered source
+
+CAS claim **`1a24043d-9c4b-4dd9-a939-8ec5408f3748`**, owner
+`AF13 profile recovery`, allocated before edits at
+`efc98989b50c17ef3ef91077ba47a4ad5a267c77`. Owner-directed bounded AF14→AF13
+transfer is visible in the same registry, with useful source checkpoint and
+renewal. Exactly three paths:
+
+- `apps/mobile/lib/src/screens/profile/edit_profile_screen.dart`.
+- `apps/mobile/test/edit_profile_screen_test.dart`.
+- `docs/workstreams/UI-MUI-09-verification.md` (this handoff).
+
+Fresh main matched the supplied delivered SHA. Latest Software Factory v0.4.4
+still resolves to `b8e9437ea40ce22094758a4352d9c88462d3e17a`; read its AGENTS,
+skill, operating/owner/verification and relevant screen/privacy instructions.
+Current project development/main policy supersedes older integration-only
+Factory requirements. Fresh PRs/claims and paginated #616 comments still
+provide no AF00/AF05 canonical inbox transfer. Preserve AF00 composition,
+AF05 `main.ts`/voice allocation, #497 head
+`82e4f436e47828be76088cabe2c9064a80a548ec`, #576 head
+`aa88511f4add1bbcf9e213283088fea5a6b0561b`, prior narrow Chats recovery and
+all native/group/incoming/history/billing source.
+
+Two relevant records were already explicitly released but retained in
+`active`: prior #460 profile-test allocation and #692 directory allocation.
+Moved their complete records to `history` through CAS at
+`6cd1b7709fe6a7af45fc5892c0d672dd7fc9ca30`, preserving source/release evidence;
+no unreleased owner was displaced. The only #460 profile diff at head
+`06d30813b39e8681da30793d0b4e448a14ebd07c` consists of four necessary pumps.
+Recover those corrections. Relevant #497 editor/test source also already
+contains uncertain-write locks, account-response fences and a fully mounted
+form. Recover those parts selectively and qualify them on fresh main, retaining
+current transport/photo-removal contracts. Its unmerged avatar picker/upload
+composition and all other unique source remain preserved in #497.
+
+### Demonstrated behavior and correction
+
+The five original tests on untouched main reproduced **1 pass / 4 failures**,
+exactly the four retained profile names below. Recovering only #460 scheduling
+corrections produced **4 pass / 1 failure**: after displaying an error, lazy
+layout no longer exposed Save to the fixture. The selectively recovered #497
+12-case set on unchanged production produced **5 pass / 7 failures**; some
+failed on lazy control reachability, others directly demonstrated missing
+write locks and account-switch/logout behavior. These intermediate results
+are not final passes or evidence of live API execution.
+
+A new 320px/2x/300px synthetic-keyboard test then demonstrated a real defect:
+enter an invalid name, focus/edit Bio, scroll to Save, and the lazy ListView
+removes the name's validator from the Form; **one invalid update was issued**.
+A mounted `SingleChildScrollView`/Column retains every validator. The same
+layout supports first-time handle/name/bio creation and reopening at that size.
+This is functional widget evidence, not a font-render or real-device claim.
+
+Unconfirmed create/update, conflict and denial now disable Save until a
+successful self-profile GET or confirmed 404 reconciles state. Failed reload
+retains the lock. Successful GET replaces draft values with server data; no
+automatic replay or success notification occurs after an uncertain write.
+When creation was uncommitted, a confirming 404 preserves that account's
+handle/name/bio for explicit retry; a new test failed on erased handle before
+this correction. Account changes clear drafts immediately, reload the new
+profile and ignore old load/save success or failure. Same-account token refresh
+keeps the draft. Epoch/version fences affect editor responses; they do not
+replace server auth or qualify shared credential/retry behavior.
+
+### Executed checks and independent review
+
+Official Flutter **3.47.7** (`abaf9c5237`), Dart **3.13.5** installed locally.
+`flutter pub get` passed; generated analysis-options/lock edits restored to
+original bytes before source changes. Later commands use `--no-pub`; this is
+not frozen-lockfile qualification. All fixture records/accounts are synthetic.
+
+- **PASS, 36 focused tests**, final source `f915a3f...`: 20 editor cases plus
+  existing self-profile transport, social profiles, profile header and route
+  compatibility tests. Four typed 401/403/409/503 cases verify safe error copy,
+  no private-detail/success disclosure, no second mutation and authoritative
+  readback. Late old-account error cannot lock or display an error in the new
+  editor. Original creation/validation/reopening/failure assertions remain.
+- **PASS, zero issues**, focused Dart analysis of the editor and its test;
+  `git diff --check`. Corrected two pre-existing informational diagnostics;
+  explicit mounted check preserves analyzer recognition of the async fence.
+- **FAIL, 317 diagnostics**, final whole `dart analyze`; no global suppression.
+  Prior executed **322 / FAIL** remains historical evidence. This count change
+  is not a full-analysis pass or a new complete baseline comparison.
+- **FAIL, 597 passed / 2 retained Talk failures**, final full suite at
+  `f915a3f...`, including all 20 editor cases. Initial production run with the
+  15-editor-case set was **592/2**; the later five added coverage cases passed.
+  No introduced failure found; the exact two retained names are below.
+- Independent read-only reviewer inspected the source and both test sets:
+  **no blocking findings**. No independently executed test/analyzer claimed.
+  Direct typed-error and stale-failure coverage suggestions were addressed;
+  avatar work remains out of scope.
+- Source-head Foundation [38328593874](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38328593874)
+  and Mobile [38328593899](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38328593899)
+  initially ran in progress. Foundation now **FAILS** with the unchanged
+  `packages/agents/src/talk-replay.test.ts(6,8)` TS2459 (`TalkId` not exported),
+  confirmed in its failed job log. Mobile is still **IN_PROGRESS**, not passed,
+  at this readback. Refresh final-head checks after the handoff commit.
+  Global-analysis CI debt remains; no CI/test/protection change or admin bypass.
+
+Retained Talk failure names: `talk_screen_test.dart` — **listener opens Sponsor
+Seat sheet from Add AI**; **host opens direct Add AI semantics**. The four
+original profile failures now pass: missing profile offers real first-time
+creation; unsaved or invalid updates cannot be submitted; saved public profile
+survives leaving and reopening editor; failed save keeps previous server state
+for recovery. Both previously corrected directory cases stay in the full suite.
+
+Preserve earlier **35 directory focused PASS / 578 passed, 6 failures**,
+**158 focused / 24 corrected font-render cases / 27 audio rechecks PASS**,
+**575/8** baseline, historical **322 analyzer diagnostics**, exact MUI-07
+**496/9 → 524/10** failures/test-set caveat/audio rechecks, and TalkId TS2459
+and global CI debt in the sections below. Test-set differences do not themselves
+prove a customer repair. Source and simulated tests do not establish release.
+
+The reviewer also identified a pre-existing qualification gap: the shared
+`ApiClient` attaches/retries using current mutable credentials, while the
+editor's fakes only prove response fencing. **Request-level cross-account
+profile fencing remains OPEN, AF08**, requiring bounded transport/auth path
+allocation and request/401-refresh race tests; this patch does not certify it
+safe or change that authority. Android SDK/signing/devices/provider evidence
+remains absent. Hausa still uses production English fallback; complete Hausa/
+Arabic localization, actual IME and live account/server acceptance remain OPEN.
+
+```sh
+cd apps/mobile
+/workspace/flutter/bin/flutter pub get
+/workspace/flutter/bin/flutter test --no-pub --reporter expanded \
+  test/edit_profile_screen_test.dart test/own_profile_transport_test.dart \
+  test/talk_social_profiles_test.dart test/profile_header_test.dart \
+  test/app_shell_route_compatibility_test.dart
+/workspace/flutter/bin/dart analyze lib/src/screens/profile/edit_profile_screen.dart \
+  test/edit_profile_screen_test.dart
+/workspace/flutter/bin/dart analyze
+/workspace/flutter/bin/flutter test --no-pub --reporter expanded
+```
+
+Raw local logs: `/workspace/scratch/profile-{baseline,460-recovery,497-red,
+validation-red,draft-red,green-final,focused-final,analyze-final,full-analyze-final,
+full-suite,full-suite-final}.log`. The narrow creation fixture initially needed
+unfocus/settle before tapping the scrolled Save control; corrected fixture passes.
+No production keyboard workaround or full visual qualification is claimed.
+
+### Remaining acceptance and smallest next action
+
+The named simulated mounted creation/save/readback journey is source-tested;
+its external auth/server/device acceptance and full MUI-09 remain **OPEN**.
+Prefer **MUI-03** only with explicit AF00 trusted composition/auth/migration
+transfer and AF05 `main.ts` coordination. Otherwise continue **MUI-09/AF13**
+through a bounded AF09 allocation for the two retained Talk Add AI failures:
+reconcile their current product/route/seat contracts and useful #497/#460 source,
+reproduce exact failures, and correct demonstrated behavior or stale fixtures.
+Do not restore retired live-Talk publishing, unsupported actions or old shells.
+AF08 separately owns the exact profile request/retry account-fencing gap above.
+
+MUI-04/06 still need protected canonical Status/Rooms composition; MUI-07
+MSN/funding/Send needs AF01/AF00 reconciliation with #576. MUI-08 supplies
+`quotedAt`, not expiry: AF01 must define authoritative expiry/admission. Keep
+unfinished feature acceptance, full MUI-09, MUI-10 signed installed identity
+and AF11 device/provider qualification OPEN. Do not repeat the combined matrix
+instead of source integration. Release this exact claim after final handoff
+integration and print the next queue-aware prompt with delivered identities.
+
+
 ## Named directory recovery continuation — 2026-10-12, PR #692
 
 **Scope:** MUI-09/AF13 bounded AF07 directory journey: a signed-in fan opens
