@@ -2265,13 +2265,14 @@ export async function startGatewayService(
         repository: database.platformSessions,
       }))
     : undefined;
-  const mediaConfiguration = options.statusMedia ?? createConfiguredStatusMedia(env);
   const editors = readPrincipalSet(
     env.MASANAWA_ADMIN_USER_IDS ?? env.MASANAWA_ADMIN_PRINCIPALS ??
     env.MASANAWA_ADMIN_EMAILS,
   );
   let status: StatusRuntime | undefined = options.appOptions?.status;
-  if (!status && sessions && database.status) {
+  try {
+    const mediaConfiguration = options.statusMedia ?? createConfiguredStatusMedia(env);
+    if (!status && sessions && database.status) {
     const {feed,editorial,eligibility,published} = database.status;
     const mediaRuntime = createStatusMediaRuntime({
       eligibility,published,
@@ -2285,6 +2286,12 @@ export async function startGatewayService(
       isEditor: async session => editors.has(session.userId),
       media: mediaRuntime.media,
     };
+  }
+  } catch (error) {
+    // Fail closed without stranding the pool when trusted S3 origins or media
+    // composition are invalid. No Gateway listener has been created yet.
+    await database.close().catch(() => undefined);
+    throw error;
   }
   const videos: GatewayAppOptions["videos"] = options.appOptions?.videos ??
     (sessions && database.videos ? {
