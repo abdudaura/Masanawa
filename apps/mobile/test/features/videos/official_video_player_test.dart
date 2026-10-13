@@ -4,6 +4,11 @@ import 'package:masanawa/src/features/videos/video_embed_policy.dart';
 import 'package:masanawa/src/features/videos/video_models.dart';
 import 'package:masanawa/src/features/videos/official_video_player_screen.dart';
 
+Future<void> _useTallVideoViewport(WidgetTester tester) async {
+  await tester.binding.setSurfaceSize(const Size(800, 950));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+}
+
 void main() {
   test('canonical URLs are the only playable embeds', () {
     final yt = OfficialVideoEmbed.fromSource('youtube',
@@ -37,6 +42,7 @@ void main() {
 
   testWidgets('official player, attribution, stop, external source and retry',
       (tester) async {
+    await _useTallVideoViewport(tester);
     final v = ExternalVideo(id: '1', title: 'Maths', channelName: 'Tutor',
       provider: 'youtube',
       sourceUrl: Uri.parse('https://www.youtube.com/watch?v=abcDE12_-34'));
@@ -67,6 +73,7 @@ void main() {
 
   testWidgets('untrusted video cannot initialize webview or external opener',
       (tester) async {
+    await _useTallVideoViewport(tester);
     final v = ExternalVideo(id: '2', title: 'Blocked', channelName: 'Unknown',
       provider: 'youtube', sourceUrl: Uri.parse('https://attacker.example/video'));
     Uri? opened;
