@@ -13,6 +13,7 @@ typedef VideoOpener = Future<bool> Function(Uri);
 class ExternalVideosScreen extends StatefulWidget {
   const ExternalVideosScreen({
     required this.load, this.loadPage, this.open, this.embedBuilder,
+    this.onOpenVideo,
     this.checkAvailability,
     this.accountKey = '', this.enabled = true, this.languageCode = 'en',
     super.key,
@@ -20,6 +21,8 @@ class ExternalVideosScreen extends StatefulWidget {
   final VideoLoader load;
   final VideoPageLoader? loadPage;
   final VideoOpener? open;
+  /// Host-owned route so account replacement unmounts the active player.
+  final ValueChanged<ExternalVideo>? onOpenVideo;
   final VideoEmbedBuilder? embedBuilder;
   /// Parent injects VideoRepository.isApproved using its authenticated Dio.
   final Future<bool> Function(String id)? checkAvailability;
@@ -107,6 +110,10 @@ class _ExternalVideosScreenState extends State<ExternalVideosScreen> {
   }
 
   void openVideo(ExternalVideo video) {
+    if (widget.onOpenVideo != null) {
+      widget.onOpenVideo!(video);
+      return;
+    }
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => OfficialVideoPlayerScreen(
         video: video, embedBuilder: widget.embedBuilder,

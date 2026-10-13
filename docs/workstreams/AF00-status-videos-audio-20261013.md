@@ -1,0 +1,11 @@
+# Status audio and approved Videos recovery — 2026-10-13
+
+Owner asks for Status text/images/audio, plus a Videos section with connected authenticated catalog and official player. Current source from main `875654e90a192b82dcdaab05f1fb2b4e07e93202`; historical feature tree `523b1511ebff58ce10d5e90cb2478680970e0d2b`. Claim `af00-video-status-media-20261013-gpt6`.
+
+This branch recovers the scoped L-VIDEO feature sources: Flutter client and tests, Gateway external-video admissions, provider/webhook routes, PostgreSQL repository/migrations and worker jobs. Status uses the same authenticated app Dio interceptor and account-scoped request fencing. Video playback rechecks Gateway approval each time before official provider embedding and its player is hosted by a session-watched route that unmounts on account changes. This is a **Videos section inside Status**, not a sixth shell tab. No downloaded, fabricated or independently rehosted provider video URLs.
+
+Status **audio** is enabled for authorized original media (same signed five-minute grant) and uses the existing `just_audio` playback, session audio focus and OS interruption/noisy/headphone pause. No autoplay, no provider activation; denied/expired grants remain denied. Audio on an actual device while calls and recording are active is not yet device-qualified.
+
+Feature-local implementation is not full Gateway operation until the AF00 integrator composes `services/gateway/src/app.ts`, `main.ts`, forward PostgreSQL migration roots and the trusted original-media signer, with new admin/video stores, source registration, and relevant worker lifecycle. Existing AF00 claim `af00-j06-j07-c10-20261013` owns these shared entrypoints in branch `lane/af00-status-rooms-chats-backend-20261013`; **do not overwrite them** or claim production readiness. Historical prior video tests are not current branch test results; Flutter/PG/Gateway tests remain unrun if runners unavailable.
+
+Next actions: AF00 integrate both feature trees and video routes in root server with fail-closed signed-in authorization, run PG18 migrations in disposable database, focused Flutter tests `test/status_screen_test.dart test/features/videos test/features/home_feed`, Dart analysis, video / signed image/audio E2E; validate on Android calls, Bluetooth and playback after session switch.
