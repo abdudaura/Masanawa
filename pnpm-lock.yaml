@@ -204,6 +204,15 @@ importers:
 
   adapters/storage/postgres:
     dependencies:
+      '@masanawa/feed':
+        specifier: workspace:*
+        version: link:../../../packages/feed
+      '@masanawa/masana':
+        specifier: workspace:*
+        version: link:../../../packages/masana
+      '@masanawa/rooms':
+        specifier: workspace:*
+        version: link:../../../packages/rooms
       '@masanawa/agents':
         specifier: workspace:*
         version: link:../../../packages/agents
