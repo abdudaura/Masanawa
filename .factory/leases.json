@@ -2021,21 +2021,6 @@
       "source_head": "c6a3ee3b149245943bef6f5e1c3554a22d584a01",
       "source_pr": 731,
       "integration_head_sha": "483ec92068e6236137a7a28d709b8760414996cc"
-    },
-    {
-      "claim_id": "af00-worker-credential-contract-20261014-gpt6",
-      "owner": "GPT-6 AF00 canonical worker recovery",
-      "scope": "Align Worker Gemini credential value normalization with Gateway production credential parser; restore AI Room question worker startup using already-configured Railway Gemini provider; add negative regression tests.",
-      "paths": [
-        "services/worker/src/jobs/rooms/gemini_room_model.ts",
-        "services/worker/src/jobs/rooms/gemini_room_model.test.ts"
-      ],
-      "claimed_at": "2026-10-13T23:35:42.063Z",
-      "heartbeat_at": "2026-10-13T23:35:42.063Z",
-      "expires_at": "2026-10-14T00:20:42.063Z",
-      "base_sha": "01eb241196019e7be49eb02e9febeebc7dd4a241",
-      "branch": "lane/af00-worker-gemini-contract-20261014-gpt6",
-      "notes": "Real Railway deployment cfba1a74-... logs rooms_ai.credentials_required despite Gemini env name present; Gateway starts with its less restrictive normalizeSecret. No secret retrieval/disclosure."
     }
   ],
   "history": [
@@ -7167,6 +7152,26 @@
       "integration_head_sha": "01eb241196019e7be49eb02e9febeebc7dd4a241",
       "source_pr": 735,
       "release_reason": "PR #735 merged to main. Rooms Production Build Qualification and Railway Deployment Source Contract passed on exact source SHA; Foundation CI failed unrelated whole-project typecheck. New worker deployment triggered separately; live readiness not yet qualified."
+    },
+    {
+      "claim_id": "af00-worker-credential-contract-20261014-gpt6",
+      "owner": "GPT-6 AF00 canonical worker recovery",
+      "scope": "Align Worker Gemini credential value normalization with Gateway production credential parser; restore AI Room question worker startup using already-configured Railway Gemini provider; add negative regression tests.",
+      "paths": [
+        "services/worker/src/jobs/rooms/gemini_room_model.ts",
+        "services/worker/src/jobs/rooms/gemini_room_model.test.ts"
+      ],
+      "claimed_at": "2026-10-13T23:35:42.063Z",
+      "heartbeat_at": "2026-10-13T23:35:42.063Z",
+      "expires_at": "2026-10-14T00:20:42.063Z",
+      "base_sha": "01eb241196019e7be49eb02e9febeebc7dd4a241",
+      "branch": "lane/af00-worker-gemini-contract-20261014-gpt6",
+      "notes": "Real Railway deployment cfba1a74-... logs rooms_ai.credentials_required despite Gemini env name present; Gateway starts with its less restrictive normalizeSecret. No secret retrieval/disclosure.",
+      "released_at": "2026-10-13T23:40:20.489Z",
+      "source_head": "a28c6807d0d4bad6bddec919d283a2f1e39b4474",
+      "integration_head_sha": "4c1b56deb3c3e1eaa1cefb72631ddb70dcebcbb0",
+      "source_pr": 736,
+      "release_reason": "Merged after Rooms Production Build Qualification PASS, Status Video focused suites/Worker typecheck/Gateway/Worker production builds PASS; pre-existing Gateway strict and Foundation CI failures remain; real Worker readiness not yet verified."
     }
   ],
   "schema_version": 1
