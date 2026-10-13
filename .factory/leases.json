@@ -2059,6 +2059,26 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af01-msn-reconciliation-20261013-gpt6",
+      "owner": "GPT-6 AF01 MSN reconciliation",
+      "scope": "Bounded, read-only staged MSN accounting reconciliation and worker adapter; no issuance, checkout, production migration or financial flag change",
+      "paths": [
+        "services/gateway/src/msn_wallet/reconciliation.ts",
+        "services/gateway/src/msn_wallet/reconciliation.test.ts",
+        "adapters/storage/postgres/src/commerce/msn-reconciliation.integration.test.ts",
+        "services/worker/src/jobs/msn/reconcile.ts",
+        "services/worker/src/jobs/msn/reconcile.test.ts",
+        ".github/workflows/af01-msn-reconciliation.yml",
+        "docs/workstreams/AF01-msn-reconciliation-20261013.md"
+      ],
+      "base_sha": "ce7f4a9df38262b00c9fab78986143e6ccdf760c",
+      "branch": "lane/af01-msn-reconciliation-20261013-gpt6",
+      "claimed_at": "2026-10-13T15:24:56.460Z",
+      "heartbeat_at": "2026-10-13T15:24:56.460Z",
+      "expires_at": "2026-10-13T15:29:56.460Z",
+      "notes": "Fresh main #720; #714/#715 integrated. Staged 0112 remains outside production. No shared composition ownership or paid provider access."
     }
   ],
   "history": [
