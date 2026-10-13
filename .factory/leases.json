@@ -2276,9 +2276,9 @@
         "docs/workstreams/AF14-settings-safe-controls-20261013.md"
       ],
       "claimed_at": "2026-10-13T04:39:46.596Z",
-      "heartbeat_at": "2026-10-13T04:39:46.596Z",
-      "expires_at": "2026-10-13T04:44:46.596Z",
-      "notes": "Reviewed main and released Settings-only C09 claim; no AF08 credential transport, AF01 financial ledger, AF00 router, AF05 voice, provider or native changes."
+      "heartbeat_at": "2026-10-13T04:44:00.851Z",
+      "expires_at": "2026-10-13T04:49:00.851Z",
+      "notes": "Source+four authored dialog regressions committed, reviewed push reattach; focused Flutter runner unavailable locally; preserve feature branch and normal PR review."
     }
   ],
   "history": [
