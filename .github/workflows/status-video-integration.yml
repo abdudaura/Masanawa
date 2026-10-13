@@ -43,6 +43,8 @@ jobs:
         run: >-
           pnpm exec vitest run
           services/gateway/src/modules/home_feed/media_runtime.test.ts
+          services/gateway/src/modules/home_feed/object_store.test.ts
+          services/gateway/src/modules/home_feed/composition.test.ts
           services/gateway/src/modules/home_feed/status_video_composition.test.ts
           services/gateway/src/modules/home_feed/runtime.test.ts
           services/gateway/src/modules/external_videos/routes.test.ts
