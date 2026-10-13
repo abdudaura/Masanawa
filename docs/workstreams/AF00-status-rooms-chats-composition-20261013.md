@@ -32,3 +32,49 @@ The old #700 draft must not be merged wholesale. Its canonical backend, migratio
 - First candidate SHA `450f0313849fee8abd707f7c1b6ce332590ba02f` had frozen-lockfile **FAIL** before tests; source was repaired and rerun at `2399f3d6` (do not cite the initial run as passing).
 - **Gateway strict TypeScript remains FAIL**: 75 error diagnostics, *byte-for-byte identical* to earlier #704 hosted baseline run 38359483451. The change introduces **0** new Gateway diagnostics. Global Foundation errors remain; no passing whole-project build or production proof claimed.
 - Source integration is distinct from release: Room/subscription/teacher worker scheduler wiring, real live two-account authorization, signed-media origins, external providers, moderated publishing rights, Android/device/backup/production migration qualification all remain separately gated. Feature flags OFF; never enable paid operations based on source tests alone.
+
+## AF00 J06/J07 editorial admission and default-off Status qualification — 2026-10-13
+
+**Base:** `fd29f392156ab6f032fa66a4de6420b932d64507` (already contains #702–#709).
+**Claim:** `af00-status-rooms-staff-20261013-gpt6` in `factory/claims`.
+**Branch:** `lane/af00-status-rooms-staff-20261013-gpt6`.
+Only the existing root Gateway composition, its included Status/Rooms test files
+and this handoff are changed. No new store, ledger, worker, root route, schema,
+dependency, provider or mobile screen is introduced.
+
+The production-composed J06 Status backend now requires
+`MASANAWA_STATUS_BACKEND_ENABLED=true` rather than becoming live just because
+PostgreSQL and sessions exist. Disabled routes return typed 503 before session
+resolution/storage; an explicitly injected Status runtime remains under the
+trusted caller's control. This is a **change in default behavior**: deployment
+operators must intentionally qualify the canonical backend, migration, signed
+media origins and real accounts before setting the flag.
+
+Existing J07/J08/C38 Rooms discovery, lessons, questions, discussion and saved
+lessons keep their existing `MASANAWA_ROOMS_BACKEND_ENABLED=true` guard.
+The editorial create/publish/lesson/moderation routes may now receive
+`rooms_editor` from the *existing server-side content editor user-ID allowlist*,
+but ONLY on a signed-in, platform-tenant-checked session, with both
+`MASANAWA_ROOMS_BACKEND_ENABLED=true` and
+`MASANAWA_ROOMS_STAFF_ENABLED=true`. Both default OFF; consumer fan capabilities
+always get no staff roles. Forged user/tenant/role headers and bodies never assign
+staff roles. Publish still checks an approved Masana teacher at the repository
+boundary. The separate paid, invitation and membership moderation endpoints
+remain disabled.
+
+Added source tests to the existing hosted Status Video Integration workflow's
+selected suites: production default-off Status read/early authorization fence and
+explicit enabled option; Rooms denied role spoof/disabled staff capability and
+qualified editor create → approved teacher publish → lesson creation.
+These are deterministic injected tests, not actual external authorization or
+real customer publishing.
+
+**Execution status:** pending workflow run on the exact PR code head. Run the
+existing `.github/workflows/status-video-integration.yml` (Node 24 / pnpm
+12.8.2 / PostgreSQL18), then inspect individual steps; the hosted Gateway
+whole-project typecheck has existing unrelated diagnostics. Real tenant-aware
+permission/login, editorial UI/Admin credentials, disabled flag startup,
+production DB restore, media distribution, rooms teacher worker, device/provider
+and signed APK acceptance remain OPEN, not inferred from source or mock results.
+Do not turn on paid subscription, migration or provider operations as part of
+this development merge.

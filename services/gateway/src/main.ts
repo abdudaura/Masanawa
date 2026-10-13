@@ -610,6 +610,22 @@ function readCsvEnv(value: string | undefined): readonly string[] {
   ]);
 }
 
+/**
+ * Bound Room editorial privilege: only an authenticated, tenant-checked
+ * session can be considered, and only for the staff capability when the
+ * independent staff feature is explicitly qualified. Caller headers and
+ * request payloads never supply roles.
+ */
+export function roomRolesForSession(
+  capability: "rooms.read" | "rooms.join" | "rooms.ask" | "rooms.staff",
+  userId: string,
+  editorUserIds: ReadonlySet<string>,
+  staffEnabled: boolean,
+): readonly string[] {
+  return capability === "rooms.staff" && staffEnabled && editorUserIds.has(userId)
+    ? ["rooms_editor"] : [];
+}
+
 function readPrincipalSet(value: string | undefined): ReadonlySet<string> {
   if (!value?.trim()) return new Set();
   return new Set(
@@ -2292,6 +2308,9 @@ export async function startGatewayService(
       feed: new FeedService(feed,author,mediaRuntime.approved),
       editorial: new EditorialReviewService(editorial,author,mediaRuntime.approved),
       isEditor: async session => editors.has(session.userId),
+      // Publication and media access require explicit runtime qualification;
+      // a mounted route must not implicitly activate editorial operations.
+      enabled: () => env.MASANAWA_STATUS_BACKEND_ENABLED === "true",
       media: mediaRuntime.media,
     };
   }
@@ -2338,17 +2357,26 @@ export async function startGatewayService(
     return { tenantId: session.tenantId, userId: session.userId };
   };
   const roomsEnabled = () => env.MASANAWA_ROOMS_BACKEND_ENABLED === "true";
+  const roomsStaffEnabled = () =>
+    roomsEnabled() && env.MASANAWA_ROOMS_STAFF_ENABLED === "true";
   const rooms: GatewayAppOptions["rooms"] = options.appOptions?.rooms ??
     (featurePool && sessions && featureTenant ? (() => {
       const authorizeRoom = async (
         header: string | undefined,
-        _capability: "rooms.read" | "rooms.join" | "rooms.ask" | "rooms.staff",
+        capability: "rooms.read" | "rooms.join" | "rooms.ask" | "rooms.staff",
       ) => {
         try {
           const session = await resolveFeatureFan(header);
-          // Never derive staff roles from headers, tokens' arbitrary claims,
-          // or client request bodies. Staff writes remain unavailable.
-          return { tenantId: session.tenantId, userId: session.userId, roles: [] };
+          // The canonical session already passed the exact platform-tenant
+          // fence. Room staff may use the existing server-approved editorial
+          // identity list only when the separate Room staff gate is enabled.
+          return {
+            tenantId: session.tenantId,
+            userId: session.userId,
+            roles: roomRolesForSession(
+              capability, session.userId, editors, roomsStaffEnabled(),
+            ),
+          };
         } catch (error) {
           if (error instanceof CustomerAuthError)
             throw new RoomError(error.statusCode, error.code);
