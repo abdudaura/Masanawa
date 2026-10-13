@@ -1869,7 +1869,15 @@
         "docs/workstreams/AF05-voice-notes-connected-20261013.md"
       ],
       "scope": "Recover AF05 unmerged native recorder and UI; connect chat microphone to owner-fenced offline-safe voice-note attachment; preserve independent live call button and tests.",
-      "notes": "Original one-commit WIP branch lane/af05-android-voice-repair-20261012, source head d9ec3a3c60d2, contains 9 files and authored tests; no PR. Avoid other voice/session/native/finance/composition paths. Implementation head cd0dad1 source connected; PR #705 opened; awaiting executable Flutter exact-head checks."
+      "notes": "Original one-commit WIP branch lane/af05-android-voice-repair-20261012, source head d9ec3a3c60d2, contains 9 files and authored tests; no PR. Avoid other voice/session/native/finance/composition paths. Implementation head cd0dad1 source connected; PR #705 opened; awaiting executable Flutter exact-head checks.",
+      "transferred_paths": [
+        "apps/mobile/test/ai_chat_voice_actions_test.dart"
+      ],
+      "transfer_record": {
+        "at": "2026-10-13T07:47:10.528Z",
+        "basis": "Owner requested merging latest unmerged features; audited original expired AF05 claim, unchanged PR #705 exact head cd0dad1, same branch, source regression CI 29+ tests passing with one reproducible overriding-test-helper analyzer warning; reviewed takeover is only exact test file, preserve all other AF05 source.",
+        "to": "af05-voice-note-analyzer-recovery-20261013"
+      }
     },
     {
       "claim_id": "af06-mui03-c10-client-20261013-gpt6",
@@ -1887,6 +1895,20 @@
         "docs/workstreams/UI-MUI-03-chats.md"
       ],
       "notes": "After AF00 #704 merged main, preserve existing MUI03 local Chats search/Calls/navigation; bounded local client source, authorized C10 remote query with pinned credential and stale-account fence; runtime disabled/offline honest. No AF08 shared transport edits."
+    },
+    {
+      "base_sha": "79d8fc9419c1415231a6a82aee5043076f60291b",
+      "branch": "recover/af05-voice-notes-connected-20261013",
+      "claim_id": "af05-voice-note-analyzer-recovery-20261013",
+      "claimed_at": "2026-10-13T07:47:10.528Z",
+      "heartbeat_at": "2026-10-13T07:47:10.528Z",
+      "expires_at": "2026-10-13T07:52:10.528Z",
+      "owner": "GPT-6 / AF05 CI blocker recovery",
+      "paths": [
+        "apps/mobile/test/ai_chat_voice_actions_test.dart"
+      ],
+      "scope": "Remove invalid @override from disconnected test-only helper, exact-head CI verify then merge existing PR #705.",
+      "notes": "Stale claim reviewed + bounded transfer in original record; do not modify shared auth or live voice; preserve original source and tests; handoff only on actual merger or concrete failure."
     }
   ],
   "history": [
