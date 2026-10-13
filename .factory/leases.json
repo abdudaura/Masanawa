@@ -2006,13 +2006,15 @@
         "apps/mobile/test/ui/mui07_wallet_test.dart",
         "apps/mobile/test/ui/af01_send_credits_test.dart",
         ".github/workflows/af01-wallet-credit-send.yml",
-        "docs/workstreams/AF01-wallet-send-integration-20261013.md"
+        "docs/workstreams/AF01-wallet-send-integration-20261013.md",
+        "adapters/storage/postgres/src/commerce/twin-economy.ts",
+        "adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts"
       ],
       "scope": "Wire existing Flutter Send Credits review-confirm-receipt to existing canonical Gateway credit transfer/postgres ledger with operator client/server default-off gates; no fiat/MSN provider activation",
       "claimed_at": "2026-10-13T10:04:28.703Z",
-      "heartbeat_at": "2026-10-13T10:04:28.703Z",
-      "expires_at": "2026-10-13T10:14:28.703Z",
-      "notes": "Main #711 readback, no competing unreleased paths; scoped two-provider CI planned"
+      "heartbeat_at": "2026-10-13T10:50:00.000Z",
+      "expires_at": "2026-10-13T11:20:00.000Z",
+      "notes": "Continuing named AF01 #712 owner; adding exact PostgreSQL repository+concurrent replay test paths to resolve observed CI #38381724205 23505. Reviewed older expired AF01 #460 and expired AF06 #600 overlapping claims; preserve both PRs/branches, no wholesale cherry-pick; current main ledger code equals #712 base. Focus on request vs ledger uniqueness conflict; no migration/production flag changes."
     }
   ],
   "history": [
