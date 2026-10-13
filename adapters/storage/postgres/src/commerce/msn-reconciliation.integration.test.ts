@@ -96,6 +96,33 @@ db("AF01 staged MSN PostgreSQL18 reconciliation through worker", () => {
     )).rows[0]?.n).toBe(0);
   });
 
+  it("refuses a forged admission without an immutable verified fiat event", async () => {
+    const s=await seed();
+    const q=s.quote;
+    const settlement:MsnProviderSettlement={
+      tenantId:q.tenantId,userId:q.userId,quoteId:q.quoteId,
+      fundingReference:q.fundingReference,providerQuoteReference:q.providerQuoteReference,
+      providerSettlementId:randomUUID(),backingAsset:q.backingAsset,
+      backingNetwork:q.backingNetwork,settledBackingUsdMicro:1000000n,
+      verifiedNgnFundingKobo:15025n,settledAtMs:s.now,
+    };
+    const forged=admitMsnSettlement({
+      quote:q,settlement,nowMs:s.now+1,qualifiedProvider:true,
+      custodyBackingVerified:true,conversionLicensedAndAvailable:true,
+      accountPolicyApproved:true,
+    });
+    await expect(createMsnLedgerStore(pool).issue({
+      quote:q,admission:forged,verifiedEvidenceSha256:"c".repeat(64),
+    })).rejects.toThrow("msn.ngn.fiat_verification_missing");
+    const counts=await pool.query(
+      "SELECT count(*)::int AS n FROM commerce.msn_issuances WHERE tenant_id=$1",
+      [q.tenantId],
+    );
+    expect(counts.rows[0]?.n).toBe(0);
+    expect((await createMsnReconciler(pool).scan(q.tenantId)).results[0])
+      .toMatchObject({state:"funding_pending",custodyQualified:false});
+  });
+
   it("reconciles double-entry issuance as accounting consistency, not provider qualification", async () => {
     const s = await seed();
     await fund(s);
@@ -118,6 +145,17 @@ db("AF01 staged MSN PostgreSQL18 reconciliation through worker", () => {
       quote:q,admission,verifiedEvidenceSha256:"b".repeat(64),
     });
     expect(issued.replay).toBe(false);
+    const ngnDebit=await pool.query(
+      `SELECT entry_id,reason,reference,direction,amount_kobo::text AS kobo
+         FROM commerce.ngn_wallet_entries
+        WHERE tenant_id=$1 AND user_id=$2 AND entry_id=$3`,
+      [q.tenantId,q.userId,"msn-convert:"+q.quoteId],
+    );
+    expect(ngnDebit.rows).toEqual([{
+      entry_id:"msn-convert:"+q.quoteId,
+      reason:"adjustment",reference:"msn-convert:"+q.quoteId,
+      direction:"debit",kobo:"15025",
+    }]);
     const scan=await createMsnReconciler(pool).scan(q.tenantId);
     expect(scan.results[0]).toEqual({
       quoteId:q.quoteId,state:"issued_accounting_consistent",
