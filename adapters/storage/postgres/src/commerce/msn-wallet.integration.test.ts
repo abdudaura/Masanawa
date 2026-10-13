@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -16,6 +17,12 @@ db("MSN canonical PostgreSQL ledger acceptance", () => {
       owner: "commerce",
       directory: fileURLToPath(new URL("../../../../../packages/commerce/migrations", import.meta.url)),
     }]);
+    // Simulate an approved deployment without migrating real mainline
+    // production databases before qualified custody and issuer review.
+    const proposedSql = await readFile(fileURLToPath(
+      new URL("../../../../../packages/commerce/migration_proposals/0112_msn_wallet.sql", import.meta.url),
+    ), "utf8");
+    await pool.query(proposedSql);
   });
   afterAll(async () => { await pool?.end(); });
 

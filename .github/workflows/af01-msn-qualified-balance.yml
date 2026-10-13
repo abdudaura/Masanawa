@@ -5,7 +5,7 @@ on:
       - "services/gateway/src/msn_wallet/**"
       - "services/gateway/src/app.ts"
       - "services/gateway/src/main.ts"
-      - "packages/commerce/migrations/0112_msn_wallet.sql"
+      - "packages/commerce/migration_proposals/0112_msn_wallet.sql"
       - "adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts"
       - "apps/mobile/lib/src/finance/msn_*"
       - "apps/mobile/lib/src/screens/wallet/wallet_screen.dart"
@@ -15,7 +15,7 @@ on:
     branches: [main]
     paths:
       - "services/gateway/src/msn_wallet/**"
-      - "packages/commerce/migrations/0112_msn_wallet.sql"
+      - "packages/commerce/migration_proposals/0112_msn_wallet.sql"
       - "apps/mobile/lib/src/finance/msn_*"
 permissions:
   contents: read

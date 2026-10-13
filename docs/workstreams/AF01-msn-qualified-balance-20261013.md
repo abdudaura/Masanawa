@@ -9,7 +9,7 @@ Do **not** wholesale-merge #576 or overwrite mounted MUI08 Crypto or new Wallet.
 ## Source scope
 
 This batch integrates reusable exact micro-unit MSN issuance admission,
-a bounded internal PostgreSQL ledger store, additive migration 0112 with
+a bounded internal PostgreSQL ledger store, staged additive migration proposal 0112 with
 append-only two-sided journal and deferred balancing, actual PG acceptance,
 an authenticated read-only Gateway route and guarded mounted Wallet MSN card.
 The route is absent unless MASANAWA_MSN_BALANCE_ENABLED=true on the Gateway,
@@ -52,3 +52,7 @@ Gateway package correctly lacks a direct pg dependency, so PostgreSQL18 acceptan
 ## Hosted qualified source e3f70616e53a693e746724ff4cf453f8eebb7f74
 
 CI #38388652652: PostgreSQL18+Vitest **34 passed across 5 files** (including new real migration/immutability/tenant fencing), Flutter **44 passed** across inherited MSN transport/card, MUI07 and AF01 Wallet and AF08 regression. Focused Dart analysis exited successfully with four informational style lints in reused #576 sources; follow-up source fixes these without changing behavior, requiring a final exact-head verification. No financial flags activated.
+
+## Pre-merge production migration safeguard
+
+The trial DDL is stored at `packages/commerce/migration_proposals/0112_msn_wallet.sql`, **outside** `platformProductMigrationRoots()` and the auto-applied commerce migrations directory. Thus a deployment of main cannot silently create MSN finance tables. Real PG acceptance executes canonical migrations and then expressly applies the proposed SQL within its disposable test database. An operator must first qualify custody/provider evidence, migration versioning and production rollback and then schedule a distinct controlled migration for release. Until then even an accidentally enabled read-only Gateway route shows 503 instead of a fabricated balance.
