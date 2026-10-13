@@ -182,9 +182,37 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
     }));
   }
 
+  /// External provider navigation is a playback action too: never bypass
+  /// the current server's approval merely because the old catalog had a URL.
   Future<void> openAtSource() async {
     if (opening || approvedEmbed == null) return;
-    setState(() => opening = true);
+    final verify = widget.checkAvailability;
+    if (verify == null) {
+      setState(() => verificationFailed = true);
+      return;
+    }
+    final epoch = ++availabilityEpoch;
+    setState(() { opening = true; verificationFailed = false; });
+    bool authorized;
+    try {
+      authorized = await verify(widget.video.id);
+    } catch (_) {
+      if (mounted && epoch == availabilityEpoch) {
+        setState(() { opening = false; verificationFailed = true; });
+      }
+      return;
+    }
+    if (!mounted || epoch != availabilityEpoch) return;
+    if (!authorized) {
+      setState(() {
+        opening = false;
+        unavailable = true;
+        playing = false;
+        controller = null;
+        loading = false;
+      });
+      return;
+    }
     bool result = false;
     try {
       result = await (widget.open?.call(approvedEmbed!.source) ??
@@ -192,7 +220,7 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
     } catch (_) {
       result = false;
     }
-    if (!mounted) return;
+    if (!mounted || epoch != availabilityEpoch) return;
     setState(() { opening = false; if (!result) unavailable = true; });
     if (!result) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
