@@ -2067,16 +2067,19 @@
       "branch": "lane/af10-rooms-live-answers-ui-pg-20261013-gpt6",
       "base_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae",
       "paths": [
+        ".github/workflows/rooms-production-build.yml",
+        "adapters/storage/postgres/src/rooms/repository.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.ts",
         "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
         "apps/mobile/test/features/rooms/room_auto_answer_test.dart",
-        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts",
-        ".github/workflows/rooms-production-build.yml",
         "docs/workstreams/AF10-rooms-direct-answer-refresh-20261013.md"
       ],
       "pr": "",
       "claimed_at": "2026-10-13T14:51:15.857Z",
-      "heartbeat_at": "2026-10-13T14:51:15.857Z",
-      "expires_at": "2026-10-13T14:59:15.857Z"
+      "heartbeat_at": "2026-10-13T14:56:45.315Z",
+      "expires_at": "2026-10-13T15:04:45.315Z",
+      "notes": "Real PG18 end-to-end run #38417440572 discovered SQLSTATE 42P08 ambiguous jsonb_build_object bind in actual user ask outbox. Claim canonical Rooms PG repository and teacher queue for exact typed fix; user request direct AI answers."
     }
   ],
   "history": [
