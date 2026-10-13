@@ -1,0 +1,100 @@
+name: AF01 Wallet Credit Send
+on:
+  pull_request:
+    paths:
+      - "services/gateway/src/app.ts"
+      - "services/gateway/src/main.ts"
+      - "services/gateway/src/credit_transfer_routes.ts"
+      - "services/gateway/src/credit_transfer_routes.test.ts"
+      - "adapters/storage/postgres/src/commerce/twin-economy.ts"
+      - "adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts"
+      - "apps/mobile/lib/src/screens/wallet/**"
+      - "apps/mobile/test/ui/af01_send_credits_test.dart"
+      - "apps/mobile/test/ui/mui07_wallet_test.dart"
+      - ".github/workflows/af01-wallet-credit-send.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/gateway/src/app.ts"
+      - "services/gateway/src/main.ts"
+      - "services/gateway/src/credit_transfer_routes.ts"
+      - "services/gateway/src/credit_transfer_routes.test.ts"
+      - "adapters/storage/postgres/src/commerce/twin-economy.ts"
+      - "adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts"
+      - "apps/mobile/lib/src/screens/wallet/**"
+      - "apps/mobile/test/ui/af01_send_credits_test.dart"
+      - ".github/workflows/af01-wallet-credit-send.yml"
+permissions:
+  contents: read
+jobs:
+  gateway-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_DB: masanawa_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d masanawa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MASANAWA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/masanawa_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.8.2"
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+      - name: Canonical Send route, service, transaction and PostgreSQL ledger regression
+        run: >-
+          pnpm exec vitest run
+          services/gateway/src/credit_transfer_routes.test.ts
+          services/gateway/src/credit_transfer.test.ts
+          services/gateway/src/twin_production_runtime.test.ts
+          adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts
+      - name: Scoped Gateway typecheck (known global debt reported separately)
+        run: pnpm --filter @masanawa/gateway-service typecheck
+        continue-on-error: true
+  flutter-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Restore Flutter packages
+        run: flutter pub get
+      - name: Wallet Send confirmation, existing Wallet and credential regressions
+        run: >-
+          flutter test --no-pub --reporter expanded
+          test/ui/af01_send_credits_test.dart
+          test/ui/mui07_wallet_test.dart
+          test/wallet_http_transport_test.dart
+          test/wallet_account_fencing_test.dart
+          test/wallet_receipts_test.dart
+          test/auth_credential_fencing_test.dart
+      - name: Focused Dart analysis
+        run: >-
+          dart analyze
+          lib/src/screens/wallet/wallet_screen.dart
+          lib/src/screens/wallet/send_credits_sheet.dart
+          test/ui/af01_send_credits_test.dart
+          test/ui/mui07_wallet_test.dart

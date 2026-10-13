@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../commerce/wallet_models.dart';
+import '../../state/session_state.dart';
+import 'send_credits_sheet.dart';
+import 'wallet_receipt_sheet.dart';
 import '../../state/wallet_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../ui/components/masanawa_main_header.dart';
+
+/// Compile-time rollout gate. Production APKs never expose Credits Send
+/// until Gateway policy, real-account ledger replay and device checks qualify.
+const bool kWalletCreditSendEnabled = bool.fromEnvironment(
+  'MASANAWA_WALLET_CREDIT_SEND_ENABLED', defaultValue: false,
+);
 
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({
@@ -16,6 +25,7 @@ class WalletScreen extends ConsumerWidget {
     this.onOpenCrypto,
     this.onOpenBillingService,
     this.embeddedInShell = false,
+    this.walletCreditSendEnabled = kWalletCreditSendEnabled,
   });
 
   final VoidCallback? onAddMoney;
@@ -29,11 +39,18 @@ class WalletScreen extends ConsumerWidget {
 
   /// Root owns the header when this surface is selected as a bottom tab.
   final bool embeddedInShell;
+  final bool walletCreditSendEnabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final wallet = ref.watch(walletProvider);
+    final accountId = walletCreditSendEnabled
+        ? switch (ref.watch(sessionProvider)) {
+            SessionSignedIn(:final user) => user.id,
+            _ => null,
+          }
+        : null;
 
     // Loading or a balance failure must not remove entry to separate,
     // independently qualified Billing/Crypto routes.
@@ -77,6 +94,47 @@ class WalletScreen extends ConsumerWidget {
           error: (_, _) => pendingOrUnavailableWallet(),
           data: (value) {
             if (value == null) return pendingOrUnavailableWallet();
+            VoidCallback? sendAction = onSend;
+            if (sendAction == null &&
+                walletCreditSendEnabled &&
+                accountId != null) {
+              sendAction = () async {
+                final receipt = await showModalBottomSheet<CreditTransferReceipt>(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => SendCreditsSheet(
+                    expectedAccountId: accountId,
+                    currentAccountId: () => switch (ref.read(sessionProvider)) {
+                      SessionSignedIn(:final user) => user.id,
+                      _ => null,
+                    },
+                    spendableCredits: value.spendableCredits,
+                    onSend: (recipient, amount) =>
+                        ref.read(walletProvider.notifier).sendCredits(
+                          recipient: recipient, amountCredits: amount,
+                        ),
+                  ),
+                );
+                if (!context.mounted || receipt == null) {
+                  return;
+                }
+                final current = ref.read(sessionProvider);
+                if (current is! SessionSignedIn ||
+                    current.user.id != accountId) {
+                  return;
+                }
+                await showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => WalletReceiptSheet(
+                    title: 'Credits sent',
+                    amountCredits: receipt.amountCredits,
+                    reference: receipt.transferId,
+                    detail: 'Sent to ${receipt.recipientUserId}.',
+                  ),
+                );
+              };
+            }
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -89,12 +147,12 @@ class WalletScreen extends ConsumerWidget {
                   onOpenBillingService: onOpenBillingService,
                 ),
                 if (onAddMoney != null ||
-                    onSend != null ||
+                    sendAction != null ||
                     onWithdraw != null) ...[
                   const SizedBox(height: 12),
                   _Actions(
                     onAddMoney: onAddMoney,
-                    onSend: onSend,
+                    onSend: sendAction,
                     onWithdraw: onWithdraw,
                   ),
                 ],

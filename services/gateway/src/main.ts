@@ -2465,6 +2465,9 @@ export async function startGatewayService(
       ...(linkedWhatsAppAdmin
         ? { linkedWhatsApp: linkedWhatsAppAdmin }
         : {}),
+      // Only the production operator may enable this legacy credit-ledger
+      // transfer. This never activates MSN minting, funding or crypto payouts.
+      walletCreditSendEnabled: env.MASANAWA_WALLET_CREDIT_SEND_ENABLED === "true" && !!twinProduction,
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(incomingCalls ? { incomingCalls } : {}),

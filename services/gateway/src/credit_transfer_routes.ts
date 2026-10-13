@@ -20,8 +20,18 @@ function amount(value: unknown): number {
 export function registerCreditTransferRoutes(
   app: FastifyInstance,
   service: CreditTransferService,
+  enabled: () => boolean = () => false,
 ): void {
-  app.post("/v1/wallet/transfers", async (request) => {
+  app.post("/v1/wallet/transfers", async (request, reply) => {
+    // A registered endpoint is not authorization to execute money movement.
+    // The operator-only server gate precedes parsing, identity resolution and
+    // any idempotent credit-ledger write.
+    if (!enabled()) {
+      return reply.code(503).send({
+        code: "WALLET_SEND_DISABLED",
+        message: "Credits transfers are not available yet.",
+      });
+    }
     const body = request.body as Record<string, unknown>;
     return service.transfer({
       authorizationHeader: request.headers.authorization,

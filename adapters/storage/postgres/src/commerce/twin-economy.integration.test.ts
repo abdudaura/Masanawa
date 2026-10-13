@@ -731,12 +731,11 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
       completedAt: "2026-10-05T17:31:00.000Z",
     };
 
-    const results = await Promise.all([
-      repository.recordCreditOperation(input),
-      repository.recordCreditOperation(input),
-    ]);
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () => repository.recordCreditOperation(input)),
+    );
 
-    expect(results[0]).toEqual(results[1]);
+    for (const receipt of results) expect(receipt).toEqual(results[0]);
 
     const persisted = await pool.query<{ count: string }>(
       `SELECT count(*)::text AS count
@@ -746,4 +745,33 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     );
     expect(persisted.rows[0]?.count).toBe("1");
   });
+  it("rejects ledger entry reuse by a different request without a false receipt", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const senderUserId = createCanonicalId("user");
+    const recipientUserId = createCanonicalId("user");
+    const ledgerEntryId = createCanonicalId("ledger-entry");
+    const original = {
+      tenantId,
+      requestId: "twin-transfer-ledger-entry-reuse-1",
+      kind: "transfer" as const,
+      senderUserId,
+      recipientUserId,
+      characterId: null,
+      amountCredits: 75,
+      ledgerEntryId,
+      completedAt: "2026-10-05T17:32:00.000Z",
+    };
+    const receipt = await repository.recordCreditOperation(original);
+    await expect(repository.recordCreditOperation({
+      ...original, requestId: "twin-transfer-ledger-entry-reuse-2",
+    })).rejects.toThrow("ledger entry replay conflict");
+    await expect(repository.readCreditOperation({
+      tenantId, requestId: original.requestId,
+    })).resolves.toEqual(receipt);
+    await expect(repository.readCreditOperation({
+      tenantId, requestId: "twin-transfer-ledger-entry-reuse-2",
+    })).resolves.toBeNull();
+  });
+
 });
