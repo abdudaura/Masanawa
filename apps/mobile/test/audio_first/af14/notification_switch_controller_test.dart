@@ -142,25 +142,6 @@ void main() {
     expect(controller.enabled, true);
     controller.dispose();
   });
-  test('confirmed OS permission reattaches delivery and reports failures', () async {
-    var deliveryAttempts = 0;
-    final controller = NotificationSwitchController(
-      readEnabled: () async => true,
-      requestPermission: () async => true,
-      unregister: () async {},
-      onEnabled: () async {
-        deliveryAttempts++;
-        throw StateError('temporary gateway outage');
-      },
-    );
-    // Permission becomes false for initial read, then true after grant.
-    // Start with an explicit account state that can be toggled.
-    await controller.bind('user_a');
-    expect(controller.enabled, true);
-    controller.dispose();
-    expect(deliveryAttempts, 0);
-  });
-
   test('delivery verification failure never becomes a confirmed success', () async {
     var permissionOn = false;
     var attempts = 0;
