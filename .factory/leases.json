@@ -2059,6 +2059,20 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af10-rooms-pg18-test-cleanup-20261013-gpt6",
+      "owner": "AF10/GPT-6 postmerge PG18 test lifecycle",
+      "scope": "Fix confirmed post-merge Vitest PG18 drop force connection termination 57P01; keep real customer question/answer tests and CI trustworthy",
+      "branch": "lane/af10-rooms-pg18-test-cleanup-20261013-gpt6",
+      "base_sha": "20daa18a2d5b30d9b25f7eeff332a556aae5fc82",
+      "paths": [
+        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T15:03:43.364Z",
+      "heartbeat_at": "2026-10-13T15:03:43.364Z",
+      "expires_at": "2026-10-13T15:11:43.364Z"
     }
   ],
   "history": [
