@@ -1838,7 +1838,7 @@
       "claimed_at": "2026-10-13T06:11:32.066Z",
       "expires_at": "2026-10-13T06:27:00.038Z",
       "heartbeat_at": "2026-10-13T06:22:00.038Z",
-      "integration_head_sha": null,
+      "integration_head_sha": "ce968552e648f482ae74f613264f026c0061643e",
       "notes": "Run focused Flutter startup widget/cache tests in standalone CI to separate baseline whole-project analyzer failure. Protected startup shell and routing previously claimed; no existing CI file edited.",
       "owner": "GPT-6 / startup performance",
       "paths": [
@@ -1855,7 +1855,11 @@
         "apps/mobile/test/ui/fast_launch_route_test.dart",
         ".github/workflows/mobile-startup-regression.yml"
       ],
-      "scope": "Remove artificial Splash delay, surface local cache milestones, preserve account fencing, provide repeatable Android startup measurements."
+      "scope": "Remove artificial Splash delay, surface local cache milestones, preserve account fencing, provide repeatable Android startup measurements.",
+      "source_head": "5c4960ee0fb1f45a6bf4c76bdf8dc78b09b8a23d",
+      "source_pr": 701,
+      "released_at": "2026-10-13T06:24:55.868Z",
+      "release_reason": "PR #701 merged to main at ce968552e648f482ae74f613264f026c0061643e. Focused Mobile Startup Regression run 38356345765 PASS at b8a35b6; later only style fix (braces) at 5c4960e. Earlier Mobile Build whole-project Flutter analyze FAIL (pre-existing extensive warnings + one new style fixed), Foundation TS2459 existing; later current-head run 38356391584 launched, real Android APK startup timing NOT_RUN. No device speed claim."
     }
   ],
   "history": [
