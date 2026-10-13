@@ -26,7 +26,7 @@ function dbRow(overrides:Record<string,unknown>={}):Record<string,unknown>{
 }
 function fixture(row:Record<string,unknown>|null=dbRow()){
   const statements:string[]=[];let released=0;
-  const query=vi.fn(async(sql:string)=>{
+  const query=vi.fn(async(sql:string,_params?:unknown[])=>{
     statements.push(sql);
     if(sql.includes("SELECT q.tenant_id"))return{rows:row?[row]:[],rowCount:row?1:0};
     return{rows:[],rowCount:1};
