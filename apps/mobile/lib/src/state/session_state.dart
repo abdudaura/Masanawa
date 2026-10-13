@@ -112,6 +112,17 @@ class SessionError extends SessionState {
 }
 
 class SessionController extends Notifier<SessionState> {
+  int _authEpoch = 0;
+  Future<void> _storageWrites = Future<void>.value();
+
+  // Serialize sign-in, refresh and sign-out writes so a late old refresh can
+  // never restore credentials after the next account cleared/replaced them.
+  Future<void> _writeCredentials(Future<void> Function() action) {
+    final next = _storageWrites.catchError((_) {}).then((_) => action());
+    _storageWrites = next.catchError((_) {});
+    return next;
+  }
+
   @override
   SessionState build() {
     _restore();
@@ -119,17 +130,22 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> _restore() async {
+    final epoch = _authEpoch;
     try {
       final stored = await _readPersisted();
+      if (epoch != _authEpoch) return;
       if (stored == null) {
         state = const SessionSignedOut();
         return;
       }
       final client = ref.read(apiClientProvider);
+      _authEpoch++;
+      client.authenticatedAccountId = stored.user.id;
       client.accessToken = stored.accessToken;
       client.onUnauthorized = _rotateOn401;
       state = SessionSignedIn(stored.user, stored);
     } catch (_) {
+      if (epoch != _authEpoch) return;
       await _clear();
       state = const SessionSignedOut();
     }
@@ -358,7 +374,9 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> refresh() async {
+    final epoch = _authEpoch;
     final stored = await _readPersisted();
+    if (epoch != _authEpoch) return;
     if (stored == null) {
       await _clear();
       state = const SessionSignedOut();
@@ -367,9 +385,15 @@ class SessionController extends Notifier<SessionState> {
     try {
       final rotated =
           await ref.read(apiClientProvider).refresh(stored.refreshToken);
-      await _persist(rotated);
+      if (epoch != _authEpoch) return;
+      if (rotated.user.id != stored.user.id) {
+        throw StateError('Refresh cannot replace the authenticated account');
+      }
+      await _persist(rotated, expectedEpoch: epoch);
+      if (epoch != _authEpoch) return;
       state = SessionSignedIn(rotated.user, rotated);
     } catch (_) {
+      if (epoch != _authEpoch) return;
       await _clear();
       state = const SessionSignedOut();
     }
@@ -384,31 +408,45 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> logout() async {
+    // Immediately revoke permission for in-flight refresh to write the old
+    // session, even if the best-effort remote logout is slow/offline.
+    final epoch = ++_authEpoch;
     try {
       await ref.read(apiClientProvider).logout();
     } catch (_) {
-      // Sign-out is always completed locally even if the network is unavailable.
+      // Sign-out always completes locally on network failure.
     }
+    if (epoch != _authEpoch) return;
     await _clear();
     state = const SessionSignedOut();
   }
 
-  Future<void> _persist(AuthTokens tokens) async {
+  Future<void> _persist(AuthTokens tokens, {int? expectedEpoch}) async {
+    if (expectedEpoch != null && expectedEpoch != _authEpoch) return;
     final client = ref.read(apiClientProvider);
+    if (expectedEpoch == null) {
+      _authEpoch++; // New login, even if the same fan signs in again.
+      client.authenticatedAccountId = null;
+    }
+    final epoch = _authEpoch;
+    client.authenticatedAccountId = tokens.user.id;
     client.accessToken = tokens.accessToken;
     client.onUnauthorized = _rotateOn401;
 
-    // One encrypted record replaces four sequential keystore writes/reads on
-    // normal startup. Legacy keys remain readable for seamless upgrades.
-    await _storage.write(
-      key: _kSession,
-      value: jsonEncode({
-        'accessToken': tokens.accessToken,
-        'refreshToken': tokens.refreshToken,
-        'accessExpiresIn': tokens.accessExpiresIn,
-        'user': tokens.user.toJson(),
-      }),
-    );
+    // One encrypted record, with serialized epochs to prevent a refresh
+    // from racing a logout or a new account's credential storage.
+    await _writeCredentials(() async {
+      if (epoch != _authEpoch) return;
+      await _storage.write(
+        key: _kSession,
+        value: jsonEncode({
+          'accessToken': tokens.accessToken,
+          'refreshToken': tokens.refreshToken,
+          'accessExpiresIn': tokens.accessExpiresIn,
+          'user': tokens.user.toJson(),
+        }),
+      );
+    });
   }
 
   AuthTokens? _decodeSessionBlob(String? raw) {
@@ -485,16 +523,21 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> _clear() async {
+    final epoch = ++_authEpoch;
     final client = ref.read(apiClientProvider);
+    client.authenticatedAccountId = null;
     client.accessToken = null;
     client.onUnauthorized = null;
-    await Future.wait<void>([
-      _storage.delete(key: _kSession),
-      _storage.delete(key: _kAccess),
-      _storage.delete(key: _kRefresh),
-      _storage.delete(key: _kExpiry),
-      _storage.delete(key: _kUser),
-    ]);
+    await _writeCredentials(() async {
+      if (epoch != _authEpoch) return;
+      await Future.wait<void>([
+        _storage.delete(key: _kSession),
+        _storage.delete(key: _kAccess),
+        _storage.delete(key: _kRefresh),
+        _storage.delete(key: _kExpiry),
+        _storage.delete(key: _kUser),
+      ]);
+    });
   }
 }
 
