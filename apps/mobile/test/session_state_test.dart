@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -377,6 +378,80 @@ void main() {
     expect(err.identifier, email);
   });
 
+  test('delayed old-account refresh cannot overwrite next login or keystore', () async {
+    storageMap['auth_session_v2'] = jsonEncode({
+      'accessToken': 'a1',
+      'refreshToken': 'ar1',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(sessionProvider), isA<SessionSignedIn>());
+
+    adapter.defer('/auth/refresh');
+    final oldRefresh = controller.refresh();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    final nextUser = AuthUser(
+      id: 'fan-b',
+      name: 'Fan B',
+      locale: 'en',
+      status: 'ACTIVE',
+      role: 'USER',
+      isNewUser: false,
+      createdAt: '2026-10-13T00:00:00Z',
+    );
+    adapter.respond('/auth/verify', {
+      'accessToken': 'b1',
+      'refreshToken': 'br1',
+      'accessExpiresIn': 900,
+      'user': nextUser.toJson(),
+    });
+    await controller.verifyOtp(code, email: email);
+    expect((container.read(sessionProvider) as SessionSignedIn).user.id, 'fan-b');
+    adapter.completeDeferred('/auth/refresh', {
+      'accessToken': 'a2',
+      'refreshToken': 'ar2',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    await oldRefresh;
+    final state = container.read(sessionProvider) as SessionSignedIn;
+    expect(state.user.id, 'fan-b');
+    expect(api.accessToken, 'b1');
+    expect(jsonDecode(storageMap['auth_session_v2']!)['accessToken'], 'b1');
+  });
+
+  test('logout fences deferred refresh from reviving signed-out session', () async {
+    storageMap['auth_session_v2'] = jsonEncode({
+      'accessToken': 'a1',
+      'refreshToken': 'ar1',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    adapter.defer('/auth/refresh');
+    final stale = controller.refresh();
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    await controller.logout();
+    adapter.completeDeferred('/auth/refresh', {
+      'accessToken': 'a2',
+      'refreshToken': 'ar2',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    await stale;
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+    expect(storageMap.containsKey('auth_session_v2'), isFalse);
+    expect(api.accessToken, isNull);
+  });
+
   test('clearVerifyError returns to awaitingOtp with the live cooldown', () async {
     adapter.respond(
       '/auth/verify',
@@ -409,6 +484,19 @@ void main() {
 /// responses. Dio's MockAdapter needs a package dep; this keeps the test lean.
 class _FakeAdapter implements HttpClientAdapter {
   final _requests = <String>[];
+  final _deferred = <String, Completer<ResponseBody>>{};
+
+  void defer(String path) {
+    _deferred[path] = Completer<ResponseBody>();
+  }
+
+  void completeDeferred(String path, Map<String, dynamic> body,
+      {int statusCode = 200}) {
+    _deferred[path]!.complete(ResponseBody.fromString(
+      jsonEncode(body), statusCode,
+      headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+    ));
+  }
   _Route _next = _Route(
     path: '/',
     statusCode: 200,
@@ -428,6 +516,8 @@ class _FakeAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     _requests.add('${options.method} ${options.path}');
+    final pending = _deferred[options.path];
+    if (pending != null) return pending.future;
     final route = _next;
     final body = jsonEncode(route.body);
     return ResponseBody.fromString(
