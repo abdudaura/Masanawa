@@ -1,0 +1,58 @@
+name: Mobile Status and Rooms Recovery
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/lib/src/features/videos/**"
+      - "apps/mobile/lib/src/screens/status/**"
+      - "apps/mobile/lib/src/features/rooms/**"
+      - "apps/mobile/lib/src/screens/rooms/**"
+      - "apps/mobile/test/features/videos/**"
+      - "apps/mobile/test/features/rooms/**"
+      - "apps/mobile/test/rooms_screen_test.dart"
+      - ".github/workflows/mobile-status-rooms-recovery.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/lib/src/features/videos/**"
+      - "apps/mobile/lib/src/screens/status/**"
+      - "apps/mobile/lib/src/features/rooms/**"
+      - "apps/mobile/lib/src/screens/rooms/**"
+      - "apps/mobile/test/features/videos/**"
+      - "apps/mobile/test/features/rooms/**"
+      - "apps/mobile/test/rooms_screen_test.dart"
+      - ".github/workflows/mobile-status-rooms-recovery.yml"
+permissions:
+  contents: read
+jobs:
+  status-rooms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - name: Mounted videos and Rooms authorization, identity, outage regression
+        run: >-
+          flutter test --no-pub
+          test/features/videos/official_video_player_test.dart
+          test/features/videos/video_availability_test.dart
+          test/features/videos/video_repository_test.dart
+          test/features/videos/videos_screen_test.dart
+          test/rooms_screen_test.dart
+          test/features/rooms/rooms_screen_test.dart
+      - name: Focused video and Rooms analysis
+        run: >-
+          flutter analyze --no-pub --no-fatal-infos
+          lib/src/features/videos
+          lib/src/features/rooms
+          lib/src/screens/rooms/rooms_screen.dart
+          test/features/videos
+          test/features/rooms
+          test/rooms_screen_test.dart
