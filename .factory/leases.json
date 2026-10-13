@@ -2059,6 +2059,24 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af10-live-answers-refresh-pg-20261013-gpt6",
+      "owner": "AF10/GPT-6 postmerge live answer UI and real PG18",
+      "scope": "Post-#718 separate merge: auto-refresh Room pending AI answer without stale account reads, verify real PG18 customer ask→outbox→AI answer→readback + failure retry.",
+      "branch": "lane/af10-rooms-live-answers-ui-pg-20261013-gpt6",
+      "base_sha": "ca2ab3d121a378d4a799536d830c22b2ba44f2ae",
+      "paths": [
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        "apps/mobile/test/features/rooms/room_auto_answer_test.dart",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts",
+        ".github/workflows/rooms-production-build.yml",
+        "docs/workstreams/AF10-rooms-direct-answer-refresh-20261013.md"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T14:51:15.857Z",
+      "heartbeat_at": "2026-10-13T14:51:15.857Z",
+      "expires_at": "2026-10-13T14:59:15.857Z"
     }
   ],
   "history": [
