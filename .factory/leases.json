@@ -1924,6 +1924,22 @@
       "source_head": "814523132c96c391ba43c5c435dc1af9ad63f9fc",
       "source_pr": 705,
       "integration_head_sha": "9b246649077fc77cd9135f4b8c6a79bcd9e440fa"
+    },
+    {
+      "claim_id": "af00-700-worker-closure-20261013-gpt6",
+      "owner": "GPT-6 / AF00 abandoned PR #700 recovery",
+      "base_sha": "9b246649077fc77cd9135f4b8c6a79bcd9e440fa",
+      "branch": "recover/af00-700-worker-closure-20261013",
+      "claimed_at": "2026-10-13T08:30:53.649Z",
+      "heartbeat_at": "2026-10-13T08:30:53.649Z",
+      "expires_at": "2026-10-13T08:55:53.649Z",
+      "scope": "Recover unmerged #700 worker workspace declaration and meaningful existing PG18/backend/worker CI; reconcile old draft without replacing newer main",
+      "paths": [
+        "services/worker/package.json",
+        ".github/workflows/status-video-integration.yml",
+        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
+      ],
+      "notes": "Main includes #702 and #704 source and PG18 62-test pass, distinct #700 helper and broad CI redundant. No provider/paid activation. PR #700 closing only after unique work disposition."
     }
   ],
   "history": [
