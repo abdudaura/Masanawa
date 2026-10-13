@@ -1,0 +1,47 @@
+name: MUI03 C10 Remote Chats
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/lib/src/screens/chat/chat_list_screen.dart"
+      - "apps/mobile/lib/src/features/masana_chat/inbox_search.dart"
+      - "apps/mobile/test/ui/mui03_remote_chats_search_test.dart"
+      - "apps/mobile/test/ui/mui03_chats_search_test.dart"
+      - ".github/workflows/mui03-remote-inbox.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/lib/src/screens/chat/chat_list_screen.dart"
+      - "apps/mobile/lib/src/features/masana_chat/inbox_search.dart"
+      - "apps/mobile/test/ui/mui03_remote_chats_search_test.dart"
+      - ".github/workflows/mui03-remote-inbox.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Restore Flutter packages
+        run: flutter pub get
+      - name: C10 remote and MUI03 local regression
+        run: >-
+          flutter test --no-pub
+          test/ui/mui03_chats_search_test.dart
+          test/ui/mui03_remote_chats_search_test.dart
+      - name: Focused Dart analysis
+        run: >-
+          dart analyze
+          lib/src/screens/chat/chat_list_screen.dart
+          lib/src/features/masana_chat/inbox_search.dart
+          test/ui/mui03_remote_chats_search_test.dart

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +9,7 @@ import '../../chat/chat_format.dart';
 import '../../core/startup_metrics.dart';
 import '../../chat/message_parts.dart';
 import '../../finance/crypto_wallet_screen.dart';
+import '../../features/masana_chat/inbox_search.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
@@ -420,6 +424,10 @@ class ChatListScreen extends ConsumerWidget {
         threads: session is SessionSignedIn ? threads : const <ChatThread>[],
         directory: directory,
         online: chat.online,
+        accountId: session is SessionSignedIn ? session.user.id : '',
+        accessToken: session is SessionSignedIn ? session.tokens.accessToken : '',
+        inbox: ref.watch(masanaInboxSearchProvider),
+        onOpenRemote: (remote) => context.push('/chat/${remote.characterId}'),
         onRetry: () => ref.read(agentDirectoryProvider.notifier).refresh(),
         resultsBuilder: (visibleThreads) => visibleThreads.isEmpty
           ? _EmptyChats(
@@ -546,18 +554,21 @@ class ChatListScreen extends ConsumerWidget {
 }
 
 
-/* Search is scoped to the currently authorized directory and account-owned
- * conversation projection. Filtering is synchronous: there are no outstanding
- * search responses which could overwrite a newer query. A keyed pane disposes
- * its controller when the authenticated account changes. The C10 server-wide
- * inbox endpoint is not mounted on main; do not suggest cached-only matches
- * cover unhydrated remote history. */
+/* Keep zero-network initial rendering from locally authorized chats; C10
+ * remote lookups run only for typed searches. Server results use one authenticated
+ * tenant/fan authority, and stale query/account/token responses are discarded.
+ * AF08 owns shared interceptor refresh hardening, so C10 pins one credential
+ * and never retries across an identity replacement. */
 class _ChatsSearchPane extends StatefulWidget {
   const _ChatsSearchPane({
     super.key,
     required this.threads,
     required this.directory,
     required this.online,
+    required this.accountId,
+    required this.accessToken,
+    required this.inbox,
+    required this.onOpenRemote,
     required this.onRetry,
     required this.resultsBuilder,
   });
@@ -565,6 +576,10 @@ class _ChatsSearchPane extends StatefulWidget {
   final List<ChatThread> threads;
   final AgentDirectoryState directory;
   final bool online;
+  final String accountId;
+  final String accessToken;
+  final MasanaInboxSearchAccess inbox;
+  final void Function(MasanaInboxSearchItem) onOpenRemote;
   final VoidCallback onRetry;
   final Widget Function(List<ChatThread> visibleThreads) resultsBuilder;
 
@@ -574,22 +589,175 @@ class _ChatsSearchPane extends StatefulWidget {
 
 class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
   final TextEditingController _search = TextEditingController();
+  Timer? _debounce;
+  int _generation = 0;
   String _query = '';
+  List<MasanaInboxSearchItem> _remote = const [];
+  bool _serverLoading = false;
+  String? _serverError;
+
+  @override
+  void didUpdateWidget(covariant _ChatsSearchPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.accountId != oldWidget.accountId ||
+        widget.accessToken != oldWidget.accessToken) {
+      _debounce?.cancel();
+      _generation++;
+      _remote = const [];
+      _serverLoading = false;
+      _serverError = null;
+      if (widget.accountId != oldWidget.accountId) {
+        _search.clear();
+        _query = '';
+      } else if (_query.isNotEmpty && widget.online) {
+        _queueRemote();
+      }
+    }
+  }
 
   @override
   void dispose() {
+    _generation++;
+    _debounce?.cancel();
     _search.dispose();
     super.dispose();
   }
 
+  bool _current(int generation, String account, String token, String query) =>
+      mounted &&
+      generation == _generation &&
+      account == widget.accountId &&
+      token == widget.accessToken &&
+      query == _query;
+
+  void _queueRemote() {
+    _debounce?.cancel();
+    final generation = ++_generation;
+    final query = _query;
+    final account = widget.accountId;
+    final token = widget.accessToken;
+    if (query.isEmpty || !widget.online || account.isEmpty || token.isEmpty) {
+      _serverLoading = false;
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      unawaited(_fetchRemote(generation, account, token, query));
+    });
+  }
+
+  Future<void> _fetchRemote(
+      int generation, String account, String token, String query) async {
+    if (!_current(generation, account, token, query)) return;
+    setState(() => _serverLoading = true);
+    try {
+      final items = await widget.inbox.search(bearer: token, query: query);
+      if (!_current(generation, account, token, query)) return;
+      setState(() {
+        _remote = items;
+        _serverError = null;
+        _serverLoading = false;
+      });
+    } on DioException catch (error) {
+      if (!_current(generation, account, token, query)) return;
+      final status = error.response?.statusCode;
+      setState(() {
+        _remote = const [];
+        _serverLoading = false;
+        _serverError = status == 401 || status == 403
+            ? 'Authorization required for server search.'
+            : status == 503 || status == 410 || status == 404
+                ? 'Server conversations are not available yet. Showing saved chats.'
+                : 'Server search unavailable. Showing saved chats.';
+      });
+    } catch (_) {
+      if (!_current(generation, account, token, query)) return;
+      setState(() {
+        _remote = const [];
+        _serverLoading = false;
+        _serverError = 'Could not search server conversations. Showing saved chats.';
+      });
+    }
+  }
+
   void _changed(String raw) {
     final query = raw.trim().toLowerCase();
-    if (query != _query) setState(() => _query = query);
+    if (query == _query) return;
+    setState(() {
+      _query = query;
+      _remote = const [];
+      _serverError = null;
+      _serverLoading = false;
+      _queueRemote();
+    });
   }
 
   void _clear() {
     _search.clear();
-    if (_query.isNotEmpty) setState(() => _query = '');
+    _debounce?.cancel();
+    _generation++;
+    setState(() {
+      _query = '';
+      _remote = const [];
+      _serverLoading = false;
+      _serverError = null;
+    });
+  }
+
+  void _retryRemote() {
+    if (_query.isEmpty || !widget.online) return;
+    setState(() {
+      _serverError = null;
+      _queueRemote();
+    });
+  }
+
+  Future<void> _toggleRemotePin(MasanaInboxSearchItem item) async {
+    final account = widget.accountId;
+    final token = widget.accessToken;
+    try {
+      final revision = await widget.inbox.setPinned(
+        bearer: token,
+        characterId: item.characterId,
+        pinned: !item.pinned,
+        expectedRevision: item.revision,
+      );
+      if (!mounted || account != widget.accountId ||
+          token != widget.accessToken) {
+        return;
+      }
+      setState(() {
+        _remote = [
+          for (final entry in _remote)
+            if (entry.characterId == item.characterId)
+              entry.withPin(!item.pinned, revision)
+            else
+              entry,
+        ];
+      });
+    } catch (_) {
+      if (!mounted || account != widget.accountId ||
+          token != widget.accessToken) {
+        return;
+      }
+      setState(() => _serverError = 'Could not update pin. Retry search.');
+    }
+  }
+
+  void _openRemote(MasanaInboxSearchItem item) {
+    final account = widget.accountId;
+    final token = widget.accessToken;
+    widget.onOpenRemote(item);
+    unawaited(widget.inbox.markRead(
+      bearer: token,
+      characterId: item.characterId,
+    ).then((_) {
+      if (mounted && account == widget.accountId &&
+          token == widget.accessToken) {
+        _retryRemote();
+      }
+    }).catchError((Object _) {
+      // Keep unread visible on failed receipt; do not fabricate a read.
+    }));
   }
 
   @override
@@ -602,6 +770,11 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
           (thread.title?.toLowerCase().contains(_query) ?? false) ||
           thread.characterId.toLowerCase().contains(_query);
     }).toList(growable: false);
+    final visibleIds = visible.map((item) => item.characterId).toSet();
+    final remote = _query.isEmpty
+        ? const <MasanaInboxSearchItem>[]
+        : _remote.where((row) => !visibleIds.contains(row.characterId))
+            .take(50).toList(growable: false);
 
     return Column(
       children: [
@@ -612,8 +785,51 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
           onChanged: _changed,
           onClear: _clear,
         ),
-        if (widget.directory.loading)
+        if (widget.directory.loading || _serverLoading)
           const LinearProgressIndicator(minHeight: 2),
+        if (_query.isNotEmpty && _serverError != null)
+          MaterialBanner(
+            content: Text(_serverError!),
+            actions: [
+              TextButton(onPressed: _retryRemote, child: const Text('Retry server search')),
+            ],
+          ),
+        if (remote.isNotEmpty)
+          SizedBox(
+            height: remote.length == 1 ? 106 : 232,
+            child: ListView.builder(
+              itemCount: remote.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Text('Other server conversations',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                  );
+                }
+                final result = remote[index - 1];
+                return ListTile(
+                  dense: true,
+                  key: ValueKey('remote-${result.characterId}'),
+                  leading: CircleAvatar(
+                    child: Text(result.displayName[0].toUpperCase()),
+                  ),
+                  title: Text(result.displayName),
+                  subtitle: Text(result.lastMessage.isNotEmpty
+                      ? result.lastMessage : result.profession,
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  trailing: IconButton(
+                    tooltip: result.pinned ? 'Unpin server conversation'
+                        : 'Pin server conversation',
+                    icon: Icon(result.pinned ? Icons.push_pin
+                        : Icons.push_pin_outlined),
+                    onPressed: () => _toggleRemotePin(result),
+                  ),
+                  onTap: () => _openRemote(result),
+                );
+              },
+            ),
+          ),
         if (widget.directory.error != null && widget.threads.isNotEmpty)
           MaterialBanner(
             content: const Text(
@@ -624,10 +840,13 @@ class _ChatsSearchPaneState extends State<_ChatsSearchPane> {
             ],
           ),
         Expanded(
-          child: _query.isNotEmpty &&
+          child: remote.isNotEmpty && visible.isEmpty
+              ? const SizedBox.shrink()
+              : _query.isNotEmpty &&
                   visible.isEmpty &&
                   widget.threads.isNotEmpty &&
-                  !widget.directory.loading
+                  !widget.directory.loading &&
+                  !_serverLoading
               ? Center(
                   child: SingleChildScrollView(
                     child: Padding(
