@@ -1737,6 +1737,13 @@
         ],
         "original_claim_preserved": true,
         "voice_paths_reserved": true
+      },
+      "released_at": "2026-10-13T06:57:32.000Z",
+      "release_reason": "Reviewed expired 2026-10-12 AF05 lease and WIP source head d9ec3a3c60d2; no fresh PR/lease, no deletions. Owner requested missing features recovered and merged. Transfer only enumerated voice-note source paths; preserve existing native/live-voice/Gateway code and original branch.",
+      "transfer_record": {
+        "at": "2026-10-13T06:57:32.000Z",
+        "to": "af05-voice-notes-recovery-20261013",
+        "basis": "Explicit owner-directed unmerged-feature recovery; original WIP inspected and preserved; old claim expired yesterday."
       }
     },
     {
@@ -1864,6 +1871,31 @@
       "source_head": "6f7b4f7a1d3381686e9df2e195b35827628d74ae",
       "integration_head_sha": "7d16ed7b83e02beff153e462924d472951cf9202",
       "release_reason": "PR #703 merged into main; exact-head 10/10 Flutter focused and zero-issue analyzer PASS (run 38359075382); merged main same focused suite PASS (run 38359185626); old PR #606 closed superseded. Full mobile build and Foundation CI remain pre-existing unrelated failures, device/Firebase E2E NOT_RUN."
+    },
+    {
+      "base_sha": "174c7d1b633a15607e069a0205269baf414e3b95",
+      "branch": "recover/af05-voice-notes-connected-20261013",
+      "claim_id": "af05-voice-notes-recovery-20261013",
+      "claimed_at": "2026-10-13T06:57:32.000Z",
+      "expires_at": "2026-10-13T07:02:32.000Z",
+      "heartbeat_at": "2026-10-13T06:57:32.000Z",
+      "owner": "GPT-6 / AF05 voice-note completion",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "apps/mobile/lib/src/core/voice_note_recorder.dart",
+        "apps/mobile/lib/src/core/audio_failure.dart",
+        "apps/mobile/lib/src/ui/components/voice_note_composer.dart",
+        "apps/mobile/lib/src/agents/masanawa_transport.dart",
+        "apps/mobile/test/voice_note_recorder_test.dart",
+        "apps/mobile/test/voice_note_composer_test.dart",
+        "apps/mobile/test/ai_chat_voice_actions_test.dart",
+        "apps/mobile/test/audio_failure_test.dart",
+        "apps/mobile/test/call_lifecycle_reporter_test.dart",
+        ".github/workflows/mobile-voice-note-regression.yml",
+        "docs/workstreams/AF05-voice-notes-connected-20261013.md"
+      ],
+      "scope": "Recover AF05 unmerged native recorder and UI; connect chat microphone to owner-fenced offline-safe voice-note attachment; preserve independent live call button and tests.",
+      "notes": "Original one-commit WIP branch lane/af05-android-voice-repair-20261012, source head d9ec3a3c60d2, contains 9 files and authored tests; no PR. Avoid other voice/session/native/finance/composition paths."
     }
   ],
   "history": [
