@@ -1848,7 +1848,6 @@
         "services/gateway/src/api_versioning.test.ts",
         "services/gateway/src/api_versioning.ts",
         "services/gateway/src/app.test.ts",
-        "services/gateway/src/app.ts",
         "services/gateway/src/clone_onboarding.test.ts",
         "services/gateway/src/clone_onboarding.ts",
         "services/gateway/src/clone_onboarding_routes.test.ts",
@@ -1856,7 +1855,6 @@
         "services/gateway/src/clone_onboarding_shell.test.ts",
         "services/gateway/src/clone_onboarding_shell.ts",
         "services/gateway/src/clone_onboarding_startup.test.ts",
-        "services/gateway/src/main.ts",
         "services/gateway/src/talk_ai_seat_routes.test.ts",
         "tests/contracts/public-api-lifecycle.test.ts"
       ],
@@ -1869,7 +1867,18 @@
       "transferred_paths": [
         "apps/mobile/lib/src/router/app_router.dart",
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart"
-      ]
+      ],
+      "bounded_source_transfer": {
+        "at": "2026-10-13T06:01:47.593Z",
+        "approved_by": "owner-directed PR #616 comment 6139065553 and 2026-10-13 continuation",
+        "to": "af00-j06-j07-c10-20261013",
+        "paths": [
+          "services/gateway/src/app.ts",
+          "services/gateway/src/main.ts"
+        ],
+        "original_claim_preserved": true,
+        "reviewed_main": "875654e90a192b82dcdaab05f1fb2b4e07e93202"
+      }
     },
     {
       "base_sha": "708a2ba11",
@@ -1992,10 +2001,19 @@
         "apps/mobile/lib/src/agents/masanawa_transport.dart",
         "apps/mobile/test/call_lifecycle_reporter_test.dart",
         "services/gateway/src/live_voice_token.ts",
-        "services/gateway/src/call_history/token_recording.test.ts",
-        "services/gateway/src/main.ts"
+        "services/gateway/src/call_history/token_recording.test.ts"
       ],
-      "scope": "Restore real composer voice notes and diagnose/fix call start errors; retain AF11 history/billing/incoming"
+      "scope": "Restore real composer voice notes and diagnose/fix call start errors; retain AF11 history/billing/incoming",
+      "bounded_source_transfer": {
+        "at": "2026-10-13T06:01:47.593Z",
+        "approved_by": "owner-directed PR #616 comment 6139065553 and 2026-10-13 continuation",
+        "to": "af00-j06-j07-c10-20261013",
+        "paths": [
+          "services/gateway/src/main.ts"
+        ],
+        "original_claim_preserved": true,
+        "voice_paths_reserved": true
+      }
     },
     {
       "base_sha": "600fe204c1610c6c715ad9d61387f58f67d5817a",
@@ -2044,6 +2062,40 @@
       "released_at": "2026-10-12T19:50:07.080502+00:00",
       "scope": "Mounted Crypto presentation and existing transaction sheets; no controller/authority/backend changes",
       "source_head": "e2950f41c96599a8223e089a9713318d780abf6d"
+    },
+    {
+      "base_sha": "875654e90a192b82dcdaab05f1fb2b4e07e93202",
+      "branch": "lane/af00-status-rooms-chats-backend-20261013",
+      "claim_id": "af00-j06-j07-c10-20261013",
+      "claimed_at": "2026-10-13T06:01:47.593Z",
+      "expires_at": "2026-10-13T06:06:47.593Z",
+      "heartbeat_at": "2026-10-13T06:01:47.593Z",
+      "owner": "AF00 / GPT-6 owner-directed protected source composition",
+      "paths": [
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/modules/home_feed/**",
+        "services/gateway/src/modules/masana_chat/**",
+        "services/gateway/src/modules/rooms/**",
+        "adapters/storage/postgres/src/readiness.ts",
+        "adapters/storage/postgres/src/index.ts",
+        "adapters/storage/postgres/src/home_feed/**",
+        "adapters/storage/postgres/src/masana/**",
+        "adapters/storage/postgres/src/masana_chat/**",
+        "adapters/storage/postgres/src/rooms/**",
+        "packages/feed/**",
+        "packages/masana/**",
+        "packages/rooms/**",
+        "services/worker/src/jobs/home_feed/**",
+        "services/worker/src/jobs/rooms/**",
+        "services/gateway/package.json",
+        "adapters/storage/postgres/package.json",
+        "services/worker/package.json",
+        "pnpm-lock.yaml",
+        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
+      ],
+      "scope": "Selective J06 status / J07-J08-C38 rooms / C10 server-wide Chats backend, forward-only PG and disabled paid/publishing with current Calls preserved",
+      "notes": "PR #616 comment 6139065553 approved bounded transfer; original AF05 native/voice and cloud branches stay intact. No whole-shell merge, production migrations/provider activation or known regressions. Source PRs #674/#676/#625/#655/#641."
     }
   ],
   "history": [
