@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'room_discussion_api.dart';
 import 'room_discussion_screen.dart';
+import 'room_membership_client.dart';
+import 'room_membership_screen.dart';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -22,13 +24,14 @@ String roomError(Object e){
  return 'Could not load. Check the network and retry.';
 }
 class RoomsScreen extends StatefulWidget {
- const RoomsScreen({super.key,required this.client,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey,this.protectDetail});
+ const RoomsScreen({super.key,required this.client,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey,this.membershipClient,this.protectDetail});
  final RoomsClient client;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
  final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
  final SavedLessonsClient? savedLessonsClient;
  final String? savedLessonsAccountKey;
+ final RoomMembershipClient? membershipClient;
  final RoomDetailProtector? protectDetail;
  @override State<RoomsScreen> createState()=>_RoomsScreenState();
 }
@@ -81,7 +84,8 @@ class _RoomsScreenState extends State<RoomsScreen>{
         final detail=RoomHomeScreen(client:widget.client,id:r.id,
           discussionApi:widget.discussionApi,discussionAccountScope:widget.discussionAccountScope,
           onDiscussionReport:widget.onDiscussionReport,
-          savedLessonsClient:widget.savedLessonsClient,savedLessonsAccountKey:widget.savedLessonsAccountKey);
+          savedLessonsClient:widget.savedLessonsClient,savedLessonsAccountKey:widget.savedLessonsAccountKey,
+          membershipClient:widget.membershipClient);
         return widget.protectDetail?.call(routeContext,detail)??detail;
        }));
        if(mounted)load();
@@ -92,13 +96,15 @@ class _RoomsScreenState extends State<RoomsScreen>{
 }
 class RoomHomeScreen extends StatefulWidget {
  const RoomHomeScreen({super.key,required this.client,required this.id,
-  this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
+  this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey,
+  this.membershipClient});
  final RoomsClient client;final String id;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
  final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
  final SavedLessonsClient? savedLessonsClient;
  final String? savedLessonsAccountKey;
+ final RoomMembershipClient? membershipClient;
  @override State<RoomHomeScreen> createState()=>_RoomHomeScreenState();
 }
 class _RoomHomeScreenState extends State<RoomHomeScreen>{
@@ -216,7 +222,13 @@ class _RoomHomeScreenState extends State<RoomHomeScreen>{
  }
  @override Widget build(BuildContext context)=>Scaffold(
   appBar:AppBar(title:Text(info?.title??'Room'),backgroundColor:Colors.white,foregroundColor:Colors.black87,
-   actions:widget.savedLessonsClient==null?null:[IconButton(
+   actions:[
+    if(widget.membershipClient!=null) IconButton(
+      key:const Key('room-invitations'),tooltip:'Room invitations',
+      onPressed:()=>Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>
+        RoomMembershipScreen(client:widget.membershipClient!,roomId:widget.id,onJoined:load))),
+      icon:const Icon(Icons.mark_email_unread_outlined)),
+    if(widget.savedLessonsClient!=null) IconButton(
     key:const Key('room-saved-lessons'),tooltip:'Saved lessons',
     onPressed:info?.joined==true&&!paidAccessBlocked&&widget.savedLessonsAccountKey==widget.savedLessonsClient?.accountKey?openSaved:null,
     icon:const Icon(Icons.bookmarks_outlined))]),
