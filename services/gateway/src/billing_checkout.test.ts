@@ -644,16 +644,16 @@ describe("billing checkout", () => {
       revision: number;
       nodes: Array<{ action?: string; token?: string }>;
     };
-    const start = quotedDoc.nodes.find((node) => node.action === "billing.checkout.start")!;
+    // Customer-facing quotes now offer wallet-first confirmation. Legacy
+    // hosted checkout remains an explicit authenticated API, not a shell CTA.
+    expect(quotedDoc.nodes.some((node) => node.action === "billing.wallet.confirm")).toBe(true);
     at = "2026-10-04T20:00:30.000Z";
-    const checkoutExecution = await service.executeShellAction({
+    const checkout = await service.startCheckout({
       authorizationHeader: "Bearer session",
-      documentId: quotedDoc.id,
-      revision: quotedDoc.revision,
-      actionId: "billing.checkout.start",
-      token: start.token!,
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
     });
-    const checkoutDoc = checkoutExecution.document as {
+    const checkoutDoc = checkout.document as {
       id: string;
       revision: number;
       expiresAt: string;
