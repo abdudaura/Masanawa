@@ -2014,7 +2014,12 @@
       "claimed_at": "2026-10-13T10:04:28.703Z",
       "heartbeat_at": "2026-10-13T10:50:00.000Z",
       "expires_at": "2026-10-13T11:20:00.000Z",
-      "notes": "Continuing named AF01 #712 owner; adding exact PostgreSQL repository+concurrent replay test paths to resolve observed CI #38381724205 23505. Reviewed older expired AF01 #460 and expired AF06 #600 overlapping claims; preserve both PRs/branches, no wholesale cherry-pick; current main ledger code equals #712 base. Focus on request vs ledger uniqueness conflict; no migration/production flag changes."
+      "notes": "Continuing named AF01 #712 owner; adding exact PostgreSQL repository+concurrent replay test paths to resolve observed CI #38381724205 23505. Reviewed older expired AF01 #460 and expired AF06 #600 overlapping claims; preserve both PRs/branches, no wholesale cherry-pick; current main ledger code equals #712 base. Focus on request vs ledger uniqueness conflict; no migration/production flag changes.",
+      "released_at": "2026-10-13T11:02:00.000Z",
+      "release_reason": "AF01 PR #712 source and exact-head 58/58 PostgreSQL18+Vitest and 50/50 Flutter scoped regressions plus zero focused Dart analysis; merged to main 8d5a0492b65ebe702087dfe61457b562ea201760. Both financial flags remain default OFF. Global analysis/TS, live provider/device/release remain OPEN.",
+      "source_head": "4fcda058e4f65ead1c8b55c27d0b55897ce79401",
+      "source_pr": 712,
+      "integration_head_sha": "8d5a0492b65ebe702087dfe61457b562ea201760"
     }
   ],
   "history": [
