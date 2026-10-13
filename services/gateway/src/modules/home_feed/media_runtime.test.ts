@@ -5,7 +5,7 @@ import {registerStatusRuntime} from "./runtime.js";
 const post={tenantId:"tenant_real",postId:"381026c2-9d56-47b1-b73d-1784e24e41e2",mediaId:"media_abcdefgh",authorMasanaId:"masana",kind:"image" as const,transcript:null};
 function fixture(){
  const object=vi.fn(async()=>({objectKey:"canonical/tenant_real/approved.png"}));
- const find=vi.fn(async()=>post);
+ const find=vi.fn(async():Promise<{tenantId:string;postId:string;mediaId:string;authorMasanaId:string;kind:"image"|"audio";transcript:string|null}|null>=>post);
  const statObject=vi.fn(async()=>({contentType:"image/png",bytes:1024}));
  const presignGet=vi.fn(async()=>({url:"https://media.example/signed",expiresAt:new Date(Date.now()+120000).toISOString()}));
  const input={eligibility:{object},published:{find},configuration:{objects:{statObject,presignGet},approvedDownloadOrigins:["https://media.example"]}};

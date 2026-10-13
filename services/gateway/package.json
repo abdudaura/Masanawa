@@ -14,6 +14,7 @@
     "@masanawa/contracts": "workspace:*",
     "@masanawa/commerce": "workspace:*",
     "@masanawa/feed": "workspace:*",
+    "@masanawa/rooms": "workspace:*",
     "@masanawa/identity": "workspace:*",
     "fastify": "5.12.5",
     "typebox": "1.3.34",

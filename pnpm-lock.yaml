@@ -529,6 +529,9 @@ importers:
       '@masanawa/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@masanawa/rooms':
+        specifier: workspace:*
+        version: link:../../packages/rooms
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../packages/security

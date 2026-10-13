@@ -14,7 +14,7 @@ export function createConfiguredStatusMedia(
  if(entries.some(value=>!value)){
   throw new TypeError("Status media storage configuration incomplete");
  }
- const [endpoint,region,bucket,accessKey,secret,origin]=entries as string[];
+ const [endpoint,region,bucket,accessKey,secret,origin]=entries as [string,string,string,string,string,string];
  const objects=createReplayObjectStore({
   endpoint,region,bucket,accessKey,secret,
   maxObjectBytes:30*1024*1024,
