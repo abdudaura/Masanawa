@@ -5,6 +5,7 @@ on:
     paths:
       - "apps/mobile/lib/src/screens/chat/**"
       - "apps/mobile/lib/src/core/voice_note_recorder.dart"
+      - "apps/mobile/lib/src/core/agent_audio_attachment.dart"
       - "apps/mobile/lib/src/core/live_voice_session.dart"
       - "apps/mobile/lib/src/core/live_pcm_audio.dart"
       - "apps/mobile/lib/src/ui/components/voice_note_composer.dart"
@@ -12,6 +13,7 @@ on:
       - "apps/mobile/lib/src/state/ai_chat_state.dart"
       - "apps/mobile/lib/src/calls/**"
       - "apps/mobile/test/voice_note*"
+      - "apps/mobile/test/agent_audio_attachment_test.dart"
       - "apps/mobile/test/live_voice*"
       - "apps/mobile/test/ai_chat*"
       - "services/gateway/src/agent_conversation*"
@@ -88,6 +90,7 @@ jobs:
           test/agent_recovery_test.dart
           test/voice_note_recorder_test.dart
           test/voice_note_composer_test.dart
+          test/agent_audio_attachment_test.dart
           test/ai_chat_voice_actions_test.dart
           test/audio_failure_test.dart
           test/live_voice_session_test.dart
@@ -103,6 +106,7 @@ jobs:
         run: >-
           flutter analyze --no-pub --no-fatal-infos
           lib/src/core/voice_note_recorder.dart
+          lib/src/core/agent_audio_attachment.dart
           lib/src/core/live_voice_session.dart
           lib/src/core/live_pcm_audio.dart
           lib/src/ui/components/voice_note_composer.dart
