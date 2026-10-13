@@ -28,6 +28,7 @@ import '../../calls/group_paid_voice_transport.dart';
 import '../../calls/group_paid_voice_outbox.dart';
 import '../../core/live_pcm_audio.dart';
 import '../../core/live_voice_session.dart';
+import '../../ui/components/voice_note_composer.dart';
 import '../../core/app_permissions.dart';
 import '../../agents/agent_shell.dart';
 import '../../agents/masanawa_transport.dart';
@@ -106,6 +107,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   String _inlineCurrentTranscript = '';
   LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
   bool _inlineVoiceClosing = false;
+  bool _voiceNoteSheetOpen = false;
 
   @override
   void initState() {
@@ -351,6 +353,52 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       ),
     );
     return false;
+  }
+
+  /// Record a local voice message, without starting a paid LiveKit/Gemini call.
+  /// The existing chat controller retains offline queue/retry and receipts.
+  Future<void> _openVoiceNoteComposer() async {
+    if (_voiceNoteSheetOpen || !mounted) return;
+    if (_inlineVoiceSession != null || _modalVoiceSession != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End the live call before recording a voice note.')),
+      );
+      return;
+    }
+    final session = ref.read(sessionProvider);
+    if (session is! SessionSignedIn || session.user.id.isEmpty) return;
+    final accountId = session.user.id;
+    final recorder = ref.read(voiceNoteRecorderFactoryProvider)();
+    _voiceNoteSheetOpen = true;
+    FocusScope.of(context).unfocus();
+    bool sameAccount() {
+      if (!mounted) return false;
+      final active = ref.read(sessionProvider);
+      return active is SessionSignedIn && active.user.id == accountId;
+    }
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => VoiceNoteComposer(
+          recorder: recorder,
+          isOwnerCurrent: sameAccount,
+          onSend: (attachment) async {
+            if (!sameAccount() ||
+                ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) {
+              return false;
+            }
+            await ref.read(aiChatProvider.notifier)
+                .sendAttachment(widget.characterId, attachment);
+            return sameAccount();
+          },
+        ),
+      );
+    } finally {
+      await recorder.close();
+      _voiceNoteSheetOpen = false;
+    }
   }
 
   // ---- Attachments ---------------------------------------------------------
@@ -1033,7 +1081,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 onAttach: _openAttachSheet,
                 onMic: updateRequired
                     ? () {}
-                    : () => unawaited(_startInlineLiveVoice(agent)),
+                    : () => unawaited(_openVoiceNoteComposer()),
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -2396,7 +2444,7 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: 6),
             Semantics(
               button: true,
-              label: hasText ? 'Send message' : 'Start live voice',
+              label: hasText ? 'Send message' : 'Record voice note',
               child: Material(
                   color: u.brand,
                   shape: const CircleBorder(),
