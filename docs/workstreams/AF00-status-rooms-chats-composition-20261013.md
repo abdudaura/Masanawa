@@ -12,9 +12,11 @@ Reconciled older AF00 #700 source head `99624b46a27448801f649a321fac15f5f31f2496
 
 ## Evidence and remaining
 
-Source/test code authored with focused fail-closed, trusted fan scope, header-spoof and default routing tests. Hosted command to execute on exact source head:
-`pnpm --frozen-lockfile install && pnpm --filter @masanawa/postgres build && pnpm --filter @masanawa/gateway test -- modules/masana_chat/af00_composition.test.ts modules/masana_chat/inbox_routes.test.ts modules/rooms/routes.test.ts`.
-Run DB18 fresh + upgrade migrations, negative cross-fan/tenant, Flutter mounted Rooms and Chats server integration and Android signed-device qualification separately. The present connector-only session lacks local private checkout/pnpm/PostgreSQL18/Flutter, so code tests are NOT_RUN unless later hosted results prove execution.
+Source implementation and route/schema test tree verified at `37ff01b8c3612a3002faad2966f37bef3ede754c` in PR #704 after repairing a proven missing Postgres workspace importer and restoring explicit cross-root order `masana → external-videos → feed → rooms`. No numbered SQL changed. The final handoff-only commit leaves these tested code blobs unchanged.
+
+**Executed hosted evidence at the source SHA:** [Status Video Integration run #38359483451](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38359483451) used Node 24, pnpm 12.8.2, real PostgreSQL 18.6 service, frozen workspace install and `pnpm exec vitest run` on 14 selected Status, Videos, Rooms, C10 and real PG18 migration suites. **14 suites PASS, 62 tests PASS (including fresh/upgrade, schema readiness and second-run idempotence)**. The first two iterations failed for a missing `@masanawa/rooms` workspace dependency and cross-root `feed.saved_videos → external_videos.items` FK ordering respectively; both fixed and rerun. Do not claim running those tests locally.
+
+**Whole-project TypeScript remains FAILED:** same hosted run strict Gateway typecheck reports existing third-party declaration, legacy Talk, call history and test fixture errors (75 diagnostics, none in touched source). [Foundation run #38359483373](https://github.com/weavewellindustrieslimited/masanawa/actions/runs/38359483373) stops at existing `packages/agents/src/talk-replay.test.ts` TS2459. These are not a green build or suppression of failures. Flutter/Dart, device, real tenant/provider and production DB restore checks NOT_RUN. Feature activation flags remain OFF; code merge does not qualify production migrations or customer release.
 
 Remaining: MUI-03 server-wide Chats client, full authorized pagination/title matching, AF08 auth-transport refresh fencing, MUI-04 Status/audio/Video device and rights qualification, MUI-06 Rooms real PG and moderated/invite paid gates, AF01 MSN funding/quotedAt, MUI-09 combined regression, MUI-10 signed installed identity, AF11 device/provider proof. No paid/provider activation.
 
