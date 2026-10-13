@@ -178,8 +178,32 @@ function isDirectExecution(): boolean {
   return Boolean(entry && import.meta.url === pathToFileURL(entry).href);
 }
 
+/**
+ * Worker startup errors may include untrusted provider/connection details.
+ * Emit only fixed, non-sensitive diagnostic codes so Railway outages can be
+ * repaired without leaking a Gemini key or PostgreSQL connection string.
+ */
+export function safeWorkerStartupReason(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  switch (message) {
+    case "rooms_ai.credentials_required":
+    case "rooms_ai.models_invalid":
+    case "rooms_teacher_postgres_pool_required":
+    case "Missing required environment variable: DATABASE_URL":
+    case "service.start_failed":
+      return message;
+    default:
+      return "worker_startup_unknown";
+  }
+}
+
 if (isDirectExecution()) {
-  void startWorkerService().catch(() => {
+  void startWorkerService().catch(error => {
+    process.stderr.write(JSON.stringify({
+      event: "service.start_failed",
+      service: "worker",
+      reason: safeWorkerStartupReason(error),
+    }) + "\n");
     process.exitCode = 1;
   });
 }
