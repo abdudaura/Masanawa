@@ -2084,11 +2084,12 @@
         "docs/workstreams/AF01-msn-funding-status-20261013.md"
       ],
       "claimed_at": "2026-10-13T13:03:36.016Z",
-      "heartbeat_at": "2026-10-13T13:14:56.954Z",
-      "expires_at": "2026-10-13T13:21:56.954Z",
+      "heartbeat_at": "2026-10-13T13:24:19.297Z",
+      "expires_at": "2026-10-13T13:34:19.297Z",
       "scope": "Staged (non-auto) MSN quote/fiat verification journal, authenticated account-safe status route and Flutter readback behind flags OFF; no mint/pay/conversion",
       "notes": "No other existing ledger/provider activation. Extend proposal 0112 without production migrations",
-      "source_head": "56cf3e49ce3788dd161e2e0d9b828146a0ee6e4e"
+      "source_head": "cec24fb3863c7f8877149f6075c1fd34568d6c70",
+      "source_pr": 715
     }
   ],
   "history": [
