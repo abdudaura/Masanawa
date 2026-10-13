@@ -1,3 +1,8 @@
+import { registerStatusRuntime, type StatusRuntime } from "./modules/home_feed/runtime.js";
+import { registerExternalVideoRoutes } from "./modules/external_videos/routes.js";
+import type { VideoStore } from "./modules/external_videos/service.js";
+import type { VideoPrincipal } from "./modules/external_videos/contract.js";
+import type { FastifyRequest } from "fastify";
 import { registerIncomingCallRoutes } from "./incoming_calls/routes.js";
 import { IncomingCallError, type IncomingCallService } from "./incoming_calls/service.js";
 import { registerGroupCallRoutes } from "./group_calls/routes.js";
@@ -93,6 +98,11 @@ export interface ReadinessCheck {
 }
 
 export interface GatewayAppOptions {
+  readonly status?: StatusRuntime;
+  readonly videos?: {
+    store: VideoStore;
+    resolvePrincipal: (request: FastifyRequest) => Promise<VideoPrincipal>;
+  };
   readonly callHistory?: CallHistoryService;
   readonly groupCalls?: GroupCallService;
   readonly incomingCalls?: IncomingCallService;
@@ -1503,6 +1513,13 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
+  // These modules reuse the same host app, tenant authority and database.
+  if (options.status) {
+    app.register(async scope => { await registerStatusRuntime(scope, options.status!); });
+  }
+  if (options.videos) {
+    app.register(async scope => { registerExternalVideoRoutes(scope, options.videos!); });
+  }
   if (options.callHistory) registerCallHistoryRoutes(app, options.callHistory);
   if (options.groupCalls) registerGroupCallRoutes(app, options.groupCalls);
   if (options.incomingCalls) registerIncomingCallRoutes(app, options.incomingCalls);
