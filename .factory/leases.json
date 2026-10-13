@@ -2021,6 +2021,19 @@
       "source_head": "c6a3ee3b149245943bef6f5e1c3554a22d584a01",
       "source_pr": 731,
       "integration_head_sha": "483ec92068e6236137a7a28d709b8760414996cc"
+    },
+    {
+      "claim_id": "af00-apk-new-gateway-workflow-20261013-gpt6-2311",
+      "owner": "GPT-6 AF00 Android artifact integration",
+      "paths": [
+        ".github/workflows/masana-android-apk.yml"
+      ],
+      "scope": "Remove retired Gateway URLs injected into APK release compile; retain same signing, tests and artifacts.",
+      "base_sha": "c064d1bf19877ca584f806a25379006412f394fa",
+      "branch": "lane/af00-apk-gateway-build-url-20261013-gpt6",
+      "claimed_at": "2026-10-13T23:09:17.940Z",
+      "heartbeat_at": "2026-10-13T23:09:17.940Z",
+      "expires_at": "2026-10-13T23:44:17.940Z"
     }
   ],
   "history": [
