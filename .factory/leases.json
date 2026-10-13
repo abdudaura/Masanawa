@@ -1999,12 +1999,12 @@
       "paths": [
         "services/gateway/src/main.ts",
         "services/gateway/src/modules/home_feed/composition.test.ts",
-        "services/gateway/src/modules/rooms/af00_staff_composition.test.ts",
+        "services/gateway/src/modules/rooms/routes.test.ts",
         "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
       ],
       "claimed_at": "2026-10-13T09:43:23.013Z",
-      "heartbeat_at": "2026-10-13T09:43:23.013Z",
-      "expires_at": "2026-10-13T09:48:23.013Z",
+      "heartbeat_at": "2026-10-13T09:44:16.521Z",
+      "expires_at": "2026-10-13T09:49:16.521Z",
       "notes": "AF00 shared Gateway main composition; latest main checked; unclaimed exact files; no providers/production flags activated"
     }
   ],
