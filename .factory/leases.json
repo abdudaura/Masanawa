@@ -1816,6 +1816,26 @@
       "source_pr": 701,
       "released_at": "2026-10-13T06:24:55.868Z",
       "release_reason": "PR #701 merged to main at ce968552e648f482ae74f613264f026c0061643e. Focused Mobile Startup Regression run 38356345765 PASS at b8a35b6; later only style fix (braces) at 5c4960e. Earlier Mobile Build whole-project Flutter analyze FAIL (pre-existing extensive warnings + one new style fixed), Foundation TS2459 existing; later current-head run 38356391584 launched, real Android APK startup timing NOT_RUN. No device speed claim."
+    },
+    {
+      "claim_id": "af00-rooms-c10-runtime-20261013-gpt6-continue",
+      "owner": "GPT-6 / owner-directed AF00 Rooms and C10 gateway composition",
+      "claimed_at": "2026-10-13T06:42:33.335Z",
+      "heartbeat_at": "2026-10-13T06:42:33.335Z",
+      "expires_at": "2026-10-13T07:12:33.335Z",
+      "base_sha": "c64994837d3a1a19bd065f94c241178aa512e53d",
+      "branch": "lane/af00-rooms-c10-runtime-20261013",
+      "scope": "Reconcile #700 unique Rooms/C10 protected Gateway runtime source on #702 merged Status/Video, preserving one PG/session authority; explicit default-OFF runtime; focused negative tests",
+      "paths": [
+        "services/gateway/src/app.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/modules/masana_chat/inbox_routes.ts",
+        "services/gateway/src/modules/masana_chat/af00_composition.test.ts",
+        "adapters/storage/postgres/src/index.ts",
+        "docs/workstreams/AF00-status-rooms-chats-composition-20261013.md"
+      ],
+      "notes": "Bounded AF00 shared transfer acknowledged #616 comment 6139065553; previously released af00-j06-j07-c10-20261013 source retained #700; AF05 live voice and Calls untouched. No provider or destructive migrations.",
+      "source_pr": 700
     }
   ],
   "history": [
