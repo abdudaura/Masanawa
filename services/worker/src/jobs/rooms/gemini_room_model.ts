@@ -11,7 +11,11 @@ function credentialKeys(value:unknown,depth=0):string[]{
    if(v.startsWith("{")||v.startsWith("[")){
      try{return credentialKeys(JSON.parse(v) as unknown,depth+1);}catch{return [];}
    }
-   // Match the production Gateway secret contract: one non-empty,\n   // whitespace-free credential of at most 256 characters. The provider\n   // validates key syntax; inventing a narrower regex prevents the Rooms\n   // worker from starting with a key accepted by chat and voice.\n   return v.length>0 && v.length<=256 && !/\\s/u.test(v)?[v]:[];
+   // Match the production Gateway secret contract: one non-empty,
+   // whitespace-free credential of at most 256 characters. The provider
+   // validates key syntax; inventing a narrower regex prevents the Rooms
+   // worker from starting with a key accepted by chat and voice.
+   return v.length > 0 && v.length <= 256 && !/\s/u.test(v) ? [v] : [];
  }
  if(Array.isArray(value))return value.flatMap(x=>credentialKeys(x,depth+1));
  if(typeof value==="object"){
