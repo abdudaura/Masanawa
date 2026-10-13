@@ -1955,12 +1955,13 @@
       "paths": [
         "adapters/storage/postgres/src/rooms/membership.ts",
         "adapters/storage/postgres/src/rooms/membership.test.mjs",
-        "adapters/storage/postgres/src/rooms/membership.integration.test.mjs"
+        "adapters/storage/postgres/src/rooms/membership.integration.test.mjs",
+        "adapters/storage/postgres/src/rooms/repository.ts"
       ],
       "claimed_at": "2026-10-13T16:31:29.857Z",
-      "heartbeat_at": "2026-10-13T16:31:29.857Z",
-      "expires_at": "2026-10-13T16:41:29.857Z",
-      "notes": "Separate from active AF05 voice note and AF07 lessons claims. Default-OFF production Room membership preserved."
+      "heartbeat_at": "2026-10-13T16:33:48.553Z",
+      "expires_at": "2026-10-13T16:43:48.553Z",
+      "notes": "Separate from active AF05 voice note and AF07 lessons claims. Default-OFF production Room membership preserved. Found direct free Room join has the identical stale-role revival bug; expand narrow claim and PG journey to cover both direct join and invitation redemption."
     }
   ],
   "history": [
