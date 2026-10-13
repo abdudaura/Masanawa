@@ -245,11 +245,11 @@ class _OfficialVideoPlayerScreenState extends State<OfficialVideoPlayerScreen>
         AspectRatio(aspectRatio: 16 / 9, child: ColoredBox(
           color: Colors.black,
           child: unavailable || embed == null || verificationFailed
-            ? Center(child: Text(verificationFailed
-                ? t('Could not check video availability. Retry when online.',
-                    'Ba a iya tabbatar da bidiyo ba. Sake gwadawa idan akwai intanet.')
-                : t('Video unavailable here. Open at source.',
-                    'Ba a samun bidiyon nan. Bude daga asali.'),
+            ? Center(child: Text(unavailable || embed == null
+                ? t('Video unavailable here. Open at source.',
+                    'Ba a samun bidiyon nan. Bude daga asali.')
+                : t('Could not check video availability. Retry when online.',
+                    'Ba a iya tabbatar da bidiyo ba. Sake gwadawa idan akwai intanet.'),
                 style: const TextStyle(color: Colors.white)))
             : !playing
               ? Center(child: FilledButton.icon(
