@@ -2067,15 +2067,16 @@
       "branch": "lane/af10-rooms-production-build-20261013-gpt6",
       "base_sha": "d547dcdccf3ec448c65ee8dd995ca29e91d1d3e2",
       "paths": [
-        "services/gateway/src/call_history/routes.ts",
-        "services/gateway/src/call_history/routes.test.ts",
         ".github/workflows/rooms-production-build.yml",
-        "docs/workstreams/AF10-rooms-production-activation-20261013.md"
+        ".github/workflows/status-video-integration.yml",
+        "docs/workstreams/AF10-rooms-production-activation-20261013.md",
+        "services/gateway/src/call_history/routes.test.ts",
+        "services/gateway/src/call_history/routes.ts"
       ],
-      "pr": "",
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/717",
       "claimed_at": "2026-10-13T14:02:47.536Z",
-      "heartbeat_at": "2026-10-13T14:02:47.536Z",
-      "expires_at": "2026-10-13T14:07:47.536Z"
+      "heartbeat_at": "2026-10-13T14:05:08.181Z",
+      "expires_at": "2026-10-13T14:10:08.181Z"
     }
   ],
   "history": [
