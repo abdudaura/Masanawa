@@ -8,6 +8,7 @@ import {
   createMasanaInboxRepository,
   ensureMasanaCatalogProfilesAndRooms,withCatalogProvisionLock,
 } from "@masanawa/postgres";
+import {createPgAgentRoomDirectory} from "./agent_directory_rooms.js";
 import { createStatusMediaRuntime, type StatusMediaConfiguration } from "./modules/home_feed/media_runtime.js";
 import { createConfiguredStatusMedia } from "./modules/home_feed/media_environment.js";
 import type { StatusRuntime } from "./modules/home_feed/runtime.js";
@@ -2453,6 +2454,7 @@ export async function startGatewayService(
         ? createIncomingCallService({
             repository: database.incomingCalls,
             authorizer: directoryAuthorizer,
+           ...(database.featurePool ? { rooms:createPgAgentRoomDirectory(database.featurePool) } : {}),
             serverAuthorizer: createIncomingServerAuthorizer(env.MASANAWA_INCOMING_CALLS_SERVER_TOKEN),
             liveVoiceTokens,
             ...(pushSender ? { pushSender } : {}),

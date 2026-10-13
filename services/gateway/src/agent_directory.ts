@@ -34,8 +34,12 @@ export interface MobileAgentDirectoryEntry {
   readonly defaultPlatformAgent: boolean;
   readonly voiceProvider: string | null;
   readonly voiceName: string | null;
+  readonly roomId?: string;
 }
 
+export interface AgentRoomDirectoryReader {
+  readPublished(input:{readonly tenantId:TenantId;readonly characterIds:readonly CharacterId[]}):Promise<ReadonlyMap<CharacterId,string>>;
+}
 export interface AgentDirectoryService {
   list(input: {
     readonly authorizationHeader: string | undefined;
@@ -63,6 +67,7 @@ export function createAgentDirectoryService(input: {
   readonly platformProfiles?: PlatformAgentProfileRepository;
   readonly userPreferences?: UserAgentPreferenceRepository;
   readonly activity?: MobileAgentActivityRepository;
+  readonly rooms?: AgentRoomDirectoryReader;
 }): AgentDirectoryService {
   return Object.freeze<AgentDirectoryService>({
     async list(
@@ -84,7 +89,7 @@ export function createAgentDirectoryService(input: {
       );
 
       const characterIds = visible.map((item) => item.characterId);
-      const [preference, profiles, activity] = await Promise.all([
+      const [preference, profiles, activity, rooms] = await Promise.all([
         input.userPreferences?.readForUser({
           tenantId: authority.tenantId,
           userId: authority.userId,
@@ -106,6 +111,8 @@ export function createAgentDirectoryService(input: {
               characterIds,
             })
           : Promise.resolve([]),
+        input.rooms ? input.rooms.readPublished({tenantId:authority.tenantId,characterIds})
+          : Promise.resolve(new Map<CharacterId,string>()),
       ]);
       const profileByCharacter = new Map(
         profiles.map(({ characterId, profile }) => [characterId, profile]),
@@ -140,6 +147,8 @@ export function createAgentDirectoryService(input: {
             defaultPlatformAgent,
             voiceProvider: profile?.voiceProvider ?? null,
             voiceName: profile?.voiceName ?? null,
+            ...(rooms.has(presentation.characterId)
+              ? {roomId:rooms.get(presentation.characterId)} : {}),
           });
         }),
       );
