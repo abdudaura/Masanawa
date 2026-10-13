@@ -2084,22 +2084,6 @@
       "integration_head_sha": "174b862ab4a6239e8ff96fb7dcdc8ac5ab541be0",
       "release_reason": "PR #721 merged main 174b862. Exact-head Actions 38423066248 SUCCESS; 61 Vitest + 2 actual PG18, Gateway/Worker build + worker typecheck. Read-only staged source only; financial flags OFF, 0112 not production; real providers/device OPEN. PR handoff comment 6149216130.",
       "released_at": "2026-10-13T15:35:41.555Z"
-    },
-    {
-      "claim_id": "af07-persona-avatar-chat-call-20261013-gpt6",
-      "owner": "AF07/GPT-6 contact and call avatar integration",
-      "scope": "Show professional persona portraits on chat headers, forward sheets and live call sheet using compiled 26 SVG assets, no new network or prompt features",
-      "branch": "lane/af07-masana-portraits-in-chat-and-call-20261013-gpt6",
-      "base_sha": "6e7533a111c5f2302f7efd1becc2afc51bb30fc9",
-      "paths": [
-        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
-        "docs/workstreams/AF07-avatar-journey-20261013.md",
-        ".github/workflows/masana-roster-integration.yml"
-      ],
-      "pr": "",
-      "claimed_at": "2026-10-13T16:00:09.743Z",
-      "heartbeat_at": "2026-10-13T16:01:15.902Z",
-      "expires_at": "2026-10-13T16:31:15.902Z"
     }
   ],
   "history": [
@@ -6881,6 +6865,26 @@
       "integration_head_sha": "6e7533a111c5f2302f7efd1becc2afc51bb30fc9",
       "released_at": "2026-10-13T15:57:16.911Z",
       "release_reason": "PR #722 exact source 1c92ce5aef32a5ced795d248e318d6abd807be22, Masana Professional Roster CI #38426143365 success: Gateway/Worker builds, 26 catalog unit, real PG18 profile/Rooms, first-contact chat/call auth, 52 Flutter SVG assets and focused analysis. Merged main 6e7533a111c5f2302f7efd1becc2afc51bb30fc9. Production Railway/real Gemini and installed signed APK remain unverified."
+    },
+    {
+      "claim_id": "af07-persona-avatar-chat-call-20261013-gpt6",
+      "owner": "AF07/GPT-6 contact and call avatar integration",
+      "scope": "Show professional persona portraits on chat headers, forward sheets and live call sheet using compiled 26 SVG assets, no new network or prompt features",
+      "branch": "lane/af07-masana-portraits-in-chat-and-call-20261013-gpt6",
+      "base_sha": "6e7533a111c5f2302f7efd1becc2afc51bb30fc9",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
+        "docs/workstreams/AF07-avatar-journey-20261013.md",
+        ".github/workflows/masana-roster-integration.yml"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T16:00:09.743Z",
+      "heartbeat_at": "2026-10-13T16:01:15.902Z",
+      "expires_at": "2026-10-13T16:31:15.902Z",
+      "integration_head_sha": "8cc8086738cc682cbad84433c99ffcb69fee72b3",
+      "source_pr": 723,
+      "released_at": "2026-10-13T16:04:04.408Z",
+      "release_reason": "PR #723 source 290bf2b20d7006bc4f76b3c04525405cbc2ad46e tested in CI #38427115471 (server build+PG18/identity+Flutter portrait tests and chat Dart analysis) then merged main 8cc8086738cc682cbad84433c99ffcb69fee72b3."
     }
   ],
   "schema_version": 1
