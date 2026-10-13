@@ -11,6 +11,18 @@ describe("Gemini Room question answer delivery",()=>{
  it("requires a server-held provider key rather than quietly routing to review",()=>{
    expect(()=>createGeminiRoomAnswerModel({})).toThrow("rooms_ai.credentials_required");
  });
+ it("accepts the same provider key format as the production Gateway",async()=>{
+   const credential="example-gemini.key/path_with.symbols";
+   const fetchImpl=vi.fn(async(_url:string|URL|Request,_init?:RequestInit)=>success("Service restored."));
+   const model=createGeminiRoomAnswerModel({apiKey:credential,fetchImpl});
+   expect(await model.generate(job)).toBe("Service restored.");
+   const options=fetchImpl.mock.calls[0]?.[1];
+   expect(new Headers(options?.headers).get("x-goog-api-key")).toBe(credential);
+   expect(()=>createGeminiRoomAnswerModel({apiKey:"  padded-server-key  "})).not.toThrow();
+   for(const rejected of ["", "has whitespace inside", "x".repeat(257)]){
+     expect(()=>createGeminiRoomAnswerModel({apiKey:rejected})).toThrow("rooms_ai.credentials_required");
+   }
+ });
  it("submits the real queued question and directly returns a model answer",async()=>{
    const fetchImpl=vi.fn(async(_url:string|URL|Request,_init?:RequestInit)=>success());
    const model=createGeminiRoomAnswerModel({credentialsJson:JSON.stringify({
