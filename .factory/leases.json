@@ -2059,6 +2059,36 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
+    },
+    {
+      "claim_id": "af10-rooms-direct-answers-20261013-gpt6",
+      "owner": "AF10/GPT-6 direct AI Rooms user answers",
+      "scope": "Replace routine staff review with qualified direct Gemini answers, remove arbitrary daily limit, default-on authenticated Rooms content, canonical outbox PG rollback-safe boundaries",
+      "branch": "lane/af10-rooms-direct-answers-20261013-gpt6",
+      "base_sha": "e11fe1481c3aa51db9b6bf90fce38c44cd2b1472",
+      "paths": [
+        "packages/rooms/src/teacher.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.test.ts",
+        "adapters/storage/postgres/src/rooms/repository.ts",
+        "services/worker/src/jobs/rooms/teacher.ts",
+        "services/worker/src/jobs/rooms/teacher.test.ts",
+        "services/worker/src/jobs/rooms/runtime.ts",
+        "services/worker/src/jobs/rooms/runtime.test.ts",
+        "services/worker/src/jobs/rooms/gemini_room_model.ts",
+        "services/worker/src/jobs/rooms/gemini_room_model.test.ts",
+        "services/worker/src/main.ts",
+        "services/gateway/src/main.ts",
+        "services/gateway/src/modules/rooms/routes.ts",
+        "services/gateway/src/modules/rooms/routes.test.ts",
+        "apps/mobile/lib/src/features/rooms/rooms_screen.dart",
+        ".github/workflows/rooms-production-build.yml",
+        "docs/workstreams/AF10-rooms-direct-answers-20261013.md"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T14:21:15.778Z",
+      "heartbeat_at": "2026-10-13T14:21:15.778Z",
+      "expires_at": "2026-10-13T14:27:15.778Z"
     }
   ],
   "history": [
