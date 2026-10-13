@@ -2021,19 +2021,6 @@
       "source_head": "c6a3ee3b149245943bef6f5e1c3554a22d584a01",
       "source_pr": 731,
       "integration_head_sha": "483ec92068e6236137a7a28d709b8760414996cc"
-    },
-    {
-      "claim_id": "af00-apk-new-gateway-workflow-20261013-gpt6-2311",
-      "owner": "GPT-6 AF00 Android artifact integration",
-      "paths": [
-        ".github/workflows/masana-android-apk.yml"
-      ],
-      "scope": "Remove retired Gateway URLs injected into APK release compile; retain same signing, tests and artifacts.",
-      "base_sha": "c064d1bf19877ca584f806a25379006412f394fa",
-      "branch": "lane/af00-apk-gateway-build-url-20261013-gpt6",
-      "claimed_at": "2026-10-13T23:09:17.940Z",
-      "heartbeat_at": "2026-10-13T23:09:17.940Z",
-      "expires_at": "2026-10-13T23:44:17.940Z"
     }
   ],
   "history": [
@@ -7128,6 +7115,23 @@
       "release_reason": "PR #733 merged main c064d1bf19877ca584f806a25379006412f394fa; source builds + roster PG18/Gateway/Worker/Flutter tests pass on exact head ac419fb; Foundation legacy CI failed independently; real new Railway rollout not yet verified.",
       "source_head": "ac419fb3718becc3d2184b94a6f3826f391d42af",
       "integration_head_sha": "c064d1bf19877ca584f806a25379006412f394fa"
+    },
+    {
+      "claim_id": "af00-apk-new-gateway-workflow-20261013-gpt6-2311",
+      "owner": "GPT-6 AF00 Android artifact integration",
+      "paths": [
+        ".github/workflows/masana-android-apk.yml"
+      ],
+      "scope": "Remove retired Gateway URLs injected into APK release compile; retain same signing, tests and artifacts.",
+      "base_sha": "c064d1bf19877ca584f806a25379006412f394fa",
+      "branch": "lane/af00-apk-gateway-build-url-20261013-gpt6",
+      "claimed_at": "2026-10-13T23:09:17.940Z",
+      "heartbeat_at": "2026-10-13T23:09:17.940Z",
+      "expires_at": "2026-10-13T23:44:17.940Z",
+      "released_at": "2026-10-13T23:13:26.939Z",
+      "source_head": "6554dfadb67084e5853b027e6547de1d7452127d",
+      "integration_head_sha": "9c9acd84efa327d1257238c68966081e1dd2d890",
+      "release_reason": "PR #734 merged main with one-path reviewed workflow correction and focused 26-portrait tests passed; full APK release compilation was still in progress at merge (not falsely marked PASS), CI will report separately."
     }
   ],
   "schema_version": 1
