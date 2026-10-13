@@ -172,7 +172,14 @@ class MasanaListScreen extends ConsumerWidget {
                       style: TextStyle(color: u.textMuted, fontSize: 14),
                     ),
                   ),
-                  trailing: Icon(Icons.chat_bubble_outline, color: u.brand),
+                  trailing: agent.roomId == null
+                      ? Icon(Icons.chat_bubble_outline, color: u.brand)
+                      : IconButton(
+                          tooltip: 'Open ${agent.displayName} Room',
+                          icon: const Icon(Icons.school_outlined),
+                          color: u.brand,
+                          onPressed: () => context.push('/rooms/${Uri.encodeComponent(agent.roomId!)}'),
+                        ),
                   onTap: () {
                     ref
                         .read(aiChatProvider.notifier)

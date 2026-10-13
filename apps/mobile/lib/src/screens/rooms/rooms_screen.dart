@@ -188,3 +188,43 @@ class RoomsScreen extends ConsumerWidget {
     );
   }
 }
+
+/** Direct link from the Masana directory to the canonical, account-fenced Room. */
+class MasanaRoomDetailScreen extends ConsumerWidget {
+  const MasanaRoomDetailScreen({super.key, required this.roomId});
+  final String roomId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session=ref.watch(sessionProvider);
+    if(session is! SessionSignedIn) {
+      return const Scaffold(body:Center(child:Text('Sign in to view this Room.')));
+    }
+    final accountId=session.user.id;
+    final api=ref.watch(apiClientProvider);
+    String? currentAccount(){
+      try{
+        final current=ref.read(sessionProvider);
+        return current is SessionSignedIn?current.user.id:null;
+      }catch(_){return null;}
+    }
+    return KeyedSubtree(
+      key:ValueKey('masana-room-$accountId-$roomId'),
+      child:canonical.RoomHomeScreen(
+        id:roomId,
+        client:AccountBoundRoomsClient(delegate:ref.watch(roomsClientProvider),
+          ownerAccount:accountId,currentAccount:currentAccount),
+        discussionApi:AccountBoundRoomDiscussionApi(
+          delegate:HttpRoomDiscussionApi(api.dio),
+          ownerAccount:accountId,currentAccount:currentAccount),
+        discussionAccountScope:accountId,
+        membershipClient:AccountBoundRoomMembershipClient(
+          delegate:HttpRoomMembershipClient(api.dio),
+          ownerAccount:accountId,currentAccount:currentAccount),
+        savedLessonsClient:DioSavedLessonsClient(
+          dio:api.dio,accountKey:accountId,currentAccountKey:currentAccount),
+        savedLessonsAccountKey:accountId,
+      ),
+    );
+  }
+}

@@ -48,6 +48,7 @@ class AgentDirectoryEntry {
     this.defaultPlatformAgent = false,
     this.voiceProvider,
     this.voiceName,
+    this.roomId,
   });
 
   final String characterId;
@@ -65,6 +66,7 @@ class AgentDirectoryEntry {
   final bool defaultPlatformAgent;
   final String? voiceProvider;
   final String? voiceName;
+  final String? roomId;
 
   /// Saved roster metadata is useful before refresh, but saved presence is
   /// historical. Never present it as a current runtime/voice availability check.
@@ -82,6 +84,7 @@ class AgentDirectoryEntry {
         defaultPlatformAgent: defaultPlatformAgent,
         voiceProvider: voiceProvider,
         voiceName: voiceName,
+        roomId: roomId,
       );
 
   String get initial =>
@@ -115,6 +118,7 @@ class AgentDirectoryEntry {
         'defaultPlatformAgent': defaultPlatformAgent,
         if (voiceProvider != null) 'voiceProvider': voiceProvider,
         if (voiceName != null) 'voiceName': voiceName,
+        if (roomId != null) 'roomId': roomId,
       };
 
   factory AgentDirectoryEntry.fromJson(Map<String, dynamic> json) {
@@ -143,6 +147,8 @@ class AgentDirectoryEntry {
       defaultPlatformAgent: json['defaultPlatformAgent'] == true,
       voiceProvider: (json['voiceProvider'] as String?)?.trim(),
       voiceName: (json['voiceName'] as String?)?.trim(),
+      roomId: (json['roomId'] is String && (json['roomId'] as String).trim().isNotEmpty)
+          ? (json['roomId'] as String).trim() : null,
     );
   }
 }

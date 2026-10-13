@@ -823,6 +823,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 onPressed: () => _moveSearch(1, searchMatches),
               ),
             ],
+            if (agent.roomId != null)
+              IconButton(
+                tooltip: 'Open ${agent.displayName} Room',
+                icon: const Icon(Icons.school_outlined),
+                onPressed: () => context.push('/rooms/${Uri.encodeComponent(agent.roomId!)}'),
+              ),
             IconButton(
               tooltip: 'Call',
               icon: const Icon(Icons.call_outlined),
