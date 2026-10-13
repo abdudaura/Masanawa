@@ -145,6 +145,22 @@ class RoomsScreen extends ConsumerWidget {
     return KeyedSubtree(
       key: ValueKey('rooms-account-' + ownerAccount),
       child: canonical.RoomsScreen(
+        // Navigator detail routes outlive the account-keyed tab. A route
+        // must immediately hide and unmount private Room data on sign-out
+        // or account replacement, not merely reject its next network read.
+        protectDetail: (routeContext, detail) => Consumer(
+          builder: (context, detailRef, _) {
+            final active = detailRef.watch(sessionProvider);
+            if (active is! SessionSignedIn || active.user.id != ownerAccount) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('Session changed. Sign in to view this Room.'),
+                ),
+              );
+            }
+            return detail;
+          },
+        ),
         client: AccountBoundRoomsClient(
           delegate: ref.watch(roomsClientProvider),
           ownerAccount: ownerAccount,

@@ -8,6 +8,9 @@ import 'rooms_client.dart';
 import 'saved_lessons_client.dart';
 import 'saved_lessons_screen.dart';
 const masanaBlue=Color(0xFF1E63D6);
+
+/// Host session must guard details pushed beyond the account-keyed tab.
+typedef RoomDetailProtector = Widget Function(BuildContext routeContext, Widget detail);
 String roomError(Object e){
  if(e is StateError&&e.message=='account_changed')return 'Session changed. Sign in again.';
  if(e is DioException){
@@ -19,13 +22,14 @@ String roomError(Object e){
  return 'Could not load. Check the network and retry.';
 }
 class RoomsScreen extends StatefulWidget {
- const RoomsScreen({super.key,required this.client,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey});
+ const RoomsScreen({super.key,required this.client,this.discussionApi,this.discussionAccountScope,this.onDiscussionReport,this.savedLessonsClient,this.savedLessonsAccountKey,this.protectDetail});
  final RoomsClient client;
  final RoomDiscussionApi? discussionApi;
  final String? discussionAccountScope;
  final ValueChanged<RoomDiscussionReply>? onDiscussionReport;
  final SavedLessonsClient? savedLessonsClient;
  final String? savedLessonsAccountKey;
+ final RoomDetailProtector? protectDetail;
  @override State<RoomsScreen> createState()=>_RoomsScreenState();
 }
 class _RoomsScreenState extends State<RoomsScreen>{
@@ -73,10 +77,13 @@ class _RoomsScreenState extends State<RoomsScreen>{
       title:Text(r.title),subtitle:Text("${r.language} · ${r.members} members · ${r.paid ? 'Paid' : 'Free'}"),
       trailing:Icon(r.joined?Icons.check_circle_outline:Icons.chevron_right,color:masanaBlue),
       onTap:()async{
-       await Navigator.push<void>(context,MaterialPageRoute(builder:(_)=>RoomHomeScreen(client:widget.client,id:r.id,
-        discussionApi:widget.discussionApi,discussionAccountScope:widget.discussionAccountScope,
-        onDiscussionReport:widget.onDiscussionReport,
-        savedLessonsClient:widget.savedLessonsClient,savedLessonsAccountKey:widget.savedLessonsAccountKey)));
+       await Navigator.push<void>(context,MaterialPageRoute(builder:(routeContext){
+        final detail=RoomHomeScreen(client:widget.client,id:r.id,
+          discussionApi:widget.discussionApi,discussionAccountScope:widget.discussionAccountScope,
+          onDiscussionReport:widget.onDiscussionReport,
+          savedLessonsClient:widget.savedLessonsClient,savedLessonsAccountKey:widget.savedLessonsAccountKey);
+        return widget.protectDetail?.call(routeContext,detail)??detail;
+       }));
        if(mounted)load();
       });
     })))
