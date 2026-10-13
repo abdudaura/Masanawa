@@ -2059,20 +2059,6 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
-    },
-    {
-      "claim_id": "af10-rooms-pg18-test-cleanup-20261013-gpt6",
-      "owner": "AF10/GPT-6 postmerge PG18 test lifecycle",
-      "scope": "Fix confirmed post-merge Vitest PG18 drop force connection termination 57P01; keep real customer question/answer tests and CI trustworthy",
-      "branch": "lane/af10-rooms-pg18-test-cleanup-20261013-gpt6",
-      "base_sha": "20daa18a2d5b30d9b25f7eeff332a556aae5fc82",
-      "paths": [
-        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts"
-      ],
-      "pr": "",
-      "claimed_at": "2026-10-13T15:03:43.364Z",
-      "heartbeat_at": "2026-10-13T15:03:43.364Z",
-      "expires_at": "2026-10-13T15:11:43.364Z"
     }
   ],
   "history": [
@@ -6750,6 +6736,24 @@
       "release_reason": "PR #719 source d266d13407afc6f0e44b9943f80fab7562271525 merged main 20daa18a2d5b30d9b25f7eeff332a556aae5fc82; two PG18 suites 4 PASS and 12 focused Rooms suites 56 PASS, 10 Flutter PASS, Gateway/Worker production builds & Worker TypeScript PASS. No Railway real deployment, APK or Gemini provider acceptance.",
       "integration_head_sha": "20daa18a2d5b30d9b25f7eeff332a556aae5fc82",
       "source_pr": 719
+    },
+    {
+      "claim_id": "af10-rooms-pg18-test-cleanup-20261013-gpt6",
+      "owner": "AF10/GPT-6 postmerge PG18 test lifecycle",
+      "scope": "Fix confirmed post-merge Vitest PG18 drop force connection termination 57P01; keep real customer question/answer tests and CI trustworthy",
+      "branch": "lane/af10-rooms-pg18-test-cleanup-20261013-gpt6",
+      "base_sha": "20daa18a2d5b30d9b25f7eeff332a556aae5fc82",
+      "paths": [
+        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts"
+      ],
+      "pr": "",
+      "claimed_at": "2026-10-13T15:03:43.364Z",
+      "heartbeat_at": "2026-10-13T15:03:43.364Z",
+      "expires_at": "2026-10-13T15:11:43.364Z",
+      "released_at": "2026-10-13T15:06:14.990Z",
+      "release_reason": "PR #720 tested exact source 31da1d90ba3ea7b258d20a28ad12e63ebe9e1084, merged main ce7f4a9df38262b00c9fab78986143e6ccdf760c; 56 focused suites tests, 4 PG18 real tests, 10 Flutter tests, Gateway/Worker builds and worker typing PASS. No live Railway deployment.",
+      "source_pr": 720,
+      "integration_head_sha": "ce7f4a9df38262b00c9fab78986143e6ccdf760c"
     }
   ],
   "schema_version": 1
