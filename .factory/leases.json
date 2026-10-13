@@ -1870,6 +1870,23 @@
       ],
       "scope": "Recover AF05 unmerged native recorder and UI; connect chat microphone to owner-fenced offline-safe voice-note attachment; preserve independent live call button and tests.",
       "notes": "Original one-commit WIP branch lane/af05-android-voice-repair-20261012, source head d9ec3a3c60d2, contains 9 files and authored tests; no PR. Avoid other voice/session/native/finance/composition paths. Implementation head cd0dad1 source connected; PR #705 opened; awaiting executable Flutter exact-head checks."
+    },
+    {
+      "claim_id": "af06-mui03-c10-client-20261013-gpt6",
+      "owner": "GPT-6 / AF06 canonical C10 remote chat search",
+      "claimed_at": "2026-10-13T07:00:49.751Z",
+      "heartbeat_at": "2026-10-13T07:00:49.751Z",
+      "expires_at": "2026-10-13T07:40:49.751Z",
+      "branch": "lane/af06-c10-search-live-20261013",
+      "base_sha": "174c7d1b633a15607e069a0205269baf414e3b95",
+      "paths": [
+        "apps/mobile/lib/src/screens/chat/chat_list_screen.dart",
+        "apps/mobile/lib/src/features/masana_chat/inbox_search.dart",
+        "apps/mobile/test/ui/mui03_remote_chats_search_test.dart",
+        ".github/workflows/mui03-remote-inbox.yml",
+        "docs/workstreams/UI-MUI-03-chats.md"
+      ],
+      "notes": "After AF00 #704 merged main, preserve existing MUI03 local Chats search/Calls/navigation; bounded local client source, authorized C10 remote query with pinned credential and stale-account fence; runtime disabled/offline honest. No AF08 shared transport edits."
     }
   ],
   "history": [
