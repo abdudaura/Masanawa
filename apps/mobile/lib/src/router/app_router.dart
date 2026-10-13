@@ -20,6 +20,7 @@ import '../core/startup_metrics.dart';
 import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
 import '../screens/chat/masana_list_screen.dart';
+import '../screens/rooms/rooms_screen.dart' show MasanaRoomDetailScreen;
 import '../screens/twin/shell_tab.dart';
 import '../shell/five_tab_shell.dart';
 import '../shell/startup_gate.dart';
@@ -104,6 +105,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/search' ||
           path == '/chats' ||
           path.startsWith('/chat/') ||
+          path.startsWith('/rooms/') ||
           path.startsWith('/talk/') ||
           path.startsWith('/u/') ||
           path.startsWith('/persona/') ||
@@ -249,6 +251,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/agents', redirect: (_, __) => '/home?tab=chats'),
       GoRoute(path: '/masana', builder: (_, _) => const MasanaListScreen()),
+      GoRoute(path:'/rooms/:id',builder:(_,state)=>MasanaRoomDetailScreen(roomId:state.pathParameters['id']!)),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(
         path: '/billing',
