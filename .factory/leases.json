@@ -1833,10 +1833,10 @@
       "branch": "perf/masanawa-cache-first-startup-20261013",
       "claim_id": "perf-fast-start-20261013-gpt6",
       "claimed_at": "2026-10-13T06:11:32.066Z",
-      "expires_at": "2026-10-13T06:16:32.066Z",
-      "heartbeat_at": "2026-10-13T06:11:32.066Z",
+      "expires_at": "2026-10-13T06:22:46.568Z",
+      "heartbeat_at": "2026-10-13T06:17:46.568Z",
       "integration_head_sha": null,
-      "notes": "Cache-first authenticated Chats startup and real Android cold/warm timing; no auth/money/native/Gateway contracts. Source/test changes, no APK claim.",
+      "notes": "Owner requested remove dedicated branded Splash and merge to main. Scoped protected router edit required, checked no live overlapping claims.",
       "owner": "GPT-6 / startup performance",
       "paths": [
         "apps/mobile/lib/main.dart",
@@ -1846,7 +1846,10 @@
         "apps/mobile/lib/src/state/ai_chat_state.dart",
         "apps/mobile/lib/src/state/agent_directory_state.dart",
         "apps/mobile/test/ui/fast_launch_splash_test.dart",
-        "scripts/mobile-startup-benchmark.ps1"
+        "scripts/mobile-startup-benchmark.ps1",
+        "apps/mobile/lib/src/router/app_router.dart",
+        "apps/mobile/lib/src/shell/startup_gate.dart",
+        "apps/mobile/test/ui/fast_launch_route_test.dart"
       ],
       "scope": "Remove artificial Splash delay, surface local cache milestones, preserve account fencing, provide repeatable Android startup measurements."
     }
