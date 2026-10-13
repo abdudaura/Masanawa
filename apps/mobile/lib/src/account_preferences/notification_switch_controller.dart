@@ -5,19 +5,16 @@ import 'package:flutter/foundation.dart';
 /// call succeeded; callers must still reconcile the server/device token.
 class NotificationSwitchController extends ChangeNotifier {
   NotificationSwitchController({
-    required Future<bool> Function() readEnabled,
-    required Future<bool> Function() requestPermission,
-    required Future<void> Function() unregister,
-    Future<void> Function()? onEnabled,
-  }) : _readEnabled = readEnabled,
-       _requestPermission = requestPermission,
-       _unregister = unregister,
-       _onEnabled = onEnabled;
+    required this.readEnabled,
+    required this.requestPermission,
+    required this.unregister,
+    this.onEnabled,
+  });
 
-  final Future<bool> Function() _readEnabled;
-  final Future<bool> Function() _requestPermission;
-  final Future<void> Function() _unregister;
-  final Future<void> Function()? _onEnabled;
+  final Future<bool> Function() readEnabled;
+  final Future<bool> Function() requestPermission;
+  final Future<void> Function() unregister;
+  final Future<void> Function()? onEnabled;
   String? _accountId;
   int _generation = 0;
   bool _disposed = false;
@@ -65,7 +62,7 @@ class NotificationSwitchController extends ChangeNotifier {
 
   Future<void> _load(int generation, String account) async {
     try {
-      final value = await _readEnabled();
+      final value = await readEnabled();
       if (!_current(generation, account)) return;
       enabled = value;
     } catch (_) {
@@ -93,26 +90,26 @@ class NotificationSwitchController extends ChangeNotifier {
     _publish();
     try {
       if (requested) {
-        final granted = await _requestPermission();
+        final granted = await requestPermission();
         if (!_current(generation, account)) return false;
         if (!granted) {
           error = 'Notification permission is off. Enable it in device settings.';
           return false;
         }
       } else {
-        await _unregister();
+        await unregister();
         if (!_current(generation, account)) return false;
       }
-      final confirmed = await _readEnabled();
+      final confirmed = await readEnabled();
       if (!_current(generation, account)) return false;
       enabled = confirmed;
       if (confirmed != requested) {
         error = 'Notification change was not confirmed. Check permissions and retry.';
         return false;
       }
-      if (requested && _onEnabled != null) {
+      if (requested && onEnabled != null) {
         try {
-          await _onEnabled();
+          await onEnabled();
         } catch (_) {
           if (_current(generation, account)) {
             error = 'Device permission is enabled, but message delivery could not be confirmed. Reconnect and retry.';

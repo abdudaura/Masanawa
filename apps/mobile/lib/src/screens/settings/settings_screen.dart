@@ -255,42 +255,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                for (var index = 0; index < supportAgents.length; index++) ...[
-                  Builder(
-                    builder: (context) {
-                      final agent = supportAgents[index];
-                      final selected = agent.defaultPlatformAgent;
-                      final saving =
-                          _savingDefaultAgentId == agent.characterId;
-                      return RadioListTile<String>(
-                        value: agent.characterId,
-                        groupValue: selectedSupportAgentId,
-                        onChanged: saving || _savingDefaultAgentId != null ||
-                                user == null
-                            ? null
-                            : (value) {
-                                if (value == null || selected) return;
-                                unawaited(_chooseSupportAgent(
-                                  accountId: user.id,
-                                  characterId: value,
-                                  displayName: agent.displayName,
-                                ));
-                              },
-                        secondary: CircleAvatar(
-                          backgroundColor: u.brand.withValues(alpha: 0.12),
-                          child: Text(
-                            agent.initial,
-                            style: TextStyle(color: u.brand),
-                          ),
+                RadioGroup<String>(
+                  groupValue: selectedSupportAgentId,
+                  onChanged: (value) {
+                    if (value == null || user == null ||
+                        _savingDefaultAgentId != null) return;
+                    for (final agent in supportAgents) {
+                      if (agent.characterId != value ||
+                          agent.defaultPlatformAgent) continue;
+                      unawaited(_chooseSupportAgent(
+                        accountId: user.id,
+                        characterId: value,
+                        displayName: agent.displayName,
+                      ));
+                      break;
+                    }
+                  },
+                  child: Column(
+                    children: [
+                      for (var index = 0; index < supportAgents.length; index++) ...[
+                        Builder(
+                          builder: (context) {
+                            final agent = supportAgents[index];
+                            return RadioListTile<String>(
+                              value: agent.characterId,
+                              enabled: user != null &&
+                                  _savingDefaultAgentId == null,
+                              secondary: CircleAvatar(
+                                backgroundColor: u.brand.withValues(alpha: 0.12),
+                                child: Text(
+                                  agent.initial,
+                                  style: TextStyle(color: u.brand),
+                                ),
+                              ),
+                              title: Text(agent.displayName),
+                              subtitle: Text(agent.roleLabel),
+                            );
+                          },
                         ),
-                        title: Text(agent.displayName),
-                        subtitle: Text(agent.roleLabel),
-                      );
-                    },
+                        if (index != supportAgents.length - 1)
+                          const Divider(height: 1),
+                      ],
+                    ],
                   ),
-                  if (index != supportAgents.length - 1)
-                    const Divider(height: 1),
-                ],
+                ),
               ],
             ),
           ],
