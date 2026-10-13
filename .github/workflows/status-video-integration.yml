@@ -60,5 +60,9 @@ jobs:
           services/worker/src/jobs/home_feed
       - name: Worker service typecheck
         run: pnpm --filter @masanawa/worker-service typecheck
+      - name: Gateway production build
+        run: pnpm --filter @masanawa/gateway-service... build
+      - name: Worker production build
+        run: pnpm --filter @masanawa/worker-service... build
       - name: Gateway strict typecheck
         run: pnpm --filter @masanawa/gateway-service typecheck
