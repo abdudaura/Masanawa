@@ -44,3 +44,7 @@ Next substantial milestone: independently authenticated Flutterwave/crypto
 provider settlement evidence; custody reserve and priced quote; trusted
 idempotent worker driving NGN->MSN issuance plus recovery and readback;
 then atomic crypto deposits/conversion/send, with actual provider evidence.
+
+## CI repair from first hosted run #38388319251
+
+Gateway package correctly lacks a direct pg dependency, so PostgreSQL18 acceptance moved into the canonical adapters/storage/postgres/src/commerce location rather than creating a second database dependency. 31 Gateway/MSN tests passed before the old path's missing pg error aborted the fifth file. The old #576 Flutter disabled-route test created a completed-error future before attaching its consumer; deferred the fault until after the widget mounts. A new exact-head hosted run is required before claiming success.

@@ -6,6 +6,7 @@ on:
       - "services/gateway/src/app.ts"
       - "services/gateway/src/main.ts"
       - "packages/commerce/migrations/0112_msn_wallet.sql"
+      - "adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts"
       - "apps/mobile/lib/src/finance/msn_*"
       - "apps/mobile/lib/src/screens/wallet/wallet_screen.dart"
       - "apps/mobile/test/finance/msn_*"
@@ -56,7 +57,7 @@ jobs:
           services/gateway/src/msn_wallet/store.test.ts
           services/gateway/src/msn_wallet/routes.test.ts
           services/gateway/src/msn_wallet/composition.test.ts
-          services/gateway/src/msn_wallet/msn_postgres.integration.test.ts
+          adapters/storage/postgres/src/commerce/msn-wallet.integration.test.ts
   flutter-readback:
     runs-on: ubuntu-latest
     timeout-minutes: 25

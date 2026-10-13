@@ -79,8 +79,10 @@ void main() {
   testWidgets('route disabled never displays a synthetic zero',
       (tester) async {
     final transport = _QueueTransport([
-      Future<MsnBalance>.error(
-          const ApiException('not mounted', statusCode: 404)),
+      Future<MsnBalance>.delayed(
+        Duration.zero,
+        () => throw const ApiException('not mounted', statusCode: 404),
+      ),
     ]);
     await tester.pumpWidget(_screen(transport, 'session-A'));
     await tester.pumpAndSettle();

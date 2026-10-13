@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { runMigrations } from "../../../../adapters/storage/postgres/src/migrations.js";
-import { createMsnLedgerStore } from "./store.js";
+import { runMigrations } from "../migrations.js";
+import { createMsnLedgerStore } from "../../../../../services/gateway/src/msn_wallet/store.js";
 
 const url = process.env.MASANAWA_TEST_DATABASE_URL;
 const db = url ? describe : describe.skip;
@@ -14,7 +14,7 @@ db("MSN canonical PostgreSQL ledger acceptance", () => {
     pool = new Pool({ connectionString: url });
     await runMigrations(pool, [{
       owner: "commerce",
-      directory: fileURLToPath(new URL("../../../../packages/commerce/migrations", import.meta.url)),
+      directory: fileURLToPath(new URL("../../../../../packages/commerce/migrations", import.meta.url)),
     }]);
   });
   afterAll(async () => { await pool?.end(); });
