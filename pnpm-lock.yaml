@@ -630,6 +630,9 @@ importers:
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
+      '@masanawa/rooms':
+        specifier: workspace:*
+        version: link:../../packages/rooms
       '@masanawa/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
