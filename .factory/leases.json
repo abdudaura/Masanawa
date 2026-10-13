@@ -1995,6 +1995,26 @@
       "source_pr": 730,
       "integration_head_sha": "84fb4a75148b84304d42ac4be1fdb77e6e9fbf4a",
       "test_state": "PASS_AF01_DEDICATED_CI_REAL_PG18_AND_FLUTTER; UNRELATED_BASELINE_FOUNDATION_AND_VIDEO_TYPECHECK_FAILED; PROD_AND_CUSTODY_BLOCKED"
+    },
+    {
+      "base_sha": "84fb4a75148b84304d42ac4be1fdb77e6e9fbf4a",
+      "branch": "lane/af00-railway-recovery-contract-20261013-gpt6",
+      "claim_id": "af00-railway-recovery-deployment-contract-20261013-gpt6",
+      "claimed_at": "2026-10-13T20:47:27.510Z",
+      "expires_at": "2026-10-13T20:52:27.515Z",
+      "heartbeat_at": "2026-10-13T20:47:27.510Z",
+      "owner": "GPT-6 / AF00 Railway recovery source",
+      "paths": [
+        "infra/deployment/worker/Dockerfile",
+        "infra/deployment/worker/railway.toml",
+        "services/gateway/package.json",
+        "test/architecture/railway-deployment.test.ts",
+        ".github/workflows/railway-deployment-contract.yml",
+        "docs/workstreams/AF00-railway-account-recovery-20261013.md",
+        "docs/CONFIGURATION-DEPLOYMENT.md"
+      ],
+      "scope": "Add dedicated canonical Worker Railway image/config and keep production DB migration explicitly operator-owned before account recovery; no provider activation or data movement",
+      "notes": "Old Railway account expired; installed Railway app does not expose usable runtime actions in this session. Exact data volume and backup are untouched."
     }
   ],
   "history": [
