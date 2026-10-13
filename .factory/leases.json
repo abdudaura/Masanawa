@@ -2087,12 +2087,14 @@
         "services/worker/src/jobs/rooms/runtime.ts",
         "services/worker/src/jobs/rooms/teacher.test.ts",
         "services/worker/src/jobs/rooms/teacher.ts",
-        "services/worker/src/main.ts"
+        "services/worker/src/main.ts",
+        "adapters/storage/postgres/src/rooms/teacher_outbox.integration.test.ts"
       ],
-      "pr": "",
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/718",
       "claimed_at": "2026-10-13T14:21:15.778Z",
-      "heartbeat_at": "2026-10-13T14:23:29.921Z",
-      "expires_at": "2026-10-13T14:29:29.921Z"
+      "heartbeat_at": "2026-10-13T14:36:53.648Z",
+      "expires_at": "2026-10-13T14:44:53.648Z",
+      "notes": "Same-owner recovery of expired short lease (previous 2026-10-13T14:29:29.921Z); first focused source cdb0fe5 had 45 Rooms/PG tests and worker+Flutter PASS, plus earlier baseline global typecheck failures. Continue substantial real PostgreSQL question->AI answer integration, no different owner took paths."
     }
   ],
   "history": [
