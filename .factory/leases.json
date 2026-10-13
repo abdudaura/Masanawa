@@ -2059,24 +2059,6 @@
       "source_head": "120de3b7785bdcf01e6178667566491b7965818e",
       "source_pr": 713,
       "integration_head_sha": "bb7ebef98f0dac0fbfc8a21511ca52c16487bafc"
-    },
-    {
-      "claim_id": "af10-rooms-production-build-20261013-gpt6",
-      "owner": "AF10 / GPT-6 production readiness",
-      "scope": "Restore live Gateway production compiler and verify real Rooms/worker build and PG migration before any production activation",
-      "branch": "lane/af10-rooms-production-build-20261013-gpt6",
-      "base_sha": "d547dcdccf3ec448c65ee8dd995ca29e91d1d3e2",
-      "paths": [
-        ".github/workflows/rooms-production-build.yml",
-        ".github/workflows/status-video-integration.yml",
-        "docs/workstreams/AF10-rooms-production-activation-20261013.md",
-        "services/gateway/src/call_history/routes.test.ts",
-        "services/gateway/src/call_history/routes.ts"
-      ],
-      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/717",
-      "claimed_at": "2026-10-13T14:02:47.536Z",
-      "heartbeat_at": "2026-10-13T14:05:08.181Z",
-      "expires_at": "2026-10-13T14:10:08.181Z"
     }
   ],
   "history": [
@@ -6645,6 +6627,29 @@
       "source_head": "c88fdcd4ba3144ae0d0a877b21b84abc6f69350b",
       "integration_head_sha": "d547dcdccf3ec448c65ee8dd995ca29e91d1d3e2",
       "source_pr": 716
+    },
+    {
+      "claim_id": "af10-rooms-production-build-20261013-gpt6",
+      "owner": "AF10 / GPT-6 production readiness",
+      "scope": "Restore live Gateway production compiler and verify real Rooms/worker build and PG migration before any production activation",
+      "branch": "lane/af10-rooms-production-build-20261013-gpt6",
+      "base_sha": "d547dcdccf3ec448c65ee8dd995ca29e91d1d3e2",
+      "paths": [
+        ".github/workflows/rooms-production-build.yml",
+        ".github/workflows/status-video-integration.yml",
+        "docs/workstreams/AF10-rooms-production-activation-20261013.md",
+        "services/gateway/src/call_history/routes.test.ts",
+        "services/gateway/src/call_history/routes.ts"
+      ],
+      "pr": "https://github.com/weavewellindustrieslimited/masanawa/pull/717",
+      "claimed_at": "2026-10-13T14:02:47.536Z",
+      "heartbeat_at": "2026-10-13T14:05:08.181Z",
+      "expires_at": "2026-10-13T14:10:08.181Z",
+      "released_at": "2026-10-13T14:09:08.976Z",
+      "release_reason": "PR #717 merged main e11fe1481c3aa51db9b6bf90fce38c44cd2b1472; 2 hosted Gateway and Worker prod builds PASS; 43 Rooms/Calls tests and 2 PG18 PASS; 91 extended scoped suites + worker TS PASS; existing global CI debt; Railway production offline, rollout not qualified",
+      "source_head": "fec7d95a444ee9025792fca67659478bd462132b",
+      "source_pr": 717,
+      "integration_head_sha": "e11fe1481c3aa51db9b6bf90fce38c44cd2b1472"
     }
   ],
   "schema_version": 1
