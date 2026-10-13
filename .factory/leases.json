@@ -2093,12 +2093,13 @@
       "base_sha": "6e7533a111c5f2302f7efd1becc2afc51bb30fc9",
       "paths": [
         "apps/mobile/lib/src/screens/chat/ai_chat_screen.dart",
-        "docs/workstreams/AF07-avatar-journey-20261013.md"
+        "docs/workstreams/AF07-avatar-journey-20261013.md",
+        ".github/workflows/masana-roster-integration.yml"
       ],
       "pr": "",
       "claimed_at": "2026-10-13T16:00:09.743Z",
-      "heartbeat_at": "2026-10-13T16:00:09.743Z",
-      "expires_at": "2026-10-13T16:30:09.743Z"
+      "heartbeat_at": "2026-10-13T16:01:15.902Z",
+      "expires_at": "2026-10-13T16:31:15.902Z"
     }
   ],
   "history": [
